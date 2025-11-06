@@ -110,7 +110,7 @@ func (m *Manager) CheckEligibility(ethAddress common.Address) (*REQLSnapshot, er
 	}
 
 	// Check if claim period has expired
-	snapshotTime, _ := time.Parse(time.RFC3339, m.config.REQLSnapshotDate)
+	snapshotTime, _ := time.Parse(time.RFC3339, m.config.SnapshotDate)
 	claimDeadline := snapshotTime.Add(time.Duration(m.config.ClaimPeriod) * time.Second)
 	if time.Now().After(claimDeadline) {
 		return nil, errAirdropExpired
@@ -219,14 +219,14 @@ func (m *Manager) loadSnapshot() error {
 	mockSnapshots := []REQLSnapshot{
 		{
 			Address:       common.HexToAddress("0x1234567890123456789012345678901234567890"),
-			REQLBalance:   big.NewInt(1000000 * 1e18), // 1M REQL
-			LUXAllocation: big.NewInt(1000000000 * 1e9), // 1B LUX
+			REQLBalance:   new(big.Int).Mul(big.NewInt(1000000), big.NewInt(1e18)), // 1M REQL
+			LUXAllocation: new(big.Int).Mul(big.NewInt(1000000000), big.NewInt(1e9)), // 1B LUX
 		},
 		// Add more snapshot entries...
 	}
 
 	for _, snapshot := range mockSnapshots {
-		snapshot.SnapshotTime, _ = time.Parse(time.RFC3339, m.config.REQLSnapshotDate)
+		snapshot.SnapshotTime, _ = time.Parse(time.RFC3339, m.config.SnapshotDate)
 		m.reqlSnapshots[snapshot.Address] = &snapshot
 	}
 
@@ -283,7 +283,7 @@ func (m *Manager) processClaim(ctx context.Context, claim *AirdropClaim) (ids.ID
 
 // getClaimDeadline returns the deadline for claiming airdrops
 func (m *Manager) getClaimDeadline() time.Time {
-	snapshotTime, _ := time.Parse(time.RFC3339, m.config.REQLSnapshotDate)
+	snapshotTime, _ := time.Parse(time.RFC3339, m.config.SnapshotDate)
 	return snapshotTime.Add(time.Duration(m.config.ClaimPeriod) * time.Second)
 }
 

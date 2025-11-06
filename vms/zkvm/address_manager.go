@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/log"
 )
 
 const (

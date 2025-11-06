@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	luxcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 
@@ -73,7 +73,7 @@ func (w *Wallet) SendTx(
 func awaitTx(
 	ctx context.Context,
 	client *ethclient.Client,
-	txHash common.Hash,
+	txHash luxcommon.Hash,
 	pingFrequency time.Duration,
 ) error {
 	ticker := time.NewTicker(pingFrequency)

@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-// Note that since an Lux network has exactly one Platform Chain,
+// Note that since a Lux network has exactly one Platform Chain,
 // and the Platform Chain defines the genesis state of the network
 // (who is staking, which chains exist, etc.), defining the genesis
 // state of the Platform Chain is the same as defining the genesis

@@ -84,7 +84,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 
 	case KeyTypeMLDSA44, KeyTypeMLDSA65, KeyTypeMLDSA87:
 		if key, ok := s.mldsaKey.(*mldsa.PrivateKey); ok {
-			sig, err := key.Sign(nil, hash, crypto.Hash(0))
+			sig, err := key.Sign(rand.Reader, hash, crypto.Hash(0))
 			if err != nil {
 				return nil, err
 			}
@@ -94,7 +94,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 
 	case KeyTypeSLHDSA128, KeyTypeSLHDSA192, KeyTypeSLHDSA256:
 		if key, ok := s.slhdsaKey.(*slhdsa.PrivateKey); ok {
-			sig, err := key.Sign(nil, hash, crypto.Hash(0))
+			sig, err := key.Sign(rand.Reader, hash, crypto.Hash(0))
 			if err != nil {
 				return nil, err
 			}
@@ -123,7 +123,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 		}
 
 		if key, ok := s.hybridPQ.(*mldsa.PrivateKey); ok {
-			pqSig, err := key.Sign(nil, hash, crypto.Hash(0))
+			pqSig, err := key.Sign(rand.Reader, hash, crypto.Hash(0))
 			if err != nil {
 				return nil, err
 			}
@@ -173,9 +173,9 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		var pqSig []byte
 		switch pq := s.hybridPQ.(type) {
 		case *mldsa.PrivateKey:
-			pqSig, err = pq.Sign(nil, msg, crypto.Hash(0))
+			pqSig, err = pq.Sign(rand.Reader, msg, crypto.Hash(0))
 		case *slhdsa.PrivateKey:
-			pqSig, err = pq.Sign(nil, msg, crypto.Hash(0))
+			pqSig, err = pq.Sign(rand.Reader, msg, crypto.Hash(0))
 		default:
 			return nil, ErrInvalidKeyType
 		}

@@ -13,12 +13,12 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -36,7 +36,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *consensus.Context
+	Context    *consensusctx.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -46,10 +46,10 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &consensus.Context{
+		c.Context = &consensusctx.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
-			Log:       logging.NoLog{},
+			Log:       log.NoLog{},
 		}
 	}
 	if len(c.Genesis) == 0 {
@@ -66,7 +66,7 @@ func New(t testing.TB, c Config) state.State {
 	if c.Upgrades == (upgrade.Config{}) {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
-	if c.Config == (config.Config{}) {
+	if c.Config.BlockCacheSize == 0 {
 		c.Config = config.Default
 	}
 	if c.Metrics == nil {

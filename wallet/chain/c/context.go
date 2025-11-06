@@ -6,12 +6,11 @@ package c
 import (
 	"context"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/exchangevm"
-	xvm "github.com/luxfi/node/vms/exchangevm"
 )
 
 const Alias = "C"
@@ -19,19 +18,18 @@ const Alias = "C"
 type Context struct {
 	NetworkID    uint32
 	BlockchainID ids.ID
-	XAssetID   ids.ID
+	XAssetID     ids.ID
 }
 
-func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
+func NewContextFromURI(ctx context.Context, uri string, luxAssetID ids.ID) (*Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := xvm.NewClient(uri, "X")
-	return NewContextFromClients(ctx, infoClient, xChainClient)
+	return NewContextFromClients(ctx, infoClient, luxAssetID)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient *info.Client,
-	xChainClient *xvm.Client,
+	luxAssetID ids.ID,
 ) (*Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -43,15 +41,10 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	luxAsset, err := xChainClient.GetAssetDescription(ctx, "LUX")
-	if err != nil {
-		return nil, err
-	}
-
 	return &Context{
 		NetworkID:    networkID,
 		BlockchainID: blockchainID,
-		XAssetID:   luxAsset.AssetID,
+		XAssetID:     luxAssetID,
 	}, nil
 }
 
@@ -59,11 +52,9 @@ func newConsensusContext(c *Context) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
 	return &consensusctx.Context{
 		NetworkID:   c.NetworkID,
-		NetID:    constants.PrimaryNetworkID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     c.BlockchainID,
-		CChainID:    c.BlockchainID,
-		LUXAssetID: c.LUXAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		XAssetID:  c.XAssetID,
+		Log:         log.NoLog{},
 	}, lookup.Alias(c.BlockchainID, Alias)
 }

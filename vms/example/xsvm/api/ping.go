@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/log"
 )
 
 var _ xsvmconnect.PingHandler = (*PingService)(nil)

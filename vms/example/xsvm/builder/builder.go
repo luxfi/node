@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/core"
+	consensusctx "github.com/luxfi/consensus/context"
+	corecommon "github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -29,12 +29,12 @@ var _ Builder = (*builder)(nil)
 type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
-	WaitForEvent(ctx context.Context) (common.Message, error)
+	WaitForEvent(ctx context.Context) (corecommon.Message, error)
 	BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error)
 }
 
 type builder struct {
-	chainContext *consensus.Context
+	chainContext *consensusctx.Context
 	chain        chain.Chain
 
 	preference ids.ID
@@ -43,7 +43,7 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *consensus.Context, chain chain.Chain) Builder {
+func New(chainContext *consensusctx.Context, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,
@@ -71,17 +71,17 @@ func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
 	return nil
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (corecommon.Message, error) {
 	b.pendingTxsCond.L.Lock()
 	defer b.pendingTxsCond.L.Unlock()
 
 	for b.pendingTxs.Len() == 0 {
 		if err := b.pendingTxsCond.Wait(ctx); err != nil {
-			return 0, err
+			return corecommon.Message{}, err
 		}
 	}
 
-	return common.PendingTxs, nil
+	return corecommon.Message{Type: corecommon.PendingTxs}, nil
 }
 
 func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {

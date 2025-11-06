@@ -6,10 +6,13 @@ package primary
 import (
 	"context"
 
+	gethcommon "github.com/luxfi/geth/common"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
@@ -23,6 +26,42 @@ import (
 )
 
 var _ Wallet = (*wallet)(nil)
+
+// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain and c.EthKeychain interfaces.
+// This allows secp256k1fx.Keychain to be used with MakeWallet.
+type KeychainAdapter struct {
+	*secp256k1fx.Keychain
+}
+
+// Addresses implements wallet/keychain.Keychain
+func (kc *KeychainAdapter) Addresses() set.Set[ids.ShortID] {
+	return kc.Keychain.Addrs
+}
+
+// Get implements wallet/keychain.Keychain (returns wallet/keychain.Signer, not utils/crypto/keychain.Signer)
+func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
+	return kc.Keychain.GetWallet(addr)
+}
+
+// GetEth implements c.EthKeychain
+func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
+	signer, ok := kc.Keychain.GetEth(addr)
+	if !ok {
+		return nil, false
+	}
+	// secp256k1fx.luxSigner already implements wallet/keychain.Signer
+	return signer.(keychain.Signer), true
+}
+
+// EthAddresses implements c.EthKeychain
+func (kc *KeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
+	return kc.Keychain.EthAddrs
+}
+
+// NewKeychainAdapter creates a KeychainAdapter from a secp256k1fx.Keychain
+func NewKeychainAdapter(kc *secp256k1fx.Keychain) *KeychainAdapter {
+	return &KeychainAdapter{Keychain: kc}
+}
 
 // Wallet provides chain wallets for the primary network.
 type Wallet interface {
@@ -72,7 +111,7 @@ type WalletConfig struct {
 	URI string // required
 	// Keys to use for signing all transactions.
 	LUXKeychain keychain.Keychain // required
-	EthKeychain c.EthKeychain     // required
+	EthKeychain c.EthKeychain      // required
 	// Set of P-chain transactions that the wallet should know about to be able
 	// to generate transactions.
 	PChainTxs map[ids.ID]*txs.Tx // optional
@@ -92,7 +131,7 @@ type WalletConfig struct {
 //
 // The wallet manages all state locally, and performs all tx signing locally.
 func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
-	luxAddrs := set.Of(config.LUXKeychain.Addresses()...)
+	luxAddrs := config.LUXKeychain.Addresses()
 	luxState, err := FetchState(ctx, config.URI, luxAddrs)
 	if err != nil {
 		return nil, err
@@ -138,9 +177,11 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 	// cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
 	// cSigner := c.NewSigner(config.LUXKeychain, config.EthKeychain, cBackend)
 
+	pClient := p.NewClient(luxState.PClient, pBackend)
+
 	return NewWallet(
-		p.NewWallet(pBuilder, pSigner, luxState.PClient, pBackend),
-		x.NewWallet(xBuilder, xSigner, luxState.XClient, xBackend),
+		p.NewWallet(pClient, pBuilder, pSigner),
+		x.NewWallet(xBuilder, xSigner, xBackend),
 		nil, // c.NewWallet(cBuilder, cSigner, luxState.CClient, ethState.Client, cBackend),
 	), nil
 }

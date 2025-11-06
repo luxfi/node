@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core/common"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -243,7 +242,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		if err := vm.verifyTransaction(tx); err != nil {
 			vm.log.Debug("Transaction verification failed",
 				log.String("txID", tx.ID.String()),
-				log.Error(err),
+				log.Reflect("error", err),
 			)
 			continue
 		}

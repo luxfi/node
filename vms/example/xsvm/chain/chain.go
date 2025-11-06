@@ -6,7 +6,8 @@ package chain
 import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	consensuschain "github.com/luxfi/consensus/engine/chain"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -16,7 +17,7 @@ var _ Chain = (*chain)(nil)
 
 type Chain interface {
 	LastAccepted() ids.ID
-	SetChainState(state consensusinterfaces.State)
+	SetChainState(state consensuschain.Engine)
 	GetBlock(blkID ids.ID) (Block, error)
 
 	// Creates a fully verifiable and executable block, which can be processed
@@ -25,17 +26,17 @@ type Chain interface {
 }
 
 type chain struct {
-	chainContext  context.Context
+	chainContext  *consensusctx.Context
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
-	chainState consensusinterfaces.State
+	chainState consensuschain.Engine
 
 	lastAcceptedID ids.ID
 	verifiedBlocks map[ids.ID]*block
 }
 
-func New(ctx context.Context, db database.Database) (Chain, error) {
+func New(ctx *consensusctx.Context, db database.Database) (Chain, error) {
 	// Load the last accepted block data. For a newly created VM, this will be
 	// the genesis. It is assumed the genesis was processed and stored
 	// previously during VM initialization.
@@ -65,7 +66,7 @@ func (c *chain) LastAccepted() ids.ID {
 	return c.lastAcceptedID
 }
 
-func (c *chain) SetChainState(state consensusinterfaces.State) {
+func (c *chain) SetChainState(state consensuschain.Engine) {
 	c.chainState = state
 }
 

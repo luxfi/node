@@ -24,15 +24,15 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/crypto"
 )
 
 const (
@@ -76,7 +76,7 @@ func GetEthAddress(key *secp256k1.PrivateKey) common.Address {
 }
 
 // Defines a mapping of flag keys to values intended to be supplied to
-// an invocation of an luxd node.
+// an invocation of a Lux Node.
 type FlagsMap map[string]interface{}
 
 // SetDefaults ensures the effectiveness of flag overrides by only
@@ -182,7 +182,7 @@ type NodeURI struct {
 	URI    string
 }
 
-// NodeConfig defines configuration for an luxd node.
+// NodeConfig defines configuration for a Lux Node.
 type NodeConfig struct {
 	NodeID ids.NodeID
 	Flags  FlagsMap

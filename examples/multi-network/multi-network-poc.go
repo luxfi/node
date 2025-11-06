@@ -1,5 +1,5 @@
 // Multi-Network Validation Proof of Concept
-// This demonstrates how a single luxd node could validate multiple networks
+// This demonstrates how a single Lux Node could validate multiple networks
 
 package main
 

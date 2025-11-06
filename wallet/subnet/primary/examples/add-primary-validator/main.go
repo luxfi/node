@@ -65,7 +65,7 @@ func main() {
 			Wght:   weight,
 		}},
 		nodePOP,
-		context.LUXAssetID,
+		context.XAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{validatorRewardAddr},

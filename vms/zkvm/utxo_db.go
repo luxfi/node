@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 )
 
 const (
@@ -264,7 +263,7 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 			// Remove from database
 			key := makeUTXOKey(commitment)
 			if err := udb.db.Delete(key); err != nil {
-				udb.log.Warn("Failed to prune UTXO", log.Error(err))
+				udb.log.Warn("Failed to prune UTXO", log.Reflect("error", err))
 				continue
 			}
 			

@@ -4,14 +4,10 @@
 package merkledb
 
 import (
-	"github.com/luxfi/metric"
-
 	"errors"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	utilmetric "github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -97,7 +93,7 @@ type prometheusMetrics struct {
 	lookup metric.CounterVec
 }
 
-func newMetrics(prefix string, reg prometheus.Registerer) (metrics, error) {
+func newMetrics(prefix string, reg metric.Registerer) (merkleDBMetrics, error) {
 	// TODO: Should we instead return an error if reg is nil?
 	if reg == nil {
 		return &mockMetrics{}, nil

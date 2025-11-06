@@ -6,12 +6,12 @@ package execute
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -35,7 +35,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext context.Context
+	ChainContext *consensusctx.Context
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool
@@ -52,7 +52,7 @@ func (t *Tx) Transfer(tf *tx.Transfer) error {
 	if tf.MaxFee < t.TransferFee {
 		return errFeeTooHigh
 	}
-	if tf.ChainID != consensus.GetChainID(t.ChainContext) {
+	if tf.ChainID != t.ChainContext.ChainID {
 		return errWrongChainID
 	}
 
@@ -68,7 +68,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	if e.MaxFee < t.ExportFee {
 		return errFeeTooHigh
 	}
-	if e.ChainID != consensus.GetChainID(t.ChainContext) {
+	if e.ChainID != t.ChainContext.ChainID {
 		return errWrongChainID
 	}
 
@@ -84,7 +84,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	}
 
 	message, err := warp.NewUnsignedMessage(
-		consensus.GetNetworkID(t.ChainContext),
+		t.ChainContext.NetworkID,
 		e.ChainID,
 		payload.Bytes(),
 	)
@@ -131,7 +131,7 @@ func (t *Tx) Import(i *tx.Import) error {
 	var errs wrappers.Errs
 	errs.Add(
 		state.IncrementNonce(t.Database, t.Sender, i.Nonce),
-		state.DecreaseBalance(t.Database, t.Sender, consensus.GetChainID(t.ChainContext), t.ImportFee),
+		state.DecreaseBalance(t.Database, t.Sender, t.ChainContext.ChainID, t.ImportFee),
 	)
 
 	payload, err := tx.ParsePayload(message.Payload)
@@ -141,7 +141,7 @@ func (t *Tx) Import(i *tx.Import) error {
 
 	if payload.IsReturn {
 		errs.Add(
-			state.IncreaseBalance(t.Database, payload.To, consensus.GetChainID(t.ChainContext), payload.Amount),
+			state.IncreaseBalance(t.Database, payload.To, t.ChainContext.ChainID, payload.Amount),
 			state.DecreaseLoan(t.Database, message.SourceChainID, payload.Amount),
 		)
 	} else {
@@ -165,9 +165,9 @@ func (t *Tx) Import(i *tx.Import) error {
 		return errs.Err
 	}
 
-	validators, err := warp.GetCanonicalValidatorSetFromChainID(
+	validatorSet, err := warp.GetCanonicalValidatorSetFromChainID(
 		t.Context,
-		t.ChainContext.ValidatorState,
+		t.ChainContext.ValidatorState.(validators.State),
 		t.BlockContext.PChainHeight,
 		message.SourceChainID,
 	)
@@ -178,16 +178,16 @@ func (t *Tx) Import(i *tx.Import) error {
 	return message.Signature.Verify(
 		&message.UnsignedMessage,
 		t.ChainContext.NetworkID,
-		validators,
+		validatorSet,
 		QuorumNumerator,
 		QuorumDenominator,
 	)
 }
 
-// warpValidatorStateAdapter adapts consensus.ValidatorState to warp.ValidatorState
+// warpValidatorStateAdapter adapts consensusctx.ValidatorState to warp.ValidatorState
 type warpValidatorStateAdapter struct {
 	ctx context.Context
-	vs  consensus.ValidatorState
+	vs  consensusctx.ValidatorState
 }
 
 func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*warp.ValidatorData, error) {

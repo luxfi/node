@@ -4,13 +4,12 @@
 package builder
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math"
@@ -194,7 +193,7 @@ type ProposalTxBuilder interface {
 }
 
 func New(
-	ctx context.Context,
+	ctx *consensusctx.Context,
 	cfg *config.Config,
 	clk *mockable.Clock,
 	fx fx.Fx,
@@ -208,6 +207,9 @@ func New(
 		state:             state,
 		cfg:               cfg,
 		ctx:               ctx,
+		NetworkID:         ctx.NetworkID,
+		ChainID:           ctx.ChainID,
+		XAssetID:          ctx.XAssetID,
 		clk:               clk,
 		fx:                fx,
 	}
@@ -219,7 +221,7 @@ type builder struct {
 	state state.State
 
 	cfg        *config.Config
-	ctx        context.Context
+	ctx        *consensusctx.Context
 	NetworkID  uint32
 	ChainID    ids.ID
 	XAssetID ids.ID
@@ -235,7 +237,7 @@ func (b *builder) NewImportTx(
 ) (*txs.Tx, error) {
 	kc := secp256k1fx.NewKeychain(keys...)
 
-	addrs := set.Of(kc.Addresses()...)
+	addrs := kc.Addresses()
 	atomicUTXOs, _, _, err := b.GetAtomicUTXOs(from, addrs, ids.ShortEmpty, ids.Empty, MaxPageSize)
 	if err != nil {
 		return nil, fmt.Errorf("problem retrieving atomic UTXOs: %w", err)
@@ -379,8 +381,7 @@ func (b *builder) NewCreateChainTx(
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	timestamp := b.state.GetTimestamp()
-	createBlockchainTxFee := b.cfg.GetCreateBlockchainTxFee(timestamp)
+	createBlockchainTxFee := b.cfg.CreateBlockchainTxFee
 	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createBlockchainTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
@@ -423,8 +424,7 @@ func (b *builder) NewCreateNetTx(
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	timestamp := b.state.GetTimestamp()
-	createNetTxFee := b.cfg.GetCreateNetTxFee(timestamp)
+	createNetTxFee := b.cfg.CreateNetTxFee
 	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createNetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)

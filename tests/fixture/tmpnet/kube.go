@@ -34,7 +34,6 @@ import (
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

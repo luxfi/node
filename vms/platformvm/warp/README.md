@@ -41,7 +41,7 @@ Unsigned Message:
 ```
 
 - `codecID` is the codec version used to serialize the payload and is hardcoded to `0x0000`
-- `networkID` is the unique ID of an Lux Network (Mainnet/Testnet) and provides replay protection for BLS Signers across different Lux Networks
+- `networkID` is the unique ID of a Lux Network (Mainnet/Testnet) and provides replay protection for BLS Signers across different Lux Networks
 - `sourceChainID` is the hash of the transaction that created the blockchain on the Lux P-Chain. It serves as the unique identifier for the blockchain across the Lux Network so that each blockchain can only sign a message with its own id.
 - `payload` provides an arbitrary byte array containing the contents of the message. VMs define their own message types to include in the `payload`
 
@@ -79,9 +79,9 @@ Signed Message:
                                       +-------------------------------------------------+
 ```
 
-## Sending an Lux Interchain Message
+## Sending a Lux Interchain Message
 
-A blockchain on Lux sends an Lux Interchain Message by coming to agreement on the message that every validator should be willing to sign. As an example, the VM of a blockchain may define that once a block is accepted, the VM should be willing to sign a message including the block hash in the payload to attest to any other network that the block was accepted. The contents of the payload, how to aggregate the signature (VM-to-VM communication, off-chain relayer, etc.), is left to the VM.
+A blockchain on Lux sends a Lux Interchain Message by coming to agreement on the message that every validator should be willing to sign. As an example, the VM of a blockchain may define that once a block is accepted, the VM should be willing to sign a message including the block hash in the payload to attest to any other network that the block was accepted. The contents of the payload, how to aggregate the signature (VM-to-VM communication, off-chain relayer, etc.), is left to the VM.
 
 Once the validator set of a blockchain is willing to sign an arbitrary message `M`, an aggregator performs the following process:
 
@@ -91,7 +91,7 @@ Once the validator set of a blockchain is willing to sign an arbitrary message `
 4. Encode the selection of the `N` validators included in the signature in a bitset
 5. Construct the signed message from the aggregate signature, bitset, and original unsigned message
 
-## Verifying / Receiving an Lux Interchain Message
+## Verifying / Receiving a Lux Interchain Message
 
 Lux Interchain Messages are verified within the context of a specific P-Chain height included in the [ProposerVM](../../proposervm/README.md)'s header. The P-Chain height is provided as context to the underlying VM when verifying the underlying VM's blocks (implemented by the optional interface [WithVerifyContext](../../../consensus/engine/consensusman/block/block_context_vm.go)).
 
@@ -109,15 +109,15 @@ Once a message is verified, it is left to the VM to define the semantics of deli
 
 ### Processing Historical Lux Interchain Messages
 
-Verifying an Lux Interchain Message requires a lookup of validator sets at a specific P-Chain height. The P-Chain serves lookups maintaining validator set diffs that can be applied in-order to reconstruct the validator set of any network at any height.
+Verifying a Lux Interchain Message requires a lookup of validator sets at a specific P-Chain height. The P-Chain serves lookups maintaining validator set diffs that can be applied in-order to reconstruct the validator set of any network at any height.
 
-As the P-Chain grows, the number of validator set diffs that needs to be applied in order to reconstruct the validator set needed to verify an Lux Interchain Messages increases over time.
+As the P-Chain grows, the number of validator set diffs that needs to be applied in order to reconstruct the validator set needed to verify a Lux Interchain Messages increases over time.
 
-Therefore, in order to support verifying historical Lux Interchain Messages, VMs should provide a mechanism to determine whether an Lux Interchain Message was treated as valid or invalid within a historical block.
+Therefore, in order to support verifying historical Lux Interchain Messages, VMs should provide a mechanism to determine whether a Lux Interchain Message was treated as valid or invalid within a historical block.
 
 When nodes bootstrap in the future, they bootstrap blocks that have already been marked as accepted by the network, so they can assume the block was verified by the validators of the network when it was first accepted.
 
-Therefore, the new bootstrapping node can assume the block was valid to determine whether an Lux Interchain Message should be treated as valid/invalid within the execution of that block.
+Therefore, the new bootstrapping node can assume the block was valid to determine whether a Lux Interchain Message should be treated as valid/invalid within the execution of that block.
 
 Two strategies to provide that mechanism are:
 

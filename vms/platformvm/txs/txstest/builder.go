@@ -4,12 +4,19 @@
 package txstest
 
 import (
+	"context"
+
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
+	wkeychain "github.com/luxfi/node/wallet/keychain"
 )
 
 func NewWalletFactory(
@@ -18,24 +25,23 @@ func NewWalletFactory(
 	state state.State,
 ) *WalletFactory {
 	return &WalletFactory{
-		ctx:          ctx,
-		sharedMemory: sharedMemory,
-		cfg:          cfg,
-		state:        state,
+		ctx:   ctx,
+		cfg:   cfg,
+		state: state,
 	}
 }
 
 // NewWalletFactoryWithAssets creates a wallet factory with explicit asset IDs
 func NewWalletFactoryWithAssets(
-	ctx context.Context,
+	stdCtx context.Context,
 	sharedMemory atomic.SharedMemory,
 	cfg *config.Config,
 	state state.State,
 	luxAssetID ids.ID,
 ) *WalletFactory {
 	// Put the LUX asset ID into the context so it can be retrieved later
-	networkID := consensus.GetNetworkID(ctx)
-	ctxIDs := consContext.IDs{
+	networkID := consensusctx.GetNetworkID(stdCtx)
+	ctxIDs := consensusctx.IDs{
 		NetworkID:  networkID,
 		QuantumID:  networkID,
 		NetID:      ids.Empty,
@@ -44,12 +50,21 @@ func NewWalletFactoryWithAssets(
 		PublicKey:  nil,
 		LUXAssetID: luxAssetID,
 	}
-	ctx = consContext.WithIDs(ctx, ctxIDs)
+	stdCtx = consensusctx.WithIDs(stdCtx, ctxIDs)
+
+	// Extract consensus context or create one
+	consCtx := consensusctx.FromContext(stdCtx)
+	if consCtx == nil {
+		consCtx = &consensusctx.Context{
+			NetworkID:  networkID,
+			LUXAssetID: luxAssetID,
+		}
+	}
+
 	return &WalletFactory{
-		ctx:          ctx,
-		sharedMemory: sharedMemory,
-		cfg:          cfg,
-		state:        state,
+		ctx:   consCtx,
+		cfg:   cfg,
+		state: state,
 	}
 }
 
@@ -59,29 +74,35 @@ type WalletFactory struct {
 	state state.State
 }
 
+// keychainAdapter adapts secp256k1fx.Keychain (utils/crypto keychain) to wallet keychain
+type keychainAdapter struct {
+	kc *secp256k1fx.Keychain
+}
+
+func (k *keychainAdapter) Get(addr ids.ShortID) (wkeychain.Signer, bool) {
+	utilsSigner, ok := k.kc.Get(addr)
+	if !ok {
+		return nil, false
+	}
+	return utilsSigner.(wkeychain.Signer), true
+}
+
+func (k *keychainAdapter) Addresses() set.Set[ids.ShortID] {
+	return k.kc.Addresses()
+}
+
 func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builder, signer.Signer) {
 	var (
 		kc      = secp256k1fx.NewKeychain(keys...)
 		addrSet = kc.AddressSet()
-		backend = newBackend(addrSet, w.state, w.sharedMemory)
-		// Extract networkID and XAssetID from context
-		networkID  = consensus.GetNetworkID(w.ctx)
-		// Get LUX asset ID from context - this should match the asset ID used in genesis
-		luxAssetIDInterface = consensus.LuxAssetID(w.ctx)
-		luxAssetID ids.ID
+		backend = newBackend(addrSet, w.state)
+		// Extract networkID and LUXAssetID from context
+		networkID  = w.ctx.NetworkID
+		luxAssetID = w.ctx.LUXAssetID
 	)
-	
-	// Type assert the asset ID or use empty ID as fallback
-	if luxAssetIDInterface != nil {
-		if id, ok := luxAssetIDInterface.(ids.ID); ok {
-			luxAssetID = id
-		}
-	}
-	
+
 	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
+	kcAdapter := &keychainAdapter{kc: kc}
 
-	// Debug: log the asset ID being used
-	//fmt.Printf("WalletFactory: Using LUX AssetID: %s\n", luxAssetID)
-
-	return builder.New(addrSet, context, backend), signer.New(kc, backend)
+	return builder.New(addrSet, context, backend), signer.New(kcAdapter, backend)
 }

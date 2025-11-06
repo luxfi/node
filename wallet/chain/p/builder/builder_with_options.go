@@ -4,6 +4,8 @@
 package builder
 
 import (
+	"time"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -80,28 +82,28 @@ func (b *builderWithOptions) NewAddValidatorTx(
 }
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewAddNetValidatorTx(
-// 	vdr *txs.NetValidator,
-// 	options ...common.Option,
-// ) (*txs.AddNetValidatorTx, error) {
-// 	return b.builder.NewAddNetValidatorTx(
-// 		vdr,
-// 		common.UnionOptions(b.options, options)...,
-// 	)
-// }
+func (b *builderWithOptions) NewAddNetValidatorTx(
+	vdr *txs.NetValidator,
+	options ...common.Option,
+) (*txs.AddNetValidatorTx, error) {
+	return b.builder.NewAddNetValidatorTx(
+		vdr,
+		common.UnionOptions(b.options, options)...,
+	)
+}
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewRemoveNetValidatorTx(
-// 	nodeID ids.NodeID,
-// 	netID ids.ID,
-// 	options ...common.Option,
-// ) (*txs.RemoveNetValidatorTx, error) {
-// 	return b.builder.NewRemoveNetValidatorTx(
-// 		nodeID,
-// 		netID,
-// 		common.UnionOptions(b.options, options)...,
-// 	)
-// }
+func (b *builderWithOptions) NewRemoveNetValidatorTx(
+	nodeID ids.NodeID,
+	netID ids.ID,
+	options ...common.Option,
+) (*txs.RemoveNetValidatorTx, error) {
+	return b.builder.NewRemoveNetValidatorTx(
+		nodeID,
+		netID,
+		common.UnionOptions(b.options, options)...,
+	)
+}
 
 func (b *builderWithOptions) NewAddDelegatorTx(
 	vdr *txs.Validator,
@@ -134,28 +136,28 @@ func (b *builderWithOptions) NewCreateChainTx(
 }
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewCreateNetTx(
-// 	owner *secp256k1fx.OutputOwners,
-// 	options ...common.Option,
-// ) (*txs.CreateNetTx, error) {
-// 	return b.builder.NewCreateNetTx(
-// 		owner,
-// 		common.UnionOptions(b.options, options)...,
-// 	)
-// }
+func (b *builderWithOptions) NewCreateNetTx(
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.CreateNetTx, error) {
+	return b.builder.NewCreateNetTx(
+		owner,
+		common.UnionOptions(b.options, options)...,
+	)
+}
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewTransferNetOwnershipTx(
-// 	subnetID ids.ID,
-// 	owner *secp256k1fx.OutputOwners,
-// 	options ...common.Option,
-// ) (*txs.TransferNetOwnershipTx, error) {
-// 	return b.builder.NewTransferNetOwnershipTx(
-// 		subnetID,
-// 		owner,
-// 		common.UnionOptions(b.options, options)...,
-// 	)
-// }
+func (b *builderWithOptions) NewTransferNetOwnershipTx(
+	subnetID ids.ID,
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.TransferNetOwnershipTx, error) {
+	return b.builder.NewTransferNetOwnershipTx(
+		subnetID,
+		owner,
+		common.UnionOptions(b.options, options)...,
+	)
+}
 
 func (b *builderWithOptions) NewImportTx(
 	sourceChainID ids.ID,
@@ -182,41 +184,41 @@ func (b *builderWithOptions) NewExportTx(
 }
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewTransformNetTx(
-// 	netID ids.ID,
-// 	assetID ids.ID,
-// 	initialSupply uint64,
-// 	maxSupply uint64,
-// 	minConsumptionRate uint64,
-// 	maxConsumptionRate uint64,
-// 	minValidatorStake uint64,
-// 	maxValidatorStake uint64,
-// 	minStakeDuration time.Duration,
-// 	maxStakeDuration time.Duration,
-// 	minDelegationFee uint32,
-// 	minDelegatorStake uint64,
-// 	maxValidatorWeightFactor byte,
-// 	uptimeRequirement uint32,
-// 	options ...common.Option,
-// ) (*txs.TransformNetTx, error) {
-// 	return b.builder.NewTransformNetTx(
-// 		netID,
-// 		assetID,
-// 		initialSupply,
-// 		maxSupply,
-// 		minConsumptionRate,
-// 		maxConsumptionRate,
-// 		minValidatorStake,
-// 		maxValidatorStake,
-// 		minStakeDuration,
-// 		maxStakeDuration,
-// 		minDelegationFee,
-// 		minDelegatorStake,
-// 		maxValidatorWeightFactor,
-// 		uptimeRequirement,
-// 		common.UnionOptions(b.options, options)...,
-// 	)
-// }
+func (b *builderWithOptions) NewTransformNetTx(
+	netID ids.ID,
+	assetID ids.ID,
+	initialSupply uint64,
+	maxSupply uint64,
+	minConsumptionRate uint64,
+	maxConsumptionRate uint64,
+	minValidatorStake uint64,
+	maxValidatorStake uint64,
+	minStakeDuration time.Duration,
+	maxStakeDuration time.Duration,
+	minDelegationFee uint32,
+	minDelegatorStake uint64,
+	maxValidatorWeightFactor byte,
+	uptimeRequirement uint32,
+	options ...common.Option,
+) (*txs.TransformNetTx, error) {
+	return b.builder.NewTransformNetTx(
+		netID,
+		assetID,
+		initialSupply,
+		maxSupply,
+		minConsumptionRate,
+		maxConsumptionRate,
+		minValidatorStake,
+		maxValidatorStake,
+		minStakeDuration,
+		maxStakeDuration,
+		minDelegationFee,
+		minDelegatorStake,
+		maxValidatorWeightFactor,
+		uptimeRequirement,
+		common.UnionOptions(b.options, options)...,
+	)
+}
 
 func (b *builderWithOptions) NewAddPermissionlessValidatorTx(
 	vdr *txs.NetValidator,

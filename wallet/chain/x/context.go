@@ -6,21 +6,22 @@ package x
 import (
 	"context"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
-func NewContextFromURI(ctx context.Context, uri string) (*builder.Context, error) {
+func NewContextFromURI(ctx context.Context, uri string, luxAssetID ids.ID, baseTxFee uint64, createAssetTxFee uint64) (*builder.Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := exchangevm.NewClient(uri, builder.Alias)
-	return NewContextFromClients(ctx, infoClient, xChainClient)
+	return NewContextFromClients(ctx, infoClient, luxAssetID, baseTxFee, createAssetTxFee)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient *info.Client,
-	xChainClient *exchangevm.Client,
+	luxAssetID ids.ID,
+	baseTxFee uint64,
+	createAssetTxFee uint64,
 ) (*builder.Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -32,20 +33,10 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "LUX")
-	if err != nil {
-		return nil, err
-	}
-
-	baseTxFee, createAssetTxFee, err := xChainClient.GetTxFee(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		XAssetID:         asset.AssetID,
+		XAssetID:         luxAssetID,
 		BaseTxFee:        baseTxFee,
 		CreateAssetTxFee: createAssetTxFee,
 	}, nil

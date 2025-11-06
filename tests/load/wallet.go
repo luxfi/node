@@ -22,7 +22,7 @@ type Wallet struct {
 	chainID *big.Int
 	signer  types.Signer
 	client  *ethclient.Client
-	metrics metricsImpl
+	metrics *Metrics
 }
 
 func newWallet(
@@ -30,7 +30,7 @@ func newWallet(
 	nonce uint64,
 	chainID *big.Int,
 	client *ethclient.Client,
-	metrics metricsImpl,
+	metrics *Metrics,
 ) *Wallet {
 	return &Wallet{
 		privKey: privKey,
@@ -66,8 +66,7 @@ func (w *Wallet) SendTx(
 		return err
 	}
 
-	issuanceDuration := time.Since(startTime)
-	w.metrics.issue(issuanceDuration)
+	w.metrics.IncIssuedTx()
 
 	err = w.awaitTx(
 		ctx,
@@ -80,8 +79,7 @@ func (w *Wallet) SendTx(
 	}
 
 	totalDuration := time.Since(startTime)
-	confirmationDuration := totalDuration - issuanceDuration
-	w.metrics.accept(confirmationDuration, totalDuration)
+	w.metrics.RecordConfirmedTx(float64(totalDuration.Milliseconds()))
 
 	w.nonce++
 

@@ -39,7 +39,7 @@ func NewLoadGenerator(
 	registry metric.Registry,
 	test Test,
 ) (LoadGenerator, error) {
-	metrics, err := newMetrics(metricsNamespace, registry)
+	metrics, err := NewMetrics(registry)
 	if err != nil {
 		return LoadGenerator{}, err
 	}
@@ -96,9 +96,9 @@ func (l LoadGenerator) Run(
 // and that deferred cleanups are always executed before returning.
 func execTestWithRecovery(ctx context.Context, log log.Logger, test Test, wallet *Wallet, testTimeout time.Duration) {
 	tc := tests.NewTestContext(log)
-	defer tc.Recover()
-	contextWithTimeout, cancel := context.WithTimeout(ctx, testTimeout)
-	defer cancel()
-	tc.SetDefaultContextParent(contextWithTimeout)
+	defer tc.Cleanup()
+	// Note: testTimeout is currently unused as tests create their own contexts via tc.DefaultContext()
+	// which uses the standard 2-minute timeout. If per-test timeouts are needed, tests should be
+	// modified to use tc.ContextWithTimeout(testTimeout) instead.
 	test.Run(tc, wallet)
 }

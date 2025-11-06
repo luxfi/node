@@ -30,6 +30,12 @@ var Default = Config{
 	L1NetIDNodeIDCacheSize:     16 * units.KiB,
 	ChecksumsEnabled:              false,
 	MempoolPruneFrequency:         30 * time.Minute,
+	TxFee:                         units.MilliLux,
+	CreateAssetTxFee:              units.MilliLux,
+	CreateNetTxFee:             units.Lux,
+	CreateBlockchainTxFee:         units.Lux,
+	AddPrimaryNetworkValidatorFee: 0,
+	AddPrimaryNetworkDelegatorFee: 0,
 }
 
 // Config contains all of the user-configurable parameters of the PlatformVM.
@@ -52,6 +58,14 @@ type Config struct {
 	SybilProtectionEnabled        bool             `json:"sybil-protection-enabled"`
 	TrackedNets                set.Set[ids.ID]  `json:"tracked-subnets"`
 	Chains                        chains.Manager   `json:"-"`
+	
+	// Transaction fees
+	TxFee                         uint64           `json:"tx-fee"`
+	CreateAssetTxFee              uint64           `json:"create-asset-tx-fee"`
+	CreateNetTxFee             uint64           `json:"create-subnet-tx-fee"`
+	CreateBlockchainTxFee         uint64           `json:"create-blockchain-tx-fee"`
+	AddPrimaryNetworkValidatorFee uint64           `json:"add-primary-network-validator-fee"`
+	AddPrimaryNetworkDelegatorFee uint64           `json:"add-primary-network-delegator-fee"`
 }
 
 // GetConfig returns a Config from the provided json encoded bytes. If a

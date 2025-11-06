@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/math"
@@ -32,7 +31,7 @@ type Backend interface {
 	BuilderBackend
 	SignerBackend
 
-	AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error
+	AcceptAtomicTx(ctx context.Context, tx *Tx) error
 }
 
 type backend struct {
@@ -57,12 +56,12 @@ func NewBackend(
 	}
 }
 
-func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
+func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
 	switch tx := tx.UnsignedAtomicTx.(type) {
-	case *atomic.UnsignedImportTx:
+	case *UnsignedImportTx:
 		for _, input := range tx.ImportedInputs {
 			utxoID := input.InputID()
-			if err := b.RemoveUTXO(ctx, utx.SourceChain, utxoID); err != nil {
+			if err := b.RemoveUTXO(ctx, tx.SourceChain, utxoID); err != nil {
 				return err
 			}
 		}
@@ -70,7 +69,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 		b.accountsLock.Lock()
 		defer b.accountsLock.Unlock()
 
-		for _, output := range utx.Outs {
+		for _, output := range tx.Outs {
 			account, ok := b.accounts[output.Address]
 			if !ok {
 				continue
@@ -80,12 +79,12 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 			balance.Mul(balance, luxConversionRate)
 			account.Balance.Add(account.Balance, balance)
 		}
-	case *atomic.UnsignedExportTx:
+	case *UnsignedExportTx:
 		txID := tx.ID()
 		for i, out := range tx.ExportedOutputs {
 			err := b.AddUTXO(
 				ctx,
-				utx.DestinationChain,
+				tx.DestinationChain,
 				&lux.UTXO{
 					UTXOID: lux.UTXOID{
 						TxID:        txID,
@@ -103,7 +102,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 		b.accountsLock.Lock()
 		defer b.accountsLock.Unlock()
 
-		for _, input := range utx.Ins {
+		for _, input := range tx.Ins {
 			account, ok := b.accounts[input.Address]
 			if !ok {
 				continue
@@ -123,7 +122,7 @@ func (b *backend) AcceptAtomicTx(ctx context.Context, tx *atomic.Tx) error {
 			account.Nonce = newNonce
 		}
 	default:
-		return fmt.Errorf("%w: %T", errUnknownTxType, utx)
+		return fmt.Errorf("%w: %T", errUnknownTxType, tx)
 	}
 	return nil
 }

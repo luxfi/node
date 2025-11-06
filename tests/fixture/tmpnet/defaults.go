@@ -30,8 +30,6 @@ const (
 	// Arbitrary number of pre-funded keys to create by default
 	DefaultPreFundedKeyCount = 50
 
-	// A short minimum stake duration enables testing of staking logic.
-	DefaultMinStakeDuration = "1s"
 
 	defaultConfigFilename = "config.json"
 )

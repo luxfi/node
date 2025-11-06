@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/log"
 	lru "github.com/hashicorp/golang-lru"
 )
 

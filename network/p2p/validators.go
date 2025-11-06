@@ -46,6 +46,7 @@ func NewValidators(
 		netID:                 netID,
 		validators:               validators,
 		maxValidatorSetStaleness: maxValidatorSetStaleness,
+		validatorSet:             set.NewSet[ids.NodeID](0),
 	}
 }
 
@@ -83,6 +84,10 @@ func (v *Validators) refresh(ctx context.Context) {
 
 	// Even though validatorList may be nil, truncating will not panic.
 	v.validatorList = v.validatorList[:0]
+	// Ensure validatorSet is initialized before clearing
+	if v.validatorSet == nil {
+		v.validatorSet = set.NewSet[ids.NodeID](0)
+	}
 	v.validatorSet.Clear()
 	v.totalWeight = 0
 

@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/core/common"
+	corecommon "github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -37,12 +36,12 @@ func TestHandler(t *testing.T) {
 			name:   "signature fails verification",
 			cacher: &cache.Empty[ids.ID, []byte]{},
 			verifier: &testVerifier{
-				Errs: []*core.AppError{
+				Errs: []*corecommon.AppError{
 					{Code: 123},
 				},
 			},
 			expectedErrs: []error{
-				&core.AppError{Code: 123},
+				&corecommon.AppError{Code: 123},
 			},
 		},
 		{
@@ -57,7 +56,7 @@ func TestHandler(t *testing.T) {
 			name:   "signature is cached",
 			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
-				Errs: []*core.AppError{
+				Errs: []*corecommon.AppError{
 					nil,
 					{Code: 123}, // The valid response should be cached
 				},
@@ -120,8 +119,8 @@ func TestHandler(t *testing.T) {
 
 				if expectedErr != nil {
 					require.Error(appErr)
-					if expectedAppErr, ok := expectedErr.(*core.AppError); ok {
-						actualAppErr, ok := appErr.(*core.AppError)
+					if expectedAppErr, ok := expectedErr.(*corecommon.AppError); ok {
+						actualAppErr, ok := appErr.(*corecommon.AppError)
 						require.True(ok, "expected AppError but got %T", appErr)
 						require.Equal(int32(expectedAppErr.Code), actualAppErr.Code)
 					}
@@ -157,14 +156,14 @@ func TestHandler(t *testing.T) {
 
 // The zero value of testVerifier allows signing
 type testVerifier struct {
-	Errs []*core.AppError
+	Errs []*corecommon.AppError
 }
 
 func (t *testVerifier) Verify(
 	context.Context,
 	*warp.UnsignedMessage,
 	[]byte,
-) *core.AppError {
+) *corecommon.AppError {
 	if len(t.Errs) == 0 {
 		return nil
 	}

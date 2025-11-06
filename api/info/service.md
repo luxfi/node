@@ -1,4 +1,4 @@
-The Info API can be used to access basic information about an Lux node.
+The Info API can be used to access basic information about a Lux node.
 
 ## Format
 

@@ -123,7 +123,7 @@ func ExampleNewTestNetwork() {
 	if err != nil {
 		log.Fatal(
 			"failed to create test network config",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 		return
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
@@ -248,13 +249,13 @@ type Builder interface {
 // BuilderBackend specifies the required information needed to build unsigned
 // P-chain transactions.
 type BuilderBackend interface {
-	Context
-	UTXOs(ctx stdcontext.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
+	builder.Backend
 	GetTx(ctx stdcontext.Context, txID ids.ID) (*txs.Tx, error)
 }
 
 type txBuilder struct {
 	addrs   set.Set[ids.ShortID]
+	context *builder.Context
 	backend BuilderBackend
 }
 
@@ -262,11 +263,13 @@ type txBuilder struct {
 //
 //   - [addrs] is the set of addresses that the builder assumes can be used when
 //     signing the transactions in the future.
-//   - [backend] provides the required access to the chain's context and state
+//   - [context] provides the chain's configuration.
+//   - [backend] provides the required access to the chain's state
 //     to build out the transactions.
-func NewBuilder(addrs set.Set[ids.ShortID], backend BuilderBackend) Builder {
+func NewBuilder(addrs set.Set[ids.ShortID], context *builder.Context, backend BuilderBackend) Builder {
 	return &txBuilder{
 		addrs:   addrs,
+		context: context,
 		backend: backend,
 	}
 }
@@ -291,7 +294,7 @@ func (b *txBuilder) NewBaseTx(
 	options ...common.Option,
 ) (*txs.CreateNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.CreateNetTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateNetTxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -313,7 +316,7 @@ func (b *txBuilder) NewBaseTx(
 
 	return &txs.CreateNetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -329,9 +332,9 @@ func (b *txBuilder) NewAddValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddValidatorTx, error) {
-	luxAssetID := b.backend.XAssetID()
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
-		luxAssetID: b.backend.AddPrimaryNetworkValidatorFee(),
+		luxAssetID: b.context.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
 	}
 	toStake := map[ids.ID]uint64{
 		luxAssetID: vdr.Wght,
@@ -345,7 +348,7 @@ func (b *txBuilder) NewAddValidatorTx(
 	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
@@ -363,7 +366,7 @@ func (b *txBuilder) NewAddNetValidatorTx(
 	options ...common.Option,
 ) (*txs.AddNetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.AddNetValidatorFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.AddNetValidatorFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -379,7 +382,7 @@ func (b *txBuilder) NewAddNetValidatorTx(
 
 	return &txs.AddNetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -396,7 +399,7 @@ func (b *txBuilder) NewRemoveNetValidatorTx(
 	options ...common.Option,
 ) (*txs.RemoveNetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.BaseTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.TxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -412,7 +415,7 @@ func (b *txBuilder) NewRemoveNetValidatorTx(
 
 	return &txs.RemoveNetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -429,12 +432,12 @@ func (b *txBuilder) NewAddDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddDelegatorTx, error) {
-	luxAssetID := b.backend.XAssetID()
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
-		luxAssetID: b.backend.AddPrimaryNetworkDelegatorFee(),
+		luxAssetID: b.context.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
 	}
 	toStake := map[ids.ID]uint64{
-		b.backend.XAssetID(): vdr.Wght,
+		b.context.XAssetID: vdr.Wght,
 	}
 	ops := common.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
@@ -445,7 +448,7 @@ func (b *txBuilder) NewAddDelegatorTx(
 	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
@@ -466,7 +469,7 @@ func (b *txBuilder) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.CreateBlockchainTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateBlockchainTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -483,7 +486,7 @@ func (b *txBuilder) NewCreateChainTx(
 	utils.Sort(fxIDs)
 	return &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -503,7 +506,7 @@ func (b *txBuilder) NewCreateNetTx(
 	options ...common.Option,
 ) (*txs.CreateNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.CreateNetTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateNetTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -515,7 +518,7 @@ func (b *txBuilder) NewCreateNetTx(
 	utils.Sort(owner.Addrs)
 	return &txs.CreateNetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -539,8 +542,8 @@ func (b *txBuilder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID      = b.backend.XAssetID()
-		txFee           = b.backend.BaseTxFee()
+		luxAssetID      = b.context.XAssetID
+		txFee           = b.context.StaticFeeConfig.TxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmounts = make(map[ids.ID]uint64)
@@ -620,7 +623,7 @@ func (b *txBuilder) NewImportTx(
 	lux.SortTransferableOutputs(outputs, txs.Codec) // sort imported outputs
 	return &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -637,7 +640,7 @@ func (b *txBuilder) NewExportTx(
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.BaseTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.TxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -658,7 +661,7 @@ func (b *txBuilder) NewExportTx(
 	lux.SortTransferableOutputs(outputs, txs.Codec) // sort exported outputs
 	return &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         changeOutputs,
@@ -687,7 +690,7 @@ func (b *txBuilder) NewTransformNetTx(
 	options ...common.Option,
 ) (*txs.TransformNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.backend.XAssetID(): b.backend.TransformNetTxFee(),
+		b.context.XAssetID: b.context.StaticFeeConfig.TransformNetTxFee,
 		assetID:                maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
@@ -704,7 +707,7 @@ func (b *txBuilder) NewTransformNetTx(
 
 	return &txs.TransformNetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
@@ -737,12 +740,12 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
-	luxAssetID := b.backend.XAssetID()
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Net == constants.PrimaryNetworkID {
-		toBurn[luxAssetID] = b.backend.AddPrimaryNetworkValidatorFee()
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkValidatorFee
 	} else {
-		toBurn[luxAssetID] = b.backend.AddNetValidatorFee()
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddNetValidatorFee
 	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
@@ -757,7 +760,7 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 	utils.Sort(delegationRewardsOwner.Addrs)
 	return &txs.AddPermissionlessValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
@@ -779,12 +782,12 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
-	luxAssetID := b.backend.XAssetID()
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Net == constants.PrimaryNetworkID {
-		toBurn[luxAssetID] = b.backend.AddPrimaryNetworkDelegatorFee()
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkDelegatorFee
 	} else {
-		toBurn[luxAssetID] = b.backend.AddNetDelegatorFee()
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddNetDelegatorFee
 	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
@@ -798,7 +801,7 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	utils.Sort(rewardsOwner.Addrs)
 	return &txs.AddPermissionlessDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.backend.NetworkID(),
+			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
@@ -947,7 +950,7 @@ func (b *txBuilder) spend(
 		})
 
 		// Stake any value that should be staked
-		amountToStake := math.Min(
+		amountToStake := min(
 			remainingAmountToStake, // Amount we still need to stake
 			out.Amt,                // Amount available to stake
 		)
@@ -1025,7 +1028,7 @@ func (b *txBuilder) spend(
 		})
 
 		// Burn any value that should be burned
-		amountToBurn := math.Min(
+		amountToBurn := min(
 			remainingAmountToBurn, // Amount we still need to burn
 			out.Amt,               // Amount available to burn
 		)
@@ -1033,7 +1036,7 @@ func (b *txBuilder) spend(
 
 		amountAvalibleToStake := out.Amt - amountToBurn
 		// Burn any value that should be burned
-		amountToStake := math.Min(
+		amountToStake := min(
 			remainingAmountToStake, // Amount we still need to stake
 			amountAvalibleToStake,  // Amount available to stake
 		)

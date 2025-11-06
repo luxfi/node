@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/log"
 )
 
 const (
@@ -249,7 +248,7 @@ func (ndb *NullifierDB) PruneOldNullifiers(minHeight uint64) error {
 			// Remove from database
 			key := makeNullifierKey(nullifier)
 			if err := ndb.db.Delete(key); err != nil {
-				ndb.log.Warn("Failed to prune nullifier", log.Error(err))
+				ndb.log.Warn("Failed to prune nullifier", log.Reflect("error", err))
 				continue
 			}
 			

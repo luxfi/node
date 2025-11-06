@@ -17,10 +17,8 @@ import (
 func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
-	kc := secp256k1fx.NewKeychain(key)
+	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 	subnetOwner := key.Address()
-
-	// Create adapter for the keychain
 
 	ctx := context.Background()
 

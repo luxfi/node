@@ -13,6 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
+	gomock "go.uber.org/mock/gomock"
+
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 )

@@ -24,28 +24,6 @@ const (
 
 var ErrUnrecoverableNodeHealthCheck = errors.New("failed to query node health")
 
-func CheckNodeHealth(ctx context.Context, uri string) (*health.APIReply, error) {
-	// Check that the node is reporting healthy
-	healthReply, err := health.NewClient(uri).Health(ctx, nil)
-	if err == nil {
-		return healthReply, nil
-	}
-
-	switch t := err.(type) {
-	case *net.OpError:
-		if t.Op == "read" {
-			// Connection refused - potentially recoverable
-			return nil, err
-		}
-	case syscall.Errno:
-		if t == syscall.ECONNREFUSED {
-			// Connection refused - potentially recoverable
-			return nil, err
-		}
-	}
-	// Assume all other errors are not recoverable
-	return nil, fmt.Errorf("%w: %w", ErrUnrecoverableNodeHealthCheck, err)
-}
 
 // NodeURI is already defined in config.go
 // type NodeURI struct {

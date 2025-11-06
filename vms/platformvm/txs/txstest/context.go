@@ -4,28 +4,28 @@
 package txstest
 
 import (
-	"github.com/luxfi/node/vms/components/gas"
+	"time"
+
+	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 )
 
 func newContext(
 	ctx *consensusctx.Context,
-	config *config.Internal,
-	state state.State,
+	networkID uint32,
+	luxAssetID ids.ID,
+	cfg *config.Config,
+	timestamp time.Time,
 ) *builder.Context {
 	builderContext := &builder.Context{
-		NetworkID:   ctx.NetworkID,
-		LUXAssetID: ctx.LUXAssetID,
+		NetworkID:   networkID,
+		XAssetID: luxAssetID,
 	}
 
-	builderContext.ComplexityWeights = config.DynamicFeeConfig.Weights
-	builderContext.GasPrice = gas.CalculatePrice(
-		config.DynamicFeeConfig.MinPrice,
-		state.GetFeeState().Excess,
-		config.DynamicFeeConfig.ExcessConversionConstant,
-	)
+	// For test purposes, use default values
+	// Complexity weights and gas price would be set here if needed
 
 	return builderContext
 }

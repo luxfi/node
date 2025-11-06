@@ -138,7 +138,7 @@ type DatabaseConfig struct {
 	Config []byte `json:"-"`
 }
 
-// Config contains all of the configurations of an Lux node.
+// Config contains all of the configurations of a Lux node.
 type Config struct {
 	HTTPConfig       `json:"httpConfig"`
 	IPConfig         `json:"ipConfig"`

@@ -8,15 +8,17 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
 
 const Alias = "P"
 
 type Context struct {
 	NetworkID         uint32
-	LUXAssetID       ids.ID
+	XAssetID          ids.ID
 	ComplexityWeights gas.Dimensions
 	GasPrice          gas.Price
+	StaticFeeConfig   fee.StaticConfig
 }
 
 func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*consensusctx.Context, error) {
@@ -25,7 +27,7 @@ func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*consensusctx.Con
 		NetworkID:   networkID,
 		NetID:    constants.PrimaryNetworkID,
 		ChainID:     constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	return ctx, lookup.Alias(constants.PlatformChainID, Alias)
 }

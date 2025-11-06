@@ -25,25 +25,21 @@ import (
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
 const (
-	Lux NodePathEnvName = "LUXD_PATH"
 
-	defaultNodeInitTimeout = 10 * time.Second
 )
 
 var (
 	Lux NodePluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
 
-	errNodeAlreadyRunning = errors.New("failed to start node: node is already running")
 	errNotRunning         = errors.New("node is not running")
 )
 
 type ProcessRuntimeConfig struct {
-	Lux NodePath   string `json:"luxPath,omitempty"`
+	LuxNodePath       string `json:"luxPath,omitempty"`
 	PluginDir         string `json:"pluginDir,omitempty"`
 	ReuseDynamicPorts bool   `json:"reuseDynamicPorts,omitempty"`
 }
@@ -120,7 +116,7 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	}
 
 	// All arguments are provided in the flags file
-	cmd := exec.Command(runtimeConfig.Lux NodePath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
+	cmd := exec.Command(runtimeConfig.LuxNodePath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
 	// Ensure process is detached from the parent process so that an error in the parent will not affect the child
 	configureDetachedProcess(cmd)
 

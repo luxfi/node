@@ -18,13 +18,13 @@ import (
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/wallet/chain/c"
+	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 
 	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
+	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -39,8 +39,8 @@ const (
 
 // perform their own assertions.
 var (
-	_ UTXOClient = platformvm.Client(nil)
-	_ UTXOClient = xvm.Client(nil)
+	_ UTXOClient = (*platformvm.Client)(nil)
+	_ UTXOClient = (*XClient)(nil)
 )
 
 type UTXOClient interface {
@@ -55,10 +55,39 @@ type UTXOClient interface {
 	) ([][]byte, ids.ShortID, ids.ID, error)
 }
 
+// XClient is a client for interacting with the X-Chain
+type XClient struct {
+	requester rpc.EndpointRequester
+}
+
+// NewXClient returns a new X-Chain client
+func NewXClient(uri, chainAlias string) *XClient {
+	return &XClient{
+		requester: rpc.NewEndpointRequester(
+			fmt.Sprintf("%s/ext/bc/%s", uri, chainAlias),
+		),
+	}
+}
+
+// GetAtomicUTXOs implements UTXOClient
+func (c *XClient) GetAtomicUTXOs(
+	ctx context.Context,
+	addrs []ids.ShortID,
+	sourceChain string,
+	limit uint32,
+	startAddress ids.ShortID,
+	startUTXOID ids.ID,
+	options ...rpc.Option,
+) ([][]byte, ids.ShortID, ids.ID, error) {
+	// GetAtomicUTXOs not yet implemented for X-chain client.
+	// Would require implementing the avm.getAtomicUTXOs JSON-RPC call.
+	return nil, ids.ShortEmpty, ids.Empty, fmt.Errorf("GetAtomicUTXOs not implemented")
+}
+
 type LUXState struct {
-	PClient platformvm.Client
+	PClient *platformvm.Client
 	PCTX    *pbuilder.Context
-	XClient xvm.Client
+	XClient *XClient
 	XCTX    *xbuilder.Context
 	// CClient evm.Client // Implementation note
 	// CCTX    *c.Context
@@ -75,15 +104,21 @@ func FetchState(
 ) {
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
-	xClient := xvm.NewClient(uri, "X")
+	xClient := NewXClient(uri, "X")
 	// cClient := evm.NewCChainClient(uri) // Implementation note
 
-	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
+	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
 		return nil, err
 	}
 
-	xCTX, err := x.NewContextFromClients(ctx, infoClient, xClient)
+	// For X-chain, we need to get the LUX asset ID and fees
+	// TODO: Get these from the xClient or infoClient
+	luxAssetID := pCTX.XAssetID
+	baseTxFee := uint64(1000000)        // 0.001 LUX
+	createAssetTxFee := uint64(10000000) // 0.01 LUX
+
+	xCTX, err := x.NewContextFromClients(ctx, infoClient, luxAssetID, baseTxFee, createAssetTxFee)
 	if err != nil {
 		return nil, err
 	}
@@ -103,12 +138,12 @@ func FetchState(
 		{
 			id:     constants.PlatformChainID,
 			client: pClient,
-			codec:  txs.Codec,
+			codec:  ptxs.Codec,
 		},
 		{
 			id:     xCTX.BlockchainID,
 			client: xClient,
-			codec:  xbuilder.Parser.Codec(),
+			codec:  codec.NewDefaultManager(),
 		},
 		// {
 		// 	id:     cCTX.BlockchainID,

@@ -10,13 +10,12 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/hashing"
 )
 
 var (
-	_ chain.Block = (*Block)(nil)
+	_ block.Block = (*Block)(nil)
 
 	errInvalidBlock = errors.New("invalid block")
 )
@@ -82,13 +81,28 @@ func (b *Block) Reject(context.Context) error {
 	return nil
 }
 
-// Status implements the chain.Block interface
-func (b *Block) Status() choices.Status {
-	return b.status
+// Status implements the block.Block interface - returns uint8 status
+func (b *Block) Status() uint8 {
+	// Convert choices.Status to uint8
+	switch b.status {
+	case choices.Processing:
+		return 1 // StatusProcessing
+	case choices.Accepted:
+		return 2 // StatusAccepted
+	case choices.Rejected:
+		return 3 // StatusRejected
+	default:
+		return 0 // StatusUnknown
+	}
 }
 
-// Parent implements the chain.Block interface
+// Parent implements the block.Block interface
 func (b *Block) Parent() ids.ID {
+	return b.parentID
+}
+
+// ParentID implements the block.Block interface
+func (b *Block) ParentID() ids.ID {
 	return b.parentID
 }
 

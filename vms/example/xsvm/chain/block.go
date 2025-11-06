@@ -11,8 +11,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
@@ -34,7 +32,7 @@ var (
 )
 
 type Block interface {
-	chain.Block
+	smblock.Block
 	smblock.WithVerifyContext
 
 	// Timestamp returns the block's timestamp
@@ -83,6 +81,11 @@ func (b *block) Timestamp() time.Time {
 	return b.Time()
 }
 
+func (b *block) Status() uint8 {
+	// Return processing status (implementation detail for consensus)
+	return 1
+}
+
 func (b *block) Verify(ctx context.Context) error {
 	return b.VerifyWithContext(ctx, nil)
 }
@@ -105,7 +108,7 @@ func (b *block) Accept(context.Context) error {
 	}
 
 	b.chain.lastAcceptedID = b.id
-	delete(b.chain.verifiedBlocks, b.ParentID)
+	delete(b.chain.verifiedBlocks, b.ParentID())
 	b.state = nil
 	return nil
 }

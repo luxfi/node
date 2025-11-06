@@ -32,8 +32,12 @@ func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]
 	return nil, nil
 }
 
+func (manager) GetCurrentValidators(context.Context, uint64, ids.ID) (map[ids.NodeID]*consensusvalidators.GetValidatorOutput, error) {
+	return nil, nil
+}
+
 func (manager) OnAcceptedBlockID(ids.ID) {}
 
-func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*consensusvalidators.GetCurrentValidatorOutput, uint64, error) {
+func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*consensusvalidators.GetValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }

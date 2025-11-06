@@ -64,15 +64,17 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/cchainvm"
+	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	qvm "github.com/luxfi/node/vms/quantumvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
 )
 
 const (
@@ -268,7 +270,7 @@ func New(
 	return n, nil
 }
 
-// Node is an instance of an Lux node.
+// Node is an instance of a Lux node.
 type Node struct {
 	Log          log.Logger
 	VMFactoryLog log.Logger
@@ -1201,28 +1203,32 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("Platform VM registered successfully")
 
-	// TODO: X VM and C-Chain VM not available
-	// n.Log.Info("Registering X VM", "vmID", constants.XVMID)
-	// err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{
-	// 	Config: avmconfig.Config{
-	// 		TxFee:            n.Config.TxFee,
-	// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
-	// 		EtnaTime:         etnaTime,
-	// 	},
-	// })
-	// if err != nil {
-	// 	n.Log.Error("Failed to register X VM", "error", err)
-	// 	return err
-	// }
-	// n.Log.Info("X VM registered successfully")
+	// Register X-Chain VM (Exchange VM)
+	n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register X-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("X-Chain VM registered successfully")
 
-	// n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	// err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
-	// if err != nil {
-	// 	n.Log.Error("Failed to register C-Chain VM", "error", err)
-	// 	return err
-	// }
-	// n.Log.Info("C-Chain VM registered successfully")
+	// Register C-Chain VM  
+	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register C-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("C-Chain VM registered successfully")
+
+	// Register Q-Chain VM (Quantum VM)
+	n.Log.Info("Registering Q-Chain VM", "vmID", constants.QVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.QVMID, &qvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register Q-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("Q-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

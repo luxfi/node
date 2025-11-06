@@ -16,16 +16,10 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
-
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/version"
 )
 
 const (
@@ -34,14 +28,14 @@ const (
 )
 
 var (
-	_ core.VM = (*VM)(nil)
+	_ block.ChainVM  = (*VM)(nil)
 	_ health.Checker = (*VM)(nil)
-	_ validators.Connector = (*VM)(nil)
+	// validators.Connector is satisfied by Connected/Disconnected methods
 
 	errNotImplemented = errors.New("not implemented")
 )
 
-// VM implements the chain.ChainVM interface for the AI Chain (A-Chain)
+// VM implements the block.ChainVM interface for the AI Chain (A-Chain)
 // This chain is specialized for AI computation and agent coordination
 type VM struct {
 	ctx         *consensusctx.Context
@@ -49,10 +43,10 @@ type VM struct {
 	genesisData []byte
 	toEngine    chan<- block.Message
 	fxs         []*consensus.Fx
-	appSender   appsender.AppSender
+	appSender   block.AppSender
 
 	// State management
-	state       core.State
+	state       uint32 // VM state (Bootstrapping, NormalOp, etc.)
 	baseDB      database.Database
 	preferredID ids.ID
 
@@ -98,32 +92,68 @@ const (
 	TaskFailed
 )
 
-// Initialize implements the core.VM interface
+// Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusctx.Context,
-	db database.Database,
+	chainCtxIntf interface{},
+	dbIntf interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*consensus.Fx,
-	appSender appsender.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSenderIntf interface{},
 ) error {
+	// Type assert chainCtx
+	chainCtx, ok := chainCtxIntf.(*consensusctx.Context)
+	if !ok {
+		return fmt.Errorf("invalid chain context type")
+	}
 	vm.ctx = chainCtx
+
+	// Type assert database
+	db, ok := dbIntf.(database.Database)
+	if !ok {
+		return fmt.Errorf("invalid database type")
+	}
 	vm.db = db
+	vm.baseDB = db
+
+	// Type assert message channel
+	if toEngineIntf != nil {
+		toEngine, ok := toEngineIntf.(chan<- block.Message)
+		if !ok {
+			return fmt.Errorf("invalid toEngine type")
+		}
+		vm.toEngine = toEngine
+	}
+
+	// Type assert fxs
+	if fxsIntf != nil {
+		fxs := make([]*consensus.Fx, 0, len(fxsIntf))
+		for _, fxIntf := range fxsIntf {
+			if fx, ok := fxIntf.(*consensus.Fx); ok {
+				fxs = append(fxs, fx)
+			}
+		}
+		vm.fxs = fxs
+	}
+
+	// Type assert appSender
+	if appSenderIntf != nil {
+		appSender, ok := appSenderIntf.(block.AppSender)
+		if !ok {
+			return fmt.Errorf("invalid app sender type")
+		}
+		vm.appSender = appSender
+	}
+
 	vm.genesisData = genesisBytes
-	vm.toEngine = toEngine
-	vm.fxs = fxs
-	vm.appSender = appSender
 
 	// Initialize state management
 	vm.taskRegistry = make(map[ids.ID]*AITask)
 	vm.agentRegistry = make(map[ids.ShortID]*AIAgent)
 	vm.gpuProviders = make(map[ids.NodeID]*GPUProvider)
-
-	// Use provided database
-	vm.baseDB = db
 
 	// Parse genesis if needed
 	if len(genesisBytes) > 0 {
@@ -132,18 +162,21 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	chainCtx.Log.Info("initialized AI VM", log.String("version", vmVersion))
+	// Type assert and use logger
+	if logger, ok := chainCtx.Log.(log.Logger); ok {
+		logger.Info("initialized AI VM", "version", vmVersion)
+	}
 
 	return nil
 }
 
-// SetState implements the core.VM interface
-func (vm *VM) SetState(ctx context.Context, state core.State) error {
+// SetState implements the block.ChainVM interface
+func (vm *VM) SetState(ctx context.Context, state uint32) error {
 	vm.state = state
 	return nil
 }
 
-// Shutdown implements the core.VM interface
+// Shutdown implements the block.ChainVM interface
 func (vm *VM) Shutdown(context.Context) error {
 	if vm.db != nil {
 		return vm.db.Close()
@@ -151,13 +184,13 @@ func (vm *VM) Shutdown(context.Context) error {
 	return nil
 }
 
-// Version implements the core.VM interface
+// Version implements the block.ChainVM interface
 func (vm *VM) Version(context.Context) (string, error) {
 	return vmVersion, nil
 }
 
-// CreateHandlers implements the core.VM interface
-func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
+// NewHTTPHandler implements the block.ChainVM interface
+func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 	handler := &apiHandler{vm: vm}
 	return map[string]http.Handler{
 		"/ai":       handler,
@@ -167,6 +200,12 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, nil
 }
 
+// WaitForEvent implements the block.ChainVM interface
+func (vm *VM) WaitForEvent(context.Context) (interface{}, error) {
+	// For now, return nil - this would normally wait for new tasks or events
+	return nil, nil
+}
+
 // HealthCheck implements the health.Checker interface
 func (vm *VM) HealthCheck(context.Context) (any, error) {
 	return map[string]interface{}{
@@ -174,12 +213,12 @@ func (vm *VM) HealthCheck(context.Context) (any, error) {
 		"taskCount":    len(vm.taskRegistry),
 		"agentCount":   len(vm.agentRegistry),
 		"gpuProviders": len(vm.gpuProviders),
-		"state":        vm.state.String(),
+		"state":        vm.state,
 	}, nil
 }
 
-// Connected implements the validators.Connector interface
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+// Connected implements the block.ChainVM and validators.Connector interface
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
 	// Track connected nodes that might be GPU providers
 	return nil
 }

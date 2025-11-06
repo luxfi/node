@@ -13,11 +13,11 @@
 package luxmock
 
 import (
-	"go.uber.org/mock/gomock"
+	"context"
+	"reflect"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	reflect "reflect"
-
+	gomock "go.uber.org/mock/gomock"
 	verify "github.com/luxfi/node/vms/components/verify"
 )
 

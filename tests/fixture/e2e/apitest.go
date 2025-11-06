@@ -130,7 +130,7 @@ func (tc *ginkgoTestContext) Eventually(condition func() bool, waitFor time.Dura
 }
 
 // ExecuteAPITest executes a test whose primary dependency is being
-// able to access the API of one or more luxd nodes.
+// able to access the API of one or more Lux Nodes.
 func ExecuteAPITest(apiTest APITestFunction) {
 	// This function needs proper test context setup
 	// For now, it's a placeholder that should be called from actual test runners

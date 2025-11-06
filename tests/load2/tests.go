@@ -8,7 +8,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	luxcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/luxfi/geth/params"
@@ -35,7 +36,8 @@ func (z ZeroTransferTest) Run(
 	bigGwei := big.NewInt(params.GWei)
 	gasTipCap := new(big.Int).Mul(bigGwei, big.NewInt(1))
 	gasFeeCap := new(big.Int).Mul(bigGwei, maxFeeCap)
-	senderAddress := crypto.PubkeyToAddress(wallet.privKey.PublicKey)
+	ethSenderAddress := crypto.PubkeyToAddress(wallet.privKey.PublicKey)
+	senderAddress := luxcommon.Address(ethSenderAddress)
 	tx, err := types.SignNewTx(wallet.privKey, wallet.signer, &types.DynamicFeeTx{
 		ChainID:   wallet.chainID,
 		Nonce:     wallet.nonce,
@@ -44,7 +46,7 @@ func (z ZeroTransferTest) Run(
 		Gas:       params.TxGas,
 		To:        &senderAddress,
 		Data:      nil,
-		Value:     common.Big0,
+		Value:     ethcommon.Big0,
 	})
 	require.NoError(err)
 

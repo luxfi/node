@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ wallet.Client = (*Client)(nil)
@@ -43,12 +43,8 @@ func (c *Client) IssueTx(
 	}
 
 	issuanceDuration := time.Since(startTime)
-	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       txID,
-			Duration:   issuanceDuration,
-		})
+	if f := ops.PostIssuanceFunc(); f != nil {
+		f(txID)
 	}
 
 	if ops.AssumeDecided() {
@@ -66,8 +62,9 @@ func (c *Client) IssueTx(
 		f(common.ConfirmationReceipt{
 			ChainAlias:           builder.Alias,
 			TxID:                 txID,
-			TotalDuration:        totalDuration,
+			IssuanceDuration:     issuanceDuration,
 			ConfirmationDuration: confirmationDuration,
+			TotalDuration:        totalDuration,
 		})
 	}
 

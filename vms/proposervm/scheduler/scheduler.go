@@ -6,8 +6,6 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
 )

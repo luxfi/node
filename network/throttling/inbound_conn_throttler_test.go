@@ -4,7 +4,6 @@
 package throttling
 
 import (
-	"github.com/luxfi/metric"
 	"context"
 	"net"
 	"testing"

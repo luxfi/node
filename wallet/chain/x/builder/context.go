@@ -30,7 +30,7 @@ func NewConsensusContext(
 		NetID:    constants.PrimaryNetworkID,
 		ChainID:     blockchainID,
 		XChainID:    blockchainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	return ctx, lookup.Alias(blockchainID, Alias)
 }

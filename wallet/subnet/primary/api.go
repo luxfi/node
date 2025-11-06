@@ -11,13 +11,11 @@ import (
 	"github.com/luxfi/geth/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -39,9 +37,34 @@ const (
 	fetchLimit = 1024
 )
 
+type XClient struct {
+	requester rpc.EndpointRequester
+}
+
+func NewXClient(uri, chainAlias string) *XClient {
+	return &XClient{
+		requester: rpc.NewEndpointRequester(
+			fmt.Sprintf("%s/ext/bc/%s", uri, chainAlias),
+		),
+	}
+}
+
+func (c *XClient) GetAtomicUTXOs(
+	ctx context.Context,
+	addrs []ids.ShortID,
+	sourceChain string,
+	limit uint32,
+	startAddress ids.ShortID,
+	startUTXOID ids.ID,
+	options ...rpc.Option,
+) ([][]byte, ids.ShortID, ids.ID, error) {
+	// TODO: Implement proper X-chain GetAtomicUTXOs RPC call
+	return nil, ids.ShortEmpty, ids.Empty, nil
+}
+
 var (
 	_ UTXOClient = (*platformvm.Client)(nil)
-	_ UTXOClient = (*avm.Client)(nil)
+	_ UTXOClient = (*XClient)(nil)
 )
 
 type UTXOClient interface {
@@ -59,7 +82,7 @@ type UTXOClient interface {
 type LUXState struct {
 	PClient *platformvm.Client
 	PCTX    *pbuilder.Context
-	XClient *avm.Client
+	XClient *XClient
 	XCTX    *xbuilder.Context
 	CClient client.Client
 	CCTX    *c.Context
@@ -76,20 +99,24 @@ func FetchState(
 ) {
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
-	xClient := avm.NewClient(uri, "X")
-	cClient := client.NewCChainClient(uri)
+	xClient := NewXClient(uri, "X")
+	cClient := client.NewClient(uri, "C")
 
 	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
 		return nil, err
 	}
 
-	xCTX, err := x.NewContextFromClients(ctx, infoClient, xClient)
+	luxAssetID := pCTX.XAssetID
+	baseTxFee := uint64(1000000)
+	createTxFee := uint64(10000000)
+
+	xCTX, err := x.NewContextFromClients(ctx, infoClient, luxAssetID, baseTxFee, createTxFee)
 	if err != nil {
 		return nil, err
 	}
 
-	cCTX, err := c.NewContextFromClients(ctx, infoClient, xClient)
+	cCTX, err := c.NewContextFromClients(ctx, infoClient, luxAssetID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +138,7 @@ func FetchState(
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
 		},
-		{
-			id:     cCTX.BlockchainID,
-			client: cClient,
-			codec:  atomic.Codec,
-		},
+		// C-Chain UTXOs are handled differently (EVM state, not atomic UTXOs)
 	}
 	for _, destinationChain := range chains {
 		for _, sourceChain := range chains {

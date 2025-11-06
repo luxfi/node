@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/utils"
 )
 
 const (
@@ -86,8 +85,12 @@ func (s *testDataServer) allocateKeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Forget the allocated keys
-	utils.ZeroSlice(allocatedKeys)
+	// Forget the allocated keys - zero out the sensitive key material
+	for _, key := range allocatedKeys {
+		if key != nil {
+			clear(key.Bytes()) // Zero the private key bytes (Go 1.21+ built-in)
+		}
+	}
 	s.PreFundedKeys = s.PreFundedKeys[:remainingKeys]
 }
 

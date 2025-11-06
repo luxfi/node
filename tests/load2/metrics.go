@@ -17,7 +17,7 @@ type metrics struct {
 	txTotalLatency        metric.Histogram
 }
 
-func newMetrics(namespace string, registry *metric.Registry) (metrics, error) {
+func newMetrics(namespace string, registry metric.Registry) (metrics, error) {
 	m := metrics{
 		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,

@@ -40,7 +40,10 @@ func (m *BLSManager) CreateKeyPair() (*bls.SecretKey, *bls.PublicKey, error) {
 
 // Sign creates a BLS signature
 func (m *BLSManager) Sign(sk *bls.SecretKey, message []byte) (*bls.Signature, error) {
-	sig := sk.Sign(message)
+	sig, err := sk.Sign(message)
+	if err != nil {
+		return nil, err
+	}
 	return sig, nil
 }
 

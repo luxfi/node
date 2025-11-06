@@ -4,14 +4,13 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -35,7 +34,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx context.Context,
+	ctx *consensusctx.Context,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -51,7 +50,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     context.Context
+	ctx     *consensusctx.Context
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain
@@ -66,9 +65,9 @@ type NetworkReply struct {
 }
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
-	reply.NetworkID = consensus.GetNetworkID(s.ctx)
-	reply.NetID = consensus.GetNetID(s.ctx)
-	reply.ChainID = consensus.GetChainID(s.ctx)
+	reply.NetworkID = s.ctx.NetworkID
+	reply.NetID = s.ctx.NetID
+	reply.ChainID = s.ctx.ChainID
 	return nil
 }
 

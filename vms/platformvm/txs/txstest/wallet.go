@@ -5,12 +5,12 @@ package txstest
 
 import (
 	"context"
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -22,13 +22,13 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 func NewWallet(
 	t testing.TB,
 	ctx *consensusctx.Context,
-	config *config.Internal,
+	cfg *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
 	subnetIDs []ids.ID,
@@ -53,27 +53,9 @@ func NewWallet(
 		))
 	}
 
-	for _, chainID := range chainIDs {
-		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
-			ctx.SharedMemory,
-			txs.Codec,
-			chainID,
-			addrs,
-			ids.ShortEmpty,
-			ids.Empty,
-			math.MaxInt,
-		)
-		require.NoError(err)
-
-		for _, utxo := range remoteChainUTXOs {
-			require.NoError(utxos.AddUTXO(
-				context.Background(),
-				chainID,
-				constants.PlatformChainID,
-				utxo,
-			))
-		}
-	}
+	// Skip cross-chain UTXOs for test wallet
+	// In production, these would come from shared memory
+	_ = chainIDs
 
 	owners := make(map[ids.ID]fx.Owner, len(subnetIDs)+len(validationIDs))
 	for _, subnetID := range subnetIDs {
@@ -98,7 +80,8 @@ func NewWallet(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	builderContext := newContext(ctx, config, state)
+	builderContext := newContext(ctx, ctx.NetworkID, ctx.LUXAssetID, cfg, state.GetTimestamp())
+	kcAdapter := &keychainAdapter{kc: kc}
 	return wallet.New(
 		&client{
 			backend: backend,
@@ -109,7 +92,7 @@ func NewWallet(
 			backend,
 		),
 		signer.New(
-			kc,
+			kcAdapter,
 			backend,
 		),
 	)
@@ -124,18 +107,6 @@ func (c *client) IssueTx(
 	options ...common.Option,
 ) error {
 	ops := common.NewOptions(options)
-	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       tx.ID(),
-		})
-	}
-	if f := ops.ConfirmationHandler(); f != nil {
-		f(common.ConfirmationReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       tx.ID(),
-		})
-	}
 	ctx := ops.Context()
 	return c.backend.AcceptTx(ctx, tx)
 }

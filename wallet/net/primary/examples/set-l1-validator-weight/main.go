@@ -25,7 +25,7 @@ import (
 func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
-	kc := secp256k1fx.NewKeychain(key)
+	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 
 	// Create adapter for the keychain
 	chainID := ids.FromStringOrPanic("2BMFrJ9xeh5JdwZEx6uuFcjfZC2SV2hdbMT8ee5HrvjtfJb5br")
@@ -54,7 +54,7 @@ func main() {
 		&primary.WalletConfig{
 			URI:         uri,
 			LUXKeychain: kc,
-			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			EthKeychain: kc, // Empty ETH keychain
 		},
 	)
 	if err != nil {

@@ -22,7 +22,7 @@ Any changes made to proto definition can be updated by running
 
 The protobuf definitions and generated code are versioned based on the
 [RPCChainVMProtocol](../version/version.go#L13) defined for the RPCChainVM.
-Many versions of an Lux client can use the same
+Many versions of a Lux client can use the same
 [RPCChainVMProtocol](../version/version.go#L13). But each Lux client and
 subnet vm must use the same protocol version to be compatible.
 

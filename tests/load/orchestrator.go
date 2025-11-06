@@ -12,8 +12,6 @@ import (
 
 	"github.com/luxfi/log"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/luxfi/log"
 )
 
 var ErrFailedToReachTargetTPS = errors.New("failed to reach target TPS")

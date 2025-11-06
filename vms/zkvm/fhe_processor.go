@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/log"
 	
-	"github.com/luxfi/log"
 )
 
 // FHEProcessor handles fully homomorphic encryption operations

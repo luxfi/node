@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
@@ -200,7 +201,7 @@ type Config struct {
 	// If [Reg] is nil, metrics are collected locally but not exported through
 	// Prometheus.
 	// This may be useful for testing.
-	Reg        prometheus.Registerer
+	Reg        metric.Registerer
 	Namespace  string
 	TraceLevel TraceLevel
 	Tracer     trace.Tracer

@@ -4,6 +4,8 @@
 package wallet
 
 import (
+	"time"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
@@ -69,28 +71,28 @@ func (w *withOptions) IssueAddValidatorTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueAddNetValidatorTx(
-// 	vdr *txs.NetValidator,
-// 	options ...common.Option,
-// ) (*txs.Tx, error) {
-// 	return w.wallet.IssueAddNetValidatorTx(
-// 		vdr,
-// 		common.UnionOptions(w.options, options)...,
-// 	)
-// }
+func (w *withOptions) IssueAddNetValidatorTx(
+	vdr *txs.NetValidator,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddNetValidatorTx(
+		vdr,
+		common.UnionOptions(w.options, options)...,
+	)
+}
 
 // Removed in regenesis
-// func (w *withOptions) IssueRemoveNetValidatorTx(
-// 	nodeID ids.NodeID,
-// 	netID ids.ID,
-// 	options ...common.Option,
-// ) (*txs.Tx, error) {
-// 	return w.wallet.IssueRemoveNetValidatorTx(
-// 		nodeID,
-// 		netID,
-// 		common.UnionOptions(w.options, options)...,
-// 	)
-// }
+func (w *withOptions) IssueRemoveNetValidatorTx(
+	nodeID ids.NodeID,
+	netID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueRemoveNetValidatorTx(
+		nodeID,
+		netID,
+		common.UnionOptions(w.options, options)...,
+	)
+}
 
 func (w *withOptions) IssueAddDelegatorTx(
 	vdr *txs.Validator,
@@ -123,28 +125,28 @@ func (w *withOptions) IssueCreateChainTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueCreateNetTx(
-// 	owner *secp256k1fx.OutputOwners,
-// 	options ...common.Option,
-// ) (*txs.Tx, error) {
-// 	return w.wallet.IssueCreateNetTx(
-// 		owner,
-// 		common.UnionOptions(w.options, options)...,
-// 	)
-// }
+func (w *withOptions) IssueCreateNetTx(
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueCreateNetTx(
+		owner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
 
 // Removed in regenesis
-// func (w *withOptions) IssueTransferNetOwnershipTx(
-// 	subnetID ids.ID,
-// 	owner *secp256k1fx.OutputOwners,
-// 	options ...common.Option,
-// ) (*txs.Tx, error) {
-// 	return w.wallet.IssueTransferNetOwnershipTx(
-// 		netID,
-// 		owner,
-// 		common.UnionOptions(w.options, options)...,
-// 	)
-// }
+func (w *withOptions) IssueTransferNetOwnershipTx(
+	subnetID ids.ID,
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueTransferNetOwnershipTx(
+		subnetID,
+		owner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
 
 func (w *withOptions) IssueConvertNetToL1Tx(
 	subnetID ids.ID,
@@ -233,41 +235,41 @@ func (w *withOptions) IssueExportTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueTransformNetTx(
-// 	subnetID ids.ID,
-// 	assetID ids.ID,
-// 	initialSupply uint64,
-// 	maxSupply uint64,
-// 	minConsumptionRate uint64,
-// 	maxConsumptionRate uint64,
-// 	minValidatorStake uint64,
-// 	maxValidatorStake uint64,
-// 	minStakeDuration time.Duration,
-// 	maxStakeDuration time.Duration,
-// 	minDelegationFee uint32,
-// 	minDelegatorStake uint64,
-// 	maxValidatorWeightFactor byte,
-// 	uptimeRequirement uint32,
-// 	options ...common.Option,
-// ) (*txs.Tx, error) {
-// 	return w.wallet.IssueTransformNetTx(
-// 		netID,
-// 		assetID,
-// 		initialSupply,
-// 		maxSupply,
-// 		minConsumptionRate,
-// 		maxConsumptionRate,
-// 		minValidatorStake,
-// 		maxValidatorStake,
-// 		minStakeDuration,
-// 		maxStakeDuration,
-// 		minDelegationFee,
-// 		minDelegatorStake,
-// 		maxValidatorWeightFactor,
-// 		uptimeRequirement,
-// 		common.UnionOptions(w.options, options)...,
-// 	)
-// }
+func (w *withOptions) IssueTransformNetTx(
+	subnetID ids.ID,
+	assetID ids.ID,
+	initialSupply uint64,
+	maxSupply uint64,
+	minConsumptionRate uint64,
+	maxConsumptionRate uint64,
+	minValidatorStake uint64,
+	maxValidatorStake uint64,
+	minStakeDuration time.Duration,
+	maxStakeDuration time.Duration,
+	minDelegationFee uint32,
+	minDelegatorStake uint64,
+	maxValidatorWeightFactor byte,
+	uptimeRequirement uint32,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueTransformNetTx(
+		subnetID,
+		assetID,
+		initialSupply,
+		maxSupply,
+		minConsumptionRate,
+		maxConsumptionRate,
+		minValidatorStake,
+		maxValidatorStake,
+		minStakeDuration,
+		maxStakeDuration,
+		minDelegationFee,
+		minDelegatorStake,
+		maxValidatorWeightFactor,
+		uptimeRequirement,
+		common.UnionOptions(w.options, options)...,
+	)
+}
 
 func (w *withOptions) IssueAddPermissionlessValidatorTx(
 	vdr *txs.NetValidator,

@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/crypto/ringtail"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"go.uber.org/zap"
 )
 
 // SignatureType represents the type of aggregated signature
@@ -127,12 +127,12 @@ func NewSignatureAggregator(config SignatureConfig, log log.Logger) (*SignatureA
 	sa.feeCollector = NewFeeCollector()
 	
 	log.Info("Signature aggregator initialized",
-		log.Uint8("preferredType", uint8(config.PreferredType)),
-		log.Bool("blsEnabled", config.EnableBLS),
-		log.Bool("ringtailEnabled", config.EnableRingtail),
-		log.Bool("cggmp21Enabled", config.EnableCGGMP21),
-		log.Uint64("blsFee", config.BLSFee),
-		log.Uint64("ringtailFee", config.RingtailFee),
+		zap.Uint8("preferredType", uint8(config.PreferredType)),
+		zap.Bool("blsEnabled", config.EnableBLS),
+		zap.Bool("ringtailEnabled", config.EnableRingtail),
+		zap.Bool("cggmp21Enabled", config.EnableCGGMP21),
+		zap.Uint64("blsFee", config.BLSFee),
+		zap.Uint64("ringtailFee", config.RingtailFee),
 	)
 	
 	return sa, nil
@@ -181,9 +181,9 @@ func (sa *SignatureAggregator) StartAggregation(
 	sa.sessions[sessionID] = session
 	
 	sa.log.Debug("Started aggregation session",
-		log.String("sessionID", sessionID),
-		log.Uint8("type", uint8(sigType)),
-		log.Int("expectedSigners", expectedSigners),
+		zap.String("sessionID", sessionID),
+		zap.Uint8("type", uint8(sigType)),
+		zap.Int("expectedSigners", expectedSigners),
 	)
 	
 	return nil
@@ -356,10 +356,10 @@ func (sa *SignatureAggregator) FinalizeAggregation(
 	session.Result = result
 	
 	sa.log.Info("Finalized aggregation",
-		log.String("sessionID", sessionID),
-		log.Uint8("type", uint8(session.SignatureType)),
-		log.Int("signers", session.SignerCount),
-		log.Uint64("totalFee", result.TotalFee),
+		zap.String("sessionID", sessionID),
+		zap.Uint8("type", uint8(session.SignatureType)),
+		zap.Int("signers", session.SignerCount),
+		zap.Uint64("totalFee", result.TotalFee),
 	)
 	
 	return result, nil

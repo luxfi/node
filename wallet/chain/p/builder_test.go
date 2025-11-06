@@ -108,7 +108,7 @@ var (
 
 	testContextPostEtna = &builder.Context{
 		NetworkID:   constants.UnitTestID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 
 		ComplexityWeights: gas.Dimensions{
 			gas.Bandwidth: 1,
@@ -648,7 +648,7 @@ func TestConvertNetToL1Tx(t *testing.T) {
 				nil,
 				nil,
 				map[ids.ID]uint64{
-					e.context.LUXAssetID: 3 * units.Lux, // Balance of the validators
+					e.context.XAssetID: 3 * units.Lux, // Balance of the validators
 				},
 			)
 		})
@@ -751,7 +751,7 @@ func TestRegisterL1ValidatorTx(t *testing.T) {
 				nil,
 				nil,
 				map[ids.ID]uint64{
-					e.context.LUXAssetID: balance, // Balance of the validator
+					e.context.XAssetID: balance, // Balance of the validator
 				},
 			)
 		})
@@ -868,7 +868,7 @@ func TestIncreaseL1ValidatorBalanceTx(t *testing.T) {
 				nil,
 				nil,
 				map[ids.ID]uint64{
-					e.context.LUXAssetID: balance, // Balance increase
+					e.context.XAssetID: balance, // Balance increase
 				},
 			)
 		})

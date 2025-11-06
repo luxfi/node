@@ -6,16 +6,19 @@ package primary
 import (
 	"context"
 
+	gethcommon "github.com/luxfi/geth/common"
+
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/utils/crypto/keychain" // input keychain
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
+	walletkeychain "github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	
-	ethcommon "github.com/luxfi/geth/common"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	psigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -23,6 +26,45 @@ import (
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	xsigner "github.com/luxfi/node/wallet/chain/x/signer"
 )
+
+// EthKeychainAdapter adapts secp256k1fx.Keychain to c.EthKeychain interface.
+// This allows secp256k1fx.Keychain to be used as the ethKeychain parameter in MakeWallet.
+type EthKeychainAdapter struct {
+	*secp256k1fx.Keychain
+}
+
+// GetEth implements c.EthKeychain by type-casting the signer
+func (kc *EthKeychainAdapter) GetEth(addr gethcommon.Address) (walletkeychain.Signer, bool) {
+	signer, ok := kc.Keychain.GetEth(addr)
+	if !ok {
+		return nil, false
+	}
+	// secp256k1fx.luxSigner already implements wallet/keychain.Signer
+	return signer.(walletkeychain.Signer), true
+}
+
+// EthAddresses implements c.EthKeychain
+func (kc *EthKeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
+	return kc.Keychain.EthAddrs
+}
+
+// NewEthKeychainAdapter creates an EthKeychainAdapter from a secp256k1fx.Keychain
+func NewEthKeychainAdapter(kc *secp256k1fx.Keychain) *EthKeychainAdapter {
+	return &EthKeychainAdapter{Keychain: kc}
+}
+
+// keychainAdapter adapts utils/crypto keychain to wallet keychain interface
+type keychainAdapter struct {
+	keychain.Keychain
+}
+
+func (k *keychainAdapter) Get(addr ids.ShortID) (walletkeychain.Signer, bool) {
+	utilsSigner, ok := k.Keychain.Get(addr)
+	if !ok {
+		return nil, false
+	}
+	return utilsSigner, true
+}
 
 // Wallet provides chain wallets for the primary network.
 type Wallet struct {
@@ -108,23 +150,23 @@ func MakeWallet(
 	pBackend := pwallet.NewBackend(pUTXOs, owners)
 	pClient := p.NewClient(luxState.PClient, pBackend)
 	pBuilder := pbuilder.New(luxAddrs, luxState.PCTX, pBackend)
-	pSigner := psigner.New(luxKeychain, pBackend)
+	pSigner := psigner.New(&keychainAdapter{Keychain: luxKeychain}, pBackend)
 
 	xChainID := luxState.XCTX.BlockchainID
 	xUTXOs := common.NewChainUTXOs(xChainID, luxState.UTXOs)
 	xBackend := x.NewBackend(luxState.XCTX, xUTXOs)
 	xBuilder := xbuilder.New(luxAddrs, luxState.XCTX, xBackend)
-	xSigner := xsigner.New(luxKeychain, xBackend)
+	xSigner := xsigner.New(&keychainAdapter{Keychain: luxKeychain}, xBackend)
 
 	cChainID := luxState.CCTX.BlockchainID
 	cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
 	cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
 	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
-	cSigner := c.NewSigner(luxKeychain, ethKeychain, cBackend)
+	cSigner := c.NewSigner(&keychainAdapter{Keychain: luxKeychain}, ethKeychain, cBackend)
 
 	return NewWallet(
 		pwallet.New(pClient, pBuilder, pSigner),
-		x.NewWallet(xBuilder, xSigner, luxState.XClient, xBackend),
+		x.NewWallet(xBuilder, xSigner, xBackend),
 		c.NewWallet(cBuilder, cSigner, luxState.CClient, ethState.Client, cBackend),
 	), nil
 }
@@ -159,6 +201,6 @@ func MakePWallet(
 	pBackend := pwallet.NewBackend(pUTXOs, owners)
 	pClient := p.NewClient(client, pBackend)
 	pBuilder := pbuilder.New(addrs, context, pBackend)
-	pSigner := psigner.New(keychain, pBackend)
+	pSigner := psigner.New(&keychainAdapter{Keychain: keychain}, pBackend)
 	return pwallet.New(pClient, pBuilder, pSigner), nil
 }

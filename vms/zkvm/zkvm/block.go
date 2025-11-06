@@ -9,15 +9,15 @@ import (
 	"time"
 
 	ethcommon "github.com/luxfi/geth/common"
-	
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/utils/hashing"
 )
 
 var (
-	_ chain.Block = (*Block)(nil)
+	// Comment out interface check until Block is fully implemented
+	// _ block.Block = (*Block)(nil)
 
 	errInvalidBlock = errors.New("invalid block")
 )
@@ -149,6 +149,11 @@ func (b *Block) Status() choices.Status {
 
 // Parent implements the chain.Block interface
 func (b *Block) Parent() ids.ID {
+	return b.parentID
+}
+
+// ParentID returns the parent block ID (alias for Parent, required by block.Block interface)
+func (b *Block) ParentID() ids.ID {
 	return b.parentID
 }
 

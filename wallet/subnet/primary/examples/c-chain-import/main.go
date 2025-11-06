@@ -8,6 +8,9 @@ import (
 	"log"
 	"time"
 
+	gethcommon "github.com/luxfi/geth/common"
+
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -22,7 +25,6 @@ func main() {
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
 	luxAddr := key.Address()
-	ethAddr := key.PublicKey().EthAddress()
 
 	ctx := context.Background()
 
@@ -33,7 +35,7 @@ func main() {
 		ctx,
 		uri,
 		kc,
-		kc,
+		primary.NewEthKeychainAdapter(kc),
 		primary.WalletConfig{},
 	)
 	if err != nil {
@@ -67,12 +69,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue export transaction: %s\n", err)
 	}
-	log.Printf("issued export %s in %s\n", exportTx.ID(), time.Since(exportStartTime))
+	log.Printf("issued export %s in %s\n", exportTx.ID, time.Since(exportStartTime))
 
 	importStartTime := time.Now()
+	pk := key.PublicKey()
+	cryptoAddr := secp256k1.PubkeyToAddress(*pk.ToECDSA())
+	ethAddr := gethcommon.Address(cryptoAddr)
 	importTx, err := cWallet.IssueImportTx(constants.PlatformChainID, ethAddr)
 	if err != nil {
 		log.Fatalf("failed to issue import transaction: %s\n", err)
 	}
-	log.Printf("issued import %s to %s in %s\n", importTx.ID(), ethAddr.Hex(), time.Since(importStartTime))
+	log.Printf("issued import %s to %s in %s\n", importTx.ID, ethAddr.Hex(), time.Since(importStartTime))
 }

@@ -255,7 +255,7 @@ func (t TransferTest) Run(tc tests.TestContext, wallet *Wallet) {
 	})
 	require.NoError(err)
 
-	require.NoError(wallet.SendTx(tc.GetDefaultContextParent(), tx))
+	require.NoError(wallet.SendTx(tc.DefaultContext(), tx))
 }
 
 type ReadTest struct {
@@ -386,7 +386,7 @@ func executeContractTx(
 	tx, err := txFunc(txOpts)
 	require.NoError(err)
 
-	require.NoError(wallet.SendTx(tc.GetDefaultContextParent(), tx))
+	require.NoError(wallet.SendTx(tc.DefaultContext(), tx))
 }
 
 // newTxOpts returns transactions options for contract calls, with sending disabled

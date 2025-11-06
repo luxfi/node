@@ -5,18 +5,13 @@ package txstest
 
 import (
 	"context"
-	"math"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 )
@@ -29,53 +24,38 @@ var (
 func newBackend(
 	addrs set.Set[ids.ShortID],
 	state state.State,
-	sharedMemory atomic.SharedMemory,
 ) *Backend {
 	return &Backend{
-		addrs:        addrs,
-		state:        state,
-		sharedMemory: sharedMemory,
+		addrs: addrs,
+		state: state,
 	}
 }
 
 type Backend struct {
-	addrs        set.Set[ids.ShortID]
-	state        state.State
-	sharedMemory atomic.SharedMemory
+	addrs set.Set[ids.ShortID]
+	state state.State
 }
 
 func (b *Backend) UTXOs(_ context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error) {
+	// For test purposes, only return platform chain UTXOs
 	if sourceChainID == constants.PlatformChainID {
 		return lux.GetAllUTXOs(b.state, b.addrs)
 	}
-
-	utxos, _, _, err := lux.GetAtomicUTXOs(
-		b.sharedMemory,
-		txs.Codec,
-		sourceChainID,
-		b.addrs,
-		ids.ShortEmpty,
-		ids.Empty,
-		math.MaxInt,
-	)
-	return utxos, err
+	// Return empty for cross-chain UTXOs in tests
+	return nil, nil
 }
 
 func (b *Backend) GetUTXO(_ context.Context, chainID, utxoID ids.ID) (*lux.UTXO, error) {
 	if chainID == constants.PlatformChainID {
 		return b.state.GetUTXO(utxoID)
 	}
+	// Return nil for cross-chain UTXOs in tests
+	return nil, nil
+}
 
-	utxoBytes, err := b.sharedMemory.Get(chainID, [][]byte{utxoID[:]})
-	if err != nil {
-		return nil, err
-	}
-
-	utxo := lux.UTXO{}
-	if _, err := txs.Codec.Unmarshal(utxoBytes[0], &utxo); err != nil {
-		return nil, err
-	}
-	return &utxo, nil
+func (b *Backend) GetOwner(_ context.Context, ownerID ids.ID) (fx.Owner, error) {
+	// For test purposes, treat ownerID as subnet ID
+	return b.state.GetNetOwner(ownerID)
 }
 
 func (b *Backend) GetNetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {

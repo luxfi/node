@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )

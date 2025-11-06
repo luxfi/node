@@ -24,7 +24,7 @@ defines the behavior of the blockchain where it is instantiated. For example,
 
 ## Introduction
 
-Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Net]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
+Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in a Lux [Net]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
 
 ## How it Works
 

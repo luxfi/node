@@ -4,7 +4,6 @@
 package c
 
 import (
-	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -41,7 +40,7 @@ func (w *walletWithOptions) IssueImportTx(
 	chainID ids.ID,
 	to ethcommon.Address,
 	options ...common.Option,
-) (*atomic.Tx, error) {
+) (*Tx, error) {
 	return w.Wallet.IssueImportTx(
 		chainID,
 		to,
@@ -53,7 +52,7 @@ func (w *walletWithOptions) IssueExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
 	options ...common.Option,
-) (*atomic.Tx, error) {
+) (*Tx, error) {
 	return w.Wallet.IssueExportTx(
 		chainID,
 		outputs,
@@ -62,9 +61,9 @@ func (w *walletWithOptions) IssueExportTx(
 }
 
 func (w *walletWithOptions) IssueUnsignedAtomicTx(
-	utx atomic.UnsignedAtomicTx,
+	utx UnsignedAtomicTx,
 	options ...common.Option,
-) (*atomic.Tx, error) {
+) (*Tx, error) {
 	return w.Wallet.IssueUnsignedAtomicTx(
 		utx,
 		common.UnionOptions(w.options, options)...,
@@ -72,7 +71,7 @@ func (w *walletWithOptions) IssueUnsignedAtomicTx(
 }
 
 func (w *walletWithOptions) IssueAtomicTx(
-	tx *atomic.Tx,
+	tx *Tx,
 	options ...common.Option,
 ) error {
 	return w.Wallet.IssueAtomicTx(

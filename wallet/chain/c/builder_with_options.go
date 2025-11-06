@@ -6,7 +6,6 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -59,7 +58,7 @@ func (b *builderWithOptions) NewImportTx(
 	to ethcommon.Address,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*atomic.UnsignedImportTx, error) {
+) (*UnsignedImportTx, error) {
 	return b.Builder.NewImportTx(
 		chainID,
 		to,
@@ -73,7 +72,7 @@ func (b *builderWithOptions) NewExportTx(
 	outputs []*secp256k1fx.TransferOutput,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*atomic.UnsignedExportTx, error) {
+) (*UnsignedExportTx, error) {
 	return b.Builder.NewExportTx(
 		chainID,
 		outputs,

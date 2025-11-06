@@ -29,7 +29,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm"
@@ -41,7 +40,6 @@ import (
 const (
 	// Constants defining the names of shell variables whose value can
 	// configure network orchestration.
-	RootNetworkDirEnvName = "TMPNET_ROOT_NETWORK_DIR"
 	NetworkDirEnvName     = "TMPNET_NETWORK_DIR"
 
 	// Message to log indicating where to look for metrics and logs for network
@@ -1021,7 +1019,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 		return nil
 	}
 
-	nodeRPCVersion, err := getRPCVersion(log, config.Lux NodePath, "--version-json")
+	nodeRPCVersion, err := getRPCVersion(log, config.LuxNodePath, "--version-json")
 	if err != nil {
 		log.Warn("unable to check rpcchainvm version for node", log.Error(err))
 		return nil
@@ -1056,7 +1054,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			} else if nodeRPCVersion != vmRPCVersion {
 				log.Error("unexpected rpcchainvm version for VM binary",
 					log.String("subnet", subnet.Name),
-					log.String("nodePath", config.Lux NodePath),
+					log.String("nodePath", config.LuxNodePath),
 					log.Uint64("nodeRPCVersion", nodeRPCVersion),
 					log.String("vmPath", vmPath),
 					log.Uint64("vmRPCVersion", vmRPCVersion),

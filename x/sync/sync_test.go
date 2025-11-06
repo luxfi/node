@@ -1078,7 +1078,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 }
 
 func Test_Sync_Result_Correct_Root_Update_Root_During(t *testing.T) {
-	t.Skip("FLAKY")
+	t.Skip("Test exhibits timing-dependent behavior; requires refactoring for determinism")
 
 	require := require.New(t)
 

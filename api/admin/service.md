@@ -65,7 +65,7 @@ Give a blockchain an alias, a different name that can be used any place the bloc
 <Callout title="Note">
 Aliasing a chain can also be done via the [Node API](https://docs.lux.network/docs/nodes/configure/configs-flags#--chain-aliases-file-string).
 
-Note that the alias is set for each chain on each node individually. In a multi-node Lux L1, the same alias should be configured on each node to use an alias across an Lux L1 successfully. Setting an alias for a chain on one node does not register that alias with other nodes automatically.
+Note that the alias is set for each chain on each node individually. In a multi-node Lux L1, the same alias should be configured on each node to use an alias across a Lux L1 successfully. Setting an alias for a chain on one node does not register that alias with other nodes automatically.
 </Callout>
 
 **Signature**:

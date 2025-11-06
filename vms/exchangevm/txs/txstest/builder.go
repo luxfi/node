@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/vms/components/lux"
@@ -18,6 +19,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
+	wkeychain "github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
@@ -218,15 +220,32 @@ func (b *Builder) ExportTx(
 	return signer.SignUnsigned(context.Background(), xSigner, utx)
 }
 
+// keychainAdapter adapts secp256k1fx.Keychain (utils/crypto keychain) to wallet keychain
+type keychainAdapter struct {
+	kc *secp256k1fx.Keychain
+}
+
+func (k *keychainAdapter) Get(addr ids.ShortID) (wkeychain.Signer, bool) {
+	utilsSigner, ok := k.kc.Get(addr)
+	if !ok {
+		return nil, false
+	}
+	return utilsSigner.(wkeychain.Signer), true
+}
+
+func (k *keychainAdapter) Addresses() set.Set[ids.ShortID] {
+	return k.kc.Addresses()
+}
+
 func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Signer) {
 	var (
-		addrs = kc.Addresses()
-		wa    = &walletUTXOsAdapter{
+		addrs     = kc.Addresses()
+		wa        = &walletUTXOsAdapter{
 			utxos: b.utxos,
 			addrs: addrs,
 		}
 		builder   = builder.New(addrs, b.ctx, wa)
-		kcAdapter = kc
+		kcAdapter = &keychainAdapter{kc: kc}
 		signer    = signer.New(kcAdapter, wa)
 	)
 	return builder, signer
