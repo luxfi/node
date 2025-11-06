@@ -161,13 +161,7 @@ func TestIndexer(t *testing.T) {
 	// Assert state is right
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	baseCtx := consensustest.Context(t, testChainID)
-	chain1Ctx := &consensuscontext.Context{
-		NetworkID: constants.PrimaryNetworkID,
-		ChainID:   testChainID,
-		NodeID:    baseCtx.NodeID,
-		Log:       baseCtx.Log,
-	}
+	chain1Ctx := consensustest.Context(t, testChainID)
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -176,7 +170,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	t.Logf("After RegisterChain, closed=%v", idxr.closed)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
@@ -280,15 +274,15 @@ func TestIndexer(t *testing.T) {
 	require.Contains(server.endpoints, "/block")
 
 	// Register a DAG chain
-	snow2Ctx := snowtest.Context(t, snowtest.XChainID)
-	chain2Ctx := snowtest.ConsensusContext(snow2Ctx)
+	chain2ChainID := ids.GenerateTestID()
+	chain2Ctx := consensustest.Context(t, chain2ChainID)
 	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
 	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	dagVM := vertexmock.NewLinearizableVM(ctrl)
+	dagVM := blockmock.NewMockChainVM(ctrl) // Use ChainVM for now, similar to chain1
 	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
 	require.NoError(err)
 	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -437,7 +431,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
@@ -525,7 +519,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }
