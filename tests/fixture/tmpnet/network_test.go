@@ -26,12 +26,12 @@ func TestNetworkSerialization(t *testing.T) {
 	network.PrimaryNetConfig = ConfigMap{
 		"validatorOnly": true,
 	}
-	require.NoError(network.EnsureDefaultConfig(logging.NoLog{}))
+	require.NoError(network.EnsureDefaultConfig(log.NoLog{}))
 	require.NoError(network.Create(tmpDir))
 	// Ensure node runtime is initialized
 	require.NoError(network.readNodes(ctx))
 
-	loadedNetwork, err := ReadNetwork(ctx, logging.NoLog{}, network.Dir)
+	loadedNetwork, err := ReadNetwork(ctx, log.NoLog{}, network.Dir)
 	require.NoError(err)
 	for _, key := range loadedNetwork.PreFundedKeys {
 		// Address() enables comparison with the original network by
