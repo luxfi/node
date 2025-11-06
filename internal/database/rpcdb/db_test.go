@@ -121,7 +121,7 @@ func TestHealthCheck(t *testing.T) {
 			require := require.New(t)
 
 			baseDB := setupDB(t)
-			db := corruptabledb.New(baseDB.server, logging.NoLog{})
+			db := corruptabledb.New(baseDB.server, log.NoLog{})
 			defer db.Close()
 			require.NoError(scenario.testFn(db))
 

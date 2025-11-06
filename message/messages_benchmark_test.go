@@ -4,6 +4,7 @@
 package message
 
 import (
+	"github.com/luxfi/metric"
 	"net"
 	"os"
 	"testing"

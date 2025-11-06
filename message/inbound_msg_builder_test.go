@@ -4,6 +4,7 @@
 package message
 
 import (
+	"github.com/luxfi/metric"
 	"testing"
 	"time"
 

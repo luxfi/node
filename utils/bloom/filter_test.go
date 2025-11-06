@@ -4,7 +4,6 @@
 package bloom
 
 import (
-	"github.com/luxfi/metric"
 	"math/rand"
 	"testing"
 
