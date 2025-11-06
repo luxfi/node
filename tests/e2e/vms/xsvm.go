@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/errgroup"
 
@@ -79,9 +80,9 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		sourceAPINode := sourceValidators[0]
 		sourceAPINodeURI := e2e.GetLocalURI(tc, sourceAPINode)
 		tc.Log().Info("issuing transactions for source subnet",
-			log.String("subnetName", subnetAName),
+			logfields.UserString("subnetName", subnetAName),
 			log.Stringer("nodeID", sourceAPINode.NodeID),
-			log.String("nodeURI", sourceAPINodeURI),
+			logfields.UserString("nodeURI", sourceAPINodeURI),
 		)
 
 		destinationValidators := getNodesForIDs(network.Nodes, destinationNet.ValidatorIDs)
@@ -89,9 +90,9 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		destinationAPINode := destinationValidators[0]
 		destinationAPINodeURI := e2e.GetLocalURI(tc, destinationAPINode)
 		tc.Log().Info("issuing transactions for destination subnet",
-			log.String("subnetName", subnetBName),
+			logfields.UserString("subnetName", subnetBName),
 			log.Stringer("nodeID", destinationAPINode.NodeID),
-			log.String("nodeURI", destinationAPINodeURI),
+			logfields.UserString("nodeURI", destinationAPINodeURI),
 		)
 
 		destinationKey := e2e.NewPrivateKey(tc)
@@ -253,7 +254,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 					return err
 				}
 
-				log.Info("sent message", log.String("msg", msg))
+				log.Info("sent message", logfields.UserString("msg", msg))
 			}
 
 			return nil
@@ -270,7 +271,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 					return fmt.Errorf("unexpected ping reply: %s", reply.Message)
 				}
 
-				log.Info("received message", log.String("msg", reply.Message))
+				log.Info("received message", logfields.UserString("msg", reply.Message))
 			}
 
 			return nil

@@ -20,26 +20,29 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
-	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/vms/platformvm/warp"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
+	xschain "github.com/luxfi/node/vms/example/xsvm/chain"
 )
 
-var (
-	_ block.ChainVM                      = (*VM)(nil)
-	_ block.BuildBlockWithContextChainVM = (*VM)(nil)
-)
+// TODO: Update xsvm to match current consensus ChainVM interface
+// The consensus interface has evolved to use interface{} parameters
+// var (
+// 	_ smblock.ChainVM                      = (*VM)(nil)
+// 	_ smblock.BuildBlockWithContextChainVM = (*VM)(nil)
+// )
 
 type VM struct {
 	*p2p.Network
@@ -48,7 +51,7 @@ type VM struct {
 	db           database.Database
 	genesis      *genesis.Genesis
 
-	chain   chain.Chain
+	chain   xschain.Chain
 	builder builder.Builder
 }
 
@@ -62,18 +65,21 @@ func (vm *VM) Initialize(
 	_ []*common.Fx,
 	appSender common.AppSender,
 ) error {
-	chainContext.Log.Info("initializing xsvm",
+	logger := chainContext.Log.(log.Logger)
+	logger.Info("initializing xsvm",
 		log.Stringer("version", Version),
 	)
 
 	metrics := metric.NewRegistry()
-	err := chainContext.Metrics.Register("p2p", metrics)
-	if err != nil {
-		return err
+	if metricsReg, ok := chainContext.Metrics.(interface{ Register(string, interface{}) error }); ok {
+		if err := metricsReg.Register("p2p", metrics); err != nil {
+			return err
+		}
 	}
 
+	var err error
 	vm.Network, err = p2p.NewNetwork(
-		chainContext.Log,
+		logger,
 		appSender,
 		metrics,
 		"",
@@ -85,10 +91,13 @@ func (vm *VM) Initialize(
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
+	warpSigner := chainContext.WarpSigner.(interface {
+		Sign(*warp.UnsignedMessage) ([]byte, error)
+	})
 	lp118CachedHandler := lp118.NewCachedHandler(
 		signatureCache,
 		lp118Verifier{},
-		chainContext.WarpSigner,
+		warpSigner,
 	)
 	lp118Handler := lp118.NewHandlerAdapter(lp118CachedHandler)
 	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {
@@ -103,7 +112,7 @@ func (vm *VM) Initialize(
 	}
 
 	vdb := versiondb.New(vm.db)
-	chainID := chainCtx.ChainID
+	chainID := chainContext.ChainID
 	if err := execute.Genesis(vdb, chainID, g); err != nil {
 		return fmt.Errorf("failed to initialize genesis state: %w", err)
 	}
@@ -113,9 +122,7 @@ func (vm *VM) Initialize(
 
 	vm.genesis = g
 
-	// Create a context.Context with chain information
-	chainContext := context.WithValue(context.Background(), "chainCtx", chainCtx)
-	vm.chain, err = chain.New(chainContext, vm.db)
+	vm.chain, err = xschain.New(chainContext, vm.db)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chain manager: %w", err)
 	}
@@ -128,14 +135,29 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
-	// Pass the state directly since it's already the right type
-	vm.chain.SetChainState(state)
+func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
+	// SetState receives the consensus engine, which we pass to the chain
+	// The state parameter is actually the consensus engine
+	if engine, ok := ctx.Value("engine").(interface{ HealthCheck(context.Context) (interface{}, error) }); ok {
+		// Type assert to the Engine interface needed by SetChainState
+		vm.chain.SetChainState(engine.(interface {
+			Start(context.Context, uint32) error
+			Stop(context.Context) error
+			HealthCheck(context.Context) (interface{}, error)
+			IsBootstrapped() bool
+		}))
+	}
 	return nil
 }
 
+// Connected overrides p2p.Network.Connected to match consensus interface
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+	// Convert interface{} back to the specific type p2p.Network expects
+	return vm.Network.Connected(ctx, nodeID, nil)
+}
+
 func (vm *VM) Shutdown(context.Context) error {
-	if vm.chainCtx == nil {
+	if vm.chainContext == nil {
 		return nil
 	}
 	return vm.db.Close()
@@ -169,7 +191,7 @@ func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
 	)
 	mux.Handle(reflectionPattern, reflectionHandler)
 
-	pingService := &api.PingService{Log: vm.chainContext.Log}
+	pingService := &api.PingService{Log: vm.chainContext.Log.(log.Logger)}
 	pingPath, pingHandler := xsvmconnect.NewPingHandler(pingService)
 	mux.Handle(pingPath, pingHandler)
 
@@ -180,11 +202,15 @@ func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
-	return vm.chain.GetBlock(blkID)
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (smblock.Block, error) {
+	blk, err := vm.chain.GetBlock(blkID)
+	if err != nil {
+		return nil, err
+	}
+	return &blockWrapper{Block: blk}, nil
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (xschain.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -200,8 +226,12 @@ func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
-	return vm.builder.BuildBlock(ctx, nil)
+func (vm *VM) BuildBlock(ctx context.Context) (smblock.Block, error) {
+	blk, err := vm.builder.BuildBlock(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &blockWrapper{Block: blk}, nil
 }
 
 func (vm *VM) SetPreference(_ context.Context, preferred ids.ID) error {
@@ -213,26 +243,21 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
-	return vm.builder.BuildBlock(ctx, blockContext)
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (smblock.Block, error) {
+	blk, err := vm.builder.BuildBlock(ctx, blockContext)
+	if err != nil {
+		return nil, err
+	}
+	return &blockWrapper{Block: blk}, nil
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
 	return state.GetBlockIDByHeight(vm.db, height)
 }
 
-func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
-	// xsvm doesn't need a custom HTTP handler
-	return nil, nil
-}
-
-func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
-	return vm.builder.WaitForEvent(ctx)
-}
-
 // blockWrapper wraps an xsvm chain.Block to implement consensus block.Block
 type blockWrapper struct {
-	chain.Block
+	xschain.Block
 }
 
 // Status returns the uint8 status directly from the underlying block

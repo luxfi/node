@@ -4,7 +4,7 @@
 package p
 
 import (
-	"fmt"
+"fmt"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -12,11 +12,8 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm"
@@ -46,7 +43,7 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 			pWallet     = baseWallet.P()
 			pBuilder    = pWallet.Builder()
 			pContext    = pBuilder.Context()
-			luxAssetID = pContext.LUXAssetID
+			luxAssetID = pContext.XAssetID
 		)
 
 		const delegatorCount = 15

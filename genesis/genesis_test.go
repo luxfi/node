@@ -367,10 +367,6 @@ func TestGenesis(t *testing.T) {
 			expectedID: "UUvXi6j7QhVvgpbKM89MP5HdrxKm9CaJeHc187TsDNf8nZdLk",
 		},
 		{
-			config:     &FujiConfig,
-			expectedID: "MSj6o9TpezwsQx4Tv7SHqpVvCbJ8of1ikjsqPZ1bKRjc9zBy3",
-		},
-		{
 			config:     &unmodifiedLocalConfig,
 			expectedID: "2nRRoR76HuEk1JjDpRdN8FKvZFvUXWxY3b9C5rZRPFjcgEh7S7",
 		},
@@ -513,7 +509,7 @@ func TestCChainGenesisTimestamp(t *testing.T) {
 			expectedGenesisTime: 0,
 		},
 		{
-			networkID:           constants.FujiID,
+			networkID:           constants.TestnetID,
 			expectedGenesisTime: 0,
 		},
 		{

@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -48,7 +48,7 @@ func WaitForCompletion(
 		if err := json.Unmarshal(testDetailsBytes, &testDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal test details: %w", err)
 		}
-		log.Info("Loaded test details", log.Reflect("testDetails", testDetails))
+		log.Info("Loaded test details", logfields.Reflect("testDetails", testDetails))
 	}
 
 	clientset, err := getClientset(log)
@@ -60,15 +60,15 @@ func WaitForCompletion(
 	defer cancel()
 
 	log.Info("Retrieving pod to determine bootstrap test config",
-		log.String("namespace", namespace),
-		log.String("pod", podName),
-		log.String("container", nodeContainerName),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("pod", podName),
+		logfields.UserString("container", nodeContainerName),
 	)
 	testConfig, err := GetBootstrapTestConfigFromPod(ctx, clientset, namespace, podName, nodeContainerName)
 	if err != nil {
 		return fmt.Errorf("failed to determine bootstrap test config: %w", err)
 	}
-	log.Info("Retrieved bootstrap test config", log.Reflect("testConfig", testConfig))
+	log.Info("Retrieved bootstrap test config", logfields.Reflect("testConfig", testConfig))
 
 	// Avoid checking node health before it reports initial ready
 	log.Info("Waiting for pod readiness")
@@ -83,26 +83,28 @@ func WaitForCompletion(
 
 		// Define common fields for logging
 		diskUsage := getDiskUsage(log, dataDir)
-		commonFields := []log.Field{
-			log.String("diskUsage", diskUsage),
-			log.Duration("duration", time.Since(testDetails.StartTime)),
-		}
 
 		// Check whether the node is reporting healthy which indicates that bootstrap is complete
 		if healthy, err := tmpnet.CheckNodeHealth(ctx, nodeURL); err != nil {
-			log.Error("failed to check node health", log.Error(err))
+			log.Error("failed to check node health", logfields.Err(err))
 			return false, nil
 		} else {
 			if !healthy.Healthy {
-				log.Info("Node reported unhealthy", commonFields...)
+				log.Info("Node reported unhealthy",
+					logfields.UserString("diskUsage", diskUsage),
+					logfields.Duration("duration", time.Since(testDetails.StartTime)),
+				)
 				return false, nil
 			}
 
 			log.Info("Node reported healthy")
 		}
 
-		commonFields = append(commonFields, log.Reflect("testConfig", testConfig))
-		log.Info("Bootstrap completed successfully", commonFields...)
+		log.Info("Bootstrap completed successfully",
+			logfields.UserString("diskUsage", diskUsage),
+			logfields.Duration("duration", time.Since(testDetails.StartTime)),
+			logfields.Reflect("testConfig", testConfig),
+		)
 
 		return true, nil
 	}); err != nil {
@@ -117,7 +119,7 @@ func WaitForCompletion(
 		log.Info("Starting pod to get the image id for the `latest` tag")
 		latestImageDetails, err := getLatestImageDetails(ctx, log, clientset, namespace, testConfig.Image, nodeContainerName)
 		if err != nil {
-			log.Error("failed to get latest image id", log.Error(err))
+			log.Error("failed to get latest image id", logfields.Err(err))
 			return false, nil
 		}
 
@@ -127,13 +129,13 @@ func WaitForCompletion(
 		}
 
 		log.Info("Found updated image",
-			log.String("image", latestImageDetails.Image),
-			log.Reflect("versions", latestImageDetails.Versions),
+			logfields.UserString("image", latestImageDetails.Image),
+			logfields.Reflect("versions", latestImageDetails.Versions),
 		)
 
 		log.Info("Updating StatefulSet to trigger a new test")
 		if err := setImageDetails(ctx, log, clientset, namespace, podName, latestImageDetails); err != nil {
-			log.Error("failed to set container image", log.Error(err))
+			log.Error("failed to set container image", logfields.Err(err))
 			return false, nil
 		}
 
@@ -160,7 +162,7 @@ func getDiskUsage(log log.Logger, dir string) string {
 	if err != nil {
 		exitError, ok := err.(*exec.ExitError)
 		if !ok {
-			log.Error("Error executing du", log.Error(err))
+			log.Error("Error executing du", logfields.Err(err))
 			return ""
 		}
 		switch exitError.ExitCode() {
@@ -170,16 +172,16 @@ func getDiskUsage(log log.Logger, dir string) string {
 			// usage message can be printed.
 		case 2:
 			log.Error("Incorrect usage of du command for dir",
-				log.String("dir", dir),
-				log.String("stderr", stderr.String()),
-				log.Error(err),
+				logfields.UserString("dir", dir),
+				logfields.UserString("stderr", stderr.String()),
+				logfields.Err(err),
 			)
 			return ""
 		default:
 			log.Error("du command failed for dir",
-				log.String("dir", dir),
-				log.String("stderr", stderr.String()),
-				log.Error(err),
+				logfields.UserString("dir", dir),
+				logfields.UserString("stderr", stderr.String()),
+				logfields.Err(err),
 			)
 			return ""
 		}
@@ -188,7 +190,7 @@ func getDiskUsage(log log.Logger, dir string) string {
 	usageParts := strings.Split(string(output), "\t")
 	if len(usageParts) != 2 {
 		log.Error("Unexpected output from du command",
-			log.String("output", string(output)),
+			logfields.UserString("output", string(output)),
 		)
 	}
 

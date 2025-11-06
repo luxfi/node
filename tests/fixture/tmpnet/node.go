@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
@@ -259,7 +260,7 @@ func (n *Node) EnsureKeys() error {
 // Ensures a BLS signing key is generated if not already present.
 func (n *Node) EnsureBLSSigningKey() error {
 	// Attempt to retrieve an existing key
-	existingKey := n.Flags[config.StakingSignerKeyContentKey]
+	existingKey, _ := n.Flags[config.StakingSignerKeyContentKey].(string)
 	if len(existingKey) > 0 {
 		// Nothing to do
 		return nil
@@ -279,8 +280,8 @@ func (n *Node) EnsureStakingKeypair() error {
 	keyKey := config.StakingTLSKeyContentKey
 	certKey := config.StakingCertContentKey
 
-	key := n.Flags[keyKey]
-	cert := n.Flags[certKey]
+	key, _ := n.Flags[keyKey].(string)
+	cert, _ := n.Flags[certKey].(string)
 	if len(key) == 0 && len(cert) == 0 {
 		// Generate new keypair
 		tlsCertBytes, tlsKeyBytes, err := staking.NewCertAndKeyBytes()
@@ -300,7 +301,7 @@ func (n *Node) EnsureStakingKeypair() error {
 // Derives the nodes proof-of-possession. Requires the node to have a
 // BLS signing key.
 func (n *Node) GetProofOfPossession() (*signer.ProofOfPossession, error) {
-	signingKey := n.Flags[config.StakingSignerKeyContentKey]
+	signingKey, _ := n.Flags[config.StakingSignerKeyContentKey].(string)
 	signingKeyBytes, err := base64.StdEncoding.DecodeString(signingKey)
 	if err != nil {
 		return nil, err
@@ -322,7 +323,7 @@ func (n *Node) EnsureNodeID() error {
 	keyKey := config.StakingTLSKeyContentKey
 	certKey := config.StakingCertContentKey
 
-	key := n.Flags[keyKey]
+	key, _ := n.Flags[keyKey].(string)
 	if len(key) == 0 {
 		return errMissingTLSKeyForNodeID
 	}
@@ -331,7 +332,7 @@ func (n *Node) EnsureNodeID() error {
 		return fmt.Errorf("failed to ensure node ID: failed to base64 decode value for %q: %w", keyKey, err)
 	}
 
-	cert := n.Flags[certKey]
+	cert, _ := n.Flags[certKey].(string)
 	if len(cert) == 0 {
 		return errMissingCertForNodeID
 	}
@@ -375,12 +376,12 @@ func (n *Node) composeFlags() (FlagsMap, error) {
 	flags.SetDefaults(DefaultTmpnetFlags())
 
 	// Convert the network id to a string to ensure consistency in JSON round-tripping.
-	flags.SetDefault(config.NetworkNameKey, strconv.FormatUint(uint64(n.network.GetNetworkID()), 10))
+	flags[config.NetworkNameKey] = strconv.FormatUint(uint64(n.network.GetNetworkID()), 10)
 
 	// Set the bootstrap configuration
 	bootstrapIPs, bootstrapIDs := n.network.GetBootstrapIPsAndIDs(n)
-	flags.SetDefault(config.BootstrapIDsKey, strings.Join(bootstrapIDs, ","))
-	flags.SetDefault(config.BootstrapIPsKey, strings.Join(bootstrapIPs, ","))
+	flags[config.BootstrapIDsKey] = strings.Join(bootstrapIDs, ",")
+	flags[config.BootstrapIPsKey] = strings.Join(bootstrapIPs, ",")
 
 	// TODO(marun) Maybe avoid computing content flags for each node start?
 
@@ -389,12 +390,12 @@ func (n *Node) composeFlags() (FlagsMap, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get genesis file content: %w", err)
 		}
-		flags.SetDefault(config.GenesisFileContentKey, genesisFileContent)
+		flags[config.GenesisFileContentKey] = genesisFileContent
 
 		isSingleNodeNetwork := len(n.network.Nodes) == 1 && len(n.network.Genesis.InitialStakers) == 1
 		if isSingleNodeNetwork {
 			n.network.log.Info("defaulting to sybil protection disabled to enable a single-node network to start")
-			flags.SetDefault(config.SybilProtectionEnabledKey, "false")
+			flags[config.SybilProtectionEnabledKey] = "false"
 		}
 	}
 
@@ -403,7 +404,7 @@ func (n *Node) composeFlags() (FlagsMap, error) {
 		return nil, fmt.Errorf("failed to get subnet config content: %w", err)
 	}
 	if len(subnetConfigContent) > 0 {
-		flags.SetDefault(config.NetConfigContentKey, subnetConfigContent)
+		flags[config.NetConfigContentKey] = subnetConfigContent
 	}
 
 	chainConfigContent, err := n.network.GetChainConfigContent()
@@ -411,7 +412,7 @@ func (n *Node) composeFlags() (FlagsMap, error) {
 		return nil, fmt.Errorf("failed to get chain config content: %w", err)
 	}
 	if len(chainConfigContent) > 0 {
-		flags.SetDefault(config.ChainConfigContentKey, chainConfigContent)
+		flags[config.ChainConfigContentKey] = chainConfigContent
 	}
 
 	return flags, nil
@@ -433,7 +434,7 @@ func (n *Node) WaitForHealthy(ctx context.Context) error {
 		case err != nil:
 			n.network.log.Verbo("failed to query node health",
 				log.Stringer("nodeID", n.NodeID),
-				log.Error(err),
+				logfields.Err(err),
 			)
 			continue
 		case healthy:

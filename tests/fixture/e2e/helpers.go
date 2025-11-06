@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/geth/ethclient"
+	evmethclient "github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/geth/core/types"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
@@ -25,31 +25,18 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	ethereum "github.com/luxfi/geth"
 )
 
-// GetEnv returns a test environment
-func GetEnv(tc tests.TestContext) *TestEnvironment {
-	if Env != nil {
-		return Env
-	}
-	require.Fail(ginkgo.GinkgoT(), "Test environment not initialized. Call InitSharedTestEnvironment first.")
-	return nil
-}
-
-// NewPrivateKey creates a new private key
-func NewPrivateKey(tc tests.TestContext) *secp256k1.PrivateKey {
-	sk, err := secp256k1.NewPrivateKey()
-	require.NoError(ginkgo.GinkgoT(), err)
-	return sk
-}
+// Note: GetEnv is defined in env.go
+// Note: NewPrivateKey is defined below
 
 // NewWallet with TestContext - overloaded version for tests
 func NewWalletWithContext(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.Wallet {
-	return NewWallet(keychain, nodeURI)
+	return NewWallet(tc, keychain, nodeURI)
 }
 
 const (
@@ -79,51 +66,30 @@ func NewPrivateKey(tc tests.TestContext) *secp256k1.PrivateKey {
 }
 
 // Create a new wallet for the provided keychain against the specified node URI.
-func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) *primary.Wallet {
+func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.Wallet {
 	log := tc.Log()
-	log.Info("initializing a new wallet",
-		log.Stringer("nodeID", nodeURI.NodeID),
-		log.String("URI", nodeURI.URI),
-	)
-	baseWallet, err := primary.MakeWallet(
-		tc.DefaultContext(),
-		nodeURI.URI,
-		keychain,
-		keychain,
-		primary.WalletConfig{},
-	)
+	log.Info("initializing a new wallet")
+	
+	keychain2 := secp256k1fx.NewKeychain(keychain.Keys...)
+	adapter := primary.NewKeychainAdapter(keychain2)
+	
+	wallet, err := primary.MakeWallet(tc.DefaultContext(), &primary.WalletConfig{
+		URI:          nodeURI.URI,
+		LUXKeychain:  adapter,
+		EthKeychain:  adapter,
+	})
 	require.NoError(tc, err)
-	wallet := primary.NewWalletWithOptions(
-		baseWallet,
-		common.WithIssuanceHandler(func(r common.IssuanceReceipt) {
-			log.Info("issued transaction",
-				log.String("chainAlias", r.ChainAlias),
-				log.Stringer("txID", r.TxID),
-				log.Duration("duration", r.Duration),
-			)
-		}),
-		common.WithConfirmationHandler(func(r common.ConfirmationReceipt) {
-			log.Info("confirmed transaction",
-				log.String("chainAlias", r.ChainAlias),
-				log.Stringer("txID", r.TxID),
-				log.Duration("totalDuration", r.TotalDuration),
-				log.Duration("confirmationDuration", r.ConfirmationDuration),
-			)
-		}),
-		// Reducing the default from 100ms speeds up detection of tx acceptance
-		common.WithPollFrequency(10*time.Millisecond),
-	)
 	OutputWalletBalances(tc, wallet)
 	return wallet
 }
 
 // OutputWalletBalances outputs the X-Chain and P-Chain balances of the provided wallet.
-func OutputWalletBalances(tc tests.TestContext, wallet *primary.Wallet) {
+func OutputWalletBalances(tc tests.TestContext, wallet primary.Wallet) {
 	_, _ = GetWalletBalances(tc, wallet)
 }
 
 // GetWalletBalances retrieves the X-Chain and P-Chain balances of the provided wallet.
-func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, uint64) {
+func GetWalletBalances(tc tests.TestContext, wallet primary.Wallet) (uint64, uint64) {
 	require := require.New(tc)
 	var (
 		xWallet  = wallet.X()
@@ -137,7 +103,7 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 	require.NoError(err, "failed to fetch P-chain balances")
 	var (
 		xContext    = xBuilder.Context()
-		luxAssetID = xContext.LUXAssetID
+		luxAssetID = xContext.XAssetID
 		xLUX       = xBalances[luxAssetID]
 		pLUX       = pBalances[luxAssetID]
 	)
@@ -149,14 +115,14 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 }
 
 // Create a new eth client targeting the specified node URI.
-func NewEthClient(tc tests.TestContext, nodeURI tmpnet.NodeURI) *ethclient.Client {
+func NewEthClient(tc tests.TestContext, nodeURI tmpnet.NodeURI) evmethclient.Client {
 	tc.Log().Info("initializing a new eth client",
 		log.Stringer("nodeID", nodeURI.NodeID),
 		log.String("URI", nodeURI.URI),
 	)
 	nodeAddress := strings.Split(nodeURI.URI, "//")[1]
 	uri := fmt.Sprintf("ws://%s/ext/bc/C/ws", nodeAddress)
-	client, err := ethclient.Dial(uri)
+	client, err := evmethclient.Dial(uri)
 	require.NoError(tc, err)
 	return client
 }
@@ -188,7 +154,7 @@ func WaitForHealthy(t require.TestingT, node *tmpnet.Node) {
 
 // Sends an eth transaction and waits for the transaction receipt from the
 // execution of the transaction.
-func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signedTx *types.Transaction) *types.Receipt {
+func SendEthTransaction(tc tests.TestContext, ethClient evmethclient.Client, signedTx *types.Transaction) *types.Receipt {
 	require := require.New(tc)
 
 	txID := signedTx.Hash()
@@ -221,7 +187,7 @@ func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signe
 
 // Determines the suggested gas price for the configured client that will
 // maximize the chances of transaction acceptance.
-func SuggestGasPrice(tc tests.TestContext, ethClient *ethclient.Client) *big.Int {
+func SuggestGasPrice(tc tests.TestContext, ethClient evmethclient.Client) *big.Int {
 	gasPrice, err := ethClient.SuggestGasPrice(tc.DefaultContext())
 	require.NoError(tc, err)
 
@@ -237,7 +203,7 @@ func SuggestGasPrice(tc tests.TestContext, ethClient *ethclient.Client) *big.Int
 }
 
 // Helper simplifying use via an option of a gas price appropriate for testing.
-func WithSuggestedGasPrice(tc tests.TestContext, ethClient *ethclient.Client) common.Option {
+func WithSuggestedGasPrice(tc tests.TestContext, ethClient evmethclient.Client) common.Option {
 	baseFee := SuggestGasPrice(tc, ethClient)
 	return common.WithBaseFee(baseFee)
 }

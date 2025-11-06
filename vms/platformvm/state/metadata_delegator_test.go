@@ -11,8 +11,6 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

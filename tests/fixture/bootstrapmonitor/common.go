@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -87,10 +87,10 @@ func setImageDetails(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to patch statefulset %s.%s: %w", namespace, statefulSetName, err)
 	}
 	log.Info("Updated statefulset to target new image",
-		log.String("namespace", namespace),
-		log.String("statefulSetName", statefulSetName),
-		log.String("image", imageDetails.Image),
-		log.Reflect("versions", imageDetails.Versions),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSetName", statefulSetName),
+		logfields.UserString("image", imageDetails.Image),
+		logfields.Reflect("versions", imageDetails.Versions),
 	)
 	return nil
 }
@@ -110,8 +110,8 @@ func getBaseImageName(log log.Logger, imageName string) (string, error) {
 	case 2:
 		// Ambiguous image name - could contain a tag or a registry
 		log.Info("Derived tag-less image name from string",
-			log.String("tagLessImageName", imageNameParts[0]),
-			log.String("imageName", imageName),
+			logfields.UserString("tagLessImageName", imageNameParts[0]),
+			logfields.UserString("imageName", imageName),
 		)
 		return imageNameParts[0], nil
 	case 3:

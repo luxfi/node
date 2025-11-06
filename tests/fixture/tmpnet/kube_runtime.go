@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -87,9 +88,9 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 	)
 
 	log.Debug("reading state for node",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -98,16 +99,16 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 	}
 
 	log.Debug("checking if StatefulSet exists",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		log.Debug("StatefulSet not found",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 		p.setNotRunning()
 		return nil
@@ -118,9 +119,9 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 
 	if scale.Spec.Replicas == 0 {
 		log.Debug("StatefulSet has no replicas",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulset", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulset", statefulSetName),
 		)
 		p.setNotRunning()
 		return nil
@@ -192,9 +193,9 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	)
 
 	log.Trace("starting node",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -203,18 +204,18 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Debug("attempting to retrieve existing StatefulSet",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	_, err = clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 	if err == nil {
 		// Stateful exists - make sure it is scaled up and running
 
 		log.Debug("attempting to retrieve scale for existing StatefulSet",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 		scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 		if err != nil {
@@ -223,17 +224,17 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 
 		if scale.Spec.Replicas != 0 {
 			log.Debug("StatefulSet is already running",
-				log.String("nodeID", nodeID),
-				log.String("namespace", namespace),
-				log.String("statefulSet", statefulSetName),
+				logfields.UserString("nodeID", nodeID),
+				logfields.UserString("namespace", namespace),
+				logfields.UserString("statefulSet", statefulSetName),
 			)
 			return nil
 		}
 
 		log.Debug("attempting to scale up StatefulSet",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 		scale.Spec.Replicas = 1
 		_, err = clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).UpdateScale(
@@ -247,9 +248,9 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		}
 
 		log.Debug("scaled up StatefulSet",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 
 		return nil
@@ -265,9 +266,9 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Debug("creating StatefulSet",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	statefulSet := NewNodeStatefulSet(
 		statefulSetName,
@@ -285,11 +286,11 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		labelKey := runtimeConfig.SchedulingLabelKey
 		labelValue := runtimeConfig.SchedulingLabelValue
 		log.Debug("configuring exclusive scheduling",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
-			log.String("schedulingLabelKey", labelKey),
-			log.String("schedulingLabelValue", labelValue),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
+			logfields.UserString("schedulingLabelKey", labelKey),
+			logfields.UserString("schedulingLabelValue", labelValue),
 		)
 		if labelKey == "" || labelValue == "" {
 			return errors.New("scheduling label key and value must be non-empty when exclusive scheduling is enabled")
@@ -306,9 +307,9 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
 	log.Debug("created StatefulSet",
-		log.String("nodeID", nodeID),
-		log.String("namespace", runtimeConfig.Namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", runtimeConfig.Namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	return p.ensureBootstrapIP(ctx)
@@ -325,9 +326,9 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	)
 
 	log.Trace("initiating node stop",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -335,9 +336,9 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 		return err
 	}
 	log.Debug("retrieving StatefulSet scale",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if err != nil {
@@ -350,9 +351,9 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	}
 
 	log.Debug("setting StatefulSet replicas to zero",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	scale.Spec.Replicas = 0
 	_, err = clientset.AppsV1().StatefulSets(p.runtimeConfig().Namespace).UpdateScale(
@@ -366,9 +367,9 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	}
 
 	log.Debug("StatefulSet replicas set to zero",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	p.setNotRunning()
@@ -388,9 +389,9 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 	)
 
 	log.Trace("waiting for node to stop",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -406,27 +407,27 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 			scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				log.Debug("node stopped: StatefulSet not found",
-					log.String("nodeID", nodeID),
-					log.String("namespace", namespace),
-					log.String("statefulSet", statefulSetName),
+					logfields.UserString("nodeID", nodeID),
+					logfields.UserString("namespace", namespace),
+					logfields.UserString("statefulSet", statefulSetName),
 				)
 				p.setNotRunning()
 				return true, nil
 			}
 			if err != nil {
 				log.Warn("failed to retrieve StatefulSet scale",
-					log.String("nodeID", nodeID),
-					log.String("namespace", namespace),
-					log.String("statefulSet", statefulSetName),
-					log.Error(err),
+					logfields.UserString("nodeID", nodeID),
+					logfields.UserString("namespace", namespace),
+					logfields.UserString("statefulSet", statefulSetName),
+					logfields.Err(err),
 				)
 				return false, nil
 			}
 			if scale.Status.Replicas == 0 {
 				log.Debug("node stopped: StatefulSet scaled to zero replicas",
-					log.String("nodeID", nodeID),
-					log.String("namespace", namespace),
-					log.String("statefulSet", statefulSetName),
+					logfields.UserString("nodeID", nodeID),
+					logfields.UserString("namespace", namespace),
+					logfields.UserString("statefulSet", statefulSetName),
 				)
 				p.setNotRunning()
 				return true, nil
@@ -452,9 +453,9 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 	)
 
 	log.Trace("initiating node restart",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -496,9 +497,9 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 	}
 
 	log.Debug("ensuring StatefulSet is up to date",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	updatedStatefulSet, err := clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).Patch(
 		ctx,
@@ -514,9 +515,9 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 
 	if updatedGeneration == statefulset.Generation {
 		log.Debug("StatefulSet generation unchanged. Forcing restart.",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 
 		// Force a restart by scaling up and down
@@ -538,10 +539,10 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 			statefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 			if err != nil {
 				log.Debug("failed to retrieve StatefulSet",
-					log.String("nodeID", nodeID),
-					log.String("namespace", namespace),
-					log.String("statefulSet", statefulSetName),
-					log.Error(err),
+					logfields.UserString("nodeID", nodeID),
+					logfields.UserString("namespace", namespace),
+					logfields.UserString("statefulSet", statefulSetName),
+					logfields.Err(err),
 				)
 				return false, nil
 			}
@@ -553,9 +554,9 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 				status.UpdatedReplicas == replicas)
 			if finishedRollingOut {
 				log.Debug("StatefulSet finished rolling out",
-					log.String("nodeID", nodeID),
-					log.String("namespace", namespace),
-					log.String("name", statefulSetName),
+					logfields.UserString("nodeID", nodeID),
+					logfields.UserString("namespace", namespace),
+					logfields.UserString("name", statefulSetName),
 				)
 			}
 			return finishedRollingOut, nil
@@ -580,7 +581,7 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	if len(p.node.URI) == 0 {
-		return false, errNotRunning
+		return false, ErrNotRunning
 	}
 
 	uri, cancel, err := p.GetLocalURI(ctx)
@@ -594,8 +595,8 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		return false, err
 	} else if err != nil {
 		p.node.network.log.Verbo("failed to check node health",
-			log.String("nodeID", p.node.NodeID.String()),
-			log.Error(err),
+			logfields.UserString("nodeID", p.node.NodeID.String()),
+			logfields.Err(err),
 		)
 		return false, nil
 	}
@@ -615,17 +616,17 @@ func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 	bootstrapIPs, _ := p.node.network.GetBootstrapIPsAndIDs(p.node)
 	if len(bootstrapIPs) > 0 {
 		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready",
-			log.String("nodeID", nodeID),
-			log.String("namespace", namespace),
-			log.String("statefulSet", statefulSetName),
+			logfields.UserString("nodeID", nodeID),
+			logfields.UserString("namespace", namespace),
+			logfields.UserString("statefulSet", statefulSetName),
 		)
 		return nil
 	}
 
 	log.Trace("waiting for node readiness so that subsequent nodes will have a bootstrap target",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("statefulSet", statefulSetName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("statefulSet", statefulSetName),
 	)
 	return p.waitForPodReadiness(ctx)
 }
@@ -642,9 +643,9 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 	)
 
 	log.Debug("waiting for Pod to become ready",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("pod", podName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("pod", podName),
 	)
 
 	clientset, err := p.getClientset()
@@ -656,15 +657,15 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		return err
 	}
 	log.Debug("pod is ready",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("pod", podName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("pod", podName),
 	)
 
 	log.Debug("retrieving Pod IP",
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("pod", podName),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("pod", podName),
 	)
 	pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
@@ -689,11 +690,11 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		p.node.StakingAddress = stakingAddress
 	}
 	log.Debug(readyMsg,
-		log.String("nodeID", nodeID),
-		log.String("namespace", namespace),
-		log.String("pod", podName),
-		log.String("uri", uri),
-		log.Stringer("stakingAddress", stakingAddress),
+		logfields.UserString("nodeID", nodeID),
+		logfields.UserString("namespace", namespace),
+		logfields.UserString("pod", podName),
+		logfields.UserString("uri", uri),
+		logfields.Stringer("stakingAddress", stakingAddress),
 	)
 
 	return nil

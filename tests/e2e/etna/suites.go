@@ -30,10 +30,14 @@ var _ = ginkgo.Describe("[Etna]", func() {
 
 			now := time.Now()
 			if !upgrades.IsEtnaActivated(now) {
-				tc.Outf("{{green}}Etna is not activated{{/}}: %s (now) < %s (EtnaTime)\n", now, upgrades.EtnaTime)
+				tc.Log().Info("Etna is not activated", 
+					"now", now, 
+					"etnaTime", upgrades.EtnaTime)
 				return
 			}
 
-			tc.Outf("{{green}}Etna is activated{{/}}: %s (now) >= %s (EtnaTime)\n", now, upgrades.EtnaTime)
+			tc.Log().Info("Etna is activated", 
+				"now", now, 
+				"etnaTime", upgrades.EtnaTime)
 		})
 })

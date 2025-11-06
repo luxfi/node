@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -69,25 +70,15 @@ type Net struct {
 }
 
 // Retrieves a wallet configured for use with the subnet
-func (s *Net) GetWallet(ctx context.Context, uri string) (*primary.Wallet, error) {
+func (s *Net) GetWallet(ctx context.Context, uri string) (primary.Wallet, error) {
 	keychain := secp256k1fx.NewKeychain(s.OwningKey)
+	adapter := primary.NewKeychainAdapter(keychain)
 
-	// Only fetch the net transaction if a net ID is present. This won't be true when
-	// the wallet is first used to create the subnet.
-	subnetIDs := []ids.ID{}
-	if s.NetID != ids.Empty {
-		subnetIDs = append(subnetIDs, s.NetID)
-	}
-
-	return primary.MakeWallet(
-		ctx,
-		uri,
-		keychain,
-		keychain,
-		primary.WalletConfig{
-			NetIDs: subnetIDs,
-		},
-	)
+	return primary.MakeWallet(ctx, &primary.WalletConfig{
+		URI:          uri,
+		LUXKeychain:  adapter,
+		EthKeychain:  adapter,
+	})
 }
 
 // Issues the net creation transaction and retains the result. The URI of a node is
@@ -124,7 +115,7 @@ func (s *Net) CreateChains(ctx context.Context, log log.Logger, uri string) erro
 	pWallet := wallet.P()
 
 	log.Info("creating chains for subnet",
-		log.String("subnet", s.Name),
+		logfields.UserString("subnet", s.Name),
 	)
 
 	for _, chain := range s.Chains {
@@ -142,9 +133,9 @@ func (s *Net) CreateChains(ctx context.Context, log log.Logger, uri string) erro
 		chain.ChainID = createChainTx.ID()
 
 		log.Info("created chain",
-			log.Stringer("chain", chain.ChainID),
-			log.String("subnet", s.Name),
-			log.Stringer("vm", chain.VMID),
+			logfields.Stringer("chain", chain.ChainID),
+			logfields.UserString("subnet", s.Name),
+			logfields.Stringer("vm", chain.VMID),
 		)
 	}
 	return nil
@@ -193,8 +184,8 @@ func (s *Net) AddValidators(ctx context.Context, log log.Logger, apiURI string, 
 		}
 
 		log.Info("added validator to subnet",
-			log.String("subnet", s.Name),
-			log.Stringer("nodeID", node.NodeID),
+			logfields.UserString("subnet", s.Name),
+			logfields.Stringer("nodeID", node.NodeID),
 		)
 	}
 
@@ -258,7 +249,7 @@ func WaitForActiveValidators(
 	defer ticker.Stop()
 
 	log.Info("waiting for subnet validators to become active",
-		log.String("subnet", subnet.Name),
+		logfields.UserString("subnet", subnet.Name),
 	)
 
 	for {
@@ -278,7 +269,7 @@ func WaitForActiveValidators(
 		}
 		if allActive {
 			log.Info("saw the expected active validators of the subnet",
-				log.String("subnet", subnet.Name),
+				logfields.UserString("subnet", subnet.Name),
 			)
 			return nil
 		}

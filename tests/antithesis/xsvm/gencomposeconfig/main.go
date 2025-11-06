@@ -6,7 +6,7 @@ package main
 import (
 	"os"
 
-	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests"
@@ -25,7 +25,7 @@ func main() {
 	}
 	if err := antithesis.GenerateComposeConfig(network, baseImageName); err != nil {
 		tests.NewDefaultLogger("").Fatal("failed to generate compose config",
-			log.Error(err),
+			logfields.Err(err),
 		)
 		os.Exit(1)
 	}

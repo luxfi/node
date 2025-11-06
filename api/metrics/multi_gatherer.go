@@ -38,6 +38,11 @@ type multiGatherer struct {
 	gatherers []metric.Gatherer
 }
 
+// NewMultiGatherer creates and returns a new MultiGatherer.
+func NewMultiGatherer() MultiGatherer {
+	return &multiGatherer{}
+}
+
 func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
@@ -57,6 +62,20 @@ func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 	})
 
 	return allFamilies, nil
+}
+
+// Register adds the outputs of gatherer to the results of future calls to
+// Gather with the provided name added to the metrics.
+func (g *multiGatherer) Register(name string, gatherer metric.Gatherer) error {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+
+	if slices.Contains(g.names, name) {
+		return fmt.Errorf("gatherer with name %q already registered", name)
+	}
+
+	g.register(name, gatherer)
+	return nil
 }
 
 func (g *multiGatherer) register(name string, gatherer metric.Gatherer) {

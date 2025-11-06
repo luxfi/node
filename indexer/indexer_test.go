@@ -12,25 +12,20 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	consensuscontext "github.com/luxfi/consensus/context"
-	// "github.com/luxfi/consensus/engine/chain/block/blockmock" // Removed - mock not available
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/versiondb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/dag/vertex/vertexmock"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/constants"
 )
 
 // mockChainVM is a simple mock for testing
@@ -137,6 +132,8 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 // some vertices
 func TestIndexer(t *testing.T) {
 	require := require.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
@@ -164,11 +161,13 @@ func TestIndexer(t *testing.T) {
 	// Assert state is right
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, testChainID)
-	chain1Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
-		NetID:   constants.PrimaryNetworkID,
-		ChainID: testChainID,
-	})
+	baseCtx := consensustest.Context(t, testChainID)
+	chain1Ctx := &consensuscontext.Context{
+		NetworkID: constants.PrimaryNetworkID,
+		ChainID:   testChainID,
+		NodeID:    baseCtx.NodeID,
+		Log:       baseCtx.Log,
+	}
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)

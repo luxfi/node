@@ -4,17 +4,15 @@
 package p
 
 import (
-	"math/big"
+"math/big"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
@@ -24,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainLabel), func() {
@@ -69,11 +67,11 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			cBuilder = cWallet.Builder()
 			cContext = cBuilder.Context()
 
-			luxAssetID = xContext.LUXAssetID
+			luxAssetID = xContext.XAssetID
 		)
 
 		tc.By("defining common configuration")
-		recipientEthAddress := recipientKey.EthAddress()
+		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,

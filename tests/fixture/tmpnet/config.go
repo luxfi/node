@@ -17,7 +17,6 @@ import (
 
 	"github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/params"
-	"github.com/luxfi/geth/plugin/evm"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
@@ -30,9 +29,10 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	
+
+	"crypto/elliptic"
 	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/crypto"
+	gethcrypto "github.com/luxfi/geth/crypto"
 )
 
 const (
@@ -65,14 +65,18 @@ var (
 	errInvalidKeypair              = fmt.Errorf("%q and %q must be provided together or not at all", config.StakingTLSKeyContentKey, config.StakingCertContentKey)
 )
 
-// getEthAddress converts a secp256k1 private key to an Ethereum address
-func getEthAddress(key *secp256k1.PrivateKey) common.Address {
-	return common.Address(crypto.PubkeyToAddress(*(key.PublicKey().ToECDSA())))
-}
-
-// GetEthAddress converts a secp256k1 private key to an Ethereum address (exported version)
+// GetEthAddress converts a secp256k1 private key to an Ethereum address
+// Ethereum address = Keccak256(uncompressed_pubkey[1:])[12:]
 func GetEthAddress(key *secp256k1.PrivateKey) common.Address {
-	return getEthAddress(key)
+	// Get uncompressed public key bytes (65 bytes: 0x04 + 32-byte X + 32-byte Y)
+	pubKey := key.PublicKey().ToECDSA()
+	pubBytes := elliptic.Marshal(secp256k1.S256(), pubKey.X, pubKey.Y)
+
+	// Ethereum address is last 20 bytes of Keccak256(pubkey[1:])
+	hash := gethcrypto.Keccak256(pubBytes[1:]) // Skip the 0x04 prefix
+	var addr common.Address
+	copy(addr[:], hash[12:]) // Take last 20 bytes
+	return addr
 }
 
 // Defines a mapping of flag keys to values intended to be supplied to
@@ -162,7 +166,7 @@ func (c *NetworkConfig) EnsureGenesis(networkID uint32, validatorIDs []ids.NodeI
 	cChainBalances := make(core.GenesisAlloc, len(c.FundedKeys))
 	for _, key := range c.FundedKeys {
 		xChainBalances[key.Address()] = DefaultFundedKeyXChainAmount
-		cChainBalances[getEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[GetEthAddress(key)] = core.GenesisAccount{
 			Balance: DefaultFundedKeyCChainAmount,
 		}
 	}

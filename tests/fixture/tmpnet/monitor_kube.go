@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
@@ -87,8 +88,8 @@ func DeployKubeCollectors(
 	}
 	for _, collectorConfig := range collectorConfigs {
 		log.Info("deploying kube collector",
-			log.String("cmd", collectorConfig.name),
-			log.String("target", collectorConfig.target),
+			logfields.UserString("cmd", collectorConfig.name),
+			logfields.UserString("target", collectorConfig.target),
 		)
 		if err := deployKubeCollector(ctx, log, clientset, dynamicClient, collectorConfig); err != nil {
 			return err
@@ -144,8 +145,8 @@ func createCredentialSecret(
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			log.Info("secret already exists",
-				log.String("namespace", monitoringNamespace),
-				log.String("name", secretName),
+				logfields.UserString("namespace", monitoringNamespace),
+				logfields.UserString("name", secretName),
 			)
 			return nil
 		}
@@ -153,8 +154,8 @@ func createCredentialSecret(
 	}
 
 	log.Info("created secret",
-		log.String("namespace", monitoringNamespace),
-		log.String("name", secretName),
+		logfields.UserString("namespace", monitoringNamespace),
+		logfields.UserString("name", secretName),
 	)
 
 	return nil

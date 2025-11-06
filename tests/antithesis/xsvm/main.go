@@ -14,6 +14,7 @@ import (
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
@@ -22,7 +23,6 @@ import (
 	"github.com/luxfi/node/tests/fixture/subnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -177,7 +177,7 @@ func (w *workload) run(ctx context.Context) {
 		if err != nil {
 			w.log.Warn("failed to issue transfer",
 				log.Int("worker", w.id),
-				log.Error(err),
+				logfields.Err(err),
 			)
 		} else {
 			w.log.Info("issued transfer",
@@ -208,7 +208,7 @@ func (w *workload) confirmTransferTx(ctx context.Context, tx *status.TxIssuance)
 				log.Int("worker", w.id),
 				log.Stringer("txID", tx.TxID),
 				log.String("uri", uri),
-				log.Error(err),
+				logfields.Err(err),
 			)
 			return
 		}

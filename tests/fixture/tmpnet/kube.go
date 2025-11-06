@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -48,8 +49,8 @@ func DefaultPodFlags(networkName string, dataDir string) map[string]string {
 		config.NetworkNameKey:            networkName,
 		config.SybilProtectionEnabledKey: "false",
 		config.HealthCheckFreqKey:        "500ms", // Ensure rapid detection of a healthy state
-		config.LogDisplayLevelKey:        logging.Debug.String(),
-		config.LogLevelKey:               logging.Debug.String(),
+		config.LogDisplayLevelKey:        "debug",
+		config.LogLevelKey:               "debug",
 		config.HTTPHostKey:               "0.0.0.0", // Need to bind to pod IP to ensure kubelet can access the http port for the readiness check
 	}
 }
@@ -170,7 +171,7 @@ func flagsToEnvVarSlice(flags FlagsMap) []corev1.EnvVar {
 	for k, v := range flags {
 		envVars[i] = corev1.EnvVar{
 			Name:  config.EnvVarName(config.EnvPrefix, k),
-			Value: v,
+			Value: v.(string),
 		}
 		i++
 	}
@@ -234,7 +235,7 @@ func WaitForNodeHealthy(
 		} else if err != nil {
 			// Error is potentially recoverable - log and continue
 			log.Debug("failed to check node health",
-				log.Error(err),
+				logfields.Err(err),
 			)
 			return false, nil
 		}
@@ -361,7 +362,7 @@ func GetClientConfig(log log.Logger, path string, context string) (*restclient.C
 			return kubeconfig, nil
 		}
 		log.Warn("failed to create inClusterConfig, falling back to default config",
-			log.Error(err),
+			logfields.Err(err),
 		)
 	}
 	overrides := &clientcmd.ConfigOverrides{}
@@ -450,9 +451,9 @@ func applyManifest(
 			return fmt.Errorf("failed to apply %s %s/%s: %w", gvk.Kind, resourceNamespace, obj.GetName(), err)
 		}
 		log.Info("applied resource",
-			log.String("kind", gvk.Kind),
-			log.String("namespace", resourceNamespace),
-			log.String("name", obj.GetName()),
+			logfields.UserString("kind", gvk.Kind),
+			logfields.UserString("namespace", resourceNamespace),
+			logfields.UserString("name", obj.GetName()),
 		)
 	}
 

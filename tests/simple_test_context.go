@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"
@@ -21,6 +21,8 @@ type SimpleTestContext struct {
 	log           log.Logger
 	cleanupFuncs  []func()
 	cleanupCalled bool
+	errorfHandler func(format string, args ...any)
+	panicHandler  func(r any)
 }
 
 func NewTestContext(log log.Logger) *SimpleTestContext {
@@ -29,12 +31,43 @@ func NewTestContext(log log.Logger) *SimpleTestContext {
 	}
 }
 
+// NewTestContextWithArgs creates a test context with custom error and panic handlers.
+// This is useful for integration with testing frameworks like Antithesis.
+func NewTestContextWithArgs(
+	_ context.Context,
+	log log.Logger,
+	errorfHandler func(format string, args ...any),
+	panicHandler func(r any),
+) *SimpleTestContext {
+	return &SimpleTestContext{
+		log:           log,
+		errorfHandler: errorfHandler,
+		panicHandler:  panicHandler,
+	}
+}
+
 func (tc *SimpleTestContext) Errorf(format string, args ...interface{}) {
-	tc.log.Error(fmt.Sprintf(format, args...))
+	if tc.errorfHandler != nil {
+		tc.errorfHandler(format, args...)
+	} else {
+		tc.log.Error(fmt.Sprintf(format, args...))
+	}
 }
 
 func (*SimpleTestContext) FailNow() {
 	panic(failNowMessage)
+}
+
+// Recover should be deferred to recover from panics and call custom panic handler if set.
+func (tc *SimpleTestContext) Recover() {
+	if r := recover(); r != nil {
+		if tc.panicHandler != nil {
+			tc.panicHandler(r)
+		} else {
+			// Re-panic if no custom handler is set
+			panic(r)
+		}
+	}
 }
 
 // Cleanup is intended to be deferred by the caller to ensure cleanup is performed even
@@ -50,6 +83,11 @@ func (tc *SimpleTestContext) Cleanup() {
 
 	var panicData any
 	if r := recover(); r != nil {
+		// Call custom panic handler if set
+		if tc.panicHandler != nil {
+			tc.panicHandler(r)
+		}
+		
 		errorString, ok := r.(string)
 		if !ok || errorString != failNowMessage {
 			// Retain the panic data to raise after cleanup

@@ -20,12 +20,9 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/math/set"
 )
 
 const (
@@ -113,14 +110,11 @@ func (ln *LocalNetwork) GetNodes() []*tmpnet.Node {
 	for _, localNode := range ln.Nodes {
 		// Convert LocalNode to tmpnet.Node
 		node := &tmpnet.Node{
-			NetworkUUID:    ln.UUID,
-			NetworkOwner:   ln.Owner,
 			NodeID:         localNode.NodeID,
 			Flags:          localNode.Flags,
 			IsEphemeral:    localNode.IsEphemeral,
 			RuntimeConfig:  localNode.RuntimeConfig,
 			URI:            localNode.URI,
-			StakingAddress: localNode.StakingAddress,
 		}
 		nodes = append(nodes, node)
 	}
@@ -142,14 +136,11 @@ func (ln *LocalNetwork) AddEphemeralNode(w io.Writer, flags tmpnet.FlagsMap) (*t
 	}
 	// Convert LocalNode to tmpnet.Node
 	return &tmpnet.Node{
-		NetworkUUID:    ln.UUID,
-		NetworkOwner:   ln.Owner,
 		NodeID:         localNode.NodeID,
 		Flags:          localNode.Flags,
 		IsEphemeral:    localNode.IsEphemeral,
 		RuntimeConfig:  localNode.RuntimeConfig,
 		URI:            localNode.URI,
-		StakingAddress: localNode.StakingAddress,
 	}, nil
 }
 

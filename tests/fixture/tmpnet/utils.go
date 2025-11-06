@@ -7,13 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
-	"syscall"
 	"time"
 
-	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
 )

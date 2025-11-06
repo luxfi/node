@@ -6,6 +6,7 @@ package c
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"errors"
 	"fmt"
 	"math/big"
@@ -19,8 +20,20 @@ import (
 
 	"github.com/luxfi/node/tests/load/c/contracts"
 
-	ethcrypto "github.com/luxfi/geth/crypto"
+	gethcrypto "github.com/luxfi/geth/crypto"
 )
+
+// pubkeyToAddress converts an ecdsa.PublicKey to an Ethereum address
+// Ethereum address = Keccak256(uncompressed_pubkey[1:])[12:]
+func pubkeyToAddress(p ecdsa.PublicKey) common.Address {
+	// Get uncompressed public key bytes (65 bytes: 0x04 + 32-byte X + 32-byte Y)
+	pubBytes := elliptic.Marshal(p.Curve, p.X, p.Y)
+	// Ethereum address is last 20 bytes of Keccak256(pubkey[1:])
+	hash := gethcrypto.Keccak256(pubBytes[1:]) // Skip the 0x04 prefix
+	var addr common.Address
+	copy(addr[:], hash[12:]) // Take last 20 bytes
+	return addr
+}
 
 var (
 	errNonpositiveSeed      = errors.New("seed is nonpositive")
@@ -94,7 +107,7 @@ func makeTxTypes(
 	chainID *big.Int,
 	client *ethclient.Client,
 ) []txType {
-	senderAddress := ethcrypto.PubkeyToAddress(senderKey.PublicKey)
+	senderAddress := pubkeyToAddress(senderKey.PublicKey)
 	signer := types.LatestSignerForChainID(chainID)
 	return []txType{
 		{

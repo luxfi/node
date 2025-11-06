@@ -14,7 +14,6 @@ import (
 
 var (
 	errTest = errors.New("non-nil error")
-	hello   = "hello"
 )
 
 func TestOptionalGathererEmptyGather(t *testing.T) {

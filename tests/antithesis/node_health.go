@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/log"
 )
 
 // Waits for the nodes at the provided URIs to report healthy.
@@ -31,24 +31,24 @@ func awaitHealthyNode(ctx context.Context, log log.Logger, uri string) error {
 	defer ticker.Stop()
 
 	log.Info("awaiting node health",
-		log.String("uri", uri),
+		logfields.UserString("uri", uri),
 	)
 	for {
 		res, err := client.Health(ctx, nil)
 		switch {
 		case err != nil:
 			log.Warn("failed to reach node",
-				log.String("uri", uri),
-				log.Error(err),
+				logfields.UserString("uri", uri),
+				logfields.Err(err),
 			)
 		case res.Healthy:
 			log.Info("node reported healthy",
-				log.String("uri", uri),
+				logfields.UserString("uri", uri),
 			)
 			return nil
 		default:
 			log.Info("node reported unhealthy",
-				log.String("uri", uri),
+				logfields.UserString("uri", uri),
 			)
 		}
 

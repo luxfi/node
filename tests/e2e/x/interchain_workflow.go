@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainLabel), func() {
@@ -41,7 +41,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		pWallet := baseWallet.P()
 
 		tc.By("defining common configuration")
-		recipientEthAddress := recipientKey.EthAddress()
+		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
 		xBuilder := xWallet.Builder()
 		xContext := xBuilder.Context()
 		cBuilder := cWallet.Builder()

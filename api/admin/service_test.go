@@ -17,7 +17,6 @@ import (
 	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type loadVMsTest struct {

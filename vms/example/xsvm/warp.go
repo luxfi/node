@@ -16,6 +16,6 @@ var _ lp118.Verifier = (*lp118Verifier)(nil)
 // lp118Verifier allows signing all warp messages
 type lp118Verifier struct{}
 
-func (lp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *common.AppError {
+func (lp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *core.AppError {
 	return nil
 }

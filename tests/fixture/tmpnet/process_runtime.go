@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"
@@ -33,9 +34,9 @@ const (
 )
 
 var (
-	Lux NodePluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
+	LuxNodePluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
 
-	errNotRunning         = errors.New("node is not running")
+	ErrNotRunning = errors.New("node is not running")
 )
 
 type ProcessRuntimeConfig struct {
@@ -141,9 +142,9 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Info("started local node",
-		log.Stringer("nodeID", p.node.NodeID),
-		log.String("dataDir", p.node.DataDir),
-		log.Bool("isEphemeral", p.node.IsEphemeral),
+		logfields.Stringer("nodeID", p.node.NodeID),
+		logfields.UserString("dataDir", p.node.DataDir),
+		logfields.Bool("isEphemeral", p.node.IsEphemeral),
 	)
 
 	// Configure collection of metrics and logs
@@ -174,11 +175,11 @@ func (p *ProcessRuntime) writeFlags() error {
 	// Only configure the plugin dir with a non-empty value to ensure the use of the
 	// default value (`[datadir]/plugins`) when no plugin dir is configured.
 	if len(runtimeConfig.PluginDir) > 0 {
-		flags.SetDefault(config.PluginDirKey, runtimeConfig.PluginDir)
+		flags[config.PluginDirKey] = runtimeConfig.PluginDir
 	}
 
 	// Ensure a non-empty plugin directory exists or the node will fail to start.
-	pluginDir := flags[config.PluginDirKey]
+	pluginDir, _ := flags[config.PluginDirKey].(string)
 	if len(pluginDir) > 0 {
 		if err := os.MkdirAll(pluginDir, perms.ReadWriteExecute); err != nil {
 			return fmt.Errorf("failed to create plugin dir: %w", err)
@@ -261,7 +262,7 @@ func (p *ProcessRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("failed to determine process status: %w", err)
 	}
 	if proc == nil {
-		return false, errNotRunning
+		return false, ErrNotRunning
 	}
 
 	healthReply, err := CheckNodeHealth(ctx, p.node.URI)
@@ -467,8 +468,8 @@ func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCau
 	file, err := os.Open(path)
 	if err != nil {
 		log.Error("failed to open log file",
-			log.String("path", path),
-			log.Error(err),
+			logfields.UserString("path", path),
+			logfields.Err(err),
 		)
 		return
 	}
@@ -490,8 +491,8 @@ func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCau
 					continue
 				} else {
 					log.Error("failed to read log file",
-						log.String("path", path),
-						log.Error(err),
+						logfields.UserString("path", path),
+						logfields.Err(err),
 					)
 					return
 				}

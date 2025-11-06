@@ -12,12 +12,10 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/tests"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -29,16 +27,12 @@ var (
 )
 
 func main() {
-	var (
-		networkDir   string
-		rawLogFormat string
-	)
+	var networkDir string
 	rootCmd := &cobra.Command{
 		Use:   "tmpnetctl",
 		Short: "tmpnetctl commands",
 	}
 	rootCmd.PersistentFlags().StringVar(&networkDir, "network-dir", os.Getenv(tmpnet.NetworkDirEnvName), "The path to the configuration directory of a temporary network")
-	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", logging.AutoString, logging.FormatDescription)
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -59,10 +53,7 @@ func main() {
 		Use:   "start-network",
 		Short: "Start a new temporary network",
 		RunE: func(*cobra.Command, []string) error {
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
+			logger := log.New()
 
 			nodeCount, err := startNetworkVars.GetNodeCount()
 			if err != nil {
@@ -92,11 +83,11 @@ func main() {
 			defer cancel()
 			if err := tmpnet.BootstrapNewNetwork(
 				ctx,
-				log,
+				logger,
 				network,
 				startNetworkVars.RootNetworkDir,
 			); err != nil {
-				log.Error("failed to bootstrap network", log.Error(err))
+				logger.Error("failed to bootstrap network", log.Err(err))
 				return err
 			}
 
@@ -135,11 +126,8 @@ func main() {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			if err := tmpnet.StopNetwork(ctx, log, networkDir); err != nil {
+			logger := log.New()
+			if err := tmpnet.StopNetwork(ctx, logger, networkDir); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stdout, "Stopped network configured at: %s\n", networkDir)
@@ -155,13 +143,10 @@ func main() {
 			if len(networkDir) == 0 {
 				return errNetworkDirRequired
 			}
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
+			logger := log.New()
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			return tmpnet.RestartNetwork(ctx, log, networkDir)
+			return tmpnet.RestartNetwork(ctx, logger, networkDir)
 		},
 	}
 	rootCmd.AddCommand(restartNetworkCmd)
@@ -172,11 +157,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.StartPrometheus(ctx, log)
+			logger := log.New()
+			return tmpnet.StartPrometheus(ctx, logger)
 		},
 	}
 	rootCmd.AddCommand(startMetricsCollectorCmd)
@@ -187,11 +169,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.StartPromtail(ctx, log)
+			logger := log.New()
+			return tmpnet.StartPromtail(ctx, logger)
 		},
 	}
 	rootCmd.AddCommand(startLogsCollectorCmd)
@@ -202,11 +181,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.StopMetricsCollector(ctx, log)
+			logger := log.New()
+			return tmpnet.StopMetricsCollector(ctx, logger)
 		},
 	}
 	rootCmd.AddCommand(stopMetricsCollectorCmd)
@@ -217,11 +193,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.StopLogsCollector(ctx, log)
+			logger := log.New()
+			return tmpnet.StopLogsCollector(ctx, logger)
 		},
 	}
 	rootCmd.AddCommand(stopLogsCollectorCmd)
@@ -234,11 +207,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.CheckMetricsExist(ctx, log, networkUUID)
+			logger := log.New()
+			return tmpnet.CheckMetricsExist(ctx, logger, networkUUID)
 		},
 	}
 	checkMetricsCmd.PersistentFlags().StringVar(
@@ -255,11 +225,8 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return tmpnet.CheckLogsExist(ctx, log, networkUUID)
+			logger := log.New()
+			return tmpnet.CheckLogsExist(ctx, logger, networkUUID)
 		},
 	}
 	checkLogsCmd.PersistentFlags().StringVar(
@@ -280,10 +247,7 @@ func main() {
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
-			if err != nil {
-				return err
-			}
+			logger := log.New()
 			// A valid kubeconfig is required for local kind usage but this is not validated by KubeconfigVars
 			// since unlike kind, tmpnet usage may involve an implicit in-cluster config.
 			if len(kubeconfigVars.Path) == 0 {
@@ -298,7 +262,7 @@ func main() {
 			}
 			return tmpnet.StartKindCluster(
 				ctx,
-				log,
+				logger,
 				kubeconfigVars.Path,
 				collectorVars.StartMetricsCollector,
 				collectorVars.StartLogsCollector,

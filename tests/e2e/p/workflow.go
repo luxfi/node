@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations
@@ -85,7 +85,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			xBuilder = xWallet.Builder()
 			xContext = xBuilder.Context()
 
-			luxAssetID = pContext.LUXAssetID
+			luxAssetID = pContext.XAssetID
 		)
 
 		tc.Log().Info("fetching minimal stake amounts")

@@ -4,7 +4,7 @@
 package p
 
 import (
-	"time"
+"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/onsi/ginkgo/v2"
@@ -16,12 +16,10 @@ import (
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -294,7 +292,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 				balances, err := pBuilder.GetBalance()
 				require.NoError(err)
-				rewardBalances[rewardKey.Address()] = balances[pContext.LUXAssetID]
+				rewardBalances[rewardKey.Address()] = balances[pContext.XAssetID]
 			}
 
 			require.Equal(

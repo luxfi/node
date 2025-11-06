@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
@@ -39,9 +39,9 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		tc.By("allocating a pre-funded key to send from and a recipient key to deliver to")
 		var (
 			senderKey           = env.PreFundedKey
-			senderEthAddress    = senderKey.EthAddress()
+			senderEthAddress    = tmpnet.GetEthAddress(senderKey)
 			recipientKey        = e2e.NewPrivateKey(tc)
-			recipientEthAddress = recipientKey.EthAddress()
+			recipientEthAddress = tmpnet.GetEthAddress(recipientKey)
 		)
 
 		tc.By("sending funds from one address to another on the C-Chain", func() {

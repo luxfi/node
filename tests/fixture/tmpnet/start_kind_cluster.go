@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -56,13 +57,13 @@ func StartKindCluster(
 	}
 	if clusterRunning {
 		log.Info("local kind cluster already running",
-			log.String("kubeconfig", configPath),
-			log.String("kubeconfigContext", configContext),
+			logfields.UserString("kubeconfig", configPath),
+			logfields.UserString("kubeconfigContext", configContext),
 		)
 	} else {
 		log.Info("attempting to start local kind cluster",
-			log.String("kubeconfig", configPath),
-			log.String("kubeconfigContext", configContext),
+			logfields.UserString("kubeconfig", configPath),
+			logfields.UserString("kubeconfigContext", configContext),
 		)
 
 		startCtx, cancel := context.WithTimeout(ctx, DefaultNetworkTimeout)
@@ -106,7 +107,7 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
-			log.String("kubeconfig", configPath),
+			logfields.UserString("kubeconfig", configPath),
 		)
 		return false, nil
 	}
@@ -118,8 +119,8 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	if err != nil {
 		if strings.Contains(err.Error(), missingContextMsg) {
 			log.Info("specified kubeconfig context does not exist",
-				log.String("kubeconfig", configPath),
-				log.String("kubeconfigContext", configContext),
+				logfields.UserString("kubeconfig", configPath),
+				logfields.UserString("kubeconfigContext", configContext),
 			)
 			return false, nil
 		} else {
@@ -134,9 +135,9 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err = clientset.Discovery().ServerVersion()
 	if err != nil {
 		log.Info("failed to contact kubernetes cluster",
-			log.String("kubeconfig", configPath),
-			log.String("kubeconfigContext", configContext),
-			log.Error(err),
+			logfields.UserString("kubeconfig", configPath),
+			logfields.UserString("kubeconfigContext", configContext),
+			logfields.Err(err),
 		)
 		return false, nil
 	}
@@ -149,7 +150,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
-			log.String("namespace", namespace),
+			logfields.UserString("namespace", namespace),
 		)
 		return nil
 	}
@@ -158,7 +159,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	}
 
 	log.Info("namespace not found, creating",
-		log.String("namespace", namespace),
+		logfields.UserString("namespace", namespace),
 	)
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -169,7 +170,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to create namespace %s: %w", namespace, err)
 	}
 	log.Info("created namespace",
-		log.String("namespace", namespace),
+		logfields.UserString("namespace", namespace),
 	)
 
 	return nil
@@ -184,7 +185,7 @@ func deployRBAC(
 	namespace string,
 ) error {
 	log.Info("deploying tmpnet RBAC resources",
-		log.String("namespace", namespace),
+		logfields.UserString("namespace", namespace),
 	)
 
 	clientConfig, err := GetClientConfig(log, configPath, configContext)
@@ -202,7 +203,7 @@ func deployRBAC(
 	}
 
 	log.Info("successfully deployed tmpnet RBAC resources",
-		log.String("namespace", namespace),
+		logfields.UserString("namespace", namespace),
 	)
 
 	return nil
@@ -228,8 +229,8 @@ func createServiceAccountKubeconfig(
 	// Check if the context already exists
 	if _, exists := config.Contexts[newContextName]; exists {
 		log.Info("service account kubeconfig context already exists",
-			log.String("context", newContextName),
-			log.String("namespace", namespace),
+			logfields.UserString("context", newContextName),
+			logfields.UserString("namespace", namespace),
 		)
 		return nil
 	}
@@ -277,8 +278,8 @@ func createServiceAccountKubeconfig(
 	}
 
 	log.Info("created service account kubeconfig context",
-		log.String("context", newContextName),
-		log.String("namespace", namespace),
+		logfields.UserString("context", newContextName),
+		logfields.UserString("namespace", namespace),
 	)
 
 	return nil

@@ -111,7 +111,7 @@ func NewTestGenesisWithFunds(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[key.EthAddress()] = core.GenesisAccount{
+		cChainBalances[GetEthAddress(key)] = core.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}

@@ -16,13 +16,13 @@ import (
 func TestLRU(t *testing.T) {
 	cache := &cache.LRU[ids.ID, int64]{Size: 1}
 
-	cachetest.TestBasic(t, cache)
+	cachetest.Basic(t, cache)
 }
 
 func TestLRUEviction(t *testing.T) {
 	cache := &cache.LRU[ids.ID, int64]{Size: 2}
 
-	cachetest.TestEviction(t, cache)
+	cachetest.Eviction(t, cache)
 }
 
 func TestLRUResize(t *testing.T) {

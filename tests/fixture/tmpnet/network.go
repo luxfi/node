@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config"
@@ -234,7 +235,7 @@ func ReadNetwork(ctx context.Context, log log.Logger, dir string) (*Network, err
 // Initializes a new network with default configuration.
 func (n *Network) EnsureDefaultConfig(log log.Logger) error {
 	log.Info("preparing configuration for new network",
-		log.Any("runtimeConfig", n.DefaultRuntimeConfig),
+		logfields.Any("runtimeConfig", n.DefaultRuntimeConfig),
 	)
 
 	n.log = log
@@ -347,7 +348,7 @@ func (n *Network) DefaultGenesis() (*genesis.UnparsedConfig, error) {
 	}
 	keysToFund = append(keysToFund, n.PreFundedKeys...)
 
-	return NewTestGenesis(defaultNetworkID, n.Nodes, keysToFund)
+	return NewTestGenesisWithFunds(defaultNetworkID, n.Nodes, keysToFund)
 }
 
 // Starts the specified nodes
@@ -365,8 +366,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 		// Simplify output by only logging network start when starting all nodes or when starting
 		// the first node by itself to bootstrap subnet creation.
 		log.Info("starting network",
-			log.String("networkDir", n.Dir),
-			log.String("uuid", n.UUID),
+			logfields.UserString("networkDir", n.Dir),
+			logfields.UserString("uuid", n.UUID),
 		)
 	}
 
@@ -384,8 +385,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 		return err
 	}
 	log.Info("started network",
-		log.String("networkDir", n.Dir),
-		log.String("uuid", n.UUID),
+		logfields.UserString("networkDir", n.Dir),
+		logfields.UserString("uuid", n.UUID),
 	)
 	// Provide a link to the main dashboard filtered by the uuid and showing results from now till whenever the link is viewed
 	startTimeStr := strconv.FormatInt(startTime.UnixMilli(), 10)
@@ -398,8 +399,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 	}
 
 	log.Info(MetricsAvailableMessage,
-		log.String("url", metricsURL),
-		log.String("linkPath", metricsPath),
+		logfields.UserString("url", metricsURL),
+		logfields.UserString("linkPath", metricsPath),
 	)
 
 	return nil
@@ -429,7 +430,8 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 
 		// If sybil protection is enabled, it should be re-enabled before the node is used to bootstrap the other nodes
 		if value, ok := bootstrapNode.Flags[config.SybilProtectionEnabledKey]; ok {
-			existingSybilProtectionValue = &value
+			strValue := value.(string)
+			existingSybilProtectionValue = &strValue
 		}
 		// Ensure sybil protection is disabled for the bootstrap node.
 		bootstrapNode.Flags[config.SybilProtectionEnabledKey] = "false"
@@ -451,13 +453,13 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 
 	if existingSybilProtectionValue == nil {
 		log.Info("re-enabling sybil protection",
-			log.Stringer("nodeID", bootstrapNode.NodeID),
+			logfields.Stringer("nodeID", bootstrapNode.NodeID),
 		)
 		delete(bootstrapNode.Flags, config.SybilProtectionEnabledKey)
 	} else {
 		log.Info("restoring previous sybil protection value",
-			log.Stringer("nodeID", bootstrapNode.NodeID),
-			log.String("sybilProtectionEnabled", *existingSybilProtectionValue),
+			logfields.Stringer("nodeID", bootstrapNode.NodeID),
+			logfields.UserString("sybilProtectionEnabled", *existingSybilProtectionValue),
 		)
 		bootstrapNode.Flags[config.SybilProtectionEnabledKey] = *existingSybilProtectionValue
 	}
@@ -468,7 +470,7 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 	// - sybil protection didn't change
 	// - the node is not a subnet validator
 	log.Info("restarting bootstrap node",
-		log.Stringer("nodeID", bootstrapNode.NodeID),
+		logfields.Stringer("nodeID", bootstrapNode.NodeID),
 	)
 	if err := bootstrapNode.Restart(ctx); err != nil {
 		return err
@@ -550,7 +552,7 @@ func (n *Network) Restart(ctx context.Context) error {
 func WaitForHealthyNodes(ctx context.Context, log log.Logger, nodes []*Node) error {
 	for _, node := range nodes {
 		log.Info("waiting for node to become healthy",
-			log.Stringer("nodeID", node.NodeID),
+			logfields.Stringer("nodeID", node.NodeID),
 		)
 		if err := node.WaitForHealthy(ctx); err != nil {
 			return err
@@ -586,8 +588,8 @@ func (n *Network) TrackedNetsForNode(nodeID ids.NodeID) string {
 			continue
 		}
 		// Only track subnets that this node validates
-		if slices.Contains(subnet.ValidatorIDs, nodeID) {
-			subnetIDs = append(subnetIDs, subnet.NetID.String())
+		if slices.Contains(net.ValidatorIDs, nodeID) {
+			netIDs = append(netIDs, net.NetID.String())
 		}
 	}
 	return strings.Join(netIDs, ",")
@@ -616,7 +618,7 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 		}
 
 		log.Info("creating subnet",
-			log.String("name", subnet.Name),
+			logfields.UserString("name", net.Name),
 		)
 
 		if net.OwningKey == nil {
@@ -630,22 +632,22 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 		}
 
 		// Create the subnet on the network
-		if err := subnet.Create(ctx, apiURI); err != nil {
+		if err := net.Create(ctx, apiURI); err != nil {
 			return err
 		}
 
 		log.Info("created subnet",
-			log.String("name", subnet.Name),
-			log.Stringer("id", subnet.NetID),
+			logfields.UserString("name", net.Name),
+			logfields.Stringer("id", net.NetID),
 		)
 
 		// Persist the subnet configuration
-		if err := subnet.Write(n.GetNetDir()); err != nil {
+		if err := net.Write(n.GetNetDir()); err != nil {
 			return err
 		}
 
 		log.Info("wrote subnet configuration",
-			log.String("name", subnet.Name),
+			logfields.UserString("name", net.Name),
 		)
 
 		createdNets = append(createdNets, net)
@@ -693,12 +695,12 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 	// Add validators for the subnet
 	for _, subnet := range createdNets {
 		log.Info("adding validators for subnet",
-			log.String("name", subnet.Name),
+			logfields.UserString("name", subnet.Name),
 		)
 
 		// Collect the nodes intended to validate the net
-		validatorIDs := set.NewSet[ids.NodeID](len(net.ValidatorIDs))
-		validatorIDs.Add(net.ValidatorIDs...)
+		validatorIDs := set.NewSet[ids.NodeID](len(subnet.ValidatorIDs))
+		validatorIDs.Add(subnet.ValidatorIDs...)
 		validatorNodes := []*Node{}
 		for _, node := range n.Nodes {
 			if !validatorIDs.Contains(node.NodeID) {
@@ -729,15 +731,15 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 			return err
 		}
 		log.Info("wrote subnet configuration",
-			log.String("name", subnet.Name),
-			log.Stringer("id", subnet.NetID),
+			logfields.UserString("name", subnet.Name),
+			logfields.Stringer("id", subnet.NetID),
 		)
 
 		// If one or more of the subnets chains have explicit configuration, the
 		// net's validator nodes will need to be restarted for those nodes to read
 		// the newly written chain configuration and apply it to the chain(s).
-		if net.HasChainConfig() {
-			validatorsToRestart.Add(net.ValidatorIDs...)
+		if subnet.HasChainConfig() {
+			validatorsToRestart.Add(subnet.ValidatorIDs...)
 		}
 	}
 
@@ -959,8 +961,8 @@ func waitForHealthy(ctx context.Context, log log.Logger, nodes []*Node) error {
 
 			unhealthyNodes.Remove(node)
 			log.Info("node is healthy",
-				log.Stringer("nodeID", node.NodeID),
-				log.String("uri", node.URI),
+				logfields.Stringer("nodeID", node.NodeID),
+				logfields.UserString("uri", node.URI),
 			)
 		}
 
@@ -1021,7 +1023,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 
 	nodeRPCVersion, err := getRPCVersion(log, config.LuxNodePath, "--version-json")
 	if err != nil {
-		log.Warn("unable to check rpcchainvm version for node", log.Error(err))
+		log.Warn("unable to check rpcchainvm version for node", logfields.Err(err))
 		return nil
 	}
 
@@ -1033,8 +1035,8 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			// Check that the path exists
 			if _, err := os.Stat(vmPath); err != nil {
 				log.Warn("unable to check rpcchainvm version for VM",
-					log.String("vmPath", vmPath),
-					log.Error(err),
+					logfields.UserString("vmPath", vmPath),
+					logfields.Err(err),
 				)
 				continue
 			}
@@ -1048,16 +1050,16 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			vmRPCVersion, err := getRPCVersion(log, vmPath, chain.VersionArgs...)
 			if err != nil {
 				log.Warn("unable to check rpcchainvm version for VM Binary",
-					log.String("subnet", subnet.Name),
-					log.Error(err),
+					logfields.UserString("subnet", subnet.Name),
+					logfields.Err(err),
 				)
 			} else if nodeRPCVersion != vmRPCVersion {
 				log.Error("unexpected rpcchainvm version for VM binary",
-					log.String("subnet", subnet.Name),
-					log.String("nodePath", config.LuxNodePath),
-					log.Uint64("nodeRPCVersion", nodeRPCVersion),
-					log.String("vmPath", vmPath),
-					log.Uint64("vmRPCVersion", vmRPCVersion),
+					logfields.UserString("subnet", subnet.Name),
+					logfields.UserString("nodePath", config.LuxNodePath),
+					logfields.Uint64("nodeRPCVersion", nodeRPCVersion),
+					logfields.UserString("vmPath", vmPath),
+					logfields.Uint64("vmRPCVersion", vmRPCVersion),
 				)
 				incompatibleChains = true
 			}
@@ -1087,8 +1089,8 @@ func getRPCVersion(log log.Logger, command string, versionArgs ...string) (uint6
 	// with `go run` and the go toolchain emitting diagnostic logging before the version output.
 	if idx := bytes.IndexByte(output, '{'); idx > 0 {
 		log.Info("ignoring leading bytes of JSON version output in advance of opening `{`",
-			log.String("command", command),
-			log.String("ignoredLeadingBytes", string(output[:idx])),
+			logfields.UserString("command", command),
+			logfields.UserString("ignoredLeadingBytes", string(output[:idx])),
 		)
 		output = output[idx:]
 	}

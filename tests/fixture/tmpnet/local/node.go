@@ -22,8 +22,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/node"
+	nodeconfig "github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/perms"
 )
@@ -45,7 +44,7 @@ type LocalConfig struct {
 type LocalNode struct {
 	tmpnet.NodeConfig
 	LocalConfig
-	node.NodeProcessContext
+	nodeconfig.ProcessContext
 
 	// Fields needed for tmpnet.Node compatibility
 	IsEphemeral    bool
@@ -88,8 +87,8 @@ func (n *LocalNode) GetConfig() tmpnet.NodeConfig {
 }
 
 // Retrieve backend-agnostic process details.
-func (n *LocalNode) GetProcessContext() node.NodeProcessContext {
-	return n.NodeProcessContext
+func (n *LocalNode) GetProcessContext() nodeconfig.ProcessContext {
+	return n.ProcessContext
 }
 
 func (n *LocalNode) GetDataDir() string {
@@ -141,7 +140,7 @@ func (n *LocalNode) ReadProcessContext() error {
 	path := n.GetProcessContextPath()
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		// The absence of the process context file indicates the node is not running
-		n.NodeProcessContext = node.NodeProcessContext{}
+		n.ProcessContext = nodeconfig.ProcessContext{}
 		return nil
 	}
 
@@ -149,11 +148,11 @@ func (n *LocalNode) ReadProcessContext() error {
 	if err != nil {
 		return fmt.Errorf("failed to read local node process context: %w", err)
 	}
-	processContext := node.NodeProcessContext{}
+	processContext := nodeconfig.ProcessContext{}
 	if err := json.Unmarshal(bytes, &processContext); err != nil {
 		return fmt.Errorf("failed to unmarshal local node process context: %w", err)
 	}
-	n.NodeProcessContext = processContext
+	n.ProcessContext = processContext
 	return nil
 }
 

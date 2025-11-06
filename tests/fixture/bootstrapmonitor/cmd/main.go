@@ -30,7 +30,6 @@ func main() {
 		podName           string
 		nodeContainerName string
 		dataDir           string
-		rawLogFormat      string
 	)
 	rootCmd := &cobra.Command{
 		Use:   commandName,
@@ -40,8 +39,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&podName, "pod-name", os.Getenv("POD_NAME"), "The name of the pod")
 	rootCmd.PersistentFlags().StringVar(&nodeContainerName, "node-container-name", "", "The name of the node container in the pod")
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "The path of the data directory used for the bootstrap job")
-	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", logging.AutoString, logging.FormatDescription)
-
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print version details",
@@ -63,11 +60,8 @@ func main() {
 			if err := checkArgs(namespace, podName, nodeContainerName, dataDir); err != nil {
 				return err
 			}
-			log, err := newLogger(rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return bootstrapmonitor.InitBootstrapTest(log, namespace, podName, nodeContainerName, dataDir)
+			logger := log.New()
+			return bootstrapmonitor.InitBootstrapTest(logger, namespace, podName, nodeContainerName, dataDir)
 		},
 	}
 	rootCmd.AddCommand(initCmd)
@@ -89,11 +83,8 @@ func main() {
 			if imageCheckInterval <= 0 {
 				return errors.New("--image-check-interval must be greater than 0")
 			}
-			log, err := newLogger(rawLogFormat)
-			if err != nil {
-				return err
-			}
-			return bootstrapmonitor.WaitForCompletion(log, namespace, podName, nodeContainerName, dataDir, healthCheckInterval, imageCheckInterval)
+			logger := log.New()
+			return bootstrapmonitor.WaitForCompletion(logger, namespace, podName, nodeContainerName, dataDir, healthCheckInterval, imageCheckInterval)
 		},
 	}
 	waitCmd.PersistentFlags().DurationVar(&healthCheckInterval, "health-check-interval", defaultHealthCheckInterval, "The interval at which to check for node health")
@@ -122,11 +113,4 @@ func checkArgs(namespace string, podName string, nodeContainerName string, dataD
 	return nil
 }
 
-func newLogger(rawLogFormat string) (log.Logger, error) {
-	writeCloser := os.Stdout
-	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
-	if err != nil {
-		return nil, err
-	}
-	return logging.NewLogger("", logging.NewWrappedCore(logging.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
-}
+

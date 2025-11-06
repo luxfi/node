@@ -8,10 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/geth/plugin/evm/upgrade/lp176"
-	"github.com/luxfi/geth/plugin/evm/upgrade/lp118"
 	"github.com/luxfi/geth/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/params"
 	"github.com/onsi/ginkgo/v2"
@@ -21,10 +19,16 @@ import (
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/vms/evm/lp176"
 )
 
 // This test uses the compiled bytecode for `consume_gas.sol` as well as its ABI
 // contained in `consume_gas.go`.
+
+const (
+	// legacyGasLimit is the pre-Fortuna (LP-176) gas limit
+	legacyGasLimit = 8_000_000
+)
 
 var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 	tc := e2e.NewTestContext()
@@ -76,7 +80,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 
 		tc.By("allocating a pre-funded key")
 		key := privateNetwork.PreFundedKeys[0]
-		ethAddress := key.EthAddress()
+		ethAddress := tmpnet.GetEthAddress(key)
 
 		tc.By("initializing a geth client")
 		node := privateNetwork.Nodes[0]
@@ -108,7 +112,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 			if upgrades.IsFortunaActivated(now) {
 				gasLimit = lp176.MinMaxCapacity
 			} else {
-				gasLimit = lp118.GasLimit
+				gasLimit = legacyGasLimit
 			}
 		})
 		tc.Log().Info("set gas limit",
@@ -207,7 +211,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 		// Create a recipient address
 		var (
 			recipientKey        = e2e.NewPrivateKey(tc)
-			recipientEthAddress = recipientKey.EthAddress()
+			recipientEthAddress = tmpnet.GetEthAddress(recipientKey)
 		)
 		tc.By("sending small transactions until a sufficient gas price decrease is detected", func() {
 			tc.Eventually(func() bool {

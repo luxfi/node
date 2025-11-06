@@ -21,7 +21,7 @@ const (
 	nodePathFlag = "node-path"
 )
 
-var errLux NodeRequired = fmt.Errorf("--%s or %s are required", nodePathFlag, tmpnet.Lux NodePathEnvName)
+var errLuxNodeRequired = fmt.Errorf("--%s or %s are required", nodePathFlag, tmpnet.LuxNodePathEnvName)
 
 type processRuntimeVars struct {
 	config tmpnet.ProcessRuntimeConfig
@@ -37,21 +37,21 @@ func (v *processRuntimeVars) registerWithFlagSet(flagSet *pflag.FlagSet) {
 
 func (v *processRuntimeVars) register(stringVar varFunc[string], boolVar varFunc[bool]) {
 	stringVar(
-		&v.config.Lux NodePath,
+		&v.config.LuxNodePath,
 		nodePathFlag,
-		os.Getenv(tmpnet.Lux NodePathEnvName),
+		os.Getenv(tmpnet.LuxNodePathEnvName),
 		processDocPrefix+fmt.Sprintf(
 			"The node executable path. Also possible to configure via the %s env variable.",
-			tmpnet.Lux NodePathEnvName,
+			tmpnet.LuxNodePathEnvName,
 		),
 	)
 	stringVar(
 		&v.config.PluginDir,
 		"plugin-dir",
-		tmpnet.GetEnvWithDefault(tmpnet.Lux NodePluginDirEnvName, os.ExpandEnv("$HOME/.node/plugins")),
+		tmpnet.GetEnvWithDefault(tmpnet.LuxNodePluginDirEnvName, os.ExpandEnv("$HOME/.node/plugins")),
 		processDocPrefix+fmt.Sprintf(
 			"The dir containing VM plugins. Also possible to configure via the %s env variable.",
-			tmpnet.Lux NodePluginDirEnvName,
+			tmpnet.LuxNodePluginDirEnvName,
 		),
 	)
 	boolVar(
@@ -70,10 +70,10 @@ func (v *processRuntimeVars) getProcessRuntimeConfig() (*tmpnet.ProcessRuntimeCo
 }
 
 func (v *processRuntimeVars) validate() error {
-	path := v.config.Lux NodePath
+	path := v.config.LuxNodePath
 
 	if len(path) == 0 {
-		return errLux NodeRequired
+		return errLuxNodeRequired
 	}
 
 	if filepath.IsAbs(path) {

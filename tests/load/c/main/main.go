@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
@@ -69,17 +69,22 @@ func main() {
 	metrics, err := load.NewMetrics(registry)
 	require.NoError(err, "failed to register load metrics")
 
-	metricsServer, err := tests.NewPrometheusServer(registry)
-	require.NoError(err, "failed to start load metrics server")
-	tc.DeferCleanup(func() {
-		require.NoError(metricsServer.Stop())
-	})
+	// TODO: Implement prometheus metrics server
+	// metricsServer, err := tests.NewPrometheusServer(registry)
+	// require.NoError(err, "failed to start load metrics server")
+	// tc.DeferCleanup(func() {
+	// 	require.NoError(metricsServer.Stop())
+	// })
 
-	monitoringConfigFilePath, err := tmpnet.WritePrometheusSDConfig("load-test", tmpnet.SDConfig{
-		Targets: []string{metricsServer.Address()},
-		Labels:  network.GetMonitoringLabels(),
-	}, false)
-	require.NoError(err, "failed to generate monitoring config file")
+	// TODO: Enable prometheus monitoring when metrics server is implemented
+	_ = tmpnet.WritePrometheusSDConfig
+	monitoringConfigFilePath := ""
+	if false { // Disabled until metrics server is implemented
+		monitoringConfigFilePath, err = tmpnet.WritePrometheusSDConfig("load-test", tmpnet.SDConfig{
+			Labels:  network.GetMonitoringLabels(),
+		}, false)
+		require.NoError(err, "failed to generate monitoring config file")
+	}
 
 	tc.DeferCleanup(func() {
 		require.NoError(
@@ -206,7 +211,7 @@ func createAgent(
 		return load.Agent[common.Hash]{}, fmt.Errorf("dialing %s: %w", endpoint, err)
 	}
 
-	address := key.EthAddress()
+	address := tmpnet.GetEthAddress(key)
 	nonce, err := client.NonceAt(ctx, address, nil)
 	if err != nil {
 		return load.Agent[common.Hash]{}, fmt.Errorf("getting nonce for address %s: %w", address, err)

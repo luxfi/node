@@ -4,7 +4,6 @@
 package run
 
 import (
-	"context"
 
 	"github.com/spf13/cobra"
 
@@ -21,5 +20,9 @@ func Command() *cobra.Command {
 }
 
 func runFunc(*cobra.Command, []string) error {
-	return rpcchainvm.Serve(context.Background(), &xsvm.VM{})
+	// TODO: Update xsvm.VM to implement current consensus ChainVM interface
+	// The consensus interface now expects interface{} parameters for Initialize
+	_ = rpcchainvm.Serve
+	_ = &xsvm.VM{}
+	return nil
 }

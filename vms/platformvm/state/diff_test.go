@@ -563,7 +563,7 @@ func TestDiffNet(t *testing.T) {
 		[]ids.ID{
 			parentStateCreateNetTx.ID(),
 		},
-		subnetIDs,
+		netIDs,
 	)
 
 	diff, err := NewDiffOn(state)
@@ -588,7 +588,7 @@ func TestDiffNet(t *testing.T) {
 			parentStateCreateNetTx.ID(),
 			createNetTx.ID(),
 		},
-		subnetIDs,
+		netIDs,
 	)
 }
 
@@ -601,13 +601,13 @@ func TestDiffChain(t *testing.T) {
 	// Initialize parent with one chain
 	parentStateCreateChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			NetID: netID,
+			NetID: subnetID,
 		},
 	}
 	state.AddChain(parentStateCreateChainTx)
 
 	// Verify parent returns one chain
-	chains, err := state.GetChains(netID)
+	chains, err := state.GetChains(subnetID)
 	require.NoError(err)
 	require.Equal(
 		[]*txs.Tx{
@@ -622,7 +622,7 @@ func TestDiffChain(t *testing.T) {
 	// Put a chain
 	createChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			NetID: netID, // note this is the same net as [parentStateCreateChainTx]
+			NetID: subnetID, // note this is the same net as [parentStateCreateChainTx]
 		},
 	}
 	diff.AddChain(createChainTx)
@@ -631,7 +631,7 @@ func TestDiffChain(t *testing.T) {
 	require.NoError(diff.Apply(state))
 
 	// Verify parent now returns two chains
-	chains, err = state.GetChains(netID)
+	chains, err = state.GetChains(subnetID)
 	require.NoError(err)
 	require.Equal(
 		[]*txs.Tx{

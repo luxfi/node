@@ -6,7 +6,6 @@ package antithesis
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -30,8 +28,8 @@ const (
 var (
 	errTargetPathEnvVarNotSet = errors.New(targetPathEnvName + " environment variable not set")
 	errImageTagEnvVarNotSet   = errors.New(imageTagEnvName + " environment variable not set")
-	errLux NodeEvVarNotSet = errors.New(tmpnet.Lux NodePathEnvName + " environment variable not set")
-	errPluginDirEnvVarNotSet  = errors.New(tmpnet.Lux NodePluginDirEnvName + " environment variable not set")
+	errLuxNodeEnvVarNotSet = errors.New(tmpnet.LuxNodePathEnvName + " environment variable not set")
+	errPluginDirEnvVarNotSet  = errors.New(tmpnet.LuxNodePluginDirEnvName + " environment variable not set")
 )
 
 // Creates docker compose configuration for an antithesis test setup. Configuration is via env vars to
@@ -50,20 +48,20 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 
 	// Net testing requires creating an initial db state for the bootstrap node
 	if len(network.Nets) > 0 {
-		luxPath := os.Getenv(tmpnet.Lux NodePathEnvName)
+		luxPath := os.Getenv(tmpnet.LuxNodePathEnvName)
 		if len(luxPath) == 0 {
-			return errLux NodeEvVarNotSet
+			return errLuxNodeEnvVarNotSet
 		}
 
 		// Plugin dir configured here is only used for initializing the bootstrap db.
-		pluginDir := os.Getenv(tmpnet.Lux NodePluginDirEnvName)
+		pluginDir := os.Getenv(tmpnet.LuxNodePluginDirEnvName)
 		if len(pluginDir) == 0 {
 			return errPluginDirEnvVarNotSet
 		}
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				Lux NodePath: luxPath,
+				LuxNodePath: luxPath,
 				PluginDir:       pluginDir,
 			},
 		}
@@ -168,20 +166,20 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                logging.Debug.String(),
-			config.LogDisplayLevelKey:         logging.Trace.String(),
-			config.LogFormatKey:               logging.JSONString,
+			config.LogLevelKey:                "debug",
+			config.LogDisplayLevelKey:         "trace",
+			config.LogFormatKey:               "json",
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,
-			config.StakingTLSKeyContentKey:    tlsKey,
-			config.StakingCertContentKey:      tlsCert,
-			config.StakingSignerKeyContentKey: signerKey,
+			config.StakingTLSKeyContentKey:    tlsKey.(string),
+			config.StakingCertContentKey:      tlsCert.(string),
+			config.StakingSignerKeyContentKey: signerKey.(string),
 			config.ChainConfigContentKey:      chainConfigContent,
 		}
 
 		// Apply configuration appropriate to a test network
 		for k, v := range tmpnet.DefaultTmpnetFlags() {
-			env[k] = v
+			env[k] = v.(string)
 		}
 
 		serviceName := getServiceName(i)
@@ -195,8 +193,8 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		}
 
 		trackNets := node.Flags[config.TrackNetsKey]
-		if len(trackNets) > 0 {
-			env[config.TrackNetsKey] = trackNets
+	if trackNetsStr, ok := trackNets.(string); ok && len(trackNetsStr) > 0 {
+			env[config.TrackNetsKey] = trackNetsStr
 			if i == bootstrapIndex {
 				// DB volume for bootstrap node will need to initialized with the subnet
 				volumes = append(volumes, types.ServiceVolumeConfig{
@@ -271,7 +269,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 				Ipam: types.IPAMConfig{
 					Config: []*types.IPAMPool{
 						{
-							Net: baseNetworkAddress + ".0/24",
+							Subnet: baseNetworkAddress + ".0/24",
 						},
 					},
 				},

@@ -16,13 +16,13 @@ import (
 func TestSizedLRU(t *testing.T) {
 	c := cache.NewSizedLRU[ids.ID, int64](cachetest.IntSize, cachetest.IntSizeFunc)
 
-	cachetest.TestBasic(t, c)
+	cachetest.Basic(t, c)
 }
 
 func TestSizedLRUEviction(t *testing.T) {
 	c := cache.NewSizedLRU[ids.ID, int64](2*cachetest.IntSize, cachetest.IntSizeFunc)
 
-	cachetest.TestEviction(t, c)
+	cachetest.Eviction(t, c)
 }
 
 func TestSizedLRUWrongKeyEvictionRegression(t *testing.T) {

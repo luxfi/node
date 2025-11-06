@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
+	logfields "github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/node/utils/perms"
@@ -107,22 +108,22 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 	}
 	if proc == nil {
 		log.Info("collector not running",
-			log.String("cmd", cmdName),
+			logfields.UserString("cmd", cmdName),
 		)
 		return nil
 	}
 
 	log.Info("sending SIGTERM to collector process",
-		log.String("cmd", cmdName),
-		log.Int("pid", proc.Pid),
+		logfields.UserString("cmd", cmdName),
+		logfields.Int("pid", proc.Pid),
 	)
 	if err := proc.Signal(syscall.SIGTERM); err != nil {
 		return fmt.Errorf("failed to send SIGTERM to pid %d: %w", proc.Pid, err)
 	}
 
 	log.Info("waiting for collector process to stop",
-		log.String("cmd", cmdName),
-		log.Int("pid", proc.Pid),
+		logfields.UserString("cmd", cmdName),
+		logfields.Int("pid", proc.Pid),
 	)
 	err = pollUntilContextCancel(
 		ctx,
@@ -137,9 +138,9 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 				// Attempt to clear the PID file. Not critical that it is removed, just good housekeeping.
 				if err := clearStalePIDFile(log, cmdName, pidPath); err != nil {
 					log.Warn("failed to remove stale PID file",
-						log.String("cmd", cmdName),
-						log.String("pidFile", pidPath),
-						log.Error(err),
+						logfields.UserString("cmd", cmdName),
+						logfields.UserString("pidFile", pidPath),
+						logfields.Err(err),
 					)
 				}
 			}
@@ -150,7 +151,7 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 		return err
 	}
 	log.Info("collector stopped",
-		log.String("cmdName", cmdName),
+		logfields.UserString("cmdName", cmdName),
 	)
 
 	return nil
@@ -365,7 +366,7 @@ func startCollector(
 		return err
 	} else if process != nil {
 		log.Info("collector already running",
-			log.String("cmd", cmdName),
+			logfields.UserString("cmd", cmdName),
 		)
 		return nil
 	}
@@ -384,8 +385,8 @@ func startCollector(
 	confFilename := cmdName + ".yaml"
 	confPath := filepath.Join(workingDir, confFilename)
 	log.Info("writing collector config",
-		log.String("cmd", cmdName),
-		log.String("path", confPath),
+		logfields.UserString("cmd", cmdName),
+		logfields.UserString("path", confPath),
 	)
 	if err := os.WriteFile(confPath, []byte(config), perms.ReadWrite); err != nil {
 		return err
@@ -431,8 +432,8 @@ func clearStalePIDFile(log log.Logger, cmdName string, pidPath string) error {
 		}
 	} else {
 		log.Info("deleted stale collector pid file",
-			log.String("cmd", cmdName),
-			log.String("path", pidPath),
+			logfields.UserString("cmd", cmdName),
+			logfields.UserString("path", pidPath),
 		)
 	}
 	return nil
@@ -489,10 +490,10 @@ func startCollectorProcess(
 	logFilename := getLogFilename(cmdName)
 	fullCmd := "nohup " + cmdName + " " + args + " > " + logFilename + " 2>&1 & echo -n \"$!\" > " + pidPath
 	log.Info("starting collector",
-		log.String("cmd", cmdName),
-		log.String("workingDir", workingDir),
-		log.String("fullCmd", fullCmd),
-		log.String("logPath", filepath.Join(workingDir, logFilename)),
+		logfields.UserString("cmd", cmdName),
+		logfields.UserString("workingDir", workingDir),
+		logfields.UserString("fullCmd", fullCmd),
+		logfields.UserString("logPath", filepath.Join(workingDir, logFilename)),
 	)
 
 	cmd := exec.Command("bash", "-c", fullCmd)
@@ -511,9 +512,9 @@ func startCollectorProcess(
 			pid, err = getPID(cmdName, pidPath)
 			if err != nil {
 				log.Warn("failed to read PID file",
-					log.String("cmd", cmdName),
-					log.String("pidPath", pidPath),
-					log.Error(err),
+					logfields.UserString("cmd", cmdName),
+					logfields.UserString("pidPath", pidPath),
+					logfields.Err(err),
 				)
 			}
 			return pid != 0, nil
@@ -523,8 +524,8 @@ func startCollectorProcess(
 		return err
 	}
 	log.Info("started collector",
-		log.String("cmd", cmdName),
-		log.Int("pid", pid),
+		logfields.UserString("cmd", cmdName),
+		logfields.Int("pid", pid),
 	)
 
 	// Wait for non-empty log file. An empty log file should only occur if the command
@@ -575,9 +576,9 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 		return err
 	}
 	log.Info("waiting for collector readiness",
-		log.String("cmd", cmdName),
-		log.String("url", readinessURL),
-		log.String("logPath", logPath),
+		logfields.UserString("cmd", cmdName),
+		logfields.UserString("url", readinessURL),
+		logfields.UserString("logPath", logPath),
 	)
 	err = pollUntilContextCancel(
 		ctx,
@@ -587,10 +588,10 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 				return ready, nil
 			}
 			log.Warn("failed to check readiness",
-				log.String("cmd", cmdName),
-				log.String("url", readinessURL),
-				log.String("body", body),
-				log.Error(err),
+				logfields.UserString("cmd", cmdName),
+				logfields.UserString("url", readinessURL),
+				logfields.UserString("body", body),
+				logfields.Err(err),
 			)
 			return false, nil
 		},
@@ -599,7 +600,7 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 		return err
 	}
 	log.Info("collector ready",
-		log.String("cmd", cmdName),
+		logfields.UserString("cmd", cmdName),
 	)
 	return nil
 }

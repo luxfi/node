@@ -9,11 +9,10 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 type ginkgoWriteCloser struct{}
@@ -28,29 +27,10 @@ func (*ginkgoWriteCloser) Close() error {
 	return nil
 }
 
-// Define a simple encoder config appropriate for logging with ginkgo
-var ginkgoEncoderConfig = zapcore.EncoderConfig{
-	// Time, name and caller are omitted for consistency with previous output.
-	TimeKey:        "",
-	LevelKey:       "level",
-	NameKey:        "",
-	CallerKey:      "",
-	MessageKey:     "msg",
-	StacktraceKey:  "stacktrace",
-	EncodeLevel:    logging.ConsoleColorLevelEncoder,
-	EncodeDuration: zapcore.StringDurationEncoder,
-}
-
-// NewGinkgoLogger returns a logger with limited output
-func newGinkgoLogger(cfg zapcore.Encoder) log.Logger {
-	return logging.NewLogger(
-		"",
-		logging.NewWrappedCore(
-			logging.Info,
-			&ginkgoWriteCloser{},
-			cfg,
-		),
-	)
+// GinkgoLogger returns a simple logger for ginkgo tests
+func newGinkgoLogger() log.Logger {
+	// Use log.New() for simple logging
+	return log.New()
 }
 
 type GinkgoTestContext struct {
@@ -62,17 +42,15 @@ type GinkgoTestContext struct {
 // handler e.g. SynchronizedBeforeSuite.
 func NewEventHandlerTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
-		logger: newGinkgoLogger(logging.Auto.ConsoleEncoder()),
+		logger: newGinkgoLogger(),
 	}
 }
 
-// NewTestContext provides a logger with limited output to account for
+// NewGinkgoTestContext provides a logger with limited output to account for
 // the context already provided by ginkgo for test logging.
-func NewTestContext() *GinkgoTestContext {
+func NewGinkgoTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
-		logger: newGinkgoLogger(
-			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),
-		),
+		logger: newGinkgoLogger(),
 	}
 }
 

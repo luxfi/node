@@ -14,8 +14,6 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
 	"github.com/luxfi/node/vms/example/xsvm/tx"

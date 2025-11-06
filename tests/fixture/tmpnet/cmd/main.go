@@ -14,6 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/version"
 )
@@ -74,13 +75,12 @@ func main() {
 
 			ctx, cancel := context.WithTimeout(context.Background(), networkStartTimeout)
 			defer cancel()
+			logger := log.New()
 			err := tmpnet.BootstrapNewNetwork(
 				ctx,
-				os.Stdout,
+				logger,
 				network,
 				rootDir,
-				luxNodePath,
-				pluginDir,
 			)
 			if err != nil {
 				return err
@@ -105,7 +105,7 @@ func main() {
 			return nil
 		},
 	}
-	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(tmpnet.RootDirEnvName), "The path to the root directory for temporary networks")
+	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(tmpnet.RootNetworkDirEnvName), "The path to the root directory for temporary networks")
 	startNetworkCmd.PersistentFlags().StringVar(&luxNodePath, "node-path", os.Getenv(tmpnet.LuxNodePathEnvName), "The path to an node binary")
 	startNetworkCmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", os.ExpandEnv("$HOME/.luxd/plugins"), "[optional] the dir containing VM plugins")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
@@ -121,7 +121,8 @@ func main() {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			if err := tmpnet.StopNetwork(ctx, networkDir); err != nil {
+			logger := log.New()
+			if err := tmpnet.StopNetwork(ctx, logger, networkDir); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stdout, "Stopped network configured at: %s\n", networkDir)
@@ -139,7 +140,8 @@ func main() {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			return tmpnet.RestartNetwork(ctx, os.Stdout, networkDir)
+			logger := log.New()
+			return tmpnet.RestartNetwork(ctx, logger, networkDir)
 		},
 	}
 	rootCmd.AddCommand(restartNetworkCmd)

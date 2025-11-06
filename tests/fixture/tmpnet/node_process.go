@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/node"
+	nodeconfig "github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -66,7 +66,7 @@ type NodeProcess struct {
 	pid int
 }
 
-func (p *NodeProcess) setProcessContext(processContext node.NodeProcessContext) {
+func (p *NodeProcess) setProcessContext(processContext nodeconfig.ProcessContext) {
 	p.pid = processContext.PID
 	p.node.URI = processContext.URI
 	p.node.StakingAddress = processContext.StakingAddress
@@ -76,7 +76,7 @@ func (p *NodeProcess) readState() error {
 	path := p.getProcessContextPath()
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		// The absence of the process context file indicates the node is not running
-		p.setProcessContext(node.NodeProcessContext{})
+		p.setProcessContext(nodeconfig.ProcessContext{})
 		return nil
 	}
 
@@ -84,7 +84,7 @@ func (p *NodeProcess) readState() error {
 	if err != nil {
 		return fmt.Errorf("failed to read node process context: %w", err)
 	}
-	processContext := node.NodeProcessContext{}
+	processContext := nodeconfig.ProcessContext{}
 	if err := json.Unmarshal(bytes, &processContext); err != nil {
 		return fmt.Errorf("failed to unmarshal node process context: %w", err)
 	}
@@ -114,7 +114,7 @@ func (p *NodeProcess) Start(w io.Writer) error {
 	}
 
 	// All arguments are provided in the flags file
-	cmd := exec.Command(p.node.RuntimeConfig.LuxNodePath, "--config-file", p.node.getFlagsPath()) // #nosec G204
+	cmd := exec.Command(p.node.RuntimeConfig.Process.LuxNodePath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
 	// Ensure process is detached from the parent process so that an error in the parent will not affect the child
 	configureDetachedProcess(cmd)
 
@@ -123,7 +123,7 @@ func (p *NodeProcess) Start(w io.Writer) error {
 	}
 
 	// Determine appropriate level of node description detail
-	dataDir := p.node.GetDataDir()
+	dataDir := p.node.DataDir
 	nodeDescription := fmt.Sprintf("node %q", p.node.NodeID)
 	if p.node.IsEphemeral {
 		nodeDescription = "ephemeral " + nodeDescription
@@ -206,7 +206,7 @@ func (p *NodeProcess) IsHealthy(ctx context.Context) (bool, error) {
 }
 
 func (p *NodeProcess) getProcessContextPath() string {
-	return filepath.Join(p.node.GetDataDir(), config.DefaultProcessContextFilename)
+	return filepath.Join(p.node.DataDir, config.DefaultProcessContextFilename)
 }
 
 func (p *NodeProcess) waitForProcessContext(ctx context.Context) error {
@@ -268,10 +268,10 @@ func (p *NodeProcess) getProcess() (*os.Process, error) {
 func (p *NodeProcess) writeMonitoringConfig() error {
 	// Ensure labeling that uniquely identifies the node and its network
 	commonLabels := FlagsMap{
-		"network_uuid":      p.node.NetworkUUID,
+		"network_uuid":      p.node.network.UUID,
 		"node_id":           p.node.NodeID,
 		"is_ephemeral_node": strconv.FormatBool(p.node.IsEphemeral),
-		"network_owner":     p.node.NetworkOwner,
+		"network_owner":     p.node.network.Owner,
 		// metric/promtail ignore empty values so including these
 		// labels with empty values outside of a github worker (where
 		// the env vars will not be set) should not be a problem.
@@ -299,7 +299,7 @@ func (p *NodeProcess) writeMonitoringConfig() error {
 	}
 
 	promtailLabels := FlagsMap{
-		"__path__": filepath.Join(p.node.GetDataDir(), "logs", "*.log"),
+		"__path__": filepath.Join(p.node.DataDir, "logs", "*.log"),
 	}
 	promtailLabels.SetDefaults(commonLabels)
 	promtailConfig := []FlagsMap{
@@ -315,7 +315,7 @@ func (p *NodeProcess) writeMonitoringConfig() error {
 func (p *NodeProcess) getMonitoringConfigPath(tmpnetDir string, name string) string {
 	// Ensure a unique filename to allow config files to be added and removed
 	// by multiple nodes without conflict.
-	return filepath.Join(tmpnetDir, name, "file_sd_configs", fmt.Sprintf("%s_%s.json", p.node.NetworkUUID, p.node.NodeID))
+	return filepath.Join(tmpnetDir, name, "file_sd_configs", fmt.Sprintf("%s_%s.json", p.node.network.UUID, p.node.NodeID))
 }
 
 // Ensure the removal of the metric configuration file for this node.

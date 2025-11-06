@@ -19,8 +19,6 @@ import (
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/nets"
 )
 
@@ -370,20 +368,20 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
-	defaultConfigs := map[ids.ID]subnets.Config{
-		subnetID: getDefaultNetConfig(setupViperFlags()),
+	defaultConfigs := map[ids.ID]nets.Config{
+		netID: getDefaultNetConfig(setupViperFlags()),
 	}
 
 	tests := map[string]struct {
 		fileName    string
 		givenJSON   string
-		testF       func(*require.Assertions, map[ids.ID]subnets.Config)
+		testF       func(*require.Assertions, map[ids.ID]nets.Config)
 		expectedErr error
 	}{
 		"wrong config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
 			givenJSON: `thisisnotjson`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Nil(given)
 			},
 			expectedErr: errUnmarshalling,
@@ -391,7 +389,7 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 		"subnet is not tracked": {
 			fileName:  "Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU.json",
 			givenJSON: `{"validatorOnly": true}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
@@ -399,7 +397,7 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 		"default config when incorrect extension used": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.yaml",
 			givenJSON: `{"validatorOnly": true}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
@@ -407,7 +405,7 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 		"invalid consensus parameters": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
 			givenJSON: `{"consensusParameters":{"k": 111, "alphaPreference":1234} }`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Nil(given)
 			},
 			expectedErr: consensusconfig.ErrParametersInvalid,
@@ -415,7 +413,7 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 		"correct config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
 			givenJSON: `{"validatorOnly": true, "consensusParameters":{"k":20, "alphaPreference":15, "alphaConfidence":15} }`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
 				require.True(ok)
@@ -456,25 +454,25 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
-	defaultConfigs := map[ids.ID]subnets.Config{
-		subnetID: getDefaultNetConfig(setupViperFlags()),
+	defaultConfigs := map[ids.ID]nets.Config{
+		netID: getDefaultNetConfig(setupViperFlags()),
 	}
 
 	tests := map[string]struct {
 		givenJSON   string
-		testF       func(*require.Assertions, map[ids.ID]subnets.Config)
+		testF       func(*require.Assertions, map[ids.ID]nets.Config)
 		expectedErr error
 	}{
 		"default config used when no config provided": {
 			givenJSON: `{}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
 		},
 		"entry with no config": {
 			givenJSON: `{"2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i":{"consensusParameters":{"k":20,"alphaPreference":15,"alphaConfidence":15}}}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Len(given, 1)
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
@@ -488,7 +486,7 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 		},
 		"default config used when subnet is not tracked": {
 			givenJSON: `{"Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU":{"validatorOnly":true}}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
@@ -502,7 +500,7 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 					}
 				}
 			}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Empty(given)
 			},
 			expectedErr: consensusconfig.ErrParametersInvalid,
@@ -518,7 +516,7 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 					"validatorOnly": true
 				}
 			}`,
-			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
+			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
 				require.True(ok)
