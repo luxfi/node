@@ -24,25 +24,25 @@ func TestNewLedgerKeychain(t *testing.T) {
 
 	// user request invalid number of addresses to derive
 	ledger := keychainmock.NewLedger(ctrl)
-	_, err := NewLedgerKeychain(ledger, 0)
-	require.ErrorIs(err, ErrInvalidNumAddrsToDerive)
+	_, err := NewLedgerKeychain(ledger, []uint32{})
+	require.ErrorIs(err, ErrInvalidIndicesLength)
 
 	// ledger does not return expected number of derived addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{}, nil).Times(1)
-	_, err = NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{}, nil).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.ErrorIs(err, ErrInvalidNumAddrsDerived)
 
 	// ledger return error when asked for derived addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr}, errTest).Times(1)
-	_, err = NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr}, errTest).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.ErrorIs(err, errTest)
 
 	// good path
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr}, nil).Times(1)
-	_, err = NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr}, nil).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 }
 
@@ -56,8 +56,8 @@ func TestLedgerKeychain_Addresses(t *testing.T) {
 
 	// 1 addr
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	kc, err := NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	addrs := kc.Addresses()
@@ -66,8 +66,8 @@ func TestLedgerKeychain_Addresses(t *testing.T) {
 
 	// multiple addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
-	kc, err = NewLedgerKeychain(ledger, 3)
+	ledger.EXPECT().GetAddresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0, 1, 2})
 	require.NoError(err)
 
 	addrs = kc.Addresses()
@@ -87,8 +87,8 @@ func TestLedgerKeychain_Get(t *testing.T) {
 
 	// 1 addr
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	kc, err := NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	_, b := kc.Get(ids.GenerateTestShortID())
@@ -100,8 +100,8 @@ func TestLedgerKeychain_Get(t *testing.T) {
 
 	// multiple addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
-	kc, err = NewLedgerKeychain(ledger, 3)
+	ledger.EXPECT().GetAddresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0, 1, 2})
 	require.NoError(err)
 
 	_, b = kc.Get(ids.GenerateTestShortID())
@@ -132,24 +132,25 @@ func TestLedgerSigner_SignHash(t *testing.T) {
 	expectedSignature2 := []byte{2, 2, 2}
 	expectedSignature3 := []byte{3, 3, 3}
 
-	// ledger returns an incorrect number of signatures
+	// ledger returns an empty signature
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{}, nil).Times(1)
-	kc, err := NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return([]byte{}, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b := kc.Get(addr1)
 	require.True(b)
 
-	_, err = s.SignHash(toSign)
-	require.ErrorIs(err, ErrInvalidNumSignatures)
+	signature, err := s.SignHash(toSign)
+	require.NoError(err)
+	require.Equal([]byte{}, signature)
 
 	// ledger returns an error when asked for signature
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{expectedSignature1}, errTest).Times(1)
-	kc, err = NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return(expectedSignature1, errTest).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)
@@ -160,25 +161,25 @@ func TestLedgerSigner_SignHash(t *testing.T) {
 
 	// good path 1 addr
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{expectedSignature1}, nil).Times(1)
-	kc, err = NewLedgerKeychain(ledger, 1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return(expectedSignature1, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)
 	require.True(b)
 
-	signature, err := s.SignHash(toSign)
+	signature, err = s.SignHash(toSign)
 	require.NoError(err)
 	require.Equal(expectedSignature1, signature)
 
 	// good path 3 addr
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{expectedSignature1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{1}).Return([][]byte{expectedSignature2}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{2}).Return([][]byte{expectedSignature3}, nil).Times(1)
-	kc, err = NewLedgerKeychain(ledger, 3)
+	ledger.EXPECT().GetAddresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return(expectedSignature1, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(1)).Return(expectedSignature2, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(2)).Return(expectedSignature3, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0, 1, 2})
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)
@@ -203,7 +204,7 @@ func TestLedgerSigner_SignHash(t *testing.T) {
 	require.Equal(expectedSignature3, signature)
 }
 
-func TestNewLedgerKeychainFromIndices(t *testing.T) {
+func TestNewLedgerKeychainWithIndices(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -212,25 +213,25 @@ func TestNewLedgerKeychainFromIndices(t *testing.T) {
 
 	// user request invalid number of indices
 	ledger := keychainmock.NewLedger(ctrl)
-	_, err := NewLedgerKeychainFromIndices(ledger, []uint32{})
+	_, err := NewLedgerKeychain(ledger, []uint32{})
 	require.ErrorIs(err, ErrInvalidIndicesLength)
 
 	// ledger does not return expected number of derived addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{}, nil).Times(1)
-	_, err = NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{}, nil).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.ErrorIs(err, ErrInvalidNumAddrsDerived)
 
 	// ledger return error when asked for derived addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr}, errTest).Times(1)
-	_, err = NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr}, errTest).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.ErrorIs(err, errTest)
 
 	// good path
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr}, nil).Times(1)
-	_, err = NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr}, nil).Times(1)
+	_, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 }
 
@@ -244,8 +245,8 @@ func TestLedgerKeychainFromIndices_Addresses(t *testing.T) {
 
 	// 1 addr
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	kc, err := NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	addrs := kc.Addresses()
@@ -254,8 +255,8 @@ func TestLedgerKeychainFromIndices_Addresses(t *testing.T) {
 
 	// first 3 addresses
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, []uint32{0, 1, 2})
+	ledger.EXPECT().GetAddresses([]uint32{0, 1, 2}).Return([]ids.ShortID{addr1, addr2, addr3}, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0, 1, 2})
 	require.NoError(err)
 
 	addrs = kc.Addresses()
@@ -268,8 +269,8 @@ func TestLedgerKeychainFromIndices_Addresses(t *testing.T) {
 	indices := []uint32{3, 7, 1}
 	addresses := []ids.ShortID{addr1, addr2, addr3}
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses(indices).Return(addresses, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, indices)
+	ledger.EXPECT().GetAddresses(indices).Return(addresses, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, indices)
 	require.NoError(err)
 
 	addrs = kc.Addresses()
@@ -282,8 +283,8 @@ func TestLedgerKeychainFromIndices_Addresses(t *testing.T) {
 	indices = []uint32{3, 7, 1, 3, 1, 7}
 	addresses = []ids.ShortID{addr1, addr2, addr3, addr1, addr2, addr3}
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses(indices).Return(addresses, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, indices)
+	ledger.EXPECT().GetAddresses(indices).Return(addresses, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, indices)
 	require.NoError(err)
 
 	addrs = kc.Addresses()
@@ -303,8 +304,8 @@ func TestLedgerKeychainFromIndices_Get(t *testing.T) {
 
 	// 1 addr
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	kc, err := NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	_, b := kc.Get(ids.GenerateTestShortID())
@@ -318,8 +319,8 @@ func TestLedgerKeychainFromIndices_Get(t *testing.T) {
 	indices := []uint32{3, 7, 1}
 	addresses := []ids.ShortID{addr1, addr2, addr3}
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses(indices).Return(addresses, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, indices)
+	ledger.EXPECT().GetAddresses(indices).Return(addresses, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, indices)
 	require.NoError(err)
 
 	_, b = kc.Get(ids.GenerateTestShortID())
@@ -352,9 +353,9 @@ func TestLedgerSignerFromIndices_SignHash(t *testing.T) {
 
 	// ledger returns an incorrect number of signatures
 	ledger := keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{}, nil).Times(1)
-	kc, err := NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return(expectedSignature1, nil).Times(1)
+	kc, err := NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b := kc.Get(addr1)
@@ -365,9 +366,9 @@ func TestLedgerSignerFromIndices_SignHash(t *testing.T) {
 
 	// ledger returns an error when asked for signature
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
 	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{expectedSignature1}, errTest).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	kc, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)
@@ -378,9 +379,9 @@ func TestLedgerSignerFromIndices_SignHash(t *testing.T) {
 
 	// good path 1 addr
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{0}).Return([][]byte{expectedSignature1}, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, []uint32{0})
+	ledger.EXPECT().GetAddresses([]uint32{0}).Return([]ids.ShortID{addr1}, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, uint32(0)).Return(expectedSignature1, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, []uint32{0})
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)
@@ -394,11 +395,11 @@ func TestLedgerSignerFromIndices_SignHash(t *testing.T) {
 	indices := []uint32{3, 7, 1}
 	addresses := []ids.ShortID{addr1, addr2, addr3}
 	ledger = keychainmock.NewLedger(ctrl)
-	ledger.EXPECT().Addresses(indices).Return(addresses, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{indices[0]}).Return([][]byte{expectedSignature1}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{indices[1]}).Return([][]byte{expectedSignature2}, nil).Times(1)
-	ledger.EXPECT().SignHash(toSign, []uint32{indices[2]}).Return([][]byte{expectedSignature3}, nil).Times(1)
-	kc, err = NewLedgerKeychainFromIndices(ledger, indices)
+	ledger.EXPECT().GetAddresses(indices).Return(addresses, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, indices[0]).Return(expectedSignature1, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, indices[1]).Return(expectedSignature2, nil).Times(1)
+	ledger.EXPECT().SignHash(toSign, indices[2]).Return(expectedSignature3, nil).Times(1)
+	kc, err = NewLedgerKeychain(ledger, indices)
 	require.NoError(err)
 
 	s, b = kc.Get(addr1)

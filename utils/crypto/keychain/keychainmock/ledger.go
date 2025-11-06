@@ -13,7 +13,6 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -56,21 +55,6 @@ func (mr *LedgerMockRecorder) Address(displayHRP, addressIndex any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Address", reflect.TypeOf((*Ledger)(nil).Address), displayHRP, addressIndex)
 }
 
-// Addresses mocks base method.
-func (m *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Addresses", addressIndices)
-	ret0, _ := ret[0].([]ids.ShortID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Addresses indicates an expected call of Addresses.
-func (mr *LedgerMockRecorder) Addresses(addressIndices any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Addresses", reflect.TypeOf((*Ledger)(nil).Addresses), addressIndices)
-}
-
 // Disconnect mocks base method.
 func (m *Ledger) Disconnect() error {
 	m.ctrl.T.Helper()
@@ -85,47 +69,62 @@ func (mr *LedgerMockRecorder) Disconnect() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disconnect", reflect.TypeOf((*Ledger)(nil).Disconnect))
 }
 
-// Sign mocks base method.
-func (m *Ledger) Sign(unsignedTxBytes []byte, addressIndices []uint32) ([][]byte, error) {
+// GetAddresses mocks base method.
+func (m *Ledger) GetAddresses(addressIndices []uint32) ([]ids.ShortID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Sign", unsignedTxBytes, addressIndices)
-	ret0, _ := ret[0].([][]byte)
+	ret := m.ctrl.Call(m, "GetAddresses", addressIndices)
+	ret0, _ := ret[0].([]ids.ShortID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddresses indicates an expected call of GetAddresses.
+func (mr *LedgerMockRecorder) GetAddresses(addressIndices any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddresses", reflect.TypeOf((*Ledger)(nil).GetAddresses), addressIndices)
+}
+
+// Sign mocks base method.
+func (m *Ledger) Sign(hash []byte, addressIndex uint32) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sign", hash, addressIndex)
+	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Sign indicates an expected call of Sign.
-func (mr *LedgerMockRecorder) Sign(unsignedTxBytes, addressIndices any) *gomock.Call {
+func (mr *LedgerMockRecorder) Sign(hash, addressIndex any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sign", reflect.TypeOf((*Ledger)(nil).Sign), unsignedTxBytes, addressIndices)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sign", reflect.TypeOf((*Ledger)(nil).Sign), hash, addressIndex)
 }
 
 // SignHash mocks base method.
-func (m *Ledger) SignHash(hash []byte, addressIndices []uint32) ([][]byte, error) {
+func (m *Ledger) SignHash(hash []byte, addressIndex uint32) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignHash", hash, addressIndices)
-	ret0, _ := ret[0].([][]byte)
+	ret := m.ctrl.Call(m, "SignHash", hash, addressIndex)
+	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignHash indicates an expected call of SignHash.
-func (mr *LedgerMockRecorder) SignHash(hash, addressIndices any) *gomock.Call {
+func (mr *LedgerMockRecorder) SignHash(hash, addressIndex any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignHash", reflect.TypeOf((*Ledger)(nil).SignHash), hash, addressIndices)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignHash", reflect.TypeOf((*Ledger)(nil).SignHash), hash, addressIndex)
 }
 
-// Version mocks base method.
-func (m *Ledger) Version() (*version.Semantic, error) {
+// SignTransaction mocks base method.
+func (m *Ledger) SignTransaction(rawUnsignedHash []byte, addressIndices []uint32) ([][]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Version")
-	ret0, _ := ret[0].(*version.Semantic)
+	ret := m.ctrl.Call(m, "SignTransaction", rawUnsignedHash, addressIndices)
+	ret0, _ := ret[0].([][]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Version indicates an expected call of Version.
-func (mr *LedgerMockRecorder) Version() *gomock.Call {
+// SignTransaction indicates an expected call of SignTransaction.
+func (mr *LedgerMockRecorder) SignTransaction(rawUnsignedHash, addressIndices any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Version", reflect.TypeOf((*Ledger)(nil).Version))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTransaction", reflect.TypeOf((*Ledger)(nil).SignTransaction), rawUnsignedHash, addressIndices)
 }
