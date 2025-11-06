@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/leveldb"
@@ -18,7 +16,6 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/node/utils/units"
@@ -83,11 +80,11 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	netID := ids.GenerateTestID()
 	for _, nodeID := range nodeIDs {
 		currentHeight++
-		require.NoError(addNetValidator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeID, currentHeight))
+		require.NoError(addNetValidator(s, netID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeID, currentHeight))
 	}
 	for i := 0; i < 9900; i++ {
 		currentHeight++
-		require.NoError(addNetDelegator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeIDs, currentHeight))
+		require.NoError(addNetDelegator(s, netID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeIDs, currentHeight))
 	}
 
 	ctx := context.Background()
