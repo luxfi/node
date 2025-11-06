@@ -4,9 +4,6 @@
 package fx
 
 import (
-	"context"
-
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -21,12 +18,6 @@ var (
 // OutputOwnersWrapper wraps secp256k1fx.OutputOwners to implement Owner
 type OutputOwnersWrapper struct {
 	*secp256k1fx.OutputOwners
-}
-
-// InitializeContext implements consensus.Contextualizable
-func (o *OutputOwnersWrapper) InitializeContext(ctx context.Context) error {
-	// No-op implementation for now
-	return nil
 }
 
 var _ Owner = (*OutputOwnersWrapper)(nil)
@@ -63,7 +54,6 @@ type Owner interface {
 	verify.IsNotState
 
 	verify.Verifiable
-	consensus.ContextInitializable
 }
 
 type Owned interface {
