@@ -4,13 +4,13 @@
 package executor
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
@@ -51,9 +51,11 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 	s := state.NewMockState(ctrl)
 	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
+	ctx := consensustest.Context(t, ids.GenerateTestID())
+
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: context.Background(),
+			ctx: ctx,
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
 			},
@@ -109,13 +111,15 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx.SharedMemory = sharedMemory
+
 	acceptor := &acceptor{
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state:        s,
-			ctx:          context.Background(),
-			SharedMemory: sharedMemory,
+			state: s,
+			ctx:   ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -188,13 +192,15 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 
 	parentID := ids.GenerateTestID()
 	clk := &mockable.Clock{}
+	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx.SharedMemory = sharedMemory
+
 	acceptor := &acceptor{
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state:        s,
-			ctx:          context.Background(),
-			SharedMemory: sharedMemory,
+			state: s,
+			ctx:   ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -276,17 +282,18 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx.SharedMemory = sharedMemory
+
 	acceptor := &acceptor{
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state:        s,
-			ctx:          context.Background(),
-			SharedMemory: sharedMemory,
+			state: s,
+			ctx:   ctx,
 		},
-		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validators.TestManager,
 	}
 
 	blk, err := block.NewApricotCommitBlock(parentID, 1 /*height*/)
@@ -385,17 +392,18 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx.SharedMemory = sharedMemory
+
 	acceptor := &acceptor{
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state:        s,
-			ctx:          context.Background(),
-			SharedMemory: sharedMemory,
+			state: s,
+			ctx:   ctx,
 		},
-		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validators.TestManager,
 	}
 
 	blk, err := block.NewApricotAbortBlock(parentID, 1 /*height*/)

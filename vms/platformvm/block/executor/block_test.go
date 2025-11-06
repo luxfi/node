@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/uptime/uptimemock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -38,18 +38,16 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -65,18 +63,16 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -101,18 +97,16 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -139,18 +133,16 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrClosed)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -180,18 +172,16 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -231,18 +221,16 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(nil, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -286,19 +274,18 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(0.0, database.ErrNotFound)
+				// Note: NoOpCalculator doesn't need mocking, it always returns 100% uptime
 
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -343,18 +330,16 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetNetTransformation(netID).Return(nil, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -404,19 +389,18 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetNetTransformation(netID).Return(transformNetTx, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)
+				// Note: NoOpCalculator doesn't need mocking, it always returns 100% uptime
 
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: .8,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 
@@ -466,19 +450,18 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetNetTransformation(netID).Return(transformNetTx, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)
+				// Note: NoOpCalculator doesn't need mocking, it always returns 100% uptime
 
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   context.Background(),
+						ctx:   consensustest.Context(t, ids.GenerateTestID()),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Internal{
 							UptimePercentage: .8,
 						},
-						Uptimes: uptimes,
+						Uptimes: &uptime.NoOpCalculator{},
 					},
 				}
 

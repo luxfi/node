@@ -15,6 +15,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -54,6 +55,7 @@ type testEnv struct {
 	genesisTx     *txs.Tx
 	testLock      *sync.Mutex
 	txBuilder     *txstest.Builder
+	sharedMemory  *atomic.Memory
 }
 
 // newGenesisBytesTest creates test genesis bytes
@@ -109,7 +111,25 @@ func getCreateTxFromGenesisTest(t *testing.T, genesisBytes []byte, assetAlias st
 	return nil
 }
 
+// testSharedMemory wraps atomic.SharedMemory to match VM's SharedMemory interface
+type testSharedMemory struct {
+	mem atomic.SharedMemory
+}
 
+func (t *testSharedMemory) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
+	return t.mem.Get(peerChainID, keys)
+}
+
+func (t *testSharedMemory) Apply(requests map[ids.ID]interface{}, _ ...interface{}) error {
+	// Convert interface{} map to *atomic.Requests map
+	atomicRequests := make(map[ids.ID]*atomic.Requests)
+	for chainID, req := range requests {
+		if atomicReq, ok := req.(*atomic.Requests); ok {
+			atomicRequests[chainID] = atomicReq
+		}
+	}
+	return t.mem.Apply(atomicRequests)
+}
 
 // setup creates a test environment
 func setup(t testing.TB, config *envConfig) *testEnv {
@@ -129,9 +149,13 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	}
 
 	baseDB := memdb.New()
+	sharedMemory := atomic.NewMemory(memdb.New())
 
 	vm := &VM{}
 	genesisBytes := newGenesisBytesTest(t.(*testing.T))
+	// Create shared memory wrapper that matches VM's interface
+	atomicMem := sharedMemory.NewSharedMemory(ctx.ChainID)
+	vm.SharedMemory = &testSharedMemory{mem: atomicMem}
 
 	testLock := &sync.Mutex{}
 	testLock.Lock()
@@ -173,6 +197,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		genesisTx:     genesisTx,
 		testLock:      testLock,
 		txBuilder:     txBuilder,
+		sharedMemory:  sharedMemory,
 	}
 
 	return env

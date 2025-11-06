@@ -11,24 +11,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/consensus/consensustest"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/engine/enginetest"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core/common"
-	"github.com/luxfi/consensus/engine/enginetest"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -126,25 +126,35 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		Rewards:    rewardsCalc,
 	})
 
-	res.uptimes = uptime.NewManager(res.state, res.clk)
-	res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+	// Uptime calculator is set to NoOp in backend
+	res.utxosVerifier = utxo.NewVerifier(res.clk, res.fx)
 
 	genesisID := res.state.GetLastAccepted()
+	// Convert testcontext.Context to consensusctx.Context
+	consensusCtx := &consensusctx.Context{
+		NetworkID:  res.ctx.NetworkID,
+		QuantumID:  res.ctx.NetworkID,
+		NetID:      res.ctx.NetID,
+		ChainID:    res.ctx.ChainID,
+		NodeID:     res.ctx.NodeID,
+		XAssetID:   res.ctx.XAssetID,
+		LUXAssetID: res.ctx.LUXAssetID,
+	}
+
 	res.backend = txexecutor.Backend{
 		Config:       res.config,
-		Ctx:          res.ctx,
+		Ctx:          consensusCtx,
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
-		Lock:         res.ctx.Lock,
 	}
 
 	registerer := prometheus.NewRegistry()
 	res.sender = &enginetest.Sender{}
-	res.sender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	res.sender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
 		return nil
 	}
 
@@ -162,23 +172,29 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		validatorstest.Manager,
 	)
 
-	validatorManager := validators.NewManager()
+	// Use validatorstest.Manager for validator state
 	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
+
+	// Create a mock warp signer if needed
+	var warpSigner warp.Signer
+	if res.ctx.WarpSigner != nil {
+		if ws, ok := res.ctx.WarpSigner.(warp.Signer); ok {
+			warpSigner = ws
+		}
+	}
+
 	res.network, err = network.New(
 		res.ctx.Log,
 		res.ctx.NodeID,
 		res.ctx.NetID,
-		validators.NewLockedState(
-			res.ctx.Lock,
-			validatorManager,
-		),
+		validatorstest.Manager,
 		txVerifier,
 		res.mempool,
 		res.backend.Config.PartialSyncPrimaryNetwork,
 		res.sender,
-		&res.ctx.Lock,
+		res.ctx.Lock,
 		res.state,
-		res.ctx.WarpSigner,
+		warpSigner,
 		registerer,
 		config.DefaultNetwork,
 	)
@@ -197,13 +213,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		res.ctx.Lock.Lock()
 		defer res.ctx.Lock.Unlock()
 
-		if res.uptimes.StartedTracking() {
-			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-
-			require.NoError(res.uptimes.StopTracking(validatorIDs))
-
-			require.NoError(res.state.Commit())
-		}
+		// Uptime tracking is NoOp, skip cleanup
 
 		require.NoError(res.state.Close())
 		require.NoError(res.baseDB.Close())
@@ -221,9 +231,19 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
+	// Convert testcontext.Context to consensusctx.Context for wallet
+	walletCtx := &consensusctx.Context{
+		NetworkID:  e.ctx.NetworkID,
+		QuantumID:  e.ctx.NetworkID,
+		NetID:      e.ctx.NetID,
+		ChainID:    e.ctx.ChainID,
+		NodeID:     e.ctx.NodeID,
+		XAssetID:   e.ctx.XAssetID,
+		LUXAssetID: e.ctx.LUXAssetID,
+	}
 	return txstest.NewWallet(
 		t,
-		e.ctx,
+		walletCtx,
 		e.config,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),

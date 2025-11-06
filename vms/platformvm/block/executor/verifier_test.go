@@ -11,14 +11,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/consensustest"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/upgrade"
@@ -55,7 +55,7 @@ import (
 type testVerifierConfig struct {
 	DB                 database.Database
 	Upgrades           upgrade.Config
-	Context            *consensus.Context
+	Context            *consensuscontext.Context
 	ValidatorFeeConfig validatorfee.Config
 }
 

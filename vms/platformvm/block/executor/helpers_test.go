@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -88,7 +89,7 @@ type test struct {
 
 // testContext provides a mock context for testing
 type testContext struct {
-	context.Context
+	context.Context // embed stdlib context
 	NetworkID    uint32
 	NetID     ids.ID
 	ChainID      ids.ID

@@ -116,3 +116,13 @@ func BuildChild(parent *Block) *Block {
 		StatusV:    Processing,
 	}
 }
+
+// MakeLastAcceptedBlockF creates a LastAcceptedF function that returns the last block in the chain
+func MakeLastAcceptedBlockF(blocks []*Block) func(context.Context) (ids.ID, error) {
+	return func(context.Context) (ids.ID, error) {
+		if len(blocks) == 0 {
+			return ids.Empty, nil
+		}
+		return blocks[len(blocks)-1].ID(), nil
+	}
+}

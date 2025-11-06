@@ -12,24 +12,26 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 )
 
 // VM is a test VM that can be used for testing
 type VM struct {
 	T *testing.T
 
-	InitializeF         func(context.Context, context.Context, database.Database, []byte, []byte, []byte, interface{}, []ids.ID, metric.Registry) error
+	InitializeF         func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error
 	BuildBlockF         func(context.Context) (block.Block, error)
 	ParseBlockF         func(context.Context, []byte) (block.Block, error)
 	GetBlockF           func(context.Context, ids.ID) (block.Block, error)
 	LastAcceptedF       func(context.Context) (ids.ID, error)
 	SetPreferenceF      func(context.Context, ids.ID) error
-	SetStateF           func(context.Context, uint8) error
+	SetStateF           func(context.Context, uint32) error
 	VerifyHeightIndexF  func(context.Context) error
 	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
 	GetStatelessBlockF  func(context.Context, ids.ID) (block.Block, error)
 }
+
+// ChainVM is a type alias for VM to maintain compatibility
+type ChainVM = VM
 
 // BatchedVM is a test VM that supports batch operations
 type BatchedVM struct {
@@ -53,7 +55,7 @@ type StateSyncableVM struct {
 
 // Standard method implementations - these can be overridden by setting the F fields
 
-func (vm *VM) Initialize(ctx context.Context, chainCtx context.Context, db database.Database, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgSender interface{}, validators []ids.ID, registry metric.Registry) error {
+func (vm *VM) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgSender interface{}, validators []interface{}, registry interface{}) error {
 	if vm.InitializeF != nil {
 		return vm.InitializeF(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgSender, validators, registry)
 	}
@@ -95,7 +97,7 @@ func (vm *VM) SetPreference(ctx context.Context, blkID ids.ID) error {
 	return nil
 }
 
-func (vm *VM) SetState(ctx context.Context, state uint8) error {
+func (vm *VM) SetState(ctx context.Context, state uint32) error {
 	if vm.SetStateF != nil {
 		return vm.SetStateF(ctx, state)
 	}
@@ -121,6 +123,48 @@ func (vm *VM) GetStatelessBlock(ctx context.Context, blkID ids.ID) (block.Block,
 		return vm.GetStatelessBlockF(ctx, blkID)
 	}
 	return nil, errors.New("not implemented")
+}
+
+// Connected is called when the node connects to a peer
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+	// No-op implementation for tests
+	return nil
+}
+
+// Disconnected is called when the node disconnects from a peer
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// No-op implementation for tests
+	return nil
+}
+
+// HealthCheck returns the health status of the VM
+func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+	// Return healthy status for tests
+	return map[string]string{"status": "healthy"}, nil
+}
+
+// NewHTTPHandler returns an HTTP handler for the VM
+func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+	// Return nil handler for tests
+	return nil, nil
+}
+
+// Shutdown shuts down the VM
+func (vm *VM) Shutdown(ctx context.Context) error {
+	// No-op implementation for tests
+	return nil
+}
+
+// Version returns the version of the VM
+func (vm *VM) Version(ctx context.Context) (string, error) {
+	// Return test version
+	return "test-1.0.0", nil
+}
+
+// WaitForEvent waits for an event from the VM
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+	// No-op implementation for tests
+	return nil, nil
 }
 
 // BatchedVM methods

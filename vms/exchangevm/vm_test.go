@@ -4,21 +4,13 @@
 package exchangevm
 
 import (
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"context"
 	"math"
 	"testing"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -26,8 +18,14 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/propertyfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
+	xvmtxs "github.com/luxfi/node/vms/exchangevm/txs"
 )
 
 func TestInvalidFx(t *testing.T) {
@@ -160,7 +158,9 @@ func TestIssueNFT(t *testing.T) {
 
 	// Move the NFT
 	addrs := set.Set[ids.ShortID]{}
-	addrs.Add(kc.Addresses()...)
+	for addr := range kc.Addresses() {
+		addrs.Add(addr)
+	}
 	utxos, err := lux.GetAllUTXOs(env.vm.state, addrs)
 	require.NoError(err)
 	transferOp, _, err := env.vm.SpendNFT(
@@ -187,10 +187,12 @@ func TestIssueProperty(t *testing.T) {
 
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
-		additionalFxs: []interface{}{{
-			ID: propertyfx.ID,
-			Fx: &propertyfx.Fx{},
-		}},
+		additionalFxs: []interface{}{
+			&common.Fx{
+				ID: propertyfx.ID,
+				Fx: &propertyfx.Fx{},
+			},
+		},
 	})
 	env.vm.Lock.Unlock()
 
@@ -223,7 +225,7 @@ func TestIssueProperty(t *testing.T) {
 	issueAndAccept(require, env.vm, createAssetTx)
 
 	// mint the property
-	mintPropertyOp := &txs.Operation{
+	mintPropertyOp := &xvmtxs.Operation{
 		Asset: lux.Asset{ID: createAssetTx.ID()},
 		UTXOIDs: []*lux.UTXOID{{
 			TxID:        createAssetTx.ID(),
@@ -244,7 +246,7 @@ func TestIssueProperty(t *testing.T) {
 	}
 
 	mintPropertyTx, err := env.txBuilder.Operation(
-		[]*txs.Operation{mintPropertyOp},
+		[]*xvmtxs.Operation{mintPropertyOp},
 		kc,
 		key.Address(),
 	)
@@ -252,7 +254,7 @@ func TestIssueProperty(t *testing.T) {
 	issueAndAccept(require, env.vm, mintPropertyTx)
 
 	// burn the property
-	burnPropertyOp := &txs.Operation{
+	burnPropertyOp := &xvmtxs.Operation{
 		Asset: lux.Asset{ID: createAssetTx.ID()},
 		UTXOIDs: []*lux.UTXOID{{
 			TxID:        mintPropertyTx.ID(),
@@ -262,7 +264,7 @@ func TestIssueProperty(t *testing.T) {
 	}
 
 	burnPropertyTx, err := env.txBuilder.Operation(
-		[]*txs.Operation{burnPropertyOp},
+		[]*xvmtxs.Operation{burnPropertyOp},
 		kc,
 		key.Address(),
 	)
@@ -274,13 +276,12 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:             upgradetest.Latest,
-		isCustomFeeAsset: true,
+		fork: upgradetest.GetConfig(upgradetest.Latest),
 	})
 	env.vm.Lock.Unlock()
 
 	// send first asset
-	tx := newTx(t, env.genesisBytes, env.consensusCtx.ChainID, env.vm.parser, feeAssetName)
+	tx := newTx(t, env.genesisBytes, env.consensusCtx.ChainID, env.vm.parser, "LUX")
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -288,8 +289,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:             upgradetest.Latest,
-		isCustomFeeAsset: true,
+		fork: upgradetest.GetConfig(upgradetest.Latest),
 	})
 	env.vm.Lock.Unlock()
 
@@ -298,8 +298,8 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 		key = keys[0]
 		kc  = secp256k1fx.NewKeychain(key)
 
-		feeAssetCreateTx = getCreateTxFromGenesisTest(t, env.genesisBytes, feeAssetName)
-		createTx         = getCreateTxFromGenesisTest(t, env.genesisBytes, otherAssetName)
+		feeAssetCreateTx = getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
+		createTx         = getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 	)
 
 	tx, err := env.txBuilder.BaseTx(
@@ -363,7 +363,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          upgradetest.Latest,
+		fork:          upgradetest.GetConfig(upgradetest.Latest),
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -391,7 +391,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require.NoError(err)
 
 	// let secondTx spend firstTx outputs
-	secondTx := &txs.Tx{Unsigned: &txs.BaseTx{
+	secondTx := &xvmtxs.Tx{Unsigned: &xvmtxs.BaseTx{
 		BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
 			BlockchainID: env.vm.XChainID,
@@ -438,7 +438,7 @@ func TestIssueImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.Durango,
+		fork: upgradetest.GetConfig(upgradetest.Durango),
 	})
 	defer env.vm.Lock.Unlock()
 
@@ -474,7 +474,7 @@ func TestIssueImportTx(t *testing.T) {
 	)
 
 	// Provide the platform UTXO:
-	utxoBytes, err := env.vm.parser.Codec().Marshal(txs.CodecVersion, importedUtxo)
+	utxoBytes, err := env.vm.parser.Codec().Marshal(xvmtxs.CodecVersion, importedUtxo)
 	require.NoError(err)
 
 	inputID := importedUtxo.InputID()
@@ -513,7 +513,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          upgradetest.Durango,
+		fork:          upgradetest.GetConfig(upgradetest.Durango),
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -532,8 +532,8 @@ func TestForceAcceptImportTx(t *testing.T) {
 	}
 
 	txAssetID := lux.Asset{ID: luxID}
-	tx := &txs.Tx{Unsigned: &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	tx := &xvmtxs.Tx{Unsigned: &xvmtxs.ImportTx{
+		BaseTx: xvmtxs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
 			BlockchainID: env.vm.XChainID,
 			Outs: []*lux.TransferableOutput{{
@@ -575,7 +575,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 func TestImportTxNotState(t *testing.T) {
 	require := require.New(t)
 
-	intf := interface{}(&txs.ImportTx{})
+	intf := interface{}(&xvmtxs.ImportTx{})
 	_, ok := intf.(verify.State)
 	require.False(ok)
 }
@@ -584,8 +584,8 @@ func TestImportTxNotState(t *testing.T) {
 func TestIssueExportTx(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: upgradetest.Durango})
-	defer env.vm.ctx.Lock.Unlock()
+	env := setup(t, &envConfig{fork: upgradetest.GetConfig(upgradetest.Durango)})
+	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
