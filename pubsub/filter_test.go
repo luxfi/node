@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/pubsub/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
