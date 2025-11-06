@@ -261,7 +261,7 @@ func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 	tx, err := wallet.IssueCreateChainTx(
 		subnetID,
 		nil,
-		constants.AVMID,
+		constants.XVMID,
 		nil,
 		"chain name",
 	)

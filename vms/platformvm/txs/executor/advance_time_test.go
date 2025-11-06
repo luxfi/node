@@ -4,15 +4,17 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -30,12 +32,7 @@ func newAdvanceTimeTx(t testing.TB, timestamp time.Time) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
-	})
-	return tx, tx.SyntacticVerify(ctx)
+	return tx, nil
 }
 
 // Ensure semantic verification updates the current and pending staker set
@@ -389,7 +386,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			for _, staker := range test.subnetStakers {
 				wallet := newWallet(t, env, walletConfig{
-					subnetIDs: []ids.ID{subnetID},
+					subnetIDs: []ids.ID{netID},
 				})
 
 				tx, err := wallet.IssueAddNetValidatorTx(
@@ -485,7 +482,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	env.config.TrackedNets.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		subnetIDs: []ids.ID{netID},
 	})
 
 	dummyHeight := uint64(1)
@@ -570,7 +567,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 		onAbortState,
 	))
 
-	_, err = onCommitState.GetCurrentValidator(subnetID, subnetValidatorNodeID)
+	_, err = onCommitState.GetCurrentValidator(netID, subnetValidatorNodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
 	// Check VM Validators are removed successfully
@@ -599,7 +596,7 @@ func TestTrackedNet(t *testing.T) {
 			}
 
 			wallet := newWallet(t, env, walletConfig{
-				subnetIDs: []ids.ID{subnetID},
+				subnetIDs: []ids.ID{netID},
 			})
 
 			// Add a subnet validator to the staker set

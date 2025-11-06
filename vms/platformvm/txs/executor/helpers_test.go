@@ -41,6 +41,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/status"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
@@ -78,7 +79,7 @@ type environment struct {
 	msm            *mutableSharedMemory
 	state          state.State
 	states         map[ids.ID]state.Chain
-	uptimes        uptime.Manager
+	uptimes        uptime.Calculator
 	backend        Backend
 }
 

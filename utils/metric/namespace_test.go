@@ -4,7 +4,6 @@
 package utilmetric
 
 import (
-	luxmetric "github.com/luxfi/metric"
 	"strings"
 	"testing"
 
