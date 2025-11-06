@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/filesystem/filesystemmock"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
-
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/vmsmock"
 )
@@ -138,7 +138,6 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystemmock.NewReader(ctrl)
 	mockManager := vmsmock.NewManager(ctrl)
-	mockRegistry := metric.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
 		log.NewNoOpLogger(),
 		"",

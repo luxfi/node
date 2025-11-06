@@ -16,11 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/vmsmock"
 )
 
 var id = ids.GenerateTestID()
@@ -29,7 +26,7 @@ var id = ids.GenerateTestID()
 func TestRegisterRegisterVMFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 
 	// We fail to register the VM
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(errTest)
@@ -42,7 +39,7 @@ func TestRegisterRegisterVMFails(t *testing.T) {
 func TestRegisterBadVM(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := "this is not a vm..."
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
@@ -57,7 +54,7 @@ func TestRegisterBadVM(t *testing.T) {
 func TestRegisterCreateHandlersAndShutdownFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	// Set up the manual mock behaviors
@@ -79,7 +76,7 @@ func TestRegisterCreateHandlersAndShutdownFails(t *testing.T) {
 func TestRegisterCreateHandlersFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
@@ -101,7 +98,7 @@ func TestRegisterCreateHandlersFails(t *testing.T) {
 func TestRegisterAddRouteFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -132,7 +129,7 @@ func TestRegisterAddRouteFails(t *testing.T) {
 func TestRegisterAliasLookupFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -164,7 +161,7 @@ func TestRegisterAliasLookupFails(t *testing.T) {
 func TestRegisterAddAliasesFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -204,7 +201,7 @@ func TestRegisterAddAliasesFails(t *testing.T) {
 func TestRegisterHappyCase(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -243,7 +240,7 @@ func TestRegisterHappyCase(t *testing.T) {
 func TestRegisterWithReadLockRegisterVMFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 
 	// We fail to register the VM
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(errTest)
@@ -256,7 +253,7 @@ func TestRegisterWithReadLockRegisterVMFails(t *testing.T) {
 func TestRegisterWithReadLockBadVM(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := "this is not a vm..."
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
@@ -271,7 +268,7 @@ func TestRegisterWithReadLockBadVM(t *testing.T) {
 func TestRegisterWithReadLockCreateHandlersAndShutdownFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
@@ -293,7 +290,7 @@ func TestRegisterWithReadLockCreateHandlersAndShutdownFails(t *testing.T) {
 func TestRegisterWithReadLockCreateHandlersFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	resources.mockManager.EXPECT().RegisterFactory(gomock.Any(), id, vmFactory).Times(1).Return(nil)
@@ -315,7 +312,7 @@ func TestRegisterWithReadLockCreateHandlersFails(t *testing.T) {
 func TestRegisterWithReadLockAddRouteWithReadLockFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -346,7 +343,7 @@ func TestRegisterWithReadLockAddRouteWithReadLockFails(t *testing.T) {
 func TestRegisterWithReadLockAliasLookupFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -378,7 +375,7 @@ func TestRegisterWithReadLockAliasLookupFails(t *testing.T) {
 func TestRegisterWithReadLockAddAliasesFails(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -418,7 +415,7 @@ func TestRegisterWithReadLockAddAliasesFails(t *testing.T) {
 func TestRegisterWithReadLockHappyCase(t *testing.T) {
 	resources := initRegistererTest(t)
 
-	vmFactory := vms.NewMockFactory(resources.ctrl)
+	vmFactory := vmsmock.NewFactory(resources.ctrl)
 	vm := newTestVM()
 
 	handlers := map[string]http.Handler{
@@ -455,7 +452,7 @@ func TestRegisterWithReadLockHappyCase(t *testing.T) {
 
 type vmRegistererTestResources struct {
 	ctrl        *gomock.Controller
-	mockManager *vms.MockManager
+	mockManager *vmsmock.Manager
 	mockServer  *server.MockServer
 	registerer  VMRegisterer
 }
@@ -463,7 +460,7 @@ type vmRegistererTestResources struct {
 func initRegistererTest(t *testing.T) *vmRegistererTestResources {
 	ctrl := gomock.NewController(t)
 
-	mockManager := vms.NewMockManager(ctrl)
+	mockManager := vmsmock.NewManager(ctrl)
 	mockServer := server.NewMockServer(ctrl)
 	registerer := NewVMRegisterer(VMRegistererConfig{
 		APIServer:    mockServer,
