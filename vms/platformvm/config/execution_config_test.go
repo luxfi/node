@@ -5,29 +5,13 @@ package config
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-// Requires all values in a struct to be initialized
-func verifyInitializedStruct(tb testing.TB, s interface{}) {
-	tb.Helper()
-
-	require := require.New(tb)
-
-	structType := reflect.TypeOf(s)
-	require.Equal(reflect.Struct, structType.Kind())
-
-	v := reflect.ValueOf(s)
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		require.True(field.IsValid(), "invalid field: ", structType.Field(i).Name)
-		require.False(field.IsZero(), "zero field: ", structType.Field(i).Name)
-	}
-}
+// verifyInitializedStruct is defined in config_test.go
 
 func TestExecutionConfigUnmarshal(t *testing.T) {
 	t.Run("default values from empty json", func(t *testing.T) {
