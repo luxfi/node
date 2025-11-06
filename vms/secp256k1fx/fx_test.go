@@ -13,10 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/cb58"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/log"
 )
 
 var (

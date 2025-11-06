@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
