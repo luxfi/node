@@ -4,72 +4,50 @@
 package warp
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"math"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
 )
 
 var (
-	netID    = ids.GenerateTestID()
-	testVdrs []*testValidator
+	netID     = ids.GenerateTestID()
+	errTest   = errors.New("non-nil error")
+	testVdrs  []*testValidator
 )
-
-// validatorStateAdapter adapts validators.State to ValidatorState
-type validatorStateAdapter struct {
-	state validators.State
-}
-
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
-	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[ids.NodeID]*ValidatorData, len(validatorSet))
-	for nodeID, validator := range validatorSet {
-		result[nodeID] = &ValidatorData{
-			NodeID:    validator.NodeID,
-			PublicKey: validator.PublicKey,
-			Weight:    validator.Weight,
-		}
-	}
-	return result, nil
-}
-
-func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// Mock implementation - validators.State doesn't have GetNetID
-	return netID, nil
-}
 
 type testValidator struct {
 	nodeID ids.NodeID
-	sk     *bls.SecretKey
+	sk     bls.Signer
 	vdr    *Validator
 }
 
-func (v *testValidator) Compare(o *testValidator) int {
-	return v.vdr.Compare(o.vdr)
+func (v *testValidator) Compare(other *testValidator) int {
+	return bytes.Compare(v.vdr.PublicKeyBytes, other.vdr.PublicKeyBytes)
 }
 
 func newTestValidator() *testValidator {
-	sk, err := bls.NewSecretKey()
+	sk, err := localsigner.New()
 	if err != nil {
 		panic(err)
 	}
 
 	nodeID := ids.GenerateTestNodeID()
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	return &testValidator{
 		nodeID: nodeID,
 		sk:     sk,
@@ -81,6 +59,7 @@ func newTestValidator() *testValidator {
 		},
 	}
 }
+
 
 func init() {
 	testVdrs = []*testValidator{

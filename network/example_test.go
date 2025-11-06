@@ -5,6 +5,8 @@ package network
 
 import (
 	"context"
+	"fmt"
+	
 	"time"
 
 	"github.com/luxfi/metric"
@@ -121,10 +123,7 @@ func ExampleNewTestNetwork() {
 		trackedNets,
 	)
 	if err != nil {
-		log.Fatal(
-			"failed to create test network config",
-			log.Reflect("error", err),
-		)
+		panic(fmt.Sprintf("failed to create test network config: %v", err))
 		return
 	}
 	network, err := NewTestNetwork(
