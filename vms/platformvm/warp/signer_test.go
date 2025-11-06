@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/signertest"
@@ -30,10 +31,10 @@ func TestSigner(t *testing.T) {
 }
 
 // Test that using a random SourceChainID results in an error
-func testWrongChainID(t *testing.T, s Signer, _ *bls.SecretKey, _ uint32, _ ids.ID) {
+func testWrongChainID(t *testing.T, s warp.Signer, _ *localsigner.LocalSigner, _ uint32, _ ids.ID) {
 	require := require.New(t)
 
-	msg, err := NewUnsignedMessage(
+	msg, err := warp.NewUnsignedMessage(
 		constants.UnitTestID,
 		ids.GenerateTestID(),
 		[]byte("payload"),
@@ -45,10 +46,10 @@ func testWrongChainID(t *testing.T, s Signer, _ *bls.SecretKey, _ uint32, _ ids.
 }
 
 // Test that using a different networkID results in an error
-func testWrongNetworkID(t *testing.T, s Signer, _ *bls.SecretKey, networkID uint32, blockchainID ids.ID) {
+func testWrongNetworkID(t *testing.T, s warp.Signer, _ *localsigner.LocalSigner, networkID uint32, blockchainID ids.ID) {
 	require := require.New(t)
 
-	msg, err := NewUnsignedMessage(
+	msg, err := warp.NewUnsignedMessage(
 		networkID+1,
 		blockchainID,
 		[]byte("payload"),
@@ -60,10 +61,10 @@ func testWrongNetworkID(t *testing.T, s Signer, _ *bls.SecretKey, networkID uint
 }
 
 // Test that a signature generated with the signer verifies correctly
-func testVerifies(t *testing.T, s Signer, sk *bls.SecretKey, networkID uint32, chainID ids.ID) {
+func testVerifies(t *testing.T, s warp.Signer, sk *localsigner.LocalSigner, networkID uint32, chainID ids.ID) {
 	require := require.New(t)
 
-	msg, err := NewUnsignedMessage(
+	msg, err := warp.NewUnsignedMessage(
 		networkID,
 		chainID,
 		[]byte("payload"),
@@ -76,7 +77,7 @@ func testVerifies(t *testing.T, s Signer, sk *bls.SecretKey, networkID uint32, c
 	sig, err := bls.SignatureFromBytes(sigBytes)
 	require.NoError(err)
 
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	msgBytes := msg.Bytes()
 	require.True(bls.Verify(pk, sig, msgBytes))
 }
