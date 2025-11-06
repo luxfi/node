@@ -376,3 +376,49 @@ Same as previous session - no progress on these yet
 - **Naming Convention**: Lux uses "Net" not "Subnet" terminology throughout
 - **Test Helpers**: Many tests depend on shared test fixtures that need updating
 
+
+## Subnet to Net Renaming (2025-11-06)
+
+Successfully completed systematic renaming of all "subnet" references to "net" throughout the Lux node codebase.
+
+### Summary of Changes
+
+#### Directory Renames
+- `tests/fixture/subnet/` → `tests/fixture/net/`
+- `cmd/migrate-subnet-to-cchain/` → `cmd/migrate-net-to-cchain/`
+- `wallet/subnet/` → Removed (wallet/net already existed)
+
+#### File Renames
+- `chains/subnets.go` → `chains/nets.go` (and test file)
+- `tests/e2e/p/elastic_subnets.go` → `elastic_nets.go`
+- `tests/e2e/p/permissionless_subnets.go` → `permissionless_nets.go`
+- `tests/fixture/tmpnet/subnet.go` → `net.go`
+- `vms/components/verify/subnet.go` → `net.go` (and test file)
+- `vms/experimental/aivm/gpu_subnet.go` → `gpu_net.go`
+- `vms/platformvm/state/subnet_id_node_id.go` → `net_id_node_id.go` (and test)
+- `vms/platformvm/txs/executor/subnet_tx_verification.go` → `net_tx_verification.go`
+- `vms/platformvm/warp/message/subnet_to_l1_conversion.go` → `net_to_l1_conversion.go` (and test)
+- `vms/platformvm/docs/subnets.md` → `nets.md`
+
+#### Code Updates
+- Updated all import paths from `wallet/subnet` to `wallet/net`
+- Updated all import paths from `fixture/subnet` to `fixture/net`
+- Replaced `Subnet` with `Net` in type names, struct names, and variables
+- Replaced `subnet` with `net` in function names and identifiers
+- Updated documentation and comments
+
+#### Notable Preserved Elements
+- Proto field names kept unchanged for backwards compatibility (e.g., `tracked_subnets`, `subnet_uptimes`)
+- NetID type alias maintained (was already renamed from SubnetID)
+
+### Testing Results
+- ✅ All packages compile successfully
+- ✅ Main binary (`./app`) builds without errors
+- ✅ Changed files: 66 files modified
+- ✅ Lines changed: 27 insertions, 3115 deletions (net reduction due to wallet/subnet removal)
+
+### Commit
+- Commit hash: 3ad42d81fd
+- Message: "refactor: rename subnet to net throughout codebase"
+
+This completes the comprehensive subnet → net renaming task across the entire Lux node repository.
