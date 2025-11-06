@@ -23,7 +23,7 @@ func TestLedger(t *testing.T) {
 	require := require.New(t)
 
 	// Initialize Ledger
-	device, err := New()
+	device, err := NewLedger()
 	if err != nil {
 		t.Skip("ledger not detected")
 	}
