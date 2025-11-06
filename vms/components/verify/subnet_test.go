@@ -9,12 +9,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/validators/validatorsmock"
 )
 
 // testValidatorState is a test implementation of ValidatorState
@@ -40,7 +37,7 @@ func (s *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[i
 	return s.validators[netID], nil
 }
 
-func (s *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+func (s *testValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	if s.err != nil {
 		return ids.Empty, s.err
 	}
@@ -58,10 +55,6 @@ func (s *testValidatorState) GetCurrentValidators(ctx context.Context, height ui
 	return nil, nil
 }
 
-func (s *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return s.GetNetID(chainID)
-}
-
 var errMissing = errors.New("missing")
 
 func TestSameNet(t *testing.T) {
@@ -71,66 +64,58 @@ func TestSameNet(t *testing.T) {
 	chainID1 := ids.GenerateTestID()
 
 	tests := []struct {
-		name    string
-		ctxF    func(*testing.T) context.Context
-		chainID ids.ID
-		result  error
+		name     string
+		chainCtx *ChainContext
+		chainID  ids.ID
+		result   error
 	}{
 		{
 			name: "same chain",
-			ctxF: func(t *testing.T) context.Context {
-				ctrl := gomock.NewController(t)
-				state := validatorsmock.NewState(ctrl)
-				ctx := context.Background()
-				ctx = consensuscontext.WithState(ctx, state)
-				ctx = consensuscontext.WithChainID(ctx, chainID0)
-				ctx = consensuscontext.WithNetworkID(ctx, netID0)
-				return ctx
+			chainCtx: &ChainContext{
+				ChainID:        chainID0,
+				NetID:          netID0,
+				ValidatorState: &testValidatorState{},
 			},
 			chainID: chainID0,
 			result:  ErrSameChainID,
 		},
 		{
 			name: "unknown chain",
-			ctxF: func(t *testing.T) context.Context {
-				ctrl := gomock.NewController(t)
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID1, errMissing)
-				ctx := context.Background()
-				ctx = consensuscontext.WithState(ctx, state)
-				ctx = consensuscontext.WithChainID(ctx, chainID0)
-				ctx = consensuscontext.WithNetworkID(ctx, netID0)
-				return ctx
+			chainCtx: &ChainContext{
+				ChainID: chainID0,
+				NetID:   netID0,
+				ValidatorState: &testValidatorState{
+					subnets: map[ids.ID]ids.ID{},
+					err:     errMissing,
+				},
 			},
 			chainID: chainID1,
 			result:  errMissing,
 		},
 		{
 			name: "wrong subnet",
-			ctxF: func(t *testing.T) context.Context {
-				ctrl := gomock.NewController(t)
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID1, nil)
-				ctx := context.Background()
-				ctx = consensuscontext.WithState(ctx, state)
-				ctx = consensuscontext.WithChainID(ctx, chainID0)
-				ctx = consensuscontext.WithNetworkID(ctx, netID0)
-				return ctx
+			chainCtx: &ChainContext{
+				ChainID: chainID0,
+				NetID:   netID0,
+				ValidatorState: &testValidatorState{
+					subnets: map[ids.ID]ids.ID{
+						chainID1: netID1,
+					},
+				},
 			},
 			chainID: chainID1,
 			result:  ErrMismatchedNetIDs,
 		},
 		{
 			name: "same subnet",
-			ctxF: func(t *testing.T) context.Context {
-				ctrl := gomock.NewController(t)
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID0, nil)
-				ctx := context.Background()
-				ctx = consensuscontext.WithState(ctx, state)
-				ctx = consensuscontext.WithChainID(ctx, chainID0)
-				ctx = consensuscontext.WithNetworkID(ctx, netID0)
-				return ctx
+			chainCtx: &ChainContext{
+				ChainID: chainID0,
+				NetID:   netID0,
+				ValidatorState: &testValidatorState{
+					subnets: map[ids.ID]ids.ID{
+						chainID1: netID0,
+					},
+				},
 			},
 			chainID: chainID1,
 			result:  nil,
@@ -138,9 +123,7 @@ func TestSameNet(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			chainCtx := test.ctxF(t)
-
-			result := SameNet(context.Background(), chainCtx, test.chainID)
+			result := SameNet(context.Background(), test.chainCtx, test.chainID)
 			require.ErrorIs(t, result, test.result)
 		})
 	}
