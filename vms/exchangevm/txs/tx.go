@@ -23,8 +23,6 @@ import (
 var _ gossip.Gossipable = (*Tx)(nil)
 
 type UnsignedTx interface {
-	consensus.ContextInitializable
-	consensus.Contextualizable
 
 	SetBytes(unsignedBytes []byte)
 	Bytes() []byte

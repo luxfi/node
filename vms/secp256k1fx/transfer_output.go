@@ -26,7 +26,6 @@ type TransferOutput struct {
 	OutputOwners `serialize:"true"`
 }
 
-// InitializeWithContext implements consensus.ContextInitializable
 func (out *TransferOutput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
