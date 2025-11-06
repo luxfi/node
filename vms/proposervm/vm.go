@@ -18,7 +18,7 @@ import (
 	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	consensusinterfaces "github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"

@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
-	nodevalidators "github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
+	nodevalidators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 )
 

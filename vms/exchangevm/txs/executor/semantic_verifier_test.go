@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/consensus/validators/validatorsmock"
+	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"

@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"

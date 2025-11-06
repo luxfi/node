@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 )
 
 // Context is the node-specific context for RPC chain VM

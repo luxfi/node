@@ -10,7 +10,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"

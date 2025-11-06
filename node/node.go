@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	nodevalidators "github.com/luxfi/consensus/validators"
+	nodevalidators "github.com/luxfi/consensus/validator"
 	"io"
 	"io/fs"
 	"net"

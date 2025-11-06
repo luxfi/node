@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/consensus/interfaces"
 	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"

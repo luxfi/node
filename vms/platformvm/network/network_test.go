@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/engine/core/coremock"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

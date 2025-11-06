@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/log"
 )
 

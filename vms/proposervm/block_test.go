@@ -23,9 +23,11 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/block"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
+	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/proposer/proposermock"
@@ -39,6 +41,8 @@ import (
 // isn't activated, we should call BuildBlock rather than BuildBlockWithContext.
 func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	require := require.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	var (
 		nodeID                 = ids.GenerateTestNodeID()
@@ -50,25 +54,25 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		parentEpoch            = statelessblock.Epoch{}
 	)
 
-	innerBlk := consensusmanmock.NewBlock(ctrl)
+	innerBlk := blockmock.NewMockBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := consensusmanmock.NewBlock(ctrl)
+	builtBlk := blockmock.NewMockBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
-	innerVM := blockmock.NewChainVM(ctrl)
-	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
+	innerVM := blockmock.NewMockChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextChainVM(ctrl)
+	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &consensusblock.Context{
 		PChainHeight: pChainHeight,
 	}).Return(builtBlk, nil).AnyTimes()
 
-	vdrState := validatorsmock.NewState(ctrl)
+	vdrState := validatorsmock.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposermock.NewWindower(ctrl)
+	windower := proposermock.NewMockWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -386,10 +390,10 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		PChainHeight: parentPChainHeght,
 	}).Return(innerChildBlock, nil).AnyTimes()
 
-	vdrState := validatorsmock.NewState(ctrl)
+	vdrState := validatorsmock.NewMockState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposermock.NewWindower(ctrl)
+	windower := proposermock.NewMockWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	vm := &VM{

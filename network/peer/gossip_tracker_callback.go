@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 )
 
 var _ validators.SetCallbackListener = (*GossipTrackerCallback)(nil)

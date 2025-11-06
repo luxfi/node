@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

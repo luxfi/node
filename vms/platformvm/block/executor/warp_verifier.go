@@ -6,7 +6,7 @@ package executor
 import (
 	"context"
 
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/platformvm/block"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )

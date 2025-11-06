@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -26,17 +27,18 @@ import (
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/validators"
-	consensusvalidatorstest "github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/consensus/interfaces"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/components/chain/blocktest"
 
 	blockbuilder "github.com/luxfi/node/vms/proposervm/block"
 )
 
-// validatorStateAdapter adapts consensusvalidatorstest.State to consensus ValidatorState interface
+// validatorStateAdapter adapts validatorstest.State to consensus ValidatorState interface
 type validatorStateAdapter struct {
-	state *consensusvalidatorstest.State
+	state *validatorstest.State
 }
 
 func (v *validatorStateAdapter) GetChainID(subnetID ids.ID) (ids.ID, error) {
@@ -629,8 +631,8 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	vm := VM{
 		ctx: &consensus.Context{ChainID: chainID},
 		ChainVM: &blocktest.VM{
-			ParseBlockF: func(_ context.Context, rawBlock []byte) (consensusman.Block, error) {
-				return &consensusmantest.Block{BytesV: rawBlock}, nil
+			ParseBlockF: func(_ context.Context, rawBlock []byte) (block.Block, error) {
+				return &chaintest.TestBlock{BytesV: rawBlock}, nil
 			},
 		},
 	}
@@ -642,7 +644,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	require.NoError(t, err)
 	key := tlsCert.PrivateKey.(crypto.Signer)
 
-	blockThatCantBeParsed := consensusmantest.BuildChild(consensusmantest.Genesis)
+	blockThatCantBeParsed := chaintest.BuildChild(chaintest.Genesis)
 
 	blocksWithUnparsable := makeParseableBlocks(t, parentID, timestamp, pChainHeight, cert, chainID, key)
 	blocksWithUnparsable[50] = blockThatCantBeParsed.Bytes()
@@ -967,15 +969,16 @@ func initTestRemoteProposerVM(
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*core.Fx,
-		core.AppSender,
+		interface{},
+		[]interface{},
+		interface{},
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{consensusmantest.Genesis},
-	)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusman.Block, error) {
+	coreVM.LastAcceptedF = func(_ context.Context) (ids.ID, error) {
+		return chaintest.Genesis.ID(), nil
+	}
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -1008,12 +1011,7 @@ func initTestRemoteProposerVM(
 		},
 	)
 
-	valState := &validatorstest.State{
-		T: t,
-	}
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return blocktest.GenesisHeight, nil
-	}
+	valState := validatorstest.NewTestState()
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
@@ -1066,13 +1064,14 @@ func initTestRemoteProposerVM(
 		nil,
 		nil,
 		nil,
+		[]interface{}{},
 		nil,
 	))
 
 	// Initialize shouldn't be called again
 	coreVM.VM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), interfaces.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
 	return coreVM, proVM
 }

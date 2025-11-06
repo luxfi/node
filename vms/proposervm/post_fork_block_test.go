@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"

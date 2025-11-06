@@ -17,7 +17,7 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	validators "github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	iterator "github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/log"
 	lux "github.com/luxfi/node/vms/components/lux"

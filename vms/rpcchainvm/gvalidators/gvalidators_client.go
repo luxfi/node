@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 )

@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	consensusuptime "github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 

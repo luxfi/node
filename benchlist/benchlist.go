@@ -1,7 +1,7 @@
 package benchlist
 
 import "github.com/luxfi/ids"
-import "github.com/luxfi/consensus/validators"
+import "github.com/luxfi/consensus/validator"
 
 type Config struct{}
 

@@ -11,7 +11,7 @@ import (
 
 
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"

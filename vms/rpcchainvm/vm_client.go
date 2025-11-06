@@ -28,7 +28,7 @@ import (
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/resource"

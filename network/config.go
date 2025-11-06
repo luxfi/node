@@ -14,7 +14,7 @@ import (
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils"

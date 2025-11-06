@@ -21,12 +21,14 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
@@ -41,8 +43,8 @@ import (
 )
 
 var (
-	_ block.ChainVM         = (*fullVM)(nil)
-	_ block.StateSyncableVM = (*fullVM)(nil)
+	_ consensusblock.ChainVM         = (*fullVM)(nil)
+	_ consensusblock.StateSyncableVM = (*fullVM)(nil)
 )
 
 type fullVM struct {
@@ -208,7 +210,7 @@ func initTestProposerVM(
 	return coreVM, valState, proVM, db
 }
 
-func waitForProposerWindow(vm *VM, chainTip chain.Block, pchainHeight uint64) error {
+func waitForProposerWindow(vm *VM, chainTip consensusblock.Block, pchainHeight uint64) error {
 	var (
 		ctx              = context.Background()
 		childBlockHeight = chainTip.Height() + 1
@@ -947,7 +949,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 }
 
 type wrappedBlock struct {
-	chain.Block
+	consensusblock.Block
 	verified bool
 }
 
@@ -1990,8 +1992,8 @@ func TestVMInnerBlkCache(t *testing.T) {
 }
 
 type blockWithVerifyContext struct {
-	*consensusmanmock.Block
-	*blockmock.WithVerifyContext
+	*blockmock.MockBlock
+	*blockmock.MockWithVerifyContext
 }
 
 // Ensures that we call [VerifyWithContext] rather than [Verify] on blocks that

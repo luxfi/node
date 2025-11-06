@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"

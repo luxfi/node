@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/log"
 )
 

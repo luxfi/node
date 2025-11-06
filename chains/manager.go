@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/trace"

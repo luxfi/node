@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/ids"
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"

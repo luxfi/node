@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/upgrade/upgradetest"

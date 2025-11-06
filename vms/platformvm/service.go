@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

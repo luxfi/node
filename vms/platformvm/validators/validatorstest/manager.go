@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 
-	consensusvalidators "github.com/luxfi/consensus/validators"
+	consensusvalidators "github.com/luxfi/consensus/validator"
 	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 )
 

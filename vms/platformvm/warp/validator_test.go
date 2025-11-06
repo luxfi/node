@@ -13,11 +13,11 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
-	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/validatorsmock"
+	"github.com/luxfi/consensus/validator/validatorstest"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
 )
 

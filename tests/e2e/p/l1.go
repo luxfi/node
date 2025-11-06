@@ -44,7 +44,7 @@ import (
 	p2psdk "github.com/luxfi/node/network/p2p"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	platformvmpb "github.com/luxfi/node/proto/pb/platformvm"
-	consensusvalidators "github.com/luxfi/consensus/validators"
+	consensusvalidators "github.com/luxfi/consensus/validator"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 	platformvmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -131,8 +131,23 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
 	m := atomic.NewMemory(atomicDB)
 
-	res.ctx = consensustest.Context(t, consensustest.PChainID)
-	res.ctx.SharedMemory = m.NewSharedMemory(res.ctx.ChainID)
+	// Create consensus context from consensustest
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	
+	// Build our testContext from the consensus context
+	res.ctx = &testContext{
+		Context:      context.Background(),
+		NetworkID:    consensusCtx.NetworkID,
+		NetID:        consensusCtx.NetID,
+		ChainID:      consensusCtx.ChainID,
+		NodeID:       consensusCtx.NodeID,
+		XChainID:     consensusCtx.XChainID,
+		CChainID:     consensusCtx.CChainID,
+		XAssetID:     consensusCtx.XAssetID,
+		Log:          consensusCtx.Log.(log.Logger),
+		Lock:         &consensusCtx.Lock,
+		SharedMemory: m.NewSharedMemory(consensusCtx.ChainID),
+	}
 
 	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
@@ -140,7 +155,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 
 	// Create a node mockable clock for utxo handler
 	nodeClock := &mockable.Clock{}
-	nodeClock.Set(defaultGenesisTime)
+	nodeClock.Set(genesistest.DefaultValidatorStartTime)
 
 	if ctrl == nil {
 		res.state = statetest.New(t, statetest.Config{

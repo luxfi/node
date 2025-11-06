@@ -25,7 +25,7 @@ import (
 	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
 	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"

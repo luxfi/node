@@ -24,7 +24,8 @@ import (
 )
 
 var (
-	_ chain.OracleBlock = (*TestOptionsBlock)(nil)
+	// OracleBlock interface doesn't exist in consensus package
+	// _ engineBlock.OracleBlock = (*TestOptionsBlock)(nil)
 
 	// ErrNotOracle is returned when a block doesn't implement options
 	ErrNotOracle = errors.New("not an oracle block")

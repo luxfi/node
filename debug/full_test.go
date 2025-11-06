@@ -6,7 +6,7 @@ import (
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 )
 
 func TestFullValidatorFunctionality(t *testing.T) {

@@ -4,7 +4,7 @@
 package network
 
 import (
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 )

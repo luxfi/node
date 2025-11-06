@@ -25,7 +25,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/leveldb"

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"

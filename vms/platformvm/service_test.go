@@ -22,7 +22,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -38,7 +38,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/validators"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
