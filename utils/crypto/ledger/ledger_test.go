@@ -28,10 +28,12 @@ func TestLedger(t *testing.T) {
 		t.Skip("ledger not detected")
 	}
 
-	// Get version
-	version, err := device.Version()
-	require.NoError(err)
-	t.Logf("version: %s\n", version)
+	// Get version (requires type assertion to *LedgerAdapter)
+	if adapter, ok := device.(*LedgerAdapter); ok {
+		version, err := adapter.Version()
+		require.NoError(err)
+		t.Logf("version: %s\n", version)
+	}
 
 	// Get Fuji Address
 	addr, err := device.Address(hrp, 0)
@@ -41,7 +43,7 @@ func TestLedger(t *testing.T) {
 	t.Logf("address: %s shortID: %s\n", paddr, addr)
 
 	// Get Extended Addresses
-	addresses, err := device.Addresses([]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	addresses, err := device.GetAddresses([]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 	require.NoError(err)
 	for i, taddr := range addresses {
 		paddr, err := address.Format(chainAlias, hrp, taddr[:])
@@ -54,11 +56,15 @@ func TestLedger(t *testing.T) {
 		}
 	}
 
-	// Sign Hash
+	// Sign Hash (SignHash now takes single index, returns single signature)
 	rawHash := hashing.ComputeHash256([]byte{0x1, 0x2, 0x3, 0x4})
 	indices := []uint32{1, 3}
-	sigs, err := device.SignHash(rawHash, indices)
-	require.NoError(err)
+	sigs := make([][]byte, len(indices))
+	for i, addrIndex := range indices {
+		sig, err := device.SignHash(rawHash, addrIndex)
+		require.NoError(err)
+		sigs[i] = sig
+	}
 	require.Len(sigs, 2)
 
 	for i, addrIndex := range indices {
