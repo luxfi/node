@@ -25,10 +25,7 @@ import (
 )
 
 var (
-	pChainHeight = uint64(1337)
-	subnetID     = ids.GenerateTestID()
-	errTest      = errors.New("non-nil error")
-	testVdrs     []*testValidator
+	subnetID = ids.GenerateTestID()
 )
 
 // testValidatorStateAdapter wraps validators.State to implement ValidatorState
@@ -52,41 +49,6 @@ func (t *testValidatorStateAdapter) GetValidatorSet(ctx context.Context, height 
 		}
 	}
 	return result, nil
-}
-
-type testValidator struct {
-	nodeID ids.NodeID
-	vdr    *Validator
-}
-
-func newTestValidator() *testValidator {
-	sk, err := localsigner.New()
-	if err != nil {
-		panic(err)
-	}
-
-	nodeID := ids.GenerateTestNodeID()
-	pk := sk.PublicKey()
-	return &testValidator{
-		nodeID: nodeID,
-		vdr: &Validator{
-			PublicKey:      pk,
-			PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk),
-			Weight:         3,
-			NodeIDs:        []ids.NodeID{nodeID},
-		},
-	}
-}
-
-func init() {
-	testVdrs = []*testValidator{
-		newTestValidator(),
-		newTestValidator(),
-		newTestValidator(),
-	}
-	slices.SortFunc(testVdrs, func(a, b *testValidator) int {
-		return bytes.Compare(a.vdr.PublicKeyBytes, b.vdr.PublicKeyBytes)
-	})
 }
 
 func TestGetCanonicalValidatorSet(t *testing.T) {
