@@ -82,7 +82,7 @@ func TestOrchestratorTPS(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				agents,
 				tracker,
-				logging.NoLog{},
+				log.NoLog{},
 				tt.config,
 			)
 
@@ -153,7 +153,7 @@ func TestOrchestratorExecution(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				tt.agents,
 				tracker,
-				logging.NoLog{},
+				log.NoLog{},
 				NewOrchestratorConfig(),
 			)
 			r.NoError(err)
