@@ -15,13 +15,12 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/proposervm/block"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
+	proposerBlock "github.com/luxfi/node/vms/proposervm/block"
 )
 
 var (
@@ -37,8 +36,8 @@ type TestOptionsBlock struct {
 	optsErr error
 }
 
-func (tob TestOptionsBlock) Options(context.Context) ([2]block.Block, error) {
-	return [2]block.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
+func (tob TestOptionsBlock) Options(context.Context) ([2]engineBlock.Block, error) {
+	return [2]engineBlock.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
 }
 
 // ProposerBlock.Verify tests section
@@ -357,7 +356,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 
 	// reject oracle block
 	require.NoError(builtBlk.Reject(context.Background()))
-	require.NotEqual(block.StatusRejected, oracleCoreBlk.StatusV)
+	require.NotEqual(engineBlock.StatusRejected, oracleCoreBlk.StatusV)
 
 	// reject an option
 	require.IsType(&postForkBlock{}, builtBlk)
@@ -366,7 +365,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(opts[0].Reject(context.Background()))
-	require.NotEqual(block.StatusRejected, oracleCoreBlk.opts[0].StatusV)
+	require.NotEqual(engineBlock.StatusRejected, oracleCoreBlk.opts[0].StatusV)
 }
 
 func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
@@ -427,7 +426,7 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 	require.Equal(ErrNotOracle, err)
 
 	// Build the child
-	statelessChild, err := block.BuildOption(
+	statelessChild, err := proposerBlock.BuildOption(
 		postForkBlk.ID(),
 		coreChildBlk.Bytes(),
 	)
@@ -462,7 +461,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 	}
 
 	oracleBlkTime := proVM.Time().Truncate(time.Second)
-	statelessBlock, err := block.BuildUnsigned(
+	statelessBlock, err := proposerBlock.BuildUnsigned(
 		blocktest.GenesisID,
 		oracleBlkTime,
 		0,
