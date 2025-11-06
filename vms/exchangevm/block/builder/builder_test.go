@@ -13,9 +13,9 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
@@ -30,9 +30,11 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	xvmmetrics "github.com/luxfi/node/vms/exchangevm/metrics"
 	"github.com/luxfi/node/vms/exchangevm/state"
+	"github.com/luxfi/node/vms/exchangevm/state/statemock"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
+	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
 )
 
 const trackChecksums = false
@@ -130,7 +132,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -171,7 +173,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -213,7 +215,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -294,8 +296,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx1))
-				require.NoError(t, mempool.Add(tx2))
+				require.NoError(t, memPool.Add(tx1))
+				require.NoError(t, memPool.Add(tx2))
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -363,7 +365,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -433,7 +435,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -471,7 +473,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require := require.New(t)
 
 	registerer := metric.NewRegistry()
-	mempool, err := mempool.New("mempool", registerer)
+	memPool, err := mempool.New("mempool", registerer)
 	require.NoError(err)
 	// add a tx to the mempool
 	tx := transactions[0]

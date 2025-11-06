@@ -11,9 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -21,7 +18,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/consensus/uptime"
+	consensusuptime "github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
@@ -102,16 +99,12 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	baseCtx := context.Background()
 	luxAssetID := ids.GenerateTestID()
-	baseCtx = consensus.WithIDs(baseCtx, consensus.IDs{
-		NetworkID:  constants.UnitTestID,
-		ChainID:    constants.PlatformChainID,
-		XAssetID: luxAssetID,
-	})
-	ctx := testcontext.New(baseCtx)
+	
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = constants.PlatformChainID
 	ctx.XAssetID = luxAssetID
+	ctx.NetworkID = constants.UnitTestID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(ctx.ChainID),

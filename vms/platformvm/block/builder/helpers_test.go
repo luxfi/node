@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/uptime"
@@ -142,13 +142,14 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		Lock:         res.ctx.Lock,
 	}
 
-	registerer := metric.NewRegistry()
-	res.sender = &enginetest.Sender{T: t}
+	registerer := prometheus.NewRegistry()
+	res.sender = &enginetest.Sender{}
 	res.sender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
 		return nil
 	}
 
-	platformMetrics := metric.Noop
+	platformMetrics, err := metrics.New(registerer)
+	require.NoError(err)
 
 	res.mempool, err = mempool.New("mempool", registerer)
 	require.NoError(err)
@@ -161,13 +162,13 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		validatorstest.Manager,
 	)
 
-	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, platformMetrics, res.clk)
+	validatorManager := validators.NewManager()
 	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
 	res.network, err = network.New(
 		res.ctx.Log,
 		res.ctx.NodeID,
 		res.ctx.NetID,
-		pvalidators.NewLockedState(
+		validators.NewLockedState(
 			res.ctx.Lock,
 			validatorManager,
 		),

@@ -27,7 +27,7 @@ func TestLockOutVerify(t *testing.T) {
 			name:     "happy path",
 			locktime: 1,
 			transferableOutF: func(ctrl *gomock.Controller) lux.TransferableOut {
-				o := luxmock.NewTransferableOut(ctrl)
+				o := luxmock.NewMockTransferableOut(ctrl)
 				o.EXPECT().Verify().Return(nil)
 				return o
 			},
@@ -53,7 +53,7 @@ func TestLockOutVerify(t *testing.T) {
 			name:     "inner output fails verification",
 			locktime: 1,
 			transferableOutF: func(ctrl *gomock.Controller) lux.TransferableOut {
-				o := luxmock.NewTransferableOut(ctrl)
+				o := luxmock.NewMockTransferableOut(ctrl)
 				o.EXPECT().Verify().Return(errTest)
 				return o
 			},
@@ -85,7 +85,7 @@ func TestLockInVerify(t *testing.T) {
 			name:     "happy path",
 			locktime: 1,
 			transferableInF: func(ctrl *gomock.Controller) lux.TransferableIn {
-				o := luxmock.NewTransferableIn(ctrl)
+				o := luxmock.NewMockTransferableIn(ctrl)
 				o.EXPECT().Verify().Return(nil)
 				return o
 			},
@@ -111,7 +111,7 @@ func TestLockInVerify(t *testing.T) {
 			name:     "inner input fails verification",
 			locktime: 1,
 			transferableInF: func(ctrl *gomock.Controller) lux.TransferableIn {
-				o := luxmock.NewTransferableIn(ctrl)
+				o := luxmock.NewMockTransferableIn(ctrl)
 				o.EXPECT().Verify().Return(errTest)
 				return o
 			},

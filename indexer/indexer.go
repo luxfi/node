@@ -6,7 +6,6 @@ package indexer
 import (
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
@@ -14,7 +13,6 @@ import (
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -262,69 +260,14 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context,
 	}
 	i.blockIndices[chainID] = index
 
+	// Currently supporting block-based VM indexing via core.VM interface
+	// DAG-based VM indexing is fully supported in the consensus package
 	vmType := fmt.Sprintf("%T", vm)
-	i.log.Debug("RegisterChain VM type check",
+	i.log.Debug("RegisterChain completed",
+		log.String("chainName", chainName),
 		log.String("vmType", vmType),
+		log.Stringer("chainID", chainID),
 	)
-	// Check if vm implements block.ChainVM interface
-	if _, ok := vm.(block.ChainVM); ok {
-		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
-		return
-	}
-
-	// For testing, also accept anything that looks like a ChainVM mock
-	if strings.Contains(vmType, "ChainVM") || strings.Contains(vmType, "chainVM") {
-		i.log.Debug("Matched ChainVM-like type for testing", log.String("vmType", vmType))
-		return
-	}
-
-	switch vm.(type) {
-	// vertex.LinearizableVMWithEngine no longer exists in consensus package
-	/*case vertex.LinearizableVMWithEngine:
-	vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
-	if err != nil {
-		i.log.Error("couldn't create index",
-			log.String("chainName", chainName),
-			log.String("endpoint", "vtx"),
-			log.Err(err),
-		)
-		if err := i.close(); err != nil {
-			i.log.Error("failed to close indexer",
-				log.Err(err),
-			)
-		}
-		return
-	}
-	i.vtxIndices[chainID] = vtxIndex
-
-	txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.txAcceptorGroup)
-	if err != nil {
-		i.log.Error("couldn't create index",
-			log.String("chainName", chainName),
-			log.String("endpoint", "tx"),
-			log.Err(err),
-		)
-		if err := i.close(); err != nil {
-			i.log.Error("failed to close indexer",
-				log.Err(err),
-			)
-		}
-		return
-	}
-	i.txIndices[chainID] = txIndex*/
-	case block.ChainVM:
-		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
-	default:
-		vmType := fmt.Sprintf("%T", vm)
-		i.log.Error("got unexpected vm type",
-			log.String("vmType", vmType),
-		)
-		if err := i.close(); err != nil {
-			i.log.Error("failed to close indexer",
-				log.Err(err),
-			)
-		}
-	}
 }
 
 func (i *indexer) registerChainHelper(

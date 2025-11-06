@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils"
 )
 
 func TestVMInitialize(t *testing.T) {
@@ -21,9 +21,9 @@ func TestVMInitialize(t *testing.T) {
 
 	// Create test context
 	ctx := context.Background()
-	chainCtx := &consensus.Context{
+	chainCtx := &core.Context{
 		ChainID: ids.GenerateTestID(),
-		Log:     logging.NoLog{},
+		Log:     log.NoLog{},
 	}
 
 	// Create test database
@@ -73,7 +73,6 @@ func TestVMInitialize(t *testing.T) {
 	vm := &VM{}
 
 	// Initialize VM
-	toEngine := make(chan common.Message, 1)
 	err = vm.Initialize(
 		ctx,
 		chainCtx,
@@ -81,7 +80,6 @@ func TestVMInitialize(t *testing.T) {
 		genesisBytes,
 		nil, // upgradeBytes
 		configBytes,
-		toEngine,
 		nil, // fxs
 		nil, // appSender
 	)
@@ -184,14 +182,17 @@ func TestPrivateAddress(t *testing.T) {
 
 func setupTestVM(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &consensus.Context{
+	chainCtx := &core.Context{
 		ChainID: ids.GenerateTestID(),
-		Log:     logging.NoLog{},
+		Log:     log.NoLog{},
 	}
 
 	db := memdb.New()
 
-	genesis := &Genesis{Timestamp: 1607144400}
+	genesis := &Genesis{
+		Timestamp: 1607144400,
+		InitialTxs: []*Transaction{},
+	}
 	genesisBytes, _ := utils.Codec.Marshal(codecVersion, genesis)
 
 	config := ZKConfig{
@@ -202,9 +203,8 @@ func setupTestVM(t *testing.T) *VM {
 	configBytes, _ := utils.Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
-	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
+	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, nil, nil)
 	require.NoError(t, err)
 
 	return vm
@@ -212,14 +212,17 @@ func setupTestVM(t *testing.T) *VM {
 
 func setupTestVMWithPrivacy(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &consensus.Context{
+	chainCtx := &core.Context{
 		ChainID: ids.GenerateTestID(),
-		Log:     logging.NoLog{},
+		Log:     log.NoLog{},
 	}
 
 	db := memdb.New()
 
-	genesis := &Genesis{Timestamp: 1607144400}
+	genesis := &Genesis{
+		Timestamp: 1607144400,
+		InitialTxs: []*Transaction{},
+	}
 	genesisBytes, _ := utils.Codec.Marshal(codecVersion, genesis)
 
 	config := ZKConfig{
@@ -231,9 +234,8 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	configBytes, _ := utils.Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
-	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
+	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, nil, nil)
 	require.NoError(t, err)
 
 	return vm

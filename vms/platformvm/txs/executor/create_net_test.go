@@ -22,7 +22,8 @@ import (
 )
 
 func TestCreateNetTxAP3FeeChange(t *testing.T) {
-	ap3Time := genesistest.DefaultValidatorStartTime.Add(time.Hour)
+	defaultGenesisTime := time.Unix(1649891275, 0) // Use a default genesis time
+	ap3Time := defaultGenesisTime.Add(time.Hour)
 	tests := []struct {
 		name        string
 		time        time.Time
@@ -52,22 +53,17 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			env := newEnvironment(t, apricotPhase3)
+			env := newEnvironment(t, upgradetest.Banff)
 			env.config.UpgradeConfig.ApricotPhase3Time = ap3Time
 			env.ctx.Lock.Lock()
 			defer env.ctx.Lock.Unlock()
 
 			env.state.SetTimestamp(test.time) // to duly set fee
 
-			addrs := set.NewSet[ids.ShortID](len(preFundedKeys))
-			for _, key := range preFundedKeys {
-				addrs.Add(key.Address())
-			}
-
 			cfg := *env.config
-			cfg.StaticFeeConfig.CreateNetTxFee = test.fee
-			factory := txstest.NewWalletFactory(env.ctx.Context, env.ctx.SharedMemory, &cfg, env.state)
-			builder, signer := factory.NewWallet(preFundedKeys...)
+			cfg.CreateNetTxFee = test.fee
+			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
+			builder, signer := factory.NewWallet()
 			utx, err := builder.NewCreateNetTx(
 				&secp256k1fx.OutputOwners{},
 			)
@@ -81,7 +77,7 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 			stateDiff.SetTimestamp(test.time)
 
 			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
-			executor := StandardTxExecutor{
+			executor := Executor{
 				Backend:       &env.backend,
 				FeeCalculator: feeCalculator,
 				State:         stateDiff,

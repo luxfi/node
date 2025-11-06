@@ -69,7 +69,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue export transaction: %s\n", err)
 	}
-	log.Printf("issued export %s in %s\n", exportTx.ID, time.Since(exportStartTime))
+	log.Printf("issued export %s in %s\n", exportTx.ID(), time.Since(exportStartTime))
 
 	importStartTime := time.Now()
 	pk := key.PublicKey()
@@ -79,5 +79,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue import transaction: %s\n", err)
 	}
-	log.Printf("issued import %s to %s in %s\n", importTx.ID, ethAddr.Hex(), time.Since(importStartTime))
+	log.Printf("issued import %s to %s in %s\n", importTx.ID(), ethAddr.Hex(), time.Since(importStartTime))
 }

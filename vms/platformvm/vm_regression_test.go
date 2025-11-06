@@ -16,9 +16,9 @@ import (
 
 	"github.com/luxfi/consensus/consensustest"
 	consContext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/chain"
+	enginechain "github.com/luxfi/consensus/engine/chain"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
+	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"

@@ -46,8 +46,8 @@ func TestTimeoutScheduler(t *testing.T) {
 
 			testCase.initClock(testCase.clock)
 
-			var preemptionSignal PreemptionSignal
-			ps := preemptionSignal.Listen()
+			var preemptionSignal preemptionSignal
+			ps := preemptionSignal.listen()
 
 			if testCase.shouldPreempt {
 				preemptionSignal.Preempt()

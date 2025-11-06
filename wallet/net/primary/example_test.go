@@ -23,14 +23,15 @@ import (
 func ExampleWallet() {
 	ctx := context.Background()
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
+	wkc := kc.AsWalletKeychain()
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
 	// [LocalAPIURI] is hosting.
 	walletSyncStartTime := time.Now()
 	wallet, err := MakeWallet(ctx, &WalletConfig{
 		URI:         LocalAPIURI,
-		LUXKeychain: kc,
-		EthKeychain: kc,
+		LUXKeychain: wkc,
+		EthKeychain: wkc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet with: %s\n", err)

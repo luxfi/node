@@ -20,18 +20,14 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/chainmock"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/node/vms/components/chain/blocktest" as componentblocktest
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -50,7 +46,7 @@ var (
 )
 
 type fullVM struct {
-	*blocktest.VM
+	*blocktest.ChainVM
 	*blocktest.StateSyncableVM
 }
 
@@ -94,26 +90,24 @@ func initTestProposerVM(
 
 	initialState := []byte("genesis state")
 	coreVM := &fullVM{
-		VM: &blocktest.VM{
-			VM: enginetest.VM{
-				T: t,
-			},
+		ChainVM: &blocktest.ChainVM{
+			T: t,
 		},
 		StateSyncableVM: &blocktest.StateSyncableVM{
 			T: t,
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *core.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{consensusmantest.Genesis},
+	coreVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
+		[]*blocktest.Block{blocktest.Genesis},
 	)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -121,7 +115,7 @@ func initTestProposerVM(
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -182,8 +176,9 @@ func initTestProposerVM(
 		}, nil
 	}
 
-	ctx := consensustest.Context(t, ids.ID{1})
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	ctx := coretest.Context(t)
+	ctx.ChainID = ids.ID{1}
+	ctx.NodeID = ids.NodeIDFromCert(&core.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
@@ -205,7 +200,7 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), core.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
 
 	proVM.Set(blocktest.GenesisTimestamp)
@@ -1565,16 +1560,16 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *core.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{consensusmantest.Genesis},
+	coreVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
+		[]*blocktest.Block{blocktest.Genesis},
 	)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -1582,7 +1577,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -1736,16 +1731,16 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *core.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{consensusmantest.Genesis},
+	coreVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
+		[]*blocktest.Block{blocktest.Genesis},
 	)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusman.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -1753,7 +1748,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil

@@ -18,8 +18,6 @@ import (
 	"github.com/luxfi/consensus/engine/core/coremock"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/exchangevm/block/executor"
 	"github.com/luxfi/node/vms/exchangevm/block/executor/executormock"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"

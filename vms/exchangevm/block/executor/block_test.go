@@ -13,14 +13,20 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/mock/gomock"
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/exchangevm/block"
+	"github.com/luxfi/node/vms/exchangevm/config"
+	"github.com/luxfi/node/vms/exchangevm/metrics/metricsmock"
+	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/node/vms/exchangevm/state/statemock"
+	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
+	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
+	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 )
 
 func TestBlockVerify(t *testing.T) {
@@ -367,7 +373,7 @@ func TestBlockVerify(t *testing.T) {
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
-						executor, ok := visitor.(*executor.Executor)
+						executor, ok := visitor.(*txexecutor.Executor)
 						if !ok {
 							return errors.New("wrong visitor type")
 						}
@@ -380,7 +386,7 @@ func TestBlockVerify(t *testing.T) {
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
-						executor, ok := visitor.(*executor.Executor)
+						executor, ok := visitor.(*txexecutor.Executor)
 						if !ok {
 							return errors.New("wrong visitor type")
 						}
@@ -445,7 +451,7 @@ func TestBlockVerify(t *testing.T) {
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
-						executor, ok := visitor.(*executor.Executor)
+						executor, ok := visitor.(*txexecutor.Executor)
 						if !ok {
 							return errors.New("wrong visitor type")
 						}
@@ -710,7 +716,7 @@ func TestBlockAccept(t *testing.T) {
 					manager: &manager{
 						state:   mockManagerState,
 						mempool: mempool,
-						metrics: metricsObj,
+						metrics: metrics,
 						backend: defaultTestBackend(false, mockSharedMemory),
 						blkIDToState: map[ids.ID]*blockState{
 							blockID: {
@@ -756,7 +762,7 @@ func TestBlockAccept(t *testing.T) {
 					manager: &manager{
 						state:   mockManagerState,
 						mempool: mempool,
-						metrics: metricsObj,
+						metrics: metrics,
 						backend: defaultTestBackend(false, mockSharedMemory),
 						blkIDToState: map[ids.ID]*blockState{
 							blockID: {
@@ -928,18 +934,17 @@ func TestBlockReject(t *testing.T) {
 	}
 }
 
-func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *executor.Backend {
+func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *txexecutor.Backend {
 	ctx := context.Background()
 	// Add shared memory to context if needed
 	if sharedMemory != nil {
 		// Use consensus package helper if available
 		// Otherwise just use base context
 	}
-	return &executor.Backend{
+	return &txexecutor.Backend{
 		Bootstrapped: bootstrapped,
 		Ctx:          ctx,
 		Config: &config.Config{
-			Upgrades:         upgradetest.GetConfig(upgradetest.Durango),
 			TxFee:            0,
 			CreateAssetTxFee: 0,
 		},

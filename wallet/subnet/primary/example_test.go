@@ -23,6 +23,7 @@ import (
 func ExampleWallet() {
 	ctx := context.Background()
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
+	wkc := kc.AsWalletKeychain()
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
 	// [LocalAPIURI] is hosting.
@@ -30,8 +31,8 @@ func ExampleWallet() {
 	wallet, err := MakeWallet(
 		ctx,
 		LocalAPIURI,
-		kc,
-		kc,
+		wkc,
+		wkc,
 		WalletConfig{},
 	)
 	if err != nil {

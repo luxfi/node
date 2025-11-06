@@ -123,6 +123,35 @@ func (kc Keychain) GetWallet(id ids.ShortID) (wkeychain.Signer, bool) {
 	return &luxSigner{key: signer}, true
 }
 
+// GetEthWallet gets a key from the keychain by Ethereum address for wallet operations.
+// Returns wkeychain.Signer to maintain compatibility with wallet code
+func (kc Keychain) GetEthWallet(addr gethcommon.Address) (wkeychain.Signer, bool) {
+	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
+		return &luxSigner{key: kc.Keys[i]}, true
+	}
+	return nil, false
+}
+
+// WalletKeychain wraps a Keychain to implement wallet keychain interfaces
+type WalletKeychain struct {
+	*Keychain
+}
+
+// Get implements wallet/keychain.Keychain
+func (wkc WalletKeychain) Get(id ids.ShortID) (wkeychain.Signer, bool) {
+	return wkc.Keychain.GetWallet(id)
+}
+
+// GetEth implements wallet/chain/c.EthKeychain
+func (wkc WalletKeychain) GetEth(addr gethcommon.Address) (wkeychain.Signer, bool) {
+	return wkc.Keychain.GetEthWallet(addr)
+}
+
+// AsWalletKeychain wraps a Keychain to implement wallet interfaces
+func (kc *Keychain) AsWalletKeychain() WalletKeychain {
+	return WalletKeychain{Keychain: kc}
+}
+
 // GetEth gets a key from the keychain by Ethereum address and returns whether the key existed.
 func (kc Keychain) GetEth(addr gethcommon.Address) (ukeychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {

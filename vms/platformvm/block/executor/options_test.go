@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -27,7 +27,7 @@ func TestOptionsUnexpectedBlockType(t *testing.T) {
 	for _, blk := range tests {
 		t.Run(fmt.Sprintf("%T", blk), func(t *testing.T) {
 			err := blk.Visit(&options{})
-			require.ErrorIs(t, err, chain.ErrNotOracle)
+			require.ErrorIs(t, err, ErrNotOracle)
 		})
 	}
 }

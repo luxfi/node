@@ -67,5 +67,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to issue create asset transaction: %s\n", err)
 	}
-	log.Printf("created new asset %s in %s\n", createAssetTx.ID, time.Since(createAssetStartTime))
+	log.Printf("created new asset %s in %s\n", createAssetTx.ID(), time.Since(createAssetStartTime))
 }

@@ -20,12 +20,12 @@ import (
 
 	"github.com/luxfi/consensus/consensustest"
 	consContext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/chain"
+	enginechain "github.com/luxfi/consensus/engine/chain"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/protocol/chain"
+	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -376,7 +376,7 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	proposalBlk := blk.(chain.OracleBlock)
+	proposalBlk := blk.(enginechain.OracleBlock)
 	options, err := proposalBlk.Options(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed retrieving options: %w", err)
