@@ -1081,15 +1081,15 @@ func getNetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, err
 }
 
 func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
-	subnetConfigContentB64 := v.GetString(NetConfigContentKey)
-	subnetConfigContent, err := base64.StdEncoding.DecodeString(subnetConfigContentB64)
+	netConfigContentB64 := v.GetString(NetConfigContentKey)
+	netConfigContent, err := base64.StdEncoding.DecodeString(netConfigContentB64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode base64 content: %w", err)
 	}
 
 	// partially parse configs to be filled by defaults later
 	subnetConfigs := make(map[ids.ID]json.RawMessage, len(netIDs))
-	if err := json.Unmarshal(subnetConfigContent, &subnetConfigs); err != nil {
+	if err := json.Unmarshal(netConfigContent, &subnetConfigs); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
@@ -1150,7 +1150,7 @@ func getNetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.C
 			return nil, fmt.Errorf("%q is a directory, expected a file", fileInfo.Name())
 		}
 
-		// subnetConfigDir/netID.json
+		// netConfigDir/netID.json
 		file, err := os.ReadFile(filePath)
 		if err != nil {
 			return nil, err

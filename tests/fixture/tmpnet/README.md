@@ -258,7 +258,7 @@ the flag.
 tmpnet configuration for a given subnet and its chain(s) is stored at
 `[network-dir]/subnets/[subnet name].json`. Net configuration for
 all subnets is provided to each node via the
-`--subnet-config-content` flag if a node does not set a value for the
+`--net-config-content` flag if a node does not set a value for the
 flag. Chain configuration for all chains is provided to each node via
 the `--chain-config-content` flag where a node does not set a value
 for the flag.

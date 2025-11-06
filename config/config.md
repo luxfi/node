@@ -712,7 +712,7 @@ separate [Net Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-conf
 Specifies the directory that contains Net configs, as described above.
 Defaults to `$HOME/.node/configs/subnets`. If the flag is set explicitly,
 the specified folder must exist, or Lux Node will exit with an error. This
-flag is ignored if `--subnet-config-content` is specified.
+flag is ignored if `--net-config-content` is specified.
 
 Example: Let's say we have a Net with ID
 `p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6`. We can create a config file
@@ -734,7 +734,7 @@ An example config file is:
 By default, none of these directories and/or files exist. You would need to create them manually if needed.
 :::
 
-#### `--subnet-config-content` (string)
+#### `--net-config-content` (string)
 
 As an alternative to `--subnet-config-dir`, it allows specifying base64 encoded parameters for a Net.
 

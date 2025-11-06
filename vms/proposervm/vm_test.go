@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/consensus/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/node/vms/components/chain/blocktest" as componentblocktest
+	"github.com/luxfi/node/vms/components/chain/blocktest"  componentblocktest
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"

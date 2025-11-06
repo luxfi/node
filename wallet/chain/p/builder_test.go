@@ -35,8 +35,8 @@ import (
 	"github.com/luxfi/node/vms/types"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
-	"github.com/luxfi/node/wallet/subnet/primary/common/utxotest"
+	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common/utxotest"
 )
 
 var (

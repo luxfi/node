@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
-	"github.com/luxfi/node/tests/fixture/subnet"
+	"github.com/luxfi/node/tests/fixture/net"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 

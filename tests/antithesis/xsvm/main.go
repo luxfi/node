@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
-	"github.com/luxfi/node/tests/fixture/subnet"
+	"github.com/luxfi/node/tests/fixture/net"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/math/set"
