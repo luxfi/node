@@ -34,9 +34,9 @@ type ipcContext struct {
 type ChainIPCs struct {
 	ipcContext
 	chains              map[ids.ID]*EventSockets
-	blockAcceptorGroup  consensus.AcceptorGroup
-	txAcceptorGroup     consensus.AcceptorGroup
-	vertexAcceptorGroup consensus.AcceptorGroup
+	blockAcceptorGroup  interface{}
+	txAcceptorGroup     interface{}
+	vertexAcceptorGroup interface{}
 }
 
 // NewChainIPCs creates a new *ChainIPCs that writes consensus and decision
@@ -45,9 +45,9 @@ func NewChainIPCs(
 	log log.Logger,
 	path string,
 	networkID uint32,
-	blockAcceptorGroup consensus.AcceptorGroup,
-	txAcceptorGroup consensus.AcceptorGroup,
-	vertexAcceptorGroup consensus.AcceptorGroup,
+	blockAcceptorGroup interface{},
+	txAcceptorGroup interface{},
+	vertexAcceptorGroup interface{},
 	defaultChainIDs []ids.ID,
 ) (*ChainIPCs, error) {
 	cipcs := &ChainIPCs{

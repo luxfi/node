@@ -29,9 +29,9 @@ type EventSockets struct {
 func newEventSockets(
 	ctx ipcContext,
 	chainID ids.ID,
-	blockAcceptorGroup consensus.AcceptorGroup,
-	txAcceptorGroup consensus.AcceptorGroup,
-	vertexAcceptorGroup consensus.AcceptorGroup,
+	blockAcceptorGroup interface{},
+	txAcceptorGroup interface{},
+	vertexAcceptorGroup interface{},
 ) (*EventSockets, error) {
 	consensusIPC, err := newEventIPCSocket(
 		ctx,
@@ -117,8 +117,8 @@ func newEventIPCSocket(
 	ctx ipcContext,
 	chainID ids.ID,
 	name string,
-	linearAcceptorGroup consensus.AcceptorGroup,
-	luxAcceptorGroup consensus.AcceptorGroup,
+	linearAcceptorGroup interface{},
+	luxAcceptorGroup interface{},
 ) (*eventSocket, error) {
 	var (
 		url     = ipcURL(ctx, chainID, name)
