@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/chain/blocktest"
 )
@@ -530,7 +529,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := metric.NewDefaultRegistry()
+	registry := metric.NewRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
