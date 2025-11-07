@@ -290,7 +290,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		0, // pChainHeight
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
-		consensus.GetChainID(proVM.ctx),
+		proVM.ctx.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -616,7 +616,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		0, // pChainHeight,
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
-		consensus.GetChainID(proVM.ctx),
+		proVM.ctx.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)

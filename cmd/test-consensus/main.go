@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	fmt.Printf("Consensus package version: %s\n", "integrated")
 
 	// Verify consensus types are accessible
-	var _ consensus.Acceptor
+	var _ core.Acceptor
 
 	fmt.Println("\n✅ Consensus package successfully integrated with node!")
 	fmt.Println("The consensus package is now available as a native Go dependency.")

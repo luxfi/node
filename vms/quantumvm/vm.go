@@ -12,9 +12,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/consensus"
 	enginecore "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
+	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
@@ -296,7 +296,7 @@ func (vm *VM) GetBlock(ctx context.Context, blockID ids.ID) (enginecore.Block, e
 }
 
 // SetState sets the VM state
-func (vm *VM) SetState(ctx context.Context, state consensus.State) error {
+func (vm *VM) SetState(ctx context.Context, state consensusinterfaces.State) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 

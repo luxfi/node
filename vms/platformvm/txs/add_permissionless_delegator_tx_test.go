@@ -5,7 +5,7 @@ package txs
 
 import (
 	consensusctx "github.com/luxfi/consensus/context"
-	
+
 	"encoding/json"
 	"errors"
 	"math"
@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -81,7 +81,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	simpleAddPrimaryTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: testChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -140,9 +140,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx = &consensusctx.Context{
-		NetworkID: 1,
-		QuantumID: 1,
-		NetID:     constants.PrimaryNetworkID,
+		NetworkID:  1,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -244,7 +244,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	complexAddPrimaryTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -397,9 +397,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		},
 	}
 	ctx = &consensusctx.Context{
-		NetworkID: 1,
-		QuantumID: 1,
-		NetID:     constants.PrimaryNetworkID,
+		NetworkID:  1,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -634,7 +634,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx2 = &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 
-		QuantumID: 1,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -658,8 +658,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"amount": 1,
 				"locktime": 0,
 				"threshold": 1
-			
-		NetID:     constants.PrimaryNetworkID,
+			}
 		},
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
@@ -807,7 +806,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	simpleAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -887,9 +886,9 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		NetworkID: 1,
-		QuantumID: 1,
-		NetID:     constants.PrimaryNetworkID,
+		NetworkID:  1,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1012,7 +1011,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	complexAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -1165,9 +1164,9 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		},
 	}
 	ctx = &consensusctx.Context{
-		NetworkID: 1,
-		QuantumID: 1,
-		NetID:     constants.PrimaryNetworkID,
+		NetworkID:  1,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1402,7 +1401,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	ctx2 = &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 
-		QuantumID: 1,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1426,8 +1425,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 				"amount": 1,
 				"locktime": 0,
 				"threshold": 1
-			
-		NetID:     constants.PrimaryNetworkID,
+			}
 		},
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
@@ -1564,7 +1562,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   networkID,
+			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -1616,8 +1614,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 								Amt: 1,
 							},
 						},
-					}
+					},
 				}
+			},
 			err: lux.ErrWrongNetworkID,
 		},
 		{
@@ -1642,7 +1641,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: errCustom,
 		},
 		{
@@ -1669,6 +1669,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					},
 					DelegationRewardsOwner: rewardsOwner,
 				}
+			},
 			err: errCustom,
 		},
 		{
@@ -1701,7 +1702,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: errMultipleStakedAssets,
 		},
 		{
@@ -1735,7 +1737,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: errOutputsNotSorted,
 		},
 		{
@@ -1770,7 +1773,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: safemath.ErrOverflow,
 		},
 		{
@@ -1804,7 +1808,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: errDelegatorWeightMismatch,
 		},
 		{
@@ -1838,7 +1843,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: nil,
 		},
 		{
@@ -1872,7 +1878,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
+			},
 			err: nil,
 		},
 	}
@@ -1882,16 +1889,16 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			testCtx := context.Background()
-			testCtx = &consensusctx.Context{
+			testCtx := &consensusctx.Context{
 				NetworkID: constants.UnitTestID,
-
 				QuantumID: networkID,
 				ChainID:   chainID,
+				NetID:     constants.PrimaryNetworkID,
+			}
 			err := tx.SyntacticVerify(testCtx)
 			require.ErrorIs(t, err, tt.err)
-	
-				NetID:     constants.PrimaryNetworkID,
+		})
+	}
 }
 
 func TestAddPermissionlessDelegatorTxNotValidatorTx(t *testing.T) {

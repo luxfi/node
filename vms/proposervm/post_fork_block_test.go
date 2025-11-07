@@ -162,6 +162,7 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 			ids.Empty, // refer unknown parent
 			proVM.Time(),
 			pChainHeight,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -179,6 +180,7 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 			parentBlk.ID(), // refer known parent
 			proVM.Time(),
 			pChainHeight,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -263,7 +265,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -284,7 +286,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 
@@ -308,10 +310,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	// reduce validator state to allow consensus.GetNodeID(proVM.ctx) to be easily selected as proposer
+	// reduce validator state to allow proVM.ctx.NodeID to be easily selected as proposer
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		var (
-			thisNode = consensus.GetNodeID(proVM.ctx)
+			thisNode = proVM.ctx.NodeID
 			nodeID1  = ids.BuildTestNodeID([]byte{1})
 		)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
@@ -386,9 +388,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			newTime,
 			pChainHeight,
+			block.Epoch{},
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -398,7 +401,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		require.ErrorIs(err, errTimeNotMonotonic)
 	}
 
-	blkWinDelay, err := proVM.Delay(context.Background(), childCoreBlk.Height(), parentPChainHeight, consensus.GetNodeID(proVM.ctx), proposer.MaxVerifyWindows)
+	blkWinDelay, err := proVM.Delay(context.Background(), childCoreBlk.Height(), parentPChainHeight, proVM.ctx.NodeID, proposer.MaxVerifyWindows)
 	require.NoError(err)
 
 	{
@@ -410,9 +413,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			beforeWinStart,
 			pChainHeight,
+			block.Epoch{},
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -431,9 +435,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			atWindowStart,
 			pChainHeight,
+			block.Epoch{},
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -451,9 +456,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			afterWindowStart,
 			pChainHeight,
+			block.Epoch{},
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -471,6 +477,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			atSubWindowEnd,
 			pChainHeight,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -487,9 +494,10 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			parentBlk.ID(),
 			afterSubWinEnd,
 			pChainHeight,
+			block.Epoch{},
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -515,9 +523,6 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	pChainHeight := uint64(100)
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return pChainHeight, nil
-	}
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return pChainHeight / 50, nil
 	}
 
 	// create parent block ...
@@ -565,7 +570,6 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		},
 	}
 
-	parentBlkPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
 	nextEpoch := lp181.NewEpoch(
 		proVM.Upgrades,
 		parentBlkPChainHeight,
@@ -583,7 +587,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -602,7 +606,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -620,7 +624,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -629,7 +633,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		require.NoError(childBlk.Verify(context.Background()))
 	}
 
-	currPChainHeight, _ := consensus.GetValidatorState(proVM.ctx).GetCurrentHeight()
+	currPChainHeight, _ := valState.GetCurrentHeightF(context.Background())
 	{
 		// block P-Chain height can be equal to current P-Chain height
 		childSlb, err := block.Build(
@@ -639,7 +643,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -657,7 +661,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
-			consensus.GetChainID(proVM.ctx),
+			proVM.ctx.ChainID,
 			proVM.StakingLeafSigner,
 		)
 		require.NoError(err)
@@ -683,9 +687,6 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 	pChainHeight := uint64(100)
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return pChainHeight, nil
-	}
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return pChainHeight / 50, nil
 	}
 
 	// create post fork oracle block ...
@@ -768,6 +769,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			parentBlk.ID(),
 			nextTime,
 			parentBlkPChainHeight-1,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -783,6 +785,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			parentBlk.ID(),
 			nextTime,
 			parentBlkPChainHeight,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -797,6 +800,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			parentBlk.ID(),
 			nextTime,
 			parentBlkPChainHeight+1,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -805,13 +809,14 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		require.NoError(childBlk.Verify(context.Background()))
 	}
 
-	currPChainHeight, _ := consensus.GetValidatorState(proVM.ctx).GetCurrentHeight()
+	currPChainHeight, _ := valState.GetCurrentHeightF(context.Background())
 	{
 		// block P-Chain height can be equal to current P-Chain height
 		childSlb, err := block.BuildUnsigned(
 			parentBlk.ID(),
 			nextTime,
 			currPChainHeight,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -826,6 +831,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			parentBlk.ID(),
 			nextTime,
 			currPChainHeight*2,
+			block.Epoch{},
 			childCoreBlk.Bytes(),
 		)
 		require.NoError(err)
@@ -962,15 +968,12 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 		activationTime = time.Unix(0, 0)
 		durangoTime    = activationTime
 	)
-	coreVM, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
+	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	var minimumHeight uint64
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return minimumHeight, nil
-	}
 
 	// generate two blocks with the same core block and store them
 	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
@@ -1011,7 +1014,6 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 	}()
 
 	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
-	coreBlk.ErrR = errUnexpectedBlockRejection
 	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreBlk, nil
 	}
@@ -1100,9 +1102,10 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 		postForkOracleBlk.ID(),
 		postForkOracleBlk.Timestamp().Add(proposer.WindowDuration),
 		postForkOracleBlk.PChainHeight(),
+		block.Epoch{},
 		proVM.StakingCertLeaf,
 		oracleCoreBlk.opts[0].Bytes(),
-		consensus.GetChainID(proVM.ctx),
+		proVM.ctx.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -1155,6 +1158,7 @@ func TestBlockVerify_PostForkBlock_PChainTooLow(t *testing.T) {
 		componentblocktest.GenesisID,
 		componentblocktest.GenesisTimestamp,
 		4,
+		block.Epoch{},
 		coreBlk.Bytes(),
 	)
 	require.NoError(err)
