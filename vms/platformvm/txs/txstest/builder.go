@@ -6,10 +6,10 @@ package txstest
 import (
 	"context"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"

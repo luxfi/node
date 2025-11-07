@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -220,13 +220,13 @@ type builder struct {
 	utxo.Spender
 	state state.State
 
-	cfg        *config.Config
-	ctx        *consensusctx.Context
-	NetworkID  uint32
-	ChainID    ids.ID
-	XAssetID ids.ID
-	clk        *mockable.Clock
-	fx         fx.Fx
+	cfg       *config.Config
+	ctx       *consensusctx.Context
+	NetworkID uint32
+	ChainID   ids.ID
+	XAssetID  ids.ID
+	clk       *mockable.Clock
+	fx        fx.Fx
 }
 
 func (b *builder) NewImportTx(
@@ -409,7 +409,7 @@ func (b *builder) NewCreateChainTx(
 		VMID:        vmID,
 		FxIDs:       fxIDs,
 		GenesisData: genesisData,
-		NetAuth:  subnetAuth,
+		NetAuth:     subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -608,8 +608,8 @@ func (b *builder) NewRemoveNetValidatorTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:        netID,
-		NodeID:     nodeID,
+		Net:     netID,
+		NodeID:  nodeID,
 		NetAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
@@ -663,7 +663,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:        netID,
+		Net:     netID,
 		NetAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,

@@ -379,6 +379,4 @@ func TestIncreaseL1ValidatorBalanceTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(test.tx.SyntacticallyVerified)
-		})
 	}
-}

@@ -4,15 +4,14 @@
 package txs
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
@@ -28,13 +27,14 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	luxAssetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		QuantumID: constants.UnitTestID,
+	ctx := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  constants.UnitTestID,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 		NodeID:     nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -88,14 +88,14 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Outs:         outputs,
 			Ins:          inputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		Validator: Validator{
-			NodeID: consensus.GetNodeID(ctx),
+			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
@@ -142,12 +142,13 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx = &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -194,14 +195,14 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Outs:         outputs,
 			Ins:          inputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		Validator: Validator{
-			NodeID: consensus.GetNodeID(ctx),
+			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,

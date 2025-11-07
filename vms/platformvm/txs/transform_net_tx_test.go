@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+	
 	"encoding/json"
 	"testing"
 
@@ -117,12 +118,16 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleTransformTxBytes := []byte{
@@ -346,11 +351,12 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
 	ctx2 := context.Background()
-	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
+	ctx2 = &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexTransformTxBytes := []byte{
@@ -524,7 +530,8 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
-	}
+	
+		NetID:     constants.PrimaryNetworkID,
 	var unsignedComplexTransformTx UnsignedTx = complexTransformTx
 	unsignedComplexTransformTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransformTx)
 	require.NoError(err)
@@ -537,8 +544,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
 	unsignedComplexTransformTx.InitCtx(testCtx)
@@ -560,7 +566,6 @@ func TestTransformNetTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
-			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -575,7 +580,6 @@ func TestTransformNetTxSerialization(t *testing.T) {
 					"locktime": 0,
 					"threshold": 1
 				}
-			}
 		}
 	],
 	"inputs": [
@@ -590,8 +594,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			}
-		},
+			},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -605,7 +608,6 @@ func TestTransformNetTxSerialization(t *testing.T) {
 						0
 					]
 				}
-			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -616,7 +618,6 @@ func TestTransformNetTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
-		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
@@ -635,8 +636,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	"uptimeRequirement": 0,
 	"subnetAuthorization": {
 		"signatureIndices": []
-	}
-}`, string(unsignedComplexTransformTxJSONBytes))
+	}`, string(unsignedComplexTransformTxJSONBytes))
 }
 
 func TestTransformNetTxSyntacticVerify(t *testing.T) {
@@ -652,12 +652,16 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 		luxAssetID = ids.GenerateTestID()
 	)
 
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		ChainID:    chainID,
 		QuantumID: networkID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -688,8 +692,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformNetTx {
 				return &TransformNetTx{
 					BaseTx: verifiedBaseTx,
-				}
-			},
+				},
 			err: nil,
 		},
 		{
@@ -698,8 +701,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 				return &TransformNetTx{
 					BaseTx: validBaseTx,
 					Net:    constants.PrimaryNetworkID,
-				}
-			},
+				},
 			err: errCantTransformPrimaryNetwork,
 		},
 		{
@@ -709,8 +711,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					BaseTx:  validBaseTx,
 					Net:     ids.GenerateTestID(),
 					AssetID: ids.Empty,
-				}
-			},
+				},
 			err: errEmptyAssetID,
 		},
 		{
@@ -720,8 +721,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					BaseTx:  validBaseTx,
 					Net:     ids.GenerateTestID(),
 					AssetID: luxAssetID,
-				}
-			},
+				},
 			err: errAssetIDCantBeLUX,
 		},
 		{
@@ -732,8 +732,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					Net:           ids.GenerateTestID(),
 					AssetID:       ids.GenerateTestID(),
 					InitialSupply: 0,
-				}
-			},
+				},
 			err: errInitialSupplyZero,
 		},
 		{
@@ -745,8 +744,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					AssetID:       ids.GenerateTestID(),
 					InitialSupply: 2,
 					MaximumSupply: 1,
-				}
-			},
+				},
 			err: errInitialSupplyGreaterThanMaxSupply,
 		},
 		{
@@ -760,8 +758,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaximumSupply:      1,
 					MinConsumptionRate: 2,
 					MaxConsumptionRate: 1,
-				}
-			},
+				},
 			err: errMinConsumptionRateTooLarge,
 		},
 		{
@@ -775,8 +772,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaximumSupply:      1,
 					MinConsumptionRate: 0,
 					MaxConsumptionRate: reward.PercentDenominator + 1,
-				}
-			},
+				},
 			err: errMaxConsumptionRateTooLarge,
 		},
 		{
@@ -791,8 +787,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinConsumptionRate: 0,
 					MaxConsumptionRate: reward.PercentDenominator,
 					MinValidatorStake:  0,
-				}
-			},
+				},
 			err: errMinValidatorStakeZero,
 		},
 		{
@@ -807,8 +802,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinConsumptionRate: 0,
 					MaxConsumptionRate: reward.PercentDenominator,
 					MinValidatorStake:  2,
-				}
-			},
+				},
 			err: errMinValidatorStakeAboveSupply,
 		},
 		{
@@ -824,8 +818,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxConsumptionRate: reward.PercentDenominator,
 					MinValidatorStake:  2,
 					MaxValidatorStake:  1,
-				}
-			},
+				},
 			err: errMinValidatorStakeAboveMax,
 		},
 		{
@@ -841,8 +834,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxConsumptionRate: reward.PercentDenominator,
 					MinValidatorStake:  2,
 					MaxValidatorStake:  11,
-				}
-			},
+				},
 			err: errMaxValidatorStakeTooLarge,
 		},
 		{
@@ -859,8 +851,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinValidatorStake:  2,
 					MaxValidatorStake:  10,
 					MinStakeDuration:   0,
-				}
-			},
+				},
 			err: errMinStakeDurationZero,
 		},
 		{
@@ -878,8 +869,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxValidatorStake:  10,
 					MinStakeDuration:   2,
 					MaxStakeDuration:   1,
-				}
-			},
+				},
 			err: errMinStakeDurationTooLarge,
 		},
 		{
@@ -898,8 +888,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinStakeDuration:   1,
 					MaxStakeDuration:   2,
 					MinDelegationFee:   reward.PercentDenominator + 1,
-				}
-			},
+				},
 			err: errMinDelegationFeeTooLarge,
 		},
 		{
@@ -919,8 +908,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxStakeDuration:   2,
 					MinDelegationFee:   reward.PercentDenominator,
 					MinDelegatorStake:  0,
-				}
-			},
+				},
 			err: errMinDelegatorStakeZero,
 		},
 		{
@@ -941,8 +929,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinDelegationFee:         reward.PercentDenominator,
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 0,
-				}
-			},
+				},
 			err: errMaxValidatorWeightFactorZero,
 		},
 		{
@@ -964,8 +951,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator + 1,
-				}
-			},
+				},
 			err: errUptimeRequirementTooLarge,
 		},
 		{
@@ -991,8 +977,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
 					NetAuth:               invalidNetAuth,
-				}
-			},
+				},
 			err: errInvalidNetAuth,
 		},
 		{
@@ -1014,8 +999,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
-				}
-			},
+				},
 			err: lux.ErrWrongNetworkID,
 		},
 		{
@@ -1041,8 +1025,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
 					NetAuth:               validNetAuth,
-				}
-			},
+				},
 			err: nil,
 		},
 	}
@@ -1054,6 +1037,4 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)
 			require.ErrorIs(t, err, tt.err)
-		})
 	}
-}

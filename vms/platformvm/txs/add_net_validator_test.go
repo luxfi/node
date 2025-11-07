@@ -4,16 +4,16 @@
 package txs
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -25,12 +25,13 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -75,8 +76,8 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	}
 	addNetValidatorTx = &AddNetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -150,12 +151,13 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -193,8 +195,8 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	}
 	addNetValidatorTx = &AddNetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},

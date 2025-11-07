@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -42,22 +42,22 @@ const (
 var (
 	_ txs.Visitor = (*standardTxExecutor)(nil)
 
-	errEmptyNodeID                      = errors.New("validator nodeID cannot be empty")
-	errMaxStakeDurationTooLarge         = errors.New("max stake duration must be less than or equal to the global max stake duration")
-	errMissingStartTimePreDurango       = errors.New("staker transactions must have a StartTime pre-Durango")
-	errEtnaUpgradeNotActive             = errors.New("attempting to use an Etna-upgrade feature prior to activation")
+	errEmptyNodeID                   = errors.New("validator nodeID cannot be empty")
+	errMaxStakeDurationTooLarge      = errors.New("max stake duration must be less than or equal to the global max stake duration")
+	errMissingStartTimePreDurango    = errors.New("staker transactions must have a StartTime pre-Durango")
+	errEtnaUpgradeNotActive          = errors.New("attempting to use an Etna-upgrade feature prior to activation")
 	errTransformNetTxPostEtna        = errors.New("TransformNetTx is not permitted post-Etna")
-	errMaxNumActiveValidators           = errors.New("already at the max number of active validators")
+	errMaxNumActiveValidators        = errors.New("already at the max number of active validators")
 	errCouldNotLoadNetToL1Conversion = errors.New("could not load subnet conversion")
-	errWrongWarpMessageSourceChainID    = errors.New("wrong warp message source chain ID")
-	errWrongWarpMessageSourceAddress    = errors.New("wrong warp message source address")
-	errWarpMessageExpired               = errors.New("warp message expired")
-	errWarpMessageNotYetAllowed         = errors.New("warp message not yet allowed")
-	errWarpMessageAlreadyIssued         = errors.New("warp message already issued")
-	errCouldNotLoadL1Validator          = errors.New("could not load L1 validator")
-	errWarpMessageContainsStaleNonce    = errors.New("warp message contains stale nonce")
-	errRemovingLastValidator            = errors.New("attempting to remove the last L1 validator from a converted subnet")
-	errStateCorruption                  = errors.New("state corruption")
+	errWrongWarpMessageSourceChainID = errors.New("wrong warp message source chain ID")
+	errWrongWarpMessageSourceAddress = errors.New("wrong warp message source address")
+	errWarpMessageExpired            = errors.New("warp message expired")
+	errWarpMessageNotYetAllowed      = errors.New("warp message not yet allowed")
+	errWarpMessageAlreadyIssued      = errors.New("warp message already issued")
+	errCouldNotLoadL1Validator       = errors.New("could not load L1 validator")
+	errWarpMessageContainsStaleNonce = errors.New("warp message contains stale nonce")
+	errRemovingLastValidator         = errors.New("attempting to remove the last L1 validator from a converted subnet")
+	errStateCorruption               = errors.New("state corruption")
 )
 
 // StandardTx executes the standard transaction [tx].
@@ -538,7 +538,7 @@ func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 		//            second entry.
 		map[ids.ID]uint64{
 			e.backend.Ctx.LUXAssetID: fee,
-			tx.AssetID:                totalRewardAmount,
+			tx.AssetID:               totalRewardAmount,
 		},
 	); err != nil {
 		return err
@@ -710,7 +710,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		startTime                = uint64(currentTimestamp.Unix())
 		currentFees              = e.state.GetAccruedFees()
 		subnetToL1ConversionData = message.NetToL1ConversionData{
-			NetID:       tx.Net,
+			NetID:          tx.Net,
 			ManagerChainID: tx.ChainID,
 			ManagerAddress: tx.Address,
 			Validators:     make([]message.NetToL1ConversionValidatorData, len(tx.Validators)),
@@ -733,7 +733,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 
 		l1Validator := state.L1Validator{
 			ValidationID:          tx.Net.Append(uint32(i)),
-			NetID:              tx.Net,
+			NetID:                 tx.Net,
 			NodeID:                nodeID,
 			PublicKey:             bls.PublicKeyToUncompressedBytes(vdr.Signer.Key()),
 			RemainingBalanceOwner: remainingBalanceOwner,
@@ -917,7 +917,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 	}
 	l1Validator := state.L1Validator{
 		ValidationID:          validationID,
-		NetID:              msg.NetID,
+		NetID:                 msg.NetID,
 		NodeID:                nodeID,
 		PublicKey:             bls.PublicKeyToUncompressedBytes(pop.Key()),
 		RemainingBalanceOwner: remainingBalanceOwner,

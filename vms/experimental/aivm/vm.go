@@ -16,10 +16,10 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 const (
@@ -42,7 +42,7 @@ type VM struct {
 	db          database.Database
 	genesisData []byte
 	toEngine    chan<- block.Message
-	fxs         []*consensus.Fx
+	fxs         []fx.Fx
 	appSender   block.AppSender
 
 	// State management
@@ -130,10 +130,10 @@ func (vm *VM) Initialize(
 
 	// Type assert fxs
 	if fxsIntf != nil {
-		fxs := make([]*consensus.Fx, 0, len(fxsIntf))
+		fxs := make([]fx.Fx, 0, len(fxsIntf))
 		for _, fxIntf := range fxsIntf {
-			if fx, ok := fxIntf.(*consensus.Fx); ok {
-				fxs = append(fxs, fx)
+			if fxItem, ok := fxIntf.(fx.Fx); ok {
+				fxs = append(fxs, fxItem)
 			}
 		}
 		vm.fxs = fxs

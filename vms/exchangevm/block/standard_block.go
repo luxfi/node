@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/exchangevm/txs"
@@ -41,11 +40,6 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx *consensusctx.Context) {
-	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
-	}
-}
 
 func (b *StandardBlock) ID() ids.ID {
 	return b.BlockID
@@ -102,8 +96,3 @@ func NewStandardBlock(
 	return blk, nil
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *StandardBlock) InitializeWithContext(ctx *consensusctx.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}

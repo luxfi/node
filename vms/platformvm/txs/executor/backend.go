@@ -4,10 +4,10 @@
 package executor
 
 import (
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"

@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+	
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,11 +20,15 @@ import (
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		QuantumID: constants.UnitTestID,
 		ChainID:   testChainID,
-	})
 	testNet1ID := ids.GenerateTestID()
 
 	type test struct {
@@ -148,8 +153,8 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			createChainTx := &CreateChainTx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:   consensus.GetNetworkID(ctx),
-					BlockchainID: consensus.GetChainID(ctx),
+					NetworkID:   ctx.NetworkID,
+					BlockchainID: ctx.ChainID,
 					Ins:          inputs,
 					Outs:         outputs,
 				}},
@@ -170,6 +175,4 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			err = stx.SyntacticVerify(ctx)
 			require.ErrorIs(err, test.expectedErr)
-		})
 	}
-}

@@ -4,15 +4,16 @@
 package txs
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -26,13 +27,18 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	luxAssetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
+		QuantumID:  constants.UnitTestID,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 		NodeID:     nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -87,13 +93,13 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: consensus.GetNodeID(ctx),
+			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
@@ -158,13 +164,18 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	luxAssetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
+		QuantumID:  constants.UnitTestID,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 		NodeID:     nodeID,
-	})
+	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -212,13 +223,13 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:   consensus.GetNetworkID(ctx),
-			BlockchainID: consensus.GetChainID(ctx),
+			NetworkID:    ctx.NetworkID,
+			BlockchainID: ctx.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: consensus.GetNodeID(ctx),
+			NodeID: ctx.NodeID,
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,

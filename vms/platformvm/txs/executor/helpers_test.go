@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	validators "github.com/luxfi/consensus/validator"
+	consensusuptime "github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -18,14 +20,12 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	consensusuptime "github.com/luxfi/consensus/validator/uptime"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -100,7 +100,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 
 	baseDB := versiondb.New(memdb.New())
 	luxAssetID := ids.GenerateTestID()
-	
+
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = constants.PlatformChainID
 	ctx.XAssetID = luxAssetID

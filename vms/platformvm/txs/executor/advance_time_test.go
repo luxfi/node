@@ -13,11 +13,11 @@ import (
 
 	"github.com/luxfi/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -208,11 +208,11 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 		startTime, endTime time.Time
 	}
 	type test struct {
-		description           string
-		stakers               []staker
-		subnetStakers         []staker
-		advanceTimeTo         []time.Time
-		expectedStakers       map[ids.NodeID]stakerStatus
+		description        string
+		stakers            []staker
+		subnetStakers      []staker
+		advanceTimeTo      []time.Time
+		expectedStakers    map[ids.NodeID]stakerStatus
 		expectedNetStakers map[ids.NodeID]stakerStatus
 	}
 

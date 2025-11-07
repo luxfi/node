@@ -15,10 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/core"
+	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -26,10 +29,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -2523,7 +2523,7 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				return e.state.PutL1Validator(state.L1Validator{
 					ValidationID: ids.GenerateTestID(),
-					NetID:     subnetID,
+					NetID:        subnetID,
 					NodeID:       nodeID,
 					Weight:       1,
 				})
@@ -2630,7 +2630,7 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			}
 
 			expectedConversionID, err := message.NetToL1ConversionID(message.NetToL1ConversionData{
-				NetID:       subnetID,
+				NetID:          subnetID,
 				ManagerChainID: chainID,
 				ManagerAddress: address,
 				Validators: []message.NetToL1ConversionValidatorData{
@@ -2669,7 +2669,7 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			require.Equal(
 				state.L1Validator{
 					ValidationID:          validationID,
-					NetID:              subnetID,
+					NetID:                 subnetID,
 					NodeID:                nodeID,
 					PublicKey:             pkBytes,
 					RemainingBalanceOwner: remainingBalanceOwner,
@@ -3095,7 +3095,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				return e.state.PutL1Validator(state.L1Validator{
 					ValidationID: ids.GenerateTestID(),
-					NetID:     subnetID,
+					NetID:        subnetID,
 					NodeID:       nodeID,
 					PublicKey:    bls.PublicKeyToUncompressedBytes(initialSK.PublicKey()),
 					Weight:       1,
@@ -3186,7 +3186,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			require.Equal(
 				state.L1Validator{
 					ValidationID:          validationID,
-					NetID:              subnetID,
+					NetID:                 subnetID,
 					NodeID:                nodeID,
 					PublicKey:             pkBytes,
 					RemainingBalanceOwner: remainingBalanceOwnerBytes,

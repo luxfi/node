@@ -15,7 +15,7 @@ import (
 
 var (
 	_ txs.Visitor = (*MempoolTxVerifier)(nil)
-	
+
 	ErrFutureStakeTime = errors.New("staker starts in the future")
 )
 
@@ -168,4 +168,3 @@ func (v *MempoolTxVerifier) nextBlockTime(chainState state.Diff) (time.Time, err
 	}
 	return nextBlkTime, nil
 }
-

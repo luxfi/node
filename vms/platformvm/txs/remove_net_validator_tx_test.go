@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+	
 	"encoding/json"
 	"errors"
 	"testing"
@@ -56,7 +57,6 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
-	})
 	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -91,18 +91,23 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
+	}
 		Net:    netID,
 		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
@@ -260,6 +265,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
+	}
 		Net:    netID,
 		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
@@ -268,11 +274,12 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
 	ctx2 := context.Background()
-	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
+	ctx2 = &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
@@ -421,7 +428,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
-	}
+	
+		NetID:     constants.PrimaryNetworkID,
 	var unsignedComplexRemoveValidatorTx UnsignedTx = complexRemoveValidatorTx
 	unsignedComplexRemoveValidatorTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexRemoveValidatorTx)
 	require.NoError(err)
@@ -434,8 +442,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
 	unsignedComplexRemoveValidatorTx.InitCtx(testCtx)
@@ -457,7 +464,6 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
-			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -472,7 +478,6 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 					"locktime": 0,
 					"threshold": 1
 				}
-			}
 		}
 	],
 	"inputs": [
@@ -487,8 +492,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			}
-		},
+			},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -502,7 +506,6 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 						0
 					]
 				}
-			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -513,15 +516,13 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
-		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"nodeID": "NodeID-2ZbTY9GatRTrfinAoYiYLcf6CvrPAUYgo",
 	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"subnetAuthorization": {
 		"signatureIndices": []
-	}
-}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
+	}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
 }
 
 func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
@@ -536,11 +537,15 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		ChainID:   chainID,
 		QuantumID: networkID,
-	})
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -575,8 +580,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "already verified",
 			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
-				return &RemoveNetValidatorTx{BaseTx: verifiedBaseTx}
-			},
+				return &RemoveNetValidatorTx{BaseTx: verifiedBaseTx},
 			expectedErr: nil,
 		},
 		{
@@ -588,8 +592,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
 					BaseTx: invalidBaseTx,
-				}
-			},
+				},
 			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
@@ -600,8 +603,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
 					Net:    constants.PrimaryNetworkID,
-				}
-			},
+				},
 			expectedErr: ErrRemovePrimaryNetworkValidator,
 		},
 		{
@@ -617,8 +619,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,
 					NetAuth: invalidNetAuth,
-				}
-			},
+				},
 			expectedErr: errInvalidNetAuth,
 		},
 		{
@@ -634,8 +635,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,
 					NetAuth: validNetAuth,
-				}
-			},
+				},
 			expectedErr: nil,
 		},
 	}
@@ -652,6 +652,4 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(tx.SyntacticallyVerified)
-		})
 	}
-}

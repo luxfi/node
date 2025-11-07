@@ -88,7 +88,6 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 			0x11, 0x22, 0x33, 0x44,
-		})
 	)
 
 	tests := []struct {
@@ -543,9 +542,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			txJSON, err := json.MarshalIndent(test.tx, "", "\t")
 			require.NoError(err)
 			require.JSONEq(string(test.expectedJSON), string(txJSON))
-		})
 	}
-}
 
 func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 	sk, err := localsigner.New()
@@ -814,6 +811,4 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(test.tx.SyntacticallyVerified)
-		})
 	}
-}

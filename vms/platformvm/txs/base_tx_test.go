@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+	
 	"encoding/json"
 	"testing"
 
@@ -74,12 +75,16 @@ func TestBaseTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty for serialization test
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
+	ctx := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   ids.GenerateTestID(),
+	}
+	ctx = &consensusctx.Context{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleBaseTxBytes := []byte{
@@ -223,11 +228,12 @@ func TestBaseTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
 	ctx2 := context.Background()
-	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
+	ctx2 = &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
+
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
@@ -363,7 +369,8 @@ func TestBaseTxSerialization(t *testing.T) {
 		0xf0, 0x9f, 0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c,
 		0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73,
 		0x01, 0x23, 0x45, 0x21,
-	}
+	
+		NetID:     constants.PrimaryNetworkID,
 	var unsignedComplexBaseTx UnsignedTx = complexBaseTx
 	unsignedComplexBaseTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexBaseTx)
 	require.NoError(err)
@@ -376,8 +383,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		QuantumID: 1,
 		ChainID:    testChainID,
-		XAssetID: luxAssetID,
-	})
+		LUXAssetID: luxAssetID,
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
 	unsignedComplexBaseTx.InitCtx(testCtx)
@@ -399,7 +405,6 @@ func TestBaseTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
-			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -414,7 +419,6 @@ func TestBaseTxSerialization(t *testing.T) {
 					"locktime": 0,
 					"threshold": 1
 				}
-			}
 		}
 	],
 	"inputs": [
@@ -429,8 +433,7 @@ func TestBaseTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			}
-		},
+			},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -444,7 +447,6 @@ func TestBaseTxSerialization(t *testing.T) {
 						0
 					]
 				}
-			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -455,7 +457,6 @@ func TestBaseTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
-		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521"
 }`, string(unsignedComplexBaseTxJSONBytes))

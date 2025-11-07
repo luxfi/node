@@ -355,6 +355,4 @@ func TestSetL1ValidatorWeightTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(test.tx.SyntacticallyVerified)
-		})
 	}
-}

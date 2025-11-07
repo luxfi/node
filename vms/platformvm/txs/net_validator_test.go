@@ -36,4 +36,3 @@ func TestNetValidatorVerifyNetID(t *testing.T) {
 
 		require.NoError(vdr.Verify())
 	}
-}

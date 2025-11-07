@@ -6,8 +6,8 @@ package txstest
 import (
 	"time"
 
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 )
@@ -20,8 +20,8 @@ func newContext(
 	timestamp time.Time,
 ) *builder.Context {
 	builderContext := &builder.Context{
-		NetworkID:   networkID,
-		XAssetID: luxAssetID,
+		NetworkID: networkID,
+		XAssetID:  luxAssetID,
 	}
 
 	// For test purposes, use default values

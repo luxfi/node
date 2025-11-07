@@ -6,9 +6,9 @@ package executor
 import (
 	"fmt"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -154,4 +154,3 @@ func (e *atomicTxExecutor) atomicTx() error {
 	)
 	return err
 }
-

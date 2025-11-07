@@ -22,7 +22,7 @@ import (
 const MaxNetAddressLength = 4096
 
 var (
-	_ UnsignedTx                             = (*ConvertNetToL1Tx)(nil)
+	_ UnsignedTx                               = (*ConvertNetToL1Tx)(nil)
 	_ utils.Sortable[*ConvertNetToL1Validator] = (*ConvertNetToL1Validator)(nil)
 
 	ErrConvertPermissionlessNet            = errors.New("cannot convert a permissionless net")

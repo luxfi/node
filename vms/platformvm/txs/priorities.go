@@ -38,9 +38,9 @@ var PendingToCurrentPriorities = []Priority{
 	PrimaryNetworkDelegatorApricotPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
 	PrimaryNetworkValidatorPendingPriority:        PrimaryNetworkValidatorCurrentPriority,
 	PrimaryNetworkDelegatorBanffPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
-	NetPermissionlessValidatorPendingPriority:  NetPermissionlessValidatorCurrentPriority,
-	NetPermissionlessDelegatorPendingPriority:  NetPermissionlessDelegatorCurrentPriority,
-	NetPermissionedValidatorPendingPriority:    NetPermissionedValidatorCurrentPriority,
+	NetPermissionlessValidatorPendingPriority:     NetPermissionlessValidatorCurrentPriority,
+	NetPermissionlessDelegatorPendingPriority:     NetPermissionlessDelegatorCurrentPriority,
+	NetPermissionedValidatorPendingPriority:       NetPermissionedValidatorCurrentPriority,
 }
 
 type Priority byte

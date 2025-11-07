@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -186,7 +186,7 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{ids.GenerateTestID()},
 			GenesisData: []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
-			NetAuth:  &secp256k1fx.Input{SigIndices: []uint32{1}},
+			NetAuth:     &secp256k1fx.Input{SigIndices: []uint32{1}},
 		}
 
 		tx, err := txs.NewSigned(utx, txs.Codec, nil)
