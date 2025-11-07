@@ -101,7 +101,6 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
@@ -154,6 +153,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
@@ -399,7 +399,6 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
@@ -457,6 +456,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
 	_ = []byte{ // expectedUnsignedComplexAddPrimaryTxBytes - not used since we skip exact byte comparison
@@ -753,6 +753,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
+	})
 	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -803,7 +804,6 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12346,
 			Wght:   1,
@@ -850,6 +850,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
@@ -1093,7 +1094,6 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 1,
 			Wght:   9,
@@ -1151,6 +1151,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
@@ -1413,6 +1414,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	ctx = &consensusctx.Context{
 		QuantumID: networkID,
 		ChainID:   chainID,
+	}
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -1449,7 +1451,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *AddPermissionlessValidatorTx {
 				return &AddPermissionlessValidatorTx{
 					BaseTx: verifiedBaseTx,
-				},
+				}
+			},
 			err: nil,
 		},
 		{
@@ -1460,7 +1463,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						NodeID: ids.EmptyNodeID,
 					},
-				},
+				}
+			},
 			err: errEmptyNodeID,
 		},
 		{
@@ -1472,7 +1476,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 					},
 					StakeOuts: nil,
-				},
+				}
+			},
 			err: errNoStake,
 		},
 		{
@@ -1494,7 +1499,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationShares: reward.PercentDenominator + 1,
-				},
+				}
+			},
 			err: errTooManyShares,
 		},
 		{
@@ -1516,7 +1522,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationShares: reward.PercentDenominator,
-				},
+				}
+			},
 			err: lux.ErrWrongNetworkID,
 		},
 		{
@@ -1545,7 +1552,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errCustom,
 		},
 		{
@@ -1574,7 +1582,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errInvalidSigner,
 		},
 		{
@@ -1604,7 +1613,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errCustom,
 		},
 		{
@@ -1642,7 +1652,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: safemath.ErrOverflow,
 		},
 		{
@@ -1679,7 +1690,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errMultipleStakedAssets,
 		},
 		{
@@ -1717,7 +1729,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errOutputsNotSorted,
 		},
 		{
@@ -1755,7 +1768,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: errValidatorWeightMismatch,
 		},
 		{
@@ -1793,7 +1807,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: nil,
 		},
 		{
@@ -1831,7 +1846,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					ValidatorRewardsOwner: rewardsOwner,
 					DelegatorRewardsOwner: rewardsOwner,
 					DelegationShares:      reward.PercentDenominator,
-				},
+				}
+			},
 			err: nil,
 		},
 	}
@@ -1843,7 +1859,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)
 			require.ErrorIs(t, err, tt.err)
+		})
 	}
+}
 
 func TestAddPermissionlessValidatorTxNotDelegatorTx(t *testing.T) {
 	txIntf := any((*AddPermissionlessValidatorTx)(nil))

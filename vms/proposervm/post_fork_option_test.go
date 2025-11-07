@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/consensus/engine/chain"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/consensus/core"
@@ -273,13 +274,12 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	// accept oracle block
 	require.NoError(parentBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
-		[]*componentblocktest.Block{
-			componentblocktest.Genesis,
-			&oracleCoreBlk.Block,
-		},
-		oracleCoreBlk.opts[:],
-	)
+	acceptedBlocks := []*componentblocktest.Block{
+		componentblocktest.Genesis,
+		&oracleCoreBlk.Block,
+	}
+	acceptedBlocks = append(acceptedBlocks, oracleCoreBlk.opts[:]...)
+	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(acceptedBlocks)
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 	require.Equal(parentBlk.ID(), acceptedID)
@@ -357,7 +357,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 
 	// reject oracle block
 	require.NoError(builtBlk.Reject(context.Background()))
-	require.NotEqual(engineBlock.StatusRejected, oracleCoreBlk.StatusV)
+	require.NotEqual(choices.Rejected, oracleCoreBlk.StatusV)
 
 	// reject an option
 	require.IsType(&postForkBlock{}, builtBlk)
@@ -366,7 +366,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(opts[0].Reject(context.Background()))
-	require.NotEqual(engineBlock.StatusRejected, oracleCoreBlk.opts[0].StatusV)
+	require.NotEqual(choices.Rejected, oracleCoreBlk.opts[0].StatusV)
 }
 
 func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
