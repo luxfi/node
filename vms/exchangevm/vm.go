@@ -395,12 +395,17 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensusinterfaces.State) error {
+func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
 	// Check if bootstrapping or normal operation based on state
-	if state == consensusinterfaces.Bootstrapping {
+	state := consensusinterfaces.StateEnum(stateNum)
+	switch state {
+	case consensusinterfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
+	case consensusinterfaces.NormalOp:
+		return vm.onNormalOperationsStarted()
+	default:
+		return nil
 	}
-	return vm.onNormalOperationsStarted()
 }
 
 func (vm *VM) Shutdown() error {

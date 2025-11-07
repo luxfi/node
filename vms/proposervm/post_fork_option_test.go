@@ -55,13 +55,13 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
-	preferredBlk := blocktest.BuildChild(coreTestBlk)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	preferredBlk := componentblocktest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*blocktest.Block{
+		opts: [2]*componentblocktest.Block{
 			preferredBlk,
-			blocktest.BuildChild(coreTestBlk),
+			componentblocktest.BuildChild(coreTestBlk),
 		},
 	}
 
@@ -70,8 +70,8 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -84,8 +84,8 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -117,7 +117,7 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	// show we can build on options
 	require.NoError(proVM.SetPreference(context.Background(), opts[0].ID()))
 
-	childCoreBlk := blocktest.BuildChild(preferredBlk)
+	childCoreBlk := componentblocktest.BuildChild(preferredBlk)
 	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return childCoreBlk, nil
 	}
@@ -144,12 +144,12 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreOpt0 := blocktest.BuildChild(coreTestBlk)
-	coreOpt1 := blocktest.BuildChild(coreTestBlk)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreOpt0 := componentblocktest.BuildChild(coreTestBlk)
+	coreOpt1 := componentblocktest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*blocktest.Block{
+		opts: [2]*componentblocktest.Block{
 			coreOpt0,
 			coreOpt1,
 		},
@@ -160,8 +160,8 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -174,8 +174,8 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -226,12 +226,12 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*blocktest.Block{
-			blocktest.BuildChild(coreTestBlk),
-			blocktest.BuildChild(coreTestBlk),
+		opts: [2]*componentblocktest.Block{
+			componentblocktest.BuildChild(coreTestBlk),
+			componentblocktest.BuildChild(coreTestBlk),
 		},
 	}
 
@@ -240,8 +240,8 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -254,8 +254,8 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -273,9 +273,9 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	// accept oracle block
 	require.NoError(parentBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
-		[]*blocktest.Block{
-			blocktest.Genesis,
+	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
+		[]*componentblocktest.Block{
+			componentblocktest.Genesis,
 			&oracleCoreBlk.Block,
 		},
 		oracleCoreBlk.opts[:],
@@ -311,12 +311,12 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*blocktest.Block{
-			blocktest.BuildChild(coreTestBlk),
-			blocktest.BuildChild(coreTestBlk),
+		opts: [2]*componentblocktest.Block{
+			componentblocktest.BuildChild(coreTestBlk),
+			componentblocktest.BuildChild(coreTestBlk),
 		},
 	}
 
@@ -325,8 +325,8 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -339,8 +339,8 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -382,21 +382,21 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	coreBlk := &TestOptionsBlock{
 		Block:   *coreTestBlk,
 		optsErr: ErrNotOracle,
 	}
 
-	coreChildBlk := blocktest.BuildChild(coreTestBlk)
+	coreChildBlk := componentblocktest.BuildChild(coreTestBlk)
 
 	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return coreBlk, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		case coreChildBlk.ID():
@@ -407,8 +407,8 @@ func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		case bytes.Equal(b, coreChildBlk.Bytes()):
@@ -452,18 +452,18 @@ func TestOptionTimestampValidity(t *testing.T) {
 	)
 	coreVM, _, proVM, db := initTestProposerVM(t, activationTime, durangoTime, 0)
 
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	coreOracleBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*blocktest.Block{
-			blocktest.BuildChild(coreTestBlk),
-			blocktest.BuildChild(coreTestBlk),
+		opts: [2]*componentblocktest.Block{
+			componentblocktest.BuildChild(coreTestBlk),
+			componentblocktest.BuildChild(coreTestBlk),
 		},
 	}
 
 	oracleBlkTime := proVM.Time().Truncate(time.Second)
 	statelessBlock, err := proposerBlock.BuildUnsigned(
-		blocktest.GenesisID,
+		componentblocktest.GenesisID,
 		oracleBlkTime,
 		0,
 		coreOracleBlk.Bytes(),
@@ -472,8 +472,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreOracleBlk.ID():
 			return coreOracleBlk, nil
 		case coreOracleBlk.opts[0].ID():
@@ -486,8 +486,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreOracleBlk.Bytes()):
 			return coreOracleBlk, nil
 		case bytes.Equal(b, coreOracleBlk.opts[0].Bytes()):
@@ -561,8 +561,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreOracleBlk.ID():
 			return coreOracleBlk, nil
 		case coreOracleBlk.opts[0].ID():
@@ -575,8 +575,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreOracleBlk.Bytes()):
 			return coreOracleBlk, nil
 		case bytes.Equal(b, coreOracleBlk.opts[0].Bytes()):

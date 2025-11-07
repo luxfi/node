@@ -41,8 +41,6 @@ func (t *txInit) getParsedFx(val interface{}) (*fxs.ParsedFx, error) {
 }
 
 func (t *txInit) init() error {
-	t.tx.Unsigned.InitCtx(t.ctx)
-
 	for _, cred := range t.tx.Creds {
 		fx, err := t.getParsedFx(cred.Credential)
 		if err != nil {
