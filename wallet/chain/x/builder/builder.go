@@ -235,7 +235,7 @@ func (b *builder) NewBaseTx(
 		Outs:         outputs,
 		Memo:         ops.Memo(),
 	}}
-	return tx, b.initCtx(tx)
+	return tx, nil
 }
 
 func (b *builder) NewCreateAssetTx(
@@ -280,7 +280,7 @@ func (b *builder) NewCreateAssetTx(
 		Denomination: denomination,
 		States:       states,
 	}
-	return tx, b.initCtx(tx)
+	return tx, nil
 }
 
 func (b *builder) NewOperationTx(
@@ -307,7 +307,7 @@ func (b *builder) NewOperationTx(
 		}},
 		Ops: operations,
 	}
-	return tx, b.initCtx(tx)
+	return tx, nil
 }
 
 func (b *builder) NewOperationTxMintFT(
@@ -467,7 +467,7 @@ func (b *builder) NewImportTx(
 		SourceChain: chainID,
 		ImportedIns: importedInputs,
 	}
-	return tx, b.initCtx(tx)
+	return tx, nil
 }
 
 func (b *builder) NewExportTx(
@@ -505,7 +505,7 @@ func (b *builder) NewExportTx(
 		DestinationChain: chainID,
 		ExportedOuts:     outputs,
 	}
-	return tx, b.initCtx(tx)
+	return tx, nil
 }
 
 func (b *builder) getBalance(
@@ -873,18 +873,4 @@ func (b *builder) burnProperty(
 		)
 	}
 	return operations, nil
-}
-
-func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	ctx, err := NewConsensusContext(
-		b.context.NetworkID,
-		b.context.BlockchainID,
-		b.context.XAssetID,
-	)
-	if err != nil {
-		return err
-	}
-
-	tx.InitCtx(ctx)
-	return nil
 }

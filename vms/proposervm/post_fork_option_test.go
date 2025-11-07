@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 
@@ -32,8 +32,8 @@ var (
 )
 
 type TestOptionsBlock struct {
-	blocktest.Block
-	opts    [2]*blocktest.Block
+	componentblocktest.Block
+	opts    [2]*componentblocktest.Block
 	optsErr error
 }
 

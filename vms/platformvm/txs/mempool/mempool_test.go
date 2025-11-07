@@ -4,7 +4,6 @@
 package mempool
 
 import (
-	"errors"
 	"math"
 	"testing"
 	"time"

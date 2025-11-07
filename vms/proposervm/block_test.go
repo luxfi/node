@@ -18,6 +18,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/log"
 
@@ -29,7 +30,7 @@ import (
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
@@ -126,7 +127,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreParentBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -134,8 +135,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -144,8 +145,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -166,7 +167,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	// it'd be picked if block build time was before MaxVerifyDelay
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		// a validator with a weight large enough to fully fill the proposers list
-		nodeID := consensus.GetNodeID(proVM.ctx)
+		nodeID := proVM.ctx.NodeID
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			nodeID: {
 				NodeID: nodeID,
@@ -175,8 +176,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := blocktest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (block.Block, error) {
+	coreChildBlk := componentblocktest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -191,7 +192,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		require.IsType(&postForkBlock{}, childBlkIntf)
 
 		childBlk := childBlkIntf.(*postForkBlock)
-		require.Equal(consensus.GetNodeID(proVM.ctx), childBlk.Proposer()) // signed block
+		require.Equal(proVM.ctx.NodeID, childBlk.Proposer()) // signed block
 	}
 
 	{
@@ -255,7 +256,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreParentBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -263,8 +264,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -273,8 +274,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -307,8 +308,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := blocktest.BuildChild(coreParentBlk)
-	coreVM.BuildBlockF = func(context.Context) (block.Block, error) {
+	coreChildBlk := componentblocktest.BuildChild(coreParentBlk)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreChildBlk, nil
 	}
 
@@ -372,8 +373,8 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		parentEpoch              = statelessblock.Epoch{}
 	)
 
-	innerParentBlock := blocktest.Genesis
-	innerChildBlock := blocktest.BuildChild(innerParentBlock)
+	innerParentBlock := componentblocktest.Genesis
+	innerChildBlock := componentblocktest.BuildChild(innerParentBlock)
 
 	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextVM(ctrl)
 	// Expect the that context passed in has parent's P-Chain height
@@ -420,12 +421,16 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 	require := require.New(t)
 
-	_, _, proVM, _ := initTestProposerVM(t, upgradetest.Latest, 0)
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = activationTime
+	)
+	_, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	innerBlk := blocktest.BuildChild(blocktest.Genesis)
+	innerBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	slb, err := statelessblock.Build(
 		proVM.preferred,
 		proVM.Time(),
@@ -449,7 +454,7 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 		},
 	}
 	err = proBlk.Verify(context.Background())
-	require.ErrorIs(err, errEpochNotZero)
+	require.ErrorIs(err, errEpochMismatch)
 }
 
 // Verify that post-fork blocks are validated to contain the correct epoch
@@ -457,17 +462,21 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 	ctx := context.Background()
 
-	coreVM, _, proVM, _ := initTestProposerVM(t, upgradetest.Latest, 0)
+	var (
+		activationTime = time.Unix(0, 0)
+		durangoTime    = activationTime
+	)
+	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(t, proVM.Shutdown(ctx))
 	}()
 
-	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreChildBlk := blocktest.BuildChild(coreParentBlk)
+	coreParentBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreChildBlk := componentblocktest.BuildChild(coreParentBlk)
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) { // needed when setting preference
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
 		case bytes.Equal(b, coreChildBlk.Bytes()):
@@ -482,14 +491,14 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 
 	// Build the first proposervm block so that verification is on top of a
 	// post-fork block.
-	parentTime := upgradetest.InitiallyActiveTime.Add(24 * time.Hour) // Some arbitrary time after initial activations
+	parentTime := upgrade.InitiallyActiveTime.Add(24 * time.Hour) // Some arbitrary time after initial activations
 	proVM.Set(parentTime)
 
 	parentBlk, err := proVM.BuildBlock(ctx)
 	require.NoError(t, err)
 	require.NoError(t, parentBlk.Verify(ctx))
 	require.NoError(t, proVM.SetPreference(ctx, parentBlk.ID()))
-	require.NoError(t, proVM.waitForProposerWindow())
+	require.NoError(t, waitForProposerWindow(proVM, parentBlk, parentBlk.(*postForkBlock).PChainHeight()))
 
 	tests := []struct {
 		name    string

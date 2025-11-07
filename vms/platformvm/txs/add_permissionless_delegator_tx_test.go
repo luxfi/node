@@ -106,7 +106,6 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
@@ -353,7 +352,6 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
@@ -639,6 +637,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	testCtx := testcontext.New(ctx2)
 	testCtx.BCLookup = aliaser
 	unsignedComplexAddPrimaryTx.InitCtx(testCtx)
@@ -797,6 +796,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
+	})
 	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -847,7 +847,6 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12346,
 			Wght:   1,
@@ -1121,7 +1120,6 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		},
 		Validator: Validator{
 			NodeID: nodeID,
-	}
 			Start:  12345,
 			End:    12345 + 1,
 			Wght:   9,
@@ -1407,6 +1405,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	testCtx := testcontext.New(ctx2)
 	testCtx.BCLookup = aliaser
 	unsignedComplexAddNetTx.InitCtx(testCtx)
@@ -1555,6 +1554,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 	ctx = &consensusctx.Context{
 		QuantumID: networkID,
 		ChainID:   chainID,
+	}
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -1585,7 +1585,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *AddPermissionlessDelegatorTx {
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: verifiedBaseTx,
-				},
+				}
+			},
 			err: nil,
 		},
 		{
@@ -1594,7 +1595,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 				return &AddPermissionlessDelegatorTx{
 					BaseTx:    validBaseTx,
 					StakeOuts: nil,
-				},
+				}
+			},
 			err: errNoStake,
 		},
 		{
@@ -1614,8 +1616,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 								Amt: 1,
 							},
 						},
-					},
-				},
+					}
+				}
 			err: lux.ErrWrongNetworkID,
 		},
 		{
@@ -1666,7 +1668,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						},
 					},
 					DelegationRewardsOwner: rewardsOwner,
-				},
+				}
 			err: errCustom,
 		},
 		{

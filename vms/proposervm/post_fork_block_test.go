@@ -19,8 +19,11 @@ import (
 	"github.com/luxfi/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/engine/chain"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
 	validators "github.com/luxfi/consensus/validator"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
@@ -40,7 +43,7 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 	// setup
 	proBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
-			innerBlk: blocktest.BuildChild(blocktest.Genesis),
+			innerBlk: componentblocktest.BuildChild(componentblocktest.Genesis),
 		},
 	}
 
@@ -58,12 +61,12 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	innerTestBlock := blocktest.BuildChild(blocktest.Genesis)
+	innerTestBlock := componentblocktest.BuildChild(componentblocktest.Genesis)
 	innerOracleBlk := &TestOptionsBlock{
 		Block: *innerTestBlock,
-		opts: [2]*consensusmantest.Block{
-			consensusmantest.BuildChild(innerTestBlock),
-			consensusmantest.BuildChild(innerTestBlock),
+		opts: [2]*componentblocktest.Block{
+			componentblocktest.BuildChild(innerTestBlock),
+			componentblocktest.BuildChild(innerTestBlock),
 		},
 	}
 
@@ -71,9 +74,10 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 		ids.Empty, // refer unknown parent
 		time.Time{},
 		0, // pChainHeight,
+		block.Epoch{},
 		proVM.StakingCertLeaf,
 		innerOracleBlk.Bytes(),
-		consensus.GetChainID(proVM.ctx),
+		proVM.ctx.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -109,24 +113,24 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	parentCoreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -141,7 +145,7 @@ func TestBlockVerify_PostForkBlock_PreDurango_ParentChecks(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), parentBlk.ID()))
 
 	// .. create child block ...
-	childCoreBlk := blocktest.BuildChild(parentCoreBlk)
+	childCoreBlk := componentblocktest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -201,24 +205,24 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	parentCoreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -232,7 +236,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 	require.NoError(parentBlk.Verify(context.Background()))
 	require.NoError(proVM.SetPreference(context.Background(), parentBlk.ID()))
 
-	childCoreBlk := blocktest.BuildChild(parentCoreBlk)
+	childCoreBlk := componentblocktest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -329,24 +333,24 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	parentCoreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -365,7 +369,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		parentPChainHeight = parentBlk.(*postForkBlock).PChainHeight()
 	)
 
-	childCoreBlk := blocktest.BuildChild(parentCoreBlk)
+	childCoreBlk := componentblocktest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -517,24 +521,24 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	}
 
 	// create parent block ...
-	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	parentCoreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case parentCoreBlk.ID():
 			return parentCoreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, parentCoreBlk.Bytes()):
 			return parentCoreBlk, nil
 		default:
@@ -553,7 +557,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	parentBlkPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
 	require.NoError(waitForProposerWindow(proVM, parentBlk, parentBlkPChainHeight))
 
-	childCoreBlk := blocktest.BuildChild(parentCoreBlk)
+	childCoreBlk := componentblocktest.BuildChild(parentCoreBlk)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -685,23 +689,23 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 	}
 
 	// create post fork oracle block ...
-	innerTestBlock := blocktest.BuildChild(blocktest.Genesis)
+	innerTestBlock := componentblocktest.BuildChild(componentblocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *innerTestBlock,
 	}
-	preferredOracleBlkChild := consensusmantest.BuildChild(innerTestBlock)
-	oracleCoreBlk.opts = [2]*consensusmantest.Block{
+	preferredOracleBlkChild := componentblocktest.BuildChild(innerTestBlock)
+	oracleCoreBlk.opts = [2]*componentblocktest.Block{
 		preferredOracleBlkChild,
-		blocktest.BuildChild(innerTestBlock),
+		componentblocktest.BuildChild(innerTestBlock),
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -712,10 +716,10 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -750,7 +754,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 
 	parentBlkPChainHeight := postForkOracleBlk.PChainHeight() // option takes proposal blocks' Pchain height
 
-	childCoreBlk := blocktest.BuildChild(preferredOracleBlkChild)
+	childCoreBlk := componentblocktest.BuildChild(preferredOracleBlkChild)
 	childBlk := postForkBlock{
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       proVM,
@@ -850,24 +854,24 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -909,24 +913,24 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 		return pChainHeight, nil
 	}
 
-	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -940,9 +944,9 @@ func TestBlockAccept_PostForkBlock_SetsLastAcceptedBlock(t *testing.T) {
 	// test
 	require.NoError(builtBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{
-			consensusmantest.Genesis,
+	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
+		[]*componentblocktest.Block{
+			componentblocktest.Genesis,
 			coreBlk,
 		},
 	)
@@ -969,12 +973,12 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 	}
 
 	// generate two blocks with the same core block and store them
-	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreBlk, nil
 	}
 
-	minimumHeight = blocktest.GenesisHeight
+	minimumHeight = componentblocktest.GenesisHeight
 
 	proBlk1, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
@@ -1006,9 +1010,9 @@ func TestBlockReject_PostForkBlock_InnerBlockIsNotRejected(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := consensusmantest.BuildChild(consensusmantest.Genesis)
-	coreBlk.RejectV = errUnexpectedBlockRejection
-	coreVM.BuildBlockF = func(context.Context) (consensusman.Block, error) {
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreBlk.ErrR = errUnexpectedBlockRejection
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -1033,22 +1037,22 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 	}()
 
 	// create post fork oracle block ...
-	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreTestBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
-			consensusmantest.BuildChild(coreTestBlk),
-			consensusmantest.BuildChild(coreTestBlk),
+		opts: [2]*componentblocktest.Block{
+			componentblocktest.BuildChild(coreTestBlk),
+			componentblocktest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case oracleCoreBlk.ID():
 			return oracleCoreBlk, nil
 		case oracleCoreBlk.opts[0].ID():
@@ -1059,10 +1063,10 @@ func TestBlockVerify_PostForkBlock_ShouldBePostForkOption(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, oracleCoreBlk.Bytes()):
 			return oracleCoreBlk, nil
 		case bytes.Equal(b, oracleCoreBlk.opts[0].Bytes()):
@@ -1125,21 +1129,21 @@ func TestBlockVerify_PostForkBlock_PChainTooLow(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
-		case blocktest.GenesisID:
-			return blocktest.Genesis, nil
+		case componentblocktest.GenesisID:
+			return componentblocktest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) {
 		switch {
-		case bytes.Equal(b, blocktest.GenesisBytes):
-			return blocktest.Genesis, nil
+		case bytes.Equal(b, componentblocktest.GenesisBytes):
+			return componentblocktest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -1148,8 +1152,8 @@ func TestBlockVerify_PostForkBlock_PChainTooLow(t *testing.T) {
 	}
 
 	statelessChild, err := block.BuildUnsigned(
-		blocktest.GenesisID,
-		blocktest.GenesisTimestamp,
+		componentblocktest.GenesisID,
+		componentblocktest.GenesisTimestamp,
 		4,
 		coreBlk.Bytes(),
 	)
