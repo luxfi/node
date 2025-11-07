@@ -85,6 +85,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleBaseTxBytes := []byte{
@@ -227,13 +228,12 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
+	ctx2 := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
@@ -369,8 +369,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		0xf0, 0x9f, 0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c,
 		0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73,
 		0x01, 0x23, 0x45, 0x21,
-	
-		NetID:     constants.PrimaryNetworkID,
+	}
 	var unsignedComplexBaseTx UnsignedTx = complexBaseTx
 	unsignedComplexBaseTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexBaseTx)
 	require.NoError(err)
@@ -379,11 +378,12 @@ func TestBaseTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	ctx3 := context.Background()
-	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
+	ctx3 := &consensusctx.Context{
+		NetworkID: constants.UnitTestID,
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
 	unsignedComplexBaseTx.InitCtx(testCtx)

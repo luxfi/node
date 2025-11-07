@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/consensus/engine/chain"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
@@ -466,6 +467,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 		componentblocktest.GenesisID,
 		oracleBlkTime,
 		0,
+		proposerBlock.Epoch{},
 		coreOracleBlk.Bytes(),
 	)
 	require.NoError(err)
@@ -504,7 +506,12 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.NoError(statefulBlock.Verify(context.Background()))
 
-	statefulOracleBlock, ok := statefulBlock.(chain.OracleBlock)
+	// Note: OracleBlock interface doesn't exist in consensus package
+	// Using type assertion to access Options method directly
+	type oracleBlock interface {
+		Options(context.Context) ([2]engineBlock.Block, error)
+	}
+	statefulOracleBlock, ok := statefulBlock.(oracleBlock)
 	require.True(ok)
 
 	options, err := statefulOracleBlock.Options(context.Background())
@@ -539,7 +546,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOp().Registry(),
+			Registerer:          metric.NewRegistry(),
 		},
 	)
 
@@ -550,8 +557,9 @@ func TestOptionTimestampValidity(t *testing.T) {
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*core.Fx,
-		core.AppSender,
+		interface{},
+		[]interface{},
+		interface{},
 	) error {
 		return nil
 	}
@@ -592,6 +600,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 		context.Background(),
 		ctx,
 		db,
+		nil,
 		nil,
 		nil,
 		nil,
