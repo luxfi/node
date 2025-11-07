@@ -19,7 +19,8 @@ import (
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	consensuscoremock "github.com/luxfi/consensus/core/coremock"
+	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
@@ -31,6 +32,13 @@ import (
 )
 
 // Moved to post_fork_option_test.go to avoid redeclaration
+
+// oracleBlock defines the interface for blocks that provide options
+// Note: chain.OracleBlock doesn't exist in consensus package, so we define locally
+type oracleBlock interface {
+	engineBlock.Block
+	Options(context.Context) ([2]engineBlock.Block, error)
+}
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 	require := require.New(t)
@@ -290,6 +298,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		componentblocktest.GenesisID,
 		coreBlk.Timestamp(),
 		0, // pChainHeight
+		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
 		proVM.ctx.ChainID,
@@ -542,10 +551,10 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 
 	require.NoError(firstBlock.Verify(context.Background()))
 
-	oracleBlock, ok := firstBlock.(chain.OracleBlock)
+	oracleBlk, ok := firstBlock.(oracleBlock)
 	require.True(ok)
 
-	options, err := oracleBlock.Options(context.Background())
+	options, err := oracleBlk.Options(context.Background())
 	require.NoError(err)
 
 	require.NoError(options[0].Verify(context.Background()))
@@ -616,6 +625,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		firstBlock.ID(), // refer unknown parent
 		firstBlock.Timestamp(),
 		0, // pChainHeight,
+		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
 		proVM.ctx.ChainID,
@@ -642,14 +652,14 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	pChainHeight := uint64(1337)
 	blkID := ids.GenerateTestID()
-	innerBlk := consensusmanmock.NewBlock(ctrl)
+	innerBlk := consensusblockmock.NewMockBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Timestamp().Return(mockable.MaxTime)
-	builtBlk := consensusmanmock.NewBlock(ctrl)
+	builtBlk := consensusblockmock.NewMockBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
-	innerVM := blockmock.NewChainVM(ctrl)
+	innerVM := consensusblockmock.NewMockChainVM(ctrl)
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
 	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()

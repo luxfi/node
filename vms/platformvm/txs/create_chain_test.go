@@ -5,15 +5,15 @@ package txs
 
 import (
 	consensusctx "github.com/luxfi/consensus/context"
-	
+
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -29,6 +29,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	ctx = &consensusctx.Context{
 		QuantumID: constants.UnitTestID,
 		ChainID:   testChainID,
+	}
 	testNet1ID := ids.GenerateTestID()
 
 	type test struct {
@@ -153,7 +154,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			createChainTx := &CreateChainTx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:   ctx.NetworkID,
+					NetworkID:    ctx.NetworkID,
 					BlockchainID: ctx.ChainID,
 					Ins:          inputs,
 					Outs:         outputs,
@@ -163,7 +164,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 				VMID:        test.vmID,
 				FxIDs:       test.fxIDs,
 				GenesisData: test.genesisData,
-				NetAuth:  subnetAuth,
+				NetAuth:     subnetAuth,
 			}
 
 			signers := [][]*secp256k1.PrivateKey{preFundedKeys}
@@ -175,4 +176,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			err = stx.SyntacticVerify(ctx)
 			require.ErrorIs(err, test.expectedErr)
+		})
 	}
+}
