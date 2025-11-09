@@ -51,8 +51,23 @@ func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	return v.state.GetValidatorSet(ctx, height, subnetID)
+func (v *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Not available in test state, return empty ID
+	return ids.Empty, nil
+}
+
+func (v *validatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	// Adapter: convert validators.State GetValidatorSet to consensuscontext.ValidatorState format
+	validatorMap, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	// Convert from map[ids.NodeID]*validators.GetValidatorOutput to map[ids.NodeID]uint64
+	result := make(map[ids.NodeID]uint64, len(validatorMap))
+	for nodeID, validator := range validatorMap {
+		result[nodeID] = validator.Light
+	}
+	return result, nil
 }
 
 func (v *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {

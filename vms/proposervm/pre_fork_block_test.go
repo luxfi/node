@@ -16,6 +16,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
@@ -39,6 +40,8 @@ type oracleBlock interface {
 	engineBlock.Block
 	Options(context.Context) ([2]engineBlock.Block, error)
 }
+
+// Note: validatorStateAdapter is defined in batched_vm_test.go
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 	require := require.New(t)
@@ -661,13 +664,19 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 	innerVM := consensusblockmock.NewMockChainVM(ctrl)
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
-	vdrState := validatorsmock.NewState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
-
-	testCtx := consensus.WithValidatorState(context.Background(), vdrState)
+	
+	// Create minimal consensus context for testing
+	// ValidatorState is left as nil since this test doesn't exercise validator functionality
+	consensusCtx := &consensuscontext.Context{
+		QuantumID:  1,
+		NetworkID:  1,
+		ChainID:    ids.GenerateTestID(),
+		NodeID:     ids.GenerateTestNodeID(),
+	}
+	
 	vm := &VM{
 		ChainVM: innerVM,
-		ctx:     testCtx,
+		ctx:     consensusCtx,
 	}
 
 	blk := &preForkBlock{

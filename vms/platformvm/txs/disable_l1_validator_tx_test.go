@@ -387,4 +387,6 @@ func TestDisableL1ValidatorTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(test.tx.SyntacticallyVerified)
+		})
 	}
+}

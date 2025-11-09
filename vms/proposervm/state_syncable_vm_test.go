@@ -34,10 +34,8 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	require := require.New(t)
 
 	innerVM := &fullVM{
-		VM: &blocktest.VM{
-			VM: enginetest.VM{
-				T: t,
-			},
+		ChainVM: &blocktest.ChainVM{
+			T: t,
 		},
 		StateSyncableVM: &blocktest.StateSyncableVM{
 			T: t,
