@@ -417,9 +417,9 @@ type ManagerConfig struct {
 	Log                       log.Logger
 	LogFactory                log.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
-	BlockAcceptorGroup        consensus.AcceptorGroup
-	TxAcceptorGroup           consensus.AcceptorGroup
-	VertexAcceptorGroup       consensus.AcceptorGroup
+	BlockAcceptorGroup        interface{} // TODO: AcceptorGroup interface removed from consensus package
+	TxAcceptorGroup           interface{} // TODO: AcceptorGroup interface removed from consensus package
+	VertexAcceptorGroup       interface{} // TODO: AcceptorGroup interface removed from consensus package
 	DB                        database.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
 	Router                    router.Router              // Routes incoming messages to the appropriate chain

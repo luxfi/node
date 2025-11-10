@@ -753,7 +753,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	state := interfaces.State(stateNum)
+	state := interfaces.StateEnum(stateNum)
 	switch state {
 	case interfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
