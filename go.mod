@@ -30,7 +30,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/consensus v1.21.1
+	github.com/luxfi/consensus v1.21.2
 	github.com/luxfi/crypto v1.17.6
 	github.com/luxfi/database v1.2.7
 	github.com/luxfi/geth v1.16.39

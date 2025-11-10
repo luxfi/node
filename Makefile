@@ -1,6 +1,6 @@
 # Makefile for Lux Node
 
-.PHONY: all build build-cgo build-nocgo build-fips test test-cgo test-nocgo test-fips clean fmt lint install-mockgen mockgen verify-fips
+.PHONY: all build build-cgo build-nocgo build-mlx build-mlx-cgo build-fips test test-cgo test-nocgo test-fips clean fmt lint install-mockgen mockgen verify-fips
 
 # Configuration toggles (override with make FIPS=0 CGO=1 etc.)
 FIPS ?= 1
@@ -269,3 +269,12 @@ help:
 	@echo "  list-packages - List all test packages"
 	@echo "  count-packages- Count total packages"
 	@echo "  help          - Show this help message"
+# Build with MLX GPU acceleration support
+build-mlx:
+	@echo "$(GREEN)Building luxd with MLX GPU acceleration...$(NC)"
+	@$(ENV) ./scripts/build.sh -tags mlx
+	@echo "$(GREEN)✓ Build complete with MLX support$(NC)"
+
+# Build with MLX and CGO
+build-mlx-cgo:
+	@$(MAKE) build-mlx CGO=1
