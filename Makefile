@@ -1,23 +1,17 @@
 # Makefile for Lux Node
 
-.PHONY: all build build-cgo build-nocgo build-mlx build-mlx-cgo build-fips test test-cgo test-nocgo test-fips clean fmt lint install-mockgen mockgen verify-fips
+.PHONY: all build build-cgo build-nocgo build-mlx test test-cgo test-nocgo clean fmt lint install-mockgen mockgen
 
-# Configuration toggles (override with make FIPS=0 CGO=1 etc.)
-FIPS ?= 1
+# Configuration toggles
 CGO ?= 0
 FIPS_STRICT ?= 0
 
-# Derived environment variables
-ifeq ($(FIPS),1)
-	export GOFIPS140 := latest
-	ifeq ($(FIPS_STRICT),1)
-		export GODEBUG := fips140=only
-	else
-		export GODEBUG := fips140=on
-	endif
+# FIPS 140-3 always enabled (required for blockchain/financial systems)
+export GOFIPS140 := latest
+ifeq ($(FIPS_STRICT),1)
+	export GODEBUG := fips140=only
 else
-	export GOFIPS140 :=
-	export GODEBUG :=
+	export GODEBUG := fips140=on
 endif
 
 export CGO_ENABLED := $(CGO)
@@ -269,12 +263,9 @@ help:
 	@echo "  list-packages - List all test packages"
 	@echo "  count-packages- Count total packages"
 	@echo "  help          - Show this help message"
-# Build with MLX GPU acceleration support
-build-mlx:
-	@echo "$(GREEN)Building luxd with MLX GPU acceleration...$(NC)"
-	@$(ENV) ./scripts/build.sh -tags mlx
-	@echo "$(GREEN)✓ Build complete with MLX support$(NC)"
 
-# Build with MLX and CGO
-build-mlx-cgo:
-	@$(MAKE) build-mlx CGO=1
+# Build with MLX GPU acceleration support (requires CGO)
+build-mlx:
+	@echo "$(GREEN)Building luxd with MLX GPU acceleration (CGO enabled)...$(NC)"
+	@CGO_ENABLED=1 $(ENV) ./scripts/build.sh -tags mlx
+	@echo "$(GREEN)✓ Build complete with MLX support$(NC)"
