@@ -63,7 +63,9 @@ func TestPriorityIsCurrent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsCurrent())
+		})
 	}
+}
 
 func TestPriorityIsPending(t *testing.T) {
 	tests := []struct {
@@ -118,7 +120,9 @@ func TestPriorityIsPending(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsPending())
+		})
 	}
+}
 
 func TestPriorityIsValidator(t *testing.T) {
 	tests := []struct {
@@ -173,7 +177,9 @@ func TestPriorityIsValidator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsValidator())
+		})
 	}
+}
 
 func TestPriorityIsPermissionedValidator(t *testing.T) {
 	tests := []struct {
@@ -228,7 +234,9 @@ func TestPriorityIsPermissionedValidator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsPermissionedValidator())
+		})
 	}
+}
 
 func TestPriorityIsDelegator(t *testing.T) {
 	tests := []struct {
@@ -283,7 +291,9 @@ func TestPriorityIsDelegator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsDelegator())
+		})
 	}
+}
 
 func TestPriorityIsCurrentValidator(t *testing.T) {
 	tests := []struct {
@@ -338,7 +348,9 @@ func TestPriorityIsCurrentValidator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsCurrentValidator())
+		})
 	}
+}
 
 func TestPriorityIsCurrentDelegator(t *testing.T) {
 	tests := []struct {
@@ -393,7 +405,9 @@ func TestPriorityIsCurrentDelegator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsCurrentDelegator())
+		})
 	}
+}
 
 func TestPriorityIsPendingValidator(t *testing.T) {
 	tests := []struct {
@@ -448,7 +462,9 @@ func TestPriorityIsPendingValidator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsPendingValidator())
+		})
 	}
+}
 
 func TestPriorityIsPendingDelegator(t *testing.T) {
 	tests := []struct {
@@ -503,4 +519,6 @@ func TestPriorityIsPendingDelegator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%d", test.priority), func(t *testing.T) {
 			require.Equal(t, test.expected, test.priority.IsPendingDelegator())
+		})
 	}
+}

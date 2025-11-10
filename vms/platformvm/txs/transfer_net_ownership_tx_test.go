@@ -107,6 +107,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(simpleTransferNetOwnershipTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleTransferNetOwnershipTxBytes := []byte{
@@ -292,6 +293,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	}
 	require.NoError(complexTransferNetOwnershipTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexTransferNetOwnershipTxBytes := []byte{
@@ -449,7 +451,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77,
 	
-		NetID:     constants.PrimaryNetworkID,
+	}
 	var unsignedComplexTransferNetOwnershipTx UnsignedTx = complexTransferNetOwnershipTx
 	unsignedComplexTransferNetOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransferNetOwnershipTx)
 	require.NoError(err)
@@ -463,6 +465,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+	})
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
 	unsignedComplexTransferNetOwnershipTx.InitCtx(testCtx)
@@ -572,6 +575,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 	ctx = &consensusctx.Context{
 		ChainID:   chainID,
 		QuantumID: networkID,
+	}
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -606,7 +610,8 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 		{
 			name: "already verified",
 			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
-				return &TransferNetOwnershipTx{BaseTx: verifiedBaseTx},
+				return &TransferNetOwnershipTx{BaseTx: verifiedBaseTx}
+			},
 			expectedErr: nil,
 		},
 		{
@@ -616,7 +621,8 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 					// Set netID so we don't error on that check.
 					Net:    ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
-				},
+				}
+			},
 			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
@@ -625,7 +631,8 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				return &TransferNetOwnershipTx{
 					BaseTx: validBaseTx,
 					Net:    constants.PrimaryNetworkID,
-				},
+				}
+			},
 			expectedErr: ErrTransferPermissionlessNet,
 		},
 		{
@@ -639,7 +646,8 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 					Net:        ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					NetAuth: invalidNetAuth,
-				},
+				}
+			},
 			expectedErr: errInvalidNetAuth,
 		},
 		{
@@ -656,7 +664,8 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 					BaseTx:     validBaseTx,
 					NetAuth: validNetAuth,
 					Owner:      mockOwner,
-				},
+				}
+			},
 			expectedErr: nil,
 		},
 	}
@@ -673,4 +682,6 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(tx.SyntacticallyVerified)
+	})
 	}
+}

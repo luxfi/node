@@ -226,3 +226,30 @@ func (vm *StateSyncableVM) GetStateSummary(ctx context.Context, height uint64) (
 	}
 	return nil, database.ErrNotFound
 }
+
+// StateSummary is a test state summary that implements block.StateSummary
+type StateSummary struct {
+	IDV      ids.ID
+	HeightV  uint64
+	BytesV   []byte
+	AcceptF  func(context.Context) (block.StateSyncMode, error)
+}
+
+func (s *StateSummary) ID() ids.ID {
+	return s.IDV
+}
+
+func (s *StateSummary) Height() uint64 {
+	return s.HeightV
+}
+
+func (s *StateSummary) Bytes() []byte {
+	return s.BytesV
+}
+
+func (s *StateSummary) Accept(ctx context.Context) (block.StateSyncMode, error) {
+	if s.AcceptF != nil {
+		return s.AcceptF(ctx)
+	}
+	return block.StateSyncStatic, nil
+}
