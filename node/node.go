@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/luxfi/consensus"
+	// "github.com/luxfi/consensus" // TODO: AcceptorGroup removed
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database"
@@ -319,9 +319,9 @@ type Node struct {
 	uptimeCalculator uptime.LockedCalculator
 
 	// dispatcher for events as they happen in consensus
-	BlockAcceptorGroup  consensus.AcceptorGroup
-	TxAcceptorGroup     consensus.AcceptorGroup
-	VertexAcceptorGroup consensus.AcceptorGroup
+	BlockAcceptorGroup  interface{} // TODO: AcceptorGroup interface removed from consensus package
+	TxAcceptorGroup     interface{} // TODO: AcceptorGroup interface removed from consensus package
+	VertexAcceptorGroup interface{} // TODO: AcceptorGroup interface removed from consensus package
 
 	// Net runs the networking stack
 	Net network.Network
@@ -857,9 +857,10 @@ func (n *Node) initBootstrappers() error {
 // Create the EventDispatcher used for hooking events
 // into the general process flow.
 func (n *Node) initEventDispatchers() {
-	n.BlockAcceptorGroup = consensus.NewAcceptorGroup()
-	n.TxAcceptorGroup = consensus.NewAcceptorGroup()
-	n.VertexAcceptorGroup = consensus.NewAcceptorGroup()
+	// TODO: AcceptorGroup interface removed from consensus package
+	// n.BlockAcceptorGroup = consensus.NewAcceptorGroup()
+	// n.TxAcceptorGroup = consensus.NewAcceptorGroup()
+	// n.VertexAcceptorGroup = consensus.NewAcceptorGroup()
 }
 
 // Initialize [n.indexer].

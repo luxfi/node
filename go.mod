@@ -7,7 +7,7 @@ module github.com/luxfi/node
 //
 // - If updating between minor versions (e.g. 1.23.x -> 1.24.x):
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
-go 1.25.1
+go 1.25.4
 
 require (
 	connectrpc.com/connect v1.18.1
@@ -30,7 +30,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/consensus v1.19.14
+	github.com/luxfi/consensus v1.21.1
 	github.com/luxfi/crypto v1.17.6
 	github.com/luxfi/database v1.2.7
 	github.com/luxfi/geth v1.16.39
@@ -236,3 +236,9 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace github.com/luxfi/evm => ../evm
+
+replace github.com/luxfi/consensus => ../consensus
+
+replace github.com/luxfi/geth => ../geth

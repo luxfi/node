@@ -41,12 +41,12 @@ func createFunc(c *cobra.Command, args []string) error {
 	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakePWallet(
+	wallet, err := primary.MakeWallet(
 		ctx,
-		config.URI,
-		kc,
-		primary.WalletConfig{
-			NetIDs: []ids.ID{config.NetID},
+		&primary.WalletConfig{
+			URI:         config.URI,
+			LUXKeychain: kc,
+			EthKeychain: kc,
 		},
 	)
 	if err != nil {

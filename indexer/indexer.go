@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/consensus"
+	// "github.com/luxfi/consensus" // TODO: AcceptorGroup interface removed from consensus package
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
@@ -46,9 +46,9 @@ type Config struct {
 	Log                  log.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
-	BlockAcceptorGroup   consensus.AcceptorGroup
-	TxAcceptorGroup      consensus.AcceptorGroup
-	VertexAcceptorGroup  consensus.AcceptorGroup
+	BlockAcceptorGroup   interface{} // TODO: AcceptorGroup interface removed from consensus package
+	TxAcceptorGroup      interface{} // TODO: AcceptorGroup interface removed from consensus package
+	VertexAcceptorGroup  interface{} // TODO: AcceptorGroup interface removed from consensus package
 	APIServer            server.PathAdder
 	ShutdownF            func()
 }
@@ -119,11 +119,11 @@ type indexer struct {
 	txIndices map[ids.ID]*index
 
 	// Notifies of newly accepted blocks
-	blockAcceptorGroup consensus.AcceptorGroup
+	blockAcceptorGroup interface{} // TODO: AcceptorGroup interface removed from consensus package
 	// Notifies of newly accepted transactions
-	txAcceptorGroup consensus.AcceptorGroup
+	txAcceptorGroup interface{} // TODO: AcceptorGroup interface removed from consensus package
 	// Notifies of newly accepted vertices
-	vertexAcceptorGroup consensus.AcceptorGroup
+	vertexAcceptorGroup interface{} // TODO: AcceptorGroup interface removed from consensus package
 }
 
 // RegisterChain registers a chain for indexing
@@ -274,7 +274,7 @@ func (i *indexer) registerChainHelper(
 	chainID ids.ID,
 	prefixEnd byte,
 	name, endpoint string,
-	acceptorGroup consensus.AcceptorGroup,
+	acceptorGroup interface{}, // TODO: AcceptorGroup interface removed from consensus package
 ) (*index, error) {
 	prefix := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(prefix, chainID[:])
@@ -287,11 +287,12 @@ func (i *indexer) registerChainHelper(
 		return nil, err
 	}
 
+	// TODO: AcceptorGroup interface removed from consensus package
 	// Register index to learn about new accepted vertices
-	if err := acceptorGroup.RegisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID), index, true); err != nil {
-		_ = index.Close()
-		return nil, err
-	}
+	// if err := acceptorGroup.RegisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID), index, true); err != nil {
+	// 	_ = index.Close()
+	// 	return nil, err
+	// }
 
 	// Create an API endpoint for this index
 	apiServer := rpc.NewServer()
@@ -327,22 +328,25 @@ func (i *indexer) close() error {
 	i.closed = true
 
 	errs := &wrappers.Errs{}
-	for chainID, txIndex := range i.txIndices {
+	for _, txIndex := range i.txIndices { // chainID unused due to AcceptorGroup removal
 		errs.Add(
 			txIndex.Close(),
-			i.txAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
+			// TODO: AcceptorGroup interface removed from consensus package
+			// i.txAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
 		)
 	}
-	for chainID, vtxIndex := range i.vtxIndices {
+	for _, vtxIndex := range i.vtxIndices { // chainID unused due to AcceptorGroup removal
 		errs.Add(
 			vtxIndex.Close(),
-			i.vertexAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
+			// TODO: AcceptorGroup interface removed from consensus package
+			// i.vertexAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
 		)
 	}
-	for chainID, blockIndex := range i.blockIndices {
+	for _, blockIndex := range i.blockIndices { // chainID unused due to AcceptorGroup removal
 		errs.Add(
 			blockIndex.Close(),
-			i.blockAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
+			// TODO: AcceptorGroup interface removed from consensus package
+			// i.blockAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
 		)
 	}
 	errs.Add(i.db.Close())

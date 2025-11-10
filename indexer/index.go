@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/consensus"
+	// "github.com/luxfi/consensus" // TODO: Acceptor interface removed from consensus package
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
@@ -31,7 +31,7 @@ var (
 	errNumToFetchInvalid   = fmt.Errorf("numToFetch must be in [1,%d]", MaxFetchedByRange)
 	errNoContainerAtIndex  = errors.New("no container at index")
 
-	_ consensus.Acceptor = (*index)(nil)
+	// _ consensus.Acceptor = (*index)(nil) // TODO: Acceptor interface removed from consensus package
 )
 
 // index indexes containers in their order of acceptance
