@@ -117,7 +117,7 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 
 	wallet := newWallet(t, vm, walletConfig{})
 
-	validatorStartTime := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
+	validatorStartTime := vm.Clock().Time().Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	nodeID := ids.GenerateTestNodeID()
@@ -148,7 +148,7 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// Advance the time
-	vm.clock.Set(validatorStartTime)
+	vm.Clock().Set(validatorStartTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	firstDelegatorStartTime := validatorStartTime.Add(executor.SyncBound).Add(1 * time.Second)
@@ -175,7 +175,7 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// Advance the time
-	vm.clock.Set(firstDelegatorStartTime)
+	vm.Clock().Set(firstDelegatorStartTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	secondDelegatorStartTime := firstDelegatorEndTime.Add(2 * time.Second)

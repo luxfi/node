@@ -89,7 +89,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			nodeID := ids.GenerateTestNodeID()
 
 			currentTime := genesistest.DefaultValidatorStartTime
-			vm.clock.Set(currentTime)
+			vm.Clock().Set(currentTime)
 			vm.state.SetTimestamp(currentTime)
 
 			// build a valid sequence of validators start/end times, given the
@@ -125,7 +125,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 
 				switch ev.eventType {
 				case startNetValidator:
-					currentNetValidator = addNetValidator(t, vm, ev, subnetID)
+					currentNetValidator = addNetValidator(t, vm, ev, netID)
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
@@ -252,11 +252,11 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 	return nil
 }
 
-func addNetValidator(t testing.TB, vm *VM, data *validatorInputData, subnetID ids.ID) *state.Staker {
+func addNetValidator(t testing.TB, vm *VM, data *validatorInputData, netID ids.ID) *state.Staker {
 	require := require.New(t)
 
 	wallet := newWallet(t, vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		subnetIDs: []ids.ID{netID},
 	})
 	tx, err := wallet.IssueAddNetValidatorTx(
 		&txs.NetValidator{
@@ -343,7 +343,7 @@ func internalAddValidator(vm *VM, signedTx *txs.Tx) (*state.Staker, error) {
 
 func terminateNetValidator(vm *VM, validator *state.Staker) error {
 	currentTime := validator.EndTime
-	vm.nodeClock.Set(currentTime)
+	vm.Clock().Set(currentTime)
 	vm.state.SetTimestamp(currentTime)
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -365,7 +365,7 @@ func terminateNetValidator(vm *VM, validator *state.Staker) error {
 
 func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 	currentTime := validator.EndTime
-	vm.nodeClock.Set(currentTime)
+	vm.Clock().Set(currentTime)
 	vm.state.SetTimestamp(currentTime)
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -626,11 +626,11 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		RewardConfig:           defaultRewardConfig,
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, genesistest.DefaultValidatorStartTime),
 	}}
-	vm.clock.Set(genesistest.DefaultValidatorStartTime.Add(time.Second))
+	vm.Clock().Set(genesistest.DefaultValidatorStartTime.Add(time.Second))
 
 	baseDB := memdb.New()
 	chainDB := prefixdb.New([]byte{0}, baseDB)
-	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
+	atomicDB := prefixdb.New([]byte{1}, baseDB)
 
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
@@ -677,7 +677,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	}
-	testNet1, err = wallet.IssueCreateNetTx(
+	testNet1, err := wallet.IssueCreateNetTx(
 		owner,
 		walletcommon.WithChangeOwner(owner),
 	)
