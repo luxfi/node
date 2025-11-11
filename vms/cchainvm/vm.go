@@ -1531,6 +1531,12 @@ func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, request
 
 // SetPreference implements the block.ChainVM interface
 func (vm *VM) SetPreference(ctx context.Context, blkID ids.ID) error {
+	// Check for context cancellation
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	// Currently a no-op for C-Chain VM, but context cancellation is checked
 	return nil
 }
 

@@ -311,14 +311,29 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chainblock.Block, error)
 }
 
 func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
+	// Check for context cancellation at entry
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	if vm.preferred == preferred {
 		return nil
 	}
 	vm.preferred = preferred
 
+	// Check for context cancellation before expensive operations
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	blk, err := vm.getPostForkBlock(ctx, preferred)
 	if err != nil {
 		return vm.ChainVM.SetPreference(ctx, preferred)
+	}
+
+	// Check for context cancellation before delegating to inner VM
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	innerBlkID := blk.getInnerBlk().ID()
