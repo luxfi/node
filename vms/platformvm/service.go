@@ -1879,6 +1879,70 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	return nil
 }
 
+// GetAllValidatorsAtArgs are the arguments to GetAllValidatorsAt
+type GetAllValidatorsAtArgs struct {
+	Height platformapi.Height `json:"height"`
+}
+
+// GetAllValidatorsAtReply is the response from GetAllValidatorsAt
+type GetAllValidatorsAtReply struct {
+	// Map of NetID -> ValidatorSet
+	ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
+}
+
+// GetAllValidatorsAt returns the validator sets of all nets (including primary network)
+// at the specified height.
+func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtArgs, reply *GetAllValidatorsAtReply) error {
+	s.vm.log.Debug("API called",
+		log.String("service", "platform"),
+		log.String("method", "getAllValidatorsAt"),
+		log.Uint64("height", uint64(args.Height)),
+		log.Bool("isProposed", args.Height.IsProposed()),
+	)
+
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
+
+	ctx := r.Context()
+	height := uint64(args.Height)
+	if args.Height.IsProposed() {
+		// Get the proposed height from the last accepted block
+		lastAcceptedID := s.vm.state.GetLastAccepted()
+		lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
+		if err != nil {
+			return fmt.Errorf("failed to get last accepted block: %w", err)
+		}
+		height = lastAcceptedBlock.Height()
+	}
+
+	// Get all net IDs
+	netIDs, err := s.vm.state.GetNetIDs()
+	if err != nil {
+		return fmt.Errorf("failed to get net IDs: %w", err)
+	}
+
+	// Initialize the result map
+	reply.ValidatorSets = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+
+	// Add primary network first
+	primaryValidators, err := s.vm.GetValidatorSet(ctx, height, constants.PrimaryNetworkID)
+	if err != nil {
+		return fmt.Errorf("failed to get primary network validator set: %w", err)
+	}
+	reply.ValidatorSets[constants.PrimaryNetworkID] = primaryValidators
+
+	// Add all nets
+	for _, netID := range netIDs {
+		netValidators, err := s.vm.GetValidatorSet(ctx, height, netID)
+		if err != nil {
+			return fmt.Errorf("failed to get validator set for net %s: %w", netID, err)
+		}
+		reply.ValidatorSets[netID] = netValidators
+	}
+
+	return nil
+}
+
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",

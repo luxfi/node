@@ -8,11 +8,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
@@ -222,4 +226,94 @@ func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 	// In the new architecture, use sourceChainID as the subnet ID
 	// This assumes a 1:1 mapping between chains and subnets
 	return GetCanonicalValidatorSetFromSubsubnetID(ctx, adapter, pChainHeight, sourceChainID)
+}
+
+// cacheKey combines height and subnetID for cache lookups
+type cacheKey struct {
+	height   uint64
+	subnetID ids.ID
+}
+
+// CachedValidatorState wraps ValidatorState with an LRU cache
+type CachedValidatorState struct {
+	state         ValidatorState
+	upgradeConfig *upgrade.Config
+	networkID     uint32
+	cache         *lru.Cache[cacheKey, map[ids.NodeID]*ValidatorData]
+	metrics       *cacheMetrics
+}
+
+type cacheMetrics struct {
+	hits   metric.Counter
+	misses metric.Counter
+}
+
+// NewCachedValidatorState creates a new cached validator state with Granite upgrade awareness
+func NewCachedValidatorState(
+	state ValidatorState,
+	upgradeConfig *upgrade.Config,
+	networkID uint32,
+	registerer metric.Registerer,
+) (*CachedValidatorState, error) {
+	metrics := &cacheMetrics{
+		hits: metric.NewCounter(
+			metric.CounterOpts{
+				Name: "warp_validator_cache_hits",
+				Help: "number of validator set cache hits",
+			},
+		),
+		misses: metric.NewCounter(
+			metric.CounterOpts{
+				Name: "warp_validator_cache_misses",
+				Help: "number of validator set cache misses",
+			},
+		),
+	}
+
+	if err := registerer.Register("warp_validator_cache_hits", metrics.hits); err != nil {
+		return nil, fmt.Errorf("failed to register cache hits metric: %w", err)
+	}
+	if err := registerer.Register("warp_validator_cache_misses", metrics.misses); err != nil {
+		return nil, fmt.Errorf("failed to register cache misses metric: %w", err)
+	}
+
+	return &CachedValidatorState{
+		state:         state,
+		upgradeConfig: upgradeConfig,
+		networkID:     networkID,
+		cache:         lru.NewCache[cacheKey, map[ids.NodeID]*ValidatorData](8),
+		metrics:       metrics,
+	}, nil
+}
+
+// GetValidatorSet implements ValidatorState with caching for post-Granite queries
+func (c *CachedValidatorState) GetValidatorSet(
+	ctx context.Context,
+	height uint64,
+	subnetID ids.ID,
+) (map[ids.NodeID]*ValidatorData, error) {
+	// Check if Granite is activated - we only cache post-Granite
+	// Use current time as approximation since we don't have block timestamp
+	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
+		key := cacheKey{height: height, subnetID: subnetID}
+		if cached, ok := c.cache.Get(key); ok {
+			c.metrics.hits.Inc()
+			return cached, nil
+		}
+		c.metrics.misses.Inc()
+	}
+
+	// Cache miss or pre-Granite - fetch from underlying state
+	vdrSet, err := c.state.GetValidatorSet(ctx, height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result if Granite is active
+	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
+		key := cacheKey{height: height, subnetID: subnetID}
+		c.cache.Put(key, vdrSet)
+	}
+
+	return vdrSet, nil
 }

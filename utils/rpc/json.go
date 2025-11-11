@@ -59,18 +59,15 @@ func SendJSONRequest(
 	if err != nil {
 		return fmt.Errorf("failed to issue request: %w", err)
 	}
+	defer CleanlyCloseBody(resp.Body)
 
 	// Return an error for any non successful status code
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		// Drop any error during close to report the original error
-		_ = resp.Body.Close()
 		return fmt.Errorf("received status code: %d", resp.StatusCode)
 	}
 
 	if err := rpc.DecodeClientResponse(resp.Body, reply); err != nil {
-		// Drop any error during close to report the original error
-		_ = resp.Body.Close()
 		return fmt.Errorf("failed to decode client response: %w", err)
 	}
-	return resp.Body.Close()
+	return nil
 }

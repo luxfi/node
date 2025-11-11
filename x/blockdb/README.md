@@ -55,10 +55,9 @@ Index File Header (64 bytes):
 │ Version                        │ 8 bytes │
 │ Max Data File Size             │ 8 bytes │
 │ Min Block Height               │ 8 bytes │
-│ Max Contiguous Height          │ 8 bytes │
 │ Max Block Height               │ 8 bytes │
 │ Next Write Offset              │ 8 bytes │
-│ Reserved                       │ 16 bytes│
+│ Reserved                       │ 24 bytes│
 └────────────────────────────────┴─────────┘
 
 Index Entry (16 bytes):

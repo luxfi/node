@@ -13,6 +13,16 @@ import (
 	"strings"
 )
 
+// cleanlyCloseBody drains and closes an HTTP response body to prevent
+// HTTP/2 GOAWAY errors caused by closing bodies with unread data.
+func cleanlyCloseBody(body io.ReadCloser) error {
+	if body == nil {
+		return nil
+	}
+	_, _ = io.Copy(io.Discard, body)
+	return body.Close()
+}
+
 // "metric name" -> "metric value"
 type SimpleNodeMetrics map[string]float64
 
@@ -82,6 +92,7 @@ func getHTTPLines(url string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer cleanlyCloseBody(resp.Body)
 
 	rd := bufio.NewReader(resp.Body)
 	lines := []string{}
@@ -91,10 +102,9 @@ func getHTTPLines(url string) ([]string, error) {
 			if err == io.EOF {
 				break
 			}
-			_ = resp.Body.Close()
 			return nil, err
 		}
 		lines = append(lines, strings.TrimSpace(line))
 	}
-	return lines, resp.Body.Close()
+	return lines, nil
 }

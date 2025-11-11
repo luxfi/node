@@ -4,9 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
+
+// cleanlyCloseBody drains and closes an HTTP response body to prevent
+// HTTP/2 GOAWAY errors caused by closing bodies with unread data.
+func cleanlyCloseBody(body io.ReadCloser) error {
+	if body == nil {
+		return nil
+	}
+	_, _ = io.Copy(io.Discard, body)
+	return body.Close()
+}
 
 func main() {
 	// Get node info
@@ -15,13 +26,13 @@ func main() {
 	if err != nil {
 		log.Printf("Error getting node info: %v", err)
 	} else {
+		defer cleanlyCloseBody(resp.Body)
 		var result map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&result)
 		if res, ok := result["result"].(map[string]interface{}); ok {
 			fmt.Printf("Node ID: %s\n", res["nodeID"])
 			fmt.Printf("Network: %s (ID: %.0f)\n", res["networkName"], res["networkID"])
 		}
-		resp.Body.Close()
 	}
 
 	// Since this is a minimal POA node, we'll simulate blockchain height
