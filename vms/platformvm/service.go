@@ -26,8 +26,8 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 	safemath "github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -1780,8 +1780,8 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
-	Height   platformapi.Height `json:"height"`
-	NetID ids.ID             `json:"netID"`
+	Height platformapi.Height `json:"height"`
+	NetID  ids.ID             `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {
