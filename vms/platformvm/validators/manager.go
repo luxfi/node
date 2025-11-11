@@ -390,3 +390,48 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 	m.recentlyAccepted.Add(blkID)
 }
+
+func (m *manager) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	// Get the validator set at the requested height
+	vdrSet, err := m.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to WarpSet format (Height + Validators map)
+	warpValidators := make(map[ids.NodeID]*validators.WarpValidator, len(vdrSet))
+	for nodeID, vdr := range vdrSet {
+		// Only include validators with BLS public keys
+		if len(vdr.PublicKey) > 0 {
+			warpValidators[nodeID] = &validators.WarpValidator{
+				NodeID:    nodeID,
+				PublicKey: vdr.PublicKey,
+				Weight:    vdr.Weight,
+			}
+		}
+	}
+
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: warpValidators,
+	}, nil
+}
+
+func (m *manager) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+
+	// For each netID, get validator sets for all requested heights
+	for _, netID := range netIDs {
+		heightMap := make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			warpSet, err := m.GetWarpValidatorSet(ctx, height, netID)
+			if err != nil {
+				return nil, err
+			}
+			heightMap[height] = warpSet
+		}
+		result[netID] = heightMap
+	}
+
+	return result, nil
+}

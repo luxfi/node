@@ -65,6 +65,53 @@ func (a *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, e
 	return a.state.GetCurrentHeight(ctx)
 }
 
+func (a *validatorStateAdapter) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	// Get the validator set at the requested height
+	vdrSet, err := a.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to WarpSet format
+	// Note: This adapter doesn't have BLS public keys, so we return empty WarpSet
+	// Real implementations should query for BLS keys
+	warpValidators := make(map[ids.NodeID]*validators.WarpValidator, len(vdrSet))
+	for nodeID, vdr := range vdrSet {
+		// Only include validators with BLS public keys (none in this adapter)
+		if len(vdr.PublicKey) > 0 {
+			warpValidators[nodeID] = &validators.WarpValidator{
+				NodeID:    nodeID,
+				PublicKey: vdr.PublicKey,
+				Weight:    vdr.Weight,
+			}
+		}
+	}
+
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: warpValidators,
+	}, nil
+}
+
+func (a *validatorStateAdapter) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+
+	// For each netID, get validator sets for all requested heights
+	for _, netID := range netIDs {
+		heightMap := make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			warpSet, err := a.GetWarpValidatorSet(ctx, height, netID)
+			if err != nil {
+				return nil, err
+			}
+			heightMap[height] = warpSet
+		}
+		result[netID] = heightMap
+	}
+
+	return result, nil
+}
+
 const (
 	// targetBlockSize is maximum number of transaction bytes to place into a
 	// StandardBlock

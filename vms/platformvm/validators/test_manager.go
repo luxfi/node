@@ -110,3 +110,16 @@ func (testManager) TotalLight(ids.ID) (uint64, error) {
 func (testManager) String() string {
 	return "test_manager"
 }
+
+// GetWarpValidatorSet implements validators.Manager interface
+func (testManager) GetWarpValidatorSet(context.Context, uint64, ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{
+		Height:     0,
+		Validators: make(map[ids.NodeID]*validators.WarpValidator),
+	}, nil
+}
+
+// GetWarpValidatorSets implements validators.Manager interface
+func (testManager) GetWarpValidatorSets(context.Context, []uint64, []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	return make(map[ids.ID]map[uint64]*validators.WarpSet), nil
+}
