@@ -8,6 +8,7 @@ import (
 	"math"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -19,6 +20,9 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/utils/constants"
 )
 
 var (
@@ -377,6 +381,196 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := GetCanonicalValidatorSetFromSubsubnetID(b.Context(), wrappedState, pChainHeight, subnetID)
 				require.NoError(b, err)
+			}
+		})
+	}
+}
+
+func TestCachedValidatorState(t *testing.T) {
+	ctx := context.Background()
+	height := uint64(100)
+	subnet1 := ids.GenerateTestID()
+	subnet2 := ids.GenerateTestID()
+
+	// Create test validator data
+	nodeID1 := ids.GenerateTestNodeID()
+	nodeID2 := ids.GenerateTestNodeID()
+	testData := map[ids.NodeID]*ValidatorData{
+		nodeID1: {
+			NodeID:    nodeID1,
+			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+			Weight:    100,
+		},
+		nodeID2: {
+			NodeID:    nodeID2,
+			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+			Weight:    200,
+		},
+	}
+
+	// Mock ValidatorState that tracks call counts
+	type mockValidatorState struct {
+		callCount int
+		data      map[ids.NodeID]*ValidatorData
+		err       error
+	}
+
+	mockState := func(data map[ids.NodeID]*ValidatorData, err error) *mockValidatorState {
+		return &mockValidatorState{data: data, err: err}
+	}
+
+	func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
+		m.callCount++
+		return m.data, m.err
+	}
+
+	type test struct {
+		name              string
+		state             *mockValidatorState
+		upgradeConfig     *upgrade.Config
+		networkID         uint32
+		expectedCallCount int
+		operations        func(*testing.T, *CachedValidatorState)
+	}
+
+	tests := []test{
+		{
+			name:              "pre-Granite no caching",
+			state:             mockState(testData, nil),
+			upgradeConfig:     &upgrade.Config{GraniteTime: time.Now().Add(1 * time.Hour)},
+			networkID:         constants.MainnetID,
+			expectedCallCount: 2, // Should call underlying state twice (no caching)
+			operations: func(t *testing.T, cached *CachedValidatorState) {
+				vdrs1, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs1)
+				
+				vdrs2, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs2)
+			},
+		},
+		{
+			name: "post-Granite with caching",
+			setupMock: func(ctrl *gomock.Controller) ValidatorState {
+				mock := validatorsmock.NewState(ctrl)
+				// Expect only 1 call since we cache post-Granite
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height, subnet1).Return(testData, nil).Times(1)
+				return &testValidatorStateAdapter{State: mock}
+			},
+			upgradeConfig: &upgrade.Config{
+				GraniteTime: time.Now().Add(-1 * time.Hour), // Granite already active
+			},
+			networkID:      constants.MainnetID,
+			expectedHits:   1,
+			expectedMisses: 1,
+			operations: func(t *testing.T, cached *CachedValidatorState) {
+				// First call - cache miss
+				vdrs1, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs1)
+				
+				// Second call - cache hit
+				vdrs2, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs2)
+			},
+		},
+		{
+			name: "different heights cached separately",
+			setupMock: func(ctrl *gomock.Controller) ValidatorState {
+				mock := validatorsmock.NewState(ctrl)
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height, subnet1).Return(testData, nil).Times(1)
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height+1, subnet1).Return(testData, nil).Times(1)
+				return &testValidatorStateAdapter{State: mock}
+			},
+			upgradeConfig: &upgrade.Config{
+				GraniteTime: time.Now().Add(-1 * time.Hour),
+			},
+			networkID:      constants.MainnetID,
+			expectedHits:   0,
+			expectedMisses: 2,
+			operations: func(t *testing.T, cached *CachedValidatorState) {
+				// Different heights should be cached separately
+				vdrs1, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs1)
+				
+				vdrs2, err := cached.GetValidatorSet(ctx, height+1, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs2)
+			},
+		},
+		{
+			name: "different subnets cached separately",
+			setupMock: func(ctrl *gomock.Controller) ValidatorState {
+				mock := validatorsmock.NewState(ctrl)
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height, subnet1).Return(testData, nil).Times(1)
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height, subnet2).Return(testData, nil).Times(1)
+				return &testValidatorStateAdapter{State: mock}
+			},
+			upgradeConfig: &upgrade.Config{
+				GraniteTime: time.Now().Add(-1 * time.Hour),
+			},
+			networkID:      constants.MainnetID,
+			expectedHits:   0,
+			expectedMisses: 2,
+			operations: func(t *testing.T, cached *CachedValidatorState) {
+				// Different subnets should be cached separately
+				vdrs1, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs1)
+				
+				vdrs2, err := cached.GetValidatorSet(ctx, height, subnet2)
+				require.NoError(t, err)
+				require.Equal(t, testData, vdrs2)
+			},
+		},
+		{
+			name: "error propagates without caching",
+			setupMock: func(ctrl *gomock.Controller) ValidatorState {
+				mock := validatorsmock.NewState(ctrl)
+				mock.EXPECT().GetValidatorSet(gomock.Any(), height, subnet1).Return(nil, errTest).Times(1)
+				return &testValidatorStateAdapter{State: mock}
+			},
+			upgradeConfig: &upgrade.Config{
+				GraniteTime: time.Now().Add(-1 * time.Hour),
+			},
+			networkID:      constants.MainnetID,
+			expectedHits:   0,
+			expectedMisses: 1,
+			operations: func(t *testing.T, cached *CachedValidatorState) {
+				// Error should propagate
+				_, err := cached.GetValidatorSet(ctx, height, subnet1)
+				require.ErrorIs(t, err, errTest)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			state := tt.setupMock(ctrl)
+			registerer := metric.NewTestRegisterer()
+
+			cached, err := NewCachedValidatorState(state, tt.upgradeConfig, tt.networkID, registerer)
+			require.NoError(err)
+			require.NotNil(cached)
+
+			// Run test operations
+			tt.operations(t, cached)
+
+			// Verify metrics if Granite is active
+			if tt.upgradeConfig.IsGraniteActivated(time.Now()) {
+				// Check counter values
+				hitsVal := cached.metrics.hits.(*metric.CounterImpl).Value()
+				missesVal := cached.metrics.misses.(*metric.CounterImpl).Value()
+				
+				require.Equal(int64(tt.expectedHits), hitsVal, "cache hits mismatch")
+				require.Equal(int64(tt.expectedMisses), missesVal, "cache misses mismatch")
 			}
 		})
 	}

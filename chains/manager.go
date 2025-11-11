@@ -1590,7 +1590,34 @@ func (v *simpleVM) Initialize(
 	fxs []*core.Fx,
 	appSender interface{},
 ) error {
-	// Delegate to underlying ChainVM - it handles its own initialization
+	// Delegate to underlying ChainVM if it has Initialize method
+	if initVM, ok := v.vm.(interface {
+		Initialize(
+			ctx context.Context,
+			chainCtx interface{},
+			dbManager interface{},
+			genesisData []byte,
+			upgradeBytes []byte,
+			configBytes []byte,
+			toEngine interface{},
+			fxs interface{},
+			appSender interface{},
+		) error
+	}); ok {
+		// Convert types to interface{} for generic Initialize signature
+		return initVM.Initialize(
+			ctx,
+			chainCtx,
+			dbMgr,
+			genesisBytes,
+			upgradeBytes,
+			configBytes,
+			toEngine,
+			fxs,
+			appSender,
+		)
+	}
+	// VM doesn't have Initialize method or doesn't need initialization
 	return nil
 }
 

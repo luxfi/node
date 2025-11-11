@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
 	databasefactory "github.com/luxfi/node/internal/database/factory"
 	"github.com/stretchr/testify/require"
