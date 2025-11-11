@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
-	"path"
+	// "net/url"   // Unused after handler registration moved to chain manager
+	// "path"      // Unused after handler registration moved to chain manager
 	"strings"
 	"sync"
 	"time"
@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/api"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils/constants"
+	// "github.com/luxfi/node/utils/constants"  // Unused after handler registration moved
 	"github.com/luxfi/log"
 )
 
@@ -152,23 +152,22 @@ func (s *server) Dispatch() error {
 }
 
 func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM) {
-	ctx.Lock.Lock()
-	pathRouteHandlers, err := vm.CreateHandlers(context.TODO())
-	ctx.Lock.Unlock()
-	if err != nil {
-		s.log.Error("failed to create path route handlers",
-			log.String("chainName", chainName),
-			log.Err(err),
-		)
-		return
-	}
-	s.log.Debug("about to add API endpoints",
+	// Note: HTTP handler registration is now done in chains/manager.go:createChain()
+	// after VM initialization. This RegisterChain method is called too early (before
+	// VM initialization) and would cause nil pointer dereference if we call CreateHandlers here.
+	// The chain manager will call CreateHandlers at the appropriate time after notifyRegistrants.
+	
+	s.log.Debug("chain registered (handlers will be created by chain manager)",
+		log.String("chainName", chainName),
 		log.Stringer("chainID", ctx.ChainID),
 	)
+	
+	// DISABLED: Handler registration moved to chains/manager.go:createChain()
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
+	// defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
 
-	// Register each endpoint
+	// DISABLED: Register each endpoint
+	/*
 	for extension, handler := range pathRouteHandlers {
 		// Validate that the route being added is valid
 		// e.g. "/foo" and "" are ok but "\n" is not
@@ -209,6 +208,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 			log.String("chainName", chainName),
 		)
 	}
+	*/
 }
 
 func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *consensuscontext.Context, base, endpoint string) error {
