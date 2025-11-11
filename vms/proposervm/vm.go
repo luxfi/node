@@ -79,6 +79,7 @@ type VM struct {
 	db             *versiondb.Database
 	logger         log.Logger
 	validatorState validators.State
+	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetID lookups
 
 	// Block ID --> Block
 	// Each element is a block that passed verification but
@@ -175,6 +176,9 @@ func (vm *VM) Initialize(
 		return err
 	}
 	vm.innerBlkCache = innerBlkCache
+
+	// Initialize NetID cache for validator state lookups
+	vm.netIDsCache = lru.NewCache[ids.ID, ids.ID](4096)
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
 
@@ -514,9 +518,23 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
-// CreateHandlers delegates to the underlying ChainVM using vms.DelegateHandlers
+// CreateHandlers returns HTTP handlers for both the proposervm API and the inner ChainVM
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	return vms.DelegateHandlers(ctx, vm.ChainVM)
+	// Create the proposervm-specific handler
+	proposerHandler, err := NewHTTPHandler(vm)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the inner ChainVM handlers
+	handlers, err := vms.DelegateHandlers(ctx, vm.ChainVM)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the proposervm handler to the map
+	handlers["/proposervm"] = proposerHandler
+	return handlers, nil
 }
 
 func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
@@ -850,8 +868,9 @@ func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chainblock.Block) {
 
 // validatorStateWrapper wraps consensus.ValidatorState to match validators.State
 type validatorStateWrapper struct {
-	ctx context.Context
-	vs  consensus.ValidatorState
+	ctx         context.Context
+	vs          consensus.ValidatorState
+	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -881,7 +900,20 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 }
 
 func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetNetID(chainID)
+	// Check cache first
+	if netID, ok := v.netIDsCache.Get(chainID); ok {
+		return netID, nil
+	}
+
+	// Cache miss - fetch from underlying validator state
+	netID, err := v.vs.GetNetID(chainID)
+	if err != nil {
+		return ids.Empty, err
+	}
+
+	// Cache the result
+	v.netIDsCache.Put(chainID, netID)
+	return netID, nil
 }
 
 func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -900,8 +932,9 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 
 // interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
 type interfacesToConsensusValidatorStateAdapter struct {
-	ctx context.Context
-	vs  consensus.ValidatorState
+	ctx         context.Context
+	vs          consensus.ValidatorState
+	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -917,7 +950,20 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetChainID(chainID ids.ID) 
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return a.vs.GetNetID(chainID)
+	// Check cache first
+	if netID, ok := a.netIDsCache.Get(chainID); ok {
+		return netID, nil
+	}
+
+	// Cache miss - fetch from underlying validator state
+	netID, err := a.vs.GetNetID(chainID)
+	if err != nil {
+		return ids.Empty, err
+	}
+
+	// Cache the result
+	a.netIDsCache.Put(chainID, netID)
+	return netID, nil
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {

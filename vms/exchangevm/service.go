@@ -541,7 +541,7 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 		return errTxNotCreateAsset
 	}
 
-	reply.AssetID = assetID
+	reply.FormattedAssetID.AssetID = assetID
 	reply.Name = createAssetTx.Name
 	reply.Symbol = createAssetTx.Symbol
 	reply.Denomination = avajson.Uint8(createAssetTx.Denomination)

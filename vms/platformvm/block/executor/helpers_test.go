@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	metric "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -162,16 +162,16 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 			DB:         res.baseDB,
 			Genesis:    genesistest.NewBytes(t, genesistest.Config{}),
 			Validators: res.config.Validators,
-			Context:    res.ctx,
+			Context:    consensusCtx,
 			Rewards:    rewardsCalc,
 		})
 
-		res.uptimes = uptime.NewManager(res.state, res.clk)
-		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.uptimes = &uptime.NoOpCalculator{}
+		res.utxosVerifier = utxo.NewVerifier(res.clk, res.fx)
 	} else {
 		res.mockedState = state.NewMockState(ctrl)
-		res.uptimes = uptime.NewManager(res.mockedState, res.clk)
-		res.utxosVerifier = utxo.NewVerifier(res.ctx, res.clk, res.fx)
+		res.uptimes = &uptime.NoOpCalculator{}
+		res.utxosVerifier = utxo.NewVerifier(res.clk, res.fx)
 
 		// setup expectations strictly needed for environment creation
 		res.mockedState.EXPECT().GetLastAccepted().Return(ids.GenerateTestID()).Times(1)
@@ -179,19 +179,19 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 
 	res.backend = &executor.Backend{
 		Config:       res.config,
-		Ctx:          res.ctx,
+		Ctx:          consensusCtx,
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
-		Lock:         res.ctx.Lock,
+
 	}
 
 	registerer := metric.NewRegistry()
 
-	platformMetrics := metric.Noop
+	platformMetrics := metrics.Noop
 
 	var err error
 	res.mempool, err = mempool.New("mempool", registerer)
@@ -231,12 +231,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 
 		require := require.New(t)
 
-		if res.uptimes.StartedTracking() {
-			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-
-			require.NoError(res.uptimes.StopTracking(validatorIDs))
-			require.NoError(res.state.Commit())
-		}
+		// NoOpCalculator doesn't track validators, so no cleanup needed
 
 		if res.state != nil {
 			require.NoError(res.state.Close())
@@ -257,9 +252,16 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
+	
+	// Get consensus context
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	
+
+
+	
 	return txstest.NewWallet(
 		t,
-		e.ctx,
+		consensusCtx,
 		e.config,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),

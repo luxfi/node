@@ -146,7 +146,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 			TxID: txID,
 		},
 		Asset: lux.Asset{
-			ID: consensustest.LUXAssetID,
+			ID: env.ctx.XAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1,

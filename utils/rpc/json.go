@@ -7,11 +7,24 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
 	rpc "github.com/gorilla/rpc/v2/json2"
 )
+
+// CleanlyCloseBody drains and closes an HTTP response body to prevent
+// HTTP/2 GOAWAY errors caused by closing bodies with unread data.
+// See: https://github.com/golang/go/issues/46071
+func CleanlyCloseBody(body io.ReadCloser) error {
+	if body == nil {
+		return nil
+	}
+	// Drain any remaining data to allow connection reuse
+	_, _ = io.Copy(io.Discard, body)
+	return body.Close()
+}
 
 func SendJSONRequest(
 	ctx context.Context,

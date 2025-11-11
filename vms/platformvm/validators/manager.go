@@ -11,6 +11,7 @@ import (
 	"time"
 
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
@@ -269,58 +270,102 @@ func (m *manager) makeValidatorSet(
 	targetHeight uint64,
 	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-// 	validatorSet, currentHeight, err := m.getCurrentValidatorSet(ctx, netID)
-// 	if err != nil {
-// // 		return nil, 0, err
-// 	return nil, 0, nil
-// 	}
-// 	if currentHeight < targetHeight {
-// 		return nil, 0, fmt.Errorf("%w with NetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
-// 			errUnfinalizedHeight,
-// 			netID,
-// 			currentHeight,
-// 			targetHeight,
-// 		)
-// 	}
-	return nil, 0, nil
+	// Get the current validator set at the current height
+	currentValidatorSet, err := m.getCurrentValidatorSet(ctx, netID)
+	if err != nil {
+		return nil, 0, err
+	}
 
-	// Rebuild net validators at [targetHeight]
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Verify that the target height is not in the future
+	if currentHeight < targetHeight {
+		return nil, 0, fmt.Errorf(
+			"%w with NetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
+			errUnfinalizedHeight,
+			netID,
+			currentHeight,
+			targetHeight,
+		)
+	}
+
+	// If requesting current height, return immediately
+	if targetHeight == currentHeight {
+		return maps.Clone(currentValidatorSet), currentHeight, nil
+	}
+
+	// Rebuild validators at [targetHeight]
 	//
 	// Note: Since we are attempting to generate the validator set at
 	// [targetHeight], we want to apply the diffs from
 	// (targetHeight, currentHeight]. Because the state interface is implemented
 	// to be inclusive, we apply diffs in [targetHeight + 1, currentHeight].
-// 	lastDiffHeight := targetHeight + 1
-// 	err = m.state.ApplyValidatorWeightDiffs(
-// 		ctx,
-// 		validatorSet,
-// 		currentHeight,
-// 		lastDiffHeight,
-// 		netID,
-// 	)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 
-// 	err = m.state.ApplyValidatorPublicKeyDiffs(
-// 		ctx,
-// 		validatorSet,
-// 		currentHeight,
-// 		lastDiffHeight,
-// 		subnetID,
-// 	)
-// 	return validatorSet, currentHeight, err
-	return nil, 0, nil
+	lastDiffHeight := targetHeight + 1
+	validatorSet := maps.Clone(currentValidatorSet)
+
+	err = m.state.ApplyValidatorWeightDiffs(
+		ctx,
+		validatorSet,
+		currentHeight,
+		lastDiffHeight,
+		netID,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = m.state.ApplyValidatorPublicKeyDiffs(
+		ctx,
+		validatorSet,
+		currentHeight,
+		lastDiffHeight,
+		netID,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return validatorSet, currentHeight, nil
 }
 
-// func (m *manager) getCurrentValidatorSet(
-// 	ctx context.Context,
-// 	subnetID ids.ID,
-// ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-// 	subnetMap := m.cfg.Validators.GetMap(subnetID)
-// 	currentHeight, err := m.getCurrentHeight(ctx)
-// 	return subnetMap, currentHeight, err
-// }
+func (m *manager) getCurrentValidatorSet(
+	ctx context.Context,
+	netID ids.ID,
+) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	baseStakers, l1Validators, _, err := m.state.GetCurrentValidators(ctx, netID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current validators: %w", err)
+	}
+
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput)
+
+	// Add base (legacy) validators
+	for _, staker := range baseStakers {
+		var pkBytes []byte
+		if staker.PublicKey != nil {
+			pkBytes = bls.PublicKeyToUncompressedBytes(staker.PublicKey)
+		}
+		result[staker.NodeID] = &validators.GetValidatorOutput{
+			NodeID:    staker.NodeID,
+			PublicKey: pkBytes,
+			Weight:    staker.Weight,
+		}
+	}
+
+	// Add L1 validators
+	for _, validator := range l1Validators {
+		result[validator.NodeID] = &validators.GetValidatorOutput{
+			NodeID:    validator.NodeID,
+			PublicKey: validator.PublicKey,
+			Weight:    validator.Weight,
+		}
+	}
+
+	return result, nil
+}
 
 func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 	if chainID == constants.PlatformChainID {
@@ -345,38 +390,3 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 	m.recentlyAccepted.Add(blkID)
 }
-
-// func (m *manager) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
-// 	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
-// 	baseStakers, l1Validators, height, err := m.state.GetCurrentValidators(ctx, subnetID)
-// 	if err != nil {
-// 		return nil, 0, fmt.Errorf("failed to get current validators: %w", err)
-// 	}
-// 
-// 	for _, validator := range baseStakers {
-// 		result[validator.TxID] = &validators.GetCurrentValidatorOutput{
-// 			ValidationID:  validator.TxID,
-// 			NodeID:        validator.NodeID,
-// 			PublicKey:     validator.PublicKey,
-// 			Weight:        validator.Weight,
-// 			StartTime:     uint64(validator.StartTime.Unix()),
-// 			MinNonce:      0,
-// 			IsActive:      true,
-// 			IsL1Validator: false,
-// 		}
-// 	}
-// 
-// 	for _, validator := range l1Validators {
-// 		result[validator.ValidationID] = &validators.GetCurrentValidatorOutput{
-// 			ValidationID:  validator.ValidationID,
-// 			NodeID:        validator.NodeID,
-// 			PublicKey:     bls.PublicKeyFromValidUncompressedBytes(validator.PublicKey),
-// 			Weight:        validator.Weight,
-// 			StartTime:     validator.StartTime,
-// 			IsActive:      validator.IsActive(),
-// 			MinNonce:      validator.MinNonce,
-// 			IsL1Validator: true,
-// 		}
-// 	}
-// 	return result, height, nil
-// }

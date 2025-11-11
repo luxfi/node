@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/luxfi/log"
+
 	"github.com/luxfi/node/proto/pb/io/reader"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
@@ -21,13 +23,15 @@ var _ http.Handler = (*Client)(nil)
 // Client is an http.Handler that talks over RPC.
 type Client struct {
 	client httppb.HTTPClient
+	log    log.Logger
 }
 
 // NewClient returns an HTTP handler database instance connected to a remote
 // HTTP handler instance
-func NewClient(client httppb.HTTPClient) *Client {
+func NewClient(client httppb.HTTPClient, log log.Logger) *Client {
 	return &Client{
 		client: client,
+		log:    log,
 	}
 }
 
@@ -190,8 +194,9 @@ func (c *Client) serveHTTPSimple(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := convertWriteResponse(w, resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.log.Debug("failed sending HTTP response",
+			log.String("error", err.Error()),
+		)
 	}
 }
 

@@ -1,0 +1,185 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package proposervm
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/consensus"
+	validators "github.com/luxfi/consensus/validator"
+)
+
+// mockValidatorState implements consensus.ValidatorState for testing
+type mockValidatorState struct {
+	getNetIDCallCount int
+	netIDMap          map[ids.ID]ids.ID
+}
+
+func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+	m.getNetIDCallCount++
+	if netID, ok := m.netIDMap[chainID]; ok {
+		return netID, nil
+	}
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetSubnetID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	return nil, nil
+}
+
+func (m *mockValidatorState) GetCurrentHeight(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+// TestValidatorStateWrapperCache verifies NetID caching in validatorStateWrapper
+func TestValidatorStateWrapperCache(t *testing.T) {
+	require := require.New(t)
+
+	chainID1 := ids.GenerateTestID()
+	netID1 := ids.GenerateTestID()
+
+	chainID2 := ids.GenerateTestID()
+	netID2 := ids.GenerateTestID()
+
+	mock := &mockValidatorState{
+		netIDMap: map[ids.ID]ids.ID{
+			chainID1: netID1,
+			chainID2: netID2,
+		},
+	}
+
+	// Create wrapper with cache
+	wrapper := &validatorStateWrapper{
+		ctx:         context.Background(),
+		vs:          mock,
+		netIDsCache: lru.NewCache[ids.ID, ids.ID](4096),
+	}
+
+	ctx := context.Background()
+
+	// First call - cache miss
+	result1, err := wrapper.GetNetID(ctx, chainID1)
+	require.NoError(err)
+	require.Equal(netID1, result1)
+	require.Equal(1, mock.getNetIDCallCount, "First call should hit underlying state")
+
+	// Second call - cache hit
+	result2, err := wrapper.GetNetID(ctx, chainID1)
+	require.NoError(err)
+	require.Equal(netID1, result2)
+	require.Equal(1, mock.getNetIDCallCount, "Second call should use cache")
+
+	// Different chainID - cache miss
+	result3, err := wrapper.GetNetID(ctx, chainID2)
+	require.NoError(err)
+	require.Equal(netID2, result3)
+	require.Equal(2, mock.getNetIDCallCount, "Different chainID should miss cache")
+
+	// Same chainID again - cache hit
+	result4, err := wrapper.GetNetID(ctx, chainID2)
+	require.NoError(err)
+	require.Equal(netID2, result4)
+	require.Equal(2, mock.getNetIDCallCount, "Cached value should be used")
+}
+
+// TestInterfacesToConsensusValidatorStateAdapterCache verifies NetID caching in adapter
+func TestInterfacesToConsensusValidatorStateAdapterCache(t *testing.T) {
+	require := require.New(t)
+
+	chainID1 := ids.GenerateTestID()
+	netID1 := ids.GenerateTestID()
+
+	mock := &mockValidatorState{
+		netIDMap: map[ids.ID]ids.ID{
+			chainID1: netID1,
+		},
+	}
+
+	// Create adapter with cache
+	adapter := &interfacesToConsensusValidatorStateAdapter{
+		ctx:         context.Background(),
+		vs:          mock,
+		netIDsCache: lru.NewCache[ids.ID, ids.ID](4096),
+	}
+
+	// First call - cache miss
+	result1, err := adapter.GetNetID(chainID1)
+	require.NoError(err)
+	require.Equal(netID1, result1)
+	require.Equal(1, mock.getNetIDCallCount, "First call should hit underlying state")
+
+	// Second call - cache hit
+	result2, err := adapter.GetNetID(chainID1)
+	require.NoError(err)
+	require.Equal(netID1, result2)
+	require.Equal(1, mock.getNetIDCallCount, "Second call should use cache")
+}
+
+// TestNetIDCacheSize verifies cache eviction works correctly
+func TestNetIDCacheSize(t *testing.T) {
+	require := require.New(t)
+
+	mock := &mockValidatorState{
+		netIDMap: make(map[ids.ID]ids.ID),
+	}
+
+	// Create wrapper with small cache size for testing eviction
+	wrapper := &validatorStateWrapper{
+		ctx:         context.Background(),
+		vs:          mock,
+		netIDsCache: lru.NewCache[ids.ID, ids.ID](2), // Only cache 2 entries
+	}
+
+	ctx := context.Background()
+
+	// Generate test IDs
+	chainIDs := make([]ids.ID, 3)
+	netIDs := make([]ids.ID, 3)
+	for i := range chainIDs {
+		chainIDs[i] = ids.GenerateTestID()
+		netIDs[i] = ids.GenerateTestID()
+		mock.netIDMap[chainIDs[i]] = netIDs[i]
+	}
+
+	// Fill cache with 2 entries
+	_, err := wrapper.GetNetID(ctx, chainIDs[0])
+	require.NoError(err)
+	require.Equal(1, mock.getNetIDCallCount)
+
+	_, err = wrapper.GetNetID(ctx, chainIDs[1])
+	require.NoError(err)
+	require.Equal(2, mock.getNetIDCallCount)
+
+	// Add third entry - should evict oldest
+	_, err = wrapper.GetNetID(ctx, chainIDs[2])
+	require.NoError(err)
+	require.Equal(3, mock.getNetIDCallCount)
+
+	// Access first entry again - should be cache miss (evicted)
+	_, err = wrapper.GetNetID(ctx, chainIDs[0])
+	require.NoError(err)
+	require.Equal(4, mock.getNetIDCallCount, "First entry should have been evicted")
+
+	// Access second entry - should be cache hit
+	_, err = wrapper.GetNetID(ctx, chainIDs[1])
+	require.NoError(err)
+	require.Equal(4, mock.getNetIDCallCount, "Second entry should still be cached")
+}

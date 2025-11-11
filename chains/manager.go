@@ -4,6 +4,7 @@
 package chains
 
 import (
+	nodeconsensus "github.com/luxfi/node/consensus"
 	// xvm "github.com/luxfi/node/vms/exchangevm" // Unused
 	"context"
 	"crypto"
@@ -417,9 +418,9 @@ type ManagerConfig struct {
 	Log                       log.Logger
 	LogFactory                log.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
-	BlockAcceptorGroup        interface{} // TODO: AcceptorGroup interface removed from consensus package
-	TxAcceptorGroup           interface{} // TODO: AcceptorGroup interface removed from consensus package
-	VertexAcceptorGroup       interface{} // TODO: AcceptorGroup interface removed from consensus package
+	BlockAcceptorGroup        nodeconsensus.AcceptorGroup
+	TxAcceptorGroup           nodeconsensus.AcceptorGroup
+	VertexAcceptorGroup       nodeconsensus.AcceptorGroup
 	DB                        database.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
 	Router                    router.Router              // Routes incoming messages to the appropriate chain
@@ -941,58 +942,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	// 	return nil, err
 	// }
 
-	// Register HTTP handlers for this chain if the VM supports it
-	m.Log.Info("Checking for CreateHandlers support",
-		log.Stringer("chainID", chainParams.ID),
-		log.String("vmType", fmt.Sprintf("%T", chain.VM)))
-
-	if vm, ok := chain.VM.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		m.Log.Info("VM supports CreateHandlers, calling it now",
-			log.Stringer("chainID", chainParams.ID))
-		handlers, err := vm.CreateHandlers(context.TODO())
-		m.Log.Info("CreateHandlers returned",
-			log.Stringer("chainID", chainParams.ID),
-			log.Int("numHandlers", len(handlers)),
-			log.Err(err))
-		if err != nil {
-			m.Log.Error("failed to create HTTP handlers",
-				log.Stringer("chainID", chainParams.ID),
-				log.Err(err),
-			)
-		} else {
-			// Register each handler with the HTTP server
-			for endpoint, handler := range handlers {
-				chainAlias := chainParams.ID.String()
-				// For C-Chain, also register under the "C" alias
-				if chainParams.ID == m.CChainID {
-					chainAlias = "C"
-				}
-
-				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
-				chainBase := fmt.Sprintf("bc/%s", chainAlias)
-				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
-
-				// AddRoute will build the full path as /ext/<base><endpoint>
-				m.Server.AddRoute(handler, chainBase, endpoint)
-				if chainAlias != chainParams.ID.String() {
-					m.Server.AddRoute(handler, chainIDBase, endpoint)
-				}
-
-				m.Log.Info("Registered HTTP handler",
-					log.String("chainAlias", chainAlias),
-					log.Stringer("chainID", chainParams.ID),
-					log.String("base", chainBase),
-					log.String("endpoint", endpoint),
-				)
-			}
-		}
-	} else {
-		m.Log.Info("VM does not support CreateHandlers",
-			log.Stringer("chainID", chainParams.ID),
-			log.String("vmType", fmt.Sprintf("%T", chain.VM)))
-	}
+	// Note: HTTP handler registration happens later in createChain(), after notifyRegistrants()
+	// triggers VM initialization. Calling CreateHandlers here would be too early and cause
+	// nil pointer dereference since vm.metrics isn't initialized yet.
 
 	vmGatherer, err := m.getOrMakeVMGatherer(chainParams.VMID)
 	if err != nil {
@@ -1582,12 +1534,24 @@ type simpleVM struct {
 }
 
 func (v *simpleVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Return empty map - actual handlers created later
+	// Delegate to underlying VM if it supports HTTP handlers
+	if handlerVM, ok := v.vm.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return handlerVM.CreateHandlers(ctx)
+	}
+	// VM doesn't support HTTP handlers
 	return map[string]http.Handler{}, nil
 }
 
 func (v *simpleVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Return empty map - static handlers created later
+	// Delegate to underlying VM if it supports static HTTP handlers
+	if staticHandlerVM, ok := v.vm.(interface {
+		CreateStaticHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return staticHandlerVM.CreateStaticHandlers(ctx)
+	}
+	// VM doesn't support static HTTP handlers
 	return map[string]http.Handler{}, nil
 }
 

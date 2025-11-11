@@ -417,7 +417,7 @@ func (vm *VMClient) CreateHandlers(ctx context.Context) (map[string]http.Handler
 		}
 
 		vm.conns = append(vm.conns, clientConn)
-		handlers[handler.Prefix] = ghttp.NewClient(httppb.NewHTTPClient(clientConn))
+		handlers[handler.Prefix] = ghttp.NewClient(httppb.NewHTTPClient(clientConn), vm.logger)
 	}
 	return handlers, nil
 }

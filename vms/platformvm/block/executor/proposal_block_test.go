@@ -15,6 +15,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/consensus"
+
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -23,6 +25,7 @@ import (
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -116,7 +119,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetCurrentSupply(constants.PrimaryNetworkID).Return(uint64(1000), nil).AnyTimes()
 	onParentAccept.EXPECT().GetDelegateeReward(constants.PrimaryNetworkID, utx.NodeID()).Return(uint64(0), nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any()).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -230,7 +233,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 
 	onParentAccept.EXPECT().GetDelegateeReward(constants.PrimaryNetworkID, unsignedNextStakerTx.NodeID()).Return(uint64(0), nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -560,7 +563,7 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 
 			for _, subStaker := range test.subnetStakers {
 				wallet := newWallet(t, env, walletConfig{
-					subnetIDs: []ids.ID{subnetID},
+					subnetIDs: []ids.ID{netID},
 				})
 
 				tx, err := wallet.IssueAddNetValidatorTx(
@@ -692,12 +695,12 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, nil, upgradetest.Banff)
 
-	subnetID := testNet1.ID()
+	netID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		subnetIDs: []ids.ID{netID},
 	})
 
-	env.config.TrackedNets.Add(subnetID)
+	env.config.TrackedNets.Add(netID)
 
 	// Add a subnet validator to the staker set
 	subnetValidatorNodeID := genesistest.DefaultNodeIDs[0]
@@ -850,7 +853,7 @@ func TestBanffProposalBlockTrackedNet(t *testing.T) {
 			}
 
 			wallet := newWallet(t, env, walletConfig{
-				subnetIDs: []ids.ID{subnetID},
+				subnetIDs: []ids.ID{netID},
 			})
 
 			// Add a subnet validator to the staker set
@@ -1356,7 +1359,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			Net: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.LUXAssetID,
+		env.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		10000,
@@ -1438,7 +1441,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			Net: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.LUXAssetID,
+		env.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		10000,

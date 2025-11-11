@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -41,12 +40,14 @@ func createFunc(c *cobra.Command, args []string) error {
 	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
+	// Use KeychainAdapter for wallet compatibility
+	kcAdapter := primary.NewKeychainAdapter(kc)
 	wallet, err := primary.MakeWallet(
 		ctx,
 		&primary.WalletConfig{
 			URI:         config.URI,
-			LUXKeychain: kc,
-			EthKeychain: kc,
+			LUXKeychain: kcAdapter,
+			EthKeychain: kcAdapter,
 		},
 	)
 	if err != nil {
@@ -68,7 +69,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	}
 
 	createChainStartTime := time.Now()
-	createChainTxID, err := wallet.IssueCreateChainTx(
+	createChainTxID, err := wallet.P().IssueCreateChainTx(
 		config.NetID,
 		genesisBytes,
 		constants.XSVMID,

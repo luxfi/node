@@ -23,7 +23,6 @@ func TestBoundedBy(t *testing.T) {
 	aEndTIme := uint64(1)
 	a := &Validator{
 		NodeID: nodeID,
-	}
 		Start:  aStartTime,
 		End:    aEndTIme,
 		Wght:   defaultWeight,
@@ -33,7 +32,6 @@ func TestBoundedBy(t *testing.T) {
 	bEndTime := uint64(3)
 	b := &Validator{
 		NodeID: nodeID,
-	}
 		Start:  bStartTime,
 		End:    bEndTime,
 		Wght:   defaultWeight,

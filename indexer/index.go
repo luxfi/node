@@ -4,12 +4,12 @@
 package indexer
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
 
-	// "github.com/luxfi/consensus" // TODO: Acceptor interface removed from consensus package
+	nodeconsensus "github.com/luxfi/node/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
@@ -31,7 +31,7 @@ var (
 	errNumToFetchInvalid   = fmt.Errorf("numToFetch must be in [1,%d]", MaxFetchedByRange)
 	errNoContainerAtIndex  = errors.New("no container at index")
 
-	// _ consensus.Acceptor = (*index)(nil) // TODO: Acceptor interface removed from consensus package
+	_ nodeconsensus.Acceptor = (*index)(nil)
 )
 
 // index indexes containers in their order of acceptance
@@ -106,7 +106,7 @@ func (i *index) Close() error {
 // Index that the given transaction is accepted
 // Returned error should be treated as fatal; the VM should not commit [containerID]
 // or any new containers as accepted.
-func (i *index) Accept(ctx context.Context, containerID ids.ID, containerBytes []byte) error {
+func (i *index) Accept(ctx *consensuscontext.Context, containerID ids.ID, containerBytes []byte) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
