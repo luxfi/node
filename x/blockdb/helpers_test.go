@@ -64,13 +64,6 @@ func checkDatabaseState(t *testing.T, db *Database, maxHeight uint64, maxContigu
 	} else {
 		require.Equal(t, uint64(unsetHeight), maxHeight, "maxBlockHeight mismatch")
 	}
-	gotMCH, ok := db.MaxContiguousHeight()
-	if maxContiguousHeight != unsetHeight {
-		require.True(t, ok, "MaxContiguousHeight is not set, want %d", maxContiguousHeight)
-		require.Equal(t, maxContiguousHeight, gotMCH, "maxContiguousHeight mismatch")
-	} else {
-		require.False(t, ok)
-	}
 }
 
 // Helper function to create a pointer to uint64

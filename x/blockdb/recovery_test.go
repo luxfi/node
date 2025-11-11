@@ -70,12 +70,11 @@ func TestRecovery_Success(t *testing.T) {
 				firstBlockOffset := uint64(sizeOfBlockEntryHeader) + uint64(firstBlockCompressedSize)
 
 				header := indexFileHeader{
-					Version:             IndexFileVersion,
-					MaxDataFileSize:     4 * 10 * 1024, // 10KB per file
-					MinHeight:           0,
-					MaxContiguousHeight: 0,
-					MaxHeight:           0,
-					NextWriteOffset:     firstBlockOffset,
+					Version:         IndexFileVersion,
+					MaxDataFileSize: 4 * 10 * 1024, // 10KB per file
+					MinHeight:       0,
+					MaxHeight:       0,
+					NextWriteOffset: firstBlockOffset,
 				}
 
 				// Write the header
@@ -135,7 +134,6 @@ func TestRecovery_Success(t *testing.T) {
 				}
 				blockSize := uint64(sizeOfBlockEntryHeader) + uint64(lastBlockCompressedSize)
 				header.NextWriteOffset -= blockSize
-				header.MaxContiguousHeight = 3
 				header.MaxHeight = 8
 
 				// Write the corrupted header back
@@ -559,12 +557,11 @@ func resetIndexToBlock(store *Database, blockSize uint64, minHeight uint64) erro
 	defer indexFile.Close()
 
 	header := indexFileHeader{
-		Version:             IndexFileVersion,
-		MaxDataFileSize:     DefaultMaxDataFileSize,
-		MinHeight:           minHeight,
-		MaxContiguousHeight: minHeight,
-		MaxHeight:           minHeight,
-		NextWriteOffset:     uint64(sizeOfBlockEntryHeader) + blockSize,
+		Version:         IndexFileVersion,
+		MaxDataFileSize: DefaultMaxDataFileSize,
+		MinHeight:       minHeight,
+		MaxHeight:       minHeight,
+		NextWriteOffset: uint64(sizeOfBlockEntryHeader) + blockSize,
 	}
 
 	headerBytes, err := header.MarshalBinary()
