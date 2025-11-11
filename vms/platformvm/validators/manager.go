@@ -192,6 +192,9 @@ func (m *manager) GetCurrentHeightWithContext(ctx context.Context) (uint64, erro
 }
 
 func (m *manager) getCurrentHeight(context.Context) (uint64, error) {
+	if m.state == nil {
+		return 0, fmt.Errorf("state not initialized")
+	}
 	lastAcceptedID := m.state.GetLastAccepted()
 	lastAccepted, err := m.state.GetStatelessBlock(lastAcceptedID)
 	if err != nil {

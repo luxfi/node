@@ -996,12 +996,16 @@ func (m *Manager) enqueueWork(work *workItem) {
 	// Find the middle point.
 	mid := midPoint(work.start, work.end)
 
-	if maybe.Equal(work.start, mid, bytes.Equal) || maybe.Equal(mid, work.end, bytes.Equal) {
-		// The range is too small to split.
-		// If we didn't have this check we would add work items
-		// [start, start] and [start, end]. Since start <= end, this would
-		// violate the invariant of [m.unprocessedWork] and [m.processedWork]
-		// that there are no overlapping ranges.
+	// Check if start and mid are equal
+	startEqualsMid := maybe.Equal(work.start, mid, bytes.Equal)
+	// Check if mid and end are equal
+	midEqualsEnd := maybe.Equal(mid, work.end, bytes.Equal)
+
+	if startEqualsMid || midEqualsEnd {
+		// The range is too small to split, or midpoint calculation produced
+		// overlapping boundaries. This prevents work items like [start, start]
+		// and [start, end] which would violate the invariant that there are
+		// no overlapping ranges in [m.unprocessedWork] and [m.processedWork].
 		m.unprocessedWork.Insert(work)
 		return
 	}

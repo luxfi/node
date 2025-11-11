@@ -1,0 +1,221 @@
+---
+title: Introduction
+description: Core blockchain node software with multi-consensus support
+---
+
+# Lux Node
+
+The Lux node is the core blockchain software that powers the Lux network, providing multi-consensus support, high performance, and advanced features like post-quantum security.
+
+## Features
+
+- **Multi-Consensus Architecture**: Support for Chain, DAG, and Post-Quantum consensus
+- **High Performance**: Optimized for throughput and low latency
+- **P2P Networking**: Efficient peer-to-peer communication layer
+- **VM Support**: Pluggable virtual machine architecture
+- **Cross-Chain Communication**: Warp messaging for inter-chain operations
+- **Post-Quantum Security**: Quantum-resistant cryptography
+- **AI-Powered Consensus**: Neural network and LLM-based validation (optional)
+- **Monitoring & Metrics**: Comprehensive observability
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/luxfi/node
+cd node
+
+# Build the node
+make build
+
+# Run the node
+./build/node
+```
+
+### Configuration
+
+```bash
+# Create configuration file
+cat > config.json <<EOF
+{
+  "network-id": "mainnet",
+  "db-dir": "~/.luxd/db",
+  "log-level": "info",
+  "http-port": 9650,
+  "staking-port": 9651
+}
+EOF
+
+# Run with config
+./build/node --config-file=config.json
+```
+
+## Architecture
+
+### Core Components
+
+1. **Network Layer**: P2P communication, peer management, message routing
+2. **Consensus Engines**: Chain, DAG, and PQ consensus implementations
+3. **VM Manager**: Plugin system for virtual machines
+4. **Chain Manager**: Multi-chain orchestration
+5. **Database**: Persistent storage with multiple backends
+6. **API Layer**: RPC and REST endpoints
+7. **Monitoring**: Metrics, logging, and health checks
+
+### Node Lifecycle
+
+```
+┌──────────────┐
+│ Bootstrap    │  ← Connect to network
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Sync State   │  ← Download blockchain state
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Validate     │  ← Participate in consensus
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Shutdown     │  ← Graceful shutdown
+└──────────────┘
+```
+
+## Network Protocols
+
+### P2P Communication
+
+- **TLS Encryption**: All peer connections are encrypted
+- **Message Types**: Block proposals, votes, state sync, chain creation
+- **Throttling**: Bandwidth and connection rate limiting
+- **NAT Traversal**: Automatic IP resolution
+
+### RPC API
+
+```bash
+# Get network info
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.getNetworkInfo"
+}' -H 'content-type:application/json;' http://localhost:9650/ext/info
+
+# Get node ID
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.getNodeID"
+}' -H 'content-type:application/json;' http://localhost:9650/ext/info
+```
+
+## Chain Management
+
+### Creating a Chain
+
+```bash
+# Create new blockchain
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "platform.createBlockchain",
+    "params": {
+        "vmID": "your-vm-id",
+        "name": "My Chain",
+        "genesisData": "...",
+        "netID": "network-id"
+    }
+}' -H 'content-type:application/json;' http://localhost:9650/ext/P
+```
+
+### Validator Management
+
+```bash
+# Add validator
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "platform.addValidator",
+    "params": {
+        "nodeID": "NodeID-...",
+        "startTime": ...,
+        "endTime": ...,
+        "stakeAmount": ...
+    }
+}' -H 'content-type:application/json;' http://localhost:9650/ext/P
+```
+
+## Configuration Reference
+
+### Core Settings
+
+- `network-id`: Network identifier (mainnet, testnet, or custom)
+- `db-dir`: Database directory path
+- `log-level`: Logging verbosity (debug, info, warn, error)
+- `http-port`: HTTP API port (default: 9650)
+- `staking-port`: P2P staking port (default: 9651)
+
+### Advanced Settings
+
+- `bootstrap-ips`: Initial peer IPs to connect to
+- `bootstrap-ids`: Initial peer node IDs
+- `staking-enabled`: Enable/disable staking
+- `api-admin-enabled`: Enable admin API endpoints
+- `api-keystore-enabled`: Enable keystore API
+- `api-metrics-enabled`: Enable metrics API
+
+## Monitoring
+
+### Metrics
+
+```bash
+# Prometheus metrics endpoint
+curl http://localhost:9650/ext/metrics
+
+# Health check
+curl http://localhost:9650/ext/health
+```
+
+### Logs
+
+```bash
+# View logs
+tail -f ~/.luxd/logs/node.log
+
+# Set log level dynamically
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "admin.setLogLevel",
+    "params": {"logLevel": "debug"}
+}' http://localhost:9650/ext/admin
+```
+
+## Testing
+
+```bash
+# Run all tests
+go test -v ./...
+
+# Run integration tests
+go test -v -tags=integration ./...
+
+# Run with race detector
+go test -race ./...
+
+# Benchmarks
+go test -bench=. ./...
+```
+
+## Next Steps
+
+- [Configuration Guide](/docs/configuration) - Detailed configuration options
+- [API Reference](/docs/api) - Complete API documentation
+- [Network Setup](/docs/network) - Set up a local or test network
+- [VM Development](/docs/vms) - Build custom virtual machines
+- [Monitoring](/docs/monitoring) - Observability and debugging

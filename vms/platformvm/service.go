@@ -84,6 +84,7 @@ type stakerAttributes struct {
 
 // GetHeight returns the height of the last accepted block
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeightResponse) error {
+
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getHeight",
@@ -100,6 +101,7 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeigh
 
 // GetProposedHeight returns the current ProposerVM height
 func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
+
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getProposedHeight"),
@@ -137,6 +139,7 @@ type GetBalanceResponse struct {
 
 // GetBalance gets the balance of an address
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response *GetBalanceResponse) error {
+
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getBalance",

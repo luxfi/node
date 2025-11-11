@@ -137,6 +137,10 @@ type VM struct {
 	bootstrappedConsensus utils.Atomic[bool]
 	bootstrapped          utils.Atomic[bool]
 
+	// isInitialized tracks whether VM.Initialize has completed successfully
+	// This prevents API calls from accessing uninitialized state
+	isInitialized utils.Atomic[bool]
+
 	manager blockexecutor.Manager
 
 	// Cancelled on shutdown
@@ -222,14 +226,36 @@ func (vm *VM) Initialize(
 	vm.log.Info("using VM execution config", "config", execConfig)
 	fmt.Printf("Got execution config successfully\n")
 
-	// Create Prometheus registries for metrics
-	registerer := metric.NewRegistry()
+	// Get metrics registerer from chain context, or create new one if not available
+	var registerer metric.Registry
+	if chainCtx != nil && chainCtx.Metrics != nil {
+		fmt.Printf("chainCtx.Metrics is not nil, attempting type assertion\n")
+		if reg, ok := chainCtx.Metrics.(metric.Registry); ok {
+			fmt.Printf("Type assertion succeeded, reg == nil: %v\n", reg == nil)
+			registerer = reg
+			if registerer == nil {
+				fmt.Printf("ERROR: registerer is nil after assignment!\n")
+				registerer = metric.NewRegistry()
+				fmt.Printf("Created new registry as fallback\n")
+			}
+		} else {
+			// Create new registerer if chainCtx.Metrics is not a Registry
+			fmt.Printf("Type assertion failed, chainCtx.Metrics type: %T\n", chainCtx.Metrics)
+			registerer = metric.NewRegistry()
+			fmt.Printf("Created new registerer\n")
+		}
+	} else {
+		// Create new registerer if chainCtx.Metrics is nil
+		registerer = metric.NewRegistry()
+		fmt.Printf("chainCtx.Metrics is nil, created new registerer\n")
+	}
 
 	// Initialize platformvm-specific metrics
 	vm.metrics, err = platformvmmetrics.New(registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
+	vm.log.Info("platformvm metrics initialized successfully")
 
 	// Create metric interface for state
 
@@ -254,15 +280,25 @@ func (vm *VM) Initialize(
 	// Note: this codec is never used to serialize anything
 	vm.codecRegistry = linearcodec.NewDefault()
 	vm.fx = &secp256k1fx.Fx{}
+	fmt.Printf("About to initialize fx...\\n")
 	if err := vm.fx.Initialize(vm); err != nil {
-		return err
+		fmt.Printf("ERROR: fx.Initialize failed: %v\\n", err)
+		return fmt.Errorf("failed to initialize fx: %w", err)
 	}
+	fmt.Printf("fx.Initialize succeeded!\\n")
 
 	rewards := reward.NewCalculator(vm.RewardConfig)
 
 	vm.log.Info("Creating Platform VM state",
 		"genesisLen", len(genesisBytes),
 	)
+	fmt.Printf("About to call state.New()...\\n")
+	fmt.Printf("  vm.db: %v\\n", vm.db != nil)
+	fmt.Printf("  registerer: %v\\n", registerer != nil)
+	fmt.Printf("  vm.Internal.Validators: %v\\n", vm.Internal.Validators != nil)
+	fmt.Printf("  vm.ctx: %v\\n", vm.ctx != nil)
+	fmt.Printf("  vm.metrics: %v\\n", vm.metrics != nil)
+	
 	vm.state, err = state.New(
 		vm.db,
 		genesisBytes,
@@ -275,9 +311,11 @@ func (vm *VM) Initialize(
 		rewards,
 	)
 	if err != nil {
+		fmt.Printf("ERROR: state.New() failed: %v\\n", err)
 		vm.log.Error("Failed to create Platform VM state", "error", err)
 		return fmt.Errorf("failed to create state: %w", err)
 	}
+	fmt.Printf("state.New() succeeded!\\n")
 	vm.log.Info("Platform VM state created successfully")
 
 	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
@@ -391,6 +429,11 @@ if err != nil {
 			)
 		}
 	}()
+
+	// Mark VM as initialized - this must be done at the very end
+	// after all components are properly set up
+	vm.isInitialized.Set(true)
+	vm.log.Info("Platform VM initialization complete")
 
 	return nil
 }
@@ -823,24 +866,71 @@ func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
 }
 
+// lazyHandlerWrapper delays Service creation until the VM is fully initialized
+type lazyHandlerWrapper struct {
+	vm      *VM
+	handler http.Handler
+	once    sync.Once
+	err     error
+}
+
+// ServeHTTP creates the handler on first request when VM is ready
+func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	l.once.Do(func() {
+		// Check if VM is ready using the initialized flag
+		if !l.vm.isInitialized.Get() {
+			l.err = fmt.Errorf("VM not fully initialized")
+			return
+		}
+
+		// Create the actual RPC server now that VM is ready
+		server := rpc.NewServer()
+		server.RegisterCodec(json.NewCodec(), "application/json")
+		server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
+
+		// Add metrics interceptors if available
+		if l.vm.metrics != nil {
+			server.RegisterInterceptFunc(l.vm.metrics.InterceptRequest)
+			server.RegisterAfterFunc(l.vm.metrics.AfterRequest)
+		}
+
+		// Create the service with fully initialized VM
+		service := &Service{
+			vm:                    l.vm,
+			addrManager:           lux.NewAddressManager(l.vm.ctx),
+			stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
+		}
+
+		if err := server.RegisterService(service, "platform"); err != nil {
+			l.err = fmt.Errorf("failed to register platform service: %w", err)
+			return
+		}
+
+		l.handler = server
+	})
+
+	// Handle the request or return error
+	if l.err != nil {
+		http.Error(w, fmt.Sprintf("Platform service initialization error: %v", l.err), http.StatusServiceUnavailable)
+		return
+	}
+	if l.handler == nil {
+		http.Error(w, "Platform service not ready, VM still initializing", http.StatusServiceUnavailable)
+		return
+	}
+
+	l.handler.ServeHTTP(w, r)
+}
+
 // CreateHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
+// This now uses lazy initialization to avoid race conditions during VM startup
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
-	server := rpc.NewServer()
-	server.RegisterCodec(json.NewCodec(), "application/json")
-	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	server.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	server.RegisterAfterFunc(vm.metrics.AfterRequest)
-	service := &Service{
-		vm:                    vm,
-		addrManager:           lux.NewAddressManager(vm.ctx),
-		stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
-	}
-	err := server.RegisterService(service, "platform")
+	// Return a lazy wrapper that will create the actual handler when ready
 	return map[string]http.Handler{
-		"": server,
-	}, err
+		"": &lazyHandlerWrapper{vm: vm},
+	}, nil
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {

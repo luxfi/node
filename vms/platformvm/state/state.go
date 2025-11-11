@@ -555,9 +555,20 @@ func New(
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
+	// Convert metric.Registerer to metric.Registry
+	// metricsReg is a *prometheus.Registry which implements Registerer
+	// Cast it to metric.Registry (which is *prometheus.Registry)
+	var reg metric.Registry
+	if r, ok := metricsReg.(metric.Registry); ok {
+		reg = r
+	} else {
+		// If conversion fails, use nil (metercacher will handle it)
+		reg = nil
+	}
+
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewCache[uint64, ids.ID](execCfg.BlockIDCacheSize),
 	)
 	if err != nil {
@@ -566,7 +577,7 @@ func New(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.BlockCacheSize, blockSize),
 	)
 	if err != nil {
@@ -596,7 +607,7 @@ func New(
 
 	weightsCache, err := metercacher.New(
 		"l1_validator_weights_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.L1WeightsCacheSize, func(ids.ID, uint64) int {
 			return ids.IDLen + wrappers.LongLen
 		}),
@@ -607,7 +618,7 @@ func New(
 
 	inactiveL1ValidatorsCache, err := metercacher.New(
 		"l1_validator_inactive_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(
 			execCfg.L1InactiveValidatorsCacheSize,
 			func(_ ids.ID, maybeL1Validator maybe.Maybe[L1Validator]) int {
@@ -631,7 +642,7 @@ func New(
 
 	subnetIDNodeIDCache, err := metercacher.New(
 		"l1_validator_subnet_id_node_id_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.L1NetIDNodeIDCacheSize, func(subnetIDNodeID, bool) int {
 			return ids.IDLen + ids.NodeIDLen + wrappers.BoolLen
 		}),
@@ -642,7 +653,7 @@ func New(
 
 	txCache, err := metercacher.New(
 		"tx_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.TxCacheSize, txAndStatusSize),
 	)
 	if err != nil {
@@ -652,7 +663,7 @@ func New(
 	rewardUTXODB := prefixdb.New(RewardUTXOsPrefix, baseDB)
 	rewardUTXOsCache, err := metercacher.New[ids.ID, []*lux.UTXO](
 		"reward_utxos_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewCache[ids.ID, []*lux.UTXO](execCfg.RewardUTXOsCacheSize),
 	)
 	if err != nil {
@@ -670,7 +681,7 @@ func New(
 	subnetOwnerDB := prefixdb.New(NetOwnerPrefix, baseDB)
 	subnetOwnerCache, err := metercacher.New[ids.ID, fxOwnerAndSize](
 		"subnet_owner_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.FxOwnerCacheSize, func(_ ids.ID, f fxOwnerAndSize) int {
 			return ids.IDLen + f.size
 		}),
@@ -682,7 +693,7 @@ func New(
 	subnetToL1ConversionDB := prefixdb.New(NetToL1ConversionPrefix, baseDB)
 	subnetToL1ConversionCache, err := metercacher.New[ids.ID, NetToL1Conversion](
 		"subnet_conversion_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.NetToL1ConversionCacheSize, func(_ ids.ID, c NetToL1Conversion) int {
 			return 3*ids.IDLen + len(c.Addr)
 		}),
@@ -693,7 +704,7 @@ func New(
 
 	transformedNetCache, err := metercacher.New(
 		"transformed_subnet_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewSizedCache(execCfg.TransformedNetTxCacheSize, txSize),
 	)
 	if err != nil {
@@ -702,7 +713,7 @@ func New(
 
 	supplyCache, err := metercacher.New[ids.ID, *uint64](
 		"supply_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewCache[ids.ID, *uint64](execCfg.ChainCacheSize),
 	)
 	if err != nil {
@@ -711,7 +722,7 @@ func New(
 
 	chainCache, err := metercacher.New[ids.ID, []*txs.Tx](
 		"chain_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewCache[ids.ID, []*txs.Tx](execCfg.ChainCacheSize),
 	)
 	if err != nil {
@@ -720,7 +731,7 @@ func New(
 
 	chainDBCache, err := metercacher.New[ids.ID, linkeddb.LinkedDB](
 		"chain_db_cache",
-		nil, // TODO: Convert metric.Registerer to metric.Registry
+		reg,
 		lru.NewCache[ids.ID, linkeddb.LinkedDB](execCfg.ChainDBCacheSize),
 	)
 	if err != nil {

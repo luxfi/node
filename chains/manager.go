@@ -25,7 +25,7 @@ import (
 	dbmanager "github.com/luxfi/database/manager"
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/database/meterdb" // Unused
-	// "github.com/luxfi/database/prefixdb" // Unused
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
@@ -541,7 +541,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	consensusmanGatherer := metrics.NewLabelGatherer(ChainLabel)
+	consensusmanGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(chainNamespace, consensusmanGatherer); err != nil {
 		return nil, err
 	}
@@ -814,7 +814,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		return nil, errCreatePlatformVM
 	}
 	// primaryAlias will be used by the chains created below
-	// primaryAlias := m.PrimaryAliasOrDefault(chainParams.ID)
+	primaryAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 
 	// Create this chain's data directory
 	chainDataDir := filepath.Join(m.ChainDataDir, chainParams.ID.String())
@@ -825,14 +825,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	// Create the log and context of the chain
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
-	// linearMetrics was here but not used in context.Context
-	// linearMetrics, err := metric.MakeAndRegister(
-	// 	m.linearGatherer,
-	// 	primaryAlias,
-	// )
-	// if err != nil {
-	// 	return nil, err
-	// }
+	// Create metrics registry for this chain
+	m.Log.Info("Creating metrics registry", log.String("primaryAlias", primaryAlias))
+	chainMetricsReg, err := metric.MakeAndRegister(
+		m.linearGatherer,
+		primaryAlias,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chain metrics: %w", err)
+	}
+	m.Log.Info("Metrics registry created", 
+		log.String("primaryAlias", primaryAlias),
+		log.Bool("isNil", chainMetricsReg == nil),
+	)
 
 	// Note: Using local consensus package which has different fields
 	// PublicKey needs to be []byte, not *bls.PublicKey
@@ -858,6 +863,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		ChainDataDir: chainDataDir,
 
 		ValidatorState: m.validatorState,
+		Metrics:        chainMetricsReg,
+		Log:            chainLog,
 	}
 
 	// Get a factory for the vm we want to use on our chain
@@ -921,6 +928,50 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Create simple linear chain with basic consensus engine
 		m.Log.Info("creating linear chain", log.Stringer("chainID", chainCtx.ChainID))
 		
+		// Initialize the VM before creating the chain
+		// Get chain configuration
+		chainConfig, err := m.getChainConfig(chainParams.ID)
+		if err != nil {
+			m.Log.Warn("failed to get chain config, using empty config",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err))
+			chainConfig = ChainConfig{}
+		}
+
+		// Create prefixed databases for the VM
+		prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
+		vmDB := prefixdb.New(VMDBPrefix, prefixDB)
+
+		// Create message channel for VM-to-Engine communication
+		toEngine := make(chan block.Message, 1)
+
+		// Convert []*core.Fx to []interface{}
+		fxsInterface := make([]interface{}, len(chainFxs))
+		for i, fx := range chainFxs {
+			fxsInterface[i] = fx
+		}
+
+		// Initialize the VM if it supports the Initialize interface
+		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
+		err = vm.Initialize(
+			context.TODO(),
+			chainCtx,
+			vmDB,
+			chainParams.GenesisData,
+			chainConfig.Upgrade,
+			chainConfig.Config,
+			toEngine,
+			fxsInterface,
+			nil, // appSender - not needed for simple VMs
+		)
+		if err != nil {
+			m.Log.Warn("VM initialization failed, continuing anyway",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err))
+		} else {
+			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+		}
+
 		consensusEngine := consensuschain.New()
 		
 		chain = &chainInfo{
