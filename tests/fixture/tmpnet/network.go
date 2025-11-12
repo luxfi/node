@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"net/netip"
 	"os"
 	"os/exec"
@@ -161,6 +163,178 @@ func toCanonicalDir(dir string) (string, error) {
 		return "", err
 	}
 	return filepath.EvalSymlinks(absDir)
+}
+
+// CreateNodes creates n new nodes with default configuration
+func (n *Network) CreateNodes(count int) error {
+	for i := 0; i < count; i++ {
+		node := NewNode()
+		n.Nodes = append(n.Nodes, node)
+	}
+	return nil
+}
+
+// AddNode adds a new node to the network
+func (n *Network) AddNode(ctx context.Context, node *Node) error {
+	if err := n.EnsureNodeConfig(node); err != nil {
+		return fmt.Errorf("failed to configure node: %w", err)
+	}
+	
+	// Set bootstrap configuration for the new node
+	bootstrapIPs, bootstrapIDs := n.GetBootstrapIPsAndIDs(node)
+	if len(bootstrapIPs) == 0 {
+		return errors.New("no bootstrap nodes available")
+	}
+	
+	node.Flags[config.BootstrapIPsKey] = strings.Join(bootstrapIPs, ",")
+	node.Flags[config.BootstrapIDsKey] = strings.Join(bootstrapIDs, ",")
+	
+	n.Nodes = append(n.Nodes, node)
+	
+	// Write configuration
+	if err := node.Write(); err != nil {
+		return fmt.Errorf("failed to write node configuration: %w", err)
+	}
+	
+	// Update network configuration
+	if err := n.Write(); err != nil {
+		return fmt.Errorf("failed to update network configuration: %w", err)
+	}
+	
+	return nil
+}
+
+// RemoveNode removes a node from the network
+func (n *Network) RemoveNode(ctx context.Context, nodeID ids.NodeID) error {
+	var nodeToRemove *Node
+	var nodeIndex int
+	
+	for i, node := range n.Nodes {
+		if node.NodeID == nodeID {
+			nodeToRemove = node
+			nodeIndex = i
+			break
+		}
+	}
+	
+	if nodeToRemove == nil {
+		return fmt.Errorf("node %s not found in network", nodeID)
+	}
+	
+	// Stop the node if it's running
+	if nodeToRemove.IsRunning() {
+		if err := nodeToRemove.Stop(ctx); err != nil {
+			return fmt.Errorf("failed to stop node %s: %w", nodeID, err)
+		}
+	}
+	
+	// Remove node from list
+	n.Nodes = append(n.Nodes[:nodeIndex], n.Nodes[nodeIndex+1:]...)
+	
+	// Update network configuration
+	if err := n.Write(); err != nil {
+		return fmt.Errorf("failed to update network configuration: %w", err)
+	}
+	
+	return nil
+}
+
+// RestartNode restarts a specific node in the network
+func (n *Network) RestartNode(ctx context.Context, nodeID ids.NodeID) error {
+	node, err := n.GetNode(nodeID)
+	if err != nil {
+		return err
+	}
+	
+	if err := node.Restart(ctx); err != nil {
+		return fmt.Errorf("failed to restart node %s: %w", nodeID, err)
+	}
+	
+	return WaitForHealthyNodes(ctx, n.log, []*Node{node})
+}
+
+// GetHealthStatus returns the health status of all nodes
+func (n *Network) GetHealthStatus(ctx context.Context) (map[ids.NodeID]bool, error) {
+	healthStatus := make(map[ids.NodeID]bool)
+	
+	for _, node := range n.Nodes {
+		if !node.IsRunning() {
+			healthStatus[node.NodeID] = false
+			continue
+		}
+		
+		healthy, err := node.IsHealthy(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check health of node %s: %w", node.NodeID, err)
+		}
+		healthStatus[node.NodeID] = healthy
+	}
+	
+	return healthStatus, nil
+}
+
+// CollectLogs collects logs from all nodes to the specified directory
+func (n *Network) CollectLogs(destDir string) error {
+	if err := os.MkdirAll(destDir, perms.ReadWriteExecute); err != nil {
+		return fmt.Errorf("failed to create logs directory: %w", err)
+	}
+	
+	var errs []error
+	for _, node := range n.Nodes {
+		nodeLogDir := filepath.Join(destDir, node.NodeID.String())
+		if err := os.MkdirAll(nodeLogDir, perms.ReadWriteExecute); err != nil {
+			errs = append(errs, fmt.Errorf("failed to create log dir for node %s: %w", node.NodeID, err))
+			continue
+		}
+		
+		// Copy logs from node data directory
+		srcLogDir := filepath.Join(node.DataDir, "logs")
+		if _, err := os.Stat(srcLogDir); err == nil {
+			if err := copyDir(srcLogDir, nodeLogDir); err != nil {
+				errs = append(errs, fmt.Errorf("failed to copy logs for node %s: %w", node.NodeID, err))
+			}
+		}
+	}
+	
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// copyDir copies a directory recursively
+func copyDir(src, dst string) error {
+	return filepath.Walk(src, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		
+		dstPath := filepath.Join(dst, relPath)
+		
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+		
+		srcFile, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+		
+		dstFile, err := os.Create(dstPath)
+		if err != nil {
+			return err
+		}
+		defer dstFile.Close()
+		
+		_, err = io.Copy(dstFile, srcFile)
+		return err
+	})
 }
 
 func BootstrapNewNetwork(

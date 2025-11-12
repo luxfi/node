@@ -144,9 +144,21 @@ func (ci *ChaosInjector) executeFault(ctx context.Context, faultID string, confi
 // injectCrash crashes target nodes by forcing stop
 func (ci *ChaosInjector) injectCrash(ctx context.Context, config FaultConfig) {
 	for _, node := range config.TargetNodes {
+		if node == nil {
+			continue
+		}
+		
 		ci.log.Info("crashing node",
 			log.Stringer("nodeID", node.NodeID),
 		)
+
+		// Skip if node is not properly initialized (mock testing)
+		if node.RuntimeConfig == nil {
+			ci.log.Debug("skipping mock node crash",
+				log.Stringer("nodeID", node.NodeID),
+			)
+			continue
+		}
 
 		if err := node.InitiateStop(ctx); err != nil {
 			ci.log.Error("failed to crash node",

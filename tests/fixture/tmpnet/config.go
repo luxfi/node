@@ -146,6 +146,83 @@ type NetworkConfig struct {
 	CChainConfig FlagsMap
 	DefaultFlags FlagsMap
 	FundedKeys   []*secp256k1.PrivateKey
+	NetworkID    uint32
+	Owner        string
+}
+
+// GenerateNetworkConfig creates a new network configuration with the specified parameters
+func GenerateNetworkConfig(networkID uint32, nodeCount int, keyCount int) (*NetworkConfig, error) {
+	if nodeCount < 1 {
+		return nil, errors.New("at least one node is required")
+	}
+	if keyCount < 1 {
+		keyCount = DefaultFundedKeyCount
+	}
+	
+	// Generate funded keys
+	keys, err := NewPrivateKeys(keyCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate keys: %w", err)
+	}
+	
+	config := &NetworkConfig{
+		NetworkID:    networkID,
+		FundedKeys:   keys,
+		DefaultFlags: DefaultTmpnetFlags(),
+		CChainConfig: FlagsMap{
+			"log-level": "info",
+		},
+	}
+	
+	return config, nil
+}
+
+// GenerateNodeConfigs creates node configurations for the network
+func (c *NetworkConfig) GenerateNodeConfigs(count int) ([]*NodeConfig, error) {
+	nodes := make([]*NodeConfig, count)
+	
+	for i := 0; i < count; i++ {
+		nodeConfig := NewNodeConfig()
+		if err := nodeConfig.EnsureKeys(); err != nil {
+			return nil, fmt.Errorf("failed to generate keys for node %d: %w", i, err)
+		}
+		nodes[i] = nodeConfig
+	}
+	
+	// Set up bootstrap configuration
+	if count > 1 {
+		bootstrapIDs := make([]string, 0, count-1)
+		bootstrapIPs := make([]string, 0, count-1)
+		
+		// First node becomes bootstrap node
+		bootstrapNode := nodes[0]
+		bootstrapPort := uint16(9651) // Default staking port
+		
+		// Configure other nodes to bootstrap from the first node
+		for i := 1; i < count; i++ {
+			node := nodes[i]
+			node.SetNetworkingConfigDefaults(
+				uint16(9650+i), // HTTP port
+				uint16(9651+i), // Staking port  
+				[]string{bootstrapNode.NodeID.String()},
+				[]string{fmt.Sprintf("127.0.0.1:%d", bootstrapPort)},
+			)
+			
+			// Add to bootstrap list for subsequent nodes
+			bootstrapIDs = append(bootstrapIDs, node.NodeID.String())
+			bootstrapIPs = append(bootstrapIPs, fmt.Sprintf("127.0.0.1:%d", 9651+i))
+		}
+		
+		// Configure the bootstrap node with empty bootstrap list initially
+		bootstrapNode.SetNetworkingConfigDefaults(
+			9650, // HTTP port
+			9651, // Staking port
+			[]string{},
+			[]string{},
+		)
+	}
+	
+	return nodes, nil
 }
 
 // Ensure genesis is generated if not already present.

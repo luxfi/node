@@ -656,7 +656,15 @@ func getStakingTLSCert(v *viper.Viper) (tls.Certificate, error) {
 	case v.IsSet(StakingTLSKeyContentKey) && v.IsSet(StakingCertContentKey):
 		return getStakingTLSCertFromFlag(v)
 	default:
-		return getStakingTLSCertFromFile(v)
+		cert, err := getStakingTLSCertFromFile(v)
+		if err != nil {
+			return tls.Certificate{}, err
+		}
+		// Verify Leaf is populated
+		if cert.Leaf == nil {
+			return tls.Certificate{}, fmt.Errorf("cert.Leaf is nil after loading from file")
+		}
+		return cert, nil
 	}
 }
 

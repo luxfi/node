@@ -468,3 +468,105 @@ func (n *Node) getMonitoringLabels() map[string]string {
 func (n *Node) IsRunning() bool {
 	return len(n.URI) > 0
 }
+
+// GetStatus returns the status of the node
+func (n *Node) GetStatus() string {
+	if n.IsRunning() {
+		return "running"
+	}
+	return "stopped"
+}
+
+// GetLogs retrieves recent logs from the node
+func (n *Node) GetLogs(ctx context.Context, lines int) ([]string, error) {
+	// Implementation depends on the runtime
+	// For process runtime, read from log file
+	// For Kube runtime, use kubectl logs
+	return nil, errors.New("not implemented")
+}
+
+// SetLogLevel changes the log level of a running node
+func (n *Node) SetLogLevel(ctx context.Context, level string) error {
+	if !n.IsRunning() {
+		return errors.New("node is not running")
+	}
+	
+	// TODO: Implement API call to change log level
+	return errors.New("not implemented")
+}
+
+// RestartWithFlags restarts the node with additional flags
+func (n *Node) RestartWithFlags(ctx context.Context, additionalFlags FlagsMap) error {
+	// Merge additional flags
+	for k, v := range additionalFlags {
+		n.Flags[k] = v
+	}
+	
+	return n.Restart(ctx)
+}
+
+// WaitForSync waits for the node to sync with the network
+func (n *Node) WaitForSync(ctx context.Context) error {
+	ticker := time.NewTicker(defaultNodeTickerInterval)
+	defer ticker.Stop()
+	
+	for {
+		// Check if node is synced
+		// This would typically check the node's API for sync status
+		healthy, err := n.IsHealthy(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check sync status: %w", err)
+		}
+		
+		if healthy {
+			// Additional check for sync status could go here
+			return nil
+		}
+		
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timeout waiting for node %s to sync: %w", n.NodeID, ctx.Err())
+		case <-ticker.C:
+			// Continue checking
+		}
+	}
+}
+
+// GetPeerInfo retrieves information about the node's peers
+func (n *Node) GetPeerInfo(ctx context.Context) ([]string, error) {
+	if !n.IsRunning() {
+		return nil, errors.New("node is not running")
+	}
+	
+	// This would typically make an API call to get peer info
+	// For now, return bootstrap peers
+	bootstrapIPs, _ := n.network.GetBootstrapIPsAndIDs(n)
+	return bootstrapIPs, nil
+}
+
+// GetMetrics retrieves metrics from the node
+func (n *Node) GetMetrics(ctx context.Context) ([]byte, error) {
+	if len(n.URI) == 0 {
+		return nil, errors.New("node URI not available")
+	}
+	
+	baseURI, cancel, err := n.GetLocalURI(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	
+	uri := baseURI + "/ext/metrics"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	
+	return io.ReadAll(resp.Body)
+}
