@@ -8,13 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -32,17 +31,17 @@ func FuzzTransactionParsing(f *testing.F) {
 	f.Add(txData)
 	
 	// Add data with IDs
-	withID := append([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}, ids.GenerateTestID().Bytes()...)
+	testID := ids.GenerateTestID()
+	withID := append([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}, testID[:]...)
 	f.Add(withID)
 	
-	parser, err := NewParser([]secp256k1fx.Factory{})
-	if err != nil {
-		f.Fatal(err)
-	}
+	// Parser is not available in this package, using Codec instead
+	codec := Codec
 	
 	f.Fuzz(func(t *testing.T, data []byte) {
 		// Try to parse as transaction
-		tx, err := parser.ParseTx(data)
+		var tx Tx
+		_, err := codec.Unmarshal(data, &tx)
 		if err != nil {
 			// Expected for invalid transaction data
 			return
@@ -63,7 +62,8 @@ func FuzzTransactionParsing(f *testing.F) {
 		}
 		
 		// Parse again and verify consistency
-		tx2, err := parser.ParseTx(bytes)
+		var tx2 Tx
+		_, err = codec.Unmarshal(bytes, &tx2)
 		if err != nil {
 			t.Errorf("Failed to re-parse serialized transaction: %v", err)
 			return
@@ -80,7 +80,8 @@ func FuzzBaseTx(f *testing.F) {
 	// Seed corpus
 	f.Add(uint64(1), uint32(1), []byte{})
 	f.Add(uint64(1000000), uint32(42), bytes.Repeat([]byte{0xff}, 32))
-	f.Add(uint64(0), uint32(0), ids.GenerateTestID().Bytes())
+	testID := ids.GenerateTestID()
+	f.Add(uint64(0), uint32(0), testID[:])
 	
 	c := linearcodec.NewDefault()
 	
@@ -94,7 +95,7 @@ func FuzzBaseTx(f *testing.F) {
 		// Create a base transaction
 		baseTx := &BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    networkID & 0xFFFFFFFF, // Limit to uint32
+				NetworkID:    uint32(networkID & 0xFFFFFFFF), // Limit to uint32
 				BlockchainID: ids.GenerateTestID(),
 				Outs: []*lux.TransferableOutput{
 					{
@@ -181,7 +182,7 @@ func FuzzCreateChainTx(f *testing.F) {
 			VMID:        vmID,
 			FxIDs:       []ids.ID{},
 			GenesisData: genesisData,
-			SubnetAuth:  &secp256k1fx.Input{},
+			NetAuth:     &secp256k1fx.Input{},
 		}
 		
 		// Try to serialize
@@ -300,7 +301,9 @@ func FuzzAddValidatorTx(f *testing.F) {
 func FuzzImportExportTx(f *testing.F) {
 	// Seed corpus
 	f.Add([]byte{}, []byte{})
-	f.Add(ids.GenerateTestID().Bytes(), ids.GenerateTestID().Bytes())
+	testID1 := ids.GenerateTestID()
+	testID2 := ids.GenerateTestID()
+	f.Add(testID1[:], testID2[:])
 	f.Add(bytes.Repeat([]byte{0xff}, 32), bytes.Repeat([]byte{0xaa}, 32))
 	
 	c := linearcodec.NewDefault()
@@ -423,10 +426,8 @@ func FuzzTransactionSignatures(f *testing.F) {
 	f.Add([]byte{}, []byte{})
 	f.Add(bytes.Repeat([]byte{0x01}, 65), bytes.Repeat([]byte{0x02}, 32))
 	
-	parser, err := NewParser([]secp256k1fx.Factory{})
-	if err != nil {
-		f.Fatal(err)
-	}
+	// Parser is not available in this package, using Codec instead
+	codec := Codec
 	
 	f.Fuzz(func(t *testing.T, sigData []byte, txData []byte) {
 		// Create a basic transaction
@@ -439,7 +440,7 @@ func FuzzTransactionSignatures(f *testing.F) {
 					Ins:          []*lux.TransferableInput{},
 				},
 			},
-			Creds: []secp256k1fx.Credential{},
+			Creds: []verify.Verifiable{},
 		}
 		
 		// Add credentials based on signature data
@@ -459,11 +460,11 @@ func FuzzTransactionSignatures(f *testing.F) {
 				}
 			}
 			
-			baseTx.Creds = append(baseTx.Creds, cred)
+			baseTx.Creds = append(baseTx.Creds, &cred)
 		}
 		
 		// Initialize the transaction
-		if err := baseTx.Initialize(); err != nil {
+		if err := baseTx.Initialize(codec); err != nil {
 			// Some combinations might be invalid
 			return
 		}
@@ -472,7 +473,8 @@ func FuzzTransactionSignatures(f *testing.F) {
 		bytes := baseTx.Bytes()
 		
 		// Try to parse back
-		parsed, err := parser.ParseTx(bytes)
+		var parsed Tx
+		_, err := codec.Unmarshal(bytes, &parsed)
 		if err != nil {
 			// Should not fail for a transaction we created
 			t.Errorf("Failed to parse transaction we created: %v", err)

@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/consensus/utils/set"
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
@@ -51,7 +52,6 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/consensus/core"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 
@@ -167,8 +167,11 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = coremock.NewMockAppSender(gomock.NewController(t))
-	res.sender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	res.sender = &coremock.MockAppSender{
+		SendAppGossipSpecificF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+			return nil
+		},
+	}
 
 	platformMetrics, err := metrics.New(registerer)
 	require.NoError(err)

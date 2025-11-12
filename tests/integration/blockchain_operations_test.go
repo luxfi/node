@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
@@ -31,11 +32,9 @@ func TestCChainOperations(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -47,7 +46,8 @@ func TestCChainOperations(t *testing.T) {
 	}()
 
 	// Get node URI and create client
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(fn func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 	infoClient := info.NewClient(nodeURI)
@@ -79,11 +79,9 @@ func TestXChainOperations(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -95,7 +93,8 @@ func TestXChainOperations(t *testing.T) {
 	}()
 
 	// Get node URI and create client
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(fn func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 	infoClient := info.NewClient(nodeURI)
@@ -127,11 +126,9 @@ func TestPChainOperations(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -143,7 +140,8 @@ func TestPChainOperations(t *testing.T) {
 	}()
 
 	// Get node URI and create client
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(fn func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 	infoClient := info.NewClient(nodeURI)
@@ -180,11 +178,9 @@ func TestBlockProduction(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -196,7 +192,8 @@ func TestBlockProduction(t *testing.T) {
 	}()
 
 	// Get node URI and create client
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(fn func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 	infoClient := info.NewClient(nodeURI)

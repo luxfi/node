@@ -14,8 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/log"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -130,9 +129,20 @@ func TestRejectBlock(t *testing.T) {
 				blk.Parent(): nil,
 				blk.ID():     nil,
 			}
+			testCtx := testcontext.New(context.Background())
 			rejector := &rejector{
 				backend: &backend{
-					ctx:          testcontext.New(context.Background()),
+					ctx: &consensusctx.Context{
+						NetworkID: testCtx.NetworkID,
+						NetID:     testCtx.NetID,
+						ChainID:   testCtx.ChainID,
+						NodeID:    testCtx.NodeID,
+						XChainID:  testCtx.XChainID,
+						CChainID:  testCtx.CChainID,
+						XAssetID:  testCtx.XAssetID,
+						LUXAssetID: testCtx.LUXAssetID,
+						Log:       testCtx.Log,
+					},
 					blkIDToState: blkIDToState,
 					Mempool:      mempool,
 					state:        state,

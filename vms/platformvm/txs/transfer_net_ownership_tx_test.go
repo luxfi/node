@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -21,7 +20,6 @@ import (
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -286,10 +284,8 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransferNetOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferNetOwnershipTx.Ins)
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
+	ctx2 := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
@@ -457,18 +453,16 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexTransferNetOwnershipTxBytes, unsignedComplexTransferNetOwnershipTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
-	ctx3 := context.Background()
-	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		QuantumID: 1,
+	ctx3 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
-	})
-	testCtx := testcontext.New(ctx3)
-	testCtx.BCLookup = aliaser
-	unsignedComplexTransferNetOwnershipTx.InitCtx(testCtx)
+	}
+	unsignedComplexTransferNetOwnershipTx.InitCtx(ctx3)
 
 	unsignedComplexTransferNetOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferNetOwnershipTx, "", "\t")
 	require.NoError(err)

@@ -4,7 +4,6 @@
 package txs
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"math"
@@ -14,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -23,7 +21,6 @@ import (
 	"github.com/luxfi/node/vms/components/lux/luxmock"
 	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 
@@ -626,8 +623,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddPrimaryTxBytes, unsignedComplexAddPrimaryTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.UnitTestID,
@@ -635,7 +632,6 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	}
 	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
 
@@ -1391,8 +1387,8 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddNetTxBytes, unsignedComplexAddNetTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.UnitTestID,
@@ -1400,7 +1396,6 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	}
 	unsignedComplexAddNetTx.InitCtx(ctx3)
 

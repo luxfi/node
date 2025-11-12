@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -22,16 +23,14 @@ func TestServiceGetProposedHeight(t *testing.T) {
 	// Create a proposervm with mocked core VM  using existing test setup
 	activationTime := time.Unix(0, 0)
 	durangoTime := time.Unix(0, 0)
-	coreVM, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
+	_, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
 	// Set up validator state to return a known height
 	currentPChainHeight := uint64(100)
-	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return currentPChainHeight, nil
-	}
+	// GetMinimumHeightF is already set in initTestProposerVM, so we only need GetCurrentHeightF
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return currentPChainHeight, nil
 	}
@@ -58,19 +57,16 @@ func TestNewHTTPHandler(t *testing.T) {
 	// Use the existing test setup
 	activationTime := time.Unix(0, 0)
 	durangoTime := time.Unix(0, 0)
-	_, valState, proVM, db := initTestProposerVM(t, activationTime, durangoTime, 0)
+	_, valState, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	// Initialize state if not already done
-	if proVM.State == nil {
-		baseState, err := state.NewMetered(db, "test", metric.NewRegistry())
-		require.NoError(err)
-		proVM.State = baseState
-	}
+	// The state and windower should already be initialized by initTestProposerVM
 	if proVM.Windower == nil {
-		proVM.Windower = proposer.New(valState, proVM.ctx.NetworkID, proVM.ctx.ChainID)
+		networkID := ids.ID{}
+		copy(networkID[:], []byte{byte(proVM.ctx.NetworkID)})
+		proVM.Windower = proposer.New(valState, networkID, proVM.ctx.ChainID)
 	}
 
 	// Test creating the HTTP handler

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
@@ -40,7 +41,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
@@ -89,7 +89,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 	)
 	require.NoError(fx.InitializeVM(&secp256k1fx.TestVM{
 		Clk: *clock,
-		Log: logging.NoLog{},
+		Log: log.NoLog{},
 	}))
 
 	return &verifier{
@@ -111,7 +111,6 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 			Clk: clock,
 			Fx:  fx,
 			FlowChecker: utxo.NewVerifier(
-				c.Context,
 				clock,
 				fx,
 			),
@@ -201,7 +200,11 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		wallet = txstest.NewWallet(
 			t,
 			verifier.ctx,
-			verifier.txExecutorBackend.Config,
+			&config.Config{
+				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
+				Chains:                 verifier.txExecutorBackend.Config.Chains,
+			},
 			verifier.state,
 			secp256k1fx.NewKeychain(genesis.EWOQKey),
 			nil, // subnetIDs
@@ -356,7 +359,11 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		wallet = txstest.NewWallet(
 			t,
 			verifier.ctx,
-			verifier.txExecutorBackend.Config,
+			&config.Config{
+				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
+				Chains:                 verifier.txExecutorBackend.Config.Chains,
+			},
 			verifier.state,
 			secp256k1fx.NewKeychain(genesis.EWOQKey),
 			nil,                    // subnetIDs
@@ -475,7 +482,10 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx:     testcontext.New(context.Background()),
+		ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 	}
 	manager := &manager{
 		txExecutorBackend: &executor.Backend{
@@ -547,7 +557,10 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx:     testcontext.New(context.Background()),
+		ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 	}
 	manager := &manager{
 		txExecutorBackend: &executor.Backend{
@@ -607,7 +620,10 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx:          testcontext.New(context.Background()),
+		ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -678,7 +694,10 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx:          testcontext.New(context.Background()),
+				ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -777,7 +796,10 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx:          testcontext.New(context.Background()),
+				ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -853,7 +875,10 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx:     testcontext.New(context.Background()),
+		ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -909,7 +934,10 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx:     testcontext.New(context.Background()),
+		ctx: &consensuscontext.Context{
+			NetworkID: constants.UnitTestID,
+			ChainID:   constants.PlatformChainID,
+		},
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -962,7 +990,10 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx:   testcontext.New(context.Background()),
+			ctx: &consensuscontext.Context{
+				NetworkID: constants.UnitTestID,
+				ChainID:   constants.PlatformChainID,
+			},
 		},
 	}
 
@@ -1004,7 +1035,10 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx:   testcontext.New(context.Background()),
+			ctx: &consensuscontext.Context{
+				NetworkID: constants.UnitTestID,
+				ChainID:   constants.PlatformChainID,
+			},
 		},
 	}
 
@@ -1045,7 +1079,10 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx:   testcontext.New(context.Background()),
+			ctx: &consensuscontext.Context{
+				NetworkID: constants.UnitTestID,
+				ChainID:   constants.PlatformChainID,
+			},
 		},
 	}
 
@@ -1087,7 +1124,10 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx:   testcontext.New(context.Background()),
+			ctx: &consensuscontext.Context{
+				NetworkID: constants.UnitTestID,
+				ChainID:   constants.PlatformChainID,
+			},
 		},
 	}
 
@@ -1111,7 +1151,11 @@ func TestBlockExecutionWithComplexity(t *testing.T) {
 	wallet := txstest.NewWallet(
 		t,
 		verifier.ctx,
-		verifier.txExecutorBackend.Config,
+		&config.Config{
+			TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+			SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
+			Chains:                 verifier.txExecutorBackend.Config.Chains,
+		},
 		verifier.state,
 		secp256k1fx.NewKeychain(genesis.EWOQKey),
 		nil, // subnetIDs
@@ -1351,16 +1395,16 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 			networkID:         constants.UnitTestID,
 		},
 		{
-			name:              "Before F Upgrade - L1 validators evicted - on Fuji",
+			name:              "Before F Upgrade - L1 validators evicted - on Testnet",
 			currentFork:       upgradetest.Etna,
 			durationToAdvance: time.Second,
-			networkID:         constants.FujiID,
+			networkID:         constants.TestnetID,
 		},
 		{
-			name:              "After F Upgrade - L1 validators evicted - on Fuji",
+			name:              "After F Upgrade - L1 validators evicted - on Testnet",
 			currentFork:       upgradetest.Fortuna,
 			durationToAdvance: time.Second,
-			networkID:         constants.FujiID,
+			networkID:         constants.TestnetID,
 		},
 	}
 	for _, test := range tests {

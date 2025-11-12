@@ -153,7 +153,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	chainDB := prefixdb.New([]byte{0}, db)
 	atomicDB := prefixdb.New([]byte{1}, db)
 
-	vm.clock.Set(latestForkTime)
+	vm.Clock().Set(latestForkTime)
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
@@ -162,44 +162,34 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	}
 	ctx.SharedMemory = msm
 
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
-	appSender := &enginetest.Sender{}
+	appSender := &sendertest.Sender{}
 	appSender.CantSendAppGossip = true
-	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+	appSender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
 		return nil
 	}
-	chainCtx := &linearblock.ChainContext{
-		Context:          luxCtx,
-	}
-
-	// Create DB manager
-	dbManager := &simpleDBManager{
-		db: chainDB,
-	}
-
-	// Create message channel
-	toEngine := make(chan linearblock.Message, 1)
 
 	dynamicConfigBytes := []byte(`{"network":{"max-validator-set-staleness":0}}`)
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
-		chainDB,
-		genesistest.NewBytes(t, genesistest.Config{}),
-		nil,
-		dynamicConfigBytes,
-		nil,
-		appSender,
+		ctx,                                        // chainCtxIntf
+		chainDB,                                    // dbManagerIntf
+		genesistest.NewBytes(t, genesistest.Config{}), // genesisBytes
+		nil,                                        // upgradeBytes
+		dynamicConfigBytes,                         // configBytes
+		make(chan linearblock.Message, 1),         // toEngineIntf
+		nil,                                        // fxsIntf
+		appSender,                                  // appSenderIntf
 	))
 
 	// align chain time and local clock
-	vm.state.SetTimestamp(vm.clock.Time())
+	vm.state.SetTimestamp(vm.Clock().Time())
 	vm.state.SetFeeState(gas.State{
 		Capacity: defaultDynamicFeeConfig.MaxCapacity,
 	})
 
-	require.NoError(vm.SetState(context.Background(), interfaces.NormalOp))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
 
 	wallet := newWallet(t, vm, walletConfig{
 		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
@@ -221,19 +211,40 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(testNet1))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	t.Cleanup(func() {
-		ctx.Lock.Lock()
+		vm.ctx.Lock.Lock()
 		defer ctx.Lock.Unlock()
 
 		require.NoError(vm.Shutdown(context.Background()))
 	})
 
 	return vm, db, msm
+}
+
+func buildAndAcceptStandardBlock(vm *VM) error {
+	blk, err := vm.Builder.BuildBlock(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		return err
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		return err
+	}
+
+	if err := vm.SetPreference(context.Background(), blk.ID()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type walletConfig struct {
@@ -321,7 +332,7 @@ func TestAddValidatorCommit(t *testing.T) {
 	wallet := newWallet(t, vm, walletConfig{})
 
 	var (
-		endTime      = vm.clock.Time().Add(defaultMinStakingDuration)
+		endTime      = vm.Clock().Time().Add(defaultMinStakingDuration)
 		nodeID       = ids.GenerateTestNodeID()
 		rewardsOwner = &secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -331,10 +342,6 @@ func TestAddValidatorCommit(t *testing.T) {
 
 	sk, err := localsigner.New()
 	require.NoError(err)
-	pop, err := signer.NewProofOfPossession(sk)
-	require.NoError(err)
-
-	// Generate proof of possession
 	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
@@ -357,7 +364,7 @@ func TestAddValidatorCommit(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -459,9 +466,9 @@ func TestAddValidatorReject(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -521,9 +528,9 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	err = vm.issueTxFromRPC(tx)
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 	require.ErrorIs(err, txexecutor.ErrDuplicateValidator)
 }
 
@@ -562,7 +569,7 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -611,9 +618,9 @@ func TestAddNetValidatorReject(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -660,7 +667,7 @@ func TestRewardValidatorAccept(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
-	vm.clock.Set(genesistest.DefaultValidatorEndTime)
+	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
 
 	// Advance time and create proposal to reward a genesis validator
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -729,7 +736,7 @@ func TestRewardValidatorReject(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
-	vm.clock.Set(genesistest.DefaultValidatorEndTime)
+	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
 
 	// Advance time and create proposal to reward a genesis validator
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -823,7 +830,7 @@ func TestCreateChain(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -867,7 +874,7 @@ func TestCreateNet(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -879,11 +886,11 @@ func TestCreateNet(t *testing.T) {
 
 	netIDs, err := vm.state.GetNetIDs()
 	require.NoError(err)
-	require.Contains(netIDs, netID)
+	require.Contains(netIDs, subnetID)
 
 	// Now that we've created a new subnet, add a validator to that subnet
 	nodeID := genesistest.DefaultNodeIDs[0]
-	startTime := vm.clock.Time().Add(txexecutor.SyncBound).Add(1 * time.Second)
+	startTime := vm.Clock().Time().Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
 	// [startTime, endTime] is subset of time keys[0] validates default subnet so tx is valid
 	addValidatorTx, err := wallet.IssueAddNetValidatorTx(
@@ -899,7 +906,7 @@ func TestCreateNet(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -916,7 +923,7 @@ func TestCreateNet(t *testing.T) {
 	require.NoError(err)
 
 	// remove validator from current validator set
-	vm.clock.Set(endTime)
+	vm.Clock().Set(endTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, err = vm.state.GetPendingValidator(netID, nodeID)
@@ -989,7 +996,7 @@ func TestAtomicImport(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -1057,7 +1064,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	// validatorIDs := vm.Config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 	// require.NoError(vm.uptimeManager.StopTracking(validatorIDs))
 
-	require.NoError(vm.SetState(context.Background(), interfaces.NormalOp))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1232,13 +1239,13 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	}}
 
 	// Advance the time so that the VM will want to remove the first validator.
-	vm.clock.Set(genesistest.DefaultValidatorEndTime)
+	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
 
 	ctx := consensustest.Context(t, consensustest.PChainID)
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		ctx.Lock.Unlock()
+		vm.ctx.Lock.Unlock()
 	}()
 
 	require.NoError(vm.Initialize(
@@ -1439,11 +1446,11 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Allow incoming messages to be routed to the new chain
 	chainRouter.AddChain(context.Background(), h)
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 
 	h.Start(context.Background(), false)
 
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	// Mark the validator as connected. We should request the accepted frontier.
 	var reqID uint32
@@ -1570,7 +1577,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 	require.Equal(commitBlock.ID(), vm.manager.Preferred())
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	chainRouter.Shutdown(context.Background())
 }
 
@@ -1592,10 +1599,10 @@ func TestUnverifiedParent(t *testing.T) {
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.XAssetID = ids.GenerateTestID()
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		ctx.Lock.Unlock()
+		vm.ctx.Lock.Unlock()
 	}()
 
 	require.NoError(vm.Initialize(
@@ -1892,7 +1899,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.XAssetID = ids.GenerateTestID()
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
@@ -1913,7 +1920,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		ctx.Lock.Unlock()
+		vm.ctx.Lock.Unlock()
 	}()
 
 	initialClkTime := latestForkTime.Add(time.Second)
@@ -1921,10 +1928,10 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
 	require.NoError(vm.SetState(context.Background(), interfaces.Bootstrapping))
-	require.NoError(vm.SetState(context.Background(), interfaces.NormalOp))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
 
 	// Fast forward clock to time for genesis validators to leave
-	vm.clock.Set(genesistest.DefaultValidatorEndTime)
+	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
 
 	// evaluate a genesis validator for reward
 	blk, err := vm.Builder.BuildBlock(context.Background())
@@ -2016,7 +2023,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -2029,7 +2036,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -2096,7 +2103,7 @@ func TestTransferNetOwnershipTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -2116,7 +2123,7 @@ func TestTransferNetOwnershipTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(transferNetOwnershipTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -2152,7 +2159,7 @@ func TestBaseTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(baseTx))
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
@@ -2192,9 +2199,9 @@ func TestPruneMempool(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(baseTx))
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	// [baseTx] should be in the mempool.
 	baseTxID := baseTx.ID()
@@ -2237,9 +2244,9 @@ func TestPruneMempool(t *testing.T) {
 	)
 	require.NoError(err)
 
-	ctx.Lock.Unlock()
+	vm.ctx.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	// [addValidatorTx] and [baseTx] should be in the mempool.
 	addValidatorTxID := addValidatorTx.ID()
@@ -2249,11 +2256,11 @@ func TestPruneMempool(t *testing.T) {
 	require.True(ok)
 
 	// Advance clock to [endTime], making [addValidatorTx] invalid.
-	vm.clock.Set(endTime)
+	vm.Clock().Set(endTime)
 
 	vm.ctx.Lock.Unlock()
 	require.NoError(vm.pruneMempool())
-	ctx.Lock.Lock()
+	vm.ctx.Lock.Lock()
 
 	// [addValidatorTx] should be ejected from the mempool.
 	// [baseTx] should still be in the mempool.

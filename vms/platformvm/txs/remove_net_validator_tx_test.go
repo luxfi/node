@@ -4,24 +4,22 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-	
 	"encoding/json"
 	"errors"
 	"testing"
+
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -273,10 +271,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
+	ctx2 := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
@@ -435,18 +431,16 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexRemoveValidatorTxBytes, unsignedComplexRemoveValidatorTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
-	ctx3 := context.Background()
-	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		QuantumID: 1,
+	ctx3 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
-	})
-	testCtx := testcontext.New(ctx3)
-	testCtx.BCLookup = aliaser
-	unsignedComplexRemoveValidatorTx.InitCtx(testCtx)
+	}
+	unsignedComplexRemoveValidatorTx.InitCtx(ctx3)
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
 	require.NoError(err)

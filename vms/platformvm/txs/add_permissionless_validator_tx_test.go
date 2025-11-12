@@ -4,8 +4,6 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-	
 	"encoding/hex"
 	"math"
 	"testing"
@@ -13,9 +11,8 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -723,7 +720,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 func TestAddPermissionlessNetValidator(t *testing.T) {
 	require := require.New(t)
 
-	var ctx context.Context
+	// ctx variable is not needed
 	// Use empty chain ID for serialization test to match expected bytes
 	testChainID := ids.Empty
 
@@ -846,8 +843,9 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
-	ctx = &consensusctx.Context{
-		QuantumID: 1,
+	ctx := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1147,12 +1145,13 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx = &consensusctx.Context{
-		QuantumID: 1,
+	ctx2 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
-	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
+	require.NoError(complexAddNetTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version

@@ -15,12 +15,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/coremock"
 	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
@@ -32,7 +29,6 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -46,9 +42,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
-	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
+
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/validators/validatorstest"
@@ -262,7 +256,11 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	return txstest.NewWallet(
 		t,
 		consensusCtx,
-		e.config,
+		&config.Config{
+			TrackedNets:            e.config.TrackedNets,
+			SybilProtectionEnabled: e.config.SybilProtectionEnabled,
+			Chains:                 e.config.Chains,
+		},
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
 		c.subnetIDs,

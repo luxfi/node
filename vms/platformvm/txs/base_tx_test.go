@@ -12,13 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -375,8 +373,8 @@ func TestBaseTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexBaseTxBytes, unsignedComplexBaseTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
@@ -384,9 +382,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
-	testCtx := testcontext.New(ctx3)
-	testCtx.BCLookup = aliaser
-	unsignedComplexBaseTx.InitCtx(testCtx)
+	unsignedComplexBaseTx.InitCtx(ctx3)
 
 	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")
 	require.NoError(err)

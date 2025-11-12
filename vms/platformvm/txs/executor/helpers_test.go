@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensuscontext "github.com/luxfi/consensus/context"
 	validators "github.com/luxfi/consensus/validator"
 	consensusuptime "github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database/memdb"
@@ -75,7 +76,7 @@ type environment struct {
 	msm            *mutableSharedMemory
 	state          state.State
 	states         map[ids.ID]state.Chain
-	uptimes        uptime.Calculator
+	uptimes        validators.UptimeCalculator
 	backend        Backend
 }
 
@@ -127,16 +128,36 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	uptimes := consensusuptime.NoOpCalculator{}
 	utxosHandler := utxo.NewHandler(ctx.Context, &mockable.Clock{}, fx)
 
+	// Convert testcontext.Context to consensus.Context
+	consensusCtx := &consensuscontext.Context{
+		NetworkID:   ctx.NetworkID,
+		NetID:       ctx.NetID,
+		ChainID:     ctx.ChainID,
+		NodeID:      ctx.NodeID,
+		PublicKey:   ctx.PublicKey,
+		XChainID:    ctx.XChainID,
+		CChainID:    ctx.CChainID,
+		DChainID:    ctx.DChainID,
+		LUXAssetID:  ctx.LUXAssetID,
+		ValidatorState: ctx.ValidatorState,
+		SharedMemory: ctx.SharedMemory,
+		ChainDataDir: ctx.ChainDataDir,
+		Log:         ctx.Log,
+		Lock:        ctx.Lock,
+		Keystore:    ctx.Keystore,
+		Signer:      ctx.Signer,
+		WarpSigner:  ctx.WarpSigner,
+	}
+
 	backend := Backend{
 		Config:       config,
-		Ctx:          ctx,
+		Ctx:          consensusCtx,
 		Clk:          &mockable.Clock{},
 		Bootstrapped: &isBootstrapped,
 		Fx:           fx,
 		FlowChecker:  utxosHandler,
 		Uptimes:      uptimes,
 		Rewards:      rewards,
-		Lock:         ctx.Lock,
 	}
 
 	env := &environment{
@@ -191,9 +212,29 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
+	// Convert testcontext.Context to consensus.Context
+	consensusCtx := &consensuscontext.Context{
+		NetworkID:   e.ctx.NetworkID,
+		NetID:       e.ctx.NetID,
+		ChainID:     e.ctx.ChainID,
+		NodeID:      e.ctx.NodeID,
+		PublicKey:   e.ctx.PublicKey,
+		XChainID:    e.ctx.XChainID,
+		CChainID:    e.ctx.CChainID,
+		DChainID:    e.ctx.DChainID,
+		LUXAssetID:  e.ctx.LUXAssetID,
+		ValidatorState: e.ctx.ValidatorState,
+		SharedMemory: e.ctx.SharedMemory,
+		ChainDataDir: e.ctx.ChainDataDir,
+		Log:         e.ctx.Log,
+		Lock:        e.ctx.Lock,
+		Keystore:    e.ctx.Keystore,
+		Signer:      e.ctx.Signer,
+		WarpSigner:  e.ctx.WarpSigner,
+	}
 	return txstest.NewWallet(
 		t,
-		e.ctx,
+		consensusCtx,
 		c.config,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),

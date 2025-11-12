@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -515,7 +514,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 
 			for _, staker := range test.subnetStakers {
 				wallet := newWallet(t, env, walletConfig{
-					subnetIDs: []ids.ID{subnetID},
+					subnetIDs: []ids.ID{netID},
 				})
 
 				tx, err := wallet.IssueAddNetValidatorTx(
@@ -606,7 +605,7 @@ func TestBanffStandardBlockRemoveNetValidator(t *testing.T) {
 	env.config.TrackedNets.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		subnetIDs: []ids.ID{netID},
 	})
 
 	// Add a subnet validator to the staker set
@@ -710,7 +709,7 @@ func TestBanffStandardBlockTrackedNet(t *testing.T) {
 			}
 
 			wallet := newWallet(t, env, walletConfig{
-				subnetIDs: []ids.ID{subnetID},
+				subnetIDs: []ids.ID{netID},
 			})
 
 			// Add a subnet validator to the staker set

@@ -14,8 +14,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
@@ -1492,9 +1491,9 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 		return nil, err
 	}
 	// Create a context with the proper IDs
-	ctx := consensus.WithIDs(context.Background(), consensus.IDs{
+	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		ChainID:   constants.PlatformChainID,
-	})
+	}
 	return tx, tx.SyntacticVerify(ctx)
 }

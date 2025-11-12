@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
@@ -53,7 +54,7 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			env := newEnvironment(t, upgradetest.Banff)
+			env := newEnvironment(t, upgradetest.Latest)
 			env.config.UpgradeConfig.ApricotPhase3Time = ap3Time
 			env.ctx.Lock.Lock()
 			defer env.ctx.Lock.Unlock()
@@ -61,8 +62,28 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 			env.state.SetTimestamp(test.time) // to duly set fee
 
 			cfg := *env.config
-			cfg.CreateNetTxFee = test.fee
-			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
+			cfg.StaticFeeConfig.CreateNetTxFee = test.fee
+			// Convert context for wallet factory
+			consensusCtx := &consensuscontext.Context{
+				NetworkID:   env.ctx.NetworkID,
+				NetID:       env.ctx.NetID,
+				ChainID:     env.ctx.ChainID,
+				NodeID:      env.ctx.NodeID,
+				PublicKey:   env.ctx.PublicKey,
+				XChainID:    env.ctx.XChainID,
+				CChainID:    env.ctx.CChainID,
+				DChainID:    env.ctx.DChainID,
+				LUXAssetID:  env.ctx.LUXAssetID,
+				ValidatorState: env.ctx.ValidatorState,
+				SharedMemory: env.ctx.SharedMemory,
+				ChainDataDir: env.ctx.ChainDataDir,
+				Log:         env.ctx.Log,
+				Lock:        env.ctx.Lock,
+				Keystore:    env.ctx.Keystore,
+				Signer:      env.ctx.Signer,
+				WarpSigner:  env.ctx.WarpSigner,
+			}
+			factory := txstest.NewWalletFactory(consensusCtx, &cfg, env.state)
 			builder, signer := factory.NewWallet()
 			utx, err := builder.NewCreateNetTx(
 				&secp256k1fx.OutputOwners{},
@@ -77,7 +98,7 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 			stateDiff.SetTimestamp(test.time)
 
 			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
-			executor := Executor{
+			executor := StandardTxExecutor{
 				Backend:       &env.backend,
 				FeeCalculator: feeCalculator,
 				State:         stateDiff,

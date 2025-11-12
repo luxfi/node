@@ -137,6 +137,15 @@ func (m *mockValidatorState) GetCurrentValidatorSet(
 	return nil, m.height, nil
 }
 
+func (m *mockValidatorState) GetWarpValidatorSet(
+	ctx context.Context,
+	height uint64,
+	netID ids.ID,
+) (*validators.WarpSet, error) {
+	// Not used in this test
+	return nil, nil
+}
+
 var _ TxVerifier = (*testTxVerifier)(nil)
 
 type testTxVerifier struct {

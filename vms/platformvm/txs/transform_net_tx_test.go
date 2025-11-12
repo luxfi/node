@@ -4,16 +4,15 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-	
 	"encoding/json"
 	"testing"
+
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -21,7 +20,6 @@ import (
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -351,10 +349,8 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
+	ctx2 := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-
 		QuantumID: 1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
@@ -539,18 +535,16 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexTransformTxBytes, unsignedComplexTransformTxBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// This functionality is now handled differently
 
-	ctx3 := context.Background()
-	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		QuantumID: 1,
+	ctx3 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
-	})
-	testCtx := testcontext.New(ctx3)
-	testCtx.BCLookup = aliaser
-	unsignedComplexTransformTx.InitCtx(testCtx)
+	}
+	unsignedComplexTransformTx.InitCtx(ctx3)
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
 	require.NoError(err)
