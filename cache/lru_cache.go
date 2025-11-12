@@ -12,6 +12,13 @@ import (
 
 var _ Cacher[struct{}, struct{}] = (*LRU[struct{}, struct{}])(nil)
 
+// NewLRU creates a new LRU cache with the specified size
+func NewLRU[K comparable, V any](size int) *LRU[K, V] {
+	return &LRU[K, V]{
+		Size: size,
+	}
+}
+
 // LRU is a key value store with bounded size. If the size is attempted to be
 // exceeded, then an element is removed from the cache before the insertion is
 // done, based on evicting the least recently used value.

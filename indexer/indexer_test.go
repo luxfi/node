@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus"
+	nodeconsensus "github.com/luxfi/node/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
@@ -103,9 +103,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  log.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
+		BlockAcceptorGroup:   nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  nodeconsensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -144,9 +144,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 log.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(),
+		BlockAcceptorGroup:  nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:     nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup: nodeconsensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -184,9 +184,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
+		BlockAcceptorGroup:   nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  nodeconsensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -240,7 +240,7 @@ func TestIndexer(t *testing.T) {
 	require.NotNil(blkIdx)
 
 	// Accept the container
-	err = blkIdx.Accept(context.Background(), blkID, blkBytes)
+	err = blkIdx.Accept(chain1Ctx, blkID, blkBytes)
 	require.NoError(err)
 
 	// Verify GetLastAccepted is right
@@ -281,9 +281,9 @@ func TestIndexer(t *testing.T) {
 	// Create a new indexer using the same baseDB to simulate restart
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones still have the chain registered
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
+	config.BlockAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
+	config.TxAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
+	config.VertexAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -350,7 +350,7 @@ func TestIndexer(t *testing.T) {
 	require.NotNil(blk2Idx)
 
 	// Accept the block
-	err = blk2Idx.Accept(context.Background(), blk2ID, blk2Bytes)
+	err = blk2Idx.Accept(chain2Ctx, blk2ID, blk2Bytes)
 	require.NoError(err)
 
 	// Verify GetLastAccepted is right
@@ -401,9 +401,9 @@ func TestIndexer(t *testing.T) {
 	// Re-open one more time and re-register chains
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones were closed
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
+	config.BlockAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
+	config.TxAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
+	config.VertexAcceptorGroup = nodeconsensus.NewAcceptorGroup(log.NoLog{})
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -439,9 +439,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
+		BlockAcceptorGroup:   nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  nodeconsensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -524,9 +524,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
+		BlockAcceptorGroup:   nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      nodeconsensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  nodeconsensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}

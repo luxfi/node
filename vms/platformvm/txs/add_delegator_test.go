@@ -142,7 +142,7 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx = &consensusctx.Context{
+	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
 		NetID:     constants.PrimaryNetworkID,

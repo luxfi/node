@@ -318,12 +318,19 @@ func (vm *VM) Initialize(
 	fmt.Printf("state.New() succeeded!\\n")
 	vm.log.Info("Platform VM state created successfully")
 
+	fmt.Printf("DEBUG: About to create validator manager\\n")
 	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
+	fmt.Printf("DEBUG: Validator manager created\\n")
 	vm.State = validatorManager
+	fmt.Printf("DEBUG: About to create utxo handler\\n")
 	utxoHandler := utxo.NewHandler(context.Background(), &vm.nodeClock, vm.fx)
+	fmt.Printf("DEBUG: UTXO handler created\\n")
 	// Create uptime manager with noop implementation for now
+	fmt.Printf("DEBUG: About to create uptime manager\\n")
 	vm.uptimeManager = &uptime.NoOpCalculator{}
+	fmt.Printf("DEBUG: About to call SetCalculator\\n")
 	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
+	fmt.Printf("DEBUG: SetCalculator completed\\n")
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Internal,
@@ -336,10 +343,13 @@ func (vm *VM) Initialize(
 		Bootstrapped: &vm.bootstrapped,
 	}
 
+	fmt.Printf("About to create mempool...\n")
 	mempool, err := pmempool.New("mempool", registerer)
 	if err != nil {
+		fmt.Printf("ERROR: pmempool.New() failed: %v\n", err)
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
+	fmt.Printf("Mempool created successfully!\n")
 
 	vm.manager = blockexecutor.NewManager(
 		mempool,
@@ -353,13 +363,28 @@ func (vm *VM) Initialize(
 	// Create wrapper for AppSender to adapt consensusmanblock.AppSender to network expected interface
 	adaptedAppSender := &appSenderAdapter{appSender}
 
-	// Type assert WarpSigner
-	warpSigner, ok := chainCtx.WarpSigner.(warp.Signer)
-	if !ok {
-		return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
+	// Type assert WarpSigner (may be nil for Platform chain)
+	fmt.Printf("About to type assert WarpSigner...\n")
+	var warpSigner warp.Signer
+	if chainCtx.WarpSigner != nil {
+		var ok bool
+		warpSigner, ok = chainCtx.WarpSigner.(warp.Signer)
+		if !ok {
+			fmt.Printf("ERROR: WarpSigner type assertion failed, got type: %T\n", chainCtx.WarpSigner)
+			return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
+		}
+		fmt.Printf("WarpSigner type assertion succeeded!\n")
+	} else {
+		fmt.Printf("WarpSigner is nil (expected for Platform chain)\n")
+		// Create a no-op warp signer for Platform chain
+		warpSigner = &noOpWarpSigner{}
 	}
 
 	// Create network
+	fmt.Printf("About to call network.New() with registerer:\n")
+	fmt.Printf("  registerer == nil: %v\n", registerer == nil)
+	fmt.Printf("  registerer type: %T\n", registerer)
+	
 	vm.Network, err = network.New(
 	vm.log,
 	vm.nodeID,
@@ -379,8 +404,10 @@ func (vm *VM) Initialize(
 	execConfig.Network,
 )
 if err != nil {
+	fmt.Printf("ERROR: network.New() failed with error: %v\n", err)
 	return fmt.Errorf("failed to initialize network: %w", err)
 }
+fmt.Printf("network.New() succeeded!\n")
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
 	// has better control of the context lock.
@@ -1001,4 +1028,11 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// For now, just block until context is cancelled
 	<-ctx.Done()
 	return consensuscore.MessageType(0), ctx.Err()
+}
+
+// noOpWarpSigner is a no-op implementation of warp.Signer for chains that don't need warp signing
+type noOpWarpSigner struct{}
+
+func (n *noOpWarpSigner) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
+	return nil, nil
 }

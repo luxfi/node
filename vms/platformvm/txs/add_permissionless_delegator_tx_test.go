@@ -4,8 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"encoding/json"
 	"errors"
 	"math"
@@ -14,6 +13,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -46,7 +46,6 @@ func testContext(networkID uint32, chainID, luxAssetID ids.ID) *consensusctx.Con
 func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
 
-	var ctx *consensusctx.Context
 	// Use empty chain ID for serialization test to match expected bytes
 	testChainID := ids.Empty
 
@@ -139,7 +138,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx = &consensusctx.Context{
+	ctx := &consensusctx.Context{
 		NetworkID:  1,
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
@@ -630,17 +629,15 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-
+	ctx2 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
 		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+		BCLookup:   aliaser,
 	}
-	testCtx := testcontext.New(ctx2)
-	testCtx.BCLookup = aliaser
-	unsignedComplexAddPrimaryTx.InitCtx(testCtx)
+	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
@@ -1397,17 +1394,15 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	ctx2 := context.Background()
-	ctx2 = &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-
+	ctx3 := &consensusctx.Context{
+		NetworkID:  constants.UnitTestID,
 		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
+		BCLookup:   aliaser,
 	}
-	testCtx := testcontext.New(ctx2)
-	testCtx.BCLookup = aliaser
-	unsignedComplexAddNetTx.InitCtx(testCtx)
+	unsignedComplexAddNetTx.InitCtx(ctx3)
 
 	unsignedComplexAddNetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddNetTx, "", "\t")
 	require.NoError(err)
@@ -1543,14 +1538,10 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensusctx.Context{
+	_ = &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
 		QuantumID: networkID,
+		NetID:     constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 
@@ -1651,7 +1642,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := luxmock.NewTransferableOut(ctrl)
+				stakeOut := luxmock.NewMockTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,

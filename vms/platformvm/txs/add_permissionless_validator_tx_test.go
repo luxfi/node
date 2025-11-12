@@ -1592,7 +1592,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := luxmock.NewTransferableOut(ctrl)
+				stakeOut := luxmock.NewMockTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,

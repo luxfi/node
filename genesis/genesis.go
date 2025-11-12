@@ -446,6 +446,12 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},
+		{
+			GenesisData: []byte(`{}`),
+			NetID:       constants.PrimaryNetworkID,
+			VMID:        constants.QVMID,
+			Name:        "Q-Chain",
+		},
 	}
 
 	pChainGenesis, err := genesis.New(

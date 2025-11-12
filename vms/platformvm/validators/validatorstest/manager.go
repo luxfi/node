@@ -41,3 +41,11 @@ func (manager) OnAcceptedBlockID(ids.ID) {}
 func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*consensusvalidators.GetValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }
+
+func (manager) GetWarpValidatorSet(context.Context, uint64, ids.ID) (*consensusvalidators.WarpSet, error) {
+	return nil, nil
+}
+
+func (manager) GetWarpValidatorSets(context.Context, []uint64, []ids.ID) (map[ids.ID]map[uint64]*consensusvalidators.WarpSet, error) {
+	return nil, nil
+}

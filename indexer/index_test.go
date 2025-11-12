@@ -4,7 +4,6 @@
 package indexer
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -25,8 +24,7 @@ func TestIndex(t *testing.T) {
 	baseDB := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, testChainID)
-	ctx := context.Background()
+	ctx := consensustest.Context(t, testChainID)
 
 	idx, err := newIndex(baseDB, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
@@ -113,8 +111,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, testChainID)
-	ctx := context.Background()
+	ctx := consensustest.Context(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
@@ -153,8 +150,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, testChainID)
-	ctx := context.Background()
+	ctx := consensustest.Context(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
