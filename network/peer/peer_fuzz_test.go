@@ -6,7 +6,8 @@ package peer
 import (
 	"bytes"
 	"context"
-	"net"
+	"net/netip"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,10 +15,10 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/staking"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/version"
 )
@@ -37,14 +38,13 @@ func FuzzPeerMessageHandling(f *testing.F) {
 		}
 
 		// Create mock network components
-		ctx := context.Background()
 		nodeID := ids.GenerateTestNodeID()
 		networkID := uint32(1)
-		
+
 		// Create message creator
 		mc, err := message.NewCreator(
 			nil, // metric.Registerer
-			compression.TypeZstd, // Use TypeZstd instead
+			compression.TypeZstd,
 			10*time.Second,
 		)
 		if err != nil {
@@ -53,26 +53,24 @@ func FuzzPeerMessageHandling(f *testing.F) {
 
 		// Create peer config
 		config := &Config{
-			Log:                   log.NoLog{},
-			InboundMsgThrottler:   throttling.NewNoInboundThrottler(),
-			Network:               nil,
-			Router:                &testRouter{},
-			VersionCompatibility:  version.GetCompatibility(time.Now()),
-			MyNodeID:              nodeID,
-			MyNets:                set.Set[ids.ID]{},
-			Beacons:               nil,
-			Validators:            nil,
-			NetworkID:             networkID,
-			MessageCreator:        mc,
+			Log:                  log.NoLog{},
+			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
+			Network:              nil,
+			Router:               &testRouter{},
+			VersionCompatibility: version.GetCompatibility(time.Now()),
+			MyNodeID:             nodeID,
+			MyNets:               set.Set[ids.ID]{},
+			Beacons:              nil,
+			Validators:           nil,
+			NetworkID:            networkID,
+			MessageCreator:       mc,
 		}
 
 		// Create peer
 		peer := &peer{
-			Config:            config,
-			id:                nodeID,
-			trackedNets:       set.Set[ids.ID]{},
-			responseDeadlines: make(map[uint32]time.Time),
-			observedUptimes:   make(map[ids.ID]uint32),
+			Config:      config,
+			id:          nodeID,
+			trackedNets: set.Set[ids.ID]{},
 		}
 
 		// Test different message types based on fuzzing input
@@ -81,63 +79,71 @@ func FuzzPeerMessageHandling(f *testing.F) {
 		requestID := uint32(0)
 
 		switch msgType % 15 {
-		case 0: // Ping
-			msg, err = mc.Ping(chainID, requestID)
-		case 1: // Pong
-			msg, err = mc.Pong(chainID, requestID)
-		case 2: // Version
-			msg, err = mc.Version(
+		case 0: // Ping - takes only uptime
+			msg, err = mc.Ping(requestID)
+		case 1: // Pong - takes no parameters
+			msg, err = mc.Pong()
+		case 2: // Handshake
+			msg, err = mc.Handshake(
 				networkID,
 				uint64(time.Now().Unix()),
-				ips.IPPort{IP: net.IPv4(127, 0, 0, 1), Port: 9650},
-				version.CurrentApp.String(),
+				netip.MustParseAddrPort("127.0.0.1:9650"),
+				version.CurrentApp.Name,
+				uint32(version.CurrentApp.Major),
+				uint32(version.CurrentApp.Minor),
+				uint32(version.CurrentApp.Patch),
 				uint64(time.Now().Unix()),
 				[]byte{},
+				[]byte{},
 				[]ids.ID{},
+				[]uint32{},
+				[]uint32{},
+				[]byte{},
+				[]byte{},
+				false,
 			)
 		case 3: // PeerList
-			ips := []ips.ClaimedIPPort{
+			claimedIPs := []*ips.ClaimedIPPort{
 				{
-					Cert: []byte{},
-					IPPort: ips.IPPort{
-						IP:   net.IPv4(192, 168, 1, 1),
-						Port: 9650,
+					Cert: &staking.Certificate{
+						Raw: []byte{},
 					},
+					AddrPort:  netip.MustParseAddrPort("192.168.1.1:9650"),
 					Timestamp: uint64(time.Now().Unix()),
 				},
 			}
-			msg, err = mc.PeerList(ips, true)
-		case 4: // GetAcceptedFrontier
-			msg, err = mc.GetAcceptedFrontier(chainID, requestID)
-		case 5: // AcceptedFrontier
+			msg, err = mc.PeerList(claimedIPs, true)
+		case 4: // GetAcceptedFrontier - now takes deadline
+			msg, err = mc.GetAcceptedFrontier(chainID, requestID, time.Second)
+		case 5: // AcceptedFrontier - takes single containerID, not slice
+			containerID := ids.GenerateTestID()
+			msg, err = mc.AcceptedFrontier(chainID, requestID, containerID)
+		case 6: // GetAccepted - takes deadline
 			containerIDs := []ids.ID{ids.GenerateTestID()}
-			msg, err = mc.AcceptedFrontier(chainID, requestID, containerIDs)
-		case 6: // GetAccepted
-			containerIDs := []ids.ID{ids.GenerateTestID()}
-			msg, err = mc.GetAccepted(chainID, requestID, containerIDs)
+			msg, err = mc.GetAccepted(chainID, requestID, time.Second, containerIDs)
 		case 7: // Accepted
 			containerIDs := []ids.ID{ids.GenerateTestID()}
 			msg, err = mc.Accepted(chainID, requestID, containerIDs)
-		case 8: // Get
+		case 8: // Get - takes deadline but not engine type
 			containerID := ids.GenerateTestID()
-			msg, err = mc.Get(chainID, requestID, containerID)
+			msg, err = mc.Get(chainID, requestID, time.Second, containerID)
 		case 9: // Put
 			msg, err = mc.Put(chainID, requestID, msgData)
-		case 10: // PushQuery
-			msg, err = mc.PushQuery(chainID, requestID, msgData)
-		case 11: // PullQuery
+		case 10: // PushQuery - takes deadline and requested height
+			msg, err = mc.PushQuery(chainID, requestID, time.Second, msgData, 0)
+		case 11: // PullQuery - takes deadline and requested height
 			containerID := ids.GenerateTestID()
-			msg, err = mc.PullQuery(chainID, requestID, containerID)
-		case 12: // Chits
-			containerIDs := []ids.ID{ids.GenerateTestID()}
-			msg, err = mc.Chits(chainID, requestID, containerIDs)
+			msg, err = mc.PullQuery(chainID, requestID, time.Second, containerID, 0)
+		case 12: // Chits - takes 3 container IDs and acceptedHeight
+			containerID := ids.GenerateTestID()
+			msg, err = mc.Chits(chainID, requestID, containerID, containerID, containerID, 0)
 		case 13: // AppRequest
 			msg, err = mc.AppRequest(chainID, requestID, time.Second, msgData)
 		case 14: // AppResponse
 			msg, err = mc.AppResponse(chainID, requestID, msgData)
 		default:
 			// Use raw message data
-			msg, err = mc.Ping(chainID, requestID)
+			msg, err = mc.Ping(requestID)
 		}
 
 		if err != nil {
@@ -145,31 +151,33 @@ func FuzzPeerMessageHandling(f *testing.F) {
 			return
 		}
 
-		// Parse the message
-		inMsg, err := message.Parse(msg.Bytes())
+		// Parse the message - Creator embeds InboundMsgBuilder
+		inMsg, err := mc.Parse(msg.Bytes(), nodeID, func() {})
 		if err != nil {
 			// Parsing might fail
 			return
 		}
 
 		// Test that handling doesn't panic
+		// Use atomic operations for lastReceived (int64)
+		// and Set method for finishedHandshake (utils.Atomic[bool])
+		now := time.Now().Unix()
 		switch inMsg.Op() {
-		case message.Ping:
+		case message.PingOp:
 			// The actual handlePing is private, just update lastReceived
-			peer.lastReceived.Store(time.Now().Unix())
-		case message.Pong:
+			atomic.StoreInt64(&peer.lastReceived, now)
+		case message.PongOp:
 			// The actual handlePong is private, just update lastReceived
-			peer.lastReceived.Store(time.Now().Unix())
-		case message.Version:
-			// The actual handleVersion is private, just mark as handled
-			*peer.gotVersion = true
-			peer.finishedHandshake.Store(true)
-		case message.PeerList:
+			atomic.StoreInt64(&peer.lastReceived, now)
+		case message.HandshakeOp:
+			// The actual handleHandshake is private, just mark as handled
+			peer.finishedHandshake.Set(true)
+		case message.PeerListOp:
 			// The actual handlePeerList is private, just update lastReceived
-			peer.lastReceived.Store(time.Now().Unix())
+			atomic.StoreInt64(&peer.lastReceived, now)
 		default:
 			// Generic handler, just update lastReceived
-			peer.lastReceived.Store(time.Now().Unix())
+			atomic.StoreInt64(&peer.lastReceived, now)
 		}
 	})
 }
@@ -182,108 +190,81 @@ func FuzzPeerStateMachine(f *testing.F) {
 	f.Add(uint8(255), uint64(0xFFFFFFFFFFFFFFFF), uint32(0xFFFFFFFF))
 
 	f.Fuzz(func(t *testing.T, action uint8, timestamp uint64, value uint32) {
+		// Create message creator
+		mc, err := message.NewCreator(
+			nil,
+			compression.TypeZstd,
+			10*time.Second,
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		// Create peer config
 		config := &Config{
-			Log:                   log.NoLog{},
-			InboundMsgThrottler:   throttling.NewNoInboundThrottler(),
-			OutboundMsgThrottler:  throttling.NewNoOutboundThrottler(),
-			Network:               nil,
-			Router:                &testRouter{},
-			VersionCompatibility:  version.GetCompatibility(1),
-			MyNetID:               ids.GenerateTestID(),
-			MyTime:                uint64(time.Now().Unix()),
-			MaxClockDifference:    time.Minute,
-			PeerListSize:          100,
-			PingFrequency:         30 * time.Second,
-			PongTimeout:           60 * time.Second,
-			MaxPendingMessages:    1024,
-			MaxConnectionAttempts: 10,
-			ResourceTracker:       newTestResourceTracker(),
+			Log:                  log.NoLog{},
+			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
+			Network:              nil,
+			Router:               &testRouter{},
+			VersionCompatibility: version.GetCompatibility(time.Now()),
+			MyNodeID:             ids.GenerateTestNodeID(),
+			MyNets:               set.Set[ids.ID]{},
+			NetworkID:            1,
+			MessageCreator:       mc,
 		}
 
 		// Create peer
 		peer := &peer{
 			Config:            config,
 			id:                ids.GenerateTestNodeID(),
-			nodeVersion:       version.CurrentApp,
-			trackedSubnets:    set.Set[ids.ID]{},
-			responseDeadlines: make(map[uint32]time.Time),
-			observedUptimes:   make(map[ids.ID]uint32),
-			gotVersion:        new(bool),
-			version:           new(version.Application),
+			trackedNets:       set.Set[ids.ID]{},
+			finishedHandshake: utils.Atomic[bool]{},
+			onClosed:          make(chan struct{}),
 		}
 
 		// Perform actions based on fuzzing input
 		switch action % 10 {
-		case 0: // Set version
-			*peer.gotVersion = true
-			peer.version = &version.Application{
-				Name:  "test",
-				Major: int(value % 100),
-				Minor: int((value / 100) % 100),
-				Patch: int((value / 10000) % 100),
-			}
+		case 0: // Track subnet
+			netID := ids.GenerateTestID()
+			peer.trackedNets.Add(netID)
 
-		case 1: // Track subnet
-			subnetID := ids.GenerateTestID()
-			peer.trackedSubnets.Add(subnetID)
-
-		case 2: // Set uptime
-			subnetID := ids.GenerateTestID()
-			peer.observedUptimes[subnetID] = value
-
-		case 3: // Add response deadline
-			deadline := time.Unix(int64(timestamp), 0)
-			peer.responseDeadlines[value] = deadline
-
-		case 4: // Start closing
+		case 1: // Start closing
 			peer.StartClose()
 
-		case 5: // Set benched
-			if timestamp > 0 {
-				peer.benched.Store(true)
-			} else {
-				peer.benched.Store(false)
-			}
+		case 2: // Update observedUptime
+			peer.observedUptime.Set(uint32(value))
 
-		case 6: // Update last sent
-			peer.lastSent.Store(int64(timestamp))
+		case 3: // Update last sent
+			atomic.StoreInt64(&peer.lastSent, int64(timestamp))
 
-		case 7: // Update last received
-			peer.lastReceived.Store(int64(timestamp))
+		case 4: // Update last received
+			atomic.StoreInt64(&peer.lastReceived, int64(timestamp))
 
-		case 8: // Set connected state
+		case 5: // Set connected state
 			if value%2 == 0 {
-				peer.finishedHandshake.Store(true)
+				peer.finishedHandshake.Set(true)
 			} else {
-				peer.finishedHandshake.Store(false)
+				peer.finishedHandshake.Set(false)
 			}
 
-		case 9: // Check timeouts
-			now := time.Unix(int64(timestamp), 0)
-			for reqID, deadline := range peer.responseDeadlines {
-				if now.After(deadline) {
-					delete(peer.responseDeadlines, reqID)
-				}
-			}
+		default:
+			// No action
 		}
 
 		// Verify state consistency
-		if peer.closed.Load() && peer.finishedHandshake.Load() {
+		if peer.Closed() && peer.finishedHandshake.Get() {
 			t.Error("Peer cannot be both closed and have finished handshake")
 		}
 
 		// Test accessor methods don't panic
 		_ = peer.ID()
-		_ = peer.NodeVersion()
 		_ = peer.LastSent()
 		_ = peer.LastReceived()
 		_ = peer.Ready()
 		_ = peer.AwaitReady(context.Background())
 		_ = peer.Info()
 		_ = peer.Closed()
-		_ = peer.TrackedSubnets()
-		_ = peer.ObservedUptime(ids.GenerateTestID())
+		_ = peer.ObservedUptime()
 	})
 }
 
@@ -306,7 +287,7 @@ func FuzzPeerConnection(f *testing.F) {
 		// Create message
 		mc, err := message.NewCreator(
 			nil, // metric.Registerer
-			compression.TypeGzip,
+			compression.TypeZstd,
 			10*time.Second,
 		)
 		if err != nil {
@@ -315,33 +296,23 @@ func FuzzPeerConnection(f *testing.F) {
 
 		// Create peer config
 		config := &Config{
-			Log:                   log.NoLog{},
-			InboundMsgThrottler:   throttling.NewNoInboundThrottler(),
-			OutboundMsgThrottler:  throttling.NewNoOutboundThrottler(),
-			Network:               nil,
-			Router:                &testRouter{},
-			VersionCompatibility:  version.GetCompatibility(1),
-			MyNetID:               ids.GenerateTestID(),
-			MyTime:                uint64(time.Now().Unix()),
-			MaxClockDifference:    time.Minute,
-			PeerListSize:          100,
-			PingFrequency:         30 * time.Second,
-			PongTimeout:           60 * time.Second,
-			MaxPendingMessages:    int(bufferSize),
-			MaxConnectionAttempts: 10,
-			ResourceTracker:       newTestResourceTracker(),
+			Log:                  log.NoLog{},
+			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
+			Network:              nil,
+			Router:               &testRouter{},
+			VersionCompatibility: version.GetCompatibility(time.Now()),
+			NetworkID:            1,
+			MessageCreator:       mc,
+			MyNodeID:             ids.GenerateTestNodeID(),
+			MyNets:               set.Set[ids.ID]{},
 		}
 
 		// Create peer
 		peer := &peer{
-			Config:            config,
-			id:                ids.GenerateTestNodeID(),
-			nodeVersion:       version.CurrentApp,
-			trackedSubnets:    set.Set[ids.ID]{},
-			responseDeadlines: make(map[uint32]time.Time),
-			observedUptimes:   make(map[ids.ID]uint32),
-			gotVersion:        new(bool),
-			version:           new(version.Application),
+			Config:      config,
+			id:          ids.GenerateTestNodeID(),
+			trackedNets: set.Set[ids.ID]{},
+			onClosed:    make(chan struct{}),
 		}
 
 		// Test sending data
@@ -365,7 +336,7 @@ func FuzzPeerConnection(f *testing.F) {
 		// Test that message handling doesn't panic
 		msgBytes := msg.Bytes()
 		if len(msgBytes) > 0 {
-			parsed, err := message.Parse(msgBytes)
+			parsed, err := mc.Parse(msgBytes, ids.GenerateTestNodeID(), func() {})
 			if err != nil {
 				// Parsing might fail
 				return
@@ -385,11 +356,10 @@ func FuzzPeerConnection(f *testing.F) {
 			}
 		}
 
-		// Test resource tracking
+		// Test closing
 		peer.StartClose()
-		if !peer.closed.Load() {
-			t.Error("Peer should be closed after StartClose")
-		}
+		// Note: Closed() checks if onClosed channel is closed, which happens asynchronously
+		// So we can't immediately assert it's closed
 	})
 }
 
@@ -398,5 +368,7 @@ type testRouter struct{}
 
 func (r *testRouter) HandleInbound(context.Context, message.InboundMessage) {}
 
-// newTestResourceTracker is defined in test_peer.go
-// testResourceTracker type is already defined there
+// newTestResourceTracker returns a new test resource tracker
+func newTestResourceTracker() *testResourceTracker {
+	return &testResourceTracker{}
+}

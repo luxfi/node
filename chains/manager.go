@@ -35,6 +35,7 @@ import (
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	// "github.com/luxfi/consensus/core/tracker"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -970,6 +971,22 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				log.Err(err))
 		} else {
 			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+		}
+
+		// If we're in skip-bootstrap mode, transition VM directly to normal operation
+		if m.SkipBootstrap {
+			if stateVM, ok := vm.(interface {
+				SetState(context.Context, uint32) error
+			}); ok {
+				m.Log.Info("skip-bootstrap mode: transitioning VM to normal operation",
+					log.Stringer("chainID", chainParams.ID))
+				if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
+					m.Log.Error("failed to transition VM to normal operation",
+						log.Stringer("chainID", chainParams.ID),
+						log.Err(err))
+					// Continue anyway, as the VM might not require this
+				}
+			}
 		}
 
 		consensusEngine := consensuschain.New()
