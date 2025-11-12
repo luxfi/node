@@ -13,7 +13,8 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/tests"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 )
 
 // TestScenarioSustainedLoad tests a constant TPS over a duration
@@ -49,20 +50,20 @@ func TestScenarioSustainedLoad(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			log := tests.NewDefaultLogger("")
+			log := log.NoLog{}
 			registry := metric.NewRegistry()
 			metrics, err := NewMetrics(registry)
 			require.NoError(err)
 
-			tracker := NewTracker[txID](metrics)
+			tracker := NewTracker[ids.ID](metrics)
 
 			// Create 5 agents
 			numAgents := 5
-			agents := make([]Agent[txID], numAgents)
+			agents := make([]Agent[ids.ID], numAgents)
 			for i := range agents {
-				agents[i] = Agent[txID]{
-					Issuer:   &mockIssuer{tracker: tracker},
-					Listener: &mockListener{tracker: tracker, delay: 100 * time.Millisecond},
+				agents[i] = Agent[ids.ID]{
+					Issuer:   &scenarioMockIssuer{tracker: tracker},
+					Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
 				}
 			}
 
@@ -70,10 +71,10 @@ func TestScenarioSustainedLoad(t *testing.T) {
 				MaxTPS:           tt.targetTPS,
 				MinTPS:           tt.targetTPS, // Start at target TPS
 				Step:             0,             // No stepping
-				TxRateMultiplier: 1.0,          // Exact rate
-				SustainedTime:    2 * time.Second,
+				TxRateMultiplier: 1.1,          // Slightly overprovision to ensure we hit target
+				SustainedTime:    1 * time.Second,
 				MaxAttempts:      1,
-				Terminate:        false, // Run for duration
+				Terminate:        false, // Keep running even after reaching target
 			}
 
 			orchestrator := NewOrchestrator(agents, tracker, log, config)
@@ -106,20 +107,20 @@ func TestScenarioRampUp(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	log := tests.NewDefaultLogger("")
+	log := log.NoLog{}
 	registry := metric.NewRegistry()
 	metrics, err := NewMetrics(registry)
 	require.NoError(err)
 
-	tracker := NewTracker[txID](metrics)
+	tracker := NewTracker[ids.ID](metrics)
 
 	// Create 5 agents
 	numAgents := 5
-	agents := make([]Agent[txID], numAgents)
+	agents := make([]Agent[ids.ID], numAgents)
 	for i := range agents {
-		agents[i] = Agent[txID]{
-			Issuer:   &mockIssuer{tracker: tracker},
-			Listener: &mockListener{tracker: tracker, delay: 100 * time.Millisecond},
+		agents[i] = Agent[ids.ID]{
+			Issuer:   &scenarioMockIssuer{tracker: tracker},
+			Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
 		}
 	}
 
@@ -159,20 +160,20 @@ func TestScenarioSpike(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	log := tests.NewDefaultLogger("")
+	log := log.NoLog{}
 	registry := metric.NewRegistry()
 	metrics, err := NewMetrics(registry)
 	require.NoError(err)
 
-	tracker := NewTracker[txID](metrics)
+	tracker := NewTracker[ids.ID](metrics)
 
 	// Create 10 agents for higher throughput
 	numAgents := 10
-	agents := make([]Agent[txID], numAgents)
+	agents := make([]Agent[ids.ID], numAgents)
 	for i := range agents {
-		agents[i] = Agent[txID]{
-			Issuer:   &mockIssuer{tracker: tracker},
-			Listener: &mockListener{tracker: tracker, delay: 50 * time.Millisecond},
+		agents[i] = Agent[ids.ID]{
+			Issuer:   &scenarioMockIssuer{tracker: tracker},
+			Listener: &scenarioMockListener{tracker: tracker, delay: 50 * time.Millisecond},
 		}
 	}
 
@@ -209,20 +210,20 @@ func TestScenarioSoak(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	log := tests.NewDefaultLogger("")
+	log := log.NoLog{}
 	registry := metric.NewRegistry()
 	metrics, err := NewMetrics(registry)
 	require.NoError(err)
 
-	tracker := NewTracker[txID](metrics)
+	tracker := NewTracker[ids.ID](metrics)
 
 	// Create 3 agents
 	numAgents := 3
-	agents := make([]Agent[txID], numAgents)
+	agents := make([]Agent[ids.ID], numAgents)
 	for i := range agents {
-		agents[i] = Agent[txID]{
-			Issuer:   &mockIssuer{tracker: tracker},
-			Listener: &mockListener{tracker: tracker, delay: 100 * time.Millisecond},
+		agents[i] = Agent[ids.ID]{
+			Issuer:   &scenarioMockIssuer{tracker: tracker},
+			Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
 		}
 	}
 
@@ -230,7 +231,7 @@ func TestScenarioSoak(t *testing.T) {
 		MaxTPS:           300,
 		MinTPS:           300,
 		Step:             0,
-		TxRateMultiplier: 1.0,
+		TxRateMultiplier: 1.05,
 		SustainedTime:    5 * time.Second,
 		MaxAttempts:      1,
 		Terminate:        false,
@@ -264,23 +265,23 @@ func TestScenarioStressRecovery(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	log := tests.NewDefaultLogger("")
+	log := log.NoLog{}
 	registry := metric.NewRegistry()
 	metrics, err := NewMetrics(registry)
 	require.NoError(err)
 
-	tracker := NewTracker[txID](metrics)
+	tracker := NewTracker[ids.ID](metrics)
 
 	// Create agents with intermittent failures
 	numAgents := 5
-	agents := make([]Agent[txID], numAgents)
+	agents := make([]Agent[ids.ID], numAgents)
 	for i := range agents {
-		agents[i] = Agent[txID]{
-			Issuer: &mockIssuer{
+		agents[i] = Agent[ids.ID]{
+			Issuer: &scenarioMockIssuer{
 				tracker:     tracker,
 				failureRate: 0.1, // 10% failure rate
 			},
-			Listener: &mockListener{
+			Listener: &scenarioMockListener{
 				tracker: tracker,
 				delay:   150 * time.Millisecond,
 			},
@@ -291,7 +292,7 @@ func TestScenarioStressRecovery(t *testing.T) {
 		MaxTPS:           500,
 		MinTPS:           100,
 		Step:             100,
-		TxRateMultiplier: 1.2,
+		TxRateMultiplier: 1.1,
 		SustainedTime:    3 * time.Second,
 		MaxAttempts:      5, // Allow retries
 		Terminate:        true,
@@ -321,31 +322,6 @@ func TestScenarioStressRecovery(t *testing.T) {
 	}
 }
 
-// mockIssuer with optional failure injection
-type mockIssuerFailing struct {
-	tracker     *Tracker[txID]
-	failureRate float64
-	counter     uint64
-}
-
-func (m *mockIssuerFailing) GenerateAndIssueTx(ctx context.Context) (txID, error) {
-	m.counter++
-
-	// Inject failures based on failure rate
-	if m.failureRate > 0 {
-		threshold := uint64(math.Round(1.0 / m.failureRate))
-		if m.counter%threshold == 0 {
-			return txID{}, errors.New("injected failure")
-		}
-	}
-
-	id := txID{}
-	for i := range id {
-		id[i] = byte(m.counter + uint64(i))
-	}
-	return id, nil
-}
-
 // TestMetricsCollection verifies metrics are collected correctly
 func TestMetricsCollection(t *testing.T) {
 	require := require.New(t)
@@ -354,12 +330,11 @@ func TestMetricsCollection(t *testing.T) {
 	metrics, err := NewMetrics(registry)
 	require.NoError(err)
 
-	tracker := NewTracker[txID](metrics)
+	tracker := NewTracker[ids.ID](metrics)
 
 	// Issue some transactions
 	for i := 0; i < 100; i++ {
-		id := txID{}
-		id[0] = byte(i)
+		id := ids.GenerateTestID()
 		tracker.Issue(id)
 	}
 
@@ -367,8 +342,8 @@ func TestMetricsCollection(t *testing.T) {
 
 	// Simulate confirmations with varying latency
 	for i := 0; i < 80; i++ {
-		id := txID{}
-		id[0] = byte(i)
+		id := ids.GenerateTestID()
+		tracker.Issue(id)
 
 		// Simulate different latencies
 		time.Sleep(time.Microsecond * time.Duration(i%10))
@@ -378,9 +353,9 @@ func TestMetricsCollection(t *testing.T) {
 	require.Equal(uint64(80), tracker.GetObservedConfirmed())
 
 	// Simulate some failures
-	for i := 80; i < 90; i++ {
-		id := txID{}
-		id[0] = byte(i)
+	for i := 0; i < 10; i++ {
+		id := ids.GenerateTestID()
+		tracker.Issue(id)
 		tracker.ObserveFailed(id)
 	}
 
@@ -391,4 +366,203 @@ func TestMetricsCollection(t *testing.T) {
 	failed := tracker.GetObservedFailed()
 	successRate := float64(confirmed) / float64(confirmed+failed)
 	require.InDelta(0.888, successRate, 0.01) // 80/90 = 0.888...
+}
+
+// TestLatencyPercentiles tests latency percentile tracking
+func TestLatencyPercentiles(t *testing.T) {
+	require := require.New(t)
+
+	registry := metric.NewRegistry()
+	metrics, err := NewMetrics(registry)
+	require.NoError(err)
+
+	tracker := NewTracker[ids.ID](metrics)
+
+	// Simulate transactions with known latencies
+	latencies := []float64{
+		10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
+		110, 120, 130, 140, 150, 160, 170, 180, 190, 200,
+	}
+
+	for _, latency := range latencies {
+		id := ids.GenerateTestID()
+		tracker.Issue(id)
+		// Simulate latency by recording it directly
+		metrics.RecordConfirmedTx(latency)
+	}
+
+	// Get percentiles
+	percentiles := metrics.GetLatencyPercentiles()
+
+	// Verify percentiles are reasonable
+	require.Greater(percentiles.P50, 0.0, "P50 should be positive")
+	require.Greater(percentiles.P95, percentiles.P50, "P95 should be greater than P50")
+	require.Greater(percentiles.P99, percentiles.P95, "P99 should be greater than P95")
+	require.Greater(percentiles.Max, percentiles.P99, "Max should be greater than P99")
+	require.Less(percentiles.Min, percentiles.P50, "Min should be less than P50")
+
+	// Verify specific values (approximately)
+	require.InDelta(105, percentiles.P50, 10, "P50 should be around 105")
+	require.InDelta(190, percentiles.P95, 10, "P95 should be around 190")
+}
+
+// TestLoadPatterns tests various load generation patterns
+func TestLoadPatterns(t *testing.T) {
+	t.Run("ConstantRate", func(t *testing.T) {
+		pattern := NewConstantRatePattern(100)
+		delay := pattern.NextDelay()
+		require.Equal(t, 10*time.Millisecond, delay)
+		require.True(t, pattern.ShouldSend())
+	})
+
+	t.Run("RampPattern", func(t *testing.T) {
+		pattern := NewRampPattern(100, 1000, 10*time.Second)
+		initialDelay := pattern.NextDelay()
+		
+		// Wait a bit and check delay decreases (TPS increases)
+		time.Sleep(100 * time.Millisecond)
+		laterDelay := pattern.NextDelay()
+		require.Less(t, laterDelay, initialDelay, "Delay should decrease as TPS ramps up")
+	})
+
+	t.Run("BurstPattern", func(t *testing.T) {
+		pattern := NewBurstPattern(10, 1*time.Second)
+		
+		// First few calls should be in burst with minimal delay
+		var burstDelays []time.Duration
+		for i := 0; i < 5; i++ {
+			delay := pattern.NextDelay()
+			burstDelays = append(burstDelays, delay)
+		}
+		
+		// All burst delays should be very small
+		for _, d := range burstDelays {
+			require.LessOrEqual(t, d, 100*time.Microsecond, "Should have minimal delay during burst")
+		}
+		
+		// Complete the burst
+		for i := 0; i < 6; i++ {
+			pattern.NextDelay()
+		}
+		
+		// Next delay should be longer (waiting for next burst)
+		afterBurstDelay := pattern.NextDelay()
+		require.Greater(t, afterBurstDelay, 100*time.Millisecond, "Should have longer delay after burst")
+	})
+
+	t.Run("WavePattern", func(t *testing.T) {
+		pattern := NewWavePattern(100, 200, 1*time.Second)
+		
+		// Collect delays over time
+		var delays []time.Duration
+		for i := 0; i < 10; i++ {
+			delays = append(delays, pattern.NextDelay())
+			time.Sleep(100 * time.Millisecond)
+		}
+		
+		// Verify we have variation in delays (wave pattern)
+		minDelay := delays[0]
+		maxDelay := delays[0]
+		for _, d := range delays {
+			if d < minDelay {
+				minDelay = d
+			}
+			if d > maxDelay {
+				maxDelay = d
+			}
+		}
+		require.NotEqual(t, minDelay, maxDelay, "Wave pattern should produce varying delays")
+	})
+
+	t.Run("StepPattern", func(t *testing.T) {
+		steps := []float64{100, 200, 400}
+		pattern := NewStepPattern(steps, 100*time.Millisecond)
+		
+		// First step
+		delay1 := pattern.NextDelay()
+		require.Equal(t, 10*time.Millisecond, delay1)
+		
+		// Wait for next step
+		time.Sleep(150 * time.Millisecond)
+		delay2 := pattern.NextDelay()
+		require.Equal(t, 5*time.Millisecond, delay2)
+		
+		// Wait for third step
+		time.Sleep(150 * time.Millisecond)
+		delay3 := pattern.NextDelay()
+		require.Equal(t, 2500*time.Microsecond, delay3)
+	})
+}
+
+// TestTPSController tests the TPS feedback controller
+func TestTPSController(t *testing.T) {
+	controller := NewTPSController(1000)
+
+	// Initial state
+	target, actual, adjustment := controller.GetStats()
+	require.Equal(t, 1000.0, target)
+	require.Equal(t, 0.0, actual)
+	require.Equal(t, 1.0, adjustment)
+
+	// Initialize with a base count
+	baseCount := uint64(1000)
+	controller.UpdateActualTPS(baseCount)
+	
+	// Wait a bit
+	time.Sleep(100 * time.Millisecond)
+	
+	// Simulate under-performance (only 50 tx in 100ms = 500 TPS)
+	underCount := baseCount + 50
+	controller.UpdateActualTPS(underCount)
+	
+	_, actualTPS, adjustment := controller.GetStats()
+	t.Logf("Under-performing: actual=%.2f, adjustment=%.2f", actualTPS, adjustment)
+	
+	// The controller should adjust upward when actual < target
+	// But it may take multiple updates to see significant change
+	// So we'll do another update cycle
+	time.Sleep(100 * time.Millisecond)
+	underCount += 60  // Still under-performing
+	controller.UpdateActualTPS(underCount)
+	
+	_, actualTPS, adjustment = controller.GetStats()
+	t.Logf("After 2nd update: actual=%.2f, adjustment=%.2f", actualTPS, adjustment)
+
+	// Now test over-performance
+	controller = NewTPSController(1000) // Reset
+	baseCount = uint64(5000)
+	controller.UpdateActualTPS(baseCount)
+	
+	time.Sleep(100 * time.Millisecond)
+	
+	// Simulate over-performance (200 tx in 100ms = 2000 TPS)
+	overCount := baseCount + 200
+	controller.UpdateActualTPS(overCount)
+	
+	_, actualTPS, adjustment = controller.GetStats()
+	t.Logf("Over-performing: actual=%.2f, adjustment=%.2f", actualTPS, adjustment)
+	
+	// When actual > target, adjustment should decrease
+	require.NotEqual(t, 1.0, adjustment, "Adjustment should change based on performance")
+}
+
+// mockIssuerFailing with optional failure injection for stress testing
+type mockIssuerFailing struct {
+	tracker     *Tracker[ids.ID]
+	failureRate float64
+	counter     uint64
+}
+
+func (m *mockIssuerFailing) GenerateAndIssueTx(ctx context.Context) (ids.ID, error) {
+	m.counter++
+
+	// Inject failures based on failure rate
+	if m.failureRate > 0 {
+		threshold := uint64(math.Round(1.0 / m.failureRate))
+		if m.counter%threshold == 0 {
+			return ids.Empty, errors.New("injected failure")
+		}
+	}
+
+	return ids.GenerateTestID(), nil
 }

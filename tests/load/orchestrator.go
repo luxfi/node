@@ -80,7 +80,7 @@ func NewOrchestratorConfig() OrchestratorConfig {
 		MaxTPS:           5_000,
 		MinTPS:           1_000,
 		Step:             1_000,
-		TxRateMultiplier: 1.3,
+		TxRateMultiplier: 1.1,
 		SustainedTime:    20 * time.Second,
 		MaxAttempts:      3,
 		Terminate:        true,
@@ -120,12 +120,15 @@ func NewOrchestrator[T TxID](
 }
 
 func (o *Orchestrator[_]) Execute(ctx context.Context) error {
+	// Save parent context for listeners to preserve timeout/deadline errors
+	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
 
 	// start a goroutine to confirm each issuer's transactions
 	o.observerGroup = &errgroup.Group{}
 	for _, agent := range o.agents {
-		o.observerGroup.Go(func() error { return agent.Listener.Listen(ctx) })
+		// Pass parent context to listeners so they receive DeadlineExceeded, not Canceled
+		o.observerGroup.Go(func() error { return agent.Listener.Listen(parentCtx) })
 	}
 
 	// start the test and block until it's done
