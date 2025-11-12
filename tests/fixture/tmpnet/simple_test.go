@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/log"
 )
 
 // TestNetworkEnhancements tests the new network enhancement methods
@@ -117,7 +115,7 @@ func TestNodeEnhancements(t *testing.T) {
 }
 
 // TestConfigGeneration tests the new config generation functions
-func TestConfigGeneration(t *testing.T) {
+func TestNodeConfigGeneration(t *testing.T) {
 	require := require.New(t)
 	
 	// Test GenerateNetworkConfig
