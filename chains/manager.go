@@ -1658,35 +1658,24 @@ func (v *simpleVM) Initialize(
 	fxs []*core.Fx,
 	appSender interface{},
 ) error {
-	// Delegate to underlying ChainVM if it has Initialize method
-	if initVM, ok := v.vm.(interface {
-		Initialize(
-			ctx context.Context,
-			chainCtx interface{},
-			dbManager interface{},
-			genesisData []byte,
-			upgradeBytes []byte,
-			configBytes []byte,
-			toEngine interface{},
-			fxs interface{},
-			appSender interface{},
-		) error
-	}); ok {
-		// Convert types to interface{} for generic Initialize signature
-		return initVM.Initialize(
-			ctx,
-			chainCtx,
-			dbMgr,
-			genesisBytes,
-			upgradeBytes,
-			configBytes,
-			toEngine,
-			fxs,
-			appSender,
-		)
+	// Convert []*core.Fx to []interface{} for ChainVM.Initialize
+	fxsInterface := make([]interface{}, len(fxs))
+	for i, fx := range fxs {
+		fxsInterface[i] = fx
 	}
-	// VM doesn't have Initialize method or doesn't need initialization
-	return nil
+
+	// ChainVM.Initialize expects interface{} types for several parameters
+	return v.vm.Initialize(
+		ctx,
+		chainCtx,     // interface{} - *consensusctx.Context
+		dbMgr,        // interface{} - dbmanager.Manager
+		genesisBytes,
+		upgradeBytes,
+		configBytes,
+		toEngine,     // interface{} - chan<- core.Message
+		fxsInterface, // []interface{} - converted from []*core.Fx
+		appSender,
+	)
 }
 
 func (m *manager) IsBootstrapped(id ids.ID) bool {
