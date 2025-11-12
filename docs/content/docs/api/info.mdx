@@ -1,0 +1,630 @@
+---
+title: Info API
+description: Node information and network status API
+---
+
+# Info API
+
+The Info API provides general information about the node and network status. This API doesn't require authentication and provides read-only access to node metadata.
+
+## Endpoint
+
+```
+http://localhost:9630/ext/info
+```
+
+## Format
+
+The Info API uses JSON-RPC 2.0 format:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.<method>",
+    "params": {...},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+## Methods
+
+### info.getNodeVersion
+
+Get the node software version.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNodeVersion",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "version": "luxd/1.20.1",
+        "databaseVersion": "v1.4.5",
+        "gitCommit": "abc123def456",
+        "vmVersions": {
+            "avm": "v1.20.1",
+            "evm": "v0.11.5",
+            "platform": "v1.20.1",
+            "quantum": "v1.0.0"
+        }
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getNodeID
+
+Get the node's unique identifier and BLS proof of possession.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNodeID",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
+        "nodePOP": {
+            "publicKey": "0x89abc123def456...",
+            "proofOfPossession": "0xdef789abc123..."
+        }
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getNodeIP
+
+Get the node's perceived public IP address.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNodeIP",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "ip": "203.0.113.42:9631"
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getNetworkID
+
+Get the network ID.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNetworkID",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "networkID": "1"
+    },
+    "id": 1
+}
+```
+
+Network IDs:
+- `1`: Mainnet
+- `5`: Testnet
+- `12345`: Local network
+- Custom IDs for private networks
+
+---
+
+### info.getNetworkName
+
+Get the network name.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNetworkName",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "networkName": "mainnet"
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getBlockchainID
+
+Get blockchain ID from an alias.
+
+**Parameters:**
+- `alias`: `string` - Blockchain alias (P, X, C, or custom)
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getBlockchainID",
+    "params": {
+        "alias": "P"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "blockchainID": "11111111111111111111111111111111LpoYY"
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.isBootstrapped
+
+Check if a chain is bootstrapped.
+
+**Parameters:**
+- `chain`: `string` - Chain alias or ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.isBootstrapped",
+    "params": {
+        "chain": "P"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "isBootstrapped": true
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.peers
+
+Get connected peer information.
+
+**Parameters:**
+- `nodeIDs`: `[]string` - (optional) Filter by specific node IDs
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.peers",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "numPeers": 15,
+        "peers": [
+            {
+                "ip": "198.51.100.5:9631",
+                "publicIP": "198.51.100.5:9631",
+                "nodeID": "NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z",
+                "version": "luxd/1.20.1",
+                "lastSent": "2024-01-15T10:30:45Z",
+                "lastReceived": "2024-01-15T10:30:47Z",
+                "observedUptime": 98,
+                "trackedSubnets": ["11111111111111111111111111111111LpoYY"],
+                "connectedTime": "2024-01-14T08:15:30Z",
+                "latency": 45000000,
+                "benched": []
+            }
+        ]
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getTxFee
+
+Get transaction fee configuration.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getTxFee",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "createNetTxFee": "1000000000",
+        "transformNetTxFee": "10000000000",
+        "createBlockchainTxFee": "1000000000",
+        "addPrimaryNetworkValidatorFee": "0",
+        "addPrimaryNetworkDelegatorFee": "0",
+        "addNetValidatorFee": "1000000",
+        "addNetDelegatorFee": "1000000"
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.uptime
+
+Get node uptime percentage (only for validators).
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.uptime",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response (Validator):**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "rewardingStakePercentage": "98.5432",
+        "weightedAveragePercentage": "99.1234"
+    },
+    "id": 1
+}
+```
+
+**Example Response (Non-validator):**
+```json
+{
+    "jsonrpc": "2.0",
+    "error": {
+        "code": -32000,
+        "message": "node is not a validator"
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getVMs
+
+Get installed virtual machines.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getVMs",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "vms": {
+            "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq": ["avm"],
+            "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6": ["evm"],
+            "rWhpuQPF1kb72esV2momhMuTYGkEb1oL29pt2EBthWkJz9o3a": ["platform"],
+            "ryFVWA5fgYzhzzwcAxVxfhsMXfxHJCkXXYU2rT8GK5ZyHtG3u": ["quantum"]
+        }
+    },
+    "id": 1
+}
+```
+
+---
+
+### info.getUpgrades
+
+Get network upgrade schedule.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getUpgrades",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "upgrades": {
+            "apricotPhase1Time": "2022-03-01T00:00:00Z",
+            "apricotPhase2Time": "2022-05-01T00:00:00Z",
+            "apricotPhase3Time": "2022-08-01T00:00:00Z",
+            "apricotPhase4Time": "2022-11-01T00:00:00Z",
+            "apricotPhase5Time": "2023-02-01T00:00:00Z",
+            "banffTime": "2023-05-01T00:00:00Z",
+            "cortinaTime": "2023-08-01T00:00:00Z",
+            "durbanTime": "2024-01-01T00:00:00Z",
+            "graniteTime": "2024-06-01T00:00:00Z"
+        }
+    },
+    "id": 1
+}
+```
+
+---
+
+## Monitoring Examples
+
+### Node Health Dashboard
+
+```bash
+#!/bin/bash
+# monitor.sh - Node monitoring script
+
+NODE_URL="http://localhost:9630"
+
+echo "=== Lux Node Status ==="
+
+# Get node version
+VERSION=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNodeVersion",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.version')
+
+echo "Version: $VERSION"
+
+# Get node ID
+NODE_ID=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.getNodeID",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.nodeID')
+
+echo "Node ID: $NODE_ID"
+
+# Get peer count
+PEERS=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.peers",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+
+echo "Connected Peers: $PEERS"
+
+# Check bootstrap status
+for CHAIN in P X C Q; do
+    STATUS=$(curl -s -X POST --data "{
+        \"jsonrpc\": \"2.0\",
+        \"method\": \"info.isBootstrapped\",
+        \"params\": {\"chain\": \"$CHAIN\"},
+        \"id\": 1
+    }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+
+    echo "$CHAIN-Chain Bootstrapped: $STATUS"
+done
+
+# Get uptime if validator
+UPTIME=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.uptime",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info 2>/dev/null | jq -r '.result.rewardingStakePercentage' 2>/dev/null)
+
+if [ "$UPTIME" != "null" ] && [ -n "$UPTIME" ]; then
+    echo "Validator Uptime: $UPTIME%"
+fi
+```
+
+### Peer Quality Monitor
+
+```bash
+#!/bin/bash
+# peer_monitor.sh - Monitor peer connections
+
+NODE_URL="http://localhost:9630"
+
+# Get peer information
+PEERS=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.peers",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.peers[]')
+
+echo "=== Peer Connection Quality ==="
+echo "Node ID | Latency (ms) | Uptime % | Version"
+echo "--------|--------------|----------|--------"
+
+echo "$PEERS" | jq -r '. | "\(.nodeID[7:14])... | \(.latency/1000000) | \(.observedUptime) | \(.version)"'
+```
+
+### Bootstrap Progress
+
+```bash
+#!/bin/bash
+# bootstrap_progress.sh - Monitor bootstrap progress
+
+NODE_URL="http://localhost:9630"
+
+while true; do
+    clear
+    echo "=== Bootstrap Progress ==="
+    echo "Time: $(date)"
+    echo ""
+
+    for CHAIN in P X C Q; do
+        STATUS=$(curl -s -X POST --data "{
+            \"jsonrpc\": \"2.0\",
+            \"method\": \"info.isBootstrapped\",
+            \"params\": {\"chain\": \"$CHAIN\"},
+            \"id\": 1
+        }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+
+        if [ "$STATUS" == "true" ]; then
+            echo "✅ $CHAIN-Chain: Bootstrapped"
+        else
+            echo "⏳ $CHAIN-Chain: Syncing..."
+        fi
+    done
+
+    # Get peer count
+    PEERS=$(curl -s -X POST --data '{
+        "jsonrpc": "2.0",
+        "method": "info.peers",
+        "params": {},
+        "id": 1
+    }' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+
+    echo ""
+    echo "Connected Peers: $PEERS"
+
+    # Exit when all chains are bootstrapped
+    ALL_BOOTSTRAPPED=true
+    for CHAIN in P X C Q; do
+        STATUS=$(curl -s -X POST --data "{
+            \"jsonrpc\": \"2.0\",
+            \"method\": \"info.isBootstrapped\",
+            \"params\": {\"chain\": \"$CHAIN\"},
+            \"id\": 1
+        }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+
+        if [ "$STATUS" != "true" ]; then
+            ALL_BOOTSTRAPPED=false
+            break
+        fi
+    done
+
+    if [ "$ALL_BOOTSTRAPPED" == "true" ]; then
+        echo ""
+        echo "🎉 All chains bootstrapped!"
+        break
+    fi
+
+    sleep 10
+done
+```
+
+## Error Codes
+
+| Code | Message | Description |
+|------|---------|-------------|
+| -32000 | Node is not a validator | Uptime requested for non-validator |
+| -32001 | Chain not found | Invalid chain alias or ID |
+| -32002 | Not bootstrapped | Chain is still syncing |
+| -32003 | VM not found | Invalid VM ID |
+
+## Rate Limiting
+
+The Info API has generous rate limits:
+- 1000 requests per second per IP
+- No authentication required
+- Read-only operations
+
+## Next Steps
+
+- [Health API](/docs/api/health) - Health monitoring endpoints
+- [Admin API](/docs/api/admin) - Administrative operations
+- [Metrics API](/docs/api/metrics) - Prometheus metrics
+- [Platform API](/docs/api/platform) - P-Chain specific operations

@@ -1,0 +1,658 @@
+---
+title: Monitoring and Observability
+description: Comprehensive monitoring setup for Lux nodes
+---
+
+# Monitoring and Observability
+
+Effective monitoring is crucial for maintaining healthy Lux nodes. This guide covers monitoring setup, key metrics, alerting, and troubleshooting.
+
+## Monitoring Stack
+
+### Recommended Architecture
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Lux Node   │────►│  Prometheus  │────►│   Grafana    │
+│   (Metrics)  │     │  (Storage)   │     │(Visualization)│
+└──────────────┘     └──────────────┘     └──────────────┘
+        │                    │                     │
+        │                    ▼                     ▼
+        │            ┌──────────────┐     ┌──────────────┐
+        └───────────►│   Loki       │────►│   Alerts     │
+         (Logs)      │(Log Storage) │     │ (PagerDuty)  │
+                     └──────────────┘     └──────────────┘
+```
+
+## Metrics Collection
+
+### Prometheus Configuration
+
+Create `prometheus.yml`:
+
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'lux-node'
+    static_configs:
+      - targets: ['localhost:9630']
+    metrics_path: '/ext/metrics'
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+rule_files:
+  - 'alerts.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+```
+
+### Available Metrics
+
+The Lux node exposes 400+ Prometheus metrics at `http://localhost:9630/ext/metrics`.
+
+#### Key Metric Categories
+
+| Category | Prefix | Description |
+|----------|--------|-------------|
+| Node | `node_` | Node health, uptime, version |
+| Network | `network_` | Peers, bandwidth, latency |
+| Consensus | `consensus_` | Voting, finalization, forks |
+| Chain | `chain_` | Height, transactions, blocks |
+| VM | `vm_` | VM-specific metrics |
+| Database | `db_` | Database operations, size |
+| API | `api_` | Request rates, latencies |
+
+## Key Metrics to Monitor
+
+### Node Health
+
+```sql
+-- Node uptime (seconds)
+node_uptime_seconds
+
+-- Node version info
+node_version_info
+
+-- Process CPU usage
+rate(process_cpu_seconds_total[5m])
+
+-- Process memory usage
+process_resident_memory_bytes
+
+-- File descriptors
+process_open_fds / process_max_fds
+```
+
+### Network Health
+
+```sql
+-- Connected peers
+network_peers
+
+-- Peer quality (average RTT in ms)
+network_peer_rtt_avg_milliseconds
+
+-- Network bandwidth
+rate(network_bytes_sent_total[5m])
+rate(network_bytes_received_total[5m])
+
+-- Message rate
+rate(network_messages_sent_total[5m])
+rate(network_messages_received_total[5m])
+```
+
+### Consensus Performance
+
+```sql
+-- Chain height
+chain_height{chain="P"}
+
+-- Block production rate
+rate(chain_blocks_accepted_total[5m])
+
+-- Transaction throughput
+rate(chain_transactions_accepted_total[5m])
+
+-- Consensus voting rounds
+consensus_polls_successful_total
+consensus_polls_failed_total
+
+-- Fork occurrences
+consensus_reorgs_total
+```
+
+### Validator Metrics
+
+```sql
+-- Validator uptime percentage
+validator_uptime_percent
+
+-- Staking weight
+validator_stake_amount
+
+-- Delegation count
+validator_delegation_count
+
+-- Rewards earned
+validator_rewards_total
+```
+
+### Database Metrics
+
+```sql
+-- Database size
+db_size_bytes
+
+-- Database operations
+rate(db_get_total[5m])
+rate(db_put_total[5m])
+rate(db_delete_total[5m])
+
+-- Database latency
+db_get_latency_seconds
+db_put_latency_seconds
+
+-- Cache hit rate
+db_cache_hits_total / (db_cache_hits_total + db_cache_misses_total)
+```
+
+## Grafana Dashboards
+
+### Node Overview Dashboard
+
+```json
+{
+  "dashboard": {
+    "title": "Lux Node Overview",
+    "panels": [
+      {
+        "title": "Node Status",
+        "targets": [
+          {
+            "expr": "up{job='lux-node'}",
+            "legendFormat": "Status"
+          }
+        ]
+      },
+      {
+        "title": "Chain Heights",
+        "targets": [
+          {
+            "expr": "chain_height",
+            "legendFormat": "{{chain}}"
+          }
+        ]
+      },
+      {
+        "title": "Network Peers",
+        "targets": [
+          {
+            "expr": "network_peers",
+            "legendFormat": "Connected Peers"
+          }
+        ]
+      },
+      {
+        "title": "TPS",
+        "targets": [
+          {
+            "expr": "rate(chain_transactions_accepted_total[1m])",
+            "legendFormat": "{{chain}} TPS"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Import Pre-built Dashboards
+
+```bash
+# Download Lux dashboards
+curl -LO https://grafana.luxfi.com/dashboards/node-overview.json
+curl -LO https://grafana.luxfi.com/dashboards/validator-metrics.json
+curl -LO https://grafana.luxfi.com/dashboards/network-analysis.json
+
+# Import via Grafana API
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d @node-overview.json \
+  http://admin:admin@localhost:3000/api/dashboards/db
+```
+
+## Log Aggregation
+
+### Loki Configuration
+
+Create `loki-config.yml`:
+
+```yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
+    shared_store: filesystem
+  filesystem:
+    directory: /loki/chunks
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+```
+
+### Promtail Configuration
+
+Create `promtail-config.yml`:
+
+```yaml
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: lux-node
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: lux-node
+          __path__: /home/lux/.luxd/logs/*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\S+\s+\S+)\s+\[(?P<level>\w+)\]\s+(?P<message>.*)$'
+      - timestamp:
+          format: '2006-01-02 15:04:05.000'
+          source: timestamp
+      - labels:
+          level:
+```
+
+## Alerting Rules
+
+### Critical Alerts
+
+Create `alerts.yml`:
+
+```yaml
+groups:
+  - name: node_alerts
+    interval: 30s
+    rules:
+      # Node down
+      - alert: NodeDown
+        expr: up{job="lux-node"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node is down"
+          description: "Lux node {{ $labels.instance }} has been down for more than 1 minute."
+
+      # Low disk space
+      - alert: LowDiskSpace
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining on {{ $labels.instance }}."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90% on {{ $labels.instance }}."
+
+      # Validator uptime low
+      - alert: ValidatorUptimeLow
+        expr: validator_uptime_percent < 80
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Validator uptime below 80%"
+          description: "Validator uptime is {{ $value }}%, risking rewards."
+
+      # No peers
+      - alert: NoPeers
+        expr: network_peers == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No network peers"
+          description: "Node has no connected peers."
+
+      # Chain not progressing
+      - alert: ChainStalled
+        expr: increase(chain_height[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Chain not progressing"
+          description: "Chain {{ $labels.chain }} height has not increased in 10 minutes."
+```
+
+### Performance Alerts
+
+```yaml
+  - name: performance_alerts
+    rules:
+      # High latency
+      - alert: HighNetworkLatency
+        expr: network_peer_rtt_avg_milliseconds > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High network latency"
+          description: "Average peer latency is {{ $value }}ms."
+
+      # Low TPS
+      - alert: LowTransactionThroughput
+        expr: rate(chain_transactions_accepted_total[5m]) < 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low transaction throughput"
+          description: "TPS is {{ $value }} for chain {{ $labels.chain }}."
+
+      # Database slow
+      - alert: DatabaseSlow
+        expr: db_get_latency_seconds > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database operations slow"
+          description: "Database get operations taking {{ $value }}s."
+```
+
+## Health Checks
+
+### HTTP Health Endpoint
+
+```bash
+# Basic health check
+curl http://localhost:9630/ext/health
+
+# Detailed health with readiness/liveness
+curl http://localhost:9630/ext/health/readiness
+curl http://localhost:9630/ext/health/liveness
+```
+
+### Custom Health Script
+
+```bash
+#!/bin/bash
+# health_check.sh
+
+NODE_URL="http://localhost:9630"
+ALERT_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+# Function to send alert
+send_alert() {
+    curl -X POST $ALERT_WEBHOOK \
+         -H 'Content-Type: application/json' \
+         -d "{\"text\":\"⚠️ $1\"}"
+}
+
+# Check if node is responsive
+if ! curl -s "$NODE_URL/ext/health" > /dev/null; then
+    send_alert "Node is not responding!"
+    exit 1
+fi
+
+# Check chain bootstrap status
+for CHAIN in P X C Q; do
+    STATUS=$(curl -s -X POST --data "{
+        \"jsonrpc\": \"2.0\",
+        \"method\": \"info.isBootstrapped\",
+        \"params\": {\"chain\": \"$CHAIN\"},
+        \"id\": 1
+    }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+
+    if [ "$STATUS" != "true" ]; then
+        send_alert "$CHAIN-Chain is not bootstrapped!"
+    fi
+done
+
+# Check peer count
+PEERS=$(curl -s -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "info.peers",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+
+if [ "$PEERS" -lt 4 ]; then
+    send_alert "Low peer count: $PEERS"
+fi
+
+echo "Health check passed ✓"
+```
+
+## Performance Monitoring
+
+### System Metrics
+
+Use node_exporter for system metrics:
+
+```bash
+# Install node_exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
+tar xvf node_exporter-1.7.0.linux-amd64.tar.gz
+cd node_exporter-1.7.0.linux-amd64
+./node_exporter &
+```
+
+### Application Profiling
+
+Enable continuous profiling:
+
+```bash
+# Start node with profiling
+./build/node \
+  --profile-continuous-enabled \
+  --profile-continuous-freq=1m \
+  --profile-continuous-max-files=10 \
+  --profile-dir=/tmp/profiles
+```
+
+Analyze profiles:
+
+```bash
+# CPU profile
+go tool pprof -http=:8080 /tmp/profiles/cpu.prof
+
+# Memory profile
+go tool pprof -http=:8081 /tmp/profiles/mem.prof
+
+# Goroutine profile
+go tool pprof -http=:8082 /tmp/profiles/goroutine.prof
+```
+
+## Distributed Tracing
+
+### Jaeger Setup
+
+```yaml
+# docker-compose.yml
+version: '3'
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+```
+
+### Enable Tracing
+
+```bash
+# Start node with tracing
+./build/node \
+  --tracing-enabled \
+  --tracing-endpoint=localhost:6831 \
+  --tracing-sample-rate=0.1
+```
+
+## Log Analysis
+
+### Common Log Patterns
+
+```bash
+# Find errors
+grep -E "ERROR|FATAL" ~/.luxd/logs/*.log
+
+# Track consensus events
+grep "accepted block" ~/.luxd/logs/P.log
+
+# Monitor peer connections
+grep -E "connected to|disconnected from" ~/.luxd/logs/main.log
+
+# Check validator events
+grep -E "validator|stake|reward" ~/.luxd/logs/P.log
+```
+
+### Log Rotation
+
+Configure logrotate:
+
+```bash
+# /etc/logrotate.d/luxd
+/home/lux/.luxd/logs/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 lux lux
+    postrotate
+        systemctl reload luxd
+    endscript
+}
+```
+
+## Monitoring Best Practices
+
+### 1. Baseline Establishment
+
+Establish normal operating parameters:
+- Average TPS during peak/off-peak
+- Typical memory usage patterns
+- Normal peer count range
+- Expected latency values
+
+### 2. Alert Fatigue Prevention
+
+- Set appropriate thresholds
+- Use alert grouping and deduplication
+- Implement escalation policies
+- Regular alert review and tuning
+
+### 3. Capacity Planning
+
+Monitor trends for:
+- Disk usage growth rate
+- Memory consumption patterns
+- Network bandwidth utilization
+- Database size increase
+
+### 4. Incident Response
+
+Create runbooks for common issues:
+- Node restart procedures
+- Peer connection troubleshooting
+- Database corruption recovery
+- Consensus participation issues
+
+## Monitoring Tools
+
+### CLI Monitoring
+
+```bash
+# Real-time metrics
+watch -n 1 'curl -s http://localhost:9630/ext/metrics | grep -E "chain_height|network_peers"'
+
+# Log streaming
+tail -f ~/.luxd/logs/*.log | grep --line-buffered ERROR
+
+# Resource usage
+htop -p $(pgrep luxd)
+```
+
+### Third-Party Integration
+
+Integrate with monitoring services:
+
+```yaml
+# DataDog integration
+datadog:
+  api_key: YOUR_API_KEY
+  metrics:
+    - lux.node.height
+    - lux.node.peers
+    - lux.validator.uptime
+
+# New Relic integration
+newrelic:
+  license_key: YOUR_LICENSE_KEY
+  app_name: lux-node
+  labels:
+    environment: production
+    role: validator
+```
+
+## Next Steps
+
+- [Security Operations](/docs/operations/security) - Security monitoring and response
+- [Backup and Recovery](/docs/operations/backup) - Data protection strategies
+- [Troubleshooting](/docs/operations/troubleshooting) - Common issues and solutions
+- [Performance Tuning](/docs/operations/performance) - Optimization techniques

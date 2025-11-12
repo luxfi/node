@@ -1,0 +1,501 @@
+---
+title: Consensus Mechanisms
+description: Deep dive into Lux's multi-consensus architecture
+---
+
+# Consensus Mechanisms
+
+Lux implements multiple consensus mechanisms, each optimized for specific use cases. This flexibility allows each chain to use the most appropriate consensus for its requirements.
+
+## Overview
+
+Lux's consensus architecture consists of four primary consensus engines:
+
+1. **Chain Consensus** - Linear blockchain consensus
+2. **DAG Consensus** - Directed Acyclic Graph consensus
+3. **BFT Consensus** - Byzantine Fault Tolerant consensus
+4. **PQ Consensus** - Post-Quantum consensus
+
+## Chain Consensus
+
+Used by the Platform Chain (P-Chain) for validator management and metadata operations.
+
+### Algorithm
+
+Chain consensus implements a probabilistic finality model:
+
+```
+Block N-2 ← Block N-1 ← Block N ← Block N+1 (proposed)
+    ↓          ↓          ↓
+ Finalized  Preferred  Processing
+```
+
+### Properties
+
+- **Finality**: Probabilistic (increases with confirmations)
+- **Throughput**: ~1,000 TPS
+- **Block Time**: 2 seconds
+- **Fork Resolution**: Longest chain rule with modifications
+
+### Implementation
+
+```go
+type ChainConsensus struct {
+    // Current chain state
+    lastAccepted Block
+    preferred    Block
+
+    // Consensus parameters
+    alpha        int  // Quorum size
+    beta         int  // Confidence threshold
+
+    // Vote tracking
+    votes        map[ids.ID]int
+    confidence   map[ids.ID]int
+}
+
+func (c *ChainConsensus) RecordVote(blockID ids.ID) {
+    c.votes[blockID]++
+
+    if c.votes[blockID] >= c.alpha {
+        c.confidence[blockID]++
+
+        if c.confidence[blockID] >= c.beta {
+            c.Accept(blockID)
+        }
+    }
+}
+```
+
+## DAG Consensus
+
+Used by the Exchange Chain (X-Chain) for high-throughput asset transfers.
+
+### Algorithm
+
+DAG consensus allows parallel processing of non-conflicting transactions:
+
+```
+     ┌──► Vertex A ──┐
+     │               ▼
+Vertex 0 ──► Vertex B ──► Vertex D
+     │               ▲
+     └──► Vertex C ──┘
+```
+
+### Properties
+
+- **Finality**: Probabilistic with fast convergence
+- **Throughput**: ~5,000+ TPS
+- **Confirmation Time**: Sub-second
+- **Parallelism**: High (non-conflicting transactions)
+
+### Conflict Resolution
+
+```go
+type Conflict struct {
+    transactions []Transaction
+    preferences  map[ids.ID]int
+}
+
+func (d *DAGConsensus) ResolveConflict(conflict Conflict) Transaction {
+    // Use voting to determine preference
+    maxVotes := 0
+    var preferred Transaction
+
+    for _, tx := range conflict.transactions {
+        votes := d.CountVotes(tx.ID())
+        if votes > maxVotes {
+            maxVotes = votes
+            preferred = tx
+        }
+    }
+
+    return preferred
+}
+```
+
+### Vertex Structure
+
+```go
+type Vertex interface {
+    ID() ids.ID
+    Parents() []ids.ID
+    Transactions() []Transaction
+    Height() uint64
+
+    Verify() error
+    Accept() error
+    Reject() error
+}
+```
+
+## BFT Consensus
+
+Used by the Contract Chain (C-Chain) for instant finality in smart contract execution.
+
+### Algorithm
+
+BFT consensus provides immediate finality through three phases:
+
+```
+┌─────────┐    ┌─────────┐    ┌─────────┐
+│ Prepare │───►│ Promise │───►│ Commit  │
+└─────────┘    └─────────┘    └─────────┘
+     ↑                              │
+     └──────── Next Round ──────────┘
+```
+
+### Properties
+
+- **Finality**: Instant (single confirmation)
+- **Throughput**: ~2,000 TPS
+- **Fault Tolerance**: f < n/3 (Byzantine)
+- **Network Assumption**: Partially synchronous
+
+### Three-Phase Protocol
+
+#### Phase 1: Prepare
+```go
+type PrepareMessage struct {
+    View     uint64
+    Sequence uint64
+    Digest   []byte
+    Sender   ids.NodeID
+}
+
+func (b *BFTConsensus) SendPrepare(block Block) {
+    msg := PrepareMessage{
+        View:     b.currentView,
+        Sequence: block.Height(),
+        Digest:   block.Hash(),
+        Sender:   b.nodeID,
+    }
+
+    b.broadcast(msg)
+}
+```
+
+#### Phase 2: Promise
+```go
+func (b *BFTConsensus) HandlePrepare(msg PrepareMessage) {
+    if b.ValidatePrepare(msg) {
+        promise := PromiseMessage{
+            View:     msg.View,
+            Sequence: msg.Sequence,
+            Digest:   msg.Digest,
+            Sender:   b.nodeID,
+        }
+
+        b.broadcast(promise)
+        b.promises[msg.Digest]++
+
+        if b.promises[msg.Digest] >= 2*b.f+1 {
+            b.MoveToCommit(msg.Digest)
+        }
+    }
+}
+```
+
+#### Phase 3: Commit
+```go
+func (b *BFTConsensus) MoveToCommit(digest []byte) {
+    commit := CommitMessage{
+        View:     b.currentView,
+        Sequence: b.currentSequence,
+        Digest:   digest,
+        Sender:   b.nodeID,
+    }
+
+    b.broadcast(commit)
+    b.commits[digest]++
+
+    if b.commits[digest] >= 2*b.f+1 {
+        b.ExecuteBlock(digest)
+    }
+}
+```
+
+## Post-Quantum Consensus
+
+Used by the Quantum Chain (Q-Chain) for quantum-resistant operations.
+
+### Algorithm
+
+Hybrid consensus combining classical BLS signatures with post-quantum ML-DSA:
+
+```
+Classical Layer (BLS)
+        ↓
+Aggregation & Threshold
+        ↓
+Quantum Layer (ML-DSA)
+        ↓
+Final Validation
+```
+
+### Properties
+
+- **Security**: Quantum-resistant (192-bit)
+- **Signatures**: ML-DSA-65 (Dilithium)
+- **Privacy**: Ringtail ring signatures
+- **Performance**: ~1,500 TPS
+
+### Implementation
+
+```go
+type PQConsensus struct {
+    classicalSigner  *bls.Signer
+    quantumSigner    *mldsa.Signer
+    ringtailSigner   *ringtail.Signer
+
+    threshold        int
+    validatorSet     []Validator
+}
+
+func (pq *PQConsensus) SignBlock(block Block) (Signature, error) {
+    // Classical signature
+    classicalSig, err := pq.classicalSigner.Sign(block.Bytes())
+    if err != nil {
+        return nil, err
+    }
+
+    // Quantum signature
+    quantumSig, err := pq.quantumSigner.Sign(block.Bytes())
+    if err != nil {
+        return nil, err
+    }
+
+    // Combine signatures
+    return CombineSignatures(classicalSig, quantumSig), nil
+}
+
+func (pq *PQConsensus) VerifyBlock(block Block, sig Signature) bool {
+    classical, quantum := SplitSignature(sig)
+
+    // Both must validate
+    return pq.classicalSigner.Verify(block.Bytes(), classical) &&
+           pq.quantumSigner.Verify(block.Bytes(), quantum)
+}
+```
+
+### Ringtail Privacy Layer
+
+```go
+type RingtailSignature struct {
+    Ring      []PublicKey
+    Signature []byte
+    KeyImage  []byte
+}
+
+func (pq *PQConsensus) CreateRingSignature(
+    message []byte,
+    signerKey PrivateKey,
+    ring []PublicKey,
+) (*RingtailSignature, error) {
+    // Create anonymous signature within ring
+    sig := pq.ringtailSigner.Sign(message, signerKey, ring)
+
+    return &RingtailSignature{
+        Ring:      ring,
+        Signature: sig.Bytes(),
+        KeyImage:  sig.KeyImage(),
+    }, nil
+}
+```
+
+## Consensus Parameters
+
+### Configuration
+
+Each consensus engine has tunable parameters:
+
+```json
+{
+  "consensus": {
+    "chain": {
+      "alpha": 15,
+      "beta": 20,
+      "concurrent-repolls": 4,
+      "optimal-processing": 100
+    },
+    "dag": {
+      "batch-size": 30,
+      "parent-size": 10,
+      "concurrent-polls": 8
+    },
+    "bft": {
+      "block-period": "500ms",
+      "view-change-timeout": "10s",
+      "message-buffer-size": 1000
+    },
+    "pq": {
+      "quantum-algorithm": "ml-dsa-65",
+      "ring-size": 16,
+      "threshold": 67
+    }
+  }
+}
+```
+
+### Adaptive Parameters
+
+Consensus parameters can adapt based on network conditions:
+
+```go
+type AdaptiveConsensus struct {
+    baseAlpha      int
+    currentAlpha   int
+    networkSize    int
+    avgLatency     time.Duration
+}
+
+func (a *AdaptiveConsensus) AdjustParameters() {
+    // Adjust alpha based on network size
+    if a.networkSize > 1000 {
+        a.currentAlpha = a.baseAlpha + 5
+    }
+
+    // Adjust timeouts based on latency
+    if a.avgLatency > 100*time.Millisecond {
+        a.IncreaseTimeouts()
+    }
+}
+```
+
+## Fork Resolution
+
+### Chain/DAG Fork Resolution
+
+```go
+func ResolveFork(fork1, fork2 Chain) Chain {
+    // Compare cumulative difficulty
+    if fork1.Difficulty() > fork2.Difficulty() {
+        return fork1
+    }
+    if fork2.Difficulty() > fork1.Difficulty() {
+        return fork2
+    }
+
+    // Tie-breaker: earlier timestamp
+    if fork1.Timestamp() < fork2.Timestamp() {
+        return fork1
+    }
+
+    return fork2
+}
+```
+
+### BFT View Change
+
+```go
+func (b *BFTConsensus) InitiateViewChange() {
+    b.currentView++
+
+    msg := ViewChangeMessage{
+        NewView:         b.currentView,
+        LastStableSeq:   b.lastStable,
+        PreparedProofs:  b.gatherProofs(),
+    }
+
+    b.broadcast(msg)
+    b.startViewChangeTimer()
+}
+```
+
+## Performance Metrics
+
+### Throughput Comparison
+
+| Consensus | TPS | Latency | Finality |
+|-----------|-----|---------|----------|
+| Chain | 1000 | 2s | Probabilistic |
+| DAG | 5000+ | less than 1s | Probabilistic |
+| BFT | 2000 | less than 1s | Instant |
+| PQ | 1500 | 1s | Instant |
+
+### Resource Usage
+
+```go
+type ConsensusMetrics struct {
+    MessagesSent     uint64
+    MessagesReceived uint64
+    BytesSent        uint64
+    BytesReceived    uint64
+    VotingRounds     uint64
+    Reorgs           uint64
+    ViewChanges      uint64
+}
+
+func (m *ConsensusMetrics) Report() {
+    metrics.Counter("consensus.messages.sent").Add(m.MessagesSent)
+    metrics.Counter("consensus.messages.received").Add(m.MessagesReceived)
+    metrics.Gauge("consensus.bandwidth.sent").Set(m.BytesSent)
+    metrics.Gauge("consensus.bandwidth.received").Set(m.BytesReceived)
+}
+```
+
+## Security Analysis
+
+### Attack Vectors
+
+1. **Sybil Attacks**: Mitigated by stake requirements
+2. **Long-Range Attacks**: Checkpointing and finality
+3. **Grinding Attacks**: VRF for randomness
+4. **Censorship**: Multiple validators, rotation
+5. **Quantum Attacks**: ML-DSA signatures on Q-Chain
+
+### Byzantine Fault Tolerance
+
+```
+Total Validators: n
+Byzantine Nodes: f
+
+Chain/DAG: Tolerates f < n divided by 2 (crash faults)
+BFT:       Tolerates f < n divided by 3 (Byzantine faults)
+PQ:        Tolerates f < n divided by 3 (Byzantine + quantum)
+```
+
+## Best Practices
+
+### Choosing Consensus
+
+| Use Case | Recommended | Reason |
+|----------|-------------|--------|
+| Asset transfers | DAG | High throughput, parallel processing |
+| Smart contracts | BFT | Instant finality, deterministic |
+| Governance | Chain | Simple, ordered, auditable |
+| Sensitive data | PQ | Quantum-safe, privacy options |
+
+### Performance Tuning
+
+1. **Network Conditions**
+   ```go
+   if latency > 200ms {
+       consensus.SetAlpha(20)  // Increase quorum
+       consensus.SetTimeout(5s) // Increase timeout
+   }
+   ```
+
+2. **Load Balancing**
+   ```go
+   if tps > threshold {
+       consensus.EnableBatching()
+       consensus.SetBatchSize(50)
+   }
+   ```
+
+3. **Security vs Performance**
+   ```go
+   if highSecurity {
+       consensus.SetBeta(30)    // More confirmations
+       consensus.SetQuorum(0.8) // Higher threshold
+   }
+   ```
+
+## Next Steps
+
+- [VM Architecture](/docs/architecture/vms) - Virtual machine layer
+- [Network Protocol](/docs/architecture/network) - P2P communication
+- [State Management](/docs/architecture/state) - State and storage
+- [Security Model](/docs/architecture/security) - Security architecture

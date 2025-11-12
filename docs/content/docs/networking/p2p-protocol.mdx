@@ -1,0 +1,612 @@
+---
+title: P2P Networking Protocol
+description: Understanding Lux's peer-to-peer networking layer
+---
+
+# P2P Networking Protocol
+
+The Lux network uses a sophisticated peer-to-peer protocol for node communication, consensus messaging, and state synchronization. This document details the networking architecture and protocols.
+
+## Network Architecture
+
+### Overview
+
+```
+┌──────────────────────────────────────────────┐
+│            Application Layer                  │
+│         (Consensus, VMs, APIs)               │
+├──────────────────────────────────────────────┤
+│            Message Layer                      │
+│    (Serialization, Compression, Routing)     │
+├──────────────────────────────────────────────┤
+│           Transport Layer                     │
+│      (TLS 1.3, Connection Management)        │
+├──────────────────────────────────────────────┤
+│            Network Layer                      │
+│        (TCP/IP, NAT Traversal)              │
+└──────────────────────────────────────────────┘
+```
+
+## Connection Management
+
+### Peer Discovery
+
+Lux uses multiple mechanisms for peer discovery:
+
+1. **Bootstrap Nodes**
+   - Hardcoded bootstrap nodes for initial connections
+   - Configurable via `--bootstrap-ips` and `--bootstrap-ids`
+
+2. **Peer Exchange**
+   - Nodes share peer lists with connected nodes
+   - Gossip protocol for peer information
+
+3. **DNS Seeds**
+   - DNS records containing bootstrap nodes
+   - Fallback mechanism for discovery
+
+### Connection Lifecycle
+
+```go
+type PeerConnection struct {
+    State ConnectionState
+    // States: Disconnected → Connecting → Connected → Disconnecting
+}
+
+// Connection establishment
+func (n *Network) Connect(peer PeerInfo) error {
+    // 1. TCP connection
+    conn, err := net.DialTimeout("tcp", peer.Address, timeout)
+
+    // 2. TLS handshake
+    tlsConn := tls.Client(conn, tlsConfig)
+    err = tlsConn.Handshake()
+
+    // 3. Version handshake
+    err = n.performHandshake(tlsConn, peer)
+
+    // 4. Add to peer list
+    n.peers.Add(peer)
+
+    return nil
+}
+```
+
+### Handshake Protocol
+
+The handshake establishes connection parameters:
+
+```go
+type HandshakeMessage struct {
+    NetworkID       uint32
+    NodeID          ids.NodeID
+    MyTime          uint64
+    IP              netip.AddrPort
+    Version         string
+    VersionTime     uint64
+    SigBytes        []byte
+    TrackedSubnets  []ids.ID
+}
+
+func PerformHandshake(conn net.Conn) (*Peer, error) {
+    // Send our handshake
+    msg := HandshakeMessage{
+        NetworkID: networkID,
+        NodeID:    nodeID,
+        MyTime:    time.Now().Unix(),
+        Version:   version,
+    }
+
+    Send(conn, msg)
+
+    // Receive peer handshake
+    peerMsg := Receive(conn)
+
+    // Validate
+    if peerMsg.NetworkID != networkID {
+        return nil, ErrWrongNetwork
+    }
+
+    return &Peer{
+        ID:      peerMsg.NodeID,
+        Version: peerMsg.Version,
+        Conn:    conn,
+    }, nil
+}
+```
+
+## Message Protocol
+
+### Message Format
+
+All messages follow a standard format:
+
+```
+┌─────────────┬────────────┬──────────┬─────────────┐
+│   Length    │  Chain ID  │   Type   │   Payload   │
+│  (4 bytes)  │ (32 bytes) │ (1 byte) │  (variable) │
+└─────────────┴────────────┴──────────┴─────────────┘
+```
+
+### Message Types
+
+```go
+const (
+    // Consensus messages
+    GetAccepted = iota
+    Accepted
+    Get
+    Put
+    PushQuery
+    PullQuery
+    Chits
+
+    // State sync messages
+    GetAncestors
+    Ancestors
+    GetAcceptedFrontier
+    AcceptedFrontier
+    GetAcceptedStateSummary
+    AcceptedStateSummary
+
+    // Application messages
+    AppRequest
+    AppResponse
+    AppGossip
+
+    // Network messages
+    Ping
+    Pong
+    Version
+    PeerList
+)
+```
+
+### Message Handling
+
+```go
+type MessageHandler interface {
+    HandleGetAccepted(nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID)
+    HandleAccepted(nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID)
+    HandleGet(nodeID ids.NodeID, requestID uint32, containerID ids.ID)
+    HandlePut(nodeID ids.NodeID, requestID uint32, container []byte)
+    HandlePushQuery(nodeID ids.NodeID, requestID uint32, container []byte)
+    HandlePullQuery(nodeID ids.NodeID, requestID uint32, containerID ids.ID)
+    HandleChits(nodeID ids.NodeID, requestID uint32, containerIDs []ids.ID)
+}
+```
+
+## Transport Security
+
+### TLS Configuration
+
+All peer connections use TLS 1.3:
+
+```go
+type TLSConfig struct {
+    Certificates    []tls.Certificate
+    RootCAs        *x509.CertPool
+    MinVersion     uint16 // TLS 1.3
+    CipherSuites   []uint16
+}
+
+func CreateTLSConfig(cert, key string) (*tls.Config, error) {
+    certificate, err := tls.LoadX509KeyPair(cert, key)
+
+    return &tls.Config{
+        Certificates: []tls.Certificate{certificate},
+        MinVersion:   tls.VersionTLS13,
+        CipherSuites: []uint16{
+            tls.TLS_AES_256_GCM_SHA384,
+            tls.TLS_AES_128_GCM_SHA256,
+            tls.TLS_CHACHA20_POLY1305_SHA256,
+        },
+        PreferServerCipherSuites: true,
+    }, nil
+}
+```
+
+### Certificate Validation
+
+```go
+func ValidatePeerCertificate(rawCerts [][]byte) error {
+    cert, err := x509.ParseCertificate(rawCerts[0])
+
+    // Extract node ID from certificate
+    nodeID := ids.NodeIDFromCert(cert)
+
+    // Verify certificate chain
+    opts := x509.VerifyOptions{
+        Roots: trustedRoots,
+    }
+
+    _, err = cert.Verify(opts)
+    return err
+}
+```
+
+## Gossip Protocol
+
+### Message Propagation
+
+Lux uses gossip for efficient message distribution:
+
+```go
+type GossipConfig struct {
+    GossipSize           int           // Peers per gossip round
+    GossipInterval       time.Duration // Time between rounds
+    GossipMaxSize        int           // Max message size
+}
+
+func (n *Network) Gossip(msg Message) {
+    // Select random peers
+    peers := n.peers.Sample(n.config.GossipSize)
+
+    for _, peer := range peers {
+        // Send with exponential backoff
+        go n.sendWithRetry(peer, msg)
+    }
+
+    // Track gossiped messages to prevent loops
+    n.gossipTracker.Add(msg.ID())
+}
+```
+
+### Anti-Entropy
+
+Periodic synchronization to ensure consistency:
+
+```go
+func (n *Network) AntiEntropy() {
+    ticker := time.NewTicker(30 * time.Second)
+
+    for range ticker.C {
+        // Compare state with random peer
+        peer := n.peers.RandomPeer()
+
+        myHashes := n.state.GetHashes()
+        peerHashes := peer.RequestHashes()
+
+        // Find differences
+        missing := difference(peerHashes, myHashes)
+
+        // Request missing items
+        for _, hash := range missing {
+            peer.RequestItem(hash)
+        }
+    }
+}
+```
+
+## Bandwidth Management
+
+### Throttling
+
+Prevent network congestion and DoS attacks:
+
+```go
+type Throttler struct {
+    BandwidthLimit   uint64        // Bytes per second
+    MessageLimit     uint64        // Messages per second
+    ConnectionLimit  uint64        // Max connections
+
+    inboundLimiter   *rate.Limiter
+    outboundLimiter  *rate.Limiter
+}
+
+func (t *Throttler) Allow(size int) bool {
+    return t.inboundLimiter.AllowN(time.Now(), size)
+}
+
+func (t *Throttler) Send(peer Peer, msg Message) error {
+    size := len(msg.Bytes())
+
+    if !t.outboundLimiter.AllowN(time.Now(), size) {
+        return ErrThrottled
+    }
+
+    return peer.Send(msg)
+}
+```
+
+### Message Priority
+
+```go
+type Priority int
+
+const (
+    PriorityLow Priority = iota
+    PriorityMedium
+    PriorityHigh
+    PriorityCritical
+)
+
+type PriorityQueue struct {
+    queues [4][]Message
+}
+
+func (pq *PriorityQueue) Send() {
+    // Send from highest priority first
+    for priority := PriorityCritical; priority >= PriorityLow; priority-- {
+        if len(pq.queues[priority]) > 0 {
+            msg := pq.queues[priority][0]
+            pq.queues[priority] = pq.queues[priority][1:]
+            send(msg)
+            return
+        }
+    }
+}
+```
+
+## NAT Traversal
+
+### STUN/TURN Support
+
+```go
+type NATTraversal struct {
+    STUNServers []string
+    TURNServers []string
+}
+
+func (n *NATTraversal) DiscoverPublicIP() (netip.Addr, error) {
+    // Try STUN first
+    for _, server := range n.STUNServers {
+        if ip, err := n.querySTUN(server); err == nil {
+            return ip, nil
+        }
+    }
+
+    // Fallback to TURN if needed
+    for _, server := range n.TURNServers {
+        if ip, err := n.setupTURN(server); err == nil {
+            return ip, nil
+        }
+    }
+
+    return netip.Addr{}, ErrNoPublicIP
+}
+```
+
+### UPnP Configuration
+
+```go
+func ConfigureUPnP(externalPort, internalPort int) error {
+    client, err := upnp.Discover()
+    if err != nil {
+        return err
+    }
+
+    // Add port mapping
+    err = client.AddPortMapping(
+        "TCP",
+        externalPort,
+        internalPort,
+        "Lux Node",
+        0, // Permanent
+    )
+
+    return err
+}
+```
+
+## Peer Management
+
+### Peer Scoring
+
+Nodes track peer quality:
+
+```go
+type PeerScore struct {
+    Latency         time.Duration
+    Uptime          float64
+    MessagesDropped uint64
+    BytesExchanged  uint64
+    LastSeen        time.Time
+}
+
+func (ps *PeerScore) Calculate() float64 {
+    score := 100.0
+
+    // Penalize high latency
+    if ps.Latency > 200*time.Millisecond {
+        score -= 20
+    }
+
+    // Reward high uptime
+    score += ps.Uptime * 0.2
+
+    // Penalize dropped messages
+    score -= float64(ps.MessagesDropped) * 0.1
+
+    return math.Max(0, math.Min(100, score))
+}
+```
+
+### Peer Selection
+
+```go
+func SelectPeers(peers []Peer, count int) []Peer {
+    // Sort by score
+    sort.Slice(peers, func(i, j int) bool {
+        return peers[i].Score() > peers[j].Score()
+    })
+
+    // Select top peers with some randomness
+    selected := make([]Peer, 0, count)
+
+    // 70% best peers
+    bestCount := int(float64(count) * 0.7)
+    selected = append(selected, peers[:bestCount]...)
+
+    // 30% random for diversity
+    randomCount := count - bestCount
+    random := peers[bestCount:]
+    rand.Shuffle(len(random), func(i, j int) {
+        random[i], random[j] = random[j], random[i]
+    })
+    selected = append(selected, random[:randomCount]...)
+
+    return selected
+}
+```
+
+## Network Metrics
+
+### Connection Metrics
+
+```go
+type NetworkMetrics struct {
+    // Connections
+    PeersConnected    int
+    InboundPeers      int
+    OutboundPeers     int
+
+    // Bandwidth
+    BytesSent         uint64
+    BytesReceived     uint64
+    MessagesSent      uint64
+    MessagesReceived  uint64
+
+    // Latency
+    AvgLatency        time.Duration
+    MaxLatency        time.Duration
+
+    // Errors
+    ConnectionsFailed uint64
+    MessagesDropped   uint64
+}
+
+func (m *NetworkMetrics) Export() {
+    metrics.Gauge("network.peers.connected").Set(float64(m.PeersConnected))
+    metrics.Counter("network.bytes.sent").Add(m.BytesSent)
+    metrics.Counter("network.bytes.received").Add(m.BytesReceived)
+    metrics.Histogram("network.latency.avg").Update(m.AvgLatency.Milliseconds())
+}
+```
+
+## Security Considerations
+
+### DoS Protection
+
+```go
+type DoSProtection struct {
+    MaxConnectionsPerIP  int
+    MaxMessagesPerSecond int
+    BanDuration         time.Duration
+
+    banned map[netip.Addr]time.Time
+}
+
+func (d *DoSProtection) CheckConnection(ip netip.Addr) error {
+    // Check if banned
+    if banTime, ok := d.banned[ip]; ok {
+        if time.Since(banTime) < d.BanDuration {
+            return ErrBanned
+        }
+        delete(d.banned, ip)
+    }
+
+    // Check connection limit
+    if d.ConnectionsFromIP(ip) >= d.MaxConnectionsPerIP {
+        d.Ban(ip)
+        return ErrTooManyConnections
+    }
+
+    return nil
+}
+```
+
+### Message Validation
+
+```go
+func ValidateMessage(msg Message) error {
+    // Check size
+    if len(msg.Bytes()) > MaxMessageSize {
+        return ErrMessageTooLarge
+    }
+
+    // Check signature
+    if !msg.VerifySignature() {
+        return ErrInvalidSignature
+    }
+
+    // Check timestamp
+    if abs(msg.Timestamp() - time.Now().Unix()) > MaxClockSkew {
+        return ErrInvalidTimestamp
+    }
+
+    return nil
+}
+```
+
+## Configuration
+
+### Network Settings
+
+```yaml
+network:
+  # Connection settings
+  max-peers: 256
+  min-peers: 8
+
+  # Bandwidth limits
+  bandwidth-limit: 10485760  # 10 MB/s
+  message-limit: 1000        # msgs/s
+
+  # Timeouts
+  dial-timeout: 30s
+  handshake-timeout: 60s
+  read-timeout: 30s
+  write-timeout: 30s
+
+  # Gossip settings
+  gossip-size: 10
+  gossip-interval: 1s
+
+  # Security
+  max-connections-per-ip: 3
+  ban-duration: 15m
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **No Peers Connected**
+   - Check firewall settings
+   - Verify bootstrap nodes
+   - Ensure correct network ID
+
+2. **High Latency**
+   - Check bandwidth limits
+   - Verify geographic distribution
+   - Monitor network congestion
+
+3. **Connection Drops**
+   - Check for NAT timeout
+   - Monitor peer scores
+   - Verify TLS certificates
+
+### Debug Commands
+
+```bash
+# Get peer list
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"info.peers",
+    "id":1
+}' http://localhost:9630/ext/info
+
+# Check network metrics
+curl http://localhost:9630/ext/metrics | grep network
+
+# Monitor connections
+netstat -an | grep 9631
+```
+
+## Next Steps
+
+- [Message Types](/docs/networking/messages) - Detailed message specifications
+- [Consensus Networking](/docs/networking/consensus) - Consensus-specific networking
+- [Cross-Chain Protocol](/docs/networking/cross-chain) - Subnet communication
+- [Security Guide](/docs/operations/security) - Network security best practices

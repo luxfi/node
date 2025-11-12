@@ -1,0 +1,377 @@
+---
+title: Health API
+description: Health monitoring and status checking endpoints
+---
+
+# Health API
+
+The Health API provides endpoints to monitor the health and readiness of your Lux node and its chains.
+
+## Endpoint
+
+```
+http://localhost:9630/ext/health
+```
+
+## Health Check Types
+
+### Overall Health
+
+Get the overall health status of the node:
+
+```bash
+curl http://localhost:9630/ext/health
+```
+
+**Response:**
+```json
+{
+  "checks": {
+    "P": {
+      "message": "",
+      "error": null,
+      "timestamp": "2024-01-15T10:30:45Z",
+      "duration": 1234567,
+      "contiguousFailures": 0,
+      "timeOfFirstFailure": null
+    },
+    "X": {
+      "message": "",
+      "error": null,
+      "timestamp": "2024-01-15T10:30:45Z",
+      "duration": 987654,
+      "contiguousFailures": 0,
+      "timeOfFirstFailure": null
+    },
+    "C": {
+      "message": "",
+      "error": null,
+      "timestamp": "2024-01-15T10:30:45Z",
+      "duration": 1123456,
+      "contiguousFailures": 0,
+      "timeOfFirstFailure": null
+    }
+  },
+  "healthy": true
+}
+```
+
+### Readiness Check
+
+Check if the node is ready to serve requests:
+
+```bash
+curl http://localhost:9630/ext/health/readiness
+```
+
+Returns:
+- **200 OK**: Node is ready
+- **503 Service Unavailable**: Node is not ready
+
+### Liveness Check
+
+Check if the node is alive and running:
+
+```bash
+curl http://localhost:9630/ext/health/liveness
+```
+
+Returns:
+- **200 OK**: Node is alive
+- **503 Service Unavailable**: Node is not responding
+
+## JSON-RPC Methods
+
+### health.health
+
+Get detailed health information via JSON-RPC:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "health.health",
+    "params": {}
+}' -H 'content-type:application/json;' http://localhost:9630/ext/health
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "checks": {
+      "P": {
+        "message": "P-Chain is healthy",
+        "error": null,
+        "timestamp": "2024-01-15T10:30:45Z",
+        "duration": 1234567,
+        "contiguousFailures": 0,
+        "timeOfFirstFailure": null
+      }
+    },
+    "healthy": true
+  },
+  "id": 1
+}
+```
+
+## Health Check Details
+
+### Check Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `message` | string | Human-readable status message |
+| `error` | object/null | Error details if check failed |
+| `timestamp` | string | Time of last check |
+| `duration` | int64 | Check duration in nanoseconds |
+| `contiguousFailures` | int | Number of consecutive failures |
+| `timeOfFirstFailure` | string/null | Time of first failure in sequence |
+
+### Health States
+
+1. **Healthy**: All chains passing health checks
+2. **Degraded**: Some chains unhealthy but node operational
+3. **Unhealthy**: Critical chains failing or node issues
+
+## Custom Health Checks
+
+### Configure Health Check Parameters
+
+```json
+{
+  "health-check-frequency": "30s",
+  "health-check-averager-halflife": "10s",
+  "router-health-max-drop-rate": 0.01,
+  "router-health-max-outstanding-requests": 1024,
+  "network-health-max-time-since-msg-sent": "1m",
+  "network-health-max-time-since-msg-received": "1m",
+  "network-health-min-conn-peers": 1
+}
+```
+
+### Chain-Specific Health
+
+Configure per-chain health parameters:
+
+```json
+{
+  "chains": {
+    "P": {
+      "health-check-frequency": "10s"
+    },
+    "C": {
+      "health-check-frequency": "5s"
+    }
+  }
+}
+```
+
+## Monitoring Integration
+
+### Prometheus Format
+
+Export health metrics in Prometheus format:
+
+```bash
+curl http://localhost:9630/ext/metrics | grep health
+```
+
+Metrics:
+```
+# HELP health_check_duration_seconds Duration of health checks
+# TYPE health_check_duration_seconds histogram
+health_check_duration_seconds{chain="P"} 0.001234
+
+# HELP health_check_failures_total Total number of health check failures
+# TYPE health_check_failures_total counter
+health_check_failures_total{chain="P"} 0
+
+# HELP health_status Current health status (1=healthy, 0=unhealthy)
+# TYPE health_status gauge
+health_status 1
+```
+
+### Kubernetes Integration
+
+Use for Kubernetes probes:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: luxd
+        image: luxfi/node:latest
+        livenessProbe:
+          httpGet:
+            path: /ext/health/liveness
+            port: 9630
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ext/health/readiness
+            port: 9630
+          initialDelaySeconds: 60
+          periodSeconds: 5
+```
+
+## Health Check Scripts
+
+### Basic Monitoring Script
+
+```bash
+#!/bin/bash
+# health_monitor.sh
+
+while true; do
+    HEALTH=$(curl -s http://localhost:9630/ext/health | jq -r '.healthy')
+
+    if [ "$HEALTH" != "true" ]; then
+        echo "ALERT: Node unhealthy at $(date)"
+        # Send alert
+        curl -X POST $WEBHOOK_URL -d '{"text":"Node unhealthy!"}'
+    fi
+
+    sleep 30
+done
+```
+
+### Detailed Health Analysis
+
+```bash
+#!/bin/bash
+# health_analysis.sh
+
+# Get detailed health
+RESPONSE=$(curl -s http://localhost:9630/ext/health)
+
+# Parse each chain
+for CHAIN in P X C Q; do
+    ERROR=$(echo $RESPONSE | jq -r ".checks.$CHAIN.error")
+    FAILURES=$(echo $RESPONSE | jq -r ".checks.$CHAIN.contiguousFailures")
+
+    if [ "$ERROR" != "null" ]; then
+        echo "❌ $CHAIN-Chain Error: $ERROR"
+    elif [ "$FAILURES" -gt 0 ]; then
+        echo "⚠️ $CHAIN-Chain Failures: $FAILURES"
+    else
+        echo "✅ $CHAIN-Chain Healthy"
+    fi
+done
+```
+
+## Health-Based Load Balancing
+
+### HAProxy Configuration
+
+```
+backend lux_nodes
+    option httpchk GET /ext/health
+    http-check expect status 200
+
+    server node1 192.168.1.10:9630 check
+    server node2 192.168.1.11:9630 check
+    server node3 192.168.1.12:9630 check
+```
+
+### NGINX Configuration
+
+```nginx
+upstream lux_nodes {
+    server 192.168.1.10:9630 max_fails=3 fail_timeout=30s;
+    server 192.168.1.11:9630 max_fails=3 fail_timeout=30s;
+    server 192.168.1.12:9630 max_fails=3 fail_timeout=30s;
+}
+
+location /health_check {
+    proxy_pass http://lux_nodes/ext/health;
+    proxy_connect_timeout 1s;
+    proxy_read_timeout 1s;
+}
+```
+
+## Troubleshooting Health Issues
+
+### Common Health Problems
+
+1. **Chain Not Bootstrapped**
+   ```json
+   {
+     "error": {
+       "message": "not bootstrapped"
+     }
+   }
+   ```
+   **Solution**: Wait for chain sync to complete
+
+2. **Database Issues**
+   ```json
+   {
+     "error": {
+       "message": "database: closed"
+     }
+   }
+   ```
+   **Solution**: Check database integrity and disk space
+
+3. **Network Disconnected**
+   ```json
+   {
+     "error": {
+       "message": "no peers connected"
+     }
+   }
+   ```
+   **Solution**: Check network connectivity and firewall rules
+
+### Health Check Debugging
+
+Enable verbose health logging:
+
+```bash
+./build/node --log-level-health=debug
+```
+
+Monitor health check execution:
+
+```bash
+tail -f ~/.luxd/logs/main.log | grep -i health
+```
+
+## Performance Considerations
+
+### Health Check Impact
+
+- Each health check queries chain state
+- Frequent checks may impact performance
+- Default interval: 30 seconds
+- Recommended minimum: 10 seconds
+
+### Optimization
+
+```json
+{
+  "health-check-frequency": "1m",
+  "health-check-averager-halflife": "30s",
+  "max-health-check-duration": "5s"
+}
+```
+
+## API Rate Limiting
+
+Health endpoints have generous rate limits:
+- 100 requests per second
+- No authentication required
+- Suitable for frequent monitoring
+
+## Next Steps
+
+- [Admin API](/docs/api/admin) - Administrative operations
+- [Metrics API](/docs/api/metrics) - Prometheus metrics
+- [Monitoring Guide](/docs/operations/monitoring) - Set up monitoring
+- [Troubleshooting](/docs/operations/troubleshooting) - Resolve health issues

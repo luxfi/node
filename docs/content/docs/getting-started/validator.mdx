@@ -293,9 +293,9 @@ Important metrics:
 
 Configure monitoring alerts for:
 - Node offline events
-- Low disk space (<10GB)
-- High CPU usage (>90%)
-- Low memory (<500MB available)
+- Low disk space (less than 10GB)
+- High CPU usage (greater than 90%)
+- Low memory (less than 500MB available)
 - Network disconnections
 
 Example alert script:
@@ -466,7 +466,7 @@ No, stake is locked for the entire validation period.
 ### What happens if my node goes offline?
 
 - Uptime percentage decreases
-- Below 80% uptime = no rewards
+- Below 80 percent uptime = no rewards
 - No slashing on mainnet (currently)
 
 ### Can I run multiple validators?

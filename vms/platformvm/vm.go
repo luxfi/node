@@ -877,9 +877,9 @@ type lazyHandlerWrapper struct {
 // ServeHTTP creates the handler on first request when VM is ready
 func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l.once.Do(func() {
-		// Check if VM is ready using the initialized flag
-		if !l.vm.isInitialized.Get() {
-			l.err = fmt.Errorf("VM not fully initialized")
+		// Check if VM is bootstrapped and ready for API calls
+		if !l.vm.bootstrapped.Get() {
+			l.err = fmt.Errorf("VM not fully bootstrapped")
 			return
 		}
 
@@ -915,7 +915,7 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if l.handler == nil {
-		http.Error(w, "Platform service not ready, VM still initializing", http.StatusServiceUnavailable)
+		http.Error(w, "Platform service not ready, VM still bootstrapping", http.StatusServiceUnavailable)
 		return
 	}
 

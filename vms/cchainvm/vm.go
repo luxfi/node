@@ -1341,6 +1341,8 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	ethAPI := NewEthAPI(vm.backend)
 	netAPI := &NetAPI{networkID: vm.ethConfig.NetworkId}
 	web3API := &Web3API{}
+	txpoolAPI := NewTxPoolAPI(vm.backend)
+	debugAPI := NewDebugAPI(vm.backend)
 	luxAPI := NewLuxAPI(vm)
 
 	// Register each API namespace
@@ -1356,6 +1358,14 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	vm.log.Info("Registering web3 API")
 	if err := rpcServer.RegisterName("web3", web3API); err != nil {
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
+	}
+	vm.log.Info("Registering txpool API")
+	if err := rpcServer.RegisterName("txpool", txpoolAPI); err != nil {
+		return nil, fmt.Errorf("failed to register txpool API: %w", err)
+	}
+	vm.log.Info("Registering debug API")
+	if err := rpcServer.RegisterName("debug", debugAPI); err != nil {
+		return nil, fmt.Errorf("failed to register debug API: %w", err)
 	}
 	vm.log.Info("Registering lux API (replayStatus, reloadBlockchain, verifyBlockchain)")
 	// Register under "lux" namespace - accessible as lux_replayStatus, lux_reloadBlockchain, lux_verifyBlockchain
@@ -1382,7 +1392,8 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 
 // NewHTTPHandler implements the block.ChainVM interface
 func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
-	return nil, nil
+	// Return the handlers created by CreateHandlers
+	return vm.CreateHandlers(ctx)
 }
 
 // WaitForEvent implements the block.ChainVM interface

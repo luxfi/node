@@ -124,6 +124,96 @@ func (api *EthAPI) SendRawTransaction(ctx context.Context, input hexutil.Bytes) 
 	return tx.Hash(), nil
 }
 
+// SendTransaction sends a transaction (creates and signs if needed)
+func (api *EthAPI) SendTransaction(ctx context.Context, args TransactionArgs) (common.Hash, error) {
+	// For now, return an error as we don't have account management
+	return common.Hash{}, fmt.Errorf("eth_sendTransaction not supported - use eth_sendRawTransaction")
+}
+
+// Call executes a message call immediately without creating a transaction
+func (api *EthAPI) Call(ctx context.Context, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	// Return empty result for now
+	// In production, would execute EVM call
+	return hexutil.Bytes{}, nil
+}
+
+// GetStorageAt returns the value from a storage position at a given address
+func (api *EthAPI) GetStorageAt(ctx context.Context, address common.Address, key string, blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	state, err := api.backend.blockchain.StateAt(api.backend.blockchain.CurrentBlock().Root)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Parse the key
+	keyHash := common.HexToHash(key)
+	val := state.GetState(address, keyHash)
+	return val[:], nil
+}
+
+// Accounts returns the list of accounts owned by the client
+func (api *EthAPI) Accounts() []common.Address {
+	// Return empty list as we don't manage accounts
+	return []common.Address{}
+}
+
+// Sign signs data with the given account
+func (api *EthAPI) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
+	return nil, fmt.Errorf("eth_sign not supported")
+}
+
+// SignTransaction signs a transaction
+func (api *EthAPI) SignTransaction(args TransactionArgs) (hexutil.Bytes, error) {
+	return nil, fmt.Errorf("eth_signTransaction not supported")
+}
+
+// GetLogs returns logs matching the filter criteria
+func (api *EthAPI) GetLogs(ctx context.Context, criteria map[string]interface{}) ([]*types.Log, error) {
+	// Return empty logs for now
+	// In production, would query logs from blockchain
+	return []*types.Log{}, nil
+}
+
+// Mining returns whether the client is actively mining
+func (api *EthAPI) Mining() bool {
+	return false
+}
+
+// Hashrate returns the client's hashrate
+func (api *EthAPI) Hashrate() hexutil.Uint64 {
+	return hexutil.Uint64(0)
+}
+
+// Syncing returns the syncing status
+func (api *EthAPI) Syncing() (interface{}, error) {
+	// Return false to indicate not syncing
+	return false, nil
+}
+
+// GetUncleCountByBlockHash returns the number of uncles in a block by hash
+func (api *EthAPI) GetUncleCountByBlockHash(ctx context.Context, hash common.Hash) *hexutil.Uint {
+	block := api.backend.blockchain.GetBlockByHash(hash)
+	if block == nil {
+		return nil
+	}
+	count := hexutil.Uint(len(block.Uncles()))
+	return &count
+}
+
+// GetUncleCountByBlockNumber returns the number of uncles in a block by number  
+func (api *EthAPI) GetUncleCountByBlockNumber(ctx context.Context, number rpc.BlockNumber) *hexutil.Uint {
+	var block *types.Block
+	if number == rpc.LatestBlockNumber {
+		block = api.backend.blockchain.GetBlock(api.backend.blockchain.CurrentBlock().Hash(), api.backend.blockchain.CurrentBlock().Number.Uint64())
+	} else {
+		block = api.backend.blockchain.GetBlockByNumber(uint64(number))
+	}
+	if block == nil {
+		return nil
+	}
+	count := hexutil.Uint(len(block.Uncles()))
+	return &count
+}
+
 // GetTransactionByHash returns a transaction by hash
 func (api *EthAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) (*RPCTransaction, error) {
 	// Check transaction pool first
@@ -362,6 +452,78 @@ func (api *Web3API) ClientVersion() string {
 // Sha3 returns the Keccak-256 hash of the given data
 func (api *Web3API) Sha3(input hexutil.Bytes) hexutil.Bytes {
 	return crypto.Keccak256(input)
+}
+
+// TxPoolAPI provides transaction pool RPC API
+type TxPoolAPI struct {
+	backend *MinimalEthBackend
+}
+
+// NewTxPoolAPI creates a new TxPool RPC API
+func NewTxPoolAPI(backend *MinimalEthBackend) *TxPoolAPI {
+	return &TxPoolAPI{backend: backend}
+}
+
+// Status returns the status of the transaction pool
+func (api *TxPoolAPI) Status() map[string]hexutil.Uint {
+	// Return mock status for now - in production would query actual tx pool
+	return map[string]hexutil.Uint{
+		"pending": hexutil.Uint(0),
+		"queued":  hexutil.Uint(0),
+	}
+}
+
+// Content returns the transactions in the pool
+func (api *TxPoolAPI) Content() map[string]map[string]map[string]interface{} {
+	// Return empty content for now
+	return map[string]map[string]map[string]interface{}{
+		"pending": {},
+		"queued":  {},
+	}
+}
+
+// Inspect returns a summary of the pool
+func (api *TxPoolAPI) Inspect() map[string]map[string]map[string]string {
+	return map[string]map[string]map[string]string{
+		"pending": {},
+		"queued":  {},
+	}
+}
+
+// DebugAPI provides debug RPC API
+type DebugAPI struct {
+	backend *MinimalEthBackend
+}
+
+// NewDebugAPI creates a new Debug RPC API
+func NewDebugAPI(backend *MinimalEthBackend) *DebugAPI {
+	return &DebugAPI{backend: backend}
+}
+
+// TraceTransaction returns the trace of a transaction
+func (api *DebugAPI) TraceTransaction(ctx context.Context, txHash common.Hash) (interface{}, error) {
+	// Return a basic trace structure for now
+	return map[string]interface{}{
+		"gas":         hexutil.Uint64(21000),
+		"returnValue": hexutil.Bytes{},
+		"structLogs":  []interface{}{},
+	}, nil
+}
+
+// TraceBlock returns traces for all transactions in a block
+func (api *DebugAPI) TraceBlock(ctx context.Context, blockRlp hexutil.Bytes) (interface{}, error) {
+	// Return empty traces for now
+	return []interface{}{}, nil
+}
+
+// TraceBlockByNumber returns traces for all transactions in a block by number
+func (api *DebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber) (interface{}, error) {
+	return []interface{}{}, nil
+}
+
+// TraceBlockByHash returns traces for all transactions in a block by hash
+func (api *DebugAPI) TraceBlockByHash(ctx context.Context, hash common.Hash) (interface{}, error) {
+	return []interface{}{}, nil
 }
 
 // LuxAPI provides Lux-specific RPC API

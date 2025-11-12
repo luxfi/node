@@ -1,0 +1,388 @@
+---
+title: Architecture Overview
+description: Understanding the Lux blockchain architecture
+---
+
+# Architecture Overview
+
+The Lux blockchain is a high-performance, multi-chain platform featuring multiple consensus mechanisms, cross-chain interoperability, and post-quantum security. This document provides a comprehensive overview of the system architecture.
+
+## Multi-Chain Architecture
+
+Lux implements a 4-chain primary network architecture, each optimized for specific use cases:
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Primary Network                 │
+├───────────────┬──────────────┬──────────────────┤
+│   P-Chain     │   X-Chain    │     C-Chain      │
+│  (Platform)   │  (Exchange)  │   (Contract)     │
+│               │              │                   │
+│  Chain        │     DAG      │      BFT         │
+│  Consensus    │  Consensus   │   Consensus      │
+├───────────────┴──────────────┴──────────────────┤
+│                   Q-Chain                        │
+│                 (Quantum)                        │
+│                                                  │
+│         Post-Quantum Consensus                   │
+│          Ringtail Signatures                     │
+└─────────────────────────────────────────────────┘
+```
+
+### Platform Chain (P-Chain)
+
+**Purpose:** Metadata blockchain for coordination
+- Manages validators and staking
+- Tracks subnets and their validators
+- Handles cross-chain transfers
+- Uses Chain consensus for linear ordering
+
+**Key Features:**
+- Validator management (add, remove, delegate)
+- Subnet creation and management
+- Staking and rewards distribution
+- Network governance
+
+### Exchange Chain (X-Chain)
+
+**Purpose:** High-throughput asset transfers
+- UTXO-based asset model
+- Native asset creation and management
+- Fast, parallel transaction processing
+- Uses DAG consensus for high throughput
+
+**Key Features:**
+- Asset creation (fungible & non-fungible)
+- Atomic swaps
+- Multi-signature support
+- Cross-chain transfers
+
+### Contract Chain (C-Chain)
+
+**Purpose:** EVM-compatible smart contracts
+- Ethereum Virtual Machine (EVM) support
+- Smart contract deployment and execution
+- DeFi and dApp ecosystem
+- Uses BFT consensus for finality
+
+**Key Features:**
+- Full Ethereum compatibility
+- Web3 RPC support
+- MetaMask integration
+- Solidity smart contracts
+
+### Quantum Chain (Q-Chain)
+
+**Purpose:** Post-quantum security layer
+- Quantum-resistant cryptography
+- ML-DSA-65 (Dilithium) signatures
+- Ringtail ring signatures for privacy
+- Hybrid classical/quantum consensus
+
+**Key Features:**
+- Post-quantum signatures
+- Privacy-preserving transactions
+- Future-proof security
+- AI-powered validation (optional)
+
+## Consensus Architecture
+
+### Multi-Consensus Design
+
+Lux employs different consensus mechanisms optimized for each chain's requirements:
+
+```
+┌──────────────────────────────────────────────┐
+│              Consensus Engines                │
+├──────────────┬──────────────┬────────────────┤
+│    Chain     │     DAG      │      BFT       │
+│   Engine     │    Engine    │    Engine      │
+│              │              │                 │
+│  - Linear    │ - Parallel   │  - Instant     │
+│  - Ordered   │ - Fast       │  - Finality    │
+│  - Simple    │ - Scalable   │  - Byzantine   │
+├──────────────┴──────────────┴────────────────┤
+│           Post-Quantum Engine                 │
+│                                               │
+│  - ML-DSA signatures                          │
+│  - Quantum resistance                         │
+│  - Hybrid consensus                           │
+└───────────────────────────────────────────────┘
+```
+
+### Consensus Properties
+
+| Engine | Finality | Throughput | Use Case |
+|--------|----------|------------|----------|
+| Chain | Probabilistic | Medium | Metadata, ordering |
+| DAG | Probabilistic | High | Parallel transactions |
+| BFT | Instant | Medium | Smart contracts |
+| PQ | Instant | Medium | Quantum-safe operations |
+
+## Node Architecture
+
+### Component Layers
+
+```
+┌─────────────────────────────────────────────┐
+│              Application Layer               │
+│         (APIs, RPCs, User Interfaces)       │
+├─────────────────────────────────────────────┤
+│            Virtual Machine Layer             │
+│    (PlatformVM, AVM, EVM, QuantumVM)       │
+├─────────────────────────────────────────────┤
+│            Consensus Layer                   │
+│   (Chain, DAG, BFT, Post-Quantum)           │
+├─────────────────────────────────────────────┤
+│            Network Layer                     │
+│    (P2P, Gossip, Message Routing)           │
+├─────────────────────────────────────────────┤
+│            Storage Layer                     │
+│    (Database, State Management)              │
+└─────────────────────────────────────────────┘
+```
+
+### Core Components
+
+#### 1. Chain Manager
+- Manages multiple blockchain instances
+- Coordinates cross-chain communication
+- Handles chain lifecycle (create, start, stop)
+- Routes messages between chains
+
+#### 2. VM Manager
+- Plugin architecture for virtual machines
+- Dynamic VM loading and management
+- VM versioning and upgrades
+- Resource isolation
+
+#### 3. Network Manager
+- Peer discovery and management
+- Message routing and delivery
+- Bandwidth throttling
+- DDoS protection
+
+#### 4. Database Layer
+- Pluggable database backends (BadgerDB, PebbleDB)
+- Merkle tree state management
+- Efficient state pruning
+- Snapshot and restore
+
+## Virtual Machine Architecture
+
+### VM Plugin System
+
+```go
+type VM interface {
+    // Initialization
+    Initialize(ctx Context, db Database,
+              genesis []byte, upgrades []Upgrade,
+              config []byte) error
+
+    // Block Production
+    BuildBlock(ctx Context) (Block, error)
+    ParseBlock(ctx Context, bytes []byte) (Block, error)
+
+    // State Management
+    SetState(ctx Context, state State) error
+    GetLastAccepted(ctx Context) (ids.ID, error)
+
+    // Health & Lifecycle
+    HealthCheck(ctx Context) (interface{}, error)
+    Shutdown(ctx Context) error
+}
+```
+
+### Supported VMs
+
+1. **PlatformVM** - Core platform operations
+2. **AVM** - Asset management (X-Chain)
+3. **EVM** - Ethereum compatibility (C-Chain)
+4. **QuantumVM** - Post-quantum operations (Q-Chain)
+5. **Custom VMs** - User-defined virtual machines
+
+## Network Architecture
+
+### P2P Network Topology
+
+```
+         ┌─────────┐
+         │  Node A  │
+         └────┬────┘
+              │
+    ┌─────────┼─────────┐
+    │         │         │
+┌───▼───┐ ┌──▼───┐ ┌───▼───┐
+│Node B │ │Node C│ │ Node D │
+└───┬───┘ └──┬───┘ └───┬───┘
+    │         │         │
+    └─────────┼─────────┘
+              │
+         ┌────▼────┐
+         │  Node E  │
+         └─────────┘
+```
+
+### Network Protocols
+
+#### 1. Peer Discovery
+- Bootstrap nodes for initial connections
+- DHT-based peer discovery
+- NAT traversal support
+- Dynamic peer management
+
+#### 2. Message Protocol
+- TLS 1.3 for encryption
+- Protocol buffers for serialization
+- Message compression
+- Request/response correlation
+
+#### 3. Gossip Protocol
+- Efficient message propagation
+- Redundant path routing
+- Message deduplication
+- Bandwidth optimization
+
+## State Management
+
+### State Architecture
+
+```
+┌────────────────────────────────────┐
+│          State Manager              │
+├────────────┬───────────┬───────────┤
+│  Current   │  Pending  │ Historical│
+│   State    │   State   │   States  │
+├────────────┴───────────┴───────────┤
+│         Merkle Tree Layer           │
+├─────────────────────────────────────┤
+│        Database Backend             │
+│    (BadgerDB/PebbleDB/LevelDB)     │
+└─────────────────────────────────────┘
+```
+
+### State Types
+
+1. **Chain State** - Block headers, metadata
+2. **UTXO State** - Unspent transaction outputs
+3. **Account State** - EVM account balances
+4. **Validator State** - Staking information
+5. **Subnet State** - Subnet configurations
+
+## Cross-Chain Communication
+
+### Atomic Swaps
+
+```
+X-Chain                    P-Chain
+   │                          │
+   ├─── Export Tx ───────────►│
+   │                          │
+   │                          ├─── Verify ──►
+   │                          │
+   │◄──────── Import Tx ──────┤
+   │                          │
+```
+
+### Warp Messaging
+
+Native cross-subnet communication protocol:
+- BLS multi-signatures for validation
+- Aggregated signatures for efficiency
+- Replay protection
+- Atomic guarantees
+
+## Security Architecture
+
+### Cryptographic Primitives
+
+| Algorithm | Use Case | Security Level |
+|-----------|----------|----------------|
+| secp256k1 | ECDSA signatures | 128-bit |
+| BLS12-381 | Threshold signatures | 128-bit |
+| ML-DSA-65 | Post-quantum signatures | 192-bit |
+| Ringtail | Ring signatures | 128-bit |
+| SHA-256 | Hashing | 128-bit |
+| AES-256-GCM | Encryption | 256-bit |
+
+### Security Layers
+
+1. **Network Security**
+   - TLS 1.3 encryption
+   - Certificate-based authentication
+   - IP allowlisting/denylisting
+   - DDoS mitigation
+
+2. **Consensus Security**
+   - Sybil resistance via staking
+   - Byzantine fault tolerance
+   - Economic penalties
+   - Time-based security
+
+3. **VM Security**
+   - Process isolation
+   - Resource limits
+   - Gas metering
+   - Sandboxing
+
+## Performance Optimizations
+
+### Caching Strategy
+
+```
+┌─────────────────────────────────────┐
+│         Multi-Level Cache            │
+├──────────┬──────────┬───────────────┤
+│   L1     │    L2    │      L3       │
+│ Memory   │   SSD    │    Database   │
+│  Cache   │  Cache   │     Storage   │
+│          │          │               │
+│  < 1ms   │  < 10ms  │    < 100ms    │
+└──────────┴──────────┴───────────────┘
+```
+
+### Optimization Techniques
+
+1. **Parallel Processing**
+   - Concurrent transaction validation
+   - Parallel block processing
+   - Multi-threaded state updates
+   - Async I/O operations
+
+2. **Data Structures**
+   - Bloom filters for lookups
+   - LRU caches for hot data
+   - Merkle trees for verification
+   - Compact data encoding
+
+3. **Network Optimizations**
+   - Message batching
+   - Compression algorithms
+   - Connection pooling
+   - Bandwidth throttling
+
+## Monitoring & Observability
+
+### Metrics Collection
+
+```
+Node ──► Prometheus Metrics ──► Grafana
+  │              │                  │
+  │              │                  │
+  ▼              ▼                  ▼
+Logs         Time Series      Dashboards
+```
+
+### Key Metrics
+
+- **Performance**: TPS, latency, throughput
+- **Network**: Peers, bandwidth, message rates
+- **Consensus**: Block time, finality, forks
+- **Resources**: CPU, memory, disk, network
+
+## Next Steps
+
+- [Consensus Mechanisms](/docs/architecture/consensus) - Deep dive into consensus
+- [VM Architecture](/docs/architecture/vms) - Virtual machine details
+- [Network Protocol](/docs/architecture/network) - P2P networking
+- [State Management](/docs/architecture/state) - Database and state details
