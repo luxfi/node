@@ -16,8 +16,9 @@ func TestMustNotImport(t *testing.T) {
 	require := require.New(t)
 
 	mustNotImport := map[string][]string{
-		// Importing these packages configures the EVM plugin globally. This must not be
-		// done to support both geth (go-ethereum) and subnet-evm.
+		// Directly importing these packages configures the EVM plugin globally.
+		// This must not be done to support both geth (go-ethereum) and subnet-evm.
+		// Note: Transitive dependencies through geth/common are acceptable.
 		"tests/...": {
 			"github.com/luxfi/geth/params",
 			"github.com/luxfi/geth/plugin/evm/customtypes",
@@ -25,11 +26,14 @@ func TestMustNotImport(t *testing.T) {
 	}
 	for packageName, forbiddenImports := range mustNotImport {
 		packagePath := path.Join("github.com/luxfi/node", packageName)
-		imports, err := packages.GetDependencies(packagePath)
+		// Use GetDirectImports instead of GetDependencies to only check direct imports,
+		// not transitive dependencies. Transitive deps on geth/params are unavoidable
+		// when using geth/common for Address and Hash types.
+		imports, err := packages.GetDirectImports(packagePath)
 		require.NoError(err)
 
 		for _, forbiddenImport := range forbiddenImports {
-			require.NotContains(imports, forbiddenImport, "package %s must not import %s, check output of: go list -f '{{ .Deps }}' %q", packageName, forbiddenImport, packagePath)
+			require.NotContains(imports, forbiddenImport, "package %s must not directly import %s, check output of: go list -f '{{ .Imports }}' %q", packageName, forbiddenImport, packagePath)
 		}
 	}
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/geth/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"
@@ -231,9 +230,12 @@ type TransferTest struct {
 func (t TransferTest) Run(tc tests.TestContext, wallet *Wallet) {
 	require := require.New(tc)
 
-	maxValue := int64(100 * 1_000_000_000 / params.TxGas)
+	const txGas = 21000        // Base gas cost for simple transfer
+	const gwei = 1_000_000_000 // 1e9 Wei
+
+	maxValue := int64(100 * gwei / txGas)
 	maxFeeCap := big.NewInt(maxValue)
-	bigGwei := big.NewInt(params.GWei)
+	bigGwei := big.NewInt(gwei)
 	gasTipCap := new(big.Int).Mul(bigGwei, big.NewInt(1))
 	gasFeeCap := new(big.Int).Mul(bigGwei, maxFeeCap)
 
@@ -248,7 +250,7 @@ func (t TransferTest) Run(tc tests.TestContext, wallet *Wallet) {
 		Nonce:     wallet.nonce,
 		GasTipCap: gasTipCap,
 		GasFeeCap: gasFeeCap,
-		Gas:       params.TxGas,
+		Gas:       txGas,
 		To:        &recipient,
 		Data:      nil,
 		Value:     t.Value,

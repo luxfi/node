@@ -10,12 +10,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/params"
-
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -108,10 +106,10 @@ func NewTestGenesisWithFunds(
 
 	// Ensure pre-funded keys have arbitrary large balances on both chains to support testing
 	xChainBalances := make(XChainBalanceMap, len(keysToFund))
-	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
+	cChainBalances := make(map[common.Address]TestGenesisAccount, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[GetEthAddress(key)] = TestGenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}
@@ -143,8 +141,9 @@ func NewTestGenesisWithFunds(
 
 	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
-	cChainGenesis := &core.Genesis{
-		Config:     &params.ChainConfig{ChainID: chainID},      // The rest of the config is set in geth on VM initialization
+	// ChainConfig is minimal here - full config is set in geth on VM initialization
+	cChainGenesis := &TestGenesis{
+		Config:     &TestChainConfig{ChainID: chainID},
 		Difficulty: big.NewInt(0),                              // Difficulty is a mandatory field
 		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()), // This time enables Lux upgrades by default
 		GasLimit:   defaultGasLimit,

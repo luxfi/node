@@ -82,11 +82,31 @@ func (hi *heightIndexer) MarkRepaired(repaired bool) {
 // the process has limited memory footprint, can be resumed from periodic checkpoints
 // and works asynchronously without blocking the VM.
 func (hi *heightIndexer) RepairHeightIndex(ctx context.Context) error {
-	// TODO: Checkpoint functionality has been removed, need to update this logic
-	// For now, assume no checkpoint and start fresh
-	hi.MarkRepaired(true)
-	return nil // nothing to do
-	return nil
+	// Get the checkpoint (last accepted block)
+	checkpointBlkID, err := hi.state.GetCheckpoint()
+	if err == database.ErrNotFound {
+		// No checkpoint set, nothing to repair
+		hi.MarkRepaired(true)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	// Get the checkpoint block to determine its height
+	checkpointBlk, err := hi.server.GetFullPostForkBlock(ctx, checkpointBlkID)
+	if err != nil {
+		return err
+	}
+
+	// Start from checkpoint height and iterate backwards
+	err = hi.doRepair(ctx, checkpointBlkID, checkpointBlk.Height())
+	if err != nil {
+		return err
+	}
+
+	// Flush the final state
+	return hi.flush()
 }
 
 // if height index needs repairing, doRepair would do that. It

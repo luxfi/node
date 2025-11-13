@@ -53,18 +53,9 @@ func (v *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Adapter: convert validators.State GetValidatorSet to consensuscontext.ValidatorState format
-	validatorMap, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
-	if err != nil {
-		return nil, err
-	}
-	// Convert from map[ids.NodeID]*validators.GetValidatorOutput to map[ids.NodeID]uint64
-	result := make(map[ids.NodeID]uint64, len(validatorMap))
-	for nodeID, validator := range validatorMap {
-		result[nodeID] = validator.Light
-	}
-	return result, nil
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Use the test state's GetValidatorSet directly
+	return v.state.GetValidatorSet(ctx, height, netID)
 }
 
 func (v *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -74,6 +65,21 @@ func (v *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, e
 func (v *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// Not available in test state, return 0
 	return 0, nil
+}
+
+func (v *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Use the test state's GetValidatorSet to get current validators
+	return v.state.GetValidatorSet(ctx, height, subnetID)
+}
+
+func (v *validatorStateAdapter) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	// Not needed for basic proposervm tests, return empty
+	return make(map[ids.ID]map[uint64]*validators.WarpSet), nil
+}
+
+func (v *validatorStateAdapter) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	// Not needed for basic proposervm tests, return empty WarpSet
+	return &validators.WarpSet{}, nil
 }
 
 func TestCoreVMNotRemote(t *testing.T) {
@@ -993,7 +999,7 @@ func initTestRemoteProposerVM(
 		return nil
 	}
 	coreVM.LastAcceptedF = func(_ context.Context) (ids.ID, error) {
-		return chaintest.Genesis.ID(), nil
+		return blocktest.GenesisID, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
 		switch blkID {

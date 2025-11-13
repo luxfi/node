@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/params"
 
 	"github.com/luxfi/node/tests/load/c/contracts"
 
@@ -115,7 +114,8 @@ func makeTxTypes(
 			weight:    1000,
 			maxFeeCap: big.NewInt(4761904), // equiavelent to 100 ETH which is the maximum value
 			generateAndIssueTx: func(txCtx context.Context, maxFeeCap *big.Int, nonce uint64) (*types.Transaction, error) {
-				bigGwei := big.NewInt(params.GWei)
+				const gwei = 1_000_000_000 // 1e9 Wei
+				bigGwei := big.NewInt(gwei)
 				gasTipCap := new(big.Int).Mul(bigGwei, big.NewInt(1))
 				gasFeeCap := new(big.Int).Mul(bigGwei, maxFeeCap)
 				tx, err := types.SignNewTx(senderKey, signer, &types.DynamicFeeTx{
@@ -123,7 +123,7 @@ func makeTxTypes(
 					Nonce:     nonce,
 					GasTipCap: gasTipCap,
 					GasFeeCap: gasFeeCap,
-					Gas:       params.TxGas,
+					Gas:       21000, // TxGas - base gas cost for simple tx
 					To:        &senderAddress,
 					Data:      nil,
 					Value:     common.Big0,

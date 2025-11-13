@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/math/set"
 )
@@ -101,10 +100,7 @@ func TestClient_AppRequest(t *testing.T) {
 			testHandler := p2p.TestHandler{
 				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
 					if tt.appErr != nil {
-						return nil, &consensuscore.AppError{
-							Code:    123,
-							Message: tt.appErr.Error(),
-						}
+					return nil, tt.appErr.(*consensuscore.AppError)
 					}
 
 					return tt.appResponse, nil

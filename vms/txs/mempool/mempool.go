@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

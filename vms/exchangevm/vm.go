@@ -27,10 +27,13 @@ import (
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
-consensuscore "github.com/luxfi/consensus/core"
+	consensuscore "github.com/luxfi/consensus/core"
+	consensusengine "github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
@@ -120,7 +123,7 @@ type VM struct {
 
 	pubsub *pubsub.Server
 
-	appSender consensuscore.AppSender
+	appSender consensusengine.AppSender
 
 	// State management
 	state state.State
@@ -159,7 +162,7 @@ type VM struct {
 	network      *network.Network
 
 	// Channel for receiving messages from mempool
-	toEngine chan consensuscore.MessageType
+	toEngine chan consensuscore.Message
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -222,10 +225,10 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	coreFxs := make([]*consensuscore.Fx, len(fxs))
+	coreFxs := make([]*common.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx != nil {
-			coreFxs[i] = fx.(*consensuscore.Fx)
+			coreFxs[i] = fx.(*common.Fx)
 		}
 	}
 
@@ -236,14 +239,14 @@ func (vm *VM) Initialize(
 		appSender = &noOpAppSender{}
 	}
 
-	coreAppSender, ok := appSender.(consensuscore.AppSender)
+	coreAppSender, ok := appSender.(consensusengine.AppSender)
 	if !ok {
 		// Debug: Print actual type received
 		actualType := "nil"
 		if appSender != nil {
 			actualType = fmt.Sprintf("%T", appSender)
 		}
-		return fmt.Errorf("invalid app sender type: expected consensuscore.AppSender, got %s", actualType)
+		return fmt.Errorf("invalid app sender type: expected consensusengine.AppSender, got %s", actualType)
 	}
 
 	// Ignore toEngine channel as XVM doesn't use it
@@ -260,8 +263,8 @@ func (vm *VM) initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*consensuscore.Fx,
-	appSender consensuscore.AppSender,
+	fxs []*common.Fx,
+	appSender consensusengine.AppSender,
 ) error {
 	// Initialize logger first
 	vm.log = log.NoLog{}
@@ -306,12 +309,21 @@ func (vm *VM) initialize(
 		if fxContainer == nil {
 			return errIncompatibleFx
 		}
-		// Since consensuscore.Fx is now empty, we need to handle this differently
-		// For now, use a placeholder secp256k1fx
-		fx := &secp256k1fx.Fx{}
+		
+		// Type assert to extensions.Fx
+		fx, ok := fxContainer.Fx.(extensions.Fx)
+		if !ok {
+			return errIncompatibleFx
+		}
+		
+		// Initialize the FX
+		if err := fx.Initialize(vm); err != nil {
+			return err
+		}
+		
 		typedFxs[i] = fx
 		vm.fxs[i] = &extensions.ParsedFx{
-			ID: ids.Empty, // Use empty ID as placeholder
+			ID: fxContainer.ID,
 			Fx: fx,
 		}
 	}
@@ -507,7 +519,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	_ = toEngine
 	
 	// Create a channel for mempool to engine communication
-	vm.toEngine = make(chan consensuscore.MessageType, 1)
+	vm.toEngine = make(chan consensuscore.Message, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
@@ -1035,10 +1047,28 @@ func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, height
 	return result, nil
 }
 
-// noOpAppSender is a minimal implementation of consensuscore.AppSender for single-node mode
+// Clock returns the VM's clock for time-related operations
+func (vm *VM) Clock() *mockable.Clock {
+	return &vm.clock
+}
+
+// CodecRegistry returns the codec registry for marshalling/unmarshalling
+func (vm *VM) CodecRegistry() codec.Registry {
+	if vm.parser == nil {
+		return nil
+	}
+	return vm.parser.CodecRegistry()
+}
+
+// Logger returns the VM's logger
+func (vm *VM) Logger() log.Logger {
+	return vm.log
+}
+
+// noOpAppSender is a minimal implementation of consensusengine.AppSender for single-node mode
 type noOpAppSender struct{}
 
-var _ consensuscore.AppSender = (*noOpAppSender)(nil)
+var _ consensusengine.AppSender = (*noOpAppSender)(nil)
 
 func (n *noOpAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	return nil

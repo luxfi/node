@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
@@ -602,21 +601,33 @@ func TestPeersSample(t *testing.T) {
 			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, metric.NewRegistry(), "")
 			require.NoError(err)
 
-			for connected := range tt.connected {
-				require.NoError(network.Connected(context.Background(), connected, nil))
+			// Connect peers
+			for nodeID := range tt.connected {
+				require.NoError(network.Connected(context.Background(), nodeID, nil))
 			}
 
-			for disconnected := range tt.disconnected {
-				require.NoError(network.Disconnected(context.Background(), disconnected))
+			// Disconnect peers
+			for nodeID := range tt.disconnected {
+				require.NoError(network.Disconnected(context.Background(), nodeID))
 			}
 
-			sampleable := make(set.Set[ids.NodeID])
+			// Calculate expected sampleable set: connected - disconnected
+			sampleable := set.NewSet[ids.NodeID](0)
 			sampleable.Union(tt.connected)
 			sampleable.Difference(tt.disconnected)
 
+			// Sample from the network
 			sampled := network.Peers.Sample(tt.limit)
-			require.Len(sampled, min(tt.limit, len(sampleable)))
-			require.Subset(sampleable, sampled)
+
+			// Expected sample size
+			expectedLen := min(tt.limit, sampleable.Len())
+			require.Len(sampled, expectedLen, "expected %d samples but got %d, sampleable: %v, sampled: %v",
+				expectedLen, len(sampled), sampleable, sampled)
+
+			// All sampled nodes should be in the sampleable set
+			for _, nodeID := range sampled {
+				require.True(sampleable.Contains(nodeID), "sampled node %s not in sampleable set %v", nodeID, sampleable)
+			}
 		})
 	}
 }

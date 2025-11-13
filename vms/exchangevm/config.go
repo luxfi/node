@@ -12,7 +12,7 @@ import (
 
 var DefaultConfig = Config{
 	Network:          network.DefaultConfig,
-	ChecksumsEnabled: false,
+	ChecksumsEnabled: true,
 	Config:           config.Config{},
 }
 

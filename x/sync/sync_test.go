@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
@@ -58,7 +58,7 @@ func newFlakyRangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
 				return nil, appErr
@@ -77,7 +77,7 @@ func newFlakyRangeProofHandler(
 
 			responseBytes, err := proto.Marshal(proof.ToProto())
 			if err != nil {
-				return nil, &core.AppError{Code: 123, Message: err.Error()}
+				return nil, &consensuscore.AppError{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -94,7 +94,7 @@ func newFlakyChangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 			var err error
 			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
@@ -119,7 +119,7 @@ func newFlakyChangeProofHandler(
 				},
 			})
 			if err != nil {
-				return nil, &core.AppError{Code: 123, Message: err.Error()}
+				return nil, &consensuscore.AppError{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -132,9 +132,9 @@ type flakyHandler struct {
 	c *counter
 }
 
-func (f *flakyHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+func (f *flakyHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 	if f.c.Inc() == 0 {
-		return nil, &core.AppError{Code: 123, Message: "flake error"}
+		return nil, &consensuscore.AppError{Code: 123, Message: "flake error"}
 	}
 
 	return f.Handler.AppRequest(ctx, nodeID, deadline, requestBytes)
@@ -163,7 +163,7 @@ type waitingHandler struct {
 	updatedRootChan chan struct{}
 }
 
-func (w *waitingHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+func (w *waitingHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 	<-w.updatedRootChan
 	return w.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }

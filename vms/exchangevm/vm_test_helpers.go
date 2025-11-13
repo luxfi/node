@@ -205,6 +205,9 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		sharedMemory:  sharedMemory,
 	}
 
+	// Lock the VM so tests can unlock it when ready
+	vm.Lock.Lock()
+
 	return env
 }
 

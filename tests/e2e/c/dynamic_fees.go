@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/geth/accounts/abi"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/params"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
@@ -35,13 +34,16 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 	require := require.New(tc)
 
 	const (
+		gwei = 1_000_000_000 // 1e9 Wei
+		wei  = 1
+
 		// maxFeePerGas is the maximum fee that transactions issued by this test
 		// will be willing to pay. The actual value doesn't really matter, it
 		// just needs to be higher than the `targetGasPrice` calculated below.
-		maxFeePerGas = 1000 * params.GWei
+		maxFeePerGas = 1000 * gwei
 		// minFeePerGas is the minimum fee that transactions issued by this test
 		// will pay. The mempool enforces that this value is non-zero.
-		minFeePerGas = 1 * params.Wei
+		minFeePerGas = 1 * wei
 
 		// expectedGasPriceIncreaseNumerator/expectedGasPriceIncreaseDenominator
 		// is the multiplier that the gas price is attempted to reach. So if the

@@ -212,9 +212,17 @@ func stateSyncEnabledFromEnvVars(env []corev1.EnvVar) (bool, error) {
 	if !ok {
 		return true, nil
 	}
-	stateSyncEnabled, err := cast.ToBoolE(rawStateSyncEnabled)
-	if err != nil {
-		return false, fmt.Errorf("%w (%v): %w", errFailedToCastToBool, rawStateSyncEnabled, err)
+	// Only accept actual boolean values or string representations
+	switch v := rawStateSyncEnabled.(type) {
+	case bool:
+		return v, nil
+	case string:
+		stateSyncEnabled, err := cast.ToBoolE(v)
+		if err != nil {
+			return false, fmt.Errorf("%w (%v): %w", errFailedToCastToBool, rawStateSyncEnabled, err)
+		}
+		return stateSyncEnabled, nil
+	default:
+		return false, fmt.Errorf("%w (%v): expected bool or string, got %T", errFailedToCastToBool, rawStateSyncEnabled, rawStateSyncEnabled)
 	}
-	return stateSyncEnabled, nil
 }

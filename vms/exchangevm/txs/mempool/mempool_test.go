@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 
-	common "github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
 
 	"github.com/luxfi/node/vms/exchangevm/txs"
@@ -19,15 +18,14 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-func newMempool(toEngine chan<- common.MessageType) (*Mempool, error) {
+func newMempool() (*Mempool, error) {
 	return New("mempool", metric.NewNoOpRegistry())
 }
 
 func TestMempoolBasics(t *testing.T) {
 	require := require.New(t)
 
-	toEngine := make(chan common.MessageType, 1)
-	mempool, err := newMempool(toEngine)
+	mempool, err := newMempool()
 	require.NoError(err)
 
 	// Test that mempool starts empty

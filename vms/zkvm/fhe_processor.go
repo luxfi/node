@@ -180,7 +180,7 @@ func (fp *FHEProcessor) initializeFHEParams() error {
 	
 	fp.log.Info("FHE parameters initialized",
 		log.String("scheme", fp.config.FHEScheme),
-		log.Int("securityLevel", fp.config.SecurityLevel),
+		log.Int("securityLevel", int(fp.config.SecurityLevel)),
 	)
 	
 	return nil

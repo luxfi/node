@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
-
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -104,13 +104,17 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	m := atomic.NewMemory(atomicDB)
 
 	// Create test context with Lock
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	// Use PlatformChainID to match genesis transactions
+	consensusCtx := consensustest.Context(t, constants.PlatformChainID)
 	res.ctx = testcontext.New(context.Background())
 	res.ctx.NetworkID = consensusCtx.NetworkID
 	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.NodeID = consensusCtx.NodeID
 	res.ctx.NetID = consensusCtx.NetID
 	res.ctx.XAssetID = consensusCtx.XAssetID
+	res.ctx.LUXAssetID = consensusCtx.LUXAssetID
+	res.ctx.XChainID = consensusCtx.XChainID
+	res.ctx.CChainID = consensusCtx.CChainID
 	res.msm = &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(res.ctx.ChainID),
 	}
@@ -131,6 +135,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		NodeID:     res.ctx.NodeID,
 		XAssetID:   res.ctx.XAssetID,
 		LUXAssetID: res.ctx.LUXAssetID,
+		Log:        res.ctx.Log,
 	}
 	res.state = statetest.New(t, statetest.Config{
 		DB:         res.baseDB,
@@ -153,6 +158,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		NodeID:     res.ctx.NodeID,
 		XAssetID:   res.ctx.XAssetID,
 		LUXAssetID: res.ctx.LUXAssetID,
+		Log:        res.ctx.Log,
 	}
 
 	res.backend = txexecutor.Backend{

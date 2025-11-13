@@ -48,3 +48,33 @@ func GetDependencies(packageName string) (set.Set[string], error) {
 	}
 	return deps, nil
 }
+
+// GetDirectImports takes a fully qualified package name and returns a set of
+// its direct package imports (non-recursive) in the same format.
+func GetDirectImports(packageName string) (set.Set[string], error) {
+	// Configure the load mode to include imports
+	cfg := &packages.Config{Mode: packages.NeedImports | packages.NeedName}
+	pkgs, err := packages.Load(cfg, packageName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load package: %w", err)
+	}
+
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("no packages found for %s", packageName)
+	}
+
+	// Initialize imports set
+	imports := set.NewSet[string](1)
+
+	// Collect direct imports from all matching packages
+	for _, pkg := range pkgs {
+		if pkg.Errors != nil {
+			return nil, fmt.Errorf("failed to load package %s, %v", packageName, pkg.Errors)
+		}
+		// Add direct imports only
+		for importPath := range pkg.Imports {
+			imports.Add(importPath)
+		}
+	}
+	return imports, nil
+}

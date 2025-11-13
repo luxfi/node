@@ -261,7 +261,12 @@ func FuzzPeerStateMachine(f *testing.F) {
 		_ = peer.LastSent()
 		_ = peer.LastReceived()
 		_ = peer.Ready()
-		_ = peer.AwaitReady(context.Background())
+
+		// AwaitReady with timeout to prevent hanging
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		_ = peer.AwaitReady(ctx)
+		cancel()
+
 		_ = peer.Info()
 		_ = peer.Closed()
 		_ = peer.ObservedUptime()

@@ -13,17 +13,22 @@ import (
 type TestAppSender struct{}
 
 // SendAppGossip is a no-op for tests
-func (t *TestAppSender) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+func (t *TestAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
 	return nil
 }
 
 // SendAppRequest is a no-op for tests
-func (t *TestAppSender) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+func (t *TestAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
 	return nil
 }
 
 // SendAppResponse is a no-op for tests
 func (t *TestAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return nil
+}
+
+// SendAppError is a no-op for tests
+func (t *TestAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 

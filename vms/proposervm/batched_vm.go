@@ -80,6 +80,15 @@ func (vm *VM) GetAncestors(
 }
 
 func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainblock.Block, error) {
+	// Handle empty input
+	if len(blks) == 0 {
+		return nil, nil
+	}
+
+	if vm.batchedVM == nil {
+		return nil, chainblock.ErrRemoteVMNotImplemented
+	}
+
 	type partialData struct {
 		index int
 		block statelessblock.Block

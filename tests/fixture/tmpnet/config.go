@@ -15,14 +15,11 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/params"
-
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -31,6 +28,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"crypto/elliptic"
+
 	"github.com/luxfi/geth/common"
 	gethcrypto "github.com/luxfi/geth/crypto"
 )
@@ -158,13 +156,13 @@ func GenerateNetworkConfig(networkID uint32, nodeCount int, keyCount int) (*Netw
 	if keyCount < 1 {
 		keyCount = DefaultFundedKeyCount
 	}
-	
+
 	// Generate funded keys
 	keys, err := NewPrivateKeys(keyCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate keys: %w", err)
 	}
-	
+
 	config := &NetworkConfig{
 		NetworkID:    networkID,
 		FundedKeys:   keys,
@@ -173,14 +171,14 @@ func GenerateNetworkConfig(networkID uint32, nodeCount int, keyCount int) (*Netw
 			"log-level": "info",
 		},
 	}
-	
+
 	return config, nil
 }
 
 // GenerateNodeConfigs creates node configurations for the network
 func (c *NetworkConfig) GenerateNodeConfigs(count int) ([]*NodeConfig, error) {
 	nodes := make([]*NodeConfig, count)
-	
+
 	for i := 0; i < count; i++ {
 		nodeConfig := NewNodeConfig()
 		if err := nodeConfig.EnsureKeys(); err != nil {
@@ -188,31 +186,31 @@ func (c *NetworkConfig) GenerateNodeConfigs(count int) ([]*NodeConfig, error) {
 		}
 		nodes[i] = nodeConfig
 	}
-	
+
 	// Set up bootstrap configuration
 	if count > 1 {
 		bootstrapIDs := make([]string, 0, count-1)
 		bootstrapIPs := make([]string, 0, count-1)
-		
+
 		// First node becomes bootstrap node
 		bootstrapNode := nodes[0]
 		bootstrapPort := uint16(9651) // Default staking port
-		
+
 		// Configure other nodes to bootstrap from the first node
 		for i := 1; i < count; i++ {
 			node := nodes[i]
 			node.SetNetworkingConfigDefaults(
 				uint16(9650+i), // HTTP port
-				uint16(9651+i), // Staking port  
+				uint16(9651+i), // Staking port
 				[]string{bootstrapNode.NodeID.String()},
 				[]string{fmt.Sprintf("127.0.0.1:%d", bootstrapPort)},
 			)
-			
+
 			// Add to bootstrap list for subsequent nodes
 			bootstrapIDs = append(bootstrapIDs, node.NodeID.String())
 			bootstrapIPs = append(bootstrapIPs, fmt.Sprintf("127.0.0.1:%d", 9651+i))
 		}
-		
+
 		// Configure the bootstrap node with empty bootstrap list initially
 		bootstrapNode.SetNetworkingConfigDefaults(
 			9650, // HTTP port
@@ -221,7 +219,7 @@ func (c *NetworkConfig) GenerateNodeConfigs(count int) ([]*NodeConfig, error) {
 			[]string{},
 		)
 	}
-	
+
 	return nodes, nil
 }
 
@@ -240,10 +238,10 @@ func (c *NetworkConfig) EnsureGenesis(networkID uint32, validatorIDs []ids.NodeI
 
 	// Ensure pre-funded keys have arbitrary large balances on both chains to support testing
 	xChainBalances := make(XChainBalanceMap, len(c.FundedKeys))
-	cChainBalances := make(core.GenesisAlloc, len(c.FundedKeys))
+	cChainBalances := make(map[common.Address]TestGenesisAccount, len(c.FundedKeys))
 	for _, key := range c.FundedKeys {
 		xChainBalances[key.Address()] = DefaultFundedKeyXChainAmount
-		cChainBalances[GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[GetEthAddress(key)] = TestGenesisAccount{
 			Balance: DefaultFundedKeyCChainAmount,
 		}
 	}
@@ -411,7 +409,7 @@ type XChainBalanceMap map[ids.ShortID]uint64
 func NewTestGenesis(
 	networkID uint32,
 	xChainBalances XChainBalanceMap,
-	cChainBalances core.GenesisAlloc,
+	cChainBalances map[common.Address]TestGenesisAccount,
 	validatorIDs []ids.NodeID,
 ) (*genesis.UnparsedConfig, error) {
 	// Validate inputs
@@ -495,8 +493,8 @@ func NewTestGenesis(
 	}
 
 	// Define C-Chain genesis
-	cChainGenesis := &core.Genesis{
-		Config: &params.ChainConfig{
+	cChainGenesis := &TestGenesis{
+		Config: &TestChainConfig{
 			ChainID: big.NewInt(96369), // Arbitrary chain ID is arbitrary
 		},
 		Difficulty: big.NewInt(0), // Difficulty is a mandatory field

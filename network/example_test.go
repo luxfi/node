@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/set"
@@ -75,7 +75,7 @@ func (t *testExternalHandler) AppRequest(_ context.Context, nodeID ids.NodeID, r
 	return nil
 }
 
-func (t *testExternalHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+func (t *testExternalHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	t.log.Info("AppRequestFailed", "nodeID", nodeID, "requestID", requestID)
 	return nil
 }

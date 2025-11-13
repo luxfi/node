@@ -25,6 +25,7 @@ func init() {
 		lc.RegisterType(&Block{}),
 		lc.RegisterType(&UTXO{}),
 		lc.RegisterType(&Genesis{}),
+		lc.RegisterType(&ZConfig{}),
 		Codec.RegisterCodec(codecVersion, lc),
 	)
 	if err != nil {

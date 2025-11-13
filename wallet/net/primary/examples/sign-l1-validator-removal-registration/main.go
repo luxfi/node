@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"
@@ -37,7 +37,7 @@ func (h *testInboundHandler) AppGossip(_ context.Context, _ ids.NodeID, _ []byte
 func (h *testInboundHandler) AppRequest(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) AppRequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *core.AppError) error {
+func (h *testInboundHandler) AppRequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *consensuscore.AppError) error {
 	return nil
 }
 func (h *testInboundHandler) AppResponse(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error {
@@ -49,7 +49,7 @@ func (h *testInboundHandler) AppError(_ context.Context, _ ids.NodeID, _ uint32,
 func (h *testInboundHandler) CrossChainAppRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *core.AppError) error {
+func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *consensuscore.AppError) error {
 	return nil
 }
 func (h *testInboundHandler) CrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {

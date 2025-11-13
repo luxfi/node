@@ -37,7 +37,7 @@ type ProofVerifier struct {
 // NewProofVerifier creates a new proof verifier
 func NewProofVerifier(config ZConfig, log log.Logger) (*ProofVerifier, error) {
 	// Create LRU cache for proof verification results
-	cache, err := lru.New(config.ProofCacheSize)
+	cache, err := lru.New(int(config.ProofCacheSize))
 	if err != nil {
 		return nil, err
 	}

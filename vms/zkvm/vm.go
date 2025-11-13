@@ -36,24 +36,24 @@ var (
 // ZConfig contains VM configuration
 type ZConfig struct {
 	// Privacy configuration
-	EnableConfidentialTransfers bool `json:"enableConfidentialTransfers"`
-	EnablePrivateAddresses      bool `json:"enablePrivateAddresses"`
+	EnableConfidentialTransfers bool `serialize:"true" json:"enableConfidentialTransfers"`
+	EnablePrivateAddresses      bool `serialize:"true" json:"enablePrivateAddresses"`
 	
 	// ZK proof configuration
-	ProofSystem            string `json:"proofSystem"`            // groth16, plonk, etc.
-	CircuitType           string `json:"circuitType"`            // transfer, mint, burn
-	VerifyingKeyPath      string `json:"verifyingKeyPath"`
-	TrustedSetupPath      string `json:"trustedSetupPath"`
+	ProofSystem            string `serialize:"true" json:"proofSystem"`            // groth16, plonk, etc.
+	CircuitType           string `serialize:"true" json:"circuitType"`            // transfer, mint, burn
+	VerifyingKeyPath      string `serialize:"true" json:"verifyingKeyPath"`
+	TrustedSetupPath      string `serialize:"true" json:"trustedSetupPath"`
 	
 	// FHE configuration
-	EnableFHE              bool   `json:"enableFHE"`
-	FHEScheme             string `json:"fheScheme"`              // BFV, CKKS, etc.
-	SecurityLevel         int    `json:"securityLevel"`          // 128, 192, 256
+	EnableFHE              bool   `serialize:"true" json:"enableFHE"`
+	FHEScheme             string `serialize:"true" json:"fheScheme"`              // BFV, CKKS, etc.
+	SecurityLevel         uint32 `serialize:"true" json:"securityLevel"`          // 128, 192, 256
 	
 	// Performance
-	MaxUTXOsPerBlock      int    `json:"maxUtxosPerBlock"`
-	ProofVerificationTimeout time.Duration `json:"proofVerificationTimeout"`
-	ProofCacheSize        int    `json:"proofCacheSize"`
+	MaxUTXOsPerBlock      uint32 `serialize:"true" json:"maxUtxosPerBlock"`
+	ProofVerificationTimeout time.Duration `serialize:"true" json:"proofVerificationTimeout"`
+	ProofCacheSize        uint32 `serialize:"true" json:"proofCacheSize"`
 }
 
 // VM implements the Zero-Knowledge UTXO Chain VM
@@ -114,9 +114,16 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 	
-	vm.toEngine, ok = msgChan.(chan<- common.Message)
-	if !ok {
-		return errors.New("invalid message channel type")
+	if msgChan != nil {
+		vm.toEngine, ok = msgChan.(chan<- common.Message)
+		if !ok {
+			// Try bidirectional channel
+			if biChan, ok := msgChan.(chan common.Message); ok {
+				vm.toEngine = biChan
+			} else {
+				return errors.New("invalid message channel type")
+			}
+		}
 	}
 	
 	if logger, ok := vm.ctx.Log.(log.Logger); ok {
@@ -126,9 +133,27 @@ func (vm *VM) Initialize(
 	}
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	
-	// Parse configuration
-	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
+	// Parse configuration or use defaults
+	if len(configBytes) > 0 {
+		if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
+			return fmt.Errorf("failed to parse config: %w", err)
+		}
+	} else {
+		// Use default config
+		vm.config = ZConfig{
+			EnableConfidentialTransfers: true,
+			EnablePrivateAddresses:      true,
+			ProofSystem:                 "groth16",
+			CircuitType:                 "transfer",
+			EnableFHE:                   false,
+			MaxUTXOsPerBlock:            100,
+			ProofCacheSize:              1000,
+		}
+	}
+
+	// Ensure ProofCacheSize is positive
+	if vm.config.ProofCacheSize <= 0 {
+		vm.config.ProofCacheSize = 1000
 	}
 	
 	// Initialize UTXO database
@@ -231,7 +256,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	defer vm.mu.Unlock()
 	
 	// Get transactions from mempool
-	txs := vm.mempool.GetPendingTransactions(vm.config.MaxUTXOsPerBlock)
+	txs := vm.mempool.GetPendingTransactions(int(vm.config.MaxUTXOsPerBlock))
 	if len(txs) == 0 {
 		return nil, errors.New("no transactions to include in block")
 	}

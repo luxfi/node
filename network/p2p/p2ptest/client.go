@@ -68,7 +68,7 @@ func NewClientWithPeers(
 		// sends the response back to the client
 		for nodeID := range nodeIDs {
 			go func(nid ids.NodeID) {
-				_ = peerNetworks[nid].AppGossip(ctx, nid, gossipBytes)
+				_ = peerNetworks[nid].AppGossip(ctx, clientNodeID, gossipBytes)
 			}(nodeID)
 		}
 

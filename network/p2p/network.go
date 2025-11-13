@@ -108,7 +108,9 @@ func NewNetwork(
 	}
 
 	return &Network{
-		Peers:  &Peers{},
+		Peers: &Peers{
+			set: set.NewSampleableSet[ids.NodeID](0),
+		},
 		log:    log,
 		sender: sender,
 		router: newRouter(log, sender, m),

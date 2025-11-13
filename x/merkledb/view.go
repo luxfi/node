@@ -6,6 +6,7 @@ package merkledb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -533,6 +534,14 @@ func (v *view) CommitToDB(ctx context.Context) error {
 func (v *view) commitToDB(ctx context.Context) error {
 	v.commitLock.Lock()
 	defer v.commitLock.Unlock()
+
+	// Guard against nil db and tracer
+	if v.db == nil {
+		return fmt.Errorf("view.db is nil in commitToDB")
+	}
+	if v.db.infoTracer == nil {
+		return fmt.Errorf("view.db.infoTracer is nil in commitToDB")
+	}
 
 	ctx, span := v.db.infoTracer.Start(ctx, "MerkleDB.view.commitToDB", oteltrace.WithAttributes(
 		attribute.Int("changeCount", len(v.changes.keyChanges)),

@@ -1558,3 +1558,74 @@ The session demonstrates that with proper autonomy and clear objectives, AI agen
 - **Human Intervention**: Zero
 - **Next Steps**: Fix remaining 18 packages, full integration testing
 
+
+## Genesis Consolidation (2025-11-13)
+
+### Summary
+Successfully consolidated all genesis configuration into single location at `~/work/lux/genesis/pkg/genesis/` to eliminate duplication and ensure consistency across all networks (local, testnet, mainnet).
+
+### Problem
+- Genesis configuration was duplicated in two locations:  
+  - `/Users/z/work/lux/node/genesis/` (old)
+  - `/Users/z/work/lux/genesis/` (new, incomplete)
+- Import inconsistencies across 45+ files
+- Risk of configuration divergence between local/test/mainnet
+
+### Solution Implemented
+1. **Created Consolidated Package**: `~/work/lux/genesis/pkg/genesis/`
+   - Copied 15 essential files from `node/genesis/`
+   - Added go.mod with replace directive: `replace github.com/luxfi/node => ../../node`
+
+2. **Updated All Imports**: Changed 45 files from:
+   ```go
+   import "github.com/luxfi/node/genesis"
+   ```
+   To:
+   ```go
+   import "github.com/luxfi/genesis/pkg/genesis"
+   ```
+
+3. **Removed Old Package**: Deleted `node/genesis/` directory completely
+
+4. **Verified All Networks**: Confirmed P, X, C, Q chains present in all genesis files
+
+### Testing Results
+```bash
+# Compilation
+✅ Node builds successfully with make build
+✅ All 45 files with updated imports compile
+✅ No circular dependency issues
+
+# Runtime
+✅ Node starts successfully with --network-id=12345
+✅ All 4 VMs register: Platform, X-Chain, C-Chain, Q-Chain
+✅ API server accessible at http://127.0.0.1:9630
+✅ New genesis hash: 2CMVZvBg1yd61UhQvtBh9kAXdVaWBLwzH4RLcSwy3y98wbedy7
+```
+
+### Important Notes
+
+**Database Cleanup Required**:
+When switching genesis configurations, must clean database:
+```bash
+rm -rf ~/.node/db
+```
+
+**Genesis Location**:
+- Single source: `~/work/lux/genesis/pkg/genesis/`
+- Imported as: `github.com/luxfi/genesis/pkg/genesis`
+
+**Network Testing**:
+```bash
+# Single node
+./build/luxd --network-id=12345 --log-level=info
+
+# Clean start
+rm -rf ~/.node/db && ./build/luxd --network-id=12345
+```
+
+### Files Modified
+- 45 files updated with new import paths
+- 15 genesis files consolidated
+- Database cleanup automation added
+

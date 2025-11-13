@@ -11,7 +11,7 @@ import (
 	"time"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
@@ -66,7 +66,7 @@ func (s *mockServer) AddAliasesWithReadLock(endpoint string, aliases ...string) 
 }
 
 func (s *mockServer) Dispatch() error { return nil }
-func (s *mockServer) RegisterChain(chainName string, ctx *consensusctx.Context, vm core.VM) {}
+func (s *mockServer) RegisterChain(chainName string, ctx *consensusctx.Context, vm consensuscore.VM) {}
 func (s *mockServer) Shutdown() error { return nil }
 
 func TestHandlerManager_RegisterChainHandlers(t *testing.T) {

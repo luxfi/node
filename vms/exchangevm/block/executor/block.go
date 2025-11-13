@@ -15,6 +15,7 @@ import (
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/state"
@@ -168,6 +169,7 @@ func (b *Block) Verify(ctx context.Context) error {
 	blockState := &blockState{
 		statelessBlock: b.Block,
 		onAcceptState:  stateDiff,
+		importedInputs: set.NewSet[ids.ID](0),
 		atomicRequests: make(map[ids.ID]*atomic.Requests),
 	}
 
@@ -191,9 +193,10 @@ func (b *Block) Verify(ctx context.Context) error {
 		// to ensure that semantic verification correctly accounts for
 		// transactions that occurred earlier in the block.
 		executor := &executor.Executor{
-			Codec: b.manager.backend.Codec,
-			State: stateDiff,
-			Tx:    tx,
+			Codec:  b.manager.backend.Codec,
+			State:  stateDiff,
+			Tx:     tx,
+			Inputs: set.NewSet[ids.ID](0),
 		}
 		err = tx.Unsigned.Visit(executor)
 		if err != nil {

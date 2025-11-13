@@ -79,6 +79,9 @@ func NewPeerTracker(
 	minVersion *version.Application,
 ) (*PeerTracker, error) {
 	t := &PeerTracker{
+		untrackedPeers: set.NewSet[ids.NodeID](0),
+		trackedPeers:   set.NewSet[ids.NodeID](0),
+		responsivePeers: set.NewSet[ids.NodeID](0),
 		peerBandwidth: make(map[ids.NodeID]safemath.Averager),
 		bandwidthHeap: heap.NewMap[ids.NodeID, safemath.Averager](func(a, b safemath.Averager) bool {
 			return a.Read() > b.Read()

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
@@ -24,7 +24,6 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -187,7 +186,7 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	proVM.Set(componentblocktest.GenesisTimestamp)
@@ -873,7 +872,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 //		// Initialize shouldn't be called again
 //		coreVM.InitializeF = nil
 //
-//		require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+//		require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 //		require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 //
 //		// Notify the proposer VM of a new block on the inner block side
@@ -881,7 +880,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 //		// The first notification will be read from the consensus engine
 //		msg, err := proVM.WaitForEvent(context.Background())
 //		require.NoError(err)
-//		require.Equal(core.PendingTxs, msg)
+//		require.Equal(consensuscore.PendingTxs, msg)
 //
 //		// Before calling BuildBlock, verify a remote block and set it as the
 //		// preferred block.
@@ -1136,7 +1135,7 @@ func TestInnerVMRollback(t *testing.T) {
 		nil,
 	))
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
@@ -1647,7 +1646,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -1812,7 +1811,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -2214,7 +2213,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2304,7 +2303,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2350,7 +2349,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2762,7 +2761,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMBootstrapping)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMBootstrapping)))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
@@ -2810,7 +2809,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), uint32(core.VMNormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(consensuscore.VMNormalOp)))
 
 	// If the inner VM requests building a block, the proposervm passes that
 	// message to the consensus engine. This is really the source of the issue,
@@ -2818,7 +2817,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(core.PendingTxs, msg)
+	require.Equal(consensuscore.PendingTxs, msg)
 
 	innerBlock3 := componentblocktest.BuildChild(innerBlock2)
 	innerVMBlks = append(innerVMBlks, innerBlock3)

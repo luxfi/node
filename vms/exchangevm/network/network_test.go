@@ -13,12 +13,12 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-tconsensuscore "github.com/luxfi/consensus/core"
+	consensuscore "github.com/luxfi/consensus/core"
+	coremock "github.com/luxfi/consensus/core/coremock"
+	"github.com/luxfi/consensus/utils/set"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
-	consensuscore "github.com/luxfi/consensus/core"
-	consensuscore "github.com/luxfi/consensus/core"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/exchangevm/block/executor/executormock"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
@@ -190,8 +190,10 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) consensuscore.AppSender {
-				appSender := coremock.NewSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
+					return nil
+				}
 				return appSender
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
@@ -221,7 +223,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) consensuscore.AppSender {
-				return coremock.NewSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -272,8 +274,10 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) consensuscore.AppSender {
-				appSender := coremock.NewSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
+					return nil
+				}
 				return appSender
 			},
 			expectedErr: nil,
@@ -295,7 +299,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			require.NoError(err)
 
 			appSenderFunc := func(ctrl *gomock.Controller) consensuscore.AppSender {
-				return coremock.NewSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc

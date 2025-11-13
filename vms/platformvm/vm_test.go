@@ -163,7 +163,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	}
 	ctx.SharedMemory = msm
 
-	vm.ctx.Lock.Lock()
+	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 	appSender := &TestAppSender{}
 

@@ -52,7 +52,9 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	}
 
 	log := fx.VM.Logger()
-	log.Debug("initializing secp256k1 fx")
+	if log != nil {
+		log.Debug("initializing secp256k1 fx")
+	}
 
 	fx.recoverCache = secp256k1.NewRecoverCache(defaultCacheSize)
 	c := fx.VM.CodecRegistry()

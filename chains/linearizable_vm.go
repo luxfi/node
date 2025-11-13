@@ -9,13 +9,13 @@ import (
 	"sync"
 
 	"github.com/luxfi/database"
-	consensuscore "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/appsender"
+	"github.com/luxfi/consensus/engine/chain/block"
+	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensusvertex "github.com/luxfi/consensus/engine/vertex"
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 var (
@@ -42,7 +42,7 @@ type initializeOnLinearizeVM struct {
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*consensuscore.Fx
+	fxs              []fx.Fx
 	appSender        appsender.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
@@ -71,10 +71,10 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		close(vm.waitForLinearize)
 	})
 	
-	// Convert []*consensuscore.Fx to []interface{}
+	// Convert []fx.Fx to []interface{}
 	fxsInterface := make([]interface{}, len(vm.fxs))
-	for i, fx := range vm.fxs {
-		fxsInterface[i] = fx
+	for i, fxItem := range vm.fxs {
+		fxsInterface[i] = fxItem
 	}
 	
 	// Note: toVertex parameter is the toEngine channel for block.Message
@@ -179,7 +179,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*consensuscore.Fx,
+	_ []fx.Fx,
 	_ appsender.AppSender,
 ) error {
 	// Note: Vertex VM linearization is not fully supported in the current consensus implementation

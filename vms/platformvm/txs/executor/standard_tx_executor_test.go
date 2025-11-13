@@ -2100,14 +2100,9 @@ type transformNetTxVerifyEnv struct {
 	state          *state.MockDiff
 }
 
-// testContext creates a context.Context with consensus IDs for testing
+// testContext creates a context.Context for testing
 func testContext() context.Context {
-	luxAssetID := ids.GenerateTestID()
-	return consensus.WithIDs(context.Background(), consensus.IDs{
-		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
-		XAssetID:  luxAssetID,
-	})
+	return context.Background()
 }
 
 // Returns mock implementations that can be used in tests

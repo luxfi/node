@@ -298,6 +298,22 @@ func (vm *VMClient) Initialize(
 		time:     time,
 	}
 
+	// Initialize the State if not already done
+	if vm.State == nil {
+		wrappedBlk := &protocolBlockWrapper{blockClient: lastAcceptedBlk}
+		vm.State = chain.NewState(&chain.Config{
+			DecidedCacheSize:     1024,
+			MissingCacheSize:     1024,
+			UnverifiedCacheSize:  64,
+			BytesToIDCacheSize:   512,
+			LastAcceptedBlock:    wrappedBlk,
+			GetBlock:             vm.GetBlock,
+			UnmarshalBlock:       vm.ParseBlock,
+			BatchedUnmarshalBlock: vm.BatchedParseBlock,
+			BuildBlock:           vm.BuildBlock,
+		})
+	}
+
 	// VMClient doesn't need a caching layer - it's just an RPC client
 	// The caching happens on the server side
 	return vm.SetLastAcceptedBlock(&protocolBlockWrapper{blockClient: lastAcceptedBlk})
