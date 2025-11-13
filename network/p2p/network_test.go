@@ -603,30 +603,41 @@ func TestPeersSample(t *testing.T) {
 
 			// Connect peers
 			for nodeID := range tt.connected {
+				t.Logf("Connecting %s", nodeID)
 				require.NoError(network.Connected(context.Background(), nodeID, nil))
 			}
 
 			// Disconnect peers
 			for nodeID := range tt.disconnected {
+				t.Logf("Disconnecting %s", nodeID)
 				require.NoError(network.Disconnected(context.Background(), nodeID))
 			}
 
 			// Calculate expected sampleable set: connected - disconnected
 			sampleable := set.NewSet[ids.NodeID](0)
-			sampleable.Union(tt.connected)
-			sampleable.Difference(tt.disconnected)
+			sampleable = sampleable.Union(tt.connected)
+			sampleable = sampleable.Difference(tt.disconnected)
+
+			t.Logf("Connected: %v, Disconnected: %v, Sampleable: %v (len=%d)",
+				tt.connected, tt.disconnected, sampleable, sampleable.Len())
 
 			// Sample from the network
 			sampled := network.Peers.Sample(tt.limit)
 
 			// Expected sample size
 			expectedLen := min(tt.limit, sampleable.Len())
-			require.Len(sampled, expectedLen, "expected %d samples but got %d, sampleable: %v, sampled: %v",
-				expectedLen, len(sampled), sampleable, sampled)
 
-			// All sampled nodes should be in the sampleable set
-			for _, nodeID := range sampled {
-				require.True(sampleable.Contains(nodeID), "sampled node %s not in sampleable set %v", nodeID, sampleable)
+			// If sampleable is empty, we should get no samples
+			if sampleable.Len() == 0 {
+				require.Empty(sampled, "expected no samples when no peers available, but got %v", sampled)
+			} else {
+				require.Len(sampled, expectedLen, "expected %d samples but got %d, sampleable: %v, sampled: %v",
+					expectedLen, len(sampled), sampleable, sampled)
+
+				// All sampled nodes should be in the sampleable set
+				for _, nodeID := range sampled {
+					require.True(sampleable.Contains(nodeID), "sampled node %s not in sampleable set %v", nodeID, sampleable)
+				}
 			}
 		})
 	}
