@@ -124,7 +124,7 @@ func (tx *Tx) Status() choices.Status {
 }
 
 func (tx *Tx) MissingDependencies() (set.Set[ids.ID], error) {
-	txIDs := set.Set[ids.ID]{}
+	txIDs := make(set.Set[ids.ID])
 	for _, in := range tx.tx.Unsigned.InputUTXOs() {
 		if in.Symbolic() {
 			continue

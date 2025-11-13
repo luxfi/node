@@ -77,7 +77,7 @@ func NewLedgerKeychain(ledger Ledger, indices []uint32) (Keychain, error) {
 	}
 
 	addrToIdx := make(map[ids.ShortID]uint32)
-	addrs := set.Set[ids.ShortID]{}
+	addrs := make(set.Set[ids.ShortID])
 	for i, addr := range addresses {
 		addrToIdx[addr] = indices[i]
 		addrs.Add(addr)

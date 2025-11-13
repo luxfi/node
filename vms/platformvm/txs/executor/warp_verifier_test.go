@@ -23,7 +23,6 @@ import (
 
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
-		subnetID     = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
 			sk, err := localsigner.New()
@@ -31,7 +30,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 
 			return sk, &validators.GetValidatorOutput{
 				NodeID:    ids.GenerateTestNodeID(),
-				PublicKey: sk.PublicKey(),
+				PublicKey: bls.PublicKeyToCompressedBytes(sk.PublicKey()),
 				Weight:    1,
 			}
 		}
@@ -42,10 +41,6 @@ func TestVerifyWarpMessages(t *testing.T) {
 			vdr1.NodeID: vdr1,
 		}
 		state = &validatorstest.State{
-			T: t,
-			GetNetIDF: func(context.Context, ids.ID) (ids.ID, error) {
-				return subnetID, nil
-			},
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 				return vdrs, nil
 			},

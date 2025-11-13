@@ -50,15 +50,15 @@ func TestValidateConfig(t *testing.T) {
 		"mainnet": {
 			networkID:   constants.LuxMainnetID, // 96369
 			config:      &MainnetConfig,
-			expectedErr: errNoStakers, // Lux mainnet has no initial stakers
+			expectedErr: nil, // Lux mainnet has validators configured
 		},
 		"testnet": {
-			networkID:   constants.LuxTestnetID, // 96368
+			networkID:   constants.LuxTestnetID, // 96370
 			config:      &TestnetConfig,
 			expectedErr: errNoStakers, // Lux testnet has no initial stakers
 		},
 		"local": {
-			networkID:   12345,
+			networkID:   constants.LocalID,
 			config:      &LocalConfig,
 			expectedErr: nil,
 		},
@@ -68,7 +68,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errConflictingNetworkIDs,
 		},
 		"invalid start time": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.StartTime = 999999999999999
@@ -77,7 +77,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errFutureStartTime,
 		},
 		"no initial supply": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.Allocations = []Allocation{}
@@ -86,7 +86,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoSupply,
 		},
 		"no initial stakers": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.InitialStakers = []Staker{}
@@ -95,7 +95,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoStakers,
 		},
 		"invalid initial stake duration": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.InitialStakeDuration = 0
@@ -104,7 +104,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoStakeDuration,
 		},
 		"too large initial stake duration": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.InitialStakeDuration = uint64(genesisStakingCfg.MaxStakeDuration+time.Second) / uint64(time.Second)
@@ -113,7 +113,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errStakeDurationTooHigh,
 		},
 		"invalid stake offset": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				// Add multiple stakers to trigger the offset validation
@@ -126,7 +126,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errInitialStakeDurationTooLow,
 		},
 		"empty initial staked funds": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.InitialStakedFunds = []ids.ShortID(nil)
@@ -135,7 +135,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoInitiallyStakedFunds,
 		},
 		"duplicate initial staked funds": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, thisConfig.InitialStakedFunds[0])
@@ -144,7 +144,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errDuplicateInitiallyStakedAddress,
 		},
 		"initial staked funds not in allocations": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				// Add a staked fund that's not in allocations
@@ -155,7 +155,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoAllocationToStake,
 		},
 		"empty C-Chain genesis": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.CChainGenesis = ""
@@ -164,7 +164,7 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errNoCChainGenesis,
 		},
 		"empty message": {
-			networkID: 12345,
+			networkID: constants.LocalID,
 			config: func() *Config {
 				thisConfig := LocalConfig
 				thisConfig.Message = ""
@@ -219,7 +219,7 @@ func TestGenesisFromFile(t *testing.T) {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
 			expectedErr:  nil,
-			expectedHash: "5b6e3e72110135c541ad6f6f7f0a495cf749a63af9668be43ec33096b7cf20d4",
+			expectedHash: "0e97e59dd9346c16b0d647f5427d6e74f30733e9fe3d2ac92a04419b60c75f71",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -299,7 +299,7 @@ func TestGenesisFromFlag(t *testing.T) {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
 			expectedErr:  nil,
-			expectedHash: "5b6e3e72110135c541ad6f6f7f0a495cf749a63af9668be43ec33096b7cf20d4",
+			expectedHash: "0e97e59dd9346c16b0d647f5427d6e74f30733e9fe3d2ac92a04419b60c75f71",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -364,11 +364,11 @@ func TestGenesis(t *testing.T) {
 	}{
 		{
 			config:     &MainnetConfig,
-			expectedID: "UUvXi6j7QhVvgpbKM89MP5HdrxKm9CaJeHc187TsDNf8nZdLk",
+			expectedID: "Z1Zv818BgWYPhuSrbhbCSGgMDAUzzxc413yKmPq95t2To7w2J",
 		},
 		{
 			config:     &unmodifiedLocalConfig,
-			expectedID: "2nRRoR76HuEk1JjDpRdN8FKvZFvUXWxY3b9C5rZRPFjcgEh7S7",
+			expectedID: "kMvjnK9QNKdQkTovLsmfbfWaLzmUBPRHySCyo81c6Z5j4Ltx7",
 		},
 	}
 	for _, test := range tests {
@@ -398,11 +398,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "oBNAjGCioVdXmQqUqXtgaRNJgz8ZDp1qejpY6gwN6Ddct1xgx",
+					expectedID: "2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "EWi9aPkGe6EfJ3SobCAmSUXRPLa4brF3cThwPwmHTrD1y13jy",
+					expectedID: "2S4rNkYfzCTzWMKiBnfRUrqW755wS1EdjB9YWkov8SBHMUZmE5",
 				},
 			},
 		},
@@ -411,11 +411,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "247iq1TNcSm82HvqLgEWwJrNfHTYeKUcEa8A1kYU6mow4QMaTf",
+					expectedID: "V3k4ju3zD9f9HcQMUcdUWRAcvgMwHdiRyjYqheScBvr92vM66",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2JC1RVBy3tGYZ27ZsZfT5y6JXPkKpW1aCepgHN7WwmiwBhCnn5",
+					expectedID: "2S5WkykNkF6bLdhgjnUrZwFQcTtp5Ey6jM9VuHibhWUSe8ioMS",
 				},
 			},
 		},
@@ -424,11 +424,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B",
+					expectedID: "2fhZsmQEbWWMksX68zYnQq9LPtEAE1E9BrwgERMi4bkrBKNnfg",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2owdGqyG6FFzTHy5qhenDXQcEghvr571KZE3gSfRJERSJinuwC",
+					expectedID: "4owQGABLxDpH2J7GKonrY6t4CpvURbGa3bsX795oYbPVsA2HN",
 				},
 			},
 		},
@@ -469,15 +469,15 @@ func TestXAssetID(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "2HkbAcvpo7htbWv4iffXpzbcLLzjDZPBJ32fKRGXYFfBsxoe9F",
+			expectedID: "28UG6vMSjKm4Bic1y5bv3iJxmp3nrb1GwFX5uzpMjC65xJBPka",
 		},
 		{
 			networkID:  constants.TestnetID,
-			expectedID: "2we4SyEFuAC5Ch7hgPBjVfz6eut4TyzFd954ZLWCa5mAiAer5Z",
+			expectedID: "2fMMxkur1mZ6AkrLHLGj3dQNRyweGJ4qzDVwsMuutEtNXkpisD",
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q",
+			expectedID: "qrnFDnZNfdmDjphyfsXsmGFLQZnSfUbYjQtWPyydrA1FPHB5Y",
 		},
 	}
 

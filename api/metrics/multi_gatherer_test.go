@@ -15,7 +15,7 @@ import (
 var (
 	hello      = "hello"
 	world      = "world"
-	helloWorld = "helloWorld"
+	helloWorld = "hello_world"
 )
 
 func TestMultiGathererEmptyGather(t *testing.T) {

@@ -20,17 +20,15 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/proposervm/proposer"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/node/vms/proposervm/proposer"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )

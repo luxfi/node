@@ -86,14 +86,14 @@ func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error
 		return fmt.Errorf("%w: %q", errDuplicateCheck, name)
 	}
 
+	// Acquire resultsLock before modifying tags and results maps
 	w.resultsLock.Lock()
-	defer w.resultsLock.Unlock()
 
 	// Add the check to each tag
 	for _, tag := range tags {
 		names, ok := w.tags[tag]
 		if !ok {
-			names = set.Set[string]{}
+			names = make(set.Set[string])
 		}
 		names.Add(name)
 		w.tags[tag] = names
@@ -101,7 +101,7 @@ func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error
 	// Add the special AllTag descriptor
 	names, ok := w.tags[AllTag]
 	if !ok {
-		names = set.Set[string]{}
+		names = make(set.Set[string])
 	}
 	names.Add(name)
 	w.tags[AllTag] = names
@@ -114,6 +114,8 @@ func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error
 	}
 	w.checks[name] = tc
 	w.results[name] = notYetRunResult
+
+	w.resultsLock.Unlock()
 
 	// Whenever a new check is added - it is failing
 	w.log.Info("registered new check and initialized its state to failing",
@@ -153,12 +155,12 @@ func (w *worker) Results(tags ...string) (map[string]Result, bool) {
 		tags = allTags
 	}
 
-	names := set.Set[string]{}
+	names := make(set.Set[string])
 	tagSet := set.Of(tags...)
 	tagSet.Add(ApplicationTag) // we always want to include the application tag
 	for tag := range tagSet {
-		if set, ok := w.tags[tag]; ok {
-			names.Union(set)
+		if tagSet, ok := w.tags[tag]; ok {
+			names = names.Union(tagSet)
 		}
 	}
 

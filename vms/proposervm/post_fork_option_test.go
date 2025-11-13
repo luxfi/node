@@ -12,14 +12,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/consensus/engine/chain"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	proposerBlock "github.com/luxfi/node/vms/proposervm/block"

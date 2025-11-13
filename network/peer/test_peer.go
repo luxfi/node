@@ -120,7 +120,7 @@ func StartTestPeer(
 			Network:              TestNetwork,
 			Router:               router,
 			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-			MyNets:            set.Set[ids.ID]{},
+			MyNets:            make(set.Set[ids.ID]),
 			Beacons:              &testValidatorManager{},
 			Validators:           &testValidatorManager{},
 			NetworkID:            networkID,

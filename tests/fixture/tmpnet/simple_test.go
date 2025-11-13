@@ -106,11 +106,11 @@ func TestNodeEnhancements(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 		
-		// Should timeout since node is not healthy
+		// Should return error since node is not running
 		err := node.WaitForSync(ctx)
 		require.Error(err)
-		require.Contains(err.Error(), "timeout")
-		t.Logf("WaitForSync correctly times out for unhealthy node")
+		require.Contains(err.Error(), "node is not running")
+		t.Logf("WaitForSync correctly returns error for non-running node")
 	})
 }
 

@@ -12,9 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/proposervm/proposer"
-	"github.com/luxfi/node/vms/proposervm/state"
 )
 
 func TestServiceGetProposedHeight(t *testing.T) {

@@ -85,7 +85,7 @@ func (c *genericCodec) Size(value interface{}) (int, error) {
 		return 0, codec.ErrMarshalNil
 	}
 
-	typeStack := set.Set[reflect.Type]{}
+	typeStack := make(set.Set[reflect.Type])
 	size, _, err := c.size(reflect.ValueOf(value), typeStack)
 	return size, err
 }
@@ -296,7 +296,7 @@ func (c *genericCodec) MarshalInto(value interface{}, p *wrappers.Packer) error 
 		return codec.ErrMarshalNil
 	}
 
-	typeStack := set.Set[reflect.Type]{}
+	typeStack := make(set.Set[reflect.Type])
 	return c.marshal(reflect.ValueOf(value), p, typeStack)
 }
 
@@ -508,7 +508,7 @@ func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error
 	if destPtr.Kind() != reflect.Ptr {
 		return errNeedPointer
 	}
-	typeStack := set.Set[reflect.Type]{}
+	typeStack := make(set.Set[reflect.Type])
 	return c.unmarshal(p, destPtr.Elem(), typeStack)
 }
 

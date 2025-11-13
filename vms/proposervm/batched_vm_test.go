@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -23,14 +22,12 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/consensus"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/core/interfaces"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/components/chain/blocktest"
 
 	blockbuilder "github.com/luxfi/node/vms/proposervm/block"

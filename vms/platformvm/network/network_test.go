@@ -148,9 +148,9 @@ func (m *mockValidatorState) GetWarpValidatorSet(
 
 func (m *mockValidatorState) GetWarpValidatorSets(
 	ctx context.Context,
-	height uint64,
+	heights []uint64,
 	netIDs []ids.ID,
-) (map[ids.ID]*validators.WarpSet, error) {
+) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
 	// Not used in this test
 	return nil, nil
 }

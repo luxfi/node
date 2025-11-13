@@ -1966,7 +1966,7 @@ func FuzzRangeProofInvariants(f *testing.F) {
 
 		// Make sure the start proof doesn't contain any nodes
 		// that are in the end proof.
-		endProofKeys := set.Set[Key]{}
+		endProofKeys := make(set.Set[Key])
 		for _, node := range rangeProof.EndProof {
 			endProofKeys.Add(node.Key)
 		}

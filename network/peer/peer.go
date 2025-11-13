@@ -777,13 +777,9 @@ func (p *peer) handle(msg message.InboundMessage) {
 	}
 
 	// Consensus and app-level messages
-	// The router will handle the message directly
-	// Note: We need to adapt the message interface
-	// For now, we'll just log that we received it
-	p.Log.Debug("received consensus/app message",
-		log.Stringer("op", msg.Op()),
-		log.Stringer("nodeID", p.id),
-	)
+	// Route the message to the application layer handler
+	p.Router.HandleInbound(context.Background(), msg)
+	msg.OnFinishedHandling()
 }
 
 func (p *peer) handlePing(msg *p2p.Ping) {

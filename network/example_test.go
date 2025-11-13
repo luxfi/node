@@ -109,7 +109,7 @@ func ExampleNewTestNetwork() {
 
 	// If we want to be able to communicate with non-primary network nets, we
 	// should register them here.
-	trackedNets := set.Set[ids.ID]{}
+	trackedNets := make(set.Set[ids.ID])
 
 	// Messages and connections are handled by the external handler.
 	handler := &testExternalHandler{

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
@@ -19,10 +20,18 @@ import (
 func TestNodeLifecycle(t *testing.T) {
 	require := require.New(t)
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-lifecycle",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -31,11 +40,9 @@ func TestNodeLifecycle(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Use no-op logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -51,7 +58,8 @@ func TestNodeLifecycle(t *testing.T) {
 	require.NotNil(node)
 
 	// Get node URI
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(f func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 
@@ -65,10 +73,18 @@ func TestNodeLifecycle(t *testing.T) {
 func TestNodeRestart(t *testing.T) {
 	require := require.New(t)
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-restart",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -77,11 +93,9 @@ func TestNodeRestart(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Use no-op logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -94,7 +108,8 @@ func TestNodeRestart(t *testing.T) {
 
 	// Get node and URI
 	node := network.Nodes[0]
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(f func()) {})
+	require.NoError(err)
 	require.NotEmpty(uris)
 	nodeURI := uris[0].URI
 	infoClient := info.NewClient(nodeURI)
@@ -127,10 +142,18 @@ func TestMultiNodeNetwork(t *testing.T) {
 
 	const nodeCount = 3
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a multi-node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-multinode",
 		Nodes: tmpnet.NewNodesOrPanic(nodeCount),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -139,11 +162,9 @@ func TestMultiNodeNetwork(t *testing.T) {
 	// Start the network
 	err := tmpnet.BootstrapNewNetwork(
 		ctx,
-		nil, // Use default writer (discard)
+		log.NoLog{}, // Use no-op logger
 		network,
 		"", // Use default root dir
-		"", // Use default node exec path
-		"", // Use default plugin dir
 	)
 	require.NoError(err)
 
@@ -155,7 +176,8 @@ func TestMultiNodeNetwork(t *testing.T) {
 	}()
 
 	// Get node URIs
-	uris := network.GetNodeURIs()
+	uris, err := network.GetNodeURIs(ctx, func(f func()) {})
+	require.NoError(err)
 	require.Len(uris, nodeCount)
 
 	// Verify all nodes are running and accessible
@@ -177,7 +199,7 @@ func TestMultiNodeNetwork(t *testing.T) {
 	// Verify nodes can communicate with each other
 	for i, nodeURI := range uris {
 		infoClient := info.NewClient(nodeURI.URI)
-		peers, err := infoClient.Peers(ctx)
+		peers, err := infoClient.Peers(ctx, nil) // Pass nil for nodeIDs to get all peers
 		require.NoError(err, "Node %d should be able to get peers", i)
 		// Should have at least one peer (other nodes) for multi-node setup
 		require.GreaterOrEqual(len(peers), 0, "Node %d should have peers", i) // Allow 0 for single-node bootstrap

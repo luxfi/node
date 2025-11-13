@@ -58,8 +58,8 @@ func validateInitialStakedFunds(config *Config) error {
 		return errNoInitiallyStakedFunds
 	}
 
-	allocationSet := set.Set[ids.ShortID]{}
-	initialStakedFundsSet := set.Set[ids.ShortID]{}
+	allocationSet := make(set.Set[ids.ShortID])
+	initialStakedFundsSet := make(set.Set[ids.ShortID])
 	for _, allocation := range config.Allocations {
 		// It is ok to have duplicates as different
 		// ethAddrs could claim to the same luxAddr.
@@ -136,15 +136,7 @@ func validateAllocationsLockedAmount(config *Config) error {
 // validateConfig returns an error if the provided
 // *Config is not considered valid.
 func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig) error {
-	if networkID != config.NetworkID {
-		return fmt.Errorf(
-			"%w: expected %d but config contains %d",
-			errConflictingNetworkIDs,
-			networkID,
-			config.NetworkID,
-		)
-	}
-
+	// Validate all fields first, then check network ID match
 	initialSupply, err := config.InitialSupply()
 	switch {
 	case err != nil:
@@ -199,6 +191,16 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 
 	if len(config.CChainGenesis) == 0 {
 		return errNoCChainGenesis
+	}
+
+	// Check network ID match last to allow specific field errors to surface first
+	if networkID != config.NetworkID {
+		return fmt.Errorf(
+			"%w: expected %d but config contains %d",
+			errConflictingNetworkIDs,
+			networkID,
+			config.NetworkID,
+		)
 	}
 
 	return nil

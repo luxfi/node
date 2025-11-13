@@ -104,6 +104,7 @@ func New(log log.Logger, endpoint, pw string) (Auth, error) {
 	a := &auth{
 		log:      log,
 		endpoint: endpoint,
+		revoked:  set.NewSet[string](),
 	}
 	return a, a.password.Set(pw)
 }
@@ -113,6 +114,7 @@ func NewFromHash(log log.Logger, endpoint string, pw password.Hash) Auth {
 		log:      log,
 		endpoint: endpoint,
 		password: pw,
+		revoked:  set.NewSet[string](),
 	}
 }
 

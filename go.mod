@@ -215,7 +215,6 @@ require (
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/kasperdi/SPHINCSPLUS-golang v0.0.0-20231223193046-84468b93f7e9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
 	github.com/luxfi/warp v1.16.16 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
@@ -253,3 +252,5 @@ replace github.com/luxfi/evm => ../evm
 replace github.com/luxfi/consensus => ../consensus
 
 replace github.com/luxfi/geth => ../geth
+
+replace github.com/luxfi/math => ../math

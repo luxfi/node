@@ -107,7 +107,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 	// Address -> AssetID --> exists if the address's balance
 	// of the asset is changed by processing tx [txID]
 	// we do this step separately to simplify the write process later
-	balanceChanges := map[string]set.Set[ids.ID]{}
+	balanceChanges := make(map[string]set.Set[ids.ID])
 	for _, utxo := range utxos {
 		out, ok := utxo.Out.(lux.Addressable)
 		if !ok {
@@ -122,7 +122,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 
 			addressChanges, exists := balanceChanges[address]
 			if !exists {
-				addressChanges = set.Set[ids.ID]{}
+				addressChanges = make(set.Set[ids.ID])
 				balanceChanges[address] = addressChanges
 			}
 			addressChanges.Add(utxo.AssetID())

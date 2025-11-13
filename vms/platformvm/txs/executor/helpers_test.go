@@ -6,6 +6,7 @@ package executor
 import (
 	"context"
 	"math"
+	"sync"
 	"testing"
 	"time"
 
@@ -76,7 +77,7 @@ type environment struct {
 	msm            *mutableSharedMemory
 	state          state.State
 	states         map[ids.ID]state.Chain
-	uptimes        validators.UptimeCalculator
+	uptimes        consensusuptime.Calculator
 	backend        Backend
 }
 
@@ -114,40 +115,38 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 
 	fx := defaultFx(clk, ctx.Log, isBootstrapped.Get())
 
+	// Convert testcontext.Context to consensus.Context for statetest
+	consensusCtx := &consensuscontext.Context{
+		NetworkID:      ctx.NetworkID,
+		NetID:          ctx.NetID,
+		ChainID:        ctx.ChainID,
+		NodeID:         ctx.NodeID,
+		PublicKey:      []byte{}, // Use empty bytes for test
+		XChainID:       ctx.XChainID,
+		CChainID:       ctx.CChainID,
+		LUXAssetID:     ctx.LUXAssetID,
+		ValidatorState: ctx.ValidatorState,
+		SharedMemory:   ctx.SharedMemory,
+		ChainDataDir:   ctx.ChainDataDir,
+		Log:            ctx.Log,
+		Lock:           sync.RWMutex{}, // Create new RWMutex
+		Keystore:       nil,             // No keystore needed for test
+		WarpSigner:     ctx.WarpSigner,
+	}
+
 	rewards := reward.NewCalculator(config.RewardConfig)
 	baseState := statetest.New(t, statetest.Config{
 		DB:         baseDB,
 		Genesis:    genesistest.NewBytes(t, genesistest.Config{}),
 		Validators: config.Validators,
 		Upgrades:   config.UpgradeConfig,
-		Context:    ctx,
+		Context:    consensusCtx,
 		Rewards:    rewards,
 	})
 	lastAcceptedID = baseState.GetLastAccepted()
 
 	uptimes := consensusuptime.NoOpCalculator{}
 	utxosHandler := utxo.NewHandler(ctx.Context, &mockable.Clock{}, fx)
-
-	// Convert testcontext.Context to consensus.Context
-	consensusCtx := &consensuscontext.Context{
-		NetworkID:   ctx.NetworkID,
-		NetID:       ctx.NetID,
-		ChainID:     ctx.ChainID,
-		NodeID:      ctx.NodeID,
-		PublicKey:   ctx.PublicKey,
-		XChainID:    ctx.XChainID,
-		CChainID:    ctx.CChainID,
-		DChainID:    ctx.DChainID,
-		LUXAssetID:  ctx.LUXAssetID,
-		ValidatorState: ctx.ValidatorState,
-		SharedMemory: ctx.SharedMemory,
-		ChainDataDir: ctx.ChainDataDir,
-		Log:         ctx.Log,
-		Lock:        ctx.Lock,
-		Keystore:    ctx.Keystore,
-		Signer:      ctx.Signer,
-		WarpSigner:  ctx.WarpSigner,
-	}
 
 	backend := Backend{
 		Config:       config,
@@ -182,10 +181,11 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 		require := require.New(t)
 
 		if env.isBootstrapped.Get() {
-			if env.uptimes.StartedTracking() {
-				validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-				require.NoError(env.uptimes.StopTracking(validatorIDs))
-			}
+			// NoOpCalculator doesn't track validators, so nothing to stop
+			// if env.uptimes.StartedTracking() {
+			// 	validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			// 	require.NoError(env.uptimes.StopTracking(validatorIDs))
+			// }
 
 			env.state.SetHeight(math.MaxUint64)
 			require.NoError(env.state.Commit())
@@ -214,28 +214,33 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	}
 	// Convert testcontext.Context to consensus.Context
 	consensusCtx := &consensuscontext.Context{
-		NetworkID:   e.ctx.NetworkID,
-		NetID:       e.ctx.NetID,
-		ChainID:     e.ctx.ChainID,
-		NodeID:      e.ctx.NodeID,
-		PublicKey:   e.ctx.PublicKey,
-		XChainID:    e.ctx.XChainID,
-		CChainID:    e.ctx.CChainID,
-		DChainID:    e.ctx.DChainID,
-		LUXAssetID:  e.ctx.LUXAssetID,
+		NetworkID:      e.ctx.NetworkID,
+		NetID:          e.ctx.NetID,
+		ChainID:        e.ctx.ChainID,
+		NodeID:         e.ctx.NodeID,
+		PublicKey:      []byte{}, // Use empty bytes for test
+		XChainID:       e.ctx.XChainID,
+		CChainID:       e.ctx.CChainID,
+		LUXAssetID:     e.ctx.LUXAssetID,
 		ValidatorState: e.ctx.ValidatorState,
-		SharedMemory: e.ctx.SharedMemory,
-		ChainDataDir: e.ctx.ChainDataDir,
-		Log:         e.ctx.Log,
-		Lock:        e.ctx.Lock,
-		Keystore:    e.ctx.Keystore,
-		Signer:      e.ctx.Signer,
-		WarpSigner:  e.ctx.WarpSigner,
+		SharedMemory:   e.ctx.SharedMemory,
+		ChainDataDir:   e.ctx.ChainDataDir,
+		Log:            e.ctx.Log,
+		Lock:           sync.RWMutex{}, // Create new RWMutex
+		Keystore:       nil,             // No keystore needed for test
+		WarpSigner:     e.ctx.WarpSigner,
+	}
+	// Create a basic Config for wallet
+	walletConfig := &config.Config{
+		TxFee: units.MilliLux,
+		CreateAssetTxFee: units.MilliLux,
+		CreateNetTxFee: units.Lux,
+		CreateBlockchainTxFee: units.Lux,
 	}
 	return txstest.NewWallet(
 		t,
 		consensusCtx,
-		c.config,
+		walletConfig,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
 		c.subnetIDs,
@@ -343,7 +348,7 @@ func (fvi *fxVMInt) Logger() log.Logger {
 func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
-		clk:      utilsClock,
+		clk:      clk,
 		log:      log,
 	}
 	res := &secp256k1fx.Fx{}

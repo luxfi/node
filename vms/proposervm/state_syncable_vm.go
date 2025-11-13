@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/database"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 

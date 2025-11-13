@@ -199,7 +199,7 @@ func (s *state) getKeys(traits [][]byte, startTrait, startKey []byte, limit int)
 	//       this variable is declared, the map may not be initialized from the
 	//       start. The first add to the underlying map of the set would then
 	//       result in the map being initialized.
-	keySet := set.Set[ids.ID]{}
+	keySet := make(set.Set[ids.ID])
 	keys := [][]byte(nil)
 	lastTrait := startTrait
 	lastKey := startKey

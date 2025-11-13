@@ -42,11 +42,14 @@ func (g *prefixGatherer) Register(prefix string, gatherer metric.Gatherer) error
 		}
 	}
 
+	prefixPtr := new(string)
+	*prefixPtr = prefix
 	g.register(
 		prefix,
 		&prefixedGatherer{
-			prefix:   prefix,
-			gatherer: gatherer,
+			prefix:    prefix,
+			prefixPtr: prefixPtr,
+			gatherer:  gatherer,
 		},
 	)
 	return nil
@@ -68,8 +71,9 @@ func (g *prefixGatherer) Deregister(prefix string) bool {
 }
 
 type prefixedGatherer struct {
-	prefix   string
-	gatherer metric.Gatherer
+	prefix      string
+	prefixPtr   *string // Cached pointer for when suffix is empty
+	gatherer    metric.Gatherer
 }
 
 func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
@@ -77,10 +81,16 @@ func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
 	// is expected to still return the metrics in the case an error is returned.
 	metricFamilies, err := g.gatherer.Gather()
 	for _, metricFamily := range metricFamilies {
-		metricFamily.Name = proto.String(utilmetric.AppendNamespace(
-			g.prefix,
-			metricFamily.GetName(),
-		))
+		originalName := metricFamily.GetName()
+		if originalName == "" {
+			// When the original name is empty, just use the prefix pointer
+			metricFamily.Name = g.prefixPtr
+		} else {
+			metricFamily.Name = proto.String(utilmetric.AppendNamespace(
+				g.prefix,
+				originalName,
+			))
+		}
 	}
 	return metricFamilies, err
 }

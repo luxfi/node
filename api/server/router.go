@@ -39,7 +39,7 @@ type router struct {
 func newRouter() *router {
 	return &router{
 		router:         mux.NewRouter(),
-		reservedRoutes: set.Set[string]{},
+		reservedRoutes: make(set.Set[string]),
 		aliases:        make(map[string][]string),
 		headerRoutes:   make(map[string]http.Handler),
 		routes:         make(map[string]map[string]http.Handler),

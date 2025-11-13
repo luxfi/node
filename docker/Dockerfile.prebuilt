@@ -15,10 +15,10 @@ COPY node/build/luxd /usr/local/bin/luxd
 RUN chmod +x /usr/local/bin/luxd
 
 # Expose ports
-EXPOSE 9650 9651
+EXPOSE 9630 9631
 
 # Set the data directory
 VOLUME ["/data"]
 
 # Run luxd
-CMD ["luxd", "--network-id=local", "--http-host=0.0.0.0", "--http-port=9650", "--staking-port=9651", "--db-dir=/data", "--log-level=info"]
+CMD ["luxd", "--network-id=local", "--http-host=0.0.0.0", "--http-port=9630", "--staking-port=9631", "--db-dir=/data", "--log-level=info"]

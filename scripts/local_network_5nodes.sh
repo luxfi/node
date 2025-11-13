@@ -15,8 +15,8 @@ echo -e "${GREEN}Setting up Lux Network with 5 validator nodes...${NC}"
 
 # Configuration
 NETWORK_ID=12345
-API_PORT_BASE=9650
-STAKING_PORT_BASE=9651
+API_PORT_BASE=9630
+STAKING_PORT_BASE=9631
 HTTP_HOST="127.0.0.1"
 
 # Node directories

@@ -6,27 +6,19 @@ package proposervm
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consensuscontext "github.com/luxfi/consensus/context"
+	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/chainmock"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
-	consensuscoremock "github.com/luxfi/consensus/core/coremock"
-	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -300,7 +292,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	postForkStatelessChild, err := statelessblock.Build(
 		componentblocktest.GenesisID,
 		coreBlk.Timestamp(),
-		0, // pChainHeight
+		0,                      // pChainHeight
 		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
@@ -627,7 +619,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 	slb, err := statelessblock.Build(
 		firstBlock.ID(), // refer unknown parent
 		firstBlock.Timestamp(),
-		0, // pChainHeight,
+		0,                      // pChainHeight,
 		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
@@ -664,16 +656,16 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 	innerVM := consensusblockmock.NewMockChainVM(ctrl)
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
-	
+
 	// Create minimal consensus context for testing
 	// ValidatorState is left as nil since this test doesn't exercise validator functionality
 	consensusCtx := &consensuscontext.Context{
-		QuantumID:  1,
-		NetworkID:  1,
-		ChainID:    ids.GenerateTestID(),
-		NodeID:     ids.GenerateTestNodeID(),
+		QuantumID: 1,
+		NetworkID: 1,
+		ChainID:   ids.GenerateTestID(),
+		NodeID:    ids.GenerateTestNodeID(),
 	}
-	
+
 	vm := &VM{
 		ChainVM: innerVM,
 		ctx:     consensusCtx,

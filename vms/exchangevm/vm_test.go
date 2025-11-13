@@ -157,7 +157,7 @@ func TestIssueNFT(t *testing.T) {
 	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// Move the NFT
-	addrs := set.Set[ids.ShortID]{}
+	addrs := make(set.Set[ids.ShortID])
 	for addr := range kc.Addresses() {
 		addrs.Add(addr)
 	}

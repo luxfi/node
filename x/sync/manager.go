@@ -1094,7 +1094,7 @@ func midPoint(startMaybe, endMaybe maybe.Maybe[[]byte]) maybe.Maybe[[]byte] {
 // a bool indicating if any difference was found
 func findChildDifference(node1, node2 *merkledb.ProofNode, startIndex int) (byte, bool) {
 	// Children indices >= [startIndex] present in at least one of the nodes.
-	childIndices := set.Set[byte]{}
+	childIndices := make(set.Set[byte])
 	for _, node := range []*merkledb.ProofNode{node1, node2} {
 		if node == nil {
 			continue

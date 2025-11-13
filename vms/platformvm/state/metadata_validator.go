@@ -260,7 +260,7 @@ func (m *metadata) WriteValidatorMetadata(
 func (m *metadata) addUpdatedMetadata(vdrID ids.NodeID, netID ids.ID) {
 	updatedNetMetadata, ok := m.updatedMetadata[vdrID]
 	if !ok {
-		updatedNetMetadata = set.Set[ids.ID]{}
+		updatedNetMetadata = make(set.Set[ids.ID])
 		m.updatedMetadata[vdrID] = updatedNetMetadata
 	}
 	updatedNetMetadata.Add(netID)

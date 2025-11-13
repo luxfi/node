@@ -11,8 +11,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/consensus"
-	validators "github.com/luxfi/consensus/validator"
 )
 
 // mockValidatorState implements consensus.ValidatorState for testing

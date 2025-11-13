@@ -59,7 +59,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             nodeID,
-			MyNets:               set.Set[ids.ID]{},
+			MyNets:               make(set.Set[ids.ID]),
 			Beacons:              nil,
 			Validators:           nil,
 			NetworkID:            networkID,
@@ -70,7 +70,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 		peer := &peer{
 			Config:      config,
 			id:          nodeID,
-			trackedNets: set.Set[ids.ID]{},
+			trackedNets: make(set.Set[ids.ID]),
 		}
 
 		// Test different message types based on fuzzing input
@@ -208,7 +208,7 @@ func FuzzPeerStateMachine(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyNets:               set.Set[ids.ID]{},
+			MyNets:               make(set.Set[ids.ID]),
 			NetworkID:            1,
 			MessageCreator:       mc,
 		}
@@ -217,7 +217,7 @@ func FuzzPeerStateMachine(f *testing.F) {
 		peer := &peer{
 			Config:            config,
 			id:                ids.GenerateTestNodeID(),
-			trackedNets:       set.Set[ids.ID]{},
+			trackedNets:       make(set.Set[ids.ID]),
 			finishedHandshake: utils.Atomic[bool]{},
 			onClosed:          make(chan struct{}),
 		}
@@ -304,14 +304,14 @@ func FuzzPeerConnection(f *testing.F) {
 			NetworkID:            1,
 			MessageCreator:       mc,
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyNets:               set.Set[ids.ID]{},
+			MyNets:               make(set.Set[ids.ID]),
 		}
 
 		// Create peer
 		peer := &peer{
 			Config:      config,
 			id:          ids.GenerateTestNodeID(),
-			trackedNets: set.Set[ids.ID]{},
+			trackedNets: make(set.Set[ids.ID]),
 			onClosed:    make(chan struct{}),
 		}
 

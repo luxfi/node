@@ -15,7 +15,9 @@ type mapFilter struct {
 }
 
 func NewMap() Filter {
-	return &mapFilter{}
+	return &mapFilter{
+		values: make(set.Set[string]),
+	}
 }
 
 func (m *mapFilter) Add(bl ...[]byte) {

@@ -18,19 +18,25 @@ import (
 // for compatibility with existing tests
 type Context struct {
 	context.Context
-	NetworkID     uint32
-	NetID         ids.ID
-	ChainID       ids.ID
-	NodeID        ids.NodeID
-	XChainID      ids.ID
-	CChainID      ids.ID
-	XAssetID      ids.ID
-	LUXAssetID    ids.ID
-	WarpSigner    interface{}
-	Log           log.Logger
-	Lock          *sync.RWMutex
-	SharedMemory  atomic.SharedMemory
-	BCLookup      ids.AliaserReader
+	NetworkID      uint32
+	NetID          ids.ID
+	ChainID        ids.ID
+	NodeID         ids.NodeID
+	PublicKey      interface{} // BLS public key
+	XChainID       ids.ID
+	CChainID       ids.ID
+	DChainID       ids.ID
+	XAssetID       ids.ID
+	LUXAssetID     ids.ID
+	ValidatorState interface{} // Validator state manager
+	WarpSigner     interface{}
+	Log            log.Logger
+	Lock           *sync.RWMutex
+	SharedMemory   atomic.SharedMemory
+	BCLookup       ids.AliaserReader
+	ChainDataDir   string
+	Keystore       interface{}
+	Signer         interface{}
 }
 
 // New creates a new test context

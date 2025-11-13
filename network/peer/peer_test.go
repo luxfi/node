@@ -166,7 +166,7 @@ func newRawTestPeer(t *testing.T, config *Config) *rawTestPeer {
 
 	config.IPSigner = NewIPSigner(ip, tls, blsKey)
 
-	inboundMsgChan := make(chan message.InboundMessage)
+	inboundMsgChan := make(chan message.InboundMessage, 10)
 	config.Router = InboundHandlerFunc(func(_ context.Context, inboundMsg message.InboundMessage) {
 		inboundMsgChan <- inboundMsg
 	})

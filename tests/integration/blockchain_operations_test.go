@@ -5,6 +5,9 @@ package integration_test
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,14 +19,51 @@ import (
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
+// getNodeBinaryPath returns the path to the luxd binary, building it if necessary
+func getNodeBinaryPath(t *testing.T) string {
+	// Check if LUXD_PATH is set
+	if path := os.Getenv("LUXD_PATH"); path != "" {
+		return path
+	}
+
+	// Try to find it in the build directory
+	buildDir := filepath.Join("..", "..", "build")
+	luxdPath := filepath.Join(buildDir, "luxd")
+	
+	if _, err := os.Stat(luxdPath); err == nil {
+		return luxdPath
+	}
+
+	// Build it
+	t.Log("Building luxd binary for integration tests...")
+	cmd := exec.Command("go", "build", "-o", luxdPath, "./cmd/luxd")
+	cmd.Dir = filepath.Join("..", "..")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	
+	if err := cmd.Run(); err != nil {
+		t.Skipf("Skipping integration test: failed to build luxd: %v", err)
+	}
+	
+	return luxdPath
+}
+
 // TestCChainOperations tests C-Chain (EVM) operations
 func TestCChainOperations(t *testing.T) {
 	require := require.New(t)
+
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
 
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-cchain",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -67,10 +107,18 @@ func TestCChainOperations(t *testing.T) {
 func TestXChainOperations(t *testing.T) {
 	require := require.New(t)
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-xchain",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -114,10 +162,18 @@ func TestXChainOperations(t *testing.T) {
 func TestPChainOperations(t *testing.T) {
 	require := require.New(t)
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-pchain",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -166,10 +222,18 @@ func TestPChainOperations(t *testing.T) {
 func TestBlockProduction(t *testing.T) {
 	require := require.New(t)
 
+	// Get node binary path
+	luxdPath := getNodeBinaryPath(t)
+
 	// Create a single node network
 	network := &tmpnet.Network{
 		Owner: "integration-test-blocks",
 		Nodes: tmpnet.NewNodesOrPanic(1),
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
+			Process: &tmpnet.ProcessRuntimeConfig{
+				LuxNodePath: luxdPath,
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)

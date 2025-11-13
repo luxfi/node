@@ -14,18 +14,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/upgrade/upgradetest"
 
-	"github.com/luxfi/consensus"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/engine/chain"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/proposervm/lp181"
+	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 )
 

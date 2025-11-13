@@ -1,5 +1,5 @@
 {
-	"networkID": 99999,
+	"networkID": 31337,
 	"allocations": [
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",

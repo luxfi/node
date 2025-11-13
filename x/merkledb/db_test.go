@@ -901,7 +901,7 @@ func runRandDBTest(require *require.Assertions, r *rand.Rand, rt randTest, token
 		values               = make(map[Key][]byte) // tracks content of the trie
 		currentBatch         = db.NewBatch()
 		uncommittedKeyValues = make(map[Key][]byte)
-		uncommittedDeletes   = set.Set[Key]{}
+		uncommittedDeletes   = make(set.Set[Key])
 		pastRoots            = []ids.ID{}
 	)
 

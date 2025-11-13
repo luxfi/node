@@ -34,12 +34,12 @@ var (
 		// Ref: https://subnets.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
 		DurangoTime:               time.Date(2025, time.March, 6, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2025, time.December, 16, 17, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.April, 8, 15, 0, 0, 0, time.UTC),
+		EtnaTime:                  time.Date(2025, time.April, 8, 15, 0, 0, 0, time.UTC),
+		FortunaTime:               time.Date(2025, time.December, 16, 17, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
 		GraniteEpochDuration:      5 * time.Minute,
 	}
-	Fuji = Config{
+	Testnet = Config{
 		ApricotPhase1Time:            time.Date(2021, time.March, 26, 14, 0, 0, 0, time.UTC),
 		ApricotPhase2Time:            time.Date(2021, time.May, 5, 14, 0, 0, 0, time.UTC),
 		ApricotPhase3Time:            time.Date(2021, time.August, 16, 19, 0, 0, 0, time.UTC),
@@ -51,14 +51,14 @@ var (
 		ApricotPhasePost6Time:        time.Date(2022, time.September, 7, 6, 0, 0, 0, time.UTC),
 		BanffTime:                    time.Date(2022, time.October, 3, 14, 0, 0, 0, time.UTC),
 		CortinaTime:                  time.Date(2023, time.April, 6, 15, 0, 0, 0, time.UTC),
-		// The fuji stop vertex is well known. It can be verified on any fully
+		// The testnet stop vertex is well known. It can be verified on any fully
 		// synced node by looking at the parentID of the genesis block.
 		//
 		// Ref: https://subnets-test.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
 		DurangoTime:               time.Date(2025, time.February, 13, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2025, time.November, 25, 16, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
+		EtnaTime:                  time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
+		FortunaTime:               time.Date(2025, time.November, 25, 16, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
 		GraniteEpochDuration:      5 * time.Minute,
 	}

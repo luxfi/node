@@ -8,26 +8,21 @@ import (
 	"context"
 	"testing"
 
-	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/metric"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 
 	"github.com/stretchr/testify/require"
 
+	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/core"
-	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/engine/enginetest"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 

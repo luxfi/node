@@ -4,15 +4,11 @@
 package executor
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/consensus"
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

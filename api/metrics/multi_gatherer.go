@@ -38,9 +38,11 @@ type multiGatherer struct {
 	gatherers []metric.Gatherer
 }
 
-// NewMultiGatherer creates and returns a new MultiGatherer.
+// NewMultiGatherer creates and returns a new MultiGatherer that applies
+// prefixes to metric names. For a MultiGatherer without prefix support, use
+// the multiGatherer struct directly.
 func NewMultiGatherer() MultiGatherer {
-	return &multiGatherer{}
+	return NewPrefixGatherer()
 }
 
 func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {

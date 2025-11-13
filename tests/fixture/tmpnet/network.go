@@ -890,7 +890,7 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 
 	// Wait for nodes to become subnet validators
 	pChainClient := platformvm.NewClient(apiURI)
-	validatorsToRestart := set.Set[ids.NodeID]{}
+	validatorsToRestart := make(set.Set[ids.NodeID])
 	for _, subnet := range createdNets {
 		if err := WaitForActiveValidators(ctx, log, pChainClient, subnet); err != nil {
 			return err

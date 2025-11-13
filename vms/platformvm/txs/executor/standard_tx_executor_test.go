@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -1777,7 +1777,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1806,7 +1806,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1835,7 +1835,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1867,7 +1867,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1896,7 +1896,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1928,7 +1928,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1993,7 +1993,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2157,7 +2157,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          testContext(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2185,7 +2185,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          testContext(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2218,7 +2218,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          testContext(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2258,7 +2258,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          testContext(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2344,7 +2344,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          testContext(),
+						Ctx:          &consensusctx.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2371,7 +2371,7 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -2386,10 +2386,17 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 		baseState = statetest.New(t, statetest.Config{
 			Upgrades: defaultConfig.UpgradeConfig,
 		})
+		// Create a basic Config for wallet
+		walletConfig = &config.Config{
+			TxFee:                 units.MilliLux,
+			CreateAssetTxFee:      units.MilliLux,
+			CreateNetTxFee:        units.Lux,
+			CreateBlockchainTxFee: units.Lux,
+		}
 		wallet = txstest.NewWallet(
 			t,
 			ctx,
-			defaultConfig,
+			walletConfig,
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -2397,7 +2404,6 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			nil, // chainIDs
 		)
 		flowChecker = utxo.NewVerifier(
-			ctx,
 			&vm.Clk,
 			fx,
 		)
@@ -2563,7 +2569,12 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 				wallet = txstest.NewWallet(
 					t,
 					ctx,
-					defaultConfig,
+					&config.Config{
+						TxFee:                 units.MilliLux,
+						CreateAssetTxFee:      units.MilliLux,
+						CreateNetTxFee:        units.Lux,
+						CreateBlockchainTxFee: units.Lux,
+					},
 					baseState,
 					secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 					[]ids.ID{subnetID},
@@ -2689,7 +2700,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -2705,10 +2716,17 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			Upgrades: defaultConfig.UpgradeConfig,
 			Context:  ctx,
 		})
+		// Create a basic Config for wallet
+		walletConfig = &config.Config{
+			TxFee:                 units.MilliLux,
+			CreateAssetTxFee:      units.MilliLux,
+			CreateNetTxFee:        units.Lux,
+			CreateBlockchainTxFee: units.Lux,
+		}
 		wallet = txstest.NewWallet(
 			t,
 			ctx,
-			defaultConfig,
+			walletConfig,
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -2716,7 +2734,6 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			nil, // chainIDs
 		)
 		flowChecker = utxo.NewVerifier(
-			ctx,
 			&vm.Clk,
 			fx,
 		)
@@ -3115,7 +3132,12 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			wallet := txstest.NewWallet(
 				t,
 				ctx,
-				defaultConfig,
+				&config.Config{
+					TxFee:                 units.MilliLux,
+					CreateAssetTxFee:      units.MilliLux,
+					CreateNetTxFee:        units.Lux,
+					CreateBlockchainTxFee: units.Lux,
+				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 				nil, // subnetIDs
@@ -3213,7 +3235,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3229,10 +3251,17 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			Upgrades: defaultConfig.UpgradeConfig,
 			Context:  ctx,
 		})
+		// Create a basic Config for wallet
+		walletConfig = &config.Config{
+			TxFee:                 units.MilliLux,
+			CreateAssetTxFee:      units.MilliLux,
+			CreateNetTxFee:        units.Lux,
+			CreateBlockchainTxFee: units.Lux,
+		}
 		wallet = txstest.NewWallet(
 			t,
 			ctx,
-			defaultConfig,
+			walletConfig,
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -3240,7 +3269,6 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			nil, // chainIDs
 		)
 		flowChecker = utxo.NewVerifier(
-			ctx,
 			&vm.Clk,
 			fx,
 		)
@@ -3621,7 +3649,12 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			wallet := txstest.NewWallet(
 				t,
 				ctx,
-				defaultConfig,
+				&config.Config{
+					TxFee:                 units.MilliLux,
+					CreateAssetTxFee:      units.MilliLux,
+					CreateNetTxFee:        units.Lux,
+					CreateBlockchainTxFee: units.Lux,
+				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 				nil, // subnetIDs
@@ -3712,7 +3745,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3728,10 +3761,17 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			Upgrades: defaultConfig.UpgradeConfig,
 			Context:  ctx,
 		})
+		// Create a basic Config for wallet
+		walletConfig = &config.Config{
+			TxFee:                 units.MilliLux,
+			CreateAssetTxFee:      units.MilliLux,
+			CreateNetTxFee:        units.Lux,
+			CreateBlockchainTxFee: units.Lux,
+		}
 		wallet = txstest.NewWallet(
 			t,
 			ctx,
-			defaultConfig,
+			walletConfig,
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -3739,7 +3779,6 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			nil, // chainIDs
 		)
 		flowChecker = utxo.NewVerifier(
-			ctx,
 			&vm.Clk,
 			fx,
 		)
@@ -3929,7 +3968,12 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			wallet := txstest.NewWallet(
 				t,
 				ctx,
-				defaultConfig,
+				&config.Config{
+					TxFee:                 units.MilliLux,
+					CreateAssetTxFee:      units.MilliLux,
+					CreateNetTxFee:        units.Lux,
+					CreateBlockchainTxFee: units.Lux,
+				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 				nil, // subnetIDs
@@ -4001,7 +4045,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NoLog{},
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -4018,10 +4062,17 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			Upgrades: defaultConfig.UpgradeConfig,
 			Context:  ctx,
 		})
+		// Create a basic Config for wallet
+		walletConfig = &config.Config{
+			TxFee:                 units.MilliLux,
+			CreateAssetTxFee:      units.MilliLux,
+			CreateNetTxFee:        units.Lux,
+			CreateBlockchainTxFee: units.Lux,
+		}
 		wallet = txstest.NewWallet(
 			t,
 			ctx,
-			defaultConfig,
+			walletConfig,
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -4029,7 +4080,6 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			nil, // chainIDs
 		)
 		flowChecker = utxo.NewVerifier(
-			ctx,
 			&vm.Clk,
 			fx,
 		)
@@ -4204,7 +4254,12 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			wallet := txstest.NewWallet(
 				t,
 				ctx,
-				defaultConfig,
+				&config.Config{
+					TxFee:                 units.MilliLux,
+					CreateAssetTxFee:      units.MilliLux,
+					CreateNetTxFee:        units.Lux,
+					CreateBlockchainTxFee: units.Lux,
+				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 				nil, // subnetIDs

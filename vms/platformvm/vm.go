@@ -207,47 +207,28 @@ func (vm *VM) Initialize(
 	vm.log.Debug("initializing platform chain")
 
 	// Log initialization parameters
-	fmt.Printf("PlatformVM Initialize called with:\n")
-	fmt.Printf("  - ctx: %v\n", ctx)
-	fmt.Printf("  - chainCtx: %v\n", chainCtxIntf)
-	fmt.Printf("  - dbManager: %v\n", dbManager)
-	fmt.Printf("  - genesisBytes length: %d\n", len(genesisBytes))
-	fmt.Printf("  - upgradeBytes: %v\n", upgradeBytes)
-	fmt.Printf("  - configBytes: %v\n", configBytes)
-	fmt.Printf("  - toEngine: %v\n", toEngineIntf)
-	fmt.Printf("  - fxs: %v\n", fxsIntf)
-	fmt.Printf("  - appSender: %v\n", appSenderIntf)
 
 	execConfig, err := config.GetConfig(configBytes)
 	if err != nil {
-		fmt.Printf("ERROR: Failed to get execution config: %v\n", err)
 		return fmt.Errorf("failed to get execution config: %w", err)
 	}
 	vm.log.Info("using VM execution config", "config", execConfig)
-	fmt.Printf("Got execution config successfully\n")
 
 	// Get metrics registerer from chain context, or create new one if not available
 	var registerer metric.Registry
 	if chainCtx != nil && chainCtx.Metrics != nil {
-		fmt.Printf("chainCtx.Metrics is not nil, attempting type assertion\n")
 		if reg, ok := chainCtx.Metrics.(metric.Registry); ok {
-			fmt.Printf("Type assertion succeeded, reg == nil: %v\n", reg == nil)
 			registerer = reg
 			if registerer == nil {
-				fmt.Printf("ERROR: registerer is nil after assignment!\n")
 				registerer = metric.NewRegistry()
-				fmt.Printf("Created new registry as fallback\n")
 			}
 		} else {
 			// Create new registerer if chainCtx.Metrics is not a Registry
-			fmt.Printf("Type assertion failed, chainCtx.Metrics type: %T\n", chainCtx.Metrics)
 			registerer = metric.NewRegistry()
-			fmt.Printf("Created new registerer\n")
 		}
 	} else {
 		// Create new registerer if chainCtx.Metrics is nil
 		registerer = metric.NewRegistry()
-		fmt.Printf("chainCtx.Metrics is nil, created new registerer\n")
 	}
 
 	// Initialize platformvm-specific metrics
@@ -280,24 +261,15 @@ func (vm *VM) Initialize(
 	// Note: this codec is never used to serialize anything
 	vm.codecRegistry = linearcodec.NewDefault()
 	vm.fx = &secp256k1fx.Fx{}
-	fmt.Printf("About to initialize fx...\\n")
 	if err := vm.fx.Initialize(vm); err != nil {
-		fmt.Printf("ERROR: fx.Initialize failed: %v\\n", err)
 		return fmt.Errorf("failed to initialize fx: %w", err)
 	}
-	fmt.Printf("fx.Initialize succeeded!\\n")
 
 	rewards := reward.NewCalculator(vm.RewardConfig)
 
 	vm.log.Info("Creating Platform VM state",
 		"genesisLen", len(genesisBytes),
 	)
-	fmt.Printf("About to call state.New()...\\n")
-	fmt.Printf("  vm.db: %v\\n", vm.db != nil)
-	fmt.Printf("  registerer: %v\\n", registerer != nil)
-	fmt.Printf("  vm.Internal.Validators: %v\\n", vm.Internal.Validators != nil)
-	fmt.Printf("  vm.ctx: %v\\n", vm.ctx != nil)
-	fmt.Printf("  vm.metrics: %v\\n", vm.metrics != nil)
 	
 	vm.state, err = state.New(
 		vm.db,
@@ -311,26 +283,17 @@ func (vm *VM) Initialize(
 		rewards,
 	)
 	if err != nil {
-		fmt.Printf("ERROR: state.New() failed: %v\\n", err)
 		vm.log.Error("Failed to create Platform VM state", "error", err)
 		return fmt.Errorf("failed to create state: %w", err)
 	}
-	fmt.Printf("state.New() succeeded!\\n")
 	vm.log.Info("Platform VM state created successfully")
 
-	fmt.Printf("DEBUG: About to create validator manager\\n")
 	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
-	fmt.Printf("DEBUG: Validator manager created\\n")
 	vm.State = validatorManager
-	fmt.Printf("DEBUG: About to create utxo handler\\n")
 	utxoHandler := utxo.NewHandler(context.Background(), &vm.nodeClock, vm.fx)
-	fmt.Printf("DEBUG: UTXO handler created\\n")
 	// Create uptime manager with noop implementation for now
-	fmt.Printf("DEBUG: About to create uptime manager\\n")
 	vm.uptimeManager = &uptime.NoOpCalculator{}
-	fmt.Printf("DEBUG: About to call SetCalculator\\n")
 	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
-	fmt.Printf("DEBUG: SetCalculator completed\\n")
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Internal,
@@ -343,13 +306,10 @@ func (vm *VM) Initialize(
 		Bootstrapped: &vm.bootstrapped,
 	}
 
-	fmt.Printf("About to create mempool...\n")
 	mempool, err := pmempool.New("mempool", registerer)
 	if err != nil {
-		fmt.Printf("ERROR: pmempool.New() failed: %v\n", err)
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
-	fmt.Printf("Mempool created successfully!\n")
 
 	vm.manager = blockexecutor.NewManager(
 		mempool,
@@ -364,26 +324,19 @@ func (vm *VM) Initialize(
 	adaptedAppSender := &appSenderAdapter{appSender}
 
 	// Type assert WarpSigner (may be nil for Platform chain)
-	fmt.Printf("About to type assert WarpSigner...\n")
 	var warpSigner warp.Signer
 	if chainCtx.WarpSigner != nil {
 		var ok bool
 		warpSigner, ok = chainCtx.WarpSigner.(warp.Signer)
 		if !ok {
-			fmt.Printf("ERROR: WarpSigner type assertion failed, got type: %T\n", chainCtx.WarpSigner)
 			return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
 		}
-		fmt.Printf("WarpSigner type assertion succeeded!\n")
 	} else {
-		fmt.Printf("WarpSigner is nil (expected for Platform chain)\n")
 		// Create a no-op warp signer for Platform chain
 		warpSigner = &noOpWarpSigner{}
 	}
 
 	// Create network
-	fmt.Printf("About to call network.New() with registerer:\n")
-	fmt.Printf("  registerer == nil: %v\n", registerer == nil)
-	fmt.Printf("  registerer type: %T\n", registerer)
 	
 	vm.Network, err = network.New(
 	vm.log,
@@ -404,10 +357,8 @@ func (vm *VM) Initialize(
 	execConfig.Network,
 )
 if err != nil {
-	fmt.Printf("ERROR: network.New() failed with error: %v\n", err)
 	return fmt.Errorf("failed to initialize network: %w", err)
 }
-fmt.Printf("network.New() succeeded!\n")
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
 	// has better control of the context lock.

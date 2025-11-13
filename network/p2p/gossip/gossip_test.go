@@ -173,7 +173,7 @@ func TestGossiperGossip(t *testing.T) {
 				1,
 			)
 			require.NoError(err)
-			received := set.Set[*testTx]{}
+			received := make(set.Set[*testTx])
 			requestSet.onAdd = func(tx *testTx) {
 				received.Add(tx)
 			}
@@ -239,7 +239,7 @@ func TestValidatorGossiper(t *testing.T) {
 	require.Equal(1, calls)
 
 	// we are not a validator, so we should not request gossip
-	validators.validators = set.Set[ids.NodeID]{}
+	validators.validators = make(set.Set[ids.NodeID])
 	require.NoError(gossiper.Gossip(context.Background()))
 	require.Equal(1, calls)
 }

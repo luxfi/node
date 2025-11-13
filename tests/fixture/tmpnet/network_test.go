@@ -203,10 +203,16 @@ func TestNetworkHelperFunctions(t *testing.T) {
 		// Mark first node as ephemeral
 		network.Nodes[0].IsEphemeral = true
 		
-		// Get available node IDs (should exclude ephemeral)
+		// Simulate second node as running by setting its URI
+		network.Nodes[1].URI = "http://localhost:9650"
+
+		// Get available node IDs (should exclude ephemeral and non-running nodes)
 		availableIDs := network.GetAvailableNodeIDs()
-		require.Len(availableIDs, 1) // Only the non-ephemeral node
+		require.Len(availableIDs, 1) // Only the non-ephemeral running node
 		require.Equal(network.Nodes[1].NodeID.String(), availableIDs[0])
+
+		// Reset
+		network.Nodes[1].URI = ""
 	})
 	
 	t.Run("TrackedNetsForNode", func(t *testing.T) {

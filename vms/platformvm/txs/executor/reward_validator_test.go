@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -31,12 +29,7 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
-	})
-	return tx, tx.SyntacticVerify(ctx)
+	return tx, tx.SyntacticVerify(nil)
 }
 
 func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {

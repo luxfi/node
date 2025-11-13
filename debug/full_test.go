@@ -67,7 +67,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 	}
 
 	// Test SubsetWeight
-	subset := set.Set[ids.NodeID]{}
+	subset := make(set.Set[ids.NodeID])
 	subsetWeight := uint64(0)
 	for nodeID, weight := range validators {
 		subset.Add(nodeID)

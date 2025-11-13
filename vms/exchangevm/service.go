@@ -666,7 +666,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	}
 
 	now := s.vm.clock.Unix()
-	assetIDs := set.Set[ids.ID]{}       // IDs of assets the address has a non-zero balance of
+	assetIDs := make(set.Set[ids.ID])       // IDs of assets the address has a non-zero balance of
 	balances := make(map[ids.ID]uint64) // key: ID (as bytes). value: balance of that asset
 	for _, utxo := range utxos {
 		// TODO make this not specific to *secp256k1fx.TransferOutput
@@ -1430,7 +1430,7 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 	}
 
 	// Get all UTXOs/keys for the user
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, make(set.Set[ids.ShortID]))
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1689,7 +1689,7 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 	}
 
 	// Get all UTXOs/keys
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, make(set.Set[ids.ShortID]))
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1772,7 +1772,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
-	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
+	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, make(set.Set[ids.ShortID]))
 	if err != nil {
 		return nil, err
 	}

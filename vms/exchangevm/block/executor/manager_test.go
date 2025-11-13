@@ -254,7 +254,7 @@ func TestVerifyUniqueInputs(t *testing.T) {
 	// Case: No inputs
 	{
 		m := &manager{}
-		require.NoError(m.VerifyUniqueInputs(ids.GenerateTestID(), set.Set[ids.ID]{}))
+		require.NoError(m.VerifyUniqueInputs(ids.GenerateTestID(), make(set.Set[ids.ID])))
 	}
 
 	// blk0 is blk1's parent

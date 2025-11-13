@@ -20,7 +20,7 @@ func filterInvalidHosts(
 	handler http.Handler,
 	allowed []string,
 ) http.Handler {
-	s := set.Set[string]{}
+	s := make(set.Set[string])
 
 	for _, host := range allowed {
 		if host == wildcard {

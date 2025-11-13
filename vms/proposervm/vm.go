@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -150,7 +150,7 @@ func (vm *VM) Initialize(
 	// Explicit type conversions for interface{} fields - Rob Pike approach: no hiding complexity
 	logger := chainContext.Log.(log.Logger)
 	validatorState := chainContext.ValidatorState.(validators.State)
-	
+
 	vm.ctx = chainContext
 	vm.logger = logger
 	vm.validatorState = validatorState

@@ -12,11 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
-	validators "github.com/luxfi/consensus/validator"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/block"
 )

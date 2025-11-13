@@ -14,9 +14,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/ids"
 	choices "github.com/luxfi/consensus/core/choices"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

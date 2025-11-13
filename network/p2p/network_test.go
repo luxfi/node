@@ -609,7 +609,7 @@ func TestPeersSample(t *testing.T) {
 				require.NoError(network.Disconnected(context.Background(), disconnected))
 			}
 
-			sampleable := set.Set[ids.NodeID]{}
+			sampleable := make(set.Set[ids.NodeID])
 			sampleable.Union(tt.connected)
 			sampleable.Difference(tt.disconnected)
 

@@ -5,15 +5,16 @@ package executor
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
@@ -61,27 +62,27 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 
 			env.state.SetTimestamp(test.time) // to duly set fee
 
-			cfg := *env.config
-			cfg.StaticFeeConfig.CreateNetTxFee = test.fee
-			// Convert context for wallet factory
+			// Create a proper config.Config for the wallet factory
+			cfg := config.Config{
+				CreateNetTxFee: test.fee,
+			}
+			// Convert context for wallet factory  
 			consensusCtx := &consensuscontext.Context{
-				NetworkID:   env.ctx.NetworkID,
-				NetID:       env.ctx.NetID,
-				ChainID:     env.ctx.ChainID,
-				NodeID:      env.ctx.NodeID,
-				PublicKey:   env.ctx.PublicKey,
-				XChainID:    env.ctx.XChainID,
-				CChainID:    env.ctx.CChainID,
-				DChainID:    env.ctx.DChainID,
-				LUXAssetID:  env.ctx.LUXAssetID,
+				NetworkID:      env.ctx.NetworkID,
+				NetID:          env.ctx.NetID,
+				ChainID:        env.ctx.ChainID,
+				NodeID:         env.ctx.NodeID,
+				PublicKey:      []byte{}, // Use empty bytes for test
+				XChainID:       env.ctx.XChainID,
+				CChainID:       env.ctx.CChainID,
+				LUXAssetID:     env.ctx.LUXAssetID,
 				ValidatorState: env.ctx.ValidatorState,
-				SharedMemory: env.ctx.SharedMemory,
-				ChainDataDir: env.ctx.ChainDataDir,
-				Log:         env.ctx.Log,
-				Lock:        env.ctx.Lock,
-				Keystore:    env.ctx.Keystore,
-				Signer:      env.ctx.Signer,
-				WarpSigner:  env.ctx.WarpSigner,
+				SharedMemory:   env.ctx.SharedMemory,
+				ChainDataDir:   env.ctx.ChainDataDir,
+				Log:            env.ctx.Log,
+				Lock:           sync.RWMutex{}, // Create new RWMutex
+				Keystore:       nil, // No keystore needed for test
+				WarpSigner:     env.ctx.WarpSigner,
 			}
 			factory := txstest.NewWalletFactory(consensusCtx, &cfg, env.state)
 			builder, signer := factory.NewWallet()
@@ -98,11 +99,11 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 			stateDiff.SetTimestamp(test.time)
 
 			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
-			executor := StandardTxExecutor{
-				Backend:       &env.backend,
-				FeeCalculator: feeCalculator,
-				State:         stateDiff,
-				Tx:            tx,
+			executor := standardTxExecutor{
+				backend:       &env.backend,
+				feeCalculator: feeCalculator,
+				state:         stateDiff,
+				tx:            tx,
 			}
 			err = tx.Unsigned.Visit(&executor)
 			require.ErrorIs(err, test.expectedErr)

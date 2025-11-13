@@ -256,7 +256,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		config.Beacons = beacons
 		config.Validators = vdrs
 
-		var connected set.Set[ids.NodeID]
+		connected := make(set.Set[ids.NodeID])
 		net, err := NewNetwork(
 			config,
 			upgrade.InitiallyActiveTime,

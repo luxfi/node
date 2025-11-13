@@ -18,7 +18,7 @@ type FilterParam struct {
 
 func NewFilterParam() *FilterParam {
 	return &FilterParam{
-		set: set.Set[string]{},
+		set: make(set.Set[string]),
 	}
 }
 
@@ -26,7 +26,7 @@ func (f *FilterParam) NewSet() {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	f.set = set.Set[string]{}
+	f.set = make(set.Set[string])
 	f.filter = nil
 }
 

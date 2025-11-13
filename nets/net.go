@@ -61,8 +61,8 @@ type net struct {
 
 func New(myNodeID ids.NodeID, config Config) Net {
 	return &subnet{
-		bootstrapping:    set.Set[ids.ID]{},
-		bootstrapped:     set.Set[ids.ID]{},
+		bootstrapping:    make(set.Set[ids.ID]),
+		bootstrapped:     make(set.Set[ids.ID]),
 		bootstrappedSema: make(chan struct{}),
 		config:           config,
 		myNodeID:         myNodeID,

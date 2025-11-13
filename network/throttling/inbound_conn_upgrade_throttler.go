@@ -62,6 +62,7 @@ func NewInboundConnUpgradeThrottler(config InboundConnUpgradeThrottlerConfig) In
 	return &inboundConnUpgradeThrottler{
 		InboundConnUpgradeThrottlerConfig: config,
 		done:                              make(chan struct{}),
+		recentIPs:                         make(set.Set[netip.Addr]),
 		recentIPsAndTimes:                 make(chan ipAndTime, config.MaxRecentConnsUpgraded),
 	}
 }
