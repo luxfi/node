@@ -148,7 +148,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		0x00, 0x00, 0x00, 0x16,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
@@ -405,7 +405,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		0x00, 0x00, 0x00, 0x16,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
@@ -891,7 +891,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegationTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		0x00, 0x00, 0x00, 0x16,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
@@ -1169,7 +1169,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		0x00, 0x00, 0x00, 0x16,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID

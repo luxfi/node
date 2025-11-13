@@ -31,9 +31,12 @@ func EstimateETA(startTime time.Time, progress, end uint64) time.Duration {
 
 // EtaTracker provides exponentially weighted moving average ETA estimates
 type EtaTracker struct {
-	startTime time.Time
-	samples   int
-	alpha     float64
+	startTime      time.Time
+	samples        int
+	alpha          float64
+	sampleCount    int
+	lastProgress   uint64
+	lastSampleTime time.Time
 }
 
 // NewEtaTracker creates a new ETA tracker with the given number of samples and alpha
@@ -55,8 +58,48 @@ func (e *EtaTracker) AddSample(progress, total uint64, sampleTime time.Time) (*t
 	if total == 0 {
 		return nil, 0
 	}
-	eta := EstimateETA(e.startTime, progress, total)
-	progressPercent := float64(progress) / float64(total) * 100
+
+	// Initialize start time on first sample
+	if e.sampleCount == 0 {
+		e.startTime = sampleTime
+	}
+
+	// Update sample count
+	e.sampleCount++
+
+	// Check if we have enough samples
+	if e.sampleCount < e.samples {
+		e.lastProgress = progress
+		e.lastSampleTime = sampleTime
+		return nil, 0
+	}
+
+	// Check if time went backwards
+	if e.sampleCount > e.samples && sampleTime.Before(e.lastSampleTime) {
+		return nil, 0
+	}
+
+	// Check if progress didn't advance
+	if e.sampleCount > e.samples && progress <= e.lastProgress {
+		return nil, 0
+	}
+
+	e.lastProgress = progress
+	e.lastSampleTime = sampleTime
+
+	// Calculate ETA based on time elapsed from start
+	timeSpent := sampleTime.Sub(e.startTime)
+	percentExecuted := float64(progress) / float64(total)
+	estimatedTotalDuration := time.Duration(float64(timeSpent) / percentExecuted)
+	eta := (estimatedTotalDuration - timeSpent).Round(time.Second)
+
+	progressPercent := percentExecuted * 100
+
+	// If we're past the end, return 0 ETA
+	if progress >= total {
+		eta = 0
+	}
+
 	return &eta, progressPercent
 }
 

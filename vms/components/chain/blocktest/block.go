@@ -86,11 +86,17 @@ func (b *Block) Status() uint8 {
 }
 
 func (b *Block) Accept(context.Context) error {
+	if b.ErrV != nil {
+		return b.ErrV
+	}
 	b.StatusV = Accepted
 	return nil
 }
 
 func (b *Block) Reject(context.Context) error {
+	if b.ErrV != nil {
+		return b.ErrV
+	}
 	b.StatusV = Rejected
 	return nil
 }

@@ -233,7 +233,7 @@ func TestDiffExpiry(t *testing.T) {
 
 			var (
 				expectedExpiries   = set.Of(test.initialExpiries...)
-				unexpectedExpiries set.Set[ExpiryEntry]
+				unexpectedExpiries = set.NewSet[ExpiryEntry](len(test.ops))
 			)
 			for _, op := range test.ops {
 				if op.put {
