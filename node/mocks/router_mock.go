@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	core "github.com/luxfi/consensus/core"
+	core "github.com/luxfi/consensus"
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"

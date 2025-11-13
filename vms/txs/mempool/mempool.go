@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"

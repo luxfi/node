@@ -14,7 +14,7 @@ package proposervm
 // 	"github.com/luxfi/consensus"
 // 	consensustest "github.com/luxfi/consensus/test/helpers"
 // 	"github.com/luxfi/node/vms/components/chain/blocktest"
-// 	"github.com/luxfi/consensus/core"
+// 	"github.com/luxfi/consensus"
 // 	"github.com/luxfi/database"
 // 	"github.com/luxfi/database/memdb"
 // 	"github.com/luxfi/database/prefixdb"

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"

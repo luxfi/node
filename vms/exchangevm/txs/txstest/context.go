@@ -6,7 +6,6 @@ package txstest
 import (
 	"context"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/wallet/chain/x/builder"
@@ -17,9 +16,9 @@ func newContext(
 	cfg *config.Config,
 	feeAssetID ids.ID,
 ) *builder.Context {
-	// Extract IDs from context
-	networkID := consensus.GetNetworkID(ctx)
-	chainID := consensus.GetChainID(ctx)
+	// Use default values - these should be set by caller if needed
+	networkID := uint32(1) // Default to mainnet
+	chainID := ids.Empty   // Caller should set this
 
 	return &builder.Context{
 		NetworkID:        networkID,

@@ -8,7 +8,7 @@ import (
 
 	logfields "github.com/luxfi/log"
 
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/tests/fixture/net"

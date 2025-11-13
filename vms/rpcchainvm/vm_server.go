@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"

@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )

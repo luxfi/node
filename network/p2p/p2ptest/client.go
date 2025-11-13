@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 )

@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"

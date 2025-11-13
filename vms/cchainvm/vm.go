@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/geth/rpc"
 	"github.com/luxfi/geth/trie"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"

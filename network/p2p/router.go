@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 )
 
 var (

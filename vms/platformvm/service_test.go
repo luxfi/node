@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"

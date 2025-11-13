@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 
-	common "github.com/luxfi/consensus/core"
+	common "github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
 
 	"github.com/luxfi/node/vms/exchangevm/txs"

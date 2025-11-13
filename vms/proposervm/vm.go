@@ -13,9 +13,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
+	consensuscore "github.com/luxfi/consensus"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
@@ -866,10 +865,10 @@ func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chainblock.Block) {
 	}
 }
 
-// validatorStateWrapper wraps consensus.ValidatorState to match validators.State
+// validatorStateWrapper wraps consensuscontext.ValidatorState to match validators.State
 type validatorStateWrapper struct {
 	ctx         context.Context
-	vs          consensus.ValidatorState
+	vs          consensuscontext.ValidatorState
 	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 
@@ -933,7 +932,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 // interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
 type interfacesToConsensusValidatorStateAdapter struct {
 	ctx         context.Context
-	vs          consensus.ValidatorState
+	vs          consensuscontext.ValidatorState
 	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 

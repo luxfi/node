@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )

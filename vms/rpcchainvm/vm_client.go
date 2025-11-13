@@ -24,9 +24,8 @@ import (
 	"github.com/luxfi/node/internal/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
-	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
@@ -128,7 +127,7 @@ func (vm *VMClient) Initialize(
 	if cc, ok := chainCtxIface.(*chainblock.ChainContext); ok && cc != nil {
 		consensusCtx = cc.Context
 		if consensusCtx != nil {
-			ctx = consensus.WithIDs(ctx, consensus.IDs{
+			ctx = consensuscontext.WithIDs(ctx, consensuscontext.IDs{
 				NetworkID: consensusCtx.NetworkID,
 				ChainID:   consensusCtx.ChainID,
 				NodeID:    consensusCtx.NodeID,

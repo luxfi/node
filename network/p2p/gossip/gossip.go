@@ -13,7 +13,7 @@ import (
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"

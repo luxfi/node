@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"

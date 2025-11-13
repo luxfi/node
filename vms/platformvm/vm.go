@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensuscore "github.com/luxfi/consensus/core"
+	consensuscore "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/validator/uptime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"

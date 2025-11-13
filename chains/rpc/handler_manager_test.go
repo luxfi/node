@@ -11,7 +11,7 @@ import (
 	"time"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"

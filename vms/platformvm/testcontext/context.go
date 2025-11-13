@@ -8,7 +8,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxfi/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"
@@ -48,8 +48,8 @@ func New(ctx context.Context) *Context {
 	}
 }
 
-// WithIDs sets the IDs from consensus.IDs
-func (c *Context) WithIDs(ids consensus.IDs) *Context {
+// WithIDs sets the IDs from consensuscontext.IDs
+func (c *Context) WithIDs(ids consensuscontext.IDs) *Context {
 	c.NetworkID = ids.NetworkID
 	c.ChainID = ids.ChainID
 	c.NetID = ids.NetID

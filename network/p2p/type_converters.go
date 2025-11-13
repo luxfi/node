@@ -5,7 +5,7 @@ package p2p
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	consensusversion "github.com/luxfi/consensus/version"
 	nodeset "github.com/luxfi/math/set"

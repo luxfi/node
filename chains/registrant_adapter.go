@@ -6,7 +6,7 @@ package chains
 import (
 	"github.com/luxfi/node/api/server"
 	consensus "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 )
 
 // registrantAdapter adapts a Server to implement chains.Registrant

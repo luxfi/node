@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

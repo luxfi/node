@@ -10,10 +10,8 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/luxfi/log"
-
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/log"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -413,7 +411,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 
 	var sourceChain ids.ID
 	if args.SourceChain == "" {
-		sourceChain = consensus.GetChainID(s.vm.ctx)
+		sourceChain = s.vm.consensusCtx.ChainID
 	} else {
 		chainID, err := s.vm.bcLookup.Lookup(args.SourceChain)
 		if err != nil {
@@ -453,7 +451,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
-	if sourceChain == consensus.GetChainID(s.vm.ctx) {
+	if sourceChain == s.vm.consensusCtx.ChainID {
 		utxos, endAddr, endUTXOID, err = lux.GetPaginatedUTXOs(
 			s.vm.state,
 			addrSet,
@@ -854,8 +852,8 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1010,8 +1008,8 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1314,8 +1312,8 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-		BlockchainID: consensus.GetChainID(s.vm.ctx),
+		NetworkID:    s.vm.consensusCtx.QuantumID,
+		BlockchainID: s.vm.consensusCtx.ChainID,
 		Outs:         outs,
 		Ins:          ins,
 		Memo:         memoBytes,
@@ -1450,8 +1448,8 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1571,8 +1569,8 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1707,8 +1705,8 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1845,8 +1843,8 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -2002,8 +2000,8 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
-			BlockchainID: consensus.GetChainID(s.vm.ctx),
+			NetworkID:    s.vm.consensusCtx.QuantumID,
+			BlockchainID: s.vm.consensusCtx.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},

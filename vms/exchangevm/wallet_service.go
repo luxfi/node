@@ -9,8 +9,6 @@ import (
 	"maps"
 	"net/http"
 
-
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/api"
@@ -275,8 +273,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    consensus.GetNetworkID(w.vm.ctx),
-		BlockchainID: consensus.GetChainID(w.vm.ctx),
+		NetworkID:    w.vm.consensusCtx.QuantumID,
+		BlockchainID: w.vm.consensusCtx.ChainID,
 		Outs:         outs,
 		Ins:          ins,
 		Memo:         memoBytes,

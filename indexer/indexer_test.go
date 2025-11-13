@@ -17,7 +17,7 @@ import (
 	nodeconsensus "github.com/luxfi/node/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database/manager"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"

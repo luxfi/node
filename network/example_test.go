@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/set"

@@ -24,7 +24,8 @@ func NewZstdCompressorWithLevel(maxSize int64, level zstd.EncoderLevel) (Compres
 		// require max size < math.MaxInt64 to prevent int64 overflows
 		return nil, ErrInvalidMaxSizeCompressor
 	}
-	decoder, err := zstd.NewReader(nil)
+	// Configure decoder with maximum decompressed size limit
+	decoder, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(uint64(maxSize)))
 	if err != nil {
 		return nil, err
 	}

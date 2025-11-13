@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/utils/perms"
 )
 

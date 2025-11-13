@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/stretchr/testify/require"
 )
 

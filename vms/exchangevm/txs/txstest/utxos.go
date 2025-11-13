@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -32,8 +31,8 @@ func newUTXOs(
 	sharedMemory atomic.SharedMemory,
 	codec codec.Manager,
 ) *utxos {
-	// Extract chain ID from context - this should be X-chain ID
-	chainID := consensus.GetChainID(ctx)
+	// Use empty chain ID - caller should set this if needed
+	chainID := ids.Empty
 	return &utxos{
 		xchainID:     chainID,
 		state:        state,

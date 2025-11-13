@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"

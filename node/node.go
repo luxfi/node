@@ -41,7 +41,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"

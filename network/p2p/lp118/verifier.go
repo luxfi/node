@@ -6,7 +6,7 @@ package lp118
 import (
 	"context"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 

@@ -3,7 +3,7 @@ package appsender
 import (
 	"context"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"

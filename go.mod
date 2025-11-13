@@ -181,6 +181,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.6.0
 	github.com/luxfi/evm v1.16.19
+	github.com/luxfi/genesis v0.0.0
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
 	github.com/spaolacci/murmur3 v1.1.0
@@ -254,3 +255,5 @@ replace github.com/luxfi/consensus => ../consensus
 replace github.com/luxfi/geth => ../geth
 
 replace github.com/luxfi/math => ../math
+
+replace github.com/luxfi/genesis => ../genesis

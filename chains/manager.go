@@ -34,7 +34,7 @@ import (
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
 	// "github.com/luxfi/consensus/core/tracker"
 	consensuschain "github.com/luxfi/consensus/engine/chain"

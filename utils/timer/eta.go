@@ -62,6 +62,8 @@ func (e *EtaTracker) AddSample(progress, total uint64, sampleTime time.Time) (*t
 	// Initialize start time on first sample
 	if e.sampleCount == 0 {
 		e.startTime = sampleTime
+		e.lastProgress = progress
+		e.lastSampleTime = sampleTime
 	}
 
 	// Update sample count
@@ -75,32 +77,46 @@ func (e *EtaTracker) AddSample(progress, total uint64, sampleTime time.Time) (*t
 	}
 
 	// Check if time went backwards
-	if e.sampleCount > e.samples && sampleTime.Before(e.lastSampleTime) {
+	if sampleTime.Before(e.lastSampleTime) {
 		return nil, 0
 	}
 
 	// Check if progress didn't advance
-	if e.sampleCount > e.samples && progress <= e.lastProgress {
+	if progress <= e.lastProgress {
 		return nil, 0
+	}
+
+	// If we're at or past the end, return 0 ETA immediately
+	if progress >= total {
+		e.lastProgress = progress
+		e.lastSampleTime = sampleTime
+		eta := time.Duration(0)
+		return &eta, 100.0
+	}
+
+	// Calculate ETA based on recent rate (since last sample), not overall rate
+	// This allows us to detect acceleration/deceleration
+	timeSinceLastSample := sampleTime.Sub(e.lastSampleTime)
+	progressSinceLastSample := progress - e.lastProgress
+
+	if timeSinceLastSample > 0 && progressSinceLastSample > 0 {
+		// Calculate rate: progress per unit time
+		rate := float64(progressSinceLastSample) / timeSinceLastSample.Seconds()
+		remaining := total - progress
+		etaSeconds := float64(remaining) / rate
+		eta := time.Duration(etaSeconds * float64(time.Second)).Round(time.Second)
+
+		e.lastProgress = progress
+		e.lastSampleTime = sampleTime
+
+		progressPercent := (float64(progress) / float64(total)) * 100
+
+		return &eta, progressPercent
 	}
 
 	e.lastProgress = progress
 	e.lastSampleTime = sampleTime
-
-	// Calculate ETA based on time elapsed from start
-	timeSpent := sampleTime.Sub(e.startTime)
-	percentExecuted := float64(progress) / float64(total)
-	estimatedTotalDuration := time.Duration(float64(timeSpent) / percentExecuted)
-	eta := (estimatedTotalDuration - timeSpent).Round(time.Second)
-
-	progressPercent := percentExecuted * 100
-
-	// If we're past the end, return 0 ETA
-	if progress >= total {
-		eta = 0
-	}
-
-	return &eta, progressPercent
+	return nil, 0
 }
 
 // ETA returns the estimated time remaining

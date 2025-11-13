@@ -12,7 +12,7 @@ import (
 
 	nodeconsensus "github.com/luxfi/node/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"

@@ -9,7 +9,7 @@ import (
 
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/log"
 )
 

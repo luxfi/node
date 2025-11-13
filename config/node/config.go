@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/consensus/networking/benchlist"

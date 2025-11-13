@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/log"
 	logfields "github.com/luxfi/log"
 
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"

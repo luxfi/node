@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"

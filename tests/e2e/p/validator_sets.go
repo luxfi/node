@@ -13,7 +13,7 @@ import (
 
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm"

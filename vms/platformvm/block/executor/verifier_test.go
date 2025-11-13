@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"

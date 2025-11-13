@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	consensusrouter "github.com/luxfi/consensus/networking/router"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -256,7 +256,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		config.Beacons = beacons
 		config.Validators = vdrs
 
-		connected := make(set.Set[ids.NodeID])
+		connected := set.NewSet[ids.NodeID](len(handlers))
 		net, err := NewNetwork(
 			config,
 			upgrade.InitiallyActiveTime,

@@ -6,7 +6,7 @@ package messenger
 import (
 	"context"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
