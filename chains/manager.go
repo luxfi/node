@@ -37,6 +37,7 @@ consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	// "github.com/luxfi/consensus/core/tracker"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
+	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
@@ -896,10 +897,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 	}
 
+	m.Log.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vm)))
 	var chain *chainInfo
 	switch vm := vm.(type) {
 	// DAG VM support - for X-Chain and Q-Chain
-	case interface{ GetEngine() interface{} }:
+	case interface{ GetEngine() consensusdag.Engine }:
 		m.Log.Info("detected DAG VM with GetEngine()",
 			log.Stringer("chainID", chainParams.ID),
 		)
@@ -1031,7 +1033,7 @@ func (m *manager) createDAG(
 	vm interface{},
 ) (*chainInfo, error) {
 	// Type assert to get GetEngine() method from exchangevm/qvm
-	dagVM, ok := vm.(interface{ GetEngine() interface{} })
+	dagVM, ok := vm.(interface{ GetEngine() consensusdag.Engine })
 	if !ok {
 		return nil, fmt.Errorf("VM does not implement GetEngine() for DAG consensus")
 	}
