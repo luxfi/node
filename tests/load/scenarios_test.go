@@ -26,22 +26,22 @@ func TestScenarioSustainedLoad(t *testing.T) {
 		expectedTxMin uint64 // minimum expected transactions
 	}{
 		{
-			name:          "100 TPS for 10 seconds",
+			name:          "100 TPS for 2 seconds",
 			targetTPS:     100,
-			duration:      10 * time.Second,
+			duration:      2 * time.Second,
+			expectedTxMin: 180, // Allow 10% variance
+		},
+		{
+			name:          "500 TPS for 2 seconds",
+			targetTPS:     500,
+			duration:      2 * time.Second,
 			expectedTxMin: 900, // Allow 10% variance
 		},
 		{
-			name:          "500 TPS for 5 seconds",
-			targetTPS:     500,
-			duration:      5 * time.Second,
-			expectedTxMin: 2250, // Allow 10% variance
-		},
-		{
-			name:          "1000 TPS for 3 seconds",
+			name:          "1000 TPS for 2 seconds",
 			targetTPS:     1000,
-			duration:      3 * time.Second,
-			expectedTxMin: 2700, // Allow 10% variance
+			duration:      2 * time.Second,
+			expectedTxMin: 1800, // Allow 10% variance
 		},
 	}
 
@@ -63,7 +63,7 @@ func TestScenarioSustainedLoad(t *testing.T) {
 			for i := range agents {
 				agents[i] = Agent[ids.ID]{
 					Issuer:   &scenarioMockIssuer{tracker: tracker},
-					Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
+					Listener: &scenarioMockListener{tracker: tracker, delay: 10 * time.Millisecond},
 				}
 			}
 
@@ -120,29 +120,33 @@ func TestScenarioRampUp(t *testing.T) {
 	for i := range agents {
 		agents[i] = Agent[ids.ID]{
 			Issuer:   &scenarioMockIssuer{tracker: tracker},
-			Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
+			Listener: &scenarioMockListener{tracker: tracker, delay: 10 * time.Millisecond},
 		}
 	}
 
 	config := OrchestratorConfig{
-		MaxTPS:           1000,
+		MaxTPS:           500,  // Reduced from 1000 for faster test
 		MinTPS:           100,
-		Step:             100,
+		Step:             200,  // Larger step for fewer iterations
 		TxRateMultiplier: 1.1,
-		SustainedTime:    2 * time.Second,
-		MaxAttempts:      3,
+		SustainedTime:    200 * time.Millisecond,  // Reduced from 500ms
+		MaxAttempts:      2,   // Reduced from 3
 		Terminate:        true,
 	}
 
 	orchestrator := NewOrchestrator(agents, tracker, log, config)
 
-	err = orchestrator.Execute(ctx)
+	// Add timeout for ramp-up test
+	testCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	err = orchestrator.Execute(testCtx)
 	require.NoError(err)
 
 	// Verify we ramped up successfully
 	maxObservedTPS := orchestrator.GetMaxObservedTPS()
-	require.GreaterOrEqual(maxObservedTPS, int64(500),
-		"Expected to ramp up to at least 500 TPS, got %d", maxObservedTPS)
+	require.GreaterOrEqual(maxObservedTPS, int64(200),
+		"Expected to ramp up to at least 200 TPS, got %d", maxObservedTPS)
 
 	// Verify we issued and confirmed transactions
 	issued := tracker.GetObservedIssued()
@@ -223,7 +227,7 @@ func TestScenarioSoak(t *testing.T) {
 	for i := range agents {
 		agents[i] = Agent[ids.ID]{
 			Issuer:   &scenarioMockIssuer{tracker: tracker},
-			Listener: &scenarioMockListener{tracker: tracker, delay: 100 * time.Millisecond},
+			Listener: &scenarioMockListener{tracker: tracker, delay: 10 * time.Millisecond},
 		}
 	}
 

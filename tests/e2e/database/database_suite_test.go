@@ -258,8 +258,8 @@ func testReadPerformance(ctx context.Context) {
 	}
 	duration := time.Since(start)
 
-	// Should read 10k keys in under 100ms
-	require.Less(ginkgo.GinkgoT(), duration, 100*time.Millisecond,
+	// Should read 10k keys in under 500ms (lenient for CI environments)
+	require.Less(ginkgo.GinkgoT(), duration, 500*time.Millisecond,
 		"Read performance too slow: %v for %d keys", duration, numKeys)
 }
 

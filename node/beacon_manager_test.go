@@ -106,12 +106,13 @@ func TestBeaconManager_DataRace(t *testing.T) {
 
 	// Connect validators in parallel to test for data races
 	// Each connection from the primary network should count, others should not
-	wg.Add(2 * numValidators)
+	wg.Add(numValidators)
 	for _, nodeID := range validatorIDs {
-		go func() {
-			b.Connected(nodeID, version.CurrentApp, constants.PrimaryNetworkID)
-			b.Connected(nodeID, version.CurrentApp, ids.GenerateTestID())
-		}()
+		go func(id ids.NodeID) {
+			defer wg.Done()
+			b.Connected(id, version.CurrentApp, constants.PrimaryNetworkID)
+			b.Connected(id, version.CurrentApp, ids.GenerateTestID())
+		}(nodeID)
 	}
 	wg.Wait()
 

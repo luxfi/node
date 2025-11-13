@@ -179,6 +179,15 @@ func NewTestEnvironment(tc tests.TestContext, flagVars *FlagVars, desiredNetwork
 
 		network = desiredNetwork
 		runtimeConfig, err := flagVars.NodeRuntimeConfig()
+		
+		// If node path is not provided, try to build it
+		if err != nil && runtimeConfig != nil && runtimeConfig.Process != nil {
+			if nodePath, buildErr := EnsureNodeBinary(); buildErr == nil {
+				runtimeConfig.Process.LuxNodePath = nodePath
+				err = nil
+			}
+		}
+		
 		require.NoError(err)
 		network.DefaultRuntimeConfig = *runtimeConfig
 
