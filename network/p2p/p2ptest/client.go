@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 )
@@ -107,7 +107,7 @@ func NewClientWithPeers(
 	for nodeID := range peers {
 		peerSenders[nodeID].SendAppErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			go func() {
-				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &core.AppError{
+				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &consensuscore.AppError{
 					Code:    errorCode,
 					Message: errorMessage,
 				})

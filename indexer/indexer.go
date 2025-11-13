@@ -12,7 +12,7 @@ import (
 
 	nodeconsensus "github.com/luxfi/node/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -127,7 +127,7 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context, vm consensuscore.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

@@ -32,8 +32,7 @@ import (
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
 	"github.com/luxfi/geth/trie"
-
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"
@@ -1399,7 +1398,7 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 // WaitForEvent implements the block.ChainVM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	<-ctx.Done()
-	return core.PendingTxs, ctx.Err()
+	return consensuscore.PendingTxs, ctx.Err()
 }
 
 // HealthCheck implements the block.ChainVM interface
@@ -1516,7 +1515,7 @@ func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint3
 }
 
 // AppRequestFailed implements the block.ChainVM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	return nil
 }
 
@@ -1531,7 +1530,7 @@ func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestI
 }
 
 // CrossChainAppRequestFailed implements the block.ChainVM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *core.AppError) error {
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.AppError) error {
 	return nil
 }
 

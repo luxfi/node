@@ -18,7 +18,7 @@ import (
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
@@ -65,7 +65,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM)
+	RegisterChain(chainName string, ctx *consensuscontext.Context, vm consensuscore.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -151,7 +151,7 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM) {
+func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, vm consensuscore.VM) {
 	// Note: HTTP handler registration is now done in chains/manager.go:createChain()
 	// after VM initialization. This RegisterChain method is called too early (before
 	// VM initialization) and would cause nil pointer dereference if we call CreateHandlers here.

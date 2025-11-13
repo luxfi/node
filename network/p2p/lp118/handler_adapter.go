@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 )
@@ -28,17 +28,17 @@ func (h *HandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, gossi
 }
 
 // AppRequest forwards to the lp118 handler
-func (h *HandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+func (h *HandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 	resp, err := h.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 	if err != nil {
 		// Check if error is already an AppError from our own package
-		if appErr, ok := err.(*core.AppError); ok {
-			return nil, &core.AppError{
+		if appErr, ok := err.(*consensuscore.AppError); ok {
+			return nil, &consensuscore.AppError{
 				Code:    appErr.Code,
 				Message: appErr.Message,
 			}
 		}
-		return nil, &core.AppError{
+		return nil, &consensuscore.AppError{
 			Code:    -1,
 			Message: err.Error(),
 		}

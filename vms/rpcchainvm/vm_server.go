@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
@@ -67,7 +67,7 @@ type VMServer struct {
 	// If nil, the underlying VM doesn't implement the interface.
 	ssVM block.StateSyncableVM
 	// If nil, the underlying VM doesn't implement the interface.
-	appHandler core.AppHandler
+	appHandler consensuscore.AppHandler
 
 	allowShutdown *utils.Atomic[bool]
 
@@ -91,7 +91,7 @@ type VMServer struct {
 func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 	bVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	ssVM, _ := vm.(block.StateSyncableVM)
-	appHandler, _ := vm.(core.AppHandler)
+	appHandler, _ := vm.(consensuscore.AppHandler)
 	vmSrv := &VMServer{
 		metrics:       metrics.NewPrefixGatherer(),
 		vm:            vm,
@@ -649,13 +649,13 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		return nil, err
 	}
 
-	appErr := &core.AppError{
+	appErr := &consensuscore.AppError{
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}
 	
 	type vmWithAppRequestFailed interface {
-		AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error
+		AppRequestFailed(context.Context, ids.NodeID, uint32, *consensuscore.AppError) error
 	}
 	
 	if failedVM, ok := vm.vm.(vmWithAppRequestFailed); ok {

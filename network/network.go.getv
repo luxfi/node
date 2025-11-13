@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/log"
-	consensuscore "github.com/luxfi/consensus/core"
+tconsensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
@@ -281,11 +281,8 @@ func NewNetwork(
 	}
 	// Track all recent validators to optimistically connect to them before the
 	// P-chain has finished syncing.
-	genesisConfig := genesis.GetConfig(config.NetworkID)
-	if genesisConfig != nil {
-		for _, staker := range genesisConfig.InitialStakers {
-			ipTracker.ManuallyTrack(staker.NodeID)
-		}
+	for nodeID := range genesis.GetValidators(config.NetworkID) {
+		ipTracker.ManuallyTrack(nodeID)
 	}
 
 	peerConfig := &peer.Config{
@@ -363,7 +360,7 @@ func (n *network) Send(
 	)
 
 	// Create default send config for sampling
-	sendConfig := consensuscore.SendConfig{
+	sendConfig := core.SendConfig{
 		NodeIDs:       nil, // Don't restrict to specific nodes for sampling
 		Validators:    0,   // No specific validator requirement
 		NonValidators: 0,   // No specific non-validator requirement
@@ -724,6 +721,7 @@ func (n *network) Dispatch() error {
 }
 
 func (n *network) ManuallyTrack(nodeID ids.NodeID, ip netip.AddrPort) {
+	n.ipTracker.ManuallyTrack(nodeID)
 
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
@@ -837,7 +835,7 @@ func (n *network) getPeers(
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
 func (n *network) samplePeers(
-	config consensuscore.SendConfig,
+	config core.SendConfig,
 	netID ids.ID,
 	allower nets.Allower,
 ) []peer.Peer {
@@ -1309,7 +1307,7 @@ func (n *network) runTimers() {
 // pullGossipPeerLists requests validators from peers in the network
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
-		consensuscore.SendConfig{
+		core.SendConfig{
 			NonValidators: 1,
 		},
 		constants.PrimaryNetworkID,

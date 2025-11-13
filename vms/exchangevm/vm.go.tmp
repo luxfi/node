@@ -18,6 +18,7 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
@@ -27,7 +28,6 @@ import (
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
-consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
@@ -120,7 +120,7 @@ type VM struct {
 
 	pubsub *pubsub.Server
 
-	appSender consensuscore.AppSender
+	appSender core.AppSender
 
 	// State management
 	state state.State
@@ -159,7 +159,7 @@ type VM struct {
 	network      *network.Network
 
 	// Channel for receiving messages from mempool
-	toEngine chan consensuscore.MessageType
+	toEngine chan core.MessageType
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -222,10 +222,10 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	coreFxs := make([]*consensuscore.Fx, len(fxs))
+	coreFxs := make([]*core.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx != nil {
-			coreFxs[i] = fx.(*consensuscore.Fx)
+			coreFxs[i] = fx.(*core.Fx)
 		}
 	}
 
@@ -236,14 +236,14 @@ func (vm *VM) Initialize(
 		appSender = &noOpAppSender{}
 	}
 
-	coreAppSender, ok := appSender.(consensuscore.AppSender)
+	coreAppSender, ok := appSender.(core.AppSender)
 	if !ok {
 		// Debug: Print actual type received
 		actualType := "nil"
 		if appSender != nil {
 			actualType = fmt.Sprintf("%T", appSender)
 		}
-		return fmt.Errorf("invalid app sender type: expected consensuscore.AppSender, got %s", actualType)
+		return fmt.Errorf("invalid app sender type: expected core.AppSender, got %s", actualType)
 	}
 
 	// Ignore toEngine channel as XVM doesn't use it
@@ -260,13 +260,13 @@ func (vm *VM) initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*consensuscore.Fx,
-	appSender consensuscore.AppSender,
+	fxs []*core.Fx,
+	appSender core.AppSender,
 ) error {
 	// Initialize logger first
 	vm.log = log.NoLog{}
 
-	// Create a simple no-op handler since consensuscore.NewNoOpAppHandler doesn't exist in consensus
+	// Create a simple no-op handler since core.NewNoOpAppHandler doesn't exist in consensus
 	noopMessageHandler := &noOpAppHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
@@ -306,7 +306,7 @@ func (vm *VM) initialize(
 		if fxContainer == nil {
 			return errIncompatibleFx
 		}
-		// Since consensuscore.Fx is now empty, we need to handle this differently
+		// Since core.Fx is now empty, we need to handle this differently
 		// For now, use a placeholder secp256k1fx
 		fx := &secp256k1fx.Fx{}
 		typedFxs[i] = fx
@@ -495,7 +495,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- consensuscore.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- core.Message) error {
 	// Use EtnaTime from config for chain state initialization
 	err := vm.state.InitializeChainState(stopVertexID, vm.Config.EtnaTime)
 	if err != nil {
@@ -507,7 +507,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	_ = toEngine
 	
 	// Create a channel for mempool to engine communication
-	vm.toEngine = make(chan consensuscore.MessageType, 1)
+	vm.toEngine = make(chan core.MessageType, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
@@ -808,23 +808,23 @@ func (vm *VM) onAccept(tx *txs.Tx) {
 	vm.walletService.decided(txID)
 }
 
-// WaitForEvent implements the consensuscore.VM interface
+// WaitForEvent implements the core.VM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	if vm.toEngine == nil {
 		// Before linearization, no events to wait for
 		<-ctx.Done()
-		return consensuscore.PendingTxs, ctx.Err()
+		return core.PendingTxs, ctx.Err()
 	}
 
 	select {
 	case msgType := <-vm.toEngine:
 		return msgType, nil
 	case <-ctx.Done():
-		return consensuscore.PendingTxs, ctx.Err()
+		return core.PendingTxs, ctx.Err()
 	}
 }
 
-// NewHTTPHandler implements the consensuscore.VM interface
+// NewHTTPHandler implements the core.VM interface
 func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
 	return nil, nil
@@ -871,14 +871,14 @@ func (vm *VM) GetTx(ctx context.Context, txID ids.ID) (dag.Transaction, error) {
 	}, nil
 }
 
-// noOpAppHandler is a simple no-op implementation of consensuscore.AppHandler
+// noOpAppHandler is a simple no-op implementation of core.AppHandler
 type noOpAppHandler struct{}
 
 func (n *noOpAppHandler) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, uint32, *consensuscore.AppError) error {
+func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, uint32, *core.AppError) error {
 	return nil
 }
 
@@ -890,7 +890,7 @@ func (n *noOpAppHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requ
 	return nil
 }
 
-func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *consensuscore.AppError) error {
+func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *core.AppError) error {
 	return nil
 }
 
@@ -1035,10 +1035,10 @@ func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, height
 	return result, nil
 }
 
-// noOpAppSender is a minimal implementation of consensuscore.AppSender for single-node mode
+// noOpAppSender is a minimal implementation of core.AppSender for single-node mode
 type noOpAppSender struct{}
 
-var _ consensuscore.AppSender = (*noOpAppSender)(nil)
+var _ core.AppSender = (*noOpAppSender)(nil)
 
 func (n *noOpAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	return nil

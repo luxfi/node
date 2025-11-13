@@ -7,8 +7,7 @@ import (
 	"context"
 
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 
@@ -19,11 +18,11 @@ var _ appsenderpb.AppSenderServer = (*Server)(nil)
 
 type Server struct {
 	appsenderpb.UnsafeAppSenderServer
-	appSender core.AppSender
+	appSender consensuscore.AppSender
 }
 
 // NewServer returns a messenger connected to a remote channel
-func NewServer(appSender core.AppSender) *Server {
+func NewServer(appSender consensuscore.AppSender) *Server {
 	return &Server{appSender: appSender}
 }
 
@@ -70,18 +69,18 @@ func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGoss
 
 // SendCrossChainAppRequest implements AppSenderServer
 func (s *Server) SendCrossChainAppRequest(ctx context.Context, req *appsenderpb.SendCrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	// Not implemented in core.AppSender
+	// Not implemented in consensuscore.AppSender
 	return &emptypb.Empty{}, nil
 }
 
 // SendCrossChainAppResponse implements AppSenderServer
 func (s *Server) SendCrossChainAppResponse(ctx context.Context, req *appsenderpb.SendCrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	// Not implemented in core.AppSender
+	// Not implemented in consensuscore.AppSender
 	return &emptypb.Empty{}, nil
 }
 
 // SendCrossChainAppError implements AppSenderServer
 func (s *Server) SendCrossChainAppError(ctx context.Context, req *appsenderpb.SendCrossChainAppErrorMsg) (*emptypb.Empty, error) {
-	// Not implemented in core.AppSender
+	// Not implemented in consensuscore.AppSender
 	return &emptypb.Empty{}, nil
 }

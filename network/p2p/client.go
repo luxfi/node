@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/math/set"
 )
 
@@ -35,7 +35,7 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        core.AppSender
+	sender        consensuscore.AppSender
 	options       *clientOptions
 }
 
@@ -116,7 +116,7 @@ func (c *Client) AppRequest(
 // AppGossip sends a gossip message to a random set of peers.
 func (c *Client) AppGossip(
 	ctx context.Context,
-	config core.SendConfig,
+	config consensuscore.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.

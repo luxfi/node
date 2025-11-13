@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -156,7 +155,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == uint32(core.VMNormalOp) {
+	if p.vm.consensusState == uint32(consensuscore.VMNormalOp) {
 		currentPChainHeight, err := p.vm.validatorState.GetCurrentHeight(ctx)
 		if err != nil {
 			p.vm.logger.Error("block verification failed",

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/log"
@@ -23,7 +23,7 @@ import (
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler    = (*Network)(nil)
+	_ consensuscore.AppHandler    = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
@@ -31,22 +31,22 @@ var (
 	labelNames   = []string{opLabel, handlerLabel}
 )
 
-// networkAppHandlerAdapter adapts Network to core.AppHandler
+// networkAppHandlerAdapter adapts Network to consensuscore.AppHandler
 type networkAppHandlerAdapter struct {
 	*Network
 }
 
-// AppRequest implements core.AppHandler
+// AppRequest implements consensuscore.AppHandler
 func (n *networkAppHandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return n.Network.AppRequest(ctx, nodeID, requestID, deadline, msg)
 }
 
-// AppResponse implements core.AppHandler
+// AppResponse implements consensuscore.AppHandler
 func (n *networkAppHandlerAdapter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return n.Network.AppResponse(ctx, nodeID, requestID, msg)
 }
 
-// AppGossip implements core.AppHandler
+// AppGossip implements consensuscore.AppHandler
 func (n *networkAppHandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return n.Network.AppGossip(ctx, nodeID, msg)
 }
@@ -78,7 +78,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log log.Logger,
-	sender core.AppSender,
+	sender consensuscore.AppSender,
 	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -121,7 +121,7 @@ type Network struct {
 	Peers *Peers
 
 	log    log.Logger
-	sender core.AppSender
+	sender consensuscore.AppSender
 
 	router *router
 }
@@ -134,7 +134,7 @@ func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 	return n.router.AppResponse(ctx, nodeID, requestID, response)
 }
 
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	return n.router.AppRequestFailed(ctx, nodeID, requestID, appErr)
 }
 

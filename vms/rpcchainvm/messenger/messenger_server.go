@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
@@ -22,21 +22,21 @@ var (
 // Server is a messenger that is managed over RPC.
 type Server struct {
 	messengerpb.UnsafeMessengerServer
-	messenger chan<- core.Message
+	messenger chan<- consensuscore.Message
 }
 
 // NewServer returns a messenger connected to a remote channel
-func NewServer(messenger chan<- core.Message) *Server {
+func NewServer(messenger chan<- consensuscore.Message) *Server {
 	return &Server{messenger: messenger}
 }
 
 func (s *Server) Notify(_ context.Context, req *messengerpb.NotifyRequest) (*messengerpb.NotifyResponse, error) {
-	// Convert protobuf Message to core.Message
+	// Convert protobuf Message to consensuscore.Message
 	var nodeID ids.NodeID
 	copy(nodeID[:], req.Message.NodeId)
 	
-	msg := core.Message{
-		Type:    core.MessageType(req.Message.Type),
+	msg := consensuscore.Message{
+		Type:    consensuscore.MessageType(req.Message.Type),
 		NodeID:  nodeID,
 		Content: req.Message.Content,
 	}

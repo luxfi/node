@@ -17,7 +17,7 @@ import (
 	nodeconsensus "github.com/luxfi/node/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/manager"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
@@ -37,14 +37,14 @@ func (m *mockChainVM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- core.Message,
-	fxs []*core.Fx,
+	toEngine chan<- consensuscore.Message,
+	fxs []*consensuscore.Fx,
 	appSender interface{},
 ) error {
 	return nil
 }
 
-func (m *mockChainVM) SetState(ctx context.Context, state core.VMState) error {
+func (m *mockChainVM) SetState(ctx context.Context, state consensuscore.VMState) error {
 	return nil
 }
 

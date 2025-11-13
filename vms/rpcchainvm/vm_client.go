@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
@@ -149,9 +149,9 @@ func (vm *VMClient) Initialize(
 	chainCtx := chainCtxIface.(*Context)
 
 	// Convert appSender to concrete type
-	var appSenderConcrete core.AppSender
+	var appSenderConcrete consensuscore.AppSender
 	if appSender != nil {
-		appSenderConcrete = appSender.(core.AppSender)
+		appSenderConcrete = appSender.(consensuscore.AppSender)
 	}
 
 	var primaryAlias string
@@ -577,7 +577,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,
@@ -934,15 +934,15 @@ func (s *summaryClient) Accept(ctx context.Context) (chainblock.StateSyncMode, e
 	return chainblock.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
 }
 
-// WaitForEvent implements the core.VM interface
+// WaitForEvent implements the consensuscore.VM interface
 func (vm *VMClient) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// The RPC VM client doesn't directly handle events,
 	// it relies on the server-side VM for event handling
 	<-ctx.Done()
-	return core.PendingTxs, ctx.Err()
+	return consensuscore.PendingTxs, ctx.Err()
 }
 
-// NewHTTPHandler implements the core.VM interface
+// NewHTTPHandler implements the consensuscore.VM interface
 func (vm *VMClient) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 	// RPC VM uses CreateHandlers instead of a single handler
 	return nil, nil
@@ -1246,7 +1246,7 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	return v.GetValidatorSet(ctx, height, netID)
 }
 
-// appSenderWrapper wraps chainblock.AppSender to match core.AppSender
+// appSenderWrapper wraps chainblock.AppSender to match consensuscore.AppSender
 type appSenderWrapper struct {
 	appSender chainblock.AppSender
 }

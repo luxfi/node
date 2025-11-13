@@ -12,6 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 )
@@ -80,7 +81,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     *core.AppError
+		expected     *consensuscore.AppError
 	}{
 		{
 			name:         "message dropped",

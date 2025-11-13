@@ -12,6 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 
@@ -58,7 +59,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		Throttler   Throttler
-		expectedErr *core.AppError
+		expectedErr *consensuscore.AppError
 	}{
 		{
 			name:      "not throttled",

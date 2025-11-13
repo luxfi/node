@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 )
@@ -15,16 +15,16 @@ import (
 var _ Atomic = (*atomic)(nil)
 
 type Atomic interface {
-	core.AppHandler
+	consensuscore.AppHandler
 
-	Set(core.AppHandler)
+	Set(consensuscore.AppHandler)
 }
 
 type atomic struct {
-	handler utils.Atomic[core.AppHandler]
+	handler utils.Atomic[consensuscore.AppHandler]
 }
 
-func NewAtomic(h core.AppHandler) Atomic {
+func NewAtomic(h consensuscore.AppHandler) Atomic {
 	a := &atomic{}
 	a.handler.Set(h)
 	return a
@@ -51,7 +51,7 @@ func NewAtomic(h core.AppHandler) Atomic {
 // 	ctx context.Context,
 // 	chainID ids.ID,
 // 	requestID uint32,
-// 	appErr *core.AppError,
+// 	appErr *consensuscore.AppError,
 // ) error {
 // 	h := a.handler.Get()
 // 	return h.CrossChainAppRequestFailed(
@@ -98,9 +98,9 @@ func (a *atomic) AppRequestFailed(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
-	appErr *core.AppError,
+	appErr *consensuscore.AppError,
 ) error {
-	// AppRequestFailed might not be defined in core.AppHandler
+	// AppRequestFailed might not be defined in consensuscore.AppHandler
 	// Just return nil for now
 	return nil
 }
@@ -133,6 +133,6 @@ func (a *atomic) AppGossip(
 	)
 }
 
-func (a *atomic) Set(h core.AppHandler) {
+func (a *atomic) Set(h consensuscore.AppHandler) {
 	a.handler.Set(h)
 }

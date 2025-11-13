@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/luxfi/database"
-	consensus "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -37,12 +37,12 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize block.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *consensus.Context
+	ctx              *consensusctx.Context
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*core.Fx
+	fxs              []*consensuscore.Fx
 	appSender        appsender.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
@@ -71,14 +71,14 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		close(vm.waitForLinearize)
 	})
 	
-	// Convert []*core.Fx to []interface{}
+	// Convert []*consensuscore.Fx to []interface{}
 	fxsInterface := make([]interface{}, len(vm.fxs))
 	for i, fx := range vm.fxs {
 		fxsInterface[i] = fx
 	}
 	
 	// Note: toVertex parameter is the toEngine channel for block.Message
-	// but Initialize expects chan<- core.Message, so we need proper conversion
+	// but Initialize expects chan<- consensus.Message, so we need proper conversion
 	// For now, passing nil as toEngine since this is complex to adapt
 	return vm.vmToInitialize.Initialize(
 		ctx,
@@ -114,9 +114,9 @@ func (d *dbManagerWrapper) Close() error {
 	return nil
 }
 
-// blockAppSenderWrapper wraps core.AppSender to implement block.AppSender
+// blockAppSenderWrapper wraps appsender.AppSender to implement block.AppSender
 type blockAppSenderWrapper struct {
-	appSender core.AppSender
+	appSender appsender.AppSender
 }
 
 func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
@@ -174,12 +174,12 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toE
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *consensus.Context,
+	_ *consensusctx.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*core.Fx,
+	_ []*consensuscore.Fx,
 	_ appsender.AppSender,
 ) error {
 	// Note: Vertex VM linearization is not fully supported in the current consensus implementation

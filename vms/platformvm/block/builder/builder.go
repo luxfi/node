@@ -16,7 +16,7 @@ import (
 
 
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -139,9 +139,6 @@ type Builder interface {
 
 	// BuildBlockWithContext builds a block with context
 	BuildBlockWithContext(context.Context, *chainblock.Context) (chainblock.Block, error)
-
-	// WaitForEvent waits for an event that should trigger block building
-	WaitForEvent(context.Context) (consensuscore.Message, error)
 
 	// Connected is called when a node connects
 	Connected(context.Context, ids.NodeID, interface{}) error

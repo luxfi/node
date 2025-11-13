@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/metric"
 
 	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"

@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/math/set"
 )
 
@@ -37,7 +38,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, core.SendConfig{Peers: 1}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, consensuscore.SendConfig{Peers: 1}, []byte("foobar")))
 	
 	// Wait for gossip with select to respect context
 	select {
@@ -64,7 +65,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequest - error",
-			appErr: &core.AppError{
+			appErr: &consensuscore.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -81,7 +82,7 @@ func TestClient_AppRequest(t *testing.T) {
 		},
 		{
 			name: "AppRequestAny - error",
-			appErr: &core.AppError{
+			appErr: &consensuscore.AppError{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -98,9 +99,9 @@ func TestClient_AppRequest(t *testing.T) {
 
 			appRequestChan := make(chan struct{})
 			testHandler := p2p.TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
+				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
 					if tt.appErr != nil {
-						return nil, &core.AppError{
+						return nil, &consensuscore.AppError{
 							Code:    123,
 							Message: tt.appErr.Error(),
 						}

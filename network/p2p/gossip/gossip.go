@@ -13,7 +13,7 @@ import (
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
@@ -495,7 +495,7 @@ func (p *PushGossiper[T]) gossip(
 
 	return p.client.AppGossip(
 		ctx,
-		core.SendConfig{
+		consensuscore.SendConfig{
 			NodeIDs:       nodeIDsInterface,
 			Validators:    gossipParams.Validators,
 			NonValidators: gossipParams.NonValidators,

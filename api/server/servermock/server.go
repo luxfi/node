@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	consensuscontext "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -122,7 +122,7 @@ func (mr *ServerMockRecorder) Dispatch() *gomock.Call {
 }
 
 // RegisterChain mocks base method.
-func (m *Server) RegisterChain(arg0 string, arg1 *consensuscontext.Context, arg2 core.VM) {
+func (m *Server) RegisterChain(arg0 string, arg1 *consensuscontext.Context, arg2 consensuscore.VM) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
 }

@@ -12,7 +12,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 
@@ -113,12 +113,12 @@ func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Fact
 		return err
 	}
 
-	commonVM, ok := vm.(core.VM)
+	commonVM, ok := vm.(consensuscore.VM)
 	if !ok {
 		return nil
 	}
 
-	// Version is not available in core.VM interface
+	// Version is not available in consensuscore.VM interface
 	// Just shutdown the VM
 	return commonVM.Shutdown(context.Background())
 }

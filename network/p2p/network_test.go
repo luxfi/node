@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/log"
@@ -24,7 +25,7 @@ const (
 	handlerPrefix = byte(handlerID)
 )
 
-var errFoo = &core.AppError{
+var errFoo = &consensuscore.AppError{
 	Code:    123,
 	Message: "foo",
 }
@@ -124,7 +125,7 @@ func TestMessageRouting(t *testing.T) {
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
 		},
-		AppRequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *core.AppError) {
+		AppRequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *consensuscore.AppError) {
 			appRequestCalled = true
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
@@ -145,7 +146,7 @@ func TestMessageRouting(t *testing.T) {
 
 	require.NoError(client.AppGossip(
 		ctx,
-		core.SendConfig{
+		consensuscore.SendConfig{
 			Peers: 1,
 		},
 		wantMsg,
@@ -209,7 +210,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 
 	require.NoError(client.AppGossip(
 		ctx,
-		core.SendConfig{
+		consensuscore.SendConfig{
 			Peers: 1,
 		},
 		want,
@@ -365,7 +366,7 @@ func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
 }
 
 // An unregistered handler should gracefully drop messages by responding
-// to the requester with a core.AppError
+// to the requester with a consensuscore.AppError
 func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 	tests := []struct {
 		name string
@@ -390,7 +391,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 			handler := &TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
+				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -425,12 +426,12 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 func TestAppError(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
-	appError := &core.AppError{
+	appError := &consensuscore.AppError{
 		Code:    123,
 		Message: "foo",
 	}
 	handler := &TestHandler{
-		AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
+		AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
 			return nil, appError
 		},
 	}
@@ -487,7 +488,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 				AppGossipF: func(context.Context, ids.NodeID, []byte) {
 					require.Fail("should not be called")
 				},
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
+				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -498,7 +499,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 
 			err = network.AppResponse(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &core.AppError{Code: -1, Message: "timeout"})
+			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &consensuscore.AppError{Code: -1, Message: "timeout"})
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
 	}

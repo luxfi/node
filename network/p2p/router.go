@@ -17,32 +17,32 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 )
 
 var (
 	ErrExistingAppProtocol = errors.New("existing app protocol")
 	ErrUnrequestedResponse = errors.New("unrequested response")
 
-	_ core.AppHandler = (*router)(nil)
+	_ consensuscore.AppHandler = (*router)(nil)
 )
 
-// routerAppHandlerAdapter adapts router to core.AppHandler
+// routerAppHandlerAdapter adapts router to consensuscore.AppHandler
 type routerAppHandlerAdapter struct {
 	*router
 }
 
-// AppRequest implements core.AppHandler
+// AppRequest implements consensuscore.AppHandler
 func (r *routerAppHandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return r.router.AppRequest(ctx, nodeID, requestID, deadline, msg)
 }
 
-// AppResponse implements core.AppHandler
+// AppResponse implements consensuscore.AppHandler
 func (r *routerAppHandlerAdapter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return r.router.AppResponse(ctx, nodeID, requestID, msg)
 }
 
-// AppGossip implements core.AppHandler
+// AppGossip implements consensuscore.AppHandler
 func (r *routerAppHandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return r.router.AppGossip(ctx, nodeID, msg)
 }
@@ -70,7 +70,7 @@ func (m *metrics) observe(labels map[string]string, start time.Time) {
 // corresponding Client.
 type router struct {
 	log     log.Logger
-	sender  core.AppSender
+	sender  consensuscore.AppSender
 	metrics metrics
 
 	lock               sync.RWMutex
@@ -82,7 +82,7 @@ type router struct {
 // newRouter returns a new instance of Router
 func newRouter(
 	log log.Logger,
-	sender core.AppSender,
+	sender consensuscore.AppSender,
 	metrics metrics,
 ) *router {
 	return &router{
@@ -157,7 +157,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 //
 // Any error condition propagated outside Handler application logic is
 // considered fatal
-func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	start := time.Now()
 	pending, ok := r.clearAppRequest(requestID)
 	if !ok {

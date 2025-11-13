@@ -9,7 +9,7 @@ import (
 
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 
@@ -41,7 +41,7 @@ func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, goss
 	t.handler.AppGossip(ctx, nodeID, gossipBytes)
 }
 
-func (t ThrottlerHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
+func (t ThrottlerHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
 	if !t.throttler.Handle(nodeID) {
 		return nil, ErrThrottled
 	}

@@ -2,15 +2,14 @@ package appsender
 
 import (
 	"context"
-
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
 
 // NewClient creates a new app sender client
-func NewClient(client appsenderpb.AppSenderClient) core.AppSender {
+func NewClient(client appsenderpb.AppSenderClient) consensuscore.AppSender {
 	return &Client{client: client}
 }
 

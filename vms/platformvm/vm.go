@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensuscore "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/validator/uptime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
@@ -978,7 +977,7 @@ func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// For now, just block until context is cancelled
 	<-ctx.Done()
-	return consensuscore.MessageType(0), ctx.Err()
+	return nil, ctx.Err()
 }
 
 // noOpWarpSigner is a no-op implementation of warp.Signer for chains that don't need warp signing

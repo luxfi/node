@@ -9,7 +9,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/warp/socket"
 )
 
-var _ core.Acceptor = (*EventSockets)(nil)
+var _ consensuscore.Acceptor = (*EventSockets)(nil)
 
 // EventSockets is a set of named eventSockets
 type EventSockets struct {

@@ -5,7 +5,7 @@ package p2p
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	consensusversion "github.com/luxfi/consensus/version"
 	nodeset "github.com/luxfi/math/set"
@@ -58,7 +58,7 @@ func toNodeSet(s consensusset.Set[ids.NodeID]) nodeset.Set[ids.NodeID] {
 
 // sendConfigToSet converts a SendConfig to a consensus Set
 // This is a temporary helper since SendConfig.NodeIDs is []interface{}
-func sendConfigToSet(config core.SendConfig) consensusset.Set[ids.NodeID] {
+func sendConfigToSet(config consensuscore.SendConfig) consensusset.Set[ids.NodeID] {
 	result := consensusset.NewSet[ids.NodeID](len(config.NodeIDs))
 	for _, nodeIDInterface := range config.NodeIDs {
 		if nodeID, ok := nodeIDInterface.(ids.NodeID); ok {
