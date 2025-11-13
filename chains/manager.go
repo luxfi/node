@@ -898,20 +898,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	var chain *chainInfo
 	switch vm := vm.(type) {
-	// Vertex VM support disabled for now - consensus package doesn't have these types
-	// case consensusvertex.LinearizableVMWithEngine:
-	// 	chain, err = m.createLuxChain(
-	// 		ctx,
-	// 		chainParams,
-	// 		chainParams.GenesisData,
-	// 		m.Validators,
-	// 		vm,
-	// 		chainFxs,
-	// 		sb,
-	// 	)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("error while creating new lux vm %w", err)
-	// 	}
+	// DAG VM support - for X-Chain and Q-Chain
+	case interface{ GetEngine() interface{} }:
+		m.Log.Info("detected DAG VM with GetEngine()",
+			log.Stringer("chainID", chainParams.ID),
+		)
+		chain, err = m.createDAG(chainCtx, chainParams, vm)
+		if err != nil {
+			return nil, fmt.Errorf("error creating DAG chain: %w", err)
+		}
 	case block.ChainVM:
 		beacons := m.Validators
 		if chainParams.ID == constants.PlatformChainID {
@@ -1027,6 +1022,48 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
+}
+
+// createDAG creates a DAG chain (X-Chain, Q-Chain) using the VM's DAG engine
+func (m *manager) createDAG(
+	ctx *consensusctx.Context,
+	chainParams ChainParameters,
+	vm interface{},
+) (*chainInfo, error) {
+	// Type assert to get GetEngine() method from exchangevm/qvm
+	dagVM, ok := vm.(interface{ GetEngine() interface{} })
+	if !ok {
+		return nil, fmt.Errorf("VM does not implement GetEngine() for DAG consensus")
+	}
+
+	m.Log.Info("creating DAG chain",
+		log.Stringer("chainID", chainParams.ID),
+		log.String("vmID", chainParams.VMID.String()),
+	)
+
+	// Get the DAG engine from the VM - this returns consensus/engine/dag.Engine
+	dagEngine := dagVM.GetEngine()
+
+	// Start the DAG engine directly
+	if starter, ok := dagEngine.(interface{ Start(context.Context, uint32) error }); ok {
+		if err := starter.Start(context.Background(), 0); err != nil {
+			return nil, fmt.Errorf("failed to start DAG engine: %w", err)
+		}
+	}
+
+	m.Log.Info("DAG chain created successfully",
+		log.Stringer("chainID", chainParams.ID),
+		log.String("status", "using native DAG consensus"),
+	)
+
+	// Return basic chain info
+	// Handler will be created during chain startup
+	return &chainInfo{
+		Name:    chainParams.ID.String(),
+		Context: ctx,
+		VM:      nil, // VM manages itself for DAG chains
+		Handler: nil, // Created during startup
+	}, nil
 }
 
 // Create a Graph-based blockchain that uses Lux
