@@ -4,6 +4,7 @@
 package qvm
 
 import (
+	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -62,6 +63,7 @@ type SharedMemory interface {
 
 // VM implements the Q-chain Virtual Machine with quantum features
 type VM struct {
+	engine consensusdag.Engine
 	config.Config
 
 	// Core components
@@ -512,3 +514,11 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	return nil, nil
 }
+// GetEngine returns the DAG consensus engine
+func (vm *VM) GetEngine() consensusdag.Engine {
+	if vm.engine == nil {
+		vm.engine = consensusdag.New()
+	}
+	return vm.engine
+}
+
