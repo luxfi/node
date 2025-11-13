@@ -18,7 +18,10 @@ import (
 
 func TestClient_AppGossip(t *testing.T) {
 	require := require.New(t)
-	ctx := context.Background()
+	
+	// Use context with timeout to prevent test hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	appGossipChan := make(chan struct{})
 	testHandler := p2p.TestHandler{
@@ -35,7 +38,14 @@ func TestClient_AppGossip(t *testing.T) {
 		testHandler,
 	)
 	require.NoError(client.AppGossip(ctx, core.SendConfig{Peers: 1}, []byte("foobar")))
-	<-appGossipChan
+	
+	// Wait for gossip with select to respect context
+	select {
+	case <-appGossipChan:
+		// Success
+	case <-ctx.Done():
+		t.Fatal("test timed out waiting for AppGossip")
+	}
 }
 
 func TestClient_AppRequest(t *testing.T) {

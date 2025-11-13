@@ -16,13 +16,14 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/txs/txstest"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -62,6 +63,10 @@ type testEnv struct {
 func newGenesisBytesTest(t *testing.T) []byte {
 	require := require.New(t)
 
+	// Format address properly as Bech32
+	addr, err := address.FormatBech32(constants.GetHRP(constants.UnitTestID), keys[0].PublicKey().Address().Bytes())
+	require.NoError(err)
+
 	// Create a simple genesis with one asset (LUX)
 	genesisData := map[string]GenesisAssetDefinition{
 		"LUX": {
@@ -72,7 +77,7 @@ func newGenesisBytesTest(t *testing.T) []byte {
 				FixedCap: []GenesisHolder{
 					{
 						Amount:  100 * units.Lux,
-						Address: keys[0].PublicKey().Address().String(),
+						Address: addr,
 					},
 				},
 			},

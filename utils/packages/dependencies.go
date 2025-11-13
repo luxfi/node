@@ -25,10 +25,10 @@ func GetDependencies(packageName string) (set.Set[string], error) {
 		return nil, fmt.Errorf("no packages found for %s", packageName)
 	}
 
-	var (
-		deps        set.Set[string]
-		collectDeps func(pkg *packages.Package) // collectDeps is recursive
-	)
+	// Initialize deps set
+	deps := set.NewSet[string](1)
+
+	var collectDeps func(pkg *packages.Package) // collectDeps is recursive
 	collectDeps = func(pkg *packages.Package) {
 		if deps.Contains(pkg.PkgPath) {
 			return // Avoid re-processing the same dependency

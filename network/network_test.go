@@ -322,11 +322,30 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 
 func TestNewNetwork(t *testing.T) {
 	require := require.New(t)
+	
+	// Create context with timeout to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	
 	_, networks, eg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil, nil, nil})
+	
+	// Start closing networks
 	for _, net := range networks {
 		net.StartClose()
 	}
-	require.NoError(eg.Wait())
+	
+	// Wait with context
+	done := make(chan error, 1)
+	go func() {
+		done <- eg.Wait()
+	}()
+	
+	select {
+	case err := <-done:
+		require.NoError(err)
+	case <-ctx.Done():
+		t.Fatal("test timed out waiting for networks to close")
+	}
 }
 
 func TestIngressConnCount(t *testing.T) {

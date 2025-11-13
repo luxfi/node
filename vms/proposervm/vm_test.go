@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"

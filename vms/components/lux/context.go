@@ -1,10 +1,10 @@
 package lux
 
 import (
-	"github.com/luxfi/consensus"
+	"context"
 )
 
-// ContextInitializable can be initialized with a consensus context
+// ContextInitializable can be initialized with a context
 type ContextInitializable interface {
-	InitCtx(*consensus.Context)
+	InitCtx(context.Context)
 }
