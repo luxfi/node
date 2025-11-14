@@ -369,8 +369,9 @@ func TestBlockVerify(t *testing.T) {
 				// tx1 and tx2 both consume imported input [inputID]
 				inputID := ids.GenerateTestID()
 				mockUnsignedTx1 := txsmock.NewUnsignedTx(ctrl)
+				mockUnsignedTx1.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
-				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
+				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
 						executor, ok := visitor.(*txexecutor.Executor)
@@ -380,10 +381,11 @@ func TestBlockVerify(t *testing.T) {
 						executor.Inputs.Add(inputID)
 						return nil
 					},
-				).Times(1)
+				).Times(1) // Execution adds imported inputs
 				mockUnsignedTx2 := txsmock.NewUnsignedTx(ctrl)
+				mockUnsignedTx2.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
-				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
+				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
 						executor, ok := visitor.(*txexecutor.Executor)
@@ -393,7 +395,7 @@ func TestBlockVerify(t *testing.T) {
 						executor.Inputs.Add(inputID)
 						return nil
 					},
-				).Times(1)
+				).Times(1) // Execution adds imported inputs - should conflict with tx1
 				tx1 := &txs.Tx{
 					Unsigned: mockUnsignedTx1,
 				}
@@ -447,8 +449,9 @@ func TestBlockVerify(t *testing.T) {
 				// tx1 and parent block both consume [inputID]
 				inputID := ids.GenerateTestID()
 				mockUnsignedTx := txsmock.NewUnsignedTx(ctrl)
+				mockUnsignedTx.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
-				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
+				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
 					func(visitor txs.Visitor) error {
 						executor, ok := visitor.(*txexecutor.Executor)
@@ -458,7 +461,7 @@ func TestBlockVerify(t *testing.T) {
 						executor.Inputs.Add(inputID)
 						return nil
 					},
-				).Times(1)
+				).Times(1) // Execution adds imported inputs
 				tx := &txs.Tx{
 					Unsigned: mockUnsignedTx,
 				}
@@ -474,9 +477,13 @@ func TestBlockVerify(t *testing.T) {
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
 
+				mempool, err := mempool.New("", metric.NewRegistry())
+				require.NoError(t, err)
 				return &Block{
 					Block: mockBlock,
 					manager: &manager{
+						mempool: mempool,
+						metrics: metricsmock.NewMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {

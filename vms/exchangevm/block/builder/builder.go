@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/math/set"
@@ -94,7 +95,7 @@ func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
 
 	var (
 		blockTxs      []*txs.Tx
-		inputs        set.Set[ids.ID]
+		inputs        = set.NewSet[ids.ID]()
 		remainingSize = targetBlockSize
 	)
 	for {

@@ -199,7 +199,7 @@ func (qs *QuantumStamper) initSLHDSA(mode slhdsa.Mode) error {
 	qs.slhdsaSigner = &SLHDSASigner{
 		mode:    mode,
 		privKey: priv,
-		pubKey:  &priv.PublicKey,
+		pubKey:  priv.PublicKey,
 	}
 
 	qs.log.Info("SLH-DSA signer initialized", "mode", mode)

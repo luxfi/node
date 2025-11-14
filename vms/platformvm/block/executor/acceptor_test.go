@@ -150,6 +150,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	childID := ids.GenerateTestID()
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
+		statelessBlock: blk,
 		onAcceptState:  onAcceptState,
 		atomicRequests: atomicRequests,
 	}
@@ -235,6 +236,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	calledOnAcceptFunc := false
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
+		statelessBlock: blk,
 		onAcceptState: onAcceptState,
 		onAcceptFunc: func() {
 			calledOnAcceptFunc = true
@@ -346,6 +348,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	// Set [blk]'s state in the map as though it had been verified.
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
+		statelessBlock: blk,
 		onAcceptState: parentState.onCommitState,
 		onAcceptFunc:  parentState.onAcceptFunc,
 

@@ -19,9 +19,9 @@ API_PORT_BASE=9630
 STAKING_PORT_BASE=9631
 HTTP_HOST="127.0.0.1"
 
-# Node directories
-BASE_DIR="$HOME/.lux-local-network"
-NODES_DIR="$BASE_DIR/nodes"
+# Node directories - Using standard ~/.lux directory
+BASE_DIR="$HOME/.lux"
+NODES_DIR="$BASE_DIR/networks/local"
 
 # Clean up existing network
 if [ -d "$BASE_DIR" ]; then
@@ -117,7 +117,7 @@ EOF
     fi
     
     # Start the node
-    nohup ./build/node --config-file="$NODE_DIR/config.json" > "$NODE_DIR/node.log" 2>&1 &
+    nohup ./build/luxd --config-file="$NODE_DIR/config.json" > "$NODE_DIR/node.log" 2>&1 &
     NODE_PID=$!
     echo $NODE_PID > "$NODE_DIR/node.pid"
     

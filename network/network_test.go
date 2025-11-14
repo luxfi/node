@@ -256,9 +256,15 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		config.Beacons = beacons
 		config.Validators = vdrs
 
+		// Initialize TrackedNets (empty - primary network is always tracked)
+		config.TrackedNets = set.Set[ids.ID]{}
+
+		// Initialize UptimeCalculator
+		config.UptimeCalculator = &uptime.NoOpCalculator{}
+
 		// Reduce throttling delays for faster tests
-		config.PeerListGossipFreq = 100 * time.Millisecond
-		config.PeerListGossipSize = 10
+		config.PeerListPullGossipFreq = 100 * time.Millisecond
+		config.PeerListNumValidatorIPs = 10
 
 		connected := set.NewSet[ids.NodeID](len(handlers))
 		net, err := NewNetwork(
@@ -312,9 +318,15 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 	for i, net := range networks {
 		for j, config := range configs {
 			if i != j {
+				// Debug: check that IP tracker is initialized
+				t.Logf("Network %s tracking %s at %s", net.config.MyNodeID, config.MyNodeID, config.MyIPPort.Get())
 				net.ManuallyTrack(config.MyNodeID, config.MyIPPort.Get())
 				// Add as beacon to ensure network will dial
 				_ = net.config.Beacons.AddStaker(constants.PrimaryNetworkID, config.MyNodeID, nil, ids.Empty, 1)
+				// Debug: verify WantsConnection returns true
+				if !net.ipTracker.WantsConnection(config.MyNodeID) {
+					t.Logf("WARNING: Network %s does not want connection to %s after tracking", net.config.MyNodeID, config.MyNodeID)
+				}
 			}
 		}
 	}

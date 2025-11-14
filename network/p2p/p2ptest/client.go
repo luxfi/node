@@ -67,9 +67,16 @@ func NewClientWithPeers(
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
 		for nodeID := range nodeIDs {
-			go func(nid ids.NodeID) {
-				_ = peerNetworks[nid].AppGossip(ctx, clientNodeID, gossipBytes)
-			}(nodeID)
+			// Send directly to the handler if it's the client node
+			if nodeID == clientNodeID {
+				go func() {
+					_ = peerNetworks[clientNodeID].AppGossip(ctx, clientNodeID, gossipBytes)
+				}()
+			} else {
+				go func(nid ids.NodeID) {
+					_ = peerNetworks[nid].AppGossip(ctx, clientNodeID, gossipBytes)
+				}(nodeID)
+			}
 		}
 
 		return nil

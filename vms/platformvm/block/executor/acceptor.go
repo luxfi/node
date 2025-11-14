@@ -271,6 +271,9 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 }
 
 func (a *acceptor) commonAccept(b *blockState) error {
+	if b == nil {
+		return errMissingBlockState
+	}
 	blk := b.statelessBlock
 	blkID := blk.ID()
 

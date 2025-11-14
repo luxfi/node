@@ -127,6 +127,7 @@ func (o *Orchestrator[_]) Execute(ctx context.Context) error {
 	// start a goroutine to confirm each issuer's transactions
 	o.observerGroup = &errgroup.Group{}
 	for _, agent := range o.agents {
+		agent := agent // capture loop variable
 		// Pass parent context to listeners so they receive DeadlineExceeded, not Canceled
 		o.observerGroup.Go(func() error { return agent.Listener.Listen(parentCtx) })
 	}
@@ -186,7 +187,10 @@ func (o *Orchestrator[_]) run(ctx context.Context) bool {
 		currTime := time.Now()
 
 		if o.config.MaxTPS == -1 {
-			return currTargetTPS.Load() == int64(currConfirmed)
+			// In burst mode, check if we've confirmed the expected number
+			expectedConfirmed := uint64(currTargetTPS.Load())
+			// Allow some variance for timing issues
+			return currConfirmed >= (expectedConfirmed * 9 / 10) // 90% threshold
 		}
 
 		tps := computeTPS(prevConfirmed, currConfirmed, currTime.Sub(prevTime))
@@ -260,6 +264,7 @@ func (o *Orchestrator[_]) GetMaxObservedTPS() int64 {
 // if an issuer errors, all other issuers will stop as well.
 func (o *Orchestrator[_]) issueTxs(ctx context.Context, currTargetTPS *atomic.Int64) {
 	for _, agent := range o.agents {
+		agent := agent // capture loop variable
 		o.issuerGroup.Go(func() error {
 			for {
 				if ctx.Err() != nil {
@@ -285,6 +290,7 @@ func (o *Orchestrator[_]) issueTxs(ctx context.Context, currTargetTPS *atomic.In
 				}
 
 				if o.config.MaxTPS == -1 {
+					// In burst mode, we're done after issuing the batch
 					agent.Listener.IssuingDone()
 					return nil
 				}

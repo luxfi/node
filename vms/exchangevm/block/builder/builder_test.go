@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
 	"github.com/luxfi/node/vms/components/lux"
@@ -65,9 +67,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, err)
 
 				ctx := context.Background()
+				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Log: logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -95,9 +99,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, err)
 
 				ctx := context.Background()
+				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Log: logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -135,9 +141,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
+				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Log: logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -176,9 +184,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
+				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Log: logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -218,9 +228,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx))
 
 				ctx := context.Background()
+				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Log: logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -252,6 +264,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 					func(visitor txs.Visitor) error {
 						require.IsType(t, &txexecutor.Executor{}, visitor)
 						executor := visitor.(*txexecutor.Executor)
+						if executor.Inputs == nil {
+							executor.Inputs = set.NewSet[ids.ID]()
+						}
 						executor.Inputs.Add(inputID)
 						return nil
 					},
@@ -270,6 +285,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 					func(visitor txs.Visitor) error {
 						require.IsType(t, &txexecutor.Executor{}, visitor)
 						executor := visitor.(*txexecutor.Executor)
+						if executor.Inputs == nil {
+							executor.Inputs = set.NewSet[ids.ID]()
+						}
 						executor.Inputs.Add(inputID)
 						return nil
 					},
@@ -281,7 +299,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
-				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
+				// VerifyUniqueInputs is called for each tx. tx1 passes, but tx2 is dropped
+				// due to inputs.Overlaps check before VerifyUniqueInputs is called
+				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil).Times(1)
 				// Assert created block has one tx, tx1,
 				// and other fields are set correctly.
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
@@ -308,6 +328,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx:   context.Background(),
+						Log:   log.NewNoOpLogger(),
 					},
 					manager,
 					&mockable.Clock{},
@@ -355,6 +376,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 					func(visitor txs.Visitor) error {
 						require.IsType(t, &txexecutor.Executor{}, visitor)
 						executor := visitor.(*txexecutor.Executor)
+						if executor.Inputs == nil {
+							executor.Inputs = set.NewSet[ids.ID]()
+						}
 						executor.Inputs.Add(inputID)
 						return nil
 					},
@@ -376,6 +400,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx:   context.Background(),
+						Log:   log.NewNoOpLogger(),
 					},
 					manager,
 					clock,
@@ -425,6 +450,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 					func(visitor txs.Visitor) error {
 						require.IsType(t, &txexecutor.Executor{}, visitor)
 						executor := visitor.(*txexecutor.Executor)
+						if executor.Inputs == nil {
+							executor.Inputs = set.NewSet[ids.ID]()
+						}
 						executor.Inputs.Add(inputID)
 						return nil
 					},
@@ -446,6 +474,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx:   context.Background(),
+						Log:   log.NewNoOpLogger(),
 					},
 					manager,
 					clock,
@@ -493,6 +522,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	backend := &txexecutor.Backend{
 		Ctx:   context.Background(),
 		Codec: parser.Codec(),
+		Log:   log.NewNoOpLogger(),
 	}
 
 	baseDB := versiondb.New(memdb.New())

@@ -109,10 +109,22 @@ func (l *scenarioMockListener) processConfirmation(id ids.ID) {
 }
 
 func (l *scenarioMockListener) Listen(ctx context.Context) error {
-	// For load testing scenarios, just wait for context to be done
+	// For load testing scenarios, wait for context or all confirmations
 	// Confirmations happen in the background via processConfirmation()
-	<-ctx.Done()
-	return ctx.Err()
+	doneCh := make(chan struct{})
+	
+	// Monitor when all confirmations are complete
+	go func() {
+		l.confirmationWg.Wait()
+		close(doneCh)
+	}()
+	
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-doneCh:
+		return nil
+	}
 }
 
 func (l *scenarioMockListener) IssuingDone() {
@@ -181,10 +193,22 @@ func (l *latencyMockListener) processWithLatency(id ids.ID, index int) {
 }
 
 func (l *latencyMockListener) Listen(ctx context.Context) error {
-	// For load testing scenarios, just wait for context to be done
+	// For load testing scenarios, wait for context or all confirmations
 	// Confirmations happen in the background via processWithLatency()
-	<-ctx.Done()
-	return ctx.Err()
+	doneCh := make(chan struct{})
+	
+	// Monitor when all confirmations are complete
+	go func() {
+		l.confirmationWg.Wait()
+		close(doneCh)
+	}()
+	
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-doneCh:
+		return nil
+	}
 }
 
 func (l *latencyMockListener) IssuingDone() {

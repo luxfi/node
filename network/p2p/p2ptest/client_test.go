@@ -18,7 +18,7 @@ import (
 
 func TestClient_AppGossip(t *testing.T) {
 	require := require.New(t)
-	
+
 	// Use context with timeout to prevent test hanging
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -37,7 +37,11 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, consensuscore.SendConfig{Peers: 1}, []byte("foobar")))
+	// Explicitly specify the node to gossip to
+	require.NoError(client.AppGossip(ctx, consensuscore.SendConfig{
+		NodeIDs: []interface{}{nodeID},
+		Peers:   1,
+	}, []byte("foobar")))
 	
 	// Wait for gossip with select to respect context
 	select {
@@ -118,7 +122,17 @@ func TestClient_AppRequest(t *testing.T) {
 				client,
 				func(_ context.Context, _ ids.NodeID, responseBytes []byte, err error) {
 					defer close(appRequestChan)
-					require.ErrorIs(err, tt.appErr)
+					if tt.appErr != nil {
+						require.Error(err)
+						// Compare error properties since AppError doesn't implement Is()
+						appErr, ok := err.(*consensuscore.AppError)
+						require.True(ok, "error should be an AppError")
+						expectedErr := tt.appErr.(*consensuscore.AppError)
+						require.Equal(expectedErr.Code, appErr.Code)
+						require.Equal(expectedErr.Message, appErr.Message)
+					} else {
+						require.NoError(err)
+					}
 					require.Equal(tt.appResponse, responseBytes)
 				},
 			))

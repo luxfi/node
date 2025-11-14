@@ -12,6 +12,7 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -168,6 +169,17 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Create a mock AppSender
 	appSender := &noOpAppSender{}
 
+	// Add default secp256k1fx if no additional FXs provided
+	fxs := config.additionalFxs
+	if len(fxs) == 0 {
+		fxs = []interface{}{
+			&common.Fx{
+				ID: ids.GenerateTestID(),
+				Fx: &secp256k1fx.Fx{},
+			},
+		}
+	}
+
 	toEngine := make(chan interface{}, 1)
 	err := vm.Initialize(
 		context.Background(),
@@ -177,7 +189,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		nil,
 		nil,
 		toEngine,
-		config.additionalFxs,
+		fxs,
 		appSender,
 	)
 	require.NoError(err)

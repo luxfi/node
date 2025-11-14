@@ -323,15 +323,23 @@ func (p *peer) StartSendGetPeerList() {
 
 func (p *peer) StartClose() {
 	p.startClosingOnce.Do(func() {
-		if err := p.conn.Close(); err != nil {
-			p.Log.Debug("failed to close connection",
-				log.Stringer("nodeID", p.id),
-				log.Reflect("error", err),
-			)
+		if p.conn != nil {
+			if err := p.conn.Close(); err != nil {
+				if p.Log != nil {
+					p.Log.Debug("failed to close connection",
+						log.Stringer("nodeID", p.id),
+						log.Reflect("error", err),
+					)
+				}
+			}
 		}
 
-		p.messageQueue.Close()
-		p.onClosingCtxCancel()
+		if p.messageQueue != nil {
+			p.messageQueue.Close()
+		}
+		if p.onClosingCtxCancel != nil {
+			p.onClosingCtxCancel()
+		}
 	})
 }
 
