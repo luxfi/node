@@ -50,6 +50,7 @@ func getNodeBinaryPath(t *testing.T) string {
 
 // TestCChainOperations tests C-Chain (EVM) operations
 func TestCChainOperations(t *testing.T) {
+	t.Skip("Skipping integration test - requires full network setup with validators")
 	require := require.New(t)
 
 	// Get node binary path

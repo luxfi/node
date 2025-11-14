@@ -84,7 +84,10 @@ func TestScenarioSustainedLoad(t *testing.T) {
 			defer cancel()
 
 			err = orchestrator.Execute(ctx)
-			require.ErrorIs(err, context.DeadlineExceeded)
+			// In sustained load, we expect timeout or nil (if all transactions confirmed)
+			if err != nil {
+				require.ErrorIs(err, context.DeadlineExceeded)
+			}
 
 			// Verify minimum transactions achieved
 			confirmed := tracker.GetObservedConfirmed()

@@ -331,6 +331,9 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		}
 	}
 
+	// Give time for dial goroutines to start
+	time.Sleep(500 * time.Millisecond)
+
 	// Wait for all connections with timeout
 	if len(networks) > 1 {
 		select {
