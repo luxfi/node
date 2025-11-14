@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/math/set"
 	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/exchangevm/block"

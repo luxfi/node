@@ -976,7 +976,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	}
 
 	// Accept all the blocks
-	allBlocks := []chain.Block{
+	allBlocks := []linearblock.Block{
 		addValidatorStandardBlk0,
 		advanceTimeStandardBlk0,
 		importBlk,
@@ -1550,10 +1550,6 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	pk1 := sk1.PublicKey()
 	pop1, err := signer.NewProofOfPossession(sk1)
 	require.NoError(t, err)
-
-	// Generate proof of possession
-	pop1, err := signer.NewProofOfPossession(sk1)
-	require.NoError(err)
 
 	// build primary network validator with BLS key
 	primaryTx, err := wallet.IssueAddPermissionlessValidatorTx(

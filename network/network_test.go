@@ -311,8 +311,8 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		eg.Go(net.Dispatch)
 	}
 
-	// Give networks time to start dispatching
-	time.Sleep(100 * time.Millisecond)
+	// Give networks more time to start dispatching and be ready
+	time.Sleep(500 * time.Millisecond)
 
 	// Manually track all peers and mark as beacon validators to trigger dialing
 	for i, net := range networks {

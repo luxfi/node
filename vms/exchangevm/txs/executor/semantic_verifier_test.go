@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consContext "github.com/luxfi/consensus/context"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -77,8 +78,12 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
-		LuxCtx:   nil,
+		Ctx: ctx,
+		LuxCtx: &consContext.Context{
+			ChainID:        ids.GenerateTestID(),
+			NetID:          ids.GenerateTestID(),
+			ValidatorState: &testValidatorState{},
+		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -441,8 +446,12 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
-		LuxCtx:   nil,
+		Ctx: ctx,
+		LuxCtx: &consContext.Context{
+			ChainID:        ids.GenerateTestID(),
+			NetID:          ids.GenerateTestID(),
+			ValidatorState: &testValidatorState{},
+		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -961,8 +970,12 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	))
 
 	backendObj := &Backend{
-		Ctx:      ctx,
-		LuxCtx:   nil,
+		Ctx: ctx,
+		LuxCtx: &consContext.Context{
+			ChainID:        ids.GenerateTestID(),
+			NetID:          ids.GenerateTestID(),
+			ValidatorState: &testValidatorState{},
+		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{

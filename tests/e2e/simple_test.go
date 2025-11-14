@@ -27,16 +27,12 @@ func TestSimpleNetworkStart(t *testing.T) {
 		DefaultFlags: tmpnet.FlagsMap{
 			"min-stake-duration": "1s",
 		},
-		Nodes: tmpnet.NewNodesOrPanic(1),
-	}
-
-	// Configure runtime for each node
-	for _, node := range network.Nodes {
-		node.RuntimeConfig = &tmpnet.NodeRuntimeConfig{
+		DefaultRuntimeConfig: tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
 				LuxNodePath: luxdPath,
 			},
-		}
+		},
+		Nodes: tmpnet.NewNodesOrPanic(1),
 	}
 
 	// Start the network

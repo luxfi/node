@@ -459,6 +459,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	// Set [blk]'s state in the map as though it had been verified.
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
+		statelessBlock: blk,
 		onAcceptState: parentState.onAbortState,
 		onAcceptFunc:  parentState.onAcceptFunc,
 
