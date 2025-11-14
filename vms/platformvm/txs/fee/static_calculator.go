@@ -125,29 +125,24 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (c *staticVisitor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
-	c.fee = c.config.TxFee // Use TxFee since TransformNetTxFee was removed in regenesis
-	return nil
+func (*staticVisitor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+	return ErrUnsupportedTx
 }
 
-func (c *staticVisitor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
-	c.fee = c.config.TxFee
-	return nil
+func (*staticVisitor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
+	return ErrUnsupportedTx
 }
 
-func (c *staticVisitor) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
-	c.fee = c.config.TxFee
-	return nil
+func (*staticVisitor) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
+	return ErrUnsupportedTx
 }
 
-func (c *staticVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
-	c.fee = c.config.TxFee // Use TxFee since AddNetValidatorFee was removed in regenesis
-	return nil
+func (*staticVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
+	return ErrUnsupportedTx
 }
 
-func (c *staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
-	c.fee = c.config.TxFee
-	return nil
+func (*staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
+	return ErrUnsupportedTx
 }
 
 func (v *staticVisitor) AddNetValidatorTx(*txs.AddNetValidatorTx) error {

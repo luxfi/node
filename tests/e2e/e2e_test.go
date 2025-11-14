@@ -6,6 +6,8 @@ package e2e_test
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -42,6 +44,15 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	// Run only once in the first ginkgo process
 
 	tc := e2e.NewEventHandlerTestContext()
+
+	// Check if LUXD_PATH is set and points to valid binary
+	luxdPath := os.Getenv(tmpnet.LuxNodePathEnvName)
+	if luxdPath == "" {
+		ginkgo.Skip("LUXD_PATH environment variable not set - skipping e2e tests")
+	}
+	if _, err := os.Stat(luxdPath); err != nil {
+		ginkgo.Skip(fmt.Sprintf("LUXD_PATH binary not found at %s - skipping e2e tests", luxdPath))
+	}
 
 	nodeCount, err := flagVars.NodeCount()
 	require.NoError(tc, err)

@@ -531,6 +531,11 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 		return nil, err
 	}
 
+	// Initialize handlers map if it's nil
+	if handlers == nil {
+		handlers = make(map[string]http.Handler)
+	}
+
 	// Add the proposervm handler to the map
 	handlers["/proposervm"] = proposerHandler
 	return handlers, nil

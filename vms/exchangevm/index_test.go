@@ -35,11 +35,10 @@ import (
 )
 
 func TestIndexTransaction_Ordered(t *testing.T) {
-	t.Skip("Skipping due to FX initialization issues")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.testLock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	key := keys[0]
 	addr := key.PublicKey().Address()
@@ -58,11 +57,11 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-		env.testLock.Unlock()
+		env.vm.Lock.Unlock()
 
 		issueAndAccept(require, env.vm, tx)
 
-		env.testLock.Lock()
+		env.vm.Lock.Lock()
 
 		txs = append(txs, tx)
 	}
@@ -75,11 +74,10 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 }
 
 func TestIndexTransaction_MultipleTransactions(t *testing.T) {
-	t.Skip("Skipping due to FX initialization issues")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.testLock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	addressTxMap := map[ids.ShortID]*txs.Tx{}
 	txAssetID := lux.Asset{ID: env.genesisTx.ID()}
@@ -98,12 +96,12 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-		env.testLock.Unlock()
+		env.vm.Lock.Unlock()
 
 		// issue transaction
 		issueAndAccept(require, env.vm, tx)
 
-		env.testLock.Lock()
+		env.vm.Lock.Lock()
 
 		addressTxMap[addr] = tx
 	}
@@ -119,11 +117,10 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 }
 
 func TestIndexTransaction_MultipleAddresses(t *testing.T) {
-	t.Skip("Skipping due to FX initialization issues")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.testLock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	addrs := make([]ids.ShortID, len(keys))
 	for i, key := range keys {
@@ -147,22 +144,21 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addrs...)
 	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-	env.testLock.Unlock()
+	env.vm.Lock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.testLock.Lock()
+	env.vm.Lock.Lock()
 
 	assertIndexedTX(t, env.vm.db, 0, addr, txAssetID.ID, tx.ID())
 	assertLatestIdx(t, env.vm.db, addr, txAssetID.ID, 1)
 }
 
 func TestIndexer_Read(t *testing.T) {
-	t.Skip("Skipping due to FX initialization issues")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.testLock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	// generate test address and asset IDs
 	assetID := ids.GenerateTestID()

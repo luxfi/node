@@ -11,8 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/consensus/engine/core/common"
+	commonengine "github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -117,6 +118,36 @@ func getCreateTxFromGenesisTest(t *testing.T, genesisBytes []byte, assetAlias st
 	return nil
 }
 
+// mockValidatorState is a simple validator state for tests
+type mockValidatorState struct{}
+
+func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetNetID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetSubnetID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (m *mockValidatorState) GetCurrentHeight(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (m *mockValidatorState) GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+	// Return a simple validator set with the test node
+	return map[ids.NodeID]uint64{
+		ids.GenerateTestNodeID(): 1000,
+	}, nil
+}
+
 // testSharedMemory wraps atomic.SharedMemory to match VM's SharedMemory interface
 type testSharedMemory struct {
 	mem atomic.SharedMemory
@@ -148,10 +179,13 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	}
 
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		ChainID:   ids.GenerateTestID(),
-		XChainID:  ids.GenerateTestID(),
-		CChainID:  ids.GenerateTestID(),
+		NetworkID:      constants.UnitTestID,
+		ChainID:        ids.GenerateTestID(),
+		XChainID:       ids.GenerateTestID(),
+		CChainID:       ids.GenerateTestID(),
+		NetID:          ids.Empty,
+		NodeID:         ids.GenerateTestNodeID(),
+		ValidatorState: &mockValidatorState{},
 	}
 
 	baseDB := memdb.New()
@@ -173,7 +207,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	fxs := config.additionalFxs
 	if len(fxs) == 0 {
 		fxs = []interface{}{
-			&common.Fx{
+			&commonengine.Fx{
 				ID: ids.GenerateTestID(),
 				Fx: &secp256k1fx.Fx{},
 			},
@@ -215,6 +249,19 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		testLock:      testLock,
 		txBuilder:     txBuilder,
 		sharedMemory:  sharedMemory,
+	}
+
+	// Linearize the DAG to initialize the network
+	// This simulates what happens during normal VM bootstrap
+	if !config.notLinearized {
+		// Use the genesis transaction ID as the stop vertex
+		stopVertexID := genesisTx.ID()
+		toEngineChan := make(chan core.Message, 1)
+		err = vm.Linearize(context.Background(), stopVertexID, toEngineChan)
+		require.NoError(err)
+
+		// Mark the backend as bootstrapped so tests can issue transactions
+		vm.txBackend.Bootstrapped = true
 	}
 
 	// Lock the VM so tests can unlock it when ready

@@ -5,6 +5,7 @@ package integration_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -18,6 +19,11 @@ import (
 // TestNodeLifecycle tests the complete lifecycle of a node:
 // start -> bootstrap -> healthy -> shutdown
 func TestNodeLifecycle(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Get node binary path
@@ -71,6 +77,11 @@ func TestNodeLifecycle(t *testing.T) {
 
 // TestNodeRestart tests node restart functionality
 func TestNodeRestart(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Get node binary path
@@ -138,6 +149,11 @@ func TestNodeRestart(t *testing.T) {
 
 // TestMultiNodeNetwork tests multiple node network operations
 func TestMultiNodeNetwork(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	const nodeCount = 3

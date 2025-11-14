@@ -97,14 +97,13 @@ const (
 var (
 	_ txs.Visitor = (*complexityVisitor)(nil)
 
-	// Removed in regenesis
 	IntrinsicAddNetValidatorTxComplexities = gas.Dimensions{
-		// 	gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-		// 		intrinsicNetValidatorBandwidth + // netValidator
-		// 		wrappers.IntLen + // netAuth typeID
-		// 		wrappers.IntLen, // netAuthCredential typeID
-		// 	gas.DBRead:  3, // get net auth + check for net transformation + check for net conversion
-		// 	gas.DBWrite: 3, // put current staker + write weight diff + write pk diff
+		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
+			intrinsicNetValidatorBandwidth + // netValidator
+			wrappers.IntLen + // netAuth typeID
+			wrappers.IntLen, // netAuthCredential typeID
+		gas.DBRead:  3, // get net auth + check for net transformation + check for net conversion
+		gas.DBWrite: 3, // put current staker + write weight diff + write pk diff
 	}
 	IntrinsicCreateChainTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -118,11 +117,10 @@ var (
 		gas.DBRead:  3, // get subnet auth + check for subnet transformation + check for subnet conversion
 		gas.DBWrite: 1, // put chain
 	}
-	// Removed in regenesis
 	IntrinsicCreateNetTxComplexities = gas.Dimensions{
-		// 	gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-		// 		wrappers.IntLen, // owner typeID
-		// 	gas.DBWrite: 1, // write subsubnet owner
+		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
+			wrappers.IntLen, // owner typeID
+		gas.DBWrite: 1, // write net owner
 	}
 	IntrinsicImportTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -134,15 +132,14 @@ var (
 			ids.IDLen + // destination chainID
 			wrappers.IntLen, // num exported outputs
 	}
-	// Removed in regenesis
 	IntrinsicRemoveNetValidatorTxComplexities = gas.Dimensions{
-		// 	gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-		// 		ids.NodeIDLen + // nodeID
-		// 		ids.IDLen + // netID
-		// 		wrappers.IntLen + // netAuth typeID
-		// 		wrappers.IntLen, // netAuthCredential typeID
-		// 	gas.DBRead:  1, // read net auth
-		// 	gas.DBWrite: 3, // delete validator + write weight diff + write pk diff
+		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
+			ids.NodeIDLen + // nodeID
+			ids.IDLen + // netID
+			wrappers.IntLen + // netAuth typeID
+			wrappers.IntLen, // netAuthCredential typeID
+		gas.DBRead:  1, // read net auth
+		gas.DBWrite: 3, // delete validator + write weight diff + write pk diff
 	}
 	IntrinsicAddPermissionlessValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -859,9 +856,8 @@ func (c *complexityVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) e
 	return nil
 }
 
-func (c *complexityVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
-	c.output = IntrinsicTransformNetTxComplexities
-	return nil
+func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
+	return ErrUnsupportedTx
 }
 
 func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {

@@ -4,6 +4,8 @@
 package proposervm
 
 import (
+	"context"
+
 	"github.com/luxfi/consensus/engine/chain/block"
 )
 
@@ -25,4 +27,17 @@ type reverseBlockAdapter struct {
 func (rba *reverseBlockAdapter) Status() uint8 {
 	// Return the uint8 status directly from engine block
 	return rba.Block.Status()
+}
+
+// Options implements the OracleBlock interface if the underlying block does
+func (rba *reverseBlockAdapter) Options(ctx context.Context) ([2]block.Block, error) {
+	type oracleBlock interface {
+		Options(context.Context) ([2]block.Block, error)
+	}
+
+	oracleBlk, ok := rba.Block.(oracleBlock)
+	if !ok {
+		return [2]block.Block{}, errNotOracle
+	}
+	return oracleBlk.Options(ctx)
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 var _ txs.UnsignedTx = (*dummyUnsignedTx)(nil)
@@ -36,7 +36,7 @@ func (*dummyUnsignedTx) Visit(txs.Visitor) error {
 func TestVerifySpendUTXOs(t *testing.T) {
 	fx := &secp256k1fx.Fx{}
 
-	require.NoError(t, fx.InitializeVM(&secp256k1fx.TestVM{}))
+	require.NoError(t, fx.Initialize(&secp256k1fx.TestVM{}))
 	require.NoError(t, fx.Bootstrapped())
 
 	luxAssetID := ids.GenerateTestID()

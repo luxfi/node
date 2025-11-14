@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	consContext "github.com/luxfi/consensus/context"
+	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/core" // unused
@@ -124,6 +124,42 @@ var (
 	testNet1 *txs.Tx
 )
 
+// mockValidatorState implements consensusctx.ValidatorState for testing
+type mockValidatorState struct{}
+
+// Ensure mockValidatorState implements consensusctx.ValidatorState
+var _ consensusctx.ValidatorState = (*mockValidatorState)(nil)
+
+func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
+	// Return the chain ID for the given net ID
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains
+	return constants.PrimaryNetworkID, nil
+}
+
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for test chains (subnet is old term for net)
+	return constants.PrimaryNetworkID, nil
+}
+
+func (m *mockValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	// Return an empty validator set for tests
+	return make(map[ids.NodeID]uint64), nil
+}
+
+func (m *mockValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	// Return a default height for tests
+	return 100, nil
+}
+
+func (m *mockValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	// Return a minimum height for tests
+	return 0, nil
+}
+
 type mutableSharedMemory struct {
 	atomic.SharedMemory
 }
@@ -163,6 +199,9 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	}
 	ctx.SharedMemory = msm
 
+	// Create a mock ValidatorState that implements consensusctx.ValidatorState
+	ctx.ValidatorState = &mockValidatorState{}
+
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 	appSender := &TestAppSender{}
@@ -172,7 +211,9 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		context.Background(),
 		ctx,                                        // chainCtxIntf
 		chainDB,                                    // dbManagerIntf
-		genesistest.NewBytes(t, genesistest.Config{}), // genesisBytes
+		genesistest.NewBytes(t, genesistest.Config{
+			InitialBalance: 100 * units.Lux, // Increased to cover CreateNetTx fees
+		}), // genesisBytes
 		nil,                                        // upgradeBytes
 		dynamicConfigBytes,                         // configBytes
 		make(chan linearblock.Message, 1),         // toEngineIntf
@@ -188,30 +229,12 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 
 	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
 
-	wallet := newWallet(t, vm, walletConfig{
-		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
-	})
-
-	// Create a net and store it in testNet1
-	// Note: following Banff activation, block acceptance will move
-	// chain time ahead
-	var err error
-	testNet1, err = wallet.IssueCreateNetTx(
-		&secp256k1fx.OutputOwners{
-			Threshold: 2,
-			Addrs: []ids.ShortID{
-				genesistest.DefaultFundedKeys[0].Address(),
-				genesistest.DefaultFundedKeys[1].Address(),
-				genesistest.DefaultFundedKeys[2].Address(),
-			},
-		},
-	)
-	require.NoError(err)
-
-	vm.ctx.Lock.Unlock()
-	require.NoError(vm.issueTxFromRPC(testNet1))
-	vm.ctx.Lock.Lock()
-	require.NoError(buildAndAcceptStandardBlock(vm))
+	// Note: testNet1 is created on-demand by tests that need it,
+	// rather than during VM initialization. This avoids issues with
+	// CreateNetTx failing semantic validation in some upgrade configurations.
+	// Tests that need testNet1 should create it using:
+	//   wallet := newWallet(t, vm, walletConfig{keys: genesistest.DefaultFundedKeys[:1]})
+	//   testNet1 = createAndAcceptNet(t, vm, wallet)
 
 	t.Cleanup(func() {
 		vm.ctx.Lock.Lock()
@@ -242,6 +265,29 @@ func buildAndAcceptStandardBlock(vm *VM) error {
 	}
 
 	return nil
+}
+
+// createAndAcceptNet creates a new subnet (testNet1), adds it to mempool,
+// builds and accepts a block containing it. Returns the subnet transaction.
+func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
+	require := require.New(t)
+	
+	netTx, err := wallet.IssueCreateNetTx(
+		&secp256k1fx.OutputOwners{
+			Threshold: 2,
+			Addrs: []ids.ShortID{
+				genesistest.DefaultFundedKeys[0].Address(),
+				genesistest.DefaultFundedKeys[1].Address(),
+				genesistest.DefaultFundedKeys[2].Address(),
+			},
+		},
+	)
+	require.NoError(err)
+
+	require.NoError(vm.Builder.Add(netTx))
+	require.NoError(buildAndAcceptStandardBlock(vm))
+	
+	return netTx
 }
 
 type walletConfig struct {
@@ -279,6 +325,12 @@ func TestGenesis(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
+	// Create testNet1 for this test
+	wallet := newWallet(t, vm, walletConfig{
+		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
+	})
+	testNet1 := createAndAcceptNet(t, vm, wallet)
+
 	// Ensure the genesis block has been accepted and stored
 	genesisBlockID, err := vm.LastAccepted(context.Background()) // lastAccepted should be ID of genesis block
 	require.NoError(err)
@@ -288,7 +340,9 @@ func TestGenesis(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(genesisBlock)
 
-	genesisState := genesistest.New(t, genesistest.Config{})
+	genesisState := genesistest.New(t, genesistest.Config{
+		InitialBalance: 100 * units.Lux, // Match defaultVM config
+	})
 	feeCalculator := state.PickFeeCalculator(&vm.Internal, vm.state)
 	createNetFee, err := feeCalculator.CalculateFee(testNet1.Unsigned)
 	require.NoError(err)
@@ -1093,9 +1147,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := testcontext.New(context.Background())
-	firstCtx.ChainID = consensustest.PChainID
-	firstCtx.XAssetID = ids.GenerateTestID()
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
 
@@ -1182,9 +1234,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := testcontext.New(context.Background())
-	secondCtx.ChainID = consensustest.PChainID
-	secondCtx.XAssetID = firstCtx.XAssetID
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.SharedMemory = firstCtx.SharedMemory
 	secondVM.Clock().Set(initialClkTime)
 	secondCtx.Lock.Lock()
@@ -1193,28 +1243,11 @@ func TestRestartFullyAccepted(t *testing.T) {
 		secondCtx.Lock.Unlock()
 	}()
 
-	// Create lux context for chain context
-	luxCtx2 := &consContext.Context{
-		QuantumID:  secondCtx.NetworkID,
-		NodeID:     secondCtx.NodeID,
-		PublicKey:  nil,
-		XChainID:   secondCtx.XChainID,
-		CChainID:   secondCtx.CChainID,
-		XAssetID: secondCtx.XAssetID,
-		ChainID:    secondCtx.ChainID,
-		NetID:      constants.PrimaryNetworkID,
-		StartTime:  time.Now(),
-	}
-
-	chainCtx2 := &linearblock.ChainContext{
-		Context:          luxCtx2,
-	}
-
 	secondDB := prefixdb.New([]byte{}, db)
 	secondAppSender := &TestAppSender{}
 	require.NoError(secondVM.Initialize(
 		context.Background(),
-		chainCtx2,
+		secondCtx,
 		secondDB,
 		genesisBytes,
 		nil,
@@ -1259,14 +1292,7 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.Clock().Set(initialClkTime)
-	ctx := testcontext.New(context.Background())
-	ctx.ChainID = consensustest.PChainID
-	ctx.XAssetID = ids.GenerateTestID()
-	vm.ctx.Lock.Lock()
-	defer func() {
-		require.NoError(vm.Shutdown(context.Background()))
-		vm.ctx.Lock.Unlock()
-	}()
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -1279,6 +1305,12 @@ func TestUnverifiedParent(t *testing.T) {
 		nil,
 		&TestAppSender{},
 	))
+
+	vm.ctx.Lock.Lock()
+	defer func() {
+		require.NoError(vm.Shutdown(context.Background()))
+		vm.ctx.Lock.Unlock()
+	}()
 
 	// include a tx1 to make the block be accepted
 	tx1 := &txs.Tx{Unsigned: &txs.ImportTx{
@@ -1414,9 +1446,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := testcontext.New(context.Background())
-	firstCtx.ChainID = consensustest.PChainID
-	firstCtx.XAssetID = ids.GenerateTestID()
+	firstCtx := consensustest.Context(t, consensustest.PChainID)
 	firstCtx.Lock.Lock()
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})

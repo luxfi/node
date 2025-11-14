@@ -15,8 +15,10 @@ import (
 	consensuscontext "github.com/luxfi/consensus/context"
 	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
 
@@ -45,7 +47,7 @@ func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(ErrNotOracle, err)
+	require.Equal(errNotOracle, err)
 
 	// setup
 	proBlk = preForkBlock{
@@ -484,7 +486,7 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 	proBlk := sb.(*preForkBlock)
 
 	require.NoError(proBlk.Reject(context.Background()))
-	require.Equal(consensustest.Rejected, coreBlk.Status)
+	require.Equal(consensustest.Rejected, coreBlk.Status())
 }
 
 func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
@@ -616,8 +618,10 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 
 	require.NoError(firstBlock.Verify(context.Background()))
 
+	// Since this is a child of pre-fork oracle block transition, it should be unsigned
+	// but we're intentionally building it as signed to test error handling
 	slb, err := statelessblock.Build(
-		firstBlock.ID(), // refer unknown parent
+		firstBlock.ID(), // refer to parent
 		firstBlock.Timestamp(),
 		0,                      // pChainHeight,
 		statelessblock.Epoch{}, // Empty epoch
@@ -635,7 +639,8 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 	}
 
 	err = invalidChild.Verify(context.Background())
-	require.ErrorIs(err, errUnexpectedBlockType)
+	// The verification should fail because signed blocks can't be children of pre-fork blocks
+	require.ErrorIs(err, errChildOfPreForkBlockHasProposer)
 }
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
@@ -657,18 +662,24 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	innerVM := consensusblockmock.NewMockChainVM(ctrl)
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
 
+	// Create mock validator state to avoid nil pointer dereference
+	valState := validatorsmock.NewState(ctrl)
+	valState.EXPECT().GetCurrentHeight(gomock.Any()).Return(pChainHeight, nil).AnyTimes()
+
 	// Create minimal consensus context for testing
-	// ValidatorState is left as nil since this test doesn't exercise validator functionality
 	consensusCtx := &consensuscontext.Context{
-		QuantumID: 1,
-		NetworkID: 1,
-		ChainID:   ids.GenerateTestID(),
-		NodeID:    ids.GenerateTestNodeID(),
+		QuantumID:      1,
+		NetworkID:      1,
+		ChainID:        ids.GenerateTestID(),
+		NodeID:         ids.GenerateTestNodeID(),
+		ValidatorState: valState,
 	}
 
 	vm := &VM{
-		ChainVM: innerVM,
-		ctx:     consensusCtx,
+		ChainVM:        innerVM,
+		ctx:            consensusCtx,
+		validatorState: valState,
+		logger:         log.NewNoOpLogger(),
 	}
 
 	blk := &preForkBlock{

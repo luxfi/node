@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 )
 
 // Requires all values in a struct to be initialized
@@ -23,9 +26,17 @@ func verifyInitializedStruct(tb testing.TB, s interface{}) {
 
 	v := reflect.ValueOf(s)
 	for i := 0; i < v.NumField(); i++ {
+		fieldType := structType.Field(i)
 		field := v.Field(i)
-		require.True(field.IsValid(), "invalid field: ", structType.Field(i).Name)
-		require.False(field.IsZero(), "zero field: ", structType.Field(i).Name)
+
+		// Skip fields with json:"-" tag as they aren't part of serialization
+		jsonTag := fieldType.Tag.Get("json")
+		if jsonTag == "-" {
+			continue
+		}
+
+		require.True(field.IsValid(), "invalid field: ", fieldType.Name)
+		require.False(field.IsZero(), "zero field: ", fieldType.Name)
 	}
 }
 
@@ -58,6 +69,9 @@ func TestConfigUnmarshal(t *testing.T) {
 
 	t.Run("all values extracted from json", func(t *testing.T) {
 		require := require.New(t)
+
+		trackedNets := set.NewSet[ids.ID](1)
+		trackedNets.Add(ids.ID{1, 2, 3})
 
 		expected := &Config{
 			Network: Network{
@@ -93,7 +107,14 @@ func TestConfigUnmarshal(t *testing.T) {
 			L1NetIDNodeIDCacheSize:     13,
 			ChecksumsEnabled:              true,
 			SybilProtectionEnabled:        true,
+			TrackedNets:                   trackedNets,
 			MempoolPruneFrequency:         time.Minute,
+			TxFee:                         14,
+			CreateAssetTxFee:              15,
+			CreateNetTxFee:             16,
+			CreateBlockchainTxFee:         17,
+			AddPrimaryNetworkValidatorFee: 18,
+			AddPrimaryNetworkDelegatorFee: 19,
 		}
 		verifyInitializedStruct(t, *expected)
 		verifyInitializedStruct(t, expected.Network)

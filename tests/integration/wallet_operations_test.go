@@ -5,6 +5,7 @@ package integration_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -19,6 +20,11 @@ import (
 
 // TestWalletCreation tests wallet creation
 func TestWalletCreation(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Get node binary path
@@ -84,6 +90,11 @@ func TestWalletCreation(t *testing.T) {
 
 // TestWalletTransfer tests wallet transfer operations
 func TestWalletTransfer(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Get node binary path
@@ -152,6 +163,11 @@ func TestWalletTransfer(t *testing.T) {
 
 // TestWalletBalance tests wallet balance operations
 func TestWalletBalance(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Get node binary path

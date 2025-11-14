@@ -9,12 +9,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/node/api/metrics"
@@ -68,6 +71,26 @@ var (
 
 	_ chainblock.StateSummary = (*summaryClient)(nil)
 )
+
+// isNotImplementedError checks if a gRPC error indicates "not implemented"
+func isNotImplementedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// Check for gRPC Unimplemented code
+	if st, ok := status.FromError(err); ok {
+		if st.Code() == codes.Unimplemented {
+			return true
+		}
+		// Also check the message for "state syncable VM not implemented" or similar
+		msg := st.Message()
+		return strings.Contains(msg, "state syncable VM not implemented") ||
+			strings.Contains(msg, "not implemented")
+	}
+	// Check for error message containing "not implemented"
+	return strings.Contains(err.Error(), "state syncable VM not implemented") ||
+		strings.Contains(err.Error(), "not implemented")
+}
 
 // VMClient is an implementation of a VM that talks over RPC.
 type VMClient struct {
@@ -708,6 +731,11 @@ func (vm *VMClient) GetChainID(ctx context.Context) (ids.ID, error) {
 func (vm *VMClient) StateSyncEnabled(ctx context.Context) (bool, error) {
 	resp, err := vm.client.StateSyncEnabled(ctx, &emptypb.Empty{})
 	if err != nil {
+		// Check if this is the "not implemented" gRPC error
+		// StateSyncEnabled returns (false, nil) instead of error when not implemented
+		if isNotImplementedError(err) {
+			return false, nil
+		}
 		return false, err
 	}
 	err = errEnumToError[resp.Err]
@@ -720,6 +748,10 @@ func (vm *VMClient) StateSyncEnabled(ctx context.Context) (bool, error) {
 func (vm *VMClient) GetOngoingSyncStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
 	resp, err := vm.client.GetOngoingSyncStateSummary(ctx, &emptypb.Empty{})
 	if err != nil {
+		// Check if this is the "not implemented" gRPC error
+		if isNotImplementedError(err) {
+			return nil, chainblock.ErrStateSyncableVMNotImplemented
+		}
 		return nil, err
 	}
 	if errEnum := resp.Err; errEnum != vmpb.Error_ERROR_UNSPECIFIED {
@@ -738,6 +770,10 @@ func (vm *VMClient) GetOngoingSyncStateSummary(ctx context.Context) (chainblock.
 func (vm *VMClient) GetLastStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
 	resp, err := vm.client.GetLastStateSummary(ctx, &emptypb.Empty{})
 	if err != nil {
+		// Check if this is the "not implemented" gRPC error
+		if isNotImplementedError(err) {
+			return nil, chainblock.ErrStateSyncableVMNotImplemented
+		}
 		return nil, err
 	}
 	if errEnum := resp.Err; errEnum != vmpb.Error_ERROR_UNSPECIFIED {
@@ -761,6 +797,10 @@ func (vm *VMClient) ParseStateSummary(ctx context.Context, summaryBytes []byte) 
 		},
 	)
 	if err != nil {
+		// Check if this is the "not implemented" gRPC error
+		if isNotImplementedError(err) {
+			return nil, chainblock.ErrStateSyncableVMNotImplemented
+		}
 		return nil, err
 	}
 	if errEnum := resp.Err; errEnum != vmpb.Error_ERROR_UNSPECIFIED {
@@ -784,6 +824,10 @@ func (vm *VMClient) GetStateSummary(ctx context.Context, summaryHeight uint64) (
 		},
 	)
 	if err != nil {
+		// Check if this is the "not implemented" gRPC error
+		if isNotImplementedError(err) {
+			return nil, chainblock.ErrStateSyncableVMNotImplemented
+		}
 		return nil, err
 	}
 	if errEnum := resp.Err; errEnum != vmpb.Error_ERROR_UNSPECIFIED {
@@ -1050,6 +1094,25 @@ func (b *chainBlockWrapper) Reject(ctx context.Context) error {
 // Verify implements block.Block
 func (b *chainBlockWrapper) Verify(ctx context.Context) error {
 	// Forward to embedded chainblock.Block
+	return b.Block.Verify(ctx)
+}
+
+// ShouldVerifyWithContext implements block.WithVerifyContext
+func (b *chainBlockWrapper) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
+	// Check if the embedded block implements WithVerifyContext
+	if withCtx, ok := b.Block.(chainblock.WithVerifyContext); ok {
+		return withCtx.ShouldVerifyWithContext(ctx)
+	}
+	return false, nil
+}
+
+// VerifyWithContext implements block.WithVerifyContext
+func (b *chainBlockWrapper) VerifyWithContext(ctx context.Context, blockCtx *chainblock.Context) error {
+	// Check if the embedded block implements WithVerifyContext
+	if withCtx, ok := b.Block.(chainblock.WithVerifyContext); ok {
+		return withCtx.VerifyWithContext(ctx, blockCtx)
+	}
+	// Fall back to regular Verify if WithVerifyContext is not implemented
 	return b.Block.Verify(ctx)
 }
 

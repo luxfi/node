@@ -19,6 +19,11 @@ import (
 
 // TestSimpleNodeStart tests if we can start a single node
 func TestSimpleNodeStart(t *testing.T) {
+	// Skip by default - requires network infrastructure
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip("Skipping integration test - requires network infrastructure (set RUN_INTEGRATION_TESTS=true)")
+	}
+
 	require := require.New(t)
 
 	// Build luxd if needed

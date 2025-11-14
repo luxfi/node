@@ -144,18 +144,22 @@ func initTestProposerVM(
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			thisNode: {
 				NodeID: thisNode,
+				Light:  10, // BLS weight for sampling
 				Weight: 10,
 			},
 			nodeID1: {
 				NodeID: nodeID1,
+				Light:  5,
 				Weight: 5,
 			},
 			nodeID2: {
 				NodeID: nodeID2,
+				Light:  6,
 				Weight: 6,
 			},
 			nodeID3: {
 				NodeID: nodeID3,
+				Light:  7,
 				Weight: 7,
 			},
 		}, nil
@@ -1604,18 +1608,22 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			thisNode: {
 				NodeID: thisNode,
+				Light:  10, // BLS weight for sampling
 				Weight: 10,
 			},
 			nodeID1: {
 				NodeID: nodeID1,
+				Light:  5,
 				Weight: 5,
 			},
 			nodeID2: {
 				NodeID: nodeID2,
+				Light:  6,
 				Weight: 6,
 			},
 			nodeID3: {
 				NodeID: nodeID3,
+				Light:  7,
 				Weight: 7,
 			},
 		}, nil
@@ -1769,18 +1777,22 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			thisNode: {
 				NodeID: thisNode,
+				Light:  10, // BLS weight for sampling
 				Weight: 10,
 			},
 			nodeID1: {
 				NodeID: nodeID1,
+				Light:  5,
 				Weight: 5,
 			},
 			nodeID2: {
 				NodeID: nodeID2,
+				Light:  6,
 				Weight: 6,
 			},
 			nodeID3: {
 				NodeID: nodeID3,
+				Light:  7,
 				Weight: 7,
 			},
 		}, nil

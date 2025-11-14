@@ -5,6 +5,7 @@ package e2e_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -15,8 +16,16 @@ import (
 )
 
 func TestSimpleNetworkStart(t *testing.T) {
-	// Set the path to the binary
-	luxdPath := "/Users/z/work/lux/node/build/luxd"
+	// Check if LUXD_PATH is set
+	luxdPath := os.Getenv("LUXD_PATH")
+	if luxdPath == "" {
+		t.Skip("LUXD_PATH environment variable not set - skipping simple network test")
+	}
+
+	// Verify the binary exists
+	if _, err := os.Stat(luxdPath); err != nil {
+		t.Skipf("LUXD_PATH binary not found at %s - skipping simple network test", luxdPath)
+	}
 	
 	// Create logger
 	logger := log.New()

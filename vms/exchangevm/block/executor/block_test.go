@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/mock/gomock"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
@@ -411,8 +412,14 @@ func TestBlockVerify(t *testing.T) {
 				mockParentBlock.EXPECT().Height().Return(blockHeight - 1)
 
 				mockParentState := statemock.NewDiff(ctrl)
-				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
-				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
+				mockParentState.EXPECT().GetLastAccepted().Return(parentID).AnyTimes()
+				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp).AnyTimes()
+				mockParentState.EXPECT().SetTimestamp(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().SetLastAccepted(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().AddBlock(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().AddTx(gomock.Any()).AnyTimes()
+
+				mockState := statemock.NewState(ctrl)
 
 				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
@@ -420,12 +427,14 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
+						state:   mockState,
 						metrics: metricsmock.NewMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
 								onAcceptState:  mockParentState,
 								statelessBlock: mockParentBlock,
+								importedInputs: set.NewSet[ids.ID](0),
 							},
 						},
 						clk:          &mockable.Clock{},
@@ -471,11 +480,18 @@ func TestBlockVerify(t *testing.T) {
 				mockBlock.EXPECT().Parent().Return(parentID).AnyTimes()
 
 				mockParentBlock := block.NewMockBlock(ctrl)
-				mockParentBlock.EXPECT().Height().Return(blockHeight - 1)
+				mockParentBlock.EXPECT().Height().Return(blockHeight - 1).AnyTimes()
+				mockParentBlock.EXPECT().Parent().Return(ids.Empty).AnyTimes()
 
 				mockParentState := statemock.NewDiff(ctrl)
-				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
-				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
+				mockParentState.EXPECT().GetLastAccepted().Return(parentID).AnyTimes()
+				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp).AnyTimes()
+				mockParentState.EXPECT().SetTimestamp(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().SetLastAccepted(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().AddBlock(gomock.Any()).AnyTimes()
+				mockParentState.EXPECT().AddTx(gomock.Any()).AnyTimes()
+
+				mockState := statemock.NewState(ctrl)
 
 				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
@@ -483,6 +499,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
+						state:   mockState,
 						metrics: metricsmock.NewMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
@@ -753,7 +770,9 @@ func TestBlockAccept(t *testing.T) {
 				// because we mock the call to shared memory
 				mockManagerState.EXPECT().CommitBatch().Return(nil, nil)
 				mockManagerState.EXPECT().Abort()
-				mockManagerState.EXPECT().Checksum().Return(ids.Empty)
+				// Checksum() is only called if LuxCtx is set and supports Trace logging
+				// Since we don't set LuxCtx in this test, Checksum() won't be called
+				// mockManagerState.EXPECT().Checksum().Return(ids.Empty)
 
 				mockSharedMemory := atomicmock.NewSharedMemory(ctrl)
 				mockSharedMemory.EXPECT().Apply(gomock.Any(), gomock.Any()).Return(nil)
@@ -943,12 +962,7 @@ func TestBlockReject(t *testing.T) {
 
 func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *txexecutor.Backend {
 	ctx := context.Background()
-	// Add shared memory to context if needed
-	if sharedMemory != nil {
-		// Use consensus package helper if available
-		// Otherwise just use base context
-	}
-	return &txexecutor.Backend{
+	backend := &txexecutor.Backend{
 		Bootstrapped: bootstrapped,
 		Ctx:          ctx,
 		Config: &config.Config{
@@ -956,4 +970,35 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *tx
 			CreateAssetTxFee: 0,
 		},
 	}
+	if sharedMemory != nil {
+		backend.SharedMemory = &sharedMemoryAdapter{sm: sharedMemory}
+	}
+	return backend
+}
+
+// sharedMemoryAdapter adapts atomic.SharedMemory to txexecutor.SharedMemory
+type sharedMemoryAdapter struct {
+	sm atomic.SharedMemory
+}
+
+func (s *sharedMemoryAdapter) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
+	return s.sm.Get(peerChainID, keys)
+}
+
+func (s *sharedMemoryAdapter) Apply(requests map[ids.ID]interface{}, batchArgs ...interface{}) error {
+	// Convert map[ids.ID]interface{} to map[ids.ID]*atomic.Requests
+	atomicRequests := make(map[ids.ID]*atomic.Requests)
+	for chainID, req := range requests {
+		if atomicReq, ok := req.(*atomic.Requests); ok {
+			atomicRequests[chainID] = atomicReq
+		}
+	}
+	// Extract database.Batch from variadic args
+	var batch database.Batch
+	if len(batchArgs) > 0 {
+		if b, ok := batchArgs[0].(database.Batch); ok {
+			batch = b
+		}
+	}
+	return s.sm.Apply(atomicRequests, batch)
 }

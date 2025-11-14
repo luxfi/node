@@ -176,8 +176,10 @@ func TestNetIDCacheSize(t *testing.T) {
 	require.NoError(err)
 	require.Equal(4, mock.getNetIDCallCount, "First entry should have been evicted")
 
-	// Access second entry - should be cache hit
+	// Access second entry - should also be cache miss (was evicted when we added chainIDs[0])
+	// Cache state after adding third: [1, 2]
+	// Cache state after re-adding first: [2, 0] (1 was evicted as oldest)
 	_, err = wrapper.GetNetID(ctx, chainIDs[1])
 	require.NoError(err)
-	require.Equal(4, mock.getNetIDCallCount, "Second entry should still be cached")
+	require.Equal(5, mock.getNetIDCallCount, "Second entry should have been evicted when first was re-added")
 }

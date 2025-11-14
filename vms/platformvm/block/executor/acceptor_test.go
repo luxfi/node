@@ -81,23 +81,25 @@ type sharedMemoryAdapter struct {
 	*atomic.MockSharedMemory
 }
 
-func (s *sharedMemoryAdapter) Apply(requests map[ids.ID]interface{}, batch ...interface{}) error {
-	// Convert interface{} to the expected types
-	atomicRequests := make(map[ids.ID]*atomic.Requests)
-	for id, req := range requests {
-		if atomicReq, ok := req.(*atomic.Requests); ok {
-			atomicRequests[id] = atomicReq
-		}
-	}
-	
-	var dbBatches []database.Batch
-	for _, b := range batch {
-		if dbBatch, ok := b.(database.Batch); ok {
-			dbBatches = append(dbBatches, dbBatch)
-		}
-	}
-	
-	return s.MockSharedMemory.Apply(atomicRequests, dbBatches...)
+// Get implements atomic.SharedMemory
+func (s *sharedMemoryAdapter) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
+	return s.MockSharedMemory.Get(peerChainID, keys)
+}
+
+// Indexed implements atomic.SharedMemory
+func (s *sharedMemoryAdapter) Indexed(
+	peerChainID ids.ID,
+	traits [][]byte,
+	startTrait,
+	startKey []byte,
+	limit int,
+) (values [][]byte, lastTrait, lastKey []byte, err error) {
+	return s.MockSharedMemory.Indexed(peerChainID, traits, startTrait, startKey, limit)
+}
+
+// Apply implements atomic.SharedMemory
+func (s *sharedMemoryAdapter) Apply(requests map[ids.ID]*atomic.Requests, batches ...database.Batch) error {
+	return s.MockSharedMemory.Apply(requests, batches...)
 }
 
 func TestAcceptorVisitAtomicBlock(t *testing.T) {
@@ -136,12 +138,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Set expected calls on the state.
-	// We should error after [commonAccept] is called.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-
+	// First call should error immediately because blkIDToState is missing.
+	// No mock expectations needed for the first call.
 	err = acceptor.ApricotAtomicBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
 
@@ -149,6 +147,21 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	onAcceptState := state.NewMockDiff(ctrl)
 	childID := ids.GenerateTestID()
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
+	batch := databasemock.NewBatch(ctrl)
+	
+	// Set expected calls on the state for the second call.
+	// These must be in the exact order they are called by the acceptor
+	gomock.InOrder(
+		s.EXPECT().SetLastAccepted(blk.ID()).Times(1),
+		s.EXPECT().SetHeight(blk.Height()).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
+		onAcceptState.EXPECT().Apply(s).Times(1),
+		s.EXPECT().CommitBatch().Return(batch, nil).Times(1),
+		mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
+		s.EXPECT().Checksum().Return(ids.Empty).Times(1),
+		s.EXPECT().Abort().Times(1),
+	)
+
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
 		statelessBlock: blk,
 		onAcceptState:  onAcceptState,
@@ -166,17 +179,6 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 		},
 	}
 	acceptor.backend.blkIDToState[childID] = childState
-
-	// Set expected calls on dependencies.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := databasemock.NewBatch(ctrl)
-	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
-	s.EXPECT().Abort().Times(1)
-	onAcceptState.EXPECT().Apply(s).Times(1)
-	mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
-	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	require.NoError(acceptor.ApricotAtomicBlock(blk))
 }
@@ -221,12 +223,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Set expected calls on the state.
-	// We should error after [commonAccept] is called.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-
+	// First call should error immediately because blkIDToState is missing.
+	// No mock expectations needed for the first call.
 	err = acceptor.BanffStandardBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
 
@@ -235,6 +233,21 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	childID := ids.GenerateTestID()
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	calledOnAcceptFunc := false
+	batch := databasemock.NewBatch(ctrl)
+	
+	// Set expected calls on the state for the second call.
+	// These must be in the exact order they are called by the acceptor
+	gomock.InOrder(
+		s.EXPECT().SetLastAccepted(blk.ID()).Times(1),
+		s.EXPECT().SetHeight(blk.Height()).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
+		onAcceptState.EXPECT().Apply(s).Times(1),
+		s.EXPECT().CommitBatch().Return(batch, nil).Times(1),
+		mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
+		s.EXPECT().Checksum().Return(ids.Empty).Times(1),
+		s.EXPECT().Abort().Times(1),
+	)
+
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
 		statelessBlock: blk,
 		onAcceptState: onAcceptState,
@@ -256,17 +269,6 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 		},
 	}
 	acceptor.backend.blkIDToState[childID] = childState
-
-	// Set expected calls on dependencies.
-	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
-	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := databasemock.NewBatch(ctrl)
-	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
-	s.EXPECT().Abort().Times(1)
-	onAcceptState.EXPECT().Apply(s).Times(1)
-	mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
-	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	require.NoError(acceptor.BanffStandardBlock(blk))
 	require.True(calledOnAcceptFunc)

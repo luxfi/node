@@ -212,7 +212,10 @@ func (b *Block) Verify(ctx context.Context) error {
 			b.manager.mempool.MarkDropped(txID, ErrConflictingBlockTxs)
 			return ErrConflictingBlockTxs
 		}
-		blockState.importedInputs.Union(executor.Inputs)
+		// Add the imported inputs from this transaction to the block's imported inputs
+		for inputID := range executor.Inputs {
+			blockState.importedInputs.Add(inputID)
+		}
 
 		// Now that the tx would be marked as accepted, we should add it to the
 		// state for the next transaction in the block.
@@ -298,16 +301,18 @@ func (b *Block) Accept(ctx context.Context) error {
 		return err
 	}
 
-	if logger, ok := b.manager.backend.LuxCtx.Log.(interface {
-		Trace(string, ...log.Field)
-	}); ok {
-		logger.Trace(
-			"accepted block",
-			log.Stringer("blkID", blkID),
-			log.Uint64("height", b.Height()),
-			log.Stringer("parentID", b.Parent()),
-			log.Stringer("checksum", b.manager.state.Checksum()),
-		)
+	if b.manager.backend.LuxCtx != nil {
+		if logger, ok := b.manager.backend.LuxCtx.Log.(interface {
+			Trace(string, ...log.Field)
+		}); ok {
+			logger.Trace(
+				"accepted block",
+				log.Stringer("blkID", blkID),
+				log.Uint64("height", b.Height()),
+				log.Stringer("parentID", b.Parent()),
+				log.Stringer("checksum", b.manager.state.Checksum()),
+			)
+		}
 	}
 	return nil
 }
@@ -316,28 +321,34 @@ func (b *Block) Reject(ctx context.Context) error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
-	b.manager.backend.Log.Debug(
-		"rejecting block",
-		"blkID", blkID.String(),
-		"height", b.Height(),
-		"parentID", b.Parent().String(),
-	)
+	if b.manager.backend.Log != nil {
+		b.manager.backend.Log.Debug(
+			"rejecting block",
+			"blkID", blkID.String(),
+			"height", b.Height(),
+			"parentID", b.Parent().String(),
+		)
+	}
 
 	for _, tx := range b.Txs() {
 		if err := b.manager.VerifyTx(tx); err != nil {
-			b.manager.backend.Log.Debug("dropping invalidated tx",
-				"txID", tx.ID().String(),
-				"blkID", blkID.String(),
-				"error", err,
-			)
+			if b.manager.backend.Log != nil {
+				b.manager.backend.Log.Debug("dropping invalidated tx",
+					"txID", tx.ID().String(),
+					"blkID", blkID.String(),
+					"error", err,
+				)
+			}
 			continue
 		}
 		if err := b.manager.mempool.Add(tx); err != nil {
-			b.manager.backend.Log.Debug("dropping valid tx",
-				"txID", tx.ID().String(),
-				"blkID", blkID.String(),
-				"error", err,
-			)
+			if b.manager.backend.Log != nil {
+				b.manager.backend.Log.Debug("dropping valid tx",
+					"txID", tx.ID().String(),
+					"blkID", blkID.String(),
+					"error", err,
+				)
+			}
 		}
 	}
 	return nil

@@ -5,12 +5,15 @@ package load
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/luxfi/ids"
 )
+
+var ErrFailedToIssueTx = errors.New("failed to issue transaction")
 
 // improvedMockIssuer with better failure simulation
 type improvedMockIssuer struct {

@@ -646,13 +646,27 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	pChainHeight := uint64(2)
 	chainID := ids.GenerateTestID()
 
-	vm := VM{
-		ctx: &consensus.Context{ChainID: chainID},
-		ChainVM: &blocktest.VM{
+	testVM := &TestRemoteProposerVM{
+		VM: &blocktest.VM{
 			ParseBlockF: func(_ context.Context, rawBlock []byte) (block.Block, error) {
 				return &chaintest.TestBlock{BytesV: rawBlock}, nil
 			},
 		},
+		BatchedVM: &blocktest.BatchedVM{
+			BatchedParseBlockF: func(_ context.Context, rawBlocks [][]byte) ([]block.Block, error) {
+				blocks := make([]block.Block, len(rawBlocks))
+				for i, rawBlock := range rawBlocks {
+					blocks[i] = &chaintest.TestBlock{BytesV: rawBlock}
+				}
+				return blocks, nil
+			},
+		},
+	}
+	
+	vm := VM{
+		ctx:       &consensus.Context{ChainID: chainID},
+		ChainVM:   testVM,
+		batchedVM: testVM,
 	}
 
 	tlsCert, err := staking.NewTLSCert()
@@ -701,10 +715,15 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 			require.Equal(testCase.rawBlocks, returnedBlockBytes)
 
 			for i, block := range blocks {
-				if i < testCase.preForkIndex {
-					require.IsType(&postForkBlock{}, block)
+				// BatchedParseBlock returns blockAdapter wrapping the actual blocks
+				adapter, ok := block.(*blockAdapter)
+				require.True(ok, "block should be wrapped in blockAdapter")
+				// When statelessblock parsing fails at index preForkIndex,
+				// all blocks from that index onwards are treated as pre-fork
+				if i >= testCase.preForkIndex {
+					require.IsType(&preForkBlock{}, adapter.Block)
 				} else {
-					require.IsType(&preForkBlock{}, block)
+					require.IsType(&postForkBlock{}, adapter.Block)
 				}
 			}
 		})
@@ -967,6 +986,42 @@ func (vm *TestRemoteProposerVM) GetBlockIDAtHeight(ctx context.Context, height u
 	return vm.VM.GetBlockIDAtHeight(ctx, height)
 }
 
+// testWindower is a test implementation of the Windower interface that always
+// allows the configured nodeID to propose immediately
+type testWindower struct {
+	nodeID ids.NodeID
+}
+
+func (w *testWindower) Proposers(ctx context.Context, blockHeight, pChainHeight uint64, maxWindows int) ([]ids.NodeID, error) {
+	// Return the nodeID as the first proposer
+	proposers := make([]ids.NodeID, 1, maxWindows)
+	proposers[0] = w.nodeID
+	return proposers, nil
+}
+
+func (w *testWindower) Delay(ctx context.Context, blockHeight, pChainHeight uint64, validatorID ids.NodeID, maxWindows int) (time.Duration, error) {
+	// If it's our nodeID, no delay needed
+	if validatorID == w.nodeID {
+		return 0, nil
+	}
+	// Otherwise, return a small delay
+	return 5 * time.Second, nil
+}
+
+func (w *testWindower) ExpectedProposer(ctx context.Context, blockHeight, pChainHeight, slot uint64) (ids.NodeID, error) {
+	// Always return our nodeID as the expected proposer
+	return w.nodeID, nil
+}
+
+func (w *testWindower) MinDelayForProposer(ctx context.Context, blockHeight, pChainHeight uint64, nodeID ids.NodeID, startSlot uint64) (time.Duration, error) {
+	// If it's our nodeID, no delay needed
+	if nodeID == w.nodeID {
+		return 0, nil
+	}
+	// Otherwise, return a small delay
+	return 5 * time.Second, nil
+}
+
 // GetAncestors delegates to BatchedVM
 func (vm *TestRemoteProposerVM) GetAncestors(ctx context.Context, blkID ids.ID, maxBlocksNum int, maxBlocksSize int, maxBlocksRetrievalTime time.Duration) ([][]byte, error) {
 	return vm.BatchedVM.GetAncestors(ctx, blkID, maxBlocksNum, maxBlocksSize, maxBlocksRetrievalTime)
@@ -1107,6 +1162,14 @@ func initTestRemoteProposerVM(
 
 	// Initialize shouldn't be called again
 	coreVM.VM.InitializeF = nil
+
+	// Replace the windower with a test windower that allows immediate block building
+	proVM.Windower = &testWindower{
+		nodeID: thisNodeID,
+	}
+
+	// Set the clock to activation time to avoid "time too far advanced" errors
+	proVM.Clock.Set(activationTime)
 
 	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))

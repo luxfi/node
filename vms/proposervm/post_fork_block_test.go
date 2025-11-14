@@ -45,7 +45,7 @@ func TestOracle_PostForkBlock_ImplementsInterface(t *testing.T) {
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(ErrNotOracle, err)
+	require.Equal(errNotOracle, err)
 
 	// setup
 	var (

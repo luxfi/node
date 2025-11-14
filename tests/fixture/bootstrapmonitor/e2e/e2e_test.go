@@ -36,6 +36,10 @@ import (
 )
 
 func TestE2E(t *testing.T) {
+	// Skip by default - requires Kubernetes cluster
+	if os.Getenv("RUN_E2E_TESTS") != "true" {
+		t.Skip("Skipping e2e test - requires Kubernetes cluster (set RUN_E2E_TESTS=true)")
+	}
 	ginkgo.RunSpecs(t, "bootstrap test suite")
 }
 
