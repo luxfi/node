@@ -38,7 +38,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	key := keys[0]
 	addr := key.PublicKey().Address()
@@ -57,11 +57,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-		env.vm.Lock.Unlock()
-
 		issueAndAccept(require, env.vm, tx)
-
-		env.vm.Lock.Lock()
 
 		txs = append(txs, tx)
 	}

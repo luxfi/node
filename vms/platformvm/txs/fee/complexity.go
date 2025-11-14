@@ -842,18 +842,51 @@ func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 }
 
 func (c *complexityVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-	c.output = IntrinsicAddNetValidatorTxComplexities
-	return nil
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	authComplexity, err := AuthComplexity(tx.NetAuth)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicAddNetValidatorTxComplexities.Add(
+		&baseTxComplexity,
+		&authComplexity,
+	)
+	return err
 }
 
 func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
-	c.output = IntrinsicCreateNetTxComplexities
-	return nil
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	ownerComplexity, err := OwnerComplexity(tx.Owner)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicCreateNetTxComplexities.Add(
+		&baseTxComplexity,
+		&ownerComplexity,
+	)
+	return err
 }
 
 func (c *complexityVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
-	c.output = IntrinsicRemoveNetValidatorTxComplexities
-	return nil
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	authComplexity, err := AuthComplexity(tx.NetAuth)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicRemoveNetValidatorTxComplexities.Add(
+		&baseTxComplexity,
+		&authComplexity,
+	)
+	return err
 }
 
 func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
@@ -861,6 +894,22 @@ func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
 }
 
 func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
-	c.output = IntrinsicTransferNetOwnershipTxComplexities
-	return nil
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	authComplexity, err := AuthComplexity(tx.NetAuth)
+	if err != nil {
+		return err
+	}
+	ownerComplexity, err := OwnerComplexity(tx.Owner)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicTransferNetOwnershipTxComplexities.Add(
+		&baseTxComplexity,
+		&authComplexity,
+		&ownerComplexity,
+	)
+	return err
 }
