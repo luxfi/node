@@ -171,7 +171,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	// ...Call GetAncestors on them ...
 	// Note: we assumed that if blkID is not known, that's NOT an error.
 	// Simply return an empty result
-	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, _ int, _ time.Duration) ([][]byte, error) {
+	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, _ int, _ int, _ time.Duration) ([][]byte, error) {
 		res := make([][]byte, 0, 3)
 		switch blkID {
 		case coreBlk3.ID():
@@ -285,7 +285,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// ...Call GetAncestors on them ...
 	// Note: we assumed that if blkID is not known, that's NOT an error.
 	// Simply return an empty result
-	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, _ int, _ time.Duration) ([][]byte, error) {
+	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, _ int, _ int, _ time.Duration) ([][]byte, error) {
 		res := make([][]byte, 0, 3)
 		switch blkID {
 		case coreBlk3.ID():
@@ -452,7 +452,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// ...Call GetAncestors on them ...
 	// Note: we assumed that if blkID is not known, that's NOT an error.
 	// Simply return an empty result
-	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, maxBlocksNum int, _ time.Duration) ([][]byte, error) {
+	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, maxBlocksNum int, _ int, _ time.Duration) ([][]byte, error) {
 		sortedBlocks := [][]byte{
 			coreBlk4.Bytes(),
 			coreBlk3.Bytes(),
@@ -1072,18 +1072,22 @@ func initTestRemoteProposerVM(
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			thisNodeID: {
 				NodeID: thisNodeID,
+				Light:  10,
 				Weight: 10,
 			},
 			nodeID1: {
 				NodeID: nodeID1,
+				Light:  5,
 				Weight: 5,
 			},
 			nodeID2: {
 				NodeID: nodeID2,
+				Light:  6,
 				Weight: 6,
 			},
 			nodeID3: {
 				NodeID: nodeID3,
+				Light:  7,
 				Weight: 7,
 			},
 		}, nil

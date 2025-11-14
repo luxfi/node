@@ -100,6 +100,9 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	}
 
 	codec := parser.Codec()
+	// Override LuxCtx to match baseTx's NetworkID and BlockchainID
+	luxCtx.NetworkID = constants.UnitTestID
+	luxCtx.ChainID = chainID
 	backend := &Backend{
 		Ctx:        ctx,
 		LuxCtx:     luxCtx,
@@ -415,7 +418,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, chainID)
+	luxCtx := consensustest.Context(t, chainID)
 	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
@@ -492,10 +495,14 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	}
 
 	codec := parser.Codec()
+	// Override LuxCtx to match baseTx's NetworkID and BlockchainID
+	luxCtx.NetworkID = constants.UnitTestID
+	luxCtx.ChainID = chainID
 	backend := &Backend{
-		Ctx:      ctx,
-		CChainID: cChainID,
-		Config:   &feeConfig,
+		Ctx:        ctx,
+		LuxCtx:     luxCtx,
+		CChainID:   cChainID,
+		Config:     &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

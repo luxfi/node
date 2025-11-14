@@ -30,6 +30,20 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 )
 
+// testSharedMemory adapts atomic.SharedMemory to executor.SharedMemory
+type testSharedMemory struct {
+	sm atomic.SharedMemory
+}
+
+func (t *testSharedMemory) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
+	return t.sm.Get(peerChainID, keys)
+}
+
+func (t *testSharedMemory) Apply(requests map[ids.ID]interface{}, batch ...interface{}) error {
+	// We don't use Apply in these tests, just Get
+	return nil
+}
+
 func TestSemanticVerifierBaseTx(t *testing.T) {
 	ctx := context.Background()
 	cChainID := ids.GenerateTestID()

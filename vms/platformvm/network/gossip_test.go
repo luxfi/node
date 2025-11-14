@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +37,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		metric.NewRegistry(),
-		nil,
+		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -97,7 +98,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		metric.NewRegistry(),
-		nil,
+		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
