@@ -37,7 +37,7 @@ type ChainVM = VM
 type BatchedVM struct {
 	T *testing.T
 
-	GetAncestorsF       func(context.Context, ids.ID, int, time.Duration) ([][]byte, error)
+	GetAncestorsF       func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
 	BatchedParseBlockF  func(context.Context, [][]byte) ([]block.Block, error)
 	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
 }
@@ -169,9 +169,9 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 
 // BatchedVM methods
 
-func (vm *BatchedVM) GetAncestors(ctx context.Context, blkID ids.ID, maxBlocksNum int, timeout time.Duration) ([][]byte, error) {
+func (vm *BatchedVM) GetAncestors(ctx context.Context, blkID ids.ID, maxBlocksNum int, maxBlocksSize int, maxBlocksRetrievalTime time.Duration) ([][]byte, error) {
 	if vm.GetAncestorsF != nil {
-		return vm.GetAncestorsF(ctx, blkID, maxBlocksNum, timeout)
+		return vm.GetAncestorsF(ctx, blkID, maxBlocksNum, maxBlocksSize, maxBlocksRetrievalTime)
 	}
 	return nil, errors.New("not implemented")
 }

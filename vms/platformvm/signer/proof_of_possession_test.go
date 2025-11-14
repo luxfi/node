@@ -24,7 +24,8 @@ func TestProofOfPossession(t *testing.T) {
 	require.NoError(err)
 	blsPOP.ProofOfPossession = [bls.SignatureLen]byte{}
 	err = blsPOP.Verify()
-	require.ErrorIs(err, bls.ErrInvalidSignature)
+	// All zeros signature will fail to decompress before signature validation
+	require.Error(err)
 
 	blsPOP, err = newProofOfPossession()
 	require.NoError(err)

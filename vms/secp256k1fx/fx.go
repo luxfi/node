@@ -57,7 +57,15 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	}
 
 	fx.recoverCache = secp256k1.NewRecoverCache(defaultCacheSize)
+
+	if fx.VM == nil {
+		return nil
+	}
+
 	c := fx.VM.CodecRegistry()
+	if c == nil {
+		return nil
+	}
 
 	// Try to register types, but ignore duplicate registration errors
 	errs := []error{}

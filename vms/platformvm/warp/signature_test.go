@@ -4,7 +4,6 @@
 package warp
 
 import (
-	"bytes"
 	"context"
 	"math"
 	"testing"
@@ -15,7 +14,6 @@ import (
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validator/validatorsmock"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
@@ -112,15 +110,6 @@ func TestNumSigners(t *testing.T) {
 func TestSignatureVerification(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	sk0, err := bls.NewSecretKey()
-	require.NoError(t, err)
-
-	sk1, err := bls.NewSecretKey()
-	require.NoError(t, err)
-
-	sk2, err := bls.NewSecretKey()
-	require.NoError(t, err)
 
 	tests := []struct {
 		name         string
@@ -219,7 +208,7 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 
 				signers := set.NewBits()
-				signers.Add(1) // This validator doesn't exist
+				signers.Add(5) // Index 5 doesn't exist (only 0,1,2)
 
 				msg, err := NewMessage(
 					unsignedMsg,
@@ -497,54 +486,30 @@ func TestSignatureVerification(t *testing.T) {
 				unsignedMsg, err := NewUnsignedMessage(
 					constants.UnitTestID,
 					sourceChainID,
-					[]byte("payload"),
+					[]byte{1, 2, 3},
 				)
 				require.NoError(err)
 
-				// Create the sorted validator list to determine indices
-				pk0 := bls.PublicFromSecretKey(sk0)
-				pk1 := bls.PublicFromSecretKey(sk1)
-				pk2 := bls.PublicFromSecretKey(sk2)
-				
-				// Create validators in the same way FlattenValidatorSet does
-				vdrs := []*Validator{
-					{PublicKey: pk0, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk0)},
-					{PublicKey: pk1, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk1)},
-					{PublicKey: pk2, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk2)},
-				}
-				// Sort to get canonical order
-				utils.Sort(vdrs)
-				
-				// Find which indices correspond to pk0 and pk2
-				var idx0, idx2 int
-				pk0Bytes := bls.PublicKeyToUncompressedBytes(pk0)
-				pk2Bytes := bls.PublicKeyToUncompressedBytes(pk2)
-				for i, v := range vdrs {
-					if bytes.Equal(v.PublicKeyBytes, pk0Bytes) {
-						idx0 = i
-					}
-					if bytes.Equal(v.PublicKeyBytes, pk2Bytes) {
-						idx2 = i
-					}
-				}
-
+				// Sign with testVdrs[0] and testVdrs[2] which have weight 3+3=6 >= 9*1/2
 				signers := set.NewBits()
-				signers.Add(idx0)
-				signers.Add(idx2)
+				signers.Add(0)
+				signers.Add(2)
 
 				unsignedBytes := unsignedMsg.Bytes()
-				vdr1Sig, err := testVdrs[1].sk.Sign(unsignedBytes)
+				vdr0Sig, err := testVdrs[0].sk.Sign(unsignedBytes)
 				require.NoError(err)
 				vdr2Sig, err := testVdrs[2].sk.Sign(unsignedBytes)
 				require.NoError(err)
-				aggSig, err := bls.AggregateSignatures([]*bls.Signature{vdr1Sig, vdr2Sig})
+				aggSig, err := bls.AggregateSignatures([]*bls.Signature{vdr0Sig, vdr2Sig})
 				require.NoError(err)
+				aggSigBytes := [bls.SignatureLen]byte{}
+				copy(aggSigBytes[:], bls.SignatureToBytes(aggSig))
 
 				msg, err := NewMessage(
 					unsignedMsg,
 					&BitSetSignature{
 						Signers:   signers.Bytes(),
-						Signature: [bls.SignatureLen]byte(bls.SignatureToBytes(aggSig)),
+						Signature: aggSigBytes,
 					},
 				)
 				require.NoError(err)

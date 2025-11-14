@@ -397,6 +397,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 func TestSemanticVerifierExportTx(t *testing.T) {
 	ctx := context.Background()
 	cChainID := ids.GenerateTestID()
+	chainID := ids.GenerateTestID()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -435,6 +436,8 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 	baseTx := txs.BaseTx{
 		BaseTx: lux.BaseTx{
+			NetworkID:    constants.UnitTestID,
+			BlockchainID: chainID,
 			Ins: []*lux.TransferableInput{
 				&input,
 			},
@@ -448,8 +451,8 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	backendObj := &Backend{
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
-			ChainID:        ids.GenerateTestID(),
-			NetID:          ids.GenerateTestID(),
+			ChainID:        chainID, // Use same chainID as baseTx
+			NetID:          constants.PrimaryNetworkID,
 			ValidatorState: &testValidatorState{},
 		},
 		CChainID: cChainID,
@@ -767,8 +770,28 @@ type testValidatorState struct {
 	netID ids.ID
 }
 
+func (t *testValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
+	return chainID, nil
+}
+
 func (t *testValidatorState) GetNetID(_ ids.ID) (ids.ID, error) {
 	return t.netID, nil
+}
+
+func (t *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	return make(map[ids.NodeID]uint64), nil
+}
+
+func (t *testValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (t *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
 }
 
 func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
@@ -972,8 +995,8 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	backendObj := &Backend{
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
-			ChainID:        ids.GenerateTestID(),
-			NetID:          ids.GenerateTestID(),
+			ChainID:        chainID, // Use same chainID as baseTx
+			NetID:          constants.PrimaryNetworkID,
 			ValidatorState: &testValidatorState{},
 		},
 		CChainID: cChainID,
@@ -988,6 +1011,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		Codec:         codec,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
+		SharedMemory:  &testSharedMemory{sm: m.NewSharedMemory(chainID)},
 	}
 	require.NoError(t, fx.Bootstrapped())
 

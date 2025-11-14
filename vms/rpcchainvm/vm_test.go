@@ -35,6 +35,7 @@ var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	acceptStateSummaryTestKey:                      acceptStateSummaryTestPlugin,
 	lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
 	contextTestKey:                                 contextEnabledTestPlugin,
+	batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 }
 
 // helperProcess helps with creating the net binary for testing.

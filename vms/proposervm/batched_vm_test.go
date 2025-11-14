@@ -958,13 +958,23 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 }
 
 type TestRemoteProposerVM struct {
-	*blocktest.BatchedVM
 	*blocktest.VM
+	*blocktest.BatchedVM
 }
 
 // GetBlockIDAtHeight resolves ambiguous selector by delegating to VM
-func (vm TestRemoteProposerVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+func (vm *TestRemoteProposerVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	return vm.VM.GetBlockIDAtHeight(ctx, height)
+}
+
+// GetAncestors delegates to BatchedVM
+func (vm *TestRemoteProposerVM) GetAncestors(ctx context.Context, blkID ids.ID, maxBlocksNum int, maxBlocksSize int, maxBlocksRetrievalTime time.Duration) ([][]byte, error) {
+	return vm.BatchedVM.GetAncestors(ctx, blkID, maxBlocksNum, maxBlocksSize, maxBlocksRetrievalTime)
+}
+
+// BatchedParseBlock delegates to BatchedVM
+func (vm *TestRemoteProposerVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
+	return vm.BatchedVM.BatchedParseBlock(ctx, blks)
 }
 
 func initTestRemoteProposerVM(
@@ -972,7 +982,7 @@ func initTestRemoteProposerVM(
 	activationTime,
 	durangoTime time.Time,
 ) (
-	TestRemoteProposerVM,
+	*TestRemoteProposerVM,
 	*VM,
 ) {
 	require := require.New(t)
@@ -1019,7 +1029,7 @@ func initTestRemoteProposerVM(
 	}
 
 	proVM := New(
-		coreVM,
+		&coreVM,
 		Config{
 			Upgrades: upgrade.Config{
 				ApricotPhase4Time:            activationTime,
@@ -1096,5 +1106,5 @@ func initTestRemoteProposerVM(
 
 	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
-	return coreVM, proVM
+	return &coreVM, proVM
 }

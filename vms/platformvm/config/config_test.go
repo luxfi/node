@@ -92,6 +92,7 @@ func TestConfigUnmarshal(t *testing.T) {
 			L1InactiveValidatorsCacheSize: 12,
 			L1NetIDNodeIDCacheSize:     13,
 			ChecksumsEnabled:              true,
+			SybilProtectionEnabled:        true,
 			MempoolPruneFrequency:         time.Minute,
 		}
 		verifyInitializedStruct(t, *expected)

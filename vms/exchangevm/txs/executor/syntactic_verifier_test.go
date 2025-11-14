@@ -38,7 +38,7 @@ var (
 func TestSyntacticVerifierBaseTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, chainID)
+	luxCtx := consensustest.Context(t, chainID)
 	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
@@ -101,9 +101,10 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
-		CChainID: cChainID,
-		Config:   &feeConfig,
+		Ctx:        ctx,
+		LuxCtx:     luxCtx,
+		CChainID:   cChainID,
+		Config:     &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

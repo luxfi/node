@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/log"
-	"github.com/luxfi/metric"
-	"github.com/luxfi/consensus/ids"
-	"github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/version"
+	"github.com/luxfi/node/utils/log"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/validators"
 	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/metric"
 )
 
 func TestSimpleConnection(t *testing.T) {
@@ -24,8 +24,8 @@ func TestSimpleConnection(t *testing.T) {
 
 	// Set up first network
 	config1 := configs[0]
-	config1.Beacons = validator.NewManager()
-	config1.Validators = validator.NewManager()
+	config1.Beacons = validators.NewManager()
+	config1.Validators = validators.NewManager()
 	config1.TrackedNets = set.Set[ids.ID]{}
 	config1.UptimeCalculator = &uptime.NoOpCalculator{}
 
@@ -55,8 +55,8 @@ func TestSimpleConnection(t *testing.T) {
 
 	// Set up second network
 	config2 := configs[1]
-	config2.Beacons = validator.NewManager()
-	config2.Validators = validator.NewManager()
+	config2.Beacons = validators.NewManager()
+	config2.Validators = validators.NewManager()
 	config2.TrackedNets = set.Set[ids.ID]{}
 	config2.UptimeCalculator = &uptime.NoOpCalculator{}
 

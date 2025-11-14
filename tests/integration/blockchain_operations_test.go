@@ -106,6 +106,7 @@ func TestCChainOperations(t *testing.T) {
 
 // TestXChainOperations tests X-Chain (DAG) operations
 func TestXChainOperations(t *testing.T) {
+	t.Skip("Skipping integration test - requires full network setup with validators")
 	require := require.New(t)
 
 	// Get node binary path
@@ -161,6 +162,7 @@ func TestXChainOperations(t *testing.T) {
 
 // TestPChainOperations tests P-Chain (Platform) operations
 func TestPChainOperations(t *testing.T) {
+	t.Skip("Skipping integration test - requires full network setup with validators")
 	require := require.New(t)
 
 	// Get node binary path
@@ -221,6 +223,7 @@ func TestPChainOperations(t *testing.T) {
 
 // TestBlockProduction tests that blocks are being produced
 func TestBlockProduction(t *testing.T) {
+	t.Skip("Skipping integration test - requires full network setup with validators")
 	require := require.New(t)
 
 	// Get node binary path
