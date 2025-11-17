@@ -323,12 +323,17 @@ func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 	}
 
 	// Type assert ValidatorState to get GetMinimumHeight method
-	validatorState := b.txExecutorBackend.Ctx.ValidatorState.(interface {
-		GetMinimumHeight(context.Context) (uint64, error)
-	})
-	recommendedPChainHeight, err := validatorState.GetMinimumHeight(context.TODO())
-	if err != nil {
-		return nil, err
+	// ValidatorState may be nil during initialization, use 0 as default
+	var recommendedPChainHeight uint64
+	if b.txExecutorBackend.Ctx.ValidatorState != nil {
+		validatorState := b.txExecutorBackend.Ctx.ValidatorState.(interface {
+			GetMinimumHeight(context.Context) (uint64, error)
+		})
+		var err error
+		recommendedPChainHeight, err = validatorState.GetMinimumHeight(context.TODO())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !b.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
