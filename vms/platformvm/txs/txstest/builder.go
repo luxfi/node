@@ -101,7 +101,7 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		luxAssetID = w.ctx.LUXAssetID
 	)
 
-	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
+	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, nil, w.state.GetTimestamp())
 	kcAdapter := &keychainAdapter{kc: kc}
 
 	return builder.New(addrSet, context, backend), signer.New(kcAdapter, backend)

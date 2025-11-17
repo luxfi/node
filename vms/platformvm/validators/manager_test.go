@@ -113,6 +113,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
 				PublicKey: bls.PublicKeyToUncompressedBytes(pk),
+				Light:     subnetStaker.Weight, // Light is kept in sync with Weight
 				Weight:    subnetStaker.Weight,
 			},
 		}, // Net staker was added at height 1

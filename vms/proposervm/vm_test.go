@@ -80,6 +80,21 @@ func initTestProposerVM(
 	*VM,
 	database.Database,
 ) {
+	return initTestProposerVMWithGranite(t, proBlkStartTime, durangoTime, upgrade.UnscheduledActivationTime, minPChainHeight)
+}
+
+func initTestProposerVMWithGranite(
+	t *testing.T,
+	proBlkStartTime time.Time,
+	durangoTime time.Time,
+	graniteTime time.Time,
+	minPChainHeight uint64,
+) (
+	*fullVM,
+	*validatorstest.State,
+	*VM,
+	database.Database,
+) {
 	require := require.New(t)
 
 	initialState := []byte("genesis state")
@@ -121,6 +136,7 @@ func initTestProposerVM(
 				ApricotPhase4Time:            proBlkStartTime,
 				ApricotPhase4MinPChainHeight: minPChainHeight,
 				DurangoTime:                  durangoTime,
+				GraniteTime:                  graniteTime,
 			},
 			MinBlkDelay:         DefaultMinBlockDelay,
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,

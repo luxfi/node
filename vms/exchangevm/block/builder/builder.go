@@ -69,7 +69,9 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 
 // BuildBlock builds a block to be added to consensus.
 func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
-	b.backend.Log.Debug("starting to attempt to build a block")
+	if b.backend.Log != nil {
+		b.backend.Log.Debug("starting to attempt to build a block")
+	}
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.manager.Preferred()

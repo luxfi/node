@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
@@ -432,17 +433,30 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 	var (
 		activationTime = time.Unix(0, 0)
 		durangoTime    = activationTime
+		graniteTime    = time.Unix(1607230800, 0) // Granite activated
 	)
-	_, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
+	coreVM, _, proVM, _ := initTestProposerVMWithGranite(t, activationTime, durangoTime, graniteTime, 0)
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
+	// Build a parent block first
+	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
+		return coreBlk, nil
+	}
+
+	// Genesis block timestamp + 1 second for monotonicity
+	// activationTime is Unix(0,0), so add 1 second to ensure monotonic increase
+	blockTime := activationTime.Add(time.Second)
+	proVM.Set(blockTime)
+
 	innerBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
-	// Build an unsigned block since it's a child of pre-fork genesis
+	// Build an unsigned block since Granite is not activated yet  
+	// This block has a non-zero epoch which should fail before Granite
 	slb, err := statelessblock.BuildUnsigned(
 		proVM.preferred,
-		proVM.Time(),
+		blockTime,
 		100, // pChainHeight,
 		statelessblock.Epoch{
 			PChainHeight: 1,
@@ -460,6 +474,7 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 		},
 	}
 	err = proBlk.Verify(context.Background())
+	// Before Granite, epoch should be empty, so non-zero epoch causes mismatch
 	require.ErrorIs(err, errEpochMismatch)
 }
 
@@ -471,8 +486,9 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 	var (
 		activationTime = time.Unix(0, 0)
 		durangoTime    = activationTime
+		graniteTime    = activationTime // Granite activated from start
 	)
-	coreVM, _, proVM, _ := initTestProposerVM(t, activationTime, durangoTime, 0)
+	coreVM, _, proVM, _ := initTestProposerVMWithGranite(t, activationTime, durangoTime, graniteTime, 0)
 	defer func() {
 		require.NoError(t, proVM.Shutdown(ctx))
 	}()
@@ -506,18 +522,25 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 	require.NoError(t, proVM.SetPreference(ctx, parentBlk.ID()))
 	require.NoError(t, waitForProposerWindow(proVM, parentBlk, parentBlk.(*postForkBlock).PChainHeight()))
 
+	// Get the actual epoch from the parent block
+	parentPostFork := parentBlk.(*postForkBlock)
+	parentPChainHeight := parentPostFork.PChainHeight()
+	expectedEpoch := lp181.NewEpoch(
+		proVM.Upgrades,
+		parentPChainHeight,
+		parentPostFork.PChainEpoch(),
+		parentBlk.Timestamp(),
+		parentTime,
+	)
+
 	tests := []struct {
 		name    string
 		epoch   statelessblock.Epoch
 		wantErr error
 	}{
 		{
-			name: "valid",
-			epoch: statelessblock.Epoch{
-				PChainHeight: 0,
-				Number:       1,
-				StartTime:    parentBlk.Timestamp().Unix(),
-			},
+			name:    "valid",
+			epoch:   expectedEpoch,
 			wantErr: nil,
 		},
 		{

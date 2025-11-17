@@ -41,6 +41,11 @@ func newUTXOs(
 	}
 }
 
+// SetChainID updates the chain ID for UTXO lookups
+func (u *utxos) SetChainID(chainID ids.ID) {
+	u.xchainID = chainID
+}
+
 type utxos struct {
 	xchainID     ids.ID
 	state        state.State

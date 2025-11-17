@@ -37,7 +37,7 @@ import (
 func TestIndexTransaction_Ordered(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
+	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
 	env.vm.Lock.Unlock()
 
 	key := keys[0]
@@ -52,9 +52,10 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		}
 		utxo := buildUTXO(utxoID, txAssetID, addr)
 		env.vm.state.AddUTXO(utxo)
+		require.NoError(env.vm.state.Commit())
 
 		// make transaction
-		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
+		tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
 		issueAndAccept(require, env.vm, tx)
@@ -62,18 +63,23 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		txs = append(txs, tx)
 	}
 
+	// Debug: try reading directly from addressTxsIndexer
+	txIDs, err := env.vm.addressTxsIndexer.Read(addr[:], txAssetID.ID, 0, 5)
+	require.NoError(err, "Failed to read from indexer")
+	t.Logf("Read %d transactions from indexer for addr %s", len(txIDs), addr)
+
 	// for each tx check its indexed at right index
 	for i, tx := range txs {
-		assertIndexedTX(t, env.vm.db, uint64(i), addr, txAssetID.ID, tx.ID())
+		assertIndexedTX(t, env.vm.baseDB, uint64(i), addr, txAssetID.ID, tx.ID())
 	}
-	assertLatestIdx(t, env.vm.db, addr, txAssetID.ID, 5)
+	assertLatestIdx(t, env.vm.baseDB, addr, txAssetID.ID, 5)
 }
 
 func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
+	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env.vm.Lock.Unlock()
 
 	addressTxMap := map[ids.ShortID]*txs.Tx{}
 	txAssetID := lux.Asset{ID: env.genesisTx.ID()}
@@ -87,17 +93,14 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		}
 		utxo := buildUTXO(utxoID, txAssetID, addr)
 		env.vm.state.AddUTXO(utxo)
+		require.NoError(env.vm.state.Commit())
 
 		// make transaction
-		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
+		tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
-
-		env.vm.Lock.Unlock()
 
 		// issue transaction
 		issueAndAccept(require, env.vm, tx)
-
-		env.vm.Lock.Lock()
 
 		addressTxMap[addr] = tx
 	}
@@ -107,16 +110,16 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 
 	// for each *UniqueTx check its indexed at right index for the right address
 	for addr, tx := range addressTxMap {
-		assertIndexedTX(t, env.vm.db, 0, addr, txAssetID.ID, tx.ID())
-		assertLatestIdx(t, env.vm.db, addr, txAssetID.ID, 1)
+		assertIndexedTX(t, env.vm.baseDB, 0, addr, txAssetID.ID, tx.ID())
+		assertLatestIdx(t, env.vm.baseDB, addr, txAssetID.ID, 1)
 	}
 }
 
 func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
+	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env.vm.Lock.Unlock()
 
 	addrs := make([]ids.ShortID, len(keys))
 	for i, key := range keys {
@@ -135,33 +138,30 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	}
 	utxo := buildUTXO(utxoID, txAssetID, addr)
 	env.vm.state.AddUTXO(utxo)
+	require.NoError(env.vm.state.Commit())
 
 	// make transaction
-	tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addrs...)
+	tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addrs...)
 	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
-
-	env.vm.Lock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.vm.Lock.Lock()
-
-	assertIndexedTX(t, env.vm.db, 0, addr, txAssetID.ID, tx.ID())
-	assertLatestIdx(t, env.vm.db, addr, txAssetID.ID, 1)
+	assertIndexedTX(t, env.vm.baseDB, 0, addr, txAssetID.ID, tx.ID())
+	assertLatestIdx(t, env.vm.baseDB, addr, txAssetID.ID, 1)
 }
 
 func TestIndexer_Read(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
+	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env.vm.Lock.Unlock()
 
 	// generate test address and asset IDs
 	assetID := ids.GenerateTestID()
 	addr := ids.GenerateTestShortID()
 
 	// setup some fake txs under the above generated address and asset IDs
-	testTxs := initTestTxIndex(t, env.vm.db, addr, assetID, 25)
+	testTxs := initTestTxIndex(t, env.vm.baseDB, addr, assetID, 25)
 	require.Len(testTxs, 25)
 
 	// read the pages, 5 items at a time
@@ -312,7 +312,7 @@ func assertIndexedTX(t *testing.T, db database.Database, index uint64, sourceAdd
 //	    - "idx": 2
 //	    - 0: txID1
 //	    - 1: txID1
-func initTestTxIndex(t *testing.T, db *versiondb.Database, address ids.ShortID, assetID ids.ID, txCount int) []ids.ID {
+func initTestTxIndex(t *testing.T, db database.Database, address ids.ShortID, assetID ids.ID, txCount int) []ids.ID {
 	require := require.New(t)
 
 	testTxs := make([]ids.ID, txCount)
@@ -328,11 +328,8 @@ func initTestTxIndex(t *testing.T, db *versiondb.Database, address ids.ShortID, 
 		txID := txID
 		require.NoError(assetPrefixDB.Put(idxBytes, txID[:]))
 	}
-	_, err := db.CommitBatch()
-	require.NoError(err)
 
 	idxBytes := database.PackUInt64(uint64(len(testTxs)))
 	require.NoError(assetPrefixDB.Put([]byte("idx"), idxBytes))
-	require.NoError(db.Commit())
 	return testTxs
 }

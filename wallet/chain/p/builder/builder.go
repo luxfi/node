@@ -356,8 +356,11 @@ func New(
 }
 
 // getBlockchainID returns the blockchain ID to use for transactions
-// Always returns PlatformChainID for P-Chain transactions
+// Returns context.ChainID if set (for tests), otherwise PlatformChainID
 func (b *builder) getBlockchainID() ids.ID {
+	if b.context.ChainID != ids.Empty {
+		return b.context.ChainID
+	}
 	return constants.PlatformChainID
 }
 

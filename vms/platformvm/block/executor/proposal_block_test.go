@@ -120,7 +120,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 
 	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
-		time.Time{},      /*lastUpdated*/
+		time.Microsecond, /*lastUpdated - should be Duration, not Time*/
 		nil,              /*err*/
 	).AnyTimes()
 
@@ -234,7 +234,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 
 	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
-		time.Time{},      /*lastUpdated*/
+		time.Microsecond, /*lastUpdated - should be Duration, not Time*/
 		nil,              /*err*/
 	).AnyTimes()
 

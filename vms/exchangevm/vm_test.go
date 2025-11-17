@@ -35,9 +35,7 @@ func TestInvalidFx(t *testing.T) {
 	ctx := &consensusctx.Context{
 		ChainID: ids.GenerateTestID(),
 	}
-	defer func() {
-		vm.Shutdown()
-	}()
+	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
 	toEngine := make(chan interface{}, 1)
@@ -64,9 +62,7 @@ func TestFxInitializationFailure(t *testing.T) {
 	ctx := &consensusctx.Context{
 		ChainID: ids.GenerateTestID(),
 	}
-	defer func() {
-		vm.Shutdown()
-	}()
+	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
 	toEngine := make(chan interface{}, 1)
@@ -108,6 +104,7 @@ func TestIssueTx(t *testing.T) {
 func TestIssueNFT(t *testing.T) {
 	require := require.New(t)
 
+	// secp256k1fx and nftfx are now included by default
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 	})
@@ -157,11 +154,11 @@ func TestIssueNFT(t *testing.T) {
 	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// Move the NFT
-	addrs := make(set.Set[ids.ShortID])
+	moveAddrs := make(set.Set[ids.ShortID])
 	for addr := range kc.Addresses() {
-		addrs.Add(addr)
+		moveAddrs.Add(addr)
 	}
-	utxos, err := lux.GetAllUTXOs(env.vm.state, addrs)
+	utxos, err := lux.GetAllUTXOs(env.vm.state, moveAddrs)
 	require.NoError(err)
 	transferOp, _, err := env.vm.SpendNFT(
 		utxos,
@@ -202,8 +199,9 @@ func TestIssueProperty(t *testing.T) {
 	)
 
 	// create the asset
+	// propertyfx is at index 1 (secp256k1fx is always at index 0)
 	initialStates := map[uint32][]verify.State{
-		2: {
+		1: {
 			&propertyfx.MintOutput{
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
@@ -420,11 +418,17 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require.NoError(parsedFirstTx.Verify(context.Background()))
 	require.NoError(parsedFirstTx.Accept(context.Background()))
 
+	// Update the preferred block (normally done by consensus engine)
+	require.NoError(env.vm.SetPreference(context.Background(), parsedFirstTx.ID()))
+
 	parsedSecondTx, err := env.vm.ParseTx(context.Background(), secondTx.Bytes())
 	require.NoError(err)
 
 	require.NoError(parsedSecondTx.Verify(context.Background()))
 	require.NoError(parsedSecondTx.Accept(context.Background()))
+
+	// Update the preferred block (normally done by consensus engine)
+	require.NoError(env.vm.SetPreference(context.Background(), parsedSecondTx.ID()))
 
 	_, err = env.vm.state.GetTx(firstTx.ID())
 	require.NoError(err)

@@ -330,16 +330,13 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	blkID := blk.ID()
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
+	// This call will fail after accepting parent, when looking for block state
 	gomock.InOrder(
 		parentStatelessBlk.EXPECT().ID().Return(parentID).Times(1),
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
 		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
-
-		s.EXPECT().SetLastAccepted(blkID).Times(1),
-		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotCommitBlock(blk)
@@ -362,18 +359,21 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	batch := databasemock.NewBatch(ctrl)
 
 	// Set expected calls on dependencies.
-	// Make sure the parent is accepted first.
+	// Make sure the parent is accepted first, then the block itself.
 	gomock.InOrder(
+		// Parent block acceptance
 		parentStatelessBlk.EXPECT().ID().Return(parentID).Times(1),
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
 		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
 
+		// Current block acceptance
 		s.EXPECT().SetLastAccepted(blkID).Times(1),
 		s.EXPECT().SetHeight(blk.Height()).Times(1),
 		s.EXPECT().AddStatelessBlock(blk).Times(1),
 
+		// State application and commit
 		parentOnCommitState.EXPECT().Apply(s).Times(1),
 		s.EXPECT().CommitBatch().Return(batch, nil).Times(1),
 		mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
@@ -441,16 +441,13 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	blkID := blk.ID()
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
+	// This call will fail after accepting parent, when looking for block state
 	gomock.InOrder(
 		parentStatelessBlk.EXPECT().ID().Return(parentID).Times(1),
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
 		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
-
-		s.EXPECT().SetLastAccepted(blkID).Times(1),
-		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotAbortBlock(blk)

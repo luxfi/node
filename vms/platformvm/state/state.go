@@ -474,8 +474,9 @@ type heightRange struct {
 }
 
 type ValidatorWeightDiff struct {
-	Decrease bool   `serialize:"true"`
-	Amount   uint64 `serialize:"true"`
+	Decrease     bool   `serialize:"true"`
+	Amount       uint64 `serialize:"true"`
+	ValidationID ids.ID `serialize:"true"` // Added to preserve TxID during diff application
 }
 
 func (v *ValidatorWeightDiff) Add(amount uint64) error {
@@ -1487,6 +1488,7 @@ func applyWeightDiff(
 		// This node isn't in the current validator set.
 		vdr = &validators.GetValidatorOutput{
 			NodeID: nodeID,
+			TxID:   weightDiff.ValidationID, // Preserve ValidationID as TxID
 		}
 		vdrs[nodeID] = vdr
 	}
@@ -1505,6 +1507,9 @@ func applyWeightDiff(
 	if err != nil {
 		return err
 	}
+
+	// Keep Light in sync with Weight (Light is an alias for Weight)
+	vdr.Light = vdr.Weight
 
 	if vdr.Weight == 0 {
 		// The validator's weight was 0 before this block so they weren't in the
@@ -2150,36 +2155,14 @@ func (s *state) write(updateValidators bool, height uint64) error {
 }
 
 func (s *state) Close() error {
-	return errors.Join(
-		s.expiryDB.Close(),
-		s.weightsDB.Close(),
-		s.subnetIDNodeIDDB.Close(),
-		s.activeDB.Close(),
-		s.inactiveDB.Close(),
-		s.l1ValidatorsDB.Close(),
-		s.pendingNetValidatorBaseDB.Close(),
-		s.pendingNetDelegatorBaseDB.Close(),
-		s.pendingDelegatorBaseDB.Close(),
-		s.pendingValidatorBaseDB.Close(),
-		s.pendingValidatorsDB.Close(),
-		s.currentNetValidatorBaseDB.Close(),
-		s.currentNetDelegatorBaseDB.Close(),
-		s.currentDelegatorBaseDB.Close(),
-		s.currentValidatorBaseDB.Close(),
-		s.currentValidatorsDB.Close(),
-		s.validatorsDB.Close(),
-		s.txDB.Close(),
-		s.rewardUTXODB.Close(),
-		s.utxoDB.Close(),
-		s.subnetBaseDB.Close(),
-		s.subnetToL1ConversionDB.Close(),
-		s.transformedNetDB.Close(),
-		s.supplyDB.Close(),
-		s.chainDB.Close(),
-		s.singletonDB.Close(),
-		s.blockDB.Close(),
-		s.blockIDDB.Close(),
-	)
+	// Only close the base database. All other databases are prefixdb wrappers
+	// that don't need to be closed separately. Closing them would cause
+	// "closed" errors because prefixdb.Close() calls Close() on the underlying
+	// database, which would be closed multiple times.
+	// The baseDB field was not stored in the state struct, but we can close
+	// the underlying database through any of the prefixdb instances.
+	// We'll close singletonDB which is a direct prefixdb over baseDB.
+	return s.singletonDB.Close()
 }
 
 func (s *state) sync(genesis []byte) error {
@@ -2588,6 +2571,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 				nodeID:   priorL1Validator.effectiveNodeID(),
 			}
 			diff := getOrSetDefault(changes, subnetIDNodeID)
+			diff.weightDiff.ValidationID = validationID // Set ValidationID for TxID preservation
 			if err := diff.weightDiff.Sub(priorL1Validator.Weight); err != nil {
 				return nil, err
 			}
@@ -2608,6 +2592,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 			nodeID:   l1Validator.effectiveNodeID(),
 		}
 		diff := getOrSetDefault(changes, subnetIDNodeID)
+		diff.weightDiff.ValidationID = validationID // Set ValidationID for TxID preservation
 		if err := diff.weightDiff.Add(l1Validator.Weight); err != nil {
 			return nil, err
 		}

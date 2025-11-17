@@ -14,6 +14,7 @@ import (
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 )
 
 var (
@@ -109,7 +110,9 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 	parentTimestamp := b.Timestamp()
 	if b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
-			return err
+			// If parent is post-fork but not an oracle block,
+			// preFork children are not allowed
+			return errUnexpectedBlockType
 		}
 
 		b.vm.logger.Debug("allowing pre-fork block after the fork time",
@@ -168,6 +171,18 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	childTimestamp := child.Timestamp()
 	if childTimestamp.Before(parentTimestamp) {
 		return errTimeNotMonotonic
+	}
+
+	// Validate epoch for Granite upgrade (LP-181)
+	// Pre-fork blocks always have empty epoch, so use that as parent epoch
+	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
+	childEpoch := child.PChainEpoch()
+	// For pre-fork blocks, we don't have explicit P-chain height tracking.
+	// We use 0 as the parent P-chain height for genesis/pre-fork blocks.
+	parentPChainHeight := uint64(0)
+	expectedEpoch := lp181.NewEpoch(b.vm.Upgrades, parentPChainHeight, parentEpoch, parentTimestamp, childTimestamp)
+	if childEpoch != expectedEpoch {
+		return fmt.Errorf("%w: epoch %v != expected %v", errEpochMismatch, childEpoch, expectedEpoch)
 	}
 
 	// Child timestamp can't be too far in the future
@@ -237,11 +252,18 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	}
 	innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
+	// Calculate the epoch for the child block based on Granite activation
+	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
+	// For pre-fork blocks, we don't have explicit P-chain height tracking.
+	// We use 0 as the parent P-chain height for genesis/pre-fork blocks.
+	parentPChainHeight := uint64(0)
+	childEpoch := lp181.NewEpoch(b.vm.Upgrades, parentPChainHeight, parentEpoch, parentTimestamp, newTimestamp)
+
 	statelessBlock, err := block.BuildUnsigned(
 		parentID,
 		newTimestamp,
 		pChainHeight,
-		block.Epoch{}, // Pre-fork blocks don't have epochs
+		childEpoch,
 		innerBlock.Bytes(),
 	)
 	if err != nil {

@@ -28,7 +28,9 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -320,6 +322,7 @@ func defaultConfig(f upgradetest.Fork) *config.Internal {
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
+		TrackedNets:            set.Of(constants.PrimaryNetworkID),
 		MinValidatorStake:      5 * units.MilliLux,
 		MaxValidatorStake:      500 * units.MilliLux,
 		MinDelegatorStake:      1 * units.MilliLux,

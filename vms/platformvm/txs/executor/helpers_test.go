@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
@@ -101,11 +102,15 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	luxAssetID := ids.GenerateTestID()
+	// Use the same fixed LUX asset ID as genesis for consistency
+	luxAssetID := genesistest.LUXAssetID
 
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = constants.PlatformChainID
+	ctx.XChainID = ids.GenerateTestID() // Set a test X-Chain ID
+	ctx.CChainID = ids.GenerateTestID() // Set a test C-Chain ID
 	ctx.XAssetID = luxAssetID
+	ctx.LUXAssetID = luxAssetID
 	ctx.NetworkID = constants.UnitTestID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
@@ -124,6 +129,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 		PublicKey:      []byte{}, // Use empty bytes for test
 		XChainID:       ctx.XChainID,
 		CChainID:       ctx.CChainID,
+		XAssetID:       ctx.XAssetID,
 		LUXAssetID:     ctx.LUXAssetID,
 		ValidatorState: ctx.ValidatorState,
 		SharedMemory:   ctx.SharedMemory,
@@ -133,6 +139,9 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 		Keystore:       nil,             // No keystore needed for test
 		WarpSigner:     ctx.WarpSigner,
 	}
+
+	// Initialize utxo.XAssetID from the consensus context
+	utxo.XAssetID = consensusCtx.XAssetID
 
 	rewards := reward.NewCalculator(config.RewardConfig)
 	baseState := statetest.New(t, statetest.Config{
@@ -301,6 +310,7 @@ func defaultConfig(f upgradetest.Fork) *config.Internal {
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: consensusuptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
+		TrackedNets:            set.Of(constants.PrimaryNetworkID),
 		MinValidatorStake:      5 * units.MilliLux,
 		MaxValidatorStake:      500 * units.MilliLux,
 		MinDelegatorStake:      1 * units.MilliLux,

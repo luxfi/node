@@ -5,8 +5,10 @@ package exchangevm
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -26,6 +28,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/txs/txstest"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -37,7 +41,9 @@ var durango = upgradetest.GetConfig(upgradetest.Durango)
 
 // Test constants
 const (
-	startBalance uint64 = 50000
+	// Increased from 50000 to 10*units.Lux to match larger genesis allocation
+	// This ensures tests have enough funds for sequential transactions
+	startBalance uint64 = 10 * units.Lux // 10 LUX = 10,000,000,000 nanoLux
 	testTxFee    uint64 = 1000
 )
 
@@ -45,9 +51,10 @@ var assetID = ids.GenerateTestID()
 
 // envConfig configures the test environment
 type envConfig struct {
-	fork          upgrade.Config
-	notLinearized bool
-	additionalFxs []interface{}
+	fork              upgrade.Config
+	notLinearized     bool
+	additionalFxs     []interface{}
+	indexTransactions bool // Enable transaction indexing
 }
 
 // testEnv is the test environment
@@ -70,6 +77,7 @@ func newGenesisBytesTest(t *testing.T) []byte {
 	require.NoError(err)
 
 	// Create a simple genesis with one asset (LUX)
+	// Increased from 100 LUX to 1000 LUX to ensure sufficient funds for multiple transactions in tests
 	genesisData := map[string]GenesisAssetDefinition{
 		"LUX": {
 			Name:         "Lux",
@@ -78,7 +86,7 @@ func newGenesisBytesTest(t *testing.T) []byte {
 			InitialState: AssetInitialState{
 				FixedCap: []GenesisHolder{
 					{
-						Amount:  100 * units.Lux,
+						Amount:  1000 * units.Lux,
 						Address: addr,
 					},
 				},
@@ -203,25 +211,48 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Create a mock AppSender
 	appSender := &noOpAppSender{}
 
-	// Add default secp256k1fx if no additional FXs provided
-	fxs := config.additionalFxs
-	if len(fxs) == 0 {
-		fxs = []interface{}{
+	// ALWAYS include secp256k1fx first (required for genesis parsing)
+	// Then add additional Fxs if provided, or default to nftfx and propertyfx
+	fxs := []interface{}{
+		&commonengine.Fx{
+			ID: secp256k1fx.ID,
+			Fx: &secp256k1fx.Fx{},
+		},
+	}
+	
+	if len(config.additionalFxs) == 0 {
+		// No additional Fxs specified - add default nftfx and propertyfx
+		fxs = append(fxs,
 			&commonengine.Fx{
-				ID: ids.GenerateTestID(),
-				Fx: &secp256k1fx.Fx{},
+				ID: nftfx.ID,
+				Fx: &nftfx.Fx{},
 			},
-		}
+			&commonengine.Fx{
+				ID: propertyfx.ID,
+				Fx: &propertyfx.Fx{},
+			},
+		)
+	} else {
+		// Additional Fxs specified - append them after secp256k1fx
+		fxs = append(fxs, config.additionalFxs...)
 	}
 
+	// Create config for VM with optional indexing
+	vmConfig := DefaultConfig
+	if config.indexTransactions {
+		vmConfig.IndexTransactions = true
+	}
+	configBytes, err := json.Marshal(vmConfig)
+	require.NoError(err)
+
 	toEngine := make(chan interface{}, 1)
-	err := vm.Initialize(
+	err = vm.Initialize(
 		context.Background(),
 		ctx,
 		baseDB,
 		genesisBytes,
 		nil,
-		nil,
+		configBytes,
 		toEngine,
 		fxs,
 		appSender,
@@ -231,15 +262,19 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Get the genesis transaction
 	genesisTx := getCreateTxFromGenesisTest(t.(*testing.T), genesisBytes, "LUX")
 
-	// Create transaction builder
+	// Create transaction builder with SharedMemory
+	atomicMemForBuilder := sharedMemory.NewSharedMemory(ctx.ChainID)
 	txBuilder := txstest.New(
 		vm.parser.Codec(),
 		context.Background(),
 		&vm.Config,
 		vm.feeAssetID,
 		vm.state,
-		nil, // SharedMemory not needed for basic tests
+		atomicMemForBuilder,
 	)
+
+	// Set the context IDs from the consensus context
+	txBuilder.SetContextIDs(ctx.NetworkID, ctx.ChainID)
 
 	env := &testEnv{
 		vm:            vm,
@@ -250,6 +285,33 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		txBuilder:     txBuilder,
 		sharedMemory:  sharedMemory,
 	}
+
+	// Register cleanup to prevent goroutine leaks
+	// This ensures PushGossip and PullGossip goroutines are properly terminated
+	t.Cleanup(func() {
+		// Try to acquire the lock with a timeout to avoid deadlock
+		// If we can't get the lock, the test likely held it, so we proceed anyway
+		lockAcquired := make(chan bool, 1)
+		go func() {
+			vm.Lock.Lock()
+			lockAcquired <- true
+		}()
+		
+		select {
+		case <-lockAcquired:
+			defer vm.Lock.Unlock()
+		case <-time.After(100 * time.Millisecond):
+			// Lock acquisition timed out, proceeding without lock
+			// This can happen if the test holds the lock when cleanup runs
+		}
+		
+		if err := vm.Shutdown(); err != nil {
+			// Don't log "closed" errors as they're expected during shutdown
+			if err.Error() != "closed" {
+				t.Logf("Warning: VM shutdown error: %v", err)
+			}
+		}
+	})
 
 	// Linearize the DAG to initialize the network
 	// This simulates what happens during normal VM bootstrap
@@ -286,8 +348,14 @@ func issueAndAccept(require *require.Assertions, vm *VM, tx *txs.Tx) {
 	// Accept the block
 	require.NoError(blkIntf.Accept(context.Background()))
 
+	// Update the preferred block (normally done by consensus engine)
+	require.NoError(vm.SetPreference(context.Background(), blkIntf.ID()))
+
+	// Commit the versiondb so indexed data is visible
+	require.NoError(vm.db.Commit())
+
 	// Verify the block status is accepted
-	require.Equal(choices.Accepted, blkIntf.Status())
+	require.Equal(uint8(choices.Accepted), uint8(blkIntf.Status()))
 }
 
 
@@ -297,6 +365,8 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 	require := require.New(tb)
 
 	createTx := getCreateTxFromGenesisTest(tb.(*testing.T), genesisBytes, assetName)
+	// Genesis creates 1000 LUX for keys[0]
+	// This tx spends the entire UTXO and creates a change output back to keys[0]
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
@@ -304,13 +374,23 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 			Ins: []*lux.TransferableInput{{
 				UTXOID: lux.UTXOID{
 					TxID:        createTx.ID(),
-					OutputIndex: 2,
+					OutputIndex: 0, // First output (fixed cap holder output)
 				},
 				Asset: lux.Asset{ID: createTx.ID()},
 				In: &secp256k1fx.TransferInput{
-					Amt: startBalance,
+					Amt: 1000 * units.Lux, // Must match UTXO amount
 					Input: secp256k1fx.Input{
 						SigIndices: []uint32{0},
+					},
+				},
+			}},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: createTx.ID()},
+				Out: &secp256k1fx.TransferOutput{
+					Amt: 1000 * units.Lux, // Output entire amount back (no-op transfer)
+					OutputOwners: secp256k1fx.OutputOwners{
+						Threshold: 1,
+						Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
 					},
 				},
 			}},

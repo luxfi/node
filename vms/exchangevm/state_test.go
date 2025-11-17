@@ -4,6 +4,7 @@
 package exchangevm
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -23,17 +24,24 @@ import (
 func TestSetsAndGets(t *testing.T) {
 	require := require.New(t)
 
+	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
-		additionalFxs: []interface{}{&common.Fx{
-			ID: ids.GenerateTestID(),
-			Fx: &FxTest{
-				InitializeF: func(vmIntf interface{}) error {
-					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestState{})
+		additionalFxs: []interface{}{
+			&common.Fx{
+				ID: ids.GenerateTestID(),
+				Fx: &FxTest{
+					InitializeF: func(vmIntf interface{}) error {
+						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM
+						vm, ok := vmIntf.(secp256k1fx.VM)
+						if !ok {
+							return fmt.Errorf("unexpected VM type: %T", vmIntf)
+						}
+						return vm.CodecRegistry().RegisterType(&lux.TestState{})
+					},
 				},
 			},
-		}},
+		},
 	})
 	defer env.testLock.Unlock()
 
@@ -83,17 +91,24 @@ func TestSetsAndGets(t *testing.T) {
 }
 
 func TestFundingNoAddresses(t *testing.T) {
+	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
-		additionalFxs: []interface{}{&common.Fx{
-			ID: ids.GenerateTestID(),
-			Fx: &FxTest{
-				InitializeF: func(vmIntf interface{}) error {
-					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestState{})
+		additionalFxs: []interface{}{
+			&common.Fx{
+				ID: ids.GenerateTestID(),
+				Fx: &FxTest{
+					InitializeF: func(vmIntf interface{}) error {
+						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM
+						vm, ok := vmIntf.(secp256k1fx.VM)
+						if !ok {
+							return fmt.Errorf("unexpected VM type: %T", vmIntf)
+						}
+						return vm.CodecRegistry().RegisterType(&lux.TestState{})
+					},
 				},
 			},
-		}},
+		},
 	})
 	defer env.testLock.Unlock()
 
@@ -113,17 +128,20 @@ func TestFundingNoAddresses(t *testing.T) {
 func TestFundingAddresses(t *testing.T) {
 	require := require.New(t)
 
+	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
-		additionalFxs: []interface{}{&common.Fx{
-			ID: ids.GenerateTestID(),
-			Fx: &FxTest{
-				InitializeF: func(vmIntf interface{}) error {
-					vm := vmIntf.(secp256k1fx.VM)
-					return vm.CodecRegistry().RegisterType(&lux.TestAddressable{})
+		additionalFxs: []interface{}{
+			&common.Fx{
+				ID: ids.GenerateTestID(),
+				Fx: &FxTest{
+					InitializeF: func(vmIntf interface{}) error {
+						vm := vmIntf.(secp256k1fx.VM)
+						return vm.CodecRegistry().RegisterType(&lux.TestAddressable{})
+					},
 				},
 			},
-		}},
+		},
 	})
 	defer env.testLock.Unlock()
 

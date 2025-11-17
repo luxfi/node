@@ -19,8 +19,8 @@ const (
 	// diffKeyNodeIDOffset = [netIDLen] + [inverseHeightLen]
 	diffKeyNodeIDOffset = ids.IDLen + database.Uint64Size
 
-	// weightValue = [isNegative] + [weight]
-	weightValueLength = database.BoolSize + database.Uint64Size
+	// weightValue = [isNegative] + [weight] + [validationID]
+	weightValueLength = database.BoolSize + database.Uint64Size + ids.IDLen
 )
 
 var (
@@ -67,6 +67,7 @@ func marshalWeightDiff(diff *ValidatorWeightDiff) []byte {
 		value[0] = database.BoolTrue
 	}
 	binary.BigEndian.PutUint64(value[database.BoolSize:], diff.Amount)
+	copy(value[database.BoolSize+database.Uint64Size:], diff.ValidationID[:])
 	return value
 }
 
@@ -74,9 +75,12 @@ func unmarshalWeightDiff(value []byte) (*ValidatorWeightDiff, error) {
 	if len(value) != weightValueLength {
 		return nil, errUnexpectedWeightValueLength
 	}
+	var validationID ids.ID
+	copy(validationID[:], value[database.BoolSize+database.Uint64Size:])
 	return &ValidatorWeightDiff{
-		Decrease: value[0] == database.BoolTrue,
-		Amount:   binary.BigEndian.Uint64(value[database.BoolSize:]),
+		Decrease:     value[0] == database.BoolTrue,
+		Amount:       binary.BigEndian.Uint64(value[database.BoolSize:]),
+		ValidationID: validationID,
 	}, nil
 }
 

@@ -17,6 +17,8 @@ import (
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
@@ -74,6 +76,20 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		PublicKey: pTestCert.PublicKey,
 	})
 
+	valState := validatorstest.NewTestState()
+	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
+		return defaultPChainHeight, nil
+	}
+	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		return map[ids.NodeID]*validators.GetValidatorOutput{
+			ctx.NodeID: {
+				NodeID: ctx.NodeID,
+				Light:  10,
+				Weight: 10,
+			},
+		}, nil
+	}
+
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -81,7 +97,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		blocktest.GenesisBytes,
 		nil,
 		nil,
-		nil,
+		valState,
 		nil,
 		nil,
 	))

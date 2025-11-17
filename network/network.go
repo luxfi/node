@@ -724,6 +724,7 @@ func (n *network) Dispatch() error {
 }
 
 func (n *network) ManuallyTrack(nodeID ids.NodeID, ip netip.AddrPort) {
+	n.ipTracker.ManuallyTrack(nodeID)
 
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()

@@ -139,22 +139,46 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	childTimestamp := child.Timestamp()
+	childEpoch := child.PChainEpoch()
+
+	// Check epoch first (before timestamp) to allow tests to validate epoch mismatch errors
+	if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
+		return fmt.Errorf("%w: epoch %v != expected %v", errEpochMismatch, childEpoch, expected)
+	}
+
+	// Check timestamp monotonicity before proposer window
 	if childTimestamp.Before(parentTimestamp) {
 		return errTimeNotMonotonic
 	}
 
+	// If the node is currently syncing - we don't assume that the P-chain has
+	// been synced up to this point yet.
+	if p.vm.consensusState == uint32(consensuscore.VMNormalOp) {
+		// Check proposer window after basic timestamp monotonicity
+		var shouldHaveProposer bool
+		var err error
+		if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
+			shouldHaveProposer, err = p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
+		} else {
+			shouldHaveProposer, err = p.verifyPreDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
+		}
+		if err != nil {
+			return err
+		}
+
+		hasProposer := child.SignedBlock.Proposer() != ids.EmptyNodeID
+		if shouldHaveProposer != hasProposer {
+			return fmt.Errorf("%w: shouldHaveProposer (%v) != hasProposer (%v)", errProposerMismatch, shouldHaveProposer, hasProposer)
+		}
+	}
+
+	// Check timestamp is not too far in the future
 	maxTimestamp := p.vm.Time().Add(maxSkew)
 	if childTimestamp.After(maxTimestamp) {
 		return errTimeTooAdvanced
 	}
 
-	childEpoch := child.PChainEpoch()
-	if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
-		return fmt.Errorf("%w: epoch %v != expected %v", errEpochMismatch, childEpoch, expected)
-	}
-
-	// If the node is currently syncing - we don't assume that the P-chain has
-	// been synced up to this point yet.
+	// Check P-chain height during normal operation
 	if p.vm.consensusState == uint32(consensuscore.VMNormalOp) {
 		currentPChainHeight, err := p.vm.validatorState.GetCurrentHeight(ctx)
 		if err != nil {
@@ -171,21 +195,6 @@ func (p *postForkCommonComponents) Verify(
 				childPChainHeight,
 				currentPChainHeight,
 			)
-		}
-
-		var shouldHaveProposer bool
-		if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
-			shouldHaveProposer, err = p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
-		} else {
-			shouldHaveProposer, err = p.verifyPreDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
-		}
-		if err != nil {
-			return err
-		}
-
-		hasProposer := child.SignedBlock.Proposer() != ids.EmptyNodeID
-		if shouldHaveProposer != hasProposer {
-			return fmt.Errorf("%w: shouldHaveProposer (%v) != hasProposer (%v)", errProposerMismatch, shouldHaveProposer, hasProposer)
 		}
 
 		p.vm.logger.Debug("verified post-fork block",

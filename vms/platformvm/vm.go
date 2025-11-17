@@ -54,6 +54,7 @@ import (
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
+	txmempool "github.com/luxfi/node/vms/txs/mempool"
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 )
 
@@ -241,6 +242,10 @@ func (vm *VM) Initialize(
 
 	// Set consensus context
 	vm.ctx = chainCtx
+	
+	// Initialize utxo.XAssetID from the context
+	utxo.XAssetID = chainCtx.XAssetID
+	
 	// Get the current database from the DBManager
 	// Since DBManager is now an interface{}, we need to handle it differently
 	if dbManager != nil {
@@ -956,13 +961,14 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
 }
 
 func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
-// 	err := vm.Network.IssueTxFromRPC(tx)
-// 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
-// 		vm.log.Debug("failed to add tx to mempool",
-// 			"txID", tx.ID(),
-// 			"error", err,
-// 		)
-// 		return err
+	err := vm.Network.IssueTxFromRPC(tx)
+	if err != nil && !errors.Is(err, txmempool.ErrDuplicateTx) {
+		vm.log.Debug("failed to add tx to mempool",
+			log.Stringer("txID", tx.ID()),
+			log.String("error", err.Error()),
+		)
+		return err
+	}
 	return nil
 }
 

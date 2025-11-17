@@ -354,7 +354,9 @@ func (m *manager) getCurrentValidatorSet(
 		result[staker.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    staker.NodeID,
 			PublicKey: pkBytes,
+			Light:     staker.Weight, // Light is kept in sync with Weight
 			Weight:    staker.Weight,
+			TxID:      staker.TxID,
 		}
 	}
 
@@ -363,7 +365,9 @@ func (m *manager) getCurrentValidatorSet(
 		result[validator.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    validator.NodeID,
 			PublicKey: validator.PublicKey,
+			Light:     validator.Weight, // Light is kept in sync with Weight
 			Weight:    validator.Weight,
+			TxID:      validator.ValidationID,
 		}
 	}
 

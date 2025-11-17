@@ -59,5 +59,8 @@ func SignUnsigned(
 	utx txs.UnsignedTx,
 ) (*txs.Tx, error) {
 	tx := &txs.Tx{Unsigned: utx}
-	return tx, signer.Sign(ctx, tx)
+	if err := signer.Sign(ctx, tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
 }

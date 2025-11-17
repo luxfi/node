@@ -308,17 +308,22 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 
 	// Skip verification of the shared memory inputs if the other primary
 	// network chains are not guaranteed to be up-to-date.
+	var allUTXOBytes [][]byte
 	if e.backend.Bootstrapped.Get() && !e.backend.Config.PartialSyncPrimaryNetwork {
-		// TODO: Fix ChainContext type mismatch and SharedMemory interface
+		// TODO: Restore SameNet check once ChainContext types are aligned
 		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.SourceChain); err != nil {
 		// 	return err
 		// }
-		//
-		// allUTXOBytes, err := e.backend.Ctx.SharedMemory.Get(tx.SourceChain, utxoIDs)
-		// if err != nil {
-		// 	return fmt.Errorf("failed to get shared memory: %w", err)
-		// }
-		var allUTXOBytes [][]byte
+		
+		if e.backend.Ctx.SharedMemory != nil {
+			if sm, ok := e.backend.Ctx.SharedMemory.(atomic.SharedMemory); ok {
+				var err error
+				allUTXOBytes, err = sm.Get(tx.SourceChain, utxoIDs)
+				if err != nil {
+					return fmt.Errorf("failed to get shared memory: %w", err)
+				}
+			}
+		}
 
 		utxos := make([]*lux.UTXO, len(tx.Ins)+len(tx.ImportedInputs))
 		for index, input := range tx.Ins {

@@ -13,7 +13,10 @@ import (
 var DefaultConfig = Config{
 	Network:          network.DefaultConfig,
 	ChecksumsEnabled: true,
-	Config:           config.Config{},
+	Config: config.Config{
+		TxFee:            1000,  // 1000 nanoLux base transaction fee
+		CreateAssetTxFee: 10000, // 10000 nanoLux for asset creation
+	},
 }
 
 type Config struct {

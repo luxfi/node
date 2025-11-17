@@ -2388,10 +2388,13 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			CreateNetTxFee:        units.Lux,
 			CreateBlockchainTxFee: units.Lux,
 		}
-		wallet = txstest.NewWallet(
+		wallet = txstest.NewWalletWithOptions(
 			t,
 			ctx,
-			walletConfig,
+			txstest.WalletConfig{
+				Config:      walletConfig,
+				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
+			},
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -2718,10 +2721,13 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			CreateNetTxFee:        units.Lux,
 			CreateBlockchainTxFee: units.Lux,
 		}
-		wallet = txstest.NewWallet(
+		wallet = txstest.NewWalletWithOptions(
 			t,
 			ctx,
-			walletConfig,
+			txstest.WalletConfig{
+				Config:      walletConfig,
+				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
+			},
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -3253,10 +3259,13 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			CreateNetTxFee:        units.Lux,
 			CreateBlockchainTxFee: units.Lux,
 		}
-		wallet = txstest.NewWallet(
+		wallet = txstest.NewWalletWithOptions(
 			t,
 			ctx,
-			walletConfig,
+			txstest.WalletConfig{
+				Config:      walletConfig,
+				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
+			},
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -3763,10 +3772,13 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			CreateNetTxFee:        units.Lux,
 			CreateBlockchainTxFee: units.Lux,
 		}
-		wallet = txstest.NewWallet(
+		wallet = txstest.NewWalletWithOptions(
 			t,
 			ctx,
-			walletConfig,
+			txstest.WalletConfig{
+				Config:      walletConfig,
+				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
+			},
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs
@@ -4064,10 +4076,13 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			CreateNetTxFee:        units.Lux,
 			CreateBlockchainTxFee: units.Lux,
 		}
-		wallet = txstest.NewWallet(
+		wallet = txstest.NewWalletWithOptions(
 			t,
 			ctx,
-			walletConfig,
+			txstest.WalletConfig{
+				Config:      walletConfig,
+				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
+			},
 			baseState,
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
 			nil, // subnetIDs

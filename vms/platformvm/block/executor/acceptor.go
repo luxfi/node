@@ -139,12 +139,6 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		return err
 	}
 
-	if parentState.onDecisionState != nil {
-		if err := parentState.onDecisionState.Apply(a.state); err != nil {
-			return err
-		}
-	}
-
 	blkState, ok := a.blkIDToState[blkID]
 	if !ok {
 		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
@@ -170,9 +164,11 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 
 	// Note that this method writes [batch] to the database.
 	// Apply atomic requests via SharedMemory from context
-	sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
-	if err := sharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
-		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
+	if a.ctx.SharedMemory != nil {
+		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+		if err := sharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
+			return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
+		}
 	}
 
 	if onAcceptFunc := parentState.onAcceptFunc; onAcceptFunc != nil {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/ethdb/badgerdb"
 	"github.com/luxfi/geth/ethdb/pebble"
 )
@@ -75,13 +76,7 @@ func main() {
 	fmt.Println("🌌 Importing into Quasar event horizon...")
 	fmt.Println()
 
-	tgtBadger, ok := tgtDB.(*badgerdb.Database)
-	if !ok {
-		fmt.Println("❌ Target is not BadgerDB")
-		os.Exit(1)
-	}
-
-	stats := importAll(srcDB, tgtBadger)
+	stats := importAll(srcDB, tgtDB)
 
 	// Mark complete
 	os.WriteFile(marker, []byte(time.Now().Format(time.RFC3339)), 0644)
@@ -111,7 +106,7 @@ type stats struct {
 	elapsed  time.Duration
 }
 
-func importAll(src *pebble.Database, tgtDB *badgerdb.Database) stats {
+func importAll(src *pebble.Database, tgtDB ethdb.Database) stats {
 	namespace := common.FromHex("337fb73f9bcdac8c31a2d5f7b877ab1e8a2b7f2a1e9bf02a0a0e6c6fd164f1d1")
 	namespaceLen := len(namespace)
 

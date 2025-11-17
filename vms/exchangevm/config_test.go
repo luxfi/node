@@ -29,6 +29,7 @@ func TestParseConfig(t *testing.T) {
 			expectedConfig: Config{
 				Network:          network.DefaultConfig,
 				ChecksumsEnabled: true,
+				Config:           DefaultConfig.Config,
 			},
 		},
 		{
@@ -55,6 +56,7 @@ func TestParseConfig(t *testing.T) {
 					MaxBloomFilterFalsePositiveProbability:      network.DefaultConfig.MaxBloomFilterFalsePositiveProbability,
 				},
 				ChecksumsEnabled: DefaultConfig.ChecksumsEnabled,
+				Config:           DefaultConfig.Config,
 			},
 		},
 	}

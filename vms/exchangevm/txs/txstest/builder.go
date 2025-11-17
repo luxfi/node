@@ -24,8 +24,10 @@ import (
 )
 
 type Builder struct {
-	utxos *utxos
-	ctx   *builder.Context
+	utxos     *utxos
+	ctx       *builder.Context
+	networkID uint32
+	chainID   ids.ID
 }
 
 func New(
@@ -38,9 +40,22 @@ func New(
 ) *Builder {
 	utxos := newUTXOs(ctx, state, sharedMemory, codec)
 	return &Builder{
-		utxos: utxos,
-		ctx:   newContext(ctx, cfg, feeAssetID),
+		utxos:     utxos,
+		ctx:       newContext(ctx, cfg, feeAssetID),
+		networkID: 0, // Will be set from VM context
+		chainID:   ids.Empty,
 	}
+}
+
+// SetContextIDs sets the network ID and chain ID from the VM's consensus context
+func (b *Builder) SetContextIDs(networkID uint32, chainID ids.ID) {
+	b.networkID = networkID
+	b.chainID = chainID
+	// Update the builder context as well
+	b.ctx.NetworkID = networkID
+	b.ctx.BlockchainID = chainID
+	// Update the utxos chain ID so it looks up UTXOs from the correct source
+	b.utxos.SetChainID(chainID)
 }
 
 func (b *Builder) CreateAssetTx(

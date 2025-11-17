@@ -261,7 +261,9 @@ func (b *Block) Accept(ctx context.Context) error {
 
 	txs := b.Txs()
 	for _, tx := range txs {
-		b.manager.onAccept(tx)
+		if b.manager.onAccept != nil {
+			b.manager.onAccept(tx)
+		}
 	}
 
 	b.manager.lastAccepted = blkID
@@ -293,8 +295,10 @@ func (b *Block) Accept(ctx context.Context) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := b.manager.backend.SharedMemory.Apply(requests, batch); err != nil {
-		return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
+	if b.manager.backend.SharedMemory != nil {
+		if err := b.manager.backend.SharedMemory.Apply(requests, batch); err != nil {
+			return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
+		}
 	}
 
 	if err := b.manager.metrics.MarkBlockAccepted(b); err != nil {

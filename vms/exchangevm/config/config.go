@@ -15,6 +15,9 @@ type Config struct {
 
 	// Time of the Etna network upgrade
 	EtnaTime time.Time `json:"etnaTime"`
+
+	// IndexTransactions enables transaction indexing by address
+	IndexTransactions bool `json:"indexTransactions"`
 }
 
 func (c *Config) IsEtnaActivated(timestamp time.Time) bool {

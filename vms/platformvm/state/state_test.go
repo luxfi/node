@@ -868,14 +868,18 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[0].NodeID: {
 					NodeID:    primaryStakers[0].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[0].PublicKey),
+					Light:     primaryStakers[0].Weight,
 					Weight:    primaryStakers[0].Weight,
+					TxID:      primaryStakers[0].TxID,
 				},
 			},
 			expectedNetValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				subnetStakers[0].NodeID: {
 					NodeID:    subnetStakers[0].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[0].PublicKey),
+					Light:     subnetStakers[0].Weight,
 					Weight:    subnetStakers[0].Weight,
+					TxID:      subnetStakers[0].TxID,
 				},
 			},
 		},
@@ -902,7 +906,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[1].NodeID: {
 					NodeID:    primaryStakers[1].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[1].PublicKey),
-					Light:     subnetStakers[1].Weight,
+
 					Light:     primaryStakers[1].Weight,
 					Weight:    primaryStakers[1].Weight,
 				},
@@ -918,7 +922,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[2].NodeID: {
 					NodeID:    primaryStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-					Light:     subnetStakers[2].Weight,
+
 					Light:     primaryStakers[2].Weight,
 					Weight:    primaryStakers[2].Weight,
 				},
@@ -927,7 +931,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				subnetStakers[2].NodeID: {
 					NodeID:    subnetStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-					Light:     subnetStakers[2].Weight,
+
 					Light:     primaryStakers[2].Weight,
 					Weight:    subnetStakers[2].Weight,
 				},
@@ -940,21 +944,21 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[2].NodeID: {
 					NodeID:    primaryStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-					Light:     subnetStakers[2].Weight,
+
 					Light:     primaryStakers[2].Weight,
 					Weight:    primaryStakers[2].Weight,
 				},
 				primaryStakers[3].NodeID: {
 					NodeID:    primaryStakers[3].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[3].PublicKey),
-					Light:     subnetStakers[3].Weight,
+
 					Light:     primaryStakers[3].Weight,
 					Weight:    primaryStakers[3].Weight,
 				},
 				primaryStakers[4].NodeID: {
 					NodeID:    primaryStakers[4].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[4].PublicKey),
-					Light:     subnetStakers[4].Weight,
+
 					Light:     primaryStakers[4].Weight,
 					Weight:    primaryStakers[4].Weight,
 				},
@@ -963,21 +967,21 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				subnetStakers[2].NodeID: {
 					NodeID:    subnetStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-					Light:     subnetStakers[2].Weight,
+
 					Light:     primaryStakers[2].Weight,
 					Weight:    subnetStakers[2].Weight,
 				},
 				subnetStakers[3].NodeID: {
 					NodeID:    subnetStakers[3].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[3].PublicKey),
-					Light:     subnetStakers[3].Weight,
+
 					Light:     primaryStakers[3].Weight,
 					Weight:    subnetStakers[3].Weight,
 				},
 				subnetStakers[4].NodeID: {
 					NodeID:    subnetStakers[4].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[4].PublicKey),
-					Light:     subnetStakers[4].Weight,
+
 					Light:     primaryStakers[4].Weight,
 					Weight:    subnetStakers[4].Weight,
 				},
@@ -1895,7 +1899,7 @@ func TestL1Validators(t *testing.T) {
 
 			var (
 				initialL1Validators = make(map[ids.ID]L1Validator)
-				subnetIDs           set.Set[ids.ID]
+				subnetIDs           = set.NewSet[ids.ID](0)
 			)
 			for _, l1Validator := range test.initial {
 				// The codec creates zero length slices rather than leaving them
@@ -1989,7 +1993,7 @@ func TestL1Validators(t *testing.T) {
 			assertChainsEqual(t, state, d)
 
 			// Verify that the subnetID+nodeID -> validationID mapping is correct.
-			var populatedNetIDNodeIDs set.Set[subnetIDNodeID]
+			var populatedNetIDNodeIDs = set.NewSet[subnetIDNodeID](0)
 			for _, l1Validator := range expectedL1Validators {
 				if l1Validator.isDeleted() {
 					continue
@@ -2041,10 +2045,12 @@ func TestL1Validators(t *testing.T) {
 						vdr = &validators.GetValidatorOutput{
 							NodeID:    nodeID,
 							PublicKey: bls.PublicKeyToUncompressedBytes(l1Validator.effectivePublicKey()),
+							TxID:      l1Validator.ValidationID,
 						}
 						validatorSet[nodeID] = vdr
 					}
 					vdr.Weight += l1Validator.Weight
+					vdr.Light = vdr.Weight // Keep Light in sync with Weight
 				}
 				return validatorSet
 			}

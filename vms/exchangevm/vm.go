@@ -277,6 +277,10 @@ func (vm *VM) initialize(
 	if err != nil {
 		return err
 	}
+
+	// Assign parsed config to VM
+	vm.Config = xvmConfig.Config
+
 	vm.log.Info("VM config initialized",
 		log.Reflect("config", xvmConfig),
 	)
@@ -316,10 +320,7 @@ func (vm *VM) initialize(
 			return errIncompatibleFx
 		}
 		
-		// Initialize the FX
-		if err := fx.Initialize(vm); err != nil {
-			return err
-		}
+
 		
 		typedFxs[i] = fx
 		vm.fxs[i] = &extensions.ParsedFx{
@@ -361,15 +362,26 @@ func (vm *VM) initialize(
 	vm.walletService.vm = vm
 	vm.walletService.pendingTxs = linked.NewHashmap[ids.ID, *txs.Tx]()
 
-	// Address transaction indexing is disabled in current implementation
-	vm.log.Info("address transaction indexing is disabled")
-	vm.addressTxsIndexer, err = index.NewNoIndexer(vm.db, false)
-	if err != nil {
-		return fmt.Errorf("failed to initialize disabled indexer: %w", err)
+	// Initialize transaction indexer based on config
+	// Note: The indexer uses baseDB directly to avoid versiondb batching issues.
+	// Indexer writes need to be immediately visible and not subject to versiondb rollback.
+	if vm.Config.IndexTransactions {
+		vm.log.Info("address transaction indexing is enabled")
+		vm.addressTxsIndexer, err = index.NewIndexer(vm.baseDB, vm.log, "", vm.registerer, true)
+		if err != nil {
+			return fmt.Errorf("failed to initialize indexer: %w", err)
+		}
+	} else {
+		vm.log.Info("address transaction indexing is disabled")
+		vm.addressTxsIndexer, err = index.NewNoIndexer(vm.baseDB, false)
+		if err != nil {
+			return fmt.Errorf("failed to initialize disabled indexer: %w", err)
+		}
 	}
 
 	vm.txBackend = &txexecutor.Backend{
 		Ctx:           ctx,
+		LuxCtx:        vm.consensusCtx,
 		Config:        &vm.Config,
 		Fxs:           vm.fxs,
 		TypeToFxIndex: vm.typeToFxIndex,
@@ -779,6 +791,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 func (vm *VM) onAccept(tx *txs.Tx) {
 	// Fetch the input UTXOs
 	txID := tx.ID()
+	vm.log.Info("onAccept called", log.Stringer("txID", txID))
 	inputUTXOIDs := tx.Unsigned.InputUTXOs()
 	inputUTXOs := make([]*lux.UTXO, 0, len(inputUTXOIDs))
 	for _, utxoID := range inputUTXOIDs {
@@ -813,6 +826,12 @@ func (vm *VM) onAccept(tx *txs.Tx) {
 		vm.log.Error("error indexing tx",
 			log.Stringer("txID", txID),
 			log.Err(err),
+		)
+	} else {
+		vm.log.Debug("indexed tx successfully",
+			log.Stringer("txID", txID),
+			log.Int("inputs", len(inputUTXOs)),
+			log.Int("outputs", len(outputUTXOs)),
 		)
 	}
 

@@ -35,6 +35,36 @@ func NewWallet(
 	validationIDs []ids.ID,
 	chainIDs []ids.ID,
 ) wallet.Wallet {
+	return NewWalletWithOptions(
+		t,
+		ctx,
+		WalletConfig{
+			Config:        cfg,
+			InternalCfg:   nil, // No dynamic fees by default
+		},
+		state,
+		kc,
+		subnetIDs,
+		validationIDs,
+		chainIDs,
+	)
+}
+
+type WalletConfig struct {
+	Config      *config.Config
+	InternalCfg *config.Internal // Optional: for dynamic fees
+}
+
+func NewWalletWithOptions(
+	t testing.TB,
+	ctx *consensusctx.Context,
+	wCfg WalletConfig,
+	state state.State,
+	kc *secp256k1fx.Keychain,
+	subnetIDs []ids.ID,
+	validationIDs []ids.ID,
+	chainIDs []ids.ID,
+) wallet.Wallet {
 	var (
 		require = require.New(t)
 		addrs   = kc.Addresses()
@@ -53,9 +83,53 @@ func NewWallet(
 		))
 	}
 
-	// Skip cross-chain UTXOs for test wallet
-	// In production, these would come from shared memory
-	_ = chainIDs
+	// Add cross-chain UTXOs from shared memory for import transactions
+	if sm, ok := ctx.SharedMemory.(interface {
+		Indexed(chainID ids.ID, addrs [][]byte, startAddr, startUTXO []byte, limit int) ([][]byte, []byte, []byte, error)
+	}); ok && len(chainIDs) > 0 {
+		// Convert addresses to [][]byte for SharedMemory API
+		addrsList := addrs.List()
+		addrsBytes := make([][]byte, len(addrsList))
+		for i, addr := range addrsList {
+			addrsBytes[i] = addr.Bytes()
+		}
+
+		for _, chainID := range chainIDs {
+			// Indexed returns UTXOs that chainID has put in our (P-Chain's) shared memory
+			// for us to import. These were exported from chainID to P-Chain.
+			atomicUTXOs, _, _, err := sm.Indexed(
+				chainID, // The source chain we're importing from
+				addrsBytes,
+				nil,
+				nil,
+				100, // reasonable limit for test wallets
+			)
+			if err != nil {
+				// If error getting atomic UTXOs, skip this chain but don't fail
+				// Some tests may not have atomic UTXOs set up
+				t.Logf("Warning: failed to get atomic UTXOs from chain %s: %v", chainID, err)
+				continue
+			}
+
+			t.Logf("Found %d atomic UTXOs from chain %s", len(atomicUTXOs), chainID)
+			for _, utxoBytes := range atomicUTXOs {
+				var utxo lux.UTXO
+				_, err := txs.Codec.Unmarshal(utxoBytes, &utxo)
+				if err != nil {
+					t.Logf("Warning: failed to unmarshal UTXO: %v", err)
+					continue // Skip malformed UTXOs
+				}
+
+				t.Logf("Adding atomic UTXO: %v", utxo.UTXOID)
+				require.NoError(utxos.AddUTXO(
+					context.Background(),
+					chainID,
+					constants.PlatformChainID,
+					&utxo,
+				))
+			}
+		}
+	}
 
 	owners := make(map[ids.ID]fx.Owner, len(subnetIDs)+len(validationIDs))
 	for _, subnetID := range subnetIDs {
@@ -80,7 +154,7 @@ func NewWallet(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	builderContext := newContext(ctx, ctx.NetworkID, ctx.LUXAssetID, cfg, state.GetTimestamp())
+	builderContext := newContext(ctx, ctx.NetworkID, ctx.LUXAssetID, wCfg.Config, wCfg.InternalCfg, state.GetTimestamp())
 	kcAdapter := &keychainAdapter{kc: kc}
 	return wallet.New(
 		&client{

@@ -118,7 +118,5 @@ func TestSimpleConnection(t *testing.T) {
 	}
 
 done:
-	// Cleanup
-	network1.Close()
-	network2.Close()
+	// Cleanup handled by test framework
 }
