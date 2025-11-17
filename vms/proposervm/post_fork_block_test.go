@@ -986,7 +986,11 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 	proBlk1, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
+	// Advance clock by 1 second to ensure proBlk2 gets a different timestamp
+	// (and thus a different ID) even though it wraps the same core block
 	minimumHeight++
+	proVM.Set(proVM.Time().Add(time.Second))
+
 	proBlk2, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 	require.NotEqual(proBlk2.ID(), proBlk1.ID())

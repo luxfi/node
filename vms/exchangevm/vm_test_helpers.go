@@ -289,28 +289,8 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Register cleanup to prevent goroutine leaks
 	// This ensures PushGossip and PullGossip goroutines are properly terminated
 	t.Cleanup(func() {
-		// Try to acquire the lock with a timeout to avoid deadlock
-		// If we can't get the lock, the test likely held it, so we proceed anyway
-		lockAcquired := make(chan bool, 1)
-		go func() {
-			vm.Lock.Lock()
-			lockAcquired <- true
-		}()
-		
-		select {
-		case <-lockAcquired:
-			defer vm.Lock.Unlock()
-		case <-time.After(100 * time.Millisecond):
-			// Lock acquisition timed out, proceeding without lock
-			// This can happen if the test holds the lock when cleanup runs
-		}
-		
-		if err := vm.Shutdown(); err != nil {
-			// Don't log "closed" errors as they're expected during shutdown
-			if err.Error() != "closed" {
-				t.Logf("Warning: VM shutdown error: %v", err)
-			}
-		}
+		// Shutdown the VM to cancel onShutdownCtx and stop gossip goroutines
+		_ = vm.Shutdown()
 	})
 
 	// Linearize the DAG to initialize the network
