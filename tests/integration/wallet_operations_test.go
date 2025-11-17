@@ -41,7 +41,7 @@ func TestWalletCreation(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -55,7 +55,7 @@ func TestWalletCreation(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -111,7 +111,7 @@ func TestWalletTransfer(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -125,7 +125,7 @@ func TestWalletTransfer(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -184,7 +184,7 @@ func TestWalletBalance(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -198,7 +198,7 @@ func TestWalletBalance(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()

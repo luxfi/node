@@ -40,7 +40,7 @@ func TestNodeLifecycle(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -54,7 +54,7 @@ func TestNodeLifecycle(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -98,7 +98,7 @@ func TestNodeRestart(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -112,7 +112,7 @@ func TestNodeRestart(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -172,7 +172,7 @@ func TestMultiNodeNetwork(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -186,7 +186,7 @@ func TestMultiNodeNetwork(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()

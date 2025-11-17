@@ -67,7 +67,7 @@ func TestCChainOperations(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -81,7 +81,7 @@ func TestCChainOperations(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -123,7 +123,7 @@ func TestXChainOperations(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -137,7 +137,7 @@ func TestXChainOperations(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -179,7 +179,7 @@ func TestPChainOperations(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -193,7 +193,7 @@ func TestPChainOperations(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()
@@ -240,7 +240,7 @@ func TestBlockProduction(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Start the network
@@ -254,7 +254,7 @@ func TestBlockProduction(t *testing.T) {
 
 	// Ensure network stops
 	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 		network.Stop(shutdownCtx)
 	}()

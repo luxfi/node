@@ -33,7 +33,7 @@ func TestDatabaseE2E(t *testing.T) {
 var _ = ginkgo.Describe("[Database E2E]", func() {
 	ginkgo.Context("Cross-implementation compatibility", func() {
 		ginkgo.It("Should handle data migration between different backends", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			// Test data migration from LevelDB to PebbleDB
@@ -41,7 +41,7 @@ var _ = ginkgo.Describe("[Database E2E]", func() {
 		})
 
 		ginkgo.It("Should maintain consistency across concurrent operations", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			// Test concurrent read/write operations
@@ -49,7 +49,7 @@ var _ = ginkgo.Describe("[Database E2E]", func() {
 		})
 
 		ginkgo.It("Should handle large datasets efficiently", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
 
 			// Test with large datasets
@@ -59,14 +59,14 @@ var _ = ginkgo.Describe("[Database E2E]", func() {
 
 	ginkgo.Context("Error handling and recovery", func() {
 		ginkgo.It("Should recover from corrupt data gracefully", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			testCorruptionRecovery(ctx)
 		})
 
 		ginkgo.It("Should handle disk space exhaustion", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			testDiskSpaceExhaustion(ctx)
@@ -75,14 +75,14 @@ var _ = ginkgo.Describe("[Database E2E]", func() {
 
 	ginkgo.Context("Performance benchmarks", func() {
 		ginkgo.It("Should meet read performance requirements", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			testReadPerformance(ctx)
 		})
 
 		ginkgo.It("Should meet write performance requirements", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			testWritePerformance(ctx)

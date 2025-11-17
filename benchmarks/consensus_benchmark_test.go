@@ -118,7 +118,7 @@ func BenchmarkContextWithTimeout(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cancel()
 		_ = ctx
 	}

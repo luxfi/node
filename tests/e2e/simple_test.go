@@ -45,7 +45,7 @@ func TestSimpleNetworkStart(t *testing.T) {
 	}
 
 	// Start the network
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	// Bootstrap the network
@@ -54,7 +54,7 @@ func TestSimpleNetworkStart(t *testing.T) {
 
 	// Clean up
 	defer func() {
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stopCancel()
 		_ = network.Stop(stopCtx)
 	}()

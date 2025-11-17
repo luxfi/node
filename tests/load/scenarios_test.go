@@ -140,7 +140,7 @@ func TestScenarioRampUp(t *testing.T) {
 	orchestrator := NewOrchestrator(agents, tracker, log, config)
 
 	// Add timeout for ramp-up test
-	testCtx, cancel := context.WithTimeout(ctx, 45*time.Second) // Increased timeout
+	testCtx, cancel := context.WithTimeout(ctx, 15*time.Second) // Optimized timeout
 	defer cancel()
 
 	err = orchestrator.Execute(testCtx)
@@ -201,7 +201,7 @@ func TestScenarioSpike(t *testing.T) {
 	orchestrator := NewOrchestrator(agents, tracker, log, config)
 
 	// Add timeout to prevent hanging
-	testCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	testCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	err = orchestrator.Execute(testCtx)
