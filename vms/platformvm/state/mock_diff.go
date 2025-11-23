@@ -15,8 +15,8 @@ import (
 
 	ids "github.com/luxfi/ids"
 	iterator "github.com/luxfi/node/utils/iterator"
-	lux "github.com/luxfi/node/vms/components/lux"
 	gas "github.com/luxfi/node/vms/components/gas"
+	lux "github.com/luxfi/node/vms/components/lux"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
@@ -59,28 +59,16 @@ func (mr *MockDiffMockRecorder) AddChain(createChainTx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChain", reflect.TypeOf((*MockDiff)(nil).AddChain), createChainTx)
 }
 
-// AddRewardUTXO mocks base method.
-func (m *MockDiff) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
-}
-
-// AddRewardUTXO indicates an expected call of AddRewardUTXO.
-func (mr *MockDiffMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockDiff)(nil).AddRewardUTXO), txID, utxo)
-}
-
 // AddNet mocks base method.
-func (m *MockDiff) AddNet(subnetID ids.ID) {
+func (m *MockDiff) AddNet(netID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddNet", subnetID)
+	m.ctrl.Call(m, "AddNet", netID)
 }
 
 // AddNet indicates an expected call of AddNet.
-func (mr *MockDiffMockRecorder) AddNet(subnetID any) *gomock.Call {
+func (mr *MockDiffMockRecorder) AddNet(netID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNet", reflect.TypeOf((*MockDiff)(nil).AddNet), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNet", reflect.TypeOf((*MockDiff)(nil).AddNet), netID)
 }
 
 // AddNetTransformation mocks base method.
@@ -95,16 +83,28 @@ func (mr *MockDiffMockRecorder) AddNetTransformation(transformNetTx any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNetTransformation", reflect.TypeOf((*MockDiff)(nil).AddNetTransformation), transformNetTx)
 }
 
-// AddTx mocks base method.
-func (m *MockDiff) AddTx(tx *txs.Tx, status status.Status) {
+// AddRewardUTXO mocks base method.
+func (m *MockDiff) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", tx, status)
+	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
+}
+
+// AddRewardUTXO indicates an expected call of AddRewardUTXO.
+func (mr *MockDiffMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockDiff)(nil).AddRewardUTXO), txID, utxo)
+}
+
+// AddTx mocks base method.
+func (m *MockDiff) AddTx(tx *txs.Tx, arg1 status.Status) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddTx", tx, arg1)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockDiffMockRecorder) AddTx(tx, status any) *gomock.Call {
+func (mr *MockDiffMockRecorder) AddTx(tx, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockDiff)(nil).AddTx), tx, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockDiff)(nil).AddTx), tx, arg1)
 }
 
 // AddUTXO mocks base method.
@@ -280,33 +280,33 @@ func (mr *MockDiffMockRecorder) GetCurrentSupply(subnetID any) *gomock.Call {
 }
 
 // GetCurrentValidator mocks base method.
-func (m *MockDiff) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
+func (m *MockDiff) GetCurrentValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentValidator", subnetID, nodeID)
+	ret := m.ctrl.Call(m, "GetCurrentValidator", netID, nodeID)
 	ret0, _ := ret[0].(*Staker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCurrentValidator indicates an expected call of GetCurrentValidator.
-func (mr *MockDiffMockRecorder) GetCurrentValidator(subnetID, nodeID any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetCurrentValidator(netID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentValidator", reflect.TypeOf((*MockDiff)(nil).GetCurrentValidator), subnetID, nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentValidator", reflect.TypeOf((*MockDiff)(nil).GetCurrentValidator), netID, nodeID)
 }
 
 // GetDelegateeReward mocks base method.
-func (m *MockDiff) GetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID) (uint64, error) {
+func (m *MockDiff) GetDelegateeReward(netID ids.ID, nodeID ids.NodeID) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDelegateeReward", subnetID, nodeID)
+	ret := m.ctrl.Call(m, "GetDelegateeReward", netID, nodeID)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDelegateeReward indicates an expected call of GetDelegateeReward.
-func (mr *MockDiffMockRecorder) GetDelegateeReward(subnetID, nodeID any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetDelegateeReward(netID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDelegateeReward", reflect.TypeOf((*MockDiff)(nil).GetDelegateeReward), subnetID, nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDelegateeReward", reflect.TypeOf((*MockDiff)(nil).GetDelegateeReward), netID, nodeID)
 }
 
 // GetExpiryIterator mocks base method.
@@ -367,6 +367,51 @@ func (mr *MockDiffMockRecorder) GetL1ValidatorExcess() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetL1ValidatorExcess", reflect.TypeOf((*MockDiff)(nil).GetL1ValidatorExcess))
 }
 
+// GetNetOwner mocks base method.
+func (m *MockDiff) GetNetOwner(netID ids.ID) (fx.Owner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetOwner", netID)
+	ret0, _ := ret[0].(fx.Owner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetOwner indicates an expected call of GetNetOwner.
+func (mr *MockDiffMockRecorder) GetNetOwner(netID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetOwner", reflect.TypeOf((*MockDiff)(nil).GetNetOwner), netID)
+}
+
+// GetNetToL1Conversion mocks base method.
+func (m *MockDiff) GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetToL1Conversion", subnetID)
+	ret0, _ := ret[0].(NetToL1Conversion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetToL1Conversion indicates an expected call of GetNetToL1Conversion.
+func (mr *MockDiffMockRecorder) GetNetToL1Conversion(subnetID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetToL1Conversion", reflect.TypeOf((*MockDiff)(nil).GetNetToL1Conversion), subnetID)
+}
+
+// GetNetTransformation mocks base method.
+func (m *MockDiff) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetTransformation", subnetID)
+	ret0, _ := ret[0].(*txs.Tx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetTransformation indicates an expected call of GetNetTransformation.
+func (mr *MockDiffMockRecorder) GetNetTransformation(subnetID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetTransformation", reflect.TypeOf((*MockDiff)(nil).GetNetTransformation), subnetID)
+}
+
 // GetPendingDelegatorIterator mocks base method.
 func (m *MockDiff) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()
@@ -398,63 +443,18 @@ func (mr *MockDiffMockRecorder) GetPendingStakerIterator() *gomock.Call {
 }
 
 // GetPendingValidator mocks base method.
-func (m *MockDiff) GetPendingValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
+func (m *MockDiff) GetPendingValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingValidator", subnetID, nodeID)
+	ret := m.ctrl.Call(m, "GetPendingValidator", netID, nodeID)
 	ret0, _ := ret[0].(*Staker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPendingValidator indicates an expected call of GetPendingValidator.
-func (mr *MockDiffMockRecorder) GetPendingValidator(subnetID, nodeID any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetPendingValidator(netID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingValidator", reflect.TypeOf((*MockDiff)(nil).GetPendingValidator), subnetID, nodeID)
-}
-
-// GetNetOwner mocks base method.
-func (m *MockDiff) GetNetOwner(subnetID ids.ID) (fx.Owner, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetOwner", subnetID)
-	ret0, _ := ret[0].(fx.Owner)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetOwner indicates an expected call of GetNetOwner.
-func (mr *MockDiffMockRecorder) GetNetOwner(subnetID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetOwner", reflect.TypeOf((*MockDiff)(nil).GetNetOwner), subnetID)
-}
-
-// GetNetToL1Conversion mocks base method.
-func (m *MockDiff) GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetToL1Conversion", subnetID)
-	ret0, _ := ret[0].(NetToL1Conversion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetToL1Conversion indicates an expected call of GetNetToL1Conversion.
-func (mr *MockDiffMockRecorder) GetNetToL1Conversion(subnetID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetToL1Conversion", reflect.TypeOf((*MockDiff)(nil).GetNetToL1Conversion), subnetID)
-}
-
-// GetNetTransformation mocks base method.
-func (m *MockDiff) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetTransformation", subnetID)
-	ret0, _ := ret[0].(*txs.Tx)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetTransformation indicates an expected call of GetNetTransformation.
-func (mr *MockDiffMockRecorder) GetNetTransformation(subnetID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetTransformation", reflect.TypeOf((*MockDiff)(nil).GetNetTransformation), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingValidator", reflect.TypeOf((*MockDiff)(nil).GetPendingValidator), netID, nodeID)
 }
 
 // GetTimestamp mocks base method.
@@ -585,17 +585,17 @@ func (mr *MockDiffMockRecorder) PutExpiry(arg0 any) *gomock.Call {
 }
 
 // PutL1Validator mocks base method.
-func (m *MockDiff) PutL1Validator(l1Validator L1Validator) error {
+func (m *MockDiff) PutL1Validator(validator L1Validator) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PutL1Validator", l1Validator)
+	ret := m.ctrl.Call(m, "PutL1Validator", validator)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PutL1Validator indicates an expected call of PutL1Validator.
-func (mr *MockDiffMockRecorder) PutL1Validator(l1Validator any) *gomock.Call {
+func (mr *MockDiffMockRecorder) PutL1Validator(validator any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutL1Validator", reflect.TypeOf((*MockDiff)(nil).PutL1Validator), l1Validator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutL1Validator", reflect.TypeOf((*MockDiff)(nil).PutL1Validator), validator)
 }
 
 // PutPendingDelegator mocks base method.
@@ -649,17 +649,17 @@ func (mr *MockDiffMockRecorder) SetCurrentSupply(subnetID, cs any) *gomock.Call 
 }
 
 // SetDelegateeReward mocks base method.
-func (m *MockDiff) SetDelegateeReward(subnetID ids.ID, nodeID ids.NodeID, amount uint64) error {
+func (m *MockDiff) SetDelegateeReward(netID ids.ID, nodeID ids.NodeID, amount uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDelegateeReward", subnetID, nodeID, amount)
+	ret := m.ctrl.Call(m, "SetDelegateeReward", netID, nodeID, amount)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetDelegateeReward indicates an expected call of SetDelegateeReward.
-func (mr *MockDiffMockRecorder) SetDelegateeReward(subnetID, nodeID, amount any) *gomock.Call {
+func (mr *MockDiffMockRecorder) SetDelegateeReward(netID, nodeID, amount any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDelegateeReward", reflect.TypeOf((*MockDiff)(nil).SetDelegateeReward), subnetID, nodeID, amount)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDelegateeReward", reflect.TypeOf((*MockDiff)(nil).SetDelegateeReward), netID, nodeID, amount)
 }
 
 // SetFeeState mocks base method.
@@ -687,15 +687,15 @@ func (mr *MockDiffMockRecorder) SetL1ValidatorExcess(e any) *gomock.Call {
 }
 
 // SetNetOwner mocks base method.
-func (m *MockDiff) SetNetOwner(subnetID ids.ID, owner fx.Owner) {
+func (m *MockDiff) SetNetOwner(netID ids.ID, owner fx.Owner) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetNetOwner", subnetID, owner)
+	m.ctrl.Call(m, "SetNetOwner", netID, owner)
 }
 
 // SetNetOwner indicates an expected call of SetNetOwner.
-func (mr *MockDiffMockRecorder) SetNetOwner(subnetID, owner any) *gomock.Call {
+func (mr *MockDiffMockRecorder) SetNetOwner(netID, owner any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNetOwner", reflect.TypeOf((*MockDiff)(nil).SetNetOwner), subnetID, owner)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNetOwner", reflect.TypeOf((*MockDiff)(nil).SetNetOwner), netID, owner)
 }
 
 // SetNetToL1Conversion mocks base method.

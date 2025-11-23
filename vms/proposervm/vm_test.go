@@ -29,6 +29,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/timer/mockable"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -327,7 +328,10 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 	require.IsType(&postForkBlock{}, consensusBlock)
 	proBlock := consensusBlock.(*postForkBlock)
 
-	require.Equal(coreBlk, proBlock.innerBlk)
+	// innerBlk is wrapped in reverseBlockAdapter, so unwrap it
+	adapter, ok := proBlock.innerBlk.(*reverseBlockAdapter)
+	require.True(ok, "innerBlk should be wrapped in reverseBlockAdapter")
+	require.Equal(coreBlk, adapter.Block)
 }
 
 // both core blocks and pro blocks must be built on preferred
@@ -1689,11 +1693,23 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// use a different way to construct inner block Y and outer block B
 	yBlock := componentblocktest.BuildChild(componentblocktest.Genesis)
 
+	// Calculate proper epoch for child of genesis block (pre-fork)
+	// Genesis has no epoch (empty), so child gets first epoch
+	parentEpoch := statelessblock.Epoch{} // Genesis is pre-fork, no epoch
+	parentPChainHeight := uint64(0)       // Genesis P-chain height
+	childEpoch := lp181.NewEpoch(
+		proVM.Upgrades,
+		parentPChainHeight,
+		parentEpoch,
+		componentblocktest.GenesisTimestamp,
+		componentblocktest.GenesisTimestamp.Add(proposer.MaxBuildWindows*proposer.WindowDuration),
+	)
+
 	ySlb, err := statelessblock.BuildUnsigned(
 		componentblocktest.GenesisID,
 		componentblocktest.GenesisTimestamp,
 		defaultPChainHeight,
-		statelessblock.Epoch{},
+		childEpoch,
 		yBlock.Bytes(),
 	)
 	require.NoError(err)

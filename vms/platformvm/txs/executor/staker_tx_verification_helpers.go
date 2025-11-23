@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/utxo"
 )
 
 type addValidatorRules struct {
@@ -31,7 +30,7 @@ func getValidatorRules(
 ) (*addValidatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
 		return &addValidatorRules{
-			assetID:           utxo.XAssetID,
+			assetID:           backend.Ctx.LUXAssetID,
 			minValidatorStake: backend.Config.MinValidatorStake,
 			maxValidatorStake: backend.Config.MaxValidatorStake,
 			minStakeDuration:  backend.Config.MinStakeDuration,
@@ -71,7 +70,7 @@ func getDelegatorRules(
 ) (*addDelegatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
 		return &addDelegatorRules{
-			assetID:                  utxo.XAssetID,
+			assetID:                  backend.Ctx.LUXAssetID,
 			minDelegatorStake:        backend.Config.MinDelegatorStake,
 			maxValidatorStake:        backend.Config.MaxValidatorStake,
 			minStakeDuration:         backend.Config.MinStakeDuration,

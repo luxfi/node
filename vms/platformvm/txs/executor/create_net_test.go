@@ -12,10 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -27,28 +29,32 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 	defaultGenesisTime := time.Unix(1649891275, 0) // Use a default genesis time
 	ap3Time := defaultGenesisTime.Add(time.Hour)
 	tests := []struct {
-		name        string
-		time        time.Time
-		fee         uint64
-		expectedErr error
+		name         string
+		time         time.Time
+		walletFee    uint64  // Fee the wallet will pay when building transaction
+		validatorFee uint64  // Fee the validator requires
+		expectedErr  error
 	}{
 		{
-			name:        "pre-fork - correctly priced",
-			time:        defaultGenesisTime,
-			fee:         0,
-			expectedErr: nil,
+			name:         "pre-fork - correctly priced",
+			time:         defaultGenesisTime,
+			walletFee:    0,
+			validatorFee: 0,
+			expectedErr:  nil,
 		},
 		{
-			name:        "post-fork - incorrectly priced",
-			time:        ap3Time,
-			fee:         100*defaultTxFee - 1*units.NanoLux,
-			expectedErr: utxo.ErrInsufficientUnlockedFunds,
+			name:         "post-fork - incorrectly priced",
+			time:         ap3Time,
+			walletFee:    100*defaultTxFee - 1*units.NanoLux,
+			validatorFee: 100 * defaultTxFee,
+			expectedErr:  utxo.ErrInsufficientUnlockedFunds,
 		},
 		{
-			name:        "post-fork - correctly priced",
-			time:        ap3Time,
-			fee:         100 * defaultTxFee,
-			expectedErr: nil,
+			name:         "post-fork - correctly priced",
+			time:         ap3Time,
+			walletFee:    100*defaultTxFee + 10000, // Add extra to cover all fees
+			validatorFee: 100 * defaultTxFee,
+			expectedErr:  nil,
 		},
 	}
 	for _, test := range tests {
@@ -63,10 +69,12 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 			env.state.SetTimestamp(test.time) // to duly set fee
 
 			// Create a proper config.Config for the wallet factory
+			// The wallet will try to pay test.walletFee + base TxFee
 			cfg := config.Config{
-				CreateNetTxFee: test.fee,
+				TxFee:          defaultTxFee,  // Base transaction fee
+				CreateNetTxFee: test.walletFee,
 			}
-			// Convert context for wallet factory  
+			// Convert context for wallet factory
 			consensusCtx := &consensuscontext.Context{
 				NetworkID:      env.ctx.NetworkID,
 				NetID:          env.ctx.NetID,
@@ -85,7 +93,9 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 				WarpSigner:     env.ctx.WarpSigner,
 			}
 			factory := txstest.NewWalletFactory(consensusCtx, &cfg, env.state)
-			builder, signer := factory.NewWallet()
+			// Use test keys to fund the wallet
+			testKeys := secp256k1.TestKeys()
+			builder, signer := factory.NewWallet(testKeys...)
 			utx, err := builder.NewCreateNetTx(
 				&secp256k1fx.OutputOwners{},
 			)
@@ -98,7 +108,11 @@ func TestCreateNetTxAP3FeeChange(t *testing.T) {
 
 			stateDiff.SetTimestamp(test.time)
 
-			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
+			// Use static fee calculator with the validator's required fee
+			feeCalculator := fee.NewSimpleStaticCalculator(fee.StaticConfig{
+				TxFee:          defaultTxFee,
+				CreateNetTxFee: test.validatorFee,
+			})
 			executor := standardTxExecutor{
 				backend:       &env.backend,
 				feeCalculator: feeCalculator,

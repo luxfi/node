@@ -659,8 +659,12 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
+
 	innerVM := consensusblockmock.NewMockChainVM(ctrl)
-	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
+
+	// Create BuildBlockWithContext VM mock
+	innerBlockBuilderVM := consensusblockmock.NewMockBuildBlockWithContextVM(ctrl)
+	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), gomock.Any()).Return(builtBlk, nil).AnyTimes()
 
 	// Create mock validator state to avoid nil pointer dereference
 	valState := validatorsmock.NewState(ctrl)
@@ -677,6 +681,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	vm := &VM{
 		ChainVM:        innerVM,
+		blockBuilderVM: innerBlockBuilderVM,
 		ctx:            consensusCtx,
 		validatorState: valState,
 		logger:         log.NewNoOpLogger(),
@@ -687,12 +692,12 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 		vm:    vm,
 	}
 
-	// Should call BuildBlock since proposervm won't have a P-chain height
+	// Should call BuildBlockWithContext since VM supports it (pre-fork, so no P-chain height)
 	gotChild, err := blk.buildChild(context.Background())
 	require.NoError(err)
 	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
 
-	// Should call BuildBlock since proposervm is not activated
+	// Should call BuildBlockWithContext since proposervm is not activated
 	innerBlk.EXPECT().Timestamp().Return(time.Time{})
 	vm.Upgrades.ApricotPhase4Time = mockable.MaxTime
 

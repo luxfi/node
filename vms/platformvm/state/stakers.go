@@ -280,6 +280,8 @@ func (d *diffValidator) WeightDiff() (ValidatorWeightDiff, error) {
 	}
 	if d.validatorStatus != unmodified {
 		weightDiff.Amount = d.validator.Weight
+		// DO NOT set ValidationID here - it's set by L1 validator state management only
+		// Setting it here causes TxID to change incorrectly for delegator operations
 	}
 
 	for _, staker := range d.deletedDelegators {

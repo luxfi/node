@@ -4055,7 +4055,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			Log: log.NoLog{},
 		}
 	)
-	require.NoError(t, fx.InitializeVM(vm))
+	require.NoError(t, fx.Initialize(vm))
 	require.NoError(t, fx.Bootstrapped())
 
 	var (

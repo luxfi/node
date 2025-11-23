@@ -526,7 +526,54 @@ func (vm *VM) Initialize(
 	// Parse genesis or use default
 	var genesis *gethcore.Genesis
 
-	if false { // Old hardcoded fallback (disabled)
+	// PRIORITY CHECK: For network 96369, always load genesis from migrated database
+	// This overrides any genesis bytes that might be provided
+	// Check if genesis bytes contain chainId 96369
+	var shouldLoadMigratedGenesis bool
+	var loadedMigratedGenesis bool // Flag to skip remaining genesis parsing
+	if len(genesisBytes) > 0 {
+		var genesisMap map[string]interface{}
+		if err := json.Unmarshal(genesisBytes, &genesisMap); err == nil {
+			// Check for chainId in nested config object
+			if configMap, ok := genesisMap["config"].(map[string]interface{}); ok {
+				if chainID, ok := configMap["chainId"].(float64); ok && int64(chainID) == 96369 {
+					shouldLoadMigratedGenesis = true
+					fmt.Printf("=== GENESIS JSON HAS CHAINID 96369 - Will load from migrated database ===\n")
+				}
+			}
+		}
+	}
+	
+	if shouldLoadMigratedGenesis {
+		fmt.Printf("=== NETWORK 96369 DETECTED - Copying genesis from migrated database ===\n")
+		migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+		if _, err := os.Stat(migratedDBPath); err == nil {
+			// Copy block 0 and state directly to new database
+			err := copyGenesisFromMigratedDB(vm.ethDB, migratedDBPath)
+			if err != nil {
+				vm.log.Error("Failed to copy genesis from migrated DB", "error", err)
+				return fmt.Errorf("network 96369 requires migrated genesis but failed to copy: %w", err)
+			}
+			
+			// Verify canonical hash was written correctly
+			targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+			verifyHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+			vm.log.Info("[CHECKPOINT 1] After copyGenesisFromMigratedDB",
+				"expected", targetHash.Hex(),
+				"actual", verifyHash.Hex(),
+				"match", verifyHash == targetHash)
+			
+			// Set genesis = nil so backend uses what's already in database
+			genesis = nil
+			loadedMigratedGenesis = true
+			vm.log.Info("Genesis block 0 copied from migrated database", "hash", targetHash.Hex())
+		} else {
+			vm.log.Error("Migrated database not found for network 96369", "path", migratedDBPath)
+			return fmt.Errorf("network 96369 requires migrated database at %s", migratedDBPath)
+		}
+	}
+	
+	if genesis == nil && false { // Old hardcoded fallback (disabled)
 		genesis = &gethcore.Genesis{
 				Config: &params.ChainConfig{
 				ChainID:             big.NewInt(96369),
@@ -646,12 +693,14 @@ func (vm *VM) Initialize(
 				vm.log.Info("Skipping genesis parsing due to migrated data from environment")
 				fmt.Printf("MIGRATION PATCH: Skipping genesis due to imported data at height %d\n", migratedHeight)
 				genesis = nil
-			} else {
-				// Normal genesis parsing
+			} else if !loadedMigratedGenesis {
+				// Normal genesis parsing (ONLY if we haven't already loaded from migrated DB)
 				genesis = &gethcore.Genesis{}
 				if err := json.Unmarshal(genesisBytes, genesis); err != nil {
 					return fmt.Errorf("failed to unmarshal genesis: %w", err)
 				}
+			} else {
+				fmt.Printf("=== SKIPPING GENESIS PARSING - Already loaded from migrated database ===\n")
 			}
 		} else {
 			// Normal genesis parsing
@@ -691,46 +740,79 @@ func (vm *VM) Initialize(
 			networkID = chainCtxWithID.GetNetworkID()
 		}
 		if networkID == 96369 {
-			genesis = &gethcore.Genesis{
-				Config: &params.ChainConfig{
-					ChainID:             big.NewInt(96369),
-					HomesteadBlock:      big.NewInt(0),
-					EIP150Block:         big.NewInt(0),
-					EIP155Block:         big.NewInt(0),
-					EIP158Block:         big.NewInt(0),
-					ByzantiumBlock:      big.NewInt(0),
-					ConstantinopleBlock: big.NewInt(0),
-					PetersburgBlock:     big.NewInt(0),
-					IstanbulBlock:       big.NewInt(0),
-					MuirGlacierBlock:    big.NewInt(0),
-					BerlinBlock:         big.NewInt(0),
-					LondonBlock:         big.NewInt(0),
-					ArrowGlacierBlock:   big.NewInt(0),
-					GrayGlacierBlock:    big.NewInt(0),
-					MergeNetsplitBlock:  big.NewInt(0),
-					// Activate time-based forks at genesis timestamp + 1 second
-					// This ensures they're active but don't interfere with genesis validation
-					ShanghaiTime:            newUint64(1730446787), // genesis timestamp + 1
-					CancunTime:              newUint64(1730446787), // genesis timestamp + 1
-					PragueTime:              nil,                   // Not yet defined
-					VerkleTime:              nil,                   // Not yet defined
-					TerminalTotalDifficulty: common.Big0,
-					BlobScheduleConfig: &params.BlobScheduleConfig{
-						Cancun: &params.BlobConfig{
-							Target:         3,
-							Max:            6,
-							UpdateFraction: 3338477,
+			// Load genesis from migrated database instead of hardcoding
+			migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+			if _, err := os.Stat(migratedDBPath); err == nil {
+				migratedGenesis, err := createGenesisFromMigratedDB(migratedDBPath)
+				if err != nil {
+					vm.log.Error("Failed to load genesis from migrated DB, using fallback", "error", err)
+					// Fallback to empty genesis - will be handled later
+					genesis = &gethcore.Genesis{
+						Config: &params.ChainConfig{
+							ChainID:                 big.NewInt(96369),
+							HomesteadBlock:          big.NewInt(0),
+							EIP150Block:             big.NewInt(0),
+							EIP155Block:             big.NewInt(0),
+							EIP158Block:             big.NewInt(0),
+							ByzantiumBlock:          big.NewInt(0),
+							ConstantinopleBlock:     big.NewInt(0),
+							PetersburgBlock:         big.NewInt(0),
+							IstanbulBlock:           big.NewInt(0),
+							MuirGlacierBlock:        big.NewInt(0),
+							BerlinBlock:             big.NewInt(0),
+							LondonBlock:             big.NewInt(0),
+							ArrowGlacierBlock:       big.NewInt(0),
+							GrayGlacierBlock:        big.NewInt(0),
+							MergeNetsplitBlock:      big.NewInt(0),
+							ShanghaiTime:            newUint64(1730446787),
+							CancunTime:              newUint64(1730446787),
+							TerminalTotalDifficulty: common.Big0,
+							BlobScheduleConfig: &params.BlobScheduleConfig{
+								Cancun: &params.BlobConfig{
+									Target:         3,
+									Max:            6,
+									UpdateFraction: 3338477,
+								},
+							},
+						},
+					}
+				} else {
+					genesis = migratedGenesis
+					vm.log.Info("Loaded genesis from migrated database", 
+						"hash", genesis.ToBlock().Hash().Hex(),
+						"stateRoot", genesis.ToBlock().Root().Hex())
+				}
+			} else {
+				vm.log.Warn("Migrated database not found", "path", migratedDBPath)
+				genesis = &gethcore.Genesis{
+					Config: &params.ChainConfig{
+						ChainID:                 big.NewInt(96369),
+						HomesteadBlock:          big.NewInt(0),
+						EIP150Block:             big.NewInt(0),
+						EIP155Block:             big.NewInt(0),
+						EIP158Block:             big.NewInt(0),
+						ByzantiumBlock:          big.NewInt(0),
+						ConstantinopleBlock:     big.NewInt(0),
+						PetersburgBlock:         big.NewInt(0),
+						IstanbulBlock:           big.NewInt(0),
+						MuirGlacierBlock:        big.NewInt(0),
+						BerlinBlock:             big.NewInt(0),
+						LondonBlock:             big.NewInt(0),
+						ArrowGlacierBlock:       big.NewInt(0),
+						GrayGlacierBlock:        big.NewInt(0),
+						MergeNetsplitBlock:      big.NewInt(0),
+						ShanghaiTime:            newUint64(1730446787),
+						CancunTime:              newUint64(1730446787),
+						TerminalTotalDifficulty: common.Big0,
+						BlobScheduleConfig: &params.BlobScheduleConfig{
+							Cancun: &params.BlobConfig{
+								Target:         3,
+								Max:            6,
+								UpdateFraction: 3338477,
+							},
 						},
 					},
-				},
-				Nonce:      0x0,
-				Timestamp:  0x672485c2, // 1730446786 - matches actual mainnet genesis
-				ExtraData:  []byte{},
-				GasLimit:   0xb71b00, // 12000000 - matches actual mainnet genesis
-				Difficulty: big.NewInt(0),
-				Mixhash:    common.Hash{},
-				Coinbase:   common.Address{},
-				Alloc:      gethcore.GenesisAlloc{},
+				}
 			}
 			vm.log.Info("Using genesis for migrated network 96369 data")
 		} else {
@@ -924,7 +1006,7 @@ func (vm *VM) Initialize(
 	} else {
 		// Check if database already has a genesis block
 		existingGenesisHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
-		if existingGenesisHash != (common.Hash{}) {
+		if genesis != nil && existingGenesisHash != (common.Hash{}) {
 			// Database has a genesis - check if it matches what we're trying to initialize with
 			expectedHash := genesis.ToBlock().Hash()
 			if existingGenesisHash != expectedHash {
@@ -958,12 +1040,22 @@ func (vm *VM) Initialize(
 			}
 		}
 
-		// Use normal backend (no migration)
-		if genesis != nil {
-			fmt.Printf("Creating normal backend with genesis hash: %s\n", genesis.ToBlock().Hash().Hex())
-		} else {
-			fmt.Printf("Creating normal backend using database genesis\n")
+		// CRITICAL CHECK: If genesis was already copied from migrated DB, pass nil to prevent overwrite
+		network96369GenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+		if header := rawdb.ReadHeader(vm.ethDB, network96369GenesisHash, 0); header != nil {
+			fmt.Printf("✅ Found pre-copied genesis (hash: %s), passing nil to backend to avoid overwrite\n", network96369GenesisHash.Hex())
+			genesis = nil  // Don't pass genesis to backend - it's already in the database
 		}
+
+		// Verify canonical hash before backend creation
+		targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+		preBackendHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+		vm.log.Info("[CHECKPOINT 2] Before NewMinimalEthBackend",
+			"expected", targetHash.Hex(),
+			"actual", preBackendHash.Hex(),
+			"match", preBackendHash == targetHash,
+			"genesisNil", genesis == nil)
+		
 		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
 		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	}
@@ -980,47 +1072,84 @@ func (vm *VM) Initialize(
 	
 	fmt.Printf("DEBUG: After getting blockchain and txPool, blockchain=%v\n", vm.blockChain != nil)
 
-	// CRITICAL FIX: After blockchain creation, advance CurrentBlock to HEAD
-	// The blockchain loads headers correctly but CurrentBlock stays at genesis
-	// The issue is that ReadHeadBlockHash returns genesis because loadLastState reset it
-	// We need to check the CurrentHeader (which is at HEAD) vs CurrentBlock (which is at genesis)
-	currentHeader := vm.blockChain.CurrentHeader()
-	currentBlock := vm.blockChain.CurrentBlock()
-	
-	fmt.Printf("DEBUG: currentHeader=%d, currentBlock=%d, different=%v\n", 
-		currentHeader.Number.Uint64(), currentBlock.Number.Uint64(), 
-		currentHeader.Hash() != currentBlock.Hash())
-	
-	// If CurrentHeader is ahead of CurrentBlock, we need to advance
-	if currentHeader.Number.Uint64() > currentBlock.Number.Uint64() {
-		fmt.Printf("Blockchain state: CurrentBlock=%d, CurrentHeader=%d, advancing to HEAD\n", 
-			currentBlock.Number.Uint64(), currentHeader.Number.Uint64())
-
-		headHash := currentHeader.Hash()
-		headNumber := currentHeader.Number.Uint64()
-
-		fmt.Printf("Advancing blockchain to HEAD block %d (hash: %s)\n", headNumber, headHash.Hex())
-
-		// Read the full head block and insert it to advance the blockchain
-		headBlock := rawdb.ReadBlock(vm.ethDB, headHash, headNumber)
-		if headBlock != nil {
-			fmt.Printf("Inserting HEAD block to advance blockchain...\n")
-			_, err := vm.blockChain.InsertChain([]*types.Block{headBlock})
-			if err != nil {
-				fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
-				fmt.Printf("Blockchain will remain at genesis, state queries may fail\n")
-			} else {
-				fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
-			}
-		} else {
-			fmt.Printf("ERROR: Could not read HEAD block %d from database\n", headNumber)
+	// Start runtime replay for network 96369
+	// Check if genesis hash matches network 96369
+	genesisBlock := vm.blockChain.Genesis()
+	network96369GenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+	if genesisBlock != nil && genesisBlock.Hash() == network96369GenesisHash {
+		fmt.Printf("=== STARTING RUNTIME REPLAY FOR NETWORK 96369 ===\n")
+		fmt.Printf("Genesis hash: %s\n", genesisBlock.Hash().Hex())
+		migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+		// CRITICAL: Run synchronously so blockchain can advance to correct height
+		if err := copyAllDatabaseEntries(vm.ethDB, migratedDBPath); err != nil {
+			vm.log.Error("Runtime replay failed", "error", err)
+			return err
 		}
+		vm.log.Info("Runtime replay completed successfully")
+		fmt.Printf("✅ Runtime replay completed, all canonical hashes generated\n")
+	} else if genesisBlock != nil {
+		fmt.Printf("Not network 96369 (genesis hash: %s)\n", genesisBlock.Hash().Hex())
 	}
 
-	// Get genesis hash
-	genesisBlock := vm.blockChain.Genesis()
+	// CRITICAL FIX: After runtime replay, read HEAD directly from database
+	// The blockchain object was created BEFORE runtime replay wrote the head pointers,
+	// so its cached currentHeader/currentBlock are still at genesis.
+	// We need to read LastHeader from database and force blockchain to load it.
+	
+	// Read the head hash that runtime replay wrote to database
+	headHashFromDB := rawdb.ReadHeadHeaderHash(vm.ethDB)
+	fmt.Printf("DEBUG: Head hash from database: %s\n", headHashFromDB.Hex())
+	
+	if headHashFromDB != (common.Hash{}) && headHashFromDB != genesisBlock.Hash() {
+		// First, get the block number for this hash
+		headNumber, found := rawdb.ReadHeaderNumber(vm.ethDB, headHashFromDB)
+		if !found {
+			fmt.Printf("ERROR: Could not find block number for head hash %s\n", headHashFromDB.Hex())
+		} else {
+			fmt.Printf("DEBUG: Head block number from hash lookup: %d\n", headNumber)
+			
+			// Now read the header with the correct block number
+			headHeader := rawdb.ReadHeader(vm.ethDB, headHashFromDB, headNumber)
+			if headHeader != nil {
+				fmt.Printf("DATABASE HEAD: block %d (hash: %s)\n", headNumber, headHashFromDB.Hex())
+			
+			// Get blockchain's current cached state (will be wrong)
+			currentHeader := vm.blockChain.CurrentHeader()
+			currentBlock := vm.blockChain.CurrentBlock()
+			fmt.Printf("BLOCKCHAIN STATE: currentHeader=%d, currentBlock=%d\n", 
+				currentHeader.Number.Uint64(), currentBlock.Number.Uint64())
+			
+			// Force blockchain to advance by reading and inserting the head block
+			headBlock := rawdb.ReadBlock(vm.ethDB, headHashFromDB, headNumber)
+			if headBlock != nil {
+				fmt.Printf("Inserting HEAD block %d to advance blockchain...\n", headNumber)
+				_, err := vm.blockChain.InsertChain([]*types.Block{headBlock})
+				if err != nil {
+					fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
+				} else {
+					fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
+					
+					// Verify advancement worked
+					newCurrent := vm.blockChain.CurrentBlock()
+					fmt.Printf("✅ Blockchain now at height: %d\n", newCurrent.Number.Uint64())
+				}
+			} else {
+				fmt.Printf("ERROR: Could not read HEAD block %d from database\n", headNumber)
+			}
+			} else {
+				fmt.Printf("ERROR: Could not read HEAD header from database\n")
+			}
+		}
+	} else {
+		fmt.Printf("DEBUG: No head advancement needed (head hash is genesis or empty)\n")
+	}
+
+	// Get genesis hash (reuse genesisBlock variable from above)
 	if genesisBlock == nil {
-		return fmt.Errorf("genesis block not found")
+		genesisBlock = vm.blockChain.Genesis()
+		if genesisBlock == nil {
+			return fmt.Errorf("genesis block not found")
+		}
 	}
 	vm.genesisHash = genesisBlock.Hash()
 
@@ -1241,14 +1370,14 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	currentBlock = vm.blockChain.CurrentBlock()
-	if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
+	finalBlock := vm.blockChain.CurrentBlock()
+	if finalBlock != nil && finalBlock.Number.Uint64() > 0 {
 		// We have migrated data, set last accepted to current block
-		vm.lastAccepted = ids.ID(currentBlock.Hash())
+		vm.lastAccepted = ids.ID(finalBlock.Hash())
 
 		vm.log.Info("C-Chain VM found existing blockchain data",
-			"currentHash", currentBlock.Hash().Hex(),
-			"currentHeight", currentBlock.Number.Uint64(),
+			"currentHash", finalBlock.Hash().Hex(),
+			"currentHeight", finalBlock.Number.Uint64(),
 			"lastAccepted", vm.lastAccepted.String(),
 		)
 	} else {

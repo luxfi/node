@@ -1488,9 +1488,17 @@ func applyWeightDiff(
 		// This node isn't in the current validator set.
 		vdr = &validators.GetValidatorOutput{
 			NodeID: nodeID,
-			TxID:   weightDiff.ValidationID, // Preserve ValidationID as TxID
 		}
 		vdrs[nodeID] = vdr
+	}
+
+	// Preserve TxID from ValidationID if this is an L1 validator diff.
+	// The ValidationID field in the diff always contains the original TxID
+	// (set during diff creation in calculateValidatorDiffs).
+	// When applying diffs backward, this restores the correct TxID even when
+	// ValidationID changes.
+	if weightDiff.ValidationID != ids.Empty {
+		vdr.TxID = weightDiff.ValidationID
 	}
 
 	// The weight of this node changed at this block.
@@ -2047,42 +2055,30 @@ func (s *state) initValidatorSets() error {
 		return err
 	}
 
-	// Load inactive ACP-77 validator weights
+	// Load inactive ACP-77 validators
 	//
-	// TODO: L1s with no active weight should not be held in memory.
-	it := s.weightsDB.NewIterator()
-	defer it.Release()
+	// Inactive validators must be loaded individually with their ValidationID
+	// as TxID, not aggregated with ids.Empty.
+	inactiveIt := s.inactiveDB.NewIterator()
+	defer inactiveIt.Release()
 
-	for it.Next() {
-		subnetID, err := ids.ToID(it.Key())
+	for inactiveIt.Next() {
+		validationIDBytes := inactiveIt.Key()
+		validationID, err := ids.ToID(validationIDBytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse validation ID: %w", err)
 		}
 
-		totalWeight, err := database.ParseUInt64(it.Value())
-		if err != nil {
-			return err
+		var l1Validator L1Validator
+		if _, err := block.GenesisCodec.Unmarshal(inactiveIt.Value(), &l1Validator); err != nil {
+			return fmt.Errorf("failed to unmarshal inactive L1 validator: %w", err)
 		}
+		l1Validator.ValidationID = validationID
 
-		// It is required for the L1 validators to be loaded first so that the total
-		// weight is equal to the active weights here.
-		activeWeight, err := s.validators.TotalWeight(subnetID)
-		if err != nil {
-			return err
-		}
-
-		inactiveWeight, err := safemath.Sub(totalWeight, activeWeight)
-		if err != nil {
-			// This should never happen, as the total weight should always be at
-			// least the sum of the active weights.
-			return err
-		}
-		if inactiveWeight == 0 {
-			continue
-		}
-
-		if err := s.validators.AddStaker(subnetID, ids.EmptyNodeID, nil, ids.Empty, inactiveWeight); err != nil {
-			return err
+		// Add inactive validator to validator manager using addL1ValidatorToValidatorManager
+		// which properly handles effectiveNodeID, effectivePublicKey, and effectiveValidationID
+		if err := addL1ValidatorToValidatorManager(s.validators, l1Validator); err != nil {
+			return fmt.Errorf("failed to add inactive L1 validator: %w", err)
 		}
 	}
 
@@ -2210,6 +2206,13 @@ func (s *state) init(genesisBytes []byte) error {
 	}
 	if err := s.syncGenesis(genesisBlock, genesis); err != nil {
 		return err
+	}
+
+	// Commit the genesis state to the underlying database
+	// This is necessary because baseDB is a versiondb which keeps changes
+	// in memory until CommitBatch() is called
+	if _, err := s.baseDB.CommitBatch(); err != nil {
+		return fmt.Errorf("failed to commit genesis state: %w", err)
 	}
 
 	if err := markInitialized(s.singletonDB); err != nil {
@@ -2513,9 +2516,10 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 }
 
 type validatorDiff struct {
-	weightDiff    ValidatorWeightDiff
-	prevPublicKey []byte
-	newPublicKey  []byte
+	weightDiff      ValidatorWeightDiff
+	prevPublicKey   []byte
+	newPublicKey    []byte
+	hadRemoval      bool // True if pass 1 processed a removal for this (netID, nodeID)
 }
 
 // calculateValidatorDiffs calculates the validator set diff contained by the
@@ -2531,6 +2535,12 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 			weightDiff, err := diff.WeightDiff()
 			if err != nil {
 				return nil, err
+			}
+
+			// For legacy validators, set ValidationID to the validator's TxID
+			// to ensure TxID is preserved during historical reconstruction.
+			if diff.validator != nil && weightDiff.Amount != 0 {
+				weightDiff.ValidationID = diff.validator.TxID
 			}
 
 			pk, err := s.getInheritedPublicKey(nodeID)
@@ -2562,41 +2572,71 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 	}
 
 	// Calculate the changes to the ACP-77 validator set
+	//
+	// Process in two passes to ensure TxID preservation during ValidationID changes:
+	// Pass 1: Process removals (weight decreases) to capture original TxIDs
+	// Pass 2: Process additions (weight increases) without overwriting TxIDs from pass 1
+
+	// Collect entries into two slices to ensure deterministic processing order
+	type validatorEntry struct {
+		validationID ids.ID
+		validator    L1Validator
+	}
+	var removals, additions []validatorEntry
+
 	for validationID, l1Validator := range s.l1ValidatorsDiff.modified {
-		priorL1Validator, err := s.getPersistedL1Validator(validationID)
+		_, err := s.getPersistedL1Validator(validationID)
 		if err == nil {
-			// Delete the prior validator
-			subnetIDNodeID := subnetIDNodeID{
-				subnetID: priorL1Validator.NetID,
-				nodeID:   priorL1Validator.effectiveNodeID(),
-			}
-			diff := getOrSetDefault(changes, subnetIDNodeID)
-			diff.weightDiff.ValidationID = validationID // Set ValidationID for TxID preservation
-			if err := diff.weightDiff.Sub(priorL1Validator.Weight); err != nil {
-				return nil, err
-			}
-			diff.prevPublicKey = priorL1Validator.effectivePublicKeyBytes()
-		}
-		if err != database.ErrNotFound && err != nil {
+			// This validator existed before, so we're removing it
+			removals = append(removals, validatorEntry{validationID, l1Validator})
+		} else if err != database.ErrNotFound {
 			return nil, err
 		}
 
-		// If the validator is being removed, we shouldn't work to re-add it.
-		if l1Validator.isDeleted() {
-			continue
+		// If not deleted, we're also adding it (possibly with a different ValidationID)
+		if !l1Validator.isDeleted() {
+			additions = append(additions, validatorEntry{validationID, l1Validator})
+		}
+	}
+
+	// Pass 1: Process all removals first
+	for _, entry := range removals {
+		priorL1Validator, err := s.getPersistedL1Validator(entry.validationID)
+		if err != nil {
+			return nil, err
 		}
 
-		// Add the new validator
 		subnetIDNodeID := subnetIDNodeID{
-			subnetID: l1Validator.NetID,
-			nodeID:   l1Validator.effectiveNodeID(),
+			subnetID: priorL1Validator.NetID,
+			nodeID:   priorL1Validator.effectiveNodeID(),
 		}
 		diff := getOrSetDefault(changes, subnetIDNodeID)
-		diff.weightDiff.ValidationID = validationID // Set ValidationID for TxID preservation
-		if err := diff.weightDiff.Add(l1Validator.Weight); err != nil {
+		// For removals, always set ValidationID to the original TxID.
+		// This ensures TxID preservation when ValidationID changes.
+		diff.weightDiff.ValidationID = entry.validationID
+		diff.hadRemoval = true // Mark that this diff includes a removal
+		if err := diff.weightDiff.Sub(priorL1Validator.Weight); err != nil {
 			return nil, err
 		}
-		diff.newPublicKey = l1Validator.effectivePublicKeyBytes()
+		diff.prevPublicKey = priorL1Validator.effectivePublicKeyBytes()
+	}
+
+	// Pass 2: Process all additions
+	for _, entry := range additions {
+		subnetIDNodeID := subnetIDNodeID{
+			subnetID: entry.validator.NetID,
+			nodeID:   entry.validator.effectiveNodeID(),
+		}
+		diff := getOrSetDefault(changes, subnetIDNodeID)
+		// Only set ValidationID if not already set by pass 1 (removal).
+		// This preserves the original TxID when a ValidationID changes.
+		if diff.weightDiff.ValidationID == ids.Empty {
+			diff.weightDiff.ValidationID = entry.validationID
+		}
+		if err := diff.weightDiff.Add(entry.validator.Weight); err != nil {
+			return nil, err
+		}
+		diff.newPublicKey = entry.validator.effectivePublicKeyBytes()
 	}
 
 	return changes, nil
@@ -2615,7 +2655,12 @@ func (s *state) writeValidatorDiffs(height uint64) error {
 	// Write the changes to the database
 	for subnetIDNodeID, diff := range changes {
 		diffKey := marshalDiffKey(subnetIDNodeID.subnetID, height, subnetIDNodeID.nodeID)
-		if diff.weightDiff.Amount != 0 {
+		// Write weight diff if:
+		// 1. Amount changed, OR
+		// 2. Amount didn't change but ValidationID changed (hadRemoval indicates removal+addition)
+		// This ensures TxID tracking across ValidationID changes even when net weight is unchanged.
+		shouldWrite := diff.weightDiff.Amount != 0 || (diff.hadRemoval && diff.weightDiff.ValidationID != ids.Empty)
+		if shouldWrite {
 			err := s.validatorWeightDiffsDB.Put(
 				diffKey,
 				marshalWeightDiff(&diff.weightDiff),

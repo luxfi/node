@@ -67,9 +67,10 @@ func (tx *Tx) Accept(ctx context.Context) error {
 	tx.vm.onAccept(tx.tx)
 
 	executor := &executor.Executor{
-		Codec: tx.vm.txBackend.Codec,
-		State: tx.vm.state,
-		Tx:    tx.tx,
+		Codec:  tx.vm.txBackend.Codec,
+		State:  tx.vm.state,
+		Tx:     tx.tx,
+		Inputs: set.NewSet[ids.ID](0), // Initialize empty set for imported inputs
 	}
 	err := tx.tx.Unsigned.Visit(executor)
 	if err != nil {

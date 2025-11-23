@@ -12,10 +12,10 @@ package executormock
 import (
 	reflect "reflect"
 
+	block "github.com/luxfi/consensus/engine/chain/block"
 	ids "github.com/luxfi/ids"
-	consensusman "github.com/luxfi/consensus/engine/chain/block"
 	set "github.com/luxfi/math/set"
-	block "github.com/luxfi/node/vms/platformvm/block"
+	block0 "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
@@ -46,10 +46,10 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // GetBlock mocks base method.
-func (m *Manager) GetBlock(blkID ids.ID) (consensusman.Block, error) {
+func (m *Manager) GetBlock(blkID ids.ID) (block.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blkID)
-	ret0, _ := ret[0].(consensusman.Block)
+	ret0, _ := ret[0].(block.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -76,10 +76,10 @@ func (mr *ManagerMockRecorder) GetState(blkID any) *gomock.Call {
 }
 
 // GetStatelessBlock mocks base method.
-func (m *Manager) GetStatelessBlock(blkID ids.ID) (block.Block, error) {
+func (m *Manager) GetStatelessBlock(blkID ids.ID) (block0.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatelessBlock", blkID)
-	ret0, _ := ret[0].(block.Block)
+	ret0, _ := ret[0].(block0.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -105,10 +105,10 @@ func (mr *ManagerMockRecorder) LastAccepted() *gomock.Call {
 }
 
 // NewBlock mocks base method.
-func (m *Manager) NewBlock(arg0 block.Block) consensusman.Block {
+func (m *Manager) NewBlock(arg0 block0.Block) block.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBlock", arg0)
-	ret0, _ := ret[0].(consensusman.Block)
+	ret0, _ := ret[0].(block.Block)
 	return ret0
 }
 

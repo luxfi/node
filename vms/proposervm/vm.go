@@ -314,14 +314,16 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chainblock.Block, error)
 }
 
 func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
-	// Check for context cancellation at entry
+	// Short-circuit if already preferred - no context check needed
+	if vm.preferred == preferred {
+		return nil
+	}
+
+	// Check for context cancellation before any state changes
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 
-	if vm.preferred == preferred {
-		return nil
-	}
 	vm.preferred = preferred
 
 	// Check for context cancellation before expensive operations

@@ -1770,18 +1770,6 @@ func (b *builder) spend(
 	}
 
 	for _, utxo := range utxosByLUXAssetID.requested {
-		requiredFee, err := s.calculateFee()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// If we don't need to burn or stake additional LUX and we have
-		// consumed enough LUX to pay the required fee, we should stop
-		// consuming UTXOs.
-		if !s.shouldConsumeAsset(b.context.XAssetID) && excessLUX >= requiredFee {
-			break
-		}
-
 		out, _, err := unwrapOutput(utxo.Out)
 		if err != nil {
 			return nil, nil, nil, err
@@ -1813,6 +1801,22 @@ func (b *builder) spend(
 			return nil, nil, nil, err
 		}
 
+		// Calculate fee AFTER adding the input to get accurate complexity
+		requiredFee, err := s.calculateFee()
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		// If we don't need to burn or stake additional LUX and we have
+		// consumed enough LUX to pay the required fee, we should stop
+		// consuming UTXOs.
+		if !s.shouldConsumeAsset(b.context.XAssetID) && excessLUX >= requiredFee {
+			// If we need to consume additional LUX, we should be returning the
+			// change to the change address.
+			ownerOverride = changeOwner
+			break
+		}
+
 		// If we need to consume additional LUX, we should be returning the
 		// change to the change address.
 		ownerOverride = changeOwner
@@ -1835,6 +1839,7 @@ func (b *builder) spend(
 		)
 	}
 
+	// Try to add a change output if we have excess LUX
 	secpExcessLUXOutput := &secp256k1fx.TransferOutput{
 		Amt:          0, // Populated later if used
 		OutputOwners: *ownerOverride,
@@ -1845,19 +1850,37 @@ func (b *builder) spend(
 		},
 		Out: secpExcessLUXOutput,
 	}
-	if err := s.addOutputComplexity(excessLUXOutput); err != nil {
-		return nil, nil, nil, err
-	}
 
-	requiredFeeWithChange, err := s.calculateFee()
+	// Calculate the complexity of the potential change output
+	changeOutputComplexity, err := fee.OutputComplexity(excessLUXOutput)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if excessLUX > requiredFeeWithChange {
+
+	// Temporarily add the change output complexity to calculate the fee
+	tempComplexity, err := s.complexity.Add(&changeOutputComplexity)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	requiredFeeWithChange, err := tempComplexity.ToGas(s.weights)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	feeWithChange, err := requiredFeeWithChange.Cost(s.gasPrice)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	if excessLUX > feeWithChange {
 		// It is worth adding the change output
-		secpExcessLUXOutput.Amt = excessLUX - requiredFeeWithChange
+		// Permanently add the complexity
+		s.complexity = tempComplexity
+		secpExcessLUXOutput.Amt = excessLUX - feeWithChange
 		s.changeOutputs = append(s.changeOutputs, excessLUXOutput)
 	}
+	// If excessLUX <= feeWithChange, we don't add the change output
+	// and we don't modify s.complexity (it stays without the change output)
 
 	utils.Sort(s.inputs)                                     // sort inputs
 	lux.SortTransferableOutputs(s.changeOutputs, txs.Codec) // sort the change outputs

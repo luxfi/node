@@ -562,6 +562,9 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 				// update staker set
 				require.NoError(block.Verify(context.Background()))
 				require.NoError(block.Accept(context.Background()))
+
+				// Commit state after accepting blocks so they persist for next iteration
+				require.NoError(env.state.Commit())
 			}
 
 			for stakerNodeID, status := range test.expectedStakers {

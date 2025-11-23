@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -156,6 +157,8 @@ func TestBuildBlockShouldReward(t *testing.T) {
 	require.Equal([]*txs.Tx{tx}, blk.(*blockexecutor.Block).Block.Txs())
 	require.NoError(blk.Verify(context.Background()))
 	require.NoError(blk.Accept(context.Background()))
+	// Commit parent state to avoid "missing parent state" error
+	require.NoError(env.state.Commit())
 	env.blkManager.SetPreference(blk.ID())
 
 	// Validator should now be current
@@ -183,11 +186,21 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.NoError(err)
 		require.Equal([]*txs.Tx{expectedTx}, blk.(*blockexecutor.Block).Block.Txs())
 
-		// Commit the [ProposalBlock] with a [CommitBlock]
-		// TODO: OracleBlock interface not yet implemented in consensus
-		// For now, skip the commit option test and just accept the block
+		// Proposal blocks require their commit/abort option to be accepted
+		// Get the commit option and accept both proposal and commit blocks
+		options, err := blk.(chain.OracleBlock).Options(context.Background())
+		require.NoError(err)
+		commitBlk := options[0]
+		require.NoError(commitBlk.Verify(context.Background()))
+		
+		// Accept both proposal and commit blocks
 		require.NoError(blk.Accept(context.Background()))
-		env.blkManager.SetPreference(blk.ID())
+		require.NoError(commitBlk.Accept(context.Background()))
+		
+		// Commit state after accepting
+		require.NoError(env.state.Commit())
+		commitBlkID := commitBlk.ID()
+		env.blkManager.SetPreference(commitBlkID)
 
 		// Stop rewarding once our staker is rewarded
 		if staker.TxID == txID {

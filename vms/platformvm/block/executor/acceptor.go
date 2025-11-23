@@ -105,6 +105,11 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 				err,
 			)
 		}
+	} else {
+		// If SharedMemory is nil, we must write the batch ourselves
+		if err := batch.Write(); err != nil {
+			return fmt.Errorf("failed to write batch for block %s: %w", blkID, err)
+		}
 	}
 
 	log.Trace(
@@ -139,6 +144,14 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		return err
 	}
 
+	// For proposal blocks, we need to apply the onDecisionState first
+	// before applying the option block's state (commit or abort)
+	if parentState.onDecisionState != nil {
+		if err := parentState.onDecisionState.Apply(a.state); err != nil {
+			return err
+		}
+	}
+
 	blkState, ok := a.blkIDToState[blkID]
 	if !ok {
 		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
@@ -168,6 +181,11 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
 		if err := sharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
 			return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
+		}
+	} else {
+		// If SharedMemory is nil, we must write the batch ourselves
+		if err := batch.Write(); err != nil {
+			return fmt.Errorf("failed to write batch for block %s: %w", blkID, err)
 		}
 	}
 
@@ -251,6 +269,11 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
 		if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
 			return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
+		}
+	} else {
+		// If SharedMemory is nil, we must write the batch ourselves
+		if err := batch.Write(); err != nil {
+			return fmt.Errorf("failed to write batch for block %s: %w", blkID, err)
 		}
 	}
 

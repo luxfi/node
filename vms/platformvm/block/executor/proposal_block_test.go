@@ -637,6 +637,7 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 				// build proposal block moving ahead chain time
 				// as well as rewarding staker0
 				preferredID := env.state.GetLastAccepted()
+				t.Logf("Getting parent block with ID: %s", preferredID)
 				parentBlk, err := env.state.GetStatelessBlock(preferredID)
 				require.NoError(err)
 				statelessProposalBlock, err := block.NewBanffProposalBlock(
@@ -657,9 +658,36 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 				require.NoError(options[0].Verify(context.Background()))
 
 				require.NoError(block.Accept(context.Background()))
+				t.Logf("Accepted proposal block: %s", block.ID())
 				require.NoError(options[0].Accept(context.Background()))
+				t.Logf("Accepted option block: %s (last accepted now: %s)", options[0].ID(), env.state.GetLastAccepted())
+
+				// Commit state after accepting blocks so they persist for next iteration
+				require.NoError(env.state.Commit())
+				t.Logf("Committed state")
+
+				// Also commit the versiondb to persist to underlying memdb
+				require.NoError(env.baseDB.Commit())
+				t.Logf("Committed baseDB")
+
+				// Verify we can immediately retrieve the block
+				retrievedBlk, err := env.state.GetStatelessBlock(options[0].ID())
+				if err != nil {
+					t.Logf("ERROR: Cannot retrieve just-committed block %s: %v", options[0].ID(), err)
+
+					// Try direct baseDB access to see if block is there
+					blockKey := options[0].ID()
+					rawBytes, dbErr := env.baseDB.Get(append([]byte("block/"), blockKey[:]...))
+					if dbErr != nil {
+						t.Logf("BaseDB also doesn't have block: %v", dbErr)
+					} else {
+						t.Logf("BaseDB HAS the block! (%d bytes)", len(rawBytes))
+					}
+				} else {
+					t.Logf("SUCCESS: Retrieved committed block %s", retrievedBlk.ID())
+				}
 			}
-			require.NoError(env.state.Commit())
+			// No need for extra commit here - already committed in loop
 
 			for stakerNodeID, status := range test.expectedStakers {
 				switch status {

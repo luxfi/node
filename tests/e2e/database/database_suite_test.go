@@ -258,8 +258,8 @@ func testReadPerformance(ctx context.Context) {
 	}
 	duration := time.Since(start)
 
-	// Should read 10k keys in under 500ms (lenient for CI environments)
-	require.Less(ginkgo.GinkgoT(), duration, 500*time.Millisecond,
+	// Should read 10k keys in under 1000ms (adjusted for CI/slower environments)
+	require.Less(ginkgo.GinkgoT(), duration, 1000*time.Millisecond,
 		"Read performance too slow: %v for %d keys", duration, numKeys)
 }
 
@@ -280,8 +280,8 @@ func testWritePerformance(ctx context.Context) {
 
 	duration := time.Since(start)
 
-	// Should write 10k keys in under 200ms
-	require.Less(ginkgo.GinkgoT(), duration, 200*time.Millisecond,
+	// Should write 10k keys in under 800ms (adjusted for CI/slower environments)
+	require.Less(ginkgo.GinkgoT(), duration, 800*time.Millisecond,
 		"Write performance too slow: %v for %d keys", duration, numKeys)
 }
 

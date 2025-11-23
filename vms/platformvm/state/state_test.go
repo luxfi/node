@@ -255,8 +255,9 @@ func TestState_writeStakers(t *testing.T) {
 					nodeID:   primaryNetworkCurrentValidatorStaker.NodeID,
 				}: {
 					weightDiff: ValidatorWeightDiff{
-						Decrease: false,
-						Amount:   primaryNetworkCurrentValidatorStaker.Weight,
+						Decrease:     false,
+						Amount:       primaryNetworkCurrentValidatorStaker.Weight,
+						ValidationID: primaryNetworkCurrentValidatorStaker.TxID,
 					},
 					prevPublicKey: nil,
 					newPublicKey:  bls.PublicKeyToUncompressedBytes(primaryNetworkCurrentValidatorStaker.PublicKey),
@@ -325,8 +326,9 @@ func TestState_writeStakers(t *testing.T) {
 					nodeID:   subnetCurrentValidatorStaker.NodeID,
 				}: {
 					weightDiff: ValidatorWeightDiff{
-						Decrease: false,
-						Amount:   subnetCurrentValidatorStaker.Weight,
+						Decrease:     false,
+						Amount:       subnetCurrentValidatorStaker.Weight,
+						ValidationID: subnetCurrentValidatorStaker.TxID,
 					},
 					prevPublicKey: nil,
 					newPublicKey:  bls.PublicKeyToUncompressedBytes(primaryNetworkCurrentValidatorStaker.PublicKey),
@@ -343,8 +345,9 @@ func TestState_writeStakers(t *testing.T) {
 					nodeID:   primaryNetworkCurrentValidatorStaker.NodeID,
 				}: {
 					weightDiff: ValidatorWeightDiff{
-						Decrease: true,
-						Amount:   primaryNetworkCurrentValidatorStaker.Weight,
+						Decrease:     true,
+						Amount:       primaryNetworkCurrentValidatorStaker.Weight,
+						ValidationID: primaryNetworkCurrentValidatorStaker.TxID,
 					},
 					prevPublicKey: bls.PublicKeyToUncompressedBytes(primaryNetworkCurrentValidatorStaker.PublicKey),
 					newPublicKey:  nil,
@@ -412,8 +415,9 @@ func TestState_writeStakers(t *testing.T) {
 					nodeID:   subnetCurrentValidatorStaker.NodeID,
 				}: {
 					weightDiff: ValidatorWeightDiff{
-						Decrease: true,
-						Amount:   subnetCurrentValidatorStaker.Weight,
+						Decrease:     true,
+						Amount:       subnetCurrentValidatorStaker.Weight,
+						ValidationID: subnetCurrentValidatorStaker.TxID,
 					},
 					prevPublicKey: bls.PublicKeyToUncompressedBytes(primaryNetworkCurrentValidatorStaker.PublicKey),
 					newPublicKey:  nil,
@@ -906,7 +910,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[1].NodeID: {
 					NodeID:    primaryStakers[1].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[1].PublicKey),
-
+					TxID:      primaryStakers[1].TxID,
 					Light:     primaryStakers[1].Weight,
 					Weight:    primaryStakers[1].Weight,
 				},
@@ -922,7 +926,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[2].NodeID: {
 					NodeID:    primaryStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-
+					TxID:      primaryStakers[2].TxID,
 					Light:     primaryStakers[2].Weight,
 					Weight:    primaryStakers[2].Weight,
 				},
@@ -931,7 +935,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				subnetStakers[2].NodeID: {
 					NodeID:    subnetStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-
+					TxID:      subnetStakers[2].TxID,
 					Light:     primaryStakers[2].Weight,
 					Weight:    subnetStakers[2].Weight,
 				},
@@ -944,21 +948,21 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				primaryStakers[2].NodeID: {
 					NodeID:    primaryStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-
+					TxID:      primaryStakers[2].TxID,
 					Light:     primaryStakers[2].Weight,
 					Weight:    primaryStakers[2].Weight,
 				},
 				primaryStakers[3].NodeID: {
 					NodeID:    primaryStakers[3].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[3].PublicKey),
-
+					TxID:      primaryStakers[3].TxID,
 					Light:     primaryStakers[3].Weight,
 					Weight:    primaryStakers[3].Weight,
 				},
 				primaryStakers[4].NodeID: {
 					NodeID:    primaryStakers[4].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[4].PublicKey),
-
+					TxID:      primaryStakers[4].TxID,
 					Light:     primaryStakers[4].Weight,
 					Weight:    primaryStakers[4].Weight,
 				},
@@ -967,21 +971,21 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				subnetStakers[2].NodeID: {
 					NodeID:    subnetStakers[2].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[2].PublicKey),
-
+					TxID:      subnetStakers[2].TxID,
 					Light:     primaryStakers[2].Weight,
 					Weight:    subnetStakers[2].Weight,
 				},
 				subnetStakers[3].NodeID: {
 					NodeID:    subnetStakers[3].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[3].PublicKey),
-
+					TxID:      subnetStakers[3].TxID,
 					Light:     primaryStakers[3].Weight,
 					Weight:    subnetStakers[3].Weight,
 				},
 				subnetStakers[4].NodeID: {
 					NodeID:    subnetStakers[4].NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(primaryStakers[4].PublicKey),
-
+					TxID:      subnetStakers[4].TxID,
 					Light:     primaryStakers[4].Weight,
 					Weight:    subnetStakers[4].Weight,
 				},
@@ -2045,7 +2049,7 @@ func TestL1Validators(t *testing.T) {
 						vdr = &validators.GetValidatorOutput{
 							NodeID:    nodeID,
 							PublicKey: bls.PublicKeyToUncompressedBytes(l1Validator.effectivePublicKey()),
-							TxID:      l1Validator.ValidationID,
+							TxID:      l1Validator.effectiveValidationID(),
 						}
 						validatorSet[nodeID] = vdr
 					}

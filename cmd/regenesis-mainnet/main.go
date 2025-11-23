@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -33,6 +33,14 @@ type ValidatorKeys struct {
 	StakingKey  string
 	BLSKey      *bls.SecretKey
 	BLSSigner   signer.Signer
+}
+
+func mustSign(sk *bls.SecretKey, msg []byte) *bls.Signature {
+	sig, err := sk.Sign(msg)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to sign: %v", err))
+	}
+	return sig
 }
 
 func main() {
@@ -71,10 +79,10 @@ func main() {
 		}
 
 		// Create BLS signer
-		blsPK := bls.PublicFromSecretKey(blsSK)
+		blsPK := blsSK.PublicKey()
 		blsSigner := &signer.ProofOfPossession{
 			PublicKey: blsPK,
-			ProofOfPossession: blsSK.Sign(blsPK.Serialize()),
+			ProofOfPossession: mustSign(blsSK, blsPK.Serialize()),
 		}
 
 		validators[i] = ValidatorKeys{
@@ -94,7 +102,7 @@ func main() {
 		os.WriteFile(filepath.Join(nodeDir, "staker.key"), key, 0600)
 
 		// Save BLS key
-		blsBytes := blsSK.Serialize()
+		blsBytes := bls.SecretKeyToBytes(blsSK)
 		os.WriteFile(filepath.Join(nodeDir, "signer.key"), blsBytes, 0600)
 
 		fmt.Printf("  ✅ Validator %d: NodeID=%s\n", i+1, nodeID.String())
@@ -109,13 +117,13 @@ func main() {
 			{
 				ETHAddr: "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714", // Main treasury
 				LUXAddr: "X-lux1g3ea6hckz9sre2k6xvpf5dw9k4t26hxnxvxghs",
-				InitialAmount: 777_777_777 * units.MegaLux,
+				InitialAmount: 777777777 * units.MegaLux,
 				UnlockSchedule: []genesis.LockedAmount{},
 			},
 		},
 		StartTime:                  uint64(time.Now().Unix()),
-		InitialStakeDuration:       365 * 24 * time.Hour,
-		InitialStakeDurationOffset: 90 * 24 * time.Hour,
+		InitialStakeDuration:       uint64(365 * 24 * time.Hour / time.Second),
+		InitialStakeDurationOffset: uint64(90 * 24 * time.Hour / time.Second),
 		InitialStakedFunds:         []string{},
 		InitialStakers:             []genesis.UnparsedStaker{},
 		CChain: genesis.UnparsedCChain{
@@ -136,7 +144,7 @@ func main() {
 		xAddr := fmt.Sprintf("X-lux1validator%d%s", i+1, randomString(25))
 
 		staker := genesis.UnparsedStaker{
-			NodeID:        val.NodeID.String(),
+			NodeID:        val.NodeID,
 			RewardAddress: xAddr,
 			DelegationFee: delegationFee,
 			Signer:        val.BLSSigner,

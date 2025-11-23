@@ -212,7 +212,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		ctx,                                        // chainCtxIntf
 		chainDB,                                    // dbManagerIntf
 		genesistest.NewBytes(t, genesistest.Config{
-			InitialBalance: 200*units.Lux + 10000, // Doubled + 10000 nanoLux buffer for fee precision
+			InitialBalance: 200*units.Lux + 20000, // Doubled + 20000 nanoLux buffer for fee precision (was 10000, increased to fix 1949 shortfall)
 		}), // genesisBytes
 		nil,                                        // upgradeBytes
 		dynamicConfigBytes,                         // configBytes
@@ -310,10 +310,13 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 		CreateNetTxFee: units.Lux,
 		CreateBlockchainTxFee: units.Lux,
 	}
-	return txstest.NewWallet(
+	return txstest.NewWalletWithOptions(
 		t,
 		vm.ctx,
-		walletConfig,
+		txstest.WalletConfig{
+			Config:      walletConfig,
+			InternalCfg: &vm.Internal, // Pass VM's internal config with DynamicFeeConfig
+		},
 		vm.state,
 		secp256k1fx.NewKeychain(c.keys...),
 		c.subnetIDs,

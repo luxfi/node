@@ -13,7 +13,6 @@ import (
 	reflect "reflect"
 	time "time"
 
-	context "github.com/luxfi/consensus/context"
 	ids "github.com/luxfi/ids"
 	codec "github.com/luxfi/node/codec"
 	txs "github.com/luxfi/node/vms/exchangevm/txs"
@@ -84,18 +83,6 @@ func (m *MockBlock) ID() ids.ID {
 func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockBlock)(nil).ID))
-}
-
-// InitCtx mocks base method.
-func (m *MockBlock) InitCtx(arg0 *context.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
-}
-
-// InitCtx indicates an expected call of InitCtx.
-func (mr *MockBlockMockRecorder) InitCtx(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), arg0)
 }
 
 // MerkleRoot mocks base method.

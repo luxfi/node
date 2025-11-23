@@ -107,20 +107,16 @@ func NewWalletWithOptions(
 			if err != nil {
 				// If error getting atomic UTXOs, skip this chain but don't fail
 				// Some tests may not have atomic UTXOs set up
-				t.Logf("Warning: failed to get atomic UTXOs from chain %s: %v", chainID, err)
 				continue
 			}
 
-			t.Logf("Found %d atomic UTXOs from chain %s", len(atomicUTXOs), chainID)
 			for _, utxoBytes := range atomicUTXOs {
 				var utxo lux.UTXO
 				_, err := txs.Codec.Unmarshal(utxoBytes, &utxo)
 				if err != nil {
-					t.Logf("Warning: failed to unmarshal UTXO: %v", err)
 					continue // Skip malformed UTXOs
 				}
 
-				t.Logf("Adding atomic UTXO: %v", utxo.UTXOID)
 				require.NoError(utxos.AddUTXO(
 					context.Background(),
 					chainID,

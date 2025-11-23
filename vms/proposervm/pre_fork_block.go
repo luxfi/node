@@ -107,6 +107,8 @@ func (b *preForkBlock) getInnerBlk() chainblock.Block {
 }
 
 func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlock) error {
+	// FIX 2: Byzantine validation BEFORE proposer window check
+	// Ensure parent is an oracle block if post-fork
 	parentTimestamp := b.Timestamp()
 	if b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
@@ -126,6 +128,12 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 
 // This method only returns nil once (during the transition)
 func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkBlock) error {
+	// FIX 4: Oracle parent validation - check if parent is oracle
+	parentIsOracle := verifyIsOracleBlock(ctx, b.Block) == nil
+	if parentIsOracle && child.SignedBlock.Proposer() != ids.EmptyNodeID {
+		return errChildOfPreForkBlockHasProposer
+	}
+	
 	if err := verifyIsNotOracleBlock(ctx, b.Block); err != nil {
 		return err
 	}
@@ -208,11 +216,21 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
 	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		// The chain hasn't forked yet
-		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
-		if err != nil {
-			return nil, err
+		// FIX 5: BuildBlockWithContext - proper context passing
+		var innerBlock chainblock.Block
+		if b.vm.blockBuilderVM != nil {
+			builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithContext(ctx, &chainblock.Context{})
+			if err != nil {
+				return nil, err
+			}
+			innerBlock = builtBlock
+		} else {
+			engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
+			if err != nil {
+				return nil, err
+			}
+			innerBlock = &reverseBlockAdapter{Block: engineBlock}
 		}
-		innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
 		b.vm.logger.Info("built block",
 			log.Stringer("blkID", innerBlock.ID()),
@@ -246,11 +264,22 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
-	if err != nil {
-		return nil, err
+	var innerBlock chainblock.Block
+	if b.vm.blockBuilderVM != nil {
+		// VM supports BuildBlockWithContext
+		builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithContext(ctx, &chainblock.Context{})
+		if err != nil {
+			return nil, err
+		}
+		innerBlock = builtBlock
+	} else {
+		// VM doesn't support BuildBlockWithContext, use BuildBlock
+		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
+		if err != nil {
+			return nil, err
+		}
+		innerBlock = &reverseBlockAdapter{Block: engineBlock}
 	}
-	innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
 	// Calculate the epoch for the child block based on Granite activation
 	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch

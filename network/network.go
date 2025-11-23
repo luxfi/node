@@ -362,18 +362,22 @@ func (n *network) Send(
 		nodeIDs.Len()-len(namedPeers),
 	)
 
-	// Create default send config for sampling
-	sendConfig := consensuscore.SendConfig{
-		NodeIDs:       nil, // Don't restrict to specific nodes for sampling
-		Validators:    0,   // No specific validator requirement
-		NonValidators: 0,   // No specific non-validator requirement
-		Peers:         1,   // Sample 1 peer by default
+	// Only sample additional peers if no specific nodeIDs were requested
+	var sampledPeers []peer.Peer
+	if nodeIDs.Len() == 0 {
+		// Create default send config for sampling
+		sendConfig := consensuscore.SendConfig{
+			NodeIDs:       nil, // Don't restrict to specific nodes for sampling
+			Validators:    0,   // No specific validator requirement
+			NonValidators: 0,   // No specific non-validator requirement
+			Peers:         1,   // Sample 1 peer by default
+		}
+		sampledPeers = n.samplePeers(sendConfig, netID, allower)
 	}
 
 	var (
-		sampledPeers = n.samplePeers(sendConfig, netID, allower)
-		sentTo       = set.NewSet[ids.NodeID](len(namedPeers) + len(sampledPeers))
-		now          = n.peerConfig.Clock.Time()
+		sentTo = set.NewSet[ids.NodeID](len(namedPeers) + len(sampledPeers))
+		now    = n.peerConfig.Clock.Time()
 	)
 
 	// send to peers and update metrics

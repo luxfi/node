@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -347,6 +346,10 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 	createTx := getCreateTxFromGenesisTest(tb.(*testing.T), genesisBytes, assetName)
 	// Genesis creates 1000 LUX for keys[0]
 	// This tx spends the entire UTXO and creates a change output back to keys[0]
+	// Must account for transaction fee (testTxFee = 1000 nanoLux)
+	inputAmt := uint64(1000 * units.Lux)
+	outputAmt := inputAmt - testTxFee // Deduct fee from output
+
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
@@ -358,7 +361,7 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 				},
 				Asset: lux.Asset{ID: createTx.ID()},
 				In: &secp256k1fx.TransferInput{
-					Amt: 1000 * units.Lux, // Must match UTXO amount
+					Amt: inputAmt, // Must match UTXO amount
 					Input: secp256k1fx.Input{
 						SigIndices: []uint32{0},
 					},
@@ -367,7 +370,7 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 			Outs: []*lux.TransferableOutput{{
 				Asset: lux.Asset{ID: createTx.ID()},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 1000 * units.Lux, // Output entire amount back (no-op transfer)
+					Amt: outputAmt, // Output amount after fee deduction
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},

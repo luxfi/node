@@ -43,8 +43,10 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Remove a signature
-	tx.Creds[0].(*secp256k1fx.Credential).Sigs = tx.Creds[0].(*secp256k1fx.Credential).Sigs[1:]
+	// Remove a signature from the subnet authorization (last credential)
+	// The last credential is for subnet authorization, earlier ones are for input UTXOs
+	lastCredIdx := len(tx.Creds) - 1
+	tx.Creds[lastCredIdx].(*secp256k1fx.Credential).Sigs = tx.Creds[lastCredIdx].(*secp256k1fx.Credential).Sigs[1:]
 
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
@@ -85,9 +87,11 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	require.NoError(err)
 
 	// Replace a valid signature with one from another key
+	// Modify the subnet authorization credential (last credential)
 	sig, err := key.SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
 	require.NoError(err)
-	copy(tx.Creds[0].(*secp256k1fx.Credential).Sigs[0][:], sig)
+	lastCredIdx := len(tx.Creds) - 1
+	copy(tx.Creds[lastCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)
 
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)

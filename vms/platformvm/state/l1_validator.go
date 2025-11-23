@@ -169,7 +169,10 @@ func (v L1Validator) effectiveValidationID() ids.ID {
 	if v.IsActive() {
 		return v.ValidationID
 	}
-	return ids.Empty
+	// For inactive validators, return the ValidationID (not Empty).
+	// This ensures inactive validators are tracked with their ValidationID
+	// as the TxID in the validator set.
+	return v.ValidationID
 }
 
 func (v L1Validator) effectiveNodeID() ids.NodeID {

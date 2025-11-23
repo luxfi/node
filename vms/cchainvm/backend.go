@@ -7,11 +7,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/consensus"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/consensus/clique"
 	gethcore "github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/core/rawdb"
@@ -26,6 +28,7 @@ import (
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
 	"github.com/luxfi/geth/triedb"
+	"github.com/luxfi/log"
 )
 
 // PreShanghaiHeader represents header format from EVM before Shanghai upgrade
@@ -88,6 +91,574 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// createGenesisFromMigratedDB creates a proper Genesis configuration from migrated genesis block
+// This returns a *gethcore.Genesis that can be used with SetupGenesisBlock()
+// copyGenesisFromMigratedDB copies block 0 and its state directly from migrated database
+func copyGenesisFromMigratedDB(newDB ethdb.Database, migratedDBPath string) error {
+	fmt.Printf("=== COPYING GENESIS BLOCK 0 FROM MIGRATED DATABASE ===\n")
+
+	// Open migrated database
+	opts := badger.DefaultOptions(migratedDBPath).WithReadOnly(true).WithLogger(nil)
+	migratedDB, err := badger.Open(opts)
+	if err != nil {
+		return fmt.Errorf("failed to open migrated database: %w", err)
+	}
+	defer migratedDB.Close()
+
+	// Find block 0 hash
+	targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+	
+	// Read block 0 header
+	var headerData []byte
+	err = migratedDB.View(func(txn *badger.Txn) error {
+		key := make([]byte, 41)
+		key[0] = 'h'
+		binary.BigEndian.PutUint64(key[1:9], 0)
+		copy(key[9:41], targetHash.Bytes())
+
+		item, err := txn.Get(key)
+		if err != nil {
+			return fmt.Errorf("genesis header not found: %w", err)
+		}
+
+		headerData, err = item.ValueCopy(nil)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	// Decode header
+	header := new(types.Header)
+	if err := rlp.DecodeBytes(headerData, header); err != nil {
+		return fmt.Errorf("failed to decode header: %w", err)
+	}
+
+	fmt.Printf("Genesis Block 0:\n")
+	fmt.Printf("  Hash:       %s\n", header.Hash().Hex())
+	fmt.Printf("  StateRoot:  %s\n", header.Root.Hex())
+	fmt.Printf("  Number:     %d\n", header.Number.Uint64())
+	fmt.Printf("  Timestamp:  %d\n", header.Time)
+
+	// Write header to new database
+	headerRLP, err := rlp.EncodeToBytes(header)
+	if err != nil {
+		return fmt.Errorf("failed to encode header: %w", err)
+	}
+
+	// Write using geth database format:
+	// 'h' + 8-byte number + 32-byte hash -> header RLP
+	headerKey := make([]byte, 41)
+	headerKey[0] = 'h'
+	binary.BigEndian.PutUint64(headerKey[1:9], 0)
+	copy(headerKey[9:41], targetHash.Bytes())
+	
+	if err := newDB.Put(headerKey, headerRLP); err != nil {
+		return fmt.Errorf("failed to write header: %w", err)
+	}
+
+	// Write canonical hash: 'h' + 8-byte number + 'n' -> 32-byte hash (Geth format)
+	numKey := make([]byte, 10)
+	numKey[0] = 'h'
+	binary.BigEndian.PutUint64(numKey[1:9], 0)
+	numKey[9] = 'n' // CRITICAL: headerHashSuffix required by Geth!
+
+	if err := newDB.Put(numKey, targetHash.Bytes()); err != nil {
+		return fmt.Errorf("failed to write canonical hash: %w", err)
+	}
+
+	// Write head block hash (LastBlock key)
+	if err := newDB.Put([]byte("LastBlock"), targetHash.Bytes()); err != nil {
+		return fmt.Errorf("failed to write LastBlock: %w", err)
+	}
+
+	// Write head header hash (LastHeader key)
+	if err := newDB.Put([]byte("LastHeader"), targetHash.Bytes()); err != nil {
+		return fmt.Errorf("failed to write LastHeader: %w", err)
+	}
+
+	// Write total difficulty for genesis (should be 0 or header.Difficulty)
+	tdKey := append(append([]byte("h"), numKey[1:]...), targetHash.Bytes()...)
+	tdKey = append([]byte("t"), tdKey[1:]...) // 't' prefix for total difficulty
+	tdBytes, err := rlp.EncodeToBytes(header.Difficulty)
+	if err != nil {
+		return fmt.Errorf("failed to encode total difficulty: %w", err)
+	}
+	if err := newDB.Put(tdKey, tdBytes); err != nil {
+		return fmt.Errorf("failed to write total difficulty: %w", err)
+	}
+
+	// Write header number mapping: 'H' + hash -> 8-byte big-endian block number
+	// This is CRITICAL for ReadHeaderNumber() to work
+	// IMPORTANT: Must be exactly 8 bytes (not RLP encoded)
+	hashKey := make([]byte, 33)
+	hashKey[0] = 'H'
+	copy(hashKey[1:33], targetHash.Bytes())
+	numBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(numBytes, 0)
+	if err := newDB.Put(hashKey, numBytes); err != nil {
+		return fmt.Errorf("failed to write header number: %w", err)
+	}
+
+	// CRITICAL: Copy block BODY from migrated database
+	// Block body key: 'b' + 8-byte number + 32-byte hash -> body RLP
+	var bodyData []byte
+	err = migratedDB.View(func(txn *badger.Txn) error {
+		bodyKey := make([]byte, 41)
+		bodyKey[0] = 'b'
+		binary.BigEndian.PutUint64(bodyKey[1:9], 0)
+		copy(bodyKey[9:41], targetHash.Bytes())
+
+		item, err := txn.Get(bodyKey)
+		if err != nil {
+			// Genesis might have empty body, that's OK
+			fmt.Printf("   Block body not found (genesis may have empty body): %v\n", err)
+			return nil
+		}
+
+		bodyData, err = item.ValueCopy(nil)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("failed to read block body: %w", err)
+	}
+
+	// Write block body if it exists
+	if len(bodyData) > 0 {
+		bodyKey := make([]byte, 41)
+		bodyKey[0] = 'b'
+		binary.BigEndian.PutUint64(bodyKey[1:9], 0)
+		copy(bodyKey[9:41], targetHash.Bytes())
+
+		if err := newDB.Put(bodyKey, bodyData); err != nil {
+			return fmt.Errorf("failed to write block body: %w", err)
+		}
+		fmt.Printf("   Block body copied (%d bytes)\n", len(bodyData))
+	} else {
+		fmt.Printf("   Block body: empty (expected for genesis)\n")
+	}
+
+	// Copy receipts if they exist
+	// Receipts key: 'r' + 8-byte number + 32-byte hash -> receipts RLP
+	var receiptsData []byte
+	err = migratedDB.View(func(txn *badger.Txn) error {
+		receiptsKey := make([]byte, 41)
+		receiptsKey[0] = 'r'
+		binary.BigEndian.PutUint64(receiptsKey[1:9], 0)
+		copy(receiptsKey[9:41], targetHash.Bytes())
+
+		item, err := txn.Get(receiptsKey)
+		if err != nil {
+			// Genesis might have no receipts, that's OK
+			fmt.Printf("   Receipts not found (expected for genesis): %v\n", err)
+			return nil
+		}
+
+		receiptsData, err = item.ValueCopy(nil)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("failed to read receipts: %w", err)
+	}
+
+	// Write receipts if they exist
+	if len(receiptsData) > 0 {
+		receiptsKey := make([]byte, 41)
+		receiptsKey[0] = 'r'
+		binary.BigEndian.PutUint64(receiptsKey[1:9], 0)
+		copy(receiptsKey[9:41], targetHash.Bytes())
+
+		if err := newDB.Put(receiptsKey, receiptsData); err != nil {
+			return fmt.Errorf("failed to write receipts: %w", err)
+		}
+		fmt.Printf("   Receipts copied (%d bytes)\n", len(receiptsData))
+	} else {
+		fmt.Printf("   Receipts: none (expected for genesis)\n")
+	}
+
+	fmt.Printf("✅ Genesis block 0 FULLY copied!\n")
+	fmt.Printf("   Header: ✓\n")
+	fmt.Printf("   Body: ✓\n")
+	fmt.Printf("   Receipts: ✓\n")
+	fmt.Printf("   Canonical hash: ✓\n")
+	fmt.Printf("   Header number mapping: ✓\n")
+	fmt.Printf("   Total difficulty: ✓\n")
+	fmt.Printf("   LastBlock/LastHeader: %s\n", targetHash.Hex())
+	fmt.Printf("   State root preserved: %s\n", header.Root.Hex())
+	return nil
+}
+
+func createGenesisFromMigratedDB(migratedDBPath string) (*gethcore.Genesis, error) {
+	fmt.Printf("=== READING GENESIS FROM MIGRATED DATABASE ===\n")
+	fmt.Printf("Source: %s\n", migratedDBPath)
+
+	// Open the migrated BadgerDB
+	opts := badger.DefaultOptions(migratedDBPath)
+	opts.ReadOnly = true
+	opts.Logger = nil
+
+	bdb, err := badger.Open(opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open BadgerDB: %w", err)
+	}
+	defer bdb.Close()
+
+	// Read block 0 from migrated database
+	var headerData []byte
+
+	err = bdb.View(func(txn *badger.Txn) error {
+		// The migrated database has NO namespace - keys are stored directly
+		// Key for block 0: 'h' + 8-byte block number (0) + 32-byte hash
+		targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+
+		// Create the key (no namespace prefix - classic SubnetEVM from 2024)
+		key := make([]byte, 41)
+		key[0] = 'h'
+		binary.BigEndian.PutUint64(key[1:9], 0)
+		copy(key[9:41], targetHash.Bytes())
+
+		// Get header data
+		item, err := txn.Get(key)
+		if err != nil {
+			return fmt.Errorf("genesis header not found at key %x: %w", key, err)
+		}
+
+		headerData, err = item.ValueCopy(nil)
+		if err != nil {
+			return fmt.Errorf("failed to copy header data: %w", err)
+		}
+
+		fmt.Printf("Found genesis header with hash: %s\n", targetHash.Hex())
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to read genesis: %w", err)
+	}
+
+	// Decode the header using standard types.Header (19-field format)
+	header := new(types.Header)
+	if err := rlp.DecodeBytes(headerData, header); err != nil {
+		return nil, fmt.Errorf("failed to decode header: %w", err)
+	}
+
+	fmt.Printf("=== GENESIS BLOCK INFO ===\n")
+	fmt.Printf("Hash:        %s\n", header.Hash().Hex())
+	fmt.Printf("StateRoot:   %s\n", header.Root.Hex())
+	fmt.Printf("Number:      %d\n", header.Number.Uint64())
+	fmt.Printf("Time:        %d\n", header.Time)
+	fmt.Printf("GasLimit:    %d\n", header.GasLimit)
+	fmt.Printf("Coinbase:    %s\n", header.Coinbase.Hex())
+	fmt.Printf("Difficulty:  %s\n", header.Difficulty.String())
+	if header.BaseFee != nil {
+		fmt.Printf("BaseFee:     %s\n", header.BaseFee.String())
+	}
+
+	// Create Genesis configuration matching the migrated genesis EXACTLY
+	// NOTE: The actual genesis had an EMPTY alloc - all balances were created later!
+	genesis := &gethcore.Genesis{
+		Config: &params.ChainConfig{
+			ChainID:             big.NewInt(96369), // Network 96369
+			HomesteadBlock:      big.NewInt(0),
+			EIP150Block:         big.NewInt(0),
+			EIP155Block:         big.NewInt(0),
+			EIP158Block:         big.NewInt(0),
+			ByzantiumBlock:      big.NewInt(0),
+			ConstantinopleBlock: big.NewInt(0),
+			PetersburgBlock:     big.NewInt(0),
+			IstanbulBlock:       big.NewInt(0),
+			MuirGlacierBlock:    big.NewInt(0),
+			BerlinBlock:         big.NewInt(0),
+			LondonBlock:         big.NewInt(0),
+			ArrowGlacierBlock:   big.NewInt(0),
+			GrayGlacierBlock:    big.NewInt(0),
+			MergeNetsplitBlock:  big.NewInt(0),
+			ShanghaiTime:        new(uint64),
+			CancunTime:          new(uint64),
+			BlobScheduleConfig: &params.BlobScheduleConfig{
+				Cancun: &params.BlobConfig{
+					Target:         1,
+					Max:            2,
+					UpdateFraction: 1112826,
+				},
+			},
+		},
+		Nonce:      header.Nonce.Uint64(),
+		Timestamp:  header.Time,
+		ExtraData:  header.Extra,
+		GasLimit:   header.GasLimit,
+		Difficulty: header.Difficulty,
+		Mixhash:    header.MixDigest,
+		Coinbase:   header.Coinbase,
+		// CRITICAL: Genesis had EMPTY alloc - all balances created through transactions
+		Alloc: gethcore.GenesisAlloc{},
+		// Number must be 0 for genesis
+		Number:     0,
+		GasUsed:    header.GasUsed,
+		ParentHash: header.ParentHash,
+		BaseFee:    header.BaseFee,
+	}
+
+	// Set Shanghai and Cancun times to 0 (genesis)
+	zero := uint64(0)
+	genesis.Config.ShanghaiTime = &zero
+	genesis.Config.CancunTime = &zero
+
+	fmt.Printf("\n✅ Genesis configuration created successfully!\n")
+
+	return genesis, nil
+}
+
+// copyAllDatabaseEntries copies ALL database entries from migrated BadgerDB
+// This includes blocks, state, receipts - everything except genesis which was already copied
+func copyAllDatabaseEntries(db ethdb.Database, migratedDBPath string) error {
+	fmt.Printf("\n=== COPYING ALL DATABASE ENTRIES FROM MIGRATED DATABASE ===\n")
+	fmt.Printf("Source database: %s\n", migratedDBPath)
+	fmt.Printf("Copying blocks, state, receipts, and all metadata...\n\n")
+
+	// Open BadgerDB
+	opts := badger.DefaultOptions(migratedDBPath)
+	opts.ReadOnly = true
+	opts.Logger = nil
+
+	bdb, err := badger.Open(opts)
+	if err != nil {
+		return fmt.Errorf("failed to open BadgerDB: %w", err)
+	}
+	defer bdb.Close()
+
+	// Track copy progress
+	copied := 0
+	skipped := 0  // Skip genesis block 0 (already copied)
+	canonicalHashesGenerated := 0
+	lastLogTime := time.Now()
+
+	// Iterate through ALL keys in BadgerDB and copy them
+	fmt.Printf("Copying all database entries...\n")
+	fmt.Printf("CRITICAL: Will generate canonical hash keys from header keys!\n\n")
+
+	// Create a batch for efficient writes
+	batch := db.NewBatch()
+	batchSize := 0
+	const maxBatchSize = 1000  // Flush every 1000 writes
+	const maxBatchBytes = 1 * 1024 * 1024  // Flush every 1MB
+
+	// Iterate through ALL keys in the migrated database and copy them
+	err = bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			key := item.Key()
+
+			// DEBUG: Log first 50 keys to understand format
+			if copied < 50 {
+				firstByte := "?"
+				if len(key) > 0 {
+					firstByte = fmt.Sprintf("0x%02x", key[0])
+				}
+				fmt.Printf("DEBUG [%d]: len=%d firstByte=%s hex=%x\n",
+					copied, len(key), firstByte, key[:min(len(key), 20)])
+			}
+
+			// Skip genesis block 0 entries (already copied)
+			// migrated-ethdb is in standard geth format (NO blockchain ID prefix)
+			// Header keys: 'h' + 8-byte number + 32-byte hash = 41 bytes
+			// Canonical hash keys: 'h' + 8-byte number + 'n' = 10 bytes (we generate these)
+
+			// Check for 41-byte header key: 'h' + block number + hash
+			if len(key) == 41 && key[0] == 'h' {
+				blockNum := binary.BigEndian.Uint64(key[1:9])
+				if blockNum == 0 {
+					skipped++
+					continue // Skip genesis (already copied)
+				}
+
+				// Read header value
+				value, err := item.ValueCopy(nil)
+				if err != nil {
+					return fmt.Errorf("failed to read header value for block %d: %w", blockNum, err)
+				}
+
+				// Write the header key-value
+				if err := batch.Put(key, value); err != nil {
+					return fmt.Errorf("failed to write header key %x: %w", key, err)
+				}
+				copied++
+				batchSize++
+
+				// Compute hash from RLP-encoded header
+				actualHash := crypto.Keccak256Hash(value)
+
+				// Generate canonical hash key: 'h' + 8-byte number + 'n'
+				canonicalKey := make([]byte, 10)
+				canonicalKey[0] = 'h'
+				binary.BigEndian.PutUint64(canonicalKey[1:9], blockNum)
+				canonicalKey[9] = 'n' // Geth headerHashSuffix
+
+				// Write canonical hash entry
+				if err := batch.Put(canonicalKey, actualHash.Bytes()); err != nil {
+					return fmt.Errorf("failed to write canonical hash for block %d: %w", blockNum, err)
+				}
+				canonicalHashesGenerated++
+				batchSize++
+
+				// Flush batch if needed
+				if batchSize >= maxBatchSize || batch.ValueSize() >= maxBatchBytes {
+					if err := batch.Write(); err != nil {
+						return fmt.Errorf("failed to flush batch: %w", err)
+					}
+					batch.Reset()
+					batchSize = 0
+				}
+
+				// Skip normal copy since we already wrote this key
+				continue
+			}
+
+			// Copy this key-value pair to the new database
+			value, err := item.ValueCopy(nil)
+			if err != nil {
+				return fmt.Errorf("failed to read value for key %x: %w", key, err)
+			}
+
+			if err := batch.Put(key, value); err != nil {
+				return fmt.Errorf("failed to write key %x: %w", key, err)
+			}
+			batchSize++
+
+			copied++
+
+			// Flush batch every maxBatchSize entries
+			if batchSize >= maxBatchSize || batch.ValueSize() >= maxBatchBytes {
+				if err := batch.Write(); err != nil {
+					return fmt.Errorf("failed to flush batch: %w", err)
+				}
+				batch.Reset()
+				batchSize = 0
+			}
+
+			// Log progress every 10,000 entries or every second
+			if copied%10000 == 0 || time.Since(lastLogTime) > time.Second {
+				fmt.Printf("Copied %d entries (skipped %d genesis, generated %d canonical hashes)...\n", 
+					copied, skipped, canonicalHashesGenerated)
+				lastLogTime = time.Now()
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to copy database: %w", err)
+	}
+
+	// Final flush for any remaining entries in batch
+	if batchSize > 0 {
+		if err := batch.Write(); err != nil {
+			return fmt.Errorf("failed to flush final batch: %w", err)
+		}
+		fmt.Printf("Flushed final batch of %d entries\n", batchSize)
+	}
+
+	fmt.Printf("\n=== COPY COMPLETE ===\n")
+	fmt.Printf("Total entries copied: %d\n", copied)
+	fmt.Printf("Genesis entries skipped: %d\n", skipped)
+	fmt.Printf("Canonical hash keys generated: %d\n", canonicalHashesGenerated)
+	fmt.Printf("This includes:\n")
+	fmt.Printf("  - All block headers\n")
+	fmt.Printf("  - All block bodies\n")
+	fmt.Printf("  - All receipts\n")
+	fmt.Printf("  - All state trie data\n")
+	fmt.Printf("  - All canonical hash mappings (GENERATED from header keys)\n")
+	fmt.Printf("  - All metadata\n\n")
+
+	// CRITICAL: After copying all entries, we need to set the HEAD pointers
+	// so that NewBlockChain() knows where the chain head is
+	fmt.Printf("Setting head block pointers...\n")
+
+	// Find the highest block number by scanning the NEW database (not migrated!)
+	// We'll use binary search to find the highest block that exists
+	var highestBlock uint64
+	var highestHash common.Hash
+
+	// First, get an upper bound by checking if we have block 1,082,781 (known max from migration)
+	maxExpected := uint64(1082781)
+	testHash := rawdb.ReadCanonicalHash(db, maxExpected)
+
+	if testHash != (common.Hash{}) {
+		// We have blocks up to at least maxExpected
+		highestBlock = maxExpected
+		highestHash = testHash
+		fmt.Printf("Quick check: Found block %d\n", maxExpected)
+	} else {
+		// Binary search from 0 to maxExpected to find highest block
+		fmt.Printf("Binary searching for highest block (0 to %d)...\n", maxExpected)
+		left, right := uint64(0), maxExpected
+
+		for left <= right {
+			mid := (left + right) / 2
+			hash := rawdb.ReadCanonicalHash(db, mid)
+
+			if hash != (common.Hash{}) {
+				// Block mid exists, try higher
+				highestBlock = mid
+				highestHash = hash
+				if mid == maxExpected {
+					break // Can't go higher
+				}
+				left = mid + 1
+			} else {
+				// Block mid doesn't exist, try lower
+				if mid == 0 {
+					break // Can't go lower
+				}
+				right = mid - 1
+			}
+		}
+	}
+
+	if highestBlock == 0 {
+		fmt.Printf("No blocks found beyond genesis, keeping head at block 0\n")
+	} else {
+		fmt.Printf("Found highest block: %d (hash: %x)\n", highestBlock, highestHash)
+
+		// Set the head pointers in the database
+		rawdb.WriteHeadBlockHash(db, highestHash)
+		rawdb.WriteHeadHeaderHash(db, highestHash)
+		rawdb.WriteHeadFastBlockHash(db, highestHash)
+		
+		// CRITICAL: Also write the header number mapping so ReadHeaderNumber works
+		rawdb.WriteHeaderNumber(db, highestHash, highestBlock)
+
+		fmt.Printf("✅ Head pointers set to block %d\n", highestBlock)
+	}
+
+	return nil
+}
+
+// InitializeCChainWithReplay imports blocks from migrated database using runtime replay
+// NOTE: This assumes genesis has already been properly initialized via SetupGenesisBlock
+func InitializeCChainWithReplay(blockchain *gethcore.BlockChain, db ethdb.Database) error {
+	migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+
+	// Check if the migrated database exists
+	if _, err := os.Stat(migratedDBPath); os.IsNotExist(err) {
+		fmt.Printf("Migrated database not found at %s, skipping replay\n", migratedDBPath)
+		return nil
+	}
+
+	// Copy all blocks and state directly from migrated database
+	// Block 0 (genesis) was already copied by copyGenesisFromMigratedDB
+	if err := copyAllDatabaseEntries(db, migratedDBPath); err != nil {
+		return fmt.Errorf("failed to copy database: %w", err)
+	}
+
+	return nil
 }
 
 // MinimalEthBackend provides a minimal Ethereum backend without p2p networking
@@ -463,13 +1034,13 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 		networkID:   96369,
 	}
 
-	// Background block replay DISABLED - blockchain already loaded successfully
-	// from PebbleDB with canonical mappings built
-	// The blockchain is at correct height with all headers accessible
-	// No rebuild needed - this is the simple, orthogonal solution
-
-	// DISABLED: go replayBlocksToRebuildState(blockchain, rawDB, actualHeight)
-	// DISABLED: go rebuildChainWithFixedHashes(blockchain, rawDB, actualHeight)
+	// Background block replay - Enable for SubnetEVM data re-execution
+	// This will re-execute all transactions to rebuild proper state
+	fmt.Printf("🔄 Starting background block replay to rebuild state...\n")
+	fmt.Printf("   This will re-execute all %d blocks\n", actualHeight)
+	
+	// Enable the replay in background
+	go replayBlocksToRebuildState(blockchain, rawDB, actualHeight)
 
 	fmt.Printf("✅ Blockchain ready at height %d with canonical mappings\n", actualHeight)
 	fmt.Printf("   No rebuild needed - EVM data accessible via namespace stripper\n")
@@ -605,16 +1176,47 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 
 // NewMinimalEthBackend creates a new minimal Ethereum backend
 func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *gethcore.Genesis) (*MinimalEthBackend, error) {
+	// Checkpoint: Verify canonical hash at entry
+	targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+	entryHash := rawdb.ReadCanonicalHash(db, 0)
+	log.Info("[CHECKPOINT 3] NewMinimalEthBackend entry",
+		"expected", targetHash.Hex(),
+		"actual", entryHash.Hex(),
+		"match", entryHash == targetHash,
+		"genesisNil", genesis == nil)
+	
 	// Special marker for "use existing genesis in database"
 	_ = false // useExistingGenesis - may use later
 
-	// If no genesis is provided, check if we should use existing or create default
+	// CRITICAL FIX: Check if database already has genesis FIRST before creating new one
+	// This prevents overwriting a copied genesis from migrated database
 	if genesis == nil {
-		// Check if database already has a genesis
+		// Check for existing genesis FIRST to avoid overwriting copied genesis
 		if existingHash := rawdb.ReadCanonicalHash(db, 0); existingHash != (common.Hash{}) {
-			fmt.Printf("Using existing genesis from database: %s\n", existingHash.Hex())
-			// Use existing genesis - no action needed
+			fmt.Printf("Found existing genesis in database: %s\n", existingHash.Hex())
+			fmt.Printf("Skipping genesis creation - will use existing\n")
+			// Keep genesis = nil to use existing genesis in database
 		} else {
+			// No genesis in database, try to load from migrated database
+			migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+			if _, err := os.Stat(migratedDBPath); err == nil {
+				fmt.Printf("Found migrated database at %s, loading genesis from it\n", migratedDBPath)
+
+				migratedGenesis, err := createGenesisFromMigratedDB(migratedDBPath)
+				if err != nil {
+					fmt.Printf("Warning: Failed to load genesis from migrated DB: %v\n", err)
+					fmt.Printf("Will use default genesis configuration\n")
+				} else {
+					fmt.Printf("Successfully loaded genesis from migrated database\n")
+					genesis = migratedGenesis
+				}
+			}
+		}
+	}
+
+	// If still no genesis after checking database, create default
+	if genesis == nil {
+		if existingHash := rawdb.ReadCanonicalHash(db, 0); existingHash == (common.Hash{}) {
 			// CRITICAL: ALWAYS use proper mainnet genesis for network 96369
 			// NEVER use a blank or test genesis for mainnet!
 			fmt.Printf("WARNING: No genesis in database - using HARDCODED MAINNET genesis\n")
@@ -646,15 +1248,22 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 						},
 					},
 				},
+				// Use exact genesis from block 0 of network 96369
 				Nonce:      0x0,
-				Timestamp:  0x0,
+				Timestamp:  0x672485c2, // 1730446786 - from block 0
 				ExtraData:  []byte{},
-				GasLimit:   15000000, // 15M gas limit for mainnet
+				GasLimit:   12000000, // 12M - from block 0
 				Difficulty: big.NewInt(0),
 				Mixhash:    common.Hash{},
 				Coinbase:   common.Address{},
-				// Empty alloc - balances come from migrated state
-				Alloc: gethcore.GenesisAlloc{},
+				// State root from block 0: 0x2d1cedac263020c5c56ef962f6abe0da1f5217bdc6468f8c9258a0ea23699e80
+				// Empty alloc - state comes from migrated database
+				Alloc: gethcore.GenesisAlloc{
+					// Treasury address - will be filled from state
+					common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): {
+						Balance: big.NewInt(0), // Will be set from migrated state
+					},
+				},
 			}
 		}
 	}
@@ -819,6 +1428,26 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		}
 	}
 
+	// Check if migrated database exists and copy all entries BEFORE creating blockchain
+	// This way the blockchain will discover the correct head when initialized
+	migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
+	if _, err := os.Stat(migratedDBPath); err == nil {
+		// Check if we need to copy (only if current head is block 0)
+		headHash := rawdb.ReadHeadBlockHash(db)
+		if headHash == (common.Hash{}) || rawdb.ReadCanonicalHash(db, 1) == (common.Hash{}) {
+			fmt.Printf("Found migrated database, copying all blocks BEFORE blockchain creation...\n")
+			// Copy all database entries from migrated database
+			// Note: copyGenesisFromMigratedDB already copied block 0, but copyAllDatabaseEntries
+			// will skip genesis entries automatically
+			if err := copyAllDatabaseEntries(db, migratedDBPath); err != nil {
+				return nil, fmt.Errorf("failed to copy database entries: %w", err)
+			}
+			fmt.Printf("Database copy complete! Proceeding to create blockchain...\n")
+		} else {
+			fmt.Printf("Database already has blocks, skipping migrated database copy\n")
+		}
+	}
+
 	// Now create blockchain - it will use the already initialized genesis
 	// When genesis is nil and database has genesis, NewBlockChain will use it
 	// However, NewBlockChain calls SetupGenesisBlockWithOverride which causes issues
@@ -861,10 +1490,15 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		}
 
 		// Create the blockchain directly without genesis setup
+		// At this point, the database has all blocks (0 to 1082781) already copied
 		blockchain, err = createBlockchainWithoutGenesis(db, storedConfig, engine, options)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create blockchain without genesis: %w", err)
 		}
+
+		// Log the discovered head
+		currentHeight := blockchain.CurrentBlock().Number.Uint64()
+		fmt.Printf("Blockchain created! Current head: block %d\n", currentHeight)
 	} else {
 		// Normal path - let NewBlockChain handle genesis
 		blockchain, err = gethcore.NewBlockChain(db, genesis, engine, options)
@@ -919,7 +1553,8 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	}
 	*/
 
-	fmt.Printf("DEBUG: Replay mechanism disabled - node running with current database state\n")
+	
+	fmt.Printf("DEBUG: C-Chain initialized with replay support\n")
 
 	return backend, nil
 }

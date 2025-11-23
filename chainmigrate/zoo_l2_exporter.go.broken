@@ -1,0 +1,469 @@
+package chainmigrate
+
+import (
+	"context"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"math/big"
+
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/rlp"
+)
+
+// ZooL2Exporter exports data from Zoo L2 blockchain (EVM-based L2)
+type ZooL2Exporter struct {
+	config    ExporterConfig
+	client    *ethclient.Client
+	chainID   *big.Int
+	rpcURL    string
+
+	// L2-specific fields
+	l1Contract     common.Address // L1 contract address for state roots
+	batchSize      int
+	sequencerMode  bool // Whether this is a sequencer node
+}
+
+// NewZooL2Exporter creates a new Zoo L2 exporter
+func NewZooL2Exporter(rpcURL string, l1Contract common.Address) *ZooL2Exporter {
+	return &ZooL2Exporter{
+		rpcURL:     rpcURL,
+		l1Contract: l1Contract,
+		batchSize:  100,
+	}
+}
+
+// Init initializes the Zoo L2 exporter
+func (e *ZooL2Exporter) Init(config ExporterConfig) error {
+	e.config = config
+
+	// Connect to Zoo L2 RPC endpoint
+	client, err := ethclient.Dial(e.rpcURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Zoo L2: %w", err)
+	}
+	e.client = client
+
+	// Get chain ID
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get chain ID: %w", err)
+	}
+	e.chainID = chainID
+
+	// Detect if this is a sequencer node (has special APIs)
+	e.detectSequencerMode()
+
+	fmt.Printf("Connected to Zoo L2 (Chain ID: %s)\n", chainID.String())
+	return nil
+}
+
+// GetChainInfo returns information about the Zoo L2 chain
+func (e *ZooL2Exporter) GetChainInfo() (*ChainInfo, error) {
+	ctx := context.Background()
+
+	// Get latest block
+	latestBlock, err := e.client.BlockByNumber(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest block: %w", err)
+	}
+
+	// Get sync status
+	progress, err := e.client.SyncProgress(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	syncing := progress != nil
+	syncProgress := float64(100)
+	if syncing {
+		if progress.HighestBlock > 0 {
+			syncProgress = float64(progress.CurrentBlock) / float64(progress.HighestBlock) * 100
+		}
+	}
+
+	return &ChainInfo{
+		Name:         "Zoo L2",
+		ChainID:      e.chainID.Uint64(),
+		LatestBlock:  latestBlock.NumberU64(),
+		GenesisHash:  "", // Will be fetched if needed
+		Syncing:      syncing,
+		SyncProgress: syncProgress,
+		Extra: map[string]interface{}{
+			"l1_contract":    e.l1Contract.Hex(),
+			"sequencer_mode": e.sequencerMode,
+			"gas_price":      latestBlock.BaseFee(),
+			"l2_type":        "optimistic_rollup", // or "zk_rollup"
+		},
+	}, nil
+}
+
+// ExportBlocks exports blocks from Zoo L2
+func (e *ZooL2Exporter) ExportBlocks(ctx context.Context, start, end uint64) (<-chan *BlockData, <-chan error) {
+	blockChan := make(chan *BlockData, e.batchSize)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(blockChan)
+		defer close(errChan)
+
+		for num := start; num <= end; num++ {
+			select {
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+				return
+			default:
+			}
+
+			block, err := e.getBlock(num)
+			if err != nil {
+				if e.config.ContinueOnError {
+					fmt.Printf("Warning: failed to get block %d: %v\n", num, err)
+					continue
+				}
+				errChan <- fmt.Errorf("failed to get block %d: %w", num, err)
+				return
+			}
+
+			// Add L2-specific metadata
+			if e.sequencerMode {
+				e.enrichWithSequencerData(block)
+			}
+
+			select {
+			case blockChan <- block:
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+				return
+			}
+		}
+	}()
+
+	return blockChan, errChan
+}
+
+// ExportState exports state from Zoo L2 at a specific block
+func (e *ZooL2Exporter) ExportState(ctx context.Context, blockNumber uint64) (<-chan *StateAccount, <-chan error) {
+	accountChan := make(chan *StateAccount, 1000)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(accountChan)
+		defer close(errChan)
+
+		// For Zoo L2, we need to handle state differently based on rollup type
+		if e.isOptimisticRollup() {
+			// Export state from L2 node directly
+			if err := e.exportOptimisticState(ctx, blockNumber, accountChan); err != nil {
+				errChan <- err
+				return
+			}
+		} else {
+			// For ZK rollups, export state proofs
+			if err := e.exportZKState(ctx, blockNumber, accountChan); err != nil {
+				errChan <- err
+				return
+			}
+		}
+	}()
+
+	return accountChan, errChan
+}
+
+// ExportAccount exports a specific account from Zoo L2
+func (e *ZooL2Exporter) ExportAccount(ctx context.Context, address common.Address, blockNumber uint64) (*StateAccount, error) {
+	// Get balance
+	balance, err := e.client.BalanceAt(ctx, address, new(big.Int).SetUint64(blockNumber))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance: %w", err)
+	}
+
+	// Get nonce
+	nonce, err := e.client.NonceAt(ctx, address, new(big.Int).SetUint64(blockNumber))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	// Get code
+	code, err := e.client.CodeAt(ctx, address, new(big.Int).SetUint64(blockNumber))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get code: %w", err)
+	}
+
+	account := &StateAccount{
+		Address: address.Hex(),
+		Balance: balance.String(),
+		Nonce:   nonce,
+		Code:    hex.EncodeToString(code),
+		Storage: make(map[string]string),
+	}
+
+	// For contracts, we might need to export storage slots
+	// This would require special handling for Zoo L2 state layout
+	if len(code) > 0 {
+		// Export important storage slots for Zoo L2 contracts
+		e.exportZooContractStorage(ctx, address, blockNumber, account)
+	}
+
+	return account, nil
+}
+
+// ExportConfig exports Zoo L2 chain configuration
+func (e *ZooL2Exporter) ExportConfig() (*ChainConfig, error) {
+	ctx := context.Background()
+
+	// Get genesis block for initial config
+	genesis, err := e.client.BlockByNumber(ctx, big.NewInt(0))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get genesis block: %w", err)
+	}
+
+	// Build config with L2-specific parameters
+	config := &ChainConfig{
+		ChainID:      e.chainID.Uint64(),
+		GenesisTime:  genesis.Time(),
+		GenesisExtra: hex.EncodeToString(genesis.Extra()),
+		GasLimit:     genesis.GasLimit(),
+		GenesisAlloc: make(map[string]GenesisAccount),
+		Extra: map[string]interface{}{
+			"l2_type":              "zoo_optimistic", // Zoo-specific L2 type
+			"l1_contract":          e.l1Contract.Hex(),
+			"sequencer_address":    e.getSequencerAddress(),
+			"batch_size":           e.batchSize,
+			"finality_blocks":      20, // L2 finality period
+			"withdrawal_delay":     604800, // 7 days in seconds for optimistic rollup
+			"data_availability":    "ethereum", // Where L2 data is posted
+			"compression_enabled":  true,
+			"eip_1559_enabled":     true,
+		},
+	}
+
+	// Add Zoo-specific precompiles or system contracts
+	e.addZooSystemContracts(config)
+
+	return config, nil
+}
+
+// VerifyExport verifies the exported data
+func (e *ZooL2Exporter) VerifyExport(blockNumber uint64) error {
+	ctx := context.Background()
+
+	// Verify block exists
+	block, err := e.client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+	if err != nil {
+		return fmt.Errorf("block %d not found: %w", blockNumber, err)
+	}
+
+	// For L2, verify against L1 state root if available
+	if e.l1Contract != (common.Address{}) {
+		if err := e.verifyAgainstL1(block); err != nil {
+			return fmt.Errorf("L1 verification failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// Close closes the Zoo L2 exporter
+func (e *ZooL2Exporter) Close() error {
+	if e.client != nil {
+		e.client.Close()
+	}
+	return nil
+}
+
+// Helper methods for Zoo L2 specific functionality
+
+func (e *ZooL2Exporter) getBlock(number uint64) (*BlockData, error) {
+	ctx := context.Background()
+
+	block, err := e.client.BlockByNumber(ctx, new(big.Int).SetUint64(number))
+	if err != nil {
+		return nil, err
+	}
+
+	// Encode header
+	headerBytes, err := rlp.EncodeToBytes(block.Header())
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode header: %w", err)
+	}
+
+	// Encode body (transactions + uncles)
+	body := &types.Body{
+		Transactions: block.Transactions(),
+		Uncles:       block.Uncles(),
+	}
+	bodyBytes, err := rlp.EncodeToBytes(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode body: %w", err)
+	}
+
+	// Get receipts
+	receipts, err := e.client.BlockReceipts(ctx, block.Hash())
+	if err != nil {
+		// Some L2s don't expose receipts via standard RPC
+		fmt.Printf("Warning: couldn't get receipts for block %d: %v\n", number, err)
+		receipts = []*types.Receipt{}
+	}
+	receiptsBytes, _ := rlp.EncodeToBytes(receipts)
+
+	return &BlockData{
+		Number:   number,
+		Hash:     block.Hash().Hex(),
+		Parent:   block.ParentHash().Hex(),
+		Header:   headerBytes,
+		Body:     bodyBytes,
+		Receipts: receiptsBytes,
+		Extra: map[string]interface{}{
+			"l2_batch_index":    e.getL2BatchIndex(block),
+			"l1_block_number":   e.getL1BlockNumber(block),
+			"sequencer_fee":     e.getSequencerFee(block),
+		},
+	}, nil
+}
+
+func (e *ZooL2Exporter) detectSequencerMode() {
+	// Try to call sequencer-specific RPC methods
+	var result json.RawMessage
+	err := e.client.Client().Call(&result, "zoo_getSequencerInfo")
+	e.sequencerMode = err == nil
+}
+
+func (e *ZooL2Exporter) isOptimisticRollup() bool {
+	// Zoo L2 is typically optimistic rollup
+	// This could be configured or detected
+	return true
+}
+
+func (e *ZooL2Exporter) enrichWithSequencerData(block *BlockData) {
+	// Add sequencer-specific metadata if available
+	if extra, ok := block.Extra.(map[string]interface{}); ok {
+		extra["sequencer_timestamp"] = e.getSequencerTimestamp()
+		extra["batch_root"] = e.getBatchRoot()
+	}
+}
+
+func (e *ZooL2Exporter) exportOptimisticState(ctx context.Context, blockNumber uint64, accountChan chan<- *StateAccount) error {
+	// For optimistic rollups, we can directly export state from L2 node
+	// This is a simplified example - real implementation would need to
+	// iterate through all accounts efficiently
+
+	// Get known important addresses for Zoo ecosystem
+	importantAddresses := e.getZooImportantAddresses()
+
+	for _, addr := range importantAddresses {
+		account, err := e.ExportAccount(ctx, addr, blockNumber)
+		if err != nil {
+			if e.config.ContinueOnError {
+				fmt.Printf("Warning: failed to export account %s: %v\n", addr.Hex(), err)
+				continue
+			}
+			return err
+		}
+
+		select {
+		case accountChan <- account:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	return nil
+}
+
+func (e *ZooL2Exporter) exportZKState(ctx context.Context, blockNumber uint64, accountChan chan<- *StateAccount) error {
+	// For ZK rollups, export state with proofs
+	// This would require ZK-specific proof generation
+	return fmt.Errorf("ZK state export not yet implemented")
+}
+
+func (e *ZooL2Exporter) exportZooContractStorage(ctx context.Context, address common.Address, blockNumber uint64, account *StateAccount) {
+	// Export key storage slots for Zoo contracts
+	// Examples: balances mapping, allowances, staking info, etc.
+
+	// Storage slot 0: often used for owner or important config
+	slot0, err := e.client.StorageAt(ctx, address, common.HexToHash("0x0"), new(big.Int).SetUint64(blockNumber))
+	if err == nil && len(slot0) > 0 {
+		account.Storage["0x0"] = hex.EncodeToString(slot0)
+	}
+
+	// Add more Zoo-specific storage slots as needed
+}
+
+func (e *ZooL2Exporter) getSequencerAddress() string {
+	// Get sequencer address from L2 config
+	// This would be Zoo-specific
+	return "0x1234567890123456789012345678901234567890"
+}
+
+func (e *ZooL2Exporter) addZooSystemContracts(config *ChainConfig) {
+	// Add Zoo L2 system contracts to genesis
+	systemContracts := map[string]string{
+		"0x4200000000000000000000000000000000000001": "L2CrossDomainMessenger",
+		"0x4200000000000000000000000000000000000002": "L2StandardBridge",
+		"0x4200000000000000000000000000000000000003": "SequencerFeeVault",
+		"0x4200000000000000000000000000000000000004": "L2ToL1MessagePasser",
+		// Zoo-specific contracts
+		"0x5A00000000000000000000000000000000000001": "ZooStaking",
+		"0x5A00000000000000000000000000000000000002": "ZooGovernance",
+		"0x5A00000000000000000000000000000000000003": "ZooNFTBridge",
+	}
+
+	for addr, name := range systemContracts {
+		if extra, ok := config.Extra.(map[string]interface{}); ok {
+			if contracts, ok := extra["system_contracts"].(map[string]string); ok {
+				contracts[addr] = name
+			} else {
+				extra["system_contracts"] = map[string]string{addr: name}
+			}
+		}
+	}
+}
+
+func (e *ZooL2Exporter) verifyAgainstL1(block *types.Block) error {
+	// Verify L2 block against L1 state commitment
+	// This would interact with L1 contract to verify state roots
+	// Simplified for example
+	return nil
+}
+
+func (e *ZooL2Exporter) getL2BatchIndex(block *types.Block) uint64 {
+	// Extract L2 batch index from block (implementation specific)
+	return block.NumberU64() / 100 // Example: batch every 100 blocks
+}
+
+func (e *ZooL2Exporter) getL1BlockNumber(block *types.Block) uint64 {
+	// Extract L1 block number from L2 block metadata
+	// This is often stored in extra data or accessed via special RPC
+	return 0 // Placeholder
+}
+
+func (e *ZooL2Exporter) getSequencerFee(block *types.Block) string {
+	// Calculate sequencer fee for this block
+	if block.BaseFee() != nil {
+		return block.BaseFee().String()
+	}
+	return "0"
+}
+
+func (e *ZooL2Exporter) getSequencerTimestamp() uint64 {
+	// Get sequencer timestamp (for sequencer mode)
+	return 0 // Placeholder
+}
+
+func (e *ZooL2Exporter) getBatchRoot() string {
+	// Get batch merkle root (for sequencer mode)
+	return "" // Placeholder
+}
+
+func (e *ZooL2Exporter) getZooImportantAddresses() []common.Address {
+	// Return list of important Zoo ecosystem addresses to export
+	return []common.Address{
+		common.HexToAddress("0x5A00000000000000000000000000000000000001"), // Zoo Staking
+		common.HexToAddress("0x5A00000000000000000000000000000000000002"), // Zoo Governance
+		common.HexToAddress("0x5A00000000000000000000000000000000000003"), // Zoo NFT Bridge
+		// Add more as needed
+	}
+}

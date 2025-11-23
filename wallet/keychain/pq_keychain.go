@@ -349,21 +349,21 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 		return kc.AddMLDSA(key, KeyTypeMLDSA87), nil
 
 	case KeyTypeSLHDSA128:
-		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA128s)
+		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_128s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA128), nil
 
 	case KeyTypeSLHDSA192:
-		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA192s)
+		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_192s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA192), nil
 
 	case KeyTypeSLHDSA256:
-		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA256s)
+		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_256s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
@@ -393,7 +393,7 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
-		pq, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA128s)
+		pq, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_128s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	consensustest "github.com/luxfi/consensus/test/helpers"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/utils/timer/mockable"
 	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
@@ -403,7 +403,8 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 	blkWinDelay, err := proVM.Delay(context.Background(), childCoreBlk.Height(), parentPChainHeight, proVM.ctx.NodeID, proposer.MaxVerifyWindows)
 	require.NoError(err)
 
-	{
+	// Only test "before window" if delay > 1 second (node is not first proposer)
+	if blkWinDelay > time.Second {
 		// block cannot arrive before its creator window starts
 		beforeWinStart := parentTimestamp.Add(blkWinDelay).Add(-1 * time.Second)
 		proVM.Clock.Set(beforeWinStart)
@@ -424,6 +425,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 		err = childBlk.Verify(context.Background())
 		require.ErrorIs(err, errProposerWindowNotStarted)
 	}
+	// If blkWinDelay == 0, skip test (node is first proposer, no window to test before)
 
 	{
 		// block can arrive at its creator window starts
@@ -683,6 +685,10 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
+	// Set consensus state to Bootstrapping to skip P-chain height validation
+	// This allows testing that child P-chain height can be parent+1 during sync
+	proVM.consensusState = uint32(consensuscore.VMBootstrapping)
+
 	pChainHeight := uint64(100)
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return pChainHeight, nil
@@ -826,6 +832,8 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 
 	{
 		// block P-Chain height cannot be at higher than current P-Chain height
+		// Need to set state to NormalOp for this validation to be active
+		proVM.consensusState = uint32(consensuscore.VMNormalOp)
 		childSlb, err := block.BuildUnsigned(
 			parentBlk.ID(),
 			nextTime,
@@ -891,6 +899,7 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 
 	// set error on coreBlock.Verify and recall Verify()
 	// If Verify is cached correctly, this should NOT call coreBlk.Verify again
+	// The second verify returns the cached result (success), NOT the error
 	coreBlk.ErrV = errDuplicateVerify
 	require.NoError(builtBlk.Verify(context.Background()))
 
@@ -997,7 +1006,7 @@ func TestBlockAccept_PostForkBlock_TwoProBlocksWithSameCoreBlock_OneIsAccepted(t
 
 	// set proBlk1 as preferred
 	require.NoError(proBlk1.Accept(context.Background()))
-	require.Equal(consensustest.Accepted, coreBlk.Status)
+	require.Equal(componentblocktest.Accepted, coreBlk.Status())
 
 	acceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)

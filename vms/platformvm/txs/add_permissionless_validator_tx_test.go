@@ -141,13 +141,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -450,7 +446,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		DelegationShares: reward.PercentDenominator,
 	}
 	ctx = &consensusctx.Context{
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID,
+		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -844,8 +842,9 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1405,13 +1404,9 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	)
 
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
+		NetworkID: networkID,
 		QuantumID: networkID,
+		NetID:     constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 

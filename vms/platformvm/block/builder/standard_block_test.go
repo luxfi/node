@@ -45,7 +45,7 @@ func TestAtomicTxImports(t *testing.T) {
 		},
 		Asset: lux.Asset{ID: env.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          70 * units.MicroLux,
+			Amt:          70 * units.MilliLux,
 			OutputOwners: *owner,
 		},
 	}
@@ -63,6 +63,7 @@ func TestAtomicTxImports(t *testing.T) {
 		}}},
 	}))
 
+	// Create wallet - defaults to all genesis funded keys
 	wallet := newWallet(t, env, walletConfig{})
 
 	tx, err := wallet.IssueImportTx(

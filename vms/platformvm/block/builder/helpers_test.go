@@ -294,13 +294,14 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	}
 	// Convert testcontext.Context to consensusctx.Context for wallet
 	walletCtx := &consensusctx.Context{
-		NetworkID:  e.ctx.NetworkID,
-		QuantumID:  e.ctx.NetworkID,
-		NetID:      e.ctx.NetID,
-		ChainID:    e.ctx.ChainID,
-		NodeID:     e.ctx.NodeID,
-		XAssetID:   e.ctx.XAssetID,
-		LUXAssetID: e.ctx.LUXAssetID,
+		NetworkID:    e.ctx.NetworkID,
+		QuantumID:    e.ctx.NetworkID,
+		NetID:        e.ctx.NetID,
+		ChainID:      e.ctx.ChainID,
+		NodeID:       e.ctx.NodeID,
+		XAssetID:     e.ctx.XAssetID,
+		LUXAssetID:   e.ctx.LUXAssetID,
+		SharedMemory: e.ctx.SharedMemory,
 	}
 	// Create a minimal Config for the wallet
 	walletCfg := &config.Config{

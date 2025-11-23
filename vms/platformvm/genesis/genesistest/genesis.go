@@ -25,7 +25,7 @@ import (
 const (
 	DefaultValidatorDuration = 28 * 24 * time.Hour
 	DefaultValidatorWeight   = 5 * units.MilliLux
-	DefaultInitialBalance    = 102 * units.MegaLux // Increased to 102M LUX to cover L1 validator transaction fees + dynamic fee overhead
+	DefaultInitialBalance    = 110 * units.MegaLux // Increased to 110M LUX to cover all executor test fees (L1 validators, conversions, etc.)
 
 	ValidatorDelegationShares = reward.PercentDenominator
 	XChainName                = "x"

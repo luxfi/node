@@ -23,8 +23,10 @@ type testHandler struct {
 
 // HandleInbound handles network message.InboundMessage
 func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	// Since InboundHandler expects router.Message, we would need an adapter
-	// For now, just skip if there's an InboundHandler
+	// Call the embedded InboundHandler if it exists
+	if h.InboundHandler != nil {
+		h.InboundHandler.HandleInbound(ctx, msg)
+	}
 }
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {

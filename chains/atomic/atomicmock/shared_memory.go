@@ -12,9 +12,9 @@ package atomicmock
 import (
 	reflect "reflect"
 
-	atomic "github.com/luxfi/node/chains/atomic"
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
+	atomic "github.com/luxfi/node/chains/atomic"
 	gomock "go.uber.org/mock/gomock"
 )
 

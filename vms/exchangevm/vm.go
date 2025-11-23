@@ -388,6 +388,7 @@ func (vm *VM) initialize(
 		Codec:         vm.parser.Codec(),
 		FeeAssetID:    vm.feeAssetID,
 		Bootstrapped:  false,
+		SharedMemory:  vm.SharedMemory,
 	}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
@@ -501,7 +502,9 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error
 }
 
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
-	vm.chainManager.SetPreference(blkID)
+	if vm.chainManager != nil {
+		vm.chainManager.SetPreference(blkID)
+	}
 	return nil
 }
 
