@@ -15,8 +15,6 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
