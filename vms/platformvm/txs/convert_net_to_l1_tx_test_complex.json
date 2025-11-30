@@ -1,5 +1,5 @@
 {
-	"networkID": 10,
+	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
 		{
@@ -22,7 +22,7 @@
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-testing1g32kvaugnx4tk3z4vemc3xd2hdz92enhgrdu9n"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
@@ -72,7 +72,7 @@
 		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"subnetID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"chainID": "NfebWJbJMmUpduqFCF8i1m5pstbVYLP1gGHbacrevXZMhpVMy",
 	"address": "0x000000000000000000000000000000000000dead",
 	"validators": [
@@ -82,7 +82,7 @@
 			"balance": 1000000000,
 			"signer": {
 				"publicKey": "0xaff4acb4c5439b5d426cadf9e946d3a452f7de3414d1ad27336133211d8b90cf49fb97eebcdeeef714dc20f54ed0d4d1",
-				"proofOfPossession": "0x8cfd7909d153b9604b62b143ba36207bb7e64867424480202a67dc68768346d95c90983c2d279c64c43c51136b2a05e01602d52aa6376fda17fa6e2a18a083e49d9c450eab7b89b1d5555da5c489872e02b7e5227b77550af1330e5a71f8c368"
+				"proofOfPossession": "0x85adcd31c17c43b14c5e06833be8938d7fa63ddfe7cc9d32b02c0db5bc19e557bcafafda0ca6fe780ad54c91650f707b184ea558575b128bbb369484ec30a713ff1c1d94851adf7f2e440195482d279223039841662ce07baf6ac6d5806b6e42"
 			},
 			"remainingBalanceOwner": {
 				"threshold": 1,
@@ -98,7 +98,7 @@
 			}
 		}
 	],
-	"subnetAuthorization": {
+	"netAuthorization": {
 		"signatureIndices": []
 	}
 }

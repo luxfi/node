@@ -1,5 +1,5 @@
 {
-	"networkID": 10,
+	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [],
 	"inputs": [
@@ -17,11 +17,11 @@
 		}
 	],
 	"memo": "0x",
-	"subnetID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"chainID": "NfebWJbJMmUpduqFCF8i1m5pstbVYLP1gGHbacrevXZMhpVMy",
 	"address": "0x000000000000000000000000000000000000dead",
 	"validators": [],
-	"subnetAuthorization": {
+	"netAuthorization": {
 		"signatureIndices": [
 			3
 		]

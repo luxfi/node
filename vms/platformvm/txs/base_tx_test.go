@@ -74,13 +74,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	testChainID := ids.Empty // Use empty for serialization test
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
+		QuantumID:  constants.MainnetID,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -227,8 +223,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
+		QuantumID:  constants.MainnetID,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -377,8 +374,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
+		QuantumID:  constants.MainnetID,
+		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -401,6 +399,7 @@ func TestBaseTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
+			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -409,12 +408,13 @@ func TestBaseTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
 					"threshold": 1
 				}
+			}
 		}
 	],
 	"inputs": [
@@ -429,7 +429,8 @@ func TestBaseTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			},
+			}
+		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -443,6 +444,7 @@ func TestBaseTxSerialization(t *testing.T) {
 						0
 					]
 				}
+			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -453,6 +455,7 @@ func TestBaseTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
+		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521"
 }`, string(unsignedComplexBaseTxJSONBytes))

@@ -63,7 +63,7 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 	var unsignedTx UnsignedTx = &IncreaseL1ValidatorBalanceTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.UnitTestID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -166,7 +166,7 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 		// IncreaseL1ValidatorBalanceTx Type ID
 		0x00, 0x00, 0x00, 0x26,
 		// Network ID
-		0x00, 0x00, 0x01, 0x71,
+		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

@@ -57,7 +57,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	// "github.com/luxfi/node/vms/platformvm/state" // unused after TestGenesis simplification
 	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
+	// "github.com/luxfi/node/vms/platformvm/testcontext" // unused - using consensustest.Context instead
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
@@ -342,7 +342,7 @@ func TestGenesis(t *testing.T) {
 	require.NotNil(genesisBlock)
 
 	genesisState := genesistest.New(t, genesistest.Config{
-		InitialBalance: 200*units.Lux + 10000, // Match defaultVM config
+		InitialBalance: 200*units.Lux + 20000, // Match defaultVM config (doubled + 20000 nanoLux buffer)
 	})
 
 	// Ensure all the genesis UTXOs are there with correct amounts
@@ -589,12 +589,11 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Create a subnet if not already created
-	if testNet1 == nil {
-		wallet0 := newWallet(t, vm, walletConfig{})
-		testNet1 = createAndAcceptNet(t, vm, wallet0)
-	}
-	subnetID := testNet1.ID()
+	// Create subnet in this VM instance
+	wallet0 := newWallet(t, vm, walletConfig{})
+	netTx := createAndAcceptNet(t, vm, wallet0)
+	subnetID := netTx.ID()
+
 	wallet := newWallet(t, vm, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -645,7 +644,11 @@ func TestAddNetValidatorReject(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	subnetID := testNet1.ID()
+	// Create subnet in this VM instance
+	wallet0 := newWallet(t, vm, walletConfig{})
+	netTx := createAndAcceptNet(t, vm, wallet0)
+	subnetID := netTx.ID()
+
 	wallet := newWallet(t, vm, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -667,7 +670,7 @@ func TestAddNetValidatorReject(t *testing.T) {
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Net: testNet1.ID(),
+			Net: subnetID,
 		},
 	)
 	require.NoError(err)
@@ -687,7 +690,7 @@ func TestAddNetValidatorReject(t *testing.T) {
 	require.ErrorIs(err, database.ErrNotFound)
 
 	// Verify that new validator NOT in validator set
-	_, err = vm.state.GetCurrentValidator(testNet1.ID(), nodeID)
+	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -871,7 +874,11 @@ func TestCreateChain(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	subnetID := testNet1.ID()
+	// Create subnet in this VM instance
+	wallet0 := newWallet(t, vm, walletConfig{})
+	netTx := createAndAcceptNet(t, vm, wallet0)
+	subnetID := netTx.ID()
+
 	wallet := newWallet(t, vm, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -944,11 +951,16 @@ func TestCreateNet(t *testing.T) {
 	require.Contains(netIDs, subnetID)
 
 	// Now that we've created a new subnet, add a validator to that subnet
+	// Create a new wallet with authority over the subnet
+	subnetWallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
+
 	nodeID := genesistest.DefaultNodeIDs[0]
 	startTime := vm.Clock().Time().Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
 	// [startTime, endTime] is subset of time keys[0] validates default subnet so tx is valid
-	addValidatorTx, err := wallet.IssueAddNetValidatorTx(
+	addValidatorTx, err := subnetWallet.IssueAddNetValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -956,7 +968,7 @@ func TestCreateNet(t *testing.T) {
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Net: constants.PrimaryNetworkID,
+			Net: subnetID,
 		},
 	)
 	require.NoError(err)
@@ -971,20 +983,20 @@ func TestCreateNet(t *testing.T) {
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
 
-	_, err = vm.state.GetPendingValidator(constants.PrimaryNetworkID, nodeID)
+	_, err = vm.state.GetPendingValidator(subnetID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
-	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
+	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
 	require.NoError(err)
 
 	// remove validator from current validator set
 	vm.Clock().Set(endTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	_, err = vm.state.GetPendingValidator(constants.PrimaryNetworkID, nodeID)
+	_, err = vm.state.GetPendingValidator(subnetID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
-	_, err = vm.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
+	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -1019,7 +1031,7 @@ func TestAtomicImport(t *testing.T) {
 	}
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: vm.luxAssetID},
+		Asset:  lux.Asset{ID: vm.ctx.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          50 * units.MicroLux,
 			OutputOwners: *importOwners,
@@ -1084,7 +1096,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.luxAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1313,7 +1325,7 @@ func TestUnverifiedParent(t *testing.T) {
 	tx1 := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: ctx.ChainID, // Use context's ChainID, not constants.PlatformChainID
 		}},
 		SourceChain: ctx.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
@@ -1321,7 +1333,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.luxAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1350,7 +1362,7 @@ func TestUnverifiedParent(t *testing.T) {
 	tx2 := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: ctx.ChainID, // Use context's ChainID, not constants.PlatformChainID
 		}},
 		SourceChain: ctx.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
@@ -1358,7 +1370,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(2),
 				OutputIndex: 2,
 			},
-			Asset: lux.Asset{ID: vm.luxAssetID},
+			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1480,16 +1492,17 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	// Restart the VM with a larger uptime requirement
 	secondDB := prefixdb.New([]byte{}, db)
 	const secondUptimePercentage = 21 // 21% > firstUptimePercentage, so uptime for reward is not met now
+	// Use ZeroUptimeCalculator as fallback to simulate that uptime tracking is reset
+	// and validators have 0% uptime from the perspective of the new VM
 	secondVM := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
 		UptimePercentage:       secondUptimePercentage / 100.,
 		Validators:             validators.NewManager(),
-		UptimeLockedCalculator: uptime.NewLockedCalculator(),
+		UptimeLockedCalculator: uptime.NewLockedCalculatorWithFallback(uptime.ZeroUptimeCalculator{}),
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := testcontext.New(context.Background())
-	secondCtx.ChainID = consensustest.PChainID
+	secondCtx := consensustest.Context(t, consensustest.PChainID)
 	secondCtx.XAssetID = firstCtx.XAssetID
 	secondCtx.Lock.Lock()
 	defer func() {
@@ -1577,19 +1590,20 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	db := memdb.New()
 
+	// Use ZeroUptimeCalculator as fallback to simulate "never connected" scenario
+	// where validators have 0% uptime
 	vm := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
 		UptimePercentage:       .2,
 		RewardConfig:           defaultRewardConfig,
 		Validators:             validators.NewManager(),
-		UptimeLockedCalculator: uptime.NewLockedCalculator(),
+		UptimeLockedCalculator: uptime.NewLockedCalculatorWithFallback(uptime.ZeroUptimeCalculator{}),
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	ctx := testcontext.New(context.Background())
-	ctx.ChainID = consensustest.PChainID
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.XAssetID = ids.GenerateTestID()
-	vm.ctx.Lock.Lock()
+	ctx.Lock.Lock()
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
@@ -1610,7 +1624,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		vm.ctx.Lock.Unlock()
+		ctx.Lock.Unlock()
 	}()
 
 	initialClkTime := latestForkTime.Add(time.Second)
@@ -1834,7 +1848,7 @@ func TestBaseTx(t *testing.T) {
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.luxAssetID},
+				Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * units.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1871,7 +1885,7 @@ func TestPruneMempool(t *testing.T) {
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.luxAssetID},
+				Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * units.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{

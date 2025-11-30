@@ -719,9 +719,11 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		require.NoError(err)
 
 		// Replace a valid signature with one from keys[3]
+		// The subnet authorization credential is the LAST credential (not first)
 		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
 		require.NoError(err)
-		copy(tx.Creds[0].(*secp256k1fx.Credential).Sigs[0][:], sig)
+		subnetAuthCredIdx := len(tx.Creds) - 1
+		copy(tx.Creds[subnetAuthCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
 		require.NoError(err)

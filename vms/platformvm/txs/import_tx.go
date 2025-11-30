@@ -57,8 +57,7 @@ func (tx *ImportTx) InputUTXOs() set.Set[ids.ID] {
 func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 	inputs := tx.BaseTx.InputIDs()
 	atomicInputs := tx.InputUTXOs()
-	inputs.Union(atomicInputs)
-	return inputs
+	return inputs.Union(atomicInputs)
 }
 
 // SyntacticVerify this transaction is well-formed

@@ -1,5 +1,5 @@
 {
-	"networkID": 10,
+	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
 		{
@@ -22,7 +22,7 @@
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-testing1g32kvaugnx4tk3z4vemc3xd2hdz92enhgrdu9n"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,

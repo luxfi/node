@@ -96,13 +96,8 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -153,7 +148,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 		// secp256k1fx authorization type ID
-		0x00, 0x00, 0x01, 0x71,
+		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
@@ -285,8 +280,8 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexTransferNetOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferNetOwnershipTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -431,7 +426,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 		// secp256k1fx authorization type ID
-		0x00, 0x00, 0x01, 0x71,
+		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
 		// secp256k1fx output owners type ID
@@ -457,7 +452,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
@@ -481,6 +476,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
+			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -489,12 +485,13 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
 					"threshold": 1
 				}
+			}
 		}
 	],
 	"inputs": [
@@ -509,7 +506,8 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			},
+			}
+		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -523,6 +521,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 						0
 					]
 				}
+			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -533,19 +532,21 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
+		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
-	"subnetAuthorization": {
+	"netAuthorization": {
 		"signatureIndices": []
 	},
 	"newOwner": {
 		"addresses": [
-			"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+			"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 		],
 		"locktime": 876543210,
 		"threshold": 1
-	}`, string(unsignedComplexTransferNetOwnershipTxJSONBytes))
+	}
+}`, string(unsignedComplexTransferNetOwnershipTxJSONBytes))
 }
 
 func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
@@ -561,14 +562,10 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 	)
 
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		ChainID:   chainID,
+		NetworkID: networkID,
 		QuantumID: networkID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.

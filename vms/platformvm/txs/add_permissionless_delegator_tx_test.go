@@ -627,7 +627,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
@@ -646,7 +646,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 1,
 				"locktime": 0,
@@ -664,6 +664,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
+			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -672,12 +673,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
 					"threshold": 1
 				}
+			}
 		}
 	],
 	"inputs": [
@@ -692,7 +694,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					2,
 					5
 				]
-			},
+			}
+		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -706,6 +709,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 						0
 					]
 				}
+			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -716,6 +720,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
+		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"validator": {
@@ -731,12 +736,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 2000000000000,
 				"locktime": 0,
 				"threshold": 1
-			},
+			}
+		},
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
@@ -748,13 +754,15 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					"locktime": 87654321,
 					"threshold": 0
 				}
+			}
 		}
 	],
 	"rewardsOwner": {
 		"addresses": [],
 		"locktime": 0,
 		"threshold": 0
-	}`, string(unsignedComplexAddPrimaryTxJSONBytes))
+	}
+}`, string(unsignedComplexAddPrimaryTxJSONBytes))
 }
 
 func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
@@ -1391,7 +1399,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
@@ -1410,7 +1418,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 1,
 				"locktime": 0,
@@ -1428,6 +1436,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
+			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -1436,12 +1445,13 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551600,
 					"locktime": 0,
 					"threshold": 1
 				}
+			}
 		}
 	],
 	"inputs": [
@@ -1456,7 +1466,8 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 					2,
 					5
 				]
-			},
+			}
+		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -1470,6 +1481,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 						0
 					]
 				}
+			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -1480,6 +1492,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
+		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"validator": {
@@ -1495,12 +1508,13 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 2,
 				"locktime": 0,
 				"threshold": 1
-			},
+			}
+		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
@@ -1512,13 +1526,15 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 					"locktime": 87654321,
 					"threshold": 0
 				}
+			}
 		}
 	],
 	"rewardsOwner": {
 		"addresses": [],
 		"locktime": 0,
 		"threshold": 0
-	}`, string(unsignedComplexAddNetTxJSONBytes))
+	}
+}`, string(unsignedComplexAddNetTxJSONBytes))
 }
 
 func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {

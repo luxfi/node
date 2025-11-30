@@ -57,7 +57,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 	var unsignedTx UnsignedTx = &SetL1ValidatorWeightTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.UnitTestID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -157,9 +157,9 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 		// Codec version
 		0x00, 0x00,
 		// SetL1ValidatorWeightTx Type ID
-		0x00, 0x00, 0x00, 0x21,
+		0x00, 0x00, 0x00, 0x25,
 		// Network ID
-		0x00, 0x00, 0x01, 0x71,
+		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

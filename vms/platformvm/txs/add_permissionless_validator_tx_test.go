@@ -1145,7 +1145,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		DelegationShares: reward.PercentDenominator,
 	}
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,

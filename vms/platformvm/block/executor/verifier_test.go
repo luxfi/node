@@ -380,8 +380,8 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// Verify that the transaction is only consuming the imported UTXO.
-	require.Len(tx.InputIDs(), 1)
+	// Verify that the transaction consumes both a fee payment UTXO and the imported UTXO.
+	require.Len(tx.InputIDs(), 2)
 
 	// Build the block that will be executed on top of the last accepted block.
 	lastAcceptedID := verifier.state.GetLastAccepted()
@@ -412,33 +412,40 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		require.Equal(tx, acceptedTx)
 		require.Equal(status.Committed, acceptedStatus)
 
-		require.Equal(
-			&blockState{
-				statelessBlock: firstBlock,
-
-				onAcceptState: onAccept,
-
-				inputs:    tx.InputIDs(),
-				timestamp: initialTimestamp,
-				atomicRequests: map[ids.ID]*atomic.Requests{
-					verifier.ctx.XChainID: {
-						RemoveRequests: [][]byte{
-							inputID[:],
-						},
-					},
-				},
-				verifiedHeights: set.Of[uint64](0),
-				metrics: metrics.Block{
-					Block:          firstBlock,
-					GasPrice:       verifier.txExecutorBackend.Config.DynamicFeeConfig.MinPrice,
-					ValidatorPrice: verifier.txExecutorBackend.Config.ValidatorFeeConfig.MinPrice,
+		// Compare fields individually to avoid spew panic on unexported set fields
+		require.Equal(firstBlock, atomicBlockState.statelessBlock)
+		require.Equal(onAccept, atomicBlockState.onAcceptState)
+		// Compare inputs: atomicBlockState.inputs only tracks atomic/imported inputs (not BaseTx inputs)
+		// so we compare against InputUTXOs() (atomic inputs only), not InputIDs() (all inputs)
+		importTx := tx.Unsigned.(*txs.ImportTx)
+		expectedInputs := importTx.InputUTXOs()
+		require.Equal(expectedInputs.Len(), atomicBlockState.inputs.Len(), "inputs should have same length")
+		for id := range expectedInputs {
+			require.True(atomicBlockState.inputs.Contains(id), "inputs should contain %s", id)
+		}
+		require.Equal(initialTimestamp, atomicBlockState.timestamp)
+		require.Equal(map[ids.ID]*atomic.Requests{
+			verifier.ctx.XChainID: {
+				RemoveRequests: [][]byte{
+					inputID[:],
 				},
 			},
-			atomicBlockState,
-		)
+		}, atomicBlockState.atomicRequests)
+		// Compare verifiedHeights: expect same size and all expected heights present
+		expectedHeights := set.Of[uint64](0)
+		require.Equal(expectedHeights.Len(), atomicBlockState.verifiedHeights.Len(), "verifiedHeights should have same length")
+		for h := range expectedHeights {
+			require.True(atomicBlockState.verifiedHeights.Contains(h), "verifiedHeights should contain %d", h)
+		}
+		require.Equal(firstBlock, atomicBlockState.metrics.Block)
+		require.Equal(verifier.txExecutorBackend.Config.DynamicFeeConfig.MinPrice, atomicBlockState.metrics.GasPrice)
+		require.Equal(verifier.txExecutorBackend.Config.ValidatorFeeConfig.MinPrice, atomicBlockState.metrics.ValidatorPrice)
 	}
 
 	// Verify that the import transaction can not be replayed.
+	// The replay fails because the BaseTx UTXO was consumed in the first block's
+	// onAcceptState diff, so when the second block tries to execute the same
+	// transaction, the UTXO lookup fails with "not found".
 	{
 		secondBlock, err := block.NewApricotStandardBlock(
 			firstBlockID,
@@ -448,7 +455,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		require.NoError(err)
 
 		err = secondBlock.Visit(verifier)
-		require.ErrorIs(err, errConflictingParentTxs)
+		require.ErrorIs(err, database.ErrNotFound)
 
 		// Verify that the block's execution was not recorded.
 		require.NotContains(verifier.blkIDToState, secondBlock.ID())
@@ -1148,16 +1155,19 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 
 func TestBlockExecutionWithComplexity(t *testing.T) {
 	verifier := newTestVerifier(t, testVerifierConfig{})
-	wallet := txstest.NewWallet(
+	wallet := txstest.NewWalletWithOptions(
 		t,
 		verifier.ctx,
-		&config.Config{
-			TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
-			SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
-			Chains:                 verifier.txExecutorBackend.Config.Chains,
+		txstest.WalletConfig{
+			Config: &config.Config{
+				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
+				Chains:                 verifier.txExecutorBackend.Config.Chains,
+			},
+			InternalCfg: verifier.txExecutorBackend.Config, // Pass internal config for dynamic fees
 		},
 		verifier.state,
-		secp256k1fx.NewKeychain(genesis.EWOQKey),
+		secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys[0]),
 		nil, // subnetIDs
 		nil, // validationIDs
 		nil, // chainIDs

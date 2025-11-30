@@ -819,9 +819,11 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		require.NoError(err)
 
 		// Replace a valid signature with one from keys[3]
+		// The subnet authorization credential is the LAST credential (not first)
 		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
 		require.NoError(err)
-		copy(tx.Creds[0].(*secp256k1fx.Credential).Sigs[0][:], sig)
+		subnetAuthCredIdx := len(tx.Creds) - 1
+		copy(tx.Creds[subnetAuthCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)
 
 		onAcceptState, err := state.NewDiff(lastAcceptedID, env)
 		require.NoError(err)
@@ -2564,14 +2566,17 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 				balance = 1
 			)
 			var (
-				wallet = txstest.NewWallet(
+				wallet = txstest.NewWalletWithOptions(
 					t,
 					ctx,
-					&config.Config{
-						TxFee:                 units.MilliLux,
-						CreateAssetTxFee:      units.MilliLux,
-						CreateNetTxFee:        units.Lux,
-						CreateBlockchainTxFee: units.Lux,
+					txstest.WalletConfig{
+						Config: &config.Config{
+							TxFee:                 units.MilliLux,
+							CreateAssetTxFee:      units.MilliLux,
+							CreateNetTxFee:        units.Lux,
+							CreateBlockchainTxFee: units.Lux,
+						},
+						InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
 					},
 					baseState,
 					secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
@@ -3130,14 +3135,12 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			require := require.New(t)
 
 			// Create the RegisterL1ValidatorTx
-			wallet := txstest.NewWallet(
+			wallet := txstest.NewWalletWithOptions(
 				t,
 				ctx,
-				&config.Config{
-					TxFee:                 units.MilliLux,
-					CreateAssetTxFee:      units.MilliLux,
-					CreateNetTxFee:        units.Lux,
-					CreateBlockchainTxFee: units.Lux,
+				txstest.WalletConfig{
+					Config:      walletConfig,
+					InternalCfg: defaultConfig, // Use dynamic fees to match executor
 				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
@@ -3650,14 +3653,12 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			require := require.New(t)
 
 			// Create the SetL1ValidatorWeightTx
-			wallet := txstest.NewWallet(
+			wallet := txstest.NewWalletWithOptions(
 				t,
 				ctx,
-				&config.Config{
-					TxFee:                 units.MilliLux,
-					CreateAssetTxFee:      units.MilliLux,
-					CreateNetTxFee:        units.Lux,
-					CreateBlockchainTxFee: units.Lux,
+				txstest.WalletConfig{
+					Config:      walletConfig,
+					InternalCfg: defaultConfig, // Use dynamic fees to match executor
 				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
@@ -3972,14 +3973,12 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			require := require.New(t)
 
 			// Create the IncreaseL1ValidatorBalanceTx
-			wallet := txstest.NewWallet(
+			wallet := txstest.NewWalletWithOptions(
 				t,
 				ctx,
-				&config.Config{
-					TxFee:                 units.MilliLux,
-					CreateAssetTxFee:      units.MilliLux,
-					CreateNetTxFee:        units.Lux,
-					CreateBlockchainTxFee: units.Lux,
+				txstest.WalletConfig{
+					Config:      walletConfig,
+					InternalCfg: defaultConfig, // Use dynamic fees to match executor
 				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),
@@ -4261,14 +4260,12 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			require := require.New(t)
 
 			// Create the DisableL1ValidatorTx
-			wallet := txstest.NewWallet(
+			wallet := txstest.NewWalletWithOptions(
 				t,
 				ctx,
-				&config.Config{
-					TxFee:                 units.MilliLux,
-					CreateAssetTxFee:      units.MilliLux,
-					CreateNetTxFee:        units.Lux,
-					CreateBlockchainTxFee: units.Lux,
+				txstest.WalletConfig{
+					Config:      walletConfig,
+					InternalCfg: defaultConfig, // Use dynamic fees to match executor
 				},
 				baseState,
 				secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys...),

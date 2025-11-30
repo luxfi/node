@@ -103,7 +103,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -157,8 +158,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-		// secp256k1fx authorization type ID
-		0x00, 0x00, 0x01, 0x71,
+		// secp256k1fx authorization type ID (secp256k1fx.Input)
+		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
@@ -272,8 +273,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: 1,
+		NetworkID:  constants.MainnetID,
+		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -421,8 +422,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-		// secp256k1fx authorization type ID
-		0x00, 0x00, 0x01, 0x71,
+		// secp256k1fx authorization type ID (secp256k1fx.Input)
+		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
 	}
@@ -435,7 +436,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.UnitTestID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
@@ -459,6 +460,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 					"locktime": 12345678,
 					"threshold": 0
 				}
+			}
 		},
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -467,12 +469,13 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
 					"threshold": 1
 				}
+			}
 		}
 	],
 	"inputs": [
@@ -487,7 +490,8 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 					2,
 					5
 				]
-			},
+			}
+		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
 			"outputIndex": 2,
@@ -501,6 +505,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 						0
 					]
 				}
+			}
 		},
 		{
 			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
@@ -511,13 +516,15 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 				"amount": 1152921504606846976,
 				"signatureIndices": []
 			}
+		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
 	"nodeID": "NodeID-2ZbTY9GatRTrfinAoYiYLcf6CvrPAUYgo",
 	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
-	"subnetAuthorization": {
+	"netAuthorization": {
 		"signatureIndices": []
-	}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
+	}
+}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
 }
 
 func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
@@ -533,14 +540,10 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 	)
 
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		ChainID:   chainID,
+		NetworkID: networkID,
 		QuantumID: networkID,
+		NetID:     constants.PrimaryNetworkID,
+		ChainID:   chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.

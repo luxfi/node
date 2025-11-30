@@ -253,6 +253,9 @@ func (vm *VM) Initialize(
 		// Check if it has a Current() method
 		if dbMgr, ok := dbManager.(interface{ Current() database.Database }); ok {
 			vm.db = dbMgr.Current()
+		} else if db, ok := dbManager.(database.Database); ok {
+			// If it's already a database, use it directly
+			vm.db = db
 		} else {
 			// If we can't get a database from the manager, create a memory database
 			vm.db = memdb.New()
@@ -295,9 +298,10 @@ func (vm *VM) Initialize(
 	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager
 	utxoHandler := utxo.NewHandler(context.Background(), &vm.nodeClock, vm.fx)
-	// Create uptime manager with noop implementation for now
-	vm.uptimeManager = &uptime.NoOpCalculator{}
-	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
+	// Create uptime manager - use the configured UptimeLockedCalculator which
+	// delegates to its fallback calculator (NoOp by default, but tests can
+	// configure ZeroUptimeCalculator for "never connected" scenarios)
+	vm.uptimeManager = vm.UptimeLockedCalculator
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Internal,
@@ -305,7 +309,7 @@ func (vm *VM) Initialize(
 		Clk:          &vm.nodeClock,
 		Fx:           vm.fx,
 		FlowChecker:  utxoHandler,
-		Uptimes:      vm.uptimeManager,
+		Uptimes:      vm.UptimeLockedCalculator,
 		Rewards:      rewards,
 		Bootstrapped: &vm.bootstrapped,
 	}

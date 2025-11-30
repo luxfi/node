@@ -581,7 +581,7 @@ func (v *verifier) processStandardTxs(txs []*txs.Tx, feeCalculator txfee.Calcula
 			return nil, nil, nil, 0, false, ErrConflictingBlockTxs
 		}
 		// Add UTXOs to batch
-		inputs.Union(txInputs)
+		inputs = inputs.Union(txInputs)
 
 		diff.AddTx(tx, status.Committed)
 		if onAccept != nil {

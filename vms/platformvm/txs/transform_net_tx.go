@@ -19,8 +19,6 @@ import (
 var (
 	_ UnsignedTx = (*TransformNetTx)(nil)
 
-	luxAssetID = ids.Empty // LUX asset ID placeholder
-
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
 	errAssetIDCantBeLUX                  = errors.New("asset ID can't be LUX")
@@ -126,7 +124,7 @@ func (tx *TransformNetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == luxAssetID:
+	case tx.AssetID == ctx.LUXAssetID:
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero

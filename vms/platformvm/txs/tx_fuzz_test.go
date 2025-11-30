@@ -480,7 +480,14 @@ func FuzzTransactionSignatures(f *testing.F) {
 			t.Errorf("Failed to parse transaction we created: %v", err)
 			return
 		}
-		
+
+		// Initialize the parsed transaction to compute its ID
+		if err := parsed.Initialize(codec); err != nil {
+			// Should not fail for a valid parsed transaction
+			t.Errorf("Failed to initialize parsed transaction: %v", err)
+			return
+		}
+
 		// Verify ID matches
 		if baseTx.ID() != parsed.ID() {
 			t.Errorf("Transaction ID mismatch after parsing")

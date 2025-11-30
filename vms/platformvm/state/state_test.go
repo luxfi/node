@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"maps"
+	"slices"
 	"math"
 	"math/rand"
 	"sync"
@@ -2037,8 +2038,19 @@ func TestL1Validators(t *testing.T) {
 				l1Validators map[ids.ID]L1Validator,
 				subnetID ids.ID,
 			) map[ids.NodeID]*validators.GetValidatorOutput {
-				validatorSet := make(map[ids.NodeID]*validators.GetValidatorOutput)
+				// Sort validators by ValidationID for deterministic iteration.
+				// This ensures consistent TxID assignment when multiple inactive
+				// validators share the same effectiveNodeID (ids.EmptyNodeID).
+				sortedValidators := make([]L1Validator, 0, len(l1Validators))
 				for _, l1Validator := range l1Validators {
+					sortedValidators = append(sortedValidators, l1Validator)
+				}
+				slices.SortFunc(sortedValidators, func(a, b L1Validator) int {
+					return a.ValidationID.Compare(b.ValidationID)
+				})
+
+				validatorSet := make(map[ids.NodeID]*validators.GetValidatorOutput)
+				for _, l1Validator := range sortedValidators {
 					if l1Validator.NetID != subnetID || l1Validator.isDeleted() {
 						continue
 					}
