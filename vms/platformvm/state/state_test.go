@@ -1874,24 +1874,32 @@ func TestL1Validators(t *testing.T) {
 		},
 		{
 			name: "add multiple inactive",
-			l1Validators: []L1Validator{
-				{
-					ValidationID:      ids.GenerateTestID(),
-					NetID:          l1Validator.NetID,
-					NodeID:            ids.GenerateTestNodeID(),
-					PublicKey:         pkBytes,
-					Weight:            1, // Not removed
-					EndAccumulatedFee: 0, // Inactive
-				},
-				{
-					ValidationID:      l1Validator.ValidationID,
-					NetID:          l1Validator.NetID,
-					NodeID:            l1Validator.NodeID,
-					PublicKey:         pkBytes,
-					Weight:            1, // Not removed
-					EndAccumulatedFee: 0, // Inactive
-				},
-			},
+			l1Validators: func() []L1Validator {
+				// Use deterministic IDs to ensure consistent test behavior.
+				// When multiple inactive validators share ids.EmptyNodeID as their
+				// effectiveNodeID, the TxID stored depends on iteration order.
+				// Using sorted deterministic IDs ensures consistent results.
+				validationID1 := ids.ID{0x01} // Lexicographically smaller
+				validationID2 := ids.ID{0x02} // Lexicographically larger
+				return []L1Validator{
+					{
+						ValidationID:      validationID1,
+						NetID:             l1Validator.NetID,
+						NodeID:            ids.NodeID{0x01},
+						PublicKey:         pkBytes,
+						Weight:            1, // Not removed
+						EndAccumulatedFee: 0, // Inactive
+					},
+					{
+						ValidationID:      validationID2,
+						NetID:             l1Validator.NetID,
+						NodeID:            ids.NodeID{0x02},
+						PublicKey:         pkBytes,
+						Weight:            1, // Not removed
+						EndAccumulatedFee: 0, // Inactive
+					},
+				}
+			}(),
 		},
 	}
 
