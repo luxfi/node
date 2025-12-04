@@ -53,6 +53,15 @@ func (b *Block) Accept(ctx context.Context) error {
 	b.vm.mu.Lock()
 	defer b.vm.mu.Unlock()
 
+	// Insert the block into the ethereum blockchain
+	if b.vm.blockChain != nil && b.ethBlock.NumberU64() > 0 {
+		// InsertChain expects a slice of blocks
+		blocks := []*types.Block{b.ethBlock}
+		if _, err := b.vm.blockChain.InsertChain(blocks); err != nil {
+			return fmt.Errorf("failed to insert block into blockchain: %w", err)
+		}
+	}
+
 	// Mark block as accepted
 	b.status = choices.Accepted
 	b.vm.lastAccepted = b.id

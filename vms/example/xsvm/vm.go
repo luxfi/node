@@ -91,13 +91,15 @@ func (vm *VM) Initialize(
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
-	warpSigner := chainContext.WarpSigner.(interface {
+	internalSigner := chainContext.WarpSigner.(interface {
 		Sign(*warp.UnsignedMessage) ([]byte, error)
 	})
+	// Wrap internal signer to adapt to lp118.Signer (external warp)
+	warpSignerAdapter := &xsvmWarpSignerAdapter{signer: internalSigner}
 	lp118CachedHandler := lp118.NewCachedHandler(
 		signatureCache,
 		lp118Verifier{},
-		warpSigner,
+		warpSignerAdapter,
 	)
 	lp118Handler := lp118.NewHandlerAdapter(lp118CachedHandler)
 	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {

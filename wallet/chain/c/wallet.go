@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/luxfi/evm/plugin/evm/client"
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/geth/plugin/evm/client"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/rpc"

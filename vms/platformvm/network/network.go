@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/txs/mempool"
+	luxWarp "github.com/luxfi/warp"
 )
 
 type Network struct {
@@ -36,6 +37,28 @@ type Network struct {
 	txPushGossipFrequency time.Duration
 	txPullGossiper        gossip.Gossiper
 	txPullGossipFrequency time.Duration
+}
+
+// warpSignerAdapter adapts warp.Signer (node's internal) to lp118.Signer (external warp)
+type warpSignerAdapter struct {
+	signer warp.Signer
+}
+
+// Sign implements lp118.Signer interface
+func (a *warpSignerAdapter) Sign(msg *luxWarp.UnsignedMessage) ([]byte, error) {
+	// Convert external warp message to internal warp message
+	var sourceChainID ids.ID
+	copy(sourceChainID[:], msg.SourceChainID)
+	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, sourceChainID, msg.Payload)
+	if err != nil {
+		return nil, err
+	}
+	// Sign using internal signer and return raw signature bytes
+	sig, err := a.signer.Sign(internalMsg)
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
 }
 
 func New(
@@ -166,7 +189,9 @@ func New(
 	}
 	// Create a cache for signature requests (100 entries)
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
-	lp118Handler := lp118.NewCachedHandler(signatureCache, signatureRequestVerifier, signer)
+	// Wrap signer to adapt node's warp.Signer to lp118.Signer (external warp)
+	signerAdapter := &warpSignerAdapter{signer: signer}
+	lp118Handler := lp118.NewCachedHandler(signatureCache, signatureRequestVerifier, signerAdapter)
 	signatureRequestHandler := lp118.NewHandlerAdapter(lp118Handler)
 
 	if err := p2pNetwork.AddHandler(lp118.HandlerID, signatureRequestHandler); err != nil {

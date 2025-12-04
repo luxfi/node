@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/badgerdb"
 	dbmanager "github.com/luxfi/database/manager"
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/database/meterdb" // Unused
@@ -41,7 +42,7 @@ consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/consensus/networking/router"
+	// "github.com/luxfi/consensus/networking/router" // Deprecated - using local ChainRouter interface instead
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	validators "github.com/luxfi/consensus/validator"
@@ -93,6 +94,12 @@ const (
 	chainNamespace      = constants.PlatformName + utilmetric.NamespaceSeparator + "consensusman"
 	stakeNamespace        = constants.PlatformName + utilmetric.NamespaceSeparator + "stake"
 )
+
+// ChainRouter is the interface for routing messages to chains.
+// This is defined here to avoid circular imports with the node package.
+type ChainRouter interface {
+	AddChain(ctx context.Context, handler handler.Handler)
+}
 
 var (
 	// corely shared VM DB prefix
@@ -424,7 +431,7 @@ type ManagerConfig struct {
 	VertexAcceptorGroup       nodeconsensus.AcceptorGroup
 	DB                        database.Database
 	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
-	Router                    router.Router              // Routes incoming messages to the appropriate chain
+	Router                    ChainRouter                // Routes incoming messages to the appropriate chain
 	Net                       network.Network            // Sends consensus messages to other validators
 	Validators                validators.Manager         // Validators validating on this chain
 	NodeID                    ids.NodeID                 // The ID of this node
@@ -785,9 +792,10 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		}
 	}
 
-	// TODO: Fix Router.AddChain - the consensus Router interface has changed
-	// and no longer has an AddChain method. Need to update the routing logic.
-	// m.ManagerConfig.Router.AddChain(chainParams.ID, chain.Handler)
+	// Register chain with the router for message routing
+	if m.ManagerConfig.Router != nil {
+		m.ManagerConfig.Router.AddChain(context.TODO(), chain.Handler)
+	}
 
 	// Register bootstrapped health checks after P chain has been added to
 	// chains.
@@ -937,8 +945,40 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Create prefixed databases for the VM
-		prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
-		vmDB := prefixdb.New(VMDBPrefix, prefixDB)
+		var vmDB database.Database
+
+		// For network 96369 C-Chain, use the migrated BadgerDB directly
+		if m.NetworkID == 96369 && chainParams.ID == m.CChainID {
+			// Use the data-dir based path: ~/.lux/chainData/network-96369/{chainID}/badgerdb/ethdb
+			migratedDBPath := filepath.Join(os.Getenv("HOME"), ".lux/chainData/network-96369", chainParams.ID.String(), "badgerdb/ethdb")
+			if _, err := os.Stat(migratedDBPath); err == nil {
+				m.Log.Info("Network 96369 C-Chain detected - using migrated BadgerDB",
+					log.String("path", migratedDBPath))
+				migratedDB, err := badgerdb.New(migratedDBPath, nil, "cchain", chainMetricsReg)
+				if err != nil {
+					m.Log.Error("Failed to open migrated BadgerDB",
+						log.String("path", migratedDBPath),
+						log.Err(err))
+					// Fall back to prefixed DB
+					prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
+					vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+				} else {
+					vmDB = migratedDB
+					m.Log.Info("Successfully opened migrated BadgerDB",
+						log.String("path", migratedDBPath))
+				}
+			} else {
+				m.Log.Warn("Migrated BadgerDB not found at expected path",
+					log.String("path", migratedDBPath))
+				// Fall back to prefixed DB
+				prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
+				vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+			}
+		} else {
+			// Standard path for all other chains
+			prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
+			vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+		}
 
 		// Create message channel for VM-to-Engine communication
 		toEngine := make(chan block.Message, 1)
@@ -1673,7 +1713,13 @@ func (v *simpleVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 }
 
 func (v *simpleVM) SetState(ctx context.Context, state consensuscore.VMState) error {
-	// State management handled by underlying VM
+	// Forward state transitions to underlying VM if it supports SetState
+	// This is critical for Platform VM to transition to NormalOp and set bootstrapped=true
+	if stateVM, ok := v.vm.(interface {
+		SetState(context.Context, uint32) error
+	}); ok {
+		return stateVM.SetState(ctx, uint32(state))
+	}
 	return nil
 }
 

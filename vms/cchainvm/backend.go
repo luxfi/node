@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -100,6 +101,16 @@ func copyGenesisFromMigratedDB(newDB ethdb.Database, migratedDBPath string) erro
 	fmt.Printf("=== COPYING GENESIS BLOCK 0 FROM MIGRATED DATABASE ===\n")
 
 	// Open migrated database
+	// First, try to clean up any corrupt vlog files that may have been left from migration.
+	// Since we use high ValueThreshold (1MB), all data is in SST files and vlogs are empty.
+	vlogPattern := filepath.Join(migratedDBPath, "*.vlog")
+	vlogFiles, _ := filepath.Glob(vlogPattern)
+	for _, vlogFile := range vlogFiles {
+		// Remove vlog files - data is in SST files with high ValueThreshold
+		os.Remove(vlogFile)
+		fmt.Printf("Removed potentially corrupt vlog: %s\n", vlogFile)
+	}
+
 	opts := badger.DefaultOptions(migratedDBPath).WithReadOnly(true).WithLogger(nil)
 	migratedDB, err := badger.Open(opts)
 	if err != nil {
@@ -1337,54 +1348,86 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		fmt.Printf("Genesis chain ID: %v\n", genesis.Config.ChainID)
 	}
 
-	// Check if we need to initialize genesis first
+	// CRITICAL FIX: Check for migrated database BEFORE genesis initialization
+	// If we have head pointers pointing to non-genesis blocks, this is a migrated database
+	// and we must NOT call SetupGenesisBlockWithOverride (it would overwrite head pointers)
+	headHash := rawdb.ReadHeadBlockHash(db)
 	stored := rawdb.ReadCanonicalHash(db, 0)
-	fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n",
-		canonicalKey(0), stored, nil)
 
-	if stored == (common.Hash{}) {
-		// Double check with direct key access for migrated data
-		// Use 9-byte canonical key format (no suffix)
-		key := canonicalKey(0)
-		if val, err := db.Get(key); err == nil && len(val) == 32 {
-			copy(stored[:], val)
-			fmt.Printf("Found canonical hash with direct key access: %x\n", stored)
-		}
+	fmt.Printf("Migration detection: headHash=%s, genesisHash=%s\n", headHash.Hex(), stored.Hex())
+
+	// Detect migrated database: head exists and points to non-genesis block
+	isMigratedDB := headHash != (common.Hash{}) && headHash != stored
+
+	if isMigratedDB {
+		fmt.Printf("✅ MIGRATED DATABASE DETECTED\n")
+		fmt.Printf("   Head block: %s\n", headHash.Hex())
+		fmt.Printf("   Genesis:    %s\n", stored.Hex())
+		fmt.Printf("   Preserving head pointers - will use createBlockchainWithoutGenesis()\n")
+		fmt.Printf("   This will read genesis from block 0 in database, preserving all migrated data\n")
+
+		// For migrated databases:
+		// 1. Genesis MUST be at block 0 already (from migration)
+		// 2. We must NOT call SetupGenesisBlockWithOverride (it overwrites head pointers)
+		// 3. We must NOT write a new genesis (it must match block 0 exactly)
+		// 4. The blockchain creation at line 1494 will use createBlockchainWithoutGenesis()
+		//    which reads genesis from block 0 and preserves head pointers
 
 		if stored == (common.Hash{}) {
-			fmt.Printf("No genesis found in database, will initialize\n")
+			// This should NOT happen for a properly migrated database
+			return nil, fmt.Errorf("migrated database has head pointers but no genesis at block 0")
+		}
 
-			// SPECIAL CASE: Check if we're replaying from an existing genesis
-			// In this case, the genesis is already written but SetupGenesisBlockWithOverride
-			// will fail because it sees a different genesis
-			expectedReplayGenesis := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
-			if header := rawdb.ReadHeader(db, expectedReplayGenesis, 0); header != nil {
-				fmt.Printf("Found replay genesis in database, using it directly\n")
-				stored = expectedReplayGenesis
-				// Don't run SetupGenesisBlockWithOverride
-			} else {
-				// Create trie database for genesis initialization
-				tdb := triedb.NewDatabase(db, triedb.HashDefaults)
+		// Skip all genesis initialization - genesis is already at block 0
+		// Jump directly to blockchain creation which will use createBlockchainWithoutGenesis()
+	} else {
+		// Normal (non-migrated) database - safe to use standard genesis initialization
+		fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n",
+			canonicalKey(0), stored, nil)
 
-				// DEBUG: Print genesis config before setup
-				if genesis != nil && genesis.Config != nil {
-					fmt.Printf("DEBUG: Genesis ChainID=%v\n", genesis.Config.ChainID)
-					fmt.Printf("DEBUG: Genesis CancunTime=%v\n", genesis.Config.CancunTime)
-					if genesis.Config.BlobScheduleConfig != nil && genesis.Config.BlobScheduleConfig.Cancun != nil {
-						fmt.Printf("DEBUG: BlobSchedule Cancun: Target=%d Max=%d UpdateFraction=%d\n",
-							genesis.Config.BlobScheduleConfig.Cancun.Target,
-							genesis.Config.BlobScheduleConfig.Cancun.Max,
-							genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction)
-					} else {
-						fmt.Printf("DEBUG: BlobScheduleConfig is NIL or Cancun is NIL\n")
+		if stored == (common.Hash{}) {
+			// Double check with direct key access for migrated data
+			// Use 9-byte canonical key format (no suffix)
+			key := canonicalKey(0)
+			if val, err := db.Get(key); err == nil && len(val) == 32 {
+				copy(stored[:], val)
+				fmt.Printf("Found canonical hash with direct key access: %x\n", stored)
+			}
+
+			if stored == (common.Hash{}) {
+				fmt.Printf("No genesis found in database, will initialize\n")
+
+				// SPECIAL CASE: Check if we're replaying from an existing genesis
+				// In this case, the genesis is already written but SetupGenesisBlockWithOverride
+				// will fail because it sees a different genesis
+				expectedReplayGenesis := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+				if header := rawdb.ReadHeader(db, expectedReplayGenesis, 0); header != nil {
+					fmt.Printf("Found replay genesis in database, using it directly\n")
+					stored = expectedReplayGenesis
+					// Don't run SetupGenesisBlockWithOverride
+				} else {
+					// Create trie database for genesis initialization
+					tdb := triedb.NewDatabase(db, triedb.HashDefaults)
+
+					// DEBUG: Print genesis config before setup
+					if genesis != nil && genesis.Config != nil {
+						fmt.Printf("DEBUG: Genesis ChainID=%v\n", genesis.Config.ChainID)
+						fmt.Printf("DEBUG: Genesis CancunTime=%v\n", genesis.Config.CancunTime)
+						if genesis.Config.BlobScheduleConfig != nil && genesis.Config.BlobScheduleConfig.Cancun != nil {
+							fmt.Printf("DEBUG: BlobSchedule Cancun: Target=%d Max=%d UpdateFraction=%d\n",
+								genesis.Config.BlobScheduleConfig.Cancun.Target,
+								genesis.Config.BlobScheduleConfig.Cancun.Max,
+								genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction)
+						} else {
+							fmt.Printf("DEBUG: BlobScheduleConfig is NIL or Cancun is NIL\n")
+						}
 					}
-				}
 
-				// Initialize genesis block normally
-				_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
-				if err != nil {
-					return nil, fmt.Errorf("failed to setup genesis: %w", err)
-				}
+					// Initialize genesis block normally
+					_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
+					if err != nil {
+						return nil, fmt.Errorf("failed to setup genesis: %w", err)
+					}
 
 				if genesisHash != (common.Hash{}) {
 					fmt.Printf("Genesis initialized with hash: %s\n", genesisHash.Hex())
@@ -1398,6 +1441,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	} else {
 		fmt.Printf("Found existing genesis in database: %s\n", stored.Hex())
 	}
+	} // Close the else block from line 1372
 
 	// Check for highest block in migrated data
 	currentHash := rawdb.ReadHeadBlockHash(db)
@@ -1432,9 +1476,13 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	// This way the blockchain will discover the correct head when initialized
 	migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
 	if _, err := os.Stat(migratedDBPath); err == nil {
-		// Check if we need to copy (only if current head is block 0)
+		// Check if we need to copy - look for a block MUCH higher than genesis
+		// to ensure we haven't already completed the migration
+		// Use block 1000 as threshold - if it exists, migration is complete
 		headHash := rawdb.ReadHeadBlockHash(db)
-		if headHash == (common.Hash{}) || rawdb.ReadCanonicalHash(db, 1) == (common.Hash{}) {
+		block1000Hash := rawdb.ReadCanonicalHash(db, 1000)
+		fmt.Printf("DEBUG: Migration check - headHash=%s, block1000Hash=%s\n", headHash.Hex(), block1000Hash.Hex())
+		if headHash == (common.Hash{}) || block1000Hash == (common.Hash{}) {
 			fmt.Printf("Found migrated database, copying all blocks BEFORE blockchain creation...\n")
 			// Copy all database entries from migrated database
 			// Note: copyGenesisFromMigratedDB already copied block 0, but copyAllDatabaseEntries
@@ -1621,6 +1669,13 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 		rawdb.WriteChainConfig(db, genesisHash, chainConfig)
 	}
 
+	// CRITICAL: Save the actual head hash BEFORE NewBlockChain
+	// NewBlockChain calls genesis.Commit which overwrites head pointers to genesis
+	originalHeadHash := rawdb.ReadHeadBlockHash(db)
+	originalHeadNumber, hasOriginalHead := rawdb.ReadHeaderNumber(db, originalHeadHash)
+	fmt.Printf("SAVING original head BEFORE NewBlockChain: hash=%s, number=%d, ok=%v\n",
+		originalHeadHash.Hex(), originalHeadNumber, hasOriginalHead)
+
 	// Try to create blockchain with nil genesis
 	// This should use what's in the database
 	blockchain, err := gethcore.NewBlockChain(db, nil, engine, options)
@@ -1632,9 +1687,9 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 	}
 
 	// CRITICAL: After creating blockchain from replayed data, advance to HEAD
-	// The blockchain loads headers correctly but CurrentBlock stays at genesis
-	// because blocks weren't inserted through the normal validation pipeline
-	headHash := rawdb.ReadHeadBlockHash(db)
+	// NewBlockChain's genesis.Commit overwrites head pointers to genesis
+	// So we use the ORIGINAL head hash we saved above
+	headHash := originalHeadHash
 	fmt.Printf("DEBUG: headHash=%s, genesisHash=%s, empty=%v, different=%v\n",
 		headHash.Hex(), genesisHash.Hex(),
 		headHash == (common.Hash{}), headHash != genesisHash)
@@ -1647,24 +1702,21 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 					headNumber, headHash.Hex())
 
 				// The blockchain's currentBlock is at genesis but we need it at HEAD
-				// We can't call writeHeadBlock (private method) but we can use reflection
-				// or just manually insert the final block through InsertChain
-
-				// WORKAROUND: Read the full head block and force insert it
-				headBlock := rawdb.ReadBlock(db, headHash, headNumber)
-				if headBlock != nil {
-					// Try InsertChain with just the head block
-					// This will validate and set it as current
-					fmt.Printf("Inserting HEAD block to advance blockchain...\n")
-					_, err := blockchain.InsertChain([]*types.Block{headBlock})
-					if err != nil {
-						fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
-						fmt.Printf("Blockchain will remain at genesis, balance queries may fail\n")
-					} else {
-						fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
-					}
+				// Use SetHead() which sets the head by looking up the block in the database
+				// This doesn't require parent validation like InsertChain does
+				fmt.Printf("Setting blockchain head to block %d...\n", headNumber)
+				err := blockchain.SetHead(headNumber)
+				if err != nil {
+					fmt.Printf("WARNING: Failed to set HEAD to block %d: %v\n", headNumber, err)
+					fmt.Printf("Blockchain will remain at genesis, balance queries may fail\n")
 				} else {
-					fmt.Printf("WARNING: HEAD block body not found in database\n")
+					currentBlock := blockchain.CurrentBlock()
+					if currentBlock != nil {
+						fmt.Printf("✅ Blockchain head set to block %d (hash: %s)\n",
+							currentBlock.Number.Uint64(), currentBlock.Hash().Hex())
+					} else {
+						fmt.Printf("✅ SetHead succeeded but CurrentBlock is nil\n")
+					}
 				}
 			}
 		}

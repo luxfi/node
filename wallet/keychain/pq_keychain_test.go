@@ -194,7 +194,7 @@ func SkipTestPQKeychain_MultipleKeys(t *testing.T) {
 	require.NoError(err)
 	addr2 := kc.AddMLDSA(mldsaKey, KeyTypeMLDSA44)
 
-	slhdsaKey, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA128s)
+	slhdsaKey, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_128s)
 	require.NoError(err)
 	addr3 := kc.AddSLHDSA(slhdsaKey, KeyTypeSLHDSA128)
 

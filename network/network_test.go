@@ -836,12 +836,13 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 		registry := metric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
-		// Note: Can't add stakers with consensus validators.Manager
-		// require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
+		require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
 
 		vdrs := validators.NewManager()
-		// Note: Can't add stakers with consensus validators.Manager
-		// require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
+		// Add both nodes as validators so they can connect to each other
+		for _, nodeID := range nodeIDs {
+			require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, nodeID, nil, ids.GenerateTestID(), 1))
+		}
 
 		config.Beacons = beacons
 		config.Validators = vdrs
@@ -933,8 +934,13 @@ func TestGetAllPeers(t *testing.T) {
 
 	{
 		// The non-validator peer should be able to get all the peers in the network
-		peersListFromNonVdr := networks[0].Peers(nonVdrNodeIDs[0], nil, true, bloom.EmptyFilter, []byte{})
-		require.Len(peersListFromNonVdr, len(nodeIDs)-1)
+		// Wait for IP gossip to propagate
+		var peersListFromNonVdr []*ips.ClaimedIPPort
+		require.Eventually(func() bool {
+			peersListFromNonVdr = networks[0].Peers(nonVdrNodeIDs[0], nil, true, bloom.EmptyFilter, []byte{})
+			return len(peersListFromNonVdr) >= len(nodeIDs)-1
+		}, 5*time.Second, 100*time.Millisecond, "expected %d peers, got %d", len(nodeIDs)-1, len(peersListFromNonVdr))
+
 		peerNodes := set.NewSet[ids.NodeID](len(peersListFromNonVdr))
 		for _, peer := range peersListFromNonVdr {
 			peerNodes.Add(peer.NodeID)
@@ -946,8 +952,13 @@ func TestGetAllPeers(t *testing.T) {
 
 	{
 		// A validator peer should be able to get all the peers in the network
-		peersListFromVdr := networks[0].Peers(nodeIDs[1], nil, true, bloom.EmptyFilter, []byte{})
-		require.Len(peersListFromVdr, len(nodeIDs)-2) // GetPeerList doesn't return the peer that requested it
+		// Wait for IP gossip to propagate
+		var peersListFromVdr []*ips.ClaimedIPPort
+		require.Eventually(func() bool {
+			peersListFromVdr = networks[0].Peers(nodeIDs[1], nil, true, bloom.EmptyFilter, []byte{})
+			return len(peersListFromVdr) >= len(nodeIDs)-2
+		}, 5*time.Second, 100*time.Millisecond, "expected %d peers, got %d", len(nodeIDs)-2, len(peersListFromVdr))
+
 		peerNodes := set.NewSet[ids.NodeID](len(peersListFromVdr))
 		for _, peer := range peersListFromVdr {
 			peerNodes.Add(peer.NodeID)

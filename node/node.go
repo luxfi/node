@@ -1105,7 +1105,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
 			DB:                                      n.DB,
 			MsgCreator:                              n.msgCreator,
-			// Router:                                  NewRouterAdapter(n.chainRouter),  // TODO: Router adapter issue
+			Router:                                  n.chainRouter,
 			Net:                                     n.Net,
 			Validators:                              n.vdrs,
 			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,

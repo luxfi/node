@@ -7,7 +7,7 @@ import (
 	"context"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/warp"
 )
 
 // Verifier verifies warp messages according to LP-118

@@ -163,12 +163,12 @@ func (qs *QuantumStamper) initializeSigners() error {
 	case StampModeMLDSA87:
 		return qs.initMLDSA(mldsa.MLDSA87)
 	case StampModeSLHDSA:
-		return qs.initSLHDSA(slhdsa.SLHDSA128f)
+		return qs.initSLHDSA(slhdsa.SHA2_128f)
 	case StampModeHybrid:
 		if err := qs.initMLDSA(mldsa.MLDSA65); err != nil {
 			return err
 		}
-		return qs.initSLHDSA(slhdsa.SLHDSA128f)
+		return qs.initSLHDSA(slhdsa.SHA2_128f)
 	default:
 		return ErrInvalidSignatureMode
 	}
@@ -526,7 +526,7 @@ func (qs *QuantumStamper) verifySLHDSA(stamp *QuantumStamp, data []byte) bool {
 	}
 
 	// Recreate public key from bytes
-	pubKey, err := slhdsa.PublicKeyFromBytes(stamp.PublicKeySLH, slhdsa.SLHDSA128f)
+	pubKey, err := slhdsa.PublicKeyFromBytes(stamp.PublicKeySLH, slhdsa.SHA2_128f)
 	if err != nil {
 		return false
 	}

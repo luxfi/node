@@ -26,6 +26,7 @@ import (
 	"github.com/luxfi/geth/core/state"
 	"github.com/luxfi/geth/core/txpool"
 	"github.com/luxfi/geth/core/types"
+	gethvm "github.com/luxfi/geth/core/vm"
 	"github.com/luxfi/geth/eth/ethconfig"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/params"
@@ -383,8 +384,10 @@ func (vm *VM) Initialize(
 			// Check both possible locations for ethdb
 			// CRITICAL FIX: Use the correct migrated database paths
 			// The ACTUAL EVM migrated data is in the state directory
+			homeDir, _ := os.UserHomeDir()
 			possiblePaths := []string{
-				"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated EVM data
+				filepath.Join(homeDir, ".lux/chainData/network-96369/4aYc2FXx3EDKf98wqmxaRkkLERa7QSbbNnKRL7awjHqVqGgxj/badgerdb/ethdb"), // Network 96369 C-Chain migrated data
+				"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // Linux migrated EVM data
 				"/home/z/.luxd/node4/chainData/C/db/ethdb/ethdb",                  // Node4 location
 				"/home/z/.luxd/chainData/C/db/ethdb/ethdb",                        // Primary location
 				"/home/z/.luxd/chainData/C/db/badgerdb/ethdb",                     // BadgerDB location
@@ -543,36 +546,122 @@ func (vm *VM) Initialize(
 			}
 		}
 	}
-	
+
+	// CRITICAL: Check if database ALREADY contains migrated data before copying genesis
+	// If we already have blocks beyond genesis, skip the genesis copy to preserve head pointers
+	var databaseHasMigratedData bool
 	if shouldLoadMigratedGenesis {
-		fmt.Printf("=== NETWORK 96369 DETECTED - Copying genesis from migrated database ===\n")
+		headHash := rawdb.ReadHeadBlockHash(vm.ethDB)
+		genesisHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+
+		fmt.Printf("=== PRE-MIGRATION CHECK ===\n")
+		fmt.Printf("   Head hash:    %s\n", headHash.Hex())
+		fmt.Printf("   Genesis hash: %s\n", genesisHash.Hex())
+
+		// IMPROVED DETECTION: Check if block 1000 exists in database
+		// This is more reliable than checking head pointers which can be wrong
+		block1000Hash := rawdb.ReadCanonicalHash(vm.ethDB, 1000)
+		hasBlock1000 := block1000Hash != (common.Hash{})
+		fmt.Printf("   Block 1000 hash: %s (exists: %v)\n", block1000Hash.Hex(), hasBlock1000)
+
+		// If block 1000 exists, database definitely has migrated data
+		if hasBlock1000 {
+			databaseHasMigratedData = true
+			fmt.Printf("✅ DATABASE ALREADY HAS MIGRATED DATA (block 1000 exists) - Skipping genesis copy\n")
+			genesis = nil
+			loadedMigratedGenesis = true
+		} else if headHash != (common.Hash{}) && headHash != genesisHash {
+			// Fallback: check head pointers
+			databaseHasMigratedData = true
+			fmt.Printf("✅ DATABASE ALREADY HAS MIGRATED DATA - Skipping genesis copy\n")
+			fmt.Printf("   Using existing data with head at: %s\n", headHash.Hex())
+			genesis = nil
+			loadedMigratedGenesis = true
+		} else {
+			fmt.Printf("   Database is empty or at genesis - will copy from migrated source\n")
+		}
+	}
+
+	if shouldLoadMigratedGenesis && !databaseHasMigratedData {
+		fmt.Printf("=== NETWORK 96369 DETECTED - Attempting to copy genesis from migrated database ===\n")
 		migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
 		if _, err := os.Stat(migratedDBPath); err == nil {
 			// Copy block 0 and state directly to new database
 			err := copyGenesisFromMigratedDB(vm.ethDB, migratedDBPath)
 			if err != nil {
-				vm.log.Error("Failed to copy genesis from migrated DB", "error", err)
-				return fmt.Errorf("network 96369 requires migrated genesis but failed to copy: %w", err)
+				// CHANGED: Don't return error - fall back to genesis allocations instead
+				vm.log.Warn("Failed to copy from migrated DB, using fresh genesis with allocations",
+					"error", err,
+					"path", migratedDBPath)
+				fmt.Printf("=== Migrated DB copy failed, creating fresh genesis from allocations ===\n")
+				// genesis is already parsed from JSON with correct allocations - let it continue
+				// The backend will call genesis.Commit() to create block AND state
+			} else {
+				// Copy succeeded
+				// Verify canonical hash was written correctly
+				targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+				verifyHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+				vm.log.Info("[CHECKPOINT 1] After copyGenesisFromMigratedDB",
+					"expected", targetHash.Hex(),
+					"actual", verifyHash.Hex(),
+					"match", verifyHash == targetHash)
+
+				// Set genesis = nil so backend uses what's already in database
+				genesis = nil
+				loadedMigratedGenesis = true
+				vm.log.Info("Genesis block 0 copied from migrated database", "hash", targetHash.Hex())
 			}
-			
-			// Verify canonical hash was written correctly
-			targetHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
-			verifyHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
-			vm.log.Info("[CHECKPOINT 1] After copyGenesisFromMigratedDB",
-				"expected", targetHash.Hex(),
-				"actual", verifyHash.Hex(),
-				"match", verifyHash == targetHash)
-			
-			// Set genesis = nil so backend uses what's already in database
-			genesis = nil
-			loadedMigratedGenesis = true
-			vm.log.Info("Genesis block 0 copied from migrated database", "hash", targetHash.Hex())
 		} else {
-			vm.log.Error("Migrated database not found for network 96369", "path", migratedDBPath)
-			return fmt.Errorf("network 96369 requires migrated database at %s", migratedDBPath)
+			// Migrated database not found - fall back to using genesis allocations
+			// This will create a fresh genesis block with state from the allocations
+			vm.log.Warn("Migrated database not found, creating fresh genesis with allocations", "path", migratedDBPath)
+			fmt.Printf("=== Creating fresh genesis from allocations (migrated DB not found) ===\n")
+			// CRITICAL FIX: Reset ALL flags so normal genesis parsing will occur at line ~745
+			// Without this, genesis remains nil and backend creation fails
+			shouldLoadMigratedGenesis = false
+			// Also reset hasMigratedData to ensure normal genesis parsing path is taken
+			hasMigratedData = false
+			// CRITICAL: Also reset loadedMigratedGenesis so genesis parsing at line ~746 happens
+			loadedMigratedGenesis = false
+			fmt.Printf("=== DEBUG: genesisBytes length = %d ===\n", len(genesisBytes))
+
+			// CRITICAL FIX: Parse genesis DIRECTLY here instead of relying on later paths
+			// The later conditional at line ~682 will re-match chainId 96369 and skip normal parsing
+			if len(genesisBytes) > 0 {
+				fmt.Printf("=== DEBUG: Entering genesis parsing block (genesisBytes len=%d) ===\n", len(genesisBytes))
+				genesis = &gethcore.Genesis{}
+				if err := json.Unmarshal(genesisBytes, genesis); err != nil {
+					fmt.Printf("=== DEBUG: json.Unmarshal FAILED: %v ===\n", err)
+					return fmt.Errorf("failed to unmarshal genesis in migration fallback: %w", err)
+				}
+				fmt.Printf("=== DEBUG: json.Unmarshal succeeded ===\n")
+				// Set TerminalTotalDifficulty for PoS transition
+				if genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
+					genesis.Config.TerminalTotalDifficulty = common.Big0
+				}
+				// Add BlobSchedule for Cancun fork
+				if genesis.Config != nil && genesis.Config.CancunTime != nil {
+					if genesis.Config.BlobScheduleConfig == nil {
+						genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
+					}
+					if genesis.Config.BlobScheduleConfig.Cancun == nil {
+						genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{}
+					}
+					if genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction == 0 {
+						genesis.Config.BlobScheduleConfig.Cancun.Target = 3
+						genesis.Config.BlobScheduleConfig.Cancun.Max = 6
+						genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction = 3338477
+					}
+				}
+				vm.log.Info("Parsed genesis from allocations in migration fallback",
+					"chainId", genesis.Config.ChainID,
+					"allocCount", len(genesis.Alloc))
+				fmt.Printf("=== Genesis parsed successfully: ChainID=%v, Allocations=%d ===\n",
+					genesis.Config.ChainID, len(genesis.Alloc))
+			}
 		}
 	}
-	
+
 	if genesis == nil && false { // Old hardcoded fallback (disabled)
 		genesis = &gethcore.Genesis{
 				Config: &params.ChainConfig{
@@ -592,8 +681,8 @@ func (vm *VM) Initialize(
 				GrayGlacierBlock:    big.NewInt(0),
 				MergeNetsplitBlock:  big.NewInt(0),
 				// Use actual timestamps from extracted database config
-				ShanghaiTime:            newUint64(1607144400),   // From extracted config
-				CancunTime:              newUint64(253399622400), // Far future from extracted config
+				ShanghaiTime:            newUint64(0),   // From extracted config
+				CancunTime:              newUint64(0), // Far future from extracted config
 				PragueTime:              nil,                     // Not yet defined
 				VerkleTime:              nil,                     // Not yet defined
 				TerminalTotalDifficulty: common.Big0,
@@ -627,8 +716,8 @@ func (vm *VM) Initialize(
 
 		vm.log.Info("Using fallback genesis for replay",
 			"chainId", 96369,
-			"shanghaiTime", 1607144400,
-			"cancunTime", 253399622400,
+			"shanghaiTime", 0,
+			"cancunTime", 0,
 			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 	} else if len(genesisBytes) > 0 {
 		// First check if this is a database replay genesis or uses migrated data
@@ -745,8 +834,8 @@ func (vm *VM) Initialize(
 			if _, err := os.Stat(migratedDBPath); err == nil {
 				migratedGenesis, err := createGenesisFromMigratedDB(migratedDBPath)
 				if err != nil {
-					vm.log.Error("Failed to load genesis from migrated DB, using fallback", "error", err)
-					// Fallback to empty genesis - will be handled later
+					vm.log.Error("Failed to load genesis from migrated DB, using fallback with allocations", "error", err)
+					// Fallback to genesis with proper allocations
 					genesis = &gethcore.Genesis{
 						Config: &params.ChainConfig{
 							ChainID:                 big.NewInt(96369),
@@ -764,8 +853,8 @@ func (vm *VM) Initialize(
 							ArrowGlacierBlock:       big.NewInt(0),
 							GrayGlacierBlock:        big.NewInt(0),
 							MergeNetsplitBlock:      big.NewInt(0),
-							ShanghaiTime:            newUint64(1730446787),
-							CancunTime:              newUint64(1730446787),
+							ShanghaiTime:            newUint64(0),
+							CancunTime:              newUint64(0),
 							TerminalTotalDifficulty: common.Big0,
 							BlobScheduleConfig: &params.BlobScheduleConfig{
 								Cancun: &params.BlobConfig{
@@ -773,6 +862,28 @@ func (vm *VM) Initialize(
 									Max:            6,
 									UpdateFraction: 3338477,
 								},
+							},
+						},
+						Nonce:      0x0,
+						Timestamp:  0x672485c2, // 1730446786 from original genesis
+						GasLimit:   0xb71b00,   // 12000000
+						Difficulty: big.NewInt(0),
+						Alloc: gethcore.GenesisAlloc{
+							// Treasury
+							common.HexToAddress("0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"): types.Account{
+								Balance: func() *big.Int {
+									b := new(big.Int)
+									b.SetString("193e5939a08ce9dbd480000000", 16)
+									return b
+								}(),
+							},
+							// Dev address
+							common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): types.Account{
+								Balance: func() *big.Int {
+									b := new(big.Int)
+									b.SetString("21e19e0c9bab2400000", 16)
+									return b
+								}(),
 							},
 						},
 					}
@@ -783,7 +894,12 @@ func (vm *VM) Initialize(
 						"stateRoot", genesis.ToBlock().Root().Hex())
 				}
 			} else {
-				vm.log.Warn("Migrated database not found", "path", migratedDBPath)
+				vm.log.Warn("Migrated database not found, creating fresh genesis with allocations", "path", migratedDBPath)
+				fmt.Printf("=== Creating fresh genesis with network 96369 allocations ===\n")
+				// CRITICAL FIX: Reset hasMigratedData to false since we're creating fresh genesis
+				// This prevents code at line 1050 from trying to use NewMigratedBackend()
+				hasMigratedData = false
+				loadedMigratedGenesis = false
 				genesis = &gethcore.Genesis{
 					Config: &params.ChainConfig{
 						ChainID:                 big.NewInt(96369),
@@ -801,8 +917,8 @@ func (vm *VM) Initialize(
 						ArrowGlacierBlock:       big.NewInt(0),
 						GrayGlacierBlock:        big.NewInt(0),
 						MergeNetsplitBlock:      big.NewInt(0),
-						ShanghaiTime:            newUint64(1730446787),
-						CancunTime:              newUint64(1730446787),
+						ShanghaiTime:            newUint64(0), // Shanghai activated from genesis
+						CancunTime:              newUint64(0), // Cancun activated from genesis
 						TerminalTotalDifficulty: common.Big0,
 						BlobScheduleConfig: &params.BlobScheduleConfig{
 							Cancun: &params.BlobConfig{
@@ -810,6 +926,28 @@ func (vm *VM) Initialize(
 								Max:            6,
 								UpdateFraction: 3338477,
 							},
+						},
+					},
+					Nonce:      0x0,
+					Timestamp:  0x672485c2, // 1730446786 from original genesis
+					GasLimit:   0xb71b00,   // 12000000
+					Difficulty: big.NewInt(0),
+					Alloc: gethcore.GenesisAlloc{
+						// Treasury
+						common.HexToAddress("0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"): types.Account{
+							Balance: func() *big.Int {
+								b := new(big.Int)
+								b.SetString("193e5939a08ce9dbd480000000", 16)
+								return b
+							}(),
+						},
+						// Dev address
+						common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): types.Account{
+							Balance: func() *big.Int {
+								b := new(big.Int)
+								b.SetString("21e19e0c9bab2400000", 16)
+								return b
+							}(),
 						},
 					},
 				}
@@ -984,22 +1122,25 @@ func (vm *VM) Initialize(
 		// Use the normal backend but DON'T pass a genesis - let it use what's in the database
 		fmt.Printf("MIGRATION MODE WITH REPLAY: Using extracted genesis from database\n")
 
-		// Make sure genesis is written to database if not already there
-		if genesis != nil {
-			storedBlock := rawdb.ReadBlock(vm.ethDB, genesis.ToBlock().Hash(), 0)
-			if storedBlock == nil {
-				fmt.Printf("Writing genesis to database for replay: %s\n", genesis.ToBlock().Hash().Hex())
-				rawdb.WriteBlock(vm.ethDB, genesis.ToBlock())
-				rawdb.WriteCanonicalHash(vm.ethDB, genesis.ToBlock().Hash(), 0)
-				rawdb.WriteHeadHeaderHash(vm.ethDB, genesis.ToBlock().Hash())
-				rawdb.WriteHeadBlockHash(vm.ethDB, genesis.ToBlock().Hash())
-				rawdb.WriteHeadFastBlockHash(vm.ethDB, genesis.ToBlock().Hash())
-				rawdb.WriteChainConfig(vm.ethDB, genesis.ToBlock().Hash(), genesis.Config)
-			}
-			// Now pass the genesis to backend
+		// CRITICAL: Check if database already has a genesis at height 0
+		// If so, DON'T overwrite it - the migrated genesis is correct
+		existingCanonicalHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+		if existingCanonicalHash != (common.Hash{}) {
+			fmt.Printf("✅ Database already has genesis at height 0: %s - NOT overwriting\n", existingCanonicalHash.Hex())
+			// Pass nil to use the existing database genesis
+			vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, nil)
+		} else if genesis != nil {
+			// No existing genesis - write the synthetic one
+			fmt.Printf("Writing genesis to database for replay: %s\n", genesis.ToBlock().Hash().Hex())
+			rawdb.WriteBlock(vm.ethDB, genesis.ToBlock())
+			rawdb.WriteCanonicalHash(vm.ethDB, genesis.ToBlock().Hash(), 0)
+			rawdb.WriteHeadHeaderHash(vm.ethDB, genesis.ToBlock().Hash())
+			rawdb.WriteHeadBlockHash(vm.ethDB, genesis.ToBlock().Hash())
+			rawdb.WriteHeadFastBlockHash(vm.ethDB, genesis.ToBlock().Hash())
+			rawdb.WriteChainConfig(vm.ethDB, genesis.ToBlock().Hash(), genesis.Config)
 			vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
 		} else {
-			// If no genesis, try with nil
+			// No genesis anywhere - use nil
 			vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, nil)
 		}
 		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
@@ -1072,84 +1213,15 @@ func (vm *VM) Initialize(
 	
 	fmt.Printf("DEBUG: After getting blockchain and txPool, blockchain=%v\n", vm.blockChain != nil)
 
-	// Start runtime replay for network 96369
-	// Check if genesis hash matches network 96369
+	// NOTE: Runtime database copy removed - migration is done offline using direct-migrate tool
+	// The database at ~/.luxd/chainData/C/db/badgerdb already contains the migrated data
+	// from the source PebbleDB. No runtime copying is needed.
+	// The blockchain will naturally load its state from the database.
+
+	// Get genesis hash from blockchain
 	genesisBlock := vm.blockChain.Genesis()
-	network96369GenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
-	if genesisBlock != nil && genesisBlock.Hash() == network96369GenesisHash {
-		fmt.Printf("=== STARTING RUNTIME REPLAY FOR NETWORK 96369 ===\n")
-		fmt.Printf("Genesis hash: %s\n", genesisBlock.Hash().Hex())
-		migratedDBPath := "/Users/z/work/lux/genesis/migrated-ethdb"
-		// CRITICAL: Run synchronously so blockchain can advance to correct height
-		if err := copyAllDatabaseEntries(vm.ethDB, migratedDBPath); err != nil {
-			vm.log.Error("Runtime replay failed", "error", err)
-			return err
-		}
-		vm.log.Info("Runtime replay completed successfully")
-		fmt.Printf("✅ Runtime replay completed, all canonical hashes generated\n")
-	} else if genesisBlock != nil {
-		fmt.Printf("Not network 96369 (genesis hash: %s)\n", genesisBlock.Hash().Hex())
-	}
-
-	// CRITICAL FIX: After runtime replay, read HEAD directly from database
-	// The blockchain object was created BEFORE runtime replay wrote the head pointers,
-	// so its cached currentHeader/currentBlock are still at genesis.
-	// We need to read LastHeader from database and force blockchain to load it.
-	
-	// Read the head hash that runtime replay wrote to database
-	headHashFromDB := rawdb.ReadHeadHeaderHash(vm.ethDB)
-	fmt.Printf("DEBUG: Head hash from database: %s\n", headHashFromDB.Hex())
-	
-	if headHashFromDB != (common.Hash{}) && headHashFromDB != genesisBlock.Hash() {
-		// First, get the block number for this hash
-		headNumber, found := rawdb.ReadHeaderNumber(vm.ethDB, headHashFromDB)
-		if !found {
-			fmt.Printf("ERROR: Could not find block number for head hash %s\n", headHashFromDB.Hex())
-		} else {
-			fmt.Printf("DEBUG: Head block number from hash lookup: %d\n", headNumber)
-			
-			// Now read the header with the correct block number
-			headHeader := rawdb.ReadHeader(vm.ethDB, headHashFromDB, headNumber)
-			if headHeader != nil {
-				fmt.Printf("DATABASE HEAD: block %d (hash: %s)\n", headNumber, headHashFromDB.Hex())
-			
-			// Get blockchain's current cached state (will be wrong)
-			currentHeader := vm.blockChain.CurrentHeader()
-			currentBlock := vm.blockChain.CurrentBlock()
-			fmt.Printf("BLOCKCHAIN STATE: currentHeader=%d, currentBlock=%d\n", 
-				currentHeader.Number.Uint64(), currentBlock.Number.Uint64())
-			
-			// Force blockchain to advance by reading and inserting the head block
-			headBlock := rawdb.ReadBlock(vm.ethDB, headHashFromDB, headNumber)
-			if headBlock != nil {
-				fmt.Printf("Inserting HEAD block %d to advance blockchain...\n", headNumber)
-				_, err := vm.blockChain.InsertChain([]*types.Block{headBlock})
-				if err != nil {
-					fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
-				} else {
-					fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
-					
-					// Verify advancement worked
-					newCurrent := vm.blockChain.CurrentBlock()
-					fmt.Printf("✅ Blockchain now at height: %d\n", newCurrent.Number.Uint64())
-				}
-			} else {
-				fmt.Printf("ERROR: Could not read HEAD block %d from database\n", headNumber)
-			}
-			} else {
-				fmt.Printf("ERROR: Could not read HEAD header from database\n")
-			}
-		}
-	} else {
-		fmt.Printf("DEBUG: No head advancement needed (head hash is genesis or empty)\n")
-	}
-
-	// Get genesis hash (reuse genesisBlock variable from above)
 	if genesisBlock == nil {
-		genesisBlock = vm.blockChain.Genesis()
-		if genesisBlock == nil {
-			return fmt.Errorf("genesis block not found")
-		}
+		return fmt.Errorf("genesis block not found")
 	}
 	vm.genesisHash = genesisBlock.Hash()
 
@@ -1504,6 +1576,15 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	}
 	vm.log.Info("Registered lux API with replay methods")
 
+	// Register migrate API for block import operations
+	migrateAPI := NewMigrateAPI(vm)
+	vm.log.Info("Registering migrate API (importBlocks)")
+	if err := rpcServer.RegisterName("migrate", migrateAPI); err != nil {
+		vm.log.Error("Failed to register migrate API", "error", err)
+		return nil, fmt.Errorf("failed to register migrate API: %w", err)
+	}
+	vm.log.Info("Registered migrate API with importBlocks method")
+
 	vm.log.Info("Registered API namespaces")
 
 	// Create HTTP handler
@@ -1586,6 +1667,12 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		return nil, fmt.Errorf("no parent block available")
 	}
 
+	// Get state at parent
+	statedb, err := vm.blockChain.StateAt(parent.Root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get state at parent: %w", err)
+	}
+
 	// Create a new block header
 	header := &types.Header{
 		ParentHash: parent.Hash(),
@@ -1605,7 +1692,6 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	var txs []*types.Transaction
 	for _, batch := range pending {
 		for _, lazyTx := range batch {
-			// Resolve the lazy transaction
 			tx := lazyTx.Resolve()
 			if tx != nil {
 				txs = append(txs, tx)
@@ -1613,20 +1699,77 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		}
 	}
 
-	// Create a new block with transactions
-	block := types.NewBlock(header, &types.Body{
-		Transactions: txs,
+	// Execute transactions and collect receipts
+	var (
+		receipts []*types.Receipt
+		gasUsed  uint64
+	)
+
+	// Create EVM block context
+	blockCtx := gethcore.NewEVMBlockContext(header, vm.blockChain, nil)
+
+	// Create gas pool for the block
+	gp := new(gethcore.GasPool).AddGas(header.GasLimit)
+
+	// Create EVM instance
+	vmConfig := vm.blockChain.GetVMConfig()
+	evm := gethvm.NewEVM(blockCtx, statedb, vm.chainConfig, *vmConfig)
+
+	for i, tx := range txs {
+		statedb.SetTxContext(tx.Hash(), i)
+
+		receipt, err := gethcore.ApplyTransaction(evm, gp, statedb, header, tx, &gasUsed)
+		if err != nil {
+			// Skip failed transactions in dev mode
+			vm.log.Warn("Transaction failed during mining", "tx", tx.Hash().Hex(), "error", err)
+			continue
+		}
+		receipts = append(receipts, receipt)
+	}
+
+	// Finalize the state
+	stateRoot, err := statedb.Commit(header.Number.Uint64(), true, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit state: %w", err)
+	}
+
+	// Update header with execution results
+	header.GasUsed = gasUsed
+	header.Root = stateRoot
+
+	// Calculate receipts hash
+	if len(receipts) > 0 {
+		header.ReceiptHash = types.DeriveSha(types.Receipts(receipts), trie.NewStackTrie(nil))
+		header.Bloom = types.MergeBloom(types.Receipts(receipts))
+	} else {
+		header.ReceiptHash = types.EmptyReceiptsHash
+	}
+
+	// Calculate transactions hash
+	executedTxs := make([]*types.Transaction, len(receipts))
+	for i, r := range receipts {
+		for _, tx := range txs {
+			if tx.Hash() == r.TxHash {
+				executedTxs[i] = tx
+				break
+			}
+		}
+	}
+
+	// Create the final block
+	ethBlock := types.NewBlock(header, &types.Body{
+		Transactions: executedTxs,
 		Uncles:       []*types.Header{},
 		Withdrawals:  []*types.Withdrawal{},
-	}, []*types.Receipt{}, trie.NewStackTrie(nil))
+	}, receipts, trie.NewStackTrie(nil))
 
 	// Create a new block wrapper
-	blk, err := vm.newBlock(block)
+	blk, err := vm.newBlock(ethBlock)
 	if err != nil {
 		return nil, err
 	}
 
-	// Store built block
+	// Store built block with its state and receipts for later insertion
 	vm.builtBlocks[blk.ID()] = blk
 	vm.building = blk.ID()
 

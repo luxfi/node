@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/node/proto/pb/platformvm"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
+	luxWarp "github.com/luxfi/warp"
 )
 
 const (
@@ -54,7 +54,7 @@ type signatureRequestVerifier struct {
 
 func (s signatureRequestVerifier) Verify(
 	_ context.Context,
-	unsignedMessage *warp.UnsignedMessage,
+	unsignedMessage *luxWarp.UnsignedMessage,
 	justification []byte,
 ) *consensuscore.AppError {
 	msg, err := payload.ParseAddressedCall(unsignedMessage.Payload)

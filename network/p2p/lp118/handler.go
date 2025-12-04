@@ -6,6 +6,7 @@ package lp118
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -13,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/warp"
 )
 
 // HandlerID is the protocol ID for LP-118
@@ -23,6 +24,12 @@ const HandlerID = 0x12345678 // Implementation note
 type Handler interface {
 	// AppRequest handles an incoming request
 	AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, request []byte) ([]byte, error)
+}
+
+// Signer signs warp messages and returns the signature bytes
+type Signer interface {
+	// Sign signs an unsigned warp message and returns the signature bytes
+	Sign(msg *warp.UnsignedMessage) ([]byte, error)
 }
 
 // NoOpHandler is a no-op implementation of Handler
@@ -37,11 +44,11 @@ func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([
 type CachedHandler struct {
 	cache   cache.Cacher[ids.ID, []byte]
 	backend interface{}
-	signer  warp.Signer
+	signer  Signer
 }
 
 // NewCachedHandler creates a new cached handler
-func NewCachedHandler(cache cache.Cacher[ids.ID, []byte], backend interface{}, signer warp.Signer) Handler {
+func NewCachedHandler(cache cache.Cacher[ids.ID, []byte], backend interface{}, signer Signer) Handler {
 	return &CachedHandler{
 		cache:   cache,
 		backend: backend,
@@ -61,8 +68,10 @@ func (h *CachedHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadl
 		return nil, err
 	}
 
-	// Check cache
-	messageID := unsignedMessage.ID()
+	// Check cache - convert []byte ID to ids.ID
+	idBytes := unsignedMessage.ID()
+	var messageID ids.ID
+	copy(messageID[:], idBytes)
 	if signatureBytes, ok := h.cache.Get(messageID); ok {
 		resp := &sdk.SignatureResponse{
 			Signature: signatureBytes,
@@ -78,6 +87,9 @@ func (h *CachedHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadl
 	}
 
 	// Sign the message
+	if h.signer == nil {
+		return nil, fmt.Errorf("signer is nil")
+	}
 	signatureBytes, err := h.signer.Sign(unsignedMessage)
 	if err != nil {
 		return nil, err

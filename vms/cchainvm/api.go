@@ -5,14 +5,20 @@ package cchainvm
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/common/hexutil"
 	"github.com/luxfi/geth/core/rawdb"
+	"github.com/luxfi/geth/core/txpool"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/rpc"
 )
@@ -295,7 +301,7 @@ func (api *EthAPI) rpcMarshalBlock(block *types.Block, inclTx bool, fullTx bool)
 		"number":           (*hexutil.Big)(block.Number()),
 		"hash":             block.Hash(),
 		"parentHash":       block.ParentHash(),
-		"nonce":            block.Nonce(),
+		"nonce":            block.Header().Nonce,
 		"mixHash":          block.MixDigest(),
 		"sha3Uncles":       block.UncleHash(),
 		"logsBloom":        block.Bloom(),
@@ -735,4 +741,823 @@ func (api *LuxAPI) VerifyBlockchain() (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+// Mine manually triggers block building and acceptance for dev mode
+// This is useful when the consensus engine isn't running to auto-mine
+// Accessible as lux_mine
+func (api *LuxAPI) Mine() (map[string]interface{}, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	api.vm.ensureLogger()
+	result := make(map[string]interface{})
+
+	// Check pending transactions
+	pending := api.vm.txPool.Pending(txpool.PendingFilter{})
+	pendingCount := 0
+	for _, batch := range pending {
+		pendingCount += len(batch)
+	}
+	result["pendingTxs"] = pendingCount
+
+	// Get current block before mining
+	currentBlock := api.vm.blockChain.CurrentBlock()
+	if currentBlock != nil {
+		result["beforeBlockNumber"] = currentBlock.Number.Uint64()
+		result["beforeBlockHash"] = currentBlock.Hash().Hex()
+	}
+
+	// Build a new block
+	ctx := context.Background()
+	blk, err := api.vm.BuildBlock(ctx)
+	if err != nil {
+		result["success"] = false
+		result["error"] = fmt.Sprintf("failed to build block: %v", err)
+		return result, nil
+	}
+
+	// Accept the block
+	if err := blk.Accept(ctx); err != nil {
+		result["success"] = false
+		result["error"] = fmt.Sprintf("failed to accept block: %v", err)
+		return result, nil
+	}
+
+	// Get new block state
+	newBlock := api.vm.blockChain.CurrentBlock()
+	if newBlock != nil {
+		result["afterBlockNumber"] = newBlock.Number.Uint64()
+		result["afterBlockHash"] = newBlock.Hash().Hex()
+	}
+
+	result["success"] = true
+	result["blockID"] = blk.ID().String()
+	api.vm.log.Info("Mined new block", "height", result["afterBlockNumber"], "id", blk.ID().String())
+
+	return result, nil
+}
+
+// MigrateAPI provides migration RPC API for block import operations
+type MigrateAPI struct {
+	vm *VM
+}
+
+// NewMigrateAPI creates a new Migrate RPC API
+func NewMigrateAPI(vm *VM) *MigrateAPI {
+	return &MigrateAPI{vm: vm}
+}
+
+// ImportBlockEntry represents a single block to import
+type ImportBlockEntry struct {
+	Height   uint64 `json:"height"`
+	Hash     string `json:"hash"`
+	Header   string `json:"header"`
+	Body     string `json:"body"`
+	Receipts string `json:"receipts"`
+}
+
+// ImportBlocksRequest represents the request for importing blocks
+type ImportBlocksRequest struct {
+	Blocks []ImportBlockEntry `json:"blocks"`
+}
+
+// ImportBlocksResponse represents the response from importing blocks
+type ImportBlocksResponse struct {
+	Imported      int      `json:"imported"`
+	Failed        int      `json:"failed"`
+	FirstHeight   uint64   `json:"firstHeight"`
+	LastHeight    uint64   `json:"lastHeight"`
+	Errors        []string `json:"errors,omitempty"`
+	HeadBlockHash string   `json:"headBlockHash"`
+}
+
+// Helper functions for constructing database keys
+var (
+	headerPrefix = []byte("h") // headerPrefix + num (uint64 big endian) + hash -> header
+)
+
+// encodeBlockNumberForKey encodes a block number as big endian uint64 for database keys
+func encodeBlockNumberForKey(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+
+// headerKey constructs the header key: headerPrefix + num (uint64 big endian) + hash
+func headerKey(number uint64, hash common.Hash) []byte {
+	return append(append(headerPrefix, encodeBlockNumberForKey(number)...), hash.Bytes()...)
+}
+
+// ImportBlocks imports an array of blocks into the C-Chain database
+// Each block should have header, body, and receipts as RLP hex-encoded data
+// This is the migrate_importBlocks RPC method
+// Note: Accepts array directly (not wrapped in struct) for CLI compatibility
+func (api *MigrateAPI) ImportBlocks(blocks []ImportBlockEntry) (*ImportBlocksResponse, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	if api.vm.ethDB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	if len(blocks) == 0 {
+		return nil, fmt.Errorf("no blocks provided")
+	}
+
+	api.vm.ensureLogger()
+	api.vm.log.Info("Starting block import via RPC", "count", len(blocks))
+
+	response := &ImportBlocksResponse{
+		Errors: []string{},
+	}
+
+	var firstHeight, lastHeight uint64
+	firstSet := false
+
+	for _, entry := range blocks {
+		// Track height range
+		if !firstSet {
+			firstHeight = entry.Height
+			firstSet = true
+		}
+		lastHeight = entry.Height
+
+		// Decode hex strings to bytes
+		headerBytes, err := decodeHex(entry.Header)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to decode header hex: %v", entry.Height, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		bodyBytes, err := decodeHex(entry.Body)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to decode body hex: %v", entry.Height, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		receiptsBytes, err := decodeHex(entry.Receipts)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to decode receipts hex: %v", entry.Height, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Decode block hash
+		hashBytes, err := decodeHex(entry.Hash)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to decode hash: %v", entry.Height, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Write raw RLP directly to database keys (bypass types.Header decoding)
+		// This avoids WithdrawalsHash compatibility issues with pre-Shanghai blocks
+		hash := common.BytesToHash(hashBytes)
+		number := entry.Height
+
+		// Write header RLP manually
+		// First write the hash -> number mapping
+		rawdb.WriteHeaderNumber(api.vm.ethDB, hash, number)
+
+		// Then write the header RLP data
+		key := headerKey(number, hash)
+		if err := api.vm.ethDB.Put(key, headerBytes); err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to write header: %v", entry.Height, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Write body RLP
+		rawdb.WriteBodyRLP(api.vm.ethDB, hash, number, bodyBytes)
+
+		// Write receipts RLP
+		if len(receiptsBytes) > 0 {
+			rawdb.WriteRawReceipts(api.vm.ethDB, hash, number, receiptsBytes)
+		}
+
+		// Write canonical hash
+		rawdb.WriteCanonicalHash(api.vm.ethDB, hash, number)
+
+		response.Imported++
+
+		// Log progress periodically
+		if response.Imported%1000 == 0 {
+			api.vm.log.Info("Import progress", "imported", response.Imported, "current", entry.Height)
+		}
+	}
+
+	// Update head pointers to the last successfully imported block
+	if response.Imported > 0 {
+		// Find the last successfully imported block
+		for i := len(blocks) - 1; i >= 0; i-- {
+			entry := blocks[i]
+			hashBytes, err := decodeHex(entry.Hash)
+			if err == nil {
+				hash := common.BytesToHash(hashBytes)
+				rawdb.WriteHeadBlockHash(api.vm.ethDB, hash)
+				rawdb.WriteHeadHeaderHash(api.vm.ethDB, hash)
+				response.HeadBlockHash = hash.Hex()
+				break
+			}
+		}
+	}
+
+	response.FirstHeight = firstHeight
+	response.LastHeight = lastHeight
+
+	api.vm.log.Info("Block import complete",
+		"imported", response.Imported,
+		"failed", response.Failed,
+		"firstHeight", firstHeight,
+		"lastHeight", lastHeight,
+	)
+
+	return response, nil
+}
+
+// decodeHex decodes a hex string (with or without 0x prefix) to bytes
+func decodeHex(s string) ([]byte, error) {
+	s = strings.TrimPrefix(s, "0x")
+	if s == "" {
+		return []byte{}, nil
+	}
+	return hex.DecodeString(s)
+}
+
+// SetGenesisRequest represents the request for setting genesis from imported block 0
+type SetGenesisRequest struct {
+	Height   uint64 `json:"height"`
+	Hash     string `json:"hash"`
+	Header   string `json:"header"`
+	Body     string `json:"body"`
+	Receipts string `json:"receipts"`
+}
+
+// SetGenesisResponse represents the response from setting genesis
+type SetGenesisResponse struct {
+	Success        bool   `json:"success"`
+	OldGenesisHash string `json:"oldGenesisHash"`
+	NewGenesisHash string `json:"newGenesisHash"`
+	Error          string `json:"error,omitempty"`
+}
+
+// SetGenesis sets the genesis block from imported data and reloads the blockchain
+// This should be called BEFORE importing other blocks to ensure the chain is consistent
+// This is the migrate_setGenesis RPC method
+func (api *MigrateAPI) SetGenesis(req SetGenesisRequest) (*SetGenesisResponse, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	if api.vm.ethDB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	if req.Height != 0 {
+		return nil, fmt.Errorf("genesis block must have height 0, got %d", req.Height)
+	}
+
+	api.vm.ensureLogger()
+	api.vm.log.Info("Setting genesis from imported block 0")
+
+	response := &SetGenesisResponse{}
+
+	// Get the old genesis hash for reference
+	if api.vm.blockChain != nil {
+		genesis := api.vm.blockChain.GetBlockByNumber(0)
+		if genesis != nil {
+			response.OldGenesisHash = genesis.Hash().Hex()
+		}
+	}
+
+	// Decode the new genesis data
+	headerBytes, err := decodeHex(req.Header)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode header hex: %v", err)
+	}
+
+	bodyBytes, err := decodeHex(req.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode body hex: %v", err)
+	}
+
+	receiptsBytes, err := decodeHex(req.Receipts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode receipts hex: %v", err)
+	}
+
+	hashBytes, err := decodeHex(req.Hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode hash: %v", err)
+	}
+
+	hash := common.BytesToHash(hashBytes)
+	number := uint64(0)
+
+	api.vm.log.Info("Writing new genesis block",
+		"hash", hash.Hex(),
+		"headerSize", len(headerBytes),
+		"bodySize", len(bodyBytes))
+
+	// Write the genesis block to the database
+	rawdb.WriteHeaderNumber(api.vm.ethDB, hash, number)
+
+	// Write header RLP
+	key := headerKey(number, hash)
+	if err := api.vm.ethDB.Put(key, headerBytes); err != nil {
+		return nil, fmt.Errorf("failed to write header: %v", err)
+	}
+
+	// Write body
+	rawdb.WriteBodyRLP(api.vm.ethDB, hash, number, bodyBytes)
+
+	// Write receipts
+	if len(receiptsBytes) > 0 {
+		rawdb.WriteRawReceipts(api.vm.ethDB, hash, number, receiptsBytes)
+	}
+
+	// Write canonical hash for block 0
+	rawdb.WriteCanonicalHash(api.vm.ethDB, hash, number)
+
+	// Update head pointers to genesis
+	rawdb.WriteHeadBlockHash(api.vm.ethDB, hash)
+	rawdb.WriteHeadHeaderHash(api.vm.ethDB, hash)
+
+	response.NewGenesisHash = hash.Hex()
+	response.Success = true
+
+	api.vm.log.Info("Genesis block set successfully",
+		"oldHash", response.OldGenesisHash,
+		"newHash", response.NewGenesisHash)
+
+	return response, nil
+}
+
+// JSONBlockTransaction represents a transaction in JSON-RPC format
+type JSONBlockTransaction struct {
+	BlockHash        string `json:"blockHash"`
+	BlockNumber      string `json:"blockNumber"`
+	From             string `json:"from"`
+	Gas              string `json:"gas"`
+	GasPrice         string `json:"gasPrice"`
+	MaxFeePerGas     string `json:"maxFeePerGas,omitempty"`
+	MaxPriorityFee   string `json:"maxPriorityFeePerGas,omitempty"`
+	Hash             string `json:"hash"`
+	Input            string `json:"input"`
+	Nonce            string `json:"nonce"`
+	To               string `json:"to"`
+	TransactionIndex string `json:"transactionIndex"`
+	Value            string `json:"value"`
+	Type             string `json:"type,omitempty"`
+	ChainId          string `json:"chainId,omitempty"`
+	V                string `json:"v"`
+	R                string `json:"r"`
+	S                string `json:"s"`
+	// Access list for EIP-2930/EIP-1559 transactions
+	AccessList json.RawMessage `json:"accessList,omitempty"`
+}
+
+// JSONBlock represents a block in JSON-RPC format (eth_getBlockByNumber response)
+type JSONBlock struct {
+	BaseFeePerGas    string                 `json:"baseFeePerGas,omitempty"`
+	BlockGasCost     string                 `json:"blockGasCost,omitempty"`
+	Difficulty       string                 `json:"difficulty"`
+	ExtraData        string                 `json:"extraData"`
+	GasLimit         string                 `json:"gasLimit"`
+	GasUsed          string                 `json:"gasUsed"`
+	Hash             string                 `json:"hash"`
+	LogsBloom        string                 `json:"logsBloom"`
+	Miner            string                 `json:"miner"`
+	MixHash          string                 `json:"mixHash"`
+	Nonce            string                 `json:"nonce"`
+	Number           string                 `json:"number"`
+	ParentHash       string                 `json:"parentHash"`
+	ReceiptsRoot     string                 `json:"receiptsRoot"`
+	Sha3Uncles       string                 `json:"sha3Uncles"`
+	StateRoot        string                 `json:"stateRoot"`
+	Timestamp        string                 `json:"timestamp"`
+	TransactionsRoot string                 `json:"transactionsRoot"`
+	Transactions     []JSONBlockTransaction `json:"transactions"`
+	Uncles           []string               `json:"uncles"`
+}
+
+// ImportJSONBlocksResponse represents the response from importing JSON blocks
+type ImportJSONBlocksResponse struct {
+	Imported      int      `json:"imported"`
+	Failed        int      `json:"failed"`
+	FirstHeight   uint64   `json:"firstHeight"`
+	LastHeight    uint64   `json:"lastHeight"`
+	Errors        []string `json:"errors,omitempty"`
+	HeadBlockHash string   `json:"headBlockHash"`
+}
+
+// ImportJSONBlocks imports an array of blocks in JSON-RPC format into the C-Chain database
+// This accepts the raw output from eth_getBlockByNumber and converts to RLP internally
+// This is the migrate_importJSONBlocks RPC method
+func (api *MigrateAPI) ImportJSONBlocks(blocks []json.RawMessage) (*ImportJSONBlocksResponse, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	if api.vm.ethDB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	if len(blocks) == 0 {
+		return nil, fmt.Errorf("no blocks provided")
+	}
+
+	api.vm.ensureLogger()
+	api.vm.log.Info("Starting JSON block import via RPC", "count", len(blocks))
+
+	response := &ImportJSONBlocksResponse{
+		Errors: []string{},
+	}
+
+	var firstHeight, lastHeight uint64
+	firstSet := false
+
+	for i, rawBlock := range blocks {
+		var block JSONBlock
+		if err := json.Unmarshal(rawBlock, &block); err != nil {
+			errMsg := fmt.Sprintf("block %d: failed to parse JSON: %v", i, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Parse block number
+		blockNum, err := hexutil.DecodeUint64(block.Number)
+		if err != nil {
+			errMsg := fmt.Sprintf("block %d: failed to parse number: %v", i, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Track height range
+		if !firstSet {
+			firstHeight = blockNum
+			firstSet = true
+		}
+		lastHeight = blockNum
+
+		// Convert JSON block to types.Header
+		header, err := api.jsonToHeader(&block)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to convert header: %v", blockNum, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Encode header to RLP
+		headerRLP, err := rlp.EncodeToBytes(header)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to encode header: %v", blockNum, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Convert transactions to types.Transactions for body
+		txs, err := api.jsonToTransactions(block.Transactions)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to convert transactions: %v", blockNum, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Create body (transactions + uncles)
+		body := &types.Body{
+			Transactions: txs,
+			Uncles:       []*types.Header{}, // Uncles are typically empty in Lux
+		}
+
+		// Encode body to RLP
+		bodyRLP, err := rlp.EncodeToBytes(body)
+		if err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to encode body: %v", blockNum, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Get hash from the block
+		hash := common.HexToHash(block.Hash)
+
+		// Write to database
+		rawdb.WriteHeaderNumber(api.vm.ethDB, hash, blockNum)
+
+		// Write header RLP
+		key := headerKey(blockNum, hash)
+		if err := api.vm.ethDB.Put(key, headerRLP); err != nil {
+			errMsg := fmt.Sprintf("height %d: failed to write header: %v", blockNum, err)
+			response.Errors = append(response.Errors, errMsg)
+			response.Failed++
+			continue
+		}
+
+		// Write body RLP
+		rawdb.WriteBodyRLP(api.vm.ethDB, hash, blockNum, bodyRLP)
+
+		// Write canonical hash
+		rawdb.WriteCanonicalHash(api.vm.ethDB, hash, blockNum)
+
+		response.Imported++
+
+		// Log progress periodically
+		if response.Imported%1000 == 0 {
+			api.vm.log.Info("JSON import progress", "imported", response.Imported, "current", blockNum)
+		}
+	}
+
+	// Update head pointers to the last successfully imported block
+	if response.Imported > 0 && lastHeight > 0 {
+		// Find the last block's hash
+		for i := len(blocks) - 1; i >= 0; i-- {
+			var block JSONBlock
+			if err := json.Unmarshal(blocks[i], &block); err == nil {
+				hash := common.HexToHash(block.Hash)
+				rawdb.WriteHeadBlockHash(api.vm.ethDB, hash)
+				rawdb.WriteHeadHeaderHash(api.vm.ethDB, hash)
+				response.HeadBlockHash = hash.Hex()
+				break
+			}
+		}
+	}
+
+	response.FirstHeight = firstHeight
+	response.LastHeight = lastHeight
+
+	api.vm.log.Info("JSON block import complete",
+		"imported", response.Imported,
+		"failed", response.Failed,
+		"firstHeight", firstHeight,
+		"lastHeight", lastHeight,
+	)
+
+	// Auto-reload blockchain state so eth_blockNumber reflects imported blocks
+	if response.Imported > 0 {
+		api.vm.log.Info("Reloading blockchain state after import...")
+		if err := api.vm.ReloadBlockchainState(); err != nil {
+			api.vm.log.Warn("Failed to reload blockchain state", "error", err)
+		} else {
+			// Get the new block number after reload
+			if api.vm.blockChain != nil {
+				if currentBlock := api.vm.blockChain.CurrentBlock(); currentBlock != nil {
+					api.vm.log.Info("Blockchain reloaded", "newHeight", currentBlock.Number.Uint64())
+				}
+			}
+		}
+	}
+
+	return response, nil
+}
+
+// jsonToHeader converts a JSONBlock to a types.Header
+func (api *MigrateAPI) jsonToHeader(block *JSONBlock) (*types.Header, error) {
+	header := &types.Header{}
+
+	// Parse all fields
+	if block.ParentHash != "" {
+		header.ParentHash = common.HexToHash(block.ParentHash)
+	}
+	if block.Sha3Uncles != "" {
+		header.UncleHash = common.HexToHash(block.Sha3Uncles)
+	}
+	if block.Miner != "" {
+		header.Coinbase = common.HexToAddress(block.Miner)
+	}
+	if block.StateRoot != "" {
+		header.Root = common.HexToHash(block.StateRoot)
+	}
+	if block.TransactionsRoot != "" {
+		header.TxHash = common.HexToHash(block.TransactionsRoot)
+	}
+	if block.ReceiptsRoot != "" {
+		header.ReceiptHash = common.HexToHash(block.ReceiptsRoot)
+	}
+	if block.LogsBloom != "" {
+		bloomBytes, err := decodeHex(block.LogsBloom)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode logsBloom: %v", err)
+		}
+		copy(header.Bloom[:], bloomBytes)
+	}
+	if block.Difficulty != "" {
+		difficulty, err := hexutil.DecodeBig(block.Difficulty)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode difficulty: %v", err)
+		}
+		header.Difficulty = difficulty
+	}
+	if block.Number != "" {
+		number, err := hexutil.DecodeBig(block.Number)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode number: %v", err)
+		}
+		header.Number = number
+	}
+	if block.GasLimit != "" {
+		gasLimit, err := hexutil.DecodeUint64(block.GasLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode gasLimit: %v", err)
+		}
+		header.GasLimit = gasLimit
+	}
+	if block.GasUsed != "" {
+		gasUsed, err := hexutil.DecodeUint64(block.GasUsed)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode gasUsed: %v", err)
+		}
+		header.GasUsed = gasUsed
+	}
+	if block.Timestamp != "" {
+		timestamp, err := hexutil.DecodeUint64(block.Timestamp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode timestamp: %v", err)
+		}
+		header.Time = timestamp
+	}
+	if block.ExtraData != "" {
+		extraData, err := decodeHex(block.ExtraData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode extraData: %v", err)
+		}
+		header.Extra = extraData
+	}
+	if block.MixHash != "" {
+		header.MixDigest = common.HexToHash(block.MixHash)
+	}
+	if block.Nonce != "" {
+		nonceBytes, err := decodeHex(block.Nonce)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode nonce: %v", err)
+		}
+		if len(nonceBytes) == 8 {
+			copy(header.Nonce[:], nonceBytes)
+		}
+	}
+	if block.BaseFeePerGas != "" {
+		baseFee, err := hexutil.DecodeBig(block.BaseFeePerGas)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode baseFeePerGas: %v", err)
+		}
+		header.BaseFee = baseFee
+	}
+
+	return header, nil
+}
+
+// jsonToTransactions converts JSON transactions to types.Transactions
+func (api *MigrateAPI) jsonToTransactions(jsonTxs []JSONBlockTransaction) (types.Transactions, error) {
+	txs := make(types.Transactions, 0, len(jsonTxs))
+
+	for i, jtx := range jsonTxs {
+		tx, err := api.jsonToTransaction(&jtx)
+		if err != nil {
+			return nil, fmt.Errorf("tx %d: %v", i, err)
+		}
+		txs = append(txs, tx)
+	}
+
+	return txs, nil
+}
+
+// jsonToTransaction converts a single JSON transaction to types.Transaction
+func (api *MigrateAPI) jsonToTransaction(jtx *JSONBlockTransaction) (*types.Transaction, error) {
+	// Parse common fields
+	nonce, err := hexutil.DecodeUint64(jtx.Nonce)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode nonce: %v", err)
+	}
+
+	gas, err := hexutil.DecodeUint64(jtx.Gas)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode gas: %v", err)
+	}
+
+	value, err := hexutil.DecodeBig(jtx.Value)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode value: %v", err)
+	}
+
+	data, err := decodeHex(jtx.Input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode input: %v", err)
+	}
+
+	var to *common.Address
+	if jtx.To != "" {
+		addr := common.HexToAddress(jtx.To)
+		to = &addr
+	}
+
+	// Parse signature
+	v, err := hexutil.DecodeBig(jtx.V)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode v: %v", err)
+	}
+	r, err := hexutil.DecodeBig(jtx.R)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode r: %v", err)
+	}
+	s, err := hexutil.DecodeBig(jtx.S)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode s: %v", err)
+	}
+
+	// Determine transaction type
+	var txType uint8
+	if jtx.Type != "" {
+		typeVal, err := hexutil.DecodeUint64(jtx.Type)
+		if err == nil {
+			txType = uint8(typeVal)
+		}
+	}
+
+	var tx *types.Transaction
+
+	switch txType {
+	case types.LegacyTxType:
+		// Legacy transaction
+		gasPrice, err := hexutil.DecodeBig(jtx.GasPrice)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode gasPrice: %v", err)
+		}
+
+		tx = types.NewTx(&types.LegacyTx{
+			Nonce:    nonce,
+			GasPrice: gasPrice,
+			Gas:      gas,
+			To:       to,
+			Value:    value,
+			Data:     data,
+			V:        v,
+			R:        r,
+			S:        s,
+		})
+
+	case types.DynamicFeeTxType:
+		// EIP-1559 transaction
+		maxFeePerGas, err := hexutil.DecodeBig(jtx.MaxFeePerGas)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode maxFeePerGas: %v", err)
+		}
+		maxPriorityFee, err := hexutil.DecodeBig(jtx.MaxPriorityFee)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode maxPriorityFeePerGas: %v", err)
+		}
+		chainID, err := hexutil.DecodeBig(jtx.ChainId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode chainId: %v", err)
+		}
+
+		tx = types.NewTx(&types.DynamicFeeTx{
+			ChainID:   chainID,
+			Nonce:     nonce,
+			GasTipCap: maxPriorityFee,
+			GasFeeCap: maxFeePerGas,
+			Gas:       gas,
+			To:        to,
+			Value:     value,
+			Data:      data,
+			V:         v,
+			R:         r,
+			S:         s,
+		})
+
+	default:
+		// Default to legacy with gasPrice
+		gasPrice, err := hexutil.DecodeBig(jtx.GasPrice)
+		if err != nil {
+			gasPrice = big.NewInt(0)
+		}
+
+		tx = types.NewTx(&types.LegacyTx{
+			Nonce:    nonce,
+			GasPrice: gasPrice,
+			Gas:      gas,
+			To:       to,
+			Value:    value,
+			Data:     data,
+			V:        v,
+			R:        r,
+			S:        s,
+		})
+	}
+
+	return tx, nil
 }
