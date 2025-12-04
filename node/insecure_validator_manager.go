@@ -71,7 +71,7 @@ func (i *insecureValidatorManager) Deprecated() {
 	// No-op - Router interface requirement
 }
 
-func (i *insecureValidatorManager) AddChain(ctx context.Context, handler handler.Handler) {
+func (i *insecureValidatorManager) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
 	// Stub - consensus router doesn't have AddChain
 }
 

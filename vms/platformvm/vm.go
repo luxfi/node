@@ -242,9 +242,17 @@ func (vm *VM) Initialize(
 
 	// Set consensus context
 	vm.ctx = chainCtx
-	
+
 	// Initialize utxo.XAssetID from the context
 	utxo.XAssetID = chainCtx.XAssetID
+
+	// Initialize vm.luxAssetID for GetStakingAssetID API
+	// Use LUXAssetID if set, otherwise fall back to XAssetID
+	if chainCtx.LUXAssetID != ids.Empty {
+		vm.luxAssetID = chainCtx.LUXAssetID
+	} else {
+		vm.luxAssetID = chainCtx.XAssetID
+	}
 	
 	// Get the current database from the DBManager
 	// Since DBManager is now an interface{}, we need to handle it differently
@@ -862,13 +870,13 @@ type lazyHandlerWrapper struct {
 
 // ServeHTTP creates the handler on first request when VM is ready
 func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	l.once.Do(func() {
-		// Check if VM is bootstrapped and ready for API calls
-		if !l.vm.bootstrapped.Get() {
-			l.err = fmt.Errorf("VM not fully bootstrapped")
-			return
-		}
+	// Check if VM is bootstrapped BEFORE once.Do to avoid caching the "not bootstrapped" error
+	if !l.vm.bootstrapped.Get() {
+		http.Error(w, "Platform service not ready, VM still bootstrapping", http.StatusServiceUnavailable)
+		return
+	}
 
+	l.once.Do(func() {
 		// Create the actual RPC server now that VM is ready
 		server := rpc.NewServer()
 		server.RegisterCodec(json.NewCodec(), "application/json")
@@ -901,7 +909,7 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if l.handler == nil {
-		http.Error(w, "Platform service not ready, VM still bootstrapping", http.StatusServiceUnavailable)
+		http.Error(w, "Platform service not ready, handler not initialized", http.StatusServiceUnavailable)
 		return
 	}
 

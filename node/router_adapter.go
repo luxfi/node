@@ -77,7 +77,7 @@ func (r *routerAdapter) Initialize(
 func (r *routerAdapter) RegisterChain(chainID ids.ID, chainHandler router.ChainHandler) error {
 	// Wrap the router.ChainHandler to adapt it to consensus handler.Handler
 	adapter := &chainHandlerAdapter{chainHandler: chainHandler}
-	r.router.AddChain(context.Background(), adapter)
+	r.router.AddChain(context.Background(), chainID, adapter)
 	return nil
 }
 

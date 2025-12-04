@@ -57,9 +57,9 @@ func (m *mockRouter) RegisterRequest(
 ) {
 }
 
-func (m *mockRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {}
-func (m *mockRouter) Shutdown(ctx context.Context)                                   {}
-func (m *mockRouter) AddChain(ctx context.Context, handler handler.Handler)         {}
+func (m *mockRouter) HandleInbound(ctx context.Context, msg message.InboundMessage)           {}
+func (m *mockRouter) Shutdown(ctx context.Context)                                            {}
+func (m *mockRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {}
 
 func (m *mockRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if m.connected != nil {

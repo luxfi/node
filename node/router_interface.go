@@ -44,7 +44,7 @@ type Router interface {
 
 	HandleInbound(ctx context.Context, msg message.InboundMessage)
 	Shutdown(ctx context.Context)
-	AddChain(ctx context.Context, handler handler.Handler)
+	AddChain(ctx context.Context, chainID ids.ID, handler handler.Handler)
 	Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID)
 	Disconnected(nodeID ids.NodeID)
 	Benched(chainID ids.ID, nodeID ids.NodeID)

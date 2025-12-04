@@ -53,6 +53,7 @@ func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutMana
 		timeoutManager: timeoutManager,
 		connectedPeers: set.NewSet[ids.NodeID](10),
 		requests:       make(map[uint32]*requestInfo),
+		lastMsgTime:    time.Now(), // Initialize to now to avoid huge "no messages" time on startup
 	}
 }
 
@@ -162,13 +163,10 @@ func (r *SimpleRouter) Shutdown(ctx context.Context) {
 	r.requests = make(map[uint32]*requestInfo)
 }
 
-func (r *SimpleRouter) AddChain(ctx context.Context, h handler.Handler) {
+func (r *SimpleRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	// For now, we'll use a placeholder chain ID
-	// In practice, the handler should have a way to identify its chain
-	chainID := ids.GenerateTestID()
 	r.chains[chainID] = h
 
 	r.log.Info("added chain to router",

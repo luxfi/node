@@ -98,7 +98,7 @@ const (
 // ChainRouter is the interface for routing messages to chains.
 // This is defined here to avoid circular imports with the node package.
 type ChainRouter interface {
-	AddChain(ctx context.Context, handler handler.Handler)
+	AddChain(ctx context.Context, chainID ids.ID, handler handler.Handler)
 }
 
 var (
@@ -794,7 +794,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 	// Register chain with the router for message routing
 	if m.ManagerConfig.Router != nil {
-		m.ManagerConfig.Router.AddChain(context.TODO(), chain.Handler)
+		m.ManagerConfig.Router.AddChain(context.TODO(), chainParams.ID, chain.Handler)
 	}
 
 	// Register bootstrapped health checks after P chain has been added to
@@ -1010,19 +1010,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 		}
 
-		// If we're in skip-bootstrap mode, transition VM directly to normal operation
-		if m.SkipBootstrap {
-			if stateVM, ok := vm.(interface {
-				SetState(context.Context, uint32) error
-			}); ok {
-				m.Log.Info("skip-bootstrap mode: transitioning VM to normal operation",
-					log.Stringer("chainID", chainParams.ID))
-				if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
-					m.Log.Error("failed to transition VM to normal operation",
-						log.Stringer("chainID", chainParams.ID),
-						log.Err(err))
-					// Continue anyway, as the VM might not require this
-				}
+		// Transition VM to normal operation after initialization
+		// For genesis-based networks with pre-configured validators, this is required
+		// to make the VM APIs available immediately
+		if stateVM, ok := vm.(interface {
+			SetState(context.Context, uint32) error
+		}); ok {
+			m.Log.Info("transitioning VM to normal operation",
+				log.Stringer("chainID", chainParams.ID))
+			if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
+				m.Log.Error("failed to transition VM to normal operation",
+					log.Stringer("chainID", chainParams.ID),
+					log.Err(err))
+				// Continue anyway, as the VM might not require this
 			}
 		}
 
