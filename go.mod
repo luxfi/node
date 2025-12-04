@@ -245,7 +245,3 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/evm => ../evm
-
-replace github.com/luxfi/genesis => ../genesis
