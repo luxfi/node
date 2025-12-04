@@ -34,7 +34,7 @@ require (
 	github.com/luxfi/database v1.2.7
 	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux-go v1.0.0
-	github.com/luxfi/log v1.1.22
+	github.com/luxfi/log v1.1.24
 	github.com/luxfi/math v0.1.5
 	github.com/luxfi/metric v1.4.5
 	github.com/luxfi/mock v0.1.0
@@ -172,6 +172,7 @@ require (
 )
 
 require (
+	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/ethereum/go-ethereum v1.16.7
@@ -200,6 +201,7 @@ require (
 	github.com/dchest/siphash v1.2.3 // indirect
 	github.com/dgraph-io/ristretto v0.2.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
+	github.com/dgryski/go-farm v0.0.0-20240924180020-3414d57e47da // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/dot v1.9.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
