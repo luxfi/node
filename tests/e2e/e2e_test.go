@@ -17,7 +17,7 @@ import (
 
 	// ensure test packages are scanned by ginkgo
 	_ "github.com/luxfi/node/tests/e2e/banff"
-	_ "github.com/luxfi/node/tests/e2e/c"
+	// _ "github.com/luxfi/node/tests/e2e/c" // disabled - C-Chain tests moved to c.disabled
 	_ "github.com/luxfi/node/tests/e2e/faultinjection"
 	_ "github.com/luxfi/node/tests/e2e/p"
 	_ "github.com/luxfi/node/tests/e2e/x"

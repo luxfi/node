@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/node/wallet/keychain"
@@ -27,7 +26,13 @@ import (
 
 var _ Wallet = (*wallet)(nil)
 
-// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain and c.EthKeychain interfaces.
+// EthKeychain is an interface for keychains that support Ethereum addresses
+type EthKeychain interface {
+	GetEth(addr gethcommon.Address) (keychain.Signer, bool)
+	EthAddresses() set.Set[gethcommon.Address]
+}
+
+// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain and EthKeychain interfaces.
 // This allows secp256k1fx.Keychain to be used with MakeWallet.
 type KeychainAdapter struct {
 	*secp256k1fx.Keychain
@@ -43,7 +48,7 @@ func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
 	return kc.Keychain.GetWallet(addr)
 }
 
-// GetEth implements c.EthKeychain
+// GetEth implements EthKeychain
 func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
 	signer, ok := kc.Keychain.GetEth(addr)
 	if !ok {
@@ -53,7 +58,7 @@ func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, boo
 	return signer.(keychain.Signer), true
 }
 
-// EthAddresses implements c.EthKeychain
+// EthAddresses implements EthKeychain
 func (kc *KeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
 	return kc.Keychain.EthAddrs
 }
@@ -64,16 +69,15 @@ func NewKeychainAdapter(kc *secp256k1fx.Keychain) *KeychainAdapter {
 }
 
 // Wallet provides chain wallets for the primary network.
+// NOTE: C-Chain wallet is disabled - use github.com/luxfi/evm/ethclient directly
 type Wallet interface {
 	P() p.Wallet
 	X() x.Wallet
-	C() c.Wallet
 }
 
 type wallet struct {
 	p p.Wallet
 	x x.Wallet
-	c c.Wallet
 }
 
 func (w *wallet) P() p.Wallet {
@@ -84,16 +88,11 @@ func (w *wallet) X() x.Wallet {
 	return w.x
 }
 
-func (w *wallet) C() c.Wallet {
-	return w.c
-}
-
 // Creates a new default wallet
-func NewWallet(p p.Wallet, x x.Wallet, c c.Wallet) Wallet {
+func NewWallet(pWallet p.Wallet, xWallet x.Wallet) Wallet {
 	return &wallet{
-		p: p,
-		x: x,
-		c: c,
+		p: pWallet,
+		x: xWallet,
 	}
 }
 
@@ -102,7 +101,6 @@ func NewWalletWithOptions(w Wallet, options ...common.Option) Wallet {
 	return NewWallet(
 		p.NewWalletWithOptions(w.P(), options...),
 		x.NewWalletWithOptions(w.X(), options...),
-		c.NewWalletWithOptions(w.C(), options...),
 	)
 }
 
@@ -111,7 +109,7 @@ type WalletConfig struct {
 	URI string // required
 	// Keys to use for signing all transactions.
 	LUXKeychain keychain.Keychain // required
-	EthKeychain c.EthKeychain      // required
+	EthKeychain EthKeychain       // optional - for future C-Chain support
 	// Set of P-chain transactions that the wallet should know about to be able
 	// to generate transactions.
 	PChainTxs map[ids.ID]*txs.Tx // optional
@@ -182,6 +180,5 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 	return NewWallet(
 		p.NewWallet(pClient, pBuilder, pSigner),
 		x.NewWallet(xBuilder, xSigner, xBackend),
-		nil, // c.NewWallet(cBuilder, cSigner, luxState.CClient, ethState.Client, cBackend),
 	), nil
 }

@@ -6,6 +6,7 @@ package primary
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	gethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
@@ -18,7 +19,6 @@ import (
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 
@@ -28,6 +28,12 @@ import (
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
+
+// EthAccount represents an Ethereum account's state
+type EthAccount struct {
+	Balance *big.Int
+	Nonce   uint64
+}
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
@@ -182,7 +188,7 @@ func FetchState(
 
 type EthState struct {
 	Client   *ethclient.Client
-	Accounts map[ethcommon.Address]*c.Account
+	Accounts map[ethcommon.Address]*EthAccount
 }
 
 func FetchEthState(
@@ -200,7 +206,7 @@ func FetchEthState(
 		return nil, err
 	}
 
-	accounts := make(map[ethcommon.Address]*c.Account, addrs.Len())
+	accounts := make(map[ethcommon.Address]*EthAccount, addrs.Len())
 	for addr := range addrs {
 		// Convert ethereum address to geth address
 		gethAddr := gethcommon.Address(addr)
@@ -212,7 +218,7 @@ func FetchEthState(
 		if err != nil {
 			return nil, err
 		}
-		accounts[addr] = &c.Account{
+		accounts[addr] = &EthAccount{
 			Balance: balance,
 			Nonce:   nonce,
 		}
