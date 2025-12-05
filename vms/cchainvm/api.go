@@ -13,9 +13,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/holiman/uint256"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/common/hexutil"
 	"github.com/luxfi/geth/core/rawdb"
+	"github.com/luxfi/geth/core/state"
+	"github.com/luxfi/geth/core/tracing"
 	"github.com/luxfi/geth/core/txpool"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/rlp"
@@ -811,11 +814,21 @@ func NewMigrateAPI(vm *VM) *MigrateAPI {
 
 // ImportBlockEntry represents a single block to import
 type ImportBlockEntry struct {
-	Height   uint64 `json:"height"`
-	Hash     string `json:"hash"`
-	Header   string `json:"header"`
-	Body     string `json:"body"`
-	Receipts string `json:"receipts"`
+	Height       uint64                       `json:"height"`
+	Hash         string                       `json:"hash"`
+	Header       string                       `json:"header"`
+	Body         string                       `json:"body"`
+	Receipts     string                       `json:"receipts"`
+	StateChanges map[string]*ImportAccountState `json:"stateChanges,omitempty"`
+}
+
+// ImportAccountState represents account state to import
+type ImportAccountState struct {
+	Balance  string            `json:"balance"`
+	Nonce    uint64            `json:"nonce"`
+	Code     string            `json:"code,omitempty"`
+	Storage  map[string]string `json:"storage,omitempty"`
+	CodeHash string            `json:"codeHash,omitempty"`
 }
 
 // ImportBlocksRequest represents the request for importing blocks
@@ -948,6 +961,19 @@ func (api *MigrateAPI) ImportBlocks(blocks []ImportBlockEntry) (*ImportBlocksRes
 		// Write canonical hash
 		rawdb.WriteCanonicalHash(api.vm.ethDB, hash, number)
 
+		// Import state changes if provided
+		if entry.StateChanges != nil && len(entry.StateChanges) > 0 {
+			// Decode header to get state root
+			var header types.Header
+			if err := rlp.DecodeBytes(headerBytes, &header); err == nil {
+				if err := api.importStateChanges(entry.StateChanges, &header); err != nil {
+					api.vm.log.Warn("Failed to import state changes",
+						"height", entry.Height,
+						"error", err)
+				}
+			}
+		}
+
 		response.Imported++
 
 		// Log progress periodically
@@ -992,6 +1018,78 @@ func decodeHex(s string) ([]byte, error) {
 		return []byte{}, nil
 	}
 	return hex.DecodeString(s)
+}
+
+// importStateChanges imports state changes into the state trie
+func (api *MigrateAPI) importStateChanges(stateChanges map[string]*ImportAccountState, header *types.Header) error {
+	// Get state database from blockchain
+	if api.vm.blockChain == nil {
+		return fmt.Errorf("blockchain not initialized")
+	}
+
+	// Create state database at the block's state root
+	stateDB, err := api.vm.blockChain.StateAt(header.Root)
+	if err != nil {
+		// If state doesn't exist yet, create from empty root
+		stateDB, err = state.New(types.EmptyRootHash, api.vm.blockChain.StateCache())
+		if err != nil {
+			return fmt.Errorf("failed to create state DB: %w", err)
+		}
+	}
+
+	// Apply each account's state changes
+	for addrHex, accountState := range stateChanges {
+		addr := common.HexToAddress(addrHex)
+
+		// Set balance (convert big.Int to uint256)
+		if accountState.Balance != "" {
+			balance, ok := new(big.Int).SetString(accountState.Balance, 0)
+			if ok {
+				stateDB.SetBalance(addr, uint256.MustFromBig(balance), tracing.BalanceChangeUnspecified)
+			}
+		}
+
+		// Set nonce
+		stateDB.SetNonce(addr, accountState.Nonce, tracing.NonceChangeUnspecified)
+
+		// Set code if provided
+		if accountState.Code != "" {
+			code, err := decodeHex(accountState.Code)
+			if err == nil && len(code) > 0 {
+				stateDB.SetCode(addr, code, tracing.CodeChangeUnspecified)
+			}
+		}
+
+		// Set storage if provided
+		if accountState.Storage != nil {
+			for keyHex, valueHex := range accountState.Storage {
+				key := common.HexToHash(keyHex)
+				value := common.HexToHash(valueHex)
+				stateDB.SetState(addr, key, value)
+			}
+		}
+	}
+
+	// Commit the state changes (deleteEmptyObjects=true, snaps=false, lastProcessedChunk=true)
+	newRoot, err := stateDB.Commit(header.Number.Uint64(), true, true)
+	if err != nil {
+		return fmt.Errorf("failed to commit state: %w", err)
+	}
+
+	// Write trie to database
+	if err := api.vm.blockChain.StateCache().TrieDB().Commit(newRoot, false); err != nil {
+		return fmt.Errorf("failed to commit trie: %w", err)
+	}
+
+	// Verify the state root matches (for validation)
+	if newRoot != header.Root {
+		api.vm.log.Warn("State root mismatch after import",
+			"expected", header.Root.Hex(),
+			"got", newRoot.Hex(),
+			"height", header.Number.Uint64())
+	}
+
+	return nil
 }
 
 // SetGenesisRequest represents the request for setting genesis from imported block 0
