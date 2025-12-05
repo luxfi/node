@@ -177,7 +177,7 @@ require (
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/evm v1.16.20
+	github.com/luxfi/evm v0.8.1
 	github.com/luxfi/genesis v1.2.4
 	github.com/luxfi/geth v1.16.40
 	github.com/luxfi/qzmq v0.1.1
@@ -206,7 +206,9 @@ require (
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
+	github.com/fjl/gencodec v0.1.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
+	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
