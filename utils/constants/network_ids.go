@@ -15,26 +15,30 @@ import (
 
 // Const variables to be exported
 const (
+	// Standard network IDs (for compatibility)
 	LocalID    uint32 = 31337
-	MainnetID  uint32 = 1 // Use 1 for Lux compatibility
-	TestnetID  uint32 = 5 // Use 5 for Lux compatibility
+	MainnetID  uint32 = 1
+	TestnetID  uint32 = 5
 	UnitTestID uint32 = 369
 
-	// Lux-specific network IDs
-	LuxMainnetID    uint32 = 96369  // Lux mainnet
-	LuxTestnetID    uint32 = 96370  // Lux testnet
-	QChainMainnetID uint32 = 96380  // Q-Chain mainnet
-	QChainTestnetID uint32 = 96381  // Q-Chain testnet
+	// Lux Network IDs
+	// These are the PRIMARY NETWORK identifiers for the entire Lux blockchain
+	// All chains (P, X, C, Q, etc.) run on these networks
+	LuxMainnetID uint32 = 96369 // Lux mainnet - production network
+	LuxTestnetID uint32 = 96368 // Lux testnet - test network (C-Chain EVM chain ID)
 
+	// Network name strings
 	LocalName    = "local"
 	MainnetName  = "mainnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
 
-	FallbackHRP = "custom"
-	LocalHRP    = "local"
-	MainnetHRP  = "lux"
-	TestnetHRP  = "test"
+	// HRP (Human Readable Part) for bech32 addresses
+	// Used to format P-chain and X-chain addresses like P-lux1..., X-test1...
+	FallbackHRP = "custom" // Used for devnets/custom networks
+	LocalHRP    = "local"  // local1... for local development
+	MainnetHRP  = "lux"    // lux1... for mainnet
+	TestnetHRP  = "test"   // test1... for testnet
 	UnitTestHRP = "testing"
 )
 
@@ -42,20 +46,22 @@ const (
 var (
 	PrimaryNetworkID = ids.Empty
 	PlatformChainID  = ids.Empty
-	
-	// Q-Chain specific IDs
-	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'}
 
+	// Chain IDs - these identify specific chains WITHIN a network
+	// NOT to be confused with Network IDs
+	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'} // Q-Chain identifier
+
+	// NetworkIDToNetworkName maps network IDs to human-readable names
 	NetworkIDToNetworkName = map[uint32]string{
-		LocalID:         LocalName,
-		MainnetID:       MainnetName,
-		TestnetID:       TestnetName,
-		UnitTestID:      UnitTestName,
-		LuxMainnetID:    MainnetName,
-		LuxTestnetID:    TestnetName,
-		QChainMainnetID: "qchain-mainnet",
-		QChainTestnetID: "qchain-testnet",
+		LocalID:      LocalName,
+		MainnetID:    MainnetName,
+		TestnetID:    TestnetName,
+		UnitTestID:   UnitTestName,
+		LuxMainnetID: MainnetName, // 96369 -> "mainnet"
+		LuxTestnetID: TestnetName, // 96368 -> "testnet"
 	}
+
+	// NetworkNameToNetworkID maps names to network IDs
 	NetworkNameToNetworkID = map[string]uint32{
 		LocalName:    LocalID,
 		MainnetName:  MainnetID,
@@ -63,23 +69,27 @@ var (
 		UnitTestName: UnitTestID,
 	}
 
+	// NetworkIDToHRP maps network IDs to bech32 HRP (Human Readable Part)
+	// This determines the address prefix: P-lux1..., P-test1..., P-local1..., P-custom1...
 	NetworkIDToHRP = map[uint32]string{
-		LocalID:         LocalHRP,
-		MainnetID:       MainnetHRP,
-		TestnetID:       TestnetHRP,
-		UnitTestID:      UnitTestHRP,
-		LuxMainnetID:    MainnetHRP,
-		LuxTestnetID:    TestnetHRP,
-		QChainMainnetID: "qchain",
-		QChainTestnetID: "qtest",
+		LocalID:      LocalHRP,    // local1...
+		MainnetID:    MainnetHRP,  // lux1...
+		TestnetID:    TestnetHRP,  // test1...
+		UnitTestID:   UnitTestHRP, // testing1...
+		LuxMainnetID: MainnetHRP,  // 96369 -> lux1...
+		LuxTestnetID: TestnetHRP,  // 96368 -> test1...
 	}
+
+	// NetworkHRPToNetworkID maps HRP back to network ID
 	NetworkHRPToNetworkID = map[string]uint32{
 		LocalHRP:    LocalID,
 		MainnetHRP:  MainnetID,
 		TestnetHRP:  TestnetID,
 		UnitTestHRP: UnitTestID,
 	}
-	ProductionNetworkIDs = set.Of(MainnetID, TestnetID)
+
+	// ProductionNetworkIDs are networks that should use production-grade settings
+	ProductionNetworkIDs = set.Of(MainnetID, TestnetID, LuxMainnetID, LuxTestnetID)
 
 	ValidNetworkPrefix = "network-"
 
