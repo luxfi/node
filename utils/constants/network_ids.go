@@ -27,6 +27,10 @@ const (
 	LuxMainnetID uint32 = 96369 // Lux mainnet - production network
 	LuxTestnetID uint32 = 96368 // Lux testnet - test network (C-Chain EVM chain ID)
 
+	// Q-Chain Network IDs (Quantum-resistant chain)
+	QChainMainnetID uint32 = 36963 // Q-Chain mainnet
+	QChainTestnetID uint32 = 36962 // Q-Chain testnet
+
 	// Network name strings
 	LocalName    = "local"
 	MainnetName  = "mainnet"
