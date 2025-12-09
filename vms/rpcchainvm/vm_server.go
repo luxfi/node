@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -24,6 +23,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	"github.com/luxfi/log"
+	consensuscontext "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/upgrade"
@@ -51,8 +51,6 @@ import (
 var (
 	_ vmpb.VMServer = (*VMServer)(nil)
 
-	originalStderr = os.Stderr
-
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 	errNilNetworkUpgradesPB           = errors.New("network upgrades protobuf is nil")
 )
@@ -78,7 +76,7 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    *Context
+	ctx    *consensuscontext.Context
 	closed chan struct{}
 
 	// Network information
@@ -193,7 +191,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 	vm.connCloser.Add(dbClientConn)
 
-	vm.log = nil // No logger needed
+	vm.log = log.NewNoOpLogger() // Use no-op logger to prevent nil panics
 
 	vm.db = corruptabledb.New(
 		rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn)),
@@ -214,26 +212,32 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.connCloser.Add(clientConn)
 
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
-	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
+	_ = galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn)) // bcLookupClient not used by consensus context
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
 	_ = gwarp.NewClient(warppb.NewSignerClient(clientConn)) // warpSignerClient not used
 
 	vm.closed = make(chan struct{})
 
-	vm.ctx = &Context{
+	// Convert public key to bytes for consensuscontext.Context
+	var publicKeyBytes []byte
+	if publicKey != nil {
+		publicKeyBytes = bls.PublicKeyToCompressedBytes(publicKey)
+	}
+
+	vm.ctx = &consensuscontext.Context{
 		NetworkID:       req.NetworkId,
-		NetID:        subnetID,
+		NetID:           subnetID,
+		SubnetID:        subnetID,
 		ChainID:         chainID,
 		NodeID:          nodeID,
-		PublicKey:       publicKey,
+		PublicKey:       publicKeyBytes,
 		NetworkUpgrades: networkUpgrades,
 		XChainID:        xChainID,
 		CChainID:        cChainID,
 		LUXAssetID:      luxAssetID,
 		Log:             vm.log,
 		SharedMemory:    sharedMemoryClient,
-		BCLookup:        bcLookupClient,
 		Metrics:         vmMetrics,
 		ValidatorState:  validatorStateClient,
 		ChainDataDir:    req.ChainDataDir,
@@ -254,9 +258,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	lastAccepted, err := vm.vm.LastAccepted(ctx)
 	if err != nil {
-		// Ignore errors closing resources to return the original error
-		// VM.Shutdown not available in ChainVM interface
-		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
 		vm.log.Error("failed to get last accepted block ID", log.Err(err))
@@ -265,12 +266,9 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	blk, err := vm.vm.GetBlock(ctx, lastAccepted)
 	if err != nil {
-		// Ignore errors closing resources to return the original error
-		// VM.Shutdown not available in ChainVM interface
-		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
-		vm.log.Error("failed to get last accepted block", "error", err)
+		vm.log.Error("failed to get last accepted block", log.Err(err))
 		return nil, err
 	}
 	parentID := blk.Parent()

@@ -163,13 +163,66 @@ func (vm *VMClient) Initialize(
 	var db database.Database
 	if currentDB, ok := dbIface.(interface{ Current() database.Database }); ok {
 		db = currentDB.Current()
+	} else if directDB, ok := dbIface.(database.Database); ok {
+		// Handle direct database types (e.g., *prefixdb.Database)
+		db = directDB
+	}
+	if db == nil {
+		return fmt.Errorf("unable to get database from manager: dbIface type is %T", dbIface)
 	}
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
 
 	// Convert interface{} parameters to concrete types
-	chainCtx := chainCtxIface.(*Context)
+	// Handle both *rpcchainvm.Context and *consensuscontext.Context
+	var chainCtx *Context
+	switch ctx := chainCtxIface.(type) {
+	case *Context:
+		chainCtx = ctx
+	case *consensuscontext.Context:
+		// Convert consensus context to rpcchainvm context
+		chainCtx = &Context{
+			NetworkID:    ctx.NetworkID,
+			NetID:        ctx.NetID,
+			ChainID:      ctx.ChainID,
+			NodeID:       ctx.NodeID,
+			XChainID:     ctx.XChainID,
+			CChainID:     ctx.CChainID,
+			LUXAssetID:   ctx.LUXAssetID,
+			ChainDataDir: ctx.ChainDataDir,
+		}
+		// Handle type conversions for interface fields
+		if ctx.Log != nil {
+			if l, ok := ctx.Log.(log.Logger); ok {
+				chainCtx.Log = l
+			}
+		}
+		if ctx.SharedMemory != nil {
+			if sm, ok := ctx.SharedMemory.(atomic.SharedMemory); ok {
+				chainCtx.SharedMemory = sm
+			}
+		}
+		if ctx.Metrics != nil {
+			if m, ok := ctx.Metrics.(metrics.MultiGatherer); ok {
+				chainCtx.Metrics = m
+			}
+		}
+		if ctx.ValidatorState != nil {
+			if vs, ok := ctx.ValidatorState.(validators.State); ok {
+				chainCtx.ValidatorState = vs
+			}
+		}
+		// PublicKey conversion from []byte
+		if len(ctx.PublicKey) > 0 {
+			pk, err := bls.PublicKeyFromCompressedBytes(ctx.PublicKey)
+			if err == nil {
+				chainCtx.PublicKey = pk
+			}
+		}
+	default:
+		return fmt.Errorf("invalid chain context type: expected *rpcchainvm.Context or *consensuscontext.Context, got %T", chainCtxIface)
+	}
 
 	// Convert appSender to concrete type
 	var appSenderConcrete consensuscore.AppSender

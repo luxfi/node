@@ -147,6 +147,10 @@ type VM struct {
 	onShutdownCtx context.Context
 	// Call [onShutdownCtxCancel] to cancel [onShutdownCtx] during Shutdown()
 	onShutdownCtxCancel context.CancelFunc
+
+	// toEngine is the channel to send messages to the consensus engine
+	// This is used to notify the engine when there are pending transactions
+	toEngine chan<- consensusmanblock.Message
 }
 
 // GetChainID returns the chain ID of this VM
@@ -187,8 +191,23 @@ func (vm *VM) Initialize(
 	dbManager := dbManagerIntf
 
 	// Handle the message channel - it's passed as interface{}
-	// We'll handle it without type assertion for now
-	_ = toEngineIntf // Suppress unused warning
+	// Store the toEngine channel for notifying the consensus engine about pending transactions
+	// The channel may be passed as bidirectional (chan T) or send-only (chan<- T)
+	// Note: Logging is deferred until after vm.log is set up
+	var toEngineChannelType string
+	if toEngineIntf != nil {
+		// Try bidirectional channel first (what manager.go actually passes)
+		if toEngine, ok := toEngineIntf.(chan consensusmanblock.Message); ok {
+			vm.toEngine = toEngine
+			toEngineChannelType = "bidirectional"
+		} else if toEngine, ok := toEngineIntf.(chan<- consensusmanblock.Message); ok {
+			// Also accept send-only channel for flexibility
+			vm.toEngine = toEngine
+			toEngineChannelType = "send-only"
+		} else {
+			toEngineChannelType = "failed"
+		}
+	}
 
 	// Handle fxs - for now we'll skip type assertions as they're not critical
 	_ = fxsIntf
@@ -205,6 +224,15 @@ func (vm *VM) Initialize(
 	// Initialize logger
 	vm.log = log.NoLog{}
 	vm.log.Debug("initializing platform chain")
+
+	// Log deferred toEngine channel status now that logger is set up
+	if toEngineChannelType != "" {
+		if toEngineChannelType == "failed" {
+			vm.log.Warn("toEngine channel type assertion failed - notifications will not work")
+		} else {
+			vm.log.Info("toEngine channel set", log.String("type", toEngineChannelType))
+		}
+	}
 
 	// Log initialization parameters
 
@@ -732,6 +760,7 @@ func (vm *VM) createCChainIfNeeded() error {
 	// )
 
 	// vm.log.Info("C-Chain queued for creation with migrated data")
+
 	return nil
 }
 
@@ -785,6 +814,17 @@ func (vm *VM) onNormalOperationsStarted() error {
 	// 	vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
 	// 	vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	// }
+
+	// Start the notification forwarder goroutine
+	// This forwards pending transaction notifications from the Builder to the consensus engine
+	if vm.toEngine != nil && vm.Builder != nil {
+		vm.log.Info("starting P-chain notification forwarder (toEngine and Builder both set)")
+		go vm.forwardNotifications()
+	} else {
+		vm.log.Warn("P-chain notification forwarder NOT started",
+			log.Bool("hasToEngine", vm.toEngine != nil),
+			log.Bool("hasBuilder", vm.Builder != nil))
+	}
 
 	return vm.state.Commit()
 }
@@ -854,6 +894,48 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
 	vm.manager.SetPreference(blkID)
 	return nil
+}
+
+// forwardNotifications continuously waits for events from the Builder and forwards
+// them to the consensus engine via the toEngine channel. This is the critical link
+// that enables P-chain block production - without it, the consensus engine never
+// knows when there are pending transactions to build into blocks.
+func (vm *VM) forwardNotifications() {
+	vm.log.Info("starting notification forwarder for P-chain block building")
+
+	for {
+		// Wait for the Builder to signal it has pending transactions
+		msg, err := vm.Builder.WaitForEvent(vm.onShutdownCtx)
+		if err != nil {
+			// Check if we're shutting down
+			if vm.onShutdownCtx.Err() != nil {
+				vm.log.Debug("notification forwarder shutting down")
+				return
+			}
+			vm.log.Debug("error waiting for builder event",
+				log.Err(err))
+			continue
+		}
+
+		// Convert consensuscore.Message to consensusmanblock.Message
+		// Both use uint32 for the message type (PendingTxs = 0)
+		engineMsg := consensusmanblock.Message{
+			Type: uint32(msg.Type),
+		}
+
+		// Send to the consensus engine (non-blocking to avoid deadlocks)
+		select {
+		case vm.toEngine <- engineMsg:
+			vm.log.Debug("forwarded pending txs notification to consensus engine",
+				log.Uint32("type", uint32(msg.Type)))
+		case <-vm.onShutdownCtx.Done():
+			vm.log.Debug("notification forwarder shutdown during send")
+			return
+		default:
+			// Channel is full, skip this notification (engine will poll again)
+			vm.log.Debug("toEngine channel full, skipping notification")
+		}
+	}
 }
 
 func (*VM) Version(context.Context) (string, error) {

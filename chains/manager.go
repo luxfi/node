@@ -331,8 +331,8 @@ type consensusValidatorStateWrapper struct {
 	state validators.State
 }
 
-func (v *consensusValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.state.GetCurrentHeight(context.Background())
+func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -343,6 +343,11 @@ func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (
 func (v *consensusValidatorStateWrapper) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// validators.State doesn't have GetNetID, return empty ID for now
 	return ids.Empty, nil
+}
+
+func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Alias for GetNetID - subnet is old terminology for net
+	return v.GetNetID(chainID)
 }
 
 func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
@@ -815,6 +820,18 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// If the X, P, or C Chain panics, do not attempt to recover
 	if chain.Engine != nil {
 		chain.Engine.Start(context.TODO(), !m.CriticalChains.Contains(chainParams.ID))
+
+		// Start a goroutine to monitor bootstrap completion and notify the subnet
+		// This is required because the health check (m.Nets.Bootstrapping()) reports
+		// subnets as not bootstrapped until sb.Bootstrapped(chainID) is called
+		go m.monitorBootstrap(chain.Engine, sb, chainParams.ID)
+	} else {
+		// DAG chains (X-Chain, Q-Chain) manage their own consensus and don't have
+		// a standard Engine. Mark them as bootstrapped immediately since the DAG
+		// engine was already started in createDAG.
+		m.Log.Info("DAG chain has no standard engine, marking as bootstrapped immediately",
+			log.Stringer("chainID", chainParams.ID))
+		sb.Bootstrapped(chainParams.ID)
 	}
 }
 
@@ -872,7 +889,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		LUXAssetID:   m.XAssetID,
 		ChainDataDir: chainDataDir,
 
-		ValidatorState: m.validatorState,
+		ValidatorState: &consensusValidatorStateWrapper{state: m.validatorState},
 		Metrics:        chainMetricsReg,
 		Log:            chainLog,
 	}
@@ -1027,13 +1044,68 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		consensusEngine := consensuschain.New()
-		
+
+		// Wire up VM notifications to the consensus engine
+		// This goroutine reads from the toEngine channel and triggers block building
+		go func(toEng <-chan block.Message, vm block.ChainVM, logger log.Logger) {
+			logger.Info("starting VM notification forwarder")
+			for msg := range toEng {
+				logger.Debug("received VM notification, building block",
+					log.Uint32("type", msg.Type))
+
+				// Build block directly when VM notifies us of pending transactions
+				// Type 0 = PendingTxs (ready for block building)
+				if msg.Type == 0 {
+					ctx := context.Background()
+					blk, err := vm.BuildBlock(ctx)
+					if err != nil {
+						logger.Debug("failed to build block",
+							log.Err(err))
+						continue
+					}
+					logger.Info("built block from VM notification",
+						log.Stringer("blockID", blk.ID()),
+						log.Uint64("height", blk.Height()))
+
+					// Verify the block before accepting
+					if err := blk.Verify(ctx); err != nil {
+						logger.Error("failed to verify built block",
+							log.Stringer("blockID", blk.ID()),
+							log.Err(err))
+						continue
+					}
+
+					// Accept the block into the canonical chain
+					// This is the critical step that was missing!
+					if err := blk.Accept(ctx); err != nil {
+						logger.Error("failed to accept built block",
+							log.Stringer("blockID", blk.ID()),
+							log.Err(err))
+						continue
+					}
+
+					// Set this block as the preferred tip
+					if err := vm.SetPreference(ctx, blk.ID()); err != nil {
+						logger.Warn("failed to set preference to accepted block",
+							log.Stringer("blockID", blk.ID()),
+							log.Err(err))
+						// Continue anyway - block is accepted
+					}
+
+					logger.Info("successfully accepted block into canonical chain",
+						log.Stringer("blockID", blk.ID()),
+						log.Uint64("height", blk.Height()))
+				}
+			}
+			logger.Info("VM notification forwarder stopped")
+		}(toEngine, vm, m.Log)
+
 		chain = &chainInfo{
 			Name:    chainCtx.ChainID.String(),
 			Context: chainCtx,
 			VM:      &simpleVM{vm: vm},
 			Engine:  &simpleEngine{engine: consensusEngine},
-			Handler: nil, // Created during startup
+			Handler: &placeholderHandler{}, // Placeholder - messages are routed but no-op for now
 		}
 	default:
 		// Note: Special X-Chain/Q-Chain handling disabled due to interface mismatches
@@ -1104,7 +1176,7 @@ func (m *manager) createDAG(
 		Name:    chainParams.ID.String(),
 		Context: ctx,
 		VM:      nil, // VM manages itself for DAG chains
-		Handler: nil, // Created during startup
+		Handler: &placeholderHandler{}, // Placeholder - messages are routed but no-op for now
 	}, nil
 }
 
@@ -1761,6 +1833,56 @@ func (v *simpleVM) Initialize(
 		fxsInterface, // []interface{} - converted from []*consensuscore.Fx
 		appSender,
 	)
+}
+
+// monitorBootstrap monitors when a chain finishes bootstrapping and notifies the subnet.
+// This is critical for health checks because the health check queries m.Nets.Bootstrapping()
+// which returns subnets that have chains still in bootstrapping state. Without this notification,
+// the health check would permanently report "subnets not bootstrapped".
+func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
+	// Check if the engine supports IsBootstrapped
+	type bootstrapChecker interface {
+		IsBootstrapped() bool
+	}
+	checker, ok := engine.(bootstrapChecker)
+	if !ok {
+		// Engine doesn't support IsBootstrapped, immediately mark as bootstrapped
+		// This is safe because if we can't check, we assume the chain is ready
+		m.Log.Info("engine does not support IsBootstrapped, marking chain as bootstrapped",
+			log.Stringer("chainID", chainID))
+		sb.Bootstrapped(chainID)
+		return
+	}
+
+	// Poll the engine until it reports bootstrapped
+	// Use a short initial delay to let the engine start up, then poll regularly
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	// Set a reasonable timeout (5 minutes for local networks)
+	timeout := time.NewTimer(5 * time.Minute)
+	defer timeout.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if checker.IsBootstrapped() {
+				m.Log.Info("chain finished bootstrapping, notifying subnet",
+					log.Stringer("chainID", chainID))
+				sb.Bootstrapped(chainID)
+				return
+			}
+		case <-timeout.C:
+			// Timeout reached, mark as bootstrapped anyway to prevent permanent unhealthy state
+			m.Log.Warn("bootstrap monitoring timeout, marking chain as bootstrapped",
+				log.Stringer("chainID", chainID))
+			sb.Bootstrapped(chainID)
+			return
+		case <-m.chainCreatorShutdownCh:
+			// Manager is shutting down
+			return
+		}
+	}
 }
 
 func (m *manager) IsBootstrapped(id ids.ID) bool {

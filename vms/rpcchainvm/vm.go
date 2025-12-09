@@ -33,6 +33,11 @@ const defaultRuntimeDialTimeout = 5 * time.Second
 //
 // Serve starts the RPC Chain VM server and performs a handshake with the VM runtime service.
 func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption) error {
+	// DEBUG: Write to file to track Serve entry
+	if f, err := os.OpenFile("/tmp/rpcchainvm_serve.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+		fmt.Fprintf(f, "[%s] rpcchainvm.Serve called, PID=%d\n", time.Now().Format(time.RFC3339), os.Getpid())
+		f.Close()
+	}
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)

@@ -6,6 +6,7 @@ package rpcchainvm
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -41,8 +42,8 @@ func NewFactory(
 
 func (f *factory) New(log log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
-		Stderr:           nil, // log doesn't implement io.Writer
-		Stdout:           nil, // log doesn't implement io.Writer
+		Stderr:           os.Stderr, // capture VM subprocess stderr for debugging
+		Stdout:           os.Stdout, // capture VM subprocess stdout for debugging
 		HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 		Log:              log,
 	}

@@ -20,11 +20,43 @@ import (
 	"github.com/luxfi/trace"
 )
 
+// inboundMessageHandler is an internal interface for handlers that can process message.InboundMessage
+type inboundMessageHandler interface {
+	HandleInbound(ctx context.Context, msg message.InboundMessage)
+}
+
+// handlerWrapper wraps a consensus handler.Handler to implement inboundMessageHandler
+type handlerWrapper struct {
+	h   handler.Handler
+	log log.Logger
+}
+
+func (w *handlerWrapper) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+	// Extract request ID from message
+	requestID, _ := message.GetRequestID(msg.Message())
+
+	// Convert message.Op to handler.Op
+	handlerMsg := handler.Message{
+		NodeID:    ids.NodeID(msg.NodeID()),
+		RequestID: requestID,
+		Op:        handler.Op(msg.Op()),
+		Message:   nil, // The handler.Handler from consensus package doesn't actually need the bytes
+	}
+
+	if err := w.h.HandleInbound(ctx, handlerMsg); err != nil {
+		w.log.Debug("handler returned error",
+			log.Stringer("nodeID", msg.NodeID()),
+			log.Stringer("op", msg.Op()),
+			log.Reflect("error", err),
+		)
+	}
+}
+
 // SimpleRouter implements Router interface
 type SimpleRouter struct {
 	log            log.Logger
 	lock           sync.RWMutex
-	chains         map[ids.ID]handler.Handler
+	chains         map[ids.ID]inboundMessageHandler
 	timeoutManager timer.AdaptiveTimeoutManager
 	nodeID         ids.NodeID
 	healthConfig   HealthConfig
@@ -49,7 +81,7 @@ type requestInfo struct {
 func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) Router {
 	return &SimpleRouter{
 		log:            logger,
-		chains:         make(map[ids.ID]handler.Handler),
+		chains:         make(map[ids.ID]inboundMessageHandler),
 		timeoutManager: timeoutManager,
 		connectedPeers: set.NewSet[ids.NodeID](10),
 		requests:       make(map[uint32]*requestInfo),
@@ -135,15 +167,8 @@ func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		return
 	}
 
-	// Convert InboundMessage to handler.Message and pass to handler
-	requestID, _ := message.GetRequestID(msg.Message())
-	handlerMsg := handler.Message{
-		NodeID:    ids.NodeID(msg.NodeID()),
-		RequestID: requestID,
-		Op:        handler.Op(msg.Op()),
-		Message:   []byte{}, // TODO: extract actual message bytes
-	}
-	go h.HandleInbound(ctx, handlerMsg)
+	// Pass the original InboundMessage directly to the handler
+	go h.HandleInbound(ctx, msg)
 }
 
 func (r *SimpleRouter) Shutdown(ctx context.Context) {
@@ -159,7 +184,7 @@ func (r *SimpleRouter) Shutdown(ctx context.Context) {
 		)
 	}
 
-	r.chains = make(map[ids.ID]handler.Handler)
+	r.chains = make(map[ids.ID]inboundMessageHandler)
 	r.requests = make(map[uint32]*requestInfo)
 }
 
@@ -167,7 +192,8 @@ func (r *SimpleRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.H
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	r.chains[chainID] = h
+	// Wrap the consensus handler to implement inboundMessageHandler
+	r.chains[chainID] = &handlerWrapper{h: h, log: r.log}
 
 	r.log.Info("added chain to router",
 		log.Stringer("chainID", chainID),
