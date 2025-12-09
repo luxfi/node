@@ -31,7 +31,7 @@ type Node struct {
 	StakingAddress netip.AddrPort
 	DataDir        string
 	RuntimeConfig  *NodeRuntimeConfig
-	Flags          map[string]interface{}
+	Flags          Flags
 
 	// BLS signing key
 	SigningKey *bls.SecretKey
@@ -57,7 +57,7 @@ type NodeConfig struct {
 // NewNode creates a new node with default configuration
 func NewNode() *Node {
 	return &Node{
-		Flags: make(map[string]interface{}),
+		Flags: make(Flags),
 	}
 }
 
@@ -205,6 +205,32 @@ func (n *Node) Stop(ctx context.Context) error {
 	case <-ctx.Done():
 		// Force kill if context expires
 		n.cmd.Process.Kill()
+		return ctx.Err()
+	case err := <-done:
+		return err
+	}
+}
+
+// InitiateStop sends SIGTERM to the node process without waiting
+func (n *Node) InitiateStop() error {
+	if n.cmd == nil || n.cmd.Process == nil {
+		return nil
+	}
+	return n.cmd.Process.Signal(syscall.SIGTERM)
+}
+
+// WaitForStopped waits for the node process to exit
+func (n *Node) WaitForStopped(ctx context.Context) error {
+	if n.cmd == nil {
+		return nil
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- n.cmd.Wait()
+	}()
+
+	select {
+	case <-ctx.Done():
 		return ctx.Err()
 	case err := <-done:
 		return err

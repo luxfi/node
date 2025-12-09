@@ -19,6 +19,19 @@ const (
 	DefaultNetworkTimeout = 2 * time.Minute
 )
 
+// Flags is a map of node flags with helper methods
+type Flags map[string]interface{}
+
+// GetStringVal returns the string value for a flag, or empty string if not found or not a string
+func (f Flags) GetStringVal(key string) string {
+	if v, ok := f[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
 // Network represents a local test network
 type Network struct {
 	UUID                 string
@@ -28,7 +41,7 @@ type Network struct {
 	Nodes                []*Node
 	DefaultRuntimeConfig NodeRuntimeConfig
 	Genesis              interface{} // Can be []byte or *genesis.UnparsedConfig
-	DefaultFlags         map[string]interface{}
+	DefaultFlags         Flags
 
 	// Track subnets/chains
 	Subnets []*Subnet
