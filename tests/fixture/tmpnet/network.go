@@ -27,7 +27,8 @@ type Network struct {
 	Dir                  string
 	Nodes                []*Node
 	DefaultRuntimeConfig NodeRuntimeConfig
-	Genesis              []byte
+	Genesis              interface{} // Can be []byte or *genesis.UnparsedConfig
+	DefaultFlags         map[string]interface{}
 
 	// Track subnets/chains
 	Subnets []*Subnet
@@ -55,7 +56,9 @@ type NodeRuntimeConfig struct {
 
 // ProcessRuntimeConfig configures process execution
 type ProcessRuntimeConfig struct {
-	LuxdPath string
+	LuxdPath    string
+	LuxNodePath string // Alias for LuxdPath for CLI compatibility
+	PluginDir   string
 }
 
 // ReadNetwork reads a network from its directory
@@ -143,12 +146,60 @@ func (n *Network) Stop(ctx context.Context) error {
 
 // GetBootstrapIPsAndIDs returns the bootstrap IPs and IDs for the network
 func (n *Network) GetBootstrapIPsAndIDs() ([]string, []string) {
-	var ips, ids []string
+	var ips, nodeIDs []string
 	for _, node := range n.Nodes {
 		if node.URI != "" {
 			ips = append(ips, fmt.Sprintf("%s:%d", node.URI, node.StakingPort))
-			ids = append(ids, node.NodeID.String())
+			nodeIDs = append(nodeIDs, node.NodeID.String())
 		}
 	}
-	return ips, ids
+	return ips, nodeIDs
+}
+
+// EnsureDefaultConfig ensures the network has default configuration
+func (n *Network) EnsureDefaultConfig(log log.Logger) error {
+	if n.Dir == "" {
+		return fmt.Errorf("network directory not set")
+	}
+	if err := os.MkdirAll(n.Dir, 0755); err != nil {
+		return fmt.Errorf("failed to create network directory: %w", err)
+	}
+	if n.DefaultFlags == nil {
+		n.DefaultFlags = make(map[string]interface{})
+	}
+	return nil
+}
+
+// EnsureNodeConfig ensures a node has proper configuration for this network
+func (n *Network) EnsureNodeConfig(node *Node) error {
+	if node.DataDir == "" {
+		if n.Dir == "" {
+			return fmt.Errorf("network directory not set")
+		}
+		nodesDir := filepath.Join(n.Dir, "nodes")
+		if err := os.MkdirAll(nodesDir, 0755); err != nil {
+			return fmt.Errorf("failed to create nodes directory: %w", err)
+		}
+		node.DataDir = filepath.Join(nodesDir, node.NodeID.String())
+	}
+	if node.Flags == nil {
+		node.Flags = make(map[string]interface{})
+	}
+	// Copy default flags
+	for k, v := range n.DefaultFlags {
+		if _, exists := node.Flags[k]; !exists {
+			node.Flags[k] = v
+		}
+	}
+	// Set runtime config from network default
+	if node.RuntimeConfig == nil && n.DefaultRuntimeConfig.Process != nil {
+		node.RuntimeConfig = &NodeRuntimeConfig{
+			Process: &ProcessRuntimeConfig{
+				LuxdPath:    n.DefaultRuntimeConfig.Process.LuxdPath,
+				LuxNodePath: n.DefaultRuntimeConfig.Process.LuxNodePath,
+				PluginDir:   n.DefaultRuntimeConfig.Process.PluginDir,
+			},
+		}
+	}
+	return nil
 }

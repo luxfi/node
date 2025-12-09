@@ -5,8 +5,12 @@ package tmpnet
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,17 +19,19 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/staking"
 )
 
 // Node represents a node in a local test network
 type Node struct {
-	NodeID        ids.NodeID
-	URI           string
-	StakingPort   uint64
-	HTTPPort      uint64
-	DataDir       string
-	RuntimeConfig *NodeRuntimeConfig
-	Flags         map[string]interface{}
+	NodeID         ids.NodeID
+	URI            string
+	StakingPort    uint64
+	HTTPPort       uint64
+	StakingAddress netip.AddrPort
+	DataDir        string
+	RuntimeConfig  *NodeRuntimeConfig
+	Flags          map[string]interface{}
 
 	// BLS signing key
 	SigningKey *bls.SecretKey
@@ -221,4 +227,83 @@ func (n *Node) GetURI() string {
 		return fmt.Sprintf("http://127.0.0.1:%d", n.HTTPPort)
 	}
 	return fmt.Sprintf("http://%s:%d", n.URI, n.HTTPPort)
+}
+
+// EnsureKeys ensures the node has staking credentials and derives NodeID from them
+func (n *Node) EnsureKeys() error {
+	if len(n.StakingKey) > 0 && len(n.StakingCert) > 0 && n.NodeID != ids.EmptyNodeID {
+		// Already have keys and node ID
+		return nil
+	}
+
+	// Generate new staking credentials
+	cert, key, err := staking.NewCertAndKeyBytes()
+	if err != nil {
+		return fmt.Errorf("failed to generate staking credentials: %w", err)
+	}
+
+	n.StakingKey = key
+	n.StakingCert = cert
+
+	// Derive NodeID from certificate
+	nodeID, err := deriveNodeID(cert)
+	if err != nil {
+		return fmt.Errorf("failed to derive node ID: %w", err)
+	}
+	n.NodeID = nodeID
+
+	// Generate BLS signing key if not present
+	if n.SigningKey == nil {
+		sk, err := bls.NewSecretKey()
+		if err != nil {
+			return fmt.Errorf("failed to generate BLS key: %w", err)
+		}
+		n.SigningKey = sk
+	}
+
+	return nil
+}
+
+// deriveNodeID derives a NodeID from a staking certificate
+func deriveNodeID(certBytes []byte) (ids.NodeID, error) {
+	block, _ := pem.Decode(certBytes)
+	if block == nil {
+		return ids.EmptyNodeID, fmt.Errorf("failed to decode certificate PEM")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return ids.EmptyNodeID, fmt.Errorf("failed to parse certificate: %w", err)
+	}
+
+	// Convert x509.Certificate to ids.Certificate
+	idsCert := &ids.Certificate{
+		Raw:       cert.Raw,
+		PublicKey: cert.PublicKey,
+	}
+
+	return ids.NodeIDFromCert(idsCert), nil
+}
+
+// EnsureBLSSigningKey ensures the node has a BLS signing key
+func (n *Node) EnsureBLSSigningKey() error {
+	if n.SigningKey != nil {
+		return nil
+	}
+
+	sk, err := bls.NewSecretKey()
+	if err != nil {
+		return fmt.Errorf("failed to generate BLS signing key: %w", err)
+	}
+	n.SigningKey = sk
+	return nil
+}
+
+// GenerateNodeID generates a random NodeID for testing purposes
+func GenerateNodeID() (ids.NodeID, error) {
+	var nodeID ids.NodeID
+	if _, err := rand.Read(nodeID[:]); err != nil {
+		return ids.EmptyNodeID, fmt.Errorf("failed to generate random node ID: %w", err)
+	}
+	return nodeID, nil
 }
