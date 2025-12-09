@@ -6,18 +6,24 @@ import (
 )
 
 // NewTargeter creates a new targeter with configurable target usage
+// For disk throttling, VdrAlloc should be in bytes/second (e.g., 1000 GiB)
+// For CPU throttling, VdrAlloc should be the number of CPU cores
 func NewTargeter(config *TargeterConfig) Targeter {
-	targetUsage := uint64(80) // Default to 80%
+	// Default to a very high value (1 TB/s) to effectively disable throttling
+	// unless explicitly configured
+	targetUsage := uint64(1024 * 1024 * 1024 * 1024) // 1 TB
 	if config != nil {
 		if config.VdrAlloc > 0 {
-			targetUsage = uint64(config.VdrAlloc * 100)
+			// If VdrAlloc is specified, use it directly as bytes/second or CPU cores
+			// For disk, this should be a large value like 1000 GiB
+			// For CPU, this should be the number of CPU cores
+			targetUsage = uint64(config.VdrAlloc)
 		}
 	}
 
 	t := &targeterImpl{
 		targetUsage: targetUsage,
 	}
-	t.targetUsage = targetUsage
 	return t
 }
 
