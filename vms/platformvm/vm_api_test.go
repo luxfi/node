@@ -24,33 +24,35 @@ func TestLazyHandlerWrapper(t *testing.T) {
 
 	// Create a minimal VM instance
 	vm := &VM{
-		isInitialized: utils.Atomic[bool]{},
-		state:         nil, // Initially nil
-		manager:       nil, // Initially nil
+		bootstrapped: utils.Atomic[bool]{},
+		state:        nil, // Initially nil
+		manager:      nil, // Initially nil
 	}
 
 	// Create the lazy handler wrapper
 	wrapper := &lazyHandlerWrapper{vm: vm}
 
-	// Test 1: Request before initialization should return 503
+	// Test 1: Request before bootstrapping should return 503
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
 	rec := httptest.NewRecorder()
 	wrapper.ServeHTTP(rec, req)
 
 	require.Equal(http.StatusServiceUnavailable, rec.Code)
-	require.Contains(rec.Body.String(), "VM not fully bootstrapped")
+	require.Contains(rec.Body.String(), "Platform service not ready, VM still bootstrapping")
 
-	// Test 2: Mark VM as initialized (but still missing internal state)
-	vm.isInitialized.Set(true)
+	// Test 2: Mark VM as bootstrapped (but still missing internal state)
+	vm.bootstrapped.Set(true)
 
-	// Request should still fail because internal state is nil
+	// Request will go through handler creation (succeeds with nil ctx)
+	// but the RPC server will return 415 because no Content-Type header
 	req2 := httptest.NewRequest(http.MethodPost, "/", nil)
 	rec2 := httptest.NewRecorder()
 	wrapper2 := &lazyHandlerWrapper{vm: vm} // New wrapper to reset once
 	wrapper2.ServeHTTP(rec2, req2)
 
-	// The handler creation should have failed during once.Do
-	require.Equal(http.StatusServiceUnavailable, rec2.Code)
+	// The RPC server responds with 415 (Unsupported Media Type) for requests
+	// without proper Content-Type header
+	require.Equal(http.StatusUnsupportedMediaType, rec2.Code)
 
 	// Test 3: Set up minimal state and context for successful initialization
 	// Note: In real usage, these would be properly initialized by VM.Initialize()
