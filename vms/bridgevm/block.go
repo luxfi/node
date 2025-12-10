@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/crypto/cggmp21"
+	"github.com/luxfi/crypto/cggmp21"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core/choices"
 )
