@@ -16,7 +16,8 @@ const (
 	VersionSize = wrappers.ShortLen
 
 	// default max size, in bytes, of something being marshaled by Marshal()
-	defaultMaxSize = 256 * units.KiB
+	// Increased from 256KB to 1MB to allow larger genesis files
+	defaultMaxSize = 1 * units.MiB
 
 	// initial capacity of byte slice that values are marshaled into.
 	// Larger value --> need less memory allocations but possibly have allocated but unused memory
