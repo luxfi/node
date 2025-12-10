@@ -21,9 +21,9 @@ import (
 
 const (
 	// MaxTxSize is the maximum number of bytes a transaction can use to be
-	// allowed into the mempool.
-	// Increased from 64KB to 1MB to allow larger genesis files in CreateChainTx
-	MaxTxSize = 1 * units.MiB
+	// allowed into the mempool. Increased from 64 KiB to 2 MiB to support
+	// large genesis configurations (e.g., ZOO L2 genesis is ~613 KiB).
+	MaxTxSize = 2 * units.MiB
 
 	// droppedTxIDsCacheSize is the maximum number of dropped txIDs to cache
 	droppedTxIDsCacheSize = 64

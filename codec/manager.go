@@ -16,8 +16,9 @@ const (
 	VersionSize = wrappers.ShortLen
 
 	// default max size, in bytes, of something being marshaled by Marshal()
-	// Increased from 256KB to 1MB to allow larger genesis files
-	defaultMaxSize = 1 * units.MiB
+	// Increased from 256 KiB to 2 MiB to support large genesis configurations
+	// (e.g., ZOO L2 genesis is ~613 KiB with 6,896 pre-allocated accounts)
+	defaultMaxSize = 2 * units.MiB
 
 	// initial capacity of byte slice that values are marshaled into.
 	// Larger value --> need less memory allocations but possibly have allocated but unused memory
