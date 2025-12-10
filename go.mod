@@ -147,7 +147,7 @@ require (
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/genesis v1.2.4
+	github.com/luxfi/genesis v1.2.10
 	github.com/luxfi/geth v1.16.40
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
