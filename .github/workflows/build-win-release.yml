@@ -5,6 +5,12 @@ name: build-win-release
 # Controls when the action will run.
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to include in artifact name'
+        required: false
+        type: string
   push:
     tags:
       - "*"
