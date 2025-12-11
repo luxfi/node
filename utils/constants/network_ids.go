@@ -49,11 +49,18 @@ const (
 // Variables to be exported
 var (
 	PrimaryNetworkID = ids.Empty
-	PlatformChainID  = ids.Empty
+	PlatformChainID  = ids.PChainID // P-Chain: 11111111111111111111111111111111P
 
 	// Chain IDs - these identify specific chains WITHIN a network
 	// NOT to be confused with Network IDs
-	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'} // Q-Chain identifier
+	// Native chains have a recognizable pattern: all zeros except last byte which is the chain letter
+	// These are provided by the ids package for consistent display across the ecosystem
+	CChainID = ids.CChainID // C-Chain: 11111111111111111111111111111111C
+	XChainID = ids.XChainID // X-Chain: 11111111111111111111111111111111X
+	QChainID = ids.QChainID // Q-Chain: 11111111111111111111111111111111Q
+	AChainID = ids.AChainID // A-Chain: 11111111111111111111111111111111A
+	BChainID = ids.BChainID // B-Chain: 11111111111111111111111111111111B
+	TChainID = ids.TChainID // T-Chain: 11111111111111111111111111111111T
 
 	// NetworkIDToNetworkName maps network IDs to human-readable names
 	NetworkIDToNetworkName = map[uint32]string{
