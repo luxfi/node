@@ -65,12 +65,20 @@ jobs:
     with:
       tag: ${{ needs.validate-version.outputs.version }}
 
+  # Build linux binary tarballs for CLI compatibility
+  build-linux-binaries:
+    needs: validate-version
+    uses: ./.github/workflows/build-linux-binaries.yml
+    secrets: inherit
+    with:
+      tag: v${{ needs.validate-version.outputs.version }}
+
   build-macos:
     needs: validate-version
     uses: ./.github/workflows/build-macos-release.yml
     secrets: inherit
     with:
-      tag: ${{ needs.validate-version.outputs.version }}
+      tag: v${{ needs.validate-version.outputs.version }}
 
   build-windows:
     needs: validate-version
@@ -83,6 +91,7 @@ jobs:
       - validate-version
       - build-ubuntu-amd64
       - build-ubuntu-arm64
+      - build-linux-binaries
       - build-macos
       - build-windows
     runs-on: ubuntu-latest
@@ -105,8 +114,9 @@ jobs:
       - name: Organize release files
         run: |
           mkdir -p ./release
+          TAG="v${{ needs.validate-version.outputs.version }}"
 
-          # Copy Ubuntu AMD64 packages
+          # Copy Ubuntu AMD64 packages (.deb)
           if [ -d "./artifacts/jammy" ]; then
             cp ./artifacts/jammy/*.deb ./release/ 2>/dev/null || true
           fi
@@ -114,9 +124,17 @@ jobs:
             cp ./artifacts/focal/*.deb ./release/ 2>/dev/null || true
           fi
 
-          # Copy macOS zip
+          # Copy Linux binary tarballs (CLI-compatible naming)
+          if [ -d "./artifacts/amd64" ]; then
+            cp ./artifacts/amd64/node-linux-amd64-*.tar.gz ./release/ 2>/dev/null || true
+          fi
+          if [ -d "./artifacts/arm64" ]; then
+            cp ./artifacts/arm64/node-linux-arm64-*.tar.gz ./release/ 2>/dev/null || true
+          fi
+
+          # Copy macOS zip (CLI-compatible naming: node-macos-{version}.zip)
           if [ -d "./artifacts/build" ]; then
-            cp ./artifacts/build/*.zip ./release/ 2>/dev/null || true
+            cp ./artifacts/build/node-macos-*.zip ./release/ 2>/dev/null || true
           fi
 
           # Copy Windows binaries (if any)

@@ -9,6 +9,12 @@ on:
       tag:
         description: 'Tag to include in artifact name'
         required: true
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to include in artifact name'
+        required: true
+        type: string
   push:
     tags:
       - "*"
@@ -48,8 +54,11 @@ jobs:
           echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_ENV"
         shell: bash
 
-      - name: Create zip file
-        run: 7z a "luxd-macos-${TAG}.zip" build/luxd
+      - name: Create zip file with CLI-compatible naming
+        run: |
+          # CLI expects: node-macos-{version}.zip containing build/luxd
+          mkdir -p build
+          7z a "node-macos-${TAG}.zip" build/luxd
         env:
           TAG: ${{ env.TAG }}
 
@@ -66,7 +75,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Upload file to S3
-        run: aws s3 cp luxd-macos-${{ env.TAG }}.zip "s3://${BUCKET}/macos/"
+        run: aws s3 cp node-macos-${{ env.TAG }}.zip "s3://${BUCKET}/macos/"
         env:
           BUCKET: ${{ secrets.BUCKET }}
 
@@ -74,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build
-          path: luxd-macos-${{ env.TAG }}.zip
+          path: node-macos-${{ env.TAG }}.zip
 
       - name: Cleanup
         run: |
