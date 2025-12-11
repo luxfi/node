@@ -20,8 +20,16 @@ func init() {
 	lc := linearcodec.NewDefault()
 
 	err := errors.Join(
+		// Warp 1.0: Classical BLS signatures
 		lc.RegisterType(&BitSetSignature{}),
-		lc.RegisterType(&HybridBLSRTSignature{}), // Post-quantum hybrid BLS+Ringtail
+		// Warp 1.5: Quantum-safe signatures
+		lc.RegisterType(&RingtailSignature{}),         // Recommended: RT-only (LWE-based threshold)
+		lc.RegisterType(&EncryptedWarpPayload{}),      // ML-KEM + AES-256-GCM encryption
+		lc.RegisterType(&HybridBLSRTSignature{}),      // Deprecated: BLS+RT hybrid
+		// Teleport: Cross-chain bridging protocol
+		lc.RegisterType(&TeleportMessage{}),           // High-level bridge message wrapper
+		lc.RegisterType(&TeleportTransferPayload{}),   // Asset transfer payload
+		lc.RegisterType(&TeleportAttestPayload{}),     // Attestation payload
 		Codec.RegisterCodec(CodecVersion, lc),
 	)
 	if err != nil {

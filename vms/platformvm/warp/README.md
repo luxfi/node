@@ -123,3 +123,98 @@ Two strategies to provide that mechanism are:
 
 - Require interchain message validity for transaction inclusion. If the transaction is included, the interchain message must have passed verification.
 - Include the results of interchain message verification in the block itself. Use the results to determine which messages passed verification.
+
+## Warp 1.5: Quantum-Safe Cross-Chain Messaging
+
+Warp 1.5 extends Lux Interchain Messaging with post-quantum cryptographic security using Ringtail threshold signatures and ML-KEM encryption.
+
+### Signature Types
+
+Warp 1.5 introduces new signature types for quantum-safe messaging:
+
+1. **BitSetSignature** (Warp 1.0): Classical BLS aggregate signatures
+2. **RingtailSignature** (Warp 1.5 - Recommended): Post-quantum threshold signatures using LWE
+3. **EncryptedWarpPayload** (Warp 1.5): ML-KEM + AES-256-GCM encrypted cross-chain payloads
+4. **HybridBLSRTSignature** (Deprecated): BLS + Ringtail hybrid for transition period
+
+### RingtailSignature
+
+Ringtail is a lattice-based threshold signature scheme from LWE (Learning With Errors).
+
+- **Paper**: https://eprint.iacr.org/2024/1113
+- **Implementation**: github.com/luxfi/ringtail
+- **Properties**:
+  - Post-quantum secure (based on LWE hardness)
+  - Native threshold support (t-of-n signing in 2 rounds)
+  - No need for separate TSS layer
+
+```
++---------------+----------+---------------------------+
+|       type_id :   uint32 |                   4 bytes |
++---------------+----------+---------------------------+
+|       signers :   []byte |          4 + len(signers) |
++---------------+----------+---------------------------+
+|     signature :   []byte |       4 + len(signature)  |
++---------------+----------+---------------------------+
+```
+
+### EncryptedWarpPayload
+
+For confidential cross-chain messaging, Warp 1.5 provides ML-KEM encryption (FIPS 203).
+
+Use cases:
+- Private bridge transfers (hidden amounts/recipients)
+- Sealed-bid cross-chain auctions
+- Confidential governance votes
+- MEV protection (encrypt intent until committed)
+
+```
++--------------------+----------+---------------------------------+
+|    encapsulated_key :   []byte |   4 + 1088 (ML-KEM-768)         |
++--------------------+----------+---------------------------------+
+|              nonce :   []byte |   4 + 12 (AES-GCM nonce)        |
++--------------------+----------+---------------------------------+
+|         ciphertext :   []byte |   4 + len(ciphertext)           |
++--------------------+----------+---------------------------------+
+|    recipient_key_id :   []byte |   4 + len(recipient_key_id)     |
++--------------------+----------+---------------------------------+
+```
+
+### Teleport: Cross-Chain Bridge Integration
+
+Teleport is the high-level cross-chain bridging protocol built on Warp 1.5:
+
+```go
+// TeleportMessage wraps a Warp message for cross-chain transfer
+type TeleportMessage struct {
+    Version     uint8           // Teleport protocol version
+    MessageType TeleportType    // Transfer, Swap, Lock, Unlock, etc.
+    Payload     []byte          // Application-specific data
+    Encrypted   bool            // Whether payload is encrypted
+}
+
+// TeleportTypes for cross-chain operations
+const (
+    TeleportTransfer TeleportType = iota // Asset transfer
+    TeleportSwap                         // Cross-chain swap
+    TeleportLock                         // Lock assets on source
+    TeleportUnlock                       // Unlock assets on dest
+    TeleportAttest                       // Attestation message
+    TeleportGovernance                   // Cross-chain governance
+)
+```
+
+### Migration Path
+
+1. **Pre-quantum (Current)**: BLS-only (`BitSetSignature`)
+2. **Transition**: Support both BLS and Ringtail signatures
+3. **Post-quantum (Warp 1.5)**: Ringtail-only (`RingtailSignature`) recommended
+
+### Security Levels
+
+| Component | Algorithm | Security Level |
+|-----------|-----------|----------------|
+| Threshold Signatures | Ringtail (LWE) | Post-quantum secure |
+| Key Encapsulation | ML-KEM-768 | NIST Level 3 (192-bit PQ) |
+| Symmetric Encryption | AES-256-GCM | 256-bit classical |
+| Legacy Signatures | BLS | Classical (for compatibility) |

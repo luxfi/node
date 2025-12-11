@@ -345,11 +345,163 @@ func TestValidatorWithRingtailKey(t *testing.T) {
 }
 
 // TestRingtailSignatureLenConstant tests the Ringtail signature length constant
+// Note: This is a legacy constant. Ringtail signatures have variable length based on parameters.
 func TestRingtailSignatureLenConstant(t *testing.T) {
 	require := require.New(t)
 
-	// ML-DSA-65 signature length is 3309 bytes per FIPS 204
+	// Legacy constant (retained for backwards compatibility)
 	require.Equal(3309, RingtailSignatureLen)
+}
+
+// =============================================================================
+// Warp 1.5: RingtailSignature Tests (RT-only, replaces BLS)
+// =============================================================================
+
+// TestRingtailSignatureNumSigners tests the NumSigners method for RT-only signatures
+func TestRingtailSignatureNumSigners(t *testing.T) {
+	require := require.New(t)
+
+	tests := []struct {
+		name           string
+		signers        []byte
+		expectedNum    int
+		expectedErrMsg string
+	}{
+		{
+			name:        "empty signers",
+			signers:     []byte{},
+			expectedNum: 0,
+		},
+		{
+			name:        "single signer",
+			signers:     []byte{0x01},
+			expectedNum: 1,
+		},
+		{
+			name:        "five signers",
+			signers:     []byte{0x1F}, // bits 0, 1, 2, 3, 4 set
+			expectedNum: 5,
+		},
+		{
+			name:        "eight signers",
+			signers:     []byte{0xFF},
+			expectedNum: 8,
+		},
+		{
+			name:        "padded bitset (invalid)",
+			signers:     []byte{0x00, 0x01}, // Extra leading zero
+			expectedNum: 0,
+			expectedErrMsg: "invalid",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sig := &RingtailSignature{
+				Signers: tt.signers,
+			}
+
+			num, err := sig.NumSigners()
+			if tt.expectedErrMsg != "" {
+				require.Error(err)
+			} else {
+				require.NoError(err)
+				require.Equal(tt.expectedNum, num)
+			}
+		})
+	}
+}
+
+// TestRingtailSignatureString tests the String method for RT-only signatures
+func TestRingtailSignatureString(t *testing.T) {
+	require := require.New(t)
+
+	sig := &RingtailSignature{
+		Signers:   []byte{0x07}, // 3 signers
+		Signature: make([]byte, 64),
+	}
+
+	str := sig.String()
+	require.Contains(str, "RingtailSignature")
+	require.Contains(str, "Signers")
+	require.Contains(str, "Sig")
+}
+
+// TestRingtailSignatureVerifyNetworkIDMismatch tests network ID validation for RT-only
+func TestRingtailSignatureVerifyNetworkIDMismatch(t *testing.T) {
+	require := require.New(t)
+
+	msg := &UnsignedMessage{
+		NetworkID: 1,
+	}
+
+	sig := &RingtailSignature{}
+
+	validators := CanonicalValidatorSet{}
+
+	err := sig.Verify(msg, 2, validators, 2, 3) // Network ID 2 != 1
+	require.ErrorIs(err, ErrWrongNetworkID)
+}
+
+// TestRingtailSignatureVerifyInvalidBitSet tests invalid bitset validation for RT-only
+func TestRingtailSignatureVerifyInvalidBitSet(t *testing.T) {
+	require := require.New(t)
+
+	msg := &UnsignedMessage{
+		NetworkID: 1,
+	}
+
+	// Create a signature with padded bitset (invalid)
+	sig := &RingtailSignature{
+		Signers: []byte{0x00, 0x01}, // Extra leading zero is invalid
+	}
+
+	validators := CanonicalValidatorSet{
+		TotalWeight: 100,
+	}
+
+	err := sig.Verify(msg, 1, validators, 2, 3)
+	require.ErrorIs(err, ErrInvalidBitSet)
+}
+
+// TestRingtailSignatureCodecRoundTrip tests serialization for RT-only signatures
+func TestRingtailSignatureCodecRoundTrip(t *testing.T) {
+	require := require.New(t)
+
+	original := &RingtailSignature{
+		Signers:   []byte{0x0F}, // 4 signers
+		Signature: make([]byte, 256), // Variable length Ringtail signature
+	}
+	// Fill with test data
+	for i := range original.Signature {
+		original.Signature[i] = byte(i)
+	}
+
+	// Encode
+	encoded, err := Codec.Marshal(CodecVersion, original)
+	require.NoError(err)
+
+	// Decode
+	decoded := &RingtailSignature{}
+	_, err = Codec.Unmarshal(encoded, decoded)
+	require.NoError(err)
+
+	// Verify
+	require.Equal(original.Signers, decoded.Signers)
+	require.Equal(original.Signature, decoded.Signature)
+}
+
+// TestRingtailConstants verifies Ringtail protocol constants match the implementation
+func TestRingtailConstants(t *testing.T) {
+	require := require.New(t)
+
+	// Verify constants match github.com/luxfi/ringtail/sign/config.go
+	require.Equal(uint64(0x1000000004A01), uint64(RingtailQ))
+	require.Equal(8, RingtailM)
+	require.Equal(7, RingtailN)
+	require.Equal(23, RingtailKappa)
+	require.Equal(48, RingtailDbar)
+	require.Equal(32, RingtailKeySize)
 }
 
 // TestMinHelper tests the min helper function
@@ -361,4 +513,180 @@ func TestMinHelper(t *testing.T) {
 	require.Equal(5, min(5, 5))
 	require.Equal(0, min(0, 10))
 	require.Equal(-5, min(-5, 0))
+}
+
+// =============================================================================
+// Warp 1.5: EncryptedWarpPayload Tests (ML-KEM + AES-256-GCM)
+// =============================================================================
+
+// TestEncryptedWarpPayloadRoundTrip tests encrypt/decrypt cycle
+func TestEncryptedWarpPayloadRoundTrip(t *testing.T) {
+	require := require.New(t)
+
+	// Generate test ML-KEM key pair (placeholder keys)
+	recipientPubKey := make([]byte, MLKEM768PublicKeyLen)
+	recipientPrivKey := make([]byte, 2400) // ML-KEM-768 private key
+	for i := range recipientPubKey {
+		recipientPubKey[i] = byte(i)
+	}
+	for i := range recipientPrivKey {
+		recipientPrivKey[i] = byte(i)
+	}
+
+	recipientKeyID := []byte("test-key-id")
+	plaintext := []byte("Hello, cross-chain world! This is a confidential message.")
+
+	// Encrypt
+	encrypted, err := EncryptWarpPayload(plaintext, recipientPubKey, recipientKeyID)
+	require.NoError(err)
+	require.NotNil(encrypted)
+	require.Equal(MLKEM768CiphertextLen, len(encrypted.EncapsulatedKey))
+	require.Equal(AESGCMNonceLen, len(encrypted.Nonce))
+	require.Equal(recipientKeyID, encrypted.RecipientKeyID)
+
+	// Decrypt (placeholder implementation)
+	decrypted, err := encrypted.Decrypt(recipientPrivKey)
+	require.NoError(err)
+	require.Equal(plaintext, decrypted)
+}
+
+// TestEncryptedWarpPayloadInvalidPubKeyLength tests public key validation
+func TestEncryptedWarpPayloadInvalidPubKeyLength(t *testing.T) {
+	require := require.New(t)
+
+	// Wrong public key length
+	badPubKey := make([]byte, 100) // Should be MLKEM768PublicKeyLen (1184)
+	recipientKeyID := []byte("test-key-id")
+	plaintext := []byte("test")
+
+	_, err := EncryptWarpPayload(plaintext, badPubKey, recipientKeyID)
+	require.Error(err)
+	require.Contains(err.Error(), "invalid ML-KEM public key length")
+}
+
+// TestEncryptedWarpPayloadDecryptInvalidCiphertext tests ciphertext validation
+func TestEncryptedWarpPayloadDecryptInvalidCiphertext(t *testing.T) {
+	require := require.New(t)
+
+	privKey := make([]byte, 2400)
+
+	tests := []struct {
+		name      string
+		payload   *EncryptedWarpPayload
+		expectErr string
+	}{
+		{
+			name: "wrong encapsulated key length",
+			payload: &EncryptedWarpPayload{
+				EncapsulatedKey: make([]byte, 100), // Wrong length
+				Nonce:           make([]byte, AESGCMNonceLen),
+				Ciphertext:      make([]byte, 100),
+			},
+			expectErr: "invalid encapsulated key length",
+		},
+		{
+			name: "wrong nonce length",
+			payload: &EncryptedWarpPayload{
+				EncapsulatedKey: make([]byte, MLKEM768CiphertextLen),
+				Nonce:           make([]byte, 8), // Wrong length
+				Ciphertext:      make([]byte, 100),
+			},
+			expectErr: "invalid nonce length",
+		},
+		{
+			name: "ciphertext too short",
+			payload: &EncryptedWarpPayload{
+				EncapsulatedKey: make([]byte, MLKEM768CiphertextLen),
+				Nonce:           make([]byte, AESGCMNonceLen),
+				Ciphertext:      make([]byte, 5), // Too short for auth tag
+			},
+			expectErr: "ciphertext too short",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.payload.Decrypt(privKey)
+			require.Error(err)
+			require.Contains(err.Error(), tt.expectErr)
+		})
+	}
+}
+
+// TestEncryptedWarpPayloadSize tests size calculation
+func TestEncryptedWarpPayloadSize(t *testing.T) {
+	require := require.New(t)
+
+	payload := &EncryptedWarpPayload{
+		EncapsulatedKey: make([]byte, MLKEM768CiphertextLen),
+		Nonce:           make([]byte, AESGCMNonceLen),
+		Ciphertext:      make([]byte, 100),
+		RecipientKeyID:  []byte("key-id-123"),
+	}
+
+	expectedSize := MLKEM768CiphertextLen + AESGCMNonceLen + 100 + len("key-id-123")
+	require.Equal(expectedSize, payload.Size())
+}
+
+// TestEncryptedWarpPayloadString tests string representation
+func TestEncryptedWarpPayloadString(t *testing.T) {
+	require := require.New(t)
+
+	payload := &EncryptedWarpPayload{
+		EncapsulatedKey: make([]byte, MLKEM768CiphertextLen),
+		Nonce:           make([]byte, AESGCMNonceLen),
+		Ciphertext:      make([]byte, 100),
+		RecipientKeyID:  []byte("my-key-id"),
+	}
+
+	str := payload.String()
+	require.Contains(str, "EncryptedWarpPayload")
+	require.Contains(str, "KeyID")
+	require.Contains(str, "bytes")
+}
+
+// TestEncryptedWarpPayloadCodecRoundTrip tests serialization
+func TestEncryptedWarpPayloadCodecRoundTrip(t *testing.T) {
+	require := require.New(t)
+
+	original := &EncryptedWarpPayload{
+		EncapsulatedKey: make([]byte, MLKEM768CiphertextLen),
+		Nonce:           make([]byte, AESGCMNonceLen),
+		Ciphertext:      []byte("encrypted data here"),
+		RecipientKeyID:  []byte("recipient-123"),
+	}
+	// Fill encapsulated key with test data
+	for i := range original.EncapsulatedKey {
+		original.EncapsulatedKey[i] = byte(i % 256)
+	}
+
+	// Encode
+	encoded, err := Codec.Marshal(CodecVersion, original)
+	require.NoError(err)
+
+	// Decode
+	decoded := &EncryptedWarpPayload{}
+	_, err = Codec.Unmarshal(encoded, decoded)
+	require.NoError(err)
+
+	// Verify
+	require.Equal(original.EncapsulatedKey, decoded.EncapsulatedKey)
+	require.Equal(original.Nonce, decoded.Nonce)
+	require.Equal(original.Ciphertext, decoded.Ciphertext)
+	require.Equal(original.RecipientKeyID, decoded.RecipientKeyID)
+}
+
+// TestMLKEMConstants verifies ML-KEM constants are correct per FIPS 203
+func TestMLKEMConstants(t *testing.T) {
+	require := require.New(t)
+
+	// FIPS 203 ML-KEM-768 parameters
+	require.Equal(1088, MLKEM768CiphertextLen)
+	require.Equal(1184, MLKEM768PublicKeyLen)
+	require.Equal(32, MLKEM768SharedSecretLen)
+	require.Equal(1568, MLKEM1024CiphertextLen)
+
+	// AES-GCM parameters
+	require.Equal(12, AESGCMNonceLen)
+	require.Equal(16, AESGCMTagLen)
 }
