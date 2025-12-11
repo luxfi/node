@@ -27,6 +27,9 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh
 
+# Get the git commit
+git_commit=${GIT_COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")}
+
 build_args="$race"
 echo "Building Lux Node..."
 go build $build_args -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$LUX_PATH/main"
