@@ -1770,6 +1770,19 @@ func (b *builder) spend(
 	}
 
 	for _, utxo := range utxosByLUXAssetID.requested {
+		// Check if we already have enough excessLUX to pay fees before adding more inputs.
+		// This early exit is crucial for ImportTx where imported inputs may already provide
+		// sufficient LUX to cover fees, and we don't want to add unnecessary platform chain inputs.
+		if !s.shouldConsumeAsset(b.context.XAssetID) {
+			requiredFee, err := s.calculateFee()
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			if excessLUX >= requiredFee {
+				break
+			}
+		}
+
 		out, _, err := unwrapOutput(utxo.Out)
 		if err != nil {
 			return nil, nil, nil, err

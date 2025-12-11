@@ -198,8 +198,7 @@ jobs:
               --db-dir=/tmp/luxd-test/db \
               --log-dir=/tmp/luxd-test/logs \
               --log-level=${LOG_LEVEL:-info} \
-              --consensus-sample-size=1 \
-              --consensus-quorum-size=1 \
+              --dev-mode \
               --genesis-file=genesis/genesis_mainnet.json \
               --skip-bootstrap \
               $EXTRA_FLAGS &
@@ -317,8 +316,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/test-db \
             --log-dir=/tmp/test-logs \
-            --consensus-sample-size=1 \
-            --consensus-quorum-size=1 \
+            --dev-mode \
             --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
@@ -401,8 +399,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/test-skip-bootstrap \
             --log-dir=/tmp/test-logs \
-            --consensus-sample-size=1 \
-            --consensus-quorum-size=1 \
+            --dev-mode \
             --skip-bootstrap &
           
           NODE_PID=$!
@@ -462,8 +459,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/perf-db \
             --log-dir=/tmp/perf-logs \
-            --consensus-sample-size=1 \
-            --consensus-quorum-size=1 \
+            --dev-mode \
             --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
