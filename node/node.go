@@ -70,6 +70,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	qvm "github.com/luxfi/node/vms/quantumvm"
 	"github.com/luxfi/node/vms/aivm"
+	bvm "github.com/luxfi/node/vms/bridgevm"
+	tvm "github.com/luxfi/node/vms/thresholdvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
@@ -1231,14 +1233,32 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("Q-Chain VM registered successfully")
 
-	// Register AI-Chain VM (AI Virtual Machine)
-	n.Log.Info("Registering AI-Chain VM", "vmID", constants.AIVMID)
+	// Register AI-Chain VM (AI Virtual Machine) - A-Chain
+	n.Log.Info("Registering A-Chain VM (AI)", "vmID", constants.AIVMID)
 	err = n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{})
 	if err != nil {
-		n.Log.Error("Failed to register AI-Chain VM", "error", err)
+		n.Log.Error("Failed to register A-Chain VM", "error", err)
 		return err
 	}
-	n.Log.Info("AI-Chain VM registered successfully")
+	n.Log.Info("A-Chain VM registered successfully")
+
+	// Register B-Chain VM (Bridge VM) - Cross-chain bridge operations
+	n.Log.Info("Registering B-Chain VM (Bridge)", "vmID", constants.BridgeVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register B-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("B-Chain VM registered successfully")
+
+	// Register T-Chain VM (Threshold VM) - Threshold signatures and distributed key generation
+	n.Log.Info("Registering T-Chain VM (Threshold)", "vmID", constants.ThresholdVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.ThresholdVMID, &tvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register T-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("T-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

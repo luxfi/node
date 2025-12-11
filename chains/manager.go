@@ -1289,6 +1289,11 @@ func (m *manager) createDAG(
 		return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
 	}
 
+	// Create a proper context for VM initialization with cancellation support
+	// This replaces context.TODO() which the user flagged as confusing and error-prone
+	initCtx, cancelInit := context.WithCancel(context.Background())
+	defer cancelInit() // Ensure cleanup on function exit
+
 	// Initialize VM if it supports Initialize
 	vmInitialized := false
 	if initVM, ok := vm.(interface {
@@ -1311,7 +1316,7 @@ func (m *manager) createDAG(
 		}
 		// Use a no-op Warp sender for single-node mode
 		err := initVM.Initialize(
-			context.TODO(),
+			initCtx, // Proper cancellable context instead of context.TODO()
 			ctx,
 			vmDB,
 			chainParams.GenesisData,
@@ -1335,7 +1340,7 @@ func (m *manager) createDAG(
 		if stateVM, ok := vm.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
+			if err := stateVM.SetState(initCtx, uint32(interfaces.NormalOp)); err != nil {
 				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
 			}
 		}

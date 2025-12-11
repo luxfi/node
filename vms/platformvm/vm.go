@@ -815,6 +815,12 @@ func (vm *VM) onNormalOperationsStarted() error {
 	// 	vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	// }
 
+	// Commit state BEFORE starting background goroutines to avoid race conditions
+	// between state readers (forwardNotifications) and state writers (Commit)
+	if err := vm.state.Commit(); err != nil {
+		return err
+	}
+
 	// Start the notification forwarder goroutine
 	// This forwards pending transaction notifications from the Builder to the consensus engine
 	if vm.toEngine != nil && vm.Builder != nil {
@@ -826,7 +832,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 			log.Bool("hasBuilder", vm.Builder != nil))
 	}
 
-	return vm.state.Commit()
+	return nil
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {

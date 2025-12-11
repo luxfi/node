@@ -225,10 +225,18 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
+	// Convert Fx types - they may be *core.Fx or *common.Fx (same structure, different types)
 	coreFxs := make([]*common.Fx, len(fxs))
 	for i, fx := range fxs {
-		if fx != nil {
-			coreFxs[i] = fx.(*common.Fx)
+		if fx == nil {
+			continue
+		}
+		// Use reflection to handle different but structurally identical Fx types
+		// Both core.Fx and common.Fx have fields: ID ids.ID and Fx interface{}
+		fxVal := reflect.ValueOf(fx).Elem()
+		coreFxs[i] = &common.Fx{
+			ID: fxVal.FieldByName("ID").Interface().(ids.ID),
+			Fx: fxVal.FieldByName("Fx").Interface(),
 		}
 	}
 
