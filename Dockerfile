@@ -26,9 +26,9 @@ FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
 COPY --from=go-installer /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:${PATH}"
 
-# Install build dependencies
+# Install build dependencies (ca-certificates needed for go mod download)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libc6-dev make git \
+    gcc libc6-dev make git ca-certificates \
     gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu \
     && rm -rf /var/lib/apt/lists/*
 
