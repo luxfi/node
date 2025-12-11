@@ -504,11 +504,6 @@ type ManagerConfig struct {
 	ChainDataDir string
 
 	Nets *Nets
-
-	// IsolatedChains enables separate BadgerDB instances per chain
-	// When true: Each chain gets its own database directory for isolation and performance
-	// When false: Uses shared database with prefix isolation (legacy mode)
-	IsolatedChains bool
 }
 
 type manager struct {
@@ -593,12 +588,11 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	// Initialize per-chain database manager
+	// Initialize chain database manager using single global BadgerDB with prefix isolation
+	// All chains share one database - G-Chain (dgraph) can index the entire database for GraphQL queries
 	chainDBManager := NewChainDBManager(ChainDBManagerConfig{
-		BaseDir:  filepath.Join(config.ChainDataDir, "chains"),
-		SharedDB: config.DB,
-		Isolated: config.IsolatedChains,
-		Log:      config.Log,
+		DB:  config.DB,
+		Log: config.Log,
 	})
 
 	return &manager{

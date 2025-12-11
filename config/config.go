@@ -940,8 +940,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 			getExpandedArg(v, DBPathKey),
 			constants.NetworkName(networkID),
 		),
-		Config:         configBytes,
-		IsolatedChains: v.GetBool(DBIsolatedChainsKey),
+		Config: configBytes,
 	}, nil
 }
 

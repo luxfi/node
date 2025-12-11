@@ -125,11 +125,6 @@ type DatabaseConfig struct {
 
 	// Path to config file
 	Config []byte `json:"-"`
-
-	// IsolatedChains enables separate BadgerDB instances per chain.
-	// When true (default): Each chain (P, X, C, etc.) gets its own database directory
-	// When false: Uses shared database with prefix isolation (legacy mode)
-	IsolatedChains bool `json:"isolatedChains"`
 }
 
 // Config contains all of the configurations of a Lux node.
