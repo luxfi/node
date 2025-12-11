@@ -72,6 +72,7 @@ import (
 	"github.com/luxfi/node/vms/aivm"
 	bvm "github.com/luxfi/node/vms/bridgevm"
 	tvm "github.com/luxfi/node/vms/thresholdvm"
+	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
@@ -1259,6 +1260,15 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("T-Chain VM registered successfully")
+
+	// Register Z-Chain VM (ZKVM) - Zero-Knowledge proofs and privacy
+	n.Log.Info("Registering Z-Chain VM (ZK)", "vmID", constants.ZKVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register Z-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("Z-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
