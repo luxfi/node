@@ -23,6 +23,10 @@ var (
 	GenesisCodec codec.Manager
 
 	Codec codec.Manager
+
+	// genesisLinearCodec is the underlying codec for GenesisCodec.
+	// This is exposed for registering additional types from other packages.
+	genesisLinearCodec linearcodec.Codec
 )
 
 func init() {
@@ -48,6 +52,13 @@ func init() {
 	if errs.Errored() {
 		panic(errs.Err)
 	}
+	genesisLinearCodec = gc
+}
+
+// RegisterGenesisType registers a type with the GenesisCodec.
+// This is used by other packages (like state) to register backward-compatibility types.
+func RegisterGenesisType(val interface{}) error {
+	return genesisLinearCodec.RegisterType(val)
 }
 
 // RegisterApricotTypes registers the type information for blocks that were

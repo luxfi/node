@@ -5,6 +5,7 @@ package executor
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/luxfi/ids"
@@ -31,10 +32,11 @@ type backend struct {
 	// All other blocks are removed when they are accepted/rejected.
 	// Note that Genesis block is a commit block so no need to update
 	// blkIDToState with it upon backend creation (Genesis is already accepted)
-	blkIDToState map[ids.ID]*blockState
-	state        state.State
+	blkIDToState     map[ids.ID]*blockState
+	blkIDToStateLock sync.RWMutex // Protects concurrent access to blkIDToState
+	state            state.State
 
-	ctx          *consensusctx.Context
+	ctx *consensusctx.Context
 }
 
 // SharedMemory provides cross-chain atomic operations
@@ -44,6 +46,9 @@ type SharedMemory interface {
 }
 
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {
+	b.blkIDToStateLock.RLock()
+	defer b.blkIDToStateLock.RUnlock()
+
 	// If the block is in the map, it is either processing or a proposal block
 	// that was accepted without an accepted child.
 	if state, ok := b.blkIDToState[blkID]; ok {
@@ -59,6 +64,9 @@ func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {
 }
 
 func (b *backend) getOnAbortState(blkID ids.ID) (state.Diff, bool) {
+	b.blkIDToStateLock.RLock()
+	defer b.blkIDToStateLock.RUnlock()
+
 	state, ok := b.blkIDToState[blkID]
 	if !ok || state.onAbortState == nil {
 		return nil, false
@@ -67,6 +75,9 @@ func (b *backend) getOnAbortState(blkID ids.ID) (state.Diff, bool) {
 }
 
 func (b *backend) getOnCommitState(blkID ids.ID) (state.Diff, bool) {
+	b.blkIDToStateLock.RLock()
+	defer b.blkIDToStateLock.RUnlock()
+
 	state, ok := b.blkIDToState[blkID]
 	if !ok || state.onCommitState == nil {
 		return nil, false
@@ -75,10 +86,13 @@ func (b *backend) getOnCommitState(blkID ids.ID) (state.Diff, bool) {
 }
 
 func (b *backend) GetBlock(blkID ids.ID) (block.Block, error) {
+	b.blkIDToStateLock.RLock()
 	// See if the block is in memory.
 	if blk, ok := b.blkIDToState[blkID]; ok {
+		b.blkIDToStateLock.RUnlock()
 		return blk.statelessBlock, nil
 	}
+	b.blkIDToStateLock.RUnlock()
 
 	// The block isn't in memory. Check the database.
 	return b.state.GetStatelessBlock(blkID)
@@ -89,16 +103,37 @@ func (b *backend) LastAccepted() ids.ID {
 }
 
 func (b *backend) free(blkID ids.ID) {
+	b.blkIDToStateLock.Lock()
+	defer b.blkIDToStateLock.Unlock()
 	delete(b.blkIDToState, blkID)
 }
 
+// getBlockState returns the block state for the given block ID.
+// Returns nil and false if the block state doesn't exist.
+func (b *backend) getBlockState(blkID ids.ID) (*blockState, bool) {
+	b.blkIDToStateLock.RLock()
+	defer b.blkIDToStateLock.RUnlock()
+	state, ok := b.blkIDToState[blkID]
+	return state, ok
+}
+
+// setBlockState sets the block state for the given block ID.
+func (b *backend) setBlockState(blkID ids.ID, state *blockState) {
+	b.blkIDToStateLock.Lock()
+	defer b.blkIDToStateLock.Unlock()
+	b.blkIDToState[blkID] = state
+}
+
 func (b *backend) getTimestamp(blkID ids.ID) time.Time {
+	b.blkIDToStateLock.RLock()
 	// Check if the block is processing.
 	// If the block is processing, then we are guaranteed to have populated its
 	// timestamp in its state.
 	if blkState, ok := b.blkIDToState[blkID]; ok {
+		b.blkIDToStateLock.RUnlock()
 		return blkState.timestamp
 	}
+	b.blkIDToStateLock.RUnlock()
 
 	// The block isn't processing.
 	// According to the chain.Block interface, the last accepted
@@ -113,6 +148,9 @@ func (b *backend) verifyUniqueInputs(blkID ids.ID, inputs set.Set[ids.ID]) error
 	if inputs.Len() == 0 {
 		return nil
 	}
+
+	b.blkIDToStateLock.RLock()
+	defer b.blkIDToStateLock.RUnlock()
 
 	// Check for conflicts in ancestors.
 	for {

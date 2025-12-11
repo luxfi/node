@@ -69,7 +69,7 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	blkID := b.ID()
 	defer a.free(blkID)
 
-	blkState, ok := a.blkIDToState[blkID]
+	blkState, ok := a.getBlockState(blkID)
 	if !ok {
 		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}
@@ -126,7 +126,7 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 
 func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 	parentID := b.Parent()
-	parentState, ok := a.blkIDToState[parentID]
+	parentState, ok := a.getBlockState(parentID)
 	if !ok {
 		return fmt.Errorf("%w: %s", state.ErrMissingParentState, parentID)
 	}
@@ -152,7 +152,7 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		}
 	}
 
-	blkState, ok := a.blkIDToState[blkID]
+	blkState, ok := a.getBlockState(blkID)
 	if !ok {
 		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}
@@ -239,7 +239,7 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 	blkID := b.ID()
 	defer a.free(blkID)
 
-	blkState, ok := a.blkIDToState[blkID]
+	blkState, ok := a.getBlockState(blkID)
 	if !ok {
 		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
 	}

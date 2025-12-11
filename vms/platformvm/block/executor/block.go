@@ -42,7 +42,7 @@ func (*Block) ShouldVerifyWithContext(context.Context) (bool, error) {
 
 func (b *Block) VerifyWithContext(ctx context.Context, blockContext *block.Context) error {
 	blkID := b.ID()
-	blkState, previouslyExecuted := b.manager.blkIDToState[blkID]
+	blkState, previouslyExecuted := b.manager.backend.getBlockState(blkID)
 	warpAlreadyVerified := previouslyExecuted && blkState.verifiedHeights.Contains(blockContext.PChainHeight)
 
 	// If the chain is bootstrapped and the warp messages haven't been verified,

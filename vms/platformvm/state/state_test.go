@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -1191,30 +1190,19 @@ func TestReindexBlocks(t *testing.T) {
 		blks    = makeBlocks(require)
 	)
 
-	// Create a test codec that includes stateBlk type
-	testCodec := codec.NewManager(math.MaxInt32)
-	c := linearcodec.NewDefault()
-// 	require.NoError(RegisterStateBlockType(c))
-// 	require.NoError(block.RegisterApricotBlockTypes(c))
-// 	require.NoError(block.RegisterBanffBlockTypes(c))
-// 	require.NoError(txs.RegisterUnsignedTxsTypes(c))
-// 	require.NoError(txs.RegisterDUnsignedTxsTypes(c))
-	require.NoError(testCodec.RegisterCodec(block.CodecVersion, c))
+	// Remove the reindex flag that was set during state initialization
+	// so that ReindexBlocks actually runs
+	require.NoError(s.singletonDB.Delete(BlocksReindexedKey))
 
 	// Populate the blocks using the legacy format.
+	// Use block.GenesisCodec which has stateBlk registered via init() in state.go
 	for _, blk := range blks {
 		stBlk := stateBlk{
 			Bytes:  blk.Bytes(),
 			Status: uint32(choices.Accepted),
 		}
-		stBlkBytes, err := testCodec.Marshal(block.CodecVersion, &stBlk)
+		stBlkBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &stBlk)
 		require.NoError(err)
-
-		// Debug: Check what we marshaled
-		t.Logf("Marshaled stateBlk with version %d, got %d bytes", block.CodecVersion, len(stBlkBytes))
-		if len(stBlkBytes) > 10 {
-			t.Logf("First 10 bytes: %x", stBlkBytes[:10])
-		}
 
 		blkID := blk.ID()
 		require.NoError(s.blockDB.Put(blkID[:], stBlkBytes))

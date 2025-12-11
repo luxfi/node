@@ -246,7 +246,7 @@ func (v *verifier) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	v.Mempool.Remove(b.Tx)
 
 	blkID := b.ID()
-	v.blkIDToState[blkID] = &blockState{
+	v.setBlockState(blkID, &blockState{
 		statelessBlock: b,
 
 		onAcceptState: onAcceptState,
@@ -261,7 +261,7 @@ func (v *verifier) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 			onAcceptState,
 			0,
 		),
-	}
+	})
 	return nil
 }
 
@@ -358,7 +358,7 @@ func (v *verifier) abortBlock(b block.Block) error {
 	}
 
 	blkID := b.ID()
-	v.blkIDToState[blkID] = &blockState{
+	v.setBlockState(blkID, &blockState{
 		statelessBlock:  b,
 		onAcceptState:   onAbortState,
 		timestamp:       onAbortState.GetTimestamp(),
@@ -369,7 +369,7 @@ func (v *verifier) abortBlock(b block.Block) error {
 			onAbortState,
 			0,
 		),
-	}
+	})
 	return nil
 }
 
@@ -385,7 +385,7 @@ func (v *verifier) commitBlock(b block.Block) error {
 	}
 
 	blkID := b.ID()
-	v.blkIDToState[blkID] = &blockState{
+	v.setBlockState(blkID, &blockState{
 		statelessBlock:  b,
 		onAcceptState:   onCommitState,
 		timestamp:       onCommitState.GetTimestamp(),
@@ -396,7 +396,7 @@ func (v *verifier) commitBlock(b block.Block) error {
 			onCommitState,
 			0,
 		),
-	}
+	})
 	return nil
 }
 
@@ -435,7 +435,7 @@ func (v *verifier) proposalBlock(
 	v.Mempool.Remove(tx)
 
 	blkID := b.ID()
-	v.blkIDToState[blkID] = &blockState{
+	v.setBlockState(blkID, &blockState{
 		proposalBlockState: proposalBlockState{
 			onDecisionState: onDecisionState,
 			onCommitState:   onCommitState,
@@ -459,7 +459,7 @@ func (v *verifier) proposalBlock(
 			onCommitState,
 			gasConsumed,
 		),
-	}
+	})
 	return nil
 }
 
@@ -493,7 +493,7 @@ func (v *verifier) standardBlock(
 	v.Mempool.Remove(txs...)
 
 	blkID := b.ID()
-	v.blkIDToState[blkID] = &blockState{
+	v.setBlockState(blkID, &blockState{
 		statelessBlock: b,
 
 		onAcceptState: onAcceptState,
@@ -509,7 +509,7 @@ func (v *verifier) standardBlock(
 			onAcceptState,
 			gasConsumed,
 		),
-	}
+	})
 	return nil
 }
 

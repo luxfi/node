@@ -6,6 +6,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/google/btree"
 
@@ -102,6 +103,8 @@ type PendingStakers interface {
 }
 
 type baseStakers struct {
+	// mu protects concurrent access to the btree and maps
+	mu sync.RWMutex
 	// netID --> nodeID --> current state for the validator of the subnet
 	validators map[ids.ID]map[ids.NodeID]*baseStaker
 	stakers    *btree.BTreeG[*Staker]
@@ -123,6 +126,8 @@ func newBaseStakers() *baseStakers {
 }
 
 func (v *baseStakers) GetValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, error) {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
 	subnetValidators, ok := v.validators[netID]
 	if !ok {
 		return nil, database.ErrNotFound
@@ -138,10 +143,12 @@ func (v *baseStakers) GetValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, er
 }
 
 func (v *baseStakers) PutValidator(staker *Staker) {
-	validator := v.getOrCreateValidator(staker.NetID, staker.NodeID)
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
 	validator.validator = staker
 
-	validatorDiff := v.getOrCreateValidatorDiff(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
 	validatorDiff.validatorStatus = added
 	validatorDiff.validator = staker
 
@@ -149,11 +156,13 @@ func (v *baseStakers) PutValidator(staker *Staker) {
 }
 
 func (v *baseStakers) DeleteValidator(staker *Staker) {
-	validator := v.getOrCreateValidator(staker.NetID, staker.NodeID)
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
 	validator.validator = nil
-	v.pruneValidator(staker.NetID, staker.NodeID)
+	v.pruneValidatorLocked(staker.NetID, staker.NodeID)
 
-	validatorDiff := v.getOrCreateValidatorDiff(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
 	validatorDiff.validatorStatus = deleted
 	validatorDiff.validator = staker
 
@@ -161,6 +170,8 @@ func (v *baseStakers) DeleteValidator(staker *Staker) {
 }
 
 func (v *baseStakers) GetDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) iterator.Iterator[*Staker] {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
 	subnetValidators, ok := v.validators[subnetID]
 	if !ok {
 		return iterator.Empty[*Staker]{}
@@ -169,17 +180,27 @@ func (v *baseStakers) GetDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) i
 	if !ok {
 		return iterator.Empty[*Staker]{}
 	}
-	return iterator.FromTree(validator.delegators)
+	// Collect items into a slice to avoid holding the lock during iteration
+	var items []*Staker
+	if validator.delegators != nil {
+		validator.delegators.Ascend(func(item *Staker) bool {
+			items = append(items, item)
+			return true
+		})
+	}
+	return iterator.FromSlice(items...)
 }
 
 func (v *baseStakers) PutDelegator(staker *Staker) {
-	validator := v.getOrCreateValidator(staker.NetID, staker.NodeID)
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
 	if validator.delegators == nil {
 		validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
 	validator.delegators.ReplaceOrInsert(staker)
 
-	validatorDiff := v.getOrCreateValidatorDiff(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
 	if validatorDiff.addedDelegators == nil {
 		validatorDiff.addedDelegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
@@ -189,13 +210,15 @@ func (v *baseStakers) PutDelegator(staker *Staker) {
 }
 
 func (v *baseStakers) DeleteDelegator(staker *Staker) {
-	validator := v.getOrCreateValidator(staker.NetID, staker.NodeID)
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
 	if validator.delegators != nil {
 		validator.delegators.Delete(staker)
 	}
-	v.pruneValidator(staker.NetID, staker.NodeID)
+	v.pruneValidatorLocked(staker.NetID, staker.NodeID)
 
-	validatorDiff := v.getOrCreateValidatorDiff(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
 	if validatorDiff.deletedDelegators == nil {
 		validatorDiff.deletedDelegators = make(map[ids.ID]*Staker)
 	}
@@ -205,10 +228,42 @@ func (v *baseStakers) DeleteDelegator(staker *Staker) {
 }
 
 func (v *baseStakers) GetStakerIterator() iterator.Iterator[*Staker] {
-	return iterator.FromTree(v.stakers)
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	// Collect items into a slice to avoid holding the lock during iteration
+	var items []*Staker
+	v.stakers.Ascend(func(item *Staker) bool {
+		items = append(items, item)
+		return true
+	})
+	return iterator.FromSlice(items...)
 }
 
-func (v *baseStakers) getOrCreateValidator(netID ids.ID, nodeID ids.NodeID) *baseStaker {
+// LoadValidator adds a validator during state initialization.
+// Unlike PutValidator, this does not track diffs since it's loading from database.
+func (v *baseStakers) LoadValidator(staker *Staker) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator.validator = staker
+	v.stakers.ReplaceOrInsert(staker)
+}
+
+// LoadDelegator adds a delegator during state initialization.
+// Unlike PutDelegator, this does not track diffs since it's loading from database.
+func (v *baseStakers) LoadDelegator(staker *Staker) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	if validator.delegators == nil {
+		validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
+	}
+	validator.delegators.ReplaceOrInsert(staker)
+	v.stakers.ReplaceOrInsert(staker)
+}
+
+// getOrCreateValidatorLocked requires the caller to hold v.mu (write lock)
+func (v *baseStakers) getOrCreateValidatorLocked(netID ids.ID, nodeID ids.NodeID) *baseStaker {
 	subnetValidators, ok := v.validators[netID]
 	if !ok {
 		subnetValidators = make(map[ids.NodeID]*baseStaker)
@@ -222,9 +277,9 @@ func (v *baseStakers) getOrCreateValidator(netID ids.ID, nodeID ids.NodeID) *bas
 	return validator
 }
 
-// pruneValidator assumes that the named validator is currently in the
-// [validators] map.
-func (v *baseStakers) pruneValidator(netID ids.ID, nodeID ids.NodeID) {
+// pruneValidatorLocked assumes that the named validator is currently in the
+// [validators] map. Requires the caller to hold v.mu (write lock).
+func (v *baseStakers) pruneValidatorLocked(netID ids.ID, nodeID ids.NodeID) {
 	subnetValidators := v.validators[netID]
 	validator := subnetValidators[nodeID]
 	if validator.validator != nil {
@@ -239,7 +294,8 @@ func (v *baseStakers) pruneValidator(netID ids.ID, nodeID ids.NodeID) {
 	}
 }
 
-func (v *baseStakers) getOrCreateValidatorDiff(netID ids.ID, nodeID ids.NodeID) *diffValidator {
+// getOrCreateValidatorDiffLocked requires the caller to hold v.mu (write lock)
+func (v *baseStakers) getOrCreateValidatorDiffLocked(netID ids.ID, nodeID ids.NodeID) *diffValidator {
 	subnetValidatorDiffs, ok := v.validatorDiffs[netID]
 	if !ok {
 		subnetValidatorDiffs = make(map[ids.NodeID]*diffValidator)
