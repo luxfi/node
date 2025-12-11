@@ -5,21 +5,22 @@ package bvm
 
 import (
 	"context"
-	"crypto/elliptic"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/luxfi/log"
-	"github.com/luxfi/crypto/cggmp21"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core/common"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/threshold/pkg/party"
+	"github.com/luxfi/threshold/pkg/pool"
+	"github.com/luxfi/threshold/protocols/cmp/config"
 )
 
 var (
@@ -34,22 +35,25 @@ var (
 	errNotImplemented = errors.New("not implemented")
 )
 
+// Silence unused variable warning
+var _ = errNotImplemented
+
 // BridgeConfig contains VM configuration
 type BridgeConfig struct {
 	// MPC configuration for secure cross-chain operations
-	MPCThreshold      int      `json:"mpcThreshold"`      // t: Threshold (t+1 parties needed)
-	MPCTotalParties   int      `json:"mpcTotalParties"`   // n: Total number of MPC nodes
-	
+	MPCThreshold    int `json:"mpcThreshold"`    // t: Threshold (t+1 parties needed)
+	MPCTotalParties int `json:"mpcTotalParties"` // n: Total number of MPC nodes
+
 	// Bridge parameters
-	MinConfirmations  uint32   `json:"minConfirmations"`  // Confirmations required before bridging
-	BridgeFee         uint64   `json:"bridgeFee"`         // Fee in LUX for bridge operations
-	
+	MinConfirmations uint32 `json:"minConfirmations"` // Confirmations required before bridging
+	BridgeFee        uint64 `json:"bridgeFee"`        // Fee in LUX for bridge operations
+
 	// Supported chains
-	SupportedChains   []string `json:"supportedChains"`   // Chain IDs that can be bridged
-	
+	SupportedChains []string `json:"supportedChains"` // Chain IDs that can be bridged
+
 	// Security settings
-	MaxBridgeAmount   uint64   `json:"maxBridgeAmount"`   // Maximum amount per bridge transaction
-	DailyBridgeLimit  uint64   `json:"dailyBridgeLimit"`  // Daily limit for bridge operations
+	MaxBridgeAmount       uint64 `json:"maxBridgeAmount"`       // Maximum amount per bridge transaction
+	DailyBridgeLimit      uint64 `json:"dailyBridgeLimit"`      // Daily limit for bridge operations
 	RequireValidatorStake uint64 `json:"requireValidatorStake"` // 100M LUX required
 }
 
@@ -61,38 +65,40 @@ type VM struct {
 	toEngine chan<- common.Message
 	log      log.Logger
 
-	// MPC components
-	mpcParty       *cggmp21.Party
-	mpcParties     map[ids.NodeID]*cggmp21.Party
-	
+	// MPC components using threshold CMP protocol
+	mpcConfig   *config.Config // CMP config for this party (after keygen)
+	mpcPartyID  party.ID       // This party's ID in MPC protocol
+	mpcPartyIDs []party.ID     // All party IDs in the MPC group
+	mpcPool     *pool.Pool     // Worker pool for MPC operations
+
 	// Bridge state
 	pendingBridges map[ids.ID]*BridgeRequest
 	bridgeRegistry *BridgeRegistry
-	
+
 	// Chain connectivity
-	chainClients   map[string]ChainClient
-	
+	chainClients map[string]ChainClient
+
 	// Block management
 	preferred      ids.ID
 	lastAcceptedID ids.ID
 	pendingBlocks  map[ids.ID]*Block
-	
+
 	mu sync.RWMutex
 }
 
 // BridgeRequest represents a cross-chain bridge request
 type BridgeRequest struct {
-	ID              ids.ID    `json:"id"`
-	SourceChain     string    `json:"sourceChain"`
-	DestChain       string    `json:"destChain"`
-	Asset           ids.ID    `json:"asset"`
-	Amount          uint64    `json:"amount"`
-	Recipient       []byte    `json:"recipient"`
-	SourceTxID      ids.ID    `json:"sourceTxId"`
-	Confirmations   uint32    `json:"confirmations"`
-	Status          string    `json:"status"` // pending, signing, completed, failed
-	MPCSignatures   [][]byte  `json:"mpcSignatures"`
-	CreatedAt       time.Time `json:"createdAt"`
+	ID            ids.ID    `json:"id"`
+	SourceChain   string    `json:"sourceChain"`
+	DestChain     string    `json:"destChain"`
+	Asset         ids.ID    `json:"asset"`
+	Amount        uint64    `json:"amount"`
+	Recipient     []byte    `json:"recipient"`
+	SourceTxID    ids.ID    `json:"sourceTxId"`
+	Confirmations uint32    `json:"confirmations"`
+	Status        string    `json:"status"` // pending, signing, completed, failed
+	MPCSignatures [][]byte  `json:"mpcSignatures"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 // ChainClient interface for interacting with different chains
@@ -105,29 +111,29 @@ type ChainClient interface {
 
 // BridgeRegistry tracks bridge operations and validators
 type BridgeRegistry struct {
-	Validators      map[ids.NodeID]*BridgeValidator
+	Validators       map[ids.NodeID]*BridgeValidator
 	CompletedBridges map[ids.ID]*CompletedBridge
-	DailyVolume     map[string]uint64 // chainID -> volume
-	mu              sync.RWMutex
+	DailyVolume      map[string]uint64 // chainID -> volume
+	mu               sync.RWMutex
 }
 
 // BridgeValidator represents a bridge validator node
 type BridgeValidator struct {
-	NodeID          ids.NodeID
-	StakeAmount     uint64
-	MPCPublicKey    []byte
-	Active          bool
-	TotalBridged    uint64
-	SuccessRate     float64
+	NodeID       ids.NodeID
+	StakeAmount  uint64
+	MPCPublicKey []byte
+	Active       bool
+	TotalBridged uint64
+	SuccessRate  float64
 }
 
 // CompletedBridge represents a completed bridge operation
 type CompletedBridge struct {
-	RequestID       ids.ID
-	SourceTxID      ids.ID
-	DestTxID        ids.ID
-	CompletedAt     time.Time
-	MPCSignature    []byte
+	RequestID    ids.ID
+	SourceTxID   ids.ID
+	DestTxID     ids.ID
+	CompletedAt  time.Time
+	MPCSignature []byte
 }
 
 // Initialize implements the block.ChainVM interface
@@ -148,59 +154,54 @@ func (vm *VM) Initialize(
 	if !ok {
 		return errors.New("invalid chain context type")
 	}
-	
+
 	vm.db, ok = db.(database.Database)
 	if !ok {
 		return errors.New("invalid database type")
 	}
-	
+
 	vm.toEngine, ok = msgChan.(chan<- common.Message)
 	if !ok {
 		return errors.New("invalid message channel type")
 	}
-	
+
 	if logger, ok := vm.ctx.Log.(log.Logger); ok {
 		vm.log = logger
 	} else {
 		return errors.New("invalid logger type")
 	}
+
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	vm.pendingBridges = make(map[ids.ID]*BridgeRequest)
 	vm.chainClients = make(map[string]ChainClient)
-	vm.mpcParties = make(map[ids.NodeID]*cggmp21.Party)
-	
+
 	// Parse configuration
 	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
-	
+
 	// Validate configuration
-	if vm.config.RequireValidatorStake < 100_000_000 * 1e9 { // 100M LUX
+	if vm.config.RequireValidatorStake < 100_000_000*1e9 { // 100M LUX
 		return errors.New("B-chain requires 100M LUX minimum stake")
 	}
-	
-	// Initialize MPC party
-	mpcConfig := &cggmp21.Config{
-		Threshold:    vm.config.MPCThreshold,
-		TotalParties: vm.config.MPCTotalParties,
-		Curve:        elliptic.P256(), // Default curve
-		SessionTimeout: 300, // 5 minutes
-	}
-	
-	// Create MPC party with node index (simplified for now)
-	vm.mpcParty = &cggmp21.Party{
-		ID:     vm.ctx.NodeID,
-		Index:  0, // Would be determined by validator set in production
-		Config: mpcConfig,
-	}
-	
+
+	// Initialize MPC components using threshold protocol
+	// Party ID is derived from node ID
+	vm.mpcPartyID = party.ID(vm.ctx.NodeID.String())
+
+	// Create worker pool for MPC operations (8 workers)
+	vm.mpcPool = pool.NewPool(8)
+
+	// Note: mpcConfig and mpcPartyIDs will be populated during keygen
+	// which happens when validators join the bridge network
+
 	// Initialize bridge registry
 	vm.bridgeRegistry = &BridgeRegistry{
 		Validators:       make(map[ids.NodeID]*BridgeValidator),
 		CompletedBridges: make(map[ids.ID]*CompletedBridge),
 		DailyVolume:      make(map[string]uint64),
 	}
-	
+
 	// Initialize chain clients for supported chains
 	for _, chainID := range vm.config.SupportedChains {
 		// Initialize appropriate client based on chain type
@@ -209,25 +210,25 @@ func (vm *VM) Initialize(
 			log.String("chainID", chainID),
 		)
 	}
-	
+
 	// Parse genesis
 	genesis := &Genesis{}
 	if _, err := Codec.Unmarshal(genesisBytes, genesis); err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}
-	
+
 	// Create genesis block
 	genesisBlock := &Block{
-		BlockHeight:     0,
-		BlockTimestamp:  genesis.Timestamp,
-		ParentID_:       ids.Empty,
-		BridgeRequests:  []*BridgeRequest{},
-		vm:              vm,
+		BlockHeight:    0,
+		BlockTimestamp: genesis.Timestamp,
+		ParentID_:      ids.Empty,
+		BridgeRequests: []*BridgeRequest{},
+		vm:             vm,
 	}
-	
+
 	genesisBlock.ID_ = genesisBlock.computeID()
 	vm.lastAcceptedID = genesisBlock.ID()
-	
+
 	return vm.putBlock(genesisBlock)
 }
 
@@ -235,23 +236,23 @@ func (vm *VM) Initialize(
 func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
-	
+
 	// Check if we have pending bridge requests
 	if len(vm.pendingBridges) == 0 {
 		return nil, errors.New("no pending bridge requests")
 	}
-	
+
 	// Get parent block
 	parentID := vm.preferred
 	if parentID == ids.Empty {
 		parentID = vm.lastAcceptedID
 	}
-	
+
 	parent, err := vm.getBlock(parentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get parent block: %w", err)
 	}
-	
+
 	// Collect bridge requests that are ready
 	var requests []*BridgeRequest
 	for _, req := range vm.pendingBridges {
@@ -259,68 +260,68 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		if req.Confirmations >= vm.config.MinConfirmations {
 			requests = append(requests, req)
 		}
-		
+
 		// Limit block size
 		if len(requests) >= 100 {
 			break
 		}
 	}
-	
+
 	if len(requests) == 0 {
 		return nil, errors.New("no ready bridge requests")
 	}
-	
+
 	// Create new block
-	block := &Block{
-		ParentID_:       parentID,
-		BlockHeight:     parent.Height() + 1,
-		BlockTimestamp:  time.Now().Unix(),
-		BridgeRequests:  requests,
-		vm:              vm,
+	blk := &Block{
+		ParentID_:      parentID,
+		BlockHeight:    parent.Height() + 1,
+		BlockTimestamp: time.Now().Unix(),
+		BridgeRequests: requests,
+		vm:             vm,
 	}
-	
-	block.ID_ = block.computeID()
-	
+
+	blk.ID_ = blk.computeID()
+
 	// Store pending block
-	vm.pendingBlocks[block.ID()] = block
-	
+	vm.pendingBlocks[blk.ID()] = blk
+
 	vm.log.Info("built bridge block",
-		log.Stringer("blockID", block.ID()),
+		log.Stringer("blockID", blk.ID()),
 		log.Int("numRequests", len(requests)),
 	)
-	
-	return block, nil
+
+	return blk, nil
 }
 
 // GetBlock implements the block.ChainVM interface
 func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
-	
+
 	// Check pending blocks first
-	if block, exists := vm.pendingBlocks[id]; exists {
-		return block, nil
+	if blk, exists := vm.pendingBlocks[id]; exists {
+		return blk, nil
 	}
-	
+
 	return vm.getBlock(id)
 }
 
 // ParseBlock implements the block.ChainVM interface
 func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
-	block := &Block{vm: vm}
-	if _, err := Codec.Unmarshal(bytes, block); err != nil {
+	blk := &Block{vm: vm}
+	if _, err := Codec.Unmarshal(bytes, blk); err != nil {
 		return nil, err
 	}
-	
-	block.ID_ = block.computeID()
-	return block, nil
+
+	blk.ID_ = blk.computeID()
+	return blk, nil
 }
 
 // SetPreference implements the chain.ChainVM interface
 func (vm *VM) SetPreference(ctx context.Context, id ids.ID) error {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
-	
+
 	vm.preferred = id
 	return nil
 }
@@ -329,7 +330,7 @@ func (vm *VM) SetPreference(ctx context.Context, id ids.ID) error {
 func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
-	
+
 	return vm.lastAcceptedID, nil
 }
 
@@ -343,7 +344,6 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	return handlers, nil
 }
 
-
 // HealthCheck implements the common.VM interface
 func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
 	return map[string]string{"status": "healthy"}, nil
@@ -353,7 +353,7 @@ func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
 func (vm *VM) Shutdown(ctx context.Context) error {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
-	
+
 	// Clean up resources
 	return nil
 }
@@ -443,12 +443,12 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 
 // Helper methods
 
-func (vm *VM) putBlock(block *Block) error {
-	bytes, err := Codec.Marshal(codecVersion, block)
+func (vm *VM) putBlock(blk *Block) error {
+	bytes, err := Codec.Marshal(codecVersion, blk)
 	if err != nil {
 		return err
 	}
-	id := block.ID()
+	id := blk.ID()
 	return vm.db.Put(id[:], bytes)
 }
 
@@ -457,14 +457,14 @@ func (vm *VM) getBlock(id ids.ID) (*Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	block := &Block{vm: vm}
-	if _, err := Codec.Unmarshal(bytes, block); err != nil {
+
+	blk := &Block{vm: vm}
+	if _, err := Codec.Unmarshal(bytes, blk); err != nil {
 		return nil, err
 	}
-	
-	block.ID_ = id
-	return block, nil
+
+	blk.ID_ = id
+	return blk, nil
 }
 
 // HTTP handler methods
@@ -489,8 +489,6 @@ func (vm *VM) handleValidators(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"validators": []}`))
 }
-
-// Additional methods would be implemented here...
 
 // Genesis represents the genesis state
 type Genesis struct {

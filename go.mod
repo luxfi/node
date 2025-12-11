@@ -150,6 +150,7 @@ require (
 	github.com/luxfi/genesis v1.2.10
 	github.com/luxfi/geth v1.16.40
 	github.com/luxfi/qzmq v0.1.1
+	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.2
 	github.com/luxfi/warp v1.16.26
 	github.com/spaolacci/murmur3 v1.1.0
@@ -166,6 +167,7 @@ require (
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
+	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/dchest/siphash v1.2.3 // indirect
 	github.com/dgraph-io/ristretto v0.2.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
@@ -175,6 +177,7 @@ require (
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
@@ -195,6 +198,7 @@ require (
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/zondax/golem v0.27.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
