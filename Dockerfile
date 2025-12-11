@@ -27,9 +27,11 @@ COPY --from=go-installer /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Install build dependencies (ca-certificates needed for go mod download)
+# libc6-dev-arm64-cross needed for cross-compiling to ARM64
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libc6-dev make git ca-certificates \
     gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu \
+    libc6-dev-arm64-cross libc6-dev-amd64-cross \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
