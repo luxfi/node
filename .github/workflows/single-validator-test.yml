@@ -169,9 +169,11 @@ jobs:
           TEST_SCENARIO: ${{ matrix.test-scenario.name }}
           EXTRA_FLAGS: ${{ matrix.test-scenario.extra_flags }}
           DEBUG: ${{ github.event.inputs.debug_enabled }}
+          NODE_DIR: ${{ github.workspace }}/node
+          GENESIS_FILE: ${{ github.workspace }}/genesis/genesis_mainnet.json
         run: |
           echo "Running test scenario: $TEST_SCENARIO"
-          
+
           # Make test script executable if it exists
           if [ -f genesis/test_single_validator.sh ]; then
             chmod +x genesis/test_single_validator.sh
