@@ -22,7 +22,13 @@ import (
 
 func ExampleWallet() {
 	ctx := context.Background()
-	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
+	// GetEWOQKey returns nil if no key is available from environment
+	ewoquKey := genesis.GetEWOQKey()
+	if ewoquKey == nil {
+		log.Printf("no local key available, skipping example")
+		return
+	}
+	kc := secp256k1fx.NewKeychain(ewoquKey)
 	wkc := kc.AsWalletKeychain()
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
@@ -50,7 +56,7 @@ func ExampleWallet() {
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			genesis.EWOQKey.PublicKey().Address(),
+			ewoquKey.PublicKey().Address(),
 		},
 	}
 
