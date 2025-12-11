@@ -38,7 +38,7 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 	}{
 		{
 			name:         "message dropped",
-			validatorSet: testValidatorSet{},
+			validatorSet: testValidatorSet{validators: set.NewSet[ids.NodeID](0)},
 			nodeID:       nodeID,
 		},
 		{
@@ -84,7 +84,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 	}{
 		{
 			name:         "message dropped",
-			validatorSet: testValidatorSet{},
+			validatorSet: testValidatorSet{validators: set.NewSet[ids.NodeID](0)},
 			nodeID:       nodeID,
 			expected:     ErrNotValidator,
 		},

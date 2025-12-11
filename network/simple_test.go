@@ -26,7 +26,7 @@ func TestSimpleConnection(t *testing.T) {
 	config1 := configs[0]
 	config1.Beacons = validators.NewManager()
 	config1.Validators = validators.NewManager()
-	config1.TrackedNets = set.Set[ids.ID]{}
+	config1.TrackedNets = set.NewSet[ids.ID](0)
 	config1.UptimeCalculator = &uptime.NoOpCalculator{}
 
 	msgCreator1 := newMessageCreator(t)
@@ -57,7 +57,7 @@ func TestSimpleConnection(t *testing.T) {
 	config2 := configs[1]
 	config2.Beacons = validators.NewManager()
 	config2.Validators = validators.NewManager()
-	config2.TrackedNets = set.Set[ids.ID]{}
+	config2.TrackedNets = set.NewSet[ids.ID](0)
 	config2.UptimeCalculator = &uptime.NoOpCalculator{}
 
 	msgCreator2 := newMessageCreator(t)

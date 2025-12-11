@@ -262,7 +262,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 		config.Validators = vdrs
 
 		// Initialize TrackedNets (empty - primary network is always tracked)
-		config.TrackedNets = set.Set[ids.ID]{}
+		config.TrackedNets = set.NewSet[ids.ID](0)
 
 		// Initialize UptimeCalculator
 		config.UptimeCalculator = &uptime.NoOpCalculator{}
