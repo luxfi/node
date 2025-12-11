@@ -11,16 +11,16 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )
 
 func main() {
-	key := genesis.EWOQKey
+	key := keyutil.MustLoadKey()
 	uri := primary.LocalAPIURI
 	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 
@@ -30,7 +30,7 @@ func main() {
 		Timestamp: time.Now().Unix(),
 		Allocations: []xsgenesis.Allocation{
 			{
-				Address: genesis.EWOQKey.Address(),
+				Address: key.Address(),
 				Balance: math.MaxUint64,
 			},
 		},

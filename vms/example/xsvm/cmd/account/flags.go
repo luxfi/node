@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -21,7 +20,7 @@ const (
 func AddFlags(flags *pflag.FlagSet) {
 	flags.String(URIKey, primary.LocalAPIURI, "API URI to use to fetch the account state")
 	flags.String(ChainIDKey, "", "Chain to fetch the account state on")
-	flags.String(AddressKey, genesis.EWOQKey.Address().String(), "Address of the account to fetch")
+	flags.String(AddressKey, "", "Address of the account to fetch (required)")
 	flags.String(AssetIDKey, "[chain-id]", "Asset balance to fetch")
 }
 

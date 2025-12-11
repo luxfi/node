@@ -10,13 +10,13 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
 )
 
 func main() {
-	key := genesis.EWOQKey
+	key := keyutil.MustLoadKey()
 	uri := primary.LocalAPIURI
 	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 

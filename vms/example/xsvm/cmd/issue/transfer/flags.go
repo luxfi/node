@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/wallet/net/primary"
 )
@@ -29,8 +28,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.Uint64(MaxFeeKey, 0, "Maximum fee to spend")
 	flags.String(AssetIDKey, "[chain-id]", "Asset to send")
 	flags.Uint64(AmountKey, units.Schmeckle, "Amount to send")
-	flags.String(ToKey, genesis.EWOQKey.Address().String(), "Destination address")
-	flags.String(PrivateKeyKey, genesis.EWOQKeyFormattedStr, "Private key to sign the transaction")
+	flags.String(ToKey, "", "Destination address (required)")
+	flags.String(PrivateKeyKey, "", "Private key to sign the transaction (required)")
 }
 
 type Config struct {

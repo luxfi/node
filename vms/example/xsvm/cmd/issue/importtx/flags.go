@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -29,7 +28,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String(DestinationChainIDKey, "", "Chain to send the asset to")
 	flags.String(TxIDKey, "", "ID of the export transaction")
 	flags.Uint64(MaxFeeKey, 0, "Maximum fee to spend")
-	flags.String(PrivateKeyKey, genesis.EWOQKeyFormattedStr, "Private key to sign the transaction")
+	flags.String(PrivateKeyKey, "", "Private key to sign the transaction (required)")
 }
 
 type Config struct {

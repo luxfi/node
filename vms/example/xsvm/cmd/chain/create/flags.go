@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -26,10 +25,10 @@ const (
 func AddFlags(flags *pflag.FlagSet) {
 	flags.String(URIKey, primary.LocalAPIURI, "API URI to use to issue the chain creation transaction")
 	flags.String(NetIDKey, "", "Net to create the chain under")
-	flags.String(AddressKey, genesis.EWOQKey.Address().String(), "Address to fund in the genesis")
+	flags.String(AddressKey, "", "Address to fund in the genesis (required)")
 	flags.Uint64(BalanceKey, math.MaxUint64, "Amount to provide the funded address in the genesis")
 	flags.String(NameKey, "xs", "Name of the chain to create")
-	flags.String(PrivateKeyKey, genesis.EWOQKeyFormattedStr, "Private key to use when creating the new chain")
+	flags.String(PrivateKeyKey, "", "Private key to use when creating the new chain (required)")
 }
 
 type Config struct {

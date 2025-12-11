@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )
@@ -28,7 +27,7 @@ const (
 
 func AddFlags(flags *pflag.FlagSet) {
 	flags.Int64(TimeKey, time.Now().Unix(), "Unix timestamp to include in the genesis")
-	flags.String(AddressKey, genesis.EWOQKey.Address().String(), "Address to fund in the genesis")
+	flags.String(AddressKey, "", "Address to fund in the genesis (required)")
 	flags.Uint64(BalanceKey, math.MaxUint64, "Amount to provide the funded address in the genesis")
 	flags.String(EncodingKey, hexEncoding, fmt.Sprintf("Encoding to use for the genesis. Available values: %s or %s", hexEncoding, binaryEncoding))
 }
