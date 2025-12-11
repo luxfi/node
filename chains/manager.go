@@ -25,8 +25,8 @@ import (
 	dbmanager "github.com/luxfi/database/manager"
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/database/meterdb" // Unused
-	"github.com/luxfi/database/prefixdb"
-consensuscore "github.com/luxfi/consensus/core"
+	// "github.com/luxfi/database/prefixdb" // Only used in disabled createDAGChain function
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
@@ -504,6 +504,11 @@ type ManagerConfig struct {
 	ChainDataDir string
 
 	Nets *Nets
+
+	// IsolatedChains enables separate BadgerDB instances per chain
+	// When true: Each chain gets its own database directory for isolation and performance
+	// When false: Uses shared database with prefix isolation (legacy mode)
+	IsolatedChains bool
 }
 
 type manager struct {
@@ -511,6 +516,9 @@ type manager struct {
 	// That is, [chainID].String() is an alias for the chain, too
 	ids.Aliaser
 	ManagerConfig
+
+	// ChainDBManager handles per-chain database instances
+	chainDBManager *ChainDBManager
 
 	// Those notified when a chain is created
 	registrants []Registrant
@@ -585,9 +593,18 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
+	// Initialize per-chain database manager
+	chainDBManager := NewChainDBManager(ChainDBManagerConfig{
+		BaseDir:  filepath.Join(config.ChainDataDir, "chains"),
+		SharedDB: config.DB,
+		Isolated: config.IsolatedChains,
+		Log:      config.Log,
+	})
+
 	return &manager{
 		Aliaser:                ids.NewAliaser(),
 		ManagerConfig:          *config,
+		chainDBManager:         chainDBManager,
 		chains:                 make(map[ids.ID]*chainInfo),
 		chainsQueue:            buffer.NewUnboundedBlockingDeque[ChainParameters](initialQueueSize),
 		unblockChainCreatorCh:  make(chan struct{}),
@@ -951,7 +968,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("detected DAG VM with GetEngine()",
 			log.Stringer("chainID", chainParams.ID),
 		)
-		chain, err = m.createDAG(chainCtx, chainParams, vm)
+		chain, err = m.createDAG(chainCtx, chainParams, vm, chainFxs)
 		if err != nil {
 			return nil, fmt.Errorf("error creating DAG chain: %w", err)
 		}
@@ -982,40 +999,51 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			chainConfig = ChainConfig{}
 		}
 
-		// Create prefixed databases for the VM
+		// Get chain alias for database directory naming
+		linearChainAlias := chainParams.ID.String()
+		if aliases, _ := m.Aliases(chainParams.ID); len(aliases) > 0 {
+			linearChainAlias = aliases[0] // Use first alias (e.g., "P", "C")
+		}
+
+		// Get VM database from chain database manager
+		// In isolated mode, each chain gets its own BadgerDB
+		// In legacy mode, uses prefixdb on shared database
 		var vmDB database.Database
 
-		// For network 96369 C-Chain, use the migrated BadgerDB directly
+		// For network 96369 C-Chain, use the migrated BadgerDB directly (legacy migration support)
 		if m.NetworkID == 96369 && chainParams.ID == m.CChainID {
-			// Use the data-dir based path: ~/.lux/chainData/network-96369/{chainID}/badgerdb/ethdb
 			migratedDBPath := filepath.Join(os.Getenv("HOME"), ".lux/chainData/network-96369", chainParams.ID.String(), "badgerdb/ethdb")
 			if _, err := os.Stat(migratedDBPath); err == nil {
 				m.Log.Info("Network 96369 C-Chain detected - using migrated BadgerDB",
 					log.String("path", migratedDBPath))
 				migratedDB, err := badgerdb.New(migratedDBPath, nil, "cchain", chainMetricsReg)
 				if err != nil {
-					m.Log.Error("Failed to open migrated BadgerDB",
+					m.Log.Error("Failed to open migrated BadgerDB, falling back to chain DB manager",
 						log.String("path", migratedDBPath),
 						log.Err(err))
-					// Fall back to prefixed DB
-					prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
-					vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+					vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
+					}
 				} else {
 					vmDB = migratedDB
 					m.Log.Info("Successfully opened migrated BadgerDB",
 						log.String("path", migratedDBPath))
 				}
 			} else {
-				m.Log.Warn("Migrated BadgerDB not found at expected path",
+				m.Log.Warn("Migrated BadgerDB not found, using chain DB manager",
 					log.String("path", migratedDBPath))
-				// Fall back to prefixed DB
-				prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
-				vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+				vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
+				}
 			}
 		} else {
-			// Standard path for all other chains
-			prefixDB := prefixdb.New(chainParams.ID[:], m.DB)
-			vmDB = prefixdb.New(VMDBPrefix, prefixDB)
+			// Standard path: use chain database manager
+			vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
+			}
 		}
 
 		// Create message channel for VM-to-Engine communication
@@ -1159,11 +1187,79 @@ func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
 }
 
+// dagVMAdapter adapts a DAG VM to consensus.VM for HTTP handler registration
+type dagVMAdapter struct {
+	underlying interface{}
+}
+
+func (v *dagVMAdapter) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	if h, ok := v.underlying.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return h.CreateHandlers(ctx)
+	}
+	return map[string]http.Handler{}, nil
+}
+
+func (v *dagVMAdapter) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	if h, ok := v.underlying.(interface {
+		CreateStaticHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return h.CreateStaticHandlers(ctx)
+	}
+	return map[string]http.Handler{}, nil
+}
+
+func (v *dagVMAdapter) HealthCheck(ctx context.Context) (interface{}, error) {
+	return map[string]interface{}{"healthy": true}, nil
+}
+
+func (v *dagVMAdapter) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return nil, nil
+}
+
+func (v *dagVMAdapter) SetState(ctx context.Context, state consensuscore.VMState) error {
+	if s, ok := v.underlying.(interface {
+		SetState(context.Context, uint32) error
+	}); ok {
+		return s.SetState(ctx, uint32(state))
+	}
+	return nil
+}
+
+func (v *dagVMAdapter) Shutdown(ctx context.Context) error {
+	if s, ok := v.underlying.(interface {
+		Shutdown(context.Context) error
+	}); ok {
+		return s.Shutdown(ctx)
+	}
+	return nil
+}
+
+func (v *dagVMAdapter) Version(ctx context.Context) (string, error) {
+	return "1.0.0", nil
+}
+
+func (v *dagVMAdapter) Initialize(
+	ctx context.Context,
+	chainCtx *consensusctx.Context,
+	dbMgr dbmanager.Manager,
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	toEngine chan<- consensuscore.Message,
+	fxs []*consensuscore.Fx,
+	appSender interface{},
+) error {
+	return nil // DAG VMs are pre-initialized
+}
+
 // createDAG creates a DAG chain (X-Chain, Q-Chain) using the VM's DAG engine
 func (m *manager) createDAG(
 	ctx *consensusctx.Context,
 	chainParams ChainParameters,
 	vm interface{},
+	fxs []*consensuscore.Fx,
 ) (*chainInfo, error) {
 	// Type assert to get GetEngine() method from exchangevm/qvm
 	dagVM, ok := vm.(interface{ GetEngine() consensusdag.Engine })
@@ -1176,10 +1272,83 @@ func (m *manager) createDAG(
 		log.String("vmID", chainParams.VMID.String()),
 	)
 
-	// Get the DAG engine from the VM - this returns consensus/engine/dag.Engine
-	dagEngine := dagVM.GetEngine()
+	// Get chain configuration
+	chainConfig, err := m.getChainConfig(chainParams.ID)
+	if err != nil {
+		m.Log.Warn("failed to get chain config, using empty config",
+			log.Stringer("chainID", chainParams.ID),
+			log.Err(err))
+		chainConfig = ChainConfig{}
+	}
 
-	// Start the DAG engine directly
+	// Get chain alias for database directory naming
+	chainAlias := chainParams.ID.String()
+	if aliases, _ := m.Aliases(chainParams.ID); len(aliases) > 0 {
+		chainAlias = aliases[0] // Use first alias (e.g., "X", "Q")
+	}
+
+	// Get VM database from chain database manager
+	// In isolated mode, each chain gets its own BadgerDB
+	// In legacy mode, uses prefixdb on shared database
+	vmDB, err := m.chainDBManager.GetVMDatabase(chainParams.ID, chainAlias)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
+	}
+
+	// Initialize VM if it supports Initialize
+	vmInitialized := false
+	if initVM, ok := vm.(interface {
+		Initialize(
+			ctx context.Context,
+			chainCtx interface{},
+			dbManager interface{},
+			genesisBytes []byte,
+			upgradeBytes []byte,
+			configBytes []byte,
+			toEngine chan<- interface{},
+			fxs []interface{},
+			appSender interface{},
+		) error
+	}); ok {
+		toEngine := make(chan interface{}, 1)
+		fxsInterface := make([]interface{}, len(fxs))
+		for i, fx := range fxs {
+			fxsInterface[i] = fx
+		}
+		// Use a no-op Warp sender for single-node mode
+		err := initVM.Initialize(
+			context.TODO(),
+			ctx,
+			vmDB,
+			chainParams.GenesisData,
+			chainConfig.Upgrade,
+			chainConfig.Config,
+			toEngine,
+			fxsInterface,
+			&noopWarpSender{}, // Provide no-op Warp 1.5 sender for single-node mode
+		)
+		if err != nil {
+			m.Log.Warn("VM initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
+			// Continue - the VM may still be usable in a degraded state
+		} else {
+			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+			vmInitialized = true
+		}
+	}
+
+	// Only transition VM to normal operation if initialization succeeded
+	if vmInitialized {
+		if stateVM, ok := vm.(interface {
+			SetState(context.Context, uint32) error
+		}); ok {
+			if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
+				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
+			}
+		}
+	}
+
+	// Get and start the DAG engine
+	dagEngine := dagVM.GetEngine()
 	if starter, ok := dagEngine.(interface{ Start(context.Context, uint32) error }); ok {
 		if err := starter.Start(context.Background(), 0); err != nil {
 			return nil, fmt.Errorf("failed to start DAG engine: %w", err)
@@ -1191,20 +1360,19 @@ func (m *manager) createDAG(
 		log.String("status", "using native DAG consensus"),
 	)
 
-	// Return basic chain info
-	// Handler will be created during chain startup
 	return &chainInfo{
 		Name:    chainParams.ID.String(),
 		Context: ctx,
-		VM:      nil, // VM manages itself for DAG chains
-		Handler: &placeholderHandler{}, // Placeholder - messages are routed but no-op for now
+		VM:      &dagVMAdapter{underlying: vm},
+		Handler: &placeholderHandler{},
 	}, nil
 }
 
-// Create a Graph-based blockchain that uses Lux
-// Disabled for now - consensus package doesn't have vertex types
+// createDAGChain creates a DAG-based blockchain (X-Chain style)
+// Disabled for now - consensus package doesn't have vertex types yet
+// TODO: Re-enable when consensus/engine/dag provides LinearizableVMWithEngine
 /*
-func (m *manager) createLuxChain(
+func (m *manager) createDAGChain(
 	ctx context.Context,
 	chainParams ChainParameters,
 	genesisData []byte,
@@ -1731,7 +1899,7 @@ func (m *manager) createLuxChain(
 		Handler: h,
 	}, nil
 }
-*/ // End of createLuxChain - disabled
+*/ // End of createDAGChain - disabled pending consensus/engine/dag support
 
 
 // simpleEngine adapts consensuschain.Transitive to the Engine interface
@@ -2255,55 +2423,30 @@ func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Mes
 	return nil
 }
 
-// noopAppSender is a no-op implementation of AppSender
-type noopAppSender struct{}
+// noopWarpSender is a no-op implementation of WarpSender for Warp 1.5 messaging
+// Used in single-node mode where cross-chain messaging is not needed
+// Implements consensuscore.AppSender interface with minimal overhead
+type noopWarpSender struct{}
 
-func (n *noopAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, request []byte) error {
+// Compile-time check that noopWarpSender implements AppSender
+var _ consensuscore.AppSender = (*noopWarpSender)(nil)
+
+func (n *noopWarpSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
 }
 
-func (n *noopAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+func (n *noopWarpSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (n *noopAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+func (n *noopWarpSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-func (n *noopAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+func (n *noopWarpSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
 	return nil
 }
 
-// singleNodeAppSender implements consensuscore.AppSender interface for single-node mode
-// It's a no-op implementation since there's no network communication in single-node mode
-type singleNodeAppSender struct {
-	log log.Logger
-}
-
-// Ensure singleNodeAppSender implements consensuscore.AppSender
-var _ consensuscore.AppSender = (*singleNodeAppSender)(nil)
-
-func (s *singleNodeAppSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	s.log.Debug("SendAppRequest called in single-node mode (no-op)")
-	return nil
-}
-
-func (s *singleNodeAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	s.log.Debug("SendAppResponse called in single-node mode (no-op)")
-	return nil
-}
-
-func (s *singleNodeAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	s.log.Debug("SendAppError called in single-node mode (no-op)")
-	return nil
-}
-
-func (s *singleNodeAppSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	s.log.Debug("SendAppGossip called in single-node mode (no-op)")
-	return nil
-}
-
-func (s *singleNodeAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	s.log.Debug("SendAppGossipSpecific called in single-node mode (no-op)")
+func (n *noopWarpSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
 	return nil
 }

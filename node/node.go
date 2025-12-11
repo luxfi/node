@@ -1140,6 +1140,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Nets:                                 subnets,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
+			IsolatedChains:                          n.Config.DatabaseConfig.IsolatedChains,
 		},
 	)
 	if err != nil {

@@ -140,6 +140,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(PChainDBTypeKey, "", "Database type for P-Chain. If not specified, uses default db-type")
 	fs.String(XChainDBTypeKey, "", "Database type for X-Chain. If not specified, uses default db-type")
 	fs.String(CChainDBTypeKey, "", "Database type for C-Chain. If not specified, uses default db-type")
+	fs.Bool(DBIsolatedChainsKey, true, "Use isolated BadgerDB per chain (recommended for performance). If false, uses shared prefixed database.")
 
 	// Logging
 	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Lux")

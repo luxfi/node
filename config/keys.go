@@ -61,6 +61,7 @@ const (
 	PChainDBTypeKey                          = "p-chain-db-type"
 	XChainDBTypeKey                          = "x-chain-db-type"
 	CChainDBTypeKey                          = "c-chain-db-type"
+	DBIsolatedChainsKey                      = "db-isolated-chains"
 	PublicIPKey                              = "public-ip"
 	PublicIPResolutionFreqKey                = "public-ip-resolution-frequency"
 	PublicIPResolutionServiceKey             = "public-ip-resolution-service"

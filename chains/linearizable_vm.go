@@ -174,16 +174,30 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toE
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *consensusctx.Context,
-	_ database.Database,
-	_ []byte,
-	_ []byte,
-	_ []byte,
-	_ []fx.Fx,
-	_ appsender.AppSender,
+	consensusCtx *consensusctx.Context,
+	db database.Database,
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	fxs []fx.Fx,
+	appSender appsender.AppSender,
 ) error {
-	// Note: Vertex VM linearization is not fully supported in the current consensus implementation
-	// The Linearize method is not available on LinearizableVMWithEngine
-	// This is part of the disabled vertex/DAG VM support mentioned in CLAUDE.md
-	return errors.New("vertex VM linearization not supported in current implementation")
+	// When Initialize is called, we need to linearize the DAG
+	// The stopVertexID should have been set by initializeOnLinearizeVM.Linearize
+	if vm.stopVertexID == ids.Empty {
+		return errors.New("stopVertexID not set - Linearize must be called first")
+	}
+
+	// Get the underlying linearizable VM
+	linearizableVM, ok := vm.LinearizableVMWithEngine.(consensusvertex.LinearizableVM)
+	if !ok {
+		// If it doesn't implement LinearizableVM, try to call Linearize directly via interface
+		// This is a fallback for VMs that embed the engine but expose Linearize differently
+		return errors.New("VM does not implement LinearizableVM interface")
+	}
+
+	// Call Linearize to convert DAG to linear chain at stopVertexID
+	// The toEngine channel will be used to signal when linearization is complete
+	toVertexID := ids.Empty // Use empty to indicate full linearization
+	return linearizableVM.Linearize(ctx, vm.stopVertexID, toVertexID)
 }
