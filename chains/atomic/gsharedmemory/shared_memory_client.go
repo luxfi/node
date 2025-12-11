@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
@@ -83,7 +84,8 @@ func (c *Client) Apply(requests map[ids.ID]*atomic.Requests, batches ...database
 	for i, batch := range batches {
 		batch := batch.Inner()
 		fb := filteredBatch{
-			writes: make(map[string][]byte),
+			writes:  make(map[string][]byte),
+			deletes: set.NewSet[string](0),
 		}
 		if err := batch.Replay(&fb); err != nil {
 			return err
