@@ -721,6 +721,7 @@ func Test_MerkleDB_Random_Insert_Ordering(t *testing.T) {
 		// Insert key-value pairs into a database.
 		ops := make([]database.BatchOp, 0, numKeyValues)
 		keys = [][]byte{}
+		keysSet = set.NewSet[string](numKeyValues)
 		for x := 0; x < numKeyValues; x++ {
 			key := genKey(r)
 			value := make([]byte, r.Intn(51))
