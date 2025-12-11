@@ -38,8 +38,8 @@ linters:
     - goconst
     - gocritic
     # - goerr113
-    - gofmt
-    - gofumpt
+    # - gofmt  # formatter, not a linter in v2
+    # - gofumpt  # formatter, not a linter in v2
     # - gomnd
     - goprintffuncname
     - gosec
