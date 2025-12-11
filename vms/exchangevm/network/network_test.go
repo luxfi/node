@@ -155,7 +155,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				m, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
-				for i := 0; i < 1024; i++ {
+				// 64 MiB mempool / 2 MiB max tx = 32 max-size txs
+				for i := 0; i < 32; i++ {
 					tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
 					bytes := make([]byte, mempool.MaxTxSize)
 					tx.SetBytes(bytes, bytes)
