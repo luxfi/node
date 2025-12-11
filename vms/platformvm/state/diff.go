@@ -6,7 +6,10 @@ package state
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -576,7 +579,17 @@ func (d *diff) Apply(baseState Chain) error {
 	// additions. This ensures that a subnetID+nodeID pair that was deleted and
 	// then re-added in a single diff can't get reordered into the addition
 	// happening first; which would return an error.
-	for _, l1Validator := range d.l1ValidatorsDiff.modified {
+	//
+	// Sort validators by ValidationID for deterministic processing order.
+	// This is important when multiple inactive validators share the same
+	// effectiveNodeID (ids.EmptyNodeID), as the first one processed sets
+	// the TxID in the validators manager.
+	sortedValidationIDs := maps.Keys(d.l1ValidatorsDiff.modified)
+	slices.SortFunc(sortedValidationIDs, func(a, b ids.ID) int {
+		return a.Compare(b)
+	})
+	for _, validationID := range sortedValidationIDs {
+		l1Validator := d.l1ValidatorsDiff.modified[validationID]
 		if !l1Validator.isDeleted() {
 			continue
 		}
@@ -584,7 +597,8 @@ func (d *diff) Apply(baseState Chain) error {
 			return err
 		}
 	}
-	for _, l1Validator := range d.l1ValidatorsDiff.modified {
+	for _, validationID := range sortedValidationIDs {
+		l1Validator := d.l1ValidatorsDiff.modified[validationID]
 		if l1Validator.isDeleted() {
 			continue
 		}

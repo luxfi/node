@@ -965,6 +965,18 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 		defer n.metrics.numTracked.Dec()
 
 		for {
+			// Check for early termination before starting the delay timer.
+			// This ensures that if the context is already cancelled when dial
+			// is called, we return immediately without attempting to connect.
+			select {
+			case <-n.onCloseCtx.Done():
+				return
+			case <-ip.onStopTracking:
+				return
+			default:
+				// Context is not cancelled, proceed with delay
+			}
+
 			timer := time.NewTimer(ip.getDelay())
 
 			select {

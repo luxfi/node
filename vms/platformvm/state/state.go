@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"sync"
 	"time"
 
@@ -267,8 +268,10 @@ func RegisterStateBlockType(targetCodec codec.Registry) error {
 func init() {
 	// We need to register stateBlk with block.GenesisCodec so that
 	// parseStoredBlock can deserialize legacy block storage format.
-	// We can't import block package here due to import cycle, so this
-	// registration needs to happen elsewhere or we use a different approach.
+	// Since state imports block (no import cycle), we can register directly.
+	if err := block.RegisterGenesisType(&stateBlk{}); err != nil {
+		panic(err)
+	}
 }
 
 /*
@@ -364,9 +367,10 @@ type state struct {
 	expiryDiff *expiryDiff
 	expiryDB   database.Database
 
-	activeL1Validators  *activeL1Validators
-	l1ValidatorsDiff    *l1ValidatorsDiff
-	l1ValidatorsDB      database.Database
+	activeL1Validators   *activeL1Validators
+	l1ValidatorsDiff     *l1ValidatorsDiff
+	l1ValidatorsDiffLock sync.RWMutex // Protects concurrent access to l1ValidatorsDiff
+	l1ValidatorsDB       database.Database
 	weightsCache        cache.Cacher[ids.ID, uint64] // subnetID -> total L1 validator weight
 	weightsDB           database.Database
 	subnetIDNodeIDCache cache.Cacher[subnetIDNodeID, bool] // subnetID+nodeID -> is validator
@@ -460,6 +464,7 @@ type state struct {
 	currentSupply, persistedCurrentSupply         uint64
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
+	lastAcceptedLock                    sync.RWMutex // Protects concurrent access to lastAccepted
 	indexedHeights                      *heightRange
 	singletonDB                         database.Database
 }
@@ -906,6 +911,8 @@ func (s *state) GetCurrentValidators(ctx context.Context, subnetID ids.ID) ([]*S
 }
 
 func (s *state) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
+	s.l1ValidatorsDiffLock.RLock()
+	defer s.l1ValidatorsDiffLock.RUnlock()
 	return s.l1ValidatorsDiff.getActiveL1ValidatorsIterator(
 		s.activeL1Validators.newIterator(),
 	), nil
@@ -1377,10 +1384,14 @@ func (s *state) SetAccruedFees(accruedFees uint64) {
 }
 
 func (s *state) GetLastAccepted() ids.ID {
+	s.lastAcceptedLock.RLock()
+	defer s.lastAcceptedLock.RUnlock()
 	return s.lastAccepted
 }
 
 func (s *state) SetLastAccepted(lastAccepted ids.ID) {
+	s.lastAcceptedLock.Lock()
+	defer s.lastAcceptedLock.Unlock()
 	s.lastAccepted = lastAccepted
 }
 
@@ -1652,7 +1663,14 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 	// updateValidators is set to false here to maintain the invariant that the
 	// primary network's validator set is empty before the validator sets are
 	// initialized.
-	return s.write(false /*=updateValidators*/, 0)
+	if err := s.write(false /*=updateValidators*/, 0); err != nil {
+		return err
+	}
+
+	// Mark blocks as already reindexed since this is a fresh database with no
+	// legacy block indices to convert. This prevents the ReindexBlocks goroutine
+	// from running and racing with other state operations on fresh databases.
+	return s.singletonDB.Put(BlocksReindexedKey, nil)
 }
 
 // Load pulls data previously stored on disk that is expected to be in memory.
@@ -1714,7 +1732,9 @@ func (s *state) loadMetadata() error {
 		return err
 	}
 	s.persistedLastAccepted = lastAccepted
+	s.lastAcceptedLock.Lock()
 	s.lastAccepted = lastAccepted
+	s.lastAcceptedLock.Unlock()
 
 	// Lookup the most recently indexed range on disk. If we haven't started
 	// indexing the weights, then we keep the indexed heights as nil.
@@ -1834,10 +1854,7 @@ func (s *state) loadCurrentValidators() error {
 			return err
 		}
 
-		validator := s.currentStakers.getOrCreateValidator(staker.NetID, staker.NodeID)
-		validator.validator = staker
-
-		s.currentStakers.stakers.ReplaceOrInsert(staker)
+		s.currentStakers.LoadValidator(staker)
 
 		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.NetID, metadata)
 	}
@@ -1884,10 +1901,7 @@ func (s *state) loadCurrentValidators() error {
 		if err != nil {
 			return err
 		}
-		validator := s.currentStakers.getOrCreateValidator(staker.NetID, staker.NodeID)
-		validator.validator = staker
-
-		s.currentStakers.stakers.ReplaceOrInsert(staker)
+		s.currentStakers.LoadValidator(staker)
 
 		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.NetID, metadata)
 	}
@@ -1940,13 +1954,7 @@ func (s *state) loadCurrentValidators() error {
 				return err
 			}
 
-			validator := s.currentStakers.getOrCreateValidator(staker.NetID, staker.NodeID)
-			if validator.delegators == nil {
-				validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
-			}
-			validator.delegators.ReplaceOrInsert(staker)
-
-			s.currentStakers.stakers.ReplaceOrInsert(staker)
+			s.currentStakers.LoadDelegator(staker)
 		}
 	}
 
@@ -1989,10 +1997,7 @@ func (s *state) loadPendingValidators() error {
 				return err
 			}
 
-			validator := s.pendingStakers.getOrCreateValidator(staker.NetID, staker.NodeID)
-			validator.validator = staker
-
-			s.pendingStakers.stakers.ReplaceOrInsert(staker)
+			s.pendingStakers.LoadValidator(staker)
 		}
 	}
 
@@ -2024,13 +2029,7 @@ func (s *state) loadPendingValidators() error {
 				return err
 			}
 
-			validator := s.pendingStakers.getOrCreateValidator(staker.NetID, staker.NodeID)
-			if validator.delegators == nil {
-				validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
-			}
-			validator.delegators.ReplaceOrInsert(staker)
-
-			s.pendingStakers.stakers.ReplaceOrInsert(staker)
+			s.pendingStakers.LoadDelegator(staker)
 		}
 	}
 
@@ -2448,7 +2447,17 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 	// Remove all deleted L1 validators. This must be done before adding new
 	// L1 validators to support the case where a validator is removed and then
 	// immediately re-added with a different validationID.
-	for validationID, l1Validator := range s.l1ValidatorsDiff.modified {
+	//
+	// Sort validators by ValidationID for deterministic processing order.
+	// This is important when multiple inactive validators share the same
+	// effectiveNodeID (ids.EmptyNodeID), as the first one processed sets
+	// the TxID in the validators manager.
+	sortedValidationIDs := maps.Keys(s.l1ValidatorsDiff.modified)
+	slices.SortFunc(sortedValidationIDs, func(a, b ids.ID) int {
+		return a.Compare(b)
+	})
+	for _, validationID := range sortedValidationIDs {
+		l1Validator := s.l1ValidatorsDiff.modified[validationID]
 		if !l1Validator.isDeleted() {
 			continue
 		}
@@ -2470,7 +2479,8 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 
 	// Now that the removed L1 validators have been deleted, perform additions
 	// and modifications.
-	for validationID, l1Validator := range s.l1ValidatorsDiff.modified {
+	for _, validationID := range sortedValidationIDs {
+		l1Validator := s.l1ValidatorsDiff.modified[validationID]
 		if l1Validator.isDeleted() {
 			continue
 		}
@@ -2930,7 +2940,9 @@ func (s *state) writeL1Validators() error {
 		}
 	}
 
+	s.l1ValidatorsDiffLock.Lock()
 	s.l1ValidatorsDiff = newL1ValidatorsDiff()
+	s.l1ValidatorsDiffLock.Unlock()
 	return nil
 }
 
@@ -3120,11 +3132,15 @@ func (s *state) writeMetadata() error {
 		}
 		s.persistedCurrentSupply = s.currentSupply
 	}
-	if s.persistedLastAccepted != s.lastAccepted {
-		if err := database.PutID(s.singletonDB, LastAcceptedKey, s.lastAccepted); err != nil {
+	s.lastAcceptedLock.RLock()
+	lastAcceptedChanged := s.persistedLastAccepted != s.lastAccepted
+	currentLastAccepted := s.lastAccepted
+	s.lastAcceptedLock.RUnlock()
+	if lastAcceptedChanged {
+		if err := database.PutID(s.singletonDB, LastAcceptedKey, currentLastAccepted); err != nil {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
-		s.persistedLastAccepted = s.lastAccepted
+		s.persistedLastAccepted = currentLastAccepted
 	}
 	if s.indexedHeights != nil {
 		indexedHeightsBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, s.indexedHeights)
