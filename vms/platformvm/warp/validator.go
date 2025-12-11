@@ -38,9 +38,10 @@ type ValidatorState interface {
 
 // ValidatorData contains the data for a single validator
 type ValidatorData struct {
-	NodeID    ids.NodeID
-	PublicKey []byte
-	Weight    uint64
+	NodeID           ids.NodeID
+	PublicKey        []byte // BLS public key (classical)
+	RingtailPubKey   []byte // Ringtail public key (post-quantum)
+	Weight           uint64
 }
 
 type CanonicalValidatorSet struct {
@@ -51,10 +52,11 @@ type CanonicalValidatorSet struct {
 }
 
 type Validator struct {
-	PublicKey      *bls.PublicKey
-	PublicKeyBytes []byte
-	Weight         uint64
-	NodeIDs        []ids.NodeID
+	PublicKey        *bls.PublicKey
+	PublicKeyBytes   []byte
+	RingtailPubKey   []byte // Post-quantum Ringtail public key
+	Weight           uint64
+	NodeIDs          []ids.NodeID
 }
 
 func (v *Validator) Compare(o *Validator) int {
@@ -118,11 +120,13 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*ValidatorData) (CanonicalValidat
 				return CanonicalValidatorSet{}, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 			}
 			existingVdr.NodeIDs = append(existingVdr.NodeIDs, vdr.NodeID)
+			// Note: For RT keys, first one wins on merge (should be same anyway)
 		} else {
-			// Create new validator
+			// Create new validator with both BLS and Ringtail public keys
 			newVdr := &Validator{
 				PublicKey:      blsPK,
 				PublicKeyBytes: pkBytes,
+				RingtailPubKey: vdr.RingtailPubKey, // Post-quantum key
 				Weight:         vdr.Weight,
 				NodeIDs:        []ids.NodeID{vdr.NodeID},
 			}
@@ -205,9 +209,10 @@ func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint
 	result := make(map[ids.NodeID]*ValidatorData, len(validatorSet))
 	for nodeID, validator := range validatorSet {
 		result[nodeID] = &ValidatorData{
-			NodeID:    validator.NodeID,
-			PublicKey: validator.PublicKey,
-			Weight:    validator.Weight,
+			NodeID:         validator.NodeID,
+			PublicKey:      validator.PublicKey,
+			RingtailPubKey: validator.RingtailPubKey, // Post-quantum key
+			Weight:         validator.Weight,
 		}
 	}
 	return result, nil

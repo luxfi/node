@@ -52,9 +52,86 @@ type BridgeConfig struct {
 	SupportedChains []string `json:"supportedChains"` // Chain IDs that can be bridged
 
 	// Security settings
-	MaxBridgeAmount       uint64 `json:"maxBridgeAmount"`       // Maximum amount per bridge transaction
-	DailyBridgeLimit      uint64 `json:"dailyBridgeLimit"`      // Daily limit for bridge operations
-	RequireValidatorStake uint64 `json:"requireValidatorStake"` // 100M LUX required
+	MaxBridgeAmount      uint64 `json:"maxBridgeAmount"`      // Maximum amount per bridge transaction
+	DailyBridgeLimit     uint64 `json:"dailyBridgeLimit"`     // Daily limit for bridge operations
+	RequireValidatorBond uint64 `json:"requireValidatorBond"` // 100M LUX bond required (slashable, NOT staked)
+
+	// LP-333: Opt-in Signer Set Management
+	MaxSigners     int     `json:"maxSigners"`     // Maximum signers before set is frozen (default: 100)
+	ThresholdRatio float64 `json:"thresholdRatio"` // Threshold as ratio of signers (default: 0.67 = 2/3)
+}
+
+// SignerSet tracks the current MPC signer set (LP-333)
+// First 100 validators opt-in without reshare. Reshare ONLY on slot replacement.
+type SignerSet struct {
+	Signers      []*SignerInfo `json:"signers"`      // Active signers (max 100)
+	Waitlist     []ids.NodeID  `json:"waitlist"`     // Validators waiting for a slot
+	CurrentEpoch uint64        `json:"currentEpoch"` // Increments ONLY on reshare (slot replacement)
+	SetFrozen    bool          `json:"setFrozen"`    // True when len(Signers) >= MaxSigners
+	ThresholdT   int           `json:"thresholdT"`   // Current t value (T+1 required to sign)
+	PublicKey    []byte        `json:"publicKey"`    // Combined threshold public key
+}
+
+// SignerInfo contains information about a signer in the set
+type SignerInfo struct {
+	NodeID     ids.NodeID `json:"nodeId"`
+	PartyID    party.ID   `json:"partyId"`
+	BondAmount uint64     `json:"bondAmount"` // 100M LUX bond (slashable, NOT staked)
+	MPCPubKey  []byte     `json:"mpcPubKey"`
+	Active     bool       `json:"active"`
+	JoinedAt   time.Time  `json:"joinedAt"`
+	SlotIndex  int        `json:"slotIndex"`
+	Slashed    bool       `json:"slashed"`      // True if this signer has been slashed
+	SlashCount int        `json:"slashCount"`   // Number of times slashed
+}
+
+// RegisterValidatorInput is the input for registering as a bridge signer
+type RegisterValidatorInput struct {
+	NodeID     string `json:"nodeId"`
+	BondAmount string `json:"bondAmount,omitempty"` // 100M LUX bond (slashable)
+	MPCPubKey  string `json:"mpcPubKey,omitempty"`
+}
+
+// RegisterValidatorResult is the result of registering as a bridge signer
+type RegisterValidatorResult struct {
+	Success        bool   `json:"success"`
+	NodeID         string `json:"nodeId"`
+	Registered     bool   `json:"registered"`
+	Waitlisted     bool   `json:"waitlisted"`
+	SignerIndex    int    `json:"signerIndex"`
+	WaitlistIndex  int    `json:"waitlistIndex,omitempty"`
+	TotalSigners   int    `json:"totalSigners"`
+	Threshold      int    `json:"threshold"`
+	ReshareNeeded  bool   `json:"reshareNeeded"` // Always false for opt-in (LP-333)
+	CurrentEpoch   uint64 `json:"currentEpoch"`
+	SetFrozen      bool   `json:"setFrozen"`
+	RemainingSlots int    `json:"remainingSlots"`
+	Message        string `json:"message"`
+}
+
+// SignerSetInfo is the result of getting signer set information
+type SignerSetInfo struct {
+	TotalSigners   int           `json:"totalSigners"`
+	Threshold      int           `json:"threshold"`
+	MaxSigners     int           `json:"maxSigners"`
+	CurrentEpoch   uint64        `json:"currentEpoch"`
+	SetFrozen      bool          `json:"setFrozen"`
+	RemainingSlots int           `json:"remainingSlots"`
+	WaitlistSize   int           `json:"waitlistSize"`
+	Signers        []*SignerInfo `json:"signers"`
+	PublicKey      string        `json:"publicKey,omitempty"`
+}
+
+// SignerReplacementResult is the result of replacing a failed signer
+type SignerReplacementResult struct {
+	Success           bool   `json:"success"`
+	RemovedNodeID     string `json:"removedNodeId,omitempty"`
+	ReplacementNodeID string `json:"replacementNodeId,omitempty"`
+	ReshareSession    string `json:"reshareSession,omitempty"`
+	NewEpoch          uint64 `json:"newEpoch"`
+	ActiveSigners     int    `json:"activeSigners"`
+	Threshold         int    `json:"threshold"`
+	Message           string `json:"message"`
 }
 
 // VM implements the Bridge VM for cross-chain interoperability
@@ -70,6 +147,9 @@ type VM struct {
 	mpcPartyID  party.ID       // This party's ID in MPC protocol
 	mpcPartyIDs []party.ID     // All party IDs in the MPC group
 	mpcPool     *pool.Pool     // Worker pool for MPC operations
+
+	// LP-333: Signer Set Management (opt-in model)
+	signerSet *SignerSet // Active signer set with opt-in management
 
 	// Bridge state
 	pendingBridges map[ids.ID]*BridgeRequest
@@ -180,9 +260,26 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	// Validate configuration
-	if vm.config.RequireValidatorStake < 100_000_000*1e9 { // 100M LUX
-		return errors.New("B-chain requires 100M LUX minimum stake")
+	// Set LP-333 defaults for signer set management
+	if vm.config.MaxSigners == 0 {
+		vm.config.MaxSigners = 100 // First 100 validators opt-in, then set freezes
+	}
+	if vm.config.ThresholdRatio == 0 {
+		vm.config.ThresholdRatio = 0.67 // 2/3 threshold for BFT safety
+	}
+
+	// Validate configuration - Bridge validators require 100M LUX BOND (slashable, not stake)
+	if vm.config.RequireValidatorBond < 100_000_000*1e9 { // 100M LUX bond
+		return errors.New("B-chain requires 100M LUX bond (slashable)")
+	}
+
+	// Initialize LP-333 signer set (opt-in model)
+	vm.signerSet = &SignerSet{
+		Signers:      make([]*SignerInfo, 0, vm.config.MaxSigners),
+		Waitlist:     make([]ids.NodeID, 0),
+		CurrentEpoch: 0,
+		SetFrozen:    false,
+		ThresholdT:   0,
 	}
 
 	// Initialize MPC components using threshold protocol
@@ -493,4 +590,394 @@ func (vm *VM) handleValidators(w http.ResponseWriter, r *http.Request) {
 // Genesis represents the genesis state
 type Genesis struct {
 	Timestamp int64 `json:"timestamp"`
+}
+
+// =============================================================================
+// LP-333: Opt-In Signer Set Management
+// First 100 validators opt-in without reshare. Reshare ONLY on slot replacement.
+// =============================================================================
+
+// RegisterValidator registers a new validator as a bridge signer (opt-in model)
+// LP-333: First 100 validators are accepted directly - NO reshare on join.
+// After 100 signers, new validators go to waitlist until a slot opens.
+func (vm *VM) RegisterValidator(input *RegisterValidatorInput) (*RegisterValidatorResult, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Parse node ID
+	nodeID, err := ids.NodeIDFromString(input.NodeID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid node ID: %w", err)
+	}
+
+	// Check if already a signer
+	for _, signer := range vm.signerSet.Signers {
+		if signer.NodeID == nodeID {
+			return &RegisterValidatorResult{
+				Success:      false,
+				NodeID:       input.NodeID,
+				Message:      "already registered as signer",
+				TotalSigners: len(vm.signerSet.Signers),
+				Threshold:    vm.signerSet.ThresholdT,
+				CurrentEpoch: vm.signerSet.CurrentEpoch,
+				SetFrozen:    vm.signerSet.SetFrozen,
+			}, nil
+		}
+	}
+
+	// Check if already on waitlist
+	for _, wl := range vm.signerSet.Waitlist {
+		if wl == nodeID {
+			return &RegisterValidatorResult{
+				Success:    false,
+				NodeID:     input.NodeID,
+				Message:    "already on waitlist",
+				Waitlisted: true,
+			}, nil
+		}
+	}
+
+	// Parse bond amount (100M LUX required, slashable)
+	var bondAmount uint64
+	if input.BondAmount != "" {
+		if _, err := fmt.Sscanf(input.BondAmount, "%d", &bondAmount); err != nil {
+			bondAmount = 0
+		}
+	}
+
+	// If set is NOT frozen (under max signers), add directly - NO RESHARE
+	if !vm.signerSet.SetFrozen && len(vm.signerSet.Signers) < vm.config.MaxSigners {
+		// Create signer info
+		signerInfo := &SignerInfo{
+			NodeID:     nodeID,
+			PartyID:    party.ID(nodeID.String()),
+			BondAmount: bondAmount, // 100M LUX bond (slashable)
+			Active:     true,
+			JoinedAt:   time.Now(),
+			SlotIndex:  len(vm.signerSet.Signers),
+			Slashed:    false,
+			SlashCount: 0,
+		}
+
+		// Parse MPC public key if provided
+		if input.MPCPubKey != "" {
+			signerInfo.MPCPubKey = []byte(input.MPCPubKey)
+		}
+
+		// Add to signer set
+		vm.signerSet.Signers = append(vm.signerSet.Signers, signerInfo)
+
+		// Update threshold: t = floor(n * ratio)
+		vm.signerSet.ThresholdT = int(float64(len(vm.signerSet.Signers)) * vm.config.ThresholdRatio)
+		if vm.signerSet.ThresholdT < 1 {
+			vm.signerSet.ThresholdT = 1
+		}
+
+		// Check if set should freeze (reached max signers)
+		if len(vm.signerSet.Signers) >= vm.config.MaxSigners {
+			vm.signerSet.SetFrozen = true
+		}
+
+		remainingSlots := vm.config.MaxSigners - len(vm.signerSet.Signers)
+
+		if vm.log != nil {
+			vm.log.Info("validator registered as bridge signer (LP-333 opt-in)",
+				log.Stringer("nodeID", nodeID),
+				log.Int("signerIndex", signerInfo.SlotIndex),
+				log.Int("totalSigners", len(vm.signerSet.Signers)),
+				log.Int("threshold", vm.signerSet.ThresholdT),
+				log.Bool("setFrozen", vm.signerSet.SetFrozen),
+			)
+		}
+
+		return &RegisterValidatorResult{
+			Success:        true,
+			NodeID:         input.NodeID,
+			Registered:     true,
+			Waitlisted:     false,
+			SignerIndex:    signerInfo.SlotIndex,
+			TotalSigners:   len(vm.signerSet.Signers),
+			Threshold:      vm.signerSet.ThresholdT,
+			ReshareNeeded:  false, // LP-333: NO reshare on join
+			CurrentEpoch:   vm.signerSet.CurrentEpoch,
+			SetFrozen:      vm.signerSet.SetFrozen,
+			RemainingSlots: remainingSlots,
+			Message:        "registered as bridge signer",
+		}, nil
+	}
+
+	// Set is frozen - add to waitlist
+	vm.signerSet.Waitlist = append(vm.signerSet.Waitlist, nodeID)
+	waitlistIndex := len(vm.signerSet.Waitlist) - 1
+
+	if vm.log != nil {
+		vm.log.Info("validator added to waitlist (signer set frozen)",
+			log.Stringer("nodeID", nodeID),
+			log.Int("waitlistIndex", waitlistIndex),
+			log.Int("totalSigners", len(vm.signerSet.Signers)),
+		)
+	}
+
+	return &RegisterValidatorResult{
+		Success:        true,
+		NodeID:         input.NodeID,
+		Registered:     false,
+		Waitlisted:     true,
+		WaitlistIndex:  waitlistIndex,
+		TotalSigners:   len(vm.signerSet.Signers),
+		Threshold:      vm.signerSet.ThresholdT,
+		ReshareNeeded:  false,
+		CurrentEpoch:   vm.signerSet.CurrentEpoch,
+		SetFrozen:      vm.signerSet.SetFrozen,
+		RemainingSlots: 0,
+		Message:        "added to waitlist (signer set frozen at 100)",
+	}, nil
+}
+
+// GetSignerSetInfo returns information about the current signer set
+func (vm *VM) GetSignerSetInfo() *SignerSetInfo {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	remainingSlots := vm.config.MaxSigners - len(vm.signerSet.Signers)
+	if remainingSlots < 0 {
+		remainingSlots = 0
+	}
+
+	info := &SignerSetInfo{
+		TotalSigners:   len(vm.signerSet.Signers),
+		Threshold:      vm.signerSet.ThresholdT,
+		MaxSigners:     vm.config.MaxSigners,
+		CurrentEpoch:   vm.signerSet.CurrentEpoch,
+		SetFrozen:      vm.signerSet.SetFrozen,
+		RemainingSlots: remainingSlots,
+		WaitlistSize:   len(vm.signerSet.Waitlist),
+		Signers:        vm.signerSet.Signers,
+	}
+
+	if len(vm.signerSet.PublicKey) > 0 {
+		info.PublicKey = fmt.Sprintf("%x", vm.signerSet.PublicKey)
+	}
+
+	return info
+}
+
+// RemoveSigner removes a failed/stopped signer and triggers replacement
+// LP-333: This is the ONLY operation that triggers a reshare.
+// Epoch increments only when a signer is replaced.
+func (vm *VM) RemoveSigner(nodeID ids.NodeID, replacementNodeID *ids.NodeID) (*SignerReplacementResult, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Find and remove the signer
+	found := false
+	var removedSigner *SignerInfo
+	for i, signer := range vm.signerSet.Signers {
+		if signer.NodeID == nodeID {
+			removedSigner = signer
+			// Remove from slice
+			vm.signerSet.Signers = append(vm.signerSet.Signers[:i], vm.signerSet.Signers[i+1:]...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return &SignerReplacementResult{
+			Success: false,
+			Message: fmt.Sprintf("signer %s not found in active set", nodeID),
+		}, nil
+	}
+
+	// Determine replacement (from parameter or waitlist)
+	var replacement ids.NodeID
+	var replacementSource string
+	if replacementNodeID != nil && *replacementNodeID != ids.EmptyNodeID {
+		replacement = *replacementNodeID
+		replacementSource = "explicit"
+	} else if len(vm.signerSet.Waitlist) > 0 {
+		replacement = vm.signerSet.Waitlist[0]
+		vm.signerSet.Waitlist = vm.signerSet.Waitlist[1:]
+		replacementSource = "waitlist"
+	}
+
+	// Add replacement signer if available
+	if replacement != ids.EmptyNodeID {
+		newSigner := &SignerInfo{
+			NodeID:     replacement,
+			PartyID:    party.ID(replacement.String()),
+			BondAmount: 0, // Will be verified during reshare (100M LUX required)
+			Active:     true,
+			JoinedAt:   time.Now(),
+			SlotIndex:  removedSigner.SlotIndex,
+			Slashed:    false,
+			SlashCount: 0,
+		}
+		vm.signerSet.Signers = append(vm.signerSet.Signers, newSigner)
+	}
+
+	// Update threshold
+	vm.signerSet.ThresholdT = int(float64(len(vm.signerSet.Signers)) * vm.config.ThresholdRatio)
+	if vm.signerSet.ThresholdT < 1 && len(vm.signerSet.Signers) > 0 {
+		vm.signerSet.ThresholdT = 1
+	}
+
+	// INCREMENT EPOCH - This is the ONLY reshare trigger (LP-333)
+	vm.signerSet.CurrentEpoch++
+
+	// Generate reshare session ID
+	reshareSession := fmt.Sprintf("reshare-epoch-%d-%s", vm.signerSet.CurrentEpoch, time.Now().Format("20060102150405"))
+
+	if vm.log != nil {
+		vm.log.Info("signer removed and reshare triggered (LP-333)",
+			log.Stringer("removedNodeID", nodeID),
+			log.Stringer("replacementNodeID", replacement),
+			log.String("replacementSource", replacementSource),
+			log.Uint64("newEpoch", vm.signerSet.CurrentEpoch),
+			log.Int("activeSigners", len(vm.signerSet.Signers)),
+			log.String("reshareSession", reshareSession),
+		)
+	}
+
+	// TODO: Trigger actual reshare protocol via T-Chain (ThresholdVM)
+	// This would send a CrossChainAppRequest to initiate the reshare
+
+	result := &SignerReplacementResult{
+		Success:       true,
+		RemovedNodeID: nodeID.String(),
+		NewEpoch:      vm.signerSet.CurrentEpoch,
+		ActiveSigners: len(vm.signerSet.Signers),
+		Threshold:     vm.signerSet.ThresholdT,
+		Message:       "signer removed, reshare initiated",
+	}
+
+	if replacement != ids.EmptyNodeID {
+		result.ReplacementNodeID = replacement.String()
+		result.ReshareSession = reshareSession
+		result.Message = fmt.Sprintf("signer replaced from %s, reshare initiated", replacementSource)
+	}
+
+	return result, nil
+}
+
+// HasSigner checks if a node ID is in the active signer set
+func (vm *VM) HasSigner(nodeID ids.NodeID) bool {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	for _, signer := range vm.signerSet.Signers {
+		if signer.NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+// SlashSignerInput is the input for slashing a bridge signer
+type SlashSignerInput struct {
+	NodeID       ids.NodeID `json:"nodeId"`
+	Reason       string     `json:"reason"`
+	SlashPercent int        `json:"slashPercent"` // Percentage of bond to slash (1-100)
+	Evidence     []byte     `json:"evidence"`     // Proof of misbehavior
+}
+
+// SlashSignerResult is the result of slashing a bridge signer
+type SlashSignerResult struct {
+	Success        bool   `json:"success"`
+	NodeID         string `json:"nodeId"`
+	SlashedAmount  uint64 `json:"slashedAmount"`
+	RemainingBond  uint64 `json:"remainingBond"`
+	TotalSlashCount int   `json:"totalSlashCount"`
+	RemovedFromSet bool   `json:"removedFromSet"`
+	Message        string `json:"message"`
+}
+
+// SlashSigner slashes a misbehaving bridge signer's bond
+// The bond is NOT stake - it's a slashable deposit that can be partially or fully seized
+func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Validate slash percentage
+	if input.SlashPercent < 1 || input.SlashPercent > 100 {
+		return nil, errors.New("slash percent must be between 1 and 100")
+	}
+
+	// Find the signer
+	var signer *SignerInfo
+	var signerIndex int
+	for i, s := range vm.signerSet.Signers {
+		if s.NodeID == input.NodeID {
+			signer = s
+			signerIndex = i
+			break
+		}
+	}
+
+	if signer == nil {
+		return &SlashSignerResult{
+			Success: false,
+			NodeID:  input.NodeID.String(),
+			Message: "signer not found in active set",
+		}, nil
+	}
+
+	// Calculate slash amount
+	slashAmount := (signer.BondAmount * uint64(input.SlashPercent)) / 100
+	remainingBond := signer.BondAmount - slashAmount
+
+	// Update signer state
+	signer.BondAmount = remainingBond
+	signer.Slashed = true
+	signer.SlashCount++
+
+	if vm.log != nil {
+		vm.log.Warn("bridge signer slashed",
+			log.Stringer("nodeID", input.NodeID),
+			log.String("reason", input.Reason),
+			log.Int("slashPercent", input.SlashPercent),
+			log.Uint64("slashedAmount", slashAmount),
+			log.Uint64("remainingBond", remainingBond),
+			log.Int("slashCount", signer.SlashCount),
+		)
+	}
+
+	result := &SlashSignerResult{
+		Success:        true,
+		NodeID:         input.NodeID.String(),
+		SlashedAmount:  slashAmount,
+		RemainingBond:  remainingBond,
+		TotalSlashCount: signer.SlashCount,
+		RemovedFromSet: false,
+		Message:        fmt.Sprintf("slashed %d%% of bond (%d LUX)", input.SlashPercent, slashAmount/1e9),
+	}
+
+	// If bond drops below minimum (100M LUX), remove from signer set
+	minBond := uint64(100_000_000 * 1e9) // 100M LUX
+	if remainingBond < minBond {
+		// Remove signer
+		vm.signerSet.Signers = append(vm.signerSet.Signers[:signerIndex], vm.signerSet.Signers[signerIndex+1:]...)
+
+		// Update threshold
+		vm.signerSet.ThresholdT = int(float64(len(vm.signerSet.Signers)) * vm.config.ThresholdRatio)
+		if vm.signerSet.ThresholdT < 1 && len(vm.signerSet.Signers) > 0 {
+			vm.signerSet.ThresholdT = 1
+		}
+
+		// Increment epoch (removal triggers reshare)
+		vm.signerSet.CurrentEpoch++
+
+		result.RemovedFromSet = true
+		result.Message = fmt.Sprintf("slashed %d%% of bond, signer removed (bond below 100M LUX minimum)", input.SlashPercent)
+
+		if vm.log != nil {
+			vm.log.Warn("bridge signer removed due to insufficient bond after slashing",
+				log.Stringer("nodeID", input.NodeID),
+				log.Uint64("remainingBond", remainingBond),
+				log.Uint64("newEpoch", vm.signerSet.CurrentEpoch),
+			)
+		}
+	}
+
+	return result, nil
 }

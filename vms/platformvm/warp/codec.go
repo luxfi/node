@@ -21,6 +21,7 @@ func init() {
 
 	err := errors.Join(
 		lc.RegisterType(&BitSetSignature{}),
+		lc.RegisterType(&HybridBLSRTSignature{}), // Post-quantum hybrid BLS+Ringtail
 		Codec.RegisterCodec(CodecVersion, lc),
 	)
 	if err != nil {
