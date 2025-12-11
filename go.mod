@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.4
-	github.com/luxfi/crypto v1.17.8
+	github.com/luxfi/crypto v1.17.9
 	github.com/luxfi/database v1.2.7
 	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux-go v1.0.0
