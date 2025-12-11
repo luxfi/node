@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -326,7 +327,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 		listener,
 		process,
 		&subprocess.Config{
-			Stderr:           originalStderr,
+			Stderr:           os.Stderr,
 			Stdout:           io.Discard,
 			Log:              log.NoLog{},
 			HandshakeTimeout: runtime.DefaultHandshakeTimeout,

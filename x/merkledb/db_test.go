@@ -23,11 +23,10 @@ import (
 	"github.com/luxfi/database/dbtest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/trace"
 )
 
 // newDB returns a new merkle database with the underlying type so that tests can access unexported fields
