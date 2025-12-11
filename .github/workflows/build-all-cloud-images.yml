@@ -1,0 +1,89 @@
+name: Build All Cloud Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to build'
+        required: true
+        type: string
+      clouds:
+        description: 'Clouds to build (comma-separated: aws,gcp,azure)'
+        required: false
+        default: 'aws,gcp,azure'
+        type: string
+  release:
+    types: [published]
+
+jobs:
+  # Build AWS AMI
+  aws:
+    name: AWS AMI
+    if: contains(inputs.clouds || 'aws,gcp,azure', 'aws')
+    uses: ./.github/workflows/build-aws-ami.yml
+    with:
+      tag: ${{ inputs.tag || github.event.release.tag_name }}
+    secrets: inherit
+
+  # Build GCP Image
+  gcp:
+    name: GCP Image
+    if: contains(inputs.clouds || 'aws,gcp,azure', 'gcp')
+    uses: ./.github/workflows/build-gcp-image.yml
+    with:
+      tag: ${{ inputs.tag || github.event.release.tag_name }}
+    secrets: inherit
+
+  # Build Azure Image
+  azure:
+    name: Azure Image
+    if: contains(inputs.clouds || 'aws,gcp,azure', 'azure')
+    uses: ./.github/workflows/build-azure-image.yml
+    with:
+      tag: ${{ inputs.tag || github.event.release.tag_name }}
+    secrets: inherit
+
+  # Summary job
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [aws, gcp, azure]
+    if: always()
+
+    steps:
+      - name: Download all manifests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-manifest'
+          merge-multiple: true
+
+      - name: Generate Summary
+        run: |
+          echo "# Multi-Cloud Image Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`${{ inputs.tag || github.event.release.tag_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloud | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| AWS | ${{ needs.aws.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GCP | ${{ needs.gcp.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Azure | ${{ needs.azure.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Launch Instructions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### AWS" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "aws ec2 run-instances --image-id <AMI_ID> --instance-type c5.xlarge" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### GCP" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "gcloud compute instances create luxd-node --image-family=luxd --image-project=luxfi --machine-type=n2-standard-4" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Azure" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "az vm create --resource-group luxfi --name luxd-node --image luxdGallery/luxd/latest --size Standard_D4s_v3" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
