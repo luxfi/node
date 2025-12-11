@@ -23,7 +23,7 @@ func TestClockSet(t *testing.T) {
 func TestClockSync(t *testing.T) {
 	require := require.New(t)
 
-	clock := Clock{true, time.Unix(0, 0)}
+	clock := Clock{faked: true, time: time.Unix(0, 0)}
 	clock.Sync()
 	require.False(clock.faked)
 	require.NotEqual(time.Unix(0, 0), clock.Time())
@@ -32,13 +32,13 @@ func TestClockSync(t *testing.T) {
 func TestClockUnixTime(t *testing.T) {
 	require := require.New(t)
 
-	clock := Clock{true, time.Unix(123, 123)}
+	clock := Clock{faked: true, time: time.Unix(123, 123)}
 	require.Zero(clock.UnixTime().Nanosecond())
 	require.Equal(123, clock.Time().Nanosecond())
 }
 
 func TestClockUnix(t *testing.T) {
-	clock := Clock{true, time.Unix(-14159040, 0)}
+	clock := Clock{faked: true, time: time.Unix(-14159040, 0)}
 	actual := clock.Unix()
 	require.Zero(t, actual) // time prior to Unix epoch should be clamped to 0
 }
