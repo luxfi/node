@@ -149,6 +149,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/genesis v1.2.10
 	github.com/luxfi/geth v1.16.40
+	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.2
