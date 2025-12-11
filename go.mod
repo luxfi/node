@@ -185,6 +185,7 @@ require (
 	github.com/hashicorp/go-bexpr v0.1.14 // indirect
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect

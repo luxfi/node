@@ -69,6 +69,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	qvm "github.com/luxfi/node/vms/quantumvm"
+	"github.com/luxfi/node/vms/aivm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
@@ -1229,6 +1230,15 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("Q-Chain VM registered successfully")
+
+	// Register AI-Chain VM (AI Virtual Machine)
+	n.Log.Info("Registering AI-Chain VM", "vmID", constants.AIVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register AI-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("AI-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

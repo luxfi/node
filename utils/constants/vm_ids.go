@@ -11,6 +11,7 @@ const (
 	EVMName         = "evm"
 	XSVMName        = "xsvm"
 	QVMName         = "qvm"
+	AIVMName        = "aivm"
 )
 
 var (
@@ -19,6 +20,7 @@ var (
 	EVMID         = ids.ID{'e', 'v', 'm'}
 	XSVMID        = ids.ID{'x', 's', 'v', 'm'}
 	QVMID         = ids.ID{'q', 'v', 'm'}
+	AIVMID        = ids.ID{'a', 'i', 'v', 'm'}
 )
 
 // VMName returns the name of the VM with the provided ID. If a human readable
@@ -35,6 +37,8 @@ func VMName(vmID ids.ID) string {
 		return XSVMName
 	case QVMID:
 		return QVMName
+	case AIVMID:
+		return AIVMName
 	default:
 		return vmID.String()
 	}
