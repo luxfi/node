@@ -370,7 +370,7 @@ func TestBlockVerify(t *testing.T) {
 				// tx1 and tx2 both consume imported input [inputID]
 				inputID := ids.GenerateTestID()
 				mockUnsignedTx1 := txsmock.NewUnsignedTx(ctrl)
-				mockUnsignedTx1.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
+				mockUnsignedTx1.EXPECT().InputIDs().Return(set.NewSet[ids.ID](0)).AnyTimes()
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx1.EXPECT().Visit(gomock.Any()).DoAndReturn(
@@ -384,7 +384,7 @@ func TestBlockVerify(t *testing.T) {
 					},
 				).Times(1) // Execution adds imported inputs
 				mockUnsignedTx2 := txsmock.NewUnsignedTx(ctrl)
-				mockUnsignedTx2.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
+				mockUnsignedTx2.EXPECT().InputIDs().Return(set.NewSet[ids.ID](0)).AnyTimes()
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx2.EXPECT().Visit(gomock.Any()).DoAndReturn(
@@ -458,7 +458,7 @@ func TestBlockVerify(t *testing.T) {
 				// tx1 and parent block both consume [inputID]
 				inputID := ids.GenerateTestID()
 				mockUnsignedTx := txsmock.NewUnsignedTx(ctrl)
-				mockUnsignedTx.EXPECT().InputIDs().Return(set.Set[ids.ID]{}).AnyTimes()
+				mockUnsignedTx.EXPECT().InputIDs().Return(set.NewSet[ids.ID](0)).AnyTimes()
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
