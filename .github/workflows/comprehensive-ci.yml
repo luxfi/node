@@ -25,6 +25,17 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libzmq3-dev libczmq-dev libsodium-dev
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install zeromq czmq libsodium
+
     - name: Install dependencies
       run: |
         go mod download
