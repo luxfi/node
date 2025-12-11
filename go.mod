@@ -30,7 +30,7 @@ require (
 	github.com/luxfi/consensus v1.22.5
 	github.com/luxfi/crypto v1.17.9
 	github.com/luxfi/database v1.2.9
-	github.com/luxfi/ids v1.2.1
+	github.com/luxfi/ids v1.2.2
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.24
 	github.com/luxfi/math v0.1.5

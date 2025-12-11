@@ -61,6 +61,10 @@ var (
 	AChainID = ids.AChainID // A-Chain: 11111111111111111111111111111111A
 	BChainID = ids.BChainID // B-Chain: 11111111111111111111111111111111B
 	TChainID = ids.TChainID // T-Chain: 11111111111111111111111111111111T
+	ZChainID = ids.ZChainID // Z-Chain: 11111111111111111111111111111111Z (Zero-knowledge)
+	GChainID = ids.GChainID // G-Chain: 11111111111111111111111111111111G (Graph/dgraph) - COMING SOON
+	IChainID = ids.IChainID // I-Chain: 11111111111111111111111111111111I (Identity) - COMING SOON
+	KChainID = ids.KChainID // K-Chain: 11111111111111111111111111111111K (KMS) - COMING SOON
 
 	// NetworkIDToNetworkName maps network IDs to human-readable names
 	NetworkIDToNetworkName = map[uint32]string{
