@@ -5,19 +5,16 @@
 
 package metercacher
 
-import "github.com/luxfi/metric"
-
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/cachetest"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/ids"
 )
 
 func TestInterface(t *testing.T) {
