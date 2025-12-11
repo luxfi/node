@@ -332,11 +332,17 @@ type consensusValidatorStateWrapper struct {
 }
 
 func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	if v.state == nil {
+		return 0, nil
+	}
 	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// validators.State doesn't have GetMinimumHeight, return current height
+	if v.state == nil {
+		return 0, nil
+	}
 	return v.state.GetCurrentHeight(ctx)
 }
 
@@ -351,6 +357,9 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 }
 
 func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if v.state == nil {
+		return make(map[ids.NodeID]uint64), nil
+	}
 	valSet, err := v.state.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err
@@ -368,6 +377,9 @@ func (v *consensusValidatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error
 }
 
 func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consensusctx.GetValidatorOutput, error) {
+	if v.state == nil {
+		return make(map[ids.NodeID]*consensusctx.GetValidatorOutput), nil
+	}
 	// Get the validator set from the underlying state
 	valSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
@@ -387,11 +399,17 @@ func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Contex
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	if v.state == nil {
+		return 0, nil
+	}
 	return v.state.GetCurrentHeight(context.Background())
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// validators.State doesn't have GetMinimumHeight, return current height
+	if v.state == nil {
+		return 0, nil
+	}
 	return v.state.GetCurrentHeight(ctx)
 }
 
@@ -401,6 +419,9 @@ func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (i
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if v.state == nil {
+		return make(map[ids.NodeID]uint64), nil
+	}
 	valSet, err := v.state.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err

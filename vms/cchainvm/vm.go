@@ -1594,6 +1594,10 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	handlers["/rpc"] = httpHandler
 	handlers["/"] = httpHandler
 
+	// Create WebSocket handler - allows all origins for dev mode
+	wsHandler := rpcServer.WebsocketHandler([]string{"*"})
+	handlers["/ws"] = wsHandler
+
 	vm.log.Info("Created RPC handlers", "count", len(handlers))
 
 	return handlers, nil

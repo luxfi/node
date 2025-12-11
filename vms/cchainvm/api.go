@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/holiman/uint256"
 	"github.com/luxfi/geth/common"
@@ -42,23 +43,78 @@ func (api *EthAPI) ChainId() (*hexutil.Big, error) {
 }
 
 // BlockNumber returns the current block number
+// If historical blocks are available, returns the highest available block number
 func (api *EthAPI) BlockNumber() (hexutil.Uint64, error) {
 	header := api.backend.blockchain.CurrentBlock()
-	return hexutil.Uint64(header.Number.Uint64()), nil
+	canonicalHeight := header.Number.Uint64()
+
+	// Check if we have historical blocks beyond the canonical chain
+	historicalHeight := api.getHighestHistoricalBlock()
+	if historicalHeight > canonicalHeight {
+		return hexutil.Uint64(historicalHeight), nil
+	}
+
+	return hexutil.Uint64(canonicalHeight), nil
+}
+
+// getHighestHistoricalBlock returns the highest block number in historical storage
+func (api *EthAPI) getHighestHistoricalBlock() uint64 {
+	// Check database for highest canonical hash
+	// Start from a high number and work down to find the highest stored block
+	// Use a binary search-like approach for efficiency
+	high := uint64(2000000) // Start with 2M as upper bound
+	low := uint64(0)
+
+	// Quick check: see if we have block 1000000
+	if hash := rawdb.ReadCanonicalHash(api.backend.chainDb, 1000000); hash != (common.Hash{}) {
+		low = 1000000
+	}
+	if hash := rawdb.ReadCanonicalHash(api.backend.chainDb, 1100000); hash != (common.Hash{}) {
+		low = 1100000
+	}
+
+	// Binary search to find highest block
+	for low < high {
+		mid := (low + high + 1) / 2
+		hash := rawdb.ReadCanonicalHash(api.backend.chainDb, mid)
+		if hash != (common.Hash{}) {
+			low = mid
+		} else {
+			high = mid - 1
+		}
+	}
+
+	return low
 }
 
 // GetBlockByNumber returns the block for the given block number
+// Checks both canonical chain and historical blocks database
 func (api *EthAPI) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	var block *types.Block
 	if number == rpc.LatestBlockNumber {
-		block = api.backend.blockchain.GetBlock(api.backend.blockchain.CurrentBlock().Hash(), api.backend.blockchain.CurrentBlock().Number.Uint64())
+		// For latest, check if we have historical blocks that are higher
+		historicalHeight := api.getHighestHistoricalBlock()
+		canonicalHeight := api.backend.blockchain.CurrentBlock().Number.Uint64()
+		if historicalHeight > canonicalHeight {
+			block = api.getHistoricalBlock(historicalHeight)
+		} else {
+			block = api.backend.blockchain.GetBlock(api.backend.blockchain.CurrentBlock().Hash(), canonicalHeight)
+		}
 	} else if number == rpc.EarliestBlockNumber {
 		block = api.backend.blockchain.GetBlockByNumber(0)
+		if block == nil {
+			block = api.getHistoricalBlock(0)
+		}
 	} else if number == rpc.PendingBlockNumber {
 		// Return current block for pending
 		block = api.backend.blockchain.GetBlock(api.backend.blockchain.CurrentBlock().Hash(), api.backend.blockchain.CurrentBlock().Number.Uint64())
 	} else {
+		// Try canonical chain first
 		block = api.backend.blockchain.GetBlockByNumber(uint64(number))
+		// If not found, try historical blocks
+		if block == nil {
+			block = api.getHistoricalBlock(uint64(number))
+		}
 	}
 
 	if block == nil {
@@ -68,13 +124,113 @@ func (api *EthAPI) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber,
 	return api.rpcMarshalBlock(block, true, fullTx)
 }
 
+// getHistoricalBlock retrieves a block from the database that may not be in the canonical chain
+func (api *EthAPI) getHistoricalBlock(number uint64) *types.Block {
+	// Read canonical hash for this block number
+	hash := rawdb.ReadCanonicalHash(api.backend.chainDb, number)
+	if hash == (common.Hash{}) {
+		return nil
+	}
+
+	// Read header and body from database
+	header := rawdb.ReadHeader(api.backend.chainDb, hash, number)
+	if header == nil {
+		return nil
+	}
+
+	body := rawdb.ReadBody(api.backend.chainDb, hash, number)
+	if body == nil {
+		// Return block with just header if no body
+		return types.NewBlockWithHeader(header)
+	}
+
+	return types.NewBlockWithHeader(header).WithBody(*body)
+}
+
 // GetBlockByHash returns the block for the given block hash
+// Checks both canonical chain and historical blocks database
 func (api *EthAPI) GetBlockByHash(ctx context.Context, hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+	// Try canonical chain first
 	block := api.backend.blockchain.GetBlockByHash(hash)
+	// If not found, try historical blocks
+	if block == nil {
+		block = api.getHistoricalBlockByHash(hash)
+	}
 	if block == nil {
 		return nil, nil
 	}
 	return api.rpcMarshalBlock(block, true, fullTx)
+}
+
+// hashToNumberCache caches hash -> block number mappings for faster lookups
+var hashToNumberCache = make(map[common.Hash]uint64)
+var hashToNumberCacheBuilding = false
+var hashToNumberCacheBuilt = false
+var hashCacheMutex sync.RWMutex
+
+// getHistoricalBlockByHash retrieves a block by hash from the database
+// Uses the same approach as getHistoricalBlock (by number) since the hash->number
+// index may be in a different database wrapper
+func (api *EthAPI) getHistoricalBlockByHash(hash common.Hash) *types.Block {
+	// Check cache first (read lock)
+	hashCacheMutex.RLock()
+	if num, ok := hashToNumberCache[hash]; ok {
+		hashCacheMutex.RUnlock()
+		return api.getHistoricalBlock(num)
+	}
+	cacheBuilt := hashToNumberCacheBuilt
+	cacheBuilding := hashToNumberCacheBuilding
+	hashCacheMutex.RUnlock()
+
+	// If cache is built and hash not found, return nil
+	if cacheBuilt {
+		return nil
+	}
+
+	// If cache is already building, just wait for it rather than doing linear search
+	if cacheBuilding {
+		return nil
+	}
+
+	high := api.getHighestHistoricalBlock()
+	if high == 0 {
+		return nil
+	}
+
+	// Start building cache in background if not already building
+	hashCacheMutex.Lock()
+	if !hashToNumberCacheBuilding && !hashToNumberCacheBuilt {
+		hashToNumberCacheBuilding = true
+		hashCacheMutex.Unlock()
+		
+		// Build cache asynchronously
+		go func() {
+			fmt.Printf("Starting async hash index build for %d blocks...\n", high)
+			for num := uint64(0); num <= high; num++ {
+				block := api.getHistoricalBlock(num)
+				if block != nil {
+					hashCacheMutex.Lock()
+					hashToNumberCache[block.Hash()] = num
+					hashCacheMutex.Unlock()
+				}
+				// Print progress every 50000 blocks
+				if num > 0 && num%50000 == 0 {
+					fmt.Printf("Building hash index: %d/%d blocks\n", num, high)
+				}
+			}
+			hashCacheMutex.Lock()
+			hashToNumberCacheBuilt = true
+			hashToNumberCacheBuilding = false
+			hashCacheMutex.Unlock()
+			fmt.Printf("Hash index complete: %d entries\n", len(hashToNumberCache))
+		}()
+	} else {
+		hashCacheMutex.Unlock()
+	}
+
+	// Return nil for now - the cache is building in background
+	// Subsequent calls will find the hash in cache once built
+	return nil
 }
 
 // GetBalance returns the balance of an account
@@ -742,6 +898,51 @@ func (api *LuxAPI) VerifyBlockchain() (map[string]interface{}, error) {
 			result["databaseHeadNumber"] = num
 		}
 	}
+
+	return result, nil
+}
+
+// SetHead forces the blockchain to set its head to a specific block number
+// This is useful after importing blocks via migrate_importBlocks
+// Accessible as lux_setHead
+func (api *LuxAPI) SetHead(blockNumber uint64) (map[string]interface{}, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	api.vm.ensureLogger()
+	result := make(map[string]interface{})
+
+	// Get current state
+	currentBlock := api.vm.blockChain.CurrentBlock()
+	if currentBlock != nil {
+		result["beforeBlockNumber"] = currentBlock.Number.Uint64()
+		result["beforeBlockHash"] = currentBlock.Hash().Hex()
+	}
+
+	api.vm.log.Info("Setting blockchain head", "targetBlock", blockNumber)
+
+	// Use SetHead to rewind/forward the chain
+	if err := api.vm.blockChain.SetHead(blockNumber); err != nil {
+		result["success"] = false
+		result["error"] = fmt.Sprintf("SetHead failed: %v", err)
+		return result, nil
+	}
+
+	// Get new state
+	newBlock := api.vm.blockChain.CurrentBlock()
+	if newBlock != nil {
+		result["afterBlockNumber"] = newBlock.Number.Uint64()
+		result["afterBlockHash"] = newBlock.Hash().Hex()
+	}
+
+	result["success"] = true
+	result["targetBlock"] = blockNumber
+
+	api.vm.log.Info("Blockchain head set successfully",
+		"targetBlock", blockNumber,
+		"newHead", newBlock.Number.Uint64(),
+	)
 
 	return result, nil
 }
