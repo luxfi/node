@@ -15,12 +15,9 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomictest"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
