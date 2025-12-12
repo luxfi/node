@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/metric"
 )
 
-func TestSimpleConnection(t *testing.T) {
+func TestTwoNodePeerConnection(t *testing.T) {
 	require := require.New(t)
 
-	// Create a simple 2-node network
+	// Create a 2-node network to test peer connection establishment
 	dialer, listeners, nodeIDs, configs := newTestNetwork(t, 2)
 
 	// Set up first network
