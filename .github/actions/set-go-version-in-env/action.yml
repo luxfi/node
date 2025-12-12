@@ -14,3 +14,9 @@ runs:
       # the run statement runs into platform-specific path handling issues.
       run: .github/actions/set-go-version-in-env/go_version_env.sh >> $GITHUB_ENV
       shell: bash
+    - name: Set GOPRIVATE for luxfi packages
+      # Some luxfi packages have large zip files that exceed Go proxy limits
+      run: |
+        echo "GOPRIVATE=github.com/luxfi/*" >> $GITHUB_ENV
+        echo "GONOSUMDB=github.com/luxfi/*" >> $GITHUB_ENV
+      shell: bash

@@ -148,7 +148,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.3.2
+	github.com/luxfi/genesis v1.4.0
 	github.com/luxfi/geth v1.16.46
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/p2p v1.4.4
@@ -212,7 +212,3 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-// NOTE: genesis package requires GOPRIVATE=github.com/luxfi/* due to large zip size
-// For local development, use: replace github.com/luxfi/genesis => ../genesis
-replace github.com/luxfi/genesis => ../genesis
