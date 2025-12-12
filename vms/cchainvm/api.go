@@ -30,6 +30,22 @@ import (
 	"github.com/luxfi/geth/rpc"
 )
 
+// Migrated state storage prefix - stores imported account state for direct query
+var migratedStatePrefix = []byte("migrated-account-")
+
+// migratedAccountKey returns the key for storing migrated account state
+func migratedAccountKey(address common.Address) []byte {
+	return append(migratedStatePrefix, address.Bytes()...)
+}
+
+// MigratedAccountState stores account state imported via migrate API
+type MigratedAccountState struct {
+	Balance  *big.Int          `json:"balance"`
+	Nonce    uint64            `json:"nonce"`
+	Code     []byte            `json:"code,omitempty"`
+	Storage  map[string]string `json:"storage,omitempty"`
+}
+
 // EthAPI provides an Ethereum RPC API
 type EthAPI struct {
 	backend *MinimalEthBackend
@@ -237,7 +253,20 @@ func (api *EthAPI) getHistoricalBlockByHash(hash common.Hash) *types.Block {
 }
 
 // GetBalance returns the balance of an account
+// First checks migrated state (from imported blocks), then falls back to canonical state
 func (api *EthAPI) GetBalance(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
+	// Check migrated state first (imported via migrate_importBlocks)
+	if api.backend.chainDb != nil {
+		key := migratedAccountKey(address)
+		if data, err := api.backend.chainDb.Get(key); err == nil && len(data) > 0 {
+			var migrated MigratedAccountState
+			if err := json.Unmarshal(data, &migrated); err == nil && migrated.Balance != nil {
+				return (*hexutil.Big)(migrated.Balance), nil
+			}
+		}
+	}
+
+	// Fall back to canonical state
 	state, err := api.backend.blockchain.StateAt(api.backend.blockchain.CurrentBlock().Root)
 	if err != nil {
 		return nil, err
@@ -1165,6 +1194,18 @@ func (api *MigrateAPI) ImportBlocks(blocks []ImportBlockEntry) (*ImportBlocksRes
 		// Write canonical hash
 		rawdb.WriteCanonicalHash(api.vm.ethDB, hash, number)
 
+		// Write transaction lookup index for eth_getTransactionByHash
+		if len(bodyBytes) > 0 {
+			var body types.Body
+			if err := rlp.DecodeBytes(bodyBytes, &body); err == nil && len(body.Transactions) > 0 {
+				txHashes := make([]common.Hash, len(body.Transactions))
+				for i, tx := range body.Transactions {
+					txHashes[i] = tx.Hash()
+				}
+				rawdb.WriteTxLookupEntries(api.vm.ethDB, number, txHashes)
+			}
+		}
+
 		// Import state changes if provided
 		if entry.StateChanges != nil && len(entry.StateChanges) > 0 {
 			// Decode header to get state root
@@ -1224,7 +1265,8 @@ func decodeHex(s string) ([]byte, error) {
 	return hex.DecodeString(s)
 }
 
-// importStateChanges imports state changes into the state trie
+// importStateChanges imports state changes into both the state trie and a key-value store
+// The key-value store allows direct balance queries without requiring proper state root matching
 func (api *MigrateAPI) importStateChanges(stateChanges map[string]*ImportAccountState, header *types.Header) error {
 	// Get state database from blockchain
 	if api.vm.blockChain == nil {
@@ -1241,27 +1283,35 @@ func (api *MigrateAPI) importStateChanges(stateChanges map[string]*ImportAccount
 		}
 	}
 
-	// Apply each account's state changes
+	// Apply each account's state changes to both state trie and key-value store
+	storedCount := 0
 	for addrHex, accountState := range stateChanges {
 		addr := common.HexToAddress(addrHex)
 
-		// Set balance (convert big.Int to uint256)
+		// Parse balance
+		var balance *big.Int
 		if accountState.Balance != "" {
-			balance, ok := new(big.Int).SetString(accountState.Balance, 0)
-			if ok {
-				stateDB.SetBalance(addr, uint256.MustFromBig(balance), tracing.BalanceChangeUnspecified)
-			}
+			balance, _ = new(big.Int).SetString(accountState.Balance, 0)
 		}
+		if balance == nil {
+			balance = big.NewInt(0)
+		}
+
+		// Set balance in state trie (convert big.Int to uint256)
+		stateDB.SetBalance(addr, uint256.MustFromBig(balance), tracing.BalanceChangeUnspecified)
 
 		// Set nonce
 		stateDB.SetNonce(addr, accountState.Nonce, tracing.NonceChangeUnspecified)
 
-		// Set code if provided
+		// Parse code
+		var code []byte
 		if accountState.Code != "" {
-			code, err := decodeHex(accountState.Code)
-			if err == nil && len(code) > 0 {
-				stateDB.SetCode(addr, code, tracing.CodeChangeUnspecified)
-			}
+			code, _ = decodeHex(accountState.Code)
+		}
+
+		// Set code if provided
+		if len(code) > 0 {
+			stateDB.SetCode(addr, code, tracing.CodeChangeUnspecified)
 		}
 
 		// Set storage if provided
@@ -1272,7 +1322,25 @@ func (api *MigrateAPI) importStateChanges(stateChanges map[string]*ImportAccount
 				stateDB.SetState(addr, key, value)
 			}
 		}
+
+		// Also store in key-value store for direct queries (bypasses state root issues)
+		migratedState := MigratedAccountState{
+			Balance: balance,
+			Nonce:   accountState.Nonce,
+			Code:    code,
+			Storage: accountState.Storage,
+		}
+		if data, err := json.Marshal(migratedState); err == nil {
+			key := migratedAccountKey(addr)
+			if err := api.vm.ethDB.Put(key, data); err != nil {
+				api.vm.log.Warn("Failed to store migrated account", "address", addr.Hex(), "error", err)
+			} else {
+				storedCount++
+			}
+		}
 	}
+
+	api.vm.log.Info("Stored migrated state in key-value store", "accounts", storedCount, "block", header.Number.Uint64())
 
 	// Commit the state changes (deleteEmptyObjects=true, snaps=false, lastProcessedChunk=true)
 	newRoot, err := stateDB.Commit(header.Number.Uint64(), true, true)
