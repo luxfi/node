@@ -2,12 +2,12 @@
   "networkID": 96369,
   "allocations": [
     {
-      "ethAddr": "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC",
-      "luxAddr": "P-lux13kuhcl8vufyu9wvtmspzdnzv9ftm75hus3wuf7",
-      "initialAmount": 50000000000000000,
+      "ethAddr": "0xb07abbaa69bd1ce1502e2ab5880111aa62404c85",
+      "luxAddr": "P-lux1f3uvezawjpzgldj6txe6mqewrsswpwktsetnga",
+      "initialAmount": 100000000000000000,
       "unlockSchedule": [
         {
-          "amount": 50000000000000000,
+          "amount": 100000000000000000,
           "locktime": 0
         }
       ]
