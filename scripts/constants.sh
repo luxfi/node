@@ -13,6 +13,9 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory ab
 # Where Lux Node binary goes
 node_path="$LUX_PATH/build/luxd"
 
+# Docker Hub repository for node images
+node_dockerhub_repo="luxfi/node"
+
 # Static compilation
 static_ld_flags=''
 if [ "${STATIC_COMPILATION:-}" = 1 ]
