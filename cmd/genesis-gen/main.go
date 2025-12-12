@@ -38,7 +38,7 @@ func main() {
 	fmt.Println()
 
 	// Generate or load validators
-	validators := make([]ValidatorInfo, 0, *numValidators)
+	var validators []ValidatorInfo
 
 	if *stakingKeysDir != "" {
 		fmt.Printf("Loading validator keys from %s\n", *stakingKeysDir)

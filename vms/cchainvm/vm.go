@@ -616,13 +616,8 @@ func (vm *VM) Initialize(
 			// This will create a fresh genesis block with state from the allocations
 			vm.log.Warn("Migrated database not found, creating fresh genesis with allocations", "path", migratedDBPath)
 			fmt.Printf("=== Creating fresh genesis from allocations (migrated DB not found) ===\n")
-			// CRITICAL FIX: Reset ALL flags so normal genesis parsing will occur at line ~745
-			// Without this, genesis remains nil and backend creation fails
-			shouldLoadMigratedGenesis = false
-			// Also reset hasMigratedData to ensure normal genesis parsing path is taken
+			// Reset hasMigratedData to ensure normal genesis parsing path is taken
 			hasMigratedData = false
-			// CRITICAL: Also reset loadedMigratedGenesis so genesis parsing at line ~746 happens
-			loadedMigratedGenesis = false
 			fmt.Printf("=== DEBUG: genesisBytes length = %d ===\n", len(genesisBytes))
 
 			// CRITICAL FIX: Parse genesis DIRECTLY here instead of relying on later paths
@@ -896,10 +891,9 @@ func (vm *VM) Initialize(
 			} else {
 				vm.log.Warn("Migrated database not found, creating fresh genesis with allocations", "path", migratedDBPath)
 				fmt.Printf("=== Creating fresh genesis with network 96369 allocations ===\n")
-				// CRITICAL FIX: Reset hasMigratedData to false since we're creating fresh genesis
+				// Reset hasMigratedData to false since we're creating fresh genesis
 				// This prevents code at line 1050 from trying to use NewMigratedBackend()
 				hasMigratedData = false
-				loadedMigratedGenesis = false
 				genesis = &gethcore.Genesis{
 					Config: &params.ChainConfig{
 						ChainID:                 big.NewInt(96369),

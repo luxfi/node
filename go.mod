@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.5
-	github.com/luxfi/crypto v1.17.9
+	github.com/luxfi/crypto v1.17.15
 	github.com/luxfi/database v1.2.9
 	github.com/luxfi/ids v1.2.2
 	github.com/luxfi/ledger-lux-go v1.0.0
@@ -149,7 +149,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/genesis v1.2.10
-	github.com/luxfi/geth v1.16.40
+	github.com/luxfi/geth v1.16.45
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/threshold v1.1.0
@@ -210,3 +210,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace github.com/luxfi/genesis => /Users/z/work/lux/genesis

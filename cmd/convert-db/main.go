@@ -232,7 +232,7 @@ func main() {
 
 	// Check block 0
 	block0Key := append([]byte("H"), encodeBlockNumber(0)...)
-	err = dstDB.View(func(txn *badger.Txn) error {
+	_ = dstDB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(block0Key)
 		if err == nil {
 			hash, _ := item.ValueCopy(nil)
@@ -242,7 +242,7 @@ func main() {
 	})
 
 	// Check highest block
-	err = dstDB.View(func(txn *badger.Txn) error {
+	_ = dstDB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(canonicalKey)
 		if err == nil {
 			hash, _ := item.ValueCopy(nil)

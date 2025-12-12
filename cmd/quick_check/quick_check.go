@@ -34,7 +34,7 @@ func main() {
 
 	// Check genesis
 	fmt.Println("1. Genesis Block:")
-	err = db.View(func(txn *badger.Txn) error {
+	_ = db.View(func(txn *badger.Txn) error {
 		// Look for block 0
 		prefix := []byte("h")
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -61,7 +61,7 @@ func main() {
 	blockCount := 0
 	highestBlock := uint64(0)
 
-	err = db.View(func(txn *badger.Txn) error {
+	_ = db.View(func(txn *badger.Txn) error {
 		prefix := []byte("h")
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()

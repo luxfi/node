@@ -708,6 +708,9 @@ func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequ
 		maxBlksSize,
 		maxBlocksRetrievalTime,
 	)
+	if err != nil {
+		return nil, err
+	}
 	return &vmpb.GetAncestorsResponse{
 		BlksBytes: blocks,
 	}, nil

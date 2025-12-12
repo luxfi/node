@@ -114,7 +114,7 @@ func main() {
 		// Check Height
 		item, err := txn.Get([]byte("Height"))
 		if err == nil {
-			err = item.Value(func(val []byte) error {
+			_ = item.Value(func(val []byte) error {
 				if len(val) == 8 {
 					height := binary.BigEndian.Uint64(val)
 					fmt.Printf("Height: %d\n", height)
@@ -124,11 +124,11 @@ func main() {
 		} else {
 			fmt.Printf("Height key not found: %v\n", err)
 		}
-		
+
 		// Check LastBlock
 		item, err = txn.Get([]byte("LastBlock"))
 		if err == nil {
-			err = item.Value(func(val []byte) error {
+			_ = item.Value(func(val []byte) error {
 				if len(val) == 32 {
 					var hash common.Hash
 					copy(hash[:], val)
@@ -139,15 +139,15 @@ func main() {
 		} else {
 			fmt.Printf("LastBlock key not found: %v\n", err)
 		}
-		
+
 		// Check for genesis block (block 0)
 		key := make([]byte, 9)
 		key[0] = 'H'
 		binary.BigEndian.PutUint64(key[1:], 0)
-		
+
 		item, err = txn.Get(key)
 		if err == nil {
-			err = item.Value(func(val []byte) error {
+			_ = item.Value(func(val []byte) error {
 				if len(val) == 32 {
 					var hash common.Hash
 					copy(hash[:], val)
@@ -158,7 +158,7 @@ func main() {
 		} else {
 			fmt.Printf("Genesis block not found: %v\n", err)
 		}
-		
+
 		return nil
 	})
 	
