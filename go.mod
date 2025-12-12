@@ -54,7 +54,6 @@ require (
 	github.com/supranational/blst v0.3.16-0.20250831170142-f48500c1fdbe
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/thepudds/fzgen v0.4.3
-	github.com/tyler-smith/go-bip32 v1.0.0
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0
@@ -148,8 +147,9 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.4.0
+	github.com/luxfi/genesis v1.3.3
 	github.com/luxfi/geth v1.16.46
+	github.com/luxfi/go-bip32 v1.0.1
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/p2p v1.4.4
 	github.com/luxfi/qzmq v0.1.1
@@ -157,7 +157,6 @@ require (
 	github.com/luxfi/trace v0.1.2
 	github.com/luxfi/warp v1.16.35
 	github.com/spaolacci/murmur3 v1.1.0
-	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/zap v1.27.0
 )
 

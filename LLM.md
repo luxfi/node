@@ -2,6 +2,64 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Genesis Package Decoupling - 2025-12-12
+
+### Summary
+Decoupled the `github.com/luxfi/genesis` package (v1.4.0) from `github.com/luxfi/node`. The genesis package now uses only JSON-serializable types with no node dependencies.
+
+### Architecture
+
+```
+github.com/luxfi/genesis (v1.4.0)     →  github.com/luxfi/node/genesis/builder
+(JSON config, no node deps)               (Type conversion, genesis building)
+```
+
+### Key Changes
+
+1. **genesis/builder package** (new):
+   - `StakingConfig` with `time.Duration` fields (converted from uint64 seconds)
+   - `TxFeeConfig` with `gas.Config` and `fee.Config` (node-specific types)
+   - `Bootstrapper` with `ids.NodeID` and `netip.AddrPort` (parsed from strings)
+   - Default fee configs: `MainnetDynamicFeeConfig`, `LocalValidatorFeeConfig`, etc.
+   - `GetStakingConfig()`, `GetTxFeeConfig()`, `GetBootstrappers()`, `GetConfig()`
+   - `FromConfig()`, `FromFile()`, `FromFlag()`, `FromDatabase()` for building genesis
+
+2. **Type Conversions** (builder handles):
+   - `uint64` seconds → `time.Duration`
+   - `string` NodeID → `ids.NodeID`
+   - `string` IP:Port → `netip.AddrPort`
+   - `genesis.RewardConfig` → `reward.Config`
+
+3. **Migration** (config, node packages):
+   - Changed `genesis.*` imports to `builder.*` in `config/config.go`, `config/flags.go`, `node/node.go`
+   - All genesis building logic uses builder package
+
+4. **CI Configuration**:
+   - Added `GOPRIVATE=github.com/luxfi/*` to CI action
+   - Added `GONOSUMDB=github.com/luxfi/*` for checksum bypass
+
+### Files Modified/Created
+- `genesis/builder/builder.go` (new)
+- `genesis/builder/builder_test.go` (new)
+- `genesis/builder/README.md` (new)
+- `config/config.go` (genesis.* → builder.*)
+- `config/flags.go` (genesis.* → builder.*)
+- `node/node.go` (genesis.* → builder.*)
+- `.github/actions/set-go-version-in-env/action.yml` (GOPRIVATE)
+- `scripts/constants.sh` (GOPRIVATE)
+
+### Genesis Repo Cleanup
+- Removed `migrated-ethdb.backup/` from history (was 1.1GB)
+- Archive size reduced from 1.1GB to 2.2MB
+- Tagged v1.4.0 with clean history
+
+### Network IDs
+- `constants.MainnetID` (1) and `constants.LuxMainnetID` (96369) both return mainnet config
+- `constants.TestnetID` (5) and `constants.LuxTestnetID` (96368) both return testnet config
+- Config's `NetworkID` field comes from embedded JSON (96369 for mainnet)
+
+---
+
 ## Documentation Navigation Review - 2025-12-11
 
 ### Review of /Users/z/work/lux/dex/docs/content/docs/
