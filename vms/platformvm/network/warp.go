@@ -55,7 +55,7 @@ func (s signatureRequestVerifier) Verify(
 	_ context.Context,
 	unsignedMessage *luxWarp.UnsignedMessage,
 	justification []byte,
-) *luxWarp.Error {
+) error {
 	msg, err := payload.ParseAddressedCall(unsignedMessage.Payload)
 	if err != nil {
 		return &luxWarp.Error{
@@ -96,7 +96,7 @@ func (s signatureRequestVerifier) Verify(
 func (s signatureRequestVerifier) verifyNetToL1Conversion(
 	msg *message.NetToL1Conversion,
 	justification []byte,
-) *luxWarp.Error {
+) error {
 	subnetID, err := ids.ToID(justification)
 	if err != nil {
 		return &luxWarp.Error{
@@ -135,7 +135,7 @@ func (s signatureRequestVerifier) verifyNetToL1Conversion(
 func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	msg *message.L1ValidatorRegistration,
 	justificationBytes []byte,
-) *luxWarp.Error {
+) error {
 	if msg.Registered {
 		return s.verifyL1ValidatorRegistered(msg.ValidationID)
 	}
@@ -165,7 +165,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 // validator.
 func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	validationID ids.ID,
-) *luxWarp.Error {
+) error {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
@@ -192,7 +192,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
 	justification *platformvm.NetIDIndex,
-) *luxWarp.Error {
+) error {
 	subnetID, err := ids.ToID(justification.GetNetId())
 	if err != nil {
 		return &luxWarp.Error{
@@ -252,7 +252,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	validationID ids.ID,
 	justificationBytes []byte,
-) *luxWarp.Error {
+) error {
 	justification, err := message.ParseRegisterL1Validator(justificationBytes)
 	if err != nil {
 		return &luxWarp.Error{
@@ -316,7 +316,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 
 func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 	msg *message.L1ValidatorWeight,
-) *luxWarp.Error {
+) error {
 	if msg.Nonce == math.MaxUint64 {
 		return &luxWarp.Error{
 			Code:    ErrImpossibleNonce,

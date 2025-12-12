@@ -65,7 +65,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/cchainvm"
+	coreth "github.com/luxfi/coreth/plugin/factory"
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -1227,7 +1227,7 @@ func (n *Node) initVMs() error {
 
 	// Register C-Chain VM  
 	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register C-Chain VM", "error", err)
 		return err
