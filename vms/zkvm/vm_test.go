@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package zvm
 
 import (
@@ -77,7 +74,7 @@ func TestVMInitialize(t *testing.T) {
 
 	// Initialize VM
 	toEngine := make(chan common.Message, 1)
-	err = vm.Initialize(
+	require.NoError(vm.Initialize(
 		ctx,
 		chainCtx,
 		db,
@@ -87,8 +84,7 @@ func TestVMInitialize(t *testing.T) {
 		toEngine, // msgChan
 		nil,      // fxs
 		nil,      // appSender
-	)
-	require.NoError(err)
+	))
 
 	// Verify initialization
 	require.NotNil(vm.utxoDB)
@@ -104,8 +100,7 @@ func TestVMInitialize(t *testing.T) {
 	require.NotNil(health)
 
 	// Shutdown
-	err = vm.Shutdown(ctx)
-	require.NoError(err)
+	require.NoError(vm.Shutdown(ctx))
 }
 
 func TestShieldedTransaction(t *testing.T) {
@@ -146,12 +141,10 @@ func TestShieldedTransaction(t *testing.T) {
 	tx.ID = tx.ComputeID()
 
 	// Validate transaction
-	err := tx.ValidateBasic()
-	require.NoError(err)
+	require.NoError(tx.ValidateBasic())
 
 	// Add to mempool
-	err = vm.mempool.AddTransaction(tx)
-	require.NoError(err)
+	require.NoError(vm.mempool.AddTransaction(tx))
 
 	// Verify in mempool
 	require.True(vm.mempool.HasTransaction(tx.ID))
@@ -210,8 +203,7 @@ func setupTestVM(t *testing.T) *VM {
 	vm := &VM{}
 	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
-	require.NoError(t, err)
+	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
 
 	return vm
 }
@@ -242,8 +234,7 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	vm := &VM{}
 	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
-	require.NoError(t, err)
+	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
 
 	return vm
 }

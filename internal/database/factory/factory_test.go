@@ -50,8 +50,7 @@ func TestMeterDBMetricsRegistration(t *testing.T) {
 	testKey := []byte("metric_test_key")
 	testValue := []byte("metric_test_value")
 
-	err = db.Put(testKey, testValue)
-	require.NoError(err)
+	require.NoError(db.Put(testKey, testValue))
 
 	value, err := db.Get(testKey)
 	require.NoError(err)
@@ -103,8 +102,7 @@ func TestMeterDBWrappingWithReadOnly(t *testing.T) {
 	require.NoError(err)
 
 	// Write some data
-	err = db.Put([]byte("key"), []byte("value"))
-	require.NoError(err)
+	require.NoError(db.Put([]byte("key"), []byte("value")))
 	db.Close()
 
 	// Open as read-only
@@ -186,8 +184,7 @@ func TestNodeDatabasePattern(t *testing.T) {
 	}
 
 	for key, value := range testData {
-		err = db.Put([]byte(key), value)
-		require.NoError(err)
+		require.NoError(db.Put([]byte(key), value))
 	}
 
 	// Read back to trigger read metrics

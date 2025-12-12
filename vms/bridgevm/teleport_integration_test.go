@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package bvm
 
 import (
@@ -54,8 +51,7 @@ func TestTeleportBridgeIntegration(t *testing.T) {
 	require.False(teleportMsg.Encrypted)
 
 	// Validate the message
-	err = teleportMsg.Validate()
-	require.NoError(err)
+	require.NoError(teleportMsg.Validate())
 
 	// Convert to Warp message
 	networkID := uint32(96369) // Lux mainnet
@@ -191,8 +187,7 @@ func TestPrivateTeleportBridgeTransfer(t *testing.T) {
 	require.NotEqual(payloadBytes, privateTeleport.Payload) // Should be different (encrypted)
 
 	// Validate the message
-	err = privateTeleport.Validate()
-	require.NoError(err)
+	require.NoError(privateTeleport.Validate())
 
 	// Simulate recipient decryption
 	// In real scenario, recipient would use their ML-KEM private key
@@ -244,8 +239,7 @@ func TestTeleportLockUnlockFlow(t *testing.T) {
 	)
 
 	require.Equal(warp.TeleportLock, lockMsg.MessageType)
-	err = lockMsg.Validate()
-	require.NoError(err)
+	require.NoError(lockMsg.Validate())
 
 	// Step 2: Convert to Warp message for signing
 	warpLockMsg, err := lockMsg.ToWarpMessage(96369)
@@ -263,8 +257,7 @@ func TestTeleportLockUnlockFlow(t *testing.T) {
 	)
 
 	require.Equal(warp.TeleportUnlock, unlockMsg.MessageType)
-	err = unlockMsg.Validate()
-	require.NoError(err)
+	require.NoError(unlockMsg.Validate())
 
 	// Verify the lock and unlock are properly correlated
 	require.Equal(lockMsg.Nonce, unlockMsg.Nonce)
@@ -294,8 +287,7 @@ func TestTeleportGovernanceMessage(t *testing.T) {
 	)
 
 	require.Equal(warp.TeleportGovernance, govMsg.MessageType)
-	err := govMsg.Validate()
-	require.NoError(err)
+	require.NoError(govMsg.Validate())
 
 	// Convert to Warp for cross-chain delivery
 	warpGovMsg, err := govMsg.ToWarpMessage(96369)
@@ -331,8 +323,7 @@ func TestTeleportAttestationMessage(t *testing.T) {
 	)
 
 	require.Equal(warp.TeleportAttest, attestMsg.MessageType)
-	err = attestMsg.Validate()
-	require.NoError(err)
+	require.NoError(attestMsg.Validate())
 
 	// Convert to Warp
 	warpAttestMsg, err := attestMsg.ToWarpMessage(96369)
@@ -389,8 +380,7 @@ func TestTeleportSwapMessage(t *testing.T) {
 	)
 
 	require.Equal(warp.TeleportSwap, swapMsg.MessageType)
-	err = swapMsg.Validate()
-	require.NoError(err)
+	require.NoError(swapMsg.Validate())
 }
 
 // TestSignatureTypeForBridge tests selecting appropriate signature type
@@ -549,8 +539,7 @@ func TestFullBridgeFlowWithTeleport(t *testing.T) {
 		payloadBytes,
 	)
 
-	err = lockMsg.Validate()
-	require.NoError(err)
+	require.NoError(lockMsg.Validate())
 
 	// Step 3: Convert to Warp message
 	warpLockMsg, err := lockMsg.ToWarpMessage(96369)
@@ -570,8 +559,7 @@ func TestFullBridgeFlowWithTeleport(t *testing.T) {
 		payloadBytes,
 	)
 
-	err = unlockMsg.Validate()
-	require.NoError(err)
+	require.NoError(unlockMsg.Validate())
 
 	// Step 6: Verify the bridge flow is complete
 	require.Equal(lockMsg.Nonce, unlockMsg.Nonce)

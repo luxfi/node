@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package exchangevm
 
 import (
@@ -248,7 +245,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	require.NoError(err)
 
 	toEngine := make(chan interface{}, 1)
-	err = vm.Initialize(
+	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
 		baseDB,
@@ -258,8 +255,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		toEngine,
 		fxs,
 		appSender,
-	)
-	require.NoError(err)
+	))
 
 	// Get the genesis transaction
 	genesisTx := getCreateTxFromGenesisTest(t.(*testing.T), genesisBytes, "LUX")
@@ -301,8 +297,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		// Use the genesis transaction ID as the stop vertex
 		stopVertexID := genesisTx.ID()
 		toEngineChan := make(chan core.Message, 1)
-		err = vm.Linearize(context.Background(), stopVertexID, toEngineChan)
-		require.NoError(err)
+		require.NoError(vm.Linearize(context.Background(), stopVertexID, toEngineChan))
 
 		// Mark the backend as bootstrapped so tests can issue transactions
 		vm.txBackend.Bootstrapped = true
@@ -317,8 +312,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 // issueAndAccept issues and accepts a transaction
 func issueAndAccept(require *require.Assertions, vm *VM, tx *txs.Tx) {
 	// Issue the transaction to the network
-	err := vm.network.IssueTxFromRPC(tx)
-	require.NoError(err)
+	require.NoError(vm.network.IssueTxFromRPC(tx))
 
 	// Build a block containing the transaction
 	blkIntf, err := vm.BuildBlock(context.Background())

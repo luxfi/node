@@ -66,8 +66,7 @@ func TestLoadGenesisFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Write the unparsed JSON
-	err = os.WriteFile(tmpFile.Name(), []byte(mustJSON(unparsedConfig)), 0644)
-	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte(mustJSON(unparsedConfig)), 0644))
 
 	// Load it back
 	loadedConfig, err := genesis.GetConfigFile(tmpFile.Name())

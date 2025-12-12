@@ -240,8 +240,7 @@ func TestIndexer(t *testing.T) {
 	require.NotNil(blkIdx)
 
 	// Accept the container
-	err = blkIdx.Accept(chain1Ctx, blkID, blkBytes)
-	require.NoError(err)
+	require.NoError(blkIdx.Accept(chain1Ctx, blkID, blkBytes))
 
 	// Verify GetLastAccepted is right
 	gotLastAccepted, err := blkIdx.GetLastAccepted()
@@ -350,8 +349,7 @@ func TestIndexer(t *testing.T) {
 	require.NotNil(blk2Idx)
 
 	// Accept the block
-	err = blk2Idx.Accept(chain2Ctx, blk2ID, blk2Bytes)
-	require.NoError(err)
+	require.NoError(blk2Idx.Accept(chain2Ctx, blk2ID, blk2Bytes))
 
 	// Verify GetLastAccepted is right
 	gotLastAccepted, err = blk2Idx.GetLastAccepted()

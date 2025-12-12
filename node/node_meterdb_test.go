@@ -49,8 +49,7 @@ func TestMeterDBMetricsRegistration(t *testing.T) {
 	// Write a test key-value pair to trigger metrics
 	testKey := []byte("test_key")
 	testValue := []byte("test_value")
-	err = db.Put(testKey, testValue)
-	require.NoError(err)
+	require.NoError(db.Put(testKey, testValue))
 
 	// Read it back to trigger read metrics
 	value, err := db.Get(testKey)

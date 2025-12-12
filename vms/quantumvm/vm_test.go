@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package qvm
 
 import (
@@ -119,8 +116,7 @@ func TestConfigValidation(t *testing.T) {
 
 	// Test default config
 	cfg := config.DefaultConfig()
-	err := cfg.Validate()
-	require.NoError(err)
+	require.NoError(cfg.Validate())
 
 	// Test config with invalid values gets corrected
 	cfg.MaxParallelTxs = -1
@@ -128,8 +124,7 @@ func TestConfigValidation(t *testing.T) {
 	cfg.QuantumSigCacheSize = -100
 	cfg.RingtailKeySize = 256
 
-	err = cfg.Validate()
-	require.NoError(err)
+	require.NoError(cfg.Validate())
 
 	// Values should be corrected
 	require.Greater(cfg.MaxParallelTxs, 0)

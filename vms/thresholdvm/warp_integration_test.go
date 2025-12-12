@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package tvm
 
 import (
@@ -513,8 +510,7 @@ func TestThresholdConfigDefaults(t *testing.T) {
 
 	// Create a VM with default config
 	vm := &VM{}
-	err := vm.parseConfig(nil) // nil config uses defaults
-	require.NoError(err)
+	require.NoError(vm.parseConfig(nil)) // nil config uses defaults
 
 	// Verify defaults
 	require.Equal(2, vm.config.Threshold)

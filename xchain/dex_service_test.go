@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package xchain
 
 import (
@@ -81,8 +78,7 @@ func TestDEXService_SubmitOrder_GRPC(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err = service.SubmitOrder(ctx, order)
-	require.NoError(err) // Should succeed with gRPC
+	require.NoError(service.SubmitOrder(ctx, order)) // Should succeed with gRPC
 }
 
 func TestDEXService_SubmitOrder_QZMQ(t *testing.T) {
@@ -116,8 +112,7 @@ func TestDEXService_SubmitOrder_QZMQ(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err = service.SubmitOrder(ctx, order)
-	require.NoError(err) // Should succeed with QZMQ for DEX
+	require.NoError(service.SubmitOrder(ctx, order)) // Should succeed with QZMQ for DEX
 }
 
 func TestDEXService_BroadcastBlock_GRPC(t *testing.T) {
@@ -139,8 +134,7 @@ func TestDEXService_BroadcastBlock_GRPC(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err = service.BroadcastBlock(ctx, block)
-	require.NoError(err) // Should use gRPC for block broadcast
+	require.NoError(service.BroadcastBlock(ctx, block)) // Should use gRPC for block broadcast
 }
 
 func TestDEXService_BroadcastBlock_QZMQ(t *testing.T) {
@@ -169,8 +163,7 @@ func TestDEXService_BroadcastBlock_QZMQ(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err = service.BroadcastBlock(ctx, block)
-	require.NoError(err) // Should use QZMQ for block broadcast
+	require.NoError(service.BroadcastBlock(ctx, block)) // Should use QZMQ for block broadcast
 }
 
 func TestConvertOrderSide(t *testing.T) {

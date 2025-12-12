@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package xchain
 
 import (
@@ -135,11 +132,9 @@ func TestTransportManager_SendMessage_GRPC(t *testing.T) {
 	require.NoError(err)
 
 	// Should use gRPC for all messages in gRPC-only mode
-	err = tm.SendMessage("consensus", []byte("test data"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("consensus", []byte("test data")))
 
-	err = tm.SendMessage("order", []byte("test order"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("order", []byte("test order")))
 }
 
 func TestTransportManager_SendMessage_QZMQ(t *testing.T) {
@@ -180,18 +175,14 @@ func TestTransportManager_SendMessage_Hybrid(t *testing.T) {
 	require.NoError(err)
 
 	// DEX messages should use QZMQ
-	err = tm.SendMessage("order", []byte("test order"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("order", []byte("test order")))
 
-	err = tm.SendMessage("trade", []byte("test trade"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("trade", []byte("test trade")))
 
 	// Non-DEX messages should use gRPC
-	err = tm.SendMessage("consensus", []byte("test consensus"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("consensus", []byte("test consensus")))
 
-	err = tm.SendMessage("block", []byte("test block"))
-	require.NoError(err)
+	require.NoError(tm.SendMessage("block", []byte("test block")))
 }
 
 func TestTransportManager_SendMessage_InvalidType(t *testing.T) {
@@ -312,8 +303,7 @@ func TestTransportManager_Start(t *testing.T) {
 	tm, err := NewTransportManager(config)
 	require.NoError(err)
 
-	err = tm.Start()
-	require.NoError(err)
+	require.NoError(tm.Start())
 }
 
 func TestTransportManager_Close(t *testing.T) {
@@ -323,8 +313,7 @@ func TestTransportManager_Close(t *testing.T) {
 	tm, err := NewTransportManager(config)
 	require.NoError(err)
 
-	err = tm.Close()
-	require.NoError(err)
+	require.NoError(tm.Close())
 }
 
 func TestQZMQTransportConfig_Validation(t *testing.T) {
@@ -409,11 +398,9 @@ func TestTransportConfig_EdgeCases(t *testing.T) {
 	require.NotNil(tm)
 
 	// Should handle gracefully with no transports
-	err = tm.Start()
-	require.NoError(err)
+	require.NoError(tm.Start())
 
-	err = tm.Close()
-	require.NoError(err)
+	require.NoError(tm.Close())
 }
 
 func TestTransportManager_NilConfigs(t *testing.T) {
