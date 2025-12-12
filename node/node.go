@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"
@@ -1044,7 +1044,7 @@ func (n *Node) initAPIServer() error {
 func (n *Node) addDefaultVMAliases() error {
 	n.Log.Info("adding the default VM aliases")
 
-	for vmID, aliases := range genesis.VMAliases {
+	for vmID, aliases := range builder.VMAliases {
 		for _, alias := range aliases {
 			if err := n.VMAliaser.Alias(vmID, alias); err != nil {
 				return err
@@ -1058,13 +1058,13 @@ func (n *Node) addDefaultVMAliases() error {
 // XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
 func (n *Node) initChainManager(luxAssetID ids.ID) error {
-	createXVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
+	createXVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
 	if err != nil {
 		return err
 	}
 	xChainID := createXVMTx.ID()
 
-	createEVMTx, err := genesis.VMGenesis(n.Config.GenesisBytes, constants.EVMID)
+	createEVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.EVMID)
 	if err != nil {
 		return err
 	}
@@ -1626,7 +1626,7 @@ func (n *Node) initHealthAPI() error {
 // Give chains aliases as specified by the genesis information
 func (n *Node) initChainAliases(genesisBytes []byte) error {
 	n.Log.Info("initializing chain aliases")
-	_, chainAliases, err := genesis.Aliases(genesisBytes)
+	_, chainAliases, err := builder.Aliases(genesisBytes)
 	if err != nil {
 		return err
 	}
@@ -1653,7 +1653,7 @@ func (n *Node) initChainAliases(genesisBytes []byte) error {
 // APIs aliases as specified by the genesis information
 func (n *Node) initAPIAliases(genesisBytes []byte) error {
 	n.Log.Info("initializing API aliases")
-	apiAliases, _, err := genesis.Aliases(genesisBytes)
+	apiAliases, _, err := builder.Aliases(genesisBytes)
 	if err != nil {
 		return err
 	}

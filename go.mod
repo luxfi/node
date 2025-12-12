@@ -148,13 +148,14 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.2.11
+	github.com/luxfi/genesis v1.3.2
 	github.com/luxfi/geth v1.16.46
 	github.com/luxfi/go-bip39 v1.1.2
+	github.com/luxfi/p2p v1.4.4
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.2
-	github.com/luxfi/warp v1.16.34
+	github.com/luxfi/warp v1.16.35
 	github.com/spaolacci/murmur3 v1.1.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/zap v1.27.0
@@ -186,6 +187,7 @@ require (
 	github.com/hashicorp/go-bexpr v0.1.14 // indirect
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/luxfi/constants v1.0.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
@@ -210,3 +212,7 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+// NOTE: genesis package requires GOPRIVATE=github.com/luxfi/* due to large zip size
+// For local development, use: replace github.com/luxfi/genesis => ../genesis
+replace github.com/luxfi/genesis => ../genesis

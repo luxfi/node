@@ -34,3 +34,7 @@ export CGO_ENABLED=1 # Required for cross-compilation
 
 # Disable version control fallbacks
 export GOPROXY="${GOPROXY:-https://proxy.golang.org}"
+
+# Use GOPRIVATE to bypass Go proxy for luxfi packages (zip too large for proxy)
+export GOPRIVATE="${GOPRIVATE:-github.com/luxfi/*}"
+export GONOSUMDB="${GONOSUMDB:-github.com/luxfi/*}"

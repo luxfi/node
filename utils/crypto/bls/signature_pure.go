@@ -62,8 +62,7 @@ func VerifyProofOfPossession(pk *PublicKey, sig *Signature, msg []byte) bool {
 	if pk == nil || sig == nil {
 		return false
 	}
-	// Pure Go implementation should verify with PoP domain
-	return luxbls.Verify(pk, sig, msg)
+	return luxbls.VerifyProofOfPossession(pk, sig, msg)
 }
 
 // AggregateSignatures aggregates a non-zero number of signatures into a single

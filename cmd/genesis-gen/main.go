@@ -66,13 +66,7 @@ func main() {
 	}
 
 	// Convert to JSON
-	unparsedConfig, err := config.Unparse()
-	if err != nil {
-		fmt.Printf("Error unparsing config: %v\n", err)
-		os.Exit(1)
-	}
-
-	genesisJSON, err := json.MarshalIndent(unparsedConfig, "", "  ")
+	genesisJSON, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		fmt.Printf("Error marshaling genesis: %v\n", err)
 		os.Exit(1)
@@ -97,17 +91,13 @@ func main() {
 	// Print initial allocation address
 	fmt.Println("Initial Allocation:")
 	if len(config.Allocations) > 0 {
-		hrp := constants.GetHRP(config.NetworkID)
-		addr, err := address.Format("X", hrp, config.Allocations[0].LUXAddr.Bytes())
-		if err == nil {
-			fmt.Printf("  Address: %s\n", addr)
-			fmt.Printf("  Amount:  %d LUX (unlocked)\n", config.Allocations[0].InitialAmount/units.Lux)
-			totalLocked := uint64(0)
-			for _, unlock := range config.Allocations[0].UnlockSchedule {
-				totalLocked += unlock.Amount
-			}
-			fmt.Printf("  Locked:  %d LUX (for staking)\n", totalLocked/units.Lux)
+		fmt.Printf("  Address: %s\n", config.Allocations[0].LUXAddr)
+		fmt.Printf("  Amount:  %d LUX (unlocked)\n", config.Allocations[0].InitialAmount/units.Lux)
+		totalLocked := uint64(0)
+		for _, unlock := range config.Allocations[0].UnlockSchedule {
+			totalLocked += unlock.Amount
 		}
+		fmt.Printf("  Locked:  %d LUX (for staking)\n", totalLocked/units.Lux)
 	}
 }
 
@@ -207,12 +197,19 @@ func createGenesisConfig(networkID uint32, validators []ValidatorInfo) (*genesis
 	lockedAmount := totalSupply * 3 / 10
 
 	// Generate allocation address (use a deterministic address for reproducibility)
-	allocationAddr := ids.ShortID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	allocationAddrBytes := ids.ShortID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	hrp := constants.GetHRP(networkID)
+	allocationAddr, err := address.Format("X", hrp, allocationAddrBytes.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("failed to format allocation address: %w", err)
+	}
+	ethAddrBytes := ids.ShortID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+	ethAddr := fmt.Sprintf("0x%x", ethAddrBytes.Bytes())
 
 	allocations := []genesis.Allocation{
 		{
 			LUXAddr:       allocationAddr,
-			ETHAddr:       ids.ShortID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
+			ETHAddr:       ethAddr,
 			InitialAmount: unlockedAmount,
 			UnlockSchedule: []genesis.LockedAmount{
 				{
@@ -223,21 +220,12 @@ func createGenesisConfig(networkID uint32, validators []ValidatorInfo) (*genesis
 		},
 	}
 
-	// Parse validator reward addresses
+	// Build validator stakers with string IDs
 	initialStakers := make([]genesis.Staker, len(validators))
 	for i, v := range validators {
-		_, _, rewardAddrBytes, err := address.Parse(v.RewardAddress)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse reward address: %w", err)
-		}
-		rewardAddr, err := ids.ToShortID(rewardAddrBytes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert reward address: %w", err)
-		}
-
 		initialStakers[i] = genesis.Staker{
-			NodeID:        v.NodeID,
-			RewardAddress: rewardAddr,
+			NodeID:        v.NodeID.String(),
+			RewardAddress: v.RewardAddress,
 			DelegationFee: 20000, // 2%
 		}
 	}
@@ -285,19 +273,13 @@ func createGenesisConfig(networkID uint32, validators []ValidatorInfo) (*genesis
 		StartTime:                  startTime,
 		InitialStakeDuration:       365 * 24 * 60 * 60, // 1 year
 		InitialStakeDurationOffset: 0,
-		InitialStakedFunds:         []ids.ShortID{allocationAddr},
+		InitialStakedFunds:         []string{allocationAddr},
 		InitialStakers:             initialStakers,
 		CChainGenesis:              string(cchainGenesisBytes),
 		Message:                    fmt.Sprintf("Lux Network %d Genesis", networkID),
 	}
 
-	// Validate the config
-	supply, err := config.InitialSupply()
-	if err != nil {
-		return nil, fmt.Errorf("invalid initial supply: %w", err)
-	}
-
-	fmt.Printf("Initial supply: %d LUX\n", supply/units.Lux)
+	fmt.Printf("Initial supply: %d LUX\n", totalSupply/units.Lux)
 
 	return config, nil
 }

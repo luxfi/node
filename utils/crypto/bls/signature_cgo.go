@@ -68,8 +68,7 @@ func VerifyProofOfPossession(pk *PublicKey, sig *Signature, msg []byte) bool {
 	if pk == nil || sig == nil {
 		return false
 	}
-	// luxfi/crypto should handle PoP verification with CGO optimization
-	return luxbls.Verify(pk, sig, msg)
+	return luxbls.VerifyProofOfPossession(pk, sig, msg)
 }
 
 // AggregateSignatures aggregates a non-zero number of signatures into a single aggregated signature.

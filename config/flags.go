@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
@@ -112,20 +113,20 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// LUX fees:
 	// Validator fees:
-	fs.Uint64(ValidatorFeesCapacityKey, uint64(genesis.LocalParams.ValidatorFeeConfig.Capacity), "Maximum number of validators")
-	fs.Uint64(ValidatorFeesTargetKey, uint64(genesis.LocalParams.ValidatorFeeConfig.Target), "Target number of validators")
-	fs.Uint64(ValidatorFeesMinPriceKey, uint64(genesis.LocalParams.ValidatorFeeConfig.MinPrice), "Minimum validator price in nLUX per second")
-	fs.Uint64(ValidatorFeesExcessConversionConstantKey, uint64(genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant), "Constant to convert validator excess price")
+	fs.Uint64(ValidatorFeesCapacityKey, uint64(builder.LocalValidatorFeeConfig.Capacity), "Maximum number of validators")
+	fs.Uint64(ValidatorFeesTargetKey, uint64(builder.LocalValidatorFeeConfig.Target), "Target number of validators")
+	fs.Uint64(ValidatorFeesMinPriceKey, uint64(builder.LocalValidatorFeeConfig.MinPrice), "Minimum validator price in nLUX per second")
+	fs.Uint64(ValidatorFeesExcessConversionConstantKey, uint64(builder.LocalValidatorFeeConfig.ExcessConversionConstant), "Constant to convert validator excess price")
 	// Dynamic fees:
-	fs.Uint64(DynamicFeesBandwidthWeightKey, genesis.LocalParams.DynamicFeeConfig.Weights[gas.Bandwidth], "Complexity multiplier used to convert Bandwidth into Gas")
-	fs.Uint64(DynamicFeesDBReadWeightKey, genesis.LocalParams.DynamicFeeConfig.Weights[gas.DBRead], "Complexity multiplier used to convert DB Reads into Gas")
-	fs.Uint64(DynamicFeesDBWriteWeightKey, genesis.LocalParams.DynamicFeeConfig.Weights[gas.DBWrite], "Complexity multiplier used to convert DB Writes into Gas")
-	fs.Uint64(DynamicFeesComputeWeightKey, genesis.LocalParams.DynamicFeeConfig.Weights[gas.Compute], "Complexity multiplier used to convert Compute into Gas")
-	fs.Uint64(DynamicFeesMaxGasCapacityKey, uint64(genesis.LocalParams.DynamicFeeConfig.MaxCapacity), "Maximum amount of Gas the chain is allowed to store for future use")
-	fs.Uint64(DynamicFeesMaxGasPerSecondKey, uint64(genesis.LocalParams.DynamicFeeConfig.MaxPerSecond), "Rate at which Gas is stored for future use")
-	fs.Uint64(DynamicFeesTargetGasPerSecondKey, uint64(genesis.LocalParams.DynamicFeeConfig.TargetPerSecond), "Target rate of Gas usage")
-	fs.Uint64(DynamicFeesMinGasPriceKey, uint64(genesis.LocalParams.DynamicFeeConfig.MinPrice), "Minimum Gas price")
-	fs.Uint64(DynamicFeesExcessConversionConstantKey, uint64(genesis.LocalParams.DynamicFeeConfig.ExcessConversionConstant), "Constant to convert excess Gas to the Gas price")
+	fs.Uint64(DynamicFeesBandwidthWeightKey, builder.LocalDynamicFeeConfig.Weights[gas.Bandwidth], "Complexity multiplier used to convert Bandwidth into Gas")
+	fs.Uint64(DynamicFeesDBReadWeightKey, builder.LocalDynamicFeeConfig.Weights[gas.DBRead], "Complexity multiplier used to convert DB Reads into Gas")
+	fs.Uint64(DynamicFeesDBWriteWeightKey, builder.LocalDynamicFeeConfig.Weights[gas.DBWrite], "Complexity multiplier used to convert DB Writes into Gas")
+	fs.Uint64(DynamicFeesComputeWeightKey, builder.LocalDynamicFeeConfig.Weights[gas.Compute], "Complexity multiplier used to convert Compute into Gas")
+	fs.Uint64(DynamicFeesMaxGasCapacityKey, uint64(builder.LocalDynamicFeeConfig.MaxCapacity), "Maximum amount of Gas the chain is allowed to store for future use")
+	fs.Uint64(DynamicFeesMaxGasPerSecondKey, uint64(builder.LocalDynamicFeeConfig.MaxPerSecond), "Rate at which Gas is stored for future use")
+	fs.Uint64(DynamicFeesTargetGasPerSecondKey, uint64(builder.LocalDynamicFeeConfig.TargetPerSecond), "Target rate of Gas usage")
+	fs.Uint64(DynamicFeesMinGasPriceKey, uint64(builder.LocalDynamicFeeConfig.MinPrice), "Minimum Gas price")
+	fs.Uint64(DynamicFeesExcessConversionConstantKey, uint64(builder.LocalDynamicFeeConfig.ExcessConversionConstant), "Constant to convert excess Gas to the Gas price")
 	// Static fees:
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
 	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
@@ -287,13 +288,13 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(MinDelegatorStakeKey, genesis.LocalParams.MinDelegatorStake, "Minimum stake, in nLUX, that can be delegated on the primary network")
 	fs.Uint64(MinDelegatorFeeKey, uint64(genesis.LocalParams.MinDelegationFee), "Minimum delegation fee, in the range [0, 1000000], that can be charged for delegation on the primary network")
 	// Minimum Stake Duration
-	fs.Duration(MinStakeDurationKey, genesis.LocalParams.MinStakeDuration, "Minimum staking duration")
+	fs.Duration(MinStakeDurationKey, time.Duration(genesis.LocalParams.MinStakeDuration)*time.Second, "Minimum staking duration")
 	// Maximum Stake Duration
-	fs.Duration(MaxStakeDurationKey, genesis.LocalParams.MaxStakeDuration, "Maximum staking duration")
+	fs.Duration(MaxStakeDurationKey, time.Duration(genesis.LocalParams.MaxStakeDuration)*time.Second, "Maximum staking duration")
 	// Stake Reward Configs
 	fs.Uint64(StakeMaxConsumptionRateKey, genesis.LocalParams.RewardConfig.MaxConsumptionRate, "Maximum consumption rate of the remaining tokens to mint in the staking function")
 	fs.Uint64(StakeMinConsumptionRateKey, genesis.LocalParams.RewardConfig.MinConsumptionRate, "Minimum consumption rate of the remaining tokens to mint in the staking function")
-	fs.Duration(StakeMintingPeriodKey, genesis.LocalParams.RewardConfig.MintingPeriod, "Consumption period of the staking function")
+	fs.Duration(StakeMintingPeriodKey, time.Duration(genesis.LocalParams.RewardConfig.MintingPeriod)*time.Second, "Consumption period of the staking function")
 	fs.Uint64(StakeSupplyCapKey, genesis.LocalParams.RewardConfig.SupplyCap, "Supply cap of the staking function")
 	// Nets
 	fs.String(TrackNetsKey, "", "List of subnets for the node to track. A node tracking a net will track the uptimes of the net validators and attempt to sync all the chains in the subnet. Before validating a subnet, a node should be tracking the net to avoid impacting their net validation uptime")

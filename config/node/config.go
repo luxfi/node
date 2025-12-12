@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/consensus/networking/benchlist"
@@ -73,7 +73,7 @@ type IPConfig struct {
 }
 
 type StakingConfig struct {
-	genesis.StakingConfig
+	builder.StakingConfig
 	SybilProtectionEnabled        bool            `json:"sybilProtectionEnabled"`
 	PartialSyncPrimaryNetwork     bool            `json:"partialSyncPrimaryNetwork"`
 	StakingTLSCert                tls.Certificate `json:"-"`
@@ -105,7 +105,7 @@ type BootstrapConfig struct {
 	// ancestors while responding to a GetAncestors message
 	BootstrapMaxTimeGetAncestors time.Duration `json:"bootstrapMaxTimeGetAncestors"`
 
-	Bootstrappers []genesis.Bootstrapper `json:"bootstrappers"`
+	Bootstrappers []builder.Bootstrapper `json:"bootstrappers"`
 
 	// Skip bootstrapping and start processing immediately
 	SkipBootstrap bool `json:"skipBootstrap"`
@@ -133,7 +133,7 @@ type Config struct {
 	HTTPConfig          `json:"httpConfig"`
 	IPConfig            `json:"ipConfig"`
 	StakingConfig       `json:"stakingConfig"`
-	genesis.TxFeeConfig `json:"txFeeConfig"`
+	builder.TxFeeConfig `json:"txFeeConfig"`
 	StateSyncConfig     `json:"stateSyncConfig"`
 	BootstrapConfig     `json:"bootstrapConfig"`
 	DatabaseConfig      `json:"databaseConfig"`

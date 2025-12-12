@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
@@ -516,12 +516,16 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		return node.BootstrapConfig{}, fmt.Errorf("set %q but didn't set %q", BootstrapIDsKey, BootstrapIPsKey)
 	}
 	if !ipsSet && !idsSet {
-		config.Bootstrappers = genesis.SampleBootstrappers(networkID, 5)
+		var err error
+		config.Bootstrappers, err = builder.SampleBootstrappers(networkID, 5)
+		if err != nil {
+			return node.BootstrapConfig{}, fmt.Errorf("failed to sample bootstrappers: %w", err)
+		}
 		return config, nil
 	}
 
 	bootstrapIPs := strings.Split(v.GetString(BootstrapIPsKey), ",")
-	config.Bootstrappers = make([]genesis.Bootstrapper, 0, len(bootstrapIPs))
+	config.Bootstrappers = make([]builder.Bootstrapper, 0, len(bootstrapIPs))
 	for _, bootstrapIP := range bootstrapIPs {
 		ip := strings.TrimSpace(bootstrapIP)
 		if ip == "" {
@@ -531,7 +535,7 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap ip %s: %w", ip, err)
 		}
-		config.Bootstrappers = append(config.Bootstrappers, genesis.Bootstrapper{
+		config.Bootstrappers = append(config.Bootstrappers, builder.Bootstrapper{
 			// ID is populated below
 			IP: addr,
 		})
@@ -785,14 +789,14 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 			return node.StakingConfig{}, errStakeMintingPeriodBelowMin
 		}
 	} else {
-		config.StakingConfig = genesis.GetStakingConfig(networkID)
+		config.StakingConfig = builder.GetStakingConfig(networkID)
 	}
 	return config, nil
 }
 
-func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
+func getTxFeeConfig(v *viper.Viper, networkID uint32) builder.TxFeeConfig {
 	if networkID != constants.MainnetID && networkID != constants.TestnetID {
-		return genesis.TxFeeConfig{
+		return builder.TxFeeConfig{
 			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
 			TxFee:            v.GetUint64(TxFeeKey),
 			DynamicFeeConfig: gas.Config{
@@ -816,7 +820,7 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
 			},
 		}
 	}
-	return genesis.GetTxFeeConfig(networkID)
+	return builder.GetTxFeeConfig(networkID)
 }
 
 func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) {
@@ -857,7 +861,7 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	return upgradeConfig, nil
 }
 
-func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
+func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig) ([]byte, ids.ID, error) {
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
@@ -871,24 +875,24 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 			genesisDBType = "badgerdb" // Default is always badgerdb
 		}
 
-		return genesis.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
+		return builder.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
 	}
 
 	// try first loading genesis content directly from flag/env-var
 	if v.IsSet(GenesisFileContentKey) {
 		genesisData := v.GetString(GenesisFileContentKey)
-		return genesis.FromFlag(networkID, genesisData, stakingCfg)
+		return builder.FromFlag(networkID, genesisData, stakingCfg)
 	}
 
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
 		genesisFileName := getExpandedArg(v, GenesisFileKey)
-		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
+		return builder.FromFile(networkID, genesisFileName, stakingCfg)
 	}
 
 	// finally if file is not specified/readable go for the predefined config
-	config := genesis.GetConfig(networkID)
-	return genesis.FromConfig(config)
+	config := builder.GetConfig(networkID)
+	return builder.FromConfig(config)
 }
 
 func getTrackedNets(v *viper.Viper) (set.Set[ids.ID], error) {

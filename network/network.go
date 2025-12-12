@@ -280,14 +280,24 @@ func NewNetwork(
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
 	for _, bootstrapper := range genesis.GetBootstrappers(config.NetworkID) {
-		ipTracker.ManuallyGossip(constants.PrimaryNetworkID, bootstrapper.ID)
+		nodeID, err := ids.NodeIDFromString(bootstrapper.ID)
+		if err != nil {
+			log.Warn("invalid bootstrapper node ID", zap.String("id", bootstrapper.ID), zap.Error(err))
+			continue
+		}
+		ipTracker.ManuallyGossip(constants.PrimaryNetworkID, nodeID)
 	}
 	// Track all recent validators to optimistically connect to them before the
 	// P-chain has finished syncing.
 	genesisConfig := genesis.GetConfig(config.NetworkID)
 	if genesisConfig != nil {
 		for _, staker := range genesisConfig.InitialStakers {
-			ipTracker.ManuallyTrack(staker.NodeID)
+			nodeID, err := ids.NodeIDFromString(staker.NodeID)
+			if err != nil {
+				log.Warn("invalid staker node ID", zap.String("id", staker.NodeID), zap.Error(err))
+				continue
+			}
+			ipTracker.ManuallyTrack(nodeID)
 		}
 	}
 
