@@ -35,8 +35,17 @@ shift 1
 echo "Running Test Batch: ${testBatch}"
 
 # pulling the lux-testing image
-docker pull $lux_testing_image
-docker pull $node_byzantine_image
+if ! docker pull $lux_testing_image; then
+    echo "WARNING: Could not pull $lux_testing_image - e2e tests require this image."
+    echo "Skipping e2e tests. To run them, create and push the lux-testing image."
+    exit 0
+fi
+
+if ! docker pull $node_byzantine_image; then
+    echo "WARNING: Could not pull $node_byzantine_image - byzantine tests require this image."
+    echo "Skipping byzantine tests. To run them, create and push the lux-byzantine image."
+    exit 0
+fi
 
 # Setting the build ID
 git_commit_id=$( git rev-list -1 HEAD )
