@@ -74,6 +74,7 @@ import (
 	bvm "github.com/luxfi/node/vms/bridgevm"
 	tvm "github.com/luxfi/node/vms/thresholdvm"
 	zvm "github.com/luxfi/node/vms/zkvm"
+	graphvm "github.com/luxfi/node/vms/graphvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
@@ -1233,8 +1234,8 @@ func (n *Node) initVMs() error {
 	n.Log.Info("C-Chain VM registered successfully")
 
 	// Register Q-Chain VM (Quantum VM)
-	n.Log.Info("Registering Q-Chain VM", "vmID", constants.QVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.QVMID, &qvm.Factory{})
+	n.Log.Info("Registering Q-Chain VM", "vmID", constants.QuantumVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.QuantumVMID, &qvm.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register Q-Chain VM", "error", err)
 		return err
@@ -1276,6 +1277,15 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("Z-Chain VM registered successfully")
+
+	// Register G-Chain VM (GraphVM) - GraphQL/DGraph unified data layer
+	n.Log.Info("Registering G-Chain VM (Graph)", "vmID", constants.GraphVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.GraphVMID, &graphvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register G-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("G-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

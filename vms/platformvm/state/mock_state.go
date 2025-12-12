@@ -77,6 +77,35 @@ func (mr *MockStateMockRecorder) AddChain(createChainTx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChain", reflect.TypeOf((*MockState)(nil).AddChain), createChainTx)
 }
 
+// GetChainIDByName mocks base method.
+func (m *MockState) GetChainIDByName(name string) (ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainIDByName", name)
+	ret0, _ := ret[0].(ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainIDByName indicates an expected call of GetChainIDByName.
+func (mr *MockStateMockRecorder) GetChainIDByName(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainIDByName", reflect.TypeOf((*MockState)(nil).GetChainIDByName), name)
+}
+
+// IsChainNameTaken mocks base method.
+func (m *MockState) IsChainNameTaken(name string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsChainNameTaken", name)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsChainNameTaken indicates an expected call of IsChainNameTaken.
+func (mr *MockStateMockRecorder) IsChainNameTaken(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsChainNameTaken", reflect.TypeOf((*MockState)(nil).IsChainNameTaken), name)
+}
+
 // AddNet mocks base method.
 func (m *MockState) AddNet(netID ids.ID) {
 	m.ctrl.T.Helper()
@@ -768,20 +797,6 @@ func (m *MockState) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, er
 func (mr *MockStateMockRecorder) HasL1Validator(subnetID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasL1Validator", reflect.TypeOf((*MockState)(nil).HasL1Validator), subnetID, nodeID)
-}
-
-// IsChainNameTaken mocks base method.
-func (m *MockState) IsChainNameTaken(name string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsChainNameTaken", name)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsChainNameTaken indicates an expected call of IsChainNameTaken.
-func (mr *MockStateMockRecorder) IsChainNameTaken(name any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsChainNameTaken", reflect.TypeOf((*MockState)(nil).IsChainNameTaken), name)
 }
 
 // NumActiveL1Validators mocks base method.
