@@ -251,8 +251,9 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 				EndAccumulatedFee: endAccumulatedFee,
 			}
 		}
-		l1ValidatorToEvict0 = newL1Validator(3 * units.NanoLux) // lasts 3 seconds
-		l1ValidatorToEvict1 = newL1Validator(3 * units.NanoLux) // lasts 3 seconds
+		// With MinPrice of 512, EndAccumulatedFee needs to be 3 * 512 = 1536 nanoLux to last 3 seconds
+		l1ValidatorToEvict0 = newL1Validator(secondsToAdvance * uint64(builder.LocalValidatorFeeConfig.MinPrice)) // lasts 3 seconds
+		l1ValidatorToEvict1 = newL1Validator(secondsToAdvance * uint64(builder.LocalValidatorFeeConfig.MinPrice)) // lasts 3 seconds
 		l1ValidatorToKeep   = newL1Validator(units.Lux)
 
 		currentTime = genesistest.DefaultValidatorStartTime
@@ -363,7 +364,7 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 
 			require.Equal(test.expectedExcess, s.GetL1ValidatorExcess())
 			// Accrued fees = secondsToAdvance * MinPrice (512)
-			require.Equal(uint64(secondsToAdvance)*config.ValidatorFeeConfig.MinPrice, s.GetAccruedFees())
+			require.Equal(uint64(secondsToAdvance)*uint64(config.ValidatorFeeConfig.MinPrice), s.GetAccruedFees())
 		})
 	}
 }
