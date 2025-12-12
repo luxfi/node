@@ -368,7 +368,10 @@ jobs:
         with:
           name: luxd-binary
           path: node/build/
-          
+
+      - name: Make binary executable
+        run: chmod +x node/build/luxd
+
       - name: Check for import regressions
         run: |
           echo "Checking for import regressions..."
