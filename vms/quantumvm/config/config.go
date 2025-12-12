@@ -1,14 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package config
 
-import (
-	"time"
-)
+import "time"
 
 // Config contains all the foundational parameters of the QVM
 type Config struct {

@@ -1,14 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package secp256k1fx
 
-import (
-	"github.com/luxfi/crypto/secp256k1"
-)
+import "github.com/luxfi/crypto/secp256k1"
 
 // RecoverCache provides a cache for public key recovery operations
 type RecoverCache struct {

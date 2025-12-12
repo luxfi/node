@@ -1,14 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package node
 
-import (
-	"github.com/luxfi/crypto/bls"
-)
+import "github.com/luxfi/crypto/bls"
 
 // BLSSignerWrapper wraps a SecretKey to implement the Signer interface with error returns
 type BLSSignerWrapper struct {

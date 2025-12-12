@@ -3,9 +3,7 @@
 
 package lux
 
-import (
-	"context"
-)
+import "context"
 
 // ContextInitializable can be initialized with a context
 type ContextInitializable interface {

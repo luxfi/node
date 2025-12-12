@@ -3,9 +3,7 @@
 
 package bloom
 
-import (
-	"github.com/luxfi/metric"
-)
+import "github.com/luxfi/metric"
 
 // Metrics is a collection of commonly useful metrics when using a long-lived
 // bloom filter.

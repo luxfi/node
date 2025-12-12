@@ -3,9 +3,7 @@
 
 package lock
 
-import (
-	"sync"
-)
+import "sync"
 
 // State represents a lockable state
 type State struct {

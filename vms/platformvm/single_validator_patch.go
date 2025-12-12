@@ -6,9 +6,7 @@
 
 package platformvm
 
-import (
-	"github.com/luxfi/node/vms/platformvm/config"
-)
+import "github.com/luxfi/node/vms/platformvm/config"
 
 // EnableSingleValidatorMode allows Platform VM to run with a single validator
 func init() {

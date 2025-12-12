@@ -3,9 +3,7 @@
 
 package tests
 
-import (
-	"github.com/luxfi/log"
-)
+import "github.com/luxfi/log"
 
 func NewDefaultLogger(prefix string) log.Logger {
 	return log.New()

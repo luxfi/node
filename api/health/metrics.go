@@ -1,14 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package health
 
-import (
-	"github.com/luxfi/metric"
-)
+import "github.com/luxfi/metric"
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing

@@ -3,9 +3,7 @@
 
 package metercacher
 
-import (
-	"github.com/luxfi/metric"
-)
+import "github.com/luxfi/metric"
 
 const (
 	resultLabel = "result"
