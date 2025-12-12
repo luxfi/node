@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -2376,8 +2376,8 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 	var (
 		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
-			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
-			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
+			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
+			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
 			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 		baseState = statetest.New(t, statetest.Config{
@@ -2511,12 +2511,12 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			name: "too many active validators",
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.backend.Config = &config.Internal{
-					DynamicFeeConfig: genesis.LocalParams.DynamicFeeConfig,
+					DynamicFeeConfig: builder.LocalDynamicFeeConfig,
 					ValidatorFeeConfig: validatorfee.Config{
 						Capacity:                 0,
-						Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
-						MinPrice:                 genesis.LocalParams.ValidatorFeeConfig.MinPrice,
-						ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+						Target:                   builder.LocalValidatorFeeConfig.Target,
+						MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
+						ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 					},
 					UpgradeConfig: upgradetest.GetConfig(upgradetest.Latest),
 				}
@@ -2541,7 +2541,7 @@ func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.feeCalculator = txfee.NewDynamicCalculator(
 					e.backend.Config.DynamicFeeConfig.Weights,
-					100*genesis.LocalParams.DynamicFeeConfig.MinPrice,
+					100*builder.LocalDynamicFeeConfig.MinPrice,
 				)
 				return nil
 			},
@@ -2711,8 +2711,8 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	var (
 		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
-			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
-			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
+			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
+			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
 			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 		baseState = statetest.New(t, statetest.Config{
@@ -2918,7 +2918,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.feeCalculator = txfee.NewDynamicCalculator(
 					e.backend.Config.DynamicFeeConfig.Weights,
-					100*genesis.LocalParams.DynamicFeeConfig.MinPrice,
+					100*builder.LocalDynamicFeeConfig.MinPrice,
 				)
 				return nil
 			},
@@ -3091,12 +3091,12 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			balance: 1,
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.backend.Config = &config.Internal{
-					DynamicFeeConfig: genesis.LocalParams.DynamicFeeConfig,
+					DynamicFeeConfig: builder.LocalDynamicFeeConfig,
 					ValidatorFeeConfig: validatorfee.Config{
 						Capacity:                 0,
-						Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
-						MinPrice:                 genesis.LocalParams.ValidatorFeeConfig.MinPrice,
-						ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+						Target:                   builder.LocalValidatorFeeConfig.Target,
+						MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
+						ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 					},
 					UpgradeConfig: upgradetest.GetConfig(upgradetest.Latest),
 				}
@@ -3247,8 +3247,8 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	var (
 		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
-			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
-			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
+			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
+			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
 			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 		baseState = statetest.New(t, statetest.Config{
@@ -3461,7 +3461,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.feeCalculator = txfee.NewDynamicCalculator(
 					e.backend.Config.DynamicFeeConfig.Weights,
-					100*genesis.LocalParams.DynamicFeeConfig.MinPrice,
+					100*builder.LocalDynamicFeeConfig.MinPrice,
 				)
 				return nil
 			},
@@ -3758,8 +3758,8 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	var (
 		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
-			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
-			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
+			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
+			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
 			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 		baseState = statetest.New(t, statetest.Config{
@@ -3924,7 +3924,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.feeCalculator = txfee.NewDynamicCalculator(
 					e.backend.Config.DynamicFeeConfig.Weights,
-					100*genesis.LocalParams.DynamicFeeConfig.MinPrice,
+					100*builder.LocalDynamicFeeConfig.MinPrice,
 				)
 				return nil
 			},
@@ -3940,12 +3940,12 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			validationID: validationID,
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.backend.Config = &config.Internal{
-					DynamicFeeConfig: genesis.LocalParams.DynamicFeeConfig,
+					DynamicFeeConfig: builder.LocalDynamicFeeConfig,
 					ValidatorFeeConfig: validatorfee.Config{
 						Capacity:                 0,
-						Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
-						MinPrice:                 genesis.LocalParams.ValidatorFeeConfig.MinPrice,
-						ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+						Target:                   builder.LocalValidatorFeeConfig.Target,
+						MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
+						ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 					},
 					UpgradeConfig: upgradetest.GetConfig(upgradetest.Latest),
 				}
@@ -4060,8 +4060,8 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	var (
 		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
-			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
-			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
+			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
+			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
 			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 		baseState = statetest.New(t, statetest.Config{

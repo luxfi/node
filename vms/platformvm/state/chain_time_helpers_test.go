@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -74,7 +74,7 @@ func TestNextBlockTime(t *testing.T) {
 			clk.Set(test.now)
 
 			actualTime, actualCapped, err := NextBlockTime(
-				genesis.LocalParams.ValidatorFeeConfig,
+				builder.LocalValidatorFeeConfig,
 				s,
 				&clk,
 			)
@@ -87,10 +87,10 @@ func TestNextBlockTime(t *testing.T) {
 
 func TestGetNextStakerChangeTime(t *testing.T) {
 	config := validatorfee.Config{
-		Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
-		Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
+		Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
+		Target:                   builder.LocalValidatorFeeConfig.Target,
 		MinPrice:                 gas.Price(2 * units.NanoLux), // Increase minimum price to test fractional seconds
-		ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+		ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 	}
 
 	tests := []struct {
@@ -210,7 +210,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 }
 
 func TestPickFeeCalculator(t *testing.T) {
-	dynamicFeeConfig := genesis.LocalParams.DynamicFeeConfig
+	dynamicFeeConfig := builder.LocalDynamicFeeConfig
 
 	tests := []struct {
 		fork     upgradetest.Fork

@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
@@ -72,7 +72,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 		c.Context = consensustest.Context(t, constants.PlatformChainID)
 	}
 	if c.ValidatorFeeConfig == (validatorfee.Config{}) {
-		c.ValidatorFeeConfig = genesis.LocalParams.ValidatorFeeConfig
+		c.ValidatorFeeConfig = builder.LocalValidatorFeeConfig
 	}
 
 	mempool, err := mempool.New("", metric.NewRegistry())
@@ -102,7 +102,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 		},
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Internal{
-				DynamicFeeConfig:       genesis.LocalParams.DynamicFeeConfig,
+				DynamicFeeConfig:       builder.LocalDynamicFeeConfig,
 				ValidatorFeeConfig:     c.ValidatorFeeConfig,
 				SybilProtectionEnabled: true,
 				UpgradeConfig:          c.Upgrades,
@@ -1341,10 +1341,10 @@ func TestDeactivateLowBalanceL1Validators(t *testing.T) {
 			require.NoError(err)
 
 			config := validatorfee.Config{
-				Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
-				Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
+				Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
+				Target:                   builder.LocalValidatorFeeConfig.Target,
 				MinPrice:                 gas.Price(2 * units.NanoLux), // Min price is increased to allow fractional fees
-				ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+				ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 			}
 			lowBalanceL1ValidatorsEvicted, err := deactivateLowBalanceL1Validators(config, diff)
 			require.NoError(err)
@@ -1429,10 +1429,10 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 				Upgrades: upgradetest.GetConfig(test.currentFork),
 				Context:  ctx,
 				ValidatorFeeConfig: validatorfee.Config{
-					Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
-					Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
+					Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
+					Target:                   builder.LocalValidatorFeeConfig.Target,
 					MinPrice:                 gas.Price(2 * units.NanoLux), // Min price is increased to allow fractional fees
-					ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+					ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 				},
 			})
 

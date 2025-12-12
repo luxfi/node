@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
 	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
@@ -145,7 +145,14 @@ func ExampleNewTestNetwork() {
 
 	// We need to initially connect to some nodes in the network before peer
 	// gossip will enable connecting to all the remaining nodes in the network.
-	bootstrappers := genesis.SampleBootstrappers(constants.TestnetID, 5)
+	bootstrappers, err := builder.SampleBootstrappers(constants.TestnetID, 5)
+	if err != nil {
+		log.Error(
+			"failed to get sample bootstrappers",
+			"error", err,
+		)
+		return
+	}
 	for _, bootstrapper := range bootstrappers {
 		network.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
 	}

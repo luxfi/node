@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -85,7 +85,7 @@ func TestAdvanceTimeTo_UpdatesFeeState(t *testing.T) {
 			// Ensure the invariant that [nextTime <= nextStakerChangeTime] on
 			// AdvanceTimeTo is maintained.
 			nextStakerChangeTime, err := state.GetNextStakerChangeTime(
-				genesis.LocalParams.ValidatorFeeConfig,
+				builder.LocalValidatorFeeConfig,
 				s,
 				mockable.MaxTime,
 			)
@@ -195,7 +195,7 @@ func TestAdvanceTimeTo_RemovesStaleExpiries(t *testing.T) {
 			// Ensure the invariant that [newTime <= nextStakerChangeTime] on
 			// AdvanceTimeTo is maintained.
 			nextStakerChangeTime, err := state.GetNextStakerChangeTime(
-				genesis.LocalParams.ValidatorFeeConfig,
+				builder.LocalValidatorFeeConfig,
 				s,
 				mockable.MaxTime,
 			)
@@ -260,10 +260,10 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 
 		config = config.Internal{
 			ValidatorFeeConfig: fee.Config{
-				Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
+				Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
 				Target:                   1,
-				MinPrice:                 genesis.LocalParams.ValidatorFeeConfig.MinPrice,
-				ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+				MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
+				ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 			},
 			UpgradeConfig: upgradetest.GetConfig(upgradetest.Latest),
 		}
@@ -337,7 +337,7 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 			// Ensure the invariant that [newTime <= nextStakerChangeTime] on
 			// AdvanceTimeTo is maintained.
 			nextStakerChangeTime, err := state.GetNextStakerChangeTime(
-				genesis.LocalParams.ValidatorFeeConfig,
+				config.ValidatorFeeConfig,
 				s,
 				mockable.MaxTime,
 			)
@@ -362,7 +362,8 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 			)
 
 			require.Equal(test.expectedExcess, s.GetL1ValidatorExcess())
-			require.Equal(uint64(secondsToAdvance), s.GetAccruedFees())
+			// Accrued fees = secondsToAdvance * MinPrice (512)
+			require.Equal(uint64(secondsToAdvance)*config.ValidatorFeeConfig.MinPrice, s.GetAccruedFees())
 		})
 	}
 }

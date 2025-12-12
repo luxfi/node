@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -21,17 +20,19 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
 )
 
 func ExampleWallet() {
 	ctx := context.Background()
-	// GetEWOQKey returns nil if no key is available from environment
-	ewoquKey := genesis.GetEWOQKey()
-	if ewoquKey == nil {
-		log.Printf("no local key available, skipping example")
+	// Load key from local key storage (~/.lux/keys/) or environment variables
+	// Priority: LUX_MNEMONIC > LUX_PRIVATE_KEY > LUX_KEY_NAME > CLI arg > default key
+	localKey, err := keyutil.LoadKey()
+	if err != nil {
+		log.Printf("no local key available, skipping example: %v", err)
 		return
 	}
-	kc := secp256k1fx.NewKeychain(ewoquKey)
+	kc := secp256k1fx.NewKeychain(localKey)
 	wkc := kc.AsWalletKeychain()
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
@@ -59,7 +60,7 @@ func ExampleWallet() {
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			ewoquKey.PublicKey().Address(),
+			localKey.PublicKey().Address(),
 		},
 	}
 
@@ -153,10 +154,12 @@ func ExampleWallet() {
 
 	addPermissionlessValidatorStartTime := time.Now()
 	startTime := time.Now().Add(time.Minute)
+	// Generate a test node ID for this example
+	testNodeID := ids.GenerateTestNodeID()
 	addNetValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
-				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
+				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
@@ -180,7 +183,7 @@ func ExampleWallet() {
 	addNetDelegatorTx, err := pWallet.IssueAddPermissionlessDelegatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
-				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
+				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,

@@ -39,7 +39,7 @@ func TestAdversarial_ValidBLS_InvalidRingtail(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	// Create a valid finality proof
 	blockID := ids.GenerateTestID()
@@ -82,7 +82,7 @@ func TestAdversarial_InvalidBLS_ValidRingtail(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	// Create valid Ringtail signature
 	msg := make([]byte, 48)
@@ -213,7 +213,7 @@ func TestAdversarial_QuorumManipulation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := q.checkQuorum(tc.signerWeight, tc.totalWeight)
+			result := q.CheckQuorum(tc.signerWeight, tc.totalWeight)
 			if tc.shouldPass {
 				require.True(result, "quorum check failed for %s", tc.name)
 			} else {
@@ -262,8 +262,8 @@ func TestAdversarial_ReplayAttack(t *testing.T) {
 	}
 
 	// Message should be different due to height
-	origMsg := q.createMessage(FinalityEvent{BlockID: blockID, Height: 100, Timestamp: original.Timestamp})
-	replayMsg := q.createMessage(FinalityEvent{BlockID: blockID, Height: 200, Timestamp: original.Timestamp})
+	origMsg := q.CreateMessage(FinalityEvent{BlockID: blockID, Height: 100, Timestamp: original.Timestamp})
+	replayMsg := q.CreateMessage(FinalityEvent{BlockID: blockID, Height: 200, Timestamp: original.Timestamp})
 
 	require.False(bytes.Equal(origMsg, replayMsg), "replay messages should differ")
 	t.Logf("✓ Replay attack prevented - messages differ by height")
@@ -290,7 +290,7 @@ func TestAdversarial_MessageTampering(t *testing.T) {
 		Timestamp: timestamp,
 	}
 
-	originalMsg := q.createMessage(originalEvent)
+	originalMsg := q.CreateMessage(originalEvent)
 
 	// Test various tampering attempts
 	testCases := []struct {
@@ -313,7 +313,7 @@ func TestAdversarial_MessageTampering(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tamperedMsg := q.createMessage(tc.event)
+			tamperedMsg := q.CreateMessage(tc.event)
 			require.False(bytes.Equal(originalMsg, tamperedMsg),
 				"tampered message should differ from original")
 			t.Logf("✓ %s produces different message hash", tc.name)
@@ -398,9 +398,10 @@ func TestHybridConsensus_ThresholdEnforcement(t *testing.T) {
 	require.NoError(err)
 
 	// Test that threshold is properly set
-	require.Equal(3, q.threshold)
-	require.Equal(uint64(2), q.quorumNum)
-	require.Equal(uint64(3), q.quorumDen)
+	threshold, quorumNum, quorumDen := q.GetConfig()
+	require.Equal(3, threshold)
+	require.Equal(uint64(2), quorumNum)
+	require.Equal(uint64(3), quorumDen)
 
 	// Various threshold scenarios
 	testWeights := []struct {
@@ -417,7 +418,7 @@ func TestHybridConsensus_ThresholdEnforcement(t *testing.T) {
 	}
 
 	for _, tw := range testWeights {
-		result := q.checkQuorum(tw.signer, tw.total)
+		result := q.CheckQuorum(tw.signer, tw.total)
 		require.Equal(tw.passes, result,
 			"quorum %d/%d should be %v", tw.signer, tw.total, tw.passes)
 	}
@@ -443,7 +444,7 @@ func TestPQSync_PChainWaitsForQChain(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -491,7 +492,7 @@ func TestPQSync_MultipleBlocksInOrder(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -552,7 +553,7 @@ func TestConcurrent_ParallelFinality(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	// Test concurrent access to Quasar methods
 	var wg sync.WaitGroup
@@ -572,14 +573,14 @@ func TestConcurrent_ParallelFinality(t *testing.T) {
 				blockID := ids.GenerateTestID()
 				_, _ = q.GetFinality(blockID)
 			case 2:
-				_ = q.checkQuorum(uint64(idx), 100)
+				_ = q.CheckQuorum(uint64(idx), 100)
 			case 3:
 				event := FinalityEvent{
 					Height:    uint64(idx),
 					BlockID:   ids.GenerateTestID(),
 					Timestamp: time.Now(),
 				}
-				_ = q.createMessage(event)
+				_ = q.CreateMessage(event)
 			}
 		}(i)
 	}
@@ -608,7 +609,7 @@ func TestConcurrent_RaceConditions(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -662,14 +663,14 @@ func TestEdgeCase_ZeroValidators(t *testing.T) {
 
 	// Empty validator list
 	validators := []ValidatorState{}
-	total := q.totalWeight(validators)
+	total := q.TotalWeight(validators)
 	require.Equal(uint64(0), total)
 
 	// Quorum with zero total: required = 0 * 2 / 3 = 0
 	// So 0 >= 0 is true (degenerate case, but mathematically correct)
 	// This edge case should be handled at a higher level to prevent
 	// empty validator sets from achieving finality
-	require.True(q.checkQuorum(0, 0), "0 >= 0 is mathematically true")
+	require.True(q.CheckQuorum(0, 0), "0 >= 0 is mathematically true")
 	t.Log("✓ Zero validators handled (note: 0/0 is degenerate case)")
 }
 
@@ -687,7 +688,7 @@ func TestEdgeCase_AllInactiveValidators(t *testing.T) {
 		{Weight: 300, Active: false},
 	}
 
-	total := q.totalWeight(validators)
+	total := q.TotalWeight(validators)
 	require.Equal(uint64(0), total, "inactive validators should not count")
 	t.Log("✓ All inactive validators handled correctly")
 }
@@ -708,7 +709,7 @@ func TestEdgeCase_MixedActiveInactive(t *testing.T) {
 		{Weight: 500, Active: true},
 	}
 
-	total := q.totalWeight(validators)
+	total := q.TotalWeight(validators)
 	require.Equal(uint64(900), total, "only active validators should count (100+300+500)")
 	t.Log("✓ Mixed active/inactive validators handled correctly")
 }
@@ -728,7 +729,7 @@ func TestEdgeCase_MaxUint64Weight(t *testing.T) {
 	}
 
 	// This might overflow - test graceful handling
-	total := q.totalWeight(validators)
+	total := q.TotalWeight(validators)
 	t.Logf("Total weight with large values: %d", total)
 	// Note: May overflow, but shouldn't panic
 	t.Log("✓ Large weight values handled without panic")
@@ -748,7 +749,7 @@ func TestEdgeCase_StartStopCycles(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	// Multiple start/stop cycles
 	for i := 0; i < 5; i++ {
@@ -758,14 +759,14 @@ func TestEdgeCase_StartStopCycles(t *testing.T) {
 		q, err = NewQuasar(logger, 3, 2, 3)
 		require.NoError(err)
 		q.ConnectPChain(pChain)
-		q.ConnectQChain(vm)
+		ConnectQuantumSigner(q, vm.quantumSigner)
 
 		err = q.Start(ctx)
 		require.NoError(err)
-		require.True(q.running)
+		require.True(q.IsRunning())
 
 		q.Stop()
-		require.False(q.running)
+		require.False(q.IsRunning())
 	}
 
 	t.Log("✓ Multiple start/stop cycles completed")
@@ -785,7 +786,7 @@ func TestEdgeCase_ContextCancellation(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	err = q.Start(ctx)

@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/metric"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
@@ -279,17 +279,16 @@ func NewNetwork(
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
-	for _, bootstrapper := range genesis.GetBootstrappers(config.NetworkID) {
-		nodeID, err := ids.NodeIDFromString(bootstrapper.ID)
-		if err != nil {
-			log.Warn("invalid bootstrapper node ID", zap.String("id", bootstrapper.ID), zap.Error(err))
-			continue
-		}
-		ipTracker.ManuallyGossip(constants.PrimaryNetworkID, nodeID)
+	bootstrappers, err := builder.GetBootstrappers(config.NetworkID)
+	if err != nil {
+		log.Warn("failed to get bootstrappers", zap.Error(err))
+	}
+	for _, bootstrapper := range bootstrappers {
+		ipTracker.ManuallyGossip(constants.PrimaryNetworkID, bootstrapper.ID)
 	}
 	// Track all recent validators to optimistically connect to them before the
 	// P-chain has finished syncing.
-	genesisConfig := genesis.GetConfig(config.NetworkID)
+	genesisConfig := builder.GetConfig(config.NetworkID)
 	if genesisConfig != nil {
 		for _, staker := range genesisConfig.InitialStakers {
 			nodeID, err := ids.NodeIDFromString(staker.NodeID)

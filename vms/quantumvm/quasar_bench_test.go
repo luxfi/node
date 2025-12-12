@@ -36,7 +36,7 @@ func BenchmarkQuasar_MessageCreation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = q.createMessage(event)
+		_ = q.CreateMessage(event)
 	}
 }
 
@@ -47,7 +47,7 @@ func BenchmarkQuasar_QuorumCheck(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = q.checkQuorum(67, 100)
+		_ = q.CheckQuorum(67, 100)
 	}
 }
 
@@ -66,7 +66,7 @@ func BenchmarkQuasar_TotalWeight(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = q.totalWeight(validators)
+		_ = q.TotalWeight(validators)
 	}
 }
 
@@ -89,10 +89,10 @@ func BenchmarkQuasar_GetFinality(b *testing.B) {
 	// Pre-populate with some finality records
 	for i := 0; i < 1000; i++ {
 		blockID := ids.GenerateTestID()
-		q.finalized[blockID] = &QuantumFinality{
+		q.SetFinalized(blockID, &QuantumFinality{
 			BlockID:      blockID,
 			PChainHeight: uint64(i),
-		}
+		})
 	}
 
 	lookupID := ids.GenerateTestID()
@@ -501,7 +501,7 @@ func BenchmarkParallel_MessageCreation(b *testing.B) {
 				BlockID:   ids.GenerateTestID(),
 				Timestamp: time.Now(),
 			}
-			_ = q.createMessage(event)
+			_ = q.CreateMessage(event)
 		}
 	})
 }
@@ -528,7 +528,7 @@ func TestPerformance_FinalityThroughput(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 1000),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -590,7 +590,7 @@ func TestPerformance_PQSyncLatency(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -666,7 +666,7 @@ func TestPerformance_ConcurrentValidators(t *testing.T) {
 			vm := &VM{
 				quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 			}
-			q.ConnectQChain(vm)
+			ConnectQuantumSigner(q, vm.quantumSigner)
 
 			ctx := context.Background()
 			err = q.Start(ctx)
@@ -812,7 +812,7 @@ func TestStress_HighLoad(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 1000),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -867,7 +867,7 @@ func TestStress_BurstTraffic(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 1000),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -938,7 +938,7 @@ func TestStress_LongRunning(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 1000),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	ctx := context.Background()
 	err = q.Start(ctx)
@@ -1021,7 +1021,7 @@ func TestMemory_FinalityMapGrowth(t *testing.T) {
 
 	for i := 0; i < numRecords; i++ {
 		blockID := ids.GenerateTestID()
-		q.finalized[blockID] = &QuantumFinality{
+		q.SetFinalized(blockID, &QuantumFinality{
 			BlockID:       blockID,
 			PChainHeight:  uint64(i),
 			QChainHeight:  uint64(i),
@@ -1031,7 +1031,7 @@ func TestMemory_FinalityMapGrowth(t *testing.T) {
 			TotalWeight:   1000,
 			SignerWeight:  800,
 			Timestamp:     time.Now(),
-		}
+		})
 	}
 
 	stats := q.Stats()
@@ -1054,7 +1054,7 @@ func BenchmarkConcurrent_MixedOperations(b *testing.B) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -1066,16 +1066,16 @@ func BenchmarkConcurrent_MixedOperations(b *testing.B) {
 			case 1:
 				_, _ = q.GetFinality(ids.GenerateTestID())
 			case 2:
-				_ = q.checkQuorum(67, 100)
+				_ = q.CheckQuorum(67, 100)
 			case 3:
-				_ = q.totalWeight(pChain.validators)
+				_ = q.TotalWeight(pChain.validators)
 			case 4:
 				event := FinalityEvent{
 					Height:    uint64(i),
 					BlockID:   ids.GenerateTestID(),
 					Timestamp: time.Now(),
 				}
-				_ = q.createMessage(event)
+				_ = q.CreateMessage(event)
 			}
 			i++
 		}
@@ -1100,7 +1100,7 @@ func BenchmarkPQSync_EndToEnd(b *testing.B) {
 		vm := &VM{
 			quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 		}
-		q.ConnectQChain(vm)
+		ConnectQuantumSigner(q, vm.quantumSigner)
 
 		ctx := context.Background()
 		_ = q.Start(ctx)
@@ -1133,7 +1133,7 @@ func TestLockContention_ReadHeavy(t *testing.T) {
 	// Pre-populate
 	for i := 0; i < 1000; i++ {
 		blockID := ids.GenerateTestID()
-		q.finalized[blockID] = &QuantumFinality{BlockID: blockID}
+		q.SetFinalized(blockID, &QuantumFinality{BlockID: blockID})
 	}
 
 	var wg sync.WaitGroup
@@ -1184,9 +1184,7 @@ func TestLockContention_WriteHeavy(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < numOpsPerWriter; j++ {
 				blockID := ids.GenerateTestID()
-				q.mu.Lock()
-				q.finalized[blockID] = &QuantumFinality{BlockID: blockID}
-				q.mu.Unlock()
+				q.SetFinalized(blockID, &QuantumFinality{BlockID: blockID})
 				atomic.AddInt64(&totalOps, 1)
 			}
 		}()

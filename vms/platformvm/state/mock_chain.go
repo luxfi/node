@@ -220,6 +220,21 @@ func (mr *MockChainMockRecorder) GetActiveL1ValidatorsIterator() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveL1ValidatorsIterator", reflect.TypeOf((*MockChain)(nil).GetActiveL1ValidatorsIterator))
 }
 
+// GetChainIDByName mocks base method.
+func (m *MockChain) GetChainIDByName(name string) (ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainIDByName", name)
+	ret0, _ := ret[0].(ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainIDByName indicates an expected call of GetChainIDByName.
+func (mr *MockChainMockRecorder) GetChainIDByName(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainIDByName", reflect.TypeOf((*MockChain)(nil).GetChainIDByName), name)
+}
+
 // GetCurrentDelegatorIterator mocks base method.
 func (m *MockChain) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	m.ctrl.T.Helper()

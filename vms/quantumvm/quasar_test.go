@@ -79,10 +79,10 @@ func TestNewQuasar(t *testing.T) {
 	q, err := NewQuasar(logger, 3, 2, 3) // 2/3 quorum
 	require.NoError(err)
 	require.NotNil(q)
-	require.NotNil(q.hybrid)
-	require.Equal(3, q.threshold)
-	require.Equal(uint64(2), q.quorumNum)
-	require.Equal(uint64(3), q.quorumDen)
+	threshold, quorumNum, quorumDen := q.GetConfig()
+	require.Equal(3, threshold)
+	require.Equal(uint64(2), quorumNum)
+	require.Equal(uint64(3), quorumDen)
 }
 
 func TestQuasarConnections(t *testing.T) {
@@ -109,15 +109,15 @@ func TestQuasarConnections(t *testing.T) {
 	vm := &VM{
 		quantumSigner: quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100),
 	}
-	q.ConnectQChain(vm)
+	ConnectQuantumSigner(q, vm.quantumSigner)
 
 	// Now can start
 	err = q.Start(ctx)
 	require.NoError(err)
-	require.True(q.running)
+	require.True(q.IsRunning())
 
 	q.Stop()
-	require.False(q.running)
+	require.False(q.IsRunning())
 }
 
 func TestQuasarStats(t *testing.T) {
@@ -145,11 +145,11 @@ func TestQuorumCheck(t *testing.T) {
 	require.NoError(err)
 
 	// With integer division: 100 * 2 / 3 = 66, so need >= 66
-	require.True(q.checkQuorum(67, 100))
-	require.True(q.checkQuorum(100, 100))
-	require.True(q.checkQuorum(66, 100))  // 66 >= 66 (integer division)
-	require.False(q.checkQuorum(65, 100)) // 65 < 66
-	require.False(q.checkQuorum(0, 100))
+	require.True(q.CheckQuorum(67, 100))
+	require.True(q.CheckQuorum(100, 100))
+	require.True(q.CheckQuorum(66, 100))  // 66 >= 66 (integer division)
+	require.False(q.CheckQuorum(65, 100)) // 65 < 66
+	require.False(q.CheckQuorum(0, 100))
 }
 
 func TestCreateMessage(t *testing.T) {
@@ -166,7 +166,7 @@ func TestCreateMessage(t *testing.T) {
 		Timestamp: time.Now(),
 	}
 
-	msg := q.createMessage(event)
+	msg := q.CreateMessage(event)
 	require.Len(msg, 48)
 	require.Equal(blockID[:], msg[:32])
 }
@@ -185,7 +185,7 @@ func TestTotalWeight(t *testing.T) {
 		{Weight: 150, Active: true},
 	}
 
-	total := q.totalWeight(validators)
+	total := q.TotalWeight(validators)
 	require.Equal(uint64(450), total) // Only active validators
 }
 
