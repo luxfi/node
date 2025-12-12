@@ -96,6 +96,10 @@ func ToHash160(bytes []byte) (Hash160, error) {
 	return hash, nil
 }
 
+// PubkeyBytesToAddress converts a public key to an address.
+// Uses SHA256 and takes the first 20 bytes (Lux style).
+// This is simpler than the Bitcoin-style SHA256+RIPEMD160.
 func PubkeyBytesToAddress(key []byte) []byte {
-	return ComputeHash160(ComputeHash256(key))
+	hash := ComputeHash256(key)
+	return hash[:AddrLen]
 }

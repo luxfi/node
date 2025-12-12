@@ -16,7 +16,7 @@ import (
 // Const variables to be exported
 const (
 	// Standard network IDs (for compatibility)
-	LocalID    uint32 = 31337
+	LocalID    uint32 = 1337
 	MainnetID  uint32 = 1
 	TestnetID  uint32 = 5
 	UnitTestID uint32 = 369

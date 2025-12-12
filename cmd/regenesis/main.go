@@ -1,3 +1,6 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 // Copyright (C) 2025, Lux Industries Inc. All rights reserved.
 // Regenesis - Import lux-mainnet-96369 into C-Chain with quantum finality
 

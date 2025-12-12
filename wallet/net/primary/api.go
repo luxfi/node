@@ -1,3 +1,6 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 // Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -243,10 +246,15 @@ func AddAllUTXOs(
 	addrs []ids.ShortID,
 ) error {
 	var (
-		sourceChainIDStr = sourceChainID.String()
+		// When source == destination, use empty string to fetch native UTXOs
+		// Otherwise use the chain ID to fetch atomic UTXOs
+		sourceChainIDStr string
 		startAddr        ids.ShortID
 		startUTXO        ids.ID
 	)
+	if sourceChainID != destinationChainID {
+		sourceChainIDStr = sourceChainID.String()
+	}
 	for {
 		utxosBytes, endAddr, endUTXO, err := client.GetAtomicUTXOs(
 			ctx,

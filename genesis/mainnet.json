@@ -2,12 +2,12 @@
   "networkID": 96369,
   "allocations": [
     {
-      "ethAddr": "0xb07abbaa69bd1ce1502e2ab5880111aa62404c85",
-      "luxAddr": "P-lux1f3uvezawjpzgldj6txe6mqewrsswpwktsetnga",
-      "initialAmount": 100000000000000000,
+      "ethAddr": "0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc",
+      "luxAddr": "P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5uv98e28",
+      "initialAmount": 1000000000000000000,
       "unlockSchedule": [
         {
-          "amount": 100000000000000000,
+          "amount": 1000000000000000000,
           "locktime": 0
         }
       ]
@@ -17,7 +17,7 @@
   "initialStakeDuration": 31536000,
   "initialStakeDurationOffset": 5400,
   "initialStakedFunds": [
-    "P-lux13kuhcl8vufyu9wvtmspzdnzv9ftm75hus3wuf7"
+    "P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5uv98e28"
   ],
   "initialStakers": [
     {
@@ -67,6 +67,6 @@
     }
   ],
   "cChainGenesis": "{\"config\":{\"chainId\":96369,\"homesteadBlock\":0,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"berlinBlock\":0,\"londonBlock\":0,\"apricotPhase1BlockTimestamp\":0,\"apricotPhase2BlockTimestamp\":0,\"apricotPhase3BlockTimestamp\":0,\"apricotPhase4BlockTimestamp\":0,\"apricotPhase5BlockTimestamp\":0,\"durangoBlockTimestamp\":0,\"etnaTimestamp\":1800000000,\"feeConfig\":{\"gasLimit\":30000000,\"minBaseFee\":25000000000,\"targetGas\":100000000,\"baseFeeChangeDenominator\":36,\"minBlockGasCost\":0,\"maxBlockGasCost\":10000000,\"targetBlockRate\":2,\"blockGasCostStep\":500000}},\"alloc\":{\"8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC\":{\"balance\":\"0x52B7D2DCC80CD2E4000000\"}},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x1C9C380\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",
-  "xChainGenesis": "{\"allocations\":[{\"luxAddr\":\"X-lux13kuhcl8vufyu9wvtmspzdnzv9ftm75hus3wuf7\",\"ethAddr\":\"0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC\",\"initialAmount\":50000000000000000,\"unlockSchedule\":[]}],\"startTime\":1733339000,\"initialStakeDuration\":31536000,\"initialStakeDurationOffset\":5400,\"initialStakedFunds\":[],\"initialStakers\":[]}",
+  "xChainGenesis": "{\"allocations\":[{\"luxAddr\":\"X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5uv98e28\",\"ethAddr\":\"0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc\",\"initialAmount\":500000000000000000,\"unlockSchedule\":[]}],\"startTime\":1733339000,\"initialStakeDuration\":31536000,\"initialStakeDurationOffset\":5400,\"initialStakedFunds\":[],\"initialStakers\":[]}",
   "message": "Lux Mainnet Genesis - 5 Validators with Quantum-Safe BLS Signatures"
 }

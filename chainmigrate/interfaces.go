@@ -1,3 +1,6 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 // Package chainmigrate provides generic blockchain import/export functionality
 // for migrating data between different blockchain implementations.
 // Supports SubnetEVM→C-Chain, Zoo L2→mainnet, and any future chain migrations.

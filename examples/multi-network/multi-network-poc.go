@@ -1,3 +1,6 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 // Multi-Network Validation Proof of Concept
 // This demonstrates how a single Lux Node could validate multiple networks
 
