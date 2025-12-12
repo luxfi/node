@@ -147,7 +147,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.3.3
+	github.com/luxfi/genesis v1.4.1
 	github.com/luxfi/geth v1.16.46
 	github.com/luxfi/go-bip32 v1.0.1
 	github.com/luxfi/go-bip39 v1.1.2
@@ -187,7 +187,7 @@ require (
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/constants v1.0.0 // indirect
-	github.com/luxfi/czmq/v4 v4.2.1 // indirect
+	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/pointerstructure v1.2.1 // indirect
