@@ -13,8 +13,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	enginecore "github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/common"
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -122,9 +121,9 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*enginecore.Fx,
-	appSender enginecore.AppSender,
+	toEngine chan<- consensuscore.Message,
+	fxs []*consensuscore.Fx,
+	appSender consensuscore.AppSender,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
@@ -208,7 +207,7 @@ func (vm *VM) Initialize(
 }
 
 // BuildBlock builds a new block with pending transactions
-func (vm *VM) BuildBlock(ctx context.Context) (enginecore.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (consensuscore.Block, error) {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -265,7 +264,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (enginecore.Block, error) {
 }
 
 // ParseBlock parses a block from bytes
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (enginecore.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (consensuscore.Block, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
@@ -285,7 +284,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (enginecore.Blo
 }
 
 // GetBlock retrieves a block by its ID
-func (vm *VM) GetBlock(ctx context.Context, blockID ids.ID) (enginecore.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blockID ids.ID) (consensuscore.Block, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 

@@ -1295,43 +1295,81 @@ func (m *manager) createDAG(
 	defer cancelInit() // Ensure cleanup on function exit
 
 	// Initialize VM if it supports Initialize
+	// Try multiple Initialize signatures since VMs may have different interfaces
 	vmInitialized := false
+
+	// Try QVM Initialize signature (uses consensus/core types)
 	if initVM, ok := vm.(interface {
 		Initialize(
 			ctx context.Context,
 			chainCtx interface{},
-			dbManager interface{},
+			db database.Database,
 			genesisBytes []byte,
 			upgradeBytes []byte,
 			configBytes []byte,
-			toEngine chan<- interface{},
-			fxs []interface{},
-			appSender interface{},
+			toEngine chan<- consensuscore.Message,
+			fxs []*consensuscore.Fx,
+			appSender consensuscore.AppSender,
 		) error
 	}); ok {
-		toEngine := make(chan interface{}, 1)
-		fxsInterface := make([]interface{}, len(fxs))
-		for i, fx := range fxs {
-			fxsInterface[i] = fx
-		}
-		// Use a no-op Warp sender for single-node mode
+		toEngine := make(chan consensuscore.Message, 1)
 		err := initVM.Initialize(
-			initCtx, // Proper cancellable context instead of context.TODO()
+			initCtx,
 			ctx,
 			vmDB,
 			chainParams.GenesisData,
 			chainConfig.Upgrade,
 			chainConfig.Config,
 			toEngine,
-			fxsInterface,
-			&noopWarpSender{}, // Provide no-op Warp 1.5 sender for single-node mode
+			fxs,
+			&noopWarpSender{}, // Simple no-op for non-warp VMs
 		)
 		if err != nil {
-			m.Log.Warn("VM initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
-			// Continue - the VM may still be usable in a degraded state
+			m.Log.Warn("QVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
 		} else {
-			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+			m.Log.Info("QVM initialized successfully", log.Stringer("chainID", chainParams.ID))
 			vmInitialized = true
+		}
+	}
+
+	// Try ExchangeVM Initialize signature (uses interface{} types for flexibility)
+	if !vmInitialized {
+		if initVM, ok := vm.(interface {
+			Initialize(
+				ctx context.Context,
+				chainCtx interface{},
+				dbManager interface{},
+				genesisBytes []byte,
+				upgradeBytes []byte,
+				configBytes []byte,
+				toEngine chan<- interface{},
+				fxs []interface{},
+				appSender interface{},
+			) error
+		}); ok {
+			toEngine := make(chan interface{}, 1)
+			// Convert fxs to []interface{}
+			fxsInterface := make([]interface{}, len(fxs))
+			for i, fx := range fxs {
+				fxsInterface[i] = fx
+			}
+			err := initVM.Initialize(
+				initCtx,
+				ctx,
+				vmDB,
+				chainParams.GenesisData,
+				chainConfig.Upgrade,
+				chainConfig.Config,
+				toEngine,
+				fxsInterface,
+				&noopWarpSender{}, // Implements AppSender interface
+			)
+			if err != nil {
+				m.Log.Warn("ExchangeVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
+			} else {
+				m.Log.Info("ExchangeVM initialized successfully", log.Stringer("chainID", chainParams.ID))
+				vmInitialized = true
+			}
 		}
 	}
 
