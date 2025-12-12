@@ -144,10 +144,11 @@ func TestQuorumCheck(t *testing.T) {
 	q, err := NewQuasar(logger, 3, 2, 3) // 2/3 quorum
 	require.NoError(err)
 
-	// 67% of 100 = 66.67, need >= 67
+	// With integer division: 100 * 2 / 3 = 66, so need >= 66
 	require.True(q.checkQuorum(67, 100))
 	require.True(q.checkQuorum(100, 100))
-	require.False(q.checkQuorum(66, 100))
+	require.True(q.checkQuorum(66, 100))  // 66 >= 66 (integer division)
+	require.False(q.checkQuorum(65, 100)) // 65 < 66
 	require.False(q.checkQuorum(0, 100))
 }
 

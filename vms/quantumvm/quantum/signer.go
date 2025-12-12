@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package quantum
 
 import (
@@ -15,24 +12,32 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
 )
 
 var (
-	ErrInvalidQuantumSignature = errors.New("invalid quantum signature")
-	ErrInvalidRingtailKey      = errors.New("invalid ringtail key")
-	ErrQuantumStampExpired     = errors.New("quantum stamp expired")
+	ErrInvalidQuantumSignature   = errors.New("invalid quantum signature")
+	ErrInvalidRingtailKey        = errors.New("invalid ringtail key")
+	ErrQuantumStampExpired       = errors.New("quantum stamp expired")
 	ErrQuantumVerificationFailed = errors.New("quantum verification failed")
-	ErrUnsupportedAlgorithm    = errors.New("unsupported quantum algorithm")
+	ErrUnsupportedAlgorithm      = errors.New("unsupported quantum algorithm")
 )
 
-// QuantumSigner handles quantum signature operations
+// Algorithm versions
+const (
+	AlgorithmMLDSA44 uint32 = 1 // NIST Level 2 (128-bit security)
+	AlgorithmMLDSA65 uint32 = 2 // NIST Level 3 (192-bit security)
+	AlgorithmMLDSA87 uint32 = 3 // NIST Level 5 (256-bit security)
+)
+
+// QuantumSigner handles quantum signature operations using ML-DSA (Dilithium)
 type QuantumSigner struct {
 	log             log.Logger
 	algorithmVersion uint32
-	ringtailKeySize int
+	mldsaMode       mldsa.Mode
 	stampWindow     time.Duration
 	sigCache        *cache.LRU[ids.ID, *QuantumSignature]
 	mu              sync.RWMutex
@@ -40,81 +45,91 @@ type QuantumSigner struct {
 
 // QuantumSignature represents a quantum-resistant signature
 type QuantumSignature struct {
-	Algorithm   uint32
-	Timestamp   time.Time
-	PublicKey   []byte
-	Signature   []byte
-	RingtailKey []byte
+	Algorithm    uint32
+	Timestamp    time.Time
+	PublicKey    []byte
+	Signature    []byte
+	RingtailKey  []byte
 	QuantumStamp []byte
 }
 
-// RingtailKey represents a Ringtail key for quantum resistance
+// RingtailKey represents a Ringtail key for quantum resistance (using ML-DSA)
 type RingtailKey struct {
-	Version   uint32
-	PublicKey []byte
+	Version    uint32
+	PublicKey  []byte
 	PrivateKey []byte
-	Nonce     []byte
+	Nonce      []byte
+	mldsaPriv  *mldsa.PrivateKey
 }
 
-// NewQuantumSigner creates a new quantum signer
+// NewQuantumSigner creates a new quantum signer with real ML-DSA
+// algorithmVersion: 1=MLDSA44, 2=MLDSA65, 3=MLDSA87
+// keySize is ignored (determined by algorithm)
 func NewQuantumSigner(log log.Logger, algorithmVersion uint32, keySize int, stampWindow time.Duration, cacheSize int) *QuantumSigner {
+	var mode mldsa.Mode
+	switch algorithmVersion {
+	case AlgorithmMLDSA44:
+		mode = mldsa.MLDSA44
+	case AlgorithmMLDSA65:
+		mode = mldsa.MLDSA65
+	case AlgorithmMLDSA87:
+		mode = mldsa.MLDSA87
+	default:
+		mode = mldsa.MLDSA65 // Default to NIST Level 3
+		algorithmVersion = AlgorithmMLDSA65
+	}
+
 	return &QuantumSigner{
-		log:             log,
+		log:              log,
 		algorithmVersion: algorithmVersion,
-		ringtailKeySize: keySize,
-		stampWindow:     stampWindow,
-		sigCache:        &cache.LRU[ids.ID, *QuantumSignature]{Size: cacheSize},
+		mldsaMode:        mode,
+		stampWindow:      stampWindow,
+		sigCache:         &cache.LRU[ids.ID, *QuantumSignature]{Size: cacheSize},
 	}
 }
 
-// GenerateRingtailKey generates a new Ringtail key pair
+// GenerateRingtailKey generates a new ML-DSA key pair
 func (qs *QuantumSigner) GenerateRingtailKey() (*RingtailKey, error) {
 	qs.mu.Lock()
 	defer qs.mu.Unlock()
 
-	// Generate quantum-resistant key pair
-	privateKey := make([]byte, qs.ringtailKeySize)
-	nonce := make([]byte, 32)
-
-	if _, err := rand.Read(privateKey); err != nil {
-		return nil, fmt.Errorf("failed to generate private key: %w", err)
+	// Generate real ML-DSA key pair using circl
+	mldsaPriv, err := mldsa.GenerateKey(rand.Reader, qs.mldsaMode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ML-DSA key: %w", err)
 	}
+
+	// Generate nonce for quantum stamp
+	nonce := make([]byte, 32)
 	if _, err := rand.Read(nonce); err != nil {
 		return nil, fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
-	// Derive public key from private key (simplified - real quantum schemes have complex derivations)
-	publicKey := qs.derivePublicKey(privateKey)
-
 	return &RingtailKey{
-		Version:   qs.algorithmVersion,
-		PublicKey: publicKey,
-		PrivateKey: privateKey,
-		Nonce:     nonce,
+		Version:    qs.algorithmVersion,
+		PublicKey:  mldsaPriv.PublicKey.Bytes(),
+		PrivateKey: mldsaPriv.Bytes(),
+		Nonce:      nonce,
+		mldsaPriv:  mldsaPriv,
 	}, nil
 }
 
-// derivePublicKey derives a public key from a private key (simplified placeholder)
-func (qs *QuantumSigner) derivePublicKey(privateKey []byte) []byte {
-	// In real quantum schemes like SPHINCS+, this would be a complex tree-based derivation
-	// For this placeholder, we use a simple hash-based derivation
-	h := sha512.New()
-	h.Write([]byte("public_key_derivation"))
-	h.Write(privateKey)
-	hash := h.Sum(nil)
-	
-	// Expand to full key size
-	publicKey := make([]byte, len(privateKey))
-	for i := range publicKey {
-		publicKey[i] = hash[i%len(hash)]
-	}
-	return publicKey
-}
-
-// Sign creates a quantum signature for the given message
+// Sign creates a quantum signature for the given message using ML-DSA
 func (qs *QuantumSigner) Sign(message []byte, key *RingtailKey) (*QuantumSignature, error) {
-	if key == nil || len(key.PrivateKey) != qs.ringtailKeySize {
+	if key == nil {
 		return nil, ErrInvalidRingtailKey
+	}
+
+	// Restore ML-DSA key if not cached
+	var mldsaPriv *mldsa.PrivateKey
+	if key.mldsaPriv != nil {
+		mldsaPriv = key.mldsaPriv
+	} else {
+		var err error
+		mldsaPriv, err = mldsa.PrivateKeyFromBytes(qs.mldsaMode, key.PrivateKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to restore ML-DSA key: %w", err)
+		}
 	}
 
 	// Generate quantum stamp
@@ -123,15 +138,23 @@ func (qs *QuantumSigner) Sign(message []byte, key *RingtailKey) (*QuantumSignatu
 		return nil, fmt.Errorf("failed to generate quantum stamp: %w", err)
 	}
 
-	// Create signature using quantum-resistant algorithm
-	signature := qs.quantumSign(message, key.PrivateKey, stamp)
+	// Create message to sign: message || stamp
+	data := make([]byte, len(message)+len(stamp))
+	copy(data, message)
+	copy(data[len(message):], stamp)
+
+	// Sign with ML-DSA (real post-quantum signature!)
+	signature, err := mldsaPriv.Sign(rand.Reader, data, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ML-DSA signing failed: %w", err)
+	}
 
 	sig := &QuantumSignature{
-		Algorithm:   qs.algorithmVersion,
-		Timestamp:   time.Now(),
-		PublicKey:   key.PublicKey,
-		Signature:   signature,
-		RingtailKey: key.PublicKey,
+		Algorithm:    qs.algorithmVersion,
+		Timestamp:    time.Now(),
+		PublicKey:    key.PublicKey,
+		Signature:    signature,
+		RingtailKey:  key.PublicKey,
 		QuantumStamp: stamp,
 	}
 
@@ -142,7 +165,7 @@ func (qs *QuantumSigner) Sign(message []byte, key *RingtailKey) (*QuantumSignatu
 	return sig, nil
 }
 
-// Verify verifies a quantum signature
+// Verify verifies a quantum signature using ML-DSA
 func (qs *QuantumSigner) Verify(message []byte, sig *QuantumSignature) error {
 	if sig == nil {
 		return ErrInvalidQuantumSignature
@@ -158,19 +181,29 @@ func (qs *QuantumSigner) Verify(message []byte, sig *QuantumSignature) error {
 		return ErrQuantumStampExpired
 	}
 
-	// Verify quantum stamp (message-dependent)
+	// Verify quantum stamp exists
 	if err := qs.verifyQuantumStamp(message, sig); err != nil {
 		return fmt.Errorf("quantum stamp verification failed: %w", err)
 	}
 
-	// Verify signature using quantum-resistant algorithm (message-dependent)
-	if !qs.quantumVerify(message, sig.PublicKey, sig.Signature, sig.QuantumStamp) {
+	// Restore public key
+	pubKey, err := mldsa.PublicKeyFromBytes(sig.PublicKey, qs.mldsaMode)
+	if err != nil {
+		return fmt.Errorf("invalid ML-DSA public key: %w", err)
+	}
+
+	// Recreate the signed message: message || stamp
+	data := make([]byte, len(message)+len(sig.QuantumStamp))
+	copy(data, message)
+	copy(data[len(message):], sig.QuantumStamp)
+
+	// Verify with ML-DSA (real post-quantum verification!)
+	if !pubKey.VerifySignature(data, sig.Signature) {
 		return ErrQuantumVerificationFailed
 	}
 
 	return nil
 }
-
 
 // generateQuantumStamp generates a quantum stamp for message authentication
 func (qs *QuantumSigner) generateQuantumStamp(message []byte, key *RingtailKey) ([]byte, error) {
@@ -181,7 +214,7 @@ func (qs *QuantumSigner) generateQuantumStamp(message []byte, key *RingtailKey) 
 	copy(data[len(message):], key.Nonce)
 	binary.BigEndian.PutUint64(data[len(message)+len(key.Nonce):], uint64(timestamp))
 
-	// Generate quantum stamp using SHA-512 (placeholder for quantum hash)
+	// Generate quantum stamp using SHA-512
 	hash := sha512.Sum512(data)
 
 	// Add quantum noise
@@ -202,103 +235,9 @@ func (qs *QuantumSigner) verifyQuantumStamp(message []byte, sig *QuantumSignatur
 	if len(sig.QuantumStamp) < 64 {
 		return ErrInvalidQuantumSignature
 	}
-
-	// Quantum stamp is message-binding through the signature verification
-	// The stamp itself contains the hash but we verify the full signature
-	// with quantumVerify() which takes the stamp into account
-	// So we just need to check the stamp exists and has minimum length
+	// Quantum stamp is verified through ML-DSA signature
+	// The stamp is bound to the message in the signature
 	return nil
-}
-
-// quantumSign performs quantum-resistant signing
-func (qs *QuantumSigner) quantumSign(message, privateKey, stamp []byte) []byte {
-	// Combine message and stamp
-	data := make([]byte, len(message)+len(stamp))
-	copy(data, message)
-	copy(data[len(message):], stamp)
-
-	// Generate signature using quantum-resistant algorithm
-	// This is a simplified placeholder - real implementation would use
-	// algorithms like SPHINCS+, Dilithium, or Falcon
-	
-	// Create a signature by hashing (message + stamp + privateKey)
-	// The signature includes both the signature value and a commitment
-	// that can be verified against the public key
-	h := sha512.New()
-	h.Write(data)
-	h.Write(privateKey)
-	sigHash := h.Sum(nil)
-	
-	// Create commitment: hash(signature || data) for verification
-	h2 := sha512.New()
-	h2.Write(sigHash)
-	h2.Write(data)
-	commitment := h2.Sum(nil)
-	
-	// Combine signature and commitment
-	signature := make([]byte, len(sigHash)+len(commitment))
-	copy(signature, sigHash)
-	copy(signature[len(sigHash):], commitment)
-
-	return signature
-}
-
-// quantumVerify performs quantum-resistant signature verification
-func (qs *QuantumSigner) quantumVerify(message, publicKey, signature, stamp []byte) bool {
-	// Combine message and stamp
-	data := make([]byte, len(message)+len(stamp))
-	copy(data, message)
-	copy(data[len(message):], stamp)
-
-	// In a real quantum signature scheme (like SPHINCS+), we would:
-	// 1. Verify a Merkle tree path
-	// 2. Check hash-based one-time signatures
-	// 3. Verify the signature matches the public key
-	
-	// For this simplified placeholder:
-	// Signature consists of: sigHash || commitment
-	// where sigHash = hash(data + privateKey)
-	// and commitment = hash(sigHash + data)
-	
-	expectedLen := sha512.Size * 2  // sigHash + commitment
-	if len(signature) != expectedLen {
-		return false
-	}
-	
-	// Split signature into components
-	sigHash := signature[:sha512.Size]
-	commitment := signature[sha512.Size:]
-	
-	// Verify signature is non-zero
-	allZero := true
-	for _, b := range sigHash {
-		if b != 0 {
-			allZero = false
-			break
-		}
-	}
-	
-	if allZero {
-		return false
-	}
-	
-	// Verify the commitment
-	h := sha512.New()
-	h.Write(sigHash)
-	h.Write(data)
-	expectedCommitment := h.Sum(nil)
-	
-	for i := range commitment {
-		if commitment[i] != expectedCommitment[i] {
-			return false  // Commitment mismatch - signature is invalid
-		}
-	}
-	
-	// Commitment verified - signature is bound to the correct message
-	// In a real implementation, we'd also verify the sigHash against the public key
-	// using a zero-knowledge proof or Merkle tree verification
-	
-	return true
 }
 
 // computeSignatureID computes a unique ID for a signature
@@ -310,7 +249,6 @@ func (qs *QuantumSigner) computeSignatureID(sig *QuantumSignature) ids.ID {
 	binary.BigEndian.PutUint64(timestampBytes, uint64(sig.Timestamp.Unix()))
 	data = append(data, timestampBytes...)
 
-	// Use ToID to hash the data
 	id, _ := ids.ToID(data)
 	return id
 }
@@ -337,7 +275,6 @@ func (qs *QuantumSigner) ParallelVerify(messages [][]byte, signatures []*Quantum
 	wg.Wait()
 	close(errChan)
 
-	// Check for any errors
 	for err := range errChan {
 		if err != nil {
 			return err
@@ -345,4 +282,19 @@ func (qs *QuantumSigner) ParallelVerify(messages [][]byte, signatures []*Quantum
 	}
 
 	return nil
+}
+
+// GetSignatureSize returns the signature size for the current algorithm
+func (qs *QuantumSigner) GetSignatureSize() int {
+	return mldsa.GetSignatureSize(qs.mldsaMode)
+}
+
+// GetPublicKeySize returns the public key size for the current algorithm
+func (qs *QuantumSigner) GetPublicKeySize() int {
+	return mldsa.GetPublicKeySize(qs.mldsaMode)
+}
+
+// GetMode returns the ML-DSA mode being used
+func (qs *QuantumSigner) GetMode() mldsa.Mode {
+	return qs.mldsaMode
 }

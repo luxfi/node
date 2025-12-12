@@ -37,23 +37,25 @@ func TestFactory(t *testing.T) {
 func TestQuantumSigner(t *testing.T) {
 	require := require.New(t)
 
-	// Create quantum signer
+	// Create quantum signer with ML-DSA-44 (NIST Level 2)
+	// algorithmVersion: 1=MLDSA44, 2=MLDSA65, 3=MLDSA87
 	logger := log.NoLog{}
 	signer := quantum.NewQuantumSigner(
 		logger,
-		1,                    // algorithm version
-		1024,                 // key size
-		30*time.Second,       // stamp window
-		100,                  // cache size
+		quantum.AlgorithmMLDSA44, // ML-DSA-44 (NIST Level 2)
+		0,                        // key size ignored (determined by algorithm)
+		30*time.Second,           // stamp window
+		100,                      // cache size
 	)
 	require.NotNil(signer)
 
-	// Generate Ringtail key
+	// Generate Ringtail key (now using real ML-DSA)
 	key, err := signer.GenerateRingtailKey()
 	require.NoError(err)
 	require.NotNil(key)
-	require.Len(key.PublicKey, 1024)
-	require.Len(key.PrivateKey, 1024)
+	// ML-DSA-44 key sizes: public=1312, private=2560
+	require.Equal(signer.GetPublicKeySize(), len(key.PublicKey))
+	require.True(len(key.PrivateKey) > 0)
 
 	// Sign a message
 	message := []byte("test message for quantum signature")
@@ -74,14 +76,14 @@ func TestQuantumSigner(t *testing.T) {
 func TestParallelVerification(t *testing.T) {
 	require := require.New(t)
 
-	// Create quantum signer
+	// Create quantum signer with ML-DSA-44
 	logger := log.NoLog{}
 	signer := quantum.NewQuantumSigner(
 		logger,
-		1,                    // algorithm version
-		1024,                 // key size
-		30*time.Second,       // stamp window
-		100,                  // cache size
+		quantum.AlgorithmMLDSA44, // ML-DSA-44 (NIST Level 2)
+		0,                        // key size ignored
+		30*time.Second,           // stamp window
+		100,                      // cache size
 	)
 
 	// Generate multiple keys and signatures

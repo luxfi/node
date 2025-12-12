@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/protocol/quasar"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
@@ -165,6 +166,315 @@ func BenchmarkHybrid_SignMessage(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = hybrid.SignMessage(validatorID, msg)
 	}
+}
+
+// =============================================================================
+// BLS vs HYBRID COMPARISON BENCHMARKS
+// =============================================================================
+// These benchmarks compare pure BLS performance vs hybrid (BLS + Ringtail)
+// to measure the overhead of post-quantum security.
+//
+// Run with: go test -bench=Compare -benchmem ./vms/quantumvm/...
+
+// BenchmarkCompare_PureBLS_Sign benchmarks pure BLS signing only
+func BenchmarkCompare_PureBLS_Sign(b *testing.B) {
+	sk, _ := bls.NewSecretKey()
+	msg := make([]byte, 48)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = sk.Sign(msg)
+	}
+}
+
+// BenchmarkCompare_PureBLS_Verify benchmarks pure BLS verification only
+func BenchmarkCompare_PureBLS_Verify(b *testing.B) {
+	sk, _ := bls.NewSecretKey()
+	pk := sk.PublicKey()
+	msg := make([]byte, 48)
+	sig, _ := sk.Sign(msg)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = bls.Verify(pk, sig, msg)
+	}
+}
+
+// BenchmarkCompare_PureBLS_Aggregate benchmarks BLS signature aggregation
+func BenchmarkCompare_PureBLS_Aggregate(b *testing.B) {
+	numSigs := 10
+	sigs := make([]*bls.Signature, numSigs)
+	msg := make([]byte, 48)
+
+	for i := 0; i < numSigs; i++ {
+		sk, _ := bls.NewSecretKey()
+		sigs[i], _ = sk.Sign(msg)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = bls.AggregateSignatures(sigs)
+	}
+}
+
+// BenchmarkCompare_Hybrid_Sign benchmarks hybrid (BLS + Ringtail) signing
+func BenchmarkCompare_Hybrid_Sign(b *testing.B) {
+	hybrid, _ := quasar.NewHybrid(3)
+	validatorID := ids.GenerateTestNodeID().String()
+	_ = hybrid.AddValidator(validatorID, 100)
+	msg := make([]byte, 48)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = hybrid.SignMessage(validatorID, msg)
+	}
+}
+
+// BenchmarkCompare_Hybrid_Verify benchmarks hybrid signature verification
+func BenchmarkCompare_Hybrid_Verify(b *testing.B) {
+	hybrid, _ := quasar.NewHybrid(3)
+	validatorID := ids.GenerateTestNodeID().String()
+	_ = hybrid.AddValidator(validatorID, 100)
+	msg := make([]byte, 48)
+	sig, _ := hybrid.SignMessage(validatorID, msg)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = hybrid.VerifyHybridSignature(msg, sig)
+	}
+}
+
+// BenchmarkCompare_Hybrid_Aggregate benchmarks hybrid signature aggregation
+func BenchmarkCompare_Hybrid_Aggregate(b *testing.B) {
+	hybrid, _ := quasar.NewHybrid(3)
+	numSigs := 10
+	sigs := make([]*quasar.HybridSignature, numSigs)
+	msg := make([]byte, 48)
+
+	for i := 0; i < numSigs; i++ {
+		validatorID := fmt.Sprintf("validator-%d", i)
+		_ = hybrid.AddValidator(validatorID, 100)
+		sigs[i], _ = hybrid.SignMessage(validatorID, msg)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = hybrid.AggregateSignatures(msg, sigs)
+	}
+}
+
+// BenchmarkCompare_Ringtail_Sign benchmarks pure Ringtail (post-quantum) signing
+func BenchmarkCompare_Ringtail_Sign(b *testing.B) {
+	logger := log.NewLogger("bench")
+	signer := quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100)
+	key, _ := signer.GenerateRingtailKey()
+	msg := make([]byte, 48)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = signer.Sign(msg, key)
+	}
+}
+
+// BenchmarkCompare_Ringtail_Verify benchmarks pure Ringtail verification
+func BenchmarkCompare_Ringtail_Verify(b *testing.B) {
+	logger := log.NewLogger("bench")
+	signer := quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100)
+	key, _ := signer.GenerateRingtailKey()
+	msg := make([]byte, 48)
+	sig, _ := signer.Sign(msg, key)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = signer.Verify(msg, sig)
+	}
+}
+
+// TestCompare_BLSvsHybrid_Detailed runs detailed comparison and prints results
+func TestCompare_BLSvsHybrid_Detailed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping detailed comparison in short mode")
+	}
+
+	require := require.New(t)
+	numIterations := 1000
+
+	// Setup BLS
+	blsSK, err := bls.NewSecretKey()
+	require.NoError(err)
+	blsPK := blsSK.PublicKey()
+	msg := make([]byte, 48)
+	copy(msg, "test message for signing benchmark")
+
+	// Setup Hybrid
+	hybrid, err := quasar.NewHybrid(3)
+	require.NoError(err)
+	validatorID := ids.GenerateTestNodeID().String()
+	err = hybrid.AddValidator(validatorID, 100)
+	require.NoError(err)
+
+	// Setup Ringtail
+	logger := log.NewLogger("bench")
+	ringtailSigner := quantum.NewQuantumSigner(logger, 1, 64, time.Hour, 100)
+	ringtailKey, err := ringtailSigner.GenerateRingtailKey()
+	require.NoError(err)
+
+	t.Log("═══════════════════════════════════════════════════════════════════")
+	t.Log("               BLS vs HYBRID vs RINGTAIL COMPARISON")
+	t.Log("═══════════════════════════════════════════════════════════════════")
+	t.Logf("Iterations: %d", numIterations)
+	t.Log("")
+
+	// ========================
+	// SIGNING COMPARISON
+	// ========================
+	t.Log("SIGNING PERFORMANCE:")
+	t.Log("───────────────────────────────────────────────────────────────────")
+
+	// Pure BLS signing
+	blsSignStart := time.Now()
+	var blsSig *bls.Signature
+	for i := 0; i < numIterations; i++ {
+		blsSig, _ = blsSK.Sign(msg)
+	}
+	blsSignTime := time.Since(blsSignStart)
+	blsSignPerOp := blsSignTime / time.Duration(numIterations)
+
+	// Hybrid signing (BLS + Ringtail)
+	hybridSignStart := time.Now()
+	var hybridSig *quasar.HybridSignature
+	for i := 0; i < numIterations; i++ {
+		hybridSig, _ = hybrid.SignMessage(validatorID, msg)
+	}
+	hybridSignTime := time.Since(hybridSignStart)
+	hybridSignPerOp := hybridSignTime / time.Duration(numIterations)
+
+	// Pure Ringtail signing
+	ringtailSignStart := time.Now()
+	var ringtailSig *quantum.QuantumSignature
+	for i := 0; i < numIterations; i++ {
+		ringtailSig, _ = ringtailSigner.Sign(msg, ringtailKey)
+	}
+	ringtailSignTime := time.Since(ringtailSignStart)
+	ringtailSignPerOp := ringtailSignTime / time.Duration(numIterations)
+
+	signOverhead := float64(hybridSignPerOp) / float64(blsSignPerOp)
+
+	t.Logf("  Pure BLS:      %12v/op  (baseline)", blsSignPerOp)
+	t.Logf("  Pure Ringtail: %12v/op  (%.2fx BLS)", ringtailSignPerOp, float64(ringtailSignPerOp)/float64(blsSignPerOp))
+	t.Logf("  Hybrid:        %12v/op  (%.2fx BLS = BLS + Ringtail overhead)", hybridSignPerOp, signOverhead)
+	t.Log("")
+
+	// ========================
+	// VERIFICATION COMPARISON
+	// ========================
+	t.Log("VERIFICATION PERFORMANCE:")
+	t.Log("───────────────────────────────────────────────────────────────────")
+
+	// Pure BLS verification
+	blsVerifyStart := time.Now()
+	for i := 0; i < numIterations; i++ {
+		_ = bls.Verify(blsPK, blsSig, msg)
+	}
+	blsVerifyTime := time.Since(blsVerifyStart)
+	blsVerifyPerOp := blsVerifyTime / time.Duration(numIterations)
+
+	// Hybrid verification
+	hybridVerifyStart := time.Now()
+	for i := 0; i < numIterations; i++ {
+		_ = hybrid.VerifyHybridSignature(msg, hybridSig)
+	}
+	hybridVerifyTime := time.Since(hybridVerifyStart)
+	hybridVerifyPerOp := hybridVerifyTime / time.Duration(numIterations)
+
+	// Pure Ringtail verification
+	ringtailVerifyStart := time.Now()
+	for i := 0; i < numIterations; i++ {
+		_ = ringtailSigner.Verify(msg, ringtailSig)
+	}
+	ringtailVerifyTime := time.Since(ringtailVerifyStart)
+	ringtailVerifyPerOp := ringtailVerifyTime / time.Duration(numIterations)
+
+	verifyOverhead := float64(hybridVerifyPerOp) / float64(blsVerifyPerOp)
+
+	t.Logf("  Pure BLS:      %12v/op  (baseline)", blsVerifyPerOp)
+	t.Logf("  Pure Ringtail: %12v/op  (%.2fx BLS)", ringtailVerifyPerOp, float64(ringtailVerifyPerOp)/float64(blsVerifyPerOp))
+	t.Logf("  Hybrid:        %12v/op  (%.2fx BLS)", hybridVerifyPerOp, verifyOverhead)
+	t.Log("")
+
+	// ========================
+	// AGGREGATION COMPARISON
+	// ========================
+	t.Log("AGGREGATION PERFORMANCE (10 signatures):")
+	t.Log("───────────────────────────────────────────────────────────────────")
+
+	// Setup multiple BLS signatures
+	numSigs := 10
+	blsSigs := make([]*bls.Signature, numSigs)
+	for i := 0; i < numSigs; i++ {
+		sk, _ := bls.NewSecretKey()
+		blsSigs[i], _ = sk.Sign(msg)
+	}
+
+	// Setup multiple hybrid signatures
+	hybridSigs := make([]*quasar.HybridSignature, numSigs)
+	for i := 0; i < numSigs; i++ {
+		vID := fmt.Sprintf("agg-validator-%d", i)
+		_ = hybrid.AddValidator(vID, 100)
+		hybridSigs[i], _ = hybrid.SignMessage(vID, msg)
+	}
+
+	// BLS aggregation
+	blsAggStart := time.Now()
+	for i := 0; i < numIterations; i++ {
+		_, _ = bls.AggregateSignatures(blsSigs)
+	}
+	blsAggTime := time.Since(blsAggStart)
+	blsAggPerOp := blsAggTime / time.Duration(numIterations)
+
+	// Hybrid aggregation
+	hybridAggStart := time.Now()
+	for i := 0; i < numIterations; i++ {
+		_, _ = hybrid.AggregateSignatures(msg, hybridSigs)
+	}
+	hybridAggTime := time.Since(hybridAggStart)
+	hybridAggPerOp := hybridAggTime / time.Duration(numIterations)
+
+	aggOverhead := float64(hybridAggPerOp) / float64(blsAggPerOp)
+
+	t.Logf("  Pure BLS:      %12v/op  (baseline)", blsAggPerOp)
+	t.Logf("  Hybrid:        %12v/op  (%.2fx BLS)", hybridAggPerOp, aggOverhead)
+	t.Log("")
+
+	// ========================
+	// SIGNATURE SIZES
+	// ========================
+	t.Log("SIGNATURE SIZES:")
+	t.Log("───────────────────────────────────────────────────────────────────")
+
+	blsSigBytes := bls.SignatureToBytes(blsSig)
+	t.Logf("  Pure BLS:      %6d bytes", len(blsSigBytes))
+	t.Logf("  Ringtail:      %6d bytes", len(ringtailSig.Signature))
+	t.Logf("  Hybrid BLS:    %6d bytes", len(hybridSig.BLS))
+	t.Logf("  Hybrid RT:     %6d bytes", len(hybridSig.Ringtail))
+	t.Logf("  Hybrid Total:  %6d bytes (%.2fx BLS)", len(hybridSig.BLS)+len(hybridSig.Ringtail),
+		float64(len(hybridSig.BLS)+len(hybridSig.Ringtail))/float64(len(blsSigBytes)))
+	t.Log("")
+
+	// ========================
+	// SUMMARY
+	// ========================
+	t.Log("═══════════════════════════════════════════════════════════════════")
+	t.Log("SUMMARY - HYBRID OVERHEAD FOR POST-QUANTUM SECURITY:")
+	t.Log("═══════════════════════════════════════════════════════════════════")
+	t.Logf("  Signing overhead:      %.2fx slower than pure BLS", signOverhead)
+	t.Logf("  Verification overhead: %.2fx slower than pure BLS", verifyOverhead)
+	t.Logf("  Aggregation overhead:  %.2fx slower than pure BLS", aggOverhead)
+	t.Logf("  Signature size:        %.2fx larger than pure BLS",
+		float64(len(hybridSig.BLS)+len(hybridSig.Ringtail))/float64(len(blsSigBytes)))
+	t.Log("")
+	t.Log("This overhead provides protection against quantum computer attacks.")
+	t.Log("═══════════════════════════════════════════════════════════════════")
 }
 
 // BenchmarkParallel_Stats benchmarks concurrent stats reads
