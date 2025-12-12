@@ -5,6 +5,8 @@ package qvm
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,8 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockPChainProvider implements PChainProvider for testing
+// mockPChainProvider implements PChainProvider for testing (thread-safe)
 type mockPChainProvider struct {
+	mu         sync.RWMutex
 	height     uint64
 	validators []ValidatorState
 	finCh      chan FinalityEvent
@@ -35,15 +38,19 @@ func newMockPChain(validators int) *mockPChainProvider {
 	return &mockPChainProvider{
 		height:     100,
 		validators: vs,
-		finCh:      make(chan FinalityEvent, 10),
+		finCh:      make(chan FinalityEvent, 100), // Larger buffer for stress tests
 	}
 }
 
 func (m *mockPChainProvider) GetFinalizedHeight() uint64 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.height
 }
 
 func (m *mockPChainProvider) GetValidators(height uint64) ([]ValidatorState, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.validators, nil
 }
 
@@ -52,11 +59,15 @@ func (m *mockPChainProvider) SubscribeFinality() <-chan FinalityEvent {
 }
 
 func (m *mockPChainProvider) emitFinality(blockID ids.ID) {
-	m.height++
+	m.mu.Lock()
+	newHeight := atomic.AddUint64(&m.height, 1)
+	validators := m.validators
+	m.mu.Unlock()
+
 	m.finCh <- FinalityEvent{
-		Height:     m.height,
+		Height:     newHeight,
 		BlockID:    blockID,
-		Validators: m.validators,
+		Validators: validators,
 		Timestamp:  time.Now(),
 	}
 }
