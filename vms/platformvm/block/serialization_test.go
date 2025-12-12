@@ -192,7 +192,7 @@ func TestBanffProposalBlockJSON(t *testing.T) {
 		{
 			"unsignedTx": {
 				"networkID": 1,
-				"blockchainID": "11111111111111111111111111111111LpoYY",
+				"blockchainID": "11111111111111111111111111111111P",
 				"outputs": [],
 				"inputs": [],
 				"memo": "0x4b696c726f7957617348657265"
@@ -203,7 +203,7 @@ func TestBanffProposalBlockJSON(t *testing.T) {
 		{
 			"unsignedTx": {
 				"networkID": 1,
-				"blockchainID": "11111111111111111111111111111111LpoYY",
+				"blockchainID": "11111111111111111111111111111111P",
 				"outputs": [],
 				"inputs": [],
 				"memo": "0x4b696c726f795761734865726532"

@@ -396,7 +396,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetworkID:  1,
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
-		ChainID:    testChainID,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
@@ -408,11 +408,11 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x1a,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
-		// P-chain blockchain ID
+		// P-chain blockchain ID (31 zeros + 'P')
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50,
 		// Number of immediate outputs
 		0x00, 0x00, 0x00, 0x03,
 		// outputs[0]
@@ -639,7 +639,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,
-	"blockchainID": "11111111111111111111111111111111LpoYY",
+	"blockchainID": "11111111111111111111111111111111P",
 	"outputs": [
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
@@ -890,7 +890,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID:  1,
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
-		ChainID:    testChainID,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
@@ -902,11 +902,11 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x1a,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
-		// P-chain blockchain ID
+		// P-chain blockchain ID (31 zeros + 'P')
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50,
 		// Number of immediate outputs
 		0x00, 0x00, 0x00, 0x00,
 		// Number of inputs
@@ -1168,7 +1168,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID:  1,
 		QuantumID:  1,
 		NetID:      constants.PrimaryNetworkID,
-		ChainID:    testChainID,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
@@ -1180,11 +1180,11 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x1a,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
-		// P-chain blockchain ID
+		// P-chain blockchain ID (31 zeros + 'P')
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50,
 		// Number of immediate outputs
 		0x00, 0x00, 0x00, 0x03,
 		// outputs[0]
@@ -1411,7 +1411,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,
-	"blockchainID": "11111111111111111111111111111111LpoYY",
+	"blockchainID": "11111111111111111111111111111111P",
 	"outputs": [
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
