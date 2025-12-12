@@ -1,15 +1,11 @@
 version: v1
 name: buf.build/luxfi/lux
 build:
-  excludes:
-    # for golang we handle metric as a buf dep so we exclude it from generate, this proto
-    # file is required by languages such as rust.
-    - io/metric
+  excludes: []
 breaking:
   use:
     - FILE
-deps:
-  - buf.build/metric/client-model
+# deps removed - now using local io/metric/client/metrics.proto
 lint:
   use:
     - STANDARD
@@ -23,6 +19,8 @@ lint:
     # or response type for multiple RPCs
     - aliasreader/aliasreader.proto
     - net/conn/conn.proto
+    # Third-party proto from prometheus/client_model - don't lint
+    - io/metric/client/metrics.proto
   # allows RPC requests or responses to be google.protobuf.Empty messages. This can be set if you
   # want to allow messages to be void forever, that is they will never take any parameters.
   rpc_allow_google_protobuf_empty_requests: true
