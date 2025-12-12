@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ func TestSimpleConnection(t *testing.T) {
 	msgCreator1 := newMessageCreator(t)
 	registry1 := metric.NewNoOpRegistry()
 
-	var connected1 bool
+	var connected1 atomic.Bool
 	net1, err := NewNetwork(
 		config1,
 		upgrade.InitiallyActiveTime,
@@ -45,7 +46,7 @@ func TestSimpleConnection(t *testing.T) {
 			ConnectedF: func(nodeID ids.NodeID, _ *version.Application, _ ids.ID) {
 				t.Logf("Network 1 connected to %s", nodeID)
 				if nodeID == nodeIDs[1] {
-					connected1 = true
+					connected1.Store(true)
 				}
 			},
 		},
@@ -63,7 +64,7 @@ func TestSimpleConnection(t *testing.T) {
 	msgCreator2 := newMessageCreator(t)
 	registry2 := metric.NewNoOpRegistry()
 
-	var connected2 bool
+	var connected2 atomic.Bool
 	net2, err := NewNetwork(
 		config2,
 		upgrade.InitiallyActiveTime,
@@ -76,7 +77,7 @@ func TestSimpleConnection(t *testing.T) {
 			ConnectedF: func(nodeID ids.NodeID, _ *version.Application, _ ids.ID) {
 				t.Logf("Network 2 connected to %s", nodeID)
 				if nodeID == nodeIDs[0] {
-					connected2 = true
+					connected2.Store(true)
 				}
 			},
 		},
@@ -108,9 +109,9 @@ func TestSimpleConnection(t *testing.T) {
 	for {
 		select {
 		case <-ctx.Done():
-			t.Fatalf("Timeout: connected1=%v, connected2=%v", connected1, connected2)
+			t.Fatalf("Timeout: connected1=%v, connected2=%v", connected1.Load(), connected2.Load())
 		case <-ticker.C:
-			if connected1 && connected2 {
+			if connected1.Load() && connected2.Load() {
 				t.Log("Both networks connected!")
 				goto done
 			}
