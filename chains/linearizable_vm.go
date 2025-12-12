@@ -44,6 +44,7 @@ type initializeOnLinearizeVM struct {
 	configBytes      []byte
 	fxs              []fx.Fx
 	appSender        appsender.AppSender
+	toEngine         chan<- block.Message // Channel to notify consensus engine
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
 }
@@ -70,16 +71,14 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	defer vm.linearizeOnce.Do(func() {
 		close(vm.waitForLinearize)
 	})
-	
+
 	// Convert []fx.Fx to []interface{}
 	fxsInterface := make([]interface{}, len(vm.fxs))
 	for i, fxItem := range vm.fxs {
 		fxsInterface[i] = fxItem
 	}
-	
-	// Note: toVertex parameter is the toEngine channel for block.Message
-	// but Initialize expects chan<- consensus.Message, so we need proper conversion
-	// For now, passing nil as toEngine since this is complex to adapt
+
+	// Pass the toEngine channel to the VM so it can notify consensus about pending transactions
 	return vm.vmToInitialize.Initialize(
 		ctx,
 		vm.ctx,
@@ -87,7 +86,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		vm.genesisBytes,
 		vm.upgradeBytes,
 		vm.configBytes,
-		nil, // toEngine channel - needs proper adaptation
+		vm.toEngine, // toEngine channel for VM to notify consensus
 		fxsInterface,
 		vm.appSender,
 	)

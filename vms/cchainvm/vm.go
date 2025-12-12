@@ -36,8 +36,8 @@ import (
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
 	"github.com/luxfi/geth/trie"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
@@ -49,7 +49,7 @@ func newUint64(n uint64) *uint64 {
 }
 
 var (
-	_ block.ChainVM = (*VM)(nil)
+	_ consensusblock.ChainVM = (*VM)(nil)
 
 	errNilBlock     = errors.New("nil block")
 	errInvalidBlock = errors.New("invalid block")
@@ -275,6 +275,10 @@ type VM struct {
 	// Replay progress tracking
 	replayProgress *ReplayProgress
 
+	// Consensus engine communication
+	toEngine     chan<- consensusblock.Message // Channel to notify consensus engine
+	pendingTxsCh chan struct{}                 // Channel for pending tx notifications
+
 	// Synchronization
 	mu           sync.RWMutex
 	building     ids.ID
@@ -312,6 +316,22 @@ func (vm *VM) Initialize(
 	vm.shutdownChan = make(chan struct{})
 	vm.builtBlocks = make(map[ids.ID]*Block)
 	vm.replayProgress = NewReplayProgress()
+	vm.pendingTxsCh = make(chan struct{}, 1) // Buffered channel for pending tx notifications
+
+	// Store the toEngine channel if provided
+	if msgChan != nil {
+		// Try bidirectional channel first (from consensus engine), then send-only
+		switch ch := msgChan.(type) {
+		case chan consensusblock.Message:
+			vm.toEngine = ch // bidirectional can be assigned to send-only
+			vm.log.Info("C-Chain VM: toEngine channel set")
+		case chan<- consensusblock.Message:
+			vm.toEngine = ch
+			vm.log.Info("C-Chain VM: toEngine channel set")
+		default:
+			vm.log.Warn("C-Chain VM: msgChan is not a consensus Message channel", "type", fmt.Sprintf("%T", msgChan))
+		}
+	}
 
 	// MIGRATION DETECTION: Check if we have migrated data BEFORE any initialization
 	// We need to check at the C-Chain database level, not the wrapped level
@@ -1207,8 +1227,14 @@ func (vm *VM) Initialize(
 
 	vm.blockChain = vm.backend.BlockChain()
 	vm.txPool = vm.backend.TxPool()
-	
+
 	fmt.Printf("DEBUG: After getting blockchain and txPool, blockchain=%v\n", vm.blockChain != nil)
+
+	// Start a goroutine to watch for new transactions and notify consensus
+	if vm.toEngine != nil {
+		go vm.watchPendingTxs()
+		vm.log.Info("C-Chain VM: Started pending tx watcher")
+	}
 
 	// NOTE: Runtime database copy removed - migration is done offline using direct-migrate tool
 	// The database at ~/.luxd/chainData/C/db/badgerdb already contains the migrated data
@@ -1607,9 +1633,56 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 }
 
 // WaitForEvent implements the block.ChainVM interface
+// This is called by the consensus engine to wait for VM events (like pending transactions)
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	<-ctx.Done()
-	return consensuscore.PendingTxs, ctx.Err()
+	select {
+	case <-vm.pendingTxsCh:
+		// Pending transactions available - tell consensus to build a block
+		return consensuscore.PendingTxs, nil
+	case <-vm.shutdownChan:
+		return nil, errors.New("VM shutting down")
+	case <-ctx.Done():
+		return consensuscore.PendingTxs, ctx.Err()
+	}
+}
+
+// watchPendingTxs monitors the txpool for new transactions and notifies the consensus engine
+func (vm *VM) watchPendingTxs() {
+	// Subscribe to new transaction events from the txpool
+	txCh := make(chan gethcore.NewTxsEvent, 100)
+	sub := vm.txPool.SubscribeTransactions(txCh, true)
+	defer sub.Unsubscribe()
+
+	vm.log.Info("C-Chain VM: Watching for pending transactions")
+
+	for {
+		select {
+		case <-txCh:
+			// New transaction received - notify consensus to build a block
+			vm.log.Debug("C-Chain VM: New transaction(s) received, notifying consensus")
+			select {
+			case vm.pendingTxsCh <- struct{}{}:
+				// Successfully notified
+			default:
+				// Channel already has a pending notification
+			}
+			// Also send to toEngine channel if available
+			if vm.toEngine != nil {
+				select {
+				case vm.toEngine <- consensusblock.Message{Type: uint32(consensuscore.PendingTxs)}:
+					vm.log.Debug("C-Chain VM: Sent PendingTxs to consensus engine")
+				default:
+					// Channel full or closed
+				}
+			}
+		case <-sub.Err():
+			vm.log.Warn("C-Chain VM: Transaction subscription error")
+			return
+		case <-vm.shutdownChan:
+			vm.log.Info("C-Chain VM: Stopping pending tx watcher")
+			return
+		}
+	}
 }
 
 // HealthCheck implements the block.ChainVM interface
@@ -1627,8 +1700,8 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-// GetBlock implements the block.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
+// GetBlock implements the consensusblock.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (consensusblock.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
@@ -1647,8 +1720,8 @@ func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	return vm.newBlock(ethBlock)
 }
 
-// ParseBlock implements the block.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
+// ParseBlock implements the consensusblock.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (consensusblock.Block, error) {
 	ethBlock := new(types.Block)
 	if err := rlp.DecodeBytes(blockBytes, ethBlock); err != nil {
 		return nil, fmt.Errorf("failed to decode block: %w", err)
@@ -1657,8 +1730,8 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, e
 	return vm.newBlock(ethBlock)
 }
 
-// BuildBlock implements the block.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+// BuildBlock implements the consensusblock.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (consensusblock.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 

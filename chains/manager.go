@@ -1079,12 +1079,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			nil, // appSender - not needed for simple VMs
 		)
 		if err != nil {
-			m.Log.Warn("VM initialization failed, continuing anyway",
+			m.Log.Error("VM initialization failed",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
-		} else {
-			m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+			return nil, fmt.Errorf("failed to initialize VM: %w", err)
 		}
+		m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 
 		// Transition VM to normal operation after initialization
 		// For genesis-based networks with pre-configured validators, this is required
@@ -1098,7 +1098,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
-				// Continue anyway, as the VM might not require this
+				return nil, fmt.Errorf("failed to transition VM to normal operation: %w", err)
 			}
 		}
 
@@ -1674,7 +1674,8 @@ func (m *manager) createDAGChain(
 		upgradeBytes: chainConfig.Upgrade,
 		configBytes:  chainConfig.Config,
 		fxs:          fxs,
-		appSender:    nil, // Will be set to proper AppSender type later
+		appSender:    nil,      // Will be set to proper AppSender type later
+		toEngine:     toEngine, // Channel for VM to notify consensus about pending transactions
 	}
 
 	bootstrapWeight, err := vdrs.TotalWeight(netID)
