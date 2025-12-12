@@ -11,12 +11,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/warp"
 )
 
 var (
@@ -24,10 +23,10 @@ var (
 	ErrNoPeers        = errors.New("no peers")
 )
 
-// AppResponseCallback is called upon receiving an AppResponse for an AppRequest
+// ResponseCallback is called upon receiving a response to a request
 // issued by Client.
-// Callers should check [err] to see whether the AppRequest failed or not.
-type AppResponseCallback func(
+// Callers should check [err] to see whether the request failed or not.
+type ResponseCallback func(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	responseBytes []byte,
@@ -38,17 +37,17 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        consensuscore.AppSender
+	sender        warp.Sender
 	options       *clientOptions
 }
 
-// AppRequestAny issues an AppRequest to an arbitrary node decided by Client.
-// If a specific node needs to be requested, use AppRequest instead.
-// See AppRequest for more docs.
-func (c *Client) AppRequestAny(
+// RequestAny issues a request to an arbitrary node decided by Client.
+// If a specific node needs to be requested, use Request instead.
+// See Request for more docs.
+func (c *Client) RequestAny(
 	ctx context.Context,
-	appRequestBytes []byte,
-	onResponse AppResponseCallback,
+	requestBytes []byte,
+	onResponse ResponseCallback,
 ) error {
 	sampled := c.options.nodeSampler.Sample(ctx, 1)
 	if len(sampled) != 1 {
@@ -56,32 +55,32 @@ func (c *Client) AppRequestAny(
 	}
 
 	nodeIDs := set.Of(sampled...)
-	return c.AppRequest(ctx, nodeIDs, appRequestBytes, onResponse)
+	return c.Request(ctx, nodeIDs, requestBytes, onResponse)
 }
 
-// AppRequest issues an arbitrary request to a node.
+// Request issues an arbitrary request to a node.
 // [onResponse] is invoked upon an error or a response.
-func (c *Client) AppRequest(
+func (c *Client) Request(
 	ctx context.Context,
 	nodeIDs set.Set[ids.NodeID],
-	appRequestBytes []byte,
-	onResponse AppResponseCallback,
+	requestBytes []byte,
+	onResponse ResponseCallback,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
-	// SendAppRequest should be non-blocking and any error other than context
+	// SendRequest should be non-blocking and any error other than context
 	// cancellation is unexpected.
 	//
 	// This guarantees that the router should never receive an unexpected
-	// AppResponse.
+	// response.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
 	c.router.lock.Lock()
 	defer c.router.lock.Unlock()
 
-	appRequestBytes = PrefixMessage(c.handlerPrefix, appRequestBytes)
+	requestBytes = PrefixMessage(c.handlerPrefix, requestBytes)
 	for nodeID := range nodeIDs {
 		requestID := c.router.requestID
-		if _, ok := c.router.pendingAppRequests[requestID]; ok {
+		if _, ok := c.router.pendingRequests[requestID]; ok {
 			return fmt.Errorf(
 				"failed to issue request with request id %d: %w",
 				requestID,
@@ -89,13 +88,13 @@ func (c *Client) AppRequest(
 			)
 		}
 
-		nodeIDs := set.NewSet[ids.NodeID](1)
-		nodeIDs.Add(nodeID)
-		if err := c.sender.SendAppRequest(
+		targetNodeIDs := set.NewSet[ids.NodeID](1)
+		targetNodeIDs.Add(nodeID)
+		if err := c.sender.SendRequest(
 			ctxWithoutCancel,
-			toConsensusSet(set.Of(nodeID)),
+			targetNodeIDs,
 			requestID,
-			appRequestBytes,
+			requestBytes,
 		); err != nil {
 			c.router.log.Error("unexpected error when sending message",
 				log.Stringer("op", message.AppRequestOp),
@@ -106,7 +105,7 @@ func (c *Client) AppRequest(
 			return err
 		}
 
-		c.router.pendingAppRequests[requestID] = pendingAppRequest{
+		c.router.pendingRequests[requestID] = pendingRequest{
 			handlerID: c.handlerIDStr,
 			callback:  onResponse,
 		}
@@ -116,29 +115,21 @@ func (c *Client) AppRequest(
 	return nil
 }
 
-// AppGossip sends a gossip message to a random set of peers.
-func (c *Client) AppGossip(
+// Gossip sends a gossip message to a random set of peers.
+func (c *Client) Gossip(
 	ctx context.Context,
-	config consensuscore.SendConfig,
-	appGossipBytes []byte,
+	config warp.SendConfig,
+	gossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
-	// SendAppGossip should be non-blocking and any error other than context
+	// SendGossip should be non-blocking and any error other than context
 	// cancellation is unexpected.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
-	// Extract nodeIDs from config
-	nodeIDs := set.NewSet[ids.NodeID](len(config.NodeIDs))
-	for _, nodeIDIntf := range config.NodeIDs {
-		if nodeID, ok := nodeIDIntf.(ids.NodeID); ok {
-			nodeIDs.Add(nodeID)
-		}
-	}
-
-	return c.sender.SendAppGossip(
+	return c.sender.SendGossip(
 		ctxWithoutCancel,
-		sendConfigToSet(config),
-		PrefixMessage(c.handlerPrefix, appGossipBytes),
+		config,
+		PrefixMessage(c.handlerPrefix, gossipBytes),
 	)
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/consensus/engine/core/common"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -47,9 +46,8 @@ type warpSignerAdapter struct {
 // Sign implements lp118.Signer interface
 func (a *warpSignerAdapter) Sign(msg *luxWarp.UnsignedMessage) ([]byte, error) {
 	// Convert external warp message to internal warp message
-	var sourceChainID ids.ID
-	copy(sourceChainID[:], msg.SourceChainID)
-	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, sourceChainID, msg.Payload)
+	// msg.SourceChainID is already ids.ID type
+	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +67,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
-	appSender common.AppSender,
+	appSender luxWarp.Sender,
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,
@@ -232,7 +230,7 @@ func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []b
 		return nil
 	}
 
-	return n.Network.AppGossip(ctx, nodeID, msgBytes)
+	return n.Network.Gossip(ctx, nodeID, msgBytes)
 }
 
 func (n *Network) IssueTxFromRPC(tx *txs.Tx) error {

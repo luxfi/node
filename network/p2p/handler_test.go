@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/warp"
 )
 
 var _ ValidatorSet = (*testValidatorSet)(nil)
@@ -29,7 +29,7 @@ func (t testValidatorSet) Has(_ context.Context, nodeID ids.NodeID) bool {
 	return t.validators.Contains(nodeID)
 }
 
-func TestValidatorHandlerAppGossip(t *testing.T) {
+func TestValidatorHandlerGossip(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	validatorSet := set.Of(nodeID)
 
@@ -61,7 +61,7 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 			called := false
 			handler := NewValidatorHandler(
 				&TestHandler{
-					AppGossipF: func(context.Context, ids.NodeID, []byte) {
+					GossipF: func(context.Context, ids.NodeID, []byte) {
 						called = true
 					},
 				},
@@ -69,13 +69,13 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 				log.NewNoOpLogger(),
 			)
 
-			handler.AppGossip(context.Background(), tt.nodeID, []byte("foobar"))
+			handler.Gossip(context.Background(), tt.nodeID, []byte("foobar"))
 			require.Equal(tt.expected, called)
 		})
 	}
 }
 
-func TestValidatorHandlerAppRequest(t *testing.T) {
+func TestValidatorHandlerRequest(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 	validatorSet := set.Of(nodeID)
 
@@ -83,7 +83,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     *consensuscore.AppError
+		expected     *warp.Error
 	}{
 		{
 			name:         "message dropped",
@@ -110,7 +110,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 				log.NewNoOpLogger(),
 			)
 
-			_, err := handler.AppRequest(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))
+			_, err := handler.Request(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expected)
 		})
 	}

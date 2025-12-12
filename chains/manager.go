@@ -29,6 +29,7 @@ import (
 	// "github.com/luxfi/database/prefixdb" // Only used in disabled createDAGChain function
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
@@ -1325,7 +1326,7 @@ func (m *manager) createDAG(
 			configBytes []byte,
 			toEngine chan<- consensuscore.Message,
 			fxs []*consensuscore.Fx,
-			appSender consensuscore.AppSender,
+			appSender warp.Sender,
 		) error
 	}); ok {
 		toEngine := make(chan consensuscore.Message, 1)
@@ -2477,30 +2478,25 @@ func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Mes
 	return nil
 }
 
-// noopWarpSender is a no-op implementation of WarpSender for Warp 1.5 messaging
+// noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
 // Used in single-node mode where cross-chain messaging is not needed
-// Implements consensuscore.AppSender interface with minimal overhead
 type noopWarpSender struct{}
 
-// Compile-time check that noopWarpSender implements AppSender
-var _ consensuscore.AppSender = (*noopWarpSender)(nil)
+// Compile-time check that noopWarpSender implements warp.Sender
+var _ warp.Sender = (*noopWarpSender)(nil)
 
-func (n *noopWarpSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+func (n *noopWarpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
 }
 
-func (n *noopWarpSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+func (n *noopWarpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (n *noopWarpSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-func (n *noopWarpSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
+func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
 }

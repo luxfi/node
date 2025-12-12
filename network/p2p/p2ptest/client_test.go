@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package p2ptest
 
 import (
@@ -15,21 +12,21 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/warp"
 )
 
-func TestClient_AppGossip(t *testing.T) {
+func TestClient_Gossip(t *testing.T) {
 	require := require.New(t)
 
 	// Use context with timeout to prevent test hanging
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	appGossipChan := make(chan struct{})
+	gossipChan := make(chan struct{})
 	testHandler := p2p.TestHandler{
-		AppGossipF: func(context.Context, ids.NodeID, []byte) {
-			close(appGossipChan)
+		GossipF: func(context.Context, ids.NodeID, []byte) {
+			close(gossipChan)
 		},
 	}
 
@@ -41,59 +38,59 @@ func TestClient_AppGossip(t *testing.T) {
 		testHandler,
 	)
 	// Explicitly specify the node to gossip to
-	require.NoError(client.AppGossip(ctx, consensuscore.SendConfig{
-		NodeIDs: []interface{}{nodeID},
+	require.NoError(client.Gossip(ctx, warp.SendConfig{
+		NodeIDs: set.Of(nodeID),
 		Peers:   1,
 	}, []byte("foobar")))
-	
+
 	// Wait for gossip with select to respect context
 	select {
-	case <-appGossipChan:
+	case <-gossipChan:
 		// Success
 	case <-ctx.Done():
-		t.Fatal("test timed out waiting for AppGossip")
+		t.Fatal("test timed out waiting for Gossip")
 	}
 }
 
-func TestClient_AppRequest(t *testing.T) {
+func TestClient_Request(t *testing.T) {
 	tests := []struct {
 		name        string
-		appResponse []byte
-		appErr      error
-		appRequestF func(ctx context.Context, client *p2p.Client, onResponse p2p.AppResponseCallback) error
+		response    []byte
+		respErr     error
+		requestF    func(ctx context.Context, client *p2p.Client, onResponse p2p.ResponseCallback) error
 	}{
 		{
-			name:        "AppRequest - response",
-			appResponse: []byte("foobar"),
-			appRequestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.AppResponseCallback) error {
-				return client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte("foo"), onResponse)
+			name:     "Request - response",
+			response: []byte("foobar"),
+			requestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.ResponseCallback) error {
+				return client.Request(ctx, set.Of(ids.EmptyNodeID), []byte("foo"), onResponse)
 			},
 		},
 		{
-			name: "AppRequest - error",
-			appErr: &consensuscore.AppError{
+			name: "Request - error",
+			respErr: &warp.Error{
 				Code:    123,
 				Message: "foobar",
 			},
-			appRequestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.AppResponseCallback) error {
-				return client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte("foo"), onResponse)
+			requestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.ResponseCallback) error {
+				return client.Request(ctx, set.Of(ids.EmptyNodeID), []byte("foo"), onResponse)
 			},
 		},
 		{
-			name:        "AppRequestAny - response",
-			appResponse: []byte("foobar"),
-			appRequestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.AppResponseCallback) error {
-				return client.AppRequestAny(ctx, []byte("foo"), onResponse)
+			name:     "RequestAny - response",
+			response: []byte("foobar"),
+			requestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.ResponseCallback) error {
+				return client.RequestAny(ctx, []byte("foo"), onResponse)
 			},
 		},
 		{
-			name: "AppRequestAny - error",
-			appErr: &consensuscore.AppError{
+			name: "RequestAny - error",
+			respErr: &warp.Error{
 				Code:    123,
 				Message: "foobar",
 			},
-			appRequestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.AppResponseCallback) error {
-				return client.AppRequestAny(ctx, []byte("foo"), onResponse)
+			requestF: func(ctx context.Context, client *p2p.Client, onResponse p2p.ResponseCallback) error {
+				return client.RequestAny(ctx, []byte("foo"), onResponse)
 			},
 		},
 	}
@@ -103,14 +100,14 @@ func TestClient_AppRequest(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			appRequestChan := make(chan struct{})
+			requestChan := make(chan struct{})
 			testHandler := p2p.TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
-					if tt.appErr != nil {
-					return nil, tt.appErr.(*consensuscore.AppError)
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+					if tt.respErr != nil {
+						return nil, tt.respErr.(*warp.Error)
 					}
 
-					return tt.appResponse, nil
+					return tt.response, nil
 				},
 			}
 
@@ -120,26 +117,26 @@ func TestClient_AppRequest(t *testing.T) {
 				ids.EmptyNodeID,
 				testHandler,
 			)
-			require.NoError(tt.appRequestF(
+			require.NoError(tt.requestF(
 				ctx,
 				client,
 				func(_ context.Context, _ ids.NodeID, responseBytes []byte, err error) {
-					defer close(appRequestChan)
-					if tt.appErr != nil {
+					defer close(requestChan)
+					if tt.respErr != nil {
 						require.Error(err)
-						// Compare error properties since AppError doesn't implement Is()
-						appErr, ok := err.(*consensuscore.AppError)
-						require.True(ok, "error should be an AppError")
-						expectedErr := tt.appErr.(*consensuscore.AppError)
-						require.Equal(expectedErr.Code, appErr.Code)
-						require.Equal(expectedErr.Message, appErr.Message)
+						// Compare error properties since Error doesn't implement Is()
+						respErr, ok := err.(*warp.Error)
+						require.True(ok, "error should be an Error")
+						expectedErr := tt.respErr.(*warp.Error)
+						require.Equal(expectedErr.Code, respErr.Code)
+						require.Equal(expectedErr.Message, respErr.Message)
 					} else {
 						require.NoError(err)
 					}
-					require.Equal(tt.appResponse, responseBytes)
+					require.Equal(tt.response, responseBytes)
 				},
 			))
-			<-appRequestChan
+			<-requestChan
 		})
 	}
 }

@@ -22,8 +22,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/log"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
@@ -369,7 +369,7 @@ func (n *network) Send(
 	var sampledPeers []peer.Peer
 	if nodeIDs.Len() == 0 {
 		// Create default send config for sampling
-		sendConfig := consensuscore.SendConfig{
+		sendConfig := warp.SendConfig{
 			NodeIDs:       nil, // Don't restrict to specific nodes for sampling
 			Validators:    0,   // No specific validator requirement
 			NonValidators: 0,   // No specific non-validator requirement
@@ -845,7 +845,7 @@ func (n *network) getPeers(
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
 func (n *network) samplePeers(
-	config consensuscore.SendConfig,
+	config warp.SendConfig,
 	netID ids.ID,
 	allower nets.Allower,
 ) []peer.Peer {
@@ -868,12 +868,8 @@ func (n *network) samplePeers(
 			peerID := p.ID()
 			// if the peer was already explicitly included, don't include in the
 			// sample
-			if config.NodeIDs != nil {
-				for _, nodeID := range config.NodeIDs {
-					if id, ok := nodeID.(ids.NodeID); ok && id == peerID {
-						return false
-					}
-				}
+			if config.NodeIDs != nil && config.NodeIDs.Contains(peerID) {
+				return false
 			}
 
 			_, areTheyAValidator := n.config.Validators.GetValidator(netID, peerID)
@@ -1329,7 +1325,7 @@ func (n *network) runTimers() {
 // pullGossipPeerLists requests validators from peers in the network
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
-		consensuscore.SendConfig{
+		warp.SendConfig{
 			NonValidators: 1,
 		},
 		constants.PrimaryNetworkID,

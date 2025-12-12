@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/warp"
 
 	nodeversion "github.com/luxfi/node/version"
 )
@@ -57,7 +58,7 @@ type VM struct {
 	db        database.Database
 	config    GConfig
 	toEngine  chan<- common.Message
-	appSender common.AppSender
+	appSender warp.Sender
 
 	// State
 	preferredID ids.ID
@@ -171,7 +172,7 @@ func (vm *VM) Initialize(
 	}
 
 	if appSender != nil {
-		vm.appSender, ok = appSender.(common.AppSender)
+		vm.appSender, ok = appSender.(warp.Sender)
 		if !ok {
 			return errors.New("invalid app sender type")
 		}
@@ -286,7 +287,7 @@ func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint3
 }
 
 // AppRequestFailed implements the common.AppHandler interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
@@ -306,7 +307,7 @@ func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestI
 }
 
 // CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 

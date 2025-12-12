@@ -17,9 +17,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
+	warp "github.com/luxfi/warp"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -88,7 +88,7 @@ func (mr *MockRouterMockRecorder) AppRequest(ctx, nodeID, requestID, deadline, a
 }
 
 // AppRequestFailed mocks base method.
-func (m *MockRouter) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
+func (m *MockRouter) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AppRequestFailed", ctx, nodeID, requestID, appErr)
 	ret0, _ := ret[0].(error)

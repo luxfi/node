@@ -8,13 +8,13 @@ package gossip
 
 import (
 	"context"
+	"github.com/luxfi/warp"
 	"time"
 
 	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/log"
 )
@@ -47,7 +47,7 @@ type Handler[T Gossipable] struct {
 	targetResponseSize int
 }
 
-func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
+func (h Handler[T]) Request(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *warp.Error) {
 	filter, salt, err := ParseAppRequest(requestBytes)
 	if err != nil {
 		return nil, p2p.ErrUnexpected
@@ -90,7 +90,7 @@ func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, req
 	return response, nil
 }
 
-func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes []byte) {
+func (h Handler[_]) Gossip(_ context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	gossip, err := ParseAppGossip(gossipBytes)
 	if err != nil {
 		h.log.Debug("failed to unmarshal gossip", luxlog.Reflect("error", err))

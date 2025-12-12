@@ -20,6 +20,7 @@ import (
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
+	"github.com/luxfi/warp"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -126,7 +127,7 @@ func (vm *VM) Initialize(
 	configBytes []byte,
 	toEngine chan<- consensuscore.Message,
 	fxs []*consensuscore.Fx,
-	appSender consensuscore.AppSender,
+	appSender warp.Sender,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()

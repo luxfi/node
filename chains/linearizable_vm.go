@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/consensus/engine/chain/block"
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/warp"
 )
 
 var (
@@ -43,7 +43,7 @@ type initializeOnLinearizeVM struct {
 	upgradeBytes     []byte
 	configBytes      []byte
 	fxs              []fx.Fx
-	appSender        appsender.AppSender
+	appSender        warp.Sender
 	toEngine         chan<- block.Message // Channel to notify consensus engine
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
@@ -113,9 +113,9 @@ func (d *dbManagerWrapper) Close() error {
 	return nil
 }
 
-// blockAppSenderWrapper wraps appsender.AppSender to implement block.AppSender
+// blockAppSenderWrapper wraps warp.Sender to implement block.AppSender
 type blockAppSenderWrapper struct {
-	appSender appsender.AppSender
+	appSender warp.Sender
 }
 
 func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
@@ -126,33 +126,36 @@ func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []id
 	for _, nodeID := range nodeIDs {
 		nodeIDSet.Add(nodeID)
 	}
-	return b.appSender.SendAppRequest(ctx, nodeIDSet, requestID, appRequestBytes)
+	return b.appSender.SendRequest(ctx, nodeIDSet, requestID, appRequestBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+	return b.appSender.SendResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
+	return b.appSender.SendError(ctx, nodeID, requestID, errorCode, errorMessage)
 }
 
 func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// Convert slice to set
+	// Convert slice to set and create SendConfig
 	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
 	for _, nodeID := range nodeIDs {
 		nodeIDSet.Add(nodeID)
 	}
-	return b.appSender.SendAppGossip(ctx, nodeIDSet, appGossipBytes)
+	config := warp.SendConfig{
+		NodeIDs: nodeIDSet,
+	}
+	return b.appSender.SendGossip(ctx, config, appGossipBytes)
 }
 
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a
@@ -179,7 +182,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	upgradeBytes []byte,
 	configBytes []byte,
 	fxs []fx.Fx,
-	appSender appsender.AppSender,
+	appSender warp.Sender,
 ) error {
 	// When Initialize is called, we need to linearize the DAG
 	// The stopVertexID should have been set by initializeOnLinearizeVM.Linearize

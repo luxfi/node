@@ -127,7 +127,7 @@ func (s *SignatureAggregator) AggregateSignatures(
 		results:             results,
 	}
 
-	if err := s.client.AppRequest(ctx, set.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
+	if err := s.client.Request(ctx, set.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to send aggregation request: %w", err)
 	}
 

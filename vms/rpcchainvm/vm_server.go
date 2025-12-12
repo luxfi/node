@@ -24,8 +24,8 @@ import (
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	"github.com/luxfi/log"
 	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
@@ -65,7 +65,7 @@ type VMServer struct {
 	// If nil, the underlying VM doesn't implement the interface.
 	ssVM block.StateSyncableVM
 	// If nil, the underlying VM doesn't implement the interface.
-	appHandler consensuscore.AppHandler
+	appHandler warp.Handler
 
 	allowShutdown *utils.Atomic[bool]
 
@@ -89,7 +89,7 @@ type VMServer struct {
 func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 	bVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	ssVM, _ := vm.(block.StateSyncableVM)
-	appHandler, _ := vm.(consensuscore.AppHandler)
+	appHandler, _ := vm.(warp.Handler)
 	vmSrv := &VMServer{
 		metrics:       metrics.NewPrefixGatherer(),
 		vm:            vm,
@@ -638,7 +638,11 @@ func (vm *VMServer) AppRequest(ctx context.Context, req *vmpb.AppRequestMsg) (*e
 	if vm.appHandler == nil {
 		return nil, errors.New("AppRequest not implemented")
 	}
-	return &emptypb.Empty{}, vm.appHandler.AppRequest(ctx, nodeID, req.RequestId, deadline, req.Request)
+	_, appErr := vm.appHandler.Request(ctx, nodeID, req.RequestId, deadline, req.Request)
+	if appErr != nil {
+		return nil, fmt.Errorf("app error: %d - %s", appErr.Code, appErr.Message)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFailedMsg) (*emptypb.Empty, error) {
@@ -647,15 +651,15 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		return nil, err
 	}
 
-	appErr := &consensuscore.AppError{
+	appErr := &warp.Error{
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}
-	
+
 	type vmWithAppRequestFailed interface {
-		AppRequestFailed(context.Context, ids.NodeID, uint32, *consensuscore.AppError) error
+		AppRequestFailed(context.Context, ids.NodeID, uint32, *warp.Error) error
 	}
-	
+
 	if failedVM, ok := vm.vm.(vmWithAppRequestFailed); ok {
 		return &emptypb.Empty{}, failedVM.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
 	}
@@ -672,7 +676,7 @@ func (vm *VMServer) AppResponse(ctx context.Context, req *vmpb.AppResponseMsg) (
 	if vm.appHandler == nil {
 		return nil, errors.New("AppResponse not implemented")
 	}
-	return &emptypb.Empty{}, vm.appHandler.AppResponse(ctx, nodeID, req.RequestId, req.Response)
+	return &emptypb.Empty{}, vm.appHandler.Response(ctx, nodeID, req.RequestId, req.Response)
 }
 
 func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emptypb.Empty, error) {
@@ -683,7 +687,7 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 	if vm.appHandler == nil {
 		return nil, errors.New("AppGossip not implemented")
 	}
-	return &emptypb.Empty{}, vm.appHandler.AppGossip(ctx, nodeID, req.Msg)
+	return &emptypb.Empty{}, vm.appHandler.Gossip(ctx, nodeID, req.Msg)
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {

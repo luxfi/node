@@ -18,11 +18,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/engine/core"
-	cset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/warp"
 )
 
 // Minimum amount of time to handle a request
@@ -88,11 +87,11 @@ type networkClient struct {
 	// tracking of peers & bandwidth usage
 	peers *p2p.PeerTracker
 	// For sending messages to peers
-	appSender core.AppSender
+	sender warp.Sender
 }
 
 func NewNetworkClient(
-	appSender core.AppSender,
+	sender warp.Sender,
 	myNodeID ids.NodeID,
 	maxActiveRequests int64,
 	log log.Logger,
@@ -112,7 +111,7 @@ func NewNetworkClient(
 	}
 
 	return &networkClient{
-		appSender:                  appSender,
+		sender:                     sender,
 		outstandingRequestHandlers: make(map[uint32]ResponseHandler),
 		activeRequests:             semaphore.NewWeighted(maxActiveRequests),
 		peers:                      peerTracker,
@@ -287,18 +286,18 @@ func (c *networkClient) sendRequestLocked(
 	)
 	c.peers.RegisterRequest(nodeID)
 
-	// Send an app request to the peer.
-	nodeIDs := cset.Of(nodeID)
+	// Send request to the peer.
+	nodeIDs := set.Of(nodeID)
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
-	// SendAppRequest should be non-blocking and any error other than context
+	// SendRequest should be non-blocking and any error other than context
 	// cancellation is unexpected.
 	//
 	// This guarantees that the network should never receive an unexpected
-	// AppResponse.
+	// Response.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
-	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
+	if err := c.sender.SendRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
 		c.lock.Unlock()
-		c.log.Error("failed to send app request",
+		c.log.Error("failed to send request",
 			log.Stringer("nodeID", nodeID),
 			log.Uint32("requestID", requestID),
 			log.Int("requestLen", len(request)),

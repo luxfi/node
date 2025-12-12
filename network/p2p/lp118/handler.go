@@ -68,10 +68,8 @@ func (h *CachedHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadl
 		return nil, err
 	}
 
-	// Check cache - convert []byte ID to ids.ID
-	idBytes := unsignedMessage.ID()
-	var messageID ids.ID
-	copy(messageID[:], idBytes)
+	// Check cache
+	messageID := unsignedMessage.ID()
 	if signatureBytes, ok := h.cache.Get(messageID); ok {
 		resp := &sdk.SignatureResponse{
 			Signature: signatureBytes,

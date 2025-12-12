@@ -10,12 +10,13 @@ const (
 	XVMName          = "xvm"          // X-Chain: UTXO Exchange
 	EVMName          = "evm"          // C-Chain: EVM Smart Contracts
 	XSVMName         = "xsvm"         // Cross-Subnet VM
-	QuantumVMName = "quantumvm" // Q-Chain: Quantum-resistant security
-	AIVMName      = "aivm"      // A-Chain: AI Virtual Machine
+	QuantumVMName    = "quantumvm"    // Q-Chain: Quantum-resistant security
+	AIVMName         = "aivm"         // A-Chain: AI Virtual Machine
 	BridgeVMName     = "bridgevm"     // B-Chain: Bridge/Cross-chain
 	ThresholdVMName  = "thresholdvm"  // T-Chain: Threshold signatures
 	ZKVMName         = "zkvm"         // Z-Chain: Zero-Knowledge proofs
 	GraphVMName      = "graphvm"      // G-Chain: GraphQL/DGraph unified data layer
+	DexVMName        = "dexvm"        // D-Chain: Decentralized Exchange
 )
 
 var (
@@ -33,6 +34,7 @@ var (
 	ThresholdVMID   = ids.ID{'t', 'h', 'r', 'e', 's', 'h', 'o', 'l', 'd', 'v', 'm'}
 	ZKVMID          = ids.ID{'z', 'k', 'v', 'm'}
 	GraphVMID       = ids.ID{'g', 'r', 'a', 'p', 'h', 'v', 'm'}
+	DexVMID         = ids.ID{'d', 'e', 'x', 'v', 'm'} // D-Chain: Decentralized Exchange
 )
 
 // VMName returns the name of the VM with the provided ID. If a human readable
@@ -59,6 +61,8 @@ func VMName(vmID ids.ID) string {
 		return ZKVMName
 	case GraphVMID:
 		return GraphVMName
+	case DexVMID:
+		return DexVMName
 	default:
 		return vmID.String()
 	}

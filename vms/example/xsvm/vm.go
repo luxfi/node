@@ -23,6 +23,7 @@ import (
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -30,7 +31,6 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
-	"github.com/luxfi/node/vms/platformvm/warp"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -63,7 +63,7 @@ func (vm *VM) Initialize(
 	_ []byte,
 	_ []byte,
 	_ []*common.Fx,
-	appSender common.AppSender,
+	appSender warp.Sender,
 ) error {
 	logger := chainContext.Log.(log.Logger)
 	logger.Info("initializing xsvm",
@@ -91,15 +91,12 @@ func (vm *VM) Initialize(
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
-	internalSigner := chainContext.WarpSigner.(interface {
-		Sign(*warp.UnsignedMessage) ([]byte, error)
-	})
-	// Wrap internal signer to adapt to lp118.Signer (external warp)
-	warpSignerAdapter := &xsvmWarpSignerAdapter{signer: internalSigner}
+	// Cast WarpSigner directly to lp118.Signer since both use external warp
+	warpSigner := chainContext.WarpSigner.(lp118.Signer)
 	lp118CachedHandler := lp118.NewCachedHandler(
 		signatureCache,
 		lp118Verifier{},
-		warpSignerAdapter,
+		warpSigner,
 	)
 	lp118Handler := lp118.NewHandlerAdapter(lp118CachedHandler)
 	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {

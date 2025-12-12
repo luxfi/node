@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/warp"
 
 	consensusversion "github.com/luxfi/consensus/version"
 )
@@ -52,7 +53,7 @@ type VM struct {
 	genesisData []byte
 	toEngine    chan<- common.Message
 	fxs         []*common.Fx
-	appSender   common.AppSender
+	appSender   warp.Sender
 
 	// State management
 	state       interfaces.State
@@ -157,7 +158,7 @@ func (vm *VM) Initialize(
 	configBytes []byte,
 	toEngine chan<- common.Message,
 	fxs []*common.Fx,
-	appSender common.AppSender,
+	appSender warp.Sender,
 ) error {
 	vm.ctx = chainCtx
 	vm.db = db
@@ -260,7 +261,7 @@ func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint3
 }
 
 // AppRequestFailed implements the common.AppHandler interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
@@ -280,7 +281,7 @@ func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestI
 }
 
 // CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 

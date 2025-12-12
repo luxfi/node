@@ -16,14 +16,15 @@ import (
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/log"
+	"github.com/luxfi/warp"
 )
 
 const (
@@ -209,7 +210,7 @@ func (p *PullGossiper[_]) Gossip(ctx context.Context) error {
 	}
 
 	for i := 0; i < p.pollSize; i++ {
-		err := p.client.AppRequestAny(ctx, msgBytes, p.handleResponse)
+		err := p.client.RequestAny(ctx, msgBytes, p.handleResponse)
 		if err != nil && !errors.Is(err, p2p.ErrNoPeers) {
 			return err
 		}
@@ -490,16 +491,16 @@ func (p *PushGossiper[T]) gossip(
 	validatorsByStake := p.validators.Top(ctx, gossipParams.StakePercentage)
 	topValidatorsMetric.Set(float64(len(validatorsByStake)))
 
-	// Convert []ids.NodeID to []interface{} for SendConfig
-	nodeIDsInterface := make([]interface{}, len(validatorsByStake))
-	for i, nodeID := range validatorsByStake {
-		nodeIDsInterface[i] = nodeID
+	// Build nodeIDs set from top validators
+	nodeIDs := set.NewSet[ids.NodeID](len(validatorsByStake))
+	for _, nodeID := range validatorsByStake {
+		nodeIDs.Add(nodeID)
 	}
 
-	return p.client.AppGossip(
+	return p.client.Gossip(
 		ctx,
-		consensuscore.SendConfig{
-			NodeIDs:       nodeIDsInterface,
+		warp.SendConfig{
+			NodeIDs:       nodeIDs,
 			Validators:    gossipParams.Validators,
 			NonValidators: gossipParams.NonValidators,
 			Peers:         gossipParams.Peers,

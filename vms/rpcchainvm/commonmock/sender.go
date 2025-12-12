@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	common "github.com/luxfi/consensus/engine/core"
 	set "github.com/luxfi/math/set"
+	warp "github.com/luxfi/warp"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -106,7 +106,7 @@ func (mr *SenderMockRecorder) SendAppError(ctx, nodeID, requestID, errorCode, er
 }
 
 // SendAppGossip mocks base method.
-func (m *Sender) SendAppGossip(ctx context.Context, config common.SendConfig, appGossipBytes []byte) error {
+func (m *Sender) SendAppGossip(ctx context.Context, config warp.SendConfig, appGossipBytes []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendAppGossip", ctx, config, appGossipBytes)
 	ret0, _ := ret[0].(error)

@@ -1,94 +1,44 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package network
 
 import (
 	"context"
 	"time"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/warp"
 )
 
 var _ Atomic = (*atomic)(nil)
 
 type Atomic interface {
-	consensuscore.AppHandler
+	warp.Handler
 
-	Set(consensuscore.AppHandler)
+	Set(warp.Handler)
 }
 
 type atomic struct {
-	handler utils.Atomic[consensuscore.AppHandler]
+	handler utils.Atomic[warp.Handler]
 }
 
-func NewAtomic(h consensuscore.AppHandler) Atomic {
+func NewAtomic(h warp.Handler) Atomic {
 	a := &atomic{}
 	a.handler.Set(h)
 	return a
 }
 
-// func (a *atomic) CrossChainAppRequest(
-// 	ctx context.Context,
-// 	chainID ids.ID,
-// 	requestID uint32,
-// 	deadline time.Time,
-// 	msg []byte,
-// ) error {
-// 	h := a.handler.Get()
-// 	return h.CrossChainAppRequest(
-// 		ctx,
-// 		chainID,
-// 		requestID,
-// 		deadline,
-// 		msg,
-// 	)
-// }
-
-// func (a *atomic) CrossChainAppRequestFailed(
-// 	ctx context.Context,
-// 	chainID ids.ID,
-// 	requestID uint32,
-// 	appErr *consensuscore.AppError,
-// ) error {
-// 	h := a.handler.Get()
-// 	return h.CrossChainAppRequestFailed(
-// 		ctx,
-// 		chainID,
-// 		requestID,
-// 		appErr,
-// 	)
-// }
-
-// func (a *atomic) CrossChainAppResponse(
-// 	ctx context.Context,
-// 	chainID ids.ID,
-// 	requestID uint32,
-// 	msg []byte,
-// ) error {
-// 	h := a.handler.Get()
-// 	return h.CrossChainAppResponse(
-// 		ctx,
-// 		chainID,
-// 		requestID,
-// 		msg,
-// 	)
-// }
-
-func (a *atomic) AppRequest(
+func (a *atomic) Request(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
 	deadline time.Time,
 	msg []byte,
-) error {
+) ([]byte, *warp.Error) {
 	h := a.handler.Get()
-	return h.AppRequest(
+	return h.Request(
 		ctx,
 		nodeID,
 		requestID,
@@ -97,25 +47,29 @@ func (a *atomic) AppRequest(
 	)
 }
 
-func (a *atomic) AppRequestFailed(
+func (a *atomic) RequestFailed(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
-	appErr *consensuscore.AppError,
+	appErr *warp.Error,
 ) error {
-	// AppRequestFailed might not be defined in consensuscore.AppHandler
-	// Just return nil for now
-	return nil
+	h := a.handler.Get()
+	return h.RequestFailed(
+		ctx,
+		nodeID,
+		requestID,
+		appErr,
+	)
 }
 
-func (a *atomic) AppResponse(
+func (a *atomic) Response(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
 	msg []byte,
 ) error {
 	h := a.handler.Get()
-	return h.AppResponse(
+	return h.Response(
 		ctx,
 		nodeID,
 		requestID,
@@ -123,19 +77,19 @@ func (a *atomic) AppResponse(
 	)
 }
 
-func (a *atomic) AppGossip(
+func (a *atomic) Gossip(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	msg []byte,
 ) error {
 	h := a.handler.Get()
-	return h.AppGossip(
+	return h.Gossip(
 		ctx,
 		nodeID,
 		msg,
 	)
 }
 
-func (a *atomic) Set(h consensuscore.AppHandler) {
+func (a *atomic) Set(h warp.Handler) {
 	a.handler.Set(h)
 }

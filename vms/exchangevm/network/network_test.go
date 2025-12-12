@@ -13,9 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	consensuscore "github.com/luxfi/consensus/core"
-	coremock "github.com/luxfi/consensus/core/coremock"
-	"github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/math/set"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/ids"
@@ -28,7 +26,34 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/warp"
 )
+
+// testSender implements warp.Sender for testing
+type testSender struct {
+	SendGossipF func(context.Context, warp.SendConfig, []byte) error
+}
+
+var _ warp.Sender = (*testSender)(nil)
+
+func (t *testSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+	return nil
+}
+
+func (t *testSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
+	return nil
+}
+
+func (t *testSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return nil
+}
+
+func (t *testSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	if t.SendGossipF != nil {
+		return t.SendGossipF(ctx, config, gossipBytes)
+	}
+	return nil
+}
 
 var (
 	testConfig = Config{
@@ -58,7 +83,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name           string
 		mempool        mempool.Mempool[*txs.Tx]
 		txVerifierFunc func(*gomock.Controller) TxVerifier
-		appSenderFunc  func(*gomock.Controller) consensuscore.AppSender
+		appSenderFunc  func(*gomock.Controller) warp.Sender
 		tx             *txs.Tx
 		expectedErr    error
 	}
@@ -190,9 +215,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
-			appSenderFunc: func(ctrl *gomock.Controller) consensuscore.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
+				appSender := &testSender{}
+				appSender.SendGossipF = func(context.Context, warp.SendConfig, []byte) error {
 					return nil
 				}
 				return appSender
@@ -223,8 +248,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
-			appSenderFunc := func(ctrl *gomock.Controller) consensuscore.AppSender {
-				return coremock.NewMockAppSender(ctrl)
+			appSenderFunc := func(ctrl *gomock.Controller) warp.Sender {
+				return &testSender{}
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -262,7 +287,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 	type test struct {
 		name          string
 		mempool       mempool.Mempool[*txs.Tx]
-		appSenderFunc func(*gomock.Controller) consensuscore.AppSender
+		appSenderFunc func(*gomock.Controller) warp.Sender
 		expectedErr   error
 	}
 
@@ -274,9 +299,9 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) consensuscore.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
+				appSender := &testSender{}
+				appSender.SendGossipF = func(context.Context, warp.SendConfig, []byte) error {
 					return nil
 				}
 				return appSender
@@ -299,8 +324,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			)
 			require.NoError(err)
 
-			appSenderFunc := func(ctrl *gomock.Controller) consensuscore.AppSender {
-				return coremock.NewMockAppSender(ctrl)
+			appSenderFunc := func(ctrl *gomock.Controller) warp.Sender {
+				return &testSender{}
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc

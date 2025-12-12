@@ -438,9 +438,9 @@ func (m *Manager[T]) requestRangeProof(ctx context.Context, work *workItem) {
 	m.metrics.RequestMade()
 }
 
-func (m *Manager[T]) sendRequest(ctx context.Context, client *p2p.Client, requestBytes []byte, onResponse p2p.AppResponseCallback) error {
+func (m *Manager[T]) sendRequest(ctx context.Context, client *p2p.Client, requestBytes []byte, onResponse p2p.ResponseCallback) error {
 	if len(m.config.StateSyncNodes) == 0 {
-		return client.AppRequestAny(ctx, requestBytes, onResponse)
+		return client.RequestAny(ctx, requestBytes, onResponse)
 	}
 
 	// Get the next nodeID to query using the [nodeIdx] offset.
@@ -448,7 +448,7 @@ func (m *Manager[T]) sendRequest(ctx context.Context, client *p2p.Client, reques
 	// We do this try to query a different node each time if possible.
 	nodeIdx := atomic.AddUint32(&m.stateSyncNodeIdx, 1)
 	nodeID := m.config.StateSyncNodes[nodeIdx%uint32(len(m.config.StateSyncNodes))]
-	return client.AppRequest(ctx, set.Of(nodeID), requestBytes, onResponse)
+	return client.Request(ctx, set.Of(nodeID), requestBytes, onResponse)
 }
 
 func (m *Manager[T]) retryWork(work *workItem) {

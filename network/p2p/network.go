@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package p2p
 
 import (
@@ -14,45 +11,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/warp"
 )
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ consensuscore.AppHandler    = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
 	handlerLabel = "handlerID"
 	labelNames   = []string{opLabel, handlerLabel}
 )
-
-// networkAppHandlerAdapter adapts Network to consensuscore.AppHandler
-type networkAppHandlerAdapter struct {
-	*Network
-}
-
-// AppRequest implements consensuscore.AppHandler
-func (n *networkAppHandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
-	return n.Network.AppRequest(ctx, nodeID, requestID, deadline, msg)
-}
-
-// AppResponse implements consensuscore.AppHandler
-func (n *networkAppHandlerAdapter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
-	return n.Network.AppResponse(ctx, nodeID, requestID, msg)
-}
-
-// AppGossip implements consensuscore.AppHandler
-func (n *networkAppHandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	return n.Network.AppGossip(ctx, nodeID, msg)
-}
 
 // ClientOption configures Client
 type ClientOption interface {
@@ -81,7 +56,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log log.Logger,
-	sender consensuscore.AppSender,
+	sender warp.Sender,
 	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -126,25 +101,29 @@ type Network struct {
 	Peers *Peers
 
 	log    log.Logger
-	sender consensuscore.AppSender
+	sender warp.Sender
 
 	router *router
 }
 
-func (n *Network) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
-	return n.router.AppRequest(ctx, nodeID, requestID, deadline, request)
+// Request handles an incoming request
+func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+	return n.router.Request(ctx, nodeID, requestID, deadline, msg)
 }
 
-func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return n.router.AppResponse(ctx, nodeID, requestID, response)
+// Response handles an incoming response
+func (n *Network) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return n.router.Response(ctx, nodeID, requestID, msg)
 }
 
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
-	return n.router.AppRequestFailed(ctx, nodeID, requestID, appErr)
+// Gossip handles an incoming gossip message
+func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return n.router.Gossip(ctx, nodeID, msg)
 }
 
-func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	return n.router.AppGossip(ctx, nodeID, msg)
+// RequestFailed handles a failed request
+func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
+	return n.router.RequestFailed(ctx, nodeID, requestID, err)
 }
 
 func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, _ *consensusversion.Application) error {

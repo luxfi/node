@@ -7,6 +7,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/luxfi/consensus/engine/core/common"
@@ -85,7 +86,7 @@ waitloop:
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
 						log.String("reason", "channel to engine is full"),
-						log.String("messageType", msg.Type.String()),
+						log.String("messageType", fmt.Sprintf("%d", msg.Type)),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

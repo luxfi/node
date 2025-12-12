@@ -39,6 +39,7 @@ import (
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
 )
@@ -1860,8 +1861,8 @@ func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint3
 	return nil
 }
 
-// AppRequestFailed implements the block.ChainVM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
+// RequestFailed implements the warp.Handler interface
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, warpErr *warp.Error) error {
 	return nil
 }
 
@@ -1875,8 +1876,8 @@ func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestI
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the block.ChainVM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.AppError) error {
+// CrossChainRequestFailed implements the warp.Handler interface
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, warpErr *warp.Error) error {
 	return nil
 }
 

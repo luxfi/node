@@ -28,6 +28,7 @@ import (
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
 	lssconfig "github.com/luxfi/threshold/protocols/lss/config"
+	"github.com/luxfi/warp"
 )
 
 var (
@@ -1395,7 +1396,7 @@ func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint
 }
 
 // AppRequestFailed implements the common.VM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
@@ -1458,7 +1459,7 @@ func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, request
 }
 
 // CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
+func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 

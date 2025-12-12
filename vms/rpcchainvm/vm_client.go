@@ -28,10 +28,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	consensuscore "github.com/luxfi/consensus/engine/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/wrappers"
@@ -225,9 +226,9 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Convert appSender to concrete type
-	var appSenderConcrete consensuscore.AppSender
+	var appSenderConcrete warp.Sender
 	if appSender != nil {
-		appSenderConcrete = appSender.(consensuscore.AppSender)
+		appSenderConcrete = appSender.(warp.Sender)
 	}
 
 	var primaryAlias string
@@ -669,7 +670,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,
@@ -1378,49 +1379,27 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	return v.GetValidatorSet(ctx, height, netID)
 }
 
-// appSenderWrapper wraps chainblock.AppSender to match consensuscore.AppSender
+// appSenderWrapper wraps warp.Sender to implement warp.Sender
+// Note: This is legacy code for compatibility. New VMs should use warp.Sender directly.
 type appSenderWrapper struct {
-	appSender chainblock.AppSender
+	appSender warp.Sender
 }
 
-func (a *appSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
-	// block.AppSender expects a slice of nodeIDs
-	nodeIDSlice := nodeIDs.List()
-	if len(nodeIDSlice) > 0 {
-		return a.appSender.SendAppRequest(ctx, nodeIDSlice, requestID, request)
-	}
-	return nil
+func (a *appSenderWrapper) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+	// Forward to the underlying sender
+	return a.appSender.SendRequest(ctx, nodeIDs, requestID, request)
 }
 
-func (a *appSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return a.appSender.SendAppResponse(ctx, nodeID, requestID, response)
+func (a *appSenderWrapper) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return a.appSender.SendResponse(ctx, nodeID, requestID, response)
 }
 
-func (a *appSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	// AppSender in block package doesn't have SendAppError, just return nil
-	return nil
+func (a *appSenderWrapper) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return a.appSender.SendError(ctx, nodeID, requestID, errorCode, errorMessage)
 }
 
-func (a *appSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// block.AppSender expects a slice of nodeIDs
-	nodeIDSlice := nodeIDs.List()
-	return a.appSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
-}
-
-func (a *appSenderWrapper) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Same as SendAppGossip for this wrapper
-	nodeIDSlice := nodeIDs.List()
-	return a.appSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
-}
-
-func (a *appSenderWrapper) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
-	// Not implemented - return nil
-	return nil
-}
-
-func (a *appSenderWrapper) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
-	// Not implemented - return nil
-	return nil
+func (a *appSenderWrapper) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	return a.appSender.SendGossip(ctx, config, gossipBytes)
 }
 
 // bcLookupAdapter adapts interface{} to BCLookup

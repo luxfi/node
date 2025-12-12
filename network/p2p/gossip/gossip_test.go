@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/warp"
 )
 
 func TestGossiperShutdown(*testing.T) {
@@ -105,11 +106,11 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			// Channel to capture sent app responses
+			// Channel to capture sent responses
 			sentAppResponse := make(chan []byte, 1)
 			responseSender := &p2ptest.AppSender{
 				T: t,
-				SendAppResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+				SendResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 					sentAppResponse <- response
 					return nil
 				},
@@ -140,11 +141,11 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			// Channel to capture sent app requests
+			// Channel to capture sent requests
 			sentAppRequest := make(chan []byte, 1)
 			requestSender := &p2ptest.AppSender{
 				T: t,
-				SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+				SendRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 					sentAppRequest <- request
 					return nil
 				},
@@ -182,8 +183,9 @@ func TestGossiperGossip(t *testing.T) {
 			}
 
 			require.NoError(gossiper.Gossip(ctx))
-			require.NoError(responseNetwork.AppRequest(ctx, ids.EmptyNodeID, 1, time.Time{}, <-sentAppRequest))
-			require.NoError(requestNetwork.AppResponse(ctx, ids.EmptyNodeID, 1, <-sentAppResponse))
+			_, reqErr := responseNetwork.Request(ctx, ids.EmptyNodeID, 1, time.Time{}, <-sentAppRequest)
+			require.Nil(reqErr)
+			require.NoError(requestNetwork.Response(ctx, ids.EmptyNodeID, 1, <-sentAppResponse))
 
 			require.Len(requestSet.txs, tt.expectedLen)
 			require.Subset(tt.expectedPossibleValues, maps.Values(requestSet.txs))
@@ -526,7 +528,7 @@ func TestPushGossiper(t *testing.T) {
 			sentAppGossip := make(chan []byte, 2)
 			sender := &p2ptest.AppSender{
 				T: t,
-				SendAppGossipF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
+				SendGossipF: func(ctx context.Context, config warp.SendConfig, gossip []byte) error {
 					sentAppGossip <- gossip
 					return nil
 				},

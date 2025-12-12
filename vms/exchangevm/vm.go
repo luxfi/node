@@ -25,15 +25,13 @@ import (
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
-	consensusset "github.com/luxfi/consensus/utils/set"
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	consensuscore "github.com/luxfi/consensus/core"
-	consensusengine "github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
@@ -126,7 +124,7 @@ type VM struct {
 
 	pubsub *pubsub.Server
 
-	appSender consensusengine.AppSender
+	sender warp.Sender
 
 	// State management
 	state state.State
@@ -228,42 +226,42 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	// Convert Fx types - they may be *core.Fx or *common.Fx (same structure, different types)
-	coreFxs := make([]*common.Fx, len(fxs))
+	// Convert Fx types - they may be *core.Fx or *consensuscore.Fx (same structure, different types)
+	coreFxs := make([]*consensuscore.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx == nil {
 			continue
 		}
 		// Use reflection to handle different but structurally identical Fx types
-		// Both core.Fx and common.Fx have fields: ID ids.ID and Fx interface{}
+		// Both core.Fx and consensuscore.Fx have fields: ID ids.ID and Fx interface{}
 		fxVal := reflect.ValueOf(fx).Elem()
-		coreFxs[i] = &common.Fx{
+		coreFxs[i] = &consensuscore.Fx{
 			ID: fxVal.FieldByName("ID").Interface().(ids.ID),
 			Fx: fxVal.FieldByName("Fx").Interface(),
 		}
 	}
 
-	// Debug: Check appSender type
+	// Check sender type
 	if appSender == nil {
-		// In single-node mode, we can work without an AppSender
-		// Create a no-op AppSender
-		appSender = &noOpAppSender{}
+		// In single-node mode, we can work without a Sender
+		// Create a no-op Sender
+		appSender = &noOpSender{}
 	}
 
-	coreAppSender, ok := appSender.(consensusengine.AppSender)
+	warpSender, ok := appSender.(warp.Sender)
 	if !ok {
 		// Debug: Print actual type received
 		actualType := "nil"
 		if appSender != nil {
 			actualType = fmt.Sprintf("%T", appSender)
 		}
-		return fmt.Errorf("invalid app sender type: expected consensusengine.AppSender, got %s", actualType)
+		return fmt.Errorf("invalid sender type: expected warp.Sender, got %s", actualType)
 	}
 
 	// Ignore toEngine channel as XVM doesn't use it
 	_ = toEngine
 
-	return vm.initialize(ctx, ctx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, coreAppSender)
+	return vm.initialize(ctx, ctx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, warpSender)
 }
 
 // Original Initialize method renamed to initialize
@@ -274,14 +272,14 @@ func (vm *VM) initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender consensusengine.AppSender,
+	fxs []*consensuscore.Fx,
+	sender warp.Sender,
 ) error {
 	// Initialize logger first
 	vm.log = log.NoLog{}
 
-	// Create a simple no-op handler since consensuscore.NewNoOpAppHandler doesn't exist in consensus
-	noopMessageHandler := &noOpAppHandler{}
+	// Create a simple no-op handler for warp.Handler
+	noopMessageHandler := &noOpHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)
@@ -311,7 +309,7 @@ func (vm *VM) initialize(
 	vm.Aliaser = ids.NewAliaser()
 
 	vm.ctx = ctx
-	vm.appSender = appSender
+	vm.sender = sender
 	vm.baseDB = db
 	vm.db = versiondb.New(db)
 	vm.assetToFxCache = &cache.LRU[ids.ID, set.Bits64]{Size: assetToFxCacheSize}
@@ -590,7 +588,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 			vm.chainManager,
 		),
 		mempool,
-		vm.appSender,
+		vm.sender,
 		vm.registerer,
 		vm.networkConfig,
 	)
@@ -916,34 +914,24 @@ func (vm *VM) GetTx(ctx context.Context, txID ids.ID) (dag.Transaction, error) {
 	}, nil
 }
 
-// noOpAppHandler is a simple no-op implementation of consensuscore.AppHandler
-type noOpAppHandler struct{}
+// noOpHandler is a simple no-op implementation of warp.Handler
+type noOpHandler struct{}
 
-func (n *noOpAppHandler) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
+var _ warp.Handler = (*noOpHandler)(nil)
+
+func (n *noOpHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+	return nil, nil
+}
+
+func (n *noOpHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, uint32, *consensuscore.AppError) error {
+func (n *noOpHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-
-func (n *noOpAppHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
-	return nil
-}
-
-func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *consensuscore.AppError) error {
-	return nil
-}
-
-func (n *noOpAppHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return nil
-}
-
-func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
+func (n *noOpHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
 	return nil
 }
 
@@ -1098,27 +1086,23 @@ func (vm *VM) Logger() log.Logger {
 	return vm.log
 }
 
-// noOpAppSender is a minimal implementation of consensusengine.AppSender for single-node mode
-type noOpAppSender struct{}
+// noOpSender is a minimal implementation of warp.Sender for single-node mode
+type noOpSender struct{}
 
-var _ consensusengine.AppSender = (*noOpAppSender)(nil)
+var _ warp.Sender = (*noOpSender)(nil)
 
-func (n *noOpAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+func (n *noOpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+func (n *noOpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+func (n *noOpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	return nil
-}
-
-func (n *noOpAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+func (n *noOpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
 }

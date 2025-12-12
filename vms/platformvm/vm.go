@@ -47,6 +47,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	luxwarp "github.com/luxfi/warp"
 
 	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -65,39 +66,35 @@ var (
 	_ validators.State                          = (*VM)(nil)
 )
 
-// appSenderAdapter adapts consensusmanblock.AppSender to appsender.AppSender (for network.New)
+// appSenderAdapter adapts luxwarp.Sender to the expected interface (for network.New)
 type appSenderAdapter struct {
-	consensusmanblock.AppSender
+	luxwarp.Sender
 }
 
 func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	// Send to the first node in the set for compatibility
-	for nodeID := range nodeIDs {
-		nodeIDsSlice := []ids.NodeID{nodeID}
-		return a.AppSender.SendAppRequest(ctx, nodeIDsSlice, requestID, appRequestBytes)
-	}
-	return nil
+	return a.Sender.SendRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
 func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	return a.AppSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+	return a.Sender.SendResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
 func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Convert set to slice for compatibility
-	nodeIDSlice := nodeIDs.List()
-	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
+	config := luxwarp.SendConfig{
+		NodeIDs: nodeIDs,
+	}
+	return a.Sender.SendGossip(ctx, config, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	// Not implemented in linearblock.AppSender, return nil
-	return nil
+	return a.Sender.SendError(ctx, nodeID, requestID, errorCode, errorMessage)
 }
 
 func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Convert set to slice for compatibility
-	nodeIDSlice := nodeIDs.List()
-	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
+	config := luxwarp.SendConfig{
+		NodeIDs: nodeIDs,
+	}
+	return a.Sender.SendGossip(ctx, config, appGossipBytes)
 }
 
 type VM struct {
@@ -213,10 +210,10 @@ func (vm *VM) Initialize(
 	_ = fxsIntf
 
 	// Handle appSender
-	var appSender consensusmanblock.AppSender
+	var appSender luxwarp.Sender
 	if appSenderIntf != nil {
 		var ok bool
-		appSender, ok = appSenderIntf.(consensusmanblock.AppSender)
+		appSender, ok = appSenderIntf.(luxwarp.Sender)
 		if !ok {
 			return fmt.Errorf("invalid app sender type")
 		}

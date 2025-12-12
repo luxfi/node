@@ -75,6 +75,7 @@ import (
 	tvm "github.com/luxfi/node/vms/thresholdvm"
 	zvm "github.com/luxfi/node/vms/zkvm"
 	graphvm "github.com/luxfi/node/vms/graphvm"
+	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/trace"
@@ -1286,6 +1287,15 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("G-Chain VM registered successfully")
+
+	// Register D-Chain VM (DexVM) - Decentralized Exchange
+	n.Log.Info("Registering D-Chain VM (DEX)", "vmID", constants.DexVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.DexVMID, &dexvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register D-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("D-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

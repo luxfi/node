@@ -1,20 +1,16 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package p2p
 
 import (
 	"context"
 	"time"
 
-
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/warp"
 )
 
 // Standardized identifiers for application protocol handlers
@@ -33,29 +29,29 @@ var (
 
 // Handler is the server-side logic for virtual machine application protocols.
 type Handler interface {
-	// AppGossip is called when handling an AppGossip message.
-	AppGossip(
+	// Gossip is called when handling a gossip message.
+	Gossip(
 		ctx context.Context,
 		nodeID ids.NodeID,
 		gossipBytes []byte,
 	)
-	// AppRequest is called when handling an AppRequest message.
+	// Request is called when handling a request message.
 	// Sends a response with the response corresponding to [requestBytes] or
 	// an application-defined error.
-	AppRequest(
+	Request(
 		ctx context.Context,
 		nodeID ids.NodeID,
 		deadline time.Time,
 		requestBytes []byte,
-	) ([]byte, *consensuscore.AppError)
+	) ([]byte, *warp.Error)
 }
 
 // NoOpHandler drops all messages
 type NoOpHandler struct{}
 
-func (NoOpHandler) AppGossip(context.Context, ids.NodeID, []byte) {}
+func (NoOpHandler) Gossip(context.Context, ids.NodeID, []byte) {}
 
-func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
+func (NoOpHandler) Request(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
 	return nil, nil
 }
 
@@ -78,7 +74,7 @@ type ValidatorHandler struct {
 	log          log.Logger
 }
 
-func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
+func (v ValidatorHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	if !v.validatorSet.Has(ctx, nodeID) {
 		v.log.Debug("dropping message",
 			log.Stringer("nodeID", nodeID),
@@ -87,15 +83,15 @@ func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, goss
 		return
 	}
 
-	v.handler.AppGossip(ctx, nodeID, gossipBytes)
+	v.handler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
+func (v ValidatorHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
 	if !v.validatorSet.Has(ctx, nodeID) {
 		return nil, ErrNotValidator
 	}
 
-	return v.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+	return v.handler.Request(ctx, nodeID, deadline, requestBytes)
 }
 
 // responder automatically sends the response for a given request
@@ -103,12 +99,12 @@ type responder struct {
 	Handler
 	handlerID uint64
 	log       log.Logger
-	sender    consensuscore.AppSender
+	sender    warp.Sender
 }
 
-// AppRequest calls the underlying handler and sends back the response to nodeID
-func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
-	appResponse, err := r.Handler.AppRequest(ctx, nodeID, deadline, request)
+// HandleRequest calls the underlying handler and sends back the response to nodeID
+func (r *responder) HandleRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	response, err := r.Handler.Request(ctx, nodeID, deadline, request)
 	if err != nil {
 		r.log.Debug("failed to handle message",
 			log.Stringer("messageOp", message.AppRequestOp),
@@ -119,29 +115,34 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 			log.Binary("message", request),
 			log.Err(err),
 		)
-		return r.sender.SendAppError(ctx, nodeID, requestID, err.Code, err.Message)
+		return r.sender.SendError(ctx, nodeID, requestID, err.Code, err.Message)
 	}
 
-	return r.sender.SendAppResponse(ctx, nodeID, requestID, appResponse)
+	return r.sender.SendResponse(ctx, nodeID, requestID, response)
+}
+
+// HandleGossip delegates to the underlying handler's Gossip method
+func (r *responder) HandleGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
+	r.Handler.Gossip(ctx, nodeID, gossipBytes)
 }
 
 type TestHandler struct {
-	AppGossipF  func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
-	AppRequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError)
+	GossipF  func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
+	RequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error)
 }
 
-func (t TestHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
-	if t.AppGossipF == nil {
+func (t TestHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
+	if t.GossipF == nil {
 		return
 	}
 
-	t.AppGossipF(ctx, nodeID, gossipBytes)
+	t.GossipF(ctx, nodeID, gossipBytes)
 }
 
-func (t TestHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
-	if t.AppRequestF == nil {
+func (t TestHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+	if t.RequestF == nil {
 		return nil, nil
 	}
 
-	return t.AppRequestF(ctx, nodeID, deadline, requestBytes)
+	return t.RequestF(ctx, nodeID, deadline, requestBytes)
 }

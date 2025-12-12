@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/warp"
 )
 
 const (
@@ -24,72 +24,46 @@ const (
 	handlerPrefix = byte(handlerID)
 )
 
-var errFoo = &consensuscore.AppError{
+var errFoo = &warp.Error{
 	Code:    123,
 	Message: "foo",
 }
 
-// testSender is a test implementation of WarpSender for this package's tests.
+// testSender is a test implementation of warp.Sender for this package's tests.
 type testSender struct {
-	t                          *testing.T
-	SendAppRequestF            func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
-	SendAppResponseF           func(context.Context, ids.NodeID, uint32, []byte) error
-	SendAppErrorF              func(context.Context, ids.NodeID, uint32, int32, string) error
-	SendAppGossipF             func(context.Context, set.Set[ids.NodeID], []byte) error
-	SendCrossChainAppRequestF  func(context.Context, ids.ID, uint32, []byte) error
-	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
-	SendCrossChainAppErrorF    func(context.Context, ids.ID, uint32, int32, string) error
+	t             *testing.T
+	SendRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
+	SendResponseF func(context.Context, ids.NodeID, uint32, []byte) error
+	SendErrorF    func(context.Context, ids.NodeID, uint32, int32, string) error
+	SendGossipF   func(context.Context, warp.SendConfig, []byte) error
 }
 
-func (s *testSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
-	if s.SendAppRequestF != nil {
-		return s.SendAppRequestF(ctx, nodeIDs, requestID, msg)
+var _ warp.Sender = (*testSender)(nil)
+
+func (s *testSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+	if s.SendRequestF != nil {
+		return s.SendRequestF(ctx, nodeIDs, requestID, msg)
 	}
 	return nil
 }
 
-func (s *testSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
-	if s.SendAppResponseF != nil {
-		return s.SendAppResponseF(ctx, nodeID, requestID, msg)
+func (s *testSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	if s.SendResponseF != nil {
+		return s.SendResponseF(ctx, nodeID, requestID, msg)
 	}
 	return nil
 }
 
-func (s *testSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, code int32, message string) error {
-	if s.SendAppErrorF != nil {
-		return s.SendAppErrorF(ctx, nodeID, requestID, code, message)
+func (s *testSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, code int32, message string) error {
+	if s.SendErrorF != nil {
+		return s.SendErrorF(ctx, nodeID, requestID, code, message)
 	}
 	return nil
 }
 
-func (s *testSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
-	if s.SendAppGossipF != nil {
-		return s.SendAppGossipF(ctx, nodeIDs, msg)
-	}
-	return nil
-}
-
-func (s *testSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
-	return s.SendAppGossip(ctx, nodeIDs, msg)
-}
-
-func (s *testSender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
-	if s.SendCrossChainAppRequestF != nil {
-		return s.SendCrossChainAppRequestF(ctx, chainID, requestID, msg)
-	}
-	return nil
-}
-
-func (s *testSender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
-	if s.SendCrossChainAppResponseF != nil {
-		return s.SendCrossChainAppResponseF(ctx, chainID, requestID, msg)
-	}
-	return nil
-}
-
-func (s *testSender) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, code int32, message string) error {
-	if s.SendCrossChainAppErrorF != nil {
-		return s.SendCrossChainAppErrorF(ctx, chainID, requestID, code, message)
+func (s *testSender) SendGossip(ctx context.Context, config warp.SendConfig, msg []byte) error {
+	if s.SendGossipF != nil {
+		return s.SendGossipF(ctx, config, msg)
 	}
 	return nil
 }
@@ -100,31 +74,31 @@ func TestMessageRouting(t *testing.T) {
 	wantNodeID := ids.GenerateTestNodeID()
 	wantMsg := []byte("message")
 
-	var appGossipCalled, appRequestCalled bool
+	var gossipCalled, requestCalled bool
 	testHandler := &TestHandler{
-		AppGossipF: func(_ context.Context, nodeID ids.NodeID, msg []byte) {
-			appGossipCalled = true
+		GossipF: func(_ context.Context, nodeID ids.NodeID, msg []byte) {
+			gossipCalled = true
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
 		},
-		AppRequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *consensuscore.AppError) {
-			appRequestCalled = true
+		RequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *warp.Error) {
+			requestCalled = true
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
 			return nil, nil
 		},
 	}
 
-	sentAppGossip := make(chan []byte, 1)
-	sentAppRequest := make(chan []byte, 1)
+	sentGossip := make(chan []byte, 1)
+	sentRequest := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], msg []byte) error {
-			sentAppGossip <- msg
+		SendGossipF: func(_ context.Context, _ warp.SendConfig, msg []byte) error {
+			sentGossip <- msg
 			return nil
 		},
-		SendAppRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
-			sentAppRequest <- msg
+		SendRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
+			sentRequest <- msg
 			return nil
 		},
 	}
@@ -134,31 +108,31 @@ func TestMessageRouting(t *testing.T) {
 	require.NoError(network.AddHandler(1, testHandler))
 	client := network.NewClient(1)
 
-	require.NoError(client.AppGossip(
+	require.NoError(client.Gossip(
 		ctx,
-		consensuscore.SendConfig{
+		warp.SendConfig{
 			Peers: 1,
 		},
 		wantMsg,
 	))
-	gossipBytes := <-sentAppGossip
-	t.Logf("Sent AppGossip bytes: %x", gossipBytes)
-	err = network.AppGossip(ctx, wantNodeID, gossipBytes)
+	gossipBytes := <-sentGossip
+	t.Logf("Sent Gossip bytes: %x", gossipBytes)
+	err = network.Gossip(ctx, wantNodeID, gossipBytes)
 	if err != nil {
-		t.Logf("AppGossip error: %v", err)
+		t.Logf("Gossip error: %v", err)
 	}
 	require.NoError(err)
-	require.True(appGossipCalled)
+	require.True(gossipCalled)
 
-	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
-	requestBytes := <-sentAppRequest
-	t.Logf("Sent AppRequest bytes: %x", requestBytes)
-	err = network.AppRequest(ctx, wantNodeID, 1, time.Time{}, requestBytes)
-	if err != nil {
-		t.Logf("AppRequest error: %v", err)
+	require.NoError(client.Request(ctx, set.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
+	requestBytes := <-sentRequest
+	t.Logf("Sent Request bytes: %x", requestBytes)
+	_, requestErr := network.Request(ctx, wantNodeID, 1, time.Time{}, requestBytes)
+	if requestErr != nil {
+		t.Logf("Request error: %v", requestErr)
 	}
-	require.NoError(err)
-	require.True(appRequestCalled)
+	require.Nil(requestErr)
+	require.True(requestCalled)
 }
 
 // Tests that the Client prefixes messages with the handler prefix
@@ -166,16 +140,16 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sentAppRequest := make(chan []byte, 1)
-	sentAppGossip := make(chan []byte, 1)
+	sentRequest := make(chan []byte, 1)
+	sentGossip := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
-			sentAppRequest <- msg
+		SendRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
+			sentRequest <- msg
 			return nil
 		},
-		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], msg []byte) error {
-			sentAppGossip <- msg
+		SendGossipF: func(_ context.Context, _ warp.SendConfig, msg []byte) error {
+			sentGossip <- msg
 			return nil
 		},
 	}
@@ -187,47 +161,47 @@ func TestClientPrefixesMessages(t *testing.T) {
 
 	want := []byte("message")
 
-	require.NoError(client.AppRequest(
+	require.NoError(client.Request(
 		ctx,
 		set.Of(ids.EmptyNodeID),
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest := <-sentAppRequest
-	require.Equal(handlerPrefix, gotAppRequest[0])
-	require.Equal(want, gotAppRequest[1:])
+	gotRequest := <-sentRequest
+	require.Equal(handlerPrefix, gotRequest[0])
+	require.Equal(want, gotRequest[1:])
 
-	require.NoError(client.AppRequestAny(
+	require.NoError(client.RequestAny(
 		ctx,
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest = <-sentAppRequest
-	require.Equal(handlerPrefix, gotAppRequest[0])
-	require.Equal(want, gotAppRequest[1:])
+	gotRequest = <-sentRequest
+	require.Equal(handlerPrefix, gotRequest[0])
+	require.Equal(want, gotRequest[1:])
 
-	require.NoError(client.AppGossip(
+	require.NoError(client.Gossip(
 		ctx,
-		consensuscore.SendConfig{
+		warp.SendConfig{
 			Peers: 1,
 		},
 		want,
 	))
-	gotAppGossip := <-sentAppGossip
-	require.Equal(handlerPrefix, gotAppGossip[0])
-	require.Equal(want, gotAppGossip[1:])
+	gotGossip := <-sentGossip
+	require.Equal(handlerPrefix, gotGossip[0])
+	require.Equal(want, gotGossip[1:])
 }
 
 // Tests that the Client callback is called on a successful response
-func TestAppRequestResponse(t *testing.T) {
+func TestRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sentAppRequest := make(chan []byte, 1)
+	sentRequest := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
-			sentAppRequest <- msg
+		SendRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
+			sentRequest <- msg
 			return nil
 		},
 	}
@@ -248,24 +222,24 @@ func TestAppRequestResponse(t *testing.T) {
 	}
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), want, callback))
-	got := <-sentAppRequest
+	require.NoError(client.Request(ctx, set.Of(wantNodeID), want, callback))
+	got := <-sentRequest
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
 
-	require.NoError(network.AppResponse(ctx, wantNodeID, 1, wantResponse))
+	require.NoError(network.Response(ctx, wantNodeID, 1, wantResponse))
 	<-done
 }
 
-// Tests that the Client does not provide a cancelled context to the AppSender.
-func TestAppRequestCancelledContext(t *testing.T) {
+// Tests that the Client does not provide a cancelled context to the Sender.
+func TestRequestCancelledContext(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
+		SendRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
@@ -291,25 +265,25 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	cancel()
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(cancelledCtx, set.Of(wantNodeID), want, callback))
+	require.NoError(client.Request(cancelledCtx, set.Of(wantNodeID), want, callback))
 	got := <-sentMessages
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
 
-	require.NoError(network.AppResponse(ctx, wantNodeID, 1, wantResponse))
+	require.NoError(network.Response(ctx, wantNodeID, 1, wantResponse))
 	<-done
 }
 
 // Tests that the Client callback is given an error if the request fails
-func TestAppRequestFailed(t *testing.T) {
+func TestRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sentAppRequest := make(chan []byte, 1)
+	sentRequest := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
-			sentAppRequest <- msg
+		SendRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
+			sentRequest <- msg
 			return nil
 		},
 	}
@@ -328,15 +302,15 @@ func TestAppRequestFailed(t *testing.T) {
 		close(done)
 	}
 
-	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), []byte("request"), callback))
-	<-sentAppRequest
+	require.NoError(client.Request(ctx, set.Of(wantNodeID), []byte("request"), callback))
+	<-sentRequest
 
-	require.NoError(network.AppRequestFailed(ctx, wantNodeID, 1, errFoo))
+	require.NoError(network.RequestFailed(ctx, wantNodeID, 1, errFoo))
 	<-done
 }
 
 // Messages for unregistered handlers should be dropped gracefully
-func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
+func TestGossipMessageForUnregisteredHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		msg  []byte
@@ -360,21 +334,21 @@ func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 			handler := &TestHandler{
-				AppGossipF: func(context.Context, ids.NodeID, []byte) {
+				GossipF: func(context.Context, ids.NodeID, []byte) {
 					require.Fail("should not be called")
 				},
 			}
 			network, err := NewNetwork(log.NewNoOpLogger(), nil, metric.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
-			require.NoError(network.AppGossip(ctx, ids.EmptyNodeID, tt.msg))
+			require.NoError(network.Gossip(ctx, ids.EmptyNodeID, tt.msg))
 		})
 	}
 }
 
 // An unregistered handler should gracefully drop messages by responding
-// to the requester with a consensuscore.AppError
-func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
+// to the requester with a warp.Error
+func TestRequestMessageForUnregisteredHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		msg  []byte
@@ -398,7 +372,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 			handler := &TestHandler{
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -407,41 +381,29 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantNodeID := ids.GenerateTestNodeID()
 			wantRequestID := uint32(111)
 
-			done := make(chan struct{})
-			sender := &testSender{
-				t: t,
-				SendAppErrorF: func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-					defer close(done)
-
-					require.Equal(wantNodeID, nodeID)
-					require.Equal(wantRequestID, requestID)
-					require.Equal(ErrUnregisteredHandler.Code, errorCode)
-					require.Equal(ErrUnregisteredHandler.Message, errorMessage)
-
-					return nil
-				},
-			}
+			sender := &testSender{t: t}
 			network, err := NewNetwork(log.NewNoOpLogger(), sender, metric.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
-			require.NoError(network.AppRequest(ctx, wantNodeID, wantRequestID, time.Time{}, tt.msg))
-			<-done
+			// Request with unregistered handler message should return ErrUnregisteredHandler
+			_, reqErr := network.Request(ctx, wantNodeID, wantRequestID, time.Time{}, tt.msg)
+			require.Equal(ErrUnregisteredHandler, reqErr)
 		})
 	}
 }
 
-// A handler that errors should send an AppError to the requesting peer
-func TestAppError(t *testing.T) {
+// A handler that errors should send an Error to the requesting peer
+func TestHandlerError(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
-	appError := &consensuscore.AppError{
+	handlerError := &warp.Error{
 		Code:    123,
 		Message: "foo",
 	}
 	handler := &TestHandler{
-		AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
-			return nil, appError
+		RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+			return nil, handlerError
 		},
 	}
 
@@ -451,13 +413,13 @@ func TestAppError(t *testing.T) {
 	done := make(chan struct{})
 	sender := &testSender{
 		t: t,
-		SendAppErrorF: func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+		SendErrorF: func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			defer close(done)
 
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantRequestID, requestID)
-			require.Equal(appError.Code, errorCode)
-			require.Equal(appError.Message, errorMessage)
+			require.Equal(handlerError.Code, errorCode)
+			require.Equal(handlerError.Message, errorMessage)
 
 			return nil
 		},
@@ -467,7 +429,8 @@ func TestAppError(t *testing.T) {
 	require.NoError(network.AddHandler(handlerID, handler))
 	msg := PrefixMessage(ProtocolPrefix(handlerID), []byte("message"))
 
-	require.NoError(network.AppRequest(ctx, wantNodeID, wantRequestID, time.Time{}, msg))
+	_, reqErr := network.Request(ctx, wantNodeID, wantRequestID, time.Time{}, msg)
+	require.Nil(reqErr)
 	<-done
 }
 
@@ -496,10 +459,10 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 			handler := &TestHandler{
-				AppGossipF: func(context.Context, ids.NodeID, []byte) {
+				GossipF: func(context.Context, ids.NodeID, []byte) {
 					require.Fail("should not be called")
 				},
-				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *consensuscore.AppError) {
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -508,9 +471,9 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
-			err = network.AppResponse(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
+			err = network.Response(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &consensuscore.AppError{Code: -1, Message: "timeout"})
+			err = network.RequestFailed(ctx, ids.EmptyNodeID, 0, &warp.Error{Code: -1, Message: "timeout"})
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
 	}
@@ -519,15 +482,15 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 // It's possible for the request id to overflow and wrap around.
 // If there are still pending requests with the same request id, we should
 // not attempt to issue another request until the previous one has cleared.
-func TestAppRequestDuplicateRequestIDs(t *testing.T) {
+func TestRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sentAppRequest := make(chan []byte, 1)
+	sentRequest := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendAppRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
-			sentAppRequest <- msg
+		SendRequestF: func(_ context.Context, _ set.Set[ids.NodeID], _ uint32, msg []byte) error {
+			sentRequest <- msg
 			return nil
 		},
 	}
@@ -539,12 +502,12 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	noOpCallback := func(context.Context, ids.NodeID, []byte, error) {}
 	// create a request that never gets a response
 	network.router.requestID = 1
-	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
-	<-sentAppRequest
+	require.NoError(client.Request(ctx, set.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
+	<-sentRequest
 
 	// force the network to use the same requestID
 	network.router.requestID = 1
-	err = client.AppRequest(context.Background(), set.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
+	err = client.Request(context.Background(), set.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
 	require.ErrorIs(err, ErrRequestPending)
 }
 
@@ -659,7 +622,7 @@ func TestPeersSample(t *testing.T) {
 	}
 }
 
-func TestAppRequestAnyNodeSelection(t *testing.T) {
+func TestRequestAnyNodeSelection(t *testing.T) {
 	tests := []struct {
 		name     string
 		peers    []ids.NodeID
@@ -682,7 +645,7 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 			var sent ids.NodeID
 			sender := &testSender{
 				t: t,
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
+				SendRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					sent = nodeID
 					return nil
@@ -697,7 +660,7 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 
 			client := n.NewClient(1)
 
-			err = client.AppRequestAny(context.Background(), []byte("foobar"), nil)
+			err = client.RequestAny(context.Background(), []byte("foobar"), nil)
 			require.ErrorIs(err, tt.expected)
 			if len(tt.peers) > 0 && tt.expected == nil {
 				require.Contains(tt.peers, sent)
@@ -781,7 +744,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			done := make(chan struct{})
 			sender := &testSender{
 				t: t,
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
+				SendRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					if len(tt.expected) > 0 {
 						require.Contains(tt.expected, nodeID)
@@ -800,7 +763,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 
 			client := network.NewClient(0, tt.option(t, network))
 
-			if err = client.AppRequestAny(ctx, []byte("request"), nil); err != nil {
+			if err = client.RequestAny(ctx, []byte("request"), nil); err != nil {
 				close(done)
 			}
 

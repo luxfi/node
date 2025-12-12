@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package p2p
 
 import (
@@ -14,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
+	"github.com/luxfi/warp"
 )
 
 var _ Handler = (*TestHandler)(nil)
 
-func TestThrottlerHandlerAppGossip(t *testing.T) {
+func TestThrottlerHandlerGossip(t *testing.T) {
 	tests := []struct {
 		name      string
 		Throttler Throttler
@@ -43,7 +40,7 @@ func TestThrottlerHandlerAppGossip(t *testing.T) {
 			called := false
 			handler := NewThrottlerHandler(
 				TestHandler{
-					AppGossipF: func(context.Context, ids.NodeID, []byte) {
+					GossipF: func(context.Context, ids.NodeID, []byte) {
 						called = true
 					},
 				},
@@ -51,17 +48,17 @@ func TestThrottlerHandlerAppGossip(t *testing.T) {
 				log.NoLog{},
 			)
 
-			handler.AppGossip(context.Background(), ids.GenerateTestNodeID(), []byte("foobar"))
+			handler.Gossip(context.Background(), ids.GenerateTestNodeID(), []byte("foobar"))
 			require.Equal(tt.expected, called)
 		})
 	}
 }
 
-func TestThrottlerHandlerAppRequest(t *testing.T) {
+func TestThrottlerHandlerRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		Throttler   Throttler
-		expectedErr *consensuscore.AppError
+		expectedErr *warp.Error
 	}{
 		{
 			name:      "not throttled",
@@ -82,7 +79,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 				tt.Throttler,
 				log.NoLog{},
 			)
-			_, err := handler.AppRequest(context.Background(), ids.GenerateTestNodeID(), time.Time{}, []byte("foobar"))
+			_, err := handler.Request(context.Background(), ids.GenerateTestNodeID(), time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expectedErr)
 		})
 	}

@@ -9,8 +9,6 @@ import (
 	"context"
 	"time"
 
-
-	consensuscore "github.com/luxfi/consensus/core"
 	consensusvalidator "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
@@ -18,10 +16,11 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/warp"
 )
 
 var (
-	_ consensuscore.AppHandler      = (*Network)(nil)
+	_ warp.Handler                 = (*Network)(nil)
 	_ consensusvalidator.Connector = (*Network)(nil)
 )
 
@@ -45,11 +44,11 @@ func New(
 	parser txs.Parser,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
-	appSender consensuscore.AppSender,
+	sender warp.Sender,
 	registerer metric.Registerer,
 	config Config,
 ) (*Network, error) {
-	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
+	p2pNetwork, err := p2p.NewNetwork(log, sender, registerer, "p2p")
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +148,8 @@ func New(
 	// We allow pushing txs between all peers, but only serve gossip requests
 	// from validators
 	txGossipHandler := txGossipHandler{
-		appGossipHandler:  handler,
-		appRequestHandler: validatorHandler,
+		gossipHandler:  handler,
+		requestHandler: validatorHandler,
 	}
 
 	if err := p2pNetwork.AddHandler(p2p.TxGossipHandlerID, txGossipHandler); err != nil {
@@ -206,23 +205,23 @@ func (n *Network) IssueTxFromRPCWithoutVerification(tx *txs.Tx) error {
 	return nil
 }
 
-// AppGossip handles gossip messages
-func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip handles gossip messages
+func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	// Handle gossip message
 	return nil
 }
 
-// AppRequest handles app requests
-func (n *Network) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+// Request handles requests
+func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+	return nil, nil
+}
+
+// RequestFailed handles failed requests
+func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
 	return nil
 }
 
-// AppRequestFailed handles failed app requests
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
-	return nil
-}
-
-// AppResponse handles app responses
-func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+// Response handles responses
+func (n *Network) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }

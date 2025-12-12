@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 )
@@ -39,21 +39,21 @@ type txGossipHandler struct {
 	appRequestHandler p2p.Handler
 }
 
-func (t txGossipHandler) AppGossip(
+func (t txGossipHandler) Gossip(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	gossipBytes []byte,
 ) {
-	t.appGossipHandler.AppGossip(ctx, nodeID, gossipBytes)
+	t.appGossipHandler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (t txGossipHandler) AppRequest(
+func (t txGossipHandler) Request(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, *core.AppError) {
-	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
+) ([]byte, *warp.Error) {
+	return t.appRequestHandler.Request(ctx, nodeID, deadline, requestBytes)
 }
 
 type txMarshaller struct{}

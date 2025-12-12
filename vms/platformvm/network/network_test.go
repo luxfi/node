@@ -14,14 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/common"
-	"github.com/luxfi/consensus/engine/core/coremock"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -30,38 +28,27 @@ import (
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
 
-// fakeSender is a simple mock AppSender for testing
-type fakeSender struct{}
+// testSender implements warp.Sender for testing with optional call tracking
+type testSender struct {
+	sendGossipCalled bool
+}
 
-func (f *fakeSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
+var _ warp.Sender = (*testSender)(nil)
+
+func (t *testSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
 	return nil
 }
 
-func (f *fakeSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
+func (t *testSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
 	return nil
 }
 
-func (f *fakeSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
+func (t *testSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-func (f *fakeSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-
-func (f *fakeSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
-	return nil
-}
-
-func (f *fakeSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
-	return nil
-}
-
-func (f *fakeSender) SendAppRequest(context.Context, set.Set[ids.NodeID], uint32, []byte) error {
-	return nil
-}
-
-func (f *fakeSender) SendAppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+func (t *testSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	t.sendGossipCalled = true
 	return nil
 }
 
@@ -170,7 +157,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name          string
 		mempool       *pmempool.Mempool
 		txVerifier    testTxVerifier
-		appSenderFunc func(*gomock.Controller) common.AppSender
+		appSenderFunc func(*gomock.Controller) warp.Sender
 		tx            *txs.Tx
 		expectedErr   error
 	}
@@ -184,8 +171,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: &txs.BaseTx{}}))
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				return coremock.NewSender(ctrl)
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
+				return &testSender{}
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: mempool.ErrDuplicateTx,
@@ -198,9 +185,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				mempool.MarkDropped(ids.Empty, errTest)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
-				return coremock.NewSender(ctrl)
+				return &testSender{}
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -213,9 +200,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			}(),
 			txVerifier: testTxVerifier{err: errTest},
-			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
-				return coremock.NewSender(ctrl)
+				return &testSender{}
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: errTest,
@@ -227,9 +214,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
-				return coremock.NewSender(ctrl)
+				return &testSender{}
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
@@ -260,9 +247,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, mempool.Add(tx))
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
-				return coremock.NewSender(ctrl)
+				return &testSender{}
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{
@@ -298,9 +285,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 
 				return m
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
-				return coremock.NewSender(ctrl)
+				return &testSender{}
 			},
 			tx: func() *txs.Tx {
 				tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{}}}
@@ -316,10 +303,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				require.NoError(t, err)
 				return mempool
 			}(),
-			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := coremock.NewSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				return appSender
+			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
+				// testSender tracks if SendGossip was called
+				return &testSender{}
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
 			expectedErr: nil,

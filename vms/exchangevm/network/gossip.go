@@ -12,13 +12,13 @@ import (
 	"time"
 
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/warp"
 )
 
 var (
@@ -34,25 +34,25 @@ const bloomChurnMultiplier = 3
 // txGossipHandler is the handler called when serving gossip messages
 type txGossipHandler struct {
 	p2p.NoOpHandler
-	appGossipHandler  p2p.Handler
-	appRequestHandler p2p.Handler
+	gossipHandler  p2p.Handler
+	requestHandler p2p.Handler
 }
 
-func (t txGossipHandler) AppGossip(
+func (t txGossipHandler) Gossip(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	gossipBytes []byte,
 ) {
-	t.appGossipHandler.AppGossip(ctx, nodeID, gossipBytes)
+	t.gossipHandler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (t txGossipHandler) AppRequest(
+func (t txGossipHandler) Request(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, *consensuscore.AppError) {
-	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
+) ([]byte, *warp.Error) {
+	return t.requestHandler.Request(ctx, nodeID, deadline, requestBytes)
 }
 
 type txParser struct {

@@ -5,6 +5,7 @@ package p2ptest
 
 import (
 	"context"
+	"github.com/luxfi/warp"
 	"fmt"
 	"testing"
 	"time"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 )
@@ -63,18 +63,18 @@ func NewClientWithPeers(
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
+	peerSenders[clientNodeID].SendGossipF = func(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
-		for nodeID := range nodeIDs {
+		for nodeID := range config.NodeIDs {
 			// Send directly to the handler if it's the client node
 			if nodeID == clientNodeID {
 				go func() {
-					_ = peerNetworks[clientNodeID].AppGossip(ctx, clientNodeID, gossipBytes)
+					_ = peerNetworks[clientNodeID].Gossip(ctx, clientNodeID, gossipBytes)
 				}()
 			} else {
 				go func(nid ids.NodeID) {
-					_ = peerNetworks[nid].AppGossip(ctx, clientNodeID, gossipBytes)
+					_ = peerNetworks[nid].Gossip(ctx, clientNodeID, gossipBytes)
 				}(nodeID)
 			}
 		}
@@ -82,7 +82,7 @@ func NewClientWithPeers(
 		return nil
 	}
 
-	peerSenders[clientNodeID].SendAppRequestF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+	peerSenders[clientNodeID].SendRequestF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
 		for nodeID := range nodeIDs {
 			network, ok := peerNetworks[nodeID]
 			if !ok {
@@ -92,7 +92,7 @@ func NewClientWithPeers(
 			// Send the request asynchronously to avoid deadlock when the server
 			// sends the response back to the client
 			go func() {
-				_ = network.AppRequest(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
+				_, _ = network.Request(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
 			}()
 		}
 
@@ -100,11 +100,11 @@ func NewClientWithPeers(
 	}
 
 	for nodeID := range peers {
-		peerSenders[nodeID].SendAppResponseF = func(ctx context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
+		peerSenders[nodeID].SendResponseF = func(ctx context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
 			// Send the request asynchronously to avoid deadlock when the server
 			// sends the response back to the client
 			go func() {
-				_ = peerNetworks[clientNodeID].AppResponse(ctx, nodeID, requestID, responseBytes)
+				_ = peerNetworks[clientNodeID].Response(ctx, nodeID, requestID, responseBytes)
 			}()
 
 			return nil
@@ -112,9 +112,9 @@ func NewClientWithPeers(
 	}
 
 	for nodeID := range peers {
-		peerSenders[nodeID].SendAppErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+		peerSenders[nodeID].SendErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			go func() {
-				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &consensuscore.AppError{
+				_ = peerNetworks[clientNodeID].RequestFailed(ctx, nodeID, requestID, &warp.Error{
 					Code:    errorCode,
 					Message: errorMessage,
 				})

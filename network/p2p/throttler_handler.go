@@ -10,10 +10,9 @@ import (
 	"context"
 	"time"
 
-
 	"github.com/luxfi/ids"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
+	"github.com/luxfi/warp"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)
@@ -32,7 +31,7 @@ type ThrottlerHandler struct {
 	log       log.Logger
 }
 
-func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
+func (t ThrottlerHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	if !t.throttler.Handle(nodeID) {
 		t.log.Debug("dropping message",
 			log.Stringer("nodeID", nodeID),
@@ -41,13 +40,13 @@ func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, goss
 		return
 	}
 
-	t.handler.AppGossip(ctx, nodeID, gossipBytes)
+	t.handler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (t ThrottlerHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *consensuscore.AppError) {
+func (t ThrottlerHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
 	if !t.throttler.Handle(nodeID) {
 		return nil, ErrThrottled
 	}
 
-	return t.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+	return t.handler.Request(ctx, nodeID, deadline, requestBytes)
 }

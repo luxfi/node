@@ -9,12 +9,11 @@ package lp118
 import (
 	"context"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/warp"
 )
 
 // Verifier verifies warp messages according to LP-118
 type Verifier interface {
 	// Verify verifies an unsigned warp message with justification
-	Verify(ctx context.Context, unsignedMessage *warp.UnsignedMessage, justification []byte) *consensuscore.AppError
+	Verify(ctx context.Context, unsignedMessage *warp.UnsignedMessage, justification []byte) *warp.Error
 }
