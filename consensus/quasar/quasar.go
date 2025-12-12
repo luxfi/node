@@ -305,8 +305,7 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	// Run BLS and Ringtail IN PARALLEL
 	var blsProof, signerBitset []byte
 	var signerWeight uint64
-	var ringtailProof []byte
-	var ringtailSigners []ids.NodeID
+	var ringtailSig Signature
 	var blsLatency, ringtailLatency time.Duration
 	var blsErr, ringtailErr error
 	var wg sync.WaitGroup
@@ -327,12 +326,16 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 		if q.ringtail == nil || !q.ringtail.IsInitialized() {
 			// Fall back to single-signer quantum stamp
 			start := time.Now()
-			ringtailProof, ringtailErr = q.createQuantumStampFallback(msg)
+			fallbackProof, err := q.createQuantumStampFallback(msg)
+			if err == nil {
+				ringtailSig = NewRingtailSignature(fallbackProof, nil)
+			}
+			ringtailErr = err
 			ringtailLatency = time.Since(start)
 		} else {
 			// Full threshold signing
 			start := time.Now()
-			ringtailProof, ringtailSigners, ringtailErr = q.collectRingtail(msgStr)
+			ringtailSig, ringtailErr = q.collectRingtail(msgStr)
 			ringtailLatency = time.Since(start)
 		}
 	}()
@@ -357,6 +360,12 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 
 	// Record finality
 	q.qHeight++
+	var ringtailSigners []ids.NodeID
+	var ringtailProof []byte
+	if ringtailSig != nil {
+		ringtailSigners = ringtailSig.Signers()
+		ringtailProof = ringtailSig.Bytes()
+	}
 	finality := &QuantumFinality{
 		BlockID:         event.BlockID,
 		PChainHeight:    event.Height,
@@ -443,60 +452,28 @@ func (q *Quasar) collectBLS(event FinalityEvent, msg []byte) ([]byte, []byte, ui
 }
 
 // collectRingtail runs the 2-round Ringtail threshold protocol in parallel
-func (q *Quasar) collectRingtail(message string) ([]byte, []ids.NodeID, error) {
+func (q *Quasar) collectRingtail(message string) (Signature, error) {
 	if q.ringtail == nil {
-		return nil, nil, ErrRingtailNotConnected
+		return nil, ErrRingtailNotConnected
 	}
 
-	// Round 1: All validators generate commitments IN PARALLEL
-	round1Results, r1Duration, err := q.ringtail.ParallelSignRound1([]byte(message))
+	// Use the high-level Sign API which handles all rounds internally
+	sig, err := q.ringtail.Sign([]byte(message))
 	if err != nil {
-		return nil, nil, fmt.Errorf("round 1 failed: %w", err)
-	}
-
-	q.log.Debug("ringtail round 1 complete",
-		"signers", len(round1Results),
-		"duration", r1Duration,
-	)
-
-	// Round 2: All validators compute partial signatures IN PARALLEL
-	round2Results, r2Duration, err := q.ringtail.ParallelSignRound2(message, round1Results)
-	if err != nil {
-		return nil, nil, fmt.Errorf("round 2 failed: %w", err)
-	}
-
-	q.log.Debug("ringtail round 2 complete",
-		"signers", len(round2Results),
-		"duration", r2Duration,
-	)
-
-	// Finalize: combine into threshold signature
-	// Use first available party as combiner
-	var combinerID ids.NodeID
-	for nodeID := range round2Results {
-		combinerID = nodeID
-		break
-	}
-
-	sig, err := q.ringtail.Finalize(combinerID, round2Results)
-	if err != nil {
-		return nil, nil, fmt.Errorf("finalize failed: %w", err)
+		return nil, fmt.Errorf("ringtail signing failed: %w", err)
 	}
 
 	// Verify the signature
-	if !q.ringtail.Verify(message, sig) {
-		return nil, nil, ErrRingtailFailed
+	if !q.ringtail.Verify([]byte(message), sig) {
+		return nil, ErrRingtailFailed
 	}
 
-	// Serialize signature (simplified - real impl would have proper encoding)
-	// For now, just use a marker + signers count
-	proof := make([]byte, 8)
-	proof[0] = 'R' // Ringtail marker
-	proof[1] = 'T'
-	proof[2] = byte(len(sig.Signers))
-	// Real implementation would serialize sig.C, sig.Z, sig.Delta
+	q.log.Debug("ringtail signature complete",
+		"signers", len(sig.Signers()),
+		"type", sig.Type(),
+	)
 
-	return proof, sig.Signers, nil
+	return sig, nil
 }
 
 // createQuantumStampFallback creates a single-signer quantum stamp (fallback mode)

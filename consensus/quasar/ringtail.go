@@ -5,6 +5,7 @@ package quasar
 
 import (
 	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -34,14 +35,33 @@ type RingtailConfig struct {
 	Threshold  int // Minimum signers required (typically 2/3 + 1)
 }
 
-// RingtailParty represents a validator's Ringtail signing state
-type RingtailParty struct {
-	ID      int
-	Party   *sign.Party
-	SkShare structs.Vector[ring.Poly]
-	Seeds   map[int][][]byte
-	MACKeys map[int][]byte
-	Lambda  ring.Poly // Lagrange coefficient
+// Ensure RingtailCoordinator implements ThresholdSigner
+var _ ThresholdSigner = (*RingtailCoordinator)(nil)
+
+// ringtailParty represents a validator's Ringtail signing state (internal)
+type ringtailParty struct {
+	id      int
+	party   *sign.Party
+	skShare structs.Vector[ring.Poly]
+	seeds   map[int][][]byte
+	macKeys map[int][]byte
+	lambda  ring.Poly
+}
+
+// ringtailRound1Result holds the output of round 1 for a party (internal)
+type ringtailRound1Result struct {
+	partyID int
+	nodeID  ids.NodeID
+	d       structs.Matrix[ring.Poly]
+	macs    map[int][]byte
+}
+
+// internalSignature holds the internal signature representation (internal)
+type internalSignature struct {
+	c       ring.Poly
+	z       structs.Vector[ring.Poly]
+	delta   structs.Vector[ring.Poly]
+	signers []ids.NodeID
 }
 
 // RingtailCoordinator manages the threshold signing protocol
@@ -50,18 +70,18 @@ type RingtailCoordinator struct {
 	log    log.Logger
 	config RingtailConfig
 
-	// Ring parameters
-	ring    *ring.Ring
+	// Ring parameters (internal - lattice types hidden)
+	ring_   *ring.Ring
 	ringXi  *ring.Ring
 	ringNu  *ring.Ring
 	sampler *ring.UniformSampler
 
-	// Public parameters (shared by all parties)
-	A structs.Matrix[ring.Poly]
-	B structs.Vector[ring.Poly]
+	// Public parameters (internal)
+	a structs.Matrix[ring.Poly]
+	b structs.Vector[ring.Poly]
 
 	// Parties (validators)
-	parties  map[ids.NodeID]*RingtailParty
+	parties  map[ids.NodeID]*ringtailParty
 	partyIDs []int
 	nodeToID map[ids.NodeID]int
 	idToNode map[int]ids.NodeID
@@ -118,18 +138,17 @@ func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoo
 	return &RingtailCoordinator{
 		log:      log,
 		config:   config,
-		ring:     r,
+		ring_:    r,
 		ringXi:   rXi,
 		ringNu:   rNu,
 		sampler:  sampler,
-		parties:  make(map[ids.NodeID]*RingtailParty),
+		parties:  make(map[ids.NodeID]*ringtailParty),
 		nodeToID: make(map[ids.NodeID]int),
 		idToNode: make(map[int]ids.NodeID),
 	}, nil
 }
 
-// Initialize generates keys and distributes shares to all parties
-// This is the "trusted dealer" phase - in production this would be DKG
+// Initialize sets up the threshold scheme with validators (implements ThresholdSigner)
 func (rc *RingtailCoordinator) Initialize(validators []ids.NodeID) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
@@ -148,7 +167,7 @@ func (rc *RingtailCoordinator) Initialize(validators []ids.NodeID) error {
 
 	// Compute Lagrange coefficients
 	rc.lagrangeCoeffs = primitives.ComputeLagrangeCoefficients(
-		rc.ring, rc.partyIDs, big.NewInt(int64(sign.Q)),
+		rc.ring_, rc.partyIDs, big.NewInt(int64(sign.Q)),
 	)
 
 	// Generate dealer key
@@ -158,36 +177,36 @@ func (rc *RingtailCoordinator) Initialize(validators []ids.NodeID) error {
 	}
 
 	// Generate public params and key shares
-	A, skShares, seeds, macKeys, b := sign.Gen(
-		rc.ring, rc.ringXi, rc.sampler, dealerKey, rc.lagrangeCoeffs,
+	A, skShares, seeds, macKeys, B := sign.Gen(
+		rc.ring_, rc.ringXi, rc.sampler, dealerKey, rc.lagrangeCoeffs,
 	)
-	rc.A = A
-	rc.B = b
+	rc.a = A
+	rc.b = B
 
 	// Create party instances for each validator
 	for i, nodeID := range validators {
 		prng, _ := sampling.NewKeyedPRNG(dealerKey)
-		sampler := ring.NewUniformSampler(prng, rc.ring)
+		sampler := ring.NewUniformSampler(prng, rc.ring_)
 
-		party := sign.NewParty(i, rc.ring, rc.ringXi, rc.ringNu, sampler)
+		party := sign.NewParty(i, rc.ring_, rc.ringXi, rc.ringNu, sampler)
 		party.SkShare = skShares[i]
 		party.Seed = seeds
 		party.MACKeys = macKeys[i]
 
 		// Precompute Lagrange coefficient in NTT form
-		lambda := rc.ring.NewPoly()
+		lambda := rc.ring_.NewPoly()
 		lambda.Copy(rc.lagrangeCoeffs[i])
-		rc.ring.NTT(lambda, lambda)
-		rc.ring.MForm(lambda, lambda)
+		rc.ring_.NTT(lambda, lambda)
+		rc.ring_.MForm(lambda, lambda)
 		party.Lambda = lambda
 
-		rc.parties[nodeID] = &RingtailParty{
-			ID:      i,
-			Party:   party,
-			SkShare: skShares[i],
-			Seeds:   seeds,
-			MACKeys: macKeys[i],
-			Lambda:  lambda,
+		rc.parties[nodeID] = &ringtailParty{
+			id:      i,
+			party:   party,
+			skShare: skShares[i],
+			seeds:   seeds,
+			macKeys: macKeys[i],
+			lambda:  lambda,
 		}
 	}
 
@@ -200,151 +219,91 @@ func (rc *RingtailCoordinator) Initialize(validators []ids.NodeID) error {
 	return nil
 }
 
-// RingtailRound1Result holds the output of round 1 for a party
-type RingtailRound1Result struct {
-	PartyID int
-	NodeID  ids.NodeID
-	D       structs.Matrix[ring.Poly]
-	MACs    map[int][]byte
+// Sign implements Signer interface - returns a RingtailSignature
+func (rc *RingtailCoordinator) Sign(msg []byte) (Signature, error) {
+	// Round 1: all parties generate commitments
+	round1Results, _, err := rc.parallelSignRound1(msg)
+	if err != nil {
+		return nil, fmt.Errorf("round 1 failed: %w", err)
+	}
+
+	// Round 2: all parties generate partial signatures
+	msgStr := string(msg)
+	round2Results, _, err := rc.parallelSignRound2(msgStr, round1Results)
+	if err != nil {
+		return nil, fmt.Errorf("round 2 failed: %w", err)
+	}
+
+	// Finalize: combine partial signatures
+	var combinerID ids.NodeID
+	for nodeID := range rc.parties {
+		combinerID = nodeID
+		break
+	}
+
+	sig, err := rc.finalize(combinerID, round2Results)
+	if err != nil {
+		return nil, fmt.Errorf("finalize failed: %w", err)
+	}
+
+	// Convert internal signature to public RingtailSignature type
+	sigBytes := rc.serializeInternalSignature(sig)
+	return NewRingtailSignature(sigBytes, sig.signers), nil
 }
 
-// RingtailSignature represents a complete threshold signature
-type RingtailSignature struct {
-	C       ring.Poly
-	Z       structs.Vector[ring.Poly]
-	Delta   structs.Vector[ring.Poly]
-	Signers []ids.NodeID
+// Type implements Signer interface
+func (rc *RingtailCoordinator) Type() SignatureType {
+	return SignatureTypeRingtail
 }
 
-// SignRound1 executes round 1 of the signing protocol for a party
-func (rc *RingtailCoordinator) SignRound1(nodeID ids.NodeID, message []byte) (*RingtailRound1Result, error) {
+// Threshold implements ThresholdSigner interface
+func (rc *RingtailCoordinator) Threshold() int {
+	return rc.config.Threshold
+}
+
+// NumParties implements ThresholdSigner interface
+func (rc *RingtailCoordinator) NumParties() int {
+	return rc.config.NumParties
+}
+
+// IsInitialized implements ThresholdSigner interface
+func (rc *RingtailCoordinator) IsInitialized() bool {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+	return rc.initialized
+}
+
+// Verify verifies a RingtailSignature
+func (rc *RingtailCoordinator) Verify(msg []byte, sig Signature) bool {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 
 	if !rc.initialized {
-		return nil, ErrRingtailNotInitialized
-	}
-
-	party, ok := rc.parties[nodeID]
-	if !ok {
-		return nil, fmt.Errorf("unknown party: %s", nodeID)
-	}
-
-	// Generate PRF key from message
-	prfKey := primitives.GenerateRandomSeed()
-
-	// Execute round 1
-	D, macs := party.Party.SignRound1(rc.A, rc.sessionID, []byte(prfKey), rc.partyIDs)
-
-	return &RingtailRound1Result{
-		PartyID: party.ID,
-		NodeID:  nodeID,
-		D:       D,
-		MACs:    macs,
-	}, nil
-}
-
-// SignRound2 executes round 2 of the signing protocol
-func (rc *RingtailCoordinator) SignRound2(
-	nodeID ids.NodeID,
-	message string,
-	round1Results map[ids.NodeID]*RingtailRound1Result,
-) (structs.Vector[ring.Poly], error) {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
-	if !rc.initialized {
-		return nil, ErrRingtailNotInitialized
-	}
-
-	party, ok := rc.parties[nodeID]
-	if !ok {
-		return nil, fmt.Errorf("unknown party: %s", nodeID)
-	}
-
-	// Collect D matrices and MACs from all parties
-	D := make(map[int]structs.Matrix[ring.Poly])
-	MACs := make(map[int]map[int][]byte)
-	for _, result := range round1Results {
-		D[result.PartyID] = result.D
-		MACs[result.PartyID] = result.MACs
-	}
-
-	// Verify MACs and compute aggregate
-	valid, DSum, hash := party.Party.SignRound2Preprocess(rc.A, rc.B, D, MACs, rc.sessionID, rc.partyIDs)
-	if !valid {
-		return nil, ErrRingtailMACFailed
-	}
-
-	// Generate PRF key
-	prfKey := primitives.GenerateRandomSeed()
-
-	// Execute round 2
-	z := party.Party.SignRound2(rc.A, rc.B, DSum, rc.sessionID, message, rc.partyIDs, []byte(prfKey), hash)
-
-	return z, nil
-}
-
-// Finalize combines partial signatures into the final threshold signature
-func (rc *RingtailCoordinator) Finalize(
-	combinerNodeID ids.NodeID,
-	zShares map[ids.NodeID]structs.Vector[ring.Poly],
-) (*RingtailSignature, error) {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-
-	if !rc.initialized {
-		return nil, ErrRingtailNotInitialized
-	}
-
-	combiner, ok := rc.parties[combinerNodeID]
-	if !ok {
-		return nil, fmt.Errorf("unknown combiner: %s", combinerNodeID)
-	}
-
-	// Convert to party ID indexed map
-	z := make(map[int]structs.Vector[ring.Poly])
-	signers := make([]ids.NodeID, 0, len(zShares))
-	for nodeID, zShare := range zShares {
-		partyID := rc.nodeToID[nodeID]
-		z[partyID] = zShare
-		signers = append(signers, nodeID)
-	}
-
-	// Finalize signature
-	c, zSum, delta := combiner.Party.SignFinalize(z, rc.A, rc.B)
-
-	// Increment session for next signing
-	rc.sessionID++
-
-	return &RingtailSignature{
-		C:       c,
-		Z:       zSum,
-		Delta:   delta,
-		Signers: signers,
-	}, nil
-}
-
-// Verify verifies a Ringtail threshold signature
-func (rc *RingtailCoordinator) Verify(message string, sig *RingtailSignature) bool {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
-	if !rc.initialized || sig == nil {
 		return false
 	}
 
-	return sign.Verify(rc.ring, rc.ringXi, rc.ringNu, sig.Z, rc.A, message, rc.B, sig.C, sig.Delta)
-}
+	rtSig, ok := sig.(*RingtailSignature)
+	if !ok {
+		return false
+	}
 
-// GetPublicParams returns the public parameters (A, B) for external verification
-func (rc *RingtailCoordinator) GetPublicParams() (structs.Matrix[ring.Poly], structs.Vector[ring.Poly]) {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-	return rc.A, rc.B
+	internalSig, err := rc.deserializeInternalSignature(rtSig.Bytes())
+	if err != nil {
+		return false
+	}
+
+	return sign.Verify(rc.ring_, rc.ringXi, rc.ringNu, internalSig.z, rc.a, string(msg), rc.b, internalSig.c, internalSig.delta)
 }
 
 // Stats returns coordinator statistics
+type RingtailStats struct {
+	NumParties    int
+	Threshold     int
+	SessionID     int
+	Initialized   bool
+	ActiveParties int
+}
+
 func (rc *RingtailCoordinator) Stats() RingtailStats {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
@@ -358,17 +317,103 @@ func (rc *RingtailCoordinator) Stats() RingtailStats {
 	}
 }
 
-// RingtailStats contains coordinator statistics
-type RingtailStats struct {
-	NumParties    int
-	Threshold     int
-	SessionID     int
-	Initialized   bool
-	ActiveParties int
+// Internal methods - not exposed outside consensus package
+
+func (rc *RingtailCoordinator) signRound1(nodeID ids.NodeID, message []byte) (*ringtailRound1Result, error) {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	if !rc.initialized {
+		return nil, ErrRingtailNotInitialized
+	}
+
+	party, ok := rc.parties[nodeID]
+	if !ok {
+		return nil, fmt.Errorf("unknown party: %s", nodeID)
+	}
+
+	prfKey := primitives.GenerateRandomSeed()
+	D, macs := party.party.SignRound1(rc.a, rc.sessionID, []byte(prfKey), rc.partyIDs)
+
+	return &ringtailRound1Result{
+		partyID: party.id,
+		nodeID:  nodeID,
+		d:       D,
+		macs:    macs,
+	}, nil
 }
 
-// ParallelSignRound1 executes round 1 for all parties in parallel
-func (rc *RingtailCoordinator) ParallelSignRound1(message []byte) (map[ids.NodeID]*RingtailRound1Result, time.Duration, error) {
+func (rc *RingtailCoordinator) signRound2(
+	nodeID ids.NodeID,
+	message string,
+	round1Results map[ids.NodeID]*ringtailRound1Result,
+) (structs.Vector[ring.Poly], error) {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	if !rc.initialized {
+		return nil, ErrRingtailNotInitialized
+	}
+
+	party, ok := rc.parties[nodeID]
+	if !ok {
+		return nil, fmt.Errorf("unknown party: %s", nodeID)
+	}
+
+	D := make(map[int]structs.Matrix[ring.Poly])
+	MACs := make(map[int]map[int][]byte)
+	for _, result := range round1Results {
+		D[result.partyID] = result.d
+		MACs[result.partyID] = result.macs
+	}
+
+	valid, DSum, hash := party.party.SignRound2Preprocess(rc.a, rc.b, D, MACs, rc.sessionID, rc.partyIDs)
+	if !valid {
+		return nil, ErrRingtailMACFailed
+	}
+
+	prfKey := primitives.GenerateRandomSeed()
+	z := party.party.SignRound2(rc.a, rc.b, DSum, rc.sessionID, message, rc.partyIDs, []byte(prfKey), hash)
+
+	return z, nil
+}
+
+func (rc *RingtailCoordinator) finalize(
+	combinerNodeID ids.NodeID,
+	zShares map[ids.NodeID]structs.Vector[ring.Poly],
+) (*internalSignature, error) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	if !rc.initialized {
+		return nil, ErrRingtailNotInitialized
+	}
+
+	combiner, ok := rc.parties[combinerNodeID]
+	if !ok {
+		return nil, fmt.Errorf("unknown combiner: %s", combinerNodeID)
+	}
+
+	z := make(map[int]structs.Vector[ring.Poly])
+	signers := make([]ids.NodeID, 0, len(zShares))
+	for nodeID, zShare := range zShares {
+		partyID := rc.nodeToID[nodeID]
+		z[partyID] = zShare
+		signers = append(signers, nodeID)
+	}
+
+	c, zSum, delta := combiner.party.SignFinalize(z, rc.a, rc.b)
+	rc.sessionID++
+
+	return &internalSignature{
+		c:       c,
+		z:       zSum,
+		delta:   delta,
+		signers: signers,
+	}, nil
+}
+
+func (rc *RingtailCoordinator) parallelSignRound1(message []byte) (map[ids.NodeID]*ringtailRound1Result, time.Duration, error) {
 	rc.mu.RLock()
 	if !rc.initialized {
 		rc.mu.RUnlock()
@@ -381,7 +426,7 @@ func (rc *RingtailCoordinator) ParallelSignRound1(message []byte) (map[ids.NodeI
 	rc.mu.RUnlock()
 
 	start := time.Now()
-	results := make(map[ids.NodeID]*RingtailRound1Result)
+	results := make(map[ids.NodeID]*ringtailRound1Result)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(parties))
@@ -390,7 +435,7 @@ func (rc *RingtailCoordinator) ParallelSignRound1(message []byte) (map[ids.NodeI
 		wg.Add(1)
 		go func(nid ids.NodeID) {
 			defer wg.Done()
-			result, err := rc.SignRound1(nid, message)
+			result, err := rc.signRound1(nid, message)
 			if err != nil {
 				errChan <- err
 				return
@@ -413,10 +458,9 @@ func (rc *RingtailCoordinator) ParallelSignRound1(message []byte) (map[ids.NodeI
 	return results, time.Since(start), nil
 }
 
-// ParallelSignRound2 executes round 2 for all parties in parallel
-func (rc *RingtailCoordinator) ParallelSignRound2(
+func (rc *RingtailCoordinator) parallelSignRound2(
 	message string,
-	round1Results map[ids.NodeID]*RingtailRound1Result,
+	round1Results map[ids.NodeID]*ringtailRound1Result,
 ) (map[ids.NodeID]structs.Vector[ring.Poly], time.Duration, error) {
 	rc.mu.RLock()
 	if !rc.initialized {
@@ -439,7 +483,7 @@ func (rc *RingtailCoordinator) ParallelSignRound2(
 		wg.Add(1)
 		go func(nid ids.NodeID) {
 			defer wg.Done()
-			z, err := rc.SignRound2(nid, message, round1Results)
+			z, err := rc.signRound2(nid, message, round1Results)
 			if err != nil {
 				errChan <- err
 				return
@@ -462,9 +506,165 @@ func (rc *RingtailCoordinator) ParallelSignRound2(
 	return results, time.Since(start), nil
 }
 
-// IsInitialized returns whether the coordinator has been initialized
-func (rc *RingtailCoordinator) IsInitialized() bool {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-	return rc.initialized
+// Serialization helpers - convert internal types to/from bytes
+
+func (rc *RingtailCoordinator) serializeInternalSignature(sig *internalSignature) []byte {
+	var buf []byte
+
+	// Number of signers
+	numSigners := make([]byte, 4)
+	binary.BigEndian.PutUint32(numSigners, uint32(len(sig.signers)))
+	buf = append(buf, numSigners...)
+
+	// Signer IDs
+	for _, signer := range sig.signers {
+		buf = append(buf, signer[:]...)
+	}
+
+	// Serialize c polynomial
+	cBytes := rc.serializePoly(sig.c)
+	cLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(cLen, uint32(len(cBytes)))
+	buf = append(buf, cLen...)
+	buf = append(buf, cBytes...)
+
+	// Serialize z vector
+	zBytes := rc.serializeVector(sig.z)
+	zLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(zLen, uint32(len(zBytes)))
+	buf = append(buf, zLen...)
+	buf = append(buf, zBytes...)
+
+	// Serialize delta vector
+	deltaBytes := rc.serializeVector(sig.delta)
+	deltaLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(deltaLen, uint32(len(deltaBytes)))
+	buf = append(buf, deltaLen...)
+	buf = append(buf, deltaBytes...)
+
+	return buf
+}
+
+func (rc *RingtailCoordinator) deserializeInternalSignature(data []byte) (*internalSignature, error) {
+	if len(data) < 4 {
+		return nil, errors.New("signature too short")
+	}
+
+	offset := 0
+
+	numSigners := binary.BigEndian.Uint32(data[offset:])
+	offset += 4
+
+	signers := make([]ids.NodeID, numSigners)
+	for i := uint32(0); i < numSigners; i++ {
+		if offset+ids.NodeIDLen > len(data) {
+			return nil, errors.New("signature truncated at signers")
+		}
+		copy(signers[i][:], data[offset:offset+ids.NodeIDLen])
+		offset += ids.NodeIDLen
+	}
+
+	if offset+4 > len(data) {
+		return nil, errors.New("signature truncated at c length")
+	}
+	cLen := binary.BigEndian.Uint32(data[offset:])
+	offset += 4
+	if offset+int(cLen) > len(data) {
+		return nil, errors.New("signature truncated at c data")
+	}
+	c, err := rc.deserializePoly(data[offset : offset+int(cLen)])
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize c: %w", err)
+	}
+	offset += int(cLen)
+
+	if offset+4 > len(data) {
+		return nil, errors.New("signature truncated at z length")
+	}
+	zLen := binary.BigEndian.Uint32(data[offset:])
+	offset += 4
+	if offset+int(zLen) > len(data) {
+		return nil, errors.New("signature truncated at z data")
+	}
+	z, err := rc.deserializeVector(data[offset : offset+int(zLen)])
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize z: %w", err)
+	}
+	offset += int(zLen)
+
+	if offset+4 > len(data) {
+		return nil, errors.New("signature truncated at delta length")
+	}
+	deltaLen := binary.BigEndian.Uint32(data[offset:])
+	offset += 4
+	if offset+int(deltaLen) > len(data) {
+		return nil, errors.New("signature truncated at delta data")
+	}
+	delta, err := rc.deserializeVector(data[offset : offset+int(deltaLen)])
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize delta: %w", err)
+	}
+
+	return &internalSignature{
+		c:       c,
+		z:       z,
+		delta:   delta,
+		signers: signers,
+	}, nil
+}
+
+func (rc *RingtailCoordinator) serializePoly(p ring.Poly) []byte {
+	data, _ := p.MarshalBinary()
+	return data
+}
+
+func (rc *RingtailCoordinator) deserializePoly(data []byte) (ring.Poly, error) {
+	p := rc.ring_.NewPoly()
+	if err := p.UnmarshalBinary(data); err != nil {
+		return ring.Poly{}, err
+	}
+	return p, nil
+}
+
+func (rc *RingtailCoordinator) serializeVector(v structs.Vector[ring.Poly]) []byte {
+	var buf []byte
+	lenBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(lenBytes, uint32(len(v)))
+	buf = append(buf, lenBytes...)
+	for _, p := range v {
+		pBytes := rc.serializePoly(p)
+		// Prepend size for each poly
+		sizeBytes := make([]byte, 4)
+		binary.BigEndian.PutUint32(sizeBytes, uint32(len(pBytes)))
+		buf = append(buf, sizeBytes...)
+		buf = append(buf, pBytes...)
+	}
+	return buf
+}
+
+func (rc *RingtailCoordinator) deserializeVector(data []byte) (structs.Vector[ring.Poly], error) {
+	if len(data) < 4 {
+		return nil, errors.New("vector data too short")
+	}
+	length := binary.BigEndian.Uint32(data[:4])
+	offset := 4
+
+	v := make(structs.Vector[ring.Poly], length)
+	for i := uint32(0); i < length; i++ {
+		if offset+4 > len(data) {
+			return nil, errors.New("vector truncated at poly size")
+		}
+		polySize := int(binary.BigEndian.Uint32(data[offset:]))
+		offset += 4
+		if offset+polySize > len(data) {
+			return nil, errors.New("vector truncated at poly data")
+		}
+		p, err := rc.deserializePoly(data[offset : offset+polySize])
+		if err != nil {
+			return nil, err
+		}
+		v[i] = p
+		offset += polySize
+	}
+	return v, nil
 }
