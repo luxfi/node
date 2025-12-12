@@ -178,12 +178,9 @@ func TestHandlerManager_RetryLogic(t *testing.T) {
 	// Register with retries
 	ctx := context.Background()
 	chainID := ids.GenerateTestID()
-	err := manager.RegisterChainHandlers(ctx, chainID, "TEST", map[string]http.Handler{
+	require.NoError(t, manager.RegisterChainHandlers(ctx, chainID, "TEST", map[string]http.Handler{
 		"/rpc": handler,
-	})
-
-	// Should succeed after retries
-	require.NoError(t, err)
+	}))
 	require.Equal(t, 2, server.failCount) // Failed twice, succeeded on third try
 	require.Len(t, server.routes, 2)       // Both alias and ID routes
 }
@@ -209,17 +206,15 @@ func TestHandlerManager_HealthCheck(t *testing.T) {
 	chainID2 := ids.GenerateTestID()
 
 	// Register healthy chain
-	err := manager.RegisterChainHandlers(ctx, chainID1, "", map[string]http.Handler{
+	require.NoError(t, manager.RegisterChainHandlers(ctx, chainID1, "", map[string]http.Handler{
 		"/rpc": healthyHandler,
-	})
-	require.NoError(t, err)
+	}))
 
 	// Register unhealthy chain
-	err = manager.RegisterChainHandlers(ctx, chainID2, "", map[string]http.Handler{
-		"/rpc": unhealthyHandler,
-	})
 	// Registration succeeds even if health check fails
-	require.NoError(t, err) // Registration should succeed regardless of handler health
+	require.NoError(t, manager.RegisterChainHandlers(ctx, chainID2, "", map[string]http.Handler{
+		"/rpc": unhealthyHandler,
+	})) // Registration should succeed regardless of handler health
 
 	// Check health status
 	results := manager.HealthCheckAll()

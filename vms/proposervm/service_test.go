@@ -42,8 +42,7 @@ func TestServiceGetProposedHeight(t *testing.T) {
 	reply := &GetProposedHeightReply{}
 
 	// Call GetProposedHeight
-	err := service.GetProposedHeight(req, args, reply)
-	require.NoError(err)
+	require.NoError(service.GetProposedHeight(req, args, reply))
 
 	// The proposed height should be >= the current P-Chain height
 	require.GreaterOrEqual(reply.ProposedHeight, currentPChainHeight)
