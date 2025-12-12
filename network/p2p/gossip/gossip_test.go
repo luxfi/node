@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package gossip
 
 import (
@@ -19,6 +16,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
@@ -107,14 +105,15 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-		// Channel to capture sent app responses
-		sentAppResponse := make(chan []byte, 1)
-		responseSender := &FakeSender{
-			SendAppResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-				sentAppResponse <- response
-				return nil
-			},
-		}
+			// Channel to capture sent app responses
+			sentAppResponse := make(chan []byte, 1)
+			responseSender := &p2ptest.WarpSender{
+				T: t,
+				SendAppResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+					sentAppResponse <- response
+					return nil
+				},
+			}
 			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewRegistry(), "")
 			require.NoError(err)
 
@@ -141,14 +140,15 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-		// Channel to capture sent app requests
-		sentAppRequest := make(chan []byte, 1)
-		requestSender := &FakeSender{
-			SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
-				sentAppRequest <- request
-				return nil
-			},
-		}
+			// Channel to capture sent app requests
+			sentAppRequest := make(chan []byte, 1)
+			requestSender := &p2ptest.WarpSender{
+				T: t,
+				SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+					sentAppRequest <- request
+					return nil
+				},
+			}
 
 			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewRegistry(), "")
 			require.NoError(err)
@@ -522,14 +522,15 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-		// Channel to capture sent app gossip
-		sentAppGossip := make(chan []byte, 2)
-		sender := &FakeSender{
-			SendAppGossipF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
-				sentAppGossip <- gossip
-				return nil
-			},
-		}
+			// Channel to capture sent app gossip
+			sentAppGossip := make(chan []byte, 2)
+			sender := &p2ptest.WarpSender{
+				T: t,
+				SendAppGossipF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
+					sentAppGossip <- gossip
+					return nil
+				},
+			}
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,

@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package p2ptest
 
 import (
@@ -57,10 +54,10 @@ func NewClientWithPeers(
 ) *p2p.Client {
 	peers[clientNodeID] = clientHandler
 
-	peerSenders := make(map[ids.NodeID]*SenderTest)
+	peerSenders := make(map[ids.NodeID]*WarpSender)
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
-		peerSenders[nodeID] = &SenderTest{}
+		peerSenders[nodeID] = &WarpSender{T: t}
 		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], metric.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork

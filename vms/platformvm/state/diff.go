@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -64,6 +65,9 @@ type diff struct {
 	transformedNets map[ids.ID]*txs.Tx
 
 	addedChains map[ids.ID][]*txs.Tx
+
+	// Chain name uniqueness - maps lowercase chain name to chain ID
+	addedChainNames map[string]ids.ID
 
 	addedRewardUTXOs map[ids.ID][]*lux.UTXO
 
@@ -489,6 +493,43 @@ func (d *diff) AddChain(createChainTx *txs.Tx) {
 	} else {
 		d.addedChains[tx.NetID] = append(d.addedChains[tx.NetID], createChainTx)
 	}
+
+	// Register chain name for uniqueness (case-insensitive)
+	if tx.ChainName != "" {
+		nameLower := strings.ToLower(tx.ChainName)
+		chainID := createChainTx.ID()
+		if d.addedChainNames == nil {
+			d.addedChainNames = map[string]ids.ID{
+				nameLower: chainID,
+			}
+		} else {
+			d.addedChainNames[nameLower] = chainID
+		}
+	}
+}
+
+// GetChainIDByName returns the chain ID for the given chain name (case-insensitive).
+// Returns database.ErrNotFound if the name is not registered.
+func (d *diff) GetChainIDByName(name string) (ids.ID, error) {
+	nameLower := strings.ToLower(name)
+
+	// Check added chain names first
+	if chainID, exists := d.addedChainNames[nameLower]; exists {
+		return chainID, nil
+	}
+
+	// Delegate to parent state
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return ids.Empty, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.GetChainIDByName(name)
+}
+
+// IsChainNameTaken returns true if the given chain name is already registered (case-insensitive).
+func (d *diff) IsChainNameTaken(name string) bool {
+	_, err := d.GetChainIDByName(name)
+	return err == nil
 }
 
 func (d *diff) GetTx(txID ids.ID) (*txs.Tx, status.Status, error) {

@@ -200,6 +200,11 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		return err
 	}
 
+	// Verify chain name uniqueness (case-insensitive)
+	if tx.ChainName != "" && e.state.IsChainNameTaken(tx.ChainName) {
+		return fmt.Errorf("chain name %q is already taken", tx.ChainName)
+	}
+
 	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.NetID, tx.NetAuth)
 	if err != nil {
 		return err

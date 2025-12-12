@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -177,6 +178,8 @@ type ChainParameters struct {
 	FxIDs []ids.ID
 	// Invariant: Only used when [ID] is the P-chain ID.
 	CustomBeacons validators.Manager
+	// Name of the chain (used for HTTP routing alias, e.g., /ext/bc/zoo/rpc)
+	Name string
 }
 
 type chainInfo struct {
@@ -817,6 +820,19 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				m.Server.AddRoute(handler, chainBase, endpoint)
 				if chainAlias != chainParams.ID.String() {
 					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				}
+
+				// Also register with chain name alias for user-friendly routing (e.g., /ext/bc/zoo/rpc)
+				if chainParams.Name != "" {
+					nameLower := strings.ToLower(chainParams.Name)
+					nameBase := fmt.Sprintf("bc/%s", nameLower)
+					m.Server.AddRoute(handler, nameBase, endpoint)
+					m.Log.Info("Registered HTTP handler with chain name",
+						log.String("chainName", nameLower),
+						log.Stringer("chainID", chainParams.ID),
+						log.String("base", nameBase),
+						log.String("endpoint", endpoint),
+					)
 				}
 
 				m.Log.Info("Registered HTTP handler",

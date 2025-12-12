@@ -202,7 +202,7 @@ func TestValidatorsSample(t *testing.T) {
 				return validatorSet, call.getValidatorSetErr
 			}
 
-			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), &testSender{t: t}, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -349,7 +349,7 @@ func TestValidatorsTop(t *testing.T) {
 				return validatorSet, nil
 			}
 
-			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), &testSender{t: t}, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

@@ -518,6 +518,20 @@ func (mr *MockChainMockRecorder) HasL1Validator(subnetID, nodeID any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasL1Validator", reflect.TypeOf((*MockChain)(nil).HasL1Validator), subnetID, nodeID)
 }
 
+// IsChainNameTaken mocks base method.
+func (m *MockChain) IsChainNameTaken(name string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsChainNameTaken", name)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsChainNameTaken indicates an expected call of IsChainNameTaken.
+func (mr *MockChainMockRecorder) IsChainNameTaken(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsChainNameTaken", reflect.TypeOf((*MockChain)(nil).IsChainNameTaken), name)
+}
+
 // NumActiveL1Validators mocks base method.
 func (m *MockChain) NumActiveL1Validators() int {
 	m.ctrl.T.Helper()

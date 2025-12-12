@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -87,6 +88,7 @@ var (
 	TransformedNetPrefix       = []byte("transformedNet")
 	SupplyPrefix                  = []byte("supply")
 	ChainPrefix                   = []byte("chain")
+	ChainNamePrefix               = []byte("chainName") // maps lowercase chain name -> chainID
 	ExpiryReplayProtectionPrefix  = []byte("expiryReplayProtection")
 	L1Prefix                      = []byte("l1")
 	WeightsPrefix                 = []byte("weights")
@@ -148,6 +150,10 @@ type Chain interface {
 	AddNetTransformation(transformNetTx *txs.Tx)
 
 	AddChain(createChainTx *txs.Tx)
+
+	// Chain name uniqueness - for network-wide chain name resolution
+	GetChainIDByName(name string) (ids.ID, error)
+	IsChainNameTaken(name string) bool
 
 	GetTx(txID ids.ID) (*txs.Tx, status.Status, error)
 	AddTx(tx *txs.Tx, status status.Status)
@@ -456,6 +462,11 @@ type state struct {
 	chainDBCache cache.Cacher[ids.ID, linkeddb.LinkedDB] // cache of netID -> linkedDB
 	chainDB      database.Database
 
+	// Chain name uniqueness - maps lowercase chain name to chain ID
+	addedChainNames map[string]ids.ID            // newly added chain names (lowercase) -> chainID
+	chainNameCache  cache.Cacher[string, ids.ID] // cache of lowercase chain name -> chainID
+	chainNameDB     database.Database
+
 	// The persisted fields represent the current database value
 	timestamp, persistedTimestamp                 time.Time
 	feeState, persistedFeeState                   gas.State
@@ -744,6 +755,15 @@ func New(
 		return nil, err
 	}
 
+	chainNameCache, err := metercacher.New[string, ids.ID](
+		"chain_name_cache",
+		reg,
+		lru.NewCache[string, ids.ID](execCfg.ChainCacheSize),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &state{
 		validatorState: newValidatorState(),
 
@@ -839,6 +859,10 @@ func New(
 		chainDB:      prefixdb.New(ChainPrefix, baseDB),
 		chainCache:   chainCache,
 		chainDBCache: chainDBCache,
+
+		addedChainNames: make(map[string]ids.ID),
+		chainNameCache:  chainNameCache,
+		chainNameDB:     prefixdb.New(ChainNamePrefix, baseDB),
 
 		singletonDB: prefixdb.New(SingletonPrefix, baseDB),
 	}
@@ -1231,6 +1255,50 @@ func (s *state) AddChain(createChainTxIntf *txs.Tx) {
 		chains = append(chains, createChainTxIntf)
 		s.chainCache.Put(netID, chains)
 	}
+
+	// Register chain name for uniqueness tracking (case-insensitive)
+	if createChainTx.ChainName != "" {
+		nameLower := strings.ToLower(createChainTx.ChainName)
+		chainID := createChainTxIntf.ID()
+		s.addedChainNames[nameLower] = chainID
+		s.chainNameCache.Put(nameLower, chainID)
+	}
+}
+
+// GetChainIDByName returns the chain ID for the given chain name (case-insensitive).
+// Returns database.ErrNotFound if no chain with the given name exists.
+func (s *state) GetChainIDByName(name string) (ids.ID, error) {
+	nameLower := strings.ToLower(name)
+
+	// Check in-memory additions first
+	if chainID, exists := s.addedChainNames[nameLower]; exists {
+		return chainID, nil
+	}
+
+	// Check cache
+	if chainID, cached := s.chainNameCache.Get(nameLower); cached {
+		return chainID, nil
+	}
+
+	// Check database
+	chainIDBytes, err := s.chainNameDB.Get([]byte(nameLower))
+	if err != nil {
+		return ids.Empty, err
+	}
+
+	chainID, err := ids.ToID(chainIDBytes)
+	if err != nil {
+		return ids.Empty, err
+	}
+
+	s.chainNameCache.Put(nameLower, chainID)
+	return chainID, nil
+}
+
+// IsChainNameTaken returns true if a chain with the given name already exists (case-insensitive).
+func (s *state) IsChainNameTaken(name string) bool {
+	_, err := s.GetChainIDByName(name)
+	return err == nil
 }
 
 func (s *state) getChainDB(netID ids.ID) linkeddb.LinkedDB {
@@ -3097,6 +3165,14 @@ func (s *state) writeChains() error {
 			}
 		}
 		delete(s.addedChains, netID)
+	}
+
+	// Persist chain names for network-wide uniqueness
+	for nameLower, chainID := range s.addedChainNames {
+		if err := s.chainNameDB.Put([]byte(nameLower), chainID[:]); err != nil {
+			return fmt.Errorf("failed to write chain name %s: %w", nameLower, err)
+		}
+		delete(s.addedChainNames, nameLower)
 	}
 	return nil
 }

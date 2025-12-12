@@ -103,6 +103,7 @@ func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,
+		Name:        tx.ChainName,
 	}
 
 	c.Chains.QueueChainCreation(chainParams)

@@ -219,6 +219,21 @@ func (mr *MockDiffMockRecorder) GetAccruedFees() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccruedFees", reflect.TypeOf((*MockDiff)(nil).GetAccruedFees))
 }
 
+// GetChainIDByName mocks base method.
+func (m *MockDiff) GetChainIDByName(name string) (ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainIDByName", name)
+	ret0, _ := ret[0].(ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainIDByName indicates an expected call of GetChainIDByName.
+func (mr *MockDiffMockRecorder) GetChainIDByName(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainIDByName", reflect.TypeOf((*MockDiff)(nil).GetChainIDByName), name)
+}
+
 // GetActiveL1ValidatorsIterator mocks base method.
 func (m *MockDiff) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
 	m.ctrl.T.Helper()
@@ -530,6 +545,20 @@ func (m *MockDiff) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, err
 func (mr *MockDiffMockRecorder) HasL1Validator(subnetID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasL1Validator", reflect.TypeOf((*MockDiff)(nil).HasL1Validator), subnetID, nodeID)
+}
+
+// IsChainNameTaken mocks base method.
+func (m *MockDiff) IsChainNameTaken(name string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsChainNameTaken", name)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsChainNameTaken indicates an expected call of IsChainNameTaken.
+func (mr *MockDiffMockRecorder) IsChainNameTaken(name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsChainNameTaken", reflect.TypeOf((*MockDiff)(nil).IsChainNameTaken), name)
 }
 
 // NumActiveL1Validators mocks base method.
