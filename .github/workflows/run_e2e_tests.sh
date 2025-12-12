@@ -22,8 +22,9 @@ fi
 # Lux root directory
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd ../.. && pwd )
 
-# Load the constants
+# Load the constants and image tag
 source "$LUX_PATH"/scripts/constants.sh
+source "$LUX_PATH"/scripts/image_tag.sh
 
 # Login to docker
 echo "$DOCKER_PASS" | docker login --username "$DOCKER_USERNAME" --password-stdin
@@ -54,12 +55,12 @@ git_commit_id=$( git rev-list -1 HEAD )
 source "$LUX_PATH"/scripts/build_image.sh -r
 
 # Target built version to use in lux-testing
-lux_image="$node_dockerhub_repo:$current_branch"
+lux_image="$node_dockerhub_repo:$image_tag"
 
 echo "Execution Summary:"
 echo ""
 echo "Running Lux Image: ${lux_image}"
-echo "Running Lux Image Tag: $current_branch"
+echo "Running Lux Image Tag: $image_tag"
 echo "Running Lux Testing Image: ${lux_testing_image}"
 echo "Running Lux Byzantine Image: ${node_byzantine_image}"
 echo "Git Commit ID : ${git_commit_id}"
