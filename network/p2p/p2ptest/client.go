@@ -57,10 +57,10 @@ func NewClientWithPeers(
 ) *p2p.Client {
 	peers[clientNodeID] = clientHandler
 
-	peerSenders := make(map[ids.NodeID]*p2p.SenderTest)
+	peerSenders := make(map[ids.NodeID]*SenderTest)
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
-		peerSenders[nodeID] = &p2p.SenderTest{}
+		peerSenders[nodeID] = &SenderTest{}
 		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], metric.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork

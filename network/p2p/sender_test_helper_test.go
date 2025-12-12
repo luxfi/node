@@ -4,7 +4,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package p2ptest
+package p2p
 
 import (
 	"context"
@@ -14,9 +14,8 @@ import (
 	"github.com/luxfi/math/set"
 )
 
-// SenderTest is a test implementation of AppSender that implements p2p.ExtendedAppSender directly.
+// SenderTest is a test implementation of AppSender that implements ExtendedAppSender directly.
 // The function callbacks take set.Set[ids.NodeID] to match the ExtendedAppSender interface.
-// Interface compliance is verified at usage site to avoid import cycles.
 type SenderTest struct {
 	T                             *testing.T
 	SendAppRequestF               func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
@@ -34,6 +33,9 @@ type SenderTest struct {
 	CantSendCrossChainAppResponse bool
 	CantSendCrossChainAppError    bool
 }
+
+// Ensure SenderTest implements ExtendedAppSender
+var _ ExtendedAppSender = (*SenderTest)(nil)
 
 func (s *SenderTest) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	if s.SendAppRequestF != nil {

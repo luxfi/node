@@ -109,7 +109,7 @@ func TestGossiperGossip(t *testing.T) {
 
 		// Channel to capture sent app responses
 		sentAppResponse := make(chan []byte, 1)
-		responseSender := &p2p.SenderTest{
+		responseSender := &FakeSender{
 			SendAppResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 				sentAppResponse <- response
 				return nil
@@ -143,7 +143,7 @@ func TestGossiperGossip(t *testing.T) {
 
 		// Channel to capture sent app requests
 		sentAppRequest := make(chan []byte, 1)
-		requestSender := &p2p.SenderTest{
+		requestSender := &FakeSender{
 			SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 				sentAppRequest <- request
 				return nil
@@ -524,7 +524,7 @@ func TestPushGossiper(t *testing.T) {
 
 		// Channel to capture sent app gossip
 		sentAppGossip := make(chan []byte, 2)
-		sender := &p2p.SenderTest{
+		sender := &FakeSender{
 			SendAppGossipF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
 				sentAppGossip <- gossip
 				return nil
