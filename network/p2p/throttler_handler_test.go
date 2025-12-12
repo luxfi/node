@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var _ Handler = (*TestHandler)(nil)
@@ -58,7 +58,7 @@ func TestThrottlerHandlerRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		Throttler   Throttler
-		expectedErr *warp.Error
+		expectedErr *p2p.Error
 	}{
 		{
 			name:      "not throttled",

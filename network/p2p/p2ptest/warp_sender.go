@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/math/set"
 )
 
-// WarpSender is a test implementation of warp.Sender.
+// WarpSender is a test implementation of p2p.Sender.
 // Set function fields to customize behavior, or leave nil for default no-op.
 // Set Cant* fields to true to fail on unexpected calls.
 type WarpSender struct {

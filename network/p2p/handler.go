@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 // Standardized identifiers for application protocol handlers
@@ -28,30 +28,21 @@ var (
 )
 
 // Handler is the server-side logic for virtual machine application protocols.
-type Handler interface {
-	// Gossip is called when handling a gossip message.
-	Gossip(
-		ctx context.Context,
-		nodeID ids.NodeID,
-		gossipBytes []byte,
-	)
-	// Request is called when handling a request message.
-	// Sends a response with the response corresponding to [requestBytes] or
-	// an application-defined error.
-	Request(
-		ctx context.Context,
-		nodeID ids.NodeID,
-		deadline time.Time,
-		requestBytes []byte,
-	) ([]byte, *warp.Error)
-}
+// This is an alias for p2p.Handler.
+type Handler = p2p.Handler
+
+// Sender is an alias for p2p.Sender
+type Sender = p2p.Sender
+
+// SendConfig is an alias for p2p.SendConfig
+type SendConfig = p2p.SendConfig
 
 // NoOpHandler drops all messages
 type NoOpHandler struct{}
 
 func (NoOpHandler) Gossip(context.Context, ids.NodeID, []byte) {}
 
-func (NoOpHandler) Request(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+func (NoOpHandler) Request(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *p2p.Error) {
 	return nil, nil
 }
 
@@ -86,7 +77,7 @@ func (v ValidatorHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipB
 	v.handler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (v ValidatorHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+func (v ValidatorHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *p2p.Error) {
 	if !v.validatorSet.Has(ctx, nodeID) {
 		return nil, ErrNotValidator
 	}
@@ -99,7 +90,7 @@ type responder struct {
 	Handler
 	handlerID uint64
 	log       log.Logger
-	sender    warp.Sender
+	sender    Sender
 }
 
 // HandleRequest calls the underlying handler and sends back the response to nodeID
@@ -128,7 +119,7 @@ func (r *responder) HandleGossip(ctx context.Context, nodeID ids.NodeID, gossipB
 
 type TestHandler struct {
 	GossipF  func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
-	RequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error)
+	RequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *p2p.Error)
 }
 
 func (t TestHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -139,7 +130,7 @@ func (t TestHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes 
 	t.GossipF(ctx, nodeID, gossipBytes)
 }
 
-func (t TestHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+func (t TestHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *p2p.Error) {
 	if t.RequestF == nil {
 		return nil, nil
 	}

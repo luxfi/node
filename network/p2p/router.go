@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var (
@@ -47,7 +47,7 @@ func (m *metrics) observe(labels map[string]string, start time.Time) {
 // corresponding Client.
 type router struct {
 	log     log.Logger
-	sender  warp.Sender
+	sender  p2p.Sender
 	metrics metrics
 
 	lock            sync.RWMutex
@@ -59,7 +59,7 @@ type router struct {
 // newRouter returns a new instance of Router
 func newRouter(
 	log log.Logger,
-	sender warp.Sender,
+	sender p2p.Sender,
 	metrics metrics,
 ) *router {
 	return &router{
@@ -92,7 +92,7 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 }
 
 // Request handles incoming requests
-func (r *router) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) ([]byte, *warp.Error) {
+func (r *router) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) ([]byte, *p2p.Error) {
 	start := time.Now()
 	parsedMsg, handler, handlerID, ok := r.parse(request)
 	if !ok {
@@ -112,7 +112,7 @@ func (r *router) Request(ctx context.Context, nodeID ids.NodeID, requestID uint3
 
 	// call the corresponding handler and send back a response to nodeID
 	if err := handler.HandleRequest(ctx, nodeID, requestID, deadline, parsedMsg); err != nil {
-		return nil, &warp.Error{Code: -1, Message: err.Error()}
+		return nil, &p2p.Error{Code: -1, Message: err.Error()}
 	}
 
 	r.metrics.observe(
@@ -126,7 +126,7 @@ func (r *router) Request(ctx context.Context, nodeID ids.NodeID, requestID uint3
 }
 
 // RequestFailed handles failed requests
-func (r *router) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
+func (r *router) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *p2p.Error) error {
 	start := time.Now()
 	pending, ok := r.clearRequest(requestID)
 	if !ok {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)
@@ -43,7 +43,7 @@ func (t ThrottlerHandler) Gossip(ctx context.Context, nodeID ids.NodeID, gossipB
 	t.handler.Gossip(ctx, nodeID, gossipBytes)
 }
 
-func (t ThrottlerHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+func (t ThrottlerHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *p2p.Error) {
 	if !t.throttler.Handle(nodeID) {
 		return nil, ErrThrottled
 	}

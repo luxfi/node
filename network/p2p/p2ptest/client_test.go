@@ -11,9 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/node/network/p2p"
 )
 
 func TestClient_Gossip(t *testing.T) {
@@ -38,7 +37,7 @@ func TestClient_Gossip(t *testing.T) {
 		testHandler,
 	)
 	// Explicitly specify the node to gossip to
-	require.NoError(client.Gossip(ctx, warp.SendConfig{
+	require.NoError(client.Gossip(ctx, p2p.SendConfig{
 		NodeIDs: set.Of(nodeID),
 		Peers:   1,
 	}, []byte("foobar")))
@@ -68,7 +67,7 @@ func TestClient_Request(t *testing.T) {
 		},
 		{
 			name: "Request - error",
-			respErr: &warp.Error{
+			respErr: &p2p.Error{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -85,7 +84,7 @@ func TestClient_Request(t *testing.T) {
 		},
 		{
 			name: "RequestAny - error",
-			respErr: &warp.Error{
+			respErr: &p2p.Error{
 				Code:    123,
 				Message: "foobar",
 			},
@@ -102,9 +101,9 @@ func TestClient_Request(t *testing.T) {
 
 			requestChan := make(chan struct{})
 			testHandler := p2p.TestHandler{
-				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *p2p.Error) {
 					if tt.respErr != nil {
-						return nil, tt.respErr.(*warp.Error)
+						return nil, tt.respErr.(*p2p.Error)
 					}
 
 					return tt.response, nil
@@ -125,9 +124,9 @@ func TestClient_Request(t *testing.T) {
 					if tt.respErr != nil {
 						require.Error(err)
 						// Compare error properties since Error doesn't implement Is()
-						respErr, ok := err.(*warp.Error)
+						respErr, ok := err.(*p2p.Error)
 						require.True(ok, "error should be an Error")
-						expectedErr := tt.respErr.(*warp.Error)
+						expectedErr := tt.respErr.(*p2p.Error)
 						require.Equal(expectedErr.Code, respErr.Code)
 						require.Equal(expectedErr.Message, respErr.Message)
 					} else {

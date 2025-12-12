@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var _ ValidatorSet = (*testValidatorSet)(nil)
@@ -83,7 +83,7 @@ func TestValidatorHandlerRequest(t *testing.T) {
 		name         string
 		validatorSet ValidatorSet
 		nodeID       ids.NodeID
-		expected     *warp.Error
+		expected     *p2p.Error
 	}{
 		{
 			name:         "message dropped",

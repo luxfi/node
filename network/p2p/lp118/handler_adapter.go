@@ -8,7 +8,6 @@ package lp118
 
 import (
 	"context"
-	"github.com/luxfi/warp"
 	"time"
 
 	"github.com/luxfi/ids"
@@ -31,17 +30,17 @@ func (h *HandlerAdapter) Gossip(ctx context.Context, nodeID ids.NodeID, gossipBy
 }
 
 // Request forwards to the lp118 handler
-func (h *HandlerAdapter) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+func (h *HandlerAdapter) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *p2p.Error) {
 	resp, err := h.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 	if err != nil {
 		// Check if error is already an Error from warp package
-		if appErr, ok := err.(*warp.Error); ok {
-			return nil, &warp.Error{
+		if appErr, ok := err.(*p2p.Error); ok {
+			return nil, &p2p.Error{
 				Code:    appErr.Code,
 				Message: appErr.Message,
 			}
 		}
-		return nil, &warp.Error{
+		return nil, &p2p.Error{
 			Code:    -1,
 			Message: err.Error(),
 		}

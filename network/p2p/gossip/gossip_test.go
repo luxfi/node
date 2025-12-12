@@ -14,17 +14,16 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
+	validators "github.com/luxfi/consensus/validator"
+	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	validators "github.com/luxfi/consensus/validator"
-	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/warp"
 )
 
 func TestGossiperShutdown(*testing.T) {
@@ -528,7 +527,7 @@ func TestPushGossiper(t *testing.T) {
 			sentAppGossip := make(chan []byte, 2)
 			sender := &p2ptest.AppSender{
 				T: t,
-				SendGossipF: func(ctx context.Context, config warp.SendConfig, gossip []byte) error {
+				SendGossipF: func(ctx context.Context, config p2p.SendConfig, gossip []byte) error {
 					sentAppGossip <- gossip
 					return nil
 				},

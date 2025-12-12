@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var (
@@ -37,7 +37,7 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        warp.Sender
+	sender        p2p.Sender
 	options       *clientOptions
 }
 
@@ -118,7 +118,7 @@ func (c *Client) Request(
 // Gossip sends a gossip message to a random set of peers.
 func (c *Client) Gossip(
 	ctx context.Context,
-	config warp.SendConfig,
+	config p2p.SendConfig,
 	gossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.

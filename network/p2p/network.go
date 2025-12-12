@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 var (
@@ -56,7 +56,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log log.Logger,
-	sender warp.Sender,
+	sender p2p.Sender,
 	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -101,13 +101,13 @@ type Network struct {
 	Peers *Peers
 
 	log    log.Logger
-	sender warp.Sender
+	sender p2p.Sender
 
 	router *router
 }
 
 // Request handles an incoming request
-func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *p2p.Error) {
 	return n.router.Request(ctx, nodeID, requestID, deadline, msg)
 }
 
@@ -122,7 +122,7 @@ func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) err
 }
 
 // RequestFailed handles a failed request
-func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
+func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *p2p.Error) error {
 	return n.router.RequestFailed(ctx, nodeID, requestID, err)
 }
 

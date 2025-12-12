@@ -8,15 +8,14 @@ package gossip
 
 import (
 	"context"
-	"github.com/luxfi/warp"
 	"time"
 
 	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/log"
 )
 
 var _ p2p.Handler = (*Handler[*testTx])(nil)
@@ -47,7 +46,7 @@ type Handler[T Gossipable] struct {
 	targetResponseSize int
 }
 
-func (h Handler[T]) Request(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *warp.Error) {
+func (h Handler[T]) Request(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *p2p.Error) {
 	filter, salt, err := ParseAppRequest(requestBytes)
 	if err != nil {
 		return nil, p2p.ErrUnexpected

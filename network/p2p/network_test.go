@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/p2p"
 )
 
 const (
@@ -24,21 +24,21 @@ const (
 	handlerPrefix = byte(handlerID)
 )
 
-var errFoo = &warp.Error{
+var errFoo = &p2p.Error{
 	Code:    123,
 	Message: "foo",
 }
 
-// testSender is a test implementation of warp.Sender for this package's tests.
+// testSender is a test implementation of p2p.Sender for this package's tests.
 type testSender struct {
 	t             *testing.T
 	SendRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendResponseF func(context.Context, ids.NodeID, uint32, []byte) error
 	SendErrorF    func(context.Context, ids.NodeID, uint32, int32, string) error
-	SendGossipF   func(context.Context, warp.SendConfig, []byte) error
+	SendGossipF   func(context.Context, p2p.SendConfig, []byte) error
 }
 
-var _ warp.Sender = (*testSender)(nil)
+var _ p2p.Sender = (*testSender)(nil)
 
 func (s *testSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
 	if s.SendRequestF != nil {
@@ -61,7 +61,7 @@ func (s *testSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID
 	return nil
 }
 
-func (s *testSender) SendGossip(ctx context.Context, config warp.SendConfig, msg []byte) error {
+func (s *testSender) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
 	if s.SendGossipF != nil {
 		return s.SendGossipF(ctx, config, msg)
 	}
@@ -81,7 +81,7 @@ func TestMessageRouting(t *testing.T) {
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
 		},
-		RequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *warp.Error) {
+		RequestF: func(_ context.Context, nodeID ids.NodeID, _ time.Time, msg []byte) ([]byte, *p2p.Error) {
 			requestCalled = true
 			require.Equal(wantNodeID, nodeID)
 			require.Equal(wantMsg, msg)
@@ -93,7 +93,7 @@ func TestMessageRouting(t *testing.T) {
 	sentRequest := make(chan []byte, 1)
 	sender := &testSender{
 		t: t,
-		SendGossipF: func(_ context.Context, _ warp.SendConfig, msg []byte) error {
+		SendGossipF: func(_ context.Context, _ p2p.SendConfig, msg []byte) error {
 			sentGossip <- msg
 			return nil
 		},
@@ -110,7 +110,7 @@ func TestMessageRouting(t *testing.T) {
 
 	require.NoError(client.Gossip(
 		ctx,
-		warp.SendConfig{
+		p2p.SendConfig{
 			Peers: 1,
 		},
 		wantMsg,
@@ -148,7 +148,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 			sentRequest <- msg
 			return nil
 		},
-		SendGossipF: func(_ context.Context, _ warp.SendConfig, msg []byte) error {
+		SendGossipF: func(_ context.Context, _ p2p.SendConfig, msg []byte) error {
 			sentGossip <- msg
 			return nil
 		},
@@ -182,7 +182,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 
 	require.NoError(client.Gossip(
 		ctx,
-		warp.SendConfig{
+		p2p.SendConfig{
 			Peers: 1,
 		},
 		want,
@@ -347,7 +347,7 @@ func TestGossipMessageForUnregisteredHandler(t *testing.T) {
 }
 
 // An unregistered handler should gracefully drop messages by responding
-// to the requester with a warp.Error
+// to the requester with a p2p.Error
 func TestRequestMessageForUnregisteredHandler(t *testing.T) {
 	tests := []struct {
 		name string
@@ -372,7 +372,7 @@ func TestRequestMessageForUnregisteredHandler(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 			handler := &TestHandler{
-				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *p2p.Error) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -397,12 +397,12 @@ func TestRequestMessageForUnregisteredHandler(t *testing.T) {
 func TestHandlerError(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
-	handlerError := &warp.Error{
+	handlerError := &p2p.Error{
 		Code:    123,
 		Message: "foo",
 	}
 	handler := &TestHandler{
-		RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+		RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *p2p.Error) {
 			return nil, handlerError
 		},
 	}
@@ -462,7 +462,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 				GossipF: func(context.Context, ids.NodeID, []byte) {
 					require.Fail("should not be called")
 				},
-				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *warp.Error) {
+				RequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *p2p.Error) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
@@ -473,7 +473,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 
 			err = network.Response(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.RequestFailed(ctx, ids.EmptyNodeID, 0, &warp.Error{Code: -1, Message: "timeout"})
+			err = network.RequestFailed(ctx, ids.EmptyNodeID, 0, &p2p.Error{Code: -1, Message: "timeout"})
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
 	}

@@ -5,7 +5,6 @@ package p2ptest
 
 import (
 	"context"
-	"github.com/luxfi/warp"
 	"fmt"
 	"testing"
 	"time"
@@ -14,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/network/p2p"
 )
 
 func NewSelfClient(t *testing.T, ctx context.Context, nodeID ids.NodeID, handler p2p.Handler) *p2p.Client {
@@ -63,7 +62,7 @@ func NewClientWithPeers(
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].SendGossipF = func(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	peerSenders[clientNodeID].SendGossipF = func(ctx context.Context, config p2p.SendConfig, gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
 		for nodeID := range config.NodeIDs {
@@ -114,7 +113,7 @@ func NewClientWithPeers(
 	for nodeID := range peers {
 		peerSenders[nodeID].SendErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			go func() {
-				_ = peerNetworks[clientNodeID].RequestFailed(ctx, nodeID, requestID, &warp.Error{
+				_ = peerNetworks[clientNodeID].RequestFailed(ctx, nodeID, requestID, &p2p.Error{
 					Code:    errorCode,
 					Message: errorMessage,
 				})

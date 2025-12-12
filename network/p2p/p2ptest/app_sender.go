@@ -9,10 +9,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/node/network/p2p"
 )
 
-// AppSender is a test implementation of warp.Sender.
+// AppSender is a test implementation of p2p.Sender.
 // Set function fields to customize behavior, or leave nil for default no-op.
 // Set Cant* fields to true to fail on unexpected calls.
 type AppSender struct {
@@ -21,7 +21,7 @@ type AppSender struct {
 	// Function hooks - set these to customize behavior
 	SendRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendResponseF func(context.Context, ids.NodeID, uint32, []byte) error
-	SendGossipF   func(context.Context, warp.SendConfig, []byte) error
+	SendGossipF   func(context.Context, p2p.SendConfig, []byte) error
 	SendErrorF    func(context.Context, ids.NodeID, uint32, int32, string) error
 
 	// Fail flags - set to true to fail on unexpected calls
@@ -31,7 +31,7 @@ type AppSender struct {
 	CantSendError    bool
 }
 
-var _ warp.Sender = (*AppSender)(nil)
+var _ p2p.Sender = (*AppSender)(nil)
 
 func (s *AppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
 	if s.SendRequestF != nil {
@@ -53,7 +53,7 @@ func (s *AppSender) SendResponse(ctx context.Context, nodeID ids.NodeID, request
 	return nil
 }
 
-func (s *AppSender) SendGossip(ctx context.Context, config warp.SendConfig, msg []byte) error {
+func (s *AppSender) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
 	if s.SendGossipF != nil {
 		return s.SendGossipF(ctx, config, msg)
 	}

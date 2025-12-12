@@ -3,31 +3,15 @@
 
 package p2p
 
-import "github.com/luxfi/warp"
+import "github.com/luxfi/p2p"
 
+// Re-export error types from p2p package
 var (
-	// ErrUnexpected should be used to indicate that a request failed due to a
-	// generic error
-	ErrUnexpected = &warp.Error{
-		Code:    -1,
-		Message: "unexpected error",
-	}
-	// ErrUnregisteredHandler should be used to indicate that a request failed
-	// due to it not matching a registered handler
-	ErrUnregisteredHandler = &warp.Error{
-		Code:    -2,
-		Message: "unregistered handler",
-	}
-	// ErrNotValidator should be used to indicate that a request failed due to
-	// the requesting peer not being a validator
-	ErrNotValidator = &warp.Error{
-		Code:    -3,
-		Message: "not a validator",
-	}
-	// ErrThrottled should be used to indicate that a request failed due to the
-	// requesting peer exceeding a rate limit
-	ErrThrottled = &warp.Error{
-		Code:    -4,
-		Message: "throttled",
-	}
+	ErrUnexpected          = p2p.ErrUnexpected
+	ErrUnregisteredHandler = p2p.ErrUnregisteredHandler
+	ErrNotValidator        = p2p.ErrNotValidator
+	ErrThrottled           = p2p.ErrThrottled
 )
+
+// Error is an alias for p2p.Error
+type Error = p2p.Error
