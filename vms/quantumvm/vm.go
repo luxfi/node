@@ -83,6 +83,9 @@ type VM struct {
 	quantumSigner   *quantum.QuantumSigner
 	quantumCache    *cache.LRU[ids.ID, *quantum.QuantumSignature]
 
+	// Hybrid P/Q consensus bridge (connects P-Chain BLS + Q-Chain Ringtail)
+	hybridBridge    interface{}
+
 	// Consensus and validation
 	// validators      validators.Manager
 	// versionManager  consensusversion.Manager
@@ -517,11 +520,67 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	return nil, nil
 }
+
 // GetEngine returns the DAG consensus engine
 func (vm *VM) GetEngine() consensusdag.Engine {
 	if vm.engine == nil {
 		vm.engine = consensusdag.New()
 	}
 	return vm.engine
+}
+
+// GetHybridBridge returns the hybrid finality bridge for P/Q chain consensus
+// This connects P-Chain BLS signatures with Q-Chain Ringtail for quantum finality
+func (vm *VM) GetHybridBridge() interface{} {
+	// The hybrid bridge is initialized and connected by the chain manager
+	// after both P-Chain and Q-Chain are running
+	return vm.hybridBridge
+}
+
+// SetHybridBridge sets the hybrid finality bridge (called by chain manager)
+func (vm *VM) SetHybridBridge(bridge interface{}) {
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
+	vm.hybridBridge = bridge
+}
+
+// StampBlock implements QChainStamper interface for hybrid finality
+func (vm *VM) StampBlock(blockID interface{}, pChainHeight uint64, message []byte) (interface{}, error) {
+	vm.lock.RLock()
+	defer vm.lock.RUnlock()
+
+	// Generate quantum stamp using the quantum signer
+	key, err := vm.quantumSigner.GenerateRingtailKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate key for stamp: %w", err)
+	}
+
+	sig, err := vm.quantumSigner.Sign(message, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create quantum stamp: %w", err)
+	}
+
+	vm.log.Debug("created quantum stamp",
+		"pChainHeight", pChainHeight,
+		"sigLen", len(sig.Signature),
+	)
+
+	return sig, nil
+}
+
+// VerifyStamp implements QChainStamper interface for hybrid finality
+func (vm *VM) VerifyStamp(stamp interface{}) error {
+	sig, ok := stamp.(*quantum.QuantumSignature)
+	if !ok {
+		return errors.New("invalid stamp type")
+	}
+
+	// Verify using the quantum signer (requires the original message)
+	// For now we just verify the stamp structure
+	if len(sig.Signature) == 0 || len(sig.QuantumStamp) == 0 {
+		return errors.New("invalid quantum stamp structure")
+	}
+
+	return nil
 }
 

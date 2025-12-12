@@ -27,8 +27,8 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.21
-	github.com/luxfi/crypto v1.17.18
+	github.com/luxfi/consensus v1.22.22
+	github.com/luxfi/crypto v1.17.20
 	github.com/luxfi/database v1.2.9
 	github.com/luxfi/ids v1.2.2
 	github.com/luxfi/ledger-lux-go v1.0.0
@@ -148,7 +148,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.2.10
+	github.com/luxfi/genesis v1.2.11
 	github.com/luxfi/geth v1.16.46
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/qzmq v0.1.1
