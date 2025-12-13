@@ -2,6 +2,66 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## EVM Package Integration - 2025-12-12
+
+### Summary
+Fixed evm package (`github.com/luxfi/evm`) integration with node. The C-Chain VM is now registered and builds successfully.
+
+### Key Changes
+
+1. **p2p Interface Compatibility**:
+   - Updated `appSenderWrapper` in `evm/plugin/evm/vm.go` to implement `nodeCommonEng.AppSender`
+   - Changed `SendAppGossip` to use `p2p.SendConfig` instead of `set.Set[ids.NodeID]`
+   - Added p2p.Sender compatible methods: `SendRequest`, `SendResponse`, `SendError`, `SendGossip`
+
+2. **p2p.Handler Implementation**:
+   - Updated `evm/plugin/evm/gossip/handler.go` to use `Gossip` and `Request` methods (not `AppGossip`/`AppRequest`)
+   - Fixed method signatures to match `p2p.Handler` interface
+
+3. **ids.ID Type Fixes**:
+   - Removed unnecessary `[:]` slice conversions in warp packages
+   - `ids.ID` and `ids.NodeID` are arrays, not slices - use directly
+   - Fixed in: `warp/backend.go`, `warp/service.go`, `warp/lp118_signer_adapter.go`, `precompile/contracts/warp/config.go`, `precompile/contracts/warp/contract.go`
+
+4. **Test Helpers**:
+   - Added `SendError` and `SendGossip` methods to `TestSender` in `test_sender.go`
+   - Implements full `p2p.Sender` interface
+
+5. **C-Chain VM Registration**:
+   - Uncommented evm import in `node/node.go`
+   - Enabled `evm.Factory` registration with `constants.EVMID`
+
+### Files Modified
+- `/Users/z/work/lux/evm/plugin/evm/vm.go` - AppSender wrapper
+- `/Users/z/work/lux/evm/plugin/evm/gossip/handler.go` - p2p.Handler implementation
+- `/Users/z/work/lux/evm/plugin/evm/test_sender.go` - p2p.Sender test mock
+- `/Users/z/work/lux/evm/network/network.go` - p2p method calls
+- `/Users/z/work/lux/evm/warp/*.go` - ids.ID type fixes
+- `/Users/z/work/lux/evm/precompile/contracts/warp/*.go` - ids.ID type fixes
+- `/Users/z/work/lux/node/node/node.go` - C-Chain VM registration
+
+### Interface Reference
+
+**p2p.Sender** (from `github.com/luxfi/p2p`):
+```go
+type Sender interface {
+    SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error
+    SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error
+    SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error
+    SendGossip(ctx context.Context, config SendConfig, msg []byte) error
+}
+```
+
+**p2p.Handler** (from `github.com/luxfi/p2p`):
+```go
+type Handler interface {
+    Gossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
+    Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *Error)
+}
+```
+
+---
+
 ## Genesis Package Decoupling - 2025-12-12
 
 ### Summary

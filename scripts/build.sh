@@ -37,6 +37,6 @@ source "${REPO_ROOT}"/scripts/constants.sh
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
 echo "Building Lux Node with [$(go version)]..."
-go build ${race} "$@" -o "${node_path}" \
+go build -trimpath ${race} "$@" -o "${node_path}" \
    -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" \
    "${REPO_ROOT}"/main

@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	nodevalidators "github.com/luxfi/consensus/validator"
 	"io"
 	"io/fs"
 	"net"
@@ -22,17 +21,20 @@ import (
 	"sync"
 	"time"
 
+	nodevalidators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/evm/plugin/evm"
+
 	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
@@ -42,6 +44,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
+	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
@@ -62,22 +65,20 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	coreth "github.com/luxfi/geth/plugin/factory"
+	"github.com/luxfi/node/vms/aivm"
+	bvm "github.com/luxfi/node/vms/bridgevm"
+	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/exchangevm"
+	graphvm "github.com/luxfi/node/vms/graphvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	qvm "github.com/luxfi/node/vms/quantumvm"
-	"github.com/luxfi/node/vms/aivm"
-	bvm "github.com/luxfi/node/vms/bridgevm"
-	tvm "github.com/luxfi/node/vms/thresholdvm"
-	zvm "github.com/luxfi/node/vms/zkvm"
-	graphvm "github.com/luxfi/node/vms/graphvm"
-	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	tvm "github.com/luxfi/node/vms/thresholdvm"
+	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/trace"
 
 	databasefactory "github.com/luxfi/database/factory"
@@ -127,9 +128,9 @@ func New(
 	}
 
 	n := &Node{
-		Log:              logger,
-		LogFactory:       logFactory,
-		StakingTLSCert:   stakingCert,
+		Log:            logger,
+		LogFactory:     logFactory,
+		StakingTLSCert: stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       stakingCert.Raw,
 			PublicKey: stakingCert.PublicKey,
@@ -631,10 +632,10 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// Wrap the router to implement network.ExternalHandler
 	externalHandler := &externalHandlerWrapper{router: consensusRouter}
-	
+
 	// Create a Registry for network metrics
 	networkRegistry := metric.NewRegistry()
-	
+
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
 		n.Config.UpgradeConfig.FortunaTime,
@@ -1106,36 +1107,36 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
-			SybilProtectionEnabled:                  n.Config.SybilProtectionEnabled,
-			StakingTLSSigner:                        n.StakingTLSSigner,
-			StakingTLSCert:                          n.StakingTLSCert,
-			StakingBLSKey:                           n.Config.StakingSigningKey,
-			Log:                                     n.Log,
-			LogFactory:                              n.LogFactory,
-			VMManager:                               n.VMManager,
-			BlockAcceptorGroup:                      n.BlockAcceptorGroup,
-			TxAcceptorGroup:                         n.TxAcceptorGroup,
-			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
-			DB:                                      n.DB,
-			MsgCreator:                              n.msgCreator,
-			Router:                                  n.chainRouter,
-			Net:                                     n.Net,
-			Validators:                              n.vdrs,
-			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
-			NodeID:                                  n.ID,
-			NetworkID:                               n.Config.NetworkID,
-			Server:                                  n.APIServer,
-			AtomicMemory:                            n.sharedMemory,
-			XAssetID:                              luxAssetID,
-			XChainID:                                xChainID,
-			CChainID:                                cChainID,
-			CriticalChains:                          criticalChains,
-			TimeoutManager:                          n.timeoutManager,
-			Health:                                  n.health,
-			ShutdownNodeFunc:                        n.Shutdown,
-			MeterVMEnabled:                          n.Config.MeterVMEnabled,
-			Metrics:                                 n.MetricsGatherer,
-			MeterDBMetrics:                          n.MeterDBMetricsGatherer,
+			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
+			StakingTLSSigner:          n.StakingTLSSigner,
+			StakingTLSCert:            n.StakingTLSCert,
+			StakingBLSKey:             n.Config.StakingSigningKey,
+			Log:                       n.Log,
+			LogFactory:                n.LogFactory,
+			VMManager:                 n.VMManager,
+			BlockAcceptorGroup:        n.BlockAcceptorGroup,
+			TxAcceptorGroup:           n.TxAcceptorGroup,
+			VertexAcceptorGroup:       n.VertexAcceptorGroup,
+			DB:                        n.DB,
+			MsgCreator:                n.msgCreator,
+			Router:                    n.chainRouter,
+			Net:                       n.Net,
+			Validators:                n.vdrs,
+			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
+			NodeID:                    n.ID,
+			NetworkID:                 n.Config.NetworkID,
+			Server:                    n.APIServer,
+			AtomicMemory:              n.sharedMemory,
+			XAssetID:                  luxAssetID,
+			XChainID:                  xChainID,
+			CChainID:                  cChainID,
+			CriticalChains:            criticalChains,
+			TimeoutManager:            n.timeoutManager,
+			Health:                    n.health,
+			ShutdownNodeFunc:          n.Shutdown,
+			MeterVMEnabled:            n.Config.MeterVMEnabled,
+			Metrics:                   n.MetricsGatherer,
+			MeterDBMetrics:            n.MeterDBMetricsGatherer,
 			// NetConfigs:                           n.Config.NetConfigs,  // TODO: NetConfigs not available
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
@@ -1149,7 +1150,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            filepath.Join(n.Config.ChainDataDir, fmt.Sprintf("network-%d", n.Config.NetworkID)),
-			Nets:                                 subnets,
+			Nets:                                    subnets,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
 		},
@@ -1185,7 +1186,7 @@ func (n *Node) initVMs() error {
 				UptimeLockedCalculator:    n.uptimeCalculator,
 				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
 				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-				TrackedNets:            n.Config.TrackedNets,
+				TrackedNets:               n.Config.TrackedNets,
 				DynamicFeeConfig:          n.Config.DynamicFeeConfig,
 				ValidatorFeeConfig:        n.Config.ValidatorFeeConfig,
 				UptimePercentage:          n.Config.UptimeRequirement,
@@ -1225,9 +1226,9 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("X-Chain VM registered successfully")
 
-	// Register C-Chain VM  
+	// Register C-Chain VM
 	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{})
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &evm.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register C-Chain VM", "error", err)
 		return err
