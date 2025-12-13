@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/consensus/networking/benchlist"
-	// "github.com/luxfi/consensus/networking/router" // Unused
+	"github.com/luxfi/node/benchlist"
+	// "github.com/luxfi/consensus/core/router" // Unused
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/trace"

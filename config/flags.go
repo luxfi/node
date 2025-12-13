@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/ulimit"
 	"github.com/luxfi/node/utils/units"

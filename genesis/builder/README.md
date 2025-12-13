@@ -139,7 +139,7 @@ package main
 
 import (
     "github.com/luxfi/node/genesis/builder"
-    "github.com/luxfi/node/utils/constants"
+    "github.com/luxfi/constants"
 )
 
 func main() {

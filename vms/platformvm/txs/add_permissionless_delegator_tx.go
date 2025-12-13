@@ -10,7 +10,7 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math/math"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"

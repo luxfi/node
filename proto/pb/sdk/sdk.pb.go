@@ -164,8 +164,8 @@ func (x *PushGossip) GetGossip() [][]byte {
 }
 
 // SignatureRequest is an AppRequest message type for requesting
-// a BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/luxfi/ACPs/tree/main/ACPs/118-warp-signature-request
+// a BLS signature over a Warp message, as defined in LP-118:
+// https://github.com/luxfi/LPs/tree/main/LPs/118-warp-signature-request
 type SignatureRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -222,8 +222,8 @@ func (x *SignatureRequest) GetJustification() []byte {
 }
 
 // SignatureResponse is an AppResponse message type for providing
-// a requested BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/luxfi/ACPs/tree/main/ACPs/118-warp-signature-request
+// a requested BLS signature over a Warp message, as defined in LP-118:
+// https://github.com/luxfi/LPs/tree/main/LPs/118-warp-signature-request
 type SignatureResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

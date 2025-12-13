@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
@@ -293,7 +293,7 @@ func (p *peer) Info() Info {
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
 		TrackedNets: p.trackedNets,
-		// TODO: Add support for SupportedACPs and ObjectedACPs
+		// TODO: Add support for SupportedLPs and ObjectedLPs
 	}
 }
 

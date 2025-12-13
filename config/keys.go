@@ -25,8 +25,6 @@ const (
 	MainnetKey                               = "mainnet"
 	TestnetKey                               = "testnet"
 	LocalnetKey                              = "localnet"
-	ACPSupportKey                            = "lp-support"
-	ACPObjectKey                             = "lp-object"
 	DynamicFeesBandwidthWeightKey            = "dynamic-fees-bandwidth-weight"
 	DynamicFeesDBReadWeightKey               = "dynamic-fees-db-read-weight"
 	DynamicFeesDBWriteWeightKey              = "dynamic-fees-db-write-weight"

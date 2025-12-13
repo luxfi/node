@@ -1,15 +1,13 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
 
 package scheduler
 
 import (
 	"time"
 
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 

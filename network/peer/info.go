@@ -24,6 +24,6 @@ type Info struct {
 	LastReceived   time.Time       `json:"lastReceived"`
 	ObservedUptime json.Uint32     `json:"observedUptime"`
 	TrackedNets set.Set[ids.ID] `json:"trackedNets"`
-	SupportedACPs  set.Set[uint32] `json:"supportedACPs"`
-	ObjectedACPs   set.Set[uint32] `json:"objectedACPs"`
+	SupportedLPs  set.Set[uint32] `json:"supportedLPs"`
+	ObjectedLPs   set.Set[uint32] `json:"objectedLPs"`
 }

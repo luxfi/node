@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 

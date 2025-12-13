@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 )

@@ -44,7 +44,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
-	// "github.com/luxfi/consensus/networking/router" // Deprecated - using local ChainRouter interface instead
+	// "github.com/luxfi/consensus/core/router" // Deprecated - using local ChainRouter interface instead
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	validators "github.com/luxfi/consensus/validator"
@@ -53,7 +53,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/log"
 	utilmetric "github.com/luxfi/node/utils/metric"

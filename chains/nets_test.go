@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/nets"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 )
 
 func TestNewNets(t *testing.T) {

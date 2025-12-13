@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 )
 
 // NetValidator validates a net on the Lux network.

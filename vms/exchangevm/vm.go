@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
 
 package exchangevm
 
@@ -226,18 +224,32 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	// Convert Fx types - they may be *core.Fx or *consensuscore.Fx (same structure, different types)
+	// Convert Fx types to consensuscore.Fx
 	coreFxs := make([]*consensuscore.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx == nil {
 			continue
 		}
-		// Use reflection to handle different but structurally identical Fx types
-		// Both core.Fx and consensuscore.Fx have fields: ID ids.ID and Fx interface{}
-		fxVal := reflect.ValueOf(fx).Elem()
-		coreFxs[i] = &consensuscore.Fx{
-			ID: fxVal.FieldByName("ID").Interface().(ids.ID),
-			Fx: fxVal.FieldByName("Fx").Interface(),
+		switch f := fx.(type) {
+		case *consensuscore.Fx:
+			coreFxs[i] = f
+		default:
+			// For any other Fx type with ID and Fx fields, use type assertion
+			if fxWithID, ok := fx.(interface{ GetID() ids.ID }); ok {
+				if fxWithFx, ok := fx.(interface{ GetFx() interface{} }); ok {
+					coreFxs[i] = &consensuscore.Fx{
+						ID: fxWithID.GetID(),
+						Fx: fxWithFx.GetFx(),
+					}
+					continue
+				}
+			}
+			// Fallback: direct field access via reflection for legacy types
+			fxVal := reflect.ValueOf(fx).Elem()
+			coreFxs[i] = &consensuscore.Fx{
+				ID: fxVal.FieldByName("ID").Interface().(ids.ID),
+				Fx: fxVal.FieldByName("Fx").Interface(),
+			}
 		}
 	}
 

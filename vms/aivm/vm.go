@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 
 	"github.com/luxfi/node/version"
 

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/message/messagemock"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 )
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	consensusrouter "github.com/luxfi/consensus/networking/router"
+	consensusrouter "github.com/luxfi/consensus/core/router"
 	"github.com/luxfi/node/version"
 )
 

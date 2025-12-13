@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/vms/example/xsvm/chain"

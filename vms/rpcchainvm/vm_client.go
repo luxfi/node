@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	consensuscontext "github.com/luxfi/consensus/context"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	consensuscore "github.com/luxfi/consensus/engine/core"
+	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/warp"

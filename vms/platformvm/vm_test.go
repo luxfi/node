@@ -16,13 +16,13 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	// "github.com/luxfi/consensus/engine/core" // unused
-	// "github.com/luxfi/consensus/engine/core/coretest" // unused
-	// "github.com/luxfi/consensus/engine/core/tracker" // unused
+	// "github.com/luxfi/consensus/core" // unused
+	// "github.com/luxfi/consensus/core/coretest" // unused
+	// "github.com/luxfi/consensus/core/tracker" // unused
 	"github.com/luxfi/consensus/core/interfaces"
 	// consbenchlist "github.com/luxfi/consensus/networking/benchlist" // unused
 	// "github.com/luxfi/consensus/networking/handler" // unused
-	// "github.com/luxfi/consensus/networking/router" // unused
+	// "github.com/luxfi/consensus/core/router" // unused
 	// "github.com/luxfi/consensus/networking/sender" // unused
 	// "github.com/luxfi/consensus/networking/sender/sendertest" // unused
 	// "github.com/luxfi/consensus/networking/timeout" // unused
@@ -42,7 +42,7 @@ import (
 	// "github.com/luxfi/node/nets" // unused
 	// "github.com/luxfi/node/network/p2p" // unused
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	// "github.com/luxfi/node/utils/math/meter" // unused
 	// "github.com/luxfi/node/utils/resource" // unused

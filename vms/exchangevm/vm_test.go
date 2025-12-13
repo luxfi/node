@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"

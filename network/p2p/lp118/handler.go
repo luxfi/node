@@ -20,7 +20,7 @@ import (
 // HandlerID is the protocol ID for LP-118
 const HandlerID = 0x12345678 // Implementation note
 
-// Handler handles ACP-118 messages
+// Handler handles LP-118 messages
 type Handler interface {
 	// AppRequest handles an incoming request
 	AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, request []byte) ([]byte, error)

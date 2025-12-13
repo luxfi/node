@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/vms/components/gas"

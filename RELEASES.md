@@ -146,7 +146,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - Ensure HTTP headers are propagated through the rpcchainvm by @joshua-kim in https://github.com/luxfi/node/pull/3917
 - Document lp-118 message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3925
 - Add P-Chain state test by @StephenButtolph in https://github.com/luxfi/node/pull/3924
-- Document ACP-77 handling of 0 weight requests by @StephenButtolph in https://github.com/luxfi/node/pull/3926
+- Document LP-77 handling of 0 weight requests by @StephenButtolph in https://github.com/luxfi/node/pull/3926
 - Refactor cache implementations by @StephenButtolph in https://github.com/luxfi/node/pull/3239
 - Fix `proposerMinBlockDelay` location in config doc for L1s by @federiconardelli7 in https://github.com/luxfi/node/pull/3819
 - Close stale issues and PRs by @joshua-kim in https://github.com/luxfi/node/pull/3906
@@ -214,10 +214,10 @@ Fully populate test context by @StephenButtolph in https://github.com/luxfi/node
 
 ## [v1.13.0](https://github.com/luxfi/node/releases/tag/v1.13.0)
 
-This upgrade consists of the following Lux Community Proposal (ACP):
-- [ACP-176](https://github.com/luxfi/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
+This upgrade consists of the following Lux Community Proposal (LP):
+- [LP-176](https://github.com/luxfi/LPs/blob/main/LPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
 
-The ACP in this upgrade goes into effect at 11 AM ET (3 PM UTC) on Tuesday, April 8th, 2025 on Mainnet.
+The LP in this upgrade goes into effect at 11 AM ET (3 PM UTC) on Tuesday, April 8th, 2025 on Mainnet.
 
 **All Fortuna supporting Mainnet nodes should upgrade before 11 AM ET, April 8th 2025.**
 
@@ -279,7 +279,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - Remove unused `ForceCreateChain` function from `testManager` by @strmfos in https://github.com/luxfi/node/pull/3755
 - chore: make function comments match function names by @rustco in https://github.com/luxfi/node/pull/3757
 - L1 validator eviction block validity by @StephenButtolph in https://github.com/luxfi/node/pull/3758
-- Add ACP-176 e2e tests by @StephenButtolph in https://github.com/luxfi/node/pull/3749
+- Add LP-176 e2e tests by @StephenButtolph in https://github.com/luxfi/node/pull/3749
 - [tmpnet] Deploy collectors with golang to simplify cross-repo use by @maru-ava in https://github.com/luxfi/node/pull/3692
 - fix spelling issues config_test.go by @futreall in https://github.com/luxfi/node/pull/3760
 - [tmpnet] Add check for collection of logs and metrics to custom github action by @maru-ava in https://github.com/luxfi/node/pull/3740
@@ -296,7 +296,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - [ci] Disable monitoring for jobs of PRs of fork branches by @maru-ava in https://github.com/luxfi/node/pull/3781
 - Update db_test.go by @sky-coderay in https://github.com/luxfi/node/pull/3765
 - chore: fix some function names in comment by @tcpdumppy in https://github.com/luxfi/node/pull/3773
-- Implement ACP-118 Aggregator by @joshua-kim in https://github.com/luxfi/node/pull/3394
+- Implement LP-118 Aggregator by @joshua-kim in https://github.com/luxfi/node/pull/3394
 - Print git commit version upon startup by @yacovm in https://github.com/luxfi/node/pull/3771
 - chore(nix): add darwin.apple_sdk.frameworks.Security by @darioush in https://github.com/luxfi/node/pull/3769
 - Add comment to SendConfig documenting how to broadcast by @aaronbuchwald in https://github.com/luxfi/node/pull/3783
@@ -313,7 +313,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - [tmpnet] Rename tmpnetctl main package from cmd to tmpnetctl by @maru-ava in https://github.com/luxfi/node/pull/3787
 - Improve check-clean CI script by @StephenButtolph in https://github.com/luxfi/node/pull/3800
 - Bump golang.org/x/net from 0.33.0 to 0.36.0 by @dependabot in https://github.com/luxfi/node/pull/3793
-- Fix ACP-118 Aggregator Test Flake by @joshua-kim in https://github.com/luxfi/node/pull/3801
+- Fix LP-118 Aggregator Test Flake by @joshua-kim in https://github.com/luxfi/node/pull/3801
 - Canoto v0.15.0 upgrade by @tsachiherman in https://github.com/luxfi/node/pull/3805
 - [tmpnet] Fix README example for tmpnetctl script by @maru-ava in https://github.com/luxfi/node/pull/3807
 - Update geth to v0.15.0-rc.0 by @darioush in https://github.com/luxfi/node/pull/3808
@@ -486,13 +486,13 @@ The plugin version is unchanged at `38` and is compatible with version `v1.12.0`
 
 ## [v1.12.0](https://github.com/luxfi/node/releases/tag/v1.12.0)
 
-This upgrade consists of the following Lux Community Proposals (ACPs):
-- [ACP-77](https://github.com/luxfi/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Nets
-- [ACP-103](https://github.com/luxfi/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
-- [ACP-118](https://github.com/luxfi/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
-- [ACP-125](https://github.com/luxfi/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
-- [ACP-131](https://github.com/luxfi/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Net-EVM chains
-- [ACP-151](https://github.com/luxfi/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
+This upgrade consists of the following Lux Community Proposals (LPs):
+- [LP-77](https://github.com/luxfi/LPs/blob/main/LPs/77-reinventing-subnets/README.md) Reinventing Nets
+- [LP-103](https://github.com/luxfi/LPs/blob/main/LPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
+- [LP-118](https://github.com/luxfi/LPs/blob/main/LPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
+- [LP-125](https://github.com/luxfi/LPs/blob/main/LPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
+- [LP-131](https://github.com/luxfi/LPs/blob/main/LPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Net-EVM chains
+- [LP-151](https://github.com/luxfi/LPs/blob/main/LPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
 
 The changes in the upgrade go into effect at 12 AM ET (5 PM UTC) on Monday, December 16th, 2025 on Mainnet.
 
@@ -566,24 +566,24 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Introduce and use `database.WithDefault` by @StephenButtolph in https://github.com/luxfi/node/pull/3478
 - Evict recentlyAccepted blocks based on wall-clock time  by @iansuvak in https://github.com/luxfi/node/pull/3460
 - fix improper use of FailNow in testing by @tsachiherman in https://github.com/luxfi/node/pull/3479
-- [ACP 151] Use current block's P-Chain height as context for verifying state of the inner block by @iansuvak in https://github.com/luxfi/node/pull/3459
+- [LP 151] Use current block's P-Chain height as context for verifying state of the inner block by @iansuvak in https://github.com/luxfi/node/pull/3459
 - [tmpnet] Add --start-network to support hypersdk MODE=run by @marun in https://github.com/luxfi/node/pull/3465
 - [e2e] Check network health after bootstrap checks by @marun in https://github.com/luxfi/node/pull/3466
-- ACP-77: Add ConversionID to state by @StephenButtolph in https://github.com/luxfi/node/pull/3481
+- LP-77: Add ConversionID to state by @StephenButtolph in https://github.com/luxfi/node/pull/3481
 - Make bootstrapping handle its own timeouts by @yacovm in https://github.com/luxfi/node/pull/3410
 - Wrap `TestDiffExpiry` sub-tests in `t.Run` by @StephenButtolph in https://github.com/luxfi/node/pull/3483
 - Move RPC metrics registration after its client's initialization by @yacovm in https://github.com/luxfi/node/pull/3488
 - database: add applicable dbtests for linkeddb by @darioush in https://github.com/luxfi/node/pull/3486
 - Add SoV Excess to P-chain state by @StephenButtolph in https://github.com/luxfi/node/pull/3482
 - Remove deprecated X-chain pubsub server by @StephenButtolph in https://github.com/luxfi/node/pull/3490
-- Update SoV struct to align with latest ACP-77 spec by @StephenButtolph in https://github.com/luxfi/node/pull/3492
+- Update SoV struct to align with latest LP-77 spec by @StephenButtolph in https://github.com/luxfi/node/pull/3492
 - Register VM and consensusman metrics after chain creation by @yacovm in https://github.com/luxfi/node/pull/3489
 - Skip Flaky Test by @joshua-kim in https://github.com/luxfi/node/pull/3495
 - Add request to update `releases.md` in PR template by @ceyonur in https://github.com/luxfi/node/pull/3476
-- ACP-77: Update P-chain state staker tests by @StephenButtolph in https://github.com/luxfi/node/pull/3494
-- ACP-77: Write subnet public key diffs to state by @StephenButtolph in https://github.com/luxfi/node/pull/3487
+- LP-77: Update P-chain state staker tests by @StephenButtolph in https://github.com/luxfi/node/pull/3494
+- LP-77: Write subnet public key diffs to state by @StephenButtolph in https://github.com/luxfi/node/pull/3487
 - Add `Deregister` to `metrics.MultiGatherer` interface by @StephenButtolph in https://github.com/luxfi/node/pull/3498
-- ACP-77: Add subnetIDNodeID struct by @StephenButtolph in https://github.com/luxfi/node/pull/3499
+- LP-77: Add subnetIDNodeID struct by @StephenButtolph in https://github.com/luxfi/node/pull/3499
 - Use subnet public key diffs after Etna is activated by @StephenButtolph in https://github.com/luxfi/node/pull/3502
 - Split `writeCurrentStakers` into multiple functions by @StephenButtolph in https://github.com/luxfi/node/pull/3500
 - [tmpnet] Refactor bootstrap monitor kubernetes functions for reuse by @marun in https://github.com/luxfi/node/pull/3446
@@ -591,42 +591,42 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Clarify partial sync flag by @michaelkaplan13 in https://github.com/luxfi/node/pull/3505
 - Update BLST to v0.3.13 by @yacovm in https://github.com/luxfi/node/pull/3506
 - Restrict public keys prior to TLS handshake by @yacovm in https://github.com/luxfi/node/pull/3501
-- ACP-77: Filter the inactive validator from block proposals and tx gossip by @StephenButtolph in https://github.com/luxfi/node/pull/3509
+- LP-77: Filter the inactive validator from block proposals and tx gossip by @StephenButtolph in https://github.com/luxfi/node/pull/3509
 - [testing] Enable bootstrap testing of partial sync by @marun in https://github.com/luxfi/node/pull/3508
 - Rename `constantsAreUnmodified` to `immutableFieldsAreUnmodified` by @StephenButtolph in https://github.com/luxfi/node/pull/3513
 - Accept info.Peers args by @cam-schultz in https://github.com/luxfi/node/pull/3515
 - Return shallow copy of validator set in platformVM's validator manager by @yacovm in https://github.com/luxfi/node/pull/3512
 - Add `ValidatorWeightDiff` `Add` and `Sub` helpers by @StephenButtolph in https://github.com/luxfi/node/pull/3514
-- ACP-77: Add caching to SoV DB helpers by @StephenButtolph in https://github.com/luxfi/node/pull/3516
+- LP-77: Add caching to SoV DB helpers by @StephenButtolph in https://github.com/luxfi/node/pull/3516
 - Add script to configure metrics and log collection from a local node by @marun in https://github.com/luxfi/node/pull/3517
-- ACP-77: Implement validator state by @StephenButtolph in https://github.com/luxfi/node/pull/3388
-- ACP-77: Reduce block gossip log level by @StephenButtolph in https://github.com/luxfi/node/pull/3519
-- ACP-77: Implement ids.ID#Append by @StephenButtolph in https://github.com/luxfi/node/pull/3518
-- ACP-103: Document and update genesis test fee configs by @StephenButtolph in https://github.com/luxfi/node/pull/3520
-- ACP-77: Deactivate SoVs without sufficient fees by @StephenButtolph in https://github.com/luxfi/node/pull/3412
-- ACP-77: Allow legacy validator removal after conversion by @StephenButtolph in https://github.com/luxfi/node/pull/3521
-- ACP-77: Refactor e2e test by @StephenButtolph in https://github.com/luxfi/node/pull/3522
-- ACP-77: Update `ConvertNetTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3397
+- LP-77: Implement validator state by @StephenButtolph in https://github.com/luxfi/node/pull/3388
+- LP-77: Reduce block gossip log level by @StephenButtolph in https://github.com/luxfi/node/pull/3519
+- LP-77: Implement ids.ID#Append by @StephenButtolph in https://github.com/luxfi/node/pull/3518
+- LP-103: Document and update genesis test fee configs by @StephenButtolph in https://github.com/luxfi/node/pull/3520
+- LP-77: Deactivate SoVs without sufficient fees by @StephenButtolph in https://github.com/luxfi/node/pull/3412
+- LP-77: Allow legacy validator removal after conversion by @StephenButtolph in https://github.com/luxfi/node/pull/3521
+- LP-77: Refactor e2e test by @StephenButtolph in https://github.com/luxfi/node/pull/3522
+- LP-77: Update `ConvertNetTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3397
 - Remove stutter in P-chain wallet builder by @StephenButtolph in https://github.com/luxfi/node/pull/3524
 - Clarify EndAccumulatedFee comment by @michaelkaplan13 in https://github.com/luxfi/node/pull/3523
 - [tmpnet] Misc cleanup for monitoring tooling by @marun in https://github.com/luxfi/node/pull/3527
 - Remove P-chain txsmock package by @StephenButtolph in https://github.com/luxfi/node/pull/3528
 - Unexport all P-Chain visitors by @StephenButtolph in https://github.com/luxfi/node/pull/3525
 - Standardize P-Chain tx visitor order by @StephenButtolph in https://github.com/luxfi/node/pull/3529
-- ACP-77: Implement `RegisterNetValidatorTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3420
-- ACP-77: Refactor P-Chain configs by @StephenButtolph in https://github.com/luxfi/node/pull/3533
+- LP-77: Implement `RegisterNetValidatorTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3420
+- LP-77: Refactor P-Chain configs by @StephenButtolph in https://github.com/luxfi/node/pull/3533
 - Add additional BLS benchmarks by @StephenButtolph in https://github.com/luxfi/node/pull/3538
-- ACP-77: Refactor subnet auth verification by @StephenButtolph in https://github.com/luxfi/node/pull/3537
-- ACP-77: Implement `SetNetValidatorWeightTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3421
+- LP-77: Refactor subnet auth verification by @StephenButtolph in https://github.com/luxfi/node/pull/3537
+- LP-77: Implement `SetNetValidatorWeightTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3421
 - Rename error to be more generic by @StephenButtolph in https://github.com/luxfi/node/pull/3543
 - fix getNetIDTag in traced state by @ceyonur in https://github.com/luxfi/node/pull/3542
 - Add `platform.getNetOnlyValidator` API by @StephenButtolph in https://github.com/luxfi/node/pull/3540
 - Add SoV deactivation owner support to the P-chain wallet by @StephenButtolph in https://github.com/luxfi/node/pull/3541
-- ACP-77: Implement Warp message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3423
-- ACP-77: Current validators API for SoV by @ceyonur in https://github.com/luxfi/node/pull/3404
-- ACP-77: Implement Warp message signing by @StephenButtolph in https://github.com/luxfi/node/pull/3428
-- ACP-77: Implement IncreaseBalanceTx by @StephenButtolph in https://github.com/luxfi/node/pull/3429
-- ACP-77: Implement DisableNetValidatorTx by @StephenButtolph in https://github.com/luxfi/node/pull/3440
+- LP-77: Implement Warp message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3423
+- LP-77: Current validators API for SoV by @ceyonur in https://github.com/luxfi/node/pull/3404
+- LP-77: Implement Warp message signing by @StephenButtolph in https://github.com/luxfi/node/pull/3428
+- LP-77: Implement IncreaseBalanceTx by @StephenButtolph in https://github.com/luxfi/node/pull/3429
+- LP-77: Implement DisableNetValidatorTx by @StephenButtolph in https://github.com/luxfi/node/pull/3440
 - Improve P-Chain error messages by @StephenButtolph in https://github.com/luxfi/node/pull/3536
 - Add Etna logging by @StephenButtolph in https://github.com/luxfi/node/pull/3454
 - Add Etna P-chain metrics by @StephenButtolph in https://github.com/luxfi/node/pull/3458
@@ -634,9 +634,9 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - [tmpnet] Watch for and report FATAL log entries on node startup by @marun in https://github.com/luxfi/node/pull/3535
 - Allow non primary network validators to request all peers by @cam-schultz in https://github.com/luxfi/node/pull/3491
 - Add `platform.getProposedHeight` API by @iansuvak in https://github.com/luxfi/node/pull/3530
-- Follow ACP-77 naming conventions by @michaelkaplan13 in https://github.com/luxfi/node/pull/3546
-- ACP-103: Finalize complexity calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3548
-- ACP-103: Finalize parameterization by @StephenButtolph in https://github.com/luxfi/node/pull/3549
+- Follow LP-77 naming conventions by @michaelkaplan13 in https://github.com/luxfi/node/pull/3546
+- LP-103: Finalize complexity calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3548
+- LP-103: Finalize parameterization by @StephenButtolph in https://github.com/luxfi/node/pull/3549
 - Add "proposed" optional flag to `getValidatorsAt` by @iansuvak in https://github.com/luxfi/node/pull/3531
 - Fix json parsing of GetValidatorsAtArgs by @iansuvak in https://github.com/luxfi/node/pull/3551
 
@@ -700,7 +700,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Parallelize BatchedParseBlock by @yacovm in https://github.com/luxfi/node/pull/3227
 - [ci] Lint on non-test code importing packages from /tests by @marun in https://github.com/luxfi/node/pull/3214
 - Merge unlocked stake outputs by @StephenButtolph in https://github.com/luxfi/node/pull/3231
-- ACP 118 reference implementation by @cam-schultz in https://github.com/luxfi/node/pull/3218
+- LP 118 reference implementation by @cam-schultz in https://github.com/luxfi/node/pull/3218
 - Storage OpenBSD/adJ by @vtamara in https://github.com/luxfi/node/pull/2809
 - Remove unused error from fee calculator creation by @StephenButtolph in https://github.com/luxfi/node/pull/3245
 - Rename Transitive consensusman to Engine consensusman by @yacovm in https://github.com/luxfi/node/pull/3244
@@ -727,7 +727,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Fix spelling by @nnsW3 in https://github.com/luxfi/node/pull/3267
 - refactor: rename `*test.Test*` identifiers by @ARR4N in https://github.com/luxfi/node/pull/3260
 - Separate e2e tests by etna activation by @StephenButtolph in https://github.com/luxfi/node/pull/3268
-- Implement P-chain ACP-103 complexity calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3209
+- Implement P-chain LP-103 complexity calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3209
 - Implement dynamic fee calculator by @StephenButtolph in https://github.com/luxfi/node/pull/3211
 - [tmpnet] Add Network.GetNetworkID() to get ID of a running network by @marun in https://github.com/luxfi/node/pull/3269
 - Disable `TransformNetTx` post-Etna by @dhrubabasu in https://github.com/luxfi/node/pull/3152
@@ -845,7 +845,7 @@ The plugin version is updated to `36` all plugins must update to be compatible.
 - [vms/proposervm] Set build block time correctly  when anyone can propose by @dhrubabasu in https://github.com/luxfi/node/pull/3197
 - chore: fix comment by @polymaer in https://github.com/luxfi/node/pull/3201
 - Make math.Add64 and math.Mul64 generic by @StephenButtolph in https://github.com/luxfi/node/pull/3205
-- Implement ACP-103 fee package by @StephenButtolph in https://github.com/luxfi/node/pull/3203
+- Implement LP-103 fee package by @StephenButtolph in https://github.com/luxfi/node/pull/3203
 - [antithesis] Fix job duration by @marun in https://github.com/luxfi/node/pull/3206
 - [vms/platformvm] `RegisterDUnsignedTxsTypes` -> `RegisterDurangoUnsignedTxsTypes` by @dhrubabasu in https://github.com/luxfi/node/pull/3212
 - chore: fix some comments by @yingshanghuangqiao in https://github.com/luxfi/node/pull/3213
@@ -1107,8 +1107,8 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - [tmpnet] Enable single node networks by @marun in https://github.com/luxfi/node/pull/3003
 - P-chain - introducing fees calculators by @abi87 in https://github.com/luxfi/node/pull/2698
 - Change default staking key from RSA 4096 to secp256r1 by @StephenButtolph in https://github.com/luxfi/node/pull/3025
-- Fix ACP links by @dhrubabasu in https://github.com/luxfi/node/pull/3037
-- Prevent unnecessary bandwidth from activated ACPs by @dhrubabasu in https://github.com/luxfi/node/pull/3031
+- Fix LP links by @dhrubabasu in https://github.com/luxfi/node/pull/3037
+- Prevent unnecessary bandwidth from activated LPs by @dhrubabasu in https://github.com/luxfi/node/pull/3031
 - [antithesis] Add test setup for xsvm by @marun in https://github.com/luxfi/node/pull/2982
 - [antithesis] Ensure node image is pushed by @marun in https://github.com/luxfi/node/pull/3042
 - Cleanup fee config passing by @StephenButtolph in https://github.com/luxfi/node/pull/3043
@@ -1468,15 +1468,15 @@ The plugin version is updated to `34` all plugins must update to be compatible.
 
 ## [v1.11.0](https://github.com/luxfi/node/releases/tag/v1.11.0)
 
-This upgrade consists of the following Lux Community Proposals (ACPs):
+This upgrade consists of the following Lux Community Proposals (LPs):
 
-- [ACP-23](https://github.com/luxfi/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
-- [ACP-24](https://github.com/luxfi/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
-- [ACP-25](https://github.com/luxfi/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
-- [ACP-30](https://github.com/luxfi/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
-- [ACP-31](https://github.com/luxfi/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Net Ownership Transfer
-- [ACP-41](https://github.com/luxfi/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
-- [ACP-62](https://github.com/luxfi/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
+- [LP-23](https://github.com/luxfi/LPs/blob/main/LPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
+- [LP-24](https://github.com/luxfi/LPs/blob/main/LPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
+- [LP-25](https://github.com/luxfi/LPs/blob/main/LPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
+- [LP-30](https://github.com/luxfi/LPs/blob/main/LPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
+- [LP-31](https://github.com/luxfi/LPs/blob/main/LPs/31-enable-subnet-ownership-transfer/README.md) Enable Net Ownership Transfer
+- [LP-41](https://github.com/luxfi/LPs/blob/main/LPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
+- [LP-62](https://github.com/luxfi/LPs/blob/main/LPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
 
 The changes in the upgrade go into effect at 11 AM ET (4 PM UTC) on Wednesday, March 6th, 2025 on Mainnet.
 
@@ -1509,7 +1509,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - `ci`: Updated shellcheck script to support autofix by @marun in https://github.com/luxfi/node/pull/2678
 - Unblock misconfigured subnets by @StephenButtolph in https://github.com/luxfi/node/pull/2679
 - Add transfer subnet ownership functionality to wallet by @felipemadero in https://github.com/luxfi/node/pull/2659
-- Add ACP-62 by @dhrubabasu in https://github.com/luxfi/node/pull/2681
+- Add LP-62 by @dhrubabasu in https://github.com/luxfi/node/pull/2681
 - `vms/platformvm`: Add missing txs to `txs.Builder` by @dhrubabasu in https://github.com/luxfi/node/pull/2663
 - `vms/platformvm`: Disable `AddValidatorTx` and `AddDelegatorTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2662
 - Remove chain router from node.Config by @StephenButtolph in https://github.com/luxfi/node/pull/2683
@@ -1621,7 +1621,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 ### APIs
 
 - Added `info.lps` API
-- Added `supportedACPs` and `objectedACPs` for each peer returned by `info.peers`
+- Added `supportedLPs` and `objectedLPs` for each peer returned by `info.peers`
 - Added `txs` field to `BanffProposalBlock`'s json format
 - Added metrics:
   - `lux_network_validator_ips`
@@ -1734,7 +1734,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - P2P AppError handling by @joshua-kim in https://github.com/luxfi/node/pull/2248
 - `vms/platformvm`: Verify txs before building a block by @dhrubabasu in https://github.com/luxfi/node/pull/2359
 - Refactor p2p unit tests by @joshua-kim in https://github.com/luxfi/node/pull/2475
-- Add ACP signaling by @StephenButtolph in https://github.com/luxfi/node/pull/2476
+- Add LP signaling by @StephenButtolph in https://github.com/luxfi/node/pull/2476
 - Refactor SDK by @joshua-kim in https://github.com/luxfi/node/pull/2452
 - Cleanup CI by @dhrubabasu in https://github.com/luxfi/node/pull/2480
 - Ensure upgrade test uses the correct binary on restart by @marun in https://github.com/luxfi/node/pull/2478

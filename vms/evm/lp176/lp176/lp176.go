@@ -4,8 +4,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// ACP176 implements the fee logic specified here:
-// https://github.com/luxfi/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
+// LP176 implements the fee logic specified here:
+// https://github.com/luxfi/LPs/blob/main/LPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
 package lp176
 
 import (

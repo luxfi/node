@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/chains"
 	// "github.com/luxfi/node/internal/database/rpcdb" // Unused
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/perms"

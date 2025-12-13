@@ -51,7 +51,7 @@ require (
 	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.11.1
-	github.com/supranational/blst v0.3.16-0.20250831170142-f48500c1fdbe
+	github.com/supranational/blst v0.3.16
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.37.0
@@ -62,14 +62,14 @@ require (
 	go.opentelemetry.io/otel/trace v1.37.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/crypto v0.43.0
+	golang.org/x/crypto v0.46.0
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
-	golang.org/x/mod v0.28.0
-	golang.org/x/net v0.46.0
-	golang.org/x/sync v0.17.0
-	golang.org/x/term v0.36.0
+	golang.org/x/mod v0.30.0
+	golang.org/x/net v0.47.0
+	golang.org/x/sync v0.19.0
+	golang.org/x/term v0.38.0
 	golang.org/x/time v0.12.0
-	golang.org/x/tools v0.37.0
+	golang.org/x/tools v0.39.0
 	gonum.org/v1/gonum v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8
 	google.golang.org/grpc v1.75.1
@@ -82,7 +82,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.24.3 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/cockroachdb/errors v1.12.0 // indirect
@@ -131,7 +131,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
@@ -141,13 +141,14 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.4.4
+	github.com/luxfi/constants v1.2.1
+	github.com/luxfi/genesis v1.4.6
 	github.com/luxfi/geth v1.16.50
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
 	github.com/luxfi/p2p v1.4.5
 	github.com/luxfi/qzmq v0.1.1
-	github.com/luxfi/ringtail v0.1.0
+	github.com/luxfi/ringtail v0.1.1-0.20251212223757-dc8aa97bca53
 	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.2
 	github.com/luxfi/warp v1.16.35
@@ -156,9 +157,10 @@ require (
 )
 
 require (
-	github.com/ALTree/bigfloat v0.0.0-20220102081255-38c8b72a9924 // indirect
+	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
+	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251211224604-2e727cd2e6fe // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cloudflare/circl v1.6.2-0.20251204010831-23491bd573cf // indirect
@@ -180,7 +182,6 @@ require (
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/luxfi/constants v1.0.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
@@ -189,7 +190,6 @@ require (
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/tuneinsight/lattigo/v5 v5.0.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	github.com/zondax/golem v0.27.0 // indirect

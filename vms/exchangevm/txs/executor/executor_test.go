@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 
 	"github.com/luxfi/crypto/secp256k1"
 

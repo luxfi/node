@@ -6,7 +6,9 @@ package benchlist
 import "github.com/luxfi/ids"
 import "github.com/luxfi/consensus/validator"
 
-type Config struct{}
+type Config struct {
+	Deprecated bool
+}
 
 type Manager interface {
 	IsBenched(nodeID ids.NodeID, chainID ids.ID) bool

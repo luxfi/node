@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
 
 package node
 
@@ -11,7 +9,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

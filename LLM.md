@@ -441,7 +441,7 @@ P2P communication with:
 
 ## Lux Proposals (LPs)
 
-Lux uses "LP" (Lux Proposal) instead of "ACP" for branding. Key implemented LPs:
+Lux uses "LP" (Lux Proposal) instead of "LP" for branding. Key implemented LPs:
 
 ### LP-181 (Epoching)
 - **Location**: `vms/proposervm/lp181/`

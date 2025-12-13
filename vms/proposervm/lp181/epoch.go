@@ -4,8 +4,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// ACP181 implements the epoch logic specified here:
-// https://github.com/luxfi/ACPs/blob/main/ACPs/181-p-chain-epoched-views/README.md
+// LP181 implements the epoch logic specified here:
+// https://github.com/luxfi/LPs/blob/main/LPs/181-p-chain-epoched-views/README.md
 package lp181
 
 import (

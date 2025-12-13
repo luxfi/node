@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
 
 //go:build !windows && !plan9 && !js
 // +build !windows,!plan9,!js
@@ -15,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 )
 
 var staleSocketTimeout = 100 * time.Millisecond

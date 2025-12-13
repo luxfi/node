@@ -20,7 +20,7 @@ import (
 
 	"github.com/luxfi/log"
 	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/perms"

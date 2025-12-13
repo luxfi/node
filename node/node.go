@@ -56,7 +56,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"

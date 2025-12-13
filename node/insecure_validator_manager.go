@@ -9,9 +9,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/consensus/networking/router"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -20,7 +19,7 @@ import (
 )
 
 type insecureValidatorManager struct {
-	router.Router
+	Router
 	log    log.Logger
 	vdrs   validators.Manager
 	weight uint64

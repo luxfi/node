@@ -14,7 +14,7 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

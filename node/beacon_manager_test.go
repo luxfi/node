@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/timer"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/version"

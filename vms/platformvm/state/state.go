@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/maybe"
@@ -2117,12 +2117,12 @@ func (s *state) initValidatorSets() error {
 		return errValidatorSetAlreadyPopulated
 	}
 
-	// Load active ACP-77 validators
+	// Load active LP-77 validators
 	if err := s.activeL1Validators.addStakersToValidatorManager(s.validators); err != nil {
 		return err
 	}
 
-	// Load inactive ACP-77 validators
+	// Load inactive LP-77 validators
 	//
 	// Inactive validators must be loaded individually with their ValidationID
 	// as TxID, not aggregated with ids.Empty.
@@ -2149,7 +2149,7 @@ func (s *state) initValidatorSets() error {
 		}
 	}
 
-	// Load primary network and non-ACP77 validators
+	// Load primary network and non-LP77 validators
 	primaryNetworkValidators := s.currentStakers.validators[constants.PrimaryNetworkID]
 	for subnetID, subnetValidators := range s.currentStakers.validators {
 		for nodeID, subnetValidator := range subnetValidators {
@@ -2607,7 +2607,7 @@ type validatorDiff struct {
 func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, error) {
 	changes := make(map[subnetIDNodeID]*validatorDiff)
 
-	// Calculate the changes to the pre-ACP-77 validator set
+	// Calculate the changes to the pre-LP-77 validator set
 	for subnetID, subnetDiffs := range s.currentStakers.validatorDiffs {
 		for nodeID, diff := range subnetDiffs {
 			weightDiff, err := diff.WeightDiff()
@@ -2649,7 +2649,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 		}
 	}
 
-	// Calculate the changes to the ACP-77 validator set
+	// Calculate the changes to the LP-77 validator set
 	//
 	// Process in two passes to ensure TxID preservation during ValidationID changes:
 	// Pass 1: Process removals (weight decreases) to capture original TxIDs

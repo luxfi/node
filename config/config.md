@@ -37,12 +37,12 @@ If set to `false`, this node will not expose the Metrics API. Defaults to
 #### `--lp-support` (array of integers)
 
 The `--lp-support` flag allows a Lux Node to indicate support for a
-set of [Lux Community Proposals](https://github.com/luxfi/ACPs).
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
 #### `--lp-object` (array of integers)
 
 The `--lp-object` flag allows a Lux Node to indicate objection for a
-set of [Lux Community Proposals](https://github.com/luxfi/ACPs).
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
 ## Bootstrapping
 

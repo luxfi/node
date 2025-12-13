@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
 
 // Package tvm implements the Threshold VM (T-Chain) - MPC as a service for all Lux chains
 package tvm
@@ -18,7 +16,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	core "github.com/luxfi/consensus/engine/core"
+	core "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
