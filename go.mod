@@ -143,7 +143,7 @@ require (
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.3
 	github.com/luxfi/coreth v0.15.9-0.20251213172023-0605a89ea428
-	github.com/luxfi/genesis v1.5.0
+	github.com/luxfi/genesis v1.5.1
 	github.com/luxfi/geth v1.16.53
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
