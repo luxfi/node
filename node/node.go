@@ -22,7 +22,7 @@ import (
 	"time"
 
 	nodevalidators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/evm/plugin/evm"
+	coreth "github.com/luxfi/coreth/plugin/evm"
 
 	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -1228,7 +1228,7 @@ func (n *Node) initVMs() error {
 
 	// Register C-Chain VM
 	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &evm.Factory{})
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register C-Chain VM", "error", err)
 		return err
