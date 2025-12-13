@@ -142,7 +142,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.2
-	github.com/luxfi/coreth v0.15.5
+	github.com/luxfi/coreth v0.15.8
 	github.com/luxfi/genesis v1.4.7
 	github.com/luxfi/geth v1.16.52
 	github.com/luxfi/go-bip39 v1.1.2

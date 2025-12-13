@@ -328,8 +328,8 @@ github.com/luxfi/consensus v1.22.26 h1:q80Re+qPdkzYLxp+HLJLutcqM64AWsBC1eaN+XaDb
 github.com/luxfi/consensus v1.22.26/go.mod h1:kFwUKSUwzlVpkvL0PJc0NhYMoBn8BSu8qwjlYl0Iizg=
 github.com/luxfi/constants v1.2.2 h1:zzmm2CQSrCGqt4SOdHQpS7vZuHXeCgTy4EwK4xtOvbI=
 github.com/luxfi/constants v1.2.2/go.mod h1:lJSH4WAMaiVsCC5wi3kptAXJrWiNFwORptpaYTUs7P0=
-github.com/luxfi/coreth v0.15.4 h1:7MhviCDlm3dv/aODG+0KF6CmJ1Lhttl847bTihxqznU=
-github.com/luxfi/coreth v0.15.4/go.mod h1:SCpReuotdNwvIyX0Z+py6qx7cjAqJZht8zqFl4AkeGs=
+github.com/luxfi/coreth v0.15.8 h1:Bx3sh0x8U5QFjOwnDU6yFYDSrNu1JAxF+0StRlzp7Zc=
+github.com/luxfi/coreth v0.15.8/go.mod h1:zzJ+uepHnq7VZMZMY7Knr0lBmVk1l3WuDL2eoBe1INw=
 github.com/luxfi/crypto v1.17.22 h1:aYR0R4xTOqVy9q6mEFMrg7Oru7itveniWR8f4U5vea4=
 github.com/luxfi/crypto v1.17.22/go.mod h1:joL4xiznieeh61fs18bm/dF/HVrydzIPHDQk7HdZz9A=
 github.com/luxfi/czmq/v4 v4.2.2 h1:D4QDl99OfGoi8Gk3RI8GZ6pqt+040rolj+h36scSj2M=
