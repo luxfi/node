@@ -4,21 +4,18 @@
 package network
 
 import (
-	"github.com/luxfi/metric"
-
 	"context"
 	"fmt"
 	"sync"
 	"time"
 
-
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/node/vms/txs/mempool"
 )
 
 var (
@@ -51,7 +48,7 @@ func (t txGossipHandler) Request(
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, *warp.Error) {
+) ([]byte, *p2p.Error) {
 	return t.requestHandler.Request(ctx, nodeID, deadline, requestBytes)
 }
 

@@ -212,12 +212,12 @@ func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) err
 }
 
 // Request handles requests
-func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+func (n *Network) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *p2p.Error) {
 	return nil, nil
 }
 
 // RequestFailed handles failed requests
-func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
+func (n *Network) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *p2p.Error) error {
 	return nil
 }
 
