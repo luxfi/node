@@ -34,7 +34,7 @@ require (
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.26
 	github.com/luxfi/math v1.0.1
-	github.com/luxfi/metric v1.4.7
+	github.com/luxfi/metric v1.4.8
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mr-tron/base58 v1.2.0
@@ -142,7 +142,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.2
-	github.com/luxfi/coreth v0.15.3
+	github.com/luxfi/coreth v0.15.5
 	github.com/luxfi/genesis v1.4.7
 	github.com/luxfi/geth v1.16.52
 	github.com/luxfi/go-bip39 v1.1.2
@@ -160,6 +160,7 @@ require (
 require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
@@ -189,7 +190,8 @@ require (
 	github.com/hashicorp/go-bexpr v0.1.14 // indirect
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/luxfi/czmq/v4 v4.2.0 // indirect
+	github.com/luxfi/cache v1.0.0 // indirect
+	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/migrate v1.2.7 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
