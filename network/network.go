@@ -291,12 +291,7 @@ func NewNetwork(
 	genesisConfig := builder.GetConfig(config.NetworkID)
 	if genesisConfig != nil {
 		for _, staker := range genesisConfig.InitialStakers {
-			nodeID, err := ids.NodeIDFromString(staker.NodeID)
-			if err != nil {
-				log.Warn("failed to parse staker NodeID", zap.String("nodeID", staker.NodeID), zap.Error(err))
-				continue
-			}
-			ipTracker.ManuallyTrack(nodeID)
+			ipTracker.ManuallyTrack(staker.NodeID)
 		}
 	}
 
