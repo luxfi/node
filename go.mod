@@ -27,13 +27,13 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.26
-	github.com/luxfi/crypto v1.17.22
-	github.com/luxfi/database v1.2.11
-	github.com/luxfi/ids v1.2.3
+	github.com/luxfi/consensus v1.22.27
+	github.com/luxfi/crypto v1.17.23
+	github.com/luxfi/database v1.2.12
+	github.com/luxfi/ids v1.2.4
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.26
-	github.com/luxfi/math v1.0.1
+	github.com/luxfi/math v1.0.2
 	github.com/luxfi/metric v1.4.8
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -141,18 +141,18 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/constants v1.2.2
-	github.com/luxfi/coreth v0.15.8
-	github.com/luxfi/genesis v1.4.7
-	github.com/luxfi/geth v1.16.52
+	github.com/luxfi/constants v1.2.3
+	github.com/luxfi/coreth v0.15.9-0.20251213172023-0605a89ea428
+	github.com/luxfi/genesis v1.4.9
+	github.com/luxfi/geth v1.16.53
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
-	github.com/luxfi/p2p v1.4.6
+	github.com/luxfi/p2p v1.4.7
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/ringtail v0.1.1-0.20251212223757-dc8aa97bca53
 	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.4
-	github.com/luxfi/warp v1.16.36
+	github.com/luxfi/warp v1.16.37
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.0
 )
@@ -161,7 +161,6 @@ require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
-	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cloudflare/circl v1.6.2-0.20251204010831-23491bd573cf // indirect
