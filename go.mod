@@ -143,7 +143,7 @@ require (
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.3
 	github.com/luxfi/coreth v0.15.9-0.20251213172023-0605a89ea428
-	github.com/luxfi/genesis v1.4.9
+	github.com/luxfi/genesis v1.5.0
 	github.com/luxfi/geth v1.16.53
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
@@ -159,6 +159,8 @@ require (
 
 require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
+	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
+	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -191,6 +193,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/cache v1.0.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
+	github.com/luxfi/go-bip32 v1.0.1 // indirect
 	github.com/luxfi/migrate v1.2.7 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
@@ -221,3 +224,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace github.com/luxfi/coreth => /home/z/work/lux/coreth
