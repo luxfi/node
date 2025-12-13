@@ -66,13 +66,13 @@ type Bootstrapper struct {
 func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 	nodeID, err := ids.NodeIDFromString(b.ID)
 	if err != nil {
-		return Bootstrapper{}, fmt.Errorf("failed to parse node ID %s: %w", b.ID, err)
+		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper ID %q: %w", b.ID, err)
 	}
-	addr, err := netip.ParseAddrPort(b.IP)
+	ip, err := netip.ParseAddrPort(b.IP)
 	if err != nil {
-		return Bootstrapper{}, fmt.Errorf("failed to parse IP %s: %w", b.IP, err)
+		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper IP %q: %w", b.IP, err)
 	}
-	return Bootstrapper{ID: nodeID, IP: addr}, nil
+	return Bootstrapper{ID: nodeID, IP: ip}, nil
 }
 
 // GetBootstrappers returns parsed bootstrappers for the network
@@ -268,8 +268,8 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	// Sort allocations for deterministic output
 	type allocation struct {
-		ETHAddr       string
-		LUXAddr       string
+		ETHAddr       ids.ShortID
+		LUXAddr       ids.ShortID
 		InitialAmount uint64
 	}
 	xAllocations := []allocation{}
@@ -286,11 +286,12 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	for _, a := range xAllocations {
 		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, exchangevm.GenesisHolder{
 			Amount:  a.InitialAmount,
-			Address: a.LUXAddr,
+			Address: a.LUXAddr.String(),
 		})
 		// Add ETH address to memo for reference
-		if len(a.ETHAddr) > 2 { // "0x" prefix
-			memoBytes = append(memoBytes, []byte(a.ETHAddr[2:])...)
+		ethAddrStr := a.ETHAddr.Hex()
+		if len(ethAddrStr) > 2 { // "0x" prefix
+			memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
 		}
 	}
 	lux.Memo = memoBytes
@@ -326,7 +327,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	}
 
 	// Build platform allocations
-	initiallyStaked := set.Set[string]{}
+	initiallyStaked := set.Set[ids.ShortID]{}
 	for _, addr := range config.InitialStakedFunds {
 		initiallyStaked.Add(addr)
 	}
@@ -343,8 +344,8 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				platformAllocations = append(platformAllocations, genesis.Allocation{
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
-					Address:  a.LUXAddr,
-					Message:  []byte(a.ETHAddr),
+					Address:  a.LUXAddr.String(),
+					Message:  a.ETHAddr.Bytes(),
 				})
 			}
 		}
@@ -367,26 +368,21 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				allocations = append(allocations, genesis.Allocation{
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
-					Address:  a.LUXAddr,
-					Message:  []byte(a.ETHAddr),
+					Address:  a.LUXAddr.String(),
+					Message:  a.ETHAddr.Bytes(),
 				})
 			}
-		}
-
-		nodeID, err := ids.NodeIDFromString(staker.NodeID)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to parse staker node ID %s: %w", staker.NodeID, err)
 		}
 
 		validators = append(validators, genesis.PermissionlessValidator{
 			Validator: genesis.Validator{
 				StartTime: uint64(genesisTime.Unix()),
 				EndTime:   uint64(endTime.Unix()),
-				NodeID:    nodeID,
+				NodeID:    staker.NodeID,
 			},
 			RewardOwner: &genesis.Owner{
 				Threshold: 1,
-				Addresses: []string{staker.RewardAddress},
+				Addresses: []string{staker.RewardAddress.String()},
 			},
 			Staked:             allocations,
 			ExactDelegationFee: staker.DelegationFee,
