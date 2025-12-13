@@ -27,9 +27,8 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.5
-	github.com/luxfi/coreth v1.13.14
-	github.com/luxfi/crypto v1.17.18
+	github.com/luxfi/consensus v1.22.24
+	github.com/luxfi/crypto v1.17.21
 	github.com/luxfi/database v1.2.9
 	github.com/luxfi/ids v1.2.2
 	github.com/luxfi/ledger-lux-go v1.0.0
@@ -114,8 +113,6 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -144,33 +141,33 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/genesis v1.2.10
-	github.com/luxfi/geth v1.16.46
+	github.com/luxfi/genesis v1.4.4
+	github.com/luxfi/geth v1.16.50
 	github.com/luxfi/go-bip39 v1.1.2
-	github.com/luxfi/p2p v1.4.4
+	github.com/luxfi/lattice/v6 v6.1.1
+	github.com/luxfi/p2p v1.4.5
 	github.com/luxfi/qzmq v0.1.1
+	github.com/luxfi/ringtail v0.1.0
 	github.com/luxfi/threshold v1.1.0
 	github.com/luxfi/trace v0.1.2
-	github.com/luxfi/warp v1.16.31
+	github.com/luxfi/warp v1.16.35
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.0
 )
 
 require (
+	github.com/ALTree/bigfloat v0.0.0-20220102081255-38c8b72a9924 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cloudflare/circl v1.6.2-0.20251204010831-23491bd573cf // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/dgraph-io/badger/v4 v4.8.0 // indirect
 	github.com/dgraph-io/ristretto v0.2.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
-	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/dop251/goja v0.0.0-20230806174421-c933cf95e127 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/dot v1.9.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
@@ -178,33 +175,23 @@ require (
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect
-	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
-	github.com/hashicorp/go-bexpr v0.1.14 // indirect
-	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/constants v1.0.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
-	github.com/mitchellh/pointerstructure v1.2.1 // indirect
-	github.com/pion/dtls/v2 v2.2.7 // indirect
-	github.com/pion/logging v0.2.2 // indirect
-	github.com/pion/stun/v2 v2.0.0 // indirect
-	github.com/pion/transport/v2 v2.2.1 // indirect
-	github.com/pion/transport/v3 v3.0.1 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
-	github.com/status-im/keycard-go v0.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/urfave/cli/v2 v2.27.7 // indirect
+	github.com/tuneinsight/lattigo/v5 v5.0.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	github.com/zeebo/blake3 v0.2.4 // indirect
 	github.com/zondax/golem v0.27.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -213,17 +200,3 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/geth => /home/z/work/lux/geth
-
-replace github.com/luxfi/coreth => /home/z/work/lux/coreth
-
-replace github.com/luxfi/consensus => /home/z/work/lux/consensus
-
-replace github.com/luxfi/crypto => /home/z/work/lux/crypto
-
-replace github.com/luxfi/warp => /home/z/work/lux/warp
-
-replace github.com/luxfi/p2p => /home/z/work/lux/p2p
-
-replace github.com/luxfi/genesis => /home/z/work/lux/genesis

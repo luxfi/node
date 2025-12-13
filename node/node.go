@@ -65,7 +65,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	coreth "github.com/luxfi/coreth/plugin/factory"
+	coreth "github.com/luxfi/geth/plugin/factory"
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
