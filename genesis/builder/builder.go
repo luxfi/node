@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/exchangevm"
@@ -283,10 +284,18 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 	}
 
+	// Get HRP for this network to format bech32 addresses
+	hrp := constants.GetHRP(config.NetworkID)
+
 	for _, a := range xAllocations {
+		// Format address as bech32 for the X-Chain
+		bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("failed to format bech32 address: %w", err)
+		}
 		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, exchangevm.GenesisHolder{
 			Amount:  a.InitialAmount,
-			Address: a.LUXAddr.String(),
+			Address: bech32Addr,
 		})
 		// Add ETH address to memo for reference
 		ethAddrStr := a.ETHAddr.Hex()
@@ -341,10 +350,15 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 		for _, unlock := range a.UnlockSchedule {
 			if unlock.Amount > 0 {
+				// Format address as bech32 for the P-Chain
+				bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+				if err != nil {
+					return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for P-chain: %w", err)
+				}
 				platformAllocations = append(platformAllocations, genesis.Allocation{
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
-					Address:  a.LUXAddr.String(),
+					Address:  bech32Addr,
 					Message:  a.ETHAddr.Bytes(),
 				})
 			}
@@ -365,13 +379,24 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		allocations := []genesis.Allocation{}
 		for _, a := range nodeAllocations {
 			for _, unlock := range a.UnlockSchedule {
+				// Format address as bech32 for staker allocations
+				bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+				if err != nil {
+					return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for staker allocation: %w", err)
+				}
 				allocations = append(allocations, genesis.Allocation{
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
-					Address:  a.LUXAddr.String(),
+					Address:  bech32Addr,
 					Message:  a.ETHAddr.Bytes(),
 				})
 			}
+		}
+
+		// Format reward address as bech32
+		rewardBech32, err := address.FormatBech32(hrp, staker.RewardAddress[:])
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("failed to format bech32 reward address: %w", err)
 		}
 
 		validators = append(validators, genesis.PermissionlessValidator{
@@ -382,7 +407,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			},
 			RewardOwner: &genesis.Owner{
 				Threshold: 1,
-				Addresses: []string{staker.RewardAddress.String()},
+				Addresses: []string{rewardBech32},
 			},
 			Staked:             allocations,
 			ExactDelegationFee: staker.DelegationFee,
