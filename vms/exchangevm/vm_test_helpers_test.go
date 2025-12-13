@@ -14,10 +14,11 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
-	commonengine "github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -213,7 +214,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// ALWAYS include secp256k1fx first (required for genesis parsing)
 	// Then add additional Fxs if provided, or default to nftfx and propertyfx
 	fxs := []interface{}{
-		&commonengine.Fx{
+		&core.Fx{
 			ID: secp256k1fx.ID,
 			Fx: &secp256k1fx.Fx{},
 		},
@@ -222,11 +223,11 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	if len(config.additionalFxs) == 0 {
 		// No additional Fxs specified - add default nftfx and propertyfx
 		fxs = append(fxs,
-			&commonengine.Fx{
+			&core.Fx{
 				ID: nftfx.ID,
 				Fx: &nftfx.Fx{},
 			},
-			&commonengine.Fx{
+			&core.Fx{
 				ID: propertyfx.ID,
 				Fx: &propertyfx.Fx{},
 			},
@@ -380,4 +381,25 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 		tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}),
 	)
 	return tx
+}
+
+// noOpAppSender is a minimal implementation of warp.Sender for tests
+type noOpAppSender struct{}
+
+var _ warp.Sender = (*noOpAppSender)(nil)
+
+func (n *noOpAppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	return nil
 }

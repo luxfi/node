@@ -24,7 +24,7 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/warp"
 
 	consensusversion "github.com/luxfi/consensus/version"
@@ -51,8 +51,8 @@ type VM struct {
 	ctx         *consensusctx.Context
 	db          database.Database
 	genesisData []byte
-	toEngine    chan<- common.Message
-	fxs         []*common.Fx
+	toEngine    chan<- core.Message
+	fxs         []*core.Fx
 	appSender   warp.Sender
 
 	// State management
@@ -156,8 +156,8 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
+	toEngine chan<- core.Message,
+	fxs []*core.Fx,
 	appSender warp.Sender,
 ) error {
 	vm.ctx = chainCtx
@@ -358,7 +358,7 @@ func (vm *VM) StartChallenge(challenge *Challenge) error {
 	vm.challenges[challenge.ID] = challenge
 	
 	// Trigger block building (send empty message to trigger)
-	msg := common.Message{Type: common.PendingTxs}
+	msg := core.Message{Type: core.PendingTxs}
 	select {
 	case vm.toEngine <- msg:
 	default:

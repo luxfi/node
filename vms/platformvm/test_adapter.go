@@ -1,51 +1,38 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package platformvm
 
 import (
 	"context"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/p2p"
+	luxwarp "github.com/luxfi/warp"
 )
 
-// TestAppSender is a test implementation of AppSender for platformvm tests
+// TestAppSender is a test implementation of warp.Sender (p2p.Sender) for platformvm tests
 type TestAppSender struct{}
 
-// SendAppGossip is a no-op for tests
-func (t *TestAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+var _ luxwarp.Sender = (*TestAppSender)(nil)
+
+// SendRequest sends a request to the specified nodes (no-op for tests)
+func (t *TestAppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
 }
 
-// SendAppRequest is a no-op for tests
-func (t *TestAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+// SendResponse sends a response to a previous request (no-op for tests)
+func (t *TestAppSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// SendAppResponse is a no-op for tests
-func (t *TestAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+// SendError sends an error response to a previous request (no-op for tests)
+func (t *TestAppSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-// SendAppError is a no-op for tests
-func (t *TestAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return nil
-}
-
-// SendCrossChainAppRequest is a no-op for tests
-func (t *TestAppSender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
-	return nil
-}
-
-// SendCrossChainAppResponse is a no-op for tests
-func (t *TestAppSender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
-	return nil
-}
-
-// SendCrossChainAppError is a no-op for tests
-func (t *TestAppSender) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+// SendGossip sends a gossip message (no-op for tests)
+func (t *TestAppSender) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
 	return nil
 }

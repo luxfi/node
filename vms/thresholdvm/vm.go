@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -94,7 +94,7 @@ type VM struct {
 	ctx      *consensusctx.Context
 	db       database.Database
 	config   ThresholdConfig
-	toEngine chan<- common.Message
+	toEngine chan<- core.Message
 	log      log.Logger
 
 	// Protocol Registry - supports multiple threshold protocols
@@ -224,7 +224,7 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	vm.toEngine, ok = msgChan.(chan<- common.Message)
+	vm.toEngine, ok = msgChan.(chan<- core.Message)
 	if !ok {
 		return errors.New("invalid message channel type")
 	}

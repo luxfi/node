@@ -5,7 +5,7 @@ package executor
 
 import (
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -16,7 +16,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
-	toEngine        chan<- common.Message
+	toEngine        chan<- core.Message
 	addTxsToMempool bool
 }
 
@@ -88,7 +88,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- common.Message{Type: common.PendingTxs}:
+	case r.toEngine <- core.Message{Type: core.PendingTxs}:
 	default:
 	}
 

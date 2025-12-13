@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/warp"
 
 	"github.com/luxfi/node/version"
@@ -86,7 +86,7 @@ type VM struct {
 	mempool         *Mempool
 	
 	// Consensus
-	toEngine        chan<- common.Message
+	toEngine        chan<- core.Message
 	
 	// Logging
 	log             log.Logger
@@ -119,10 +119,10 @@ func (vm *VM) Initialize(
 	}
 	
 	if msgChan != nil {
-		vm.toEngine, ok = msgChan.(chan<- common.Message)
+		vm.toEngine, ok = msgChan.(chan<- core.Message)
 		if !ok {
 			// Try bidirectional channel
-			if biChan, ok := msgChan.(chan common.Message); ok {
+			if biChan, ok := msgChan.(chan core.Message); ok {
 				vm.toEngine = biChan
 			} else {
 				return errors.New("invalid message channel type")

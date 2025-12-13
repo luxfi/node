@@ -1122,7 +1122,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			logger.Info("starting VM notification forwarder")
 			for msg := range toEng {
 				logger.Debug("received VM notification, building block",
-					log.Uint32("type", msg.Type))
+					log.Uint32("type", uint32(msg.Type)))
 
 				// Build block directly when VM notifies us of pending transactions
 				// Type 0 = PendingTxs (ready for block building)

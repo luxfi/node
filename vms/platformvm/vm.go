@@ -923,7 +923,7 @@ func (vm *VM) forwardNotifications() {
 		// Convert consensuscore.Message to consensusmanblock.Message
 		// Both use uint32 for the message type (PendingTxs = 0)
 		engineMsg := consensusmanblock.Message{
-			Type: uint32(msg.Type),
+			Type: consensusmanblock.MessageType(msg.Type),
 		}
 
 		// Send to the consensus engine (non-blocking to avoid deadlocks)

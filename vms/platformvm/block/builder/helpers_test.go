@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/p2p"
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
@@ -212,7 +212,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 	registerer := prometheus.NewRegistry()
 	res.sender = &coremock.MockAppSender{
-		SendAppGossipSpecificF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+		SendGossipF: func(context.Context, p2p.SendConfig, []byte) error {
 			return nil
 		},
 	}

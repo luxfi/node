@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/lp118"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/warp"
 	"github.com/luxfi/node/utils/constants"
@@ -62,7 +62,7 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
-	_ []*common.Fx,
+	_ []*core.Fx,
 	appSender warp.Sender,
 ) error {
 	logger := chainContext.Log.(log.Logger)
@@ -221,7 +221,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (xschain.Block, err
 	return &blockWrapper{Block: chainBlk}, nil
 }
 
-func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return vm.builder.WaitForEvent(ctx)
 }
 

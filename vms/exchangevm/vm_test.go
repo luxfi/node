@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -66,7 +66,7 @@ func TestFxInitializationFailure(t *testing.T) {
 
 	genesisBytes := newGenesisBytesTest(t)
 	toEngine := make(chan interface{}, 1)
-	fx := &common.Fx{
+	fx := &core.Fx{
 		ID: ids.Empty,
 		Fx: &FxTest{
 			InitializeF: func(interface{}) error {
@@ -185,7 +185,7 @@ func TestIssueProperty(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 		additionalFxs: []interface{}{
-			&common.Fx{
+			&core.Fx{
 				ID: propertyfx.ID,
 				Fx: &propertyfx.Fx{},
 			},

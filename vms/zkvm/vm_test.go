@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/core/common"
+	core "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/log"
 )
 
@@ -73,7 +73,7 @@ func TestVMInitialize(t *testing.T) {
 	vm := &VM{}
 
 	// Initialize VM
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 	require.NoError(vm.Initialize(
 		ctx,
 		chainCtx,
@@ -201,7 +201,7 @@ func setupTestVM(t *testing.T) *VM {
 	configBytes, _ := Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 
 	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
 
@@ -232,7 +232,7 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	configBytes, _ := Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan core.Message, 1)
 
 	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
 
