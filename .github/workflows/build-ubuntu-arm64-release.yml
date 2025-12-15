@@ -34,7 +34,7 @@ jobs:
           sudo apt -y install awscli
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
           role-session-name: githubrolesession
@@ -92,7 +92,7 @@ jobs:
           sudo apt -y install awscli
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
           role-session-name: githubrolesession
