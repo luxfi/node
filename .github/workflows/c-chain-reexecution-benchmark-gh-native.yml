@@ -44,7 +44,7 @@ jobs:
     outputs:
       matrix: ${{ steps.define-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Define Matrix
         id: define-matrix
         shell: bash -x {0}
@@ -83,7 +83,7 @@ jobs:
       contents: write
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run C-Chain Re-Execution Benchmark
         uses: ./.github/actions/c-chain-reexecution-benchmark
         with:

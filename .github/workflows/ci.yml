@@ -27,7 +27,7 @@ jobs:
       matrix:
         os: [macos-12, ubuntu-20.04, ubuntu-22.04, windows-2022, custom-arm64-focal, custom-arm64-jammy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/install-focal-deps
         if: matrix.os == 'custom-arm64-focal'
       - uses: ./.github/actions/setup-go-for-project
@@ -43,7 +43,7 @@ jobs:
   Fuzz:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: fuzz_test
         shell: bash
@@ -51,7 +51,7 @@ jobs:
   e2e_pre_etna:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash
@@ -72,7 +72,7 @@ jobs:
   e2e_post_etna:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash
@@ -93,7 +93,7 @@ jobs:
   e2e_existing_network:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash
@@ -114,7 +114,7 @@ jobs:
   Upgrade:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash
@@ -136,7 +136,7 @@ jobs:
   Lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Install system dependencies
         run: |
@@ -155,7 +155,7 @@ jobs:
     name: Protobuf Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: bufbuild/buf-setup-action@v1.31.0
         with:
           github_token: ${{ github.token }}
@@ -166,7 +166,7 @@ jobs:
     name: Up-to-date protobuf
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - uses: bufbuild/buf-setup-action@v1.31.0
         with:
@@ -179,7 +179,7 @@ jobs:
     name: Up-to-date mocks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - shell: bash
         run: scripts/mock.gen.sh
@@ -189,7 +189,7 @@ jobs:
     name: Up-to-date go.mod and go.sum
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - shell: bash
         run: go mod tidy
@@ -199,7 +199,7 @@ jobs:
     name: Image build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install qemu (required for cross-platform builds)
         run: |
           sudo apt update
@@ -211,7 +211,7 @@ jobs:
     name: Build Antithesis luxd images
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash
@@ -228,7 +228,7 @@ jobs:
     name: Build Antithesis xsvm images
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - name: Build AvalancheGo Binary
         shell: bash

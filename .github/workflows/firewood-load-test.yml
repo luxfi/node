@@ -19,7 +19,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y xz-utils
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-go-for-project
       - uses: ./.github/actions/run-monitored-tmpnet-cmd
         with:

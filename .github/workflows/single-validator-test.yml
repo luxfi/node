@@ -32,12 +32,12 @@ jobs:
     
     steps:
       - name: Checkout node repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: node
           
       - name: Checkout genesis repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: luxfi/genesis  # Adjust if different repo
           path: genesis
@@ -105,12 +105,12 @@ jobs:
             
     steps:
       - name: Checkout node repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: node
           
       - name: Checkout genesis repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: luxfi/genesis  # Adjust if different repo
           path: genesis
@@ -267,12 +267,12 @@ jobs:
     
     steps:
       - name: Checkout repositories
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: node
           
       - name: Checkout genesis repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: luxfi/genesis
           path: genesis
@@ -354,7 +354,7 @@ jobs:
     
     steps:
       - name: Checkout node repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: node
           
@@ -430,12 +430,12 @@ jobs:
     
     steps:
       - name: Checkout repositories
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: node
           
       - name: Checkout genesis repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: luxfi/genesis
           path: genesis
