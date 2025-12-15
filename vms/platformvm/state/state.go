@@ -1663,6 +1663,17 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 	s.SetCurrentSupply(constants.PrimaryNetworkID, genesis.InitialSupply)
 	s.AddStatelessBlock(genesisBlk)
 
+	// Initialize fee state with default values for genesis
+	// This is required because loadMetadata expects fee state to exist
+	// We must directly write it since both feeState and persistedFeeState
+	// start as zero values and won't trigger the write in writeMetadata
+	initialFeeState := gas.State{}
+	if err := putFeeState(s.singletonDB, initialFeeState); err != nil {
+		return fmt.Errorf("failed to write initial fee state: %w", err)
+	}
+	s.feeState = initialFeeState
+	s.persistedFeeState = initialFeeState
+
 	// Persist UTXOs that exist at genesis
 	for _, utxo := range genesis.UTXOs {
 		luxUTXO := utxo.UTXO
@@ -2267,11 +2278,12 @@ func (s *state) init(genesisBytes []byte) error {
 		return err
 	}
 
-	genesis, err := genesis.Parse(genesisBytes)
+	parsedGenesis, err := genesis.Parse(genesisBytes)
 	if err != nil {
 		return err
 	}
-	if err := s.syncGenesis(genesisBlock, genesis); err != nil {
+
+	if err := s.syncGenesis(genesisBlock, parsedGenesis); err != nil {
 		return err
 	}
 
