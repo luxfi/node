@@ -29,7 +29,8 @@ import (
 	// "github.com/luxfi/database/prefixdb" // Only used in disabled createDAGChain function
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/warp"
+	luxwarp "github.com/luxfi/warp"
+	nodewarp "github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
@@ -64,7 +65,6 @@ import (
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/node/vms/nftfx"
 
-	// "github.com/luxfi/node/vms/platformvm/warp" // Not used
 	"github.com/luxfi/node/vms/propertyfx"
 	// "github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -333,6 +333,121 @@ type validatorStateWrapper struct {
 // consensusValidatorStateWrapper wraps validators.State to implement consensus.ValidatorState
 type consensusValidatorStateWrapper struct {
 	state validators.State
+}
+
+// noopValidatorState provides a no-op implementation of validators.State for non-staking nodes
+type noopValidatorState struct{}
+
+func (n *noopValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
+
+func (n *noopValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
+
+func (n *noopValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (n *noopValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+	for _, netID := range netIDs {
+		result[netID] = make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			result[netID][height] = &validators.WarpSet{
+				Height:     height,
+				Validators: make(map[ids.NodeID]*validators.WarpValidator),
+			}
+		}
+	}
+	return result, nil
+}
+
+func (n *noopValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: make(map[ids.NodeID]*validators.WarpValidator),
+	}, nil
+}
+
+// getValidatorState returns the validator state or a no-op implementation if nil
+func getValidatorState(state validators.State) validators.State {
+	if state != nil {
+		return state
+	}
+	return &noopValidatorState{}
+}
+
+// createWarpSigner creates a warp signer from a bls.Signer using the node's warp package
+// The returned signer implements nodewarp.Signer (used by platformvm)
+// For coreth, we need a different approach - see corethWarpSignerAdapter below
+func createWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) nodewarp.Signer {
+	if sk == nil {
+		return nil
+	}
+	return nodewarp.NewSigner(sk, networkID, chainID)
+}
+
+// corethWarpSignerAdapter wraps nodewarp.Signer to implement luxwarp.Signer for coreth
+// This is needed because coreth expects luxwarp.Signer but we create nodewarp.Signer
+type corethWarpSignerAdapter struct {
+	sk        bls.Signer
+	networkID uint32
+	chainID   ids.ID
+}
+
+// Ensure corethWarpSignerAdapter implements luxwarp.Signer
+var _ luxwarp.Signer = (*corethWarpSignerAdapter)(nil)
+
+// Sign implements luxwarp.Signer
+func (w *corethWarpSignerAdapter) Sign(msg *luxwarp.UnsignedMessage) ([]byte, error) {
+	if msg.SourceChainID != w.chainID {
+		return nil, luxwarp.ErrWrongSourceChainID
+	}
+	if msg.NetworkID != w.networkID {
+		return nil, luxwarp.ErrWrongNetworkID
+	}
+
+	sig, err := w.sk.Sign(msg.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return bls.SignatureToBytes(sig), nil
+}
+
+// noOpWarpSigner is a no-op warp signer for emergency/local mode without BLS keys
+// It implements luxwarp.Signer but returns an error for any signing requests
+type noOpWarpSigner struct {
+	networkID uint32
+	chainID   ids.ID
+}
+
+// Ensure noOpWarpSigner implements luxwarp.Signer
+var _ luxwarp.Signer = (*noOpWarpSigner)(nil)
+
+// Sign implements luxwarp.Signer - returns error since we can't actually sign
+func (w *noOpWarpSigner) Sign(msg *luxwarp.UnsignedMessage) ([]byte, error) {
+	// Return empty signature for local/emergency mode
+	// This allows the node to start without BLS keys but warp messaging will not work
+	return nil, fmt.Errorf("no-op warp signer: BLS key not configured")
+}
+
+// createCorethWarpSigner creates a warp signer specifically for coreth (C-chain)
+// This implements luxwarp.Signer interface
+func createCorethWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) luxwarp.Signer {
+	if sk == nil {
+		// Return no-op signer for emergency/local mode without BLS keys
+		return &noOpWarpSigner{
+			networkID: networkID,
+			chainID:   chainID,
+		}
+	}
+	return &corethWarpSignerAdapter{
+		sk:        sk,
+		networkID: networkID,
+		chainID:   chainID,
+	}
 }
 
 func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -912,18 +1027,27 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	// Create the log and context of the chain
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
-	// Create metrics registry for this chain
-	m.Log.Info("Creating metrics registry", log.String("primaryAlias", primaryAlias))
-	chainMetricsReg, err := metric.MakeAndRegister(
-		m.linearGatherer,
-		primaryAlias,
-	)
+	// Create metrics gatherer for this chain
+	// The coreth EVM expects luxmetric.MultiGatherer, not *prometheus.Registry
+	m.Log.Info("Creating metrics gatherer", log.String("primaryAlias", primaryAlias))
+	chainMetricsGatherer := metric.NewMultiGatherer()
+
+	// Create a registry and register it with the gatherer
+	chainMetricsReg, err := metric.MakeAndRegister(chainMetricsGatherer, primaryAlias)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chain metrics: %w", err)
 	}
-	m.Log.Info("Metrics registry created", 
+
+	// Also register with the global gatherer for metrics collection
+	if err := m.linearGatherer.Register(primaryAlias, chainMetricsReg); err != nil {
+		m.Log.Warn("Failed to register chain metrics with global gatherer",
+			log.String("primaryAlias", primaryAlias),
+			log.Err(err),
+		)
+	}
+	m.Log.Info("Metrics gatherer created",
 		log.String("primaryAlias", primaryAlias),
-		log.Bool("isNil", chainMetricsReg == nil),
+		log.Bool("isNil", chainMetricsGatherer == nil),
 	)
 
 	// Note: Using local consensus package which has different fields
@@ -933,6 +1057,17 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
 		// This would need proper serialization in production
 		pubKeyBytes = nil
+	}
+
+	// Create warp signer for this chain using the node's BLS key
+	// C-chain (coreth) needs luxwarp.Signer, others need nodewarp.Signer
+	var warpSigner interface{}
+	if chainParams.ID == m.CChainID {
+		// C-chain uses coreth which expects luxwarp.Signer
+		warpSigner = createCorethWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
+	} else {
+		// Other chains (P-chain, X-chain, etc.) use nodewarp.Signer
+		warpSigner = createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 	}
 
 	chainCtx := &consensusctx.Context{
@@ -949,9 +1084,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		LUXAssetID:   m.XAssetID,
 		ChainDataDir: chainDataDir,
 
-		ValidatorState: &consensusValidatorStateWrapper{state: m.validatorState},
-		Metrics:        chainMetricsReg,
-		Log:            chainLog,
+		BCLookup:        m,
+		ValidatorState:  getValidatorState(m.validatorState),
+		Metrics:         chainMetricsGatherer,
+		Log:             chainLog,
+		WarpSigner:      warpSigner,
+		NetworkUpgrades: m.Upgrades,
 	}
 
 	// Get a factory for the vm we want to use on our chain
@@ -1337,7 +1475,7 @@ func (m *manager) createDAG(
 			configBytes []byte,
 			toEngine chan<- consensuscore.Message,
 			fxs []*consensuscore.Fx,
-			appSender warp.Sender,
+			appSender luxwarp.Sender,
 		) error
 	}); ok {
 		toEngine := make(chan consensuscore.Message, 1)
@@ -2489,12 +2627,12 @@ func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Mes
 	return nil
 }
 
-// noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
+// noopWarpSender is a no-op implementation of luxwarp.Sender for cross-chain messaging
 // Used in single-node mode where cross-chain messaging is not needed
 type noopWarpSender struct{}
 
-// Compile-time check that noopWarpSender implements warp.Sender
-var _ warp.Sender = (*noopWarpSender)(nil)
+// Compile-time check that noopWarpSender implements luxwarp.Sender
+var _ luxwarp.Sender = (*noopWarpSender)(nil)
 
 func (n *noopWarpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
@@ -2508,6 +2646,6 @@ func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, reque
 	return nil
 }
 
-func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+func (n *noopWarpSender) SendGossip(ctx context.Context, config luxwarp.SendConfig, gossipBytes []byte) error {
 	return nil
 }

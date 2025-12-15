@@ -62,6 +62,28 @@ var (
 		GraniteTime:               UnscheduledActivationTime,
 		GraniteEpochDuration:      5 * time.Minute,
 	}
+	// LuxMainnet is the config for the Lux mainnet (network ID 96369).
+	// Original chain launched Nov 2024, all Apricot phases through Cortina active at genesis.
+	// Durango/Etna/Fortuna/Granite remain unscheduled to preserve original genesis format.
+	LuxMainnet = Config{
+		ApricotPhase1Time:            InitiallyActiveTime,
+		ApricotPhase2Time:            InitiallyActiveTime,
+		ApricotPhase3Time:            InitiallyActiveTime,
+		ApricotPhase4Time:            InitiallyActiveTime,
+		ApricotPhase4MinPChainHeight: 0,
+		ApricotPhase5Time:            InitiallyActiveTime,
+		ApricotPhasePre6Time:         InitiallyActiveTime,
+		ApricotPhase6Time:            InitiallyActiveTime,
+		ApricotPhasePost6Time:        InitiallyActiveTime,
+		BanffTime:                    InitiallyActiveTime,
+		CortinaTime:                  InitiallyActiveTime,
+		CortinaXChainStopVertexID:    ids.Empty,
+		DurangoTime:                  UnscheduledActivationTime,
+		EtnaTime:                     UnscheduledActivationTime,
+		FortunaTime:                  UnscheduledActivationTime,
+		GraniteTime:                  UnscheduledActivationTime,
+		GraniteEpochDuration:         30 * time.Second,
+	}
 	Default = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
 		ApricotPhase2Time:            InitiallyActiveTime,
@@ -198,6 +220,8 @@ func GetConfig(networkID uint32) Config {
 		return Mainnet
 	case constants.TestnetID:
 		return Default
+	case constants.LuxMainnetID:
+		return LuxMainnet
 	default:
 		return Default
 	}

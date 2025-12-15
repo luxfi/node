@@ -224,5 +224,4 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/coreth => /home/z/work/lux/coreth
+replace github.com/luxfi/coreth => /Users/z/work/lux/coreth

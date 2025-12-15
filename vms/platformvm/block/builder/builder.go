@@ -186,6 +186,7 @@ func (b *builder) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
 	logger := b.txExecutorBackend.Ctx.Log.(log.Logger)
+	consecutiveErrors := 0
 	for {
 		if err := ctx.Err(); err != nil {
 			return consensuscore.Message{}, err
@@ -193,11 +194,24 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 
 		duration, err := b.durationToSleep()
 		if err != nil {
-			logger.Error("block builder failed to calculate next staker change time",
-				zap.Error(err),
-			)
-			return consensuscore.Message{}, err
+			consecutiveErrors++
+			// Log the error but don't crash - use exponential backoff
+			if consecutiveErrors <= 5 {
+				logger.Error("block builder failed to calculate next staker change time",
+					zap.Error(err),
+					zap.Int("consecutiveErrors", consecutiveErrors),
+				)
+			}
+			// Use exponential backoff with max of 30 seconds
+			backoff := time.Duration(math.Min(float64(time.Second)*float64(consecutiveErrors*consecutiveErrors), float64(30*time.Second)))
+			select {
+			case <-ctx.Done():
+				return consensuscore.Message{}, ctx.Err()
+			case <-time.After(backoff):
+				continue
+			}
 		}
+		consecutiveErrors = 0 // Reset on success
 		if duration <= 0 {
 			logger.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
