@@ -232,10 +232,10 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	var validatorCfg fee.Config
 
 	switch networkID {
-	case constants.MainnetID:
+	case constants.MainnetID, constants.LuxMainnetID:
 		dynamicCfg = MainnetDynamicFeeConfig
 		validatorCfg = MainnetValidatorFeeConfig
-	case constants.TestnetID:
+	case constants.TestnetID, constants.LuxTestnetID:
 		dynamicCfg = TestnetDynamicFeeConfig
 		validatorCfg = TestnetValidatorFeeConfig
 	default:
