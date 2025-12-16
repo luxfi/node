@@ -4082,3 +4082,94 @@ ok  github.com/luxfi/node/vms/dexvm/perpetuals  1.535s
 | Referral System | `vms/dexvm/perpetuals/referral.go` | ~500 |
 | Tests | `vms/dexvm/perpetuals/*_test.go` | ~800 |
 
+---
+
+## Zoo Chain EVM Configuration - 2025-12-16
+
+### Summary
+
+Configuration and testing of Zoo chain EVM with Uniswap V2/V3 AMM contracts. Successfully configured AMM CLI with V3 swap support for Zoo chain trading.
+
+### Network Configuration
+
+**Zoo Mainnet (Chain ID: 200200)**
+
+| Contract | Address |
+|----------|---------|
+| V2 Factory | `0xD173926A10A0C4eCd3A51B1422270b65Df0551c1` |
+| V2 Router | `0xAe2cf1E403aAFE6C05A5b8Ef63EB19ba591d8511` |
+| V3 Factory | `0x80bBc7C4C7a59C899D1B37BC14539A22D5830a84` |
+| V3 Router | `0x939bC0Bca6F9B9c52E6e3AD8A3C590b5d9B9D10E` |
+| Multicall | `0xd25F88CBdAe3c2CCA3Bb75FC4E723b44C0Ea362F` |
+| Quoter | `0x12e2B76FaF4dDA5a173a4532916bb6Bfa3645275` |
+| NFT Position Manager | `0x7a4C48B9dae0b7c396569b34042fcA604150Ee28` |
+| Tick Lens | `0x57A22965AdA0e52D785A9Aa155beF423D573b879` |
+| WZOO (Wrapped ZOO) | `0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E` |
+
+### Zoo Chain Tokens (Z-prefixed)
+
+| Token | Symbol | Address | Notes |
+|-------|--------|---------|-------|
+| Wrapped ZOO | WZOO | `0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E` | Native wrapped (contract returns WLUX - needs fix) |
+| Zoo ETH | ZETH | `0x60E0a8167FC13dE89348978860466C9ceC24B9ba` | Bridged ETH |
+| Zoo BTC | ZBTC | `0x1E48D32a4F5e9f08DB9aE4959163300FaF8A6C8e` | Bridged BTC |
+| Zoo Dollar | ZUSD | `0x848Cff46eb323f323b6Bbe1Df274E40793d7f2c2` | Stablecoin |
+| Zoo LUX | ZLUX | `0x5E5290f350352768bD2bfC59c2DA15DD04A7cB88` | Bridged LUX |
+| Zoo SOL | ZSOL | `0x26B40f650156C7EbF9e087Dd0dca181Fe87625B7` | Bridged SOL |
+| Zoo BNB | ZBNB | `0x6EdcF3645DeF09DB45050638c41157D8B9FEa1cf` | Bridged BNB |
+| Zoo POL | ZPOL | `0x28BfC5DD4B7E15659e41190983e5fE3df1132bB9` | Bridged POL |
+| Zoo CELO | ZCELO | `0x3078847F879A33994cDa2Ec1540ca52b5E0eE2e5` | Bridged CELO |
+| Zoo FTM | ZFTM | `0x8B982132d639527E8a0eAAD385f97719af8f5e04` | Bridged FTM |
+| Zoo TON | ZTON | `0x3141b94b89691009b950c96e97Bff48e0C543E3C` | Bridged TON |
+
+### Available V3 Pools (at block 799)
+
+| Pool | Fee | Address | Liquidity |
+|------|-----|---------|-----------|
+| WZOO/ZUSD | 0.30% | `0x37011bB281676f85962fb35C674f7E9EB7584452` | 3.3e21 |
+| WZOO/ZLUX | 0.30% | `0x1c000d5dbE1246Fb84Ad431e933E5563F212A62b` | 3.5e27 (massive) |
+
+### Treasury Wallet
+
+- **Address**: `0x9011E888251AB053B7bD1cdB598Db4f9DEd94714`
+- **Derivation**: BIP44 m/44'/60'/0'/0/0 from LUX_MNEMONIC
+- **Native Balance**: ~1.97T ZOO
+- **WZOO Balance**: 1B tokens
+
+### AMM CLI Usage
+
+```bash
+# Check wallet balance
+lux amm balance --network zoo
+
+# Get V3 quote
+lux amm quote --network zoo --from 0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E --to 0x5E5290f350352768bD2bfC59c2DA15DD04A7cB88 --amount 100
+
+# Dry-run swap
+lux amm swap --network zoo --from WZOO_ADDRESS --to ZLUX_ADDRESS --amount 100 --dry-run
+
+# Execute V3 swap
+lux amm swap --network zoo --from 0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E --to 0x5E5290f350352768bD2bfC59c2DA15DD04A7cB88 --amount 100 --slippage 1.0
+```
+
+### Key Files Modified
+
+| File | Changes |
+|------|---------|
+| `cli/cmd/ammcmd/config.go` | Added WETH addresses, ZooTokens and LuxTokens maps |
+| `cli/cmd/ammcmd/client.go` | Added V3 ABIs, V3 quote/swap methods, proper BIP44 derivation |
+| `cli/cmd/ammcmd/amm.go` | Added V3 support to quote/swap commands with --v3 flag |
+
+### Known Issues
+
+1. **WZOO Contract Name**: The wrapped native contract at `0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E` returns "Wrapped LUX" / "WLUX" instead of "Wrapped ZOO" / "WZOO". The address is correct but name metadata needs fix.
+
+2. **Historic State**: At block 799, the chain is in historic disaster recovery mode. Transactions are submitted but cannot be mined until beacon consensus resumes producing blocks.
+
+### Testing Results
+
+- ✅ V3 Quote: Working (100 WZOO → 4.698 ZLUX)
+- ✅ Wallet Derivation: Correctly derives to 0x9011 from LUX_MNEMONIC
+- ✅ Token Info: All Z-tokens deployed and queryable
+- ⚠️ Swap Execution: Tx submitted, pending (chain at historic block 799, no new blocks)
+
