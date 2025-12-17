@@ -78,12 +78,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 					map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
 							Weight:    testVdrs[0].vdr.Weight,
 						},
 						testVdrs[1].nodeID: {
 							NodeID:    testVdrs[1].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 					},
@@ -103,17 +103,17 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 					map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
 							Weight:    testVdrs[0].vdr.Weight,
 						},
 						testVdrs[1].nodeID: {
 							NodeID:    testVdrs[1].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 						testVdrs[2].nodeID: {
 							NodeID:    testVdrs[2].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
 							Weight:    testVdrs[0].vdr.Weight,
 						},
 					},
@@ -149,7 +149,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 						},
 						testVdrs[1].nodeID: {
 							NodeID:    testVdrs[1].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+							PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 					},
@@ -202,7 +202,7 @@ func TestFilterValidators(t *testing.T) {
 	pk0 := sk0.PublicKey()
 	vdr0 := &Validator{
 		PublicKey:      pk0,
-		PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk0),
+		PublicKeyBytes: bls.PublicKeyToCompressedBytes(pk0),
 		Weight:         1,
 	}
 
@@ -211,7 +211,7 @@ func TestFilterValidators(t *testing.T) {
 	pk1 := sk1.PublicKey()
 	vdr1 := &Validator{
 		PublicKey:      pk1,
-		PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk1),
+		PublicKeyBytes: bls.PublicKeyToCompressedBytes(pk1),
 		Weight:         2,
 	}
 
@@ -355,7 +355,7 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 		blsPublicKey := blsPrivateKey.PublicKey()
 		getValidatorOutputs = append(getValidatorOutputs, &validators.GetValidatorOutput{
 			NodeID:    nodeID,
-			PublicKey: bls.PublicKeyToUncompressedBytes(blsPublicKey),
+			PublicKey: bls.PublicKeyToCompressedBytes(blsPublicKey),
 			Weight:    20,
 		})
 	}
@@ -419,12 +419,12 @@ func TestCachedValidatorState(t *testing.T) {
 	testData := map[ids.NodeID]*ValidatorData{
 		nodeID1: {
 			NodeID:    nodeID1,
-			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+			PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
 			Weight:    100,
 		},
 		nodeID2: {
 			NodeID:    nodeID2,
-			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+			PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
 			Weight:    200,
 		},
 	}
