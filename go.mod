@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.27
-	github.com/luxfi/crypto v1.17.23
+	github.com/luxfi/crypto v1.17.24
 	github.com/luxfi/database v1.2.12
 	github.com/luxfi/ids v1.2.4
 	github.com/luxfi/ledger-lux-go v1.0.0
@@ -142,15 +142,15 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.3
-	github.com/luxfi/coreth v0.15.51
-	github.com/luxfi/genesis v1.5.2
+	github.com/luxfi/coreth v0.15.52
+	github.com/luxfi/genesis v1.5.5
 	github.com/luxfi/geth v1.16.55
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
 	github.com/luxfi/p2p v1.4.7
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/ringtail v0.1.1-0.20251212223757-dc8aa97bca53
-	github.com/luxfi/threshold v1.1.0
+	github.com/luxfi/threshold v1.1.1
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/warp v1.16.37
 	github.com/spaolacci/murmur3 v1.1.0
@@ -194,7 +194,6 @@ require (
 	github.com/luxfi/cache v1.0.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.1 // indirect
-	github.com/luxfi/migrate v1.2.7 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -224,3 +223,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace github.com/luxfi/coreth => ../coreth
