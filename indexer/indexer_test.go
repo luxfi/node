@@ -16,9 +16,7 @@ import (
 
 	nodeconsensus "github.com/luxfi/node/consensus"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/database/manager"
+	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -27,24 +25,24 @@ import (
 	"github.com/luxfi/node/utils"
 )
 
-// mockChainVM is a simple mock for testing that implements core.VM
+// mockChainVM is a simple mock for testing that implements interfaces.VM
 type mockChainVM struct{}
 
 func (m *mockChainVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensuscontext.Context,
-	dbManager manager.Manager,
+	chainCtx interface{},
+	dbMgr interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- consensuscore.Message,
-	fxs []*consensuscore.Fx,
+	toEngine interface{},
+	fxs []interface{},
 	appSender interface{},
 ) error {
 	return nil
 }
 
-func (m *mockChainVM) SetState(ctx context.Context, state consensuscore.VMState) error {
+func (m *mockChainVM) SetState(ctx context.Context, state interfaces.State) error {
 	return nil
 }
 

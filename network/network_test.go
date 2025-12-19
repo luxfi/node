@@ -22,11 +22,11 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	consensuscore "github.com/luxfi/consensus/core"
-	consensusrouter "github.com/luxfi/consensus/core/router"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/router"
+	"github.com/luxfi/consensus/networking/tracker"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
@@ -43,18 +43,21 @@ import (
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
 type inboundHandlerFunc struct {
-	f func(context.Context, message.InboundMessage)
+	f func(context.Context, router.Message)
 }
 
-func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	h.f(ctx, msg)
+func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg router.Message) error {
+	if h.f != nil {
+		h.f(ctx, msg)
+	}
+	return nil
 }
 
 func (h inboundHandlerFunc) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
 	return nil
 }
 
-func (h inboundHandlerFunc) AppRequestFailed(context.Context, ids.NodeID, uint32, *consensuscore.AppError) error {
+func (h inboundHandlerFunc) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
 	return nil
 }
 
@@ -165,7 +168,7 @@ func (s *stubTargeter) TargetUsage() uint64 { return 50 }
 
 // Use the noOpResourceManager from test_network.go instead of redefining
 
-func newDefaultResourceTracker() consensustracker.ResourceTracker {
+func newDefaultResourceTracker() tracker.ResourceTracker {
 	// Create a no-op consensus resource tracker for testing
 	// Use the implementation from test_network.go
 	return &noOpConsensusResourceTracker{}
@@ -173,7 +176,7 @@ func newDefaultResourceTracker() consensustracker.ResourceTracker {
 
 // noOpConsensusResourceTracker is defined in test_network.go to avoid duplication
 
-// noOpTracker implements consensustracker.CPUTracker and tracker.Tracker for testing
+// noOpTracker implements tracker.CPUTracker and tracker.Tracker for testing
 type noOpTracker struct{}
 
 func (n *noOpTracker) Usage(nodeID ids.NodeID, t time.Time) float64 {
@@ -234,7 +237,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	return mc
 }
 
-func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.InboundHandler) ([]ids.NodeID, []*network, *errgroup.Group) {
+func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler) ([]ids.NodeID, []*network, *errgroup.Group) {
 	require := require.New(t)
 
 	dialer, listeners, nodeIDs, configs := newTestNetwork(t, len(handlers))
@@ -363,7 +366,7 @@ func TestNewNetwork(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	
-	_, networks, eg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil, nil, nil})
+	_, networks, eg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil, nil, nil})
 	
 	// Start closing networks
 	for _, net := range networks {
@@ -387,10 +390,10 @@ func TestNewNetwork(t *testing.T) {
 func TestIngressConnCount(t *testing.T) {
 	require := require.New(t)
 
-	emptyHandler := func(context.Context, message.InboundMessage) {}
+	emptyHandler := func(context.Context, router.Message) {}
 
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
-		t, []consensusrouter.InboundHandler{
+		t, []router.InboundHandler{
 			inboundHandlerFunc{f: emptyHandler},
 			inboundHandlerFunc{f: emptyHandler},
 			inboundHandlerFunc{f: emptyHandler},
@@ -451,17 +454,17 @@ func TestIngressConnCount(t *testing.T) {
 func TestSend(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan message.InboundMessage)
+	received := make(chan router.Message)
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
-		[]consensusrouter.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+		[]router.InboundHandler{
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -498,17 +501,17 @@ func TestSend(t *testing.T) {
 func TestSendWithFilter(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan message.InboundMessage)
+	received := make(chan router.Message)
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
-		[]consensusrouter.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+		[]router.InboundHandler{
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -544,7 +547,7 @@ func TestSendWithFilter(t *testing.T) {
 func TestTrackVerifiesSignatures(t *testing.T) {
 	require := require.New(t)
 
-	_, networks, eg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil})
+	_, networks, eg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
 
 	network := networks[0]
 
@@ -766,7 +769,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 func TestDialContext(t *testing.T) {
 	require := require.New(t)
 
-	_, networks, eg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil})
+	_, networks, eg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
 	dialer := newTestDialer()
 	network := networks[0]
 	network.dialer = dialer
@@ -926,7 +929,7 @@ func TestGetAllPeers(t *testing.T) {
 	// Create a network of validators
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
-		[]consensusrouter.InboundHandler{
+		[]router.InboundHandler{
 			nil, nil, nil,
 		},
 	)

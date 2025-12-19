@@ -26,10 +26,8 @@ type testHandler struct {
 
 // HandleInbound handles network message.InboundMessage
 func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	// Call the embedded InboundHandler if it exists
-	if h.InboundHandler != nil {
-		h.InboundHandler.HandleInbound(ctx, msg)
-	}
+	// Test handler - no-op for network messages
+	// The embedded InboundHandler is for consensus router.Message not network message.InboundMessage
 }
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {

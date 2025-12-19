@@ -101,7 +101,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		nil,
 		nil,
 	))
-	require.NoError(vm.SetState(context.Background(), uint32(consensusinterfaces.StateSyncing)))
+	require.NoError(vm.SetState(context.Background(), uint32(consensusinterfaces.Syncing)))
 
 	return innerVM, vm
 }

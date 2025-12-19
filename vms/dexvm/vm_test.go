@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
+	luxvm "github.com/luxfi/vm"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -33,7 +34,7 @@ func createTestVM(t *testing.T) (*VM, func()) {
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan consensuscore.Message, 100)
+	toEngine := make(chan luxvm.Message, 100)
 	appSender := warp.FakeSender{}
 
 	consensusCtx := &consensusctx.Context{
@@ -82,12 +83,12 @@ func TestVMSetState(t *testing.T) {
 	defer cleanup()
 
 	// Set to bootstrapping
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMBootstrapping))
+	err := vm.SetState(context.Background(), uint32(consensus.Bootstrapping))
 	require.NoError(err)
 	require.False(vm.bootstrapped)
 
 	// Set to normal operation (functional mode - no background tasks)
-	err = vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err = vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 	require.True(vm.bootstrapped)
 }
@@ -119,7 +120,7 @@ func TestVMHealthCheck(t *testing.T) {
 	require.Equal("functional", healthMap["mode"].(string))
 
 	// After bootstrap
-	vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm.SetState(context.Background(), uint32(consensus.Ready))
 
 	health, err = vm.HealthCheck(context.Background())
 	require.NoError(err)
@@ -199,7 +200,7 @@ func TestVMIsBootstrapped(t *testing.T) {
 
 	require.False(vm.IsBootstrapped())
 
-	vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm.SetState(context.Background(), uint32(consensus.Ready))
 
 	require.True(vm.IsBootstrapped())
 }
@@ -210,7 +211,7 @@ func TestVMShutdown(t *testing.T) {
 	vm, _ := createTestVM(t)
 
 	// Start VM (functional mode - no background tasks)
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	// Shutdown (immediate - no background tasks to wait for)
@@ -302,7 +303,7 @@ func TestVMProcessBlock(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	// Process first block
@@ -326,7 +327,7 @@ func TestVMProcessBlockWithOrders(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	// Create orderbook with crossing orders
@@ -378,7 +379,7 @@ func TestVMProcessBlockFundingInterval(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	// Process first block - funding check runs but no payments without positions
@@ -411,7 +412,7 @@ func TestVMProcessBlockAfterShutdown(t *testing.T) {
 	vm, _ := createTestVM(t)
 
 	// Bootstrap and shutdown
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -433,7 +434,7 @@ func TestVMGetBlockHeight(t *testing.T) {
 
 	require.Equal(uint64(0), vm.GetBlockHeight())
 
-	vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm.SetState(context.Background(), uint32(consensus.Ready))
 
 	// Process some blocks
 	vm.ProcessBlock(context.Background(), 1, time.Now(), nil)
@@ -454,7 +455,7 @@ func TestVMTradingFlow(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	err := vm.SetState(context.Background(), uint32(consensus.Ready))
 	require.NoError(err)
 
 	// Create orderbook
@@ -486,8 +487,8 @@ func TestVMDeterminism(t *testing.T) {
 	defer cleanup2()
 
 	// Bootstrap both
-	vm1.SetState(context.Background(), uint32(consensuscore.Ready))
-	vm2.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm1.SetState(context.Background(), uint32(consensus.Ready))
+	vm2.SetState(context.Background(), uint32(consensus.Ready))
 
 	// Process same blocks on both
 	blockTime := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -518,7 +519,7 @@ func BenchmarkVMInitialize(b *testing.B) {
 
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan luxvm.Message, 100)
 		appSender := warp.FakeSender{}
 
 		consensusCtx := &consensusctx.Context{
@@ -554,7 +555,7 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan consensuscore.Message, 100)
+	toEngine := make(chan luxvm.Message, 100)
 	appSender := warp.FakeSender{}
 
 	consensusCtx := &consensusctx.Context{
@@ -578,7 +579,7 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 		cancel()
 	}()
 
-	vm.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm.SetState(context.Background(), uint32(consensus.Ready))
 
 	blockTime := time.Now()
 
