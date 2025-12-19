@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -153,7 +153,7 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	// FIX 1: Consolidate all P-chain dependent validations into single block
-	if p.vm.consensusState == uint32(consensuscore.VMNormalOp) {
+	if p.vm.consensusState == uint32(consensus.Ready) {
 		// All P-chain dependent validations here - only when synced
 		// 1. Epoch validation
 		if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {

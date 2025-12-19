@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
+	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
-	consensuscore "github.com/luxfi/consensus/core"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
@@ -90,7 +90,7 @@ type VM struct {
 	// processing a GetAncestors message from a bootstrapping node.
 	innerBlkCache  cache.Cacher[ids.ID, chainblock.Block]
 	preferred      ids.ID
-	consensusState uint32 // Consensus state: StateSyncing, Bootstrapping, NormalOp
+	consensusState uint32 // Consensus state: Syncing, Bootstrapping, Ready
 
 	// lastAcceptedTime is set to the last accepted PostForkBlock's timestamp
 	// if the last accepted block has been a PostForkOption block since having
@@ -267,7 +267,7 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != uint32(consensusinterfaces.StateSyncing) {
+	if oldState != uint32(consensusinterfaces.Syncing) {
 		return nil
 	}
 
@@ -397,16 +397,16 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Block building is only supported if the consensus state is normal
-	// operations and the vm is not state syncing.
+	// Block building is only supported if the consensus state is Ready
+	// and the vm is not state syncing.
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != uint32(consensuscore.VMNormalOp) {
+	if vm.consensusState != uint32(consensus.Ready) {
 		return time.Time{}, false, nil
 	}
 
-	// Because the VM in marked as being in the [VMNormalOp] state, we know
+	// Because the VM is marked as being in the Ready state, we know
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
 	// If the preferred block is pre-fork, we should wait for events on the

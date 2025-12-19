@@ -246,6 +246,12 @@ func New(
 			weight = newWeight
 		}
 
+		// Use explicit weight from validator config if Staked allocations are empty
+		// This allows validators to be created with explicit weights for testing/development
+		if weight == 0 && vdr.Weight > 0 {
+			weight = vdr.Weight
+		}
+
 		if weight == 0 {
 			return nil, errValidatorHasNoWeight
 		}

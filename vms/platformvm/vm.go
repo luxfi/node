@@ -784,8 +784,8 @@ func (vm *VM) onBootstrapStarted() error {
 	return vm.fx.Bootstrapping()
 }
 
-// onNormalOperationsStarted marks this VM as bootstrapped
-func (vm *VM) onNormalOperationsStarted() error {
+// onReady marks this VM as bootstrapped and ready
+func (vm *VM) onReady() error {
 	if vm.bootstrapped.Get() {
 		return nil
 	}
@@ -833,12 +833,12 @@ func (vm *VM) onNormalOperationsStarted() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	state := interfaces.StateEnum(stateNum)
+	state := interfaces.State(stateNum)
 	switch state {
 	case interfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case interfaces.NormalOp:
-		return vm.onNormalOperationsStarted()
+	case interfaces.Ready:
+		return vm.onReady()
 	default:
 		return fmt.Errorf("unknown state: %v", state)
 	}

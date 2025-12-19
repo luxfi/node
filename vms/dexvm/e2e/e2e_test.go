@@ -211,7 +211,7 @@ func TestNetworkBasic(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 
@@ -247,7 +247,7 @@ func TestNetworkOrderMatching(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 
@@ -329,11 +329,11 @@ func TestNetworkDeterminism(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network1.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 	for _, node := range network2.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 
@@ -370,7 +370,7 @@ func TestNetworkHighThroughput(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 
@@ -410,7 +410,7 @@ func TestNetworkPartialFailure(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 	}
 
@@ -476,7 +476,7 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 			appSender,
 		)
 
-		_ = vm.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
 
 		network.Nodes[i] = &TestNode{
 			ID:        nodeID,

@@ -372,9 +372,24 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	stakingOffset := time.Duration(0)
 
 	for i, staker := range config.InitialStakers {
-		nodeAllocations := allNodeAllocations[i]
+		// Safely get node allocations (may be empty if no initialStakedFunds)
+		var nodeAllocations []genesiscfg.Allocation
+		if i < len(allNodeAllocations) {
+			nodeAllocations = allNodeAllocations[i]
+		}
+
+		// Use explicit staker times if provided, otherwise use calculated values
+		startTime := uint64(genesisTime.Unix())
+		if staker.StartTime > 0 {
+			startTime = staker.StartTime
+		}
+
 		endTime := endStakingTime.Add(-stakingOffset)
 		stakingOffset += time.Duration(config.InitialStakeDurationOffset) * time.Second
+		endTimeUnix := uint64(endTime.Unix())
+		if staker.EndTime > 0 {
+			endTimeUnix = staker.EndTime
+		}
 
 		allocations := []genesis.Allocation{}
 		for _, a := range nodeAllocations {
@@ -393,6 +408,14 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			}
 		}
 
+		// Calculate weight from allocations or use explicit weight
+		weight := staker.Weight
+		if weight == 0 {
+			for _, a := range allocations {
+				weight += a.Amount
+			}
+		}
+
 		// Format reward address as bech32
 		rewardBech32, err := address.FormatBech32(hrp, staker.RewardAddress[:])
 		if err != nil {
@@ -401,8 +424,9 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 		validators = append(validators, genesis.PermissionlessValidator{
 			Validator: genesis.Validator{
-				StartTime: uint64(genesisTime.Unix()),
-				EndTime:   uint64(endTime.Unix()),
+				StartTime: startTime,
+				EndTime:   endTimeUnix,
+				Weight:    weight,
 				NodeID:    staker.NodeID,
 			},
 			RewardOwner: &genesis.Owner{
@@ -457,8 +481,10 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 // FromFile loads genesis config from file and builds genesis bytes
 func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
+	// Only protect mainnet and testnet from genesis override
+	// LocalID (1337) is allowed to use custom genesis for development flexibility
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+	case constants.MainnetID, constants.TestnetID:
 		return nil, ids.Empty, fmt.Errorf(
 			"%w: %s",
 			errOverridesStandardNetworkConfig,
@@ -478,8 +504,10 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 
 // FromFlag parses base64-encoded genesis content and builds genesis bytes
 func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
+	// Only protect mainnet and testnet from genesis override
+	// LocalID (1337) is allowed to use custom genesis for development flexibility
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+	case constants.MainnetID, constants.TestnetID:
 		return nil, ids.Empty, fmt.Errorf(
 			"%w: %s",
 			errOverridesStandardNetworkConfig,

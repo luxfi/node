@@ -62,7 +62,9 @@ type ProtocolOptions struct {
 	RetryOnFailure bool `json:"retryOnFailure,omitempty"`
 }
 
-// ProtocolHandler defines the interface for all threshold protocols
+// ProtocolHandler defines the interface for all threshold protocols.
+// Real implementations are in github.com/luxfi/threshold (LSS, CMP, FROST).
+// Use ProtocolExecutor in executor.go for actual protocol execution.
 type ProtocolHandler interface {
 	// Keygen generates a new threshold key
 	Keygen(ctx context.Context, partyID party.ID, partyIDs []party.ID, threshold int) (KeyShare, error)
@@ -175,6 +177,8 @@ func (r *ProtocolRegistry) Available() []Protocol {
 
 // =============================================================================
 // LSS Handler - Lux Secret Sharing
+// Implemented in github.com/luxfi/threshold/protocols/lss
+// Use ProtocolExecutor.LSSKeygenStartFunc() for actual execution
 // =============================================================================
 
 // LSSHandler implements ProtocolHandler for LSS
@@ -255,10 +259,12 @@ func (h *LSSHandler) Refresh(ctx context.Context, share KeyShare) (KeyShare, err
 }
 
 // =============================================================================
-// CGGMP21 Handler
+// CGGMP21 Handler (CMP)
+// Implemented in github.com/luxfi/threshold/protocols/cmp
+// Use ProtocolExecutor.CMPKeygenStartFunc() for actual execution
 // =============================================================================
 
-// CGGMP21Handler implements ProtocolHandler for CGGMP21
+// CGGMP21Handler implements ProtocolHandler for CGGMP21/CMP
 type CGGMP21Handler struct {
 	pool *pool.Pool
 }

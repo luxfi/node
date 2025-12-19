@@ -97,7 +97,7 @@ func NewConsensusNetwork(t *testing.T) *ConsensusNetwork {
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+		err = vm.SetState(context.Background(), uint32(consensuscore.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
 		network.DexNodes[i] = &DexNode{
@@ -427,7 +427,7 @@ func BenchmarkConsensusNetwork(b *testing.B) {
 		}
 
 		_ = vm.Initialize(ctx, consensusCtx, db, nil, nil, nil, toEngine, nil, warp.FakeSender{})
-		_ = vm.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
 
 		network.DexNodes[i] = &DexNode{
 			ID: network.PrimaryNodes[i].ID,

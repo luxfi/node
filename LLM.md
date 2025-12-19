@@ -4173,3 +4173,479 @@ lux amm swap --network zoo --from 0x4888E4a2Ee0F03051c72D2BD3ACf755eD3498B3E --t
 - ✅ Token Info: All Z-tokens deployed and queryable
 - ⚠️ Swap Execution: Tx submitted, pending (chain at historic block 799, no new blocks)
 
+---
+
+## Mainnet Deployment Progress - 2025-12-16 (Session 2)
+
+### Summary
+
+Continued work on deploying Zoo chain to Lux mainnet with proper 5-node validator consensus.
+
+### Completed Tasks
+
+1. **Exported Zoo Blocks**: Successfully exported 800 blocks (0-799) from standalone Zoo geth to `/tmp/zoo-blocks.jsonl`
+
+2. **Code Updates Pushed**:
+   - **CLI** (luxfi/cli): `v1.21.37` - Added AMM commands with V3 support
+   - **Node** (luxfi/node): `v1.22.18` - Updated genesis with real treasury allocations, added Zoo EVM docs
+
+3. **Network Investigation**:
+   - Standalone geth runs Zoo chain at block 799 with 3 pending swap txs
+   - Netrunner genesis generation has format issues (base58 encoding error)
+   - Direct luxd nodes start but lack validator configuration
+
+### Key Findings
+
+**Netrunner Genesis Issue**:
+- Error: `couldn't decode ID to bytes: base58 decoding error: Invalid base58 digit ('0')`
+- Root cause: `NewMainnetConfig()` in netrunner modifies embedded genesis with initialStakers and allocations
+- The modification creates malformed xChainGenesis with invalid ID encoding
+- Workaround: Use embedded genesis directly without netrunner modifications
+
+**Embedded Genesis Works**:
+- Direct `luxd --network-id=96369` starts successfully
+- Uses genesisHash: `zNfeRJZ8G7eymdpYbWsWsNjDVLWC43Gm6XYesz4Cd7yLZ3Khy`
+- However, nodes show "not a validator" because genesis lacks initialStakers
+
+### Next Steps
+
+1. **Fix Netrunner Genesis Generation**:
+   - Debug xChainGenesis ID format in `/Users/z/work/lux/netrunner/local/genesis_config.go`
+   - Ensure proper CB58/base58 encoding for all IDs
+
+2. **Alternative: Configure Validators in Embedded Genesis**:
+   - Add initialStakers to `/Users/z/work/lux/genesis/configs/mainnet/pchain.json`
+   - Generate staking keys and BLS keys for 5 validators
+   - Commit updated genesis package
+
+3. **Import Zoo Chain State**:
+   - Use `lux network import /tmp/zoo-blocks.jsonl --id=ZOO_CHAIN_ID`
+   - Set chain head with `lux network set-head`
+
+4. **Test AMM on Live Network**:
+   - Once validators are producing blocks, test WZOO→ZLUX swap
+   - Verify C-Chain RPC at http://localhost:9650/ext/bc/C/rpc
+
+### File Locations
+
+| File | Purpose |
+|------|---------|
+| `/tmp/zoo-blocks.jsonl` | Exported Zoo chain blocks (0-799) |
+| `/Users/z/.lux/keys/validator_*.pk` | Validator private keys |
+| `/Users/z/.lux/keys/mainnet_validators.json` | Validator addresses and P-chain addrs |
+| `/Users/z/work/lux/genesis/configs/mainnet/` | Mainnet genesis components |
+| `/Users/z/work/lux/netrunner/local/genesis_config.go` | Genesis generation logic |
+
+### Validator Keys Available
+
+| Index | Eth Address | P-Chain Address |
+|-------|-------------|-----------------|
+| 0 | 0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC | P-lux10e6nu7ey36s03ax3t8xmntf8lsmxhx8sv7fl42 |
+| 1 | 0xAd435a834408e3eD36d53036fd20aB3544203419 | P-lux1dagyhrkhh3ela6695h5tk0gl98qfx3w30gyje9 |
+| 2 | 0x48E4d155A17F9c260ccD08e0604e2485DaC21022 | P-lux17vydvvzas75ygz3mtm490ta3uqlj9r4fsj2cmx |
+| 3 | 0xCE922F9bb63F3Cf1b2f160132eE84699e0001b36 | P-lux16s2lmaa0nvg30htqdh5hkrjlpa34p2gvs3wh6d |
+| 4 | 0xe7D64B3639d6818474f83afC8Bf97958Ec77D47b | P-lux139tytzctwsla5rs74u64ylxdu4memvp8tl79dr |
+
+
+---
+
+## Session: December 16, 2025 - 5-Node Mainnet Successfully Started
+
+### Bugs Fixed This Session
+
+#### 1. Genesis blobSchedule Configuration (genesis v1.5.4 → v1.5.5)
+**Error**: `failed to initialize VM: invalid chain configuration in blobSchedule for fork 'cancun': update fraction must be defined and non-zero`
+
+**Root Cause**: 
+- mainnet/cchain.json was missing cancun fork configuration
+- First attempt used wrong JSON field name (`updateFraction` instead of `baseFeeUpdateFraction`)
+
+**Fix Applied** (in `/Users/z/work/lux/genesis/configs/mainnet/cchain.json`):
+```json
+"shanghaiTime": 0,
+"cancunTime": 0,
+"etnaTimestamp": 0,
+"blobSchedule": {
+  "cancun": {
+    "max": 6,
+    "target": 3,
+    "baseFeeUpdateFraction": 3338477
+  }
+}
+```
+
+**Key Learning**: The Go struct uses `UpdateFraction uint64` with JSON tag `json:"baseFeeUpdateFraction"`. Always check struct tags!
+
+#### 2. PrimaryNetworkID Filter Bug (netrunner v1.14.17)
+**Error**: `subnetID not found on map: 11111111111111111111111111111111LpoYY`
+
+**Root Cause**: 
+- `updateSubnetInfo()` in `server/network.go` was only filtering `PlatformChainID`
+- GetNets returns the Primary Network (ID = ids.Empty = `11111111111111111111111111111111LpoYY`)
+- GetCurrentSupply succeeds for Primary Network (it has supply)
+- But Primary Network is not in `subnetID2ElasticSubnetID` map, causing failure
+
+**Fix Applied** (in `/Users/z/work/lux/netrunner/server/network.go:598-600`):
+```go
+// Skip both PlatformChainID and PrimaryNetworkID (which is ids.Empty)
+if subnet.ID != luxd_constants.PlatformChainID && subnet.ID != luxd_constants.PrimaryNetworkID {
+    subnetIDList = append(subnetIDList, subnet.ID.String())
+}
+```
+
+#### 3. Old Backend Process Caching Issue
+**Symptom**: Genesis file kept showing wrong field name despite rebuilding
+
+**Root Cause**:
+- Old CLI backend process (from Sunday) was still running
+- CLI spawns backend via `reexec.Self()` which re-runs same binary
+- Old process was generating genesis with outdated code
+
+**Fix**: `kill <old_pid>; pkill -f "cli-backend"`
+
+### Version Summary
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| genesis | v1.5.5 | Fixed blobSchedule field name |
+| netrunner | v1.14.17 | Fixed PrimaryNetworkID filter |
+| node | v1.22.18 | Using genesis v1.5.5 |
+| CLI | v1.21.37 | Local build with fixes |
+
+### Network Status
+
+**5-Node Mainnet Running Successfully**:
+- Chain ID: 96369
+- RPC Endpoints: http://127.0.0.1:9630-9638 (odd ports for HTTP, even for staking)
+- C-Chain RPC: http://localhost:9630/ext/bc/C/rpc
+- Data Directory: ~/.lux/runs/mainnet/network_*
+- Block Height: 0 (fresh network)
+
+**Validator Addresses with C-Chain Balance (1 LUX each)**:
+| Address | Balance |
+|---------|---------|
+| 0x48E4d155A17F9c260ccD08e0604e2485DaC21022 | 1 LUX |
+| 0x57C51c384DC61534EA87E541D56e8ed3c643e5E1 | 1 LUX |
+| 0xAd435a834408e3eD36d53036fd20aB3544203419 | 1 LUX |
+| 0xCE922F9bb63F3Cf1b2f160132eE84699e0001b36 | 1 LUX |
+| 0xe7D64B3639d6818474f83afC8Bf97958Ec77D47b | 1 LUX |
+
+### Commands Used
+
+Start mainnet:
+```bash
+./bin/lux network start --mainnet --num-validators 5 --node-path /Users/z/work/lux/node/build/luxd
+```
+
+Check AMM status:
+```bash
+./bin/lux amm status --network lux --rpc http://localhost:9630/ext/bc/C/rpc
+```
+
+Check balance:
+```bash
+export LUX_PRIVATE_KEY="<key_from_mainnet_validators.json>"
+./bin/lux amm balance --network lux --rpc http://localhost:9630/ext/bc/C/rpc
+```
+
+### Next Steps
+
+1. **Deploy AMM Contracts**: The mainnet is running but AMM contracts need deployment
+   - V2/V3 Factory, Router, Quoter, Multicall
+   - WZOO (wrapped native)
+   - ZLUX token
+   - Liquidity pools
+
+2. **Test AMM Swaps**: Once contracts deployed, test `lux amm swap` command
+
+3. **Import Zoo State**: Consider migrating state from standalone Zoo geth
+   - Zoo blocks exported to `/tmp/zoo-blocks.jsonl` (800 blocks)
+   - Transactions signed for chain ID 200200 (not directly replayable)
+
+---
+
+## Historic Block Import - EIP-3860 Init Code Gas Fix - 2025-12-17
+
+### Problem
+
+When importing historic Lux mainnet blocks from RLP file, block 9 failed with a gas validation error:
+```
+invalid gas used (remote: 2524114 local: 2523386)
+```
+
+This 728 gas difference occurred because the EVM was not charging EIP-3860 init code gas for CREATE2 operations.
+
+### Root Cause
+
+Block 9 calls `createPair(address,address)` which internally does CREATE2 to deploy a Uniswap V2 pair contract. EIP-3860 (Shanghai) requires charging `InitCodeWordGas` (2 gas per 32-byte word) for CREATE/CREATE2 operations.
+
+The issue was in `geth/params/config.go` line 1518:
+```go
+IsShanghai: (isMerge && c.IsShanghai(num, timestamp)) || c.IsDurango(timestamp),
+```
+
+For historic pre-merge blocks:
+- `isMerge` was false (because `blockCtx.Random == nil` for pre-merge blocks)
+- `c.IsDurango(timestamp)` was false (Durango not scheduled for mainnet)
+
+So `Rules.IsShanghai` was false, even though `ShanghaiTime = 0` in the genesis config.
+
+Without Shanghai being active, the EVM used `gasCreate2` instead of `gasCreate2Eip3860`, meaning init code gas wasn't charged:
+- 728 / 2 = 364 words × 32 bytes = 11,648 bytes of init code
+
+### Solution
+
+Changed `geth/params/config.go` line 1518 to respect `ShanghaiTime` without requiring merge status:
+```go
+// For Lux networks: If ShanghaiTime is explicitly set in genesis config,
+// Shanghai is active regardless of merge status. This handles importing
+// historic blocks that were created with Shanghai EIPs (EIP-3860 init code gas)
+// but before the merge. For SubnetEVM chains, Durango upgrade brings Shanghai EIPs.
+IsShanghai: c.IsShanghai(num, timestamp) || c.IsDurango(timestamp),
+```
+
+### Files Modified
+- `/Users/z/work/lux/geth/params/config.go` - Removed `isMerge` requirement for IsShanghai
+
+### Verification
+Successfully imported 10,000 blocks at ~1,618 blocks/sec after the fix.
+
+### Related Config
+Genesis config for Lux mainnet (`genesis/configs/mainnet/cchain.json`):
+```json
+{
+  "config": {
+    "chainId": 96369,
+    "shanghaiTime": 0,  // Shanghai active from genesis
+    "fortunaTimestamp": 253399622400,
+    "graniteTimestamp": 253399622400
+  }
+}
+```
+
+
+---
+
+## Lux Network Migration & Subnet Deployment - 2025-12-18
+
+### CRITICAL GOTCHAS & SOLUTIONS
+
+This section documents all issues encountered and their solutions when setting up a Lux mainnet network with C-Chain block import and subnet deployment.
+
+---
+
+### 1. AppSender Interface Mismatch (CRITICAL)
+
+**GOTCHA**: Node's rpcchainvm provides `warp.Sender` interface but EVM expects `consensus/engine/core.AppSender`.
+
+**SYMPTOMS**:
+```
+failed to initialize VM: rpc error: code = Unknown desc = appSender is not nodeCommonEng.AppSender
+```
+
+**SOLUTION**: Update `node/vms/rpcchainvm/appsender/appsender_client.go` to implement `consensuscore.AppSender`:
+```go
+import consensuscore "github.com/luxfi/consensus/engine/core"
+
+var _ consensuscore.AppSender = (*Client)(nil)
+
+func NewClient(client appsenderpb.AppSenderClient) consensuscore.AppSender {
+    return &Client{client: client}
+}
+
+// Implement methods: SendAppRequest, SendAppResponse, SendAppError, SendAppGossip, SendAppGossipSpecific
+```
+
+**FILES**: `node/vms/rpcchainvm/appsender/appsender_client.go`
+
+---
+
+### 2. Version Mismatch Between Node and EVM
+
+**GOTCHA**: CLI installs luxd v1.21.0 but EVM depends on node v1.22.x, causing interface incompatibilities.
+
+**SYMPTOMS**: Same AppSender error, exec format errors
+
+**SOLUTION**: 
+1. Add replace directive in EVM go.mod:
+```
+replace github.com/luxfi/node => ../node
+```
+2. Build luxd from local node repo
+3. Copy to `~/.lux/bin/luxd/luxdv1.21.0/luxd`
+4. Rebuild EVM plugin: `go build -o ~/.lux/plugins/<VMID> ./plugin`
+
+---
+
+### 3. EVM Plugin Binary Format
+
+**GOTCHA**: `go build -buildmode=plugin` creates wrong format.
+
+**SYMPTOMS**: `exec format error`
+
+**SOLUTION**: Build as regular executable:
+```bash
+go build -o ~/.lux/plugins/<VMID> ./plugin
+chmod +x ~/.lux/plugins/<VMID>
+```
+
+---
+
+### 4. Genesis Hash Mismatch for Block Import
+
+**GOTCHA**: Deploying subnet with default genesis produces different genesis hash than RLP file.
+
+**SYMPTOMS**: 
+```
+failed to insert: unknown ancestor
+```
+
+**SOLUTION**:
+1. Extract genesis from RLP file to verify parameters
+2. Use original mainnet genesis from `~/work/lux/state/pebbledb/<chain>/genesis.json`
+3. Deploy subnet with correct genesis
+
+**GENESIS FILE LOCATIONS**:
+- Zoo: `~/work/lux/state/pebbledb/zoo-mainnet/genesis.json`
+- SPC: `~/work/lux/state/pebbledb/spc-mainnet/genesis.json`
+
+---
+
+### 5. Admin API Not Available on Subnets
+
+**GOTCHA**: `admin_importChain` method doesn't exist on subnet chains by default.
+
+**SYMPTOMS**:
+```
+the method admin_importChain does not exist/is not available
+```
+
+**SOLUTION**: 
+1. Add ImportChain to `plugin/evm/admin.go`
+2. Create chain config with `admin-api-enabled: true`:
+```json
+{
+  "admin-api-enabled": true,
+  "eth-api-enabled": true
+}
+```
+3. Place in `~/.lux/chain-configs/<BlockchainID>/config.json`
+
+---
+
+### 6. Nodes Not Tracking Subnet
+
+**GOTCHA**: Subnet deployed but nodes return 404 for subnet RPC.
+
+**SYMPTOMS**: `404 page not found` on `/ext/bc/<subnet>/rpc`
+
+**SOLUTION**:
+1. CLI auto-tracks deployed subnets when starting from snapshot
+2. Manually: Add `--track-subnets=<SubnetID>` to node flags
+3. Create subnet config: `~/.lux/runs/.../node*/subnetConfigs/<SubnetID>.json`:
+```json
+{"validatorOnly": false, "proposerMinBlockDelay": 0}
+```
+
+---
+
+### 7. Network Directory Changes on Restart
+
+**GOTCHA**: CLI creates new timestamped network directories on each restart, losing subnet state.
+
+**SOLUTION**: Use snapshots to preserve state:
+```bash
+# Save snapshot after deploying subnet
+lux network save --snapshot-name <name>
+
+# Start from snapshot
+lux network start --snapshot-name <name>
+```
+
+---
+
+### 8. BlockGasCost Nil Validation
+
+**GOTCHA**: Imported blocks fail validation with nil BlockGasCost.
+
+**SOLUTION**: Update `evm/core/types/block.go` to handle nil BlockGasCost:
+```go
+// In block validation, allow nil BlockGasCost for imported legacy blocks
+if header.BlockGasCost != nil {
+    // validate
+}
+```
+
+---
+
+### 9. P-Chain Funding for Subnet Validators
+
+**GOTCHA**: Default P-Chain allocations don't fund validators for staking.
+
+**SOLUTION**: Modify `netrunner/pkg/genesis_config.go`:
+```go
+// Use second validator for initialStakedFunds
+genesisConfig.InitialStakedFunds = []string{validatorAddresses[1]}
+```
+
+---
+
+### KEY COMMANDS REFERENCE
+
+```bash
+# Start network
+lux network start --mainnet
+
+# Deploy subnet
+lux l2 deploy zoo --mainnet
+
+# Save snapshot
+lux network save --snapshot-name <name>
+
+# Start from snapshot
+lux network start --snapshot-name <name>
+
+# Import blocks
+lux chain import --chain=<chain> --path=<rlp-file> --rpc=http://127.0.0.1:9630
+
+# Check subnet validators
+curl -s -X POST --data '{"jsonrpc":"2.0","id":1,"method":"platform.getCurrentValidators","params":{"subnetID":"<SubnetID>"}}' -H 'content-type:application/json;' http://127.0.0.1:9630/ext/bc/P
+```
+
+---
+
+### FILE LOCATIONS
+
+| Item | Path |
+|------|------|
+| luxd binary | `~/.lux/bin/luxd/luxdv1.21.0/luxd` |
+| VM plugins | `~/.lux/plugins/<VMID>` |
+| Network runs | `~/.lux/runs/local_network/network_*` |
+| Snapshots | `~/.lux/snapshots/` |
+| Chain configs | `~/.lux/chain-configs/<BlockchainID>/` |
+| Subnet configs | `~/.lux/runs/.../node*/subnetConfigs/` |
+| CLI backend logs | `~/.lux/runs/server_*/cli-backend.log` |
+
+---
+
+### BUILD ORDER
+
+1. Build node: `cd ~/work/lux/node && go build -o /tmp/luxd ./main`
+2. Install luxd: `cp /tmp/luxd ~/.lux/bin/luxd/luxdv1.21.0/luxd`
+3. Build EVM (with node replace): `cd ~/work/lux/evm && go build -o ~/.lux/plugins/<VMID> ./plugin`
+4. Start network: `lux network start --mainnet`
+
+---
+
+### GENESIS EXTRACTION TOOL
+
+```bash
+# Extract genesis from RLP
+cd ~/work/lux/genesis
+go run cmd/extract-genesis/main.go --rlp <rlp-file> --output <output-file>
+
+# Genesis files stored in:
+~/work/lux/genesis/chains/zoo/genesis.json
+~/work/lux/genesis/chains/spc/genesis.json
+```
+

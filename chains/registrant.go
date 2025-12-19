@@ -4,8 +4,8 @@
 package chains
 
 import (
-	consensuscore "github.com/luxfi/consensus/core"
 	consensus "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/engine/interfaces"
 )
 
 // Registrant can register the existence of a chain
@@ -13,5 +13,5 @@ type Registrant interface {
 	// Called when a chain is created
 	// This function is called before the chain starts processing messages
 	// [vm] should be a vertex.DAGVM or block.ChainVM
-	RegisterChain(chainName string, ctx *consensus.Context, vm consensuscore.VM)
+	RegisterChain(chainName string, ctx *consensus.Context, vm interfaces.VM)
 }

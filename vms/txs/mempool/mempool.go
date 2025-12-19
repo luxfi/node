@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sync"
 
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
@@ -71,7 +71,7 @@ type Mempool[T Tx] interface {
 	Len() int
 
 	// WaitForEvent waits until there is at least one tx in the mempool.
-	WaitForEvent(ctx context.Context) (consensuscore.Message, error)
+	WaitForEvent(ctx context.Context) (engine.Message, error)
 }
 
 type mempool[T Tx] struct {
@@ -228,14 +228,14 @@ func (m *mempool[_]) Len() int {
 	return m.unissuedTxs.Len()
 }
 
-func (m *mempool[_]) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
+func (m *mempool[_]) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	for m.unissuedTxs.Len() == 0 {
 		if err := m.cond.Wait(ctx); err != nil {
-			return consensuscore.Message{}, err
+			return engine.Message{}, err
 		}
 	}
-	return consensuscore.Message{Type: consensuscore.PendingTxs}, nil
+	return engine.Message{Type: engine.PendingTxs}, nil
 }

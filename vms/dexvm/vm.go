@@ -228,21 +228,20 @@ func (vm *VM) SetState(ctx context.Context, stateNum uint32) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	state := consensuscore.VMState(stateNum)
+	state := consensuscore.State(stateNum)
 	switch state {
-	case consensuscore.VMBootstrapping:
+	case consensuscore.Bootstrapping:
 		if vm.log != nil {
 			vm.log.Info("DEX VM entering bootstrap state")
 		}
 		vm.bootstrapped = false
 		return nil
 
-	case consensuscore.VMNormalOp:
+	case consensuscore.Ready:
 		if vm.log != nil {
-			vm.log.Info("DEX VM entering normal operation (functional mode - no background tasks)")
+			vm.log.Info("DEX VM entering ready state")
 		}
 		vm.bootstrapped = true
-		// No background goroutines - all operations happen in ProcessBlock
 		return nil
 
 	default:

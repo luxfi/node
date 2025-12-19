@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -28,8 +29,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
 	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/engine"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/warp"
@@ -37,6 +38,7 @@ import (
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/chain"
+	platformwarp "github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
@@ -175,6 +177,15 @@ func (vm *VMClient) Initialize(
 		return errUnsupportedFXs
 	}
 
+	// Debug all Initialize calls
+	{
+		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG Initialize: called with chainCtxIface type=%T\n", time.Now().Format("15:04:05.000"), chainCtxIface)
+			debugFile.Close()
+		}
+	}
+
 	// Convert interface{} parameters to concrete types
 	// Handle both *rpcchainvm.Context and *consensuscontext.Context
 	var chainCtx *Context
@@ -212,6 +223,36 @@ func (vm *VMClient) Initialize(
 		if ctx.ValidatorState != nil {
 			if vs, ok := ctx.ValidatorState.(validators.State); ok {
 				chainCtx.ValidatorState = vs
+			}
+		}
+		// BCLookup conversion - critical for plugin VM alias resolution
+		if ctx.BCLookup != nil {
+			if bcl, ok := ctx.BCLookup.(ids.AliaserReader); ok {
+				chainCtx.BCLookup = bcl
+			}
+		}
+		// WarpSigner conversion - for BLS signing of warp messages
+		{
+			debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if debugFile != nil {
+				fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: ctx.WarpSigner=%p (type=%T)\n", time.Now().Format("15:04:05.000"), ctx.WarpSigner, ctx.WarpSigner)
+				debugFile.Close()
+			}
+		}
+		if ctx.WarpSigner != nil {
+			if ws, ok := ctx.WarpSigner.(platformwarp.Signer); ok {
+				chainCtx.WarpSigner = ws
+				debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if debugFile != nil {
+					fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: conversion OK, chainCtx.WarpSigner=%p\n", time.Now().Format("15:04:05.000"), chainCtx.WarpSigner)
+					debugFile.Close()
+				}
+			} else {
+				debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if debugFile != nil {
+					fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: conversion FAILED - type assertion failed\n", time.Now().Format("15:04:05.000"))
+					debugFile.Close()
+				}
 			}
 		}
 		// PublicKey conversion from []byte
@@ -273,8 +314,22 @@ func (vm *VMClient) Initialize(
 	if chainCtx.SharedMemory != nil {
 		vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
 	}
+	// Debug: check BCLookup
+	{
+		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG vm_client: chainCtx.BCLookup=%p\n", time.Now().Format("15:04:05.000"), chainCtx.BCLookup)
+			debugFile.Close()
+		}
+	}
 	if chainCtx.BCLookup != nil {
 		vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
+	} else {
+		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG vm_client: ERROR BCLookup is nil!\n", time.Now().Format("15:04:05.000"))
+			debugFile.Close()
+		}
 	}
 	if appSenderConcrete != nil {
 		vm.appSender = appsender.NewServer(appSenderConcrete)
@@ -284,6 +339,17 @@ func (vm *VMClient) Initialize(
 	}
 	if chainCtx.WarpSigner != nil {
 		vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG warpSignerServer: CREATED for chainID=%s\n", time.Now().Format("15:04:05.000"), chainCtx.ChainID.String())
+			debugFile.Close()
+		}
+	} else {
+		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG warpSignerServer: NIL for chainID=%s\n", time.Now().Format("15:04:05.000"), chainCtx.ChainID.String())
+			debugFile.Close()
+		}
 	}
 
 	serverListener, err := grpcutils.NewListener()
@@ -1048,15 +1114,15 @@ func (s *summaryClient) Accept(ctx context.Context) (chainblock.StateSyncMode, e
 	return chainblock.StateSyncMode(resp.Mode), errEnumToError[resp.Err]
 }
 
-// WaitForEvent implements the consensuscore.VM interface
+// WaitForEvent implements the VM interface
 func (vm *VMClient) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// The RPC VM client doesn't directly handle events,
 	// it relies on the server-side VM for event handling
 	<-ctx.Done()
-	return consensuscore.PendingTxs, ctx.Err()
+	return engine.PendingTxs, ctx.Err()
 }
 
-// NewHTTPHandler implements the consensuscore.VM interface
+// NewHTTPHandler implements the VM interface
 func (vm *VMClient) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 	// RPC VM uses CreateHandlers instead of a single handler
 	return nil, nil

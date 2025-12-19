@@ -27,7 +27,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.27
+	github.com/luxfi/consensus v1.22.31
 	github.com/luxfi/crypto v1.17.24
 	github.com/luxfi/database v1.2.12
 	github.com/luxfi/ids v1.2.4
@@ -142,7 +142,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.3
-	github.com/luxfi/coreth v0.15.53
+	github.com/luxfi/coreth v0.15.54
 	github.com/luxfi/genesis v1.5.5
 	github.com/luxfi/geth v1.16.56
 	github.com/luxfi/go-bip39 v1.1.2
@@ -195,6 +195,7 @@ require (
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.1 // indirect
 	github.com/luxfi/utils v1.0.0 // indirect
+	github.com/luxfi/vm v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -223,5 +224,3 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/coreth => ../coreth

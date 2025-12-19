@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -31,7 +32,6 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -50,10 +50,30 @@ import (
 
 var (
 	_ vmpb.VMServer = (*VMServer)(nil)
+	_ warp.Signer   = (*warpSignerAdapter)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 	errNilNetworkUpgradesPB           = errors.New("network upgrades protobuf is nil")
 )
+
+// warpSignerAdapter wraps the gRPC warp signer client to implement github.com/luxfi/warp.Signer
+// This is needed because plugins (like subnet-evm/coreth) expect the warp.Signer from luxfi/warp,
+// not from luxfi/node/vms/platformvm/warp
+type warpSignerAdapter struct {
+	client warppb.SignerClient
+}
+
+func (a *warpSignerAdapter) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
+	resp, err := a.client.Sign(context.Background(), &warppb.SignRequest{
+		NetworkId:     msg.NetworkID,
+		SourceChainId: msg.SourceChainID[:],
+		Payload:       msg.Payload,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Signature, nil
+}
 
 // VMServer is a VM that is managed over RPC.
 type VMServer struct {
@@ -212,10 +232,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.connCloser.Add(clientConn)
 
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
-	_ = galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn)) // bcLookupClient not used by consensus context
+	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
-	_ = gwarp.NewClient(warppb.NewSignerClient(clientConn)) // warpSignerClient not used
+	// Create WarpSigner adapter that implements github.com/luxfi/warp.Signer for plugin compatibility
+	warpSignerClient := &warpSignerAdapter{client: warppb.NewSignerClient(clientConn)}
 
 	vm.closed = make(chan struct{})
 
@@ -238,9 +259,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		LUXAssetID:      luxAssetID,
 		Log:             vm.log,
 		SharedMemory:    sharedMemoryClient,
+		BCLookup:        bcLookupClient,
 		Metrics:         vmMetrics,
 		ValidatorState:  validatorStateClient,
 		ChainDataDir:    req.ChainDataDir,
+		WarpSigner:      warpSignerClient,
 	}
 
 	// Store network information
@@ -248,12 +271,34 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.chainID = chainID
 	vm.nodeID = nodeID
 
+	// File-based debug logging
+	debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if debugFile != nil {
+		fmt.Fprintf(debugFile, "%s DEBUG vm_server: About to call vm.vm.Initialize chainID=%s\n", time.Now().Format("15:04:05.000"), chainID)
+		debugFile.Close()
+	}
+	fmt.Fprintf(os.Stderr, "DEBUG vm_server: About to call vm.vm.Initialize\n")
 	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, nil, appSenderClient); err != nil {
+		// Log error to file for debugging
+		debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG vm_server: Initialize FAILED err=%v\n", time.Now().Format("15:04:05.000"), err)
+			debugFile.Close()
+		}
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
 		vm.log.Error("failed to initialize vm", log.Err(err))
 		return nil, err
+	}
+
+	// Log success to file for debugging
+	{
+		debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if debugFile != nil {
+			fmt.Fprintf(debugFile, "%s DEBUG vm_server: Initialize SUCCESS chainID=%s\n", time.Now().Format("15:04:05.000"), chainID)
+			debugFile.Close()
+		}
 	}
 
 	lastAccepted, err := vm.vm.LastAccepted(ctx)

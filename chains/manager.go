@@ -27,7 +27,8 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/database/meterdb" // Unused
 	// "github.com/luxfi/database/prefixdb" // Only used in disabled createDAGChain function
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
 	luxwarp "github.com/luxfi/warp"
 	nodewarp "github.com/luxfi/node/vms/platformvm/warp"
@@ -38,7 +39,7 @@ import (
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
-	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/engine/interfaces"
 	// "github.com/luxfi/consensus/core/tracker"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
@@ -186,7 +187,7 @@ type ChainParameters struct {
 type chainInfo struct {
 	Name    string
 	Context *consensusctx.Context
-	VM      consensuscore.VM
+	VM      interface{} // Use interface{} since VM implementations vary
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
 }
@@ -218,7 +219,7 @@ func (s *senderToAppSenderAdapter) SendAppGossip(ctx context.Context, appGossipB
 	return nil
 }
 
-// chainVMWrapper wraps block.ChainVM to implement consensuscore.VM.
+// chainVMWrapper wraps block.ChainVM to implement interfaces.VM.
 // Uses vms.HandlerDelegator for clean, DRY handler delegation.
 type chainVMWrapper struct {
 	vm block.ChainVM
@@ -262,7 +263,7 @@ func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *chainVMWrapper) SetState(ctx context.Context, state consensuscore.VMState) error {
+func (c *chainVMWrapper) SetState(ctx context.Context, state consensus.State) error {
 	// ChainVM doesn't have SetState, return error or forward to underlying VM
 	// For now return nil as this is a wrapper
 	return nil
@@ -273,7 +274,7 @@ func (c *chainVMWrapper) Version(ctx context.Context) (string, error) {
 	return "1.0.0", nil
 }
 
-// linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement consensuscore.VM
+// linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement interfaces.VM
 // Disabled - consensus package doesn't have vertex types
 /*
 type linearizableVMWrapper struct {
@@ -347,6 +348,10 @@ func (n *noopValidatorState) GetCurrentValidators(ctx context.Context, height ui
 }
 
 func (n *noopValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (n *noopValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	return 0, nil
 }
 
@@ -1060,13 +1065,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	}
 
 	// Create warp signer for this chain using the node's BLS key
-	// C-chain (coreth) needs luxwarp.Signer, others need nodewarp.Signer
+	// For plugin VMs (rpcchainvm), we need to use nodewarp.Signer which is compatible
+	// with gwarp.Server. The gRPC layer handles the protocol conversion.
+	// C-chain (coreth) needs luxwarp.Signer
 	var warpSigner interface{}
 	if chainParams.ID == m.CChainID {
 		// C-chain uses coreth which expects luxwarp.Signer
 		warpSigner = createCorethWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 	} else {
-		// Other chains (P-chain, X-chain, etc.) use nodewarp.Signer
+		// Other chains (P-chain, X-chain, plugin VMs) use nodewarp.Signer
+		// For plugin VMs, gwarp.Server handles the gRPC protocol
 		warpSigner = createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 	}
 
@@ -1107,14 +1115,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		return nil, fmt.Errorf("error while creating vm for chain %s: %w", chainParams.ID, err)
 	}
 
-	chainFxs := make([]*consensuscore.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*engine.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &consensuscore.Fx{
+		chainFxs[i] = &engine.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -1209,7 +1217,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Create message channel for VM-to-Engine communication
 		toEngine := make(chan block.Message, 1)
 
-		// Convert []*consensuscore.Fx to []interface{}
+		// Convert []*engine.Fx to []interface{}
 		fxsInterface := make([]interface{}, len(chainFxs))
 		for i, fx := range chainFxs {
 			fxsInterface[i] = fx
@@ -1244,7 +1252,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("transitioning VM to normal operation",
 				log.Stringer("chainID", chainParams.ID))
-			if err := stateVM.SetState(context.TODO(), uint32(interfaces.NormalOp)); err != nil {
+			if err := stateVM.SetState(context.TODO(), uint32(consensus.Ready)); err != nil {
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
@@ -1318,7 +1326,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 	default:
 		// Note: Special X-Chain/Q-Chain handling disabled due to interface mismatches
-		// The exchangevm.VM implements block.ChainVM but chainInfo.VM expects consensuscore.VM
+		// The exchangevm.VM implements block.ChainVM but chainInfo.VM expects interfaces.VM
 		// This needs proper interface adaptation before it can be enabled
 		return nil, nil
 	}
@@ -1378,7 +1386,7 @@ func (v *dagVMAdapter) NewHTTPHandler(ctx context.Context) (http.Handler, error)
 	return nil, nil
 }
 
-func (v *dagVMAdapter) SetState(ctx context.Context, state consensuscore.VMState) error {
+func (v *dagVMAdapter) SetState(ctx context.Context, state consensus.State) error {
 	if s, ok := v.underlying.(interface {
 		SetState(context.Context, uint32) error
 	}); ok {
@@ -1407,8 +1415,8 @@ func (v *dagVMAdapter) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- consensuscore.Message,
-	fxs []*consensuscore.Fx,
+	toEngine chan<- engine.Message,
+	fxs []*engine.Fx,
 	appSender interface{},
 ) error {
 	return nil // DAG VMs are pre-initialized
@@ -1419,7 +1427,7 @@ func (m *manager) createDAG(
 	ctx *consensusctx.Context,
 	chainParams ChainParameters,
 	vm interface{},
-	fxs []*consensuscore.Fx,
+	fxs []*engine.Fx,
 ) (*chainInfo, error) {
 	// Type assert to get GetEngine() method from exchangevm/qvm
 	dagVM, ok := vm.(interface{ GetEngine() consensusdag.Engine })
@@ -1473,12 +1481,12 @@ func (m *manager) createDAG(
 			genesisBytes []byte,
 			upgradeBytes []byte,
 			configBytes []byte,
-			toEngine chan<- consensuscore.Message,
-			fxs []*consensuscore.Fx,
+			toEngine chan<- engine.Message,
+			fxs []*engine.Fx,
 			appSender luxwarp.Sender,
 		) error
 	}); ok {
-		toEngine := make(chan consensuscore.Message, 1)
+		toEngine := make(chan engine.Message, 1)
 		err := initVM.Initialize(
 			initCtx,
 			ctx,
@@ -1544,7 +1552,7 @@ func (m *manager) createDAG(
 		if stateVM, ok := vm.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			if err := stateVM.SetState(initCtx, uint32(interfaces.NormalOp)); err != nil {
+			if err := stateVM.SetState(initCtx, uint32(consensus.Ready)); err != nil {
 				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
 			}
 		}
@@ -1581,7 +1589,7 @@ func (m *manager) createDAGChain(
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*consensuscore.Fx,
+	fxs []*engine.Fx,
 	sb nets.Net,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -2093,7 +2101,7 @@ func (m *manager) createDAGChain(
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
 	// }
 
-	// Create a wrapper to adapt LinearizableVMWithEngine to consensuscore.VM
+	// Create a wrapper to adapt LinearizableVMWithEngine to interfaces.VM
 	vmWrapper := &linearizableVMWrapper{vm: graphVM}
 
 	return &chainInfo{
@@ -2140,7 +2148,7 @@ func (e *simpleEngine) IsBootstrapped() bool {
 	return e.engine.IsBootstrapped()
 }
 
-// simpleVM adapts block.ChainVM to consensuscore.VM
+// simpleVM adapts block.ChainVM to interfaces.VM
 type simpleVM struct {
 	vm block.ChainVM
 }
@@ -2177,7 +2185,7 @@ func (v *simpleVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return nil, nil
 }
 
-func (v *simpleVM) SetState(ctx context.Context, state consensuscore.VMState) error {
+func (v *simpleVM) SetState(ctx context.Context, state consensus.State) error {
 	// Forward state transitions to underlying VM if it supports SetState
 	// This is critical for Platform VM to transition to NormalOp and set bootstrapped=true
 	if stateVM, ok := v.vm.(interface {
@@ -2204,11 +2212,11 @@ func (v *simpleVM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- consensuscore.Message,
-	fxs []*consensuscore.Fx,
+	toEngine chan<- engine.Message,
+	fxs []*engine.Fx,
 	appSender interface{},
 ) error {
-	// Convert []*consensuscore.Fx to []interface{} for ChainVM.Initialize
+	// Convert []*engine.Fx to []interface{} for ChainVM.Initialize
 	fxsInterface := make([]interface{}, len(fxs))
 	for i, fx := range fxs {
 		fxsInterface[i] = fx
@@ -2222,8 +2230,8 @@ func (v *simpleVM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
-		toEngine,     // interface{} - chan<- consensuscore.Message
-		fxsInterface, // []interface{} - converted from []*consensuscore.Fx
+		toEngine,     // interface{} - chan<- engine.Message
+		fxsInterface, // []interface{} - converted from []*engine.Fx
 		appSender,
 	)
 }
@@ -2287,7 +2295,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 	}
 
 	// For now, assume bootstrapped chains are in NormalOp
-	return true // chain.Context.State.Get() == interfaces.NormalOp
+	return true // chain.Context.State.Get() == consensus.NormalOp
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {
@@ -2400,11 +2408,9 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *consensusctx.Context, vm consensuscore.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *consensusctx.Context, vm interface{}) {
 	for _, registrant := range m.registrants {
-		// registrant.RegisterChain expects consensuscore.VM, but we use interface{}
-		// since consensuscore.VM uses context.Context which we're not using
-		if coreVM, ok := vm.(consensuscore.VM); ok {
+		if coreVM, ok := vm.(interfaces.VM); ok {
 			registrant.RegisterChain(name, ctx, coreVM)
 		}
 	}

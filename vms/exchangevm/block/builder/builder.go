@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -34,7 +34,7 @@ var (
 type Builder interface {
 	// WaitForEvent waits until there is at least one tx available to the
 	// builder.
-	WaitForEvent(ctx context.Context) (consensuscore.Message, error)
+	WaitForEvent(ctx context.Context) (engine.Message, error)
 	// BuildBlock can be called to attempt to create a new block
 	BuildBlock(context.Context) (chainblock.Block, error)
 }
@@ -63,7 +63,7 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 

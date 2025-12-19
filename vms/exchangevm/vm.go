@@ -27,7 +27,7 @@ import (
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/warp"
 	"github.com/luxfi/math/set"
@@ -161,7 +161,7 @@ type VM struct {
 	network      *network.Network
 
 	// Channel for receiving messages from mempool
-	toEngine chan consensuscore.Message
+	toEngine chan engine.Message
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -224,20 +224,20 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database type")
 	}
 
-	// Convert Fx types to consensuscore.Fx
-	coreFxs := make([]*consensuscore.Fx, len(fxs))
+	// Convert Fx types to engine.Fx
+	coreFxs := make([]*engine.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx == nil {
 			continue
 		}
 		switch f := fx.(type) {
-		case *consensuscore.Fx:
+		case *engine.Fx:
 			coreFxs[i] = f
 		default:
 			// For any other Fx type with ID and Fx fields, use type assertion
 			if fxWithID, ok := fx.(interface{ GetID() ids.ID }); ok {
 				if fxWithFx, ok := fx.(interface{ GetFx() interface{} }); ok {
-					coreFxs[i] = &consensuscore.Fx{
+					coreFxs[i] = &engine.Fx{
 						ID: fxWithID.GetID(),
 						Fx: fxWithFx.GetFx(),
 					}
@@ -246,7 +246,7 @@ func (vm *VM) Initialize(
 			}
 			// Fallback: direct field access via reflection for legacy types
 			fxVal := reflect.ValueOf(fx).Elem()
-			coreFxs[i] = &consensuscore.Fx{
+			coreFxs[i] = &engine.Fx{
 				ID: fxVal.FieldByName("ID").Interface().(ids.ID),
 				Fx: fxVal.FieldByName("Fx").Interface(),
 			}
@@ -284,7 +284,7 @@ func (vm *VM) initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*consensuscore.Fx,
+	fxs []*engine.Fx,
 	sender warp.Sender,
 ) error {
 	// Initialize logger first
@@ -428,7 +428,7 @@ func (vm *VM) onBootstrapStarted() error {
 	return nil
 }
 
-func (vm *VM) onNormalOperationsStarted() error {
+func (vm *VM) onReady() error {
 	vm.txBackend.Bootstrapped = true
 	for _, fx := range vm.fxs {
 		if err := fx.Fx.Bootstrapped(); err != nil {
@@ -441,13 +441,12 @@ func (vm *VM) onNormalOperationsStarted() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	// Check if bootstrapping or normal operation based on state
-	state := consensusinterfaces.StateEnum(stateNum)
+	state := consensusinterfaces.State(stateNum)
 	switch state {
 	case consensusinterfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case consensusinterfaces.NormalOp:
-		return vm.onNormalOperationsStarted()
+	case consensusinterfaces.Ready:
+		return vm.onReady()
 	default:
 		return nil
 	}
@@ -543,7 +542,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- consensuscore.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- engine.Message) error {
 	// Use EtnaTime from config for chain state initialization
 	err := vm.state.InitializeChainState(stopVertexID, vm.Config.EtnaTime)
 	if err != nil {
@@ -555,7 +554,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	_ = toEngine
 	
 	// Create a channel for mempool to engine communication
-	vm.toEngine = make(chan consensuscore.Message, 1)
+	vm.toEngine = make(chan engine.Message, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
@@ -863,23 +862,23 @@ func (vm *VM) onAccept(tx *txs.Tx) {
 	vm.walletService.decided(txID)
 }
 
-// WaitForEvent implements the consensuscore.VM interface
+// WaitForEvent implements the engine.VM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	if vm.toEngine == nil {
 		// Before linearization, no events to wait for
 		<-ctx.Done()
-		return consensuscore.PendingTxs, ctx.Err()
+		return engine.PendingTxs, ctx.Err()
 	}
 
 	select {
 	case msgType := <-vm.toEngine:
 		return msgType, nil
 	case <-ctx.Done():
-		return consensuscore.PendingTxs, ctx.Err()
+		return engine.PendingTxs, ctx.Err()
 	}
 }
 
-// NewHTTPHandler implements the consensuscore.VM interface
+// NewHTTPHandler implements the engine.VM interface
 func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
 	return nil, nil

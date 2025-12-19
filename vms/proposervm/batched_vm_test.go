@@ -1171,7 +1171,7 @@ func initTestRemoteProposerVM(
 	// Set the clock to activation time to avoid "time too far advanced" errors
 	proVM.Clock.Set(activationTime)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
 	return &coreVM, proVM
 }

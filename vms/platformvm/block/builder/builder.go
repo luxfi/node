@@ -418,9 +418,7 @@ func buildBlock(
 	}
 	if err != nil {
 		logger := builder.txExecutorBackend.Ctx.Log.(log.Logger)
-		logger.Warn("failed to pack block transactions",
-			zap.Error(err),
-		)
+		logger.Warn("failed to pack block transactions: " + err.Error())
 		return nil, fmt.Errorf("failed to pack block txs: %w", err)
 	}
 
@@ -472,14 +470,23 @@ func packDurangoBlockTxs(
 	pChainHeight uint64,
 	remainingSize int,
 ) ([]*txs.Tx, error) {
+	logger := backend.Ctx.Log.(log.Logger)
+	logger.Debug("packDurangoBlockTxs starting",
+		log.Time("timestamp", timestamp),
+		log.Uint64("pChainHeight", pChainHeight),
+	)
 	stateDiff, err := state.NewDiffOn(parentState)
 	if err != nil {
+		logger.Warn("packDurangoBlockTxs NewDiffOn failed: " + err.Error())
 		return nil, err
 	}
+	logger.Debug("packDurangoBlockTxs NewDiffOn succeeded")
 
 	if _, err := txexecutor.AdvanceTimeTo(backend, stateDiff, timestamp); err != nil {
+		logger.Warn("packDurangoBlockTxs AdvanceTimeTo failed: " + err.Error())
 		return nil, err
 	}
+	logger.Debug("packDurangoBlockTxs AdvanceTimeTo succeeded")
 
 	var (
 		blockTxs      []*txs.Tx
@@ -641,16 +648,19 @@ func executeTx(
 
 	logger := backend.Ctx.Log.(log.Logger)
 	txID := tx.ID()
-	
-	// Type assert ValidatorState to consensusctx.ValidatorState
-	validatorState, ok := backend.Ctx.ValidatorState.(consensusctx.ValidatorState)
-	if !ok {
-		return false, fmt.Errorf("invalid validator state type")
+
+	// Get validator state - handle both validators.State (from node) and consensusctx.ValidatorState (from tests)
+	var stateAdapter validators.State
+	if vs, ok := backend.Ctx.ValidatorState.(validators.State); ok {
+		// Node provides validators.State directly
+		stateAdapter = vs
+	} else if vs, ok := backend.Ctx.ValidatorState.(consensusctx.ValidatorState); ok {
+		// Tests may provide consensusctx.ValidatorState, wrap it
+		stateAdapter = &validatorStateAdapter{state: vs}
+	} else {
+		return false, fmt.Errorf("invalid validator state type: %T", backend.Ctx.ValidatorState)
 	}
-	
-	// Wrap it in an adapter to implement validators.State
-	stateAdapter := &validatorStateAdapter{state: validatorState}
-	
+
 	err := txexecutor.VerifyWarpMessages(
 		ctx,
 		backend.Ctx.NetworkID,

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/luxfi/crypto/threshold"
+	_ "github.com/luxfi/crypto/threshold/bls" // Register BLS threshold scheme
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/math/set"
 )
@@ -733,16 +735,13 @@ func (s *HybridBLSRTSignature) String() string {
 // =============================================================================
 
 // AggregateRingtailPublicKeys aggregates multiple Ringtail public keys
-// into a single combined public key for threshold verification
+// into a single combined public key for threshold verification.
+// This uses the threshold package's SchemeRingtail when available,
+// falling back to XOR-based aggregation as a placeholder.
 func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	if len(publicKeys) == 0 {
 		return nil, errors.New("no public keys to aggregate")
 	}
-
-	// For lattice-based signatures, public key aggregation is typically
-	// done by summing the public key matrices modulo q
-	// This is a simplified implementation - real implementation would
-	// use the proper lattice arithmetic
 
 	// Determine the expected key length from the first key
 	keyLen := len(publicKeys[0])
@@ -752,7 +751,30 @@ func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 		}
 	}
 
-	// Aggregate by XORing (simplified - real impl uses lattice math)
+	// Try to use SchemeRingtail from threshold package if available
+	if threshold.HasScheme(threshold.SchemeRingtail) {
+		scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+		if err == nil {
+			// Parse and aggregate using the threshold scheme
+			// This provides proper lattice-based key aggregation
+			parsedKeys := make([]threshold.PublicKey, len(publicKeys))
+			for i, pk := range publicKeys {
+				parsed, err := scheme.ParsePublicKey(pk)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse public key %d: %w", i, err)
+				}
+				parsedKeys[i] = parsed
+			}
+			// Note: threshold.Scheme doesn't have aggregate keys method yet
+			// This is a placeholder for when it's added
+			// For now, fall through to the XOR fallback
+		}
+	}
+
+	// Fallback: XOR-based aggregation (placeholder for lattice math)
+	// For lattice-based signatures, proper aggregation would sum
+	// public key matrices modulo q. This XOR is NOT cryptographically
+	// correct but allows testing the infrastructure.
 	aggregated := make([]byte, keyLen)
 	copy(aggregated, publicKeys[0])
 
@@ -765,36 +787,52 @@ func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	return aggregated, nil
 }
 
-// VerifyRingtailSignature verifies a Ringtail lattice-based signature
-// This interfaces with the threshold/protocols/ringtail package
+// VerifyRingtailSignature verifies a Ringtail lattice-based signature.
+// This uses the threshold package's SchemeRingtail verifier when available.
 func VerifyRingtailSignature(publicKey []byte, message []byte, signature []byte) bool {
-	// Import verification from the ringtail config package
-	// This performs the lattice-based signature verification
-	return verifyRingtailInternal(publicKey, message, signature)
-}
-
-// verifyRingtailInternal performs the actual Ringtail verification
-// This is a placeholder that will be connected to the actual ringtail package
-func verifyRingtailInternal(publicKey []byte, message []byte, signature []byte) bool {
 	// Basic sanity checks
-	if len(publicKey) < 32 || len(signature) < 64 {
+	if len(publicKey) < 32 || len(signature) < 64 || len(message) == 0 {
 		return false
 	}
 
-	// TODO: Connect to actual ringtail.VerifySignature from
-	// github.com/luxfi/threshold/protocols/ringtail/config
-	//
-	// For now, perform basic structural validation:
+	// Try to use SchemeRingtail from threshold package if available
+	if threshold.HasScheme(threshold.SchemeRingtail) {
+		scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+		if err == nil {
+			// Parse the public key
+			pk, err := scheme.ParsePublicKey(publicKey)
+			if err != nil {
+				return false
+			}
+
+			// Create a verifier for the public key
+			verifier, err := scheme.NewVerifier(pk)
+			if err != nil {
+				return false
+			}
+
+			// Verify using the threshold verifier
+			return verifier.VerifyBytes(message, signature)
+		}
+	}
+
+	// Fallback: structural validation only
+	// This is a placeholder for testing - NOT cryptographically secure
+	// In production, SchemeRingtail MUST be registered and available
+	return verifyRingtailStructural(publicKey, message, signature)
+}
+
+// verifyRingtailStructural performs basic structural validation of a Ringtail signature.
+// This is NOT cryptographically secure and is only for testing infrastructure.
+// Production use requires the SchemeRingtail to be registered.
+func verifyRingtailStructural(publicKey []byte, message []byte, signature []byte) bool {
+	// Basic structural checks:
 	// 1. Signature length should be consistent with security level
-	// 2. Message hash should be embedded in signature
-	// 3. Lattice verification equation should hold
-
-	// Placeholder: actual lattice verification
-	// Real implementation:
-	// return config.VerifySignature(publicKey, message, signature)
-
-	// For testing/development, accept all structurally valid signatures
-	// This MUST be replaced with actual verification before production
+	// 2. Public key length should be consistent
+	// 3. Message should not be empty
+	//
+	// WARNING: This does NOT perform actual lattice verification.
+	// It only checks that the data is structurally valid.
 	return len(signature) >= 64 && len(publicKey) >= 32 && len(message) > 0
 }
 

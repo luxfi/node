@@ -87,7 +87,7 @@ func TestVMSetState(t *testing.T) {
 	require.False(vm.bootstrapped)
 
 	// Set to normal operation (functional mode - no background tasks)
-	err = vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err = vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 	require.True(vm.bootstrapped)
 }
@@ -119,7 +119,7 @@ func TestVMHealthCheck(t *testing.T) {
 	require.Equal("functional", healthMap["mode"].(string))
 
 	// After bootstrap
-	vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	vm.SetState(context.Background(), uint32(consensuscore.Ready))
 
 	health, err = vm.HealthCheck(context.Background())
 	require.NoError(err)
@@ -199,7 +199,7 @@ func TestVMIsBootstrapped(t *testing.T) {
 
 	require.False(vm.IsBootstrapped())
 
-	vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	vm.SetState(context.Background(), uint32(consensuscore.Ready))
 
 	require.True(vm.IsBootstrapped())
 }
@@ -210,7 +210,7 @@ func TestVMShutdown(t *testing.T) {
 	vm, _ := createTestVM(t)
 
 	// Start VM (functional mode - no background tasks)
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	// Shutdown (immediate - no background tasks to wait for)
@@ -302,7 +302,7 @@ func TestVMProcessBlock(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	// Process first block
@@ -326,7 +326,7 @@ func TestVMProcessBlockWithOrders(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	// Create orderbook with crossing orders
@@ -378,7 +378,7 @@ func TestVMProcessBlockFundingInterval(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	// Process first block - funding check runs but no payments without positions
@@ -411,7 +411,7 @@ func TestVMProcessBlockAfterShutdown(t *testing.T) {
 	vm, _ := createTestVM(t)
 
 	// Bootstrap and shutdown
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -433,7 +433,7 @@ func TestVMGetBlockHeight(t *testing.T) {
 
 	require.Equal(uint64(0), vm.GetBlockHeight())
 
-	vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	vm.SetState(context.Background(), uint32(consensuscore.Ready))
 
 	// Process some blocks
 	vm.ProcessBlock(context.Background(), 1, time.Now(), nil)
@@ -454,7 +454,7 @@ func TestVMTradingFlow(t *testing.T) {
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	err := vm.SetState(context.Background(), uint32(consensuscore.Ready))
 	require.NoError(err)
 
 	// Create orderbook
@@ -486,8 +486,8 @@ func TestVMDeterminism(t *testing.T) {
 	defer cleanup2()
 
 	// Bootstrap both
-	vm1.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
-	vm2.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	vm1.SetState(context.Background(), uint32(consensuscore.Ready))
+	vm2.SetState(context.Background(), uint32(consensuscore.Ready))
 
 	// Process same blocks on both
 	blockTime := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -578,7 +578,7 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 		cancel()
 	}()
 
-	vm.SetState(context.Background(), uint32(consensuscore.VMNormalOp))
+	vm.SetState(context.Background(), uint32(consensuscore.Ready))
 
 	blockTime := time.Now()
 

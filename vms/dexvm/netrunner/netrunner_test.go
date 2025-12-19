@@ -188,7 +188,7 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err = vm.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
 		vms[i] = vm
@@ -299,7 +299,7 @@ func TestDexVMSubnetDeploymentScenario(t *testing.T) {
 		)
 		require.NoError(err)
 
-		err = vm.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		err = vm.SetState(ctx, uint32(consensuscore.Ready))
 		require.NoError(err)
 
 		validators[i] = vm
@@ -362,7 +362,7 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 		}
 
 		_ = vm.Initialize(ctx, consensusCtx, db, nil, nil, nil, toEngine, nil, warp.FakeSender{})
-		_ = vm.SetState(ctx, uint32(consensuscore.VMNormalOp))
+		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
 
 		validators[i] = vm
 	}

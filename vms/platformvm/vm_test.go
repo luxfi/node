@@ -227,7 +227,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		Capacity: defaultDynamicFeeConfig.MaxCapacity,
 	})
 
-	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	// Note: testNet1 is NOT created during VM initialization to avoid
 	// timing issues with mempool/builder not being fully ready.
@@ -1127,12 +1127,12 @@ func TestOptimisticAtomicImport(t *testing.T) {
 
 	require.NoError(blk.Accept(context.Background()))
 
-	// Stop tracking before transitioning back to NormalOp to avoid "already started tracking" error
+	// Stop tracking before transitioning back to Ready to avoid "already started tracking" error
 	// Note: StopTracking method no longer exists in uptime.Calculator interface
 	// validatorIDs := vm.Config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 	// require.NoError(vm.uptimeManager.StopTracking(validatorIDs))
 
-	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1475,9 +1475,9 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	initialClkTime := latestForkTime.Add(time.Second)
 	firstVM.Clock().Set(initialClkTime)
 
-	// Set VM state to NormalOp, to start tracking validators' uptime
+	// Set VM state to Ready, to start tracking validators' uptime
 	require.NoError(firstVM.SetState(context.Background(), uint32(interfaces.Bootstrapping)))
-	require.NoError(firstVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(firstVM.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
 	durationForReward := genesistest.DefaultValidatorEndTime.Sub(genesistest.DefaultValidatorStartTime) * firstUptimePercentage / 100
@@ -1528,9 +1528,9 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	secondVM.Clock().Set(vmStopTime)
 
-	// Set VM state to NormalOp, to start tracking validators' uptime
+	// Set VM state to Ready, to start tracking validators' uptime
 	require.NoError(secondVM.SetState(context.Background(), uint32(interfaces.Bootstrapping)))
-	require.NoError(secondVM.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(secondVM.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
 	secondVM.Clock().Set(genesistest.DefaultValidatorEndTime)
@@ -1630,9 +1630,9 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.Clock().Set(initialClkTime)
 
-	// Set VM state to NormalOp, to start tracking validators' uptime
+	// Set VM state to Ready, to start tracking validators' uptime
 	require.NoError(vm.SetState(context.Background(), uint32(interfaces.Bootstrapping)))
-	require.NoError(vm.SetState(context.Background(), uint32(interfaces.NormalOp)))
+	require.NoError(vm.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
