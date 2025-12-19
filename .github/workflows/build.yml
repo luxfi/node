@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-go-for-project
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: v1.13.1
