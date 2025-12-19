@@ -36,7 +36,11 @@ source "${REPO_ROOT}"/scripts/constants.sh
 # Determine the git commit hash to use for the build
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
-echo "Building Lux Node with [$(go version)]..."
+echo "Building Lux Node v${version_major}.${version_minor}.${version_patch} with [$(go version)]..."
 go build -trimpath ${race} "$@" -o "${node_path}" \
-   -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" \
+   -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit \
+             -X github.com/luxfi/node/version.VersionMajor=$version_major \
+             -X github.com/luxfi/node/version.VersionMinor=$version_minor \
+             -X github.com/luxfi/node/version.VersionPatch=$version_patch \
+             $static_ld_flags" \
    "${REPO_ROOT}"/main

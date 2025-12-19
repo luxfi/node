@@ -5,6 +5,7 @@ package version
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	_ "embed"
@@ -18,19 +19,24 @@ const (
 	RPCChainVMProtocol uint = 42
 )
 
+// These variables are set at build time via ldflags from git tag:
+//
+//	go build -ldflags "-X github.com/luxfi/node/version.VersionMajor=1 \
+//	                   -X github.com/luxfi/node/version.VersionMinor=22 \
+//	                   -X github.com/luxfi/node/version.VersionPatch=19"
+//
+// Build with scripts/build.sh to automatically inject version from git tags.
+var (
+	VersionMajor = ""
+	VersionMinor = ""
+	VersionPatch = ""
+)
+
 // These are globals that describe network upgrades and node versions
 var (
-	Current = &Semantic{
-		Major: 1,
-		Minor: 21,
-		Patch: 0,
-	}
-	CurrentApp = &Application{
-		Name:  Client,
-		Major: Current.Major,
-		Minor: Current.Minor,
-		Patch: Current.Patch,
-	}
+	Current    *Semantic
+	CurrentApp *Application
+
 	MinimumCompatibleVersion = &Application{
 		Name:  Client,
 		Major: 1,
@@ -67,8 +73,40 @@ var (
 )
 
 func init() {
+	// Version MUST be set via ldflags at build time from git tag
+	// Build script extracts semver from: git describe --tags
+	if VersionMajor == "" || VersionMinor == "" || VersionPatch == "" {
+		panic("version not set: build with scripts/build.sh or pass -ldflags with VersionMajor/Minor/Patch")
+	}
+
+	major, err := strconv.Atoi(VersionMajor)
+	if err != nil {
+		panic("invalid VersionMajor: " + VersionMajor)
+	}
+	minor, err := strconv.Atoi(VersionMinor)
+	if err != nil {
+		panic("invalid VersionMinor: " + VersionMinor)
+	}
+	patch, err := strconv.Atoi(VersionPatch)
+	if err != nil {
+		panic("invalid VersionPatch: " + VersionPatch)
+	}
+
+	Current = &Semantic{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+	}
+	CurrentApp = &Application{
+		Name:  Client,
+		Major: Current.Major,
+		Minor: Current.Minor,
+		Patch: Current.Patch,
+	}
+
+	// Parse RPC compatibility map
 	var parsedRPCChainVMCompatibility map[uint][]string
-	err := json.Unmarshal(rpcChainVMProtocolCompatibilityBytes, &parsedRPCChainVMCompatibility)
+	err = json.Unmarshal(rpcChainVMProtocolCompatibilityBytes, &parsedRPCChainVMCompatibility)
 	if err != nil {
 		panic(err)
 	}
