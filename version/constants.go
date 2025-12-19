@@ -72,24 +72,47 @@ var (
 	RPCChainVMProtocolCompatibility map[uint][]*Semantic
 )
 
+// Default version for tests/development when not set via ldflags
+// These should match the latest git tag
+const (
+	defaultMajor = 1
+	defaultMinor = 22
+	defaultPatch = 20
+)
+
 func init() {
-	// Version MUST be set via ldflags at build time from git tag
-	// Build script extracts semver from: git describe --tags
-	if VersionMajor == "" || VersionMinor == "" || VersionPatch == "" {
-		panic("version not set: build with scripts/build.sh or pass -ldflags with VersionMajor/Minor/Patch")
+	// Version is set via ldflags at build time from git tag
+	// If not set, use defaults (for tests and go run)
+	var major, minor, patch int
+
+	if VersionMajor != "" {
+		var err error
+		major, err = strconv.Atoi(VersionMajor)
+		if err != nil {
+			panic("invalid VersionMajor: " + VersionMajor)
+		}
+	} else {
+		major = defaultMajor
 	}
 
-	major, err := strconv.Atoi(VersionMajor)
-	if err != nil {
-		panic("invalid VersionMajor: " + VersionMajor)
+	if VersionMinor != "" {
+		var err error
+		minor, err = strconv.Atoi(VersionMinor)
+		if err != nil {
+			panic("invalid VersionMinor: " + VersionMinor)
+		}
+	} else {
+		minor = defaultMinor
 	}
-	minor, err := strconv.Atoi(VersionMinor)
-	if err != nil {
-		panic("invalid VersionMinor: " + VersionMinor)
-	}
-	patch, err := strconv.Atoi(VersionPatch)
-	if err != nil {
-		panic("invalid VersionPatch: " + VersionPatch)
+
+	if VersionPatch != "" {
+		var err error
+		patch, err = strconv.Atoi(VersionPatch)
+		if err != nil {
+			panic("invalid VersionPatch: " + VersionPatch)
+		}
+	} else {
+		patch = defaultPatch
 	}
 
 	Current = &Semantic{
@@ -106,8 +129,7 @@ func init() {
 
 	// Parse RPC compatibility map
 	var parsedRPCChainVMCompatibility map[uint][]string
-	err = json.Unmarshal(rpcChainVMProtocolCompatibilityBytes, &parsedRPCChainVMCompatibility)
-	if err != nil {
+	if err := json.Unmarshal(rpcChainVMProtocolCompatibilityBytes, &parsedRPCChainVMCompatibility); err != nil {
 		panic(err)
 	}
 
