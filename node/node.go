@@ -620,7 +620,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
 	n.Config.NetworkConfig.BLSKey = n.Config.StakingSigningKey
-	n.Config.NetworkConfig.TrackedNets = n.Config.TrackedNets
+	n.Config.NetworkConfig.TrackedChains = n.Config.TrackedChains
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.StakingConfig.UptimeRequirement
 	// Wrap the resource tracker for consensus compatibility
@@ -1184,7 +1184,7 @@ func (n *Node) initVMs() error {
 				UptimeLockedCalculator:    n.uptimeCalculator,
 				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
 				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-				TrackedNets:               n.Config.TrackedNets,
+				TrackedChains:             n.Config.TrackedChains,
 				DynamicFeeConfig:          n.Config.DynamicFeeConfig,
 				ValidatorFeeConfig:        n.Config.ValidatorFeeConfig,
 				UptimePercentage:          n.Config.UptimeRequirement,
@@ -1398,6 +1398,7 @@ func (n *Node) initAdminAPI() error {
 			NodeConfig:   n.Config,
 			VMManager:    n.VMManager,
 			VMRegistry:   n.VMRegistry,
+			PluginDir:    n.Config.PluginDir,
 		},
 	)
 	if err != nil {

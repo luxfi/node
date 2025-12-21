@@ -231,7 +231,7 @@ func NewNetwork(
 		}
 	}
 
-	if config.TrackedNets.Contains(constants.PrimaryNetworkID) {
+	if config.TrackedChains.Contains(constants.PrimaryNetworkID) {
 		return nil, errTrackingPrimaryNetwork
 	}
 
@@ -266,12 +266,12 @@ func NewNetwork(
 		return nil, fmt.Errorf("initializing peer metrics failed with: %w", err)
 	}
 
-	metrics, err := newMetrics(metricsRegistry, config.TrackedNets)
+	metrics, err := newMetrics(metricsRegistry, config.TrackedChains)
 	if err != nil {
 		return nil, fmt.Errorf("initializing network metrics failed with: %w", err)
 	}
 
-	ipTracker, err := newIPTracker(config.TrackedNets, log, metricsRegistry)
+	ipTracker, err := newIPTracker(config.TrackedChains, log, metricsRegistry)
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
@@ -306,7 +306,7 @@ func NewNetwork(
 		Router:               router,
 		VersionCompatibility: version.GetCompatibility(minCompatibleTime),
 		MyNodeID:             config.MyNodeID,
-		MyNets:            config.TrackedNets,
+		MyChains:          config.TrackedChains,
 		Beacons:              config.Beacons,
 		Validators:           config.Validators,
 		NetworkID:            config.NetworkID,
@@ -581,16 +581,16 @@ func (n *network) Connected(nodeID ids.NodeID) {
 		peerIP.Timestamp,
 		peerIP.TLSSignature,
 	)
-	trackedNets := peer.TrackedNets()
-	n.ipTracker.Connected(newIP, trackedNets)
+	trackedChains := peer.TrackedChains()
+	n.ipTracker.Connected(newIP, trackedChains)
 
 	n.metrics.markConnected(peer)
 
 	peerVersion := peer.Version()
 	n.router.Connected(nodeID, peerVersion, constants.PrimaryNetworkID)
-	for netID := range n.peerConfig.MyNets {
-		if trackedNets.Contains(netID) {
-			n.router.Connected(nodeID, peerVersion, netID)
+	for chainID := range n.peerConfig.MyChains {
+		if trackedChains.Contains(chainID) {
+			n.router.Connected(nodeID, peerVersion, chainID)
 		}
 	}
 }
@@ -901,8 +901,8 @@ func (n *network) samplePeers(
 	return n.connectedPeers.Sample(
 		numValidatorsToSample+config.NonValidators+config.Peers,
 		func(p peer.Peer) bool {
-			// Only return peers that are tracking [netID]
-			if trackedNets := p.TrackedNets(); !trackedNets.Contains(netID) {
+			// Only return peers that are tracking [chainID]
+			if trackedChains := p.TrackedChains(); !trackedChains.Contains(netID) {
 				return false
 			}
 

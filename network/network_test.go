@@ -267,8 +267,8 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		config.Beacons = beacons
 		config.Validators = vdrs
 
-		// Initialize TrackedNets (empty - primary network is always tracked)
-		config.TrackedNets = set.NewSet[ids.ID](0)
+		// Initialize TrackedChains (empty - primary network is always tracked)
+		config.TrackedChains = set.NewSet[ids.ID](0)
 
 		// Initialize UptimeCalculator
 		config.UptimeCalculator = &uptime.NoOpCalculator{}

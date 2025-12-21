@@ -138,9 +138,9 @@ type Config struct {
 	// BLSKey is this node's BLS key that is used to sign IPs.
 	BLSKey bls.Signer `json:"-"`
 
-	// TrackedNets of the node.
+	// TrackedChains of the node.
 	// It must not include the primary network ID.
-	TrackedNets set.Set[ids.ID]    `json:"-"`
+	TrackedChains set.Set[ids.ID] `json:"-"`
 	Beacons        validators.Manager `json:"-"`
 
 	// Validators are the current validators in the Lux network

@@ -660,8 +660,8 @@ func (vm *VM) initBlockchains() error {
 	}
 
 	if vm.SybilProtectionEnabled {
-		for netID := range vm.TrackedNets {
-			if err := vm.createNet(netID); err != nil {
+		for chainID := range vm.TrackedChains {
+			if err := vm.createNet(chainID); err != nil {
 				return err
 			}
 		}
@@ -807,7 +807,7 @@ func (vm *VM) onReady() error {
 	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
-	// for subnetID := range vm.TrackedNets {
+	// for chainID := range vm.TrackedChains {
 	// 	vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
 	// 	vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	// }

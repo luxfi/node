@@ -82,7 +82,7 @@ func NewTestNetworkConfig(
 	metrics metric.Registerer,
 	networkID uint32,
 	currentValidators validators.Manager,
-	trackedNets set.Set[ids.ID],
+	trackedChains set.Set[ids.ID],
 ) (*Config, error) {
 	tlsCert, err := staking.NewTLSCert()
 	if err != nil {
@@ -168,7 +168,7 @@ func NewTestNetworkConfig(
 		CompressionType:              constants.DefaultNetworkCompressionType,
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
-		TrackedNets:               trackedNets,
+		TrackedChains:             trackedChains,
 		Beacons:                      nodevalidators.NewManager(),
 		Validators:                   nodevalidators.NewManager(),
 		UptimeCalculator:             &uptime.NoOpCalculator{},

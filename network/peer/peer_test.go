@@ -136,7 +136,7 @@ func newConfig(t *testing.T) *Config {
 		Network:              TestNetwork,
 		Router:               nil,
 		VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-		MyNets:            nil,
+		MyChains:          nil,
 		Beacons:              validators.NewManager(),
 		Validators:           validators.NewManager(),
 		NetworkID:            constants.LocalID,
@@ -304,41 +304,41 @@ func TestPingUptimes(t *testing.T) {
 	require.Equal(uint32(1), uptime)
 }
 
-func TestTrackedNets(t *testing.T) {
+func TestTrackedChains(t *testing.T) {
 	rawPeer0 := newRawTestPeer(t, newConfig(t))
 	rawPeer1 := newRawTestPeer(t, newConfig(t))
 
-	makeNetIDs := func(numNets int) []ids.ID {
-		netIDs := make([]ids.ID, numNets)
-		for i := range netIDs {
-			netIDs[i] = ids.GenerateTestID()
+	makeChainIDs := func(numChains int) []ids.ID {
+		chainIDs := make([]ids.ID, numChains)
+		for i := range chainIDs {
+			chainIDs[i] = ids.GenerateTestID()
 		}
-		return netIDs
+		return chainIDs
 	}
 
 	tests := []struct {
 		name             string
-		trackedNets   []ids.ID
+		trackedChains    []ids.ID
 		shouldDisconnect bool
 	}{
 		{
 			name:             "primary network only",
-			trackedNets:   makeNetIDs(0),
+			trackedChains:   makeChainIDs(0),
 			shouldDisconnect: false,
 		},
 		{
-			name:             "single net",
-			trackedNets:   makeNetIDs(1),
+			name:             "single chain",
+			trackedChains:   makeChainIDs(1),
 			shouldDisconnect: false,
 		},
 		{
-			name:             "max nets",
-			trackedNets:   makeNetIDs(maxNumTrackedNets),
+			name:             "max chains",
+			trackedChains:   makeChainIDs(maxNumTrackedChains),
 			shouldDisconnect: false,
 		},
 		{
-			name:             "too many nets",
-			trackedNets:   makeNetIDs(maxNumTrackedNets + 1),
+			name:             "too many chains",
+			trackedChains:   makeChainIDs(maxNumTrackedChains + 1),
 			shouldDisconnect: true,
 		},
 	}
@@ -347,7 +347,7 @@ func TestTrackedNets(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			rawPeer0.config.MyNets = set.Of(test.trackedNets...)
+			rawPeer0.config.MyChains = set.Of(test.trackedChains...)
 			peer0, peer1 := startTestPeers(rawPeer0, rawPeer1)
 			if test.shouldDisconnect {
 				require.NoError(peer0.AwaitClosed(context.Background()))
@@ -364,11 +364,11 @@ func TestTrackedNets(t *testing.T) {
 
 			awaitReady(t, peer0, peer1)
 
-			require.Equal(set.Of(constants.PrimaryNetworkID), peer0.TrackedNets())
+			require.Equal(set.Of(constants.PrimaryNetworkID), peer0.TrackedChains())
 
-			expectedTrackedNets := set.Of(test.trackedNets...)
-			expectedTrackedNets.Add(constants.PrimaryNetworkID)
-			require.Equal(expectedTrackedNets, peer1.TrackedNets())
+			expectedTrackedChains := set.Of(test.trackedChains...)
+			expectedTrackedChains.Add(constants.PrimaryNetworkID)
+			require.Equal(expectedTrackedChains, peer1.TrackedChains())
 		})
 	}
 }

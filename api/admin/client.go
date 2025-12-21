@@ -139,3 +139,9 @@ func (c *Client) DBGet(ctx context.Context, key []byte, options ...rpc.Option) (
 	}
 	return formatting.Decode(formatting.HexNC, res.Value)
 }
+
+func (c *Client) ListVMs(ctx context.Context, options ...rpc.Option) (map[string]VMInfo, error) {
+	res := &ListVMsReply{}
+	err := c.Requester.SendRequest(ctx, "admin.listVMs", struct{}{}, res, options...)
+	return res.VMs, err
+}

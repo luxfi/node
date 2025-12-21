@@ -56,7 +56,7 @@ type Config struct {
 	ChecksumsEnabled              bool             `json:"checksums-enabled"`
 	MempoolPruneFrequency         time.Duration    `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool             `json:"sybil-protection-enabled"`
-	TrackedNets                set.Set[ids.ID]  `json:"tracked-subnets"`
+	TrackedChains              set.Set[ids.ID]  `json:"tracked-chains"`
 	Chains                        chains.Manager   `json:"-"`
 	
 	// Transaction fees
@@ -87,7 +87,7 @@ func GetConfig(b []byte) (*Config, error) {
 func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
 		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedNets.Contains(netID) { // This node doesn't validate this blockchain
+		!c.TrackedChains.Contains(netID) { // This node doesn't validate this blockchain
 		return
 	}
 
@@ -110,7 +110,7 @@ func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, netID ids.ID, vmID ids.ID, genesisData []byte) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
 		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedNets.Contains(netID) { // This node doesn't validate this blockchain
+		!c.TrackedChains.Contains(netID) { // This node doesn't validate this blockchain
 		return
 	}
 

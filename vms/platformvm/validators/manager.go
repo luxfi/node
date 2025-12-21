@@ -252,19 +252,19 @@ func (m *manager) GetValidatorSetWithContext(
 	return maps.Clone(validatorSet), nil
 }
 
-func (m *manager) getValidatorSetCache(netID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
-	// Only cache tracked subnets
-	if netID != constants.PrimaryNetworkID && !m.cfg.TrackedNets.Contains(netID) {
+func (m *manager) getValidatorSetCache(chainID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
+	// Only cache tracked chains
+	if chainID != constants.PrimaryNetworkID && !m.cfg.TrackedChains.Contains(chainID) {
 		return &cache.Empty[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{}
 	}
 
-	validatorSetsCache, exists := m.caches[netID]
+	validatorSetsCache, exists := m.caches[chainID]
 	if exists {
 		return validatorSetsCache
 	}
 
 	validatorSetsCache = lru.NewCache[uint64, map[ids.NodeID]*validators.GetValidatorOutput](validatorSetsCacheSize)
-	m.caches[netID] = validatorSetsCache
+	m.caches[chainID] = validatorSetsCache
 	return validatorSetsCache
 }
 

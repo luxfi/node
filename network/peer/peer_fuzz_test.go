@@ -59,7 +59,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             nodeID,
-			MyNets:               make(set.Set[ids.ID]),
+			MyChains:               make(set.Set[ids.ID]),
 			Beacons:              nil,
 			Validators:           nil,
 			NetworkID:            networkID,
@@ -70,7 +70,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 		peer := &peer{
 			Config:      config,
 			id:          nodeID,
-			trackedNets: make(set.Set[ids.ID]),
+			trackedChains: make(set.Set[ids.ID]),
 		}
 
 		// Test different message types based on fuzzing input
@@ -208,7 +208,7 @@ func FuzzPeerStateMachine(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyNets:               make(set.Set[ids.ID]),
+			MyChains:               make(set.Set[ids.ID]),
 			NetworkID:            1,
 			MessageCreator:       mc,
 		}
@@ -217,16 +217,16 @@ func FuzzPeerStateMachine(f *testing.F) {
 		peer := &peer{
 			Config:            config,
 			id:                ids.GenerateTestNodeID(),
-			trackedNets:       make(set.Set[ids.ID]),
+			trackedChains:       make(set.Set[ids.ID]),
 			finishedHandshake: utils.Atomic[bool]{},
 			onClosed:          make(chan struct{}),
 		}
 
 		// Perform actions based on fuzzing input
 		switch action % 10 {
-		case 0: // Track subnet
-			netID := ids.GenerateTestID()
-			peer.trackedNets.Add(netID)
+		case 0: // Track chain
+			chainID := ids.GenerateTestID()
+			peer.trackedChains.Add(chainID)
 
 		case 1: // Start closing
 			peer.StartClose()
@@ -311,14 +311,14 @@ func FuzzPeerConnection(f *testing.F) {
 			NetworkID:            1,
 			MessageCreator:       mc,
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyNets:               make(set.Set[ids.ID]),
+			MyChains:               make(set.Set[ids.ID]),
 		}
 
 		// Create peer
 		peer := &peer{
 			Config:      config,
 			id:          ids.GenerateTestNodeID(),
-			trackedNets: make(set.Set[ids.ID]),
+			trackedChains: make(set.Set[ids.ID]),
 			onClosed:    make(chan struct{}),
 		}
 

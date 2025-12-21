@@ -6,21 +6,21 @@ package admin
 import (
 	"errors"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	// "github.com/luxfi/log" // Unused
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	// "github.com/luxfi/node/internal/database/rpcdb" // Unused
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/perms"
@@ -51,6 +51,7 @@ type Config struct {
 	HTTPServer   server.PathAdderWithReadLock
 	VMRegistry   registry.VMRegistry
 	VMManager    vms.Manager
+	PluginDir    string
 }
 
 // Admin is the API service for node admin management
@@ -433,4 +434,88 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 
 	reply.Value, err = formatting.Encode(formatting.HexNC, value)
 	return err
+}
+
+// VMInfo contains information about a registered VM
+type VMInfo struct {
+	ID      string   `json:"id"`
+	Aliases []string `json:"aliases"`
+	Path    string   `json:"path,omitempty"`
+}
+
+// ListVMsReply contains the response for ListVMs
+type ListVMsReply struct {
+	VMs map[string]VMInfo `json:"vms"`
+}
+
+// ListVMs returns all registered VMs with their IDs, aliases, and paths
+func (a *Admin) ListVMs(_ *http.Request, _ *struct{}, reply *ListVMsReply) error {
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "listVMs"),
+	)
+
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
+	// Get all registered VM IDs
+	vmIDs, err := a.VMManager.ListFactories()
+	if err != nil {
+		return err
+	}
+
+	// Build a map of plugin files in the plugin directory for path lookup
+	pluginPaths := make(map[ids.ID]string)
+	if a.PluginDir != "" {
+		entries, err := os.ReadDir(a.PluginDir)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				name := entry.Name()
+				// Strip extension for matching
+				baseName := name[:len(name)-len(filepath.Ext(name))]
+				if baseName == "" {
+					continue
+				}
+				// Try to parse as VM ID
+				vmID, err := ids.FromString(baseName)
+				if err == nil {
+					pluginPaths[vmID] = filepath.Join(a.PluginDir, name)
+				}
+			}
+		}
+	}
+
+	reply.VMs = make(map[string]VMInfo, len(vmIDs))
+	for _, vmID := range vmIDs {
+		aliases, err := a.VMManager.Aliases(vmID)
+		if err != nil {
+			return err
+		}
+
+		// Filter out the vmID string from aliases (it's always included)
+		vmIDStr := vmID.String()
+		filteredAliases := make([]string, 0, len(aliases))
+		for _, alias := range aliases {
+			if alias != vmIDStr {
+				filteredAliases = append(filteredAliases, alias)
+			}
+		}
+
+		info := VMInfo{
+			ID:      vmIDStr,
+			Aliases: filteredAliases,
+		}
+
+		// Add path if found in plugin directory
+		if pluginPath, ok := pluginPaths[vmID]; ok {
+			info.Path = pluginPath
+		}
+
+		reply.VMs[vmIDStr] = info
+	}
+
+	return nil
 }

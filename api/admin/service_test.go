@@ -12,11 +12,11 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
-
 )
 
 type loadVMsTest struct {
@@ -33,9 +33,10 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
-			Log:        log.NewNoOpLogger(),
-			VMRegistry: mockVMRegistry,
-			VMManager:  mockVMManager,
+			Log:          log.NewNoOpLogger(),
+			VMRegistry:   mockVMRegistry,
+			VMManager:    mockVMManager,
+			ChainManager: chains.TestManager,
 		}},
 		mockVMManager:  mockVMManager,
 		mockVMRegistry: mockVMRegistry,
@@ -109,6 +110,64 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 
 	reply := LoadVMsReply{}
 	err := resources.admin.LoadVMs(&http.Request{}, nil, &reply)
+	require.ErrorIs(err, errTest)
+}
+
+// Tests behavior for ListVMs if everything succeeds.
+func TestListVMsSuccess(t *testing.T) {
+	require := require.New(t)
+
+	resources := initLoadVMsTest(t)
+
+	id1 := ids.GenerateTestID()
+	id2 := ids.GenerateTestID()
+
+	vmIDs := []ids.ID{id1, id2}
+	// every vm is at least aliased to itself.
+	alias1 := []string{id1.String(), "vm1-alias-1", "vm1-alias-2"}
+	alias2 := []string{id2.String(), "vm2-alias-1"}
+
+	resources.mockVMManager.EXPECT().ListFactories().Times(1).Return(vmIDs, nil)
+	resources.mockVMManager.EXPECT().Aliases(id1).Times(1).Return(alias1, nil)
+	resources.mockVMManager.EXPECT().Aliases(id2).Times(1).Return(alias2, nil)
+
+	reply := ListVMsReply{}
+	require.NoError(resources.admin.ListVMs(nil, nil, &reply))
+
+	require.Len(reply.VMs, 2)
+	require.Equal(id1.String(), reply.VMs[id1.String()].ID)
+	require.Equal([]string{"vm1-alias-1", "vm1-alias-2"}, reply.VMs[id1.String()].Aliases)
+	require.Equal(id2.String(), reply.VMs[id2.String()].ID)
+	require.Equal([]string{"vm2-alias-1"}, reply.VMs[id2.String()].Aliases)
+}
+
+// Tests behavior for ListVMs if we fail to list factories.
+func TestListVMsListFactoriesFails(t *testing.T) {
+	require := require.New(t)
+
+	resources := initLoadVMsTest(t)
+
+	resources.mockVMManager.EXPECT().ListFactories().Times(1).Return(nil, errTest)
+
+	reply := ListVMsReply{}
+	err := resources.admin.ListVMs(nil, nil, &reply)
+	require.ErrorIs(err, errTest)
+}
+
+// Tests behavior for ListVMs if we fail to get aliases.
+func TestListVMsGetAliasesFails(t *testing.T) {
+	require := require.New(t)
+
+	resources := initLoadVMsTest(t)
+
+	id1 := ids.GenerateTestID()
+	vmIDs := []ids.ID{id1}
+
+	resources.mockVMManager.EXPECT().ListFactories().Times(1).Return(vmIDs, nil)
+	resources.mockVMManager.EXPECT().Aliases(id1).Times(1).Return(nil, errTest)
+
+	reply := ListVMsReply{}
+	err := resources.admin.ListVMs(nil, nil, &reply)
 	require.ErrorIs(err, errTest)
 }
 

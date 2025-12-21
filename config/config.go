@@ -895,28 +895,35 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	return builder.FromConfig(config)
 }
 
-func getTrackedNets(v *viper.Viper) (set.Set[ids.ID], error) {
-	trackNetsStr := v.GetString(TrackNetsKey)
-	trackNetsStrs := strings.Split(trackNetsStr, ",")
-	trackedNetIDs := set.NewSet[ids.ID](len(trackNetsStrs))
+func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
+	trackChainsStr := v.GetString(TrackChainsKey)
 
-	for _, net := range trackNetsStrs {
-		if net == "" {
+	// Special value "all" means track all chains dynamically
+	// This is indicated by returning nil (handled specially by chain manager)
+	if strings.ToLower(strings.TrimSpace(trackChainsStr)) == "all" {
+		return nil, nil // nil set means "track all"
+	}
+
+	trackChainsStrs := strings.Split(trackChainsStr, ",")
+	trackedChainIDs := set.NewSet[ids.ID](len(trackChainsStrs))
+
+	for _, chain := range trackChainsStrs {
+		if chain == "" {
 			continue
 		}
 
-		// Parse net ID
-		netID, err := ids.FromString(net)
+		// Parse chain ID
+		chainID, err := ids.FromString(chain)
 
 		if err != nil {
-			return nil, fmt.Errorf("couldn't parse netID %q: %w", net, err)
+			return nil, fmt.Errorf("couldn't parse chainID %q: %w", chain, err)
 		}
-		if netID == constants.PrimaryNetworkID {
+		if chainID == constants.PrimaryNetworkID {
 			return nil, errCannotTrackPrimaryNetwork
 		}
-		trackedNetIDs.Add(netID)
+		trackedChainIDs.Add(chainID)
 	}
-	return trackedNetIDs, nil
+	return trackedChainIDs, nil
 }
 
 func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, error) {
@@ -1391,10 +1398,13 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	// Tracked Nets
-	nodeConfig.TrackedNets, err = getTrackedNets(v)
-	if err != nil {
-		return node.Config{}, err
+	// Chain tracking
+	nodeConfig.TrackAllChains = v.GetBool(TrackAllChainsKey)
+	if !nodeConfig.TrackAllChains {
+		nodeConfig.TrackedChains, err = getTrackedChains(v)
+		if err != nil {
+			return node.Config{}, err
+		}
 	}
 
 	// HTTP APIs
@@ -1457,7 +1467,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Net Configs
-	subnetConfigs, err := getNetConfigs(v, nodeConfig.TrackedNets.List())
+	subnetConfigs, err := getNetConfigs(v, nodeConfig.TrackedChains.List())
 	if err != nil {
 		return node.Config{}, fmt.Errorf("couldn't read net configs: %w", err)
 	}

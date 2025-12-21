@@ -17,12 +17,12 @@ import (
 )
 
 type metricsImpl struct {
-	// trackedNets does not include the primary network ID
-	trackedNets set.Set[ids.ID]
+	// trackedChains does not include the primary network ID
+	trackedChains set.Set[ids.ID]
 
 	numTracked                   metric.Gauge
 	numPeers                     metric.Gauge
-	numNetPeers               metric.GaugeVec
+	numChainPeers                metric.GaugeVec
 	timeSinceLastMsgSent         metric.Gauge
 	timeSinceLastMsgReceived     metric.Gauge
 	sendFailRate                 metric.Gauge
@@ -43,14 +43,14 @@ type metricsImpl struct {
 
 func newMetrics(
 	registry metric.Registry,
-	trackedNets set.Set[ids.ID],
+	trackedChains set.Set[ids.ID],
 ) (*metricsImpl, error) {
 	metricsInstance := metric.NewWithRegistry("network", registry)
 	m := &metricsImpl{
-		trackedNets:               trackedNets,
+		trackedChains:                trackedChains,
 		numPeers:                     metricsInstance.NewGauge("peers", "Number of network peers"),
 		numTracked:                   metricsInstance.NewGauge("tracked", "Number of currently tracked IPs attempting to be connected to"),
-		numNetPeers:               metricsInstance.NewGaugeVec("peers_net", "Number of peers that are validating a particular net", []string{"netID"}),
+		numChainPeers:                metricsInstance.NewGaugeVec("peers_chain", "Number of peers that are validating a particular chain", []string{"chainID"}),
 		timeSinceLastMsgReceived:     metricsInstance.NewGauge("time_since_last_msg_received", "Time (in ns) since the last msg was received"),
 		timeSinceLastMsgSent:         metricsInstance.NewGauge("time_since_last_msg_sent", "Time (in ns) since the last msg was sent"),
 		sendFailRate:                 metricsInstance.NewGauge("send_fail_rate", "Portion of messages that recently failed to be sent over the network"),
@@ -67,11 +67,11 @@ func newMetrics(
 		peerConnectedStartTimes:      make(map[ids.NodeID]float64),
 	}
 
-	// init net tracker metrics with tracked nets
-	for netID := range trackedNets {
+	// init chain tracker metrics with tracked chains
+	for chainID := range trackedChains {
 		// initialize to 0
-		netIDStr := netID.String()
-		m.numNetPeers.WithLabelValues(netIDStr).Set(0)
+		chainIDStr := chainID.String()
+		m.numChainPeers.WithLabelValues(chainIDStr).Set(0)
 	}
 
 	return m, nil
@@ -81,10 +81,10 @@ func (m *metricsImpl) markConnected(peer peer.Peer) {
 	m.numPeers.Inc()
 	m.connected.Inc()
 
-	trackedNets := peer.TrackedNets()
-	for netID := range m.trackedNets {
-		if trackedNets.Contains(netID) {
-			m.numNetPeers.WithLabelValues(netID.String()).Inc()
+	trackedChains := peer.TrackedChains()
+	for chainID := range m.trackedChains {
+		if trackedChains.Contains(chainID) {
+			m.numChainPeers.WithLabelValues(chainID.String()).Inc()
 		}
 	}
 
@@ -100,10 +100,10 @@ func (m *metricsImpl) markDisconnected(peer peer.Peer) {
 	m.numPeers.Dec()
 	m.disconnected.Inc()
 
-	trackedNets := peer.TrackedNets()
-	for netID := range m.trackedNets {
-		if trackedNets.Contains(netID) {
-			m.numNetPeers.WithLabelValues(netID.String()).Dec()
+	trackedChains := peer.TrackedChains()
+	for chainID := range m.trackedChains {
+		if trackedChains.Contains(chainID) {
+			m.numChainPeers.WithLabelValues(chainID.String()).Dec()
 		}
 	}
 
