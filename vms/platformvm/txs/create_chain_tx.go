@@ -37,18 +37,18 @@ var (
 type CreateChainTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// ID of the Net that validates this blockchain
-	NetID ids.ID `serialize:"true" json:"netID"`
-	// A human readable name for the chain; need not be unique
-	ChainName string `serialize:"true" json:"chainName"`
-	// ID of the VM running on the new chain
+	// ID of the Chain that validates this blockchain
+	ChainID ids.ID `serialize:"true" json:"chainID"`
+	// A human readable name for the blockchain; need not be unique
+	BlockchainName string `serialize:"true" json:"blockchainName"`
+	// ID of the VM running on the new blockchain
 	VMID ids.ID `serialize:"true" json:"vmID"`
-	// IDs of the feature extensions running on the new chain
+	// IDs of the feature extensions running on the new blockchain
 	FxIDs []ids.ID `serialize:"true" json:"fxIDs"`
-	// Byte representation of genesis state of the new chain
+	// Byte representation of genesis state of the new blockchain
 	GenesisData []byte `serialize:"true" json:"genesisData"`
-	// Authorizes this blockchain to be added to this subnet
-	NetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	// Authorizes this blockchain to be added to this chain
+	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
 func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
@@ -57,9 +57,9 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
-	case tx.NetID == constants.PrimaryNetworkID:
+	case tx.ChainID == constants.PrimaryNetworkID:
 		return ErrCantValidatePrimaryNetwork
-	case len(tx.ChainName) > MaxNameLen:
+	case len(tx.BlockchainName) > MaxNameLen:
 		return errNameTooLong
 	case tx.VMID == ids.Empty:
 		return errInvalidVMID
@@ -69,7 +69,7 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 		return errGenesisTooLong
 	}
 
-	for _, r := range tx.ChainName {
+	for _, r := range tx.BlockchainName {
 		if r > unicode.MaxASCII || (!unicode.IsLetter(r) && !unicode.IsNumber(r) && r != ' ') {
 			return errIllegalNameCharacter
 		}
@@ -78,7 +78,7 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.NetAuth.Verify(); err != nil {
+	if err := tx.ChainAuth.Verify(); err != nil {
 		return err
 	}
 

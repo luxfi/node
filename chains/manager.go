@@ -168,15 +168,15 @@ type Manager interface {
 
 // ChainParameters defines the chain being created
 type ChainParameters struct {
-	// The ID of the chain being created.
+	// The ID of the blockchain being created.
 	ID ids.ID
-	// ID of the net that validates this chain.
-	NetID ids.ID
-	// The genesis data of this chain's ledger.
+	// ID of the chain that validates this blockchain.
+	ChainID ids.ID
+	// The genesis data of this blockchain's ledger.
 	GenesisData []byte
-	// The ID of the vm this chain is running.
+	// The ID of the vm this blockchain is running.
 	VMID ids.ID
-	// The IDs of the feature extensions this chain is running.
+	// The IDs of the feature extensions this blockchain is running.
 	FxIDs []ids.ID
 	// Invariant: Only used when [ID] is the P-chain ID.
 	CustomBeacons validators.Manager
@@ -768,10 +768,10 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
-	if sb, _ := m.Nets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
+	if sb, _ := m.Nets.GetOrCreate(chainParams.ChainID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			log.String("reason", "chain already staged"),
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("netID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -781,7 +781,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	if ok := m.chainsQueue.PushRight(chainParams); !ok {
 		m.Log.Warn("skipping chain creation",
 			log.String("reason", "couldn't enqueue chain"),
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("netID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -794,12 +794,12 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 // bootstrapping before this function is called
 func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("creating chain",
-		log.Stringer("netID", chainParams.NetID),
+		log.Stringer("netID", chainParams.ChainID),
 		log.Stringer("chainID", chainParams.ID),
 		log.Stringer("vmID", chainParams.VMID),
 	)
 
-	sb, _ := m.Nets.GetOrCreate(chainParams.NetID)
+	sb, _ := m.Nets.GetOrCreate(chainParams.ChainID)
 
 	// Note: buildChain builds all chain's relevant objects (notably engine and handler)
 	// but does not start their operations. Starting of the handler (which could potentially
@@ -822,7 +822,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if isXChain && isVMTypeError && skipBootstrapMode {
 			chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 			m.Log.Warn("X-Chain creation failed in single validator mode - continuing without X-Chain",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("netID", chainParams.ChainID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -837,7 +837,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				health.CheckerFunc(func(context.Context) (interface{}, error) {
 					return nil, healthCheckErr
 				}),
-				chainParams.NetID.String(),
+				chainParams.ChainID.String(),
 			)
 			if err != nil {
 				m.Log.Error("failed to register X-Chain health check",
@@ -853,7 +853,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			// unless it's X-Chain with VM type error in single validator mode (handled above)
 			m.Log.Error("error creating required chain",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("netID", chainParams.ChainID),
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID),
 				log.String("errorString", fmt.Sprintf("%v", err)),
@@ -866,7 +866,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("netID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.String("chainAlias", chainAlias),
 			log.Stringer("vmID", chainParams.VMID),
@@ -877,17 +877,17 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		// created or not. This attempts to notify the node operator that their
 		// node may not be properly validating the net they expect to be
 		// validating.
-		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.NetID, err)
+		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.ChainID, err)
 		err := m.Health.RegisterHealthCheck(
 			chainAlias,
 			health.CheckerFunc(func(context.Context) (interface{}, error) {
 				return nil, healthCheckErr
 			}),
-			chainParams.NetID.String(),
+			chainParams.ChainID.String(),
 		)
 		if err != nil {
 			m.Log.Error("failed to register failing health check",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("netID", chainParams.ChainID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -904,7 +904,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
 		m.Log.Error("failed to alias the new chain with itself",
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("netID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 			log.Err(err),
@@ -1081,7 +1081,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	chainCtx := &consensusctx.Context{
 		NetworkID:    m.NetworkID,
 		QuantumID:    m.NetworkID,
-		NetID:        chainParams.NetID,
+		NetID:        chainParams.ChainID,
 		ChainID:      chainParams.ID,
 		NodeID:       m.NodeID,
 		PublicKey:    pubKeyBytes,
@@ -1264,8 +1264,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 		// Wire up VM notifications to the consensus engine
 		// This goroutine reads from the toEngine channel and triggers block building
-		go func(toEng <-chan block.Message, vm block.ChainVM, logger log.Logger) {
-			logger.Info("starting VM notification forwarder")
+		// It now also gossips blocks to other validators for proper consensus
+		go func(toEng <-chan block.Message, vm block.ChainVM, logger log.Logger, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, netID ids.ID) {
+			logger.Info("starting VM notification forwarder with block gossip")
 			for msg := range toEng {
 				logger.Debug("received VM notification, building block",
 					log.Uint32("type", uint32(msg.Type)))
@@ -1292,8 +1293,29 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 						continue
 					}
 
+					// Gossip the block to validators before accepting locally
+					// This ensures other nodes receive and process the block
+					if net != nil && msgCreator != nil {
+						blkBytes := blk.Bytes()
+						// Create Put message with the block bytes
+						// Put is used to push a block to other nodes
+						putMsg, err := msgCreator.Put(chainID, 0, blkBytes)
+						if err != nil {
+							logger.Warn("failed to create Put message for block gossip",
+								log.Stringer("blockID", blk.ID()),
+								log.Err(err))
+						} else {
+							// Gossip to all validators
+							// numValidatorsToSend=-1 means all validators
+							// numNonValidatorsToSend=0, numPeersToSend=0 for validators only
+							sentTo := net.Gossip(putMsg, nil, netID, -1, 0, 0)
+							logger.Info("gossiped block to validators",
+								log.Stringer("blockID", blk.ID()),
+								log.Int("sentTo", sentTo.Len()))
+						}
+					}
+
 					// Accept the block into the canonical chain
-					// This is the critical step that was missing!
 					if err := blk.Accept(ctx); err != nil {
 						logger.Error("failed to accept built block",
 							log.Stringer("blockID", blk.ID()),
@@ -1315,39 +1337,25 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				}
 			}
 			logger.Info("VM notification forwarder stopped")
-		}(toEngine, vm, m.Log)
+		}(toEngine, vm, m.Log, m.Net, m.MsgCreator, chainParams.ID, chainParams.ChainID)
 
 		chain = &chainInfo{
 			Name:    chainCtx.ChainID.String(),
 			Context: chainCtx,
-			VM:      &simpleVM{vm: vm},
-			Engine:  &simpleEngine{engine: consensusEngine},
-			Handler: &placeholderHandler{}, // Placeholder - messages are routed but no-op for now
+			VM:      vm, // Use the real VM directly
+			Engine:  consensusEngine, // Use real consensus engine directly
+			Handler: newBlockHandler(vm, m.Log),
 		}
 	default:
-		// Note: Special X-Chain/Q-Chain handling disabled due to interface mismatches
-		// The exchangevm.VM implements block.ChainVM but chainInfo.VM expects interfaces.VM
-		// This needs proper interface adaptation before it can be enabled
-		return nil, nil
+		return nil, fmt.Errorf("unsupported VM type: %T", vm)
 	}
-
-	// timeout.Manager doesn't have RegisterChain in consensus package
-	// if err := m.TimeoutManager.RegisterChain(ctx); err != nil {
-	// 	return nil, err
-	// }
-
-	// Note: HTTP handler registration happens later in createChain(), after notifyRegistrants()
-	// triggers VM initialization. Calling CreateHandlers here would be too early and cause
-	// nil pointer dereference since vm.metrics isn't initialized yet.
 
 	vmGatherer, err := m.getOrMakeVMGatherer(chainParams.VMID)
 	if err != nil {
 		return nil, err
 	}
+	_ = vmGatherer
 
-	// Note: consensusmanGatherer and metric registration removed
-	// as these fields don't exist in the current manager struct
-	_ = vmGatherer // Suppress unused variable warning
 	return chain, nil
 }
 
@@ -1743,7 +1751,7 @@ func (m *manager) createDAGChain(
 	// Initialize the ProposerVM and the vm wrapped inside it
 	var (
 		// A default subnet configuration will be present if explicit configuration is not provided
-		subnetCfg           = m.NetConfigs[ctx.NetID]
+		subnetCfg           = m.NetConfigs[ctx.ChainID]
 		minBlockDelay       = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	)
@@ -2097,7 +2105,7 @@ func (m *manager) createDAGChain(
 	// })
 
 	// // Register health check for this chain
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.NetID.String()); err != nil {
+	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.ChainID.String()); err != nil {
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
 	// }
 
@@ -2113,128 +2121,6 @@ func (m *manager) createDAGChain(
 }
 */ // End of createDAGChain - disabled pending consensus/engine/dag support
 
-
-// simpleEngine adapts consensuschain.Transitive to the Engine interface
-type simpleEngine struct {
-	engine *consensuschain.Transitive
-}
-
-func (e *simpleEngine) Start(ctx context.Context, startReqID bool) error {
-	reqID := uint32(0)
-	if startReqID {
-		reqID = 1
-	}
-	return e.engine.Start(ctx, reqID)
-}
-
-func (e *simpleEngine) Stop(ctx context.Context) error {
-	return e.engine.Stop(ctx)
-}
-
-func (e *simpleEngine) StopWithError(ctx context.Context, err error) error {
-	// For simple chains, just call Stop - error handling happens at higher level
-	return e.engine.Stop(ctx)
-}
-
-func (e *simpleEngine) Context() context.Context {
-	return context.Background()
-}
-
-func (e *simpleEngine) HealthCheck(ctx context.Context) (interface{}, error) {
-	return e.engine.HealthCheck(ctx)
-}
-
-func (e *simpleEngine) IsBootstrapped() bool {
-	return e.engine.IsBootstrapped()
-}
-
-// simpleVM adapts block.ChainVM to interfaces.VM
-type simpleVM struct {
-	vm block.ChainVM
-}
-
-func (v *simpleVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Delegate to underlying VM if it supports HTTP handlers
-	if handlerVM, ok := v.vm.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return handlerVM.CreateHandlers(ctx)
-	}
-	// VM doesn't support HTTP handlers
-	return map[string]http.Handler{}, nil
-}
-
-func (v *simpleVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Delegate to underlying VM if it supports static HTTP handlers
-	if staticHandlerVM, ok := v.vm.(interface {
-		CreateStaticHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return staticHandlerVM.CreateStaticHandlers(ctx)
-	}
-	// VM doesn't support static HTTP handlers
-	return map[string]http.Handler{}, nil
-}
-
-func (v *simpleVM) HealthCheck(ctx context.Context) (interface{}, error) {
-	// Simple VM is always healthy if it exists
-	return map[string]interface{}{"healthy": true}, nil
-}
-
-func (v *simpleVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
-	// Return nil handler - handlers created later during chain startup
-	return nil, nil
-}
-
-func (v *simpleVM) SetState(ctx context.Context, state consensus.State) error {
-	// Forward state transitions to underlying VM if it supports SetState
-	// This is critical for Platform VM to transition to NormalOp and set bootstrapped=true
-	if stateVM, ok := v.vm.(interface {
-		SetState(context.Context, uint32) error
-	}); ok {
-		return stateVM.SetState(ctx, uint32(state))
-	}
-	return nil
-}
-
-func (v *simpleVM) Shutdown(ctx context.Context) error {
-	// Shutdown handled by underlying VM
-	return nil
-}
-
-func (v *simpleVM) Version(ctx context.Context) (string, error) {
-	return "1.0.0", nil
-}
-
-func (v *simpleVM) Initialize(
-	ctx context.Context,
-	chainCtx *consensusctx.Context,
-	dbMgr dbmanager.Manager,
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	toEngine chan<- engine.Message,
-	fxs []*engine.Fx,
-	appSender interface{},
-) error {
-	// Convert []*engine.Fx to []interface{} for ChainVM.Initialize
-	fxsInterface := make([]interface{}, len(fxs))
-	for i, fx := range fxs {
-		fxsInterface[i] = fx
-	}
-
-	// ChainVM.Initialize expects interface{} types for several parameters
-	return v.vm.Initialize(
-		ctx,
-		chainCtx,     // interface{} - *consensusctx.Context
-		dbMgr,        // interface{} - dbmanager.Manager
-		genesisBytes,
-		upgradeBytes,
-		configBytes,
-		toEngine,     // interface{} - chan<- engine.Message
-		fxsInterface, // []interface{} - converted from []*engine.Fx
-		appSender,
-	)
-}
 
 // monitorBootstrap monitors when a chain finishes bootstrapping and notifies the subnet.
 // This is critical for health checks because the health check queries m.Nets.Bootstrapping()
@@ -2550,6 +2436,151 @@ func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listen
 
 func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
+}
+
+// blockHandler implements handler.Handler interface and processes incoming blocks
+// This enables block propagation between validators
+type blockHandler struct {
+	vm     block.ChainVM
+	logger log.Logger
+}
+
+func newBlockHandler(vm block.ChainVM, logger log.Logger) *blockHandler {
+	return &blockHandler{vm: vm, logger: logger}
+}
+
+func (b *blockHandler) Context() *consensusctx.Context                 { return nil }
+func (b *blockHandler) Start(ctx context.Context, startReqID uint32)  {}
+func (b *blockHandler) Push(ctx context.Context, msg handler.Message) {}
+func (b *blockHandler) Len() int                                      { return 0 }
+func (b *blockHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (b *blockHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (b *blockHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (b *blockHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
+	return nil
+}
+func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
+	// Process incoming block from gossip
+	if b.vm == nil {
+		return nil
+	}
+
+	// Parse the block bytes
+	blk, err := b.vm.ParseBlock(ctx, container)
+	if err != nil {
+		b.logger.Debug("failed to parse gossiped block",
+			log.Stringer("from", nodeID),
+			log.Err(err))
+		return nil // Don't return error - just skip invalid blocks
+	}
+
+	b.logger.Info("received gossiped block",
+		log.Stringer("from", nodeID),
+		log.Stringer("blockID", blk.ID()),
+		log.Uint64("height", blk.Height()))
+
+	// Verify the block
+	if err := blk.Verify(ctx); err != nil {
+		b.logger.Debug("gossiped block failed verification",
+			log.Stringer("blockID", blk.ID()),
+			log.Err(err))
+		return nil
+	}
+
+	// Accept the block
+	if err := blk.Accept(ctx); err != nil {
+		b.logger.Warn("failed to accept gossiped block",
+			log.Stringer("blockID", blk.ID()),
+			log.Err(err))
+		return nil
+	}
+
+	// Set preference to the new block
+	if err := b.vm.SetPreference(ctx, blk.ID()); err != nil {
+		b.logger.Debug("failed to set preference to gossiped block",
+			log.Stringer("blockID", blk.ID()),
+			log.Err(err))
+	}
+
+	b.logger.Info("accepted gossiped block",
+		log.Stringer("blockID", blk.ID()),
+		log.Uint64("height", blk.Height()))
+
+	return nil
+}
+func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
+	// Handle PushQuery the same as Put - process the block
+	return b.Put(ctx, nodeID, requestID, container)
+}
+func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (b *blockHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (b *blockHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (b *blockHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+	return nil
+}
+func (b *blockHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (b *blockHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (b *blockHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (b *blockHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (b *blockHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	// Handle AppGossip - try to process as block
+	return b.Put(ctx, nodeID, 0, msg)
+}
+func (b *blockHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (b *blockHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (b *blockHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
+	return nil
+}
+func (b *blockHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+	return nil
+}
+func (b *blockHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
+	return nil
+}
+func (b *blockHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
+func (b *blockHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+func (b *blockHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
+func (b *blockHandler) Stop(ctx context.Context)                                  {}
+func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
+	// Dispatch based on Op type
+	switch msg.Op {
+	case handler.Put, handler.PushQuery:
+		// Put and PushQuery contain block data - process it
+		if len(msg.Message) > 0 {
+			return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
+		}
+	}
+	return nil
+}
+func (b *blockHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
+	return nil
 }
 
 // placeholderHandler implements handler.Handler interface

@@ -12,23 +12,23 @@ import (
 	"github.com/luxfi/constants"
 )
 
-func TestNetValidatorVerifyNetID(t *testing.T) {
+func TestChainValidatorVerifyChainID(t *testing.T) {
 	require := require.New(t)
 
 	// Error path
 	{
-		vdr := &NetValidator{
-			Net: constants.PrimaryNetworkID,
+		vdr := &ChainValidator{
+			Chain: constants.PrimaryNetworkID,
 		}
 
 		err := vdr.Verify()
-		require.ErrorIs(err, errBadNetID)
+		require.ErrorIs(err, errBadChainID)
 	}
 
 	// Happy path
 	{
-		vdr := &NetValidator{
-			Net: ids.GenerateTestID(),
+		vdr := &ChainValidator{
+			Chain: ids.GenerateTestID(),
 			Validator: Validator{
 				Wght: 1,
 			},

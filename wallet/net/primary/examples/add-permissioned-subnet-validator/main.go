@@ -63,14 +63,14 @@ func main() {
 	pWallet := wallet.P()
 
 	addValidatorStartTime := time.Now()
-	addValidatorTx, err := pWallet.IssueAddNetValidatorTx(&txs.NetValidator{
+	addValidatorTx, err := pWallet.IssueAddChainValidatorTx(&txs.ChainValidator{
 		Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(startTime.Unix()),
 			End:    uint64(startTime.Add(duration).Unix()),
 			Wght:   weight,
 		},
-		Net: netID,
+		Chain: netID,
 	})
 	if err != nil {
 		log.Fatalf("failed to issue add net validator transaction: %s\n", err)

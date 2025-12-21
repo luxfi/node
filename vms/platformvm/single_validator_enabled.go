@@ -4,7 +4,7 @@
 package platformvm
 
 // SingleValidatorMode enables single validator operation without build tags
-var SingleValidatorMode = true
+var SingleValidatorMode = false
 
 func init() {
 	if SingleValidatorMode {
@@ -15,7 +15,7 @@ func init() {
 }
 
 // MinValidatorCount sets the minimum number of validators required
-var MinValidatorCount = 1
+var MinValidatorCount = 3
 
 // RequireValidatorApproval determines if multiple validators must approve
-var RequireValidatorApproval = false
+var RequireValidatorApproval = true

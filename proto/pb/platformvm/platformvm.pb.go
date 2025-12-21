@@ -27,7 +27,7 @@ type L1ValidatorRegistrationJustification struct {
 
 	// Types that are assignable to Preimage:
 	//
-	//	*L1ValidatorRegistrationJustification_ConvertNetToL1TxData
+	//	*L1ValidatorRegistrationJustification_ConvertChainToL1TxData
 	//	*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage
 	Preimage isL1ValidatorRegistrationJustification_Preimage `protobuf_oneof:"preimage"`
 }
@@ -69,9 +69,9 @@ func (m *L1ValidatorRegistrationJustification) GetPreimage() isL1ValidatorRegist
 	return nil
 }
 
-func (x *L1ValidatorRegistrationJustification) GetConvertNetToL1TxData() *NetIDIndex {
-	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertNetToL1TxData); ok {
-		return x.ConvertNetToL1TxData
+func (x *L1ValidatorRegistrationJustification) GetConvertChainToL1TxData() *NetIDIndex {
+	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData); ok {
+		return x.ConvertChainToL1TxData
 	}
 	return nil
 }
@@ -87,10 +87,10 @@ type isL1ValidatorRegistrationJustification_Preimage interface {
 	isL1ValidatorRegistrationJustification_Preimage()
 }
 
-type L1ValidatorRegistrationJustification_ConvertNetToL1TxData struct {
+type L1ValidatorRegistrationJustification_ConvertChainToL1TxData struct {
 	// This should be set to obtain an attestation that a validator specified in
-	// a ConvertNetToL1Tx has been removed from the validator set.
-	ConvertNetToL1TxData *NetIDIndex `protobuf:"bytes,1,opt,name=convert_subnet_to_l1_tx_data,json=convertNetToL1TxData,proto3,oneof"`
+	// a ConvertChainToL1Tx has been removed from the validator set.
+	ConvertChainToL1TxData *NetIDIndex `protobuf:"bytes,1,opt,name=convert_subnet_to_l1_tx_data,json=convertNetToL1TxData,proto3,oneof"`
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
@@ -102,7 +102,7 @@ type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
 	RegisterL1ValidatorMessage []byte `protobuf:"bytes,2,opt,name=register_l1_validator_message,json=registerL1ValidatorMessage,proto3,oneof"`
 }
 
-func (*L1ValidatorRegistrationJustification_ConvertNetToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
+func (*L1ValidatorRegistrationJustification_ConvertChainToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
 }
 
 func (*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage) isL1ValidatorRegistrationJustification_Preimage() {
@@ -223,7 +223,7 @@ func file_platformvm_platformvm_proto_init() {
 		return
 	}
 	file_platformvm_platformvm_proto_msgTypes[0].OneofWrappers = []any{
-		(*L1ValidatorRegistrationJustification_ConvertNetToL1TxData)(nil),
+		(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData)(nil),
 		(*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage)(nil),
 	}
 	type x struct{}

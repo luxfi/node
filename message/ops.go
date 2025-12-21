@@ -245,6 +245,56 @@ func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 	}
 }
 
+// ToConsensusOp maps message.Op to consensus router Op values
+// Returns the consensus Op value and whether the mapping exists
+func ToConsensusOp(op Op) (byte, bool) {
+	switch op {
+	case GetAcceptedFrontierOp:
+		return 0, true // GetAcceptedFrontier
+	case AcceptedFrontierOp:
+		return 1, true // AcceptedFrontier
+	case GetAcceptedOp:
+		return 2, true // GetAccepted
+	case AcceptedOp:
+		return 3, true // Accepted
+	case GetOp:
+		return 4, true // Get
+	case PutOp:
+		return 5, true // Put
+	case PushQueryOp:
+		return 6, true // PushQuery
+	case PullQueryOp:
+		return 7, true // PullQuery
+	case ChitsOp:
+		return 8, true // Chits
+	default:
+		return 0, false
+	}
+}
+
+// GetContainerBytes extracts the container/body bytes from various message types
+func GetContainerBytes(msg fmt.Stringer) []byte {
+	switch m := msg.(type) {
+	case *p2p.Put:
+		return m.Container
+	case *p2p.PushQuery:
+		return m.Container
+	case *p2p.Ancestors:
+		if len(m.Containers) > 0 {
+			return m.Containers[0]
+		}
+		return nil
+	case *p2p.AppGossip:
+		return m.AppBytes
+	case *p2p.AppRequest:
+		return m.AppBytes
+	case *p2p.AppResponse:
+		return m.AppBytes
+	default:
+		return nil
+	}
+}
+
 func ToOp(m *p2p.Message) (Op, error) {
 	switch msg := m.GetMessage().(type) {
 	case *p2p.Message_Ping:

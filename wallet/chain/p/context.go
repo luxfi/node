@@ -8,7 +8,9 @@ import (
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 )
 
@@ -54,5 +56,16 @@ func NewContextFromClients(
 		XAssetID:          luxAssetID,
 		ComplexityWeights: dynamicFeeConfig.Weights,
 		GasPrice:          gasPriceMultiplier * gasPrice,
+		// Static fee config - use defaults matching platformvm/config
+		StaticFeeConfig: fee.StaticConfig{
+			TxFee:                         units.MilliLux,
+			CreateAssetTxFee:              10 * units.MilliLux,
+			CreateNetTxFee:                units.Lux,
+			CreateBlockchainTxFee:         units.Lux,
+			AddPrimaryNetworkValidatorFee: 0,
+			AddPrimaryNetworkDelegatorFee: 0,
+			AddNetValidatorFee:            units.MilliLux,
+			AddNetDelegatorFee:            units.MilliLux,
+		},
 	}, nil
 }

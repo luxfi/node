@@ -626,12 +626,12 @@ var file_validatorstate_validator_state_proto_depIdxs = []int32{
 	6, // 1: validatorstate.GetCurrentValidatorSetResponse.validators:type_name -> validatorstate.Validator
 	9, // 2: validatorstate.ValidatorState.GetMinimumHeight:input_type -> google.protobuf.Empty
 	9, // 3: validatorstate.ValidatorState.GetCurrentHeight:input_type -> google.protobuf.Empty
-	2, // 4: validatorstate.ValidatorState.GetNetID:input_type -> validatorstate.GetNetIDRequest
+	2, // 4: validatorstate.ValidatorState.GetChainID:input_type -> validatorstate.GetNetIDRequest
 	4, // 5: validatorstate.ValidatorState.GetValidatorSet:input_type -> validatorstate.GetValidatorSetRequest
 	5, // 6: validatorstate.ValidatorState.GetCurrentValidatorSet:input_type -> validatorstate.GetCurrentValidatorSetRequest
 	0, // 7: validatorstate.ValidatorState.GetMinimumHeight:output_type -> validatorstate.GetMinimumHeightResponse
 	1, // 8: validatorstate.ValidatorState.GetCurrentHeight:output_type -> validatorstate.GetCurrentHeightResponse
-	3, // 9: validatorstate.ValidatorState.GetNetID:output_type -> validatorstate.GetNetIDResponse
+	3, // 9: validatorstate.ValidatorState.GetChainID:output_type -> validatorstate.GetNetIDResponse
 	7, // 10: validatorstate.ValidatorState.GetValidatorSet:output_type -> validatorstate.GetValidatorSetResponse
 	8, // 11: validatorstate.ValidatorState.GetCurrentValidatorSet:output_type -> validatorstate.GetCurrentValidatorSetResponse
 	7, // [7:12] is the sub-list for method output_type

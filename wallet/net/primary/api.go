@@ -121,6 +121,9 @@ func FetchState(
 		return nil, err
 	}
 
+	// Set network ID on pClient for proper bech32 address formatting
+	pClient.SetNetworkID(pCTX.NetworkID)
+
 	// For X-chain, we need to get the LUX asset ID and fees
 	// TODO: Get these from the xClient or infoClient
 	luxAssetID := pCTX.XAssetID

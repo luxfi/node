@@ -82,23 +82,23 @@ func (w *withOptions) NewAddValidatorTx(
 }
 
 // Removed in regenesis
-func (w *withOptions) NewAddNetValidatorTx(
-	vdr *txs.NetValidator,
+func (w *withOptions) NewAddChainValidatorTx(
+	vdr *txs.ChainValidator,
 	options ...common.Option,
-) (*txs.AddNetValidatorTx, error) {
-	return w.builder.NewAddNetValidatorTx(
+) (*txs.AddChainValidatorTx, error) {
+	return w.builder.NewAddChainValidatorTx(
 		vdr,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
 // Removed in regenesis
-func (w *withOptions) NewRemoveNetValidatorTx(
+func (w *withOptions) NewRemoveChainValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	options ...common.Option,
-) (*txs.RemoveNetValidatorTx, error) {
-	return w.builder.NewRemoveNetValidatorTx(
+) (*txs.RemoveChainValidatorTx, error) {
+	return w.builder.NewRemoveChainValidatorTx(
 		nodeID,
 		subnetID,
 		common.UnionOptions(w.options, options)...,
@@ -147,26 +147,26 @@ func (w *withOptions) NewCreateNetTx(
 }
 
 // Removed in regenesis
-func (w *withOptions) NewTransferNetOwnershipTx(
+func (w *withOptions) NewTransferChainOwnershipTx(
 	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.TransferNetOwnershipTx, error) {
-	return w.builder.NewTransferNetOwnershipTx(
+) (*txs.TransferChainOwnershipTx, error) {
+	return w.builder.NewTransferChainOwnershipTx(
 		subnetID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewConvertNetToL1Tx(
+func (w *withOptions) NewConvertChainToL1Tx(
 	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertNetToL1Validator,
+	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertNetToL1Tx, error) {
-	return w.builder.NewConvertNetToL1Tx(
+) (*txs.ConvertChainToL1Tx, error) {
+	return w.builder.NewConvertChainToL1Tx(
 		subnetID,
 		chainID,
 		address,
@@ -246,7 +246,7 @@ func (w *withOptions) NewExportTx(
 }
 
 // Removed in regenesis
-func (w *withOptions) NewTransformNetTx(
+func (w *withOptions) NewTransformChainTx(
 	subnetID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
@@ -262,8 +262,8 @@ func (w *withOptions) NewTransformNetTx(
 	maxValidatorWeightFactor byte,
 	uptimeRequirement uint32,
 	options ...common.Option,
-) (*txs.TransformNetTx, error) {
-	return w.builder.NewTransformNetTx(
+) (*txs.TransformChainTx, error) {
+	return w.builder.NewTransformChainTx(
 		subnetID,
 		assetID,
 		initialSupply,
@@ -283,7 +283,7 @@ func (w *withOptions) NewTransformNetTx(
 }
 
 func (w *withOptions) NewAddPermissionlessValidatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.ChainValidator,
 	signer signer.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -303,7 +303,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) NewAddPermissionlessDelegatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.ChainValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

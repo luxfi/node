@@ -57,19 +57,19 @@ func (mr *MockBuilderMockRecorder) NewAddDelegatorTx(arg0, arg1, arg2, arg3, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAddDelegatorTx", reflect.TypeOf((*MockBuilder)(nil).NewAddDelegatorTx), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
-// NewAddNetValidatorTx mocks base method.
-func (m *MockBuilder) NewAddNetValidatorTx(arg0, arg1, arg2 uint64, arg3 ids.NodeID, arg4 ids.ID, arg5 []*secp256k1.PrivateKey, arg6 ids.ShortID) (*txs.Tx, error) {
+// NewAddChainValidatorTx mocks base method.
+func (m *MockBuilder) NewAddChainValidatorTx(arg0, arg1, arg2 uint64, arg3 ids.NodeID, arg4 ids.ID, arg5 []*secp256k1.PrivateKey, arg6 ids.ShortID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewAddNetValidatorTx", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "NewAddChainValidatorTx", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// NewAddNetValidatorTx indicates an expected call of NewAddNetValidatorTx.
-func (mr *MockBuilderMockRecorder) NewAddNetValidatorTx(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+// NewAddChainValidatorTx indicates an expected call of NewAddChainValidatorTx.
+func (mr *MockBuilderMockRecorder) NewAddChainValidatorTx(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAddNetValidatorTx", reflect.TypeOf((*MockBuilder)(nil).NewAddNetValidatorTx), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAddChainValidatorTx", reflect.TypeOf((*MockBuilder)(nil).NewAddChainValidatorTx), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NewAddValidatorTx mocks base method.
@@ -177,19 +177,19 @@ func (mr *MockBuilderMockRecorder) NewImportTx(arg0, arg1, arg2, arg3 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewImportTx", reflect.TypeOf((*MockBuilder)(nil).NewImportTx), arg0, arg1, arg2, arg3)
 }
 
-// NewRemoveNetValidatorTx mocks base method.
-func (m *MockBuilder) NewRemoveNetValidatorTx(arg0 ids.NodeID, arg1 ids.ID, arg2 []*secp256k1.PrivateKey, arg3 ids.ShortID) (*txs.Tx, error) {
+// NewRemoveChainValidatorTx mocks base method.
+func (m *MockBuilder) NewRemoveChainValidatorTx(arg0 ids.NodeID, arg1 ids.ID, arg2 []*secp256k1.PrivateKey, arg3 ids.ShortID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewRemoveNetValidatorTx", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "NewRemoveChainValidatorTx", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// NewRemoveNetValidatorTx indicates an expected call of NewRemoveNetValidatorTx.
-func (mr *MockBuilderMockRecorder) NewRemoveNetValidatorTx(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// NewRemoveChainValidatorTx indicates an expected call of NewRemoveChainValidatorTx.
+func (mr *MockBuilderMockRecorder) NewRemoveChainValidatorTx(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewRemoveNetValidatorTx", reflect.TypeOf((*MockBuilder)(nil).NewRemoveNetValidatorTx), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewRemoveChainValidatorTx", reflect.TypeOf((*MockBuilder)(nil).NewRemoveChainValidatorTx), arg0, arg1, arg2, arg3)
 }
 
 // NewRewardValidatorTx mocks base method.
@@ -207,17 +207,17 @@ func (mr *MockBuilderMockRecorder) NewRewardValidatorTx(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewRewardValidatorTx", reflect.TypeOf((*MockBuilder)(nil).NewRewardValidatorTx), arg0)
 }
 
-// NewTransferNetOwnershipTx mocks base method.
-func (m *MockBuilder) NewTransferNetOwnershipTx(arg0 ids.ID, arg1 uint32, arg2 []ids.ShortID, arg3 []*secp256k1.PrivateKey, arg4 ids.ShortID) (*txs.Tx, error) {
+// NewTransferChainOwnershipTx mocks base method.
+func (m *MockBuilder) NewTransferChainOwnershipTx(arg0 ids.ID, arg1 uint32, arg2 []ids.ShortID, arg3 []*secp256k1.PrivateKey, arg4 ids.ShortID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewTransferNetOwnershipTx", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "NewTransferChainOwnershipTx", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// NewTransferNetOwnershipTx indicates an expected call of NewTransferNetOwnershipTx.
-func (mr *MockBuilderMockRecorder) NewTransferNetOwnershipTx(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+// NewTransferChainOwnershipTx indicates an expected call of NewTransferChainOwnershipTx.
+func (mr *MockBuilderMockRecorder) NewTransferChainOwnershipTx(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTransferNetOwnershipTx", reflect.TypeOf((*MockBuilder)(nil).NewTransferNetOwnershipTx), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTransferChainOwnershipTx", reflect.TypeOf((*MockBuilder)(nil).NewTransferChainOwnershipTx), arg0, arg1, arg2, arg3, arg4)
 }

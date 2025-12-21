@@ -46,7 +46,7 @@ var (
 	errMaxStakeDurationTooLarge      = errors.New("max stake duration must be less than or equal to the global max stake duration")
 	errMissingStartTimePreDurango    = errors.New("staker transactions must have a StartTime pre-Durango")
 	errEtnaUpgradeNotActive          = errors.New("attempting to use an Etna-upgrade feature prior to activation")
-	errTransformNetTxPostEtna        = errors.New("TransformNetTx is not permitted post-Etna")
+	errTransformChainTxPostEtna        = errors.New("TransformChainTx is not permitted post-Etna")
 	errMaxNumActiveValidators        = errors.New("already at the max number of active validators")
 	errCouldNotLoadNetToL1Conversion = errors.New("could not load subnet conversion")
 	errWrongWarpMessageSourceChainID = errors.New("wrong warp message source chain ID")
@@ -145,8 +145,8 @@ func (e *standardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return nil
 }
 
-func (e *standardTxExecutor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-	if err := verifyAddNetValidatorTx(
+func (e *standardTxExecutor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
+	if err := verifyAddChainValidatorTx(
 		e.backend,
 		e.feeCalculator,
 		e.state,
@@ -201,11 +201,11 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	}
 
 	// Verify chain name uniqueness (case-insensitive)
-	if tx.ChainName != "" && e.state.IsChainNameTaken(tx.ChainName) {
-		return fmt.Errorf("chain name %q is already taken", tx.ChainName)
+	if tx.BlockchainName != "" && e.state.IsChainNameTaken(tx.BlockchainName) {
+		return fmt.Errorf("chain name %q is already taken", tx.BlockchainName)
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.NetID, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.ChainID, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -473,13 +473,13 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 	return nil
 }
 
-// Verifies a [*txs.RemoveNetValidatorTx] and, if it passes, executes it on
-// [e.State]. For verification rules, see [verifyRemoveNetValidatorTx]. This
+// Verifies a [*txs.RemoveChainValidatorTx] and, if it passes, executes it on
+// [e.State]. For verification rules, see [verifyRemoveChainValidatorTx]. This
 // transaction will result in [tx.NodeID] being removed as a validator of
-// [tx.NetID].
+// [tx.ChainID].
 // Note: [tx.NodeID] may be either a current or pending validator.
-func (e *standardTxExecutor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
-	staker, isCurrentValidator, err := verifyRemoveNetValidatorTx(
+func (e *standardTxExecutor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
+	staker, isCurrentValidator, err := verifyRemoveChainValidatorTx(
 		e.backend,
 		e.feeCalculator,
 		e.state,
@@ -505,10 +505,10 @@ func (e *standardTxExecutor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) 
 	return nil
 }
 
-func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
+func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
 	currentTimestamp := e.state.GetTimestamp()
 	if e.backend.Config.UpgradeConfig.IsEtnaActivated(currentTimestamp) {
-		return errTransformNetTxPostEtna
+		return errTransformChainTxPostEtna
 	}
 
 	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
@@ -526,7 +526,7 @@ func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 		return errMaxStakeDurationTooLarge
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -562,7 +562,7 @@ func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 	lux.Produce(e.state, txID, tx.Outs)
 	// Transform the new subnet in the database
 	e.state.AddNetTransformation(e.tx)
-	e.state.SetCurrentSupply(tx.Net, tx.InitialSupply)
+	e.state.SetCurrentSupply(tx.Chain, tx.InitialSupply)
 	return nil
 }
 
@@ -586,7 +586,7 @@ func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 	lux.Produce(e.state, txID, tx.Outs)
 
 	if e.backend.Config.PartialSyncPrimaryNetwork &&
-		tx.Net == constants.PrimaryNetworkID &&
+		tx.Chain == constants.PrimaryNetworkID &&
 		tx.Validator.NodeID == e.backend.Ctx.NodeID {
 		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
 			log.String("reason", "primary network is not being fully synced"),
@@ -620,12 +620,12 @@ func (e *standardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionl
 	return nil
 }
 
-// Verifies a [*txs.TransferNetOwnershipTx] and, if it passes, executes it on
-// [e.State]. For verification rules, see [verifyTransferNetOwnershipTx].
-// This transaction will result in the ownership of [tx.Net] being transferred
+// Verifies a [*txs.TransferChainOwnershipTx] and, if it passes, executes it on
+// [e.State]. For verification rules, see [verifyTransferChainOwnershipTx].
+// This transaction will result in the ownership of [tx.Chain] being transferred
 // to [tx.Owner].
-func (e *standardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
-	err := verifyTransferNetOwnershipTx(
+func (e *standardTxExecutor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
+	err := verifyTransferChainOwnershipTx(
 		e.backend,
 		e.feeCalculator,
 		e.state,
@@ -636,7 +636,7 @@ func (e *standardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnership
 		return err
 	}
 
-	e.state.SetNetOwner(tx.Net, tx.Owner)
+	e.state.SetNetOwner(tx.Chain, tx.Owner)
 
 	txID := e.tx.ID()
 	lux.Consume(e.state, tx.Ins)
@@ -688,7 +688,7 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 	return nil
 }
 
-func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
 	var (
 		currentTimestamp = e.state.GetTimestamp()
 		upgrades         = e.backend.Config.UpgradeConfig
@@ -705,7 +705,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -720,8 +720,8 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		startTime                = uint64(currentTimestamp.Unix())
 		currentFees              = e.state.GetAccruedFees()
 		subnetToL1ConversionData = message.NetToL1ConversionData{
-			NetID:          tx.Net,
-			ManagerChainID: tx.ChainID,
+			NetID:          tx.Chain,
+			ManagerChainID: tx.ManagerChainID,
 			ManagerAddress: tx.Address,
 			Validators:     make([]message.NetToL1ConversionValidatorData, len(tx.Validators)),
 		}
@@ -742,8 +742,8 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		}
 
 		l1Validator := state.L1Validator{
-			ValidationID:          tx.Net.Append(uint32(i)),
-			NetID:                 tx.Net,
+			ValidationID:          tx.Chain.Append(uint32(i)),
+			ChainID:               tx.Chain,
 			NodeID:                nodeID,
 			PublicKey:             bls.PublicKeyToUncompressedBytes(vdr.Signer.Key()),
 			RemainingBalanceOwner: remainingBalanceOwner,
@@ -806,10 +806,10 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	lux.Produce(e.state, txID, tx.Outs)
 	// Track the subnet conversion in the database
 	e.state.SetNetToL1Conversion(
-		tx.Net,
+		tx.Chain,
 		state.NetToL1Conversion{
 			ConversionID: conversionID,
-			ChainID:      tx.ChainID,
+			ChainID:      tx.ManagerChainID,
 			Addr:         tx.Address,
 		},
 	)
@@ -875,7 +875,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 
 	// Verify that the warp message was sent from the expected chain and
 	// address.
-	if err := verifyL1Conversion(e.state, msg.NetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
+	if err := verifyL1Conversion(e.state, msg.ChainID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
 		return err
 	}
 
@@ -927,7 +927,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 	}
 	l1Validator := state.L1Validator{
 		ValidationID:          validationID,
-		NetID:                 msg.NetID,
+		ChainID:               msg.ChainID,
 		NodeID:                nodeID,
 		PublicKey:             bls.PublicKeyToUncompressedBytes(pop.Key()),
 		RemainingBalanceOwner: remainingBalanceOwner,
@@ -1032,7 +1032,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 
 	// Verify that the warp message was sent from the expected chain and
 	// address.
-	if err := verifyL1Conversion(e.state, l1Validator.NetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
+	if err := verifyL1Conversion(e.state, l1Validator.ChainID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
 		return err
 	}
 
@@ -1041,7 +1041,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 	// Check if we are removing the validator.
 	if msg.Weight == 0 {
 		// Verify that we are not removing the last validator.
-		weight, err := e.state.WeightOfL1Validators(l1Validator.NetID)
+		weight, err := e.state.WeightOfL1Validators(l1Validator.ChainID)
 		if err != nil {
 			return fmt.Errorf("could not load L1 validator weights: %w", err)
 		}
@@ -1308,7 +1308,7 @@ func (e *standardTxExecutor) putStaker(stakerTx txs.Staker) error {
 		// validator as there are no permissioned delegators
 		var potentialReward uint64
 		if !stakerTx.CurrentPriority().IsPermissionedValidator() {
-			subnetID := stakerTx.NetID()
+			subnetID := stakerTx.ChainID()
 			currentSupply, err := e.state.GetCurrentSupply(subnetID)
 			if err != nil {
 				return err

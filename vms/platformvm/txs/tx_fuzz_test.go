@@ -177,12 +177,12 @@ func FuzzCreateChainTx(f *testing.F) {
 					Ins:          []*lux.TransferableInput{},
 				},
 			},
-			NetID:       ids.GenerateTestID(),
-			ChainName:   string(chainName),
+			ChainID:       ids.GenerateTestID(),
+			BlockchainName:   string(chainName),
 			VMID:        vmID,
 			FxIDs:       []ids.ID{},
 			GenesisData: genesisData,
-			NetAuth:     &secp256k1fx.Input{},
+			ChainAuth:     &secp256k1fx.Input{},
 		}
 		
 		// Try to serialize
@@ -203,8 +203,8 @@ func FuzzCreateChainTx(f *testing.F) {
 		}
 		
 		// Verify key fields
-		if parsed.ChainName != tx.ChainName {
-			t.Errorf("ChainName mismatch: got %q, want %q", parsed.ChainName, tx.ChainName)
+		if parsed.ChainName != tx.BlockchainName {
+			t.Errorf("ChainName mismatch: got %q, want %q", parsed.ChainName, tx.BlockchainName)
 		}
 		
 		if parsed.VMID != tx.VMID {
@@ -499,7 +499,7 @@ func FuzzTransactionSignatures(f *testing.F) {
 type visitor struct{}
 
 func (v *visitor) AddDelegatorTx(*AddDelegatorTx) error { return nil }
-func (v *visitor) AddNetValidatorTx(*AddNetValidatorTx) error { return nil }
+func (v *visitor) AddChainValidatorTx(*AddChainValidatorTx) error { return nil }
 func (v *visitor) AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) error { return nil }
 func (v *visitor) AddPermissionlessValidatorTx(*AddPermissionlessValidatorTx) error { return nil }
 func (v *visitor) AddValidatorTx(*AddValidatorTx) error { return nil }
@@ -509,11 +509,11 @@ func (v *visitor) CreateChainTx(*CreateChainTx) error { return nil }
 func (v *visitor) CreateNetTx(*CreateNetTx) error { return nil }
 func (v *visitor) ExportTx(*ExportTx) error { return nil }
 func (v *visitor) ImportTx(*ImportTx) error { return nil }
-func (v *visitor) RemoveNetValidatorTx(*RemoveNetValidatorTx) error { return nil }
+func (v *visitor) RemoveChainValidatorTx(*RemoveChainValidatorTx) error { return nil }
 func (v *visitor) RewardValidatorTx(*RewardValidatorTx) error { return nil }
-func (v *visitor) TransferNetOwnershipTx(*TransferNetOwnershipTx) error { return nil }
-func (v *visitor) TransformNetTx(*TransformNetTx) error { return nil }
-func (v *visitor) ConvertNetToL1Tx(*ConvertNetToL1Tx) error { return nil }
+func (v *visitor) TransferChainOwnershipTx(*TransferChainOwnershipTx) error { return nil }
+func (v *visitor) TransformChainTx(*TransformChainTx) error { return nil }
+func (v *visitor) ConvertChainToL1Tx(*ConvertChainToL1Tx) error { return nil }
 func (v *visitor) RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error { return nil }
 func (v *visitor) SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error { return nil }
 func (v *visitor) DisableL1ValidatorTx(*DisableL1ValidatorTx) error { return nil }

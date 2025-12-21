@@ -395,13 +395,13 @@ func TestAddValidatorCommit(t *testing.T) {
 
 	// create valid tx
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				End:    uint64(endTime.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		vm.ctx.LUXAssetID,
@@ -558,14 +558,14 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 
 	// create valid tx
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: repeatNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(endTime.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		vm.ctx.LUXAssetID,
@@ -609,15 +609,15 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	// validates primary network ([genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime])
 	var tx *txs.Tx
 	var err error
-	tx, err = wallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	tx, err = wallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Net: subnetID,
+			Chain: subnetID,
 		},
 	)
 	require.NoError(err)
@@ -662,15 +662,15 @@ func TestAddNetValidatorReject(t *testing.T) {
 	// create valid tx
 	// note that [startTime, endTime] is a subset of time that keys[0]
 	// validates primary network ([genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime])
-	tx, err := wallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	tx, err := wallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Net: subnetID,
+			Chain: subnetID,
 		},
 	)
 	require.NoError(err)
@@ -960,15 +960,15 @@ func TestCreateNet(t *testing.T) {
 	startTime := vm.Clock().Time().Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
 	// [startTime, endTime] is subset of time keys[0] validates default subnet so tx is valid
-	addValidatorTx, err := subnetWallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	addValidatorTx, err := subnetWallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Net: subnetID,
+			Chain: subnetID,
 		},
 	)
 	require.NoError(err)
@@ -1710,14 +1710,14 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	}
 
 	addValidatorTx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		vm.ctx.LUXAssetID,
@@ -1746,20 +1746,20 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	subnetID := createNetTx.ID()
-	addNetValidatorTx, err := wallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	addNetValidatorTx, err := wallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Net: subnetID,
+			Chain: subnetID,
 		},
 	)
 	require.NoError(err)
 
-	removeNetValidatorTx, err := wallet.IssueRemoveNetValidatorTx(
+	removeNetValidatorTx, err := wallet.IssueRemoveChainValidatorTx(
 		nodeID,
 		subnetID,
 	)
@@ -1790,7 +1790,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
-func TestTransferNetOwnershipTx(t *testing.T) {
+func TestTransferChainOwnershipTx(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
 	vm.ctx.Lock.Lock()
@@ -1821,7 +1821,7 @@ func TestTransferNetOwnershipTx(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
-	transferNetOwnershipTx, err := wallet.IssueTransferNetOwnershipTx(
+	transferNetOwnershipTx, err := wallet.IssueTransferChainOwnershipTx(
 		subnetID,
 		expectedNetOwner,
 	)
@@ -1928,14 +1928,14 @@ func TestPruneMempool(t *testing.T) {
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 	addValidatorTx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(endTime.Unix()),
 				Wght:   defaultMinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		vm.ctx.LUXAssetID,

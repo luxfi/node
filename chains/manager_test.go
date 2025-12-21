@@ -107,7 +107,7 @@ func TestQueueChainCreation(t *testing.T) {
 	netID := ids.GenerateTestID()
 	chainParams := ChainParameters{
 		ID:    chainID,
-		NetID: netID,
+		ChainID: netID,
 		VMID:  ids.GenerateTestID(),
 	}
 

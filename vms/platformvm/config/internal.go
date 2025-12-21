@@ -89,21 +89,21 @@ type Internal struct {
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
-// the subnet that validates the chain
-func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
-	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != tx.NetID && // All nodes must validate the primary network
-		!c.TrackedNets.Contains(tx.NetID) { // This node doesn't validate this blockchain
+// the chain that validates the blockchain
+func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
+	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all blockchains
+		constants.PrimaryNetworkID != tx.ChainID && // All nodes must validate the primary network
+		!c.TrackedNets.Contains(tx.ChainID) { // This node doesn't validate this blockchain
 		return
 	}
 
 	chainParams := chains.ChainParameters{
-		ID:          chainID,
-		NetID:       tx.NetID,
+		ID:          blockchainID,
+		ChainID:     tx.ChainID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,
-		Name:        tx.ChainName,
+		Name:        tx.BlockchainName,
 	}
 
 	c.Chains.QueueChainCreation(chainParams)

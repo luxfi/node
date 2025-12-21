@@ -42,7 +42,7 @@ func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+func (b *backendVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -95,11 +95,11 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (b *backendVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
+func (b *backendVisitor) TransformChainTx(tx *txs.TransformChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -111,9 +111,9 @@ func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+func (b *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 	b.b.setOwner(
-		tx.Net,
+		tx.Chain,
 		tx.Owner,
 	)
 	return b.baseTx(&tx.BaseTx)
@@ -123,10 +123,10 @@ func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return b.baseTx(tx)
 }
 
-func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (b *backendVisitor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
 	for i, vdr := range tx.Validators {
 		b.b.setOwner(
-			tx.Net.Append(uint32(i)),
+			tx.Chain.Append(uint32(i)),
 			&secp256k1fx.OutputOwners{
 				Threshold: vdr.DeactivationOwner.Threshold,
 				Addrs:     vdr.DeactivationOwner.Addresses,

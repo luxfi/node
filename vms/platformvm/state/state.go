@@ -1214,8 +1214,8 @@ func (s *state) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 }
 
 func (s *state) AddNetTransformation(transformNetTxIntf *txs.Tx) {
-	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformNetTx)
-	s.transformedNets[transformNetTx.Net] = transformNetTxIntf
+	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformChainTx)
+	s.transformedNets[transformNetTx.Chain] = transformNetTxIntf
 }
 
 func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
@@ -1249,7 +1249,7 @@ func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
 
 func (s *state) AddChain(createChainTxIntf *txs.Tx) {
 	createChainTx := createChainTxIntf.Unsigned.(*txs.CreateChainTx)
-	netID := createChainTx.NetID
+	netID := createChainTx.ChainID
 	s.addedChains[netID] = append(s.addedChains[netID], createChainTxIntf)
 	if chains, cached := s.chainCache.Get(netID); cached {
 		chains = append(chains, createChainTxIntf)
@@ -1257,8 +1257,8 @@ func (s *state) AddChain(createChainTxIntf *txs.Tx) {
 	}
 
 	// Register chain name for uniqueness tracking (case-insensitive)
-	if createChainTx.ChainName != "" {
-		nameLower := strings.ToLower(createChainTx.ChainName)
+	if createChainTx.BlockchainName != "" {
+		nameLower := strings.ToLower(createChainTx.BlockchainName)
 		chainID := createChainTxIntf.ID()
 		s.addedChainNames[nameLower] = chainID
 		s.chainNameCache.Put(nameLower, chainID)
@@ -1935,7 +1935,7 @@ func (s *state) loadCurrentValidators() error {
 
 		s.currentStakers.LoadValidator(staker)
 
-		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.NetID, metadata)
+		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.ChainID, metadata)
 	}
 
 	subnetValidatorIt := s.currentNetValidatorList.NewIterator()
@@ -1982,7 +1982,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 		s.currentStakers.LoadValidator(staker)
 
-		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.NetID, metadata)
+		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.ChainID, metadata)
 	}
 
 	delegatorIt := s.currentDelegatorList.NewIterator()
@@ -2552,7 +2552,7 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 			return err
 		}
 
-		if err := s.validators.RemoveWeight(priorL1Validator.NetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight); err != nil {
+		if err := s.validators.RemoveWeight(priorL1Validator.ChainID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight); err != nil {
 			return err
 		}
 	}
@@ -2574,14 +2574,14 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 				// the effectiveNodeIDs are equal.
 				nodeID := l1Validator.effectiveNodeID()
 				if priorL1Validator.Weight < l1Validator.Weight {
-					err = s.validators.AddWeight(l1Validator.NetID, nodeID, l1Validator.Weight-priorL1Validator.Weight)
+					err = s.validators.AddWeight(l1Validator.ChainID, nodeID, l1Validator.Weight-priorL1Validator.Weight)
 				} else if priorL1Validator.Weight > l1Validator.Weight {
-					err = s.validators.RemoveWeight(l1Validator.NetID, nodeID, priorL1Validator.Weight-l1Validator.Weight)
+					err = s.validators.RemoveWeight(l1Validator.ChainID, nodeID, priorL1Validator.Weight-l1Validator.Weight)
 				}
 			} else {
 				// This validator's active status is changing.
 				err = errors.Join(
-					s.validators.RemoveWeight(l1Validator.NetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight),
+					s.validators.RemoveWeight(l1Validator.ChainID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight),
 					addL1ValidatorToValidatorManager(s.validators, l1Validator),
 				)
 			}
@@ -2697,7 +2697,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 		}
 
 		subnetIDNodeID := subnetIDNodeID{
-			subnetID: priorL1Validator.NetID,
+			subnetID: priorL1Validator.ChainID,
 			nodeID:   priorL1Validator.effectiveNodeID(),
 		}
 		diff := getOrSetDefault(changes, subnetIDNodeID)
@@ -2714,7 +2714,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 	// Pass 2: Process all additions
 	for _, entry := range additions {
 		subnetIDNodeID := subnetIDNodeID{
-			subnetID: entry.validator.NetID,
+			subnetID: entry.validator.ChainID,
 			nodeID:   entry.validator.effectiveNodeID(),
 		}
 		diff := getOrSetDefault(changes, subnetIDNodeID)
@@ -2976,7 +2976,7 @@ func (s *state) writeL1Validators() error {
 
 		var (
 			subnetIDNodeID = subnetIDNodeID{
-				subnetID: l1Validator.NetID,
+				subnetID: l1Validator.ChainID,
 				nodeID:   l1Validator.NodeID,
 			}
 			subnetIDNodeIDKey = subnetIDNodeID.Marshal()
@@ -2996,7 +2996,7 @@ func (s *state) writeL1Validators() error {
 		// Update the subnetIDNodeID mapping
 		var (
 			subnetIDNodeID = subnetIDNodeID{
-				subnetID: l1Validator.NetID,
+				subnetID: l1Validator.ChainID,
 				nodeID:   l1Validator.NodeID,
 			}
 			subnetIDNodeIDKey = subnetIDNodeID.Marshal()

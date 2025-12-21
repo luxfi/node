@@ -66,7 +66,7 @@ type NetworkReply struct {
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
 	reply.NetworkID = s.ctx.NetworkID
-	reply.NetID = s.ctx.NetID
+	reply.NetID = s.ctx.ChainID
 	reply.ChainID = s.ctx.ChainID
 	return nil
 }

@@ -191,7 +191,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		ChainID:        ids.GenerateTestID(),
 		XChainID:       ids.GenerateTestID(),
 		CChainID:       ids.GenerateTestID(),
-		NetID:          ids.Empty,
+		ChainID:          ids.Empty,
 		NodeID:         ids.GenerateTestNodeID(),
 		ValidatorState: &mockValidatorState{},
 	}

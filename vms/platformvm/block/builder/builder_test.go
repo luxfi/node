@@ -124,14 +124,14 @@ func TestBuildBlockShouldReward(t *testing.T) {
 
 	// Create a valid [AddPermissionlessValidatorTx]
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		env.ctx.LUXAssetID,
@@ -336,14 +336,14 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 	tx1, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		env.ctx.LUXAssetID,
@@ -367,14 +367,14 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 	require.NoError(err)
 
 	tx2, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
 				End:    uint64(validator2EndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		env.ctx.LUXAssetID,

@@ -69,7 +69,7 @@ const (
 
 	intrinsicSECP256k1FxSignatureCompute = 200 // secp256k1 signature verification time is around 200us
 
-	intrinsicConvertNetToL1ValidatorBandwidth = wrappers.IntLen + // nodeID length
+	intrinsicConvertChainToL1ValidatorBandwidth = wrappers.IntLen + // nodeID length
 		wrappers.LongLen + // weight
 		wrappers.LongLen + // balance
 		wrappers.IntLen + // remaining balance owner threshold
@@ -91,13 +91,13 @@ const (
 
 	intrinsicInputDBWrite                   = 1
 	intrinsicOutputDBWrite                  = 1
-	intrinsicConvertNetToL1ValidatorDBWrite = 4 // weight diff + pub key diff + subnetID/nodeID + validationID
+	intrinsicConvertChainToL1ValidatorDBWrite = 4 // weight diff + pub key diff + subnetID/nodeID + validationID
 )
 
 var (
 	_ txs.Visitor = (*complexityVisitor)(nil)
 
-	IntrinsicAddNetValidatorTxComplexities = gas.Dimensions{
+	IntrinsicAddChainValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			intrinsicNetValidatorBandwidth + // netValidator
 			wrappers.IntLen + // netAuth typeID
@@ -132,7 +132,7 @@ var (
 			ids.IDLen + // destination chainID
 			wrappers.IntLen, // num exported outputs
 	}
-	IntrinsicRemoveNetValidatorTxComplexities = gas.Dimensions{
+	IntrinsicRemoveChainValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			ids.NodeIDLen + // nodeID
 			ids.IDLen + // netID
@@ -162,7 +162,7 @@ var (
 		gas.DBRead:  1, // get staking config
 		gas.DBWrite: 2, // put current staker + write weight diff
 	}
-	IntrinsicTransferNetOwnershipTxComplexities = gas.Dimensions{
+	IntrinsicTransferChainOwnershipTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			ids.IDLen + // netID
 			wrappers.IntLen + // netAuth typeID
@@ -171,7 +171,7 @@ var (
 		gas.DBRead:  1, // read net auth
 		gas.DBWrite: 1, // set net owner
 	}
-	IntrinsicTransformNetTxComplexities = gas.Dimensions{
+	IntrinsicTransformChainTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			ids.IDLen + // netID
 			ids.IDLen + // assetID
@@ -202,7 +202,7 @@ var (
 			wrappers.IntLen + // length of memo
 			wrappers.IntLen, // number of credentials
 	}
-	IntrinsicConvertNetToL1TxComplexities = gas.Dimensions{
+	IntrinsicConvertChainToL1TxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			ids.IDLen + // subsubnetID
 			ids.IDLen + // chainID
@@ -369,9 +369,9 @@ func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 	return complexity, err
 }
 
-// ConvertNetToL1ValidatorComplexity returns the complexity the validators
+// ConvertChainToL1ValidatorComplexity returns the complexity the validators
 // add to a transaction.
-func ConvertNetToL1ValidatorComplexity(l1Validators ...*txs.ConvertNetToL1Validator) (gas.Dimensions, error) {
+func ConvertChainToL1ValidatorComplexity(l1Validators ...*txs.ConvertChainToL1Validator) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, l1Validator := range l1Validators {
 		l1ValidatorComplexity, err := convertNetToL1ValidatorComplexity(l1Validator)
@@ -387,10 +387,10 @@ func ConvertNetToL1ValidatorComplexity(l1Validators ...*txs.ConvertNetToL1Valida
 	return complexity, nil
 }
 
-func convertNetToL1ValidatorComplexity(l1Validator *txs.ConvertNetToL1Validator) (gas.Dimensions, error) {
+func convertNetToL1ValidatorComplexity(l1Validator *txs.ConvertChainToL1Validator) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
-		gas.Bandwidth: intrinsicConvertNetToL1ValidatorBandwidth,
-		gas.DBWrite:   intrinsicConvertNetToL1ValidatorDBWrite,
+		gas.Bandwidth: intrinsicConvertChainToL1ValidatorBandwidth,
+		gas.DBWrite:   intrinsicConvertChainToL1ValidatorDBWrite,
 	}
 
 	signerComplexity, err := SignerComplexity(&l1Validator.Signer)
@@ -535,21 +535,21 @@ func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 // Removed in regenesis
-// func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
+// func (*complexityVisitor) TransformChainTx(*txs.TransformChainTx) error {
 // 	return ErrUnsupportedTx
 // }
 
 // Removed in regenesis
-// func (c *complexityVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+// func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.NetAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicAddNetValidatorTxComplexities.Add(
+// 	c.output, err = IntrinsicAddChainValidatorTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&authComplexity,
 // 	)
@@ -561,7 +561,7 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	bandwidth, err = math.Add(bandwidth, uint64(len(tx.ChainName)))
+	bandwidth, err = math.Add(bandwidth, uint64(len(tx.BlockchainName)))
 	if err != nil {
 		return err
 	}
@@ -577,7 +577,7 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.NetAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -639,16 +639,16 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 }
 
 // Removed in regenesis
-// func (c *complexityVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+// func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.NetAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicRemoveNetValidatorTxComplexities.Add(
+// 	c.output, err = IntrinsicRemoveChainValidatorTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&authComplexity,
 // 	)
@@ -708,12 +708,12 @@ func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 }
 
 // Removed in regenesis
-// func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+// func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.NetAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -721,7 +721,7 @@ func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicTransferNetOwnershipTxComplexities.Add(
+// 	c.output, err = IntrinsicTransferChainOwnershipTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&authComplexity,
 // 		&ownerComplexity,
@@ -738,20 +738,20 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 	return err
 }
 
-func (c *complexityVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (c *complexityVisitor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
 	}
-	validatorComplexity, err := ConvertNetToL1ValidatorComplexity(tx.Validators...)
+	validatorComplexity, err := ConvertChainToL1ValidatorComplexity(tx.Validators...)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.NetAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicConvertNetToL1TxComplexities.Add(
+	c.output, err = IntrinsicConvertChainToL1TxComplexities.Add(
 		&baseTxComplexity,
 		&validatorComplexity,
 		&authComplexity,
@@ -841,16 +841,16 @@ func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 	return complexity, err
 }
 
-func (c *complexityVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.NetAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicAddNetValidatorTxComplexities.Add(
+	c.output, err = IntrinsicAddChainValidatorTxComplexities.Add(
 		&baseTxComplexity,
 		&authComplexity,
 	)
@@ -873,32 +873,32 @@ func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
 	return err
 }
 
-func (c *complexityVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.NetAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicRemoveNetValidatorTxComplexities.Add(
+	c.output, err = IntrinsicRemoveChainValidatorTxComplexities.Add(
 		&baseTxComplexity,
 		&authComplexity,
 	)
 	return err
 }
 
-func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
+func (*complexityVisitor) TransformChainTx(*txs.TransformChainTx) error {
 	return ErrUnsupportedTx
 }
 
-func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.NetAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -906,7 +906,7 @@ func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipT
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicTransferNetOwnershipTxComplexities.Add(
+	c.output, err = IntrinsicTransferChainOwnershipTxComplexities.Add(
 		&baseTxComplexity,
 		&authComplexity,
 		&ownerComplexity,

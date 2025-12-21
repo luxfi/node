@@ -163,10 +163,10 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 		return false, fmt.Errorf("%w: %w", errFailedFetchingPrimaryStaker, err)
 	}
 
-	netID := staker.NetID()
+	netID := staker.ChainID()
 	expectedUptimePercentage := o.primaryUptimePercentage
 	if netID != constants.PrimaryNetworkID {
-		transformNet, err := txexecutor.GetTransformNetTx(o.state, netID)
+		transformNet, err := txexecutor.GetTransformChainTx(o.state, netID)
 		if err != nil {
 			return false, fmt.Errorf("%w: %w", errFailedFetchingNetTransformation, err)
 		}

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	_ UnsignedTx = (*TransformNetTx)(nil)
+	_ UnsignedTx = (*TransformChainTx)(nil)
 
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
@@ -38,14 +38,14 @@ var (
 	errUptimeRequirementTooLarge         = fmt.Errorf("uptime requirement must be less than or equal to %d", reward.PercentDenominator)
 )
 
-// TransformNetTx is an unsigned transformNetTx
-type TransformNetTx struct {
+// TransformChainTx is an unsigned transformChainTx
+type TransformChainTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// ID of the Net to transform
+	// ID of the Chain to transform
 	// Restrictions:
 	// - Must not be the Primary Network ID
-	Net ids.ID `serialize:"true" json:"netID"`
+	Chain ids.ID `serialize:"true" json:"chainID"`
 	// Asset to use when staking on the Net
 	// Restrictions:
 	// - Must not be the Empty ID
@@ -111,16 +111,16 @@ type TransformNetTx struct {
 	// - Must be <= [reward.PercentDenominator]
 	UptimeRequirement uint32 `serialize:"true" json:"uptimeRequirement"`
 	// Authorizes this transformation
-	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
+	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *TransformNetTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *TransformChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
-	case tx.Net == constants.PrimaryNetworkID:
+	case tx.Chain == constants.PrimaryNetworkID:
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
@@ -159,7 +159,7 @@ func (tx *TransformNetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.NetAuth.Verify(); err != nil {
+	if err := tx.ChainAuth.Verify(); err != nil {
 		return err
 	}
 
@@ -167,12 +167,12 @@ func (tx *TransformNetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	return nil
 }
 
-func (tx *TransformNetTx) Visit(visitor Visitor) error {
-	return visitor.TransformNetTx(tx)
+func (tx *TransformChainTx) Visit(visitor Visitor) error {
+	return visitor.TransformChainTx(tx)
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *TransformNetTx) InitializeWithContext(ctx context.Context) error {
+func (tx *TransformChainTx) InitializeWithContext(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

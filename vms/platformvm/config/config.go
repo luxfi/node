@@ -97,7 +97,7 @@ func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:       netID,
+		ChainID:       netID,
 		GenesisData: genesisData,
 		VMID:        vmID,
 		FxIDs:       nil, // No FxIDs for existing chains
@@ -116,7 +116,7 @@ func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, netID ids.ID, vmI
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:       netID,
+		ChainID:       netID,
 		GenesisData: genesisData,
 		VMID:        vmID,
 		FxIDs:       nil, // No FxIDs for existing chains

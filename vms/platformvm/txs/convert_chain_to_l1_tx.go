@@ -19,44 +19,44 @@ import (
 	"github.com/luxfi/node/vms/types"
 )
 
-const MaxNetAddressLength = 4096
+const MaxChainAddressLength = 4096
 
 var (
-	_ UnsignedTx                               = (*ConvertNetToL1Tx)(nil)
-	_ utils.Sortable[*ConvertNetToL1Validator] = (*ConvertNetToL1Validator)(nil)
+	_ UnsignedTx                                 = (*ConvertChainToL1Tx)(nil)
+	_ utils.Sortable[*ConvertChainToL1Validator] = (*ConvertChainToL1Validator)(nil)
 
-	ErrConvertPermissionlessNet            = errors.New("cannot convert a permissionless net")
+	ErrConvertPermissionlessChain          = errors.New("cannot convert a permissionless chain")
 	ErrAddressTooLong                      = errors.New("address is too long")
 	ErrConvertMustIncludeValidators        = errors.New("conversion must include at least one validator")
 	ErrConvertValidatorsNotSortedAndUnique = errors.New("conversion validators must be sorted and unique")
 	ErrZeroWeight                          = errors.New("validator weight must be non-zero")
 )
 
-type ConvertNetToL1Tx struct {
+type ConvertChainToL1Tx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// ID of the Net to transform
-	Net ids.ID `serialize:"true" json:"netID"`
-	// Chain where the Net manager lives
-	ChainID ids.ID `serialize:"true" json:"chainID"`
-	// Address of the Net manager
+	// ID of the Chain to transform
+	Chain ids.ID `serialize:"true" json:"chainID"`
+	// Blockchain where the Chain manager lives
+	ManagerChainID ids.ID `serialize:"true" json:"managerChainID"`
+	// Address of the Chain manager
 	Address types.JSONByteSlice `serialize:"true" json:"address"`
-	// Initial pay-as-you-go validators for the Net
-	Validators []*ConvertNetToL1Validator `serialize:"true" json:"validators"`
+	// Initial pay-as-you-go validators for the Chain
+	Validators []*ConvertChainToL1Validator `serialize:"true" json:"validators"`
 	// Authorizes this conversion
-	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
+	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *ConvertChainToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified:
 		// already passed syntactic verification
 		return nil
-	case tx.Net == constants.PrimaryNetworkID:
-		return ErrConvertPermissionlessNet
-	case len(tx.Address) > MaxNetAddressLength:
+	case tx.Chain == constants.PrimaryNetworkID:
+		return ErrConvertPermissionlessChain
+	case len(tx.Address) > MaxChainAddressLength:
 		return ErrAddressTooLong
 	case len(tx.Validators) == 0:
 		return ErrConvertMustIncludeValidators
@@ -72,7 +72,7 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
 			return err
 		}
 	}
-	if err := tx.NetAuth.Verify(); err != nil {
+	if err := tx.ChainAuth.Verify(); err != nil {
 		return err
 	}
 
@@ -80,11 +80,11 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
 	return nil
 }
 
-func (tx *ConvertNetToL1Tx) Visit(visitor Visitor) error {
-	return visitor.ConvertNetToL1Tx(tx)
+func (tx *ConvertChainToL1Tx) Visit(visitor Visitor) error {
+	return visitor.ConvertChainToL1Tx(tx)
 }
 
-type ConvertNetToL1Validator struct {
+type ConvertChainToL1Validator struct {
 	// NodeID of this validator
 	NodeID types.JSONByteSlice `serialize:"true" json:"nodeID"`
 	// Weight of this validator used when sampling
@@ -94,7 +94,7 @@ type ConvertNetToL1Validator struct {
 	// [Signer] is the BLS key for this validator.
 	// Note: We do not enforce that the BLS key is unique across all validators.
 	//       This means that validators can share a key if they so choose.
-	//       However, a NodeID + Net does uniquely map to a BLS key
+	//       However, a NodeID + Chain does uniquely map to a BLS key
 	Signer signer.ProofOfPossession `serialize:"true" json:"signer"`
 	// Leftover $LUX from the [Balance] will be issued to this owner once it is
 	// removed from the validator set.
@@ -103,11 +103,11 @@ type ConvertNetToL1Validator struct {
 	DeactivationOwner message.PChainOwner `serialize:"true" json:"deactivationOwner"`
 }
 
-func (v *ConvertNetToL1Validator) Compare(o *ConvertNetToL1Validator) int {
+func (v *ConvertChainToL1Validator) Compare(o *ConvertChainToL1Validator) int {
 	return bytes.Compare(v.NodeID, o.NodeID)
 }
 
-func (v *ConvertNetToL1Validator) Verify() error {
+func (v *ConvertChainToL1Validator) Verify() error {
 	if v.Weight == 0 {
 		return ErrZeroWeight
 	}

@@ -218,7 +218,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Net: netID,
+							Chain: netID,
 						},
 					}
 				)
@@ -268,7 +268,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Net: netID,
+							Chain: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -324,7 +324,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Net: netID,
+							Chain: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -379,7 +379,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Net: netID,
+							Chain: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -387,7 +387,7 @@ func TestBlockOptions(t *testing.T) {
 						StartTime: primaryNetworkValidatorStartTime,
 					}
 					transformNetTx = &txs.Tx{
-						Unsigned: &txs.TransformNetTx{
+						Unsigned: &txs.TransformChainTx{
 							UptimeRequirement: .2 * reward.PercentDenominator,
 						},
 					}
@@ -441,7 +441,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Net: netID,
+							Chain: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -449,7 +449,7 @@ func TestBlockOptions(t *testing.T) {
 						StartTime: primaryNetworkValidatorStartTime,
 					}
 					transformNetTx = &txs.Tx{
-						Unsigned: &txs.TransformNetTx{
+						Unsigned: &txs.TransformChainTx{
 							UptimeRequirement: 1.01 * reward.PercentDenominator,
 						},
 					}

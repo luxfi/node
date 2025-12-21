@@ -81,11 +81,11 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	convertNetToL1StartTime := time.Now()
-	convertNetToL1Tx, err := wallet.P().IssueConvertNetToL1Tx(
+	convertNetToL1Tx, err := wallet.P().IssueConvertChainToL1Tx(
 		netID,
 		chainID,
 		address,
-		[]*txs.ConvertNetToL1Validator{
+		[]*txs.ConvertChainToL1Validator{
 			{
 				NodeID:                nodeID[:],
 				Weight:                weight,

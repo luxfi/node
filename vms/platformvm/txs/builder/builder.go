@@ -150,7 +150,7 @@ type ProposalTxBuilder interface {
 	// netID: ID of the net the validator will validate
 	// keys: keys to use for adding the validator
 	// changeAddr: address to send change to, if there is any
-	NewAddNetValidatorTx(
+	NewAddChainValidatorTx(
 		weight,
 		startTime,
 		endTime uint64,
@@ -164,7 +164,7 @@ type ProposalTxBuilder interface {
 	// as a validator from [netID]
 	// keys: keys to use for removing the validator
 	// changeAddr: address to send change to, if there is any
-	NewRemoveNetValidatorTx(
+	NewRemoveChainValidatorTx(
 		nodeID ids.NodeID,
 		netID ids.ID,
 		keys []*secp256k1.PrivateKey,
@@ -176,7 +176,7 @@ type ProposalTxBuilder interface {
 	// ownerAddrs: control addresses for the new subnet
 	// keys: keys to use for modifying the subnet
 	// changeAddr: address to send change to, if there is any
-	NewTransferNetOwnershipTx(
+	NewTransferChainOwnershipTx(
 		netID ids.ID,
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
@@ -405,12 +405,12 @@ func (b *builder) NewCreateChainTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		NetID:       netID,
-		ChainName:   chainName,
+		ChainID:       netID,
+		BlockchainName:   chainName,
 		VMID:        vmID,
 		FxIDs:       fxIDs,
 		GenesisData: genesisData,
-		NetAuth:     subnetAuth,
+		ChainAuth:     subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -538,7 +538,7 @@ func (b *builder) NewAddDelegatorTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewAddNetValidatorTx(
+func (b *builder) NewAddChainValidatorTx(
 	weight,
 	startTime,
 	endTime uint64,
@@ -559,23 +559,23 @@ func (b *builder) NewAddNetValidatorTx(
 	signers = append(signers, subnetSigners)
 
 	// Create the tx
-	utx := &txs.AddNetValidatorTx{
+	utx := &txs.AddChainValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		NetValidator: txs.NetValidator{
+		ChainValidator: txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  startTime,
 				End:    endTime,
 				Wght:   weight,
 			},
-			Net: netID,
+			Chain: netID,
 		},
-		NetAuth: subnetAuth,
+		ChainAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -584,7 +584,7 @@ func (b *builder) NewAddNetValidatorTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewRemoveNetValidatorTx(
+func (b *builder) NewRemoveChainValidatorTx(
 	nodeID ids.NodeID,
 	netID ids.ID,
 	keys []*secp256k1.PrivateKey,
@@ -602,16 +602,16 @@ func (b *builder) NewRemoveNetValidatorTx(
 	signers = append(signers, subnetSigners)
 
 	// Create the tx
-	utx := &txs.RemoveNetValidatorTx{
+	utx := &txs.RemoveChainValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:     netID,
+		Chain:     netID,
 		NodeID:  nodeID,
-		NetAuth: subnetAuth,
+		ChainAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -639,7 +639,7 @@ func (b *builder) NewRewardValidatorTx(txID ids.ID) (*txs.Tx, error) {
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewTransferNetOwnershipTx(
+func (b *builder) NewTransferChainOwnershipTx(
 	netID ids.ID,
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
@@ -657,15 +657,15 @@ func (b *builder) NewTransferNetOwnershipTx(
 	}
 	signers = append(signers, subnetSigners)
 
-	utx := &txs.TransferNetOwnershipTx{
+	utx := &txs.TransferChainOwnershipTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:     netID,
-		NetAuth: subnetAuth,
+		Chain:     netID,
+		ChainAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,
 			Addrs:     ownerAddrs,

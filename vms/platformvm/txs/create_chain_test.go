@@ -23,7 +23,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
@@ -77,7 +77,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.NetID = constants.PrimaryNetworkID
+				tx.ChainID = constants.PrimaryNetworkID
 				return tx
 			},
 			expectedErr: ErrCantValidatePrimaryNetwork,
@@ -90,7 +90,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.ChainName = string(make([]byte, MaxNameLen+1))
+				tx.BlockchainName = string(make([]byte, MaxNameLen+1))
 				return tx
 			},
 			expectedErr: errNameTooLong,
@@ -103,7 +103,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			fxIDs:       nil,
 			chainName:   "yeet",
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.ChainName = "⌘"
+				tx.BlockchainName = "⌘"
 				return tx
 			},
 			expectedErr: errIllegalNameCharacter,
@@ -159,12 +159,12 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 					Ins:          inputs,
 					Outs:         outputs,
 				}},
-				NetID:       test.netID,
-				ChainName:   test.chainName,
+				ChainID:       test.netID,
+				BlockchainName:   test.chainName,
 				VMID:        test.vmID,
 				FxIDs:       test.fxIDs,
 				GenesisData: test.genesisData,
-				NetAuth:     subnetAuth,
+				ChainAuth:     subnetAuth,
 			}
 
 			signers := [][]*secp256k1.PrivateKey{preFundedKeys}

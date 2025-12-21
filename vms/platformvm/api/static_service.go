@@ -364,12 +364,12 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
-			NetID:       chain.NetID,
-			ChainName:   chain.Name,
+			ChainID:       chain.NetID,
+			BlockchainName:   chain.Name,
 			VMID:        chain.VMID,
 			FxIDs:       chain.FxIDs,
 			GenesisData: genesisBytes,
-			NetAuth:  &secp256k1fx.Input{},
+			ChainAuth:  &secp256k1fx.Input{},
 		}}
 		if err := tx.Initialize(txs.GenesisCodec); err != nil {
 			return err

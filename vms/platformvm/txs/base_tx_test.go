@@ -76,7 +76,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -225,7 +225,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -376,7 +376,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}

@@ -46,8 +46,8 @@ func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) er
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	if chainCtx.NetID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.NetID, peerNetID)
+	if chainCtx.ChainID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.ChainID, peerNetID)
 	}
 	return nil
 }
@@ -70,8 +70,8 @@ func SameSubnet(ctx context.Context, consensusCtx *consensusctx.Context, peerCha
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	if consensusCtx.NetID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, consensusCtx.NetID, peerNetID)
+	if consensusCtx.ChainID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, consensusCtx.ChainID, peerNetID)
 	}
 	return nil
 }

@@ -39,7 +39,7 @@ func getValidatorRules(
 		}, nil
 	}
 
-	transformNet, err := GetTransformNetTx(chainState, netID)
+	transformNet, err := GetTransformChainTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func getDelegatorRules(
 		}, nil
 	}
 
-	transformNet, err := GetTransformNetTx(chainState, netID)
+	transformNet, err := GetTransformChainTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func GetMaxWeight(
 	startTime time.Time,
 	endTime time.Time,
 ) (uint64, error) {
-	currentDelegatorIterator, err := chainState.GetCurrentDelegatorIterator(validator.NetID, validator.NodeID)
+	currentDelegatorIterator, err := chainState.GetCurrentDelegatorIterator(validator.ChainID, validator.NodeID)
 	if err != nil {
 		return 0, err
 	}
@@ -166,11 +166,11 @@ func GetMaxWeight(
 	}
 	currentDelegatorIterator.Release()
 
-	currentDelegatorIterator, err = chainState.GetCurrentDelegatorIterator(validator.NetID, validator.NodeID)
+	currentDelegatorIterator, err = chainState.GetCurrentDelegatorIterator(validator.ChainID, validator.NodeID)
 	if err != nil {
 		return 0, err
 	}
-	pendingDelegatorIterator, err := chainState.GetPendingDelegatorIterator(validator.NetID, validator.NodeID)
+	pendingDelegatorIterator, err := chainState.GetPendingDelegatorIterator(validator.ChainID, validator.NodeID)
 	if err != nil {
 		currentDelegatorIterator.Release()
 		return 0, err
@@ -216,15 +216,15 @@ func GetMaxWeight(
 	return max(currentMax, currentWeight), nil
 }
 
-func GetTransformNetTx(chain state.Chain, netID ids.ID) (*txs.TransformNetTx, error) {
+func GetTransformChainTx(chain state.Chain, netID ids.ID) (*txs.TransformChainTx, error) {
 	transformNetIntf, err := chain.GetNetTransformation(netID)
 	if err != nil {
 		return nil, err
 	}
 
-	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformChainTx)
 	if !ok {
-		return nil, ErrIsNotTransformNetTx
+		return nil, ErrIsNotTransformChainTx
 	}
 
 	return transformNet, nil

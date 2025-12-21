@@ -118,7 +118,7 @@ func addPrimaryValidator(
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
 		PublicKey:       sk.PublicKey(),
-		NetID:        constants.PrimaryNetworkID,
+		ChainID:        constants.PrimaryNetworkID,
 		Weight:          2 * units.MegaLux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -150,7 +150,7 @@ func addNetValidator(
 	if err := s.PutCurrentValidator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		NetID:           netID,
+		ChainID:           netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -184,7 +184,7 @@ func addNetDelegator(
 	s.PutCurrentDelegator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		NetID:           netID,
+		ChainID:           netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,

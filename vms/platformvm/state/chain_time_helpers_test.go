@@ -112,7 +112,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 					TxID:      ids.GenerateTestID(),
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: nil,
-					NetID:  constants.PrimaryNetworkID,
+					ChainID:  constants.PrimaryNetworkID,
 					Weight:    1,
 					StartTime: genesistest.DefaultValidatorStartTime.Add(time.Second),
 					EndTime:   genesistest.DefaultValidatorEndTime,
@@ -128,7 +128,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					ChainID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 1, // This validator should be evicted in .5 seconds, which is rounded to 0.
@@ -142,7 +142,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					ChainID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 2, // This validator should be evicted in 1 second.
@@ -156,7 +156,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					ChainID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 3, // This validator should be evicted in 1.5 seconds, which is rounded to 1.
@@ -170,7 +170,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					ChainID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: units.Lux, // This validator won't be evicted soon.

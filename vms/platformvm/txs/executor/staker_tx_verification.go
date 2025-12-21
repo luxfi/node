@@ -32,7 +32,7 @@ var (
 	ErrStakeOverflow                   = errors.New("validator stake exceeds limit")
 	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependent staking period")
 	ErrOverDelegated                   = errors.New("validator would be over delegated")
-	ErrIsNotTransformNetTx             = errors.New("is not a transform net tx")
+	ErrIsNotTransformChainTx             = errors.New("is not a transform net tx")
 	ErrTimestampNotBeforeStartTime     = errors.New("chain timestamp not before start time")
 	ErrAlreadyValidator                = errors.New("already a validator")
 	ErrDuplicateValidator              = errors.New("duplicate validator")
@@ -185,14 +185,14 @@ func verifyAddValidatorTx(
 	return outs, nil
 }
 
-// verifyAddNetValidatorTx carries out the validation for an
-// AddNetValidatorTx.
-func verifyAddNetValidatorTx(
+// verifyAddChainValidatorTx carries out the validation for an
+// AddChainValidatorTx.
+func verifyAddChainValidatorTx(
 	backend *Backend,
 	feeCalculator fee.Calculator,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.AddNetValidatorTx,
+	tx *txs.AddChainValidatorTx,
 ) error {
 	// Verify the tx is well-formed
 	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
@@ -231,13 +231,13 @@ func verifyAddNetValidatorTx(
 		return err
 	}
 
-	_, err := GetValidator(chainState, tx.NetValidator.Net, tx.Validator.NodeID)
+	_, err := GetValidator(chainState, tx.ChainValidator.Chain, tx.Validator.NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"attempted to issue %w for %s on net %s",
 			ErrDuplicateValidator,
 			tx.Validator.NodeID,
-			tx.NetValidator.Net,
+			tx.ChainValidator.Chain,
 		)
 	}
 	if err != database.ErrNotFound {
@@ -252,7 +252,7 @@ func verifyAddNetValidatorTx(
 		return err
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(backend.Fx, chainState, sTx, tx.NetValidator.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(backend.Fx, chainState, sTx, tx.ChainValidator.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -278,20 +278,20 @@ func verifyAddNetValidatorTx(
 	return nil
 }
 
-// Returns the representation of [tx.NodeID] validating [tx.Net].
-// Returns true if [tx.NodeID] is a current validator of [tx.Net].
+// Returns the representation of [tx.NodeID] validating [tx.Chain].
+// Returns true if [tx.NodeID] is a current validator of [tx.Chain].
 // Returns an error if the given tx is invalid.
 // The transaction is valid if:
-// * [tx.NodeID] is a current/pending PoA validator of [tx.Net].
+// * [tx.NodeID] is a current/pending PoA validator of [tx.Chain].
 // * [sTx]'s creds authorize it to spend the stated inputs.
-// * [sTx]'s creds authorize it to remove a validator from [tx.Net].
+// * [sTx]'s creds authorize it to remove a validator from [tx.Chain].
 // * The flow checker passes.
-func verifyRemoveNetValidatorTx(
+func verifyRemoveChainValidatorTx(
 	backend *Backend,
 	feeCalculator fee.Calculator,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.RemoveNetValidatorTx,
+	tx *txs.RemoveChainValidatorTx,
 ) (*state.Staker, bool, error) {
 	// Verify the tx is well-formed
 	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
@@ -307,9 +307,9 @@ func verifyRemoveNetValidatorTx(
 	}
 
 	isCurrentValidator := true
-	vdr, err := chainState.GetCurrentValidator(tx.Net, tx.NodeID)
+	vdr, err := chainState.GetCurrentValidator(tx.Chain, tx.NodeID)
 	if err == database.ErrNotFound {
-		vdr, err = chainState.GetPendingValidator(tx.Net, tx.NodeID)
+		vdr, err = chainState.GetPendingValidator(tx.Chain, tx.NodeID)
 		isCurrentValidator = false
 	}
 	if err != nil {
@@ -318,7 +318,7 @@ func verifyRemoveNetValidatorTx(
 			"%s %w of %s: %w",
 			tx.NodeID,
 			ErrNotValidator,
-			tx.Net,
+			tx.Chain,
 			err,
 		)
 	}
@@ -332,7 +332,7 @@ func verifyRemoveNetValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return nil, false, err
 	}
@@ -514,7 +514,7 @@ func verifyAddPermissionlessValidatorTx(
 		return err
 	}
 
-	validatorRules, err := getValidatorRules(backend, chainState, tx.Net)
+	validatorRules, err := getValidatorRules(backend, chainState, tx.Chain)
 	if err != nil {
 		return err
 	}
@@ -551,25 +551,25 @@ func verifyAddPermissionlessValidatorTx(
 		)
 	}
 
-	_, err = GetValidator(chainState, tx.Net, tx.Validator.NodeID)
+	_, err = GetValidator(chainState, tx.Chain, tx.Validator.NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"%w: %s on %s",
 			ErrDuplicateValidator,
 			tx.Validator.NodeID,
-			tx.Net,
+			tx.Chain,
 		)
 	}
 	if err != database.ErrNotFound {
 		return fmt.Errorf(
 			"failed to find whether %s is a validator on %s: %w",
 			tx.Validator.NodeID,
-			tx.Net,
+			tx.Chain,
 			err,
 		)
 	}
 
-	if tx.Net != constants.PrimaryNetworkID {
+	if tx.Chain != constants.PrimaryNetworkID {
 		if err := verifyNetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
 			return err
 		}
@@ -639,7 +639,7 @@ func verifyAddPermissionlessDelegatorTx(
 		return err
 	}
 
-	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Net)
+	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Chain)
 	if err != nil {
 		return err
 	}
@@ -668,12 +668,12 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	validator, err := GetValidator(chainState, tx.Net, tx.Validator.NodeID)
+	validator, err := GetValidator(chainState, tx.Chain, tx.Validator.NodeID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to fetch the validator for %s on %s: %w",
 			tx.Validator.NodeID,
-			tx.Net,
+			tx.Chain,
 			err,
 		)
 	}
@@ -714,11 +714,11 @@ func verifyAddPermissionlessDelegatorTx(
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
-	if tx.Net != constants.PrimaryNetworkID {
+	if tx.Chain != constants.PrimaryNetworkID {
 		// Invariant: Delegators must only be able to reference validator
 		//            transactions that implement [txs.ValidatorTx]. All
 		//            validator transactions implement this interface except the
-		//            AddNetValidatorTx. AddNetValidatorTx is the only
+		//            AddChainValidatorTx. AddChainValidatorTx is the only
 		//            permissioned validator, so we verify this delegator is
 		//            pointing to a permissionless validator.
 		if validator.Priority.IsPermissionedValidator() {
@@ -750,14 +750,14 @@ func verifyAddPermissionlessDelegatorTx(
 // Returns an error if the given tx is invalid.
 // The transaction is valid if:
 // * [sTx]'s creds authorize it to spend the stated inputs.
-// * [sTx]'s creds authorize it to transfer ownership of [tx.Net].
+// * [sTx]'s creds authorize it to transfer ownership of [tx.Chain].
 // * The flow checker passes.
-func verifyTransferNetOwnershipTx(
+func verifyTransferChainOwnershipTx(
 	backend *Backend,
 	feeCalculator fee.Calculator,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.TransferNetOwnershipTx,
+	tx *txs.TransferChainOwnershipTx,
 ) error {
 	var (
 		currentTimestamp = chainState.GetTimestamp()
@@ -781,7 +781,7 @@ func verifyTransferNetOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}

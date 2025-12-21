@@ -145,10 +145,10 @@ func (v *baseStakers) GetValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, er
 func (v *baseStakers) PutValidator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	validator.validator = staker
 
-	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.ChainID, staker.NodeID)
 	validatorDiff.validatorStatus = added
 	validatorDiff.validator = staker
 
@@ -158,11 +158,11 @@ func (v *baseStakers) PutValidator(staker *Staker) {
 func (v *baseStakers) DeleteValidator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	validator.validator = nil
-	v.pruneValidatorLocked(staker.NetID, staker.NodeID)
+	v.pruneValidatorLocked(staker.ChainID, staker.NodeID)
 
-	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.ChainID, staker.NodeID)
 	validatorDiff.validatorStatus = deleted
 	validatorDiff.validator = staker
 
@@ -194,13 +194,13 @@ func (v *baseStakers) GetDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) i
 func (v *baseStakers) PutDelegator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	if validator.delegators == nil {
 		validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
 	validator.delegators.ReplaceOrInsert(staker)
 
-	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.ChainID, staker.NodeID)
 	if validatorDiff.addedDelegators == nil {
 		validatorDiff.addedDelegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
@@ -212,13 +212,13 @@ func (v *baseStakers) PutDelegator(staker *Staker) {
 func (v *baseStakers) DeleteDelegator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	if validator.delegators != nil {
 		validator.delegators.Delete(staker)
 	}
-	v.pruneValidatorLocked(staker.NetID, staker.NodeID)
+	v.pruneValidatorLocked(staker.ChainID, staker.NodeID)
 
-	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.NetID, staker.NodeID)
+	validatorDiff := v.getOrCreateValidatorDiffLocked(staker.ChainID, staker.NodeID)
 	if validatorDiff.deletedDelegators == nil {
 		validatorDiff.deletedDelegators = make(map[ids.ID]*Staker)
 	}
@@ -244,7 +244,7 @@ func (v *baseStakers) GetStakerIterator() iterator.Iterator[*Staker] {
 func (v *baseStakers) LoadValidator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	validator.validator = staker
 	v.stakers.ReplaceOrInsert(staker)
 }
@@ -254,7 +254,7 @@ func (v *baseStakers) LoadValidator(staker *Staker) {
 func (v *baseStakers) LoadDelegator(staker *Staker) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	validator := v.getOrCreateValidatorLocked(staker.NetID, staker.NodeID)
+	validator := v.getOrCreateValidatorLocked(staker.ChainID, staker.NodeID)
 	if validator.delegators == nil {
 		validator.delegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
@@ -381,7 +381,7 @@ func (s *diffStakers) GetValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, di
 }
 
 func (s *diffStakers) PutValidator(staker *Staker) error {
-	validatorDiff := s.getOrCreateDiff(staker.NetID, staker.NodeID)
+	validatorDiff := s.getOrCreateDiff(staker.ChainID, staker.NodeID)
 	if validatorDiff.validatorStatus == deleted {
 		// Enforce the invariant that a validator cannot be added after being
 		// deleted.
@@ -399,7 +399,7 @@ func (s *diffStakers) PutValidator(staker *Staker) error {
 }
 
 func (s *diffStakers) DeleteValidator(staker *Staker) {
-	validatorDiff := s.getOrCreateDiff(staker.NetID, staker.NodeID)
+	validatorDiff := s.getOrCreateDiff(staker.ChainID, staker.NodeID)
 	if validatorDiff.validatorStatus == added {
 		// This validator was added and immediately removed in this diff. We
 		// treat it as if it was never added.
@@ -446,7 +446,7 @@ func (s *diffStakers) GetDelegatorIterator(
 }
 
 func (s *diffStakers) PutDelegator(staker *Staker) {
-	validatorDiff := s.getOrCreateDiff(staker.NetID, staker.NodeID)
+	validatorDiff := s.getOrCreateDiff(staker.ChainID, staker.NodeID)
 	if validatorDiff.addedDelegators == nil {
 		validatorDiff.addedDelegators = btree.NewG(defaultTreeDegree, (*Staker).Less)
 	}
@@ -459,7 +459,7 @@ func (s *diffStakers) PutDelegator(staker *Staker) {
 }
 
 func (s *diffStakers) DeleteDelegator(staker *Staker) {
-	validatorDiff := s.getOrCreateDiff(staker.NetID, staker.NodeID)
+	validatorDiff := s.getOrCreateDiff(staker.ChainID, staker.NodeID)
 	if validatorDiff.deletedDelegators == nil {
 		validatorDiff.deletedDelegators = make(map[ids.ID]*Staker)
 	}

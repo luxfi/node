@@ -48,12 +48,12 @@ func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map
 		}
 		subnetOwner[txID] = createNetTx.Owner
 	}
-	for _, tx := range subnetTxs { // then check for TransferNetOwnershipTx
-		transferNetOwnershipTx, ok := tx.Unsigned.(*txs.TransferNetOwnershipTx)
+	for _, tx := range subnetTxs { // then check for TransferChainOwnershipTx
+		transferNetOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[transferNetOwnershipTx.Net] = transferNetOwnershipTx.Owner
+		subnetOwner[transferNetOwnershipTx.Chain] = transferNetOwnershipTx.Owner
 	}
 	return &backend{
 		ChainUTXOs:  utxos,
@@ -97,7 +97,7 @@ func (v *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+func (v *backendVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -143,11 +143,11 @@ func (v *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (v *backendVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
+func (v *backendVisitor) TransformChainTx(tx *txs.TransformChainTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -159,8 +159,8 @@ func (v *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
-	v.b.setNetOwner(tx.Net, tx.Owner)
+func (v *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
+	v.b.setNetOwner(tx.Chain, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -168,7 +168,7 @@ func (v *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return v.baseTx(tx)
 }
 
-func (v *backendVisitor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (v *backendVisitor) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
 	return nil
 }
 

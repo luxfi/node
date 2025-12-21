@@ -97,13 +97,13 @@ var (
 		validationID: validationOwner,
 	}
 
-	primaryNetworkPermissionlessStaker = &txs.NetValidator{
+	primaryNetworkPermissionlessStaker = &txs.ChainValidator{
 		Validator: txs.Validator{
 			NodeID: nodeID,
 			End:    uint64(time.Now().Add(time.Hour).Unix()),
 			Wght:   2 * units.Lux,
 		},
-		Net: constants.PrimaryNetworkID,
+		Chain: constants.PrimaryNetworkID,
 	}
 
 	testContextPostEtna = &builder.Context{
@@ -180,13 +180,13 @@ func TestBaseTx(t *testing.T) {
 	}
 }
 
-func TestAddNetValidatorTx(t *testing.T) {
-	subnetValidator := &txs.NetValidator{
+func TestAddChainValidatorTx(t *testing.T) {
+	subnetValidator := &txs.ChainValidator{
 		Validator: txs.Validator{
 			NodeID: nodeID,
 			End:    uint64(time.Now().Add(time.Hour).Unix()),
 		},
-		Net: subnetID,
+		Chain: subnetID,
 	}
 
 	for _, e := range testEnvironment {
@@ -200,12 +200,12 @@ func TestAddNetValidatorTx(t *testing.T) {
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
-			utx, err := builder.NewAddNetValidatorTx(
+			utx, err := builder.NewAddChainValidatorTx(
 				subnetValidator,
 				common.WithMemo(e.memo),
 			)
 			require.NoError(err)
-			require.Equal(*subnetValidator, utx.NetValidator)
+			require.Equal(*subnetValidator, utx.ChainValidator)
 			require.Equal(types.JSONByteSlice(e.memo), utx.Memo)
 			requireFeeIsCorrect(
 				require,
@@ -220,7 +220,7 @@ func TestAddNetValidatorTx(t *testing.T) {
 	}
 }
 
-func TestRemoveNetValidatorTx(t *testing.T) {
+func TestRemoveChainValidatorTx(t *testing.T) {
 	for _, e := range testEnvironment {
 		t.Run(e.name, func(t *testing.T) {
 			var (
@@ -232,7 +232,7 @@ func TestRemoveNetValidatorTx(t *testing.T) {
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
-			utx, err := builder.NewRemoveNetValidatorTx(
+			utx, err := builder.NewRemoveChainValidatorTx(
 				nodeID,
 				subnetID,
 				common.WithMemo(e.memo),
@@ -282,11 +282,11 @@ func TestCreateChainTx(t *testing.T) {
 				common.WithMemo(e.memo),
 			)
 			require.NoError(err)
-			require.Equal(subnetID, utx.NetID)
+			require.Equal(subnetID, utx.ChainID)
 			require.Equal(genesisBytes, utx.GenesisData)
 			require.Equal(vmID, utx.VMID)
 			require.ElementsMatch(fxIDs, utx.FxIDs)
-			require.Equal(chainName, utx.ChainName)
+			require.Equal(chainName, utx.BlockchainName)
 			require.Equal(types.JSONByteSlice(e.memo), utx.Memo)
 			requireFeeIsCorrect(
 				require,
@@ -333,7 +333,7 @@ func TestCreateNetTx(t *testing.T) {
 	}
 }
 
-func TestTransferNetOwnershipTx(t *testing.T) {
+func TestTransferChainOwnershipTx(t *testing.T) {
 	for _, e := range testEnvironment {
 		t.Run(e.name, func(t *testing.T) {
 			var (
@@ -345,7 +345,7 @@ func TestTransferNetOwnershipTx(t *testing.T) {
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
-			utx, err := builder.NewTransferNetOwnershipTx(
+			utx, err := builder.NewTransferChainOwnershipTx(
 				subnetID,
 				subnetOwner,
 				common.WithMemo(e.memo),
@@ -573,7 +573,7 @@ func TestAddPermissionlessDelegatorTx(t *testing.T) {
 	}
 }
 
-func TestConvertNetToL1Tx(t *testing.T) {
+func TestConvertChainToL1Tx(t *testing.T) {
 	sk0, err := localsigner.New()
 	require.NoError(t, err)
 	pop0, err := signer.NewProofOfPossession(sk0)
@@ -586,7 +586,7 @@ func TestConvertNetToL1Tx(t *testing.T) {
 	var (
 		chainID    = ids.GenerateTestID()
 		address    = utils.RandomBytes(32)
-		validators = []*txs.ConvertNetToL1Validator{
+		validators = []*txs.ConvertChainToL1Validator{
 			{
 				NodeID:  utils.RandomBytes(ids.NodeIDLen),
 				Weight:  rand.Uint64(), //#nosec G404
@@ -626,7 +626,7 @@ func TestConvertNetToL1Tx(t *testing.T) {
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
-			utx, err := builder.NewConvertNetToL1Tx(
+			utx, err := builder.NewConvertChainToL1Tx(
 				subnetID,
 				chainID,
 				address,

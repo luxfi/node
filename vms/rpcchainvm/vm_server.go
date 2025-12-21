@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -249,7 +248,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.ctx = &consensuscontext.Context{
 		NetworkID:       req.NetworkId,
 		NetID:           subnetID,
-		SubnetID:        subnetID,
 		ChainID:         chainID,
 		NodeID:          nodeID,
 		PublicKey:       publicKeyBytes,
@@ -271,35 +269,15 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.chainID = chainID
 	vm.nodeID = nodeID
 
-	// File-based debug logging
-	debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if debugFile != nil {
-		fmt.Fprintf(debugFile, "%s DEBUG vm_server: About to call vm.vm.Initialize chainID=%s\n", time.Now().Format("15:04:05.000"), chainID)
-		debugFile.Close()
-	}
-	fmt.Fprintf(os.Stderr, "DEBUG vm_server: About to call vm.vm.Initialize\n")
+	vm.log.Info("initializing VM via gRPC", log.Stringer("chainID", chainID))
 	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, nil, appSenderClient); err != nil {
-		// Log error to file for debugging
-		debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG vm_server: Initialize FAILED err=%v\n", time.Now().Format("15:04:05.000"), err)
-			debugFile.Close()
-		}
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
 		vm.log.Error("failed to initialize vm", log.Err(err))
 		return nil, err
 	}
-
-	// Log success to file for debugging
-	{
-		debugFile, _ := os.OpenFile("/tmp/vm_server_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG vm_server: Initialize SUCCESS chainID=%s\n", time.Now().Format("15:04:05.000"), chainID)
-			debugFile.Close()
-		}
-	}
+	vm.log.Info("VM initialized successfully", log.Stringer("chainID", chainID))
 
 	lastAccepted, err := vm.vm.LastAccepted(ctx)
 	if err != nil {

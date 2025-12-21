@@ -7,7 +7,7 @@ package txs
 type Visitor interface {
 	// Apricot Transactions:
 	AddValidatorTx(*AddValidatorTx) error
-	AddNetValidatorTx(*AddNetValidatorTx) error
+	AddChainValidatorTx(*AddChainValidatorTx) error
 	AddDelegatorTx(*AddDelegatorTx) error
 	CreateChainTx(*CreateChainTx) error
 	CreateNetTx(*CreateNetTx) error
@@ -17,17 +17,17 @@ type Visitor interface {
 	RewardValidatorTx(*RewardValidatorTx) error
 
 	// Banff Transactions:
-	RemoveNetValidatorTx(*RemoveNetValidatorTx) error
-	TransformNetTx(*TransformNetTx) error
+	RemoveChainValidatorTx(*RemoveChainValidatorTx) error
+	TransformChainTx(*TransformChainTx) error
 	AddPermissionlessValidatorTx(*AddPermissionlessValidatorTx) error
 	AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) error
 
 	// Durango Transactions:
-	TransferNetOwnershipTx(*TransferNetOwnershipTx) error
+	TransferChainOwnershipTx(*TransferChainOwnershipTx) error
 	BaseTx(*BaseTx) error
 
 	// Etna Transactions:
-	ConvertNetToL1Tx(*ConvertNetToL1Tx) error
+	ConvertChainToL1Tx(*ConvertChainToL1Tx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error

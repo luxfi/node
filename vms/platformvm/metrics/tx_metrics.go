@@ -42,7 +42,7 @@ func (m *txMetrics) AddValidatorTx(*txs.AddValidatorTx) error {
 }
 
 // Removed in regenesis
-// func (m *txMetrics) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+// func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 // 	m.numTxs.With(metric.Labels{
 // 		txLabel: "add_subnet_validator",
 // 	}).Inc()
@@ -100,7 +100,7 @@ func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 // Removed in regenesis
-// func (m *txMetrics) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+// func (m *txMetrics) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 // 	m.numTxs.With(metric.Labels{
 // 		txLabel: "remove_subnet_validator",
 // 	}).Inc()
@@ -108,7 +108,7 @@ func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 // }
 
 // Removed in regenesis
-// func (m *txMetrics) TransformNetTx(*txs.TransformNetTx) error {
+// func (m *txMetrics) TransformChainTx(*txs.TransformChainTx) error {
 // 	m.numTxs.With(metric.Labels{
 // 		txLabel: "transform_subnet",
 // 	}).Inc()
@@ -130,7 +130,7 @@ func (m *txMetrics) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegator
 }
 
 // Removed in regenesis
-// func (m *txMetrics) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+// func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 // 	m.numTxs.With(metric.Labels{
 // 		txLabel: "transfer_subnet_ownership",
 // 	}).Inc()
@@ -144,7 +144,7 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (m *txMetrics) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (m *txMetrics) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "convert_net_to_l1",
 	}).Inc()
@@ -179,7 +179,7 @@ func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "add_net_validator",
 	}).Inc()
@@ -193,21 +193,21 @@ func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
 	return nil
 }
 
-func (m *txMetrics) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+func (m *txMetrics) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "remove_net_validator",
 	}).Inc()
 	return nil
 }
 
-func (m *txMetrics) TransformNetTx(*txs.TransformNetTx) error {
+func (m *txMetrics) TransformChainTx(*txs.TransformChainTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "transform_net",
 	}).Inc()
 	return nil
 }
 
-func (m *txMetrics) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "transfer_net_ownership",
 	}).Inc()

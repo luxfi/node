@@ -51,7 +51,7 @@ func (tx *AddDelegatorTx) InitCtx(ctx *consensusctx.Context) {
 	// Owner doesn't have InitCtx method
 }
 
-func (*AddDelegatorTx) NetID() ids.ID {
+func (*AddDelegatorTx) ChainID() ids.ID {
 	return constants.PrimaryNetworkID
 }
 

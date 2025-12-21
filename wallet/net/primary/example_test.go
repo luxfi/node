@@ -127,7 +127,7 @@ func ExampleWallet() {
 	log.Printf("issued create net transaction %s in %s\n", createNetTxID, time.Since(createNetStartTime))
 
 	transformNetStartTime := time.Now()
-	transformNetTx, err := pWallet.IssueTransformNetTx(
+	transformNetTx, err := pWallet.IssueTransformChainTx(
 		createNetTxID,
 		createAssetTxID,
 		50*units.MegaLux,
@@ -155,14 +155,14 @@ func ExampleWallet() {
 	// Generate a test node ID for this example
 	testNodeID := ids.GenerateTestNodeID()
 	addNetValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Net: createNetTxID,
+			Chain: createNetTxID,
 		},
 		&signer.Empty{},
 		createAssetTx.ID(),
@@ -179,14 +179,14 @@ func ExampleWallet() {
 
 	addPermissionlessDelegatorStartTime := time.Now()
 	addNetDelegatorTx, err := pWallet.IssueAddPermissionlessDelegatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Net: createNetTxID,
+			Chain: createNetTxID,
 		},
 		createAssetTxID,
 		&secp256k1fx.OutputOwners{},

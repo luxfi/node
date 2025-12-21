@@ -103,11 +103,11 @@ func (*proposalTxExecutor) ExportTx(*txs.ExportTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+func (*proposalTxExecutor) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) TransformNetTx(*txs.TransformNetTx) error {
+func (*proposalTxExecutor) TransformChainTx(*txs.TransformChainTx) error {
 	return ErrWrongTxType
 }
 
@@ -119,7 +119,7 @@ func (*proposalTxExecutor) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDe
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+func (*proposalTxExecutor) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	return ErrWrongTxType
 }
 
@@ -127,7 +127,7 @@ func (*proposalTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (*proposalTxExecutor) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
 	return ErrWrongTxType
 }
 
@@ -197,9 +197,9 @@ func (e *proposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return nil
 }
 
-func (e *proposalTxExecutor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-	// AddNetValidatorTx is a proposal transaction until the Banff fork
-	// activation. Following the activation, AddNetValidatorTxs must be
+func (e *proposalTxExecutor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
+	// AddChainValidatorTx is a proposal transaction until the Banff fork
+	// activation. Following the activation, AddChainValidatorTxs must be
 	// issued into StandardBlocks.
 	currentTimestamp := e.onCommitState.GetTimestamp()
 	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
@@ -211,7 +211,7 @@ func (e *proposalTxExecutor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error 
 		)
 	}
 
-	if err := verifyAddNetValidatorTx(
+	if err := verifyAddChainValidatorTx(
 		e.backend,
 		e.feeCalculator,
 		e.onCommitState,
@@ -402,7 +402,7 @@ func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 	}
 
 	// If the reward is aborted, then the current supply should be decreased.
-	currentSupply, err := e.onAbortState.GetCurrentSupply(stakerToReward.NetID)
+	currentSupply, err := e.onAbortState.GetCurrentSupply(stakerToReward.ChainID)
 	if err != nil {
 		return err
 	}
@@ -410,7 +410,7 @@ func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 	if err != nil {
 		return err
 	}
-	e.onAbortState.SetCurrentSupply(stakerToReward.NetID, newSupply)
+	e.onAbortState.SetCurrentSupply(stakerToReward.ChainID, newSupply)
 	return nil
 }
 
@@ -469,7 +469,7 @@ func (e *proposalTxExecutor) rewardValidatorTx(uValidatorTx txs.ValidatorTx, val
 
 	// Provide the accrued delegatee rewards from successful delegations here.
 	delegateeReward, err := e.onCommitState.GetDelegateeReward(
-		validator.NetID,
+		validator.ChainID,
 		validator.NodeID,
 	)
 	if err != nil {
@@ -542,7 +542,7 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 
 	// We're (possibly) rewarding a delegator, so we need to fetch
 	// the validator they are delegated to.
-	validator, err := e.onCommitState.GetCurrentValidator(delegator.NetID, delegator.NodeID)
+	validator, err := e.onCommitState.GetCurrentValidator(delegator.ChainID, delegator.NodeID)
 	if err != nil {
 		return fmt.Errorf("failed to get whether %s is a validator: %w", delegator.NodeID, err)
 	}
@@ -555,7 +555,7 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	// Invariant: Delegators must only be able to reference validator
 	//            transactions that implement [txs.ValidatorTx]. All
 	//            validator transactions implement this interface except the
-	//            AddNetValidatorTx.
+	//            AddChainValidatorTx.
 	vdrTx, ok := vdrTxIntf.Unsigned.(txs.ValidatorTx)
 	if !ok {
 		return ErrWrongTxType
@@ -600,7 +600,7 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	// Reward the delegatee here
 	if e.backend.Config.UpgradeConfig.IsCortinaActivated(validator.StartTime) {
 		previousDelegateeReward, err := e.onCommitState.GetDelegateeReward(
-			validator.NetID,
+			validator.ChainID,
 			validator.NodeID,
 		)
 		if err != nil {
@@ -615,7 +615,7 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 		// For any validators starting after [CortinaTime], we defer rewarding the
 		// [reward] until their staking period is over.
 		err = e.onCommitState.SetDelegateeReward(
-			validator.NetID,
+			validator.ChainID,
 			validator.NodeID,
 			newDelegateeReward,
 		)

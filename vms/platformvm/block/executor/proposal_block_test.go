@@ -107,7 +107,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 		iterator.FromSlice(&state.Staker{
 			TxID:      addValTx.ID(),
 			NodeID:    utx.NodeID(),
-			NetID:  utx.NetID(),
+			ChainID:  utx.ChainID(),
 			StartTime: utx.StartTime(),
 			NextTime:  chainTime,
 			EndTime:   chainTime,
@@ -565,22 +565,22 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 					subnetIDs: []ids.ID{netID},
 				})
 
-				tx, err := wallet.IssueAddNetValidatorTx(
-					&txs.NetValidator{
+				tx, err := wallet.IssueAddChainValidatorTx(
+					&txs.ChainValidator{
 						Validator: txs.Validator{
 							NodeID: subStaker.nodeID,
 							Start:  uint64(subStaker.startTime.Unix()),
 							End:    uint64(subStaker.endTime.Unix()),
 							Wght:   10,
 						},
-						Net: netID,
+						Chain: netID,
 					},
 				)
 				require.NoError(err)
 
 				subnetStaker, err := state.NewPendingStaker(
 					tx.ID(),
-					tx.Unsigned.(*txs.AddNetValidatorTx),
+					tx.Unsigned.(*txs.AddChainValidatorTx),
 				)
 				require.NoError(err)
 
@@ -732,20 +732,20 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 	// Add a subnet validator to the staker set
 	subnetValidatorNodeID := genesistest.DefaultNodeIDs[0]
 	subnetVdr1EndTime := genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration)
-	tx, err := wallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	tx, err := wallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: subnetValidatorNodeID,
 				Start:  genesistest.DefaultValidatorStartTimeUnix,
 				End:    uint64(subnetVdr1EndTime.Unix()),
 				Wght:   1,
 			},
-			Net: netID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
 
-	addNetValTx := tx.Unsigned.(*txs.AddNetValidatorTx)
+	addNetValTx := tx.Unsigned.(*txs.AddChainValidatorTx)
 	staker, err := state.NewCurrentStaker(
 		tx.ID(),
 		addNetValTx,
@@ -762,22 +762,22 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 
 	// Queue a staker that joins the staker set after the above validator leaves
 	subnetVdr2NodeID := genesistest.DefaultNodeIDs[1]
-	tx, err = wallet.IssueAddNetValidatorTx(
-		&txs.NetValidator{
+	tx, err = wallet.IssueAddChainValidatorTx(
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: subnetVdr2NodeID,
 				Start:  uint64(subnetVdr1EndTime.Add(time.Second).Unix()),
 				End:    uint64(subnetVdr1EndTime.Add(time.Second).Add(defaultMinStakingDuration).Unix()),
 				Wght:   1,
 			},
-			Net: netID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
 
 	staker, err = state.NewPendingStaker(
 		tx.ID(),
-		tx.Unsigned.(*txs.AddNetValidatorTx),
+		tx.Unsigned.(*txs.AddChainValidatorTx),
 	)
 	require.NoError(err)
 
@@ -888,22 +888,22 @@ func TestBanffProposalBlockTrackedNet(t *testing.T) {
 			subnetVdr1StartTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Minute)
 			subnetVdr1EndTime := genesistest.DefaultValidatorStartTime.Add(10 * defaultMinStakingDuration).Add(1 * time.Minute)
 
-			tx, err := wallet.IssueAddNetValidatorTx(
-				&txs.NetValidator{
+			tx, err := wallet.IssueAddChainValidatorTx(
+				&txs.ChainValidator{
 					Validator: txs.Validator{
 						NodeID: subnetValidatorNodeID,
 						Start:  uint64(subnetVdr1StartTime.Unix()),
 						End:    uint64(subnetVdr1EndTime.Unix()),
 						Wght:   1,
 					},
-					Net: netID,
+					Chain: netID,
 				},
 			)
 			require.NoError(err)
 
 			staker, err := state.NewPendingStaker(
 				tx.ID(),
-				tx.Unsigned.(*txs.AddNetValidatorTx),
+				tx.Unsigned.(*txs.AddChainValidatorTx),
 			)
 			require.NoError(err)
 
@@ -1376,14 +1376,14 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	}
 
 	addValidatorTx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   env.config.MinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		env.ctx.XAssetID,
@@ -1458,14 +1458,14 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	require.NoError(err)
 
 	addValidatorTx2, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   env.config.MinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		env.ctx.XAssetID,

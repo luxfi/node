@@ -46,7 +46,7 @@ func (*warpVerifier) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+func (*warpVerifier) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	return nil
 }
 
@@ -78,11 +78,11 @@ func (*warpVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+func (*warpVerifier) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) TransformNetTx(*txs.TransformNetTx) error {
+func (*warpVerifier) TransformChainTx(*txs.TransformChainTx) error {
 	return nil
 }
 
@@ -94,7 +94,7 @@ func (*warpVerifier) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegato
 	return nil
 }
 
-func (*warpVerifier) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+func (*warpVerifier) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	return nil
 }
 
@@ -102,7 +102,7 @@ func (*warpVerifier) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (*warpVerifier) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (*warpVerifier) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
 	return nil
 }
 

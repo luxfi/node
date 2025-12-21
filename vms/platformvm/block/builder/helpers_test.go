@@ -143,7 +143,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.ctx.NetworkID = consensusCtx.NetworkID
 	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.NodeID = consensusCtx.NodeID
-	res.ctx.NetID = consensusCtx.NetID
+	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.XAssetID = consensusCtx.XAssetID
 	res.ctx.LUXAssetID = consensusCtx.LUXAssetID
 	res.ctx.XChainID = consensusCtx.XChainID
@@ -166,7 +166,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	stateConsensusCtx := &consensusctx.Context{
 		NetworkID:  res.ctx.NetworkID,
 		QuantumID:  res.ctx.NetworkID,
-		NetID:      res.ctx.NetID,
+		ChainID:      res.ctx.ChainID,
 		ChainID:    res.ctx.ChainID,
 		NodeID:     res.ctx.NodeID,
 		XAssetID:   res.ctx.XAssetID,
@@ -189,7 +189,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	backendConsensusCtx := &consensusctx.Context{
 		NetworkID:      res.ctx.NetworkID,
 		QuantumID:      res.ctx.NetworkID,
-		NetID:          res.ctx.NetID,
+		ChainID:          res.ctx.ChainID,
 		ChainID:        res.ctx.ChainID,
 		NodeID:         res.ctx.NodeID,
 		XAssetID:       res.ctx.XAssetID,
@@ -245,7 +245,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.network, err = network.New(
 		res.ctx.Log,
 		res.ctx.NodeID,
-		res.ctx.NetID,
+		res.ctx.ChainID,
 		validatorstest.Manager,
 		txVerifier,
 		res.mempool,
@@ -296,7 +296,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	walletCtx := &consensusctx.Context{
 		NetworkID:    e.ctx.NetworkID,
 		QuantumID:    e.ctx.NetworkID,
-		NetID:        e.ctx.NetID,
+		ChainID:        e.ctx.ChainID,
 		ChainID:      e.ctx.ChainID,
 		NodeID:       e.ctx.NodeID,
 		XAssetID:     e.ctx.XAssetID,

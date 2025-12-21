@@ -1,0 +1,180 @@
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package node
+
+import (
+	"context"
+	"sync"
+	"sync/atomic"
+
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/networking/handler"
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/version"
+)
+
+var _ Router = (*ValidatorManager)(nil)
+
+// ValidatorManager wraps the consensus router and handles:
+// - Validator connection tracking
+// - Beacon connection management for bootstrap
+// - Sybil protection weight management
+type ValidatorManager struct {
+	Router
+	log log.Logger
+
+	// Validator tracking
+	vdrs       validators.Manager
+	validators map[ids.ID]map[ids.NodeID]uint64
+	weight     uint64
+	mu         sync.RWMutex
+
+	// Beacon tracking for bootstrap
+	beacons                     validators.Manager
+	requiredConns               int64
+	numConns                    int64
+	onSufficientlyConnected     chan struct{}
+	onceOnSufficientlyConnected sync.Once
+
+	// Feature flags
+	sybilProtectionDisabled bool
+}
+
+// ValidatorManagerConfig configures the validator manager
+type ValidatorManagerConfig struct {
+	Router                  Router
+	Log                     log.Logger
+	Validators              validators.Manager
+	Beacons                 validators.Manager
+	SybilProtectionDisabled bool
+	SybilProtectionWeight   uint64
+	RequiredBeaconConns     int64
+	OnSufficientlyConnected chan struct{}
+}
+
+// NewValidatorManager creates a new validator manager
+func NewValidatorManager(cfg ValidatorManagerConfig) *ValidatorManager {
+	return &ValidatorManager{
+		Router:                  cfg.Router,
+		log:                     cfg.Log,
+		vdrs:                    cfg.Validators,
+		validators:              make(map[ids.ID]map[ids.NodeID]uint64),
+		weight:                  cfg.SybilProtectionWeight,
+		beacons:                 cfg.Beacons,
+		requiredConns:           cfg.RequiredBeaconConns,
+		onSufficientlyConnected: cfg.OnSufficientlyConnected,
+		sybilProtectionDisabled: cfg.SybilProtectionDisabled,
+	}
+}
+
+func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
+	// Track validator locally when sybil protection is disabled
+	if v.sybilProtectionDisabled && constants.PrimaryNetworkID == netID {
+		v.mu.Lock()
+		if v.validators[netID] == nil {
+			v.validators[netID] = make(map[ids.NodeID]uint64)
+		}
+		v.validators[netID][nodeID] = v.weight
+		v.mu.Unlock()
+
+		v.log.Debug("tracked validator connection",
+			log.Stringer("nodeID", nodeID),
+			log.Stringer("netID", netID),
+			log.Uint64("weight", v.weight),
+		)
+	}
+
+	// Track beacon connections for bootstrap
+	if v.beacons != nil {
+		_, isBeacon := v.beacons.GetValidator(constants.PrimaryNetworkID, nodeID)
+		if isBeacon && constants.PrimaryNetworkID == netID {
+			if atomic.AddInt64(&v.numConns, 1) >= v.requiredConns {
+				v.onceOnSufficientlyConnected.Do(func() {
+					if v.onSufficientlyConnected != nil {
+						close(v.onSufficientlyConnected)
+					}
+				})
+			}
+		}
+	}
+
+	// Forward to underlying router
+	v.Router.Connected(nodeID, nodeVersion, netID)
+}
+
+func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
+	// Remove from local tracking when sybil protection is disabled
+	if v.sybilProtectionDisabled {
+		v.mu.Lock()
+		if v.validators[constants.PrimaryNetworkID] != nil {
+			delete(v.validators[constants.PrimaryNetworkID], nodeID)
+		}
+		v.mu.Unlock()
+
+		v.log.Debug("removed validator",
+			log.Stringer("nodeID", nodeID),
+			log.Stringer("netID", constants.PrimaryNetworkID),
+		)
+	}
+
+	// Track beacon disconnections
+	if v.beacons != nil {
+		if _, isBeacon := v.beacons.GetValidator(constants.PrimaryNetworkID, nodeID); isBeacon {
+			atomic.AddInt64(&v.numConns, -1)
+		}
+	}
+
+	// Forward to underlying router
+	v.Router.Disconnected(nodeID)
+}
+
+// Router interface stubs - forward to underlying router or no-op
+func (v *ValidatorManager) Deprecated() {}
+
+func (v *ValidatorManager) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {}
+
+func (v *ValidatorManager) Benched(chainID ids.ID, nodeID ids.NodeID) {}
+
+func (v *ValidatorManager) Unbenched(chainID ids.ID, nodeID ids.NodeID) {}
+
+func (v *ValidatorManager) HealthCheck(ctx context.Context) (interface{}, error) {
+	return nil, nil
+}
+
+func (v *ValidatorManager) Initialize(
+	nodeID ids.NodeID,
+	logger log.Logger,
+	timeoutManager timer.AdaptiveTimeoutManager,
+	gossipFrequency uint64,
+	harshQuittersTime uint64,
+	harshQuittersSlashingFraction uint64,
+	appGossipValidatorSize uint64,
+	appGossipNonValidatorSize uint64,
+	gossipAcceptedFrontierSize uint64,
+	appSendQueueSize uint64,
+	peerNotConnectedF uint64,
+	connectedPeers ...ids.NodeID,
+) error {
+	return nil
+}
+
+func (v *ValidatorManager) RegisterRequest(
+	ctx context.Context,
+	nodeID ids.NodeID,
+	chainID ids.ID,
+	requestID uint32,
+	op message.Op,
+	failedMsg message.InboundMessage,
+	engineType p2p.EngineType,
+) {
+}
+
+func (v *ValidatorManager) HandleInbound(ctx context.Context, msg message.InboundMessage) {}
+
+func (v *ValidatorManager) Shutdown(ctx context.Context) {}

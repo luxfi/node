@@ -128,7 +128,7 @@ func TestCreateChainTxNoSuchNet(t *testing.T) {
 	)
 	require.NoError(err)
 
-	tx.Unsigned.(*txs.CreateChainTx).NetID = ids.GenerateTestID()
+	tx.Unsigned.(*txs.CreateChainTx).ChainID = ids.GenerateTestID()
 
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)

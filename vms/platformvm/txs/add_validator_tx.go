@@ -54,7 +54,7 @@ func (tx *AddValidatorTx) InitCtx(ctx *consensusctx.Context) {
 	// Owner doesn't have InitCtx method
 }
 
-func (*AddValidatorTx) NetID() ids.ID {
+func (*AddValidatorTx) ChainID() ids.ID {
 	return constants.PrimaryNetworkID
 }
 

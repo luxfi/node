@@ -474,13 +474,13 @@ func (d *diff) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 }
 
 func (d *diff) AddNetTransformation(transformNetTxIntf *txs.Tx) {
-	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformNetTx)
+	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformChainTx)
 	if d.transformedNets == nil {
 		d.transformedNets = map[ids.ID]*txs.Tx{
-			transformNetTx.Net: transformNetTxIntf,
+			transformNetTx.Chain: transformNetTxIntf,
 		}
 	} else {
-		d.transformedNets[transformNetTx.Net] = transformNetTxIntf
+		d.transformedNets[transformNetTx.Chain] = transformNetTxIntf
 	}
 }
 
@@ -488,15 +488,15 @@ func (d *diff) AddChain(createChainTx *txs.Tx) {
 	tx := createChainTx.Unsigned.(*txs.CreateChainTx)
 	if d.addedChains == nil {
 		d.addedChains = map[ids.ID][]*txs.Tx{
-			tx.NetID: {createChainTx},
+			tx.ChainID: {createChainTx},
 		}
 	} else {
-		d.addedChains[tx.NetID] = append(d.addedChains[tx.NetID], createChainTx)
+		d.addedChains[tx.ChainID] = append(d.addedChains[tx.ChainID], createChainTx)
 	}
 
 	// Register chain name for uniqueness (case-insensitive)
-	if tx.ChainName != "" {
-		nameLower := strings.ToLower(tx.ChainName)
+	if tx.BlockchainName != "" {
+		nameLower := strings.ToLower(tx.BlockchainName)
 		chainID := createChainTx.ID()
 		if d.addedChainNames == nil {
 			d.addedChainNames = map[string]ids.ID{

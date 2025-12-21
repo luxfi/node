@@ -29,7 +29,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
@@ -166,7 +166,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{

@@ -589,29 +589,27 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 			return err
 		}
 
-		consensusRouter = &insecureValidatorManager{
-			log:        n.Log,
-			Router:     consensusRouter,
-			vdrs:       n.vdrs,
-			weight:     n.Config.SybilProtectionDisabledWeight,
-			validators: make(map[ids.ID]map[ids.NodeID]uint64),
-		}
 	}
 
+	// Create unified validator manager
 	n.onSufficientlyConnected = make(chan struct{})
 	numBootstrappers := n.bootstrappers.NumValidators(constants.PrimaryNetworkID)
-	requiredConns := (3*numBootstrappers + 3) / 4
+	requiredConns := int64((3*numBootstrappers + 3) / 4)
 
-	if requiredConns > 0 {
-		consensusRouter = &beaconManager{
-			Router:                  consensusRouter,
-			beacons:                 n.bootstrappers,
-			requiredConns:           int64(requiredConns),
-			onSufficientlyConnected: n.onSufficientlyConnected,
-		}
-	} else {
+	if requiredConns == 0 {
 		close(n.onSufficientlyConnected)
 	}
+
+	consensusRouter = NewValidatorManager(ValidatorManagerConfig{
+		Router:                  consensusRouter,
+		Log:                     n.Log,
+		Validators:              n.vdrs,
+		Beacons:                 n.bootstrappers,
+		SybilProtectionDisabled: !n.Config.SybilProtectionEnabled,
+		SybilProtectionWeight:   n.Config.SybilProtectionDisabledWeight,
+		RequiredBeaconConns:     requiredConns,
+		OnSufficientlyConnected: n.onSufficientlyConnected,
+	})
 
 	// add node configs to network config
 	n.Config.NetworkConfig.MyNodeID = n.ID
@@ -913,7 +911,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		NetID:         constants.PrimaryNetworkID,
+		ChainID:         constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,

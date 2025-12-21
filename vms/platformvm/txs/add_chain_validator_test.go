@@ -20,7 +20,7 @@ import (
 )
 
 // Note: Consider refactoring to use table tests for better test organization
-func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
+func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
@@ -28,7 +28,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}
@@ -36,7 +36,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 
 	var (
 		stx               *Tx
-		addNetValidatorTx *AddNetValidatorTx
+		addNetValidatorTx *AddChainValidatorTx
 		err               error
 	)
 
@@ -74,7 +74,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	subnetAuth := &secp256k1fx.Input{
 		SigIndices: []uint32{0, 1},
 	}
-	addNetValidatorTx = &AddNetValidatorTx{
+	addNetValidatorTx = &AddChainValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
@@ -82,16 +82,16 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
-		NetValidator: NetValidator{
+		ChainValidator: ChainValidator{
 			Validator: Validator{
 				NodeID: nodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
 			},
-			Net: netID,
+			Chain: netID,
 		},
-		NetAuth: subnetAuth,
+		ChainAuth: subnetAuth,
 	}
 
 	// Case: valid tx
@@ -110,12 +110,12 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 
 	// Case: Specifies primary network NetID
 	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.Net = ids.Empty
+	addNetValidatorTx.Chain = ids.Empty
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
 	require.ErrorIs(err, errAddPrimaryNetworkValidator)
-	addNetValidatorTx.Net = netID
+	addNetValidatorTx.Chain = netID
 
 	// Case: No weight
 	addNetValidatorTx.SyntacticallyVerified = false
@@ -128,7 +128,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 
 	// Case: Net auth indices not unique
 	addNetValidatorTx.SyntacticallyVerified = false
-	input := addNetValidatorTx.NetAuth.(*secp256k1fx.Input)
+	input := addNetValidatorTx.ChainAuth.(*secp256k1fx.Input)
 	oldInput := *input
 	input.SigIndices[0] = input.SigIndices[1]
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
@@ -139,7 +139,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 
 	// Case: adding to Primary Network
 	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.Net = constants.PrimaryNetworkID
+	addNetValidatorTx.Chain = constants.PrimaryNetworkID
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
 	err = stx.SyntacticVerify(ctx)
@@ -154,7 +154,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}
@@ -162,7 +162,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 
 	var (
 		stx               *Tx
-		addNetValidatorTx *AddNetValidatorTx
+		addNetValidatorTx *AddChainValidatorTx
 		err               error
 	)
 
@@ -193,7 +193,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	subnetAuth := &secp256k1fx.Input{
 		SigIndices: []uint32{0, 1},
 	}
-	addNetValidatorTx = &AddNetValidatorTx{
+	addNetValidatorTx = &AddChainValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    ctx.NetworkID,
 			BlockchainID: ctx.ChainID,
@@ -201,16 +201,16 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
-		NetValidator: NetValidator{
+		ChainValidator: ChainValidator{
 			Validator: Validator{
 				NodeID: nodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
 			},
-			Net: netID,
+			Chain: netID,
 		},
-		NetAuth: subnetAuth,
+		ChainAuth: subnetAuth,
 	}
 
 	// Case: valid tx
@@ -228,20 +228,20 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	require.Equal(stx, parsedTx)
 }
 
-func TestAddNetValidatorTxNotValidatorTx(t *testing.T) {
-	txIntf := any((*AddNetValidatorTx)(nil))
+func TestAddChainValidatorTxNotValidatorTx(t *testing.T) {
+	txIntf := any((*AddChainValidatorTx)(nil))
 	_, ok := txIntf.(ValidatorTx)
 	require.False(t, ok)
 }
 
-func TestAddNetValidatorTxNotDelegatorTx(t *testing.T) {
-	txIntf := any((*AddNetValidatorTx)(nil))
+func TestAddChainValidatorTxNotDelegatorTx(t *testing.T) {
+	txIntf := any((*AddChainValidatorTx)(nil))
 	_, ok := txIntf.(DelegatorTx)
 	require.False(t, ok)
 }
 
-func TestAddNetValidatorTxNotPermissionlessStaker(t *testing.T) {
-	txIntf := any((*AddNetValidatorTx)(nil))
+func TestAddChainValidatorTxNotPermissionlessStaker(t *testing.T) {
+	txIntf := any((*AddChainValidatorTx)(nil))
 	_, ok := txIntf.(PermissionlessStaker)
 	require.False(t, ok)
 }

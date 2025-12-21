@@ -134,7 +134,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	res.ctx = &testContext{
 		Context:      context.Background(),
 		NetworkID:    consensusCtx.NetworkID,
-		NetID:        consensusCtx.NetID,
+		ChainID:        consensusCtx.ChainID,
 		ChainID:      consensusCtx.ChainID,
 		NodeID:       consensusCtx.NodeID,
 		XChainID:     consensusCtx.XChainID,

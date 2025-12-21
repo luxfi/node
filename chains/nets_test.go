@@ -116,7 +116,7 @@ func TestNetConfigs(t *testing.T) {
 			name: "use net config",
 			config: map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
-				testNetID: {
+				testChainID: {
 					ValidatorOnly: true,
 				},
 			},

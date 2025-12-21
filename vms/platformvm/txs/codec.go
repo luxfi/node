@@ -83,7 +83,7 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&secp256k1fx.OutputOwners{}),
 
 		targetCodec.RegisterType(&AddValidatorTx{}),
-		targetCodec.RegisterType(&AddNetValidatorTx{}),
+		targetCodec.RegisterType(&AddChainValidatorTx{}),
 		targetCodec.RegisterType(&AddDelegatorTx{}),
 		targetCodec.RegisterType(&CreateChainTx{}),
 		targetCodec.RegisterType(&CreateNetTx{}),
@@ -102,8 +102,8 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 // valid during the Banff series of upgrades.
 func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&RemoveNetValidatorTx{}),
-		targetCodec.RegisterType(&TransformNetTx{}),
+		targetCodec.RegisterType(&RemoveChainValidatorTx{}),
+		targetCodec.RegisterType(&TransformChainTx{}),
 		targetCodec.RegisterType(&AddPermissionlessValidatorTx{}),
 		targetCodec.RegisterType(&AddPermissionlessDelegatorTx{}),
 
@@ -116,7 +116,7 @@ func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 // were valid during the Durango series of upgrades.
 func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&TransferNetOwnershipTx{}),
+		targetCodec.RegisterType(&TransferChainOwnershipTx{}),
 		targetCodec.RegisterType(&BaseTx{}),
 	)
 }
@@ -125,7 +125,7 @@ func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 // were valid during the Etna series of upgrades.
 func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&ConvertNetToL1Tx{}),
+		targetCodec.RegisterType(&ConvertChainToL1Tx{}),
 		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
 		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),

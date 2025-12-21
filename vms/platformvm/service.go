@@ -634,7 +634,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 			err,
 		)
 	}
-	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformChainTx)
 	if !ok {
 		return fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",
@@ -805,7 +805,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 		}
 		for currentStakerIterator.Next() {
 			staker := currentStakerIterator.Value()
-			if netID != staker.NetID {
+			if netID != staker.ChainID {
 				continue
 			}
 			targetStakers = append(targetStakers, staker)
@@ -841,7 +841,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 		apiStaker := toPlatformStaker(currentStaker)
 		potentialReward := avajson.Uint64(currentStaker.PotentialReward)
 
-		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.NetID, currentStaker.NodeID)
+		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.ChainID, currentStaker.NodeID)
 		if err != nil {
 			return nil, err
 		}
@@ -1009,7 +1009,7 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 	}
 
 	reply.APIL1Validator = apiVdr
-	reply.NetID = l1Validator.NetID
+	reply.NetID = l1Validator.ChainID
 	reply.Height = avajson.Uint64(height)
 	return nil
 }
@@ -1219,7 +1219,7 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-	_, isValidator := s.vm.Validators.GetValidator(chain.NetID, s.vm.nodeID)
+	_, isValidator := s.vm.Validators.GetValidator(chain.ChainID, s.vm.nodeID)
 	return isValidator
 }
 
@@ -1378,7 +1378,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			}
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
 				ID:    chainID,
-				Name:  chain.ChainName,
+				Name:  chain.BlockchainName,
 				NetID: netID,
 				VMID:  chain.VMID,
 			})
@@ -1397,7 +1397,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 		}
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
 			ID:    chainID,
-			Name:  chain.ChainName,
+			Name:  chain.BlockchainName,
 			NetID: constants.PrimaryNetworkID,
 			VMID:  chain.VMID,
 		})
@@ -1671,7 +1671,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 			err,
 		)
 	}
-	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformChainTx)
 	if !ok {
 		return fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",

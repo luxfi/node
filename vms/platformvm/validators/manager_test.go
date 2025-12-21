@@ -50,7 +50,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       pk,
-			NetID:        constants.PrimaryNetworkID,
+			ChainID:        constants.PrimaryNetworkID,
 			Weight:          1,
 			StartTime:       startTime,
 			EndTime:         endTime,
@@ -60,7 +60,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:      ids.GenerateTestID(),
 			NodeID:    primaryStaker.NodeID,
 			PublicKey: nil, // inherited from primaryStaker
-			NetID:  subnetID,
+			ChainID:  subnetID,
 			Weight:    1,
 			StartTime: upgradeTime,
 			EndTime:   endTime,

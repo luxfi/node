@@ -284,14 +284,14 @@ func TestGetTx(t *testing.T) {
 					Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 				}
 				tx, err := wallet.IssueAddPermissionlessValidatorTx(
-					&txs.NetValidator{
+					&txs.ChainValidator{
 						Validator: txs.Validator{
 							NodeID: ids.GenerateTestNodeID(),
 							Start:  uint64(s.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
 							End:    uint64(s.vm.clock.Time().Add(txexecutor.SyncBound).Add(defaultMinStakingDuration).Unix()),
 							Wght:   s.vm.MinValidatorStake,
 						},
-						Net: constants.PrimaryNetworkID,
+						Chain: constants.PrimaryNetworkID,
 					},
 					pop,
 					s.vm.ctx.LUXAssetID,
@@ -644,7 +644,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	genesis := genesistest.New(t, genesistest.Config{})
 
 	// Call getValidators
-	args := GetCurrentValidatorsArgs{NetID: constants.PrimaryNetworkID}
+	args := GetCurrentValidatorsArgs{ChainID: constants.PrimaryNetworkID}
 	response := GetCurrentValidatorsReply{}
 
 	// Connect to nodes other than the last node in genesis.Validators, which is the node being tested.
@@ -721,7 +721,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	service.vm.ctx.Lock.Unlock()
 
 	// Call getCurrentValidators
-	args = GetCurrentValidatorsArgs{NetID: constants.PrimaryNetworkID}
+	args = GetCurrentValidatorsArgs{ChainID: constants.PrimaryNetworkID}
 	require.NoError(service.GetCurrentValidators(nil, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators))
 
@@ -737,7 +737,7 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.Nil(vdr.Delegators)
 
 		innerArgs := GetCurrentValidatorsArgs{
-			NetID:   constants.PrimaryNetworkID,
+			ChainID:   constants.PrimaryNetworkID,
 			NodeIDs: []ids.NodeID{vdr.NodeID},
 		}
 		innerResponse := GetCurrentValidatorsReply{}
@@ -818,14 +818,14 @@ func TestGetValidatorsAt(t *testing.T) {
 	require.NoError(err)
 
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
 				End:    uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Add(defaultMinStakingDuration).Unix()),
 				Wght:   service.vm.MinValidatorStake,
 			},
-			Net: constants.PrimaryNetworkID,
+			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
 		service.vm.ctx.LUXAssetID,
@@ -891,7 +891,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 			name: "specific height",
 			args: GetValidatorsAtArgs{
 				Height:   pchainapi.Height(12345),
-				NetID: subnetID,
+				ChainID: subnetID,
 			},
 			json: `{"height":"12345","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
@@ -899,7 +899,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 			name: "proposed height",
 			args: GetValidatorsAtArgs{
 				Height:   pchainapi.ProposedHeight,
-				NetID: subnetID,
+				ChainID: subnetID,
 			},
 			json: `{"height":"proposed","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
@@ -1368,7 +1368,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					NetID:  subnetID,
+					ChainID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -1376,7 +1376,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					NetID:  subnetID,
+					ChainID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -1389,7 +1389,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					NetID:     subnetID,
+					ChainID:     subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    0,
 					PublicKey:    pkBytes,
@@ -1397,7 +1397,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					NetID:     subnetID,
+					ChainID:     subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    1,
@@ -1410,7 +1410,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					NetID:  subnetID,
+					ChainID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    123123,
@@ -1418,7 +1418,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					NetID:  subnetID,
+					ChainID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    0,
@@ -1428,7 +1428,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          subnetID,
+					ChainID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					StartTime:         0,
 					PublicKey:         pkBytes,
@@ -1438,7 +1438,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          subnetID,
+					ChainID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					StartTime:         2,
@@ -1447,7 +1447,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          subnetID,
+					ChainID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         3,
@@ -1468,7 +1468,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			for _, staker := range test.initial {
 				primaryStaker := &state.Staker{
 					TxID:      ids.GenerateTestID(),
-					NetID:  constants.PrimaryNetworkID,
+					ChainID:  constants.PrimaryNetworkID,
 					NodeID:    staker.NodeID,
 					PublicKey: staker.PublicKey,
 					Weight:    5,
@@ -1570,7 +1570,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			}
 
 			args := GetCurrentValidatorsArgs{
-				NetID: subnetID,
+				ChainID: subnetID,
 			}
 			reply := GetCurrentValidatorsReply{}
 			require.NoError(service.GetCurrentValidators(&http.Request{}, &args, &reply))

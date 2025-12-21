@@ -2687,7 +2687,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 
 			proVM.Clock.Set(test.time)
 			proVM.ctx.NetworkID = test.networkID
-			proVM.ctx.NetID = test.subnetID
+			proVM.ctx.ChainID = test.subnetID
 
 
 			actualPChainHeight, err := proVM.selectChildPChainHeight(

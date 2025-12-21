@@ -352,15 +352,16 @@ func (r *routerImpl) Shutdown(ctx context.Context) {
 
 // getChainID extracts the chain ID from a message
 func getChainID(msg message.InboundMessage) (ids.ID, error) {
-	// Try to get chain ID from message fields
-	// This is a simplified version - you may need to adjust based on your message structure
+	// Get the underlying message
 	msgFields := msg.Message()
 	if msgFields == nil {
 		return ids.Empty, ErrNoChainID
 	}
 
-	// Different message types may have chain ID in different fields
-	// You'll need to implement the actual extraction logic based on your message format
-	// For now, returning empty ID
-	return ids.Empty, ErrNoChainID
+	// Use the message package's GetChainID helper which handles all message types
+	chainID, err := message.GetChainID(msgFields)
+	if err != nil {
+		return ids.Empty, ErrNoChainID
+	}
+	return chainID, nil
 }

@@ -38,12 +38,25 @@ func (w *handlerWrapper) HandleInbound(ctx context.Context, msg message.InboundM
 	// Extract request ID from message
 	requestID, _ := message.GetRequestID(msg.Message())
 
-	// Convert message.Op to handler.Op
+	// Extract container bytes from the message (for Put, PushQuery, AppGossip, etc.)
+	containerBytes := message.GetContainerBytes(msg.Message())
+
+	// Map message.Op to consensus handler.Op
+	consensusOp, ok := message.ToConsensusOp(msg.Op())
+	if !ok {
+		w.log.Debug("unhandled message op",
+			log.Stringer("nodeID", msg.NodeID()),
+			log.Stringer("op", msg.Op()),
+		)
+		return
+	}
+
+	// Convert to handler.Op
 	handlerMsg := handler.Message{
 		NodeID:    ids.NodeID(msg.NodeID()),
 		RequestID: requestID,
-		Op:        handler.Op(msg.Op()),
-		Message:   nil, // The handler.Handler from consensus package doesn't actually need the bytes
+		Op:        handler.Op(consensusOp),
+		Message:   containerBytes,
 	}
 
 	if err := w.h.HandleInbound(ctx, handlerMsg); err != nil {

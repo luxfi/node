@@ -132,7 +132,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context,
 	defer i.lock.Unlock()
 
 	// Extract IDs from context
-	netID := ctx.NetID
+	netID := ctx.ChainID
 	chainID := ctx.ChainID
 
 	if i.closed {

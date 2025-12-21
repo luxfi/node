@@ -153,12 +153,12 @@ func advanceTimeTo(
 			continue
 		}
 
-		supply, err := changes.GetCurrentSupply(stakerToRemove.NetID)
+		supply, err := changes.GetCurrentSupply(stakerToRemove.ChainID)
 		if err != nil {
 			return nil, false, err
 		}
 
-		rewards, err := GetRewardsCalculator(backend, parentState, stakerToRemove.NetID)
+		rewards, err := GetRewardsCalculator(backend, parentState, stakerToRemove.ChainID)
 		if err != nil {
 			return nil, false, err
 		}
@@ -172,7 +172,7 @@ func advanceTimeTo(
 
 		// Invariant: [rewards.Calculate] can never return a [potentialReward]
 		//            such that [supply + potentialReward > maximumSupply].
-		changes.SetCurrentSupply(stakerToRemove.NetID, supply+potentialReward)
+		changes.SetCurrentSupply(stakerToRemove.ChainID, supply+potentialReward)
 
 		switch stakerToRemove.Priority {
 		case txs.PrimaryNetworkValidatorPendingPriority, txs.NetPermissionlessValidatorPendingPriority:
@@ -361,7 +361,7 @@ func GetRewardsCalculator(
 		return backend.Rewards, nil
 	}
 
-	transformNet, err := GetTransformNetTx(parentState, netID)
+	transformNet, err := GetTransformChainTx(parentState, netID)
 	if err != nil {
 		return nil, err
 	}

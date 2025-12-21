@@ -30,7 +30,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.UnitTestID,
 		QuantumID:  constants.UnitTestID,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 		NodeID:     nodeID,
@@ -145,7 +145,7 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}

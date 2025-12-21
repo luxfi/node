@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -177,15 +176,6 @@ func (vm *VMClient) Initialize(
 		return errUnsupportedFXs
 	}
 
-	// Debug all Initialize calls
-	{
-		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG Initialize: called with chainCtxIface type=%T\n", time.Now().Format("15:04:05.000"), chainCtxIface)
-			debugFile.Close()
-		}
-	}
-
 	// Convert interface{} parameters to concrete types
 	// Handle both *rpcchainvm.Context and *consensuscontext.Context
 	var chainCtx *Context
@@ -196,7 +186,7 @@ func (vm *VMClient) Initialize(
 		// Convert consensus context to rpcchainvm context
 		chainCtx = &Context{
 			NetworkID:    ctx.NetworkID,
-			NetID:        ctx.NetID,
+			NetID:        ctx.ChainID,
 			ChainID:      ctx.ChainID,
 			NodeID:       ctx.NodeID,
 			XChainID:     ctx.XChainID,
@@ -226,33 +216,27 @@ func (vm *VMClient) Initialize(
 			}
 		}
 		// BCLookup conversion - critical for plugin VM alias resolution
+		// The consensus context BCLookup interface is structurally compatible with ids.AliaserReader
 		if ctx.BCLookup != nil {
+			// Try direct type assertion to ids.AliaserReader first
 			if bcl, ok := ctx.BCLookup.(ids.AliaserReader); ok {
 				chainCtx.BCLookup = bcl
+			} else if bcl, ok := ctx.BCLookup.(consensuscontext.BCLookup); ok {
+				// Wrap the consensus context BCLookup interface
+				chainCtx.BCLookup = &bcLookupWrapper{bc: bcl}
+			} else {
+				// BCLookup is set but not a recognized type - log warning but continue
+				// This allows graceful degradation
+				if vm.logger != nil {
+					vm.logger.Warn("BCLookup has unrecognized type, alias resolution may fail",
+						log.String("type", fmt.Sprintf("%T", ctx.BCLookup)))
+				}
 			}
 		}
 		// WarpSigner conversion - for BLS signing of warp messages
-		{
-			debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if debugFile != nil {
-				fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: ctx.WarpSigner=%p (type=%T)\n", time.Now().Format("15:04:05.000"), ctx.WarpSigner, ctx.WarpSigner)
-				debugFile.Close()
-			}
-		}
 		if ctx.WarpSigner != nil {
 			if ws, ok := ctx.WarpSigner.(platformwarp.Signer); ok {
 				chainCtx.WarpSigner = ws
-				debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				if debugFile != nil {
-					fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: conversion OK, chainCtx.WarpSigner=%p\n", time.Now().Format("15:04:05.000"), chainCtx.WarpSigner)
-					debugFile.Close()
-				}
-			} else {
-				debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				if debugFile != nil {
-					fmt.Fprintf(debugFile, "%s DEBUG WarpSigner: conversion FAILED - type assertion failed\n", time.Now().Format("15:04:05.000"))
-					debugFile.Close()
-				}
 			}
 		}
 		// PublicKey conversion from []byte
@@ -314,22 +298,10 @@ func (vm *VMClient) Initialize(
 	if chainCtx.SharedMemory != nil {
 		vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
 	}
-	// Debug: check BCLookup
-	{
-		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG vm_client: chainCtx.BCLookup=%p\n", time.Now().Format("15:04:05.000"), chainCtx.BCLookup)
-			debugFile.Close()
-		}
-	}
 	if chainCtx.BCLookup != nil {
 		vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-	} else {
-		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG vm_client: ERROR BCLookup is nil!\n", time.Now().Format("15:04:05.000"))
-			debugFile.Close()
-		}
+	} else if chainCtx.Log != nil {
+		chainCtx.Log.Warn("BCLookup is nil - chain alias resolution will not work for plugin VM")
 	}
 	if appSenderConcrete != nil {
 		vm.appSender = appsender.NewServer(appSenderConcrete)
@@ -339,17 +311,6 @@ func (vm *VMClient) Initialize(
 	}
 	if chainCtx.WarpSigner != nil {
 		vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
-		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG warpSignerServer: CREATED for chainID=%s\n", time.Now().Format("15:04:05.000"), chainCtx.ChainID.String())
-			debugFile.Close()
-		}
-	} else {
-		debugFile, _ := os.OpenFile("/tmp/vm_client_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG warpSignerServer: NIL for chainID=%s\n", time.Now().Format("15:04:05.000"), chainCtx.ChainID.String())
-			debugFile.Close()
-		}
 	}
 
 	serverListener, err := grpcutils.NewListener()
@@ -391,7 +352,7 @@ func (vm *VMClient) Initialize(
 	
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
 		NetworkId:       chainCtx.NetworkID,
-		NetId:        chainCtx.NetID[:],
+		NetId:        chainCtx.ChainID[:],
 		ChainId:         chainCtx.ChainID[:],
 		NodeId:          chainCtx.NodeID.Bytes(),
 		PublicKey:       publicKeyBytes,
@@ -1341,26 +1302,32 @@ func (e *emptyIterator) Key() []byte   { return nil }
 func (e *emptyIterator) Value() []byte { return nil }
 func (e *emptyIterator) Release()      {}
 
-// bcLookupWrapper wraps BCLookup to match ids.AliaserReader
+// bcLookupWrapper wraps consensus context BCLookup to match ids.AliaserReader
+// This handles the case where BCLookup is passed as consensuscontext.BCLookup interface
 type bcLookupWrapper struct {
-	bc BCLookup
+	bc consensuscontext.BCLookup
 }
 
 func (b *bcLookupWrapper) Lookup(alias string) (ids.ID, error) {
+	if b.bc == nil {
+		return ids.Empty, fmt.Errorf("BCLookup is nil")
+	}
 	return b.bc.Lookup(alias)
 }
 
 func (b *bcLookupWrapper) PrimaryAlias(id ids.ID) (string, error) {
+	if b.bc == nil {
+		return "", fmt.Errorf("BCLookup is nil")
+	}
 	return b.bc.PrimaryAlias(id)
 }
 
 func (b *bcLookupWrapper) Aliases(id ids.ID) ([]string, error) {
-	// BCLookup doesn't have Aliases method, return just the primary alias
-	primary, err := b.bc.PrimaryAlias(id)
-	if err != nil {
-		return nil, err
+	if b.bc == nil {
+		return nil, fmt.Errorf("BCLookup is nil")
 	}
-	return []string{primary}, nil
+	// Use the Aliases method if available
+	return b.bc.Aliases(id)
 }
 
 // validatorStateWrapper wraps ValidatorState to match validators.State

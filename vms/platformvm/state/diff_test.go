@@ -286,7 +286,7 @@ func TestDiffExpiry(t *testing.T) {
 func TestDiffL1ValidatorsErrors(t *testing.T) {
 	l1Validator := L1Validator{
 		ValidationID: ids.GenerateTestID(),
-		NetID:     ids.GenerateTestID(),
+		ChainID:     ids.GenerateTestID(),
 		NodeID:       ids.GenerateTestNodeID(),
 		Weight:       1, // Not removed
 	}
@@ -351,9 +351,9 @@ func TestDiffL1ValidatorsErrors(t *testing.T) {
 			state := newTestState(t, memdb.New())
 
 			require.NoError(state.PutCurrentValidator(&Staker{
-				TxID:     ids.GenerateTestID(),
-				NetID: l1Validator.NetID,
-				NodeID:   defaultValidatorNodeID,
+				TxID:    ids.GenerateTestID(),
+				ChainID: l1Validator.ChainID,
+				NodeID:  defaultValidatorNodeID,
 			}))
 
 			l1Validator.EndAccumulatedFee = test.initialEndAccumulatedFee
@@ -364,7 +364,7 @@ func TestDiffL1ValidatorsErrors(t *testing.T) {
 
 			// Initialize subnetID, weight, and endAccumulatedFee as they are
 			// constant among all tests.
-			test.l1Validator.NetID = l1Validator.NetID
+			test.l1Validator.ChainID = l1Validator.ChainID
 			test.l1Validator.Weight = 1                        // Not removed
 			test.l1Validator.EndAccumulatedFee = rand.Uint64() //#nosec G404
 			err = d.PutL1Validator(test.l1Validator)
@@ -394,13 +394,13 @@ func TestDiffCurrentValidator(t *testing.T) {
 	// Put a current validator
 	currentValidator := &Staker{
 		TxID:   ids.GenerateTestID(),
-		NetID:  ids.GenerateTestID(),
+		ChainID:  ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 	}
 	require.NoError(d.PutCurrentValidator(currentValidator))
 
 	// Assert that we get the current validator back
-	gotCurrentValidator, err := d.GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID)
+	gotCurrentValidator, err := d.GetCurrentValidator(currentValidator.ChainID, currentValidator.NodeID)
 	require.NoError(err)
 	require.Equal(currentValidator, gotCurrentValidator)
 
@@ -408,8 +408,8 @@ func TestDiffCurrentValidator(t *testing.T) {
 	d.DeleteCurrentValidator(currentValidator)
 
 	// Make sure the deletion worked
-	state.EXPECT().GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
-	_, err = d.GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID)
+	state.EXPECT().GetCurrentValidator(currentValidator.ChainID, currentValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
+	_, err = d.GetCurrentValidator(currentValidator.ChainID, currentValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -431,13 +431,13 @@ func TestDiffPendingValidator(t *testing.T) {
 	// Put a pending validator
 	pendingValidator := &Staker{
 		TxID:   ids.GenerateTestID(),
-		NetID:  ids.GenerateTestID(),
+		ChainID:  ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 	}
 	require.NoError(d.PutPendingValidator(pendingValidator))
 
 	// Assert that we get the pending validator back
-	gotPendingValidator, err := d.GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID)
+	gotPendingValidator, err := d.GetPendingValidator(pendingValidator.ChainID, pendingValidator.NodeID)
 	require.NoError(err)
 	require.Equal(pendingValidator, gotPendingValidator)
 
@@ -445,8 +445,8 @@ func TestDiffPendingValidator(t *testing.T) {
 	d.DeletePendingValidator(pendingValidator)
 
 	// Make sure the deletion worked
-	state.EXPECT().GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
-	_, err = d.GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID)
+	state.EXPECT().GetPendingValidator(pendingValidator.ChainID, pendingValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
+	_, err = d.GetPendingValidator(pendingValidator.ChainID, pendingValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -456,7 +456,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 
 	currentDelegator := &Staker{
 		TxID:   ids.GenerateTestID(),
-		NetID:  ids.GenerateTestID(),
+		ChainID:  ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 	}
 
@@ -477,10 +477,10 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	// Assert that we get the current delegator back
 	// Mock iterator for [state] returns no delegators.
 	state.EXPECT().GetCurrentDelegatorIterator(
-		currentDelegator.NetID,
+		currentDelegator.ChainID,
 		currentDelegator.NodeID,
 	).Return(iterator.Empty[*Staker]{}, nil).Times(2)
-	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.NetID, currentDelegator.NodeID)
+	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.ChainID, currentDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotCurrentDelegatorIter.Next())
@@ -491,7 +491,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 
 	// Make sure the deletion worked.
 	// The iterator should have no elements.
-	gotCurrentDelegatorIter, err = d.GetCurrentDelegatorIterator(currentDelegator.NetID, currentDelegator.NodeID)
+	gotCurrentDelegatorIter, err = d.GetCurrentDelegatorIterator(currentDelegator.ChainID, currentDelegator.NodeID)
 	require.NoError(err)
 	require.False(gotCurrentDelegatorIter.Next())
 }
@@ -502,7 +502,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 
 	pendingDelegator := &Staker{
 		TxID:   ids.GenerateTestID(),
-		NetID:  ids.GenerateTestID(),
+		ChainID:  ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 	}
 
@@ -523,10 +523,10 @@ func TestDiffPendingDelegator(t *testing.T) {
 	// Assert that we get the pending delegator back
 	// Mock iterator for [state] returns no delegators.
 	state.EXPECT().GetPendingDelegatorIterator(
-		pendingDelegator.NetID,
+		pendingDelegator.ChainID,
 		pendingDelegator.NodeID,
 	).Return(iterator.Empty[*Staker]{}, nil).Times(2)
-	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.NetID, pendingDelegator.NodeID)
+	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.ChainID, pendingDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotPendingDelegatorIter.Next())
@@ -537,7 +537,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 
 	// Make sure the deletion worked.
 	// The iterator should have no elements.
-	gotPendingDelegatorIter, err = d.GetPendingDelegatorIterator(pendingDelegator.NetID, pendingDelegator.NodeID)
+	gotPendingDelegatorIter, err = d.GetPendingDelegatorIterator(pendingDelegator.ChainID, pendingDelegator.NodeID)
 	require.NoError(err)
 	require.False(gotPendingDelegatorIter.Next())
 }
@@ -601,7 +601,7 @@ func TestDiffChain(t *testing.T) {
 	// Initialize parent with one chain
 	parentStateCreateChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			NetID: subnetID,
+			ChainID: subnetID,
 		},
 	}
 	state.AddChain(parentStateCreateChainTx)
@@ -622,7 +622,7 @@ func TestDiffChain(t *testing.T) {
 	// Put a chain
 	createChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			NetID: subnetID, // note this is the same net as [parentStateCreateChainTx]
+			ChainID: subnetID, // note this is the same net as [parentStateCreateChainTx]
 		},
 	}
 	diff.AddChain(createChainTx)
@@ -661,7 +661,7 @@ func TestDiffTx(t *testing.T) {
 	netID := ids.GenerateTestID()
 	tx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			NetID: netID,
+			ChainID: netID,
 		},
 	}
 	tx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))
@@ -680,7 +680,7 @@ func TestDiffTx(t *testing.T) {
 		// [state] returns 1 tx.
 		parentTx := &txs.Tx{
 			Unsigned: &txs.CreateChainTx{
-				NetID: netID,
+				ChainID: netID,
 			},
 		}
 		parentTx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))

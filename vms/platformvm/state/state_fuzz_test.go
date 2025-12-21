@@ -50,7 +50,7 @@ func FuzzStateTransitions(f *testing.F) {
 				TxID:            ids.GenerateTestID(),
 				NodeID:          nodeID,
 				PublicKey:       nil,
-				NetID:           constants.PrimaryNetworkID,
+				ChainID:           constants.PrimaryNetworkID,
 				Weight:          amount,
 				StartTime:       startTime,
 				EndTime:         endTime,
@@ -113,8 +113,8 @@ func FuzzStateTransitions(f *testing.F) {
 			chainID := ids.GenerateTestID()
 			createChainTx := &txs.Tx{
 				Unsigned: &txs.CreateChainTx{
-					NetID:       ids.GenerateTestID(),
-					ChainName:   "test-chain",
+					ChainID:       ids.GenerateTestID(),
+					BlockchainName:   "test-chain",
 					VMID:        ids.GenerateTestID(),
 					FxIDs:       []ids.ID{},
 					GenesisData: []byte("genesis"),
@@ -167,8 +167,8 @@ func FuzzStateTransitions(f *testing.F) {
 
 			// Add a subnet transformation
 			s.AddNetTransformation(&txs.Tx{
-				Unsigned: &txs.TransformNetTx{
-					Net:           subnetID,
+				Unsigned: &txs.TransformChainTx{
+					Chain:           subnetID,
 					AssetID:       ids.GenerateTestID(),
 					InitialSupply: amount,
 					MaximumSupply: amount * 2,
@@ -291,7 +291,7 @@ func FuzzValidatorSet(f *testing.F) {
 				TxID:            ids.GenerateTestID(),
 				NodeID:          ids.GenerateTestNodeID(),
 				PublicKey:       nil,
-				NetID:           constants.PrimaryNetworkID,
+				ChainID:           constants.PrimaryNetworkID,
 				Weight:          weight,
 				StartTime:       time.Now().Add(time.Duration(i) * time.Hour),
 				EndTime:         time.Now().Add(time.Duration(24+i) * time.Hour),

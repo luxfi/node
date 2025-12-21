@@ -36,7 +36,7 @@ var (
 	convertNetToL1TxComplexJSON []byte
 )
 
-func TestConvertNetToL1TxSerialization(t *testing.T) {
+func TestConvertChainToL1TxSerialization(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(t, err)
 	sk, err := localsigner.FromBytes(skBytes)
@@ -94,13 +94,13 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		tx            *ConvertNetToL1Tx
+		tx            *ConvertChainToL1Tx
 		expectedBytes []byte
 		expectedJSON  []byte
 	}{
 		{
 			name: "simple",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: BaseTx{
 					BaseTx: lux.BaseTx{
 						NetworkID:    constants.MainnetID,
@@ -126,18 +126,18 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 						Memo: types.JSONByteSlice{},
 					},
 				},
-				Net:     subnetID,
+				Chain:     subnetID,
 				ChainID:    managerChainID,
 				Address:    managerAddress,
-				Validators: []*ConvertNetToL1Validator{},
-				NetAuth: &secp256k1fx.Input{
+				Validators: []*ConvertChainToL1Validator{},
+				ChainAuth: &secp256k1fx.Input{
 					SigIndices: []uint32{3},
 				},
 			},
 			expectedBytes: []byte{
 				// Codec version
 				0x00, 0x00,
-				// ConvertNetToL1Tx Type ID
+				// ConvertChainToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Mainnet Network ID
 				0x00, 0x00, 0x00, 0x01,
@@ -202,7 +202,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 		},
 		{
 			name: "complex",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: BaseTx{
 					BaseTx: lux.BaseTx{
 						NetworkID:    constants.MainnetID,
@@ -296,10 +296,10 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 						Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 					},
 				},
-				Net:  subnetID,
+				Chain:  subnetID,
 				ChainID: managerChainID,
 				Address: managerAddress,
-				Validators: []*ConvertNetToL1Validator{
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:  nodeID[:],
 						Weight:  0x0102030405060708,
@@ -319,14 +319,14 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 						},
 					},
 				},
-				NetAuth: &secp256k1fx.Input{
+				ChainAuth: &secp256k1fx.Input{
 					SigIndices: []uint32{},
 				},
 			},
 			expectedBytes: []byte{
 				// Codec version
 				0x00, 0x00,
-				// ConvertNetToL1Tx Type ID
+				// ConvertChainToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Mainnet Network ID
 				0x00, 0x00, 0x00, 0x01,
@@ -548,7 +548,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 	}
 }
 
-func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
+func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(t, err)
 	pop, err := signer.NewProofOfPossession(sk)
@@ -564,7 +564,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 		}
 		validNetID   = ids.GenerateTestID()
 		invalidAddress  = make(types.JSONByteSlice, MaxNetAddressLength+1)
-		validValidators = []*ConvertNetToL1Validator{
+		validValidators = []*ConvertChainToL1Validator{
 			{
 				NodeID:                utils.RandomBytes(ids.NodeIDLen),
 				Weight:                1,
@@ -582,7 +582,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		tx          *ConvertNetToL1Tx
+		tx          *ConvertChainToL1Tx
 		expectedErr error
 	}{
 		{
@@ -594,54 +594,54 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 			name: "already verified",
 			// The tx includes invalid data to verify that a cached result is
 			// returned.
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: BaseTx{
 					SyntacticallyVerified: true,
 				},
-				Net:     constants.PrimaryNetworkID,
+				Chain:     constants.PrimaryNetworkID,
 				Address:    invalidAddress,
 				Validators: nil,
-				NetAuth: invalidNetAuth,
+				ChainAuth: invalidNetAuth,
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "invalid subnetID",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Net:     constants.PrimaryNetworkID,
+				Chain:     constants.PrimaryNetworkID,
 				Validators: validValidators,
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: ErrConvertPermissionlessNet,
 		},
 		{
 			name: "invalid address",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Net:     validNetID,
+				Chain:     validNetID,
 				Address:    invalidAddress,
 				Validators: validValidators,
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: ErrAddressTooLong,
 		},
 		{
 			name: "invalid number of validators",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Net:     validNetID,
+				Chain:     validNetID,
 				Validators: nil,
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: ErrConvertMustIncludeValidators,
 		},
 		{
 			name: "invalid validator order",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: []byte{
 							0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -657,16 +657,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: ErrConvertValidatorsNotSortedAndUnique,
 		},
 		{
 			name: "invalid validator weight",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                0,
@@ -675,16 +675,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						DeactivationOwner:     message.PChainOwner{},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: ErrZeroWeight,
 		},
 		{
 			name: "invalid validator nodeID length",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen + 1),
 						Weight:                1,
@@ -693,16 +693,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						DeactivationOwner:     message.PChainOwner{},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: cryptohashing.ErrInvalidHashLen,
 		},
 		{
 			name: "invalid validator nodeID",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                ids.EmptyNodeID[:],
 						Weight:                1,
@@ -711,16 +711,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						DeactivationOwner:     message.PChainOwner{},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: errEmptyNodeID,
 		},
 		{
 			name: "invalid validator pop",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                1,
@@ -729,16 +729,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						DeactivationOwner:     message.PChainOwner{},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: bls.ErrFailedPublicKeyDecompress,
 		},
 		{
 			name: "invalid validator remaining balance owner",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: utils.RandomBytes(ids.NodeIDLen),
 						Weight: 1,
@@ -749,16 +749,16 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						DeactivationOwner: message.PChainOwner{},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: secp256k1fx.ErrOutputUnspendable,
 		},
 		{
 			name: "invalid validator deactivation owner",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Net: validNetID,
-				Validators: []*ConvertNetToL1Validator{
+				Chain: validNetID,
+				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                1,
@@ -769,37 +769,37 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 						},
 					},
 				},
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: secp256k1fx.ErrOutputUnspendable,
 		},
 		{
 			name: "invalid BaseTx",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     BaseTx{},
-				Net:     validNetID,
+				Chain:     validNetID,
 				Validators: validValidators,
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
 			name: "invalid subnetAuth",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Net:     validNetID,
+				Chain:     validNetID,
 				Validators: validValidators,
-				NetAuth: invalidNetAuth,
+				ChainAuth: invalidNetAuth,
 			},
 			expectedErr: secp256k1fx.ErrInputIndicesNotSortedUnique,
 		},
 		{
 			name: "passes verification",
-			tx: &ConvertNetToL1Tx{
+			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Net:     validNetID,
+				Chain:     validNetID,
 				Validators: validValidators,
-				NetAuth: validNetAuth,
+				ChainAuth: validNetAuth,
 			},
 			expectedErr: nil,
 		},

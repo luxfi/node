@@ -123,7 +123,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	// Convert testcontext.Context to consensus.Context for statetest
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      ctx.NetworkID,
-		NetID:          ctx.NetID,
+		ChainID:          ctx.ChainID,
 		ChainID:        ctx.ChainID,
 		NodeID:         ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test
@@ -224,7 +224,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	// Convert testcontext.Context to consensus.Context
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      e.ctx.NetworkID,
-		NetID:          e.ctx.NetID,
+		ChainID:          e.ctx.ChainID,
 		ChainID:        e.ctx.ChainID,
 		NodeID:         e.ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test

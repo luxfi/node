@@ -59,16 +59,16 @@ func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+func (s *visitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.NetValidator.Net, tx.NetAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.ChainValidator.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, netAuthSigners)
+	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, false, txSigners)
 }
 
@@ -85,7 +85,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.NetID, tx.NetAuth)
+	netAuthSigners, err := s.getAuthSigners(tx.ChainID, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -124,29 +124,29 @@ func (s *visitor) ExportTx(tx *txs.ExportTx) error {
 }
 
 // Removed in regenesis
-func (s *visitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (s *visitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.Net, tx.NetAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, netAuthSigners)
+	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) TransformNetTx(tx *txs.TransformNetTx) error {
+func (s *visitor) TransformChainTx(tx *txs.TransformChainTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.Net, tx.NetAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, netAuthSigners)
+	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
@@ -166,16 +166,16 @@ func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegato
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+func (s *visitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.Net, tx.NetAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, netAuthSigners)
+	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
@@ -187,16 +187,16 @@ func (s *visitor) BaseTx(tx *txs.BaseTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (s *visitor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.Net, tx.NetAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, netAuthSigners)
+	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 

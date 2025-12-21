@@ -92,8 +92,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddValidatorTx{},
 		},
 		{
-			name: "AddNetValidatorTx",
-			tx:   &txs.AddNetValidatorTx{},
+			name: "AddChainValidatorTx",
+			tx:   &txs.AddChainValidatorTx{},
 		},
 		{
 			name: "AddDelegatorTx",
@@ -124,12 +124,12 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.RewardValidatorTx{},
 		},
 		{
-			name: "RemoveNetValidatorTx",
-			tx:   &txs.RemoveNetValidatorTx{},
+			name: "RemoveChainValidatorTx",
+			tx:   &txs.RemoveChainValidatorTx{},
 		},
 		{
-			name: "TransformNetTx",
-			tx:   &txs.TransformNetTx{},
+			name: "TransformChainTx",
+			tx:   &txs.TransformChainTx{},
 		},
 		{
 			name: "AddPermissionlessValidatorTx",
@@ -140,16 +140,16 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddPermissionlessDelegatorTx{},
 		},
 		{
-			name: "TransferNetOwnershipTx",
-			tx:   &txs.TransferNetOwnershipTx{},
+			name: "TransferChainOwnershipTx",
+			tx:   &txs.TransferChainOwnershipTx{},
 		},
 		{
 			name: "BaseTx",
 			tx:   &txs.BaseTx{},
 		},
 		{
-			name: "ConvertNetToL1Tx",
-			tx:   &txs.ConvertNetToL1Tx{},
+			name: "ConvertChainToL1Tx",
+			tx:   &txs.ConvertChainToL1Tx{},
 		},
 		{
 			name:        "RegisterL1ValidatorTx with unparsable message",

@@ -100,7 +100,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
 		},
-		Net: constants.PrimaryNetworkID,
+		Chain: constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -141,7 +141,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -394,7 +394,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
 		},
-		Net: constants.PrimaryNetworkID,
+		Chain: constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -446,7 +446,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx = &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -797,7 +797,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 			End:    12346,
 			Wght:   1,
 		},
-		Net:    netID,
+		Chain:    netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -838,7 +838,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		NetID:      constants.PrimaryNetworkID,
+		ChainID:      constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1089,7 +1089,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 			End:    12345 + 1,
 			Wght:   9,
 		},
-		Net:    netID,
+		Chain:    netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -1400,7 +1400,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
 		QuantumID: networkID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 
@@ -1525,7 +1525,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1555,7 +1555,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    constants.PrimaryNetworkID,
+					Chain:    constants.PrimaryNetworkID,
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1588,7 +1588,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1617,7 +1617,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1655,7 +1655,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1694,7 +1694,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1733,7 +1733,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1772,7 +1772,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   2,
 					},
-					Net:    ids.GenerateTestID(),
+					Chain:    ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1811,7 +1811,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   2,
 					},
-					Net:    constants.PrimaryNetworkID,
+					Chain:    constants.PrimaryNetworkID,
 					Signer: blsPOP,
 					StakeOuts: []*lux.TransferableOutput{
 						{

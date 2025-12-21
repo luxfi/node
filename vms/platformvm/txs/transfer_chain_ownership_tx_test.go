@@ -4,11 +4,10 @@
 package txs
 
 import (
-	"encoding/json"
-	"errors"
-	"testing"
-
 	consensusctx "github.com/luxfi/consensus/context"
+	
+	"encoding/json"
+	"testing"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -19,14 +18,13 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
 
-var errInvalidNetAuth = errors.New("invalid net auth")
-
-func TestRemoveNetValidatorTxSerialization(t *testing.T) {
+func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	require := require.New(t)
 
 	addr := ids.ShortID{
@@ -51,11 +49,6 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 	}
-	nodeID := ids.BuildTestNodeID([]byte{
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44,
-	})
 	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -63,7 +56,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 	}
 
-	simpleRemoveValidatorTx := &RemoveNetValidatorTx{
+	simpleTransferChainOwnershipTx := &TransferChainOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:   constants.MainnetID,
@@ -89,32 +82,32 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice{},
 			},
 		},
-		NodeID: nodeID,
-		Net:    netID,
-		NetAuth: &secp256k1fx.Input{
+		Chain: netID,
+		ChainAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
+		},
+		Owner: &secp256k1fx.OutputOwners{
+			Locktime:  0,
+			Threshold: 1,
+			Addrs: []ids.ShortID{
+				addr,
+			},
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
-		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		NetID:     constants.PrimaryNetworkID,
-		ChainID:   ids.GenerateTestID(),
-	}
-	ctx = &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
+		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(ctx))
+	require.NoError(simpleTransferChainOwnershipTx.SyntacticVerify(ctx))
 
-	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
+	expectedUnsignedSimpleTransferChainOwnershipTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// RemoveNetValidatorTx Type ID
-		0x00, 0x00, 0x00, 0x17,
+		// TransferChainOwnershipTx Type ID
+		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
@@ -147,30 +140,38 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
 		0x00, 0x00, 0x00, 0x05,
-		// length of memo field
+		// length of memo
 		0x00, 0x00, 0x00, 0x00,
-		// nodeID to remove
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44,
-		// netID to remove from
+		// netID to modify
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-		// secp256k1fx authorization type ID (secp256k1fx.Input)
+		// secp256k1fx authorization type ID
 		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
 		0x00, 0x00, 0x00, 0x03,
+		// secp256k1fx output owners type ID
+		0x00, 0x00, 0x00, 0x0b,
+		// locktime
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		// threshold
+		0x00, 0x00, 0x00, 0x01,
+		// number of addrs
+		0x00, 0x00, 0x00, 0x01,
+		// Addrs[0]
+		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x44, 0x55, 0x66, 0x77,
 	}
-	var unsignedSimpleRemoveValidatorTx UnsignedTx = simpleRemoveValidatorTx
-	unsignedSimpleRemoveValidatorTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleRemoveValidatorTx)
+	var unsignedSimpleTransferChainOwnershipTx UnsignedTx = simpleTransferChainOwnershipTx
+	unsignedSimpleTransferChainOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleTransferChainOwnershipTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleRemoveValidatorTxBytes, unsignedSimpleRemoveValidatorTxBytes)
+	require.Equal(expectedUnsignedSimpleTransferChainOwnershipTxBytes, unsignedSimpleTransferChainOwnershipTxBytes)
 
-	complexRemoveValidatorTx := &RemoveNetValidatorTx{
+	complexTransferChainOwnershipTx := &TransferChainOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:   constants.MainnetID,
@@ -264,27 +265,33 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 			},
 		},
-		NodeID: nodeID,
-		Net:    netID,
-		NetAuth: &secp256k1fx.Input{
+		Chain: netID,
+		ChainAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
+		Owner: &secp256k1fx.OutputOwners{
+			Locktime:  876543210,
+			Threshold: 1,
+			Addrs: []ids.ShortID{
+				addr,
+			},
+		},
 	}
-	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
-	utils.Sort(complexRemoveValidatorTx.Ins)
+	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs, Codec)
+	utils.Sort(complexTransferChainOwnershipTx.Ins)
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
+	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(ctx2))
 
-	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
+	expectedUnsignedComplexTransferChainOwnershipTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// RemoveNetValidatorTx Type ID
-		0x00, 0x00, 0x00, 0x17,
+		// TransferChainOwnershipTx Type ID
+		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
@@ -413,24 +420,33 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		0xf0, 0x9f, 0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c,
 		0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73,
 		0x01, 0x23, 0x45, 0x21,
-		// nodeID to remove
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44,
-		// netID to remove from
+		// netID to modify
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-		// secp256k1fx authorization type ID (secp256k1fx.Input)
+		// secp256k1fx authorization type ID
 		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
+		// secp256k1fx output owners type ID
+		0x00, 0x00, 0x00, 0x0b,
+		// locktime
+		0x00, 0x00, 0x00, 0x00, 0x34, 0x3e, 0xfc, 0xea,
+		// threshold
+		0x00, 0x00, 0x00, 0x01,
+		// number of addrs
+		0x00, 0x00, 0x00, 0x01,
+		// Addrs[0]
+		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x44, 0x55, 0x66, 0x77,
+	
 	}
-	var unsignedComplexRemoveValidatorTx UnsignedTx = complexRemoveValidatorTx
-	unsignedComplexRemoveValidatorTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexRemoveValidatorTx)
+	var unsignedComplexTransferChainOwnershipTx UnsignedTx = complexTransferChainOwnershipTx
+	unsignedComplexTransferChainOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransferChainOwnershipTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedComplexRemoveValidatorTxBytes, unsignedComplexRemoveValidatorTxBytes)
+	require.Equal(expectedUnsignedComplexTransferChainOwnershipTxBytes, unsignedComplexTransferChainOwnershipTxBytes)
 
 	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
 	// This functionality is now handled differently
@@ -441,9 +457,9 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
-	unsignedComplexRemoveValidatorTx.InitCtx(ctx3)
+	unsignedComplexTransferChainOwnershipTx.InitCtx(ctx3)
 
-	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
+	unsignedComplexTransferChainOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferChainOwnershipTx, "", "\t")
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,
@@ -519,18 +535,24 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"nodeID": "NodeID-2ZbTY9GatRTrfinAoYiYLcf6CvrPAUYgo",
 	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"netAuthorization": {
 		"signatureIndices": []
+	},
+	"newOwner": {
+		"addresses": [
+			"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
+		],
+		"locktime": 876543210,
+		"threshold": 1
 	}
-}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
+}`, string(unsignedComplexTransferChainOwnershipTxJSONBytes))
 }
 
-func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
+func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 	type test struct {
 		name        string
-		txFunc      func(*gomock.Controller) *RemoveNetValidatorTx
+		txFunc      func(*gomock.Controller) *TransferChainOwnershipTx
 		expectedErr error
 	}
 
@@ -542,7 +564,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
 		QuantumID: networkID,
-		NetID:     constants.PrimaryNetworkID,
+		ChainID:     constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 
@@ -571,26 +593,24 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 	tests := []test{
 		{
 			name: "nil tx",
-			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
+			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
 				return nil
 			},
 			expectedErr: ErrNilTx,
 		},
 		{
 			name: "already verified",
-			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
-				return &RemoveNetValidatorTx{BaseTx: verifiedBaseTx}
+			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
+				return &TransferChainOwnershipTx{BaseTx: verifiedBaseTx}
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "invalid BaseTx",
-			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
-				return &RemoveNetValidatorTx{
+			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
+				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID: ids.GenerateTestNodeID(),
+					Chain:    ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
 				}
 			},
@@ -598,46 +618,43 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid netID",
-			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
-				return &RemoveNetValidatorTx{
+			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
+				return &TransferChainOwnershipTx{
 					BaseTx: validBaseTx,
-					// Set NodeID so we don't error on that check.
-					NodeID: ids.GenerateTestNodeID(),
-					Net:    constants.PrimaryNetworkID,
+					Chain:    constants.PrimaryNetworkID,
 				}
 			},
-			expectedErr: ErrRemovePrimaryNetworkValidator,
+			expectedErr: ErrTransferPermissionlessNet,
 		},
 		{
 			name: "invalid subnetAuth",
-			txFunc: func(ctrl *gomock.Controller) *RemoveNetValidatorTx {
+			txFunc: func(ctrl *gomock.Controller) *TransferChainOwnershipTx {
 				// This NetAuth fails verification.
 				invalidNetAuth := verifymock.NewVerifiable(ctrl)
 				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
-				return &RemoveNetValidatorTx{
+				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID:     ids.GenerateTestNodeID(),
+					Chain:        ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
-					NetAuth: invalidNetAuth,
+					ChainAuth: invalidNetAuth,
 				}
 			},
 			expectedErr: errInvalidNetAuth,
 		},
 		{
 			name: "passes verification",
-			txFunc: func(ctrl *gomock.Controller) *RemoveNetValidatorTx {
+			txFunc: func(ctrl *gomock.Controller) *TransferChainOwnershipTx {
 				// This NetAuth passes verification.
 				validNetAuth := verifymock.NewVerifiable(ctrl)
 				validNetAuth.EXPECT().Verify().Return(nil)
-				return &RemoveNetValidatorTx{
+				mockOwner := fxmock.NewOwner(ctrl)
+				mockOwner.EXPECT().Verify().Return(nil)
+				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID:     ids.GenerateTestNodeID(),
+					Chain:        ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
-					NetAuth: validNetAuth,
+					ChainAuth: validNetAuth,
+					Owner:      mockOwner,
 				}
 			},
 			expectedErr: nil,
@@ -656,6 +673,6 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(tx.SyntacticallyVerified)
-		})
+	})
 	}
 }

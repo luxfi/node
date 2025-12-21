@@ -71,8 +71,8 @@ func main() {
 	}
 
 	justification := platformvm.L1ValidatorRegistrationJustification{
-		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-			ConvertNetToL1TxData: &platformvm.NetIDIndex{
+		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData{
+			ConvertChainToL1TxData: &platformvm.NetIDIndex{
 				NetId: netID[:],
 				Index:    validationIndex,
 			},

@@ -55,7 +55,7 @@ func main() {
 	pWallet := wallet.P()
 
 	removeValidatorStartTime := time.Now()
-	removeValidatorTx, err := pWallet.IssueRemoveNetValidatorTx(
+	removeValidatorTx, err := pWallet.IssueRemoveChainValidatorTx(
 		nodeID,
 		netID,
 	)

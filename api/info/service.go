@@ -37,7 +37,7 @@ var (
 
 	mainnetGetTxFeeResponse = GetTxFeeResponse{
 		CreateNetTxFee:                json.Uint64(1 * units.Lux),
-		TransformNetTxFee:             json.Uint64(10 * units.Lux),
+		TransformChainTxFee:             json.Uint64(10 * units.Lux),
 		CreateBlockchainTxFee:         json.Uint64(1 * units.Lux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
@@ -46,7 +46,7 @@ var (
 	}
 	fujiGetTxFeeResponse = GetTxFeeResponse{
 		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
-		TransformNetTxFee:             json.Uint64(1 * units.Lux),
+		TransformChainTxFee:             json.Uint64(1 * units.Lux),
 		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
@@ -55,7 +55,7 @@ var (
 	}
 	defaultGetTxFeeResponse = GetTxFeeResponse{
 		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
-		TransformNetTxFee:             json.Uint64(100 * units.MilliLux),
+		TransformChainTxFee:             json.Uint64(100 * units.MilliLux),
 		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
@@ -425,7 +425,7 @@ type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
 	CreateNetTxFee                json.Uint64 `json:"createNetTxFee"`
-	TransformNetTxFee             json.Uint64 `json:"transformNetTxFee"`
+	TransformChainTxFee             json.Uint64 `json:"transformNetTxFee"`
 	CreateBlockchainTxFee         json.Uint64 `json:"createBlockchainTxFee"`
 	AddPrimaryNetworkValidatorFee json.Uint64 `json:"addPrimaryNetworkValidatorFee"`
 	AddPrimaryNetworkDelegatorFee json.Uint64 `json:"addPrimaryNetworkDelegatorFee"`

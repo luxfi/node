@@ -127,16 +127,16 @@ type PermissionlessValidator struct {
 
 // Chain defines a chain that exists at the network's genesis
 // [GenesisData] is the initial state of the chain.
-// [VMID] is the ID of the VM this chain runs.
-// [FxIDs] are the IDs of the Fxs the chain supports.
-// [Name] is a human-readable, non-unique name for the chain.
-// [NetID] is the ID of the subnet that validates the chain
+// [VMID] is the ID of the VM this blockchain runs.
+// [FxIDs] are the IDs of the Fxs the blockchain supports.
+// [Name] is a human-readable, non-unique name for the blockchain.
+// [ChainID] is the ID of the chain that validates the blockchain
 type Chain struct {
 	GenesisData []byte
 	VMID        ids.ID
 	FxIDs       []ids.ID
 	Name        string
-	NetID    ids.ID
+	ChainID     ids.ID
 }
 
 // bech32ToID takes bech32 address and produces a shortID
@@ -322,12 +322,12 @@ func New(
 				NetworkID:    networkID,
 				BlockchainID: ids.Empty,
 			}},
-			NetID:       chain.NetID, // Renamed from NetID to NetID in regenesis
-			ChainName:   chain.Name,
-			VMID:        chain.VMID,
-			FxIDs:       chain.FxIDs,
-			GenesisData: chain.GenesisData,
-			NetAuth:  &secp256k1fx.Input{},
+			ChainID:        chain.ChainID,
+			BlockchainName: chain.Name,
+			VMID:           chain.VMID,
+			FxIDs:          chain.FxIDs,
+			GenesisData:    chain.GenesisData,
+			ChainAuth:      &secp256k1fx.Input{},
 		}}
 		if err := tx.Initialize(txs.GenesisCodec); err != nil {
 			return nil, err

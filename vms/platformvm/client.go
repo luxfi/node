@@ -27,12 +27,41 @@ import (
 
 type Client struct {
 	Requester rpc.EndpointRequester
+	networkID uint32
 }
 
 func NewClient(uri string) *Client {
 	return &Client{Requester: rpc.NewEndpointRequester(
 		uri + "/ext/P",
 	)}
+}
+
+// NewClientWithNetworkID returns a new platformvm.Client with the network ID set
+// for proper bech32 address formatting
+func NewClientWithNetworkID(uri string, networkID uint32) *Client {
+	return &Client{
+		Requester: rpc.NewEndpointRequester(uri + "/ext/P"),
+		networkID: networkID,
+	}
+}
+
+// SetNetworkID sets the network ID for address formatting
+func (c *Client) SetNetworkID(networkID uint32) {
+	c.networkID = networkID
+}
+
+// formatAddresses converts ShortIDs to bech32 P-Chain addresses
+func (c *Client) formatAddresses(addrs []ids.ShortID) ([]string, error) {
+	hrp := constants.GetHRP(c.networkID)
+	formatted := make([]string, len(addrs))
+	for i, addr := range addrs {
+		addrStr, err := address.Format("P", hrp, addr[:])
+		if err != nil {
+			return nil, err
+		}
+		formatted[i] = addrStr
+	}
+	return formatted, nil
 }
 
 // GetHeight returns the current block height.
@@ -83,16 +112,33 @@ func (c *Client) GetAtomicUTXOs(
 	startUTXOID ids.ID,
 	options ...rpc.Option,
 ) ([][]byte, ids.ShortID, ids.ID, error) {
+	// Format addresses in bech32 format (P-lux1..., P-local1..., etc.)
+	formattedAddrs, err := c.formatAddresses(addrs)
+	if err != nil {
+		return nil, ids.ShortID{}, ids.Empty, err
+	}
+
+	// Build start index - only include address/UTXO if they're non-empty
+	var startIndex api.Index
+	if startAddress != ids.ShortEmpty || startUTXOID != ids.Empty {
+		hrp := constants.GetHRP(c.networkID)
+		startAddrStr, err := address.Format("P", hrp, startAddress[:])
+		if err != nil {
+			return nil, ids.ShortID{}, ids.Empty, err
+		}
+		startIndex = api.Index{
+			Address: startAddrStr,
+			UTXO:    startUTXOID.String(),
+		}
+	}
+
 	res := &api.GetUTXOsReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getUTXOs", &api.GetUTXOsArgs{
-		Addresses:   ids.ShortIDsToStrings(addrs),
+	err = c.Requester.SendRequest(ctx, "platform.getUTXOs", &api.GetUTXOsArgs{
+		Addresses:   formattedAddrs,
 		SourceChain: sourceChain,
 		Limit:       json.Uint32(limit),
-		StartIndex: api.Index{
-			Address: startAddress.String(),
-			UTXO:    startUTXOID.String(),
-		},
-		Encoding: formatting.Hex,
+		StartIndex:  startIndex,
+		Encoding:    formatting.Hex,
 	}, res, options...)
 	if err != nil {
 		return nil, ids.ShortID{}, ids.Empty, err

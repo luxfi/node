@@ -12,7 +12,9 @@ import (
 
 var (
 	ErrWeightTooSmall = errors.New("weight of this validator is too low")
-	errBadNetID       = errors.New("subnet ID can't be primary network ID")
+	errBadChainID     = errors.New("chain ID can't be primary network ID")
+	// Deprecated: use errBadChainID instead
+	errBadNetID = errBadChainID
 )
 
 // Validator is a validator.

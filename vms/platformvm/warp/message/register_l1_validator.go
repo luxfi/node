@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrInvalidNetID = errors.New("invalid subnet ID")
+	ErrInvalidChainID = errors.New("invalid chain ID")
 	ErrInvalidWeight   = errors.New("invalid weight")
 	ErrInvalidNodeID   = errors.New("invalid node ID")
 	ErrInvalidOwner    = errors.New("invalid owner")
@@ -35,7 +35,7 @@ type PChainOwner struct {
 type RegisterL1Validator struct {
 	payload
 
-	NetID              ids.ID                 `serialize:"true" json:"subnetID"`
+	ChainID               ids.ID                 `serialize:"true" json:"chainID"`
 	NodeID                types.JSONByteSlice    `serialize:"true" json:"nodeID"`
 	BLSPublicKey          [bls.PublicKeyLen]byte `serialize:"true" json:"blsPublicKey"`
 	Expiry                uint64                 `serialize:"true" json:"expiry"`
@@ -45,8 +45,8 @@ type RegisterL1Validator struct {
 }
 
 func (r *RegisterL1Validator) Verify() error {
-	if r.NetID == constants.PrimaryNetworkID {
-		return ErrInvalidNetID
+	if r.ChainID == constants.PrimaryNetworkID {
+		return ErrInvalidChainID
 	}
 	if r.Weight == 0 {
 		return ErrInvalidWeight
@@ -91,7 +91,7 @@ func NewRegisterL1Validator(
 	weight uint64,
 ) (*RegisterL1Validator, error) {
 	msg := &RegisterL1Validator{
-		NetID:              subnetID,
+		ChainID:              subnetID,
 		NodeID:                nodeID[:],
 		BLSPublicKey:          blsPublicKey,
 		Expiry:                expiry,

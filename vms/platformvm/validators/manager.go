@@ -391,7 +391,7 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 	if !ok {
 		return ids.Empty, fmt.Errorf("%q is not a blockchain", chainID)
 	}
-	return chain.NetID, nil
+	return chain.ChainID, nil
 }
 
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {

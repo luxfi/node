@@ -60,7 +60,7 @@ func (*atomicTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+func (*atomicTxExecutor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	return ErrWrongTxType
 }
 
@@ -84,11 +84,11 @@ func (*atomicTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+func (*atomicTxExecutor) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) TransformNetTx(*txs.TransformNetTx) error {
+func (*atomicTxExecutor) TransformChainTx(*txs.TransformChainTx) error {
 	return ErrWrongTxType
 }
 
@@ -100,7 +100,7 @@ func (*atomicTxExecutor) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDele
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+func (*atomicTxExecutor) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	return ErrWrongTxType
 }
 
@@ -108,7 +108,7 @@ func (*atomicTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (*atomicTxExecutor) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
 	return ErrWrongTxType
 }
 

@@ -2,6 +2,105 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## P-Chain Message Routing Fix - 2025-12-19
+
+### Summary
+Fixed critical message routing issues that were preventing P-Chain blocks from being received and processed by validator nodes.
+
+### Problem
+- P-Chain blocks were being gossiped (`gossiped block to validators sentTo=1`) but receiving nodes weren't processing them
+- `blockHandler.HandleInbound` was a no-op that just returned nil
+- `handlerWrapper.HandleInbound` was passing `Message: nil` and incorrectly casting Op values
+
+### Root Causes
+1. **Op Value Mismatch**: `message.Op` uses different numeric values than `handler.Op`/`router.Op`
+   - `message.PutOp` = 47 (position in enum)
+   - `handler.Put` = 5 (position in router enum)
+   - Direct cast `handler.Op(msg.Op())` produced wrong values
+
+2. **Missing Container Bytes**: Router wasn't extracting container bytes from protobuf messages
+   - `p2p.Put` has `Container []byte` field
+   - `p2p.AppGossip` has `AppBytes []byte` field
+   - These were never being passed to handlers
+
+3. **No Message Dispatch**: `blockHandler.HandleInbound` didn't dispatch to Put method
+
+### Fixes Applied
+
+**1. message/ops.go** - Added helper functions:
+```go
+// ToConsensusOp maps message.Op to consensus router Op values
+func ToConsensusOp(op Op) (byte, bool) {
+    switch op {
+    case PutOp: return 5, true       // handler.Put
+    case PushQueryOp: return 6, true // handler.PushQuery
+    // ... other mappings
+    }
+}
+
+// GetContainerBytes extracts container bytes from protobuf messages
+func GetContainerBytes(msg fmt.Stringer) []byte {
+    switch m := msg.(type) {
+    case *p2p.Put: return m.Container
+    case *p2p.PushQuery: return m.Container
+    case *p2p.AppGossip: return m.AppBytes
+    // ... other cases
+    }
+}
+```
+
+**2. node/router_simple.go** - Fixed handlerWrapper.HandleInbound:
+```go
+func (w *handlerWrapper) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+    containerBytes := message.GetContainerBytes(msg.Message())
+    consensusOp, ok := message.ToConsensusOp(msg.Op())
+    if !ok { return }
+
+    handlerMsg := handler.Message{
+        NodeID:    ids.NodeID(msg.NodeID()),
+        RequestID: requestID,
+        Op:        handler.Op(consensusOp),
+        Message:   containerBytes, // Now properly set
+    }
+    w.h.HandleInbound(ctx, handlerMsg)
+}
+```
+
+**3. chains/manager.go** - Fixed blockHandler.HandleInbound:
+```go
+func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
+    switch msg.Op {
+    case handler.Put, handler.PushQuery:
+        if len(msg.Message) > 0 {
+            return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
+        }
+    }
+    return nil
+}
+```
+
+**4. vms/example/xsvm/vm.go** - Fixed chain.Engine import
+
+### Files Modified
+- `/Users/z/work/lux/node/message/ops.go` - ToConsensusOp, GetContainerBytes functions
+- `/Users/z/work/lux/node/node/router_simple.go` - handlerWrapper.HandleInbound
+- `/Users/z/work/lux/node/chains/manager.go` - blockHandler.HandleInbound
+- `/Users/z/work/lux/node/vms/example/xsvm/vm.go` - chain.Engine import
+- `/Users/z/work/lux/consensus/engine/chain/engine.go` - Engine interface updates (earlier session)
+
+### Testing
+- Network starts with 3 validators
+- All nodes connect (2 peers each)
+- P-Chain at height 0 (expected for fresh network)
+- Message routing code now properly extracts and dispatches block data
+
+### Next Steps
+- Generate P-Chain transaction (CreateChain) to create blocks
+- Verify all nodes see same P-Chain height
+- Deploy Zoo blockchain
+
+---
+
 ## EVM Package Integration - 2025-12-12
 
 ### Summary
@@ -4649,3 +4748,20 @@ go run cmd/extract-genesis/main.go --rlp <rlp-file> --output <output-file>
 ~/work/lux/genesis/chains/spc/genesis.json
 ```
 
+
+## Token Denomination (Updated Dec 2024)
+
+LUX now uses **6 decimals** (microLUX base unit) on P-Chain/X-Chain:
+
+| Unit | Value |
+|------|-------|
+| µLUX (MicroLux) | 1 (base) |
+| mLUX (MilliLux) | 1,000 |
+| LUX | 1,000,000 |
+| TLUX (TeraLux) | 10^18 |
+
+**Supply Cap**: 2 trillion LUX (2 × 10^18 µLUX)
+
+C-Chain continues to use standard EVM 18 decimals (Wei).
+
+See `utils/units/lux.go` for constants.

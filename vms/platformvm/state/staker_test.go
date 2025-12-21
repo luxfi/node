@@ -150,7 +150,7 @@ func TestNewCurrentStaker(t *testing.T) {
 		TxID:            txID,
 		NodeID:          stakerTx.NodeID(),
 		PublicKey:       publicKey,
-		NetID:        stakerTx.NetID(),
+		ChainID:        stakerTx.ChainID(),
 		Weight:          stakerTx.Weight(),
 		StartTime:       startTime,
 		EndTime:         stakerTx.EndTime(),
@@ -183,7 +183,7 @@ func TestNewPendingStaker(t *testing.T) {
 		TxID:      txID,
 		NodeID:    stakerTx.NodeID(),
 		PublicKey: publicKey,
-		NetID:  stakerTx.NetID(),
+		ChainID:  stakerTx.ChainID(),
 		Weight:    stakerTx.Weight(),
 		StartTime: stakerTx.StartTime(),
 		EndTime:   stakerTx.EndTime(),
@@ -219,6 +219,6 @@ func generateStakerTx(require *require.Assertions) *txs.AddPermissionlessValidat
 			Wght:   weight,
 		},
 		Signer: pop,
-		Net: subnetID,
+		Chain: subnetID,
 	}
 }

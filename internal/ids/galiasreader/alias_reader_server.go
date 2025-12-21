@@ -6,8 +6,6 @@ package galiasreader
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/luxfi/ids"
 
@@ -44,20 +42,8 @@ func (s *Server) PrimaryAlias(
 	_ context.Context,
 	req *aliasreaderpb.ID,
 ) (*aliasreaderpb.Alias, error) {
-	// Debug logging
-	debugFile, _ := os.OpenFile("/tmp/aliasreader_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if debugFile != nil {
-		fmt.Fprintf(debugFile, "%s DEBUG aliasreader server: PrimaryAlias called, aliaser=%p\n", time.Now().Format("15:04:05.000"), s.aliaser)
-		debugFile.Close()
-	}
-
 	if s.aliaser == nil {
-		debugFile, _ := os.OpenFile("/tmp/aliasreader_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if debugFile != nil {
-			fmt.Fprintf(debugFile, "%s DEBUG aliasreader server: ERROR aliaser is nil!\n", time.Now().Format("15:04:05.000"))
-			debugFile.Close()
-		}
-		return nil, fmt.Errorf("aliaser is nil")
+		return nil, fmt.Errorf("aliaser is nil - BCLookup not configured for this chain")
 	}
 
 	id, err := ids.ToID(req.Id)
@@ -65,12 +51,6 @@ func (s *Server) PrimaryAlias(
 		return nil, err
 	}
 	alias, err := s.aliaser.PrimaryAlias(id)
-
-	debugFile, _ = os.OpenFile("/tmp/aliasreader_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if debugFile != nil {
-		fmt.Fprintf(debugFile, "%s DEBUG aliasreader server: PrimaryAlias result alias=%s err=%v\n", time.Now().Format("15:04:05.000"), alias, err)
-		debugFile.Close()
-	}
 
 	return &aliasreaderpb.Alias{
 		Alias: alias,

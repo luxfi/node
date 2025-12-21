@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
+	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -137,14 +138,8 @@ func (vm *VM) Initialize(
 func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
 	// SetState receives the consensus engine, which we pass to the chain
 	// The state parameter is actually the consensus engine
-	if engine, ok := ctx.Value("engine").(interface{ HealthCheck(context.Context) (interface{}, error) }); ok {
-		// Type assert to the Engine interface needed by SetChainState
-		vm.chain.SetChainState(engine.(interface {
-			Start(context.Context, uint32) error
-			Stop(context.Context) error
-			HealthCheck(context.Context) (interface{}, error)
-			IsBootstrapped() bool
-		}))
+	if engine, ok := ctx.Value("engine").(chain.Engine); ok {
+		vm.chain.SetChainState(engine)
 	}
 	return nil
 }

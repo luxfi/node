@@ -98,7 +98,7 @@ func TestL1Validator_immutableFieldsAreUnmodified(t *testing.T) {
 	})
 	t.Run("different subnetID", func(t *testing.T) {
 		v := randomizeL1Validator(l1Validator)
-		v.NetID = ids.GenerateTestID()
+		v.ChainID = ids.GenerateTestID()
 		require.False(t, l1Validator.immutableFieldsAreUnmodified(v))
 	})
 	t.Run("different nodeID", func(t *testing.T) {
@@ -234,7 +234,7 @@ func TestDeleteL1Validator(t *testing.T) {
 func newL1Validator() L1Validator {
 	return L1Validator{
 		ValidationID:          ids.GenerateTestID(),
-		NetID:              ids.GenerateTestID(),
+		ChainID:              ids.GenerateTestID(),
 		NodeID:                ids.GenerateTestNodeID(),
 		PublicKey:             utils.RandomBytes(bls.PublicKeyLen),
 		RemainingBalanceOwner: utils.RandomBytes(32),

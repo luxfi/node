@@ -38,10 +38,10 @@ type AddPermissionlessValidatorTx struct {
 	BaseTx `serialize:"true"`
 	// Describes the validator
 	Validator `serialize:"true" json:"validator"`
-	// ID of the net this validator is validating
-	Net ids.ID `serialize:"true" json:"netID"`
-	// If the [Net] is the primary network, [Signer] is the BLS key for this
-	// validator. If the [Net] is not the primary network, this value is the
+	// ID of the chain this validator is validating
+	Chain ids.ID `serialize:"true" json:"chainID"`
+	// If the [Chain] is the primary network, [Signer] is the BLS key for this
+	// validator. If the [Chain] is not the primary network, this value is the
 	// empty signer
 	// Note: We do not enforce that the BLS key is unique across all validators.
 	//       This means that validators can share a key if they so choose.
@@ -73,8 +73,8 @@ func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *consensusctx.Context) {
 	// tx.DelegatorRewardsOwner.InitCtx(ctx)
 }
 
-func (tx *AddPermissionlessValidatorTx) NetID() ids.ID {
-	return tx.Net
+func (tx *AddPermissionlessValidatorTx) ChainID() ids.ID {
+	return tx.Chain
 }
 
 func (tx *AddPermissionlessValidatorTx) NodeID() ids.NodeID {
@@ -90,14 +90,14 @@ func (tx *AddPermissionlessValidatorTx) PublicKey() (*bls.PublicKey, bool, error
 }
 
 func (tx *AddPermissionlessValidatorTx) PendingPriority() Priority {
-	if tx.Net == constants.PrimaryNetworkID {
+	if tx.Chain == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorPendingPriority
 	}
 	return NetPermissionlessValidatorPendingPriority
 }
 
 func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
-	if tx.Net == constants.PrimaryNetworkID {
+	if tx.Chain == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorCurrentPriority
 	}
 	return NetPermissionlessValidatorCurrentPriority
@@ -142,7 +142,7 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *consensusctx.Contex
 	}
 
 	hasKey := tx.Signer.Key() != nil
-	isPrimaryNetwork := tx.Net == constants.PrimaryNetworkID
+	isPrimaryNetwork := tx.Chain == constants.PrimaryNetworkID
 	if hasKey != isPrimaryNetwork {
 		return fmt.Errorf(
 			"%w: hasKey=%v != isPrimaryNetwork=%v",

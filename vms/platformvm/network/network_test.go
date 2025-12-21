@@ -320,7 +320,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			consensusCtx := consensustest.Context(t, ids.Empty)
 			// Extract values directly from consensus context
 			nodeID := consensusCtx.NodeID
-			netID := consensusCtx.NetID
+			netID := consensusCtx.ChainID
 			// Use a simple test logger for now
 			logger := log.NoLog{}
 			// Create a mock validator state that returns sensible defaults

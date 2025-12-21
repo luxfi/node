@@ -49,7 +49,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 
 		netID               = ids.GenerateTestID()
 		customAssetID       = ids.GenerateTestID()
-		unsignedTransformTx = &txs.TransformNetTx{
+		unsignedTransformTx = &txs.TransformChainTx{
 			AssetID:           customAssetID,
 			MinValidatorStake: 1,
 			MaxValidatorStake: 2,
@@ -81,7 +81,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				End:  uint64(endTime.Unix()),
 				Wght: unsignedTransformTx.MinValidatorStake,
 			},
-			Net: netID,
+			Chain: netID,
 			StakeOuts: []*lux.TransferableOutput{
 				{
 					Asset: lux.Asset{
@@ -613,7 +613,7 @@ func TestGetValidatorRules(t *testing.T) {
 				return state
 			},
 			expectedRules: &addValidatorRules{},
-			expectedErr:   ErrIsNotTransformNetTx,
+			expectedErr:   ErrIsNotTransformChainTx,
 		},
 		{
 			name:    "subnet",
@@ -622,7 +622,7 @@ func TestGetValidatorRules(t *testing.T) {
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
-					Unsigned: &txs.TransformNetTx{
+					Unsigned: &txs.TransformChainTx{
 						AssetID:           customAssetID,
 						MinValidatorStake: config.MinValidatorStake,
 						MaxValidatorStake: config.MaxValidatorStake,
@@ -730,7 +730,7 @@ func TestGetDelegatorRules(t *testing.T) {
 				return state
 			},
 			expectedRules: &addDelegatorRules{},
-			expectedErr:   ErrIsNotTransformNetTx,
+			expectedErr:   ErrIsNotTransformChainTx,
 		},
 		{
 			name:    "subnet",
@@ -739,7 +739,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
-					Unsigned: &txs.TransformNetTx{
+					Unsigned: &txs.TransformChainTx{
 						AssetID:                  customAssetID,
 						MinDelegatorStake:        config.MinDelegatorStake,
 						MinValidatorStake:        config.MinValidatorStake,

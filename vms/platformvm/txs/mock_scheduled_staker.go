@@ -70,18 +70,18 @@ func (mr *MockScheduledStakerMockRecorder) EndTime() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndTime", reflect.TypeOf((*MockScheduledStaker)(nil).EndTime))
 }
 
-// NetID mocks base method.
-func (m *MockScheduledStaker) NetID() ids.ID {
+// ChainID mocks base method.
+func (m *MockScheduledStaker) ChainID() ids.ID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetID")
+	ret := m.ctrl.Call(m, "ChainID")
 	ret0, _ := ret[0].(ids.ID)
 	return ret0
 }
 
-// NetID indicates an expected call of NetID.
-func (mr *MockScheduledStakerMockRecorder) NetID() *gomock.Call {
+// ChainID indicates an expected call of ChainID.
+func (mr *MockScheduledStakerMockRecorder) ChainID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetID", reflect.TypeOf((*MockScheduledStaker)(nil).NetID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainID", reflect.TypeOf((*MockScheduledStaker)(nil).ChainID))
 }
 
 // NodeID mocks base method.

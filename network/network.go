@@ -415,8 +415,45 @@ func (n *network) Gossip(
 	numNonValidatorsToSend int,
 	numPeersToSend int,
 ) set.Set[ids.NodeID] {
-	// For gossip, we don't have a request ID
-	return n.Send(msg, nodeIDs, netID, 0)
+	// If specific nodeIDs are provided, send to them directly
+	if nodeIDs != nil && nodeIDs.Len() > 0 {
+		return n.Send(msg, nodeIDs, netID, 0)
+	}
+
+	// Sample peers based on the gossip parameters
+	var allower nets.Allower = &noOpAllower{}
+
+	// Handle -1 as "all validators"
+	validators := numValidatorsToSend
+	if validators < 0 {
+		// Get all connected validators for this network
+		validators = 1000 // Large number to get all connected validators
+	}
+
+	sendConfig := warp.SendConfig{
+		NodeIDs:       nil,
+		Validators:    validators,
+		NonValidators: numNonValidatorsToSend,
+		Peers:         numPeersToSend,
+	}
+
+	sampledPeers := n.samplePeers(sendConfig, netID, allower)
+
+	var (
+		sentTo = set.NewSet[ids.NodeID](len(sampledPeers))
+		now    = n.peerConfig.Clock.Time()
+	)
+
+	for _, peer := range sampledPeers {
+		if peer.Send(n.onCloseCtx, msg) {
+			sentTo.Add(peer.ID())
+			n.sendFailRateCalculator.Observe(0, now)
+		} else {
+			n.sendFailRateCalculator.Observe(1, now)
+		}
+	}
+
+	return sentTo
 }
 
 // HealthCheck returns information about several network layer health checks.

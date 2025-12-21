@@ -15,7 +15,7 @@ type StaticConfig struct {
 	CreateNetTxFee uint64 `json:"createNetTxFee"`
 
 	// Fee that must be burned by every transform net transaction
-	TransformNetTxFee uint64 `json:"transformNetTxFee"`
+	TransformChainTxFee uint64 `json:"transformNetTxFee"`
 
 	// Fee that must be burned by every blockchain creating transaction after AP3
 	CreateBlockchainTxFee uint64 `json:"createBlockchainTxFee"`

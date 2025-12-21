@@ -11,36 +11,46 @@ const (
 	PrimaryNetworkValidatorPendingPriority
 	// then primary network banff delegators,
 	PrimaryNetworkDelegatorBanffPendingPriority
-	// then permissionless net validators,
-	NetPermissionlessValidatorPendingPriority
-	// then permissionless net delegators.
-	NetPermissionlessDelegatorPendingPriority
-	// then permissioned net validators,
-	NetPermissionedValidatorPendingPriority
+	// then permissionless chain validators,
+	ChainPermissionlessValidatorPendingPriority
+	// then permissionless chain delegators.
+	ChainPermissionlessDelegatorPendingPriority
+	// then permissioned chain validators,
+	ChainPermissionedValidatorPendingPriority
 
-	// First permissioned net validators are removed from the current
+	// First permissioned chain validators are removed from the current
 	// validator set,
 	// Invariant: All permissioned stakers must be removed first because they
 	//            are removed by the advancement of time. Permissionless stakers
 	//            are removed with a RewardValidatorTx after time has advanced.
-	NetPermissionedValidatorCurrentPriority
-	// then permissionless net delegators,
-	NetPermissionlessDelegatorCurrentPriority
-	// then permissionless net validators,
-	NetPermissionlessValidatorCurrentPriority
+	ChainPermissionedValidatorCurrentPriority
+	// then permissionless chain delegators,
+	ChainPermissionlessDelegatorCurrentPriority
+	// then permissionless chain validators,
+	ChainPermissionlessValidatorCurrentPriority
 	// then primary network delegators,
 	PrimaryNetworkDelegatorCurrentPriority
 	// then primary network validators.
 	PrimaryNetworkValidatorCurrentPriority
 )
 
+// Deprecated: Use Chain* priority constants instead
+const (
+	NetPermissionlessValidatorPendingPriority = ChainPermissionlessValidatorPendingPriority
+	NetPermissionlessDelegatorPendingPriority = ChainPermissionlessDelegatorPendingPriority
+	NetPermissionedValidatorPendingPriority   = ChainPermissionedValidatorPendingPriority
+	NetPermissionedValidatorCurrentPriority   = ChainPermissionedValidatorCurrentPriority
+	NetPermissionlessDelegatorCurrentPriority = ChainPermissionlessDelegatorCurrentPriority
+	NetPermissionlessValidatorCurrentPriority = ChainPermissionlessValidatorCurrentPriority
+)
+
 var PendingToCurrentPriorities = []Priority{
-	PrimaryNetworkDelegatorApricotPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
-	PrimaryNetworkValidatorPendingPriority:        PrimaryNetworkValidatorCurrentPriority,
-	PrimaryNetworkDelegatorBanffPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
-	NetPermissionlessValidatorPendingPriority:     NetPermissionlessValidatorCurrentPriority,
-	NetPermissionlessDelegatorPendingPriority:     NetPermissionlessDelegatorCurrentPriority,
-	NetPermissionedValidatorPendingPriority:       NetPermissionedValidatorCurrentPriority,
+	PrimaryNetworkDelegatorApricotPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
+	PrimaryNetworkValidatorPendingPriority:          PrimaryNetworkValidatorCurrentPriority,
+	PrimaryNetworkDelegatorBanffPendingPriority:     PrimaryNetworkDelegatorCurrentPriority,
+	ChainPermissionlessValidatorPendingPriority:     ChainPermissionlessValidatorCurrentPriority,
+	ChainPermissionlessDelegatorPendingPriority:     ChainPermissionlessDelegatorCurrentPriority,
+	ChainPermissionedValidatorPendingPriority:       ChainPermissionedValidatorCurrentPriority,
 }
 
 type Priority byte
@@ -58,8 +68,8 @@ func (p Priority) IsValidator() bool {
 }
 
 func (p Priority) IsPermissionedValidator() bool {
-	return p == NetPermissionedValidatorCurrentPriority ||
-		p == NetPermissionedValidatorPendingPriority
+	return p == ChainPermissionedValidatorCurrentPriority ||
+		p == ChainPermissionedValidatorPendingPriority
 }
 
 func (p Priority) IsDelegator() bool {
@@ -68,23 +78,23 @@ func (p Priority) IsDelegator() bool {
 
 func (p Priority) IsCurrentValidator() bool {
 	return p == PrimaryNetworkValidatorCurrentPriority ||
-		p == NetPermissionedValidatorCurrentPriority ||
-		p == NetPermissionlessValidatorCurrentPriority
+		p == ChainPermissionedValidatorCurrentPriority ||
+		p == ChainPermissionlessValidatorCurrentPriority
 }
 
 func (p Priority) IsCurrentDelegator() bool {
 	return p == PrimaryNetworkDelegatorCurrentPriority ||
-		p == NetPermissionlessDelegatorCurrentPriority
+		p == ChainPermissionlessDelegatorCurrentPriority
 }
 
 func (p Priority) IsPendingValidator() bool {
 	return p == PrimaryNetworkValidatorPendingPriority ||
-		p == NetPermissionedValidatorPendingPriority ||
-		p == NetPermissionlessValidatorPendingPriority
+		p == ChainPermissionedValidatorPendingPriority ||
+		p == ChainPermissionlessValidatorPendingPriority
 }
 
 func (p Priority) IsPendingDelegator() bool {
 	return p == PrimaryNetworkDelegatorBanffPendingPriority ||
 		p == PrimaryNetworkDelegatorApricotPendingPriority ||
-		p == NetPermissionlessDelegatorPendingPriority
+		p == ChainPermissionlessDelegatorPendingPriority
 }

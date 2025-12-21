@@ -39,7 +39,7 @@ func (v *MempoolTxVerifier) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+func (v *MempoolTxVerifier) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 	return v.standardTx(tx)
 }
 
@@ -63,11 +63,11 @@ func (v *MempoolTxVerifier) ExportTx(tx *txs.ExportTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (v *MempoolTxVerifier) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) TransformNetTx(tx *txs.TransformNetTx) error {
+func (v *MempoolTxVerifier) TransformChainTx(tx *txs.TransformChainTx) error {
 	return v.standardTx(tx)
 }
 
@@ -79,7 +79,7 @@ func (v *MempoolTxVerifier) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+func (v *MempoolTxVerifier) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 	return v.standardTx(tx)
 }
 
@@ -88,7 +88,7 @@ func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
 }
 
 // Etna Transactions:
-func (v *MempoolTxVerifier) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (v *MempoolTxVerifier) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
 	return v.standardTx(tx)
 }
 
