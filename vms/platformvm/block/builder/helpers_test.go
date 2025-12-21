@@ -78,6 +78,11 @@ func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains
+	return constants.PrimaryNetworkID, nil
+}
+
 func (m *mockValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Return an empty validator set for tests
 	return make(map[ids.NodeID]uint64), nil

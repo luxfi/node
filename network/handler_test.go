@@ -11,14 +11,18 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	consensusrouter "github.com/luxfi/consensus/core/router"
 	"github.com/luxfi/node/version"
 )
 
 var _ ExternalHandler = (*testHandler)(nil)
 
+// networkInboundHandler is the interface that testHandler needs to implement
+type networkInboundHandler interface {
+	HandleInbound(ctx context.Context, msg message.InboundMessage)
+}
+
 type testHandler struct {
-	consensusrouter.InboundHandler
+	networkInboundHandler
 	ConnectedF    func(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID)
 	DisconnectedF func(nodeID ids.NodeID)
 	HandleGossipF func(ctx context.Context, nodeID ids.NodeID, msg []byte)
@@ -26,8 +30,10 @@ type testHandler struct {
 
 // HandleInbound handles network message.InboundMessage
 func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	// Test handler - no-op for network messages
-	// The embedded InboundHandler is for consensus router.Message not network message.InboundMessage
+	// Forward to embedded handler if present
+	if h.networkInboundHandler != nil {
+		h.networkInboundHandler.HandleInbound(ctx, msg)
+	}
 }
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {

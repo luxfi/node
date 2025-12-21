@@ -792,6 +792,10 @@ func (t *testValidatorState) GetNetworkID(_ ids.ID) (ids.ID, error) {
 	return t.chainID, nil
 }
 
+func (t *testValidatorState) GetSubnetID(_ ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
 func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
 	return make(map[ids.NodeID]uint64), nil
 }

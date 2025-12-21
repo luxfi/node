@@ -80,8 +80,8 @@ func (m *mockRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 }
 func (m *mockRouter) Deprecated() {}
 
-// TestBeaconManager_DataRace tests for data races in beacon manager
-func TestBeaconManager_DataRace(t *testing.T) {
+// TestValidatorManager_DataRace tests for data races in validator manager beacon tracking
+func TestValidatorManager_DataRace(t *testing.T) {
 	require := require.New(t)
 
 	validatorIDs := make([]ids.NodeID, 0, numValidators)
@@ -96,13 +96,15 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	router := &mockRouter{}
+	onSufficientlyConnected := make(chan struct{})
 
-	b := beaconManager{
+	b := NewValidatorManager(ValidatorManagerConfig{
 		Router:                  router,
-		beacons:                 validatorSet,
-		requiredConns:           numValidators,
-		onSufficientlyConnected: make(chan struct{}),
-	}
+		Log:                     log.NoLog{},
+		Beacons:                 validatorSet,
+		RequiredBeaconConns:     numValidators,
+		OnSufficientlyConnected: onSufficientlyConnected,
+	})
 
 	// Connect validators in parallel to test for data races
 	// Each connection from the primary network should count, others should not
@@ -133,8 +135,8 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	require.Zero(b.numConns)
 }
 
-// TestBeaconManager_SufficientConnections tests the sufficient connections mechanism
-func TestBeaconManager_SufficientConnections(t *testing.T) {
+// TestValidatorManager_SufficientConnections tests the sufficient connections mechanism
+func TestValidatorManager_SufficientConnections(t *testing.T) {
 	require := require.New(t)
 
 	validatorIDs := make([]ids.NodeID, 3)
@@ -145,14 +147,16 @@ func TestBeaconManager_SufficientConnections(t *testing.T) {
 		validatorIDs[i] = nodeID
 	}
 
-	mockRouter := &mockRouter{}
+	router := &mockRouter{}
+	onSufficientlyConnected := make(chan struct{})
 
-	b := beaconManager{
-		Router:                  mockRouter,
-		beacons:                 validatorSet,
-		requiredConns:           2, // Require 2 connections
-		onSufficientlyConnected: make(chan struct{}),
-	}
+	b := NewValidatorManager(ValidatorManagerConfig{
+		Router:                  router,
+		Log:                     log.NoLog{},
+		Beacons:                 validatorSet,
+		RequiredBeaconConns:     2, // Require 2 connections
+		OnSufficientlyConnected: onSufficientlyConnected,
+	})
 
 	// Connect first validator - not enough
 	b.Connected(validatorIDs[0], version.CurrentApp, constants.PrimaryNetworkID)
@@ -160,7 +164,7 @@ func TestBeaconManager_SufficientConnections(t *testing.T) {
 
 	// Ensure channel is still open
 	select {
-	case <-b.onSufficientlyConnected:
+	case <-onSufficientlyConnected:
 		require.Fail("Channel should not be closed yet")
 	default:
 		// Expected behavior
@@ -172,7 +176,7 @@ func TestBeaconManager_SufficientConnections(t *testing.T) {
 
 	// Channel should now be closed
 	select {
-	case <-b.onSufficientlyConnected:
+	case <-onSufficientlyConnected:
 		// Expected behavior
 	default:
 		require.Fail("Channel should be closed")
@@ -183,8 +187,8 @@ func TestBeaconManager_SufficientConnections(t *testing.T) {
 	require.Equal(int64(3), b.numConns)
 }
 
-// TestBeaconManager_NonBeaconConnections tests that non-beacon connections are ignored
-func TestBeaconManager_NonBeaconConnections(t *testing.T) {
+// TestValidatorManager_NonBeaconConnections tests that non-beacon connections are ignored
+func TestValidatorManager_NonBeaconConnections(t *testing.T) {
 	require := require.New(t)
 
 	validatorSet := validators.NewManager()
@@ -194,14 +198,16 @@ func TestBeaconManager_NonBeaconConnections(t *testing.T) {
 	// Only add beacon to validator set
 	require.NoError(validatorSet.AddStaker(constants.PrimaryNetworkID, beaconID, nil, ids.Empty, 1))
 
-	mockRouter := &mockRouter{}
+	router := &mockRouter{}
+	onSufficientlyConnected := make(chan struct{})
 
-	b := beaconManager{
-		Router:                  mockRouter,
-		beacons:                 validatorSet,
-		requiredConns:           1,
-		onSufficientlyConnected: make(chan struct{}),
-	}
+	b := NewValidatorManager(ValidatorManagerConfig{
+		Router:                  router,
+		Log:                     log.NoLog{},
+		Beacons:                 validatorSet,
+		RequiredBeaconConns:     1,
+		OnSufficientlyConnected: onSufficientlyConnected,
+	})
 
 	// Connect non-beacon node - should be ignored
 	b.Connected(nonBeaconID, version.CurrentApp, constants.PrimaryNetworkID)
@@ -220,22 +226,24 @@ func TestBeaconManager_NonBeaconConnections(t *testing.T) {
 	require.Zero(b.numConns)
 }
 
-// TestBeaconManager_WrongNetwork tests that connections from wrong networks are ignored
-func TestBeaconManager_WrongNetwork(t *testing.T) {
+// TestValidatorManager_WrongNetwork tests that connections from wrong networks are ignored
+func TestValidatorManager_WrongNetwork(t *testing.T) {
 	require := require.New(t)
 
 	validatorSet := validators.NewManager()
 	beaconID := ids.GenerateTestNodeID()
 	require.NoError(validatorSet.AddStaker(constants.PrimaryNetworkID, beaconID, nil, ids.Empty, 1))
 
-	mockRouter := &mockRouter{}
+	router := &mockRouter{}
+	onSufficientlyConnected := make(chan struct{})
 
-	b := beaconManager{
-		Router:                  mockRouter,
-		beacons:                 validatorSet,
-		requiredConns:           1,
-		onSufficientlyConnected: make(chan struct{}),
-	}
+	b := NewValidatorManager(ValidatorManagerConfig{
+		Router:                  router,
+		Log:                     log.NoLog{},
+		Beacons:                 validatorSet,
+		RequiredBeaconConns:     1,
+		OnSufficientlyConnected: onSufficientlyConnected,
+	})
 
 	// Connect to wrong network - should be ignored
 	wrongNetworkID := ids.GenerateTestID()

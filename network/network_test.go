@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/network/router"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -43,14 +43,13 @@ import (
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
 type inboundHandlerFunc struct {
-	f func(context.Context, router.Message)
+	f func(context.Context, message.InboundMessage)
 }
 
-func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg router.Message) error {
+func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
 	if h.f != nil {
 		h.f(ctx, msg)
 	}
-	return nil
 }
 
 func (h inboundHandlerFunc) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
@@ -287,7 +286,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 			listeners[i],
 			dialer,
 			&testHandler{
-				InboundHandler: handlers[i],
+				networkInboundHandler: handlers[i],
 				ConnectedF: func(nodeID ids.NodeID, _ *version.Application, _ ids.ID) {
 					t.Logf("%s connected to %s", config.MyNodeID, nodeID)
 
@@ -390,7 +389,7 @@ func TestNewNetwork(t *testing.T) {
 func TestIngressConnCount(t *testing.T) {
 	require := require.New(t)
 
-	emptyHandler := func(context.Context, router.Message) {}
+	emptyHandler := func(context.Context, message.InboundMessage) {}
 
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t, []router.InboundHandler{
@@ -454,17 +453,17 @@ func TestIngressConnCount(t *testing.T) {
 func TestSend(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan router.Message)
+	received := make(chan message.InboundMessage)
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -501,17 +500,17 @@ func TestSend(t *testing.T) {
 func TestSendWithFilter(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan router.Message)
+	received := make(chan message.InboundMessage)
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg router.Message) {
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -620,7 +619,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 			listeners[i],
 			dialer,
 			&testHandler{
-				InboundHandler: nil,
+				networkInboundHandler: nil,
 				ConnectedF: func(ids.NodeID, *version.Application, ids.ID) {
 					require.FailNow("unexpectedly connected to a peer")
 				},
@@ -703,7 +702,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			listeners[i],
 			dialer,
 			&testHandler{
-				InboundHandler: nil,
+				networkInboundHandler: nil,
 				ConnectedF: func(ids.NodeID, *version.Application, ids.ID) {
 					require.FailNow("unexpectedly connected to a peer")
 				},
@@ -863,7 +862,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			listeners[i],
 			dialer,
 			&testHandler{
-				InboundHandler: nil,
+				networkInboundHandler: nil,
 				ConnectedF:     nil,
 				DisconnectedF:  nil,
 			},
@@ -919,7 +918,7 @@ func TestGetAllPeers(t *testing.T) {
 		listeners[0],
 		dialer,
 		&testHandler{
-			InboundHandler: nil,
+			networkInboundHandler: nil,
 			ConnectedF:     nil,
 			DisconnectedF:  nil,
 		},

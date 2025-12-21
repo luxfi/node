@@ -139,6 +139,10 @@ func (m *mockValidatorState) GetNetworkID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
 }
 
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
 func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
