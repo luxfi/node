@@ -56,7 +56,7 @@ var (
 )
 
 // warpSignerAdapter wraps the gRPC warp signer client to implement github.com/luxfi/warp.Signer
-// This is needed because plugins (like subnet-evm/coreth) expect the warp.Signer from luxfi/warp,
+// This is needed because plugins (like evm/coreth) expect the warp.Signer from luxfi/warp,
 // not from luxfi/node/vms/platformvm/warp
 type warpSignerAdapter struct {
 	client warppb.SignerClient

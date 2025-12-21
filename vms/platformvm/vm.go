@@ -617,7 +617,7 @@ func (vm *VM) checkExistingChains() error {
 // 					"petersburgBlock": 0,
 // 					"istanbulBlock": 0,
 // 					"muirGlacierBlock": 0,
-// 					"subnetEVMTimestamp": 0,
+// 					"evmTimestamp": 0,
 // 					"feeConfig": {
 // 						"gasLimit": 8000000,
 // 						"targetBlockRate": 2,
