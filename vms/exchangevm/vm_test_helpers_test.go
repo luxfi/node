@@ -127,19 +127,20 @@ func getCreateTxFromGenesisTest(t *testing.T, genesisBytes []byte, assetAlias st
 }
 
 // mockValidatorState is a simple validator state for tests
-type mockValidatorState struct{}
+type mockValidatorState struct {
+	chainID ids.ID
+}
 
 func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
+	return m.chainID, nil
 }
 
 func (m *mockValidatorState) GetNetID(ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
+	return m.chainID, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Alias for GetNetID - kept for interface compatibility
-	return m.GetNetID(chainID)
+func (m *mockValidatorState) GetSubnetID(_ ids.ID) (ids.ID, error) {
+	return m.chainID, nil
 }
 
 func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
@@ -187,14 +188,15 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		}
 	}
 
+	chainID := ids.GenerateTestID()
 	ctx := &consensusctx.Context{
 		NetworkID:      constants.UnitTestID,
-		ChainID:        ids.GenerateTestID(),
+		ChainID:        chainID,
 		XChainID:       ids.GenerateTestID(),
 		CChainID:       ids.GenerateTestID(),
-		NetID:          ids.Empty,
+		NetID:          chainID,
 		NodeID:         ids.GenerateTestNodeID(),
-		ValidatorState: &mockValidatorState{},
+		ValidatorState: &mockValidatorState{chainID: chainID},
 	}
 
 	baseDB := memdb.New()

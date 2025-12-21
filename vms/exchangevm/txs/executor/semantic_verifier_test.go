@@ -467,8 +467,8 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
-			NetID:          constants.PrimaryNetworkID,
-			ValidatorState: &testValidatorState{chainID: constants.PrimaryNetworkID},
+			NetID:          chainID,
+			ValidatorState: &testValidatorState{chainID: chainID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
@@ -1012,8 +1012,8 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
-			NetID:          constants.PrimaryNetworkID,
-			ValidatorState: &testValidatorState{chainID: constants.PrimaryNetworkID},
+			NetID:          chainID,
+			ValidatorState: &testValidatorState{chainID: chainID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,

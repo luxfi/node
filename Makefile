@@ -1,6 +1,6 @@
 # Makefile for Lux Node
 
-.PHONY: all build build-cgo build-nocgo build-mlx test test-cgo test-nocgo clean fmt lint install-mockgen mockgen
+.PHONY: all build build-cgo build-nocgo build-mlx build-release build-release-upx test test-cgo test-nocgo clean fmt lint install-mockgen mockgen
 
 # Configuration toggles
 CGO ?= 0
@@ -229,6 +229,8 @@ help:
 	@echo ""
 	@echo "$(GREEN)Build Targets:$(NC)"
 	@echo "  build         - Build luxd binary (uses FIPS=$(FIPS) CGO=$(CGO))"
+	@echo "  build-release - Build smallest possible release binary (~46MB)"
+	@echo "  build-release-upx - Build release + UPX compression (~20MB)"
 	@echo "  build-fips    - Build with FIPS enabled (FIPS=1)"
 	@echo "  build-cgo     - Build with CGO enabled (CGO=1)"
 	@echo "  build-nocgo   - Build without CGO (CGO=0)"
@@ -269,3 +271,34 @@ build-mlx:
 	@echo "$(GREEN)Building luxd with MLX GPU acceleration (CGO enabled)...$(NC)"
 	@CGO_ENABLED=1 $(ENV) ./scripts/build.sh -tags mlx
 	@echo "$(GREEN)✓ Build complete with MLX support$(NC)"
+
+# Release build - smallest possible binary with all optimizations
+# Strips: symbols, DWARF debug info, build ID, file paths
+# Disables: inlining for smaller binary, bounds check insertion
+RELEASE_LDFLAGS := -s -w -buildid=
+RELEASE_GCFLAGS := all=-l -B
+
+build-release:
+	@echo "$(GREEN)Building luxd release binary (optimized for size)...$(NC)"
+	@mkdir -p build
+	@GOWORK=off $(ENV) go build \
+		-ldflags="$(RELEASE_LDFLAGS) \
+			-X github.com/luxfi/node/version.GitCommit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown') \
+			-X github.com/luxfi/node/version.VersionMajor=$$(grep 'version_major=' scripts/constants.sh | cut -d= -f2 || echo '1') \
+			-X github.com/luxfi/node/version.VersionMinor=$$(grep 'version_minor=' scripts/constants.sh | cut -d= -f2 || echo '0') \
+			-X github.com/luxfi/node/version.VersionPatch=$$(grep 'version_patch=' scripts/constants.sh | cut -d= -f2 || echo '0')" \
+		-gcflags="$(RELEASE_GCFLAGS)" \
+		-trimpath \
+		-o build/luxd \
+		./main
+	@echo "$(GREEN)✓ Release build complete: $$(ls -lh build/luxd | awk '{print $$5}')$(NC)"
+
+# Release build with UPX compression (if available)
+build-release-upx: build-release
+	@if command -v upx >/dev/null 2>&1; then \
+		echo "$(GREEN)Compressing with UPX...$(NC)"; \
+		upx --best -q build/luxd; \
+		echo "$(GREEN)✓ Compressed: $$(ls -lh build/luxd | awk '{print $$5}')$(NC)"; \
+	else \
+		echo "$(YELLOW)UPX not installed. Install with: brew install upx$(NC)"; \
+	fi
