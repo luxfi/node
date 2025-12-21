@@ -156,8 +156,8 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b,
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
-		// input amount = 10 LUX
-		0x00, 0x00, 0x00, 0x02, 0x54, 0x0b, 0xe4, 0x00,
+		// input amount = 10 LUX (10 * 10^6 with 6 decimals)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x98, 0x96, 0x80,
 		// number of signatures needed in input
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
@@ -201,7 +201,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 		// minimum consumption rate
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xe8,
-		// maximum consumption rate
+		// maximum consumption rate (1,000,000 = 0x0f4240)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x42, 0x40,
 		// minimum staking amount
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -429,8 +429,8 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b,
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
-		// amount = 1,000 LUX
-		0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00,
+		// amount = 1 KiloLux (with 6 decimals = 1,000,000,000 microLUX)
+		0x00, 0x00, 0x00, 0x00, 0x3b, 0x9a, 0xca, 0x00,
 		// number of signatures indices
 		0x00, 0x00, 0x00, 0x02,
 		// first signature index
@@ -586,7 +586,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"input": {
-				"amount": 1000000000000,
+				"amount": 1000000000,
 				"signatureIndices": [
 					2,
 					5
@@ -620,7 +620,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"chainID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
 	"initialSupply": 1152921504606846976,
 	"maximumSupply": 1152921504606846976,
@@ -634,7 +634,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	"minDelegatorStake": 18446744073709551615,
 	"maxValidatorWeightFactor": 255,
 	"uptimeRequirement": 0,
-	"netAuthorization": {
+	"chainAuthorization": {
 		"signatureIndices": []
 	}
 }`, string(unsignedComplexTransformTxJSONBytes))

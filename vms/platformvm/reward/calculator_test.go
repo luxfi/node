@@ -80,32 +80,34 @@ func TestRewards(t *testing.T) {
 		},
 		// Min duration:
 		// (720M - 360M) * (1M / 360M) * (10% + 2% * MinimumStakingDuration / MaximumStakingDuration) * MinimumStakingDuration / MaximumStakingDuration
+		// With 6 decimal precision (microLUX base unit)
 		{
 			duration:       defaultMinStakingDuration,
 			stakeAmount:    units.MegaLux,
 			existingAmount: 360 * units.MegaLux,
-			expectedReward: 274122724713,
+			expectedReward: 274122724,
 		},
 		// (720M - 360M) * (.005 / 360M) * (10% + 2% * MinimumStakingDuration / MaximumStakingDuration) * MinimumStakingDuration / MaximumStakingDuration
+		// With small stake, rounds to minimum of 1 microLUX
 		{
 			duration:       defaultMinStakingDuration,
 			stakeAmount:    defaultMinValidatorStake,
 			existingAmount: 360 * units.MegaLux,
-			expectedReward: 1370,
+			expectedReward: 1,
 		},
 		// (720M - 400M) * (1M / 400M) * (10% + 2% * MinimumStakingDuration / MaximumStakingDuration) * MinimumStakingDuration / MaximumStakingDuration
 		{
 			duration:       defaultMinStakingDuration,
 			stakeAmount:    units.MegaLux,
 			existingAmount: 400 * units.MegaLux,
-			expectedReward: 219298179771,
+			expectedReward: 219298179,
 		},
 		// (720M - 400M) * (2M / 400M) * (10% + 2% * MinimumStakingDuration / MaximumStakingDuration) * MinimumStakingDuration / MaximumStakingDuration
 		{
 			duration:       defaultMinStakingDuration,
 			stakeAmount:    2 * units.MegaLux,
 			existingAmount: 400 * units.MegaLux,
-			expectedReward: 438596359542,
+			expectedReward: 438596359,
 		},
 		// (720M - 720M) * (1M / 720M) * (10% + 2% * MinimumStakingDuration / MaximumStakingDuration) * MinimumStakingDuration / MaximumStakingDuration
 		{

@@ -38,7 +38,7 @@
 			"assetID": "FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"input": {
-				"amount": 1000000000,
+				"amount": 1000000,
 				"signatureIndices": [
 					2,
 					5

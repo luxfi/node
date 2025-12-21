@@ -19,7 +19,8 @@ func ExampleNewCalculator() {
 		stakeAmount = 100_000 * units.Lux // 100k LUX
 
 		// The current supply can be fetched with the platform.getCurrentSupply API
-		currentSupply = 447_903_489_576_595_361 * units.NanoLux // ~448m LUX
+		// With 6 decimal precision, values are in microLUX (μLUX)
+		currentSupply = 447_903_490 * units.Lux // ~448m LUX
 	)
 	var (
 		mainnetRewardConfig = Config{
@@ -33,11 +34,11 @@ func ExampleNewCalculator() {
 
 	potentialReward := mainnetCalculator.Calculate(stakingDuration, stakeAmount, currentSupply)
 
-	fmt.Printf("Staking %d nLUX for %s with the current supply of %d nLUX would have a potential reward of %d nLUX",
+	fmt.Printf("Staking %d μLUX for %s with the current supply of %d μLUX would have a potential reward of %d μLUX",
 		stakeAmount,
 		stakingDuration,
 		currentSupply,
 		potentialReward,
 	)
-	// Output: Staking 100000000000000 nLUX for 672h0m0s with the current supply of 447903489576595361 nLUX would have a potential reward of 473168956104 nLUX
+	// Output: Staking 100000000000 μLUX for 672h0m0s with the current supply of 447903490000000 μLUX would have a potential reward of 473168954 μLUX
 }

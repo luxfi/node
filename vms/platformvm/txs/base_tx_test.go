@@ -114,7 +114,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// input amount = 1 MilliLux
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x42, 0x40,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xe8,
 		// number of signatures needed in input
 		0x00, 0x00, 0x00, 0x01,
 		// index of signer
@@ -307,7 +307,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// input amount = 1 Lux
-		0x00, 0x00, 0x00, 0x00, 0x3b, 0x9a, 0xca, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x42, 0x40,
 		// number of signatures needed in input
 		0x00, 0x00, 0x00, 0x02,
 		// index of first signer
@@ -424,7 +424,7 @@ func TestBaseTxSerialization(t *testing.T) {
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"input": {
-				"amount": 1000000000,
+				"amount": 1000000,
 				"signatureIndices": [
 					2,
 					5

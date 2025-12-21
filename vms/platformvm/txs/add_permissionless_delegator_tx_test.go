@@ -176,7 +176,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// Amount = 2k LUX
-		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x77, 0x35, 0x94, 0x00,
 		// Number of input signature indices
 		0x00, 0x00, 0x00, 0x01,
 		// signature index
@@ -192,7 +192,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// End time
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
-		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x77, 0x35, 0x94, 0x00,
 		// Primary network netID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -208,7 +208,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// secp256k1fx transferable output type ID
 		0x00, 0x00, 0x00, 0x07,
 		// amount
-		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x77, 0x35, 0x94, 0x00,
 		// locktime
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		// threshold
@@ -497,7 +497,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// amount
-		0x00, 0x03, 0x8d, 0x7e, 0xa4, 0xc6, 0x80, 0x00,
+		0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00,
 		// number of signature indices
 		0x00, 0x00, 0x00, 0x02,
 		// first signature index
@@ -563,7 +563,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// End time
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
-		0x00, 0x00, 0x04, 0x8c, 0x27, 0x39, 0x50, 0x00,
+		0x00, 0x00, 0x00, 0x01, 0x2a, 0x05, 0xf2, 0x00,
 		// Primary Network net ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -579,7 +579,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// secp256k1 transfer output type ID
 		0x00, 0x00, 0x00, 0x07,
 		// amount
-		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x77, 0x35, 0x94, 0x00,
 		// locktime
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		// threshold
@@ -602,7 +602,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		// secp256k1 transfer output type ID
 		0x00, 0x00, 0x00, 0x07,
 		// amount
-		0x00, 0x00, 0x02, 0xba, 0x7d, 0xef, 0x30, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0xb2, 0xd0, 0x5e, 0x00,
 		// locktime
 		0x00, 0x00, 0x00, 0x00, 0x05, 0x39, 0x7f, 0xb1,
 		// threshold
@@ -689,7 +689,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"input": {
-				"amount": 1000000000000000,
+				"amount": 1000000000000,
 				"signatureIndices": [
 					2,
 					5
@@ -727,9 +727,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		"nodeID": "NodeID-2ZbTY9GatRTrfinAoYiYLcf6CvrPAUYgo",
 		"start": 12345,
 		"end": 17292345,
-		"weight": 5000000000000
+		"weight": 5000000000
 	},
-	"netID": "11111111111111111111111111111111LpoYY",
+	"chainID": "11111111111111111111111111111111LpoYY",
 	"stake": [
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
@@ -738,7 +738,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"addresses": [
 					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
-				"amount": 2000000000000,
+				"amount": 2000000000,
 				"locktime": 0,
 				"threshold": 1
 			}
@@ -750,7 +750,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"locktime": 987654321,
 				"output": {
 					"addresses": [],
-					"amount": 3000000000000,
+					"amount": 3000000000,
 					"locktime": 87654321,
 					"threshold": 0
 				}
@@ -927,7 +927,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// Amount = 1 MilliLUX
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x42, 0x40,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xe8,
 		// Number of input signature indices
 		0x00, 0x00, 0x00, 0x01,
 		// signature index
@@ -1269,7 +1269,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
 		// amount
-		0x00, 0x03, 0x8d, 0x7e, 0xa4, 0xc6, 0x80, 0x00,
+		0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00,
 		// number of signature indices
 		0x00, 0x00, 0x00, 0x02,
 		// first signature index
@@ -1461,7 +1461,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"input": {
-				"amount": 1000000000000000,
+				"amount": 1000000000000,
 				"signatureIndices": [
 					2,
 					5
@@ -1501,7 +1501,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		"end": 12346,
 		"weight": 9
 	},
-	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"chainID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"stake": [
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",

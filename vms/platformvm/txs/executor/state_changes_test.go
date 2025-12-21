@@ -241,88 +241,83 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 		pk      = sk.PublicKey()
 		pkBytes = bls.PublicKeyToUncompressedBytes(pk)
 
+		validatorFeeConfig = fee.Config{
+			Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
+			Target:                   1,
+			MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
+			ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
+		}
+
 		newL1Validator = func(endAccumulatedFee uint64) state.L1Validator {
 			return state.L1Validator{
 				ValidationID:      ids.GenerateTestID(),
-				ChainID:             ids.GenerateTestID(),
+				ChainID:           ids.GenerateTestID(),
 				NodeID:            ids.GenerateTestNodeID(),
 				PublicKey:         pkBytes,
 				Weight:            1,
 				EndAccumulatedFee: endAccumulatedFee,
 			}
 		}
-		// For validators to be evicted, EndAccumulatedFee must be less than accumulated fees over 3 seconds
-		// MinPrice=512, so minimum fee over 3 seconds = 1536. Use smaller value so they run out of balance.
-		l1ValidatorToEvict0 = newL1Validator(1) // tiny balance, will run out immediately
-		l1ValidatorToEvict1 = newL1Validator(1) // tiny balance, will run out immediately
-		l1ValidatorToKeep   = newL1Validator(1000 * units.Lux) // 1000 LUX to ensure it lasts much longer with any fee rate
+
+		// Calculate the cost for 3 seconds based on validator count.
+		// This ensures validators are evicted at exactly 3 seconds (satisfying invariant).
+		costForValidators = func(numValidators int) uint64 {
+			return fee.State{Current: gas.Gas(numValidators), Excess: 0}.CostOf(validatorFeeConfig, secondsToAdvance)
+		}
+
+		// Very high balance for validators that should NOT be evicted
+		keeperBalance = uint64(1000 * units.Lux)
 
 		currentTime = genesistest.DefaultValidatorStartTime
 		newTime     = currentTime.Add(timeToAdvance)
 
 		config = config.Internal{
-			ValidatorFeeConfig: fee.Config{
-				Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
-				Target:                   1,
-				MinPrice:                 builder.LocalValidatorFeeConfig.MinPrice,
-				ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
-			},
-			UpgradeConfig: upgradetest.GetConfig(upgradetest.Latest),
+			ValidatorFeeConfig: validatorFeeConfig,
+			UpgradeConfig:      upgradetest.GetConfig(upgradetest.Latest),
 		}
 	)
 
 	tests := []struct {
-		name                 string
-		initialL1Validators  []state.L1Validator
-		expectedModified     bool
-		expectedL1Validators []state.L1Validator
-		expectedExcess       gas.Gas
+		name                    string
+		numEvict                int  // number of validators to evict
+		numKeep                 int  // number of validators to keep
+		expectedModified        bool
+		expectedExcess          gas.Gas
 	}{
 		{
 			name:             "no L1 validators",
+			numEvict:         0,
+			numKeep:          0,
 			expectedModified: false,
 			expectedExcess:   0,
 		},
 		{
-			name: "evicted one",
-			initialL1Validators: []state.L1Validator{
-				l1ValidatorToEvict0,
-			},
+			name:             "evicted one",
+			numEvict:         1,
+			numKeep:          0,
 			expectedModified: true,
 			expectedExcess:   0,
 		},
 		{
-			name: "evicted all",
-			initialL1Validators: []state.L1Validator{
-				l1ValidatorToEvict0,
-				l1ValidatorToEvict1,
-			},
+			name:             "evicted all",
+			numEvict:         2,
+			numKeep:          0,
 			expectedModified: true,
 			expectedExcess:   3,
 		},
 		{
-			name: "evicted 2 of 3",
-			initialL1Validators: []state.L1Validator{
-				l1ValidatorToEvict0,
-				l1ValidatorToEvict1,
-				l1ValidatorToKeep,
-			},
+			name:             "evicted 2 of 3",
+			numEvict:         2,
+			numKeep:          1,
 			expectedModified: true,
-			expectedL1Validators: []state.L1Validator{
-				l1ValidatorToKeep,
-			},
-			expectedExcess: 6,
+			expectedExcess:   6,
 		},
 		{
-			name: "no evictions",
-			initialL1Validators: []state.L1Validator{
-				l1ValidatorToKeep,
-			},
+			name:             "no evictions",
+			numEvict:         0,
+			numKeep:          1,
 			expectedModified: false,
-			expectedL1Validators: []state.L1Validator{
-				l1ValidatorToKeep,
-			},
-			expectedExcess: 0,
+			expectedExcess:   0,
 		},
 	}
 	for _, test := range tests {
@@ -332,8 +327,22 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 				s       = statetest.New(t, statetest.Config{})
 			)
 
-			for _, l1Validator := range test.initialL1Validators {
-				require.NoError(s.PutL1Validator(l1Validator))
+			// Calculate cost based on total number of validators
+			totalValidators := test.numEvict + test.numKeep
+			evictCost := costForValidators(max(totalValidators, 1))
+
+			// Create and add validators to evict (with exact 3-second balance)
+			var expectedL1Validators []state.L1Validator
+			for i := 0; i < test.numEvict; i++ {
+				v := newL1Validator(evictCost)
+				require.NoError(s.PutL1Validator(v))
+			}
+
+			// Create and add validators to keep (with very high balance)
+			for i := 0; i < test.numKeep; i++ {
+				v := newL1Validator(keeperBalance)
+				require.NoError(s.PutL1Validator(v))
+				expectedL1Validators = append(expectedL1Validators, v)
 			}
 
 			// Ensure the invariant that [newTime <= nextStakerChangeTime] on
@@ -359,13 +368,15 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 			activeL1Validators, err := s.GetActiveL1ValidatorsIterator()
 			require.NoError(err)
 			require.Equal(
-				test.expectedL1Validators,
+				expectedL1Validators,
 				iterator.ToSlice(activeL1Validators),
 			)
 
 			require.Equal(test.expectedExcess, s.GetL1ValidatorExcess())
-			// Accrued fees = secondsToAdvance * MinPrice (512)
-			require.Equal(uint64(secondsToAdvance)*uint64(config.ValidatorFeeConfig.MinPrice), s.GetAccruedFees())
+			// Accrued fees = cost for the number of validators over the time period
+			// When Current > Target, fee rate increases due to excess
+			expectedAccruedFees := costForValidators(max(totalValidators, 1))
+			require.Equal(expectedAccruedFees, s.GetAccruedFees())
 		})
 	}
 }
