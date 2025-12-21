@@ -115,6 +115,13 @@ type Network interface {
 	// NodeUptime returns given node's primary network UptimeResults in the view of
 	// this node's peer validators.
 	NodeUptime() (UptimeResult, error)
+
+	// TrackChain starts tracking a chain. This updates the local node's tracked
+	// chains and will be included in handshakes with new peers.
+	TrackChain(chainID ids.ID) error
+
+	// TrackedChains returns the set of chains this node is tracking.
+	TrackedChains() set.Set[ids.ID]
 }
 
 type UptimeResult struct {
@@ -1325,6 +1332,43 @@ func (n *network) NodeUptime() (UptimeResult, error) {
 		WeightedAveragePercentage: math.Abs(totalWeightedPercent / totalWeight),
 		RewardingStakePercentage:  math.Abs(100 * rewardingStake / totalWeight),
 	}, nil
+}
+
+// TrackChain adds a chain to the set of tracked chains
+func (n *network) TrackChain(chainID ids.ID) error {
+	if chainID == constants.PrimaryNetworkID {
+		return errTrackingPrimaryNetwork
+	}
+
+	n.peersLock.Lock()
+	defer n.peersLock.Unlock()
+
+	// Update the config's tracked chains
+	n.config.TrackedChains.Add(chainID)
+
+	// Update the peer config so new peers get the updated chains
+	n.peerConfig.MyChains.Add(chainID)
+
+	// Update metrics to track the new chain
+	n.metrics.trackedChains.Add(chainID)
+
+	// Update IP tracker
+	n.ipTracker.OnChainTracked(chainID)
+
+	n.peerConfig.Log.Info("now tracking chain",
+		"chainID", chainID,
+	)
+	return nil
+}
+
+// TrackedChains returns the set of chains this node is tracking
+func (n *network) TrackedChains() set.Set[ids.ID] {
+	n.peersLock.RLock()
+	defer n.peersLock.RUnlock()
+	// Return a copy to avoid external modifications
+	result := set.NewSet[ids.ID](n.config.TrackedChains.Len())
+	result.Union(n.config.TrackedChains)
+	return result
 }
 
 func (n *network) runTimers() {

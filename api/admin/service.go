@@ -5,6 +5,7 @@ package admin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -27,6 +28,7 @@ import (
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
+	"github.com/luxfi/math/set"
 )
 
 const (
@@ -41,6 +43,12 @@ var (
 	errNoLogLevel   = errors.New("need to specify either displayLevel or logLevel")
 )
 
+// ChainTracker is the interface for tracking chains at runtime
+type ChainTracker interface {
+	TrackChain(chainID ids.ID) error
+	TrackedChains() set.Set[ids.ID]
+}
+
 type Config struct {
 	Log          log.Logger
 	ProfileDir   string
@@ -52,6 +60,7 @@ type Config struct {
 	VMRegistry   registry.VMRegistry
 	VMManager    vms.Manager
 	PluginDir    string
+	Network      ChainTracker
 }
 
 // Admin is the API service for node admin management
@@ -515,6 +524,84 @@ func (a *Admin) ListVMs(_ *http.Request, _ *struct{}, reply *ListVMsReply) error
 		}
 
 		reply.VMs[vmIDStr] = info
+	}
+
+	return nil
+}
+
+// SetTrackedChainsArgs are the arguments for SetTrackedChains
+type SetTrackedChainsArgs struct {
+	Chains []string `json:"chains"`
+}
+
+// SetTrackedChainsReply is the response from SetTrackedChains
+type SetTrackedChainsReply struct {
+	TrackedChains []string `json:"trackedChains"`
+}
+
+// SetTrackedChains adds chains to be tracked by this node at runtime.
+// This enables the node to track new chains without requiring a restart.
+func (a *Admin) SetTrackedChains(_ *http.Request, args *SetTrackedChainsArgs, reply *SetTrackedChainsReply) error {
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "setTrackedChains"),
+	)
+
+	if a.Network == nil {
+		return errors.New("network not available")
+	}
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	for _, chainStr := range args.Chains {
+		chainID, err := ids.FromString(chainStr)
+		if err != nil {
+			return fmt.Errorf("invalid chain ID %q: %w", chainStr, err)
+		}
+
+		if err := a.Network.TrackChain(chainID); err != nil {
+			return fmt.Errorf("failed to track chain %s: %w", chainID, err)
+		}
+
+		a.Log.Info("chain now tracked",
+			log.Stringer("chainID", chainID),
+		)
+	}
+
+	// Return the updated list of tracked chains
+	trackedChains := a.Network.TrackedChains()
+	reply.TrackedChains = make([]string, 0, trackedChains.Len())
+	for chainID := range trackedChains {
+		reply.TrackedChains = append(reply.TrackedChains, chainID.String())
+	}
+
+	return nil
+}
+
+// GetTrackedChainsReply is the response from GetTrackedChains
+type GetTrackedChainsReply struct {
+	TrackedChains []string `json:"trackedChains"`
+}
+
+// GetTrackedChains returns the list of chains currently being tracked by this node.
+func (a *Admin) GetTrackedChains(_ *http.Request, _ *struct{}, reply *GetTrackedChainsReply) error {
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "getTrackedChains"),
+	)
+
+	if a.Network == nil {
+		return errors.New("network not available")
+	}
+
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
+	trackedChains := a.Network.TrackedChains()
+	reply.TrackedChains = make([]string, 0, trackedChains.Len())
+	for chainID := range trackedChains {
+		reply.TrackedChains = append(reply.TrackedChains, chainID.String())
 	}
 
 	return nil

@@ -638,3 +638,30 @@ func getGossipableIPs[T any](
 	}
 	return ips
 }
+
+// OnChainTracked is called when a chain is dynamically added to tracking.
+// This updates the tracked nets set and notifies existing tracked nodes
+// that may now want connections on this new chain.
+func (i *ipTracker) OnChainTracked(chainID ids.ID) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+
+	// Don't track if already tracked
+	if i.trackedNets.Contains(chainID) {
+		return
+	}
+
+	i.trackedNets.Add(chainID)
+
+	// Update any existing tracked nodes that validate this chain
+	// so they now also track it
+	for _, node := range i.tracked {
+		if node.validatedNets.Contains(chainID) {
+			node.trackedNets.Add(chainID)
+		}
+	}
+
+	i.log.Info("now tracking chain for IP gossip",
+		log.Stringer("chainID", chainID),
+	)
+}

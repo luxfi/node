@@ -1399,6 +1399,7 @@ func (n *Node) initAdminAPI() error {
 			VMManager:    n.VMManager,
 			VMRegistry:   n.VMRegistry,
 			PluginDir:    n.Config.PluginDir,
+			Network:      n.Net,
 		},
 	)
 	if err != nil {
