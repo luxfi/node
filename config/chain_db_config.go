@@ -45,7 +45,6 @@ func (c *ChainDatabaseConfig) GetDatabaseType(chainAlias string) string {
 // Validate ensures all database types are valid
 func (c *ChainDatabaseConfig) Validate() error {
 	validTypes := map[string]bool{
-		"leveldb":  true,
 		"pebbledb": true,
 		"badgerdb": true,
 		"memdb":    true,

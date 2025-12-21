@@ -767,19 +767,8 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	var dbFolderName string
-	// TODO: leveldb and pebbledb packages not imported
-	// switch n.Config.DatabaseConfig.Name {
-	// case leveldb.Name:
-	// 	// Prior to v1.10.15, the only on-disk database was leveldb, and its
-	// 	// files went to [dbPath]/[networkID]/v1.4.5.
-	// 	dbFolderName = version.CurrentDatabase.String()
-	// case pebbledb.Name:
-	// 	dbFolderName = "pebble"
-	// default:
-	// 	dbFolderName = "db"
-	// }
-	dbFolderName = "db"
+	// All databases use the same folder structure now (badgerdb is default)
+	dbFolderName := "db"
 	// dbFolderName is appended to the database path given in the config
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 

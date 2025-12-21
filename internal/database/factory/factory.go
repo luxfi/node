@@ -15,7 +15,7 @@ import (
 // This is a thin wrapper around luxfi/database/factory.New that adapts
 // the node's MultiGatherer to the database factory's expected interface.
 //
-// dbName is the name of the database, either leveldb, memdb, pebbledb, or badgerdb.
+// dbName is the name of the database: badgerdb, pebbledb, or memdb.
 // dbPath is the path to the database folder.
 // readOnly indicates if the database should be read-only.
 // dbConfig is the database configuration in JSON format.
@@ -32,7 +32,7 @@ func New(
 	meterDBRegName string,
 ) (database.Database, error) {
 	// Use the luxfi/database/factory.New which properly handles all database types
-	// The factory handles LevelDB, PebbleDB, BadgerDB, and MemDB with correct signatures
+	// The factory handles BadgerDB, PebbleDB, and MemDB with correct signatures
 	return dbfactory.New(
 		name,
 		path,

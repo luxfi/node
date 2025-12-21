@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
@@ -41,11 +41,11 @@ import (
 func BenchmarkGetValidatorSet(b *testing.B) {
 	require := require.New(b)
 
-	db, err := leveldb.New(
+	db, err := badgerdb.New(
 		b.TempDir(),
-		0,    // blockCacheSize - use default
-		0,    // writeCacheSize - use default
-		1024, // handleCap - reasonable default
+		nil,  // configBytes - use default
+		"",   // namespace
+		nil,  // metrics
 	)
 	require.NoError(err)
 	defer func() {
