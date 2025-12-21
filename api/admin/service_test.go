@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/registry/registrymock"
@@ -226,4 +227,128 @@ func TestServiceDBGet(t *testing.T) {
 			}
 		})
 	}
+}
+
+// mockChainTracker implements ChainTracker for testing
+type mockChainTracker struct {
+	trackedChains map[ids.ID]struct{}
+	trackError    error
+}
+
+func newMockChainTracker() *mockChainTracker {
+	return &mockChainTracker{
+		trackedChains: make(map[ids.ID]struct{}),
+	}
+}
+
+func (m *mockChainTracker) TrackChain(chainID ids.ID) error {
+	if m.trackError != nil {
+		return m.trackError
+	}
+	m.trackedChains[chainID] = struct{}{}
+	return nil
+}
+
+func (m *mockChainTracker) TrackedChains() set.Set[ids.ID] {
+	result := set.NewSet[ids.ID](len(m.trackedChains))
+	for id := range m.trackedChains {
+		result.Add(id)
+	}
+	return result
+}
+
+func TestSetTrackedChainsSuccess(t *testing.T) {
+	require := require.New(t)
+
+	tracker := newMockChainTracker()
+	a := &Admin{Config: Config{
+		Log:     log.NewNoOpLogger(),
+		Network: tracker,
+	}}
+
+	chain1 := ids.GenerateTestID()
+	chain2 := ids.GenerateTestID()
+
+	args := &SetTrackedChainsArgs{
+		Chains: []string{chain1.String(), chain2.String()},
+	}
+	reply := &SetTrackedChainsReply{}
+
+	require.NoError(a.SetTrackedChains(nil, args, reply))
+	require.Len(reply.TrackedChains, 2)
+
+	// Verify chains are tracked
+	tracked := tracker.TrackedChains()
+	require.True(tracked.Contains(chain1))
+	require.True(tracked.Contains(chain2))
+}
+
+func TestSetTrackedChainsInvalidChainID(t *testing.T) {
+	require := require.New(t)
+
+	tracker := newMockChainTracker()
+	a := &Admin{Config: Config{
+		Log:     log.NewNoOpLogger(),
+		Network: tracker,
+	}}
+
+	args := &SetTrackedChainsArgs{
+		Chains: []string{"invalid-chain-id"},
+	}
+	reply := &SetTrackedChainsReply{}
+
+	err := a.SetTrackedChains(nil, args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "invalid chain ID")
+}
+
+func TestSetTrackedChainsNoNetwork(t *testing.T) {
+	require := require.New(t)
+
+	a := &Admin{Config: Config{
+		Log:     log.NewNoOpLogger(),
+		Network: nil,
+	}}
+
+	args := &SetTrackedChainsArgs{
+		Chains: []string{ids.GenerateTestID().String()},
+	}
+	reply := &SetTrackedChainsReply{}
+
+	err := a.SetTrackedChains(nil, args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "network not available")
+}
+
+func TestGetTrackedChainsSuccess(t *testing.T) {
+	require := require.New(t)
+
+	tracker := newMockChainTracker()
+	chain1 := ids.GenerateTestID()
+	chain2 := ids.GenerateTestID()
+	tracker.trackedChains[chain1] = struct{}{}
+	tracker.trackedChains[chain2] = struct{}{}
+
+	a := &Admin{Config: Config{
+		Log:     log.NewNoOpLogger(),
+		Network: tracker,
+	}}
+
+	reply := &GetTrackedChainsReply{}
+	require.NoError(a.GetTrackedChains(nil, nil, reply))
+	require.Len(reply.TrackedChains, 2)
+}
+
+func TestGetTrackedChainsNoNetwork(t *testing.T) {
+	require := require.New(t)
+
+	a := &Admin{Config: Config{
+		Log:     log.NewNoOpLogger(),
+		Network: nil,
+	}}
+
+	reply := &GetTrackedChainsReply{}
+	err := a.GetTrackedChains(nil, nil, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "network not available")
 }
