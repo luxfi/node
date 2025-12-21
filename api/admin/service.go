@@ -325,9 +325,14 @@ type LoadVMsReply struct {
 	NewVMs map[ids.ID][]string `json:"newVMs"`
 	// VMs that failed to be loaded and the error message
 	FailedVMs map[ids.ID]string `json:"failedVMs,omitempty"`
+	// ChainsRetried is the number of chains that were re-queued for creation
+	// after VMs were hot-loaded
+	ChainsRetried int `json:"chainsRetried,omitempty"`
 }
 
 // LoadVMs loads any new VMs available to the node and returns the added VMs.
+// After loading new VMs, it retries creating any chains that were waiting for
+// those VMs (hot-loading support).
 func (a *Admin) LoadVMs(r *http.Request, _ *struct{}, reply *LoadVMsReply) error {
 	a.Log.Debug("API called",
 		log.String("service", "admin"),
@@ -351,7 +356,25 @@ func (a *Admin) LoadVMs(r *http.Request, _ *struct{}, reply *LoadVMsReply) error
 
 	reply.FailedVMs = failedVMsParsed
 	reply.NewVMs, err = ids.GetRelevantAliases(a.VMManager, loadedVMs)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Hot-loading: retry chains that were waiting for these VMs
+	totalRetried := 0
+	for _, vmID := range loadedVMs {
+		retried := a.ChainManager.RetryPendingChains(vmID)
+		if retried > 0 {
+			a.Log.Info("Retrying pending chains after VM hot-load",
+				log.Stringer("vmID", vmID),
+				log.Int("chainsRetried", retried),
+			)
+		}
+		totalRetried += retried
+	}
+	reply.ChainsRetried = totalRetried
+
+	return nil
 }
 
 func (a *Admin) getLoggerNames(loggerName string) []string {

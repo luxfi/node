@@ -163,6 +163,13 @@ type Manager interface {
 	// be called once.
 	StartChainCreator(platformChain ChainParameters) error
 
+	// RetryPendingChains re-queues chains that were waiting for the specified VM.
+	// This is called when a VM is hot-loaded via admin.loadVMs.
+	RetryPendingChains(vmID ids.ID) int
+
+	// GetPendingChains returns the chain parameters waiting for a VM to be loaded.
+	GetPendingChains(vmID ids.ID) []ChainParameters
+
 	Shutdown()
 }
 
@@ -651,6 +658,12 @@ type manager struct {
 	chainCreatorShutdownCh chan struct{}
 	chainCreatorExited     sync.WaitGroup
 
+	// pendingVMChains tracks chains waiting for VMs to be loaded (for hot-loading).
+	// Key: VM ID that the chain needs
+	// Value: List of chain parameters waiting for this VM
+	pendingVMChainsLock sync.RWMutex
+	pendingVMChains     map[ids.ID][]ChainParameters
+
 	chainsLock sync.Mutex
 	// Key: Chain's ID
 	// Value: The chain
@@ -727,6 +740,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		chainsQueue:            buffer.NewUnboundedBlockingDeque[ChainParameters](initialQueueSize),
 		unblockChainCreatorCh:  make(chan struct{}),
 		chainCreatorShutdownCh: make(chan struct{}),
+		pendingVMChains:        make(map[ids.ID][]ChainParameters),
 
 		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
@@ -1104,6 +1118,17 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	m.Log.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
 	vmFactory, err := m.VMManager.GetFactory(chainParams.VMID)
 	if err != nil {
+		// Check if this is a VM not found error - if so, add to pending chains for hot-loading
+		if errors.Is(err, vms.ErrNotFound) {
+			m.pendingVMChainsLock.Lock()
+			m.pendingVMChains[chainParams.VMID] = append(m.pendingVMChains[chainParams.VMID], chainParams)
+			m.pendingVMChainsLock.Unlock()
+			m.Log.Warn("VM not found - chain queued for hot-loading",
+				log.Stringer("vmID", chainParams.VMID),
+				log.Stringer("chainID", chainParams.ID),
+			)
+			return nil, fmt.Errorf("VM %s not found (chain queued for hot-loading): %w", chainParams.VMID, err)
+		}
 		m.Log.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Err(err))
 		return nil, fmt.Errorf("error while getting vmFactory: %w", err)
 	}
@@ -2290,6 +2315,49 @@ func (m *manager) Shutdown() {
 // LookupVM returns the ID of the VM associated with an alias
 func (m *manager) LookupVM(alias string) (ids.ID, error) {
 	return m.VMManager.Lookup(alias)
+}
+
+// RetryPendingChains re-queues chains that were waiting for the specified VM.
+// This is called when a VM is hot-loaded via admin.loadVMs.
+// Returns the number of chains that were re-queued.
+func (m *manager) RetryPendingChains(vmID ids.ID) int {
+	m.pendingVMChainsLock.Lock()
+	pendingChains, ok := m.pendingVMChains[vmID]
+	if ok {
+		delete(m.pendingVMChains, vmID)
+	}
+	m.pendingVMChainsLock.Unlock()
+
+	if !ok || len(pendingChains) == 0 {
+		return 0
+	}
+
+	// Re-queue all pending chains for this VM
+	for _, chainParams := range pendingChains {
+		m.Log.Info("Re-queuing chain after VM hot-load",
+			log.Stringer("vmID", vmID),
+			log.Stringer("chainID", chainParams.ID),
+		)
+		m.chainsQueue.PushRight(chainParams)
+	}
+
+	return len(pendingChains)
+}
+
+// GetPendingChains returns the chain parameters waiting for a VM to be loaded.
+func (m *manager) GetPendingChains(vmID ids.ID) []ChainParameters {
+	m.pendingVMChainsLock.RLock()
+	defer m.pendingVMChainsLock.RUnlock()
+
+	pendingChains, ok := m.pendingVMChains[vmID]
+	if !ok {
+		return nil
+	}
+
+	// Return a copy to avoid race conditions
+	result := make([]ChainParameters, len(pendingChains))
+	copy(result, pendingChains)
+	return result
 }
 
 // Notify registrants [those who want to know about the creation of chains]

@@ -50,3 +50,11 @@ func (testManager) Lookup(s string) (ids.ID, error) {
 func (testManager) LookupVM(s string) (ids.ID, error) {
 	return ids.FromString(s)
 }
+
+func (testManager) RetryPendingChains(ids.ID) int {
+	return 0
+}
+
+func (testManager) GetPendingChains(ids.ID) []ChainParameters {
+	return nil
+}
