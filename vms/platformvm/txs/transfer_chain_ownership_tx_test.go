@@ -97,9 +97,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  1,
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleTransferChainOwnershipTx.SyntacticVerify(ctx))
 
@@ -281,9 +281,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	utils.Sort(complexTransferChainOwnershipTx.Ins)
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
-		QuantumID:  1,
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(ctx2))
 
@@ -453,9 +453,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		QuantumID:  1,
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	unsignedComplexTransferChainOwnershipTx.InitCtx(ctx3)
 
@@ -563,8 +563,8 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
-		QuantumID: networkID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   chainID,
 	}
 

@@ -294,7 +294,7 @@ func TestGetTx(t *testing.T) {
 						Chain: constants.PrimaryNetworkID,
 					},
 					pop,
-					s.vm.ctx.LUXAssetID,
+					s.vm.ctx.XAssetID,
 					rewardsOwner,
 					rewardsOwner,
 					0,
@@ -312,7 +312,7 @@ func TestGetTx(t *testing.T) {
 				tx, err := wallet.IssueExportTx(
 					s.vm.ctx.XChainID,
 					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{ID: s.vm.ctx.LUXAssetID},
+						Asset: lux.Asset{ID: s.vm.ctx.XAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 100,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -478,7 +478,7 @@ func TestGetStake(t *testing.T) {
 		require.Equal(
 			lux.TransferableOutput{
 				Asset: lux.Asset{
-					ID: service.vm.ctx.LUXAssetID,
+					ID: service.vm.ctx.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: genesistest.DefaultValidatorWeight,
@@ -828,7 +828,7 @@ func TestGetValidatorsAt(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		service.vm.ctx.LUXAssetID,
+		service.vm.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		0,

@@ -1472,7 +1472,7 @@ func TestDurangoMemoField(t *testing.T) {
 						Chain: constants.PrimaryNetworkID,
 					},
 					pop,
-					env.ctx.LUXAssetID,
+					env.ctx.XAssetID,
 					owners,
 					owners,
 					reward.PercentDenominator,
@@ -1514,7 +1514,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Chain: constants.PrimaryNetworkID,
 					},
-					env.ctx.LUXAssetID,
+					env.ctx.XAssetID,
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -3626,7 +3626,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			updateExecutor: increaseL1Weight(1),
 			expectedRemainingFundsUTXO: &lux.UTXO{
 				Asset: lux.Asset{
-					ID: ctx.LUXAssetID,
+					ID: ctx.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: balance,
@@ -4347,7 +4347,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 				&lux.UTXO{
 					UTXOID: utxoID,
 					Asset: lux.Asset{
-						ID: ctx.LUXAssetID,
+						ID: ctx.XAssetID,
 					},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: test.expectedBalance,

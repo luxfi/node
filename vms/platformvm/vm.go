@@ -273,8 +273,8 @@ func (vm *VM) Initialize(
 
 	// Initialize vm.luxAssetID for GetStakingAssetID API
 	// Use LUXAssetID if set, otherwise fall back to XAssetID
-	if chainCtx.LUXAssetID != ids.Empty {
-		vm.luxAssetID = chainCtx.LUXAssetID
+	if chainCtx.XAssetID != ids.Empty {
+		vm.luxAssetID = chainCtx.XAssetID
 	} else {
 		vm.luxAssetID = chainCtx.XAssetID
 	}

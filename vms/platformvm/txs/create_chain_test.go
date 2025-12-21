@@ -22,12 +22,12 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		QuantumID: constants.UnitTestID,
+		
 		ChainID:   testChainID,
 	}
 	testNet1ID := ids.GenerateTestID()

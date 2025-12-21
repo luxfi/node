@@ -15,12 +15,12 @@ import (
 
 // mockValidatorState implements consensus.ValidatorState for testing
 type mockValidatorState struct {
-	getNetIDCallCount int
-	netIDMap          map[ids.ID]ids.ID
+	getNetworkIDCallCount int
+	netIDMap              map[ids.ID]ids.ID
 }
 
-func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
-	m.getNetIDCallCount++
+func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	m.getNetworkIDCallCount++
 	if netID, ok := m.netIDMap[chainID]; ok {
 		return netID, nil
 	}
@@ -29,11 +29,6 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 
 func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
-}
-
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Alias for GetNetID - kept for interface compatibility
-	return m.GetNetID(chainID)
 }
 
 func (m *mockValidatorState) GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
@@ -75,28 +70,28 @@ func TestValidatorStateWrapperCache(t *testing.T) {
 	ctx := context.Background()
 
 	// First call - cache miss
-	result1, err := wrapper.GetNetID(ctx, chainID1)
+	result1, err := wrapper.GetNetworkID(ctx, chainID1)
 	require.NoError(err)
 	require.Equal(netID1, result1)
-	require.Equal(1, mock.getNetIDCallCount, "First call should hit underlying state")
+	require.Equal(1, mock.getNetworkIDCallCount, "First call should hit underlying state")
 
 	// Second call - cache hit
-	result2, err := wrapper.GetNetID(ctx, chainID1)
+	result2, err := wrapper.GetNetworkID(ctx, chainID1)
 	require.NoError(err)
 	require.Equal(netID1, result2)
-	require.Equal(1, mock.getNetIDCallCount, "Second call should use cache")
+	require.Equal(1, mock.getNetworkIDCallCount, "Second call should use cache")
 
 	// Different chainID - cache miss
-	result3, err := wrapper.GetNetID(ctx, chainID2)
+	result3, err := wrapper.GetNetworkID(ctx, chainID2)
 	require.NoError(err)
 	require.Equal(netID2, result3)
-	require.Equal(2, mock.getNetIDCallCount, "Different chainID should miss cache")
+	require.Equal(2, mock.getNetworkIDCallCount, "Different chainID should miss cache")
 
 	// Same chainID again - cache hit
-	result4, err := wrapper.GetNetID(ctx, chainID2)
+	result4, err := wrapper.GetNetworkID(ctx, chainID2)
 	require.NoError(err)
 	require.Equal(netID2, result4)
-	require.Equal(2, mock.getNetIDCallCount, "Cached value should be used")
+	require.Equal(2, mock.getNetworkIDCallCount, "Cached value should be used")
 }
 
 // TestInterfacesToConsensusValidatorStateAdapterCache verifies NetID caching in adapter
@@ -120,16 +115,16 @@ func TestInterfacesToConsensusValidatorStateAdapterCache(t *testing.T) {
 	}
 
 	// First call - cache miss
-	result1, err := adapter.GetNetID(chainID1)
+	result1, err := adapter.GetNetworkID(chainID1)
 	require.NoError(err)
 	require.Equal(netID1, result1)
-	require.Equal(1, mock.getNetIDCallCount, "First call should hit underlying state")
+	require.Equal(1, mock.getNetworkIDCallCount, "First call should hit underlying state")
 
 	// Second call - cache hit
-	result2, err := adapter.GetNetID(chainID1)
+	result2, err := adapter.GetNetworkID(chainID1)
 	require.NoError(err)
 	require.Equal(netID1, result2)
-	require.Equal(1, mock.getNetIDCallCount, "Second call should use cache")
+	require.Equal(1, mock.getNetworkIDCallCount, "Second call should use cache")
 }
 
 // TestNetIDCacheSize verifies cache eviction works correctly
@@ -159,28 +154,28 @@ func TestNetIDCacheSize(t *testing.T) {
 	}
 
 	// Fill cache with 2 entries
-	_, err := wrapper.GetNetID(ctx, chainIDs[0])
+	_, err := wrapper.GetNetworkID(ctx, chainIDs[0])
 	require.NoError(err)
-	require.Equal(1, mock.getNetIDCallCount)
+	require.Equal(1, mock.getNetworkIDCallCount)
 
-	_, err = wrapper.GetNetID(ctx, chainIDs[1])
+	_, err = wrapper.GetNetworkID(ctx, chainIDs[1])
 	require.NoError(err)
-	require.Equal(2, mock.getNetIDCallCount)
+	require.Equal(2, mock.getNetworkIDCallCount)
 
 	// Add third entry - should evict oldest
-	_, err = wrapper.GetNetID(ctx, chainIDs[2])
+	_, err = wrapper.GetNetworkID(ctx, chainIDs[2])
 	require.NoError(err)
-	require.Equal(3, mock.getNetIDCallCount)
+	require.Equal(3, mock.getNetworkIDCallCount)
 
 	// Access first entry again - should be cache miss (evicted)
-	_, err = wrapper.GetNetID(ctx, chainIDs[0])
+	_, err = wrapper.GetNetworkID(ctx, chainIDs[0])
 	require.NoError(err)
-	require.Equal(4, mock.getNetIDCallCount, "First entry should have been evicted")
+	require.Equal(4, mock.getNetworkIDCallCount, "First entry should have been evicted")
 
 	// Access second entry - should also be cache miss (was evicted when we added chainIDs[0])
 	// Cache state after adding third: [1, 2]
 	// Cache state after re-adding first: [2, 0] (1 was evicted as oldest)
-	_, err = wrapper.GetNetID(ctx, chainIDs[1])
+	_, err = wrapper.GetNetworkID(ctx, chainIDs[1])
 	require.NoError(err)
-	require.Equal(5, mock.getNetIDCallCount, "Second entry should have been evicted when first was re-added")
+	require.Equal(5, mock.getNetworkIDCallCount, "Second entry should have been evicted when first was re-added")
 }

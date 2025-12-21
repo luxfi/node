@@ -135,6 +135,11 @@ func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
+func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains
+	return constants.PrimaryNetworkID, nil
+}
+
 func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// Return Primary Network ID for all chains
 	return constants.PrimaryNetworkID, nil
@@ -404,7 +409,7 @@ func TestAddValidatorCommit(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.LUXAssetID,
+		vm.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -568,7 +573,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.LUXAssetID,
+		vm.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -1031,7 +1036,7 @@ func TestAtomicImport(t *testing.T) {
 	}
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: vm.ctx.LUXAssetID},
+		Asset:  lux.Asset{ID: vm.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          50 * units.MicroLux,
 			OutputOwners: *importOwners,
@@ -1096,7 +1101,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1333,7 +1338,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1370,7 +1375,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(2),
 				OutputIndex: 2,
 			},
-			Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+			Asset: lux.Asset{ID: vm.ctx.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1720,7 +1725,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.LUXAssetID,
+		vm.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -1848,7 +1853,7 @@ func TestBaseTx(t *testing.T) {
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+				Asset: lux.Asset{ID: vm.ctx.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * units.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1885,7 +1890,7 @@ func TestPruneMempool(t *testing.T) {
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.ctx.LUXAssetID},
+				Asset: lux.Asset{ID: vm.ctx.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * units.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1938,7 +1943,7 @@ func TestPruneMempool(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.LUXAssetID,
+		vm.ctx.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		20000,

@@ -191,7 +191,7 @@ func (vm *VMClient) Initialize(
 			NodeID:       ctx.NodeID,
 			XChainID:     ctx.XChainID,
 			CChainID:     ctx.CChainID,
-			LUXAssetID:   ctx.LUXAssetID,
+			LUXAssetID:   ctx.XAssetID, // Use XAssetID as the primary asset
 			ChainDataDir: ctx.ChainDataDir,
 		}
 		// Handle type conversions for interface fields

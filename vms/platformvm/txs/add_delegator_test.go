@@ -29,10 +29,10 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.UnitTestID,
-		QuantumID:  constants.UnitTestID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 		NodeID:     nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
@@ -144,8 +144,8 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}

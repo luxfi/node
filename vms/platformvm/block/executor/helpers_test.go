@@ -87,12 +87,11 @@ type test struct {
 type testContext struct {
 	context.Context // embed stdlib context
 	NetworkID    uint32
-	NetID     ids.ID
 	ChainID      ids.ID
 	NodeID       ids.NodeID
 	XChainID     ids.ID
 	CChainID     ids.ID
-	XAssetID   ids.ID
+	XAssetID     ids.ID
 	Log          log.Logger
 	Lock         *sync.RWMutex
 	SharedMemory atomic.SharedMemory
@@ -134,7 +133,6 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	res.ctx = &testContext{
 		Context:      context.Background(),
 		NetworkID:    consensusCtx.NetworkID,
-		NetID:       consensusCtx.NetID,
 		ChainID:      consensusCtx.ChainID,
 		NodeID:       consensusCtx.NodeID,
 		XChainID:     consensusCtx.XChainID,

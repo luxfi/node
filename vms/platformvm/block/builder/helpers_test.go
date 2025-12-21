@@ -73,13 +73,8 @@ func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	// Return Primary Network ID for all chains
-	return constants.PrimaryNetworkID, nil
-}
-
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains (subnet is the network)
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -145,7 +140,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.ctx.NodeID = consensusCtx.NodeID
 	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.XAssetID = consensusCtx.XAssetID
-	res.ctx.LUXAssetID = consensusCtx.LUXAssetID
+	res.ctx.XAssetID = consensusCtx.XAssetID
 	res.ctx.XChainID = consensusCtx.XChainID
 	res.ctx.CChainID = consensusCtx.CChainID
 	res.msm = &mutableSharedMemory{
@@ -164,14 +159,11 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 	// Convert testcontext.Context to consensusctx.Context for state
 	stateConsensusCtx := &consensusctx.Context{
-		NetworkID:  res.ctx.NetworkID,
-		QuantumID:  res.ctx.NetworkID,
-		NetID:      res.ctx.NetID,
-		ChainID:    res.ctx.ChainID,
-		NodeID:     res.ctx.NodeID,
-		XAssetID:   res.ctx.XAssetID,
-		LUXAssetID: res.ctx.LUXAssetID,
-		Log:        res.ctx.Log,
+		NetworkID: res.ctx.NetworkID,
+		ChainID:   res.ctx.ChainID,
+		NodeID:    res.ctx.NodeID,
+		XAssetID:  res.ctx.XAssetID,
+		Log:       res.ctx.Log,
 	}
 	res.state = statetest.New(t, statetest.Config{
 		DB:         res.baseDB,
@@ -188,12 +180,9 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	// Convert testcontext.Context to consensusctx.Context
 	backendConsensusCtx := &consensusctx.Context{
 		NetworkID:      res.ctx.NetworkID,
-		QuantumID:      res.ctx.NetworkID,
-		NetID:          res.ctx.NetID,
 		ChainID:        res.ctx.ChainID,
 		NodeID:         res.ctx.NodeID,
 		XAssetID:       res.ctx.XAssetID,
-		LUXAssetID:     res.ctx.LUXAssetID,
 		Log:            res.ctx.Log,
 		ValidatorState: res.ctx.ValidatorState,
 		SharedMemory:   res.ctx.SharedMemory,
@@ -295,12 +284,9 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	// Convert testcontext.Context to consensusctx.Context for wallet
 	walletCtx := &consensusctx.Context{
 		NetworkID:    e.ctx.NetworkID,
-		QuantumID:    e.ctx.NetworkID,
-		NetID:        e.ctx.NetID,
 		ChainID:      e.ctx.ChainID,
 		NodeID:       e.ctx.NodeID,
 		XAssetID:     e.ctx.XAssetID,
-		LUXAssetID:   e.ctx.LUXAssetID,
 		SharedMemory: e.ctx.SharedMemory,
 	}
 	// Create a minimal Config for the wallet

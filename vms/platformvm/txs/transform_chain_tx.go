@@ -124,7 +124,7 @@ func (tx *TransformChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == ctx.LUXAssetID:
+	case tx.AssetID == ctx.XAssetID:
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero

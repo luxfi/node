@@ -121,10 +121,8 @@ func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 }
 
 func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest) (*vmpb.InitializeResponse, error) {
-	subnetID, err := ids.ToID(req.NetId)
-	if err != nil {
-		return nil, err
-	}
+	// NetId from request is no longer used - all chains are on primary network
+	// NetworkID (1=mainnet, 2=testnet) is used instead
 	chainID, err := ids.ToID(req.ChainId)
 	if err != nil {
 		return nil, err
@@ -247,14 +245,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.ctx = &consensuscontext.Context{
 		NetworkID:       req.NetworkId,
-		NetID:           subnetID,
 		ChainID:         chainID,
 		NodeID:          nodeID,
 		PublicKey:       publicKeyBytes,
 		NetworkUpgrades: networkUpgrades,
 		XChainID:        xChainID,
 		CChainID:        cChainID,
-		LUXAssetID:      luxAssetID,
+		XAssetID:        luxAssetID, // Use XAssetID for the primary asset
 		Log:             vm.log,
 		SharedMemory:    sharedMemoryClient,
 		BCLookup:        bcLookupClient,

@@ -40,16 +40,14 @@ func NewWalletFactoryWithAssets(
 	state state.State,
 	luxAssetID ids.ID,
 ) *WalletFactory {
-	// Put the LUX asset ID into the context so it can be retrieved later
+	// Put the asset ID into the context so it can be retrieved later
 	networkID := consensusctx.GetNetworkID(stdCtx)
 	ctxIDs := consensusctx.IDs{
-		NetworkID:  networkID,
-		QuantumID:  networkID,
-		NetID:      ids.Empty,
-		ChainID:    ids.Empty,
-		NodeID:     ids.EmptyNodeID,
-		PublicKey:  nil,
-		LUXAssetID: luxAssetID,
+		NetworkID: networkID,
+		ChainID:   ids.Empty,
+		NodeID:    ids.EmptyNodeID,
+		PublicKey: nil,
+		XAssetID:  luxAssetID,
 	}
 	stdCtx = consensusctx.WithIDs(stdCtx, ctxIDs)
 
@@ -57,8 +55,8 @@ func NewWalletFactoryWithAssets(
 	consCtx := consensusctx.FromContext(stdCtx)
 	if consCtx == nil {
 		consCtx = &consensusctx.Context{
-			NetworkID:  networkID,
-			LUXAssetID: luxAssetID,
+			NetworkID: networkID,
+			XAssetID:  luxAssetID,
 		}
 	}
 
@@ -99,7 +97,7 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		backend = newBackend(addrSet, w.state)
 		// Extract networkID and LUXAssetID from context
 		networkID  = w.ctx.NetworkID
-		luxAssetID = w.ctx.LUXAssetID
+		luxAssetID = w.ctx.XAssetID
 	)
 
 	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, nil, w.state.GetTimestamp())

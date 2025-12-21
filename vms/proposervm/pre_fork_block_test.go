@@ -672,7 +672,6 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	// Create minimal consensus context for testing
 	consensusCtx := &consensuscontext.Context{
-		QuantumID:      1,
 		NetworkID:      1,
 		ChainID:        ids.GenerateTestID(),
 		NodeID:         ids.GenerateTestNodeID(),

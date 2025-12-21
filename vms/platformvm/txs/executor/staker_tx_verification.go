@@ -176,7 +176,7 @@ func verifyAddValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -269,7 +269,7 @@ func verifyAddChainValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -349,7 +349,7 @@ func verifyRemoveChainValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, false, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -469,7 +469,7 @@ func verifyAddDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -591,7 +591,7 @@ func verifyAddPermissionlessValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -738,7 +738,7 @@ func verifyAddPermissionlessDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -798,7 +798,7 @@ func verifyTransferChainOwnershipTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.LUXAssetID: fee,
+			backend.Ctx.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)

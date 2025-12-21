@@ -140,10 +140,10 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -445,10 +445,10 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	}
 	ctx = &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -837,10 +837,10 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
@@ -1140,9 +1140,9 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	}
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		QuantumID:  1,
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx2))
 
@@ -1399,8 +1399,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
-		QuantumID: networkID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   chainID,
 	}
 

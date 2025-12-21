@@ -27,8 +27,8 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}
@@ -153,8 +153,8 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	}

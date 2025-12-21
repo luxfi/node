@@ -212,7 +212,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 			nil, // chainIDs
 		)
 		exportedOutput = &lux.TransferableOutput{
-			Asset: lux.Asset{ID: verifier.ctx.LUXAssetID},
+			Asset: lux.Asset{ID: verifier.ctx.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt:          units.NanoLux,
 				OutputOwners: secp256k1fx.OutputOwners{},
@@ -322,7 +322,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: ctx.LUXAssetID},
+			Asset: lux.Asset{ID: ctx.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt:          units.Lux,
 				OutputOwners: owner,

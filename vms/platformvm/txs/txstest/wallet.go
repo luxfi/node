@@ -150,7 +150,7 @@ func NewWalletWithOptions(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	builderContext := newContext(ctx, ctx.NetworkID, ctx.LUXAssetID, wCfg.Config, wCfg.InternalCfg, state.GetTimestamp())
+	builderContext := newContext(ctx, ctx.NetworkID, ctx.XAssetID, wCfg.Config, wCfg.InternalCfg, state.GetTimestamp())
 	kcAdapter := &keychainAdapter{kc: kc}
 	return wallet.New(
 		&client{

@@ -19,17 +19,15 @@ import (
 // for compatibility with existing tests
 type Context struct {
 	context.Context
-	NetworkID      uint32
-	NetID          ids.ID
+	NetworkID      uint32 // 1=mainnet, 2=testnet
 	ChainID        ids.ID
 	NodeID         ids.NodeID
 	PublicKey      interface{} // BLS public key
 	XChainID       ids.ID
 	CChainID       ids.ID
 	DChainID       ids.ID
-	XAssetID       ids.ID
-	LUXAssetID     ids.ID
-	ValidatorState interface{} // Validator state manager
+	XAssetID       ids.ID // Primary asset ID (X-chain native)
+	ValidatorState interface{}
 	WarpSigner     interface{}
 	Log            log.Logger
 	Lock           *sync.RWMutex
@@ -53,9 +51,7 @@ func New(ctx context.Context) *Context {
 func (c *Context) WithIDs(ids consensuscontext.IDs) *Context {
 	c.NetworkID = ids.NetworkID
 	c.ChainID = ids.ChainID
-	c.NetID = ids.NetID
 	c.NodeID = ids.NodeID
 	c.XAssetID = ids.XAssetID
-	c.LUXAssetID = ids.LUXAssetID
 	return c
 }

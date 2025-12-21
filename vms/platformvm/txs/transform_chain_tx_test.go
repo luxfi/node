@@ -118,10 +118,10 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
 
@@ -347,10 +347,10 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	utils.Sort(complexTransformTx.Ins)
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
 
@@ -537,10 +537,10 @@ func TestTransformChainTxSerialization(t *testing.T) {
 
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	unsignedComplexTransformTx.InitCtx(ctx3)
 
@@ -655,10 +655,10 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID:  networkID, // Must match tx.NetworkID
-		QuantumID:  networkID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    chainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 
 	// A BaseTx that already passed syntactic verification.

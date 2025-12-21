@@ -102,15 +102,14 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	// Use the same fixed LUX asset ID as genesis for consistency
-	luxAssetID := genesistest.LUXAssetID
+	// Use the same fixed X-chain asset ID as genesis for consistency
+	xAssetID := genesistest.XAssetID
 
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = constants.PlatformChainID
 	ctx.XChainID = ids.GenerateTestID() // Set a test X-Chain ID
 	ctx.CChainID = ids.GenerateTestID() // Set a test C-Chain ID
-	ctx.XAssetID = luxAssetID
-	ctx.LUXAssetID = luxAssetID
+	ctx.XAssetID = xAssetID
 	ctx.NetworkID = constants.UnitTestID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
@@ -123,14 +122,12 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	// Convert testcontext.Context to consensus.Context for statetest
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      ctx.NetworkID,
-		NetID:          ctx.NetID,
 		ChainID:        ctx.ChainID,
 		NodeID:         ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test
 		XChainID:       ctx.XChainID,
 		CChainID:       ctx.CChainID,
 		XAssetID:       ctx.XAssetID,
-		LUXAssetID:     ctx.LUXAssetID,
 		ValidatorState: ctx.ValidatorState,
 		SharedMemory:   ctx.SharedMemory,
 		ChainDataDir:   ctx.ChainDataDir,
@@ -224,13 +221,13 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	// Convert testcontext.Context to consensus.Context
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      e.ctx.NetworkID,
-		NetID:          e.ctx.NetID,
+		
 		ChainID:        e.ctx.ChainID,
 		NodeID:         e.ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test
 		XChainID:       e.ctx.XChainID,
 		CChainID:       e.ctx.CChainID,
-		LUXAssetID:     e.ctx.LUXAssetID,
+		XAssetID:     e.ctx.XAssetID,
 		ValidatorState: e.ctx.ValidatorState,
 		SharedMemory:   e.ctx.SharedMemory,
 		ChainDataDir:   e.ctx.ChainDataDir,

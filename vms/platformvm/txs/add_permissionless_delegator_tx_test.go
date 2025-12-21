@@ -33,10 +33,10 @@ var errCustom = errors.New("custom error")
 func testContext(networkID uint32, chainID, luxAssetID ids.ID) *consensusctx.Context {
 	return &consensusctx.Context{
 		NetworkID:  networkID,
-		QuantumID:  networkID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    chainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 }
 
@@ -137,10 +137,10 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := &consensusctx.Context{
 		NetworkID:  1,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -394,10 +394,10 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	}
 	ctx = &consensusctx.Context{
 		NetworkID:  1,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -628,10 +628,10 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
 
@@ -882,16 +882,16 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
 		NetworkID:  1,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
@@ -1166,10 +1166,10 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	}
 	ctx = &consensusctx.Context{
 		NetworkID:  1,
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 
@@ -1400,10 +1400,10 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		QuantumID:  1,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	unsignedComplexAddNetTx.InitCtx(ctx3)
 
@@ -1551,8 +1551,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 
 	_ = &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		QuantumID: networkID,
-		SubnetID:    constants.PrimaryNetworkID,
+		
+		
 		ChainID:   chainID,
 	}
 
@@ -1893,9 +1893,9 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			testCtx := &consensusctx.Context{
 				NetworkID: networkID,
-				QuantumID: networkID,
+				
 				ChainID:   chainID,
-				SubnetID:    constants.PrimaryNetworkID,
+				
 			}
 			err := tx.SyntacticVerify(testCtx)
 			require.ErrorIs(t, err, tt.err)

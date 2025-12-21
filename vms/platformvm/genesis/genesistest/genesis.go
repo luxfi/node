@@ -33,9 +33,9 @@ const (
 )
 
 var (
-	// Use a fixed test asset ID for LUX
-	LUXAssetID = ids.ID{'l', 'u', 'x', ' ', 'a', 's', 's', 'e', 't', ' ', 'i', 'd'}
-	LUXAsset   = lux.Asset{ID: LUXAssetID}
+	// Use a fixed test asset ID for X-chain native asset
+	XAssetID = ids.ID{'l', 'u', 'x', ' ', 'a', 's', 's', 'e', 't', ' ', 'i', 'd'}
+	XAsset   = lux.Asset{ID: XAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -103,10 +103,10 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        LUXAssetID,
+				TxID:        XAssetID,
 				OutputIndex: uint32(i),
 			},
-			Asset: LUXAsset,
+			Asset: XAsset,
 			Out: &secp256k1fx.TransferOutput{
 				Amt: c.InitialBalance,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -139,7 +139,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			},
 			StakeOuts: []*lux.TransferableOutput{
 				{
-					Asset: LUXAsset,
+					Asset: XAsset,
 					Out: &secp256k1fx.TransferOutput{
 						Amt:          c.ValidatorWeight,
 						OutputOwners: owner,

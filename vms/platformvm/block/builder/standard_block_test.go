@@ -43,7 +43,7 @@ func TestAtomicTxImports(t *testing.T) {
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 1,
 		},
-		Asset: lux.Asset{ID: env.ctx.LUXAssetID},
+		Asset: lux.Asset{ID: env.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          70 * units.MilliLux,
 			OutputOwners: *owner,

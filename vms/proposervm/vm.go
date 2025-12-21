@@ -78,7 +78,7 @@ type VM struct {
 	db             *versiondb.Database
 	logger         log.Logger
 	validatorState validators.State
-	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetID lookups
+	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetworkID lookups
 
 	// Block ID --> Block
 	// Each element is a block that passed verification but
@@ -159,7 +159,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(validatorState, chainContext.NetID, chainContext.ChainID)
+	vm.Windower = proposer.New(validatorState, constants.PrimaryNetworkID, chainContext.ChainID)
 	vm.Tree = tree.New()
 	registry, ok := vm.Config.Registerer.(metric.Registry)
 	if !ok {
@@ -905,14 +905,14 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 	return v.vs.GetMinimumHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+func (v *validatorStateWrapper) GetNetworkID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	// Check cache first
 	if netID, ok := v.netIDsCache.Get(chainID); ok {
 		return netID, nil
 	}
 
 	// Cache miss - fetch from underlying validator state
-	netID, err := v.vs.GetNetID(chainID)
+	netID, err := v.vs.GetNetworkID(chainID)
 	if err != nil {
 		return ids.Empty, err
 	}
@@ -955,14 +955,14 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetChainID(chainID ids.ID) 
 	return a.vs.GetChainID(chainID)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	// Check cache first
 	if netID, ok := a.netIDsCache.Get(chainID); ok {
 		return netID, nil
 	}
 
 	// Cache miss - fetch from underlying validator state
-	netID, err := a.vs.GetNetID(chainID)
+	netID, err := a.vs.GetNetworkID(chainID)
 	if err != nil {
 		return ids.Empty, err
 	}

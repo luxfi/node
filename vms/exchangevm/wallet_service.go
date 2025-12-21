@@ -273,7 +273,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    w.vm.consensusCtx.QuantumID,
+		NetworkID:    w.vm.consensusCtx.NetworkID,
 		BlockchainID: w.vm.consensusCtx.ChainID,
 		Outs:         outs,
 		Ins:          ins,

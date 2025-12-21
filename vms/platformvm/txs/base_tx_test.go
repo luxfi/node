@@ -75,10 +75,10 @@ func TestBaseTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty for serialization test
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
@@ -224,10 +224,10 @@ func TestBaseTxSerialization(t *testing.T) {
 	utils.Sort(complexBaseTx.Ins)
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
@@ -375,10 +375,10 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		QuantumID:  constants.MainnetID,
-		SubnetID:     constants.PrimaryNetworkID,
+		
+		
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	unsignedComplexBaseTx.InitCtx(ctx3)
 

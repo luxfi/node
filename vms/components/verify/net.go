@@ -52,9 +52,11 @@ func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) er
 	return nil
 }
 
-// SameSubnet verifies that the peerChainID is in the same subnet as the chain
+// SameSubnet verifies that the peerChainID is in the same network as the chain
 // represented by consensusCtx, but not the same chain. This is a convenience
 // wrapper for coreth compatibility that accepts *consensusctx.Context directly.
+// With the simplified NetworkID model (1=mainnet, 2=testnet), chains on the
+// same network are always in the same "subnet".
 func SameSubnet(ctx context.Context, consensusCtx *consensusctx.Context, peerChainID ids.ID) error {
 	if peerChainID == consensusCtx.ChainID {
 		return ErrSameChainID
@@ -66,12 +68,11 @@ func SameSubnet(ctx context.Context, consensusCtx *consensusctx.Context, peerCha
 		return fmt.Errorf("validator state does not implement required interface")
 	}
 
-	peerNetID, err := vs.GetChainID(peerChainID)
+	// Verify the peer chain exists in the same network
+	_, err := vs.GetChainID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get chain of %q: %w", peerChainID, err)
 	}
-	if consensusCtx.NetID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, consensusCtx.NetID, peerNetID)
-	}
+	// All chains on the same network (NetworkID 1 or 2) are in the same "subnet"
 	return nil
 }

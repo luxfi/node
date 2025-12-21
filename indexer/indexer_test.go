@@ -533,13 +533,11 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	require.IsType(&indexer{}, idxrIntf)
 	idxr := idxrIntf.(*indexer)
 
-	// Create chain1Ctx for a chain NOT in primary network
+	// Create chain1Ctx for a chain on a custom network (not mainnet/testnet)
 	testChainID := ids.GenerateTestID()
 	chain1Ctx := consensustest.Context(t, testChainID)
-	// Set NetID to non-primary network (not ids.Empty)
-	chain1Ctx.NetID = ids.GenerateTestID()
-
-	// The test context is configured correctly for a non-primary net
+	// Set NetworkID to a custom network (not 1=mainnet or 2=testnet)
+	chain1Ctx.NetworkID = 99 // Custom network
 
 	// RegisterChain should return without adding an index for this chain
 	chainVM := &mockChainVM{}

@@ -64,7 +64,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: 1,
+					env.ctx.XAssetID: 1,
 				},
 				randSrc,
 			),
@@ -79,7 +79,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.CChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: 1,
+					env.ctx.XAssetID: 1,
 				},
 				randSrc,
 			),

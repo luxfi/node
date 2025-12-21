@@ -19,7 +19,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
@@ -140,9 +139,10 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context,
 			log.String("chainName", chainName),
 		)
 		return
-	} else if ctx.NetID != constants.PrimaryNetworkID {
+	} else if ctx.NetworkID != 1 && ctx.NetworkID != 2 {
+		// Only index chains on mainnet (1) or testnet (2) - skip custom networks
 		i.log.Debug("not registering chain to indexer",
-			log.String("reason", "not in the primary network"),
+			log.String("reason", "not on mainnet or testnet"),
 			log.String("chainName", chainName),
 		)
 		return

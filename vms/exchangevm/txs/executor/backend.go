@@ -61,5 +61,5 @@ type validatorStateAdapter struct {
 }
 
 func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetNetID(chainID)
+	return v.vs.GetNetworkID(chainID)
 }

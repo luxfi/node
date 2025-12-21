@@ -30,7 +30,7 @@ func getValidatorRules(
 ) (*addValidatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
 		return &addValidatorRules{
-			assetID:           backend.Ctx.LUXAssetID,
+			assetID:           backend.Ctx.XAssetID,
 			minValidatorStake: backend.Config.MinValidatorStake,
 			maxValidatorStake: backend.Config.MaxValidatorStake,
 			minStakeDuration:  backend.Config.MinStakeDuration,
@@ -70,7 +70,7 @@ func getDelegatorRules(
 ) (*addDelegatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
 		return &addDelegatorRules{
-			assetID:                  backend.Ctx.LUXAssetID,
+			assetID:                  backend.Ctx.XAssetID,
 			minDelegatorStake:        backend.Config.MinDelegatorStake,
 			maxValidatorStake:        backend.Config.MaxValidatorStake,
 			minStakeDuration:         backend.Config.MinStakeDuration,

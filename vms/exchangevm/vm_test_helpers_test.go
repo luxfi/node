@@ -135,11 +135,7 @@ func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
 }
 
-func (m *mockValidatorState) GetNetID(ids.ID) (ids.ID, error) {
-	return m.chainID, nil
-}
-
-func (m *mockValidatorState) GetSubnetID(_ ids.ID) (ids.ID, error) {
+func (m *mockValidatorState) GetNetworkID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
 }
 
@@ -194,7 +190,6 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		ChainID:        chainID,
 		XChainID:       ids.GenerateTestID(),
 		CChainID:       ids.GenerateTestID(),
-		NetID:          chainID,
 		NodeID:         ids.GenerateTestNodeID(),
 		ValidatorState: &mockValidatorState{chainID: chainID},
 	}

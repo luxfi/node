@@ -207,6 +207,6 @@ func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height 
 	return result, nil
 }
 
-func (w *warpValidatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return w.vs.GetNetID(chainID)
+func (w *warpValidatorStateAdapter) GetNetworkID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return w.vs.GetNetworkID(chainID)
 }

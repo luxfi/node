@@ -1013,7 +1013,7 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 }
 
 func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetNetID(chainID)
+	return v.vs.GetNetworkID(chainID)
 }
 
 func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {

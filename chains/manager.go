@@ -1089,8 +1089,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	chainCtx := &consensusctx.Context{
 		NetworkID:    m.NetworkID,
-		QuantumID:    m.NetworkID,
-		NetID:        chainParams.ChainID,
 		ChainID:      chainParams.ID,
 		NodeID:       m.NodeID,
 		PublicKey:    pubKeyBytes,
@@ -1098,7 +1096,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		XChainID:     m.XChainID,
 		CChainID:     m.CChainID,
 		XAssetID:     m.XAssetID,
-		LUXAssetID:   m.XAssetID,
 		ChainDataDir: chainDataDir,
 
 		BCLookup:        m,
