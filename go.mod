@@ -29,7 +29,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.35
+	github.com/luxfi/consensus v1.22.37
 	github.com/luxfi/crypto v1.17.25
 	github.com/luxfi/database v1.2.13
 	github.com/luxfi/ids v1.2.5
@@ -142,18 +142,18 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.2.4
-	github.com/luxfi/coreth v0.15.56
+	github.com/luxfi/coreth v0.15.57
 	github.com/luxfi/genesis v1.5.9
 	github.com/luxfi/geth v1.16.58
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
-	github.com/luxfi/p2p v1.4.7
+	github.com/luxfi/p2p v1.4.9
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/ringtail v0.1.1
 	github.com/luxfi/threshold v1.1.2
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
-	github.com/luxfi/warp v1.16.37
+	github.com/luxfi/warp v1.16.38
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.0
 )
