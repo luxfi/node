@@ -173,7 +173,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 					ChainID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
-					EndAccumulatedFee: units.Lux, // This validator won't be evicted soon.
+					EndAccumulatedFee: 10 * units.Lux, // 10 LUX = 10M microLux, lasts ~58 days at 2 nanoLux/sec, well past the 28-day validator end time.
 				},
 			},
 			maxTime:  mockable.MaxTime,
