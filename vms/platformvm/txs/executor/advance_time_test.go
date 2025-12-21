@@ -367,7 +367,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 			dummyHeight := uint64(1)
 
 			netID := testNet1.ID()
-			env.config.TrackedNets.Add(netID)
+			env.config.TrackedChains.Add(netID)
 
 			for _, staker := range test.stakers {
 				addPendingValidator(
@@ -382,7 +382,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			for _, staker := range test.subnetStakers {
 				wallet := newWallet(t, env, walletConfig{
-					subnetIDs: []ids.ID{netID},
+					netIDs: []ids.ID{netID},
 				})
 
 				tx, err := wallet.IssueAddChainValidatorTx(
@@ -475,10 +475,10 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	netID := testNet1.ID()
-	env.config.TrackedNets.Add(netID)
+	env.config.TrackedChains.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{netID},
+		netIDs: []ids.ID{netID},
 	})
 
 	dummyHeight := uint64(1)
@@ -588,11 +588,11 @@ func TestTrackedNet(t *testing.T) {
 
 			netID := testNet1.ID()
 			if tracked {
-				env.config.TrackedNets.Add(netID)
+				env.config.TrackedChains.Add(netID)
 			}
 
 			wallet := newWallet(t, env, walletConfig{
-				subnetIDs: []ids.ID{netID},
+				netIDs: []ids.ID{netID},
 			})
 
 			// Add a subnet validator to the staker set

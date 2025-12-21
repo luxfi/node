@@ -293,7 +293,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// but stops validating net after stops validating primary network
 		// (note that keys[0] is a genesis validator)
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -331,7 +331,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// primary network validation period
 		// (note that keys[0] is a genesis validator)
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -389,7 +389,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Proposed validator isn't in pending or current validator sets
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -442,7 +442,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but starts validating subnet before primary network
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -478,7 +478,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but stops validating subnet after primary network
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -514,7 +514,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network and
 		// period validating subnet is subset of time validating primary network
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -552,7 +552,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 
 	{
 		wallet := newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -590,7 +590,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	// Case: Proposed validator already validating the subnet
 	// First, add validator as validator of subnet
 	wallet = newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 	subnetTx, err := wallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
@@ -622,7 +622,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Node with ID nodeIDKey.Address() now validating subnet with ID testNet1.ID
 		wallet = newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		duplicateNetTx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -661,7 +661,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Too few signatures
 		wallet = newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -703,7 +703,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Control Signature from invalid key (keys[3] is not a control key)
 		wallet = newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -746,7 +746,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator in pending validator set for subnet
 		// First, add validator to pending validator set of subnet
 		wallet = newWallet(t, env, walletConfig{
-			subnetIDs: []ids.ID{subnetID},
+			netIDs: []ids.ID{subnetID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{

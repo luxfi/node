@@ -529,7 +529,7 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 			env := newEnvironment(t, nil, upgradetest.Banff)
 
 			netID := testNet1.ID()
-			env.config.TrackedNets.Add(netID)
+			env.config.TrackedChains.Add(netID)
 
 			for _, staker := range test.stakers {
 				wallet := newWallet(t, env, walletConfig{})
@@ -727,7 +727,7 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 		subnetIDs: []ids.ID{netID},
 	})
 
-	env.config.TrackedNets.Add(netID)
+	env.config.TrackedChains.Add(netID)
 
 	// Add a subnet validator to the staker set
 	subnetValidatorNodeID := genesistest.DefaultNodeIDs[0]
@@ -876,7 +876,7 @@ func TestBanffProposalBlockTrackedNet(t *testing.T) {
 
 			netID := testNet1.ID()
 			if tracked {
-				env.config.TrackedNets.Add(netID)
+				env.config.TrackedChains.Add(netID)
 			}
 
 			wallet := newWallet(t, env, walletConfig{

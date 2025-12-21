@@ -201,7 +201,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 			t,
 			verifier.ctx,
 			&config.Config{
-				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},
@@ -360,7 +360,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 			t,
 			verifier.ctx,
 			&config.Config{
-				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},
@@ -1162,7 +1162,7 @@ func TestBlockExecutionWithComplexity(t *testing.T) {
 		verifier.ctx,
 		txstest.WalletConfig{
 			Config: &config.Config{
-				TrackedNets:            verifier.txExecutorBackend.Config.TrackedNets,
+				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},

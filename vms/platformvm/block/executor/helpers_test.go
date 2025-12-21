@@ -259,7 +259,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		t,
 		consensusCtx,
 		&config.Config{
-			TrackedNets:            e.config.TrackedNets,
+			TrackedChains:            e.config.TrackedChains,
 			SybilProtectionEnabled: e.config.SybilProtectionEnabled,
 			Chains:                 e.config.Chains,
 		},
@@ -322,7 +322,7 @@ func defaultConfig(f upgradetest.Fork) *config.Internal {
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
-		TrackedNets:            set.Of(constants.PrimaryNetworkID),
+		TrackedChains:            set.Of(constants.PrimaryNetworkID),
 		MinValidatorStake:      5 * units.MilliLux,
 		MaxValidatorStake:      500 * units.MilliLux,
 		MinDelegatorStake:      1 * units.MilliLux,

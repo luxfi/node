@@ -31,7 +31,7 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
@@ -70,7 +70,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
@@ -116,7 +116,7 @@ func TestCreateChainTxNoSuchNet(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
@@ -155,7 +155,7 @@ func TestCreateChainTxValid(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
@@ -222,7 +222,7 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			subnetID := testNet1.ID()
 			wallet := newWallet(t, env, walletConfig{
 				config:    &config,
-				subnetIDs: []ids.ID{subnetID},
+				netIDs: []ids.ID{subnetID},
 			})
 
 			tx, err := wallet.IssueCreateChainTx(
@@ -259,7 +259,7 @@ func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(

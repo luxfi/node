@@ -498,7 +498,7 @@ func TestBanffStandardBlockUpdateStakers(t *testing.T) {
 			env := newEnvironment(t, nil, upgradetest.Banff)
 
 			netID := testNet1.ID()
-			env.config.TrackedNets.Add(netID)
+			env.config.TrackedChains.Add(netID)
 
 			for _, staker := range test.stakers {
 				addPendingValidator(
@@ -605,7 +605,7 @@ func TestBanffStandardBlockRemoveNetValidator(t *testing.T) {
 	env := newEnvironment(t, nil, upgradetest.Banff)
 
 	netID := testNet1.ID()
-	env.config.TrackedNets.Add(netID)
+	env.config.TrackedChains.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{netID},
@@ -708,7 +708,7 @@ func TestBanffStandardBlockTrackedNet(t *testing.T) {
 
 			netID := testNet1.ID()
 			if tracked {
-				env.config.TrackedNets.Add(netID)
+				env.config.TrackedChains.Add(netID)
 			}
 
 			wallet := newWallet(t, env, walletConfig{
