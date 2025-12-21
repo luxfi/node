@@ -131,8 +131,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context,
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	// Extract IDs from context
-	netID := ctx.NetID   // Network/Subnet ID for primary network check
+	// Extract chain ID from context
 	chainID := ctx.ChainID
 
 	if i.closed {
@@ -141,7 +140,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context,
 			log.String("chainName", chainName),
 		)
 		return
-	} else if netID != constants.PrimaryNetworkID {
+	} else if ctx.NetID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
 			log.String("reason", "not in the primary network"),
 			log.String("chainName", chainName),

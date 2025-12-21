@@ -533,12 +533,11 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	require.IsType(&indexer{}, idxrIntf)
 	idxr := idxrIntf.(*indexer)
 
-	// Create chain1Ctx for a random net + chain.
+	// Create chain1Ctx for a chain NOT in primary network
 	testChainID := ids.GenerateTestID()
-	testNetID := ids.GenerateTestID() // Non-primary network (testNetID)
 	chain1Ctx := consensustest.Context(t, testChainID)
-	// Override the NetID to be non-primary (not PrimaryNetworkID)
-	chain1Ctx.NetID = testNetID
+	// Set NetID to non-primary network (not ids.Empty)
+	chain1Ctx.NetID = ids.GenerateTestID()
 
 	// The test context is configured correctly for a non-primary net
 
