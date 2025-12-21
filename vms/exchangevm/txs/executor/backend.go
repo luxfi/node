@@ -50,7 +50,7 @@ type SharedMemory interface {
 func (b *Backend) ToChainContext() *verify.ChainContext {
 	return &verify.ChainContext{
 		ChainID:        b.LuxCtx.ChainID,
-		NetID:          b.LuxCtx.ChainID,
+		NetID:          b.LuxCtx.NetID,
 		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(consContext.ValidatorState)},
 	}
 }

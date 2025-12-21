@@ -91,12 +91,13 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 		},
 	}
 
+	testNetID := ids.GenerateTestID()
 	backendObj := &Backend{
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        ids.GenerateTestID(),
-			NetID:          ids.GenerateTestID(),
-			ValidatorState: &testValidatorState{},
+			NetID:          testNetID,
+			ValidatorState: &testValidatorState{chainID: testNetID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
@@ -467,7 +468,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
 			NetID:          constants.PrimaryNetworkID,
-			ValidatorState: &testValidatorState{},
+			ValidatorState: &testValidatorState{chainID: constants.PrimaryNetworkID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
@@ -781,20 +782,20 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 
 // testValidatorState is a simple stub for consensusctx.ValidatorState used in tests
 type testValidatorState struct {
-	netID ids.ID
+	chainID ids.ID // The chain/subnet ID this validator state returns
 }
 
-func (t *testValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	return chainID, nil
+func (t *testValidatorState) GetChainID(_ ids.ID) (ids.ID, error) {
+	// Returns the subnet/chain ID for the given chain
+	return t.chainID, nil
 }
 
 func (t *testValidatorState) GetNetID(_ ids.ID) (ids.ID, error) {
-	return t.netID, nil
+	return t.chainID, nil
 }
 
-func (t *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Alias for GetNetID - kept for interface compatibility
-	return t.GetNetID(chainID)
+func (t *testValidatorState) GetSubnetID(_ ids.ID) (ids.ID, error) {
+	return t.chainID, nil
 }
 
 func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
@@ -815,9 +816,9 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
-	// Set up a validator state that returns a different NetID to trigger the error
+	// Set up a validator state that returns a different chainID to trigger the error
 	ctx.ValidatorState = &testValidatorState{
-		netID: ids.GenerateTestID(), // Different from ctx.ChainID
+		chainID: ids.GenerateTestID(), // Different from ctx.NetID
 	}
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -1012,7 +1013,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
 			NetID:          constants.PrimaryNetworkID,
-			ValidatorState: &testValidatorState{},
+			ValidatorState: &testValidatorState{chainID: constants.PrimaryNetworkID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,

@@ -286,8 +286,8 @@ func TestChainPermissionsForWarp(t *testing.T) {
 
 	// B-Chain permissions (full access for bridge)
 	bChainPerms := &ChainPermissions{
-		ChainID:           "B-Chain",
-		BlockchainName:         "Bridge Chain",
+		ChainID:   "B-Chain",
+		ChainName: "Bridge Chain",
 		CanSign:           true,
 		CanKeygen:         true,
 		CanReshare:        true,
@@ -305,8 +305,8 @@ func TestChainPermissionsForWarp(t *testing.T) {
 
 	// C-Chain permissions (limited for smart contracts)
 	cChainPerms := &ChainPermissions{
-		ChainID:           "C-Chain",
-		BlockchainName:         "Contract Chain",
+		ChainID:   "C-Chain",
+		ChainName: "Contract Chain",
 		CanSign:           true,
 		CanKeygen:         false,
 		CanReshare:        false,
