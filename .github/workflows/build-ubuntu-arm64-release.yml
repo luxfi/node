@@ -54,7 +54,7 @@ jobs:
       - name: Save as Github artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jammy
+          name: jammy-arm64
           path: /tmp/luxd/luxd-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
@@ -99,7 +99,7 @@ jobs:
       - name: Save as Github artifact
         uses: actions/upload-artifact@v4
         with:
-          name: focal
+          name: focal-arm64
           path: /tmp/luxd/luxd-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
