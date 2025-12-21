@@ -30,7 +30,8 @@ fi
 # We use "export" here instead of just setting a bash variable because we need
 # to pass this flag to all child processes spawned by the shell.
 export CGO_CFLAGS="-O2 -D__BLST_PORTABLE__"
-export CGO_ENABLED=1 # Required for cross-compilation
+# Only set CGO_ENABLED if not already set (allows CGO_ENABLED=0 for cross-compilation)
+export CGO_ENABLED="${CGO_ENABLED:-1}"
 
 # Disable version control fallbacks
 export GOPROXY="${GOPROXY:-https://proxy.golang.org}"
