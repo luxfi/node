@@ -70,8 +70,8 @@ func TestConfigUnmarshal(t *testing.T) {
 	t.Run("all values extracted from json", func(t *testing.T) {
 		require := require.New(t)
 
-		trackedNets := set.NewSet[ids.ID](1)
-		trackedNets.Add(ids.ID{1, 2, 3})
+		trackedChains := set.NewSet[ids.ID](1)
+		trackedChains.Add(ids.ID{1, 2, 3})
 
 		expected := &Config{
 			Network: Network{
@@ -107,7 +107,7 @@ func TestConfigUnmarshal(t *testing.T) {
 			L1NetIDNodeIDCacheSize:     13,
 			ChecksumsEnabled:              true,
 			SybilProtectionEnabled:        true,
-			TrackedNets:                   trackedNets,
+			TrackedChains:                 trackedChains,
 			MempoolPruneFrequency:         time.Minute,
 			TxFee:                         14,
 			CreateAssetTxFee:              15,

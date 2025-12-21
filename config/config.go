@@ -1405,6 +1405,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		if err != nil {
 			return node.Config{}, err
 		}
+		// If TrackedChains is nil, it means track-chains="all" was specified
+		// This should enable TrackAllChains mode
+		if nodeConfig.TrackedChains == nil {
+			nodeConfig.TrackAllChains = true
+		}
 	}
 
 	// HTTP APIs

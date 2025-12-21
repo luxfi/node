@@ -25,7 +25,7 @@ type Internal struct {
 	// The node's chain manager
 	Chains chains.Manager
 
-	// Node's validator set maps subnetID -> validators of the subnet
+	// Node's validator set maps chainID -> validators of the subnet
 	//
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
@@ -50,6 +50,9 @@ type Internal struct {
 
 	// Set of chains that this node is validating
 	TrackedChains set.Set[ids.ID]
+
+	// If true, track all chains automatically (useful for dev/test networks)
+	TrackAllChains bool
 
 	// The minimum amount of tokens one must bond to be a validator
 	MinValidatorStake uint64
@@ -93,6 +96,7 @@ type Internal struct {
 func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all blockchains
 		constants.PrimaryNetworkID != tx.ChainID && // All nodes must validate the primary network
+		!c.TrackAllChains && // Not tracking all chains automatically
 		!c.TrackedChains.Contains(tx.ChainID) { // This node doesn't validate this blockchain
 		return
 	}
