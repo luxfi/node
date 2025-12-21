@@ -134,7 +134,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	res.ctx = &testContext{
 		Context:      context.Background(),
 		NetworkID:    consensusCtx.NetworkID,
-		ChainID:        consensusCtx.ChainID,
+		NetID:       consensusCtx.NetID,
 		ChainID:      consensusCtx.ChainID,
 		NodeID:       consensusCtx.NodeID,
 		XChainID:     consensusCtx.XChainID,
@@ -279,7 +279,7 @@ func addNet(t testing.TB, env *environment) {
 	})
 
 	var err error
-	testNet1, err = wallet.IssueCreateNetTx(
+	testNet1, err = wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{

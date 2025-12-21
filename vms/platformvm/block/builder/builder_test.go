@@ -40,7 +40,7 @@ func TestBuildBlockBasic(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	// Create a valid transaction
@@ -256,7 +256,7 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	// Create a valid transaction
@@ -420,7 +420,7 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 
 	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{subnetID},
 	})
 
 	// Create a valid transaction

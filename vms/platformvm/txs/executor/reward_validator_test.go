@@ -130,7 +130,7 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 
 	onCommitBalance, err := lux.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
-	require.Equal(oldBalance+stakerToRemove.Weight+38944, onCommitBalance)
+	require.Equal(oldBalance+stakerToRemove.Weight+38, onCommitBalance) // With 6-decimal LUX, reward is ~1000x smaller
 }
 
 func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {

@@ -134,7 +134,7 @@ func TestRejectBlock(t *testing.T) {
 				backend: &backend{
 					ctx: &consensusctx.Context{
 						NetworkID: testCtx.NetworkID,
-						ChainID:     testCtx.ChainID,
+						NetID:    testCtx.NetID,
 						ChainID:   testCtx.ChainID,
 						NodeID:    testCtx.NodeID,
 						XChainID:  testCtx.XChainID,

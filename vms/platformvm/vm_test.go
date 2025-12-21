@@ -140,8 +140,8 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for test chains
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains (subnet is the network)
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -274,7 +274,7 @@ func buildAndAcceptStandardBlock(vm *VM) error {
 func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
 	require := require.New(t)
 
-	netTx, err := wallet.IssueCreateNetTx(
+	netTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -925,7 +925,7 @@ func TestCreateNet(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{
@@ -1732,7 +1732,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
@@ -1802,7 +1802,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	}
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		expectedNetOwner,
 	)
 	require.NoError(err)

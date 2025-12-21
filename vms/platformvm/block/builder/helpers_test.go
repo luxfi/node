@@ -78,8 +78,8 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for test chains
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains (subnet is the network)
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -166,7 +166,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	stateConsensusCtx := &consensusctx.Context{
 		NetworkID:  res.ctx.NetworkID,
 		QuantumID:  res.ctx.NetworkID,
-		ChainID:      res.ctx.ChainID,
+		NetID:      res.ctx.NetID,
 		ChainID:    res.ctx.ChainID,
 		NodeID:     res.ctx.NodeID,
 		XAssetID:   res.ctx.XAssetID,
@@ -189,7 +189,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	backendConsensusCtx := &consensusctx.Context{
 		NetworkID:      res.ctx.NetworkID,
 		QuantumID:      res.ctx.NetworkID,
-		ChainID:          res.ctx.ChainID,
+		NetID:          res.ctx.NetID,
 		ChainID:        res.ctx.ChainID,
 		NodeID:         res.ctx.NodeID,
 		XAssetID:       res.ctx.XAssetID,
@@ -296,7 +296,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	walletCtx := &consensusctx.Context{
 		NetworkID:    e.ctx.NetworkID,
 		QuantumID:    e.ctx.NetworkID,
-		ChainID:        e.ctx.ChainID,
+		NetID:        e.ctx.NetID,
 		ChainID:      e.ctx.ChainID,
 		NodeID:       e.ctx.NodeID,
 		XAssetID:     e.ctx.XAssetID,
@@ -332,7 +332,7 @@ func addNet(t *testing.T, env *environment) {
 	})
 
 	var err error
-	testNet1, err = wallet.IssueCreateNetTx(
+	testNet1, err = wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{

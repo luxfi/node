@@ -155,7 +155,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetUTXO(utxoID).Return(utxo, nil).AnyTimes()
 
 	// Create the tx
-	utx := &txs.CreateNetTx{
+	utx := &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    env.ctx.NetworkID,
 			BlockchainID: env.ctx.ChainID,

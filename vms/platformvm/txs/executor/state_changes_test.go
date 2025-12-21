@@ -251,10 +251,11 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 				EndAccumulatedFee: endAccumulatedFee,
 			}
 		}
-		// With MinPrice of 512, EndAccumulatedFee needs to be 3 * 512 = 1536 nanoLux to last 3 seconds
-		l1ValidatorToEvict0 = newL1Validator(secondsToAdvance * uint64(builder.LocalValidatorFeeConfig.MinPrice)) // lasts 3 seconds
-		l1ValidatorToEvict1 = newL1Validator(secondsToAdvance * uint64(builder.LocalValidatorFeeConfig.MinPrice)) // lasts 3 seconds
-		l1ValidatorToKeep   = newL1Validator(units.Lux)
+		// For validators to be evicted, EndAccumulatedFee must be less than accumulated fees over 3 seconds
+		// MinPrice=512, so minimum fee over 3 seconds = 1536. Use smaller value so they run out of balance.
+		l1ValidatorToEvict0 = newL1Validator(1) // tiny balance, will run out immediately
+		l1ValidatorToEvict1 = newL1Validator(1) // tiny balance, will run out immediately
+		l1ValidatorToKeep   = newL1Validator(1000 * units.Lux) // 1000 LUX to ensure it lasts much longer with any fee rate
 
 		currentTime = genesistest.DefaultValidatorStartTime
 		newTime     = currentTime.Add(timeToAdvance)
