@@ -328,8 +328,8 @@ github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706 h1:h7fAaM1ESv3NL9HwlLRIv4
 github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706/go.mod h1:nb+gvXLgy903aiVTerq3e19h6flTraDsb7tmBiYWg+c=
 github.com/luxfi/cache v1.0.0 h1:OcqGi/qs9ky+7O8fR6WMZtFsunvA40LBTg3QRQqJurs=
 github.com/luxfi/cache v1.0.0/go.mod h1:BEvpffvV3SXs/KSa9nUC1TszxKwUdIHwIaoXpeiYU+Y=
-github.com/luxfi/consensus v1.22.34 h1:LjCa/PltlWqqfF0LEd9RLkS/jCc5D/qijkMra7lZhcI=
-github.com/luxfi/consensus v1.22.34/go.mod h1:QHd7JLPNl5pyIULkbBhbchsgYvWowhU/gwg6cqgFNqI=
+github.com/luxfi/consensus v1.22.35 h1:ZJOEITtoy5pT9OkT+z+9qulbsVNFdcdsUAibCtXSoF4=
+github.com/luxfi/consensus v1.22.35/go.mod h1:/sNvvKfESWfq57Jmrf22T2GquLNg6PU9m9MJ3wqfoYU=
 github.com/luxfi/constants v1.2.3 h1:ewo3Ch6AJDI3G42J0rlNAdZU1Fv96YEyOmp3E2K/pzE=
 github.com/luxfi/constants v1.2.3/go.mod h1:r5WL5Z03I9iHo910pHykO+RuDCwe4jy0rBSueG1l1mo=
 github.com/luxfi/coreth v0.15.55 h1:2aEJ/gOD7v/pVTQtsMqPQM0+77jFTCykcZ096W+GltU=
