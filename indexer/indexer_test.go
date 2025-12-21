@@ -537,8 +537,8 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	testChainID := ids.GenerateTestID()
 	testNetID := ids.GenerateTestID() // Non-primary network (testNetID)
 	chain1Ctx := consensustest.Context(t, testChainID)
-	// Override the NetID to be non-primary
-	chain1Ctx.ChainID = testNetID
+	// Override the NetID to be non-primary (not PrimaryNetworkID)
+	chain1Ctx.NetID = testNetID
 
 	// The test context is configured correctly for a non-primary net
 
