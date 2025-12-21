@@ -31,7 +31,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build -tags pebbledb
+        run: ./scripts/run_task.sh build -- -tags pebbledb
 
       - name: Install aws cli
         run: |
@@ -95,7 +95,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build -tags pebbledb
+        run: ./scripts/run_task.sh build -- -tags pebbledb
 
       - name: Install aws cli
         run: |
