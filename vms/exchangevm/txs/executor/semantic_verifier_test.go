@@ -95,7 +95,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        ids.GenerateTestID(),
-			ChainID:          ids.GenerateTestID(),
+			NetID:          ids.GenerateTestID(),
 			ValidatorState: &testValidatorState{},
 		},
 		CChainID: cChainID,
@@ -466,7 +466,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
-			ChainID:          constants.PrimaryNetworkID,
+			NetID:          constants.PrimaryNetworkID,
 			ValidatorState: &testValidatorState{},
 		},
 		CChainID: cChainID,
@@ -793,7 +793,8 @@ func (t *testValidatorState) GetNetID(_ ids.ID) (ids.ID, error) {
 }
 
 func (t *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
+	// Alias for GetNetID - kept for interface compatibility
+	return t.GetNetID(chainID)
 }
 
 func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
@@ -1010,7 +1011,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		Ctx: ctx,
 		LuxCtx: &consContext.Context{
 			ChainID:        chainID, // Use same chainID as baseTx
-			ChainID:          constants.PrimaryNetworkID,
+			NetID:          constants.PrimaryNetworkID,
 			ValidatorState: &testValidatorState{},
 		},
 		CChainID: cChainID,

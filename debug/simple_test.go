@@ -15,18 +15,18 @@ func TestValidatorManager(t *testing.T) {
 	mgr := validators.NewManager()
 
 	nodeID := ids.GenerateTestNodeID()
-	subnetID := constants.PrimaryNetworkID
+	chainID := constants.PrimaryNetworkID
 	txID := ids.GenerateTestID()
 	weight := uint64(1000000)
 
 	// Test AddStaker
-	err := mgr.AddStaker(subnetID, nodeID, nil, txID, weight)
+	err := mgr.AddStaker(chainID, nodeID, nil, txID, weight)
 	if err != nil {
 		t.Fatalf("AddStaker failed: %v", err)
 	}
 
 	// Test GetValidator
-	vdr, exists := mgr.GetValidator(subnetID, nodeID)
+	vdr, exists := mgr.GetValidator(chainID, nodeID)
 	if !exists {
 		t.Fatal("Validator should exist after AddStaker")
 	}
@@ -35,13 +35,13 @@ func TestValidatorManager(t *testing.T) {
 	}
 
 	// Test GetWeight
-	w := mgr.GetWeight(subnetID, nodeID)
+	w := mgr.GetWeight(chainID, nodeID)
 	if w != weight {
 		t.Fatalf("Expected weight %d, got %d", weight, w)
 	}
 
 	// Test TotalWeight
-	total, err := mgr.TotalWeight(subnetID)
+	total, err := mgr.TotalWeight(chainID)
 	if err != nil {
 		t.Fatalf("TotalWeight failed: %v", err)
 	}
@@ -50,13 +50,13 @@ func TestValidatorManager(t *testing.T) {
 	}
 
 	// Test RemoveWeight
-	err = mgr.RemoveWeight(subnetID, nodeID, weight)
+	err = mgr.RemoveWeight(chainID, nodeID, weight)
 	if err != nil {
 		t.Fatalf("RemoveWeight failed: %v", err)
 	}
 
 	// Verify validator is removed
-	_, exists = mgr.GetValidator(subnetID, nodeID)
+	_, exists = mgr.GetValidator(chainID, nodeID)
 	if exists {
 		t.Fatal("Validator should not exist after RemoveWeight")
 	}

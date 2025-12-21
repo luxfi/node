@@ -78,8 +78,8 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for test chains (subnet is old term for net)
+func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for test chains
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -284,8 +284,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 }
 
 type walletConfig struct {
-	keys      []*secp256k1.PrivateKey
-	subnetIDs []ids.ID
+	keys   []*secp256k1.PrivateKey
+	netIDs []ids.ID
 }
 
 func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
@@ -318,7 +318,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		walletCfg,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
-		c.subnetIDs,
+		c.netIDs,
 		nil, // validationIDs
 		[]ids.ID{e.ctx.CChainID, e.ctx.XChainID},
 	)

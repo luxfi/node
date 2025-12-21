@@ -137,8 +137,9 @@ func (m *mockValidatorState) GetNetID(ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
+func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Alias for GetNetID - kept for interface compatibility
+	return m.GetNetID(chainID)
 }
 
 func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
@@ -191,7 +192,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		ChainID:        ids.GenerateTestID(),
 		XChainID:       ids.GenerateTestID(),
 		CChainID:       ids.GenerateTestID(),
-		ChainID:          ids.Empty,
+		NetID:          ids.Empty,
 		NodeID:         ids.GenerateTestNodeID(),
 		ValidatorState: &mockValidatorState{},
 	}

@@ -140,8 +140,8 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for test chains (subnet is old term for net)
+func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for test chains
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -295,8 +295,8 @@ func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
 }
 
 type walletConfig struct {
-	keys      []*secp256k1.PrivateKey
-	subnetIDs []ids.ID
+	keys   []*secp256k1.PrivateKey
+	netIDs []ids.ID
 }
 
 func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
@@ -319,7 +319,7 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 		},
 		vm.state,
 		secp256k1fx.NewKeychain(c.keys...),
-		c.subnetIDs,
+		c.netIDs,
 		nil, // validationIDs
 		[]ids.ID{vm.ctx.CChainID, vm.ctx.XChainID},
 	)
@@ -592,10 +592,10 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	// Create subnet in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
-	subnetID := netTx.ID()
+	netID := netTx.ID()
 
 	wallet := newWallet(t, vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{netID},
 	})
 
 	var (
@@ -617,7 +617,7 @@ func TestAddNetValidatorAccept(t *testing.T) {
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: subnetID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
@@ -633,7 +633,7 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	require.Equal(status.Committed, txStatus)
 
 	// Verify that new validator is in current validator set
-	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	_, err = vm.state.GetCurrentValidator(netID, nodeID)
 	require.NoError(err)
 }
 
@@ -647,10 +647,10 @@ func TestAddNetValidatorReject(t *testing.T) {
 	// Create subnet in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
-	subnetID := netTx.ID()
+	netID := netTx.ID()
 
 	wallet := newWallet(t, vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{netID},
 	})
 
 	var (
@@ -670,7 +670,7 @@ func TestAddNetValidatorReject(t *testing.T) {
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: subnetID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
@@ -690,7 +690,7 @@ func TestAddNetValidatorReject(t *testing.T) {
 	require.ErrorIs(err, database.ErrNotFound)
 
 	// Verify that new validator NOT in validator set
-	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	_, err = vm.state.GetCurrentValidator(netID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -877,14 +877,14 @@ func TestCreateChain(t *testing.T) {
 	// Create subnet in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
-	subnetID := netTx.ID()
+	netID := netTx.ID()
 
 	wallet := newWallet(t, vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{netID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		subnetID,
+		netID,
 		nil,
 		ids.ID{'t', 'e', 's', 't', 'v', 'm'},
 		nil,
@@ -902,7 +902,7 @@ func TestCreateChain(t *testing.T) {
 	require.Equal(status.Committed, txStatus)
 
 	// Verify chain was created
-	chains, err := vm.state.GetChains(subnetID)
+	chains, err := vm.state.GetChains(netID)
 	require.NoError(err)
 
 	foundNewChain := false
@@ -941,19 +941,19 @@ func TestCreateNet(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	subnetID := createNetTx.ID()
-	_, txStatus, err := vm.state.GetTx(subnetID)
+	netID := createNetTx.ID()
+	_, txStatus, err := vm.state.GetTx(netID)
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
 
 	netIDs, err := vm.state.GetNetIDs()
 	require.NoError(err)
-	require.Contains(netIDs, subnetID)
+	require.Contains(netIDs, netID)
 
 	// Now that we've created a new subnet, add a validator to that subnet
 	// Create a new wallet with authority over the subnet
 	subnetWallet := newWallet(t, vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		netIDs: []ids.ID{netID},
 	})
 
 	nodeID := genesistest.DefaultNodeIDs[0]
@@ -968,7 +968,7 @@ func TestCreateNet(t *testing.T) {
 				End:    uint64(endTime.Unix()),
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: subnetID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
@@ -983,20 +983,20 @@ func TestCreateNet(t *testing.T) {
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
 
-	_, err = vm.state.GetPendingValidator(subnetID, nodeID)
+	_, err = vm.state.GetPendingValidator(netID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
-	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	_, err = vm.state.GetCurrentValidator(netID, nodeID)
 	require.NoError(err)
 
 	// remove validator from current validator set
 	vm.Clock().Set(endTime)
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	_, err = vm.state.GetPendingValidator(subnetID, nodeID)
+	_, err = vm.state.GetPendingValidator(netID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
-	_, err = vm.state.GetCurrentValidator(subnetID, nodeID)
+	_, err = vm.state.GetCurrentValidator(netID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -1745,7 +1745,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	subnetID := createNetTx.ID()
+	netID := createNetTx.ID()
 	addNetValidatorTx, err := wallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
 			Validator: txs.Validator{
@@ -1754,14 +1754,14 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Chain: subnetID,
+			Chain: netID,
 		},
 	)
 	require.NoError(err)
 
 	removeNetValidatorTx, err := wallet.IssueRemoveChainValidatorTx(
 		nodeID,
-		subnetID,
+		netID,
 	)
 	require.NoError(err)
 
@@ -1786,7 +1786,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	require.NoError(block.Accept(context.Background()))
 	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
 
-	_, err = vm.state.GetPendingValidator(subnetID, nodeID)
+	_, err = vm.state.GetPendingValidator(netID, nodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -1812,8 +1812,8 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	subnetID := createNetTx.ID()
-	subnetOwner, err := vm.state.GetNetOwner(subnetID)
+	netID := createNetTx.ID()
+	subnetOwner, err := vm.state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(expectedNetOwner, subnetOwner)
 
@@ -1822,7 +1822,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 	transferNetOwnershipTx, err := wallet.IssueTransferChainOwnershipTx(
-		subnetID,
+		netID,
 		expectedNetOwner,
 	)
 	require.NoError(err)
@@ -1832,7 +1832,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	subnetOwner, err = vm.state.GetNetOwner(subnetID)
+	subnetOwner, err = vm.state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(expectedNetOwner, subnetOwner)
 }

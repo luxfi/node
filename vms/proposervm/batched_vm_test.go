@@ -38,7 +38,7 @@ type validatorStateAdapter struct {
 	state *validatorstest.State
 }
 
-func (v *validatorStateAdapter) GetChainID(subnetID ids.ID) (ids.ID, error) {
+func (v *validatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
 	// Not available in test state, return empty ID
 	return ids.Empty, nil
 }
@@ -48,10 +48,6 @@ func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (v *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Not available in test state, return empty ID
-	return ids.Empty, nil
-}
 
 func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Use the test state's GetValidatorSet directly
@@ -67,9 +63,9 @@ func (v *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, e
 	return 0, nil
 }
 
-func (v *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (v *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Use the test state's GetValidatorSet to get current validators
-	return v.state.GetValidatorSet(ctx, height, subnetID)
+	return v.state.GetValidatorSet(ctx, height, netID)
 }
 
 func (v *validatorStateAdapter) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {

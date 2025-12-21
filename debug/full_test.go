@@ -17,7 +17,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 
 	// Test multiple validators
 	numValidators := 10
-	subnetID := constants.PrimaryNetworkID
+	chainID := constants.PrimaryNetworkID
 	validators := make(map[ids.NodeID]uint64)
 
 	// Add validators
@@ -26,7 +26,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 		weight := uint64((i + 1) * 100000)
 		txID := ids.GenerateTestID()
 
-		err := mgr.AddStaker(subnetID, nodeID, nil, txID, weight)
+		err := mgr.AddStaker(chainID, nodeID, nil, txID, weight)
 		if err != nil {
 			t.Fatalf("Failed to add validator %d: %v", i, err)
 		}
@@ -34,7 +34,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 	}
 
 	// Verify count
-	count := mgr.Count(subnetID)
+	count := mgr.Count(chainID)
 	if count != numValidators {
 		t.Fatalf("Expected %d validators, got %d", numValidators, count)
 	}
@@ -45,7 +45,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 		expectedTotal += w
 	}
 
-	total, err := mgr.TotalWeight(subnetID)
+	total, err := mgr.TotalWeight(chainID)
 	if err != nil {
 		t.Fatalf("TotalWeight failed: %v", err)
 	}
@@ -54,14 +54,14 @@ func TestFullValidatorFunctionality(t *testing.T) {
 	}
 
 	// Test GetValidatorIDs
-	nodeIDs := mgr.GetValidatorIDs(subnetID)
+	nodeIDs := mgr.GetValidatorIDs(chainID)
 	if len(nodeIDs) != numValidators {
 		t.Fatalf("Expected %d validator IDs, got %d", numValidators, len(nodeIDs))
 	}
 
 	// Test Sample
 	sampleSize := 5
-	sampled, err := mgr.Sample(subnetID, sampleSize)
+	sampled, err := mgr.Sample(chainID, sampleSize)
 	if err != nil {
 		t.Fatalf("Sample failed: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 		}
 	}
 
-	calcWeight, err := mgr.SubsetWeight(subnetID, subset)
+	calcWeight, err := mgr.SubsetWeight(chainID, subset)
 	if err != nil {
 		t.Fatalf("SubsetWeight failed: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 	// Test AddWeight
 	for nodeID := range validators {
 		additionalWeight := uint64(50000)
-		err := mgr.AddWeight(subnetID, nodeID, additionalWeight)
+		err := mgr.AddWeight(chainID, nodeID, additionalWeight)
 		if err != nil {
 			t.Fatalf("AddWeight failed: %v", err)
 		}
@@ -100,7 +100,7 @@ func TestFullValidatorFunctionality(t *testing.T) {
 	}
 
 	// Test GetValidators (returns a Set)
-	vdrSet, err := mgr.GetValidators(subnetID)
+	vdrSet, err := mgr.GetValidators(chainID)
 	if err != nil {
 		t.Fatalf("GetValidators failed: %v", err)
 	}
@@ -124,14 +124,14 @@ func TestFullValidatorFunctionality(t *testing.T) {
 
 	// Test RemoveWeight for all validators
 	for nodeID, weight := range validators {
-		err := mgr.RemoveWeight(subnetID, nodeID, weight)
+		err := mgr.RemoveWeight(chainID, nodeID, weight)
 		if err != nil {
 			t.Fatalf("RemoveWeight failed: %v", err)
 		}
 	}
 
 	// Verify all validators removed
-	count = mgr.Count(subnetID)
+	count = mgr.Count(chainID)
 	if count != 0 {
 		t.Fatalf("Expected 0 validators after removal, got %d", count)
 	}
@@ -198,7 +198,7 @@ func TestConsensusConfig(t *testing.T) {
 
 func TestValidatorLifecycle(t *testing.T) {
 	mgr := validators.NewManager()
-	subnetID := constants.PrimaryNetworkID
+	chainID := constants.PrimaryNetworkID
 
 	// Simulate validator lifecycle
 	nodeID := ids.GenerateTestNodeID()
@@ -206,7 +206,7 @@ func TestValidatorLifecycle(t *testing.T) {
 	initialWeight := uint64(1000000) // 1M LUX minimum stake
 
 	// 1. Add validator
-	err := mgr.AddStaker(subnetID, nodeID, nil, txID, initialWeight)
+	err := mgr.AddStaker(chainID, nodeID, nil, txID, initialWeight)
 	if err != nil {
 		t.Fatalf("Failed to add validator: %v", err)
 	}
@@ -214,11 +214,11 @@ func TestValidatorLifecycle(t *testing.T) {
 
 	// 2. Increase stake
 	additionalStake := uint64(500000)
-	err = mgr.AddWeight(subnetID, nodeID, additionalStake)
+	err = mgr.AddWeight(chainID, nodeID, additionalStake)
 	if err != nil {
 		t.Fatalf("Failed to increase stake: %v", err)
 	}
-	newWeight := mgr.GetWeight(subnetID, nodeID)
+	newWeight := mgr.GetWeight(chainID, nodeID)
 	expectedWeight := initialWeight + additionalStake
 	if newWeight != expectedWeight {
 		t.Fatalf("Expected weight %d, got %d", expectedWeight, newWeight)
@@ -227,11 +227,11 @@ func TestValidatorLifecycle(t *testing.T) {
 
 	// 3. Partial unstake
 	unstakeAmount := uint64(300000)
-	err = mgr.RemoveWeight(subnetID, nodeID, unstakeAmount)
+	err = mgr.RemoveWeight(chainID, nodeID, unstakeAmount)
 	if err != nil {
 		t.Fatalf("Failed to unstake: %v", err)
 	}
-	finalWeight := mgr.GetWeight(subnetID, nodeID)
+	finalWeight := mgr.GetWeight(chainID, nodeID)
 	expectedFinal := expectedWeight - unstakeAmount
 	if finalWeight != expectedFinal {
 		t.Fatalf("Expected weight %d, got %d", expectedFinal, finalWeight)
@@ -239,11 +239,11 @@ func TestValidatorLifecycle(t *testing.T) {
 	t.Logf("✓ Partial unstake, remaining: %d LUX", finalWeight)
 
 	// 4. Complete unstake
-	err = mgr.RemoveWeight(subnetID, nodeID, finalWeight)
+	err = mgr.RemoveWeight(chainID, nodeID, finalWeight)
 	if err != nil {
 		t.Fatalf("Failed to complete unstake: %v", err)
 	}
-	_, exists := mgr.GetValidator(subnetID, nodeID)
+	_, exists := mgr.GetValidator(chainID, nodeID)
 	if exists {
 		t.Fatal("Validator should not exist after complete unstake")
 	}
@@ -252,7 +252,7 @@ func TestValidatorLifecycle(t *testing.T) {
 
 func TestValidatorSetInterface(t *testing.T) {
 	mgr := validators.NewManager()
-	subnetID := constants.PrimaryNetworkID
+	chainID := constants.PrimaryNetworkID
 
 	// Add some validators
 	for i := 0; i < 3; i++ {
@@ -260,14 +260,14 @@ func TestValidatorSetInterface(t *testing.T) {
 		weight := uint64(1000000 * (i + 1))
 		txID := ids.GenerateTestID()
 
-		err := mgr.AddStaker(subnetID, nodeID, nil, txID, weight)
+		err := mgr.AddStaker(chainID, nodeID, nil, txID, weight)
 		if err != nil {
 			t.Fatalf("Failed to add validator: %v", err)
 		}
 	}
 
 	// Get validator set
-	vdrSet, err := mgr.GetValidators(subnetID)
+	vdrSet, err := mgr.GetValidators(chainID)
 	if err != nil {
 		t.Fatalf("GetValidators failed: %v", err)
 	}

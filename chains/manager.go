@@ -482,8 +482,8 @@ func (v *consensusValidatorStateWrapper) GetNetID(chainID ids.ID) (ids.ID, error
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Alias for GetNetID - subnet is old terminology for net
+func (v *consensusValidatorStateWrapper) GetChainID(chainID ids.ID) (ids.ID, error) {
+	// Alias for GetNetID - chain lookup
 	return v.GetNetID(chainID)
 }
 
@@ -500,11 +500,6 @@ func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, netID id
 		result[nodeID] = val.Weight
 	}
 	return result, nil
-}
-
-func (v *consensusValidatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error) {
-	// Not available in validators.State, return empty ID
-	return ids.Empty, nil
 }
 
 func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consensusctx.GetValidatorOutput, error) {

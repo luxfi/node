@@ -44,10 +44,10 @@ func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) er
 
 	peerNetID, err := chainCtx.ValidatorState.GetNetID(ctx, peerChainID)
 	if err != nil {
-		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
+		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}
-	if chainCtx.ChainID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.ChainID, peerNetID)
+	if chainCtx.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.NetID, peerNetID)
 	}
 	return nil
 }
@@ -66,12 +66,12 @@ func SameSubnet(ctx context.Context, consensusCtx *consensusctx.Context, peerCha
 		return fmt.Errorf("validator state does not implement required interface")
 	}
 
-	peerNetID, err := vs.GetSubnetID(peerChainID)
+	peerNetID, err := vs.GetChainID(peerChainID)
 	if err != nil {
-		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
+		return fmt.Errorf("failed to get chain of %q: %w", peerChainID, err)
 	}
-	if consensusCtx.ChainID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, consensusCtx.ChainID, peerNetID)
+	if consensusCtx.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, consensusCtx.NetID, peerNetID)
 	}
 	return nil
 }

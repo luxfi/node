@@ -123,7 +123,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	// Convert testcontext.Context to consensus.Context for statetest
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      ctx.NetworkID,
-		SubnetID:       ctx.NetID,
+		NetID:          ctx.NetID,
 		ChainID:        ctx.ChainID,
 		NodeID:         ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test
@@ -208,10 +208,10 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 }
 
 type walletConfig struct {
-	config    *config.Internal
-	keys      []*secp256k1.PrivateKey
-	subnetIDs []ids.ID
-	chainIDs  []ids.ID
+	config   *config.Internal
+	keys     []*secp256k1.PrivateKey
+	netIDs   []ids.ID
+	chainIDs []ids.ID
 }
 
 func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
@@ -224,7 +224,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	// Convert testcontext.Context to consensus.Context
 	consensusCtx := &consensuscontext.Context{
 		NetworkID:      e.ctx.NetworkID,
-		SubnetID:       e.ctx.NetID,
+		NetID:          e.ctx.NetID,
 		ChainID:        e.ctx.ChainID,
 		NodeID:         e.ctx.NodeID,
 		PublicKey:      []byte{}, // Use empty bytes for test
@@ -252,7 +252,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		walletConfig,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
-		c.subnetIDs,
+		c.netIDs,
 		nil, // validationIDs
 		c.chainIDs,
 	)
