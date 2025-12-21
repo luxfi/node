@@ -62,23 +62,6 @@ jobs:
         env:
           TAG: ${{ env.TAG }}
 
-      - name: Install aws cli
-        run: |
-          curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-          sudo installer -pkg AWSCLIV2.pkg -target /
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
-          role-session-name: githubrolesession
-          aws-region: us-east-1
-
-      - name: Upload file to S3
-        run: aws s3 cp node-macos-${{ env.TAG }}.zip "s3://${BUCKET}/macos/"
-        env:
-          BUCKET: ${{ secrets.BUCKET }}
-
       - name: Save as Github artifact
         uses: actions/upload-artifact@v4
         with:

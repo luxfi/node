@@ -19,7 +19,11 @@ echo "Tag: $TAG"
 
 # Create package with CLI-compatible naming: node-linux-{arch}-{version}.tar.gz
 tar -czvf "node-linux-$ARCH-$TAG.tar.gz" -C "$PKG_ROOT" build
-aws s3 cp "node-linux-$ARCH-$TAG.tar.gz" "s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/"
+
+# Upload to S3 if BUCKET is set (optional)
+if [[ -n "${BUCKET:-}" ]]; then
+  aws s3 cp "node-linux-$ARCH-$TAG.tar.gz" "s3://$BUCKET/linux/binaries/ubuntu/$RELEASE/$ARCH/" || echo "Warning: S3 upload failed (credentials may not be configured)"
+fi
 
 # Also copy to workspace for artifact upload
 mkdir -p "${GITHUB_WORKSPACE:-$(pwd)}/luxd-pkg"

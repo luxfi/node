@@ -28,18 +28,6 @@ jobs:
       - name: Build the luxd binaries
         run: ./scripts/run_task.sh build
 
-      - name: Install aws cli
-        run: |
-          sudo apt update
-          sudo apt -y install awscli
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
-          role-session-name: githubrolesession
-          aws-region: us-east-1
-
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
         id: get_tag_from_git
@@ -85,18 +73,6 @@ jobs:
 
       - name: Build the luxd binaries
         run: ./scripts/run_task.sh build
-
-      - name: Install aws cli
-        run: |
-          sudo apt update
-          sudo apt -y install awscli
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
-          role-session-name: githubrolesession
-          aws-region: us-east-1
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"

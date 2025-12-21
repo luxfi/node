@@ -34,4 +34,8 @@ NEW_ARCH_STRING="Architecture: $ARCH"
 sed -i "s/Version.*/$NEW_VERSION_STRING/g" debian/DEBIAN/control
 sed -i "s/Architecture.*/$NEW_ARCH_STRING/g" debian/DEBIAN/control
 dpkg-deb --build debian "luxd-$TAG-$ARCH.deb"
-aws s3 cp "luxd-$TAG-$ARCH.deb" "s3://${BUCKET}/linux/debs/ubuntu/$RELEASE/$ARCH/"
+
+# Upload to S3 if BUCKET is set (optional)
+if [[ -n "${BUCKET:-}" ]]; then
+  aws s3 cp "luxd-$TAG-$ARCH.deb" "s3://${BUCKET}/linux/debs/ubuntu/$RELEASE/$ARCH/" || echo "Warning: S3 upload failed (credentials may not be configured)"
+fi
