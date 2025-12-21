@@ -9,7 +9,7 @@ tasks:
 
   build:
     desc: Builds node
-    cmd: ./scripts/build.sh
+    cmd: ./scripts/build.sh {{.CLI_ARGS}}
 
   build-antithesis-images-node:
     desc: Builds docker images for antithesis for the node test setup
