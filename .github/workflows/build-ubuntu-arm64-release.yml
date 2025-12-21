@@ -18,15 +18,15 @@ on:
 
 jobs:
   build-jammy-arm64-package:
-    runs-on: custom-arm64-jammy
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
       - run: go version
 
-      - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build
+      - name: Build the luxd binaries (cross-compile for arm64)
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
@@ -63,16 +63,15 @@ jobs:
           rm -rf /tmp/luxd
 
   build-focal-arm64-package:
-    runs-on: custom-arm64-focal
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-focal-deps
       - uses: ./.github/actions/setup-go-for-project
       - run: go version
 
-      - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build
+      - name: Build the luxd binaries (cross-compile for arm64)
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
