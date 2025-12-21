@@ -26,7 +26,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries (cross-compile for arm64)
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/run_task.sh build
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/build.sh
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
@@ -71,7 +71,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries (cross-compile for arm64)
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/run_task.sh build
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/build.sh
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
