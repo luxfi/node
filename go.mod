@@ -144,7 +144,7 @@ require (
 	github.com/luxfi/constants v1.2.4
 	github.com/luxfi/coreth v0.15.58
 	github.com/luxfi/genesis v1.5.9
-	github.com/luxfi/geth v1.16.59
+	github.com/luxfi/geth v1.16.60
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.1
 	github.com/luxfi/p2p v1.4.9

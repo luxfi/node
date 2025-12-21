@@ -296,8 +296,8 @@ github.com/luxfi/database v1.2.14 h1:0lxsLiCUOb/42tffrRFgIQN/imD0N9rZdAb9r97pbJE
 github.com/luxfi/database v1.2.14/go.mod h1:5xrFyVRGw8z50vkwt9fF1GkvkFvvvEqxrdeSZqGar0U=
 github.com/luxfi/genesis v1.5.9 h1:1E7/04zaLPSXj2Dgy/I8FG4Xv8Urp4MbpZiDoo/DF/k=
 github.com/luxfi/genesis v1.5.9/go.mod h1:3xmKAJU1omH9523Fhdx+AjWsVoH0fsac4bgOf64pjMU=
-github.com/luxfi/geth v1.16.59 h1:zATxirkUgn5easavur7oMz7JAyuZy+An9LujSwRIs2s=
-github.com/luxfi/geth v1.16.59/go.mod h1:vRIzu5NRkevNIx50kksP+M+xBeLj0jTWbfn7KvMBqSo=
+github.com/luxfi/geth v1.16.60 h1:0fm8U815I4U6JhjCDWaVO0cF9jjksggcxSc/TuK3T9M=
+github.com/luxfi/geth v1.16.60/go.mod h1:vRIzu5NRkevNIx50kksP+M+xBeLj0jTWbfn7KvMBqSo=
 github.com/luxfi/go-bip32 v1.0.1 h1:UaPUSu6ScZ1wobQJJO+vePAN3OcUHYmq5DEc/uOU+SY=
 github.com/luxfi/go-bip32 v1.0.1/go.mod h1:pzlclicfplIRhFE780jsfEY67S3IYF5trCyBfzQOb4c=
 github.com/luxfi/go-bip39 v1.1.2 h1:p+wLMPGs6MLQh7q0YIsmy2EhHL7LHiELEGTJko6t/Jg=
