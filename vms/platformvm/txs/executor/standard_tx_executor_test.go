@@ -1280,7 +1280,7 @@ func TestDurangoMemoField(t *testing.T) {
 				require := require.New(t)
 
 				wallet := newWallet(t, env, walletConfig{})
-				tx, err := wallet.IssueCreateNetTx(
+				tx, err := wallet.IssueCreateSubnetTx(
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -2201,7 +2201,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 				env.state = state.NewMockDiff(ctrl)
 				subnetOwner := fxmock.NewOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime).AnyTimes()
-				env.state.EXPECT().GetNetOwner(env.unsignedTx.Net).Return(subnetOwner, nil).AnyTimes()
+				env.state.EXPECT().GetNetOwner(env.unsignedTx.Chain).Return(subnetOwner, nil).AnyTimes()
 
 				cfg := &config.Internal{
 					UpgradeConfig:    upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, env.latestForkTime),
@@ -2232,13 +2232,13 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 				env.state = state.NewMockDiff(ctrl)
 				subnetOwner := fxmock.NewOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime).AnyTimes()
-				env.state.EXPECT().GetNetOwner(env.unsignedTx.Net).Return(subnetOwner, nil)
-				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Net).Return(
+				env.state.EXPECT().GetNetOwner(env.unsignedTx.Chain).Return(subnetOwner, nil)
+				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Chain).Return(
 					state.NetToL1Conversion{},
 					database.ErrNotFound,
 				).Times(1)
-				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Net).Return(nil, database.ErrNotFound).Times(1)
-				env.fx.EXPECT().VerifyPermission(gomock.Any(), env.unsignedTx.NetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil)
+				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Chain).Return(nil, database.ErrNotFound).Times(1)
+				env.fx.EXPECT().VerifyPermission(gomock.Any(), env.unsignedTx.ChainAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil)
 				env.flowChecker.EXPECT().VerifySpend(
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 				).Return(ErrFlowCheckFailed)
@@ -2273,8 +2273,8 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 				// Set dependency expectations.
 				subnetOwner := fxmock.NewOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime).AnyTimes()
-				env.state.EXPECT().GetNetOwner(env.unsignedTx.Net).Return(subnetOwner, nil).Times(1)
-				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Net).Return(
+				env.state.EXPECT().GetNetOwner(env.unsignedTx.Chain).Return(subnetOwner, nil).Times(1)
+				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Chain).Return(
 					state.NetToL1Conversion{
 						ConversionID: ids.GenerateTestID(),
 						ChainID:      ids.GenerateTestID(),
@@ -2282,8 +2282,8 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 					},
 					nil,
 				)
-				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Net).Return(nil, database.ErrNotFound).Times(1)
-				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.NetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
+				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Chain).Return(nil, database.ErrNotFound).Times(1)
+				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.ChainAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
 
 				cfg := &config.Internal{
 					UpgradeConfig:    upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, env.latestForkTime),
@@ -2314,18 +2314,18 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 				// Set dependency expectations.
 				subnetOwner := fxmock.NewOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime).AnyTimes()
-				env.state.EXPECT().GetNetOwner(env.unsignedTx.Net).Return(subnetOwner, nil).Times(1)
-				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Net).Return(
+				env.state.EXPECT().GetNetOwner(env.unsignedTx.Chain).Return(subnetOwner, nil).Times(1)
+				env.state.EXPECT().GetNetToL1Conversion(env.unsignedTx.Chain).Return(
 					state.NetToL1Conversion{},
 					database.ErrNotFound,
 				).Times(1)
-				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Net).Return(nil, database.ErrNotFound).Times(1)
-				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.NetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
+				env.state.EXPECT().GetNetTransformation(env.unsignedTx.Chain).Return(nil, database.ErrNotFound).Times(1)
+				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.ChainAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
 				env.flowChecker.EXPECT().VerifySpend(
 					env.unsignedTx, env.state, env.unsignedTx.Ins, env.unsignedTx.Outs, env.tx.Creds[:len(env.tx.Creds)-1], gomock.Any(),
 				).Return(nil).Times(1)
 				env.state.EXPECT().AddNetTransformation(env.tx)
-				env.state.EXPECT().SetCurrentSupply(env.unsignedTx.Net, env.unsignedTx.InitialSupply)
+				env.state.EXPECT().SetCurrentSupply(env.unsignedTx.Chain, env.unsignedTx.InitialSupply)
 				env.state.EXPECT().DeleteUTXO(gomock.Any()).Times(len(env.unsignedTx.Ins))
 				env.state.EXPECT().AddUTXO(gomock.Any()).Times(len(env.unsignedTx.Outs))
 
@@ -2410,7 +2410,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 	)
 
 	// Create the subnet
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -2643,11 +2643,11 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 				require.Equal(expectedUTXO, utxo)
 			}
 
-			expectedConversionID, err := message.NetToL1ConversionID(message.NetToL1ConversionData{
+			expectedConversionID, err := message.ChainToL1ConversionID(message.ChainToL1ConversionData{
 				ChainID:          subnetID,
 				ManagerChainID: chainID,
 				ManagerAddress: address,
-				Validators: []message.NetToL1ConversionValidatorData{
+				Validators: []message.ChainToL1ConversionValidatorData{
 					{
 						NodeID:       nodeID.Bytes(),
 						BLSPublicKey: pop.PublicKey,
@@ -2759,7 +2759,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the subnet
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -2949,7 +2949,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
-						must[*message.NetToL1Conversion](t)(message.NewNetToL1Conversion(ids.Empty)).Bytes(),
+						must[*message.ChainToL1Conversion](t)(message.NewChainToL1Conversion(ids.Empty)).Bytes(),
 					)).Bytes(),
 				)),
 				warpSignature,
@@ -3000,7 +3000,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 				)),
 				warpSignature,
 			)).Bytes(),
-			expectedErr: errCouldNotLoadNetToL1Conversion,
+			expectedErr: errCouldNotLoadChainToL1Conversion,
 		},
 		{
 			name: "invalid source chain",
@@ -3295,7 +3295,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the subnet
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -3492,7 +3492,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
-						must[*message.NetToL1Conversion](t)(message.NewNetToL1Conversion(ids.Empty)).Bytes(),
+						must[*message.ChainToL1Conversion](t)(message.NewChainToL1Conversion(ids.Empty)).Bytes(),
 					)).Bytes(),
 				)),
 				warpSignature,
@@ -3806,7 +3806,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the subnet
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -4108,7 +4108,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the subnet
-	createNetTx, err := wallet.IssueCreateNetTx(
+	createNetTx, err := wallet.IssueCreateSubnetTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)

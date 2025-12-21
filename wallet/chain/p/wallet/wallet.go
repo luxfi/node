@@ -114,12 +114,12 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueCreateNetTx creates, signs, and issues a new subnet with the
+	// IssueCreateSubnetTx creates, signs, and issues a new subnet with the
 	// specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
 	//   validators to the subnet.
-	IssueCreateNetTx(
+	IssueCreateSubnetTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.Tx, error)
@@ -415,11 +415,11 @@ func (w *wallet) IssueCreateChainTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateNetTx(
+func (w *wallet) IssueCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateNetTx(owner, options...)
+	utx, err := w.builder.NewCreateSubnetTx(owner, options...)
 	if err != nil {
 		return nil, err
 	}

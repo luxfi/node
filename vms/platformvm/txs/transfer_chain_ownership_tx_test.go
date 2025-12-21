@@ -564,7 +564,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
 		QuantumID: networkID,
-		ChainID:     constants.PrimaryNetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 
@@ -624,7 +624,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 					Chain:    constants.PrimaryNetworkID,
 				}
 			},
-			expectedErr: ErrTransferPermissionlessNet,
+			expectedErr: ErrTransferPermissionlessChain,
 		},
 		{
 			name: "invalid subnetAuth",

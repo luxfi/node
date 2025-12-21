@@ -5,8 +5,8 @@ package builder
 
 import (
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 )
 
 const Alias = "X"
@@ -14,7 +14,7 @@ const Alias = "X"
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	XAssetID       ids.ID
+	XAssetID         ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
@@ -26,7 +26,7 @@ func NewConsensusContext(
 ) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
 	ctx := &consensusctx.Context{
-		NetworkID:  networkID,
+		NetworkID: networkID,
 		NetID:     constants.PrimaryNetworkID,
 		ChainID:   blockchainID,
 		XChainID:  blockchainID,

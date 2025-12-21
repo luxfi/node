@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -93,8 +93,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-// Removed in regenesis
-func (s *visitor) CreateNetTx(tx *txs.CreateNetTx) error {
+func (s *visitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
@@ -398,4 +397,3 @@ func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 	tx.SetBytes(unsignedBytes, signedBytes)
 	return nil
 }
-

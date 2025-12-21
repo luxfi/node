@@ -86,7 +86,7 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&AddChainValidatorTx{}),
 		targetCodec.RegisterType(&AddDelegatorTx{}),
 		targetCodec.RegisterType(&CreateChainTx{}),
-		targetCodec.RegisterType(&CreateNetTx{}),
+		targetCodec.RegisterType(&CreateSubnetTx{}),
 		targetCodec.RegisterType(&ImportTx{}),
 		targetCodec.RegisterType(&ExportTx{}),
 		targetCodec.RegisterType(&AdvanceTimeTx{}),

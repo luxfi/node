@@ -47,11 +47,11 @@ func main() {
 	log.Printf("fetched node ID %s in %s\n", nodeID, time.Since(nodeInfoStartTime))
 
 	validationID := netID.Append(0)
-	conversionID, err := message.NetToL1ConversionID(message.NetToL1ConversionData{
-		NetID:          netID,
+	conversionID, err := message.ChainToL1ConversionID(message.ChainToL1ConversionData{
+		ChainID:        netID,
 		ManagerChainID: chainID,
 		ManagerAddress: address,
-		Validators: []message.NetToL1ConversionValidatorData{
+		Validators: []message.ChainToL1ConversionValidatorData{
 			{
 				NodeID:       nodeID.Bytes(),
 				BLSPublicKey: nodePoP.PublicKey,

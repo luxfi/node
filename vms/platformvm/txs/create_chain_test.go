@@ -23,7 +23,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		ChainID:     constants.PrimaryNetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{

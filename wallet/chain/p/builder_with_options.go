@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package p
 
 import (
@@ -120,11 +119,11 @@ func (b *builderWithOptions) NewCreateChainTx(
 	)
 }
 
-func (b *builderWithOptions) NewCreateNetTx(
+func (b *builderWithOptions) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
-	return b.Builder.NewCreateNetTx(
+) (*txs.CreateSubnetTx, error) {
+	return b.Builder.NewCreateSubnetTx(
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)

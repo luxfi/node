@@ -147,12 +147,12 @@ func (*staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error 
 }
 
 func (v *staticVisitor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
-	v.fee = v.config.AddNetValidatorFee
+	v.fee = v.config.AddSubnetValidatorFee
 	return nil
 }
 
-func (v *staticVisitor) CreateNetTx(*txs.CreateNetTx) error {
-	v.fee = v.config.CreateNetTxFee
+func (v *staticVisitor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+	v.fee = v.config.CreateSubnetTxFee
 	return nil
 }
 

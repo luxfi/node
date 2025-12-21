@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"
@@ -21,7 +22,6 @@ import (
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
@@ -200,7 +200,7 @@ func main() {
 	}
 
 	messageBuilder, err := p2pmessage.NewCreator(
-		
+
 		metric.NewNoOpRegistry(),
 		compression.TypeZstd,
 		time.Hour,

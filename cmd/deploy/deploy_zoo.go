@@ -50,7 +50,7 @@ func main() {
 		Addrs:     []ids.ShortID{ownerAddr},
 	}
 
-	unsignedCreateNetTx, err := pBuilder.NewCreateNetTx(owner)
+	unsignedCreateNetTx, err := pBuilder.NewCreateSubnetTx(owner)
 	if err != nil {
 		log.Fatalf("failed to build CreateNet tx: %s\n", err)
 	}

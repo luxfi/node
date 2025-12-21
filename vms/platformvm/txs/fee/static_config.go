@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package fee
 
 type StaticConfig struct {
@@ -11,11 +10,11 @@ type StaticConfig struct {
 	// Fee that must be burned by every state creating transaction before AP3
 	CreateAssetTxFee uint64 `json:"createAssetTxFee"`
 
-	// Fee that must be burned by every net creating transaction after AP3
-	CreateNetTxFee uint64 `json:"createNetTxFee"`
+	// Fee that must be burned by every subnet creating transaction after AP3
+	CreateSubnetTxFee uint64 `json:"createSubnetTxFee"`
 
-	// Fee that must be burned by every transform net transaction
-	TransformChainTxFee uint64 `json:"transformNetTxFee"`
+	// Fee that must be burned by every transform subnet transaction
+	TransformChainTxFee uint64 `json:"transformSubnetTxFee"`
 
 	// Fee that must be burned by every blockchain creating transaction after AP3
 	CreateBlockchainTxFee uint64 `json:"createBlockchainTxFee"`
@@ -26,9 +25,9 @@ type StaticConfig struct {
 	// Transaction fee for adding a primary network delegator
 	AddPrimaryNetworkDelegatorFee uint64 `json:"addPrimaryNetworkDelegatorFee"`
 
-	// Transaction fee for adding a net validator
-	AddNetValidatorFee uint64 `json:"addNetValidatorFee"`
+	// Transaction fee for adding a subnet validator
+	AddSubnetValidatorFee uint64 `json:"addSubnetValidatorFee"`
 
-	// Transaction fee for adding a net delegator
-	AddNetDelegatorFee uint64 `json:"addNetDelegatorFee"`
+	// Transaction fee for adding a subnet delegator
+	AddSubnetDelegatorFee uint64 `json:"addSubnetDelegatorFee"`
 }

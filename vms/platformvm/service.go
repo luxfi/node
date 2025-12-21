@@ -1304,7 +1304,7 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 				err,
 			)
 		}
-		_, ok := netTx.Unsigned.(*txs.CreateNetTx)
+		_, ok := netTx.Unsigned.(*txs.CreateSubnetTx)
 		if !ok {
 			return fmt.Errorf("%q is not a net", args.NetID)
 		}

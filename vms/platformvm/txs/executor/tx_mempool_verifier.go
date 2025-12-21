@@ -51,7 +51,7 @@ func (v *MempoolTxVerifier) CreateChainTx(tx *txs.CreateChainTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) CreateNetTx(tx *txs.CreateNetTx) error {
+func (v *MempoolTxVerifier) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	return v.standardTx(tx)
 }
 

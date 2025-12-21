@@ -550,20 +550,20 @@ func TestDiffNet(t *testing.T) {
 
 	// Initialize parent with one subnet
 	parentStateCreateNetTx := &txs.Tx{
-		Unsigned: &txs.CreateNetTx{
+		Unsigned: &txs.CreateSubnetTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
 	state.AddNet(parentStateCreateNetTx.ID())
 
 	// Verify parent returns one subnet
-	netIDs, err := state.GetNetIDs()
+	chainIDs, err := state.GetChainIDs()
 	require.NoError(err)
 	require.Equal(
 		[]ids.ID{
 			parentStateCreateNetTx.ID(),
 		},
-		netIDs,
+		chainIDs,
 	)
 
 	diff, err := NewDiffOn(state)
@@ -571,7 +571,7 @@ func TestDiffNet(t *testing.T) {
 
 	// Put a subnet
 	createNetTx := &txs.Tx{
-		Unsigned: &txs.CreateNetTx{
+		Unsigned: &txs.CreateSubnetTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
@@ -581,14 +581,14 @@ func TestDiffNet(t *testing.T) {
 	require.NoError(diff.Apply(state))
 
 	// Verify parent now returns two subnets
-	netIDs, err = state.GetNetIDs()
+	chainIDs, err = state.GetChainIDs()
 	require.NoError(err)
 	require.Equal(
 		[]ids.ID{
 			parentStateCreateNetTx.ID(),
 			createNetTx.ID(),
 		},
-		netIDs,
+		chainIDs,
 	)
 }
 
@@ -864,7 +864,7 @@ func TestDiffNetOwner(t *testing.T) {
 		owner2 = fxmock.NewOwner(ctrl)
 
 		createNetTx = &txs.Tx{
-			Unsigned: &txs.CreateNetTx{
+			Unsigned: &txs.CreateSubnetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
@@ -963,7 +963,7 @@ func TestDiffStacking(t *testing.T) {
 		owner3 = fxmock.NewOwner(ctrl)
 
 		createNetTx = &txs.Tx{
-			Unsigned: &txs.CreateNetTx{
+			Unsigned: &txs.CreateSubnetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},

@@ -135,12 +135,11 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-// Removed in regenesis
-func (w *withOptions) NewCreateNetTx(
+func (w *withOptions) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
-	return w.builder.NewCreateNetTx(
+) (*txs.CreateSubnetTx, error) {
+	return w.builder.NewCreateSubnetTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)

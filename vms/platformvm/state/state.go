@@ -92,7 +92,7 @@ var (
 	ExpiryReplayProtectionPrefix  = []byte("expiryReplayProtection")
 	L1Prefix                      = []byte("l1")
 	WeightsPrefix                 = []byte("weights")
-	NetIDNodeIDPrefix          = []byte("subnetIDNodeID")
+	ChainIDNodeIDPrefix          = []byte("subnetIDNodeID")
 	ActivePrefix                  = []byte("active")
 	InactivePrefix                = []byte("inactive")
 	SingletonPrefix               = []byte("singleton")
@@ -179,6 +179,7 @@ type State interface {
 	GetBlockIDAtHeight(height uint64) (ids.ID, error)
 
 	GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error)
+	GetChainIDs() ([]ids.ID, error)
 	GetNetIDs() ([]ids.ID, error)
 	GetChains(netID ids.ID) ([]*txs.Tx, error)
 
@@ -436,8 +437,8 @@ type state struct {
 	utxoDB        database.Database
 	utxoState     lux.UTXOState
 
-	cachedNetIDs []ids.ID // nil if the subnets haven't been loaded
-	addedNetIDs  []ids.ID
+	cachedChainIDs []ids.ID // nil if the subnets haven't been loaded
+	addedChainIDs  []ids.ID
 	subnetBaseDB database.Database
 	subnetDB     linkeddb.LinkedDB
 
@@ -792,7 +793,7 @@ func New(
 		weightsCache:        weightsCache,
 		weightsDB:           prefixdb.New(WeightsPrefix, l1ValidatorsDB),
 		subnetIDNodeIDCache: subnetIDNodeIDCache,
-		subnetIDNodeIDDB:    prefixdb.New(NetIDNodeIDPrefix, l1ValidatorsDB),
+		subnetIDNodeIDDB:    prefixdb.New(ChainIDNodeIDPrefix, l1ValidatorsDB),
 		activeDB:            prefixdb.New(ActivePrefix, l1ValidatorsDB),
 		inactiveCache:       inactiveL1ValidatorsCache,
 		inactiveDB:          prefixdb.New(InactivePrefix, l1ValidatorsDB),
@@ -1076,35 +1077,39 @@ func (s *state) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetStakerIterator(), nil
 }
 
-func (s *state) GetNetIDs() ([]ids.ID, error) {
-	if s.cachedNetIDs != nil {
-		return s.cachedNetIDs, nil
+func (s *state) GetChainIDs() ([]ids.ID, error) {
+	if s.cachedChainIDs != nil {
+		return s.cachedChainIDs, nil
 	}
 
 	subnetDBIt := s.subnetDB.NewIterator()
 	defer subnetDBIt.Release()
 
-	netIDs := []ids.ID{}
+	chainIDs := []ids.ID{}
 	for subnetDBIt.Next() {
-		netIDBytes := subnetDBIt.Key()
-		netID, err := ids.ToID(netIDBytes)
+		chainIDBytes := subnetDBIt.Key()
+		chainID, err := ids.ToID(chainIDBytes)
 		if err != nil {
 			return nil, err
 		}
-		netIDs = append(netIDs, netID)
+		chainIDs = append(chainIDs, chainID)
 	}
 	if err := subnetDBIt.Error(); err != nil {
 		return nil, err
 	}
-	netIDs = append(netIDs, s.addedNetIDs...)
-	s.cachedNetIDs = netIDs
-	return netIDs, nil
+	chainIDs = append(chainIDs, s.addedChainIDs...)
+	s.cachedChainIDs = chainIDs
+	return chainIDs, nil
 }
 
-func (s *state) AddNet(netID ids.ID) {
-	s.addedNetIDs = append(s.addedNetIDs, netID)
-	if s.cachedNetIDs != nil {
-		s.cachedNetIDs = append(s.cachedNetIDs, netID)
+func (s *state) GetNetIDs() ([]ids.ID, error) {
+	return s.GetChainIDs()
+}
+
+func (s *state) AddNet(chainID ids.ID) {
+	s.addedChainIDs = append(s.addedChainIDs, chainID)
+	if s.cachedChainIDs != nil {
+		s.cachedChainIDs = append(s.cachedChainIDs, chainID)
 	}
 }
 
@@ -1144,7 +1149,7 @@ func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 		return nil, err
 	}
 
-	subnet, ok := subnetIntf.Unsigned.(*txs.CreateNetTx)
+	subnet, ok := subnetIntf.Unsigned.(*txs.CreateSubnetTx)
 	if !ok {
 		return nil, fmt.Errorf("%q %w", netID, errIsNotNet)
 	}
@@ -3091,12 +3096,12 @@ func (s *state) writeUTXOs() error {
 }
 
 func (s *state) writeNets() error {
-	for _, netID := range s.addedNetIDs {
-		if err := s.subnetDB.Put(netID[:], nil); err != nil {
+	for _, chainID := range s.addedChainIDs {
+		if err := s.subnetDB.Put(chainID[:], nil); err != nil {
 			return fmt.Errorf("failed to write subnet: %w", err)
 		}
 	}
-	s.addedNetIDs = nil
+	s.addedChainIDs = nil
 	return nil
 }
 

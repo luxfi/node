@@ -186,9 +186,9 @@ func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
+func (m *txMetrics) CreateSubnetTx(*txs.CreateSubnetTx) error {
 	m.numTxs.With(metric.Labels{
-		txLabel: "create_net",
+		txLabel: "create_subnet",
 	}).Inc()
 	return nil
 }

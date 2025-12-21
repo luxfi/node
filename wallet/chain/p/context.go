@@ -6,8 +6,8 @@ package p
 import (
 	"context"
 
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -60,12 +60,12 @@ func NewContextFromClients(
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateNetTxFee:                units.Lux,
+			CreateSubnetTxFee:                units.Lux,
 			CreateBlockchainTxFee:         units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddNetValidatorFee:            units.MilliLux,
-			AddNetDelegatorFee:            units.MilliLux,
+			AddSubnetValidatorFee:            units.MilliLux,
+			AddSubnetDelegatorFee:            units.MilliLux,
 		},
 	}, nil
 }

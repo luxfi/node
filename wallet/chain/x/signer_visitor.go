@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package x
 
 import (
@@ -10,14 +9,14 @@ import (
 
 	stdcontext "context"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"

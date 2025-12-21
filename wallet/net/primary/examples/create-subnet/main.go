@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package main
 
 import (
@@ -47,10 +46,10 @@ func main() {
 		},
 	}
 
-	createNetStartTime := time.Now()
-	createNetTx, err := pWallet.IssueCreateNetTx(owner)
+	createSubnetStartTime := time.Now()
+	createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create net transaction: %s\n", err)
+		log.Fatalf("failed to issue create subnet transaction: %s\n", err)
 	}
-	log.Printf("created new net %s in %s\n", createNetTx.ID(), time.Since(createNetStartTime))
+	log.Printf("created new net %s in %s\n", createSubnetTx.ID(), time.Since(createSubnetStartTime))
 }

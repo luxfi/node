@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("failed to fetch network ID: %s\n", err)
 	}
 
-	subnetToL1Conversion, err := warpmessage.NewNetToL1Conversion(conversionID)
+	subnetToL1Conversion, err := warpmessage.NewChainToL1Conversion(conversionID)
 	if err != nil {
 		log.Fatalf("failed to create NetToL1Conversion message: %s\n", err)
 	}
@@ -79,7 +79,7 @@ func main() {
 	}
 
 	messageBuilder, err := p2pmessage.NewCreator(
-		
+
 		metric.NewNoOpRegistry(),
 		compression.TypeZstd,
 		time.Hour,

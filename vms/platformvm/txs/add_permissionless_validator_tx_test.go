@@ -141,7 +141,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -446,7 +446,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx = &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -838,7 +838,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID,
 		QuantumID:  1,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -1400,7 +1400,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
 		QuantumID: networkID,
-		ChainID:     constants.PrimaryNetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 

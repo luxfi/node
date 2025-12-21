@@ -203,8 +203,8 @@ func FuzzCreateChainTx(f *testing.F) {
 		}
 		
 		// Verify key fields
-		if parsed.ChainName != tx.BlockchainName {
-			t.Errorf("ChainName mismatch: got %q, want %q", parsed.ChainName, tx.BlockchainName)
+		if parsed.BlockchainName != tx.BlockchainName {
+			t.Errorf("ChainName mismatch: got %q, want %q", parsed.BlockchainName, tx.BlockchainName)
 		}
 		
 		if parsed.VMID != tx.VMID {
@@ -506,7 +506,7 @@ func (v *visitor) AddValidatorTx(*AddValidatorTx) error { return nil }
 func (v *visitor) AdvanceTimeTx(*AdvanceTimeTx) error { return nil }
 func (v *visitor) BaseTx(*BaseTx) error { return nil }
 func (v *visitor) CreateChainTx(*CreateChainTx) error { return nil }
-func (v *visitor) CreateNetTx(*CreateNetTx) error { return nil }
+func (v *visitor) CreateSubnetTx(*CreateSubnetTx) error { return nil }
 func (v *visitor) ExportTx(*ExportTx) error { return nil }
 func (v *visitor) ImportTx(*ImportTx) error { return nil }
 func (v *visitor) RemoveChainValidatorTx(*RemoveChainValidatorTx) error { return nil }

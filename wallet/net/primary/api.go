@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package primary
 
 import (
@@ -12,11 +11,11 @@ import (
 	gethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
@@ -24,8 +23,8 @@ import (
 	"github.com/luxfi/node/wallet/chain/x"
 
 	ethcommon "github.com/luxfi/geth/common"
-	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
+	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -127,7 +126,7 @@ func FetchState(
 	// For X-chain, we need to get the LUX asset ID and fees
 	// TODO: Get these from the xClient or infoClient
 	luxAssetID := pCTX.XAssetID
-	baseTxFee := uint64(1000000)        // 0.001 LUX
+	baseTxFee := uint64(1000000)         // 0.001 LUX
 	createAssetTxFee := uint64(10000000) // 0.01 LUX
 
 	xCTX, err := x.NewContextFromClients(ctx, infoClient, luxAssetID, baseTxFee, createAssetTxFee)

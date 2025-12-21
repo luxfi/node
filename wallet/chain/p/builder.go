@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package p
 
 import (
@@ -11,11 +10,11 @@ import (
 
 	stdcontext "context"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -62,7 +61,7 @@ type Builder interface {
 	NewBaseTx(
 		outputs []*lux.TransferableOutput,
 		options ...common.Option,
-	) (*txs.CreateNetTx, error)
+	) (*txs.CreateSubnetTx, error)
 
 	// NewAddValidatorTx creates a new validator of the primary network.
 	//
@@ -127,14 +126,14 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.CreateChainTx, error)
 
-	// NewCreateNetTx creates a new net with the specified owner.
+	// NewCreateSubnetTx creates a new subnet with the specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
 	//   validators to the subnet.
-	NewCreateNetTx(
+	NewCreateSubnetTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
-	) (*txs.CreateNetTx, error)
+	) (*txs.CreateSubnetTx, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
 	// the available UTXOs and import the funds to [to].
@@ -293,9 +292,9 @@ func (b *txBuilder) GetImportableBalance(
 func (b *txBuilder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
+) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.CreateNetTxFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateSubnetTxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -315,7 +314,7 @@ func (b *txBuilder) NewBaseTx(
 	outputs = append(outputs, changeOutputs...)
 	lux.SortTransferableOutputs(outputs, txs.Codec) // sort the outputs
 
-	return &txs.CreateNetTx{
+	return &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
@@ -367,7 +366,7 @@ func (b *txBuilder) NewAddChainValidatorTx(
 	options ...common.Option,
 ) (*txs.AddChainValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.AddNetValidatorFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.AddSubnetValidatorFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -493,21 +492,21 @@ func (b *txBuilder) NewCreateChainTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		ChainID:       netID,
-		BlockchainName:   chainName,
-		VMID:        vmID,
-		FxIDs:       fxIDs,
-		GenesisData: genesis,
-		ChainAuth:  subnetAuth,
+		ChainID:        netID,
+		BlockchainName: chainName,
+		VMID:           vmID,
+		FxIDs:          fxIDs,
+		GenesisData:    genesis,
+		ChainAuth:      subnetAuth,
 	}, nil
 }
 
-func (b *txBuilder) NewCreateNetTx(
+func (b *txBuilder) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
+) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.CreateNetTxFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateSubnetTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -517,7 +516,7 @@ func (b *txBuilder) NewCreateNetTx(
 	}
 
 	utils.Sort(owner.Addrs)
-	return &txs.CreateNetTx{
+	return &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
@@ -692,7 +691,7 @@ func (b *txBuilder) NewTransformChainTx(
 ) (*txs.TransformChainTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.XAssetID: b.context.StaticFeeConfig.TransformChainTxFee,
-		assetID:                maxSupply - initialSupply,
+		assetID:            maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -714,7 +713,7 @@ func (b *txBuilder) NewTransformChainTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Chain:                      netID,
+		Chain:                    netID,
 		AssetID:                  assetID,
 		InitialSupply:            initialSupply,
 		MaximumSupply:            maxSupply,
@@ -728,7 +727,7 @@ func (b *txBuilder) NewTransformChainTx(
 		MinDelegatorStake:        minDelegatorStake,
 		MaxValidatorWeightFactor: maxValidatorWeightFactor,
 		UptimeRequirement:        uptimeRequirement,
-		ChainAuth:               subnetAuth,
+		ChainAuth:                subnetAuth,
 	}, nil
 }
 
@@ -746,7 +745,7 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 	if vdr.Chain == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkValidatorFee
 	} else {
-		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddNetValidatorFee
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddSubnetValidatorFee
 	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
@@ -788,7 +787,7 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	if vdr.Chain == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkDelegatorFee
 	} else {
-		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddNetDelegatorFee
+		toBurn[luxAssetID] = b.context.StaticFeeConfig.AddSubnetDelegatorFee
 	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
@@ -1100,7 +1099,7 @@ func (b *txBuilder) authorizeNet(netID ids.ID, options *common.Options) (*secp25
 			err,
 		)
 	}
-	subnet, ok := subnetTx.Unsigned.(*txs.CreateNetTx)
+	subnet, ok := subnetTx.Unsigned.(*txs.CreateSubnetTx)
 	if !ok {
 		return nil, errWrongTxType
 	}

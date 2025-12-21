@@ -91,7 +91,7 @@ func (*proposalTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) CreateNetTx(*txs.CreateNetTx) error {
+func (*proposalTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error {
 	return ErrWrongTxType
 }
 

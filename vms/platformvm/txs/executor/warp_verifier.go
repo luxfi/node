@@ -58,7 +58,7 @@ func (*warpVerifier) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (*warpVerifier) CreateNetTx(*txs.CreateNetTx) error {
+func (*warpVerifier) CreateSubnetTx(*txs.CreateSubnetTx) error {
 	return nil
 }
 

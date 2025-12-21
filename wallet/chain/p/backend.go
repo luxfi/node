@@ -1,16 +1,15 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package p
 
 import (
 	"context"
 	"sync"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -41,19 +40,19 @@ type backend struct {
 
 func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map[ids.ID]*txs.Tx) Backend {
 	subnetOwner := make(map[ids.ID]fx.Owner)
-	for txID, tx := range subnetTxs { // first get owners from the CreateNetTx
-		createNetTx, ok := tx.Unsigned.(*txs.CreateNetTx)
+	for txID, tx := range subnetTxs { // first get owners from the CreateSubnetTx
+		createSubnetTx, ok := tx.Unsigned.(*txs.CreateSubnetTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[txID] = createNetTx.Owner
+		subnetOwner[txID] = createSubnetTx.Owner
 	}
 	for _, tx := range subnetTxs { // then check for TransferChainOwnershipTx
-		transferNetOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
+		transferSubnetOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[transferNetOwnershipTx.Chain] = transferNetOwnershipTx.Owner
+		subnetOwner[transferSubnetOwnershipTx.Chain] = transferSubnetOwnershipTx.Owner
 	}
 	return &backend{
 		ChainUTXOs:  utxos,
@@ -109,8 +108,8 @@ func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
-	v.b.setNetOwner(v.txID, tx.Owner)
+func (v *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+	v.b.setSubnetOwner(v.txID, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -160,7 +159,7 @@ func (v *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 }
 
 func (v *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-	v.b.setNetOwner(tx.Chain, tx.Owner)
+	v.b.setSubnetOwner(tx.Chain, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -221,11 +220,11 @@ func (b *backend) GetOwner(_ context.Context, ownerID ids.ID) (fx.Owner, error) 
 	return owner, nil
 }
 
-func (b *backend) GetNetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
+func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
 	return b.GetOwner(context.Background(), netID)
 }
 
-func (b *backend) setNetOwner(netID ids.ID, owner fx.Owner) {
+func (b *backend) setSubnetOwner(netID ids.ID, owner fx.Owner) {
 	b.subnetOwnerLock.Lock()
 	defer b.subnetOwnerLock.Unlock()
 

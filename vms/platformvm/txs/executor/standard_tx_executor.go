@@ -11,10 +11,10 @@ import (
 
 	"github.com/luxfi/log"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/gas"
@@ -42,22 +42,22 @@ const (
 var (
 	_ txs.Visitor = (*standardTxExecutor)(nil)
 
-	errEmptyNodeID                   = errors.New("validator nodeID cannot be empty")
-	errMaxStakeDurationTooLarge      = errors.New("max stake duration must be less than or equal to the global max stake duration")
-	errMissingStartTimePreDurango    = errors.New("staker transactions must have a StartTime pre-Durango")
-	errEtnaUpgradeNotActive          = errors.New("attempting to use an Etna-upgrade feature prior to activation")
+	errEmptyNodeID                     = errors.New("validator nodeID cannot be empty")
+	errMaxStakeDurationTooLarge        = errors.New("max stake duration must be less than or equal to the global max stake duration")
+	errMissingStartTimePreDurango      = errors.New("staker transactions must have a StartTime pre-Durango")
+	errEtnaUpgradeNotActive            = errors.New("attempting to use an Etna-upgrade feature prior to activation")
 	errTransformChainTxPostEtna        = errors.New("TransformChainTx is not permitted post-Etna")
-	errMaxNumActiveValidators        = errors.New("already at the max number of active validators")
-	errCouldNotLoadNetToL1Conversion = errors.New("could not load subnet conversion")
-	errWrongWarpMessageSourceChainID = errors.New("wrong warp message source chain ID")
-	errWrongWarpMessageSourceAddress = errors.New("wrong warp message source address")
-	errWarpMessageExpired            = errors.New("warp message expired")
-	errWarpMessageNotYetAllowed      = errors.New("warp message not yet allowed")
-	errWarpMessageAlreadyIssued      = errors.New("warp message already issued")
-	errCouldNotLoadL1Validator       = errors.New("could not load L1 validator")
-	errWarpMessageContainsStaleNonce = errors.New("warp message contains stale nonce")
-	errRemovingLastValidator         = errors.New("attempting to remove the last L1 validator from a converted subnet")
-	errStateCorruption               = errors.New("state corruption")
+	errMaxNumActiveValidators          = errors.New("already at the max number of active validators")
+	errCouldNotLoadChainToL1Conversion = errors.New("could not load chain conversion")
+	errWrongWarpMessageSourceChainID   = errors.New("wrong warp message source chain ID")
+	errWrongWarpMessageSourceAddress   = errors.New("wrong warp message source address")
+	errWarpMessageExpired              = errors.New("warp message expired")
+	errWarpMessageNotYetAllowed        = errors.New("warp message not yet allowed")
+	errWarpMessageAlreadyIssued        = errors.New("warp message already issued")
+	errCouldNotLoadL1Validator         = errors.New("could not load L1 validator")
+	errWarpMessageContainsStaleNonce   = errors.New("warp message contains stale nonce")
+	errRemovingLastValidator           = errors.New("attempting to remove the last L1 validator from a converted subnet")
+	errStateCorruption                 = errors.New("state corruption")
 )
 
 // StandardTx executes the standard transaction [tx].
@@ -205,7 +205,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		return fmt.Errorf("chain name %q is already taken", tx.BlockchainName)
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.ChainID, tx.ChainAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.ChainID, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return nil
 }
 
-func (e *standardTxExecutor) CreateNetTx(tx *txs.CreateNetTx) error {
+func (e *standardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	// Make sure this transaction is well formed.
 	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
 		return err
@@ -319,7 +319,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.SourceChain); err != nil {
 		// 	return err
 		// }
-		
+
 		if e.backend.Ctx.SharedMemory != nil {
 			if sm, ok := e.backend.Ctx.SharedMemory.(atomic.SharedMemory); ok {
 				var err error
@@ -526,7 +526,7 @@ func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
 		return errMaxStakeDurationTooLarge
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -705,7 +705,7 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 		return err
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -719,11 +719,11 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 	var (
 		startTime                = uint64(currentTimestamp.Unix())
 		currentFees              = e.state.GetAccruedFees()
-		subnetToL1ConversionData = message.NetToL1ConversionData{
-			NetID:          tx.Chain,
+		subnetToL1ConversionData = message.ChainToL1ConversionData{
+			ChainID:        tx.Chain,
 			ManagerChainID: tx.ManagerChainID,
 			ManagerAddress: tx.Address,
-			Validators:     make([]message.NetToL1ConversionValidatorData, len(tx.Validators)),
+			Validators:     make([]message.ChainToL1ConversionValidatorData, len(tx.Validators)),
 		}
 	)
 	for i, vdr := range tx.Validators {
@@ -774,7 +774,7 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 			return err
 		}
 
-		subnetToL1ConversionData.Validators[i] = message.NetToL1ConversionValidatorData{
+		subnetToL1ConversionData.Validators[i] = message.ChainToL1ConversionValidatorData{
 			NodeID:       vdr.NodeID,
 			BLSPublicKey: vdr.Signer.PublicKey,
 			Weight:       vdr.Weight,
@@ -793,7 +793,7 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 		return err
 	}
 
-	conversionID, err := message.NetToL1ConversionID(subnetToL1ConversionData)
+	conversionID, err := message.ChainToL1ConversionID(subnetToL1ConversionData)
 	if err != nil {
 		return err
 	}
@@ -1366,7 +1366,7 @@ func verifyL1Conversion(
 ) error {
 	subnetToL1Conversion, err := state.GetNetToL1Conversion(subnetID)
 	if err != nil {
-		return fmt.Errorf("%w for %s with: %w", errCouldNotLoadNetToL1Conversion, subnetID, err)
+		return fmt.Errorf("%w for %s with: %w", errCouldNotLoadChainToL1Conversion, subnetID, err)
 	}
 	if expectedChainID != subnetToL1Conversion.ChainID {
 		return fmt.Errorf("%w expected %s but had %s", errWrongWarpMessageSourceChainID, subnetToL1Conversion.ChainID, expectedChainID)

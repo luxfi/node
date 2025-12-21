@@ -43,10 +43,10 @@ var (
 	ErrAddDelegatorTxPostDurango       = errors.New("AddDelegatorTx is not permitted post-Durango")
 )
 
-// verifyNetValidatorPrimaryNetworkRequirements verifies the primary
+// verifySubnetValidatorPrimaryNetworkRequirements verifies the primary
 // network requirements for [subnetValidator]. An error is returned if they
 // are not fulfilled.
-func verifyNetValidatorPrimaryNetworkRequirements(
+func verifySubnetValidatorPrimaryNetworkRequirements(
 	isDurangoActive bool,
 	chainState state.Chain,
 	subnetValidator txs.Validator,
@@ -248,11 +248,11 @@ func verifyAddChainValidatorTx(
 		)
 	}
 
-	if err := verifyNetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
+	if err := verifySubnetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoANetAuthorization(backend.Fx, chainState, sTx, tx.ChainValidator.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(backend.Fx, chainState, sTx, tx.ChainValidator.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func verifyRemoveChainValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return nil, false, err
 	}
@@ -570,7 +570,7 @@ func verifyAddPermissionlessValidatorTx(
 	}
 
 	if tx.Chain != constants.PrimaryNetworkID {
-		if err := verifyNetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
+		if err := verifySubnetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
 			return err
 		}
 	}
@@ -781,7 +781,7 @@ func verifyTransferChainOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
 	if err != nil {
 		return err
 	}

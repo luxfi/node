@@ -126,8 +126,8 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 						Memo: types.JSONByteSlice{},
 					},
 				},
-				Chain:     subnetID,
-				ChainID:    managerChainID,
+				Chain:          subnetID,
+				ManagerChainID: managerChainID,
 				Address:    managerAddress,
 				Validators: []*ConvertChainToL1Validator{},
 				ChainAuth: &secp256k1fx.Input{
@@ -296,8 +296,8 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 						Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 					},
 				},
-				Chain:  subnetID,
-				ChainID: managerChainID,
+				Chain:          subnetID,
+				ManagerChainID: managerChainID,
 				Address: managerAddress,
 				Validators: []*ConvertChainToL1Validator{
 					{
@@ -563,7 +563,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			},
 		}
 		validNetID   = ids.GenerateTestID()
-		invalidAddress  = make(types.JSONByteSlice, MaxNetAddressLength+1)
+		invalidAddress  = make(types.JSONByteSlice, MaxChainAddressLength+1)
 		validValidators = []*ConvertChainToL1Validator{
 			{
 				NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -613,7 +613,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				Validators: validValidators,
 				ChainAuth: validNetAuth,
 			},
-			expectedErr: ErrConvertPermissionlessNet,
+			expectedErr: ErrConvertPermissionlessChain,
 		},
 		{
 			name: "invalid address",

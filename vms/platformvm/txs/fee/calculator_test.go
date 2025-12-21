@@ -133,12 +133,12 @@ var (
 			expectedDynamicFee: 72_509 * units.NanoLux,
 		},
 		{
-			name: "CreateNetTx",
+			name: "CreateSubnetTx",
 			tx:   "00000000001000003039000000000000000000000000000000000000000000000000000000000000000000000001dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db00000007002386f269cb1f00000000000000000000000001000000013cb7d3842e8cee6a0ebd09f1fe884f6861e1b29c00000001000000000000000000000000000000000000000000000000000000000000000000000001dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db00000005002386f26fc100000000000100000000000000000000000b000000000000000000000001000000013cb7d3842e8cee6a0ebd09f1fe884f6861e1b29c000000010000000900000001b3c905e7227e619bd6b98c164a8b2b4a8ce89ac5142bbb1c42b139df2d17fd777c4c76eae66cef3de90800e567407945f58d918978f734f8ca4eda6923c78eb201",
 			expectedComplexity: gas.Dimensions{
 				gas.Bandwidth: 339, // The length of the tx in bytes
-				gas.DBRead:    IntrinsicCreateNetTxComplexities[gas.DBRead] + intrinsicInputDBRead,
-				gas.DBWrite:   IntrinsicCreateNetTxComplexities[gas.DBWrite] + intrinsicInputDBWrite + intrinsicOutputDBWrite,
+				gas.DBRead:    IntrinsicCreateSubnetTxComplexities[gas.DBRead] + intrinsicInputDBRead,
+				gas.DBWrite:   IntrinsicCreateSubnetTxComplexities[gas.DBWrite] + intrinsicInputDBWrite + intrinsicOutputDBWrite,
 				gas.Compute:   intrinsicSECP256k1FxSignatureCompute,
 			},
 			expectedDynamicFee: 64_339 * units.NanoLux,

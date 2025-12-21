@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -131,14 +131,14 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.CreateChainTx, error)
 
-	// NewCreateNetTx creates a new net with the specified owner.
+	// NewCreateSubnetTx creates a new subnet with the specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
 	//   validators to the subnet.
-	NewCreateNetTx(
+	NewCreateSubnetTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
-	) (*txs.CreateNetTx, error)
+	) (*txs.CreateSubnetTx, error)
 
 	// NewTransferChainOwnershipTx changes the owner of the named subnet.
 	//
@@ -488,13 +488,13 @@ func (b *builder) NewAddChainValidatorTx(
 ) (*txs.AddChainValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
-//
+	//
 	ops := common.NewOptions(options)
 	subnetAuth, err := b.authorize(vdr.Chain, ops)
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -510,7 +510,7 @@ func (b *builder) NewAddChainValidatorTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	inputs, outputs, _, err := b.spend(
 		toBurn,
 		toStake,
@@ -522,7 +522,7 @@ func (b *builder) NewAddChainValidatorTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	tx := &txs.AddChainValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -545,13 +545,13 @@ func (b *builder) NewRemoveChainValidatorTx(
 ) (*txs.RemoveChainValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
-//
+	//
 	ops := common.NewOptions(options)
 	subnetAuth, err := b.authorize(netID, ops)
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -567,7 +567,7 @@ func (b *builder) NewRemoveChainValidatorTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	inputs, outputs, _, err := b.spend(
 		toBurn,
 		toStake,
@@ -579,7 +579,7 @@ func (b *builder) NewRemoveChainValidatorTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	tx := &txs.RemoveChainValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -704,24 +704,23 @@ func (b *builder) NewCreateChainTx(
 			Outs:         outputs,
 			Memo:         memo,
 		}},
-		ChainID:       netID,
-		BlockchainName:   chainName,
-		VMID:        vmID,
-		FxIDs:       fxIDs,
-		GenesisData: genesis,
-		ChainAuth:  subnetAuth,
+		ChainID:        netID,
+		BlockchainName: chainName,
+		VMID:           vmID,
+		FxIDs:          fxIDs,
+		GenesisData:    genesis,
+		ChainAuth:      subnetAuth,
 	}
 	return tx, b.initCtx(tx)
 }
 
-// Removed in regenesis
-func (b *builder) NewCreateNetTx(
+func (b *builder) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
+) (*txs.CreateSubnetTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
-//
+
 	ops := common.NewOptions(options)
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
@@ -731,14 +730,14 @@ func (b *builder) NewCreateNetTx(
 	if err != nil {
 		return nil, err
 	}
-	complexity, err := fee.IntrinsicCreateNetTxComplexities.Add(
+	complexity, err := fee.IntrinsicCreateSubnetTxComplexities.Add(
 		&memoComplexity,
 		&ownerComplexity,
 	)
 	if err != nil {
 		return nil, err
 	}
-//
+
 	inputs, outputs, _, err := b.spend(
 		toBurn,
 		toStake,
@@ -750,9 +749,9 @@ func (b *builder) NewCreateNetTx(
 	if err != nil {
 		return nil, err
 	}
-//
+
 	utils.Sort(owner.Addrs)
-	tx := &txs.CreateNetTx{
+	tx := &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
@@ -773,13 +772,13 @@ func (b *builder) NewTransferChainOwnershipTx(
 ) (*txs.TransferChainOwnershipTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
-//
+	//
 	ops := common.NewOptions(options)
 	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	memo := ops.Memo()
 	memoComplexity := gas.Dimensions{
 		gas.Bandwidth: uint64(len(memo)),
@@ -800,7 +799,7 @@ func (b *builder) NewTransferChainOwnershipTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	inputs, outputs, _, err := b.spend(
 		toBurn,
 		toStake,
@@ -812,7 +811,7 @@ func (b *builder) NewTransferChainOwnershipTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	utils.Sort(owner.Addrs)
 	tx := &txs.TransferChainOwnershipTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -823,7 +822,7 @@ func (b *builder) NewTransferChainOwnershipTx(
 			Memo:         memo,
 		}},
 		Chain:     subnetID,
-		Owner:   owner,
+		Owner:     owner,
 		ChainAuth: subnetAuth,
 	}
 	return tx, b.initCtx(tx)
@@ -1139,7 +1138,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.XAssetID
+		luxAssetID      = b.context.XAssetID
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmounts = make(map[ids.ID]uint64)
@@ -1336,13 +1335,13 @@ func (b *builder) NewTransformChainTx(
 		assetID: maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
-//
+	//
 	ops := common.NewOptions(options)
 	subnetAuth, err := b.authorize(netID, ops)
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	inputs, outputs, _, err := b.spend(
 		toBurn,
 		toStake,
@@ -1354,7 +1353,7 @@ func (b *builder) NewTransformChainTx(
 	if err != nil {
 		return nil, err
 	}
-//
+	//
 	tx := &txs.TransformChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -1363,7 +1362,7 @@ func (b *builder) NewTransformChainTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Chain:                      netID,
+		Chain:                    netID,
 		AssetID:                  assetID,
 		InitialSupply:            initialSupply,
 		MaximumSupply:            maxSupply,
@@ -1377,7 +1376,7 @@ func (b *builder) NewTransformChainTx(
 		MinDelegatorStake:        minDelegatorStake,
 		MaxValidatorWeightFactor: maxValidatorWeightFactor,
 		UptimeRequirement:        uptimeRequirement,
-		ChainAuth:                  subnetAuth,
+		ChainAuth:                subnetAuth,
 	}
 	return tx, b.initCtx(tx)
 }
@@ -1446,7 +1445,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 			Memo:         memo,
 		}},
 		Validator:             vdr.Validator,
-		Chain: vdr.Chain,
+		Chain:                 vdr.Chain,
 		Signer:                signer,
 		StakeOuts:             stakeOutputs,
 		ValidatorRewardsOwner: validationRewardsOwner,
@@ -1506,7 +1505,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 			Memo:         memo,
 		}},
 		Validator:              vdr.Validator,
-		Chain: vdr.Chain,
+		Chain:                  vdr.Chain,
 		StakeOuts:              stakeOutputs,
 		DelegationRewardsOwner: rewardsOwner,
 	}
@@ -1895,7 +1894,7 @@ func (b *builder) spend(
 	// If excessLUX <= feeWithChange, we don't add the change output
 	// and we don't modify s.complexity (it stays without the change output)
 
-	utils.Sort(s.inputs)                                     // sort inputs
+	utils.Sort(s.inputs)                                    // sort inputs
 	lux.SortTransferableOutputs(s.changeOutputs, txs.Codec) // sort the change outputs
 	lux.SortTransferableOutputs(s.stakeOutputs, txs.Codec)  // sort stake outputs
 	return s.inputs, s.changeOutputs, s.stakeOutputs, nil

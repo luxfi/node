@@ -119,7 +119,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -348,7 +348,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	ctx2 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -538,7 +538,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	ctx3 := &consensusctx.Context{
 		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
 		QuantumID:  constants.MainnetID,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	}
@@ -656,7 +656,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID:  networkID, // Must match tx.NetworkID
 		QuantumID:  networkID,
-		ChainID:      constants.PrimaryNetworkID,
+		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:    chainID,
 		LUXAssetID: luxAssetID,
 	}

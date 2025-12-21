@@ -87,7 +87,7 @@ type DecisionTxBuilder interface {
 	// ownerAddrs: control addresses for the new subnet
 	// keys: keys to pay the fee
 	// changeAddr: address to send change to, if there is any
-	NewCreateNetTx(
+	NewCreateSubnetTx(
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
 		keys []*secp256k1.PrivateKey,
@@ -419,14 +419,14 @@ func (b *builder) NewCreateChainTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewCreateNetTx(
+func (b *builder) NewCreateSubnetTx(
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	createNetTxFee := b.cfg.CreateNetTxFee
-	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createNetTxFee, changeAddr)
+	createSubnetTxFee := b.cfg.CreateNetTxFee
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createSubnetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -435,7 +435,7 @@ func (b *builder) NewCreateNetTx(
 	utils.Sort(ownerAddrs)
 
 	// Create the tx
-	utx := &txs.CreateNetTx{
+	utx := &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,

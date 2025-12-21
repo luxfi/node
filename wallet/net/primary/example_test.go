@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package primary
 
 import (
@@ -9,8 +8,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -117,18 +116,18 @@ func ExampleWallet() {
 	importTxID := importTx.ID()
 	log.Printf("issued X->P import %s in %s\n", importTxID, time.Since(importStartTime))
 
-	createNetStartTime := time.Now()
-	createNetTx, err := pWallet.IssueCreateNetTx(owner)
+	createSubnetStartTime := time.Now()
+	createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create net transaction with: %s\n", err)
+		log.Fatalf("failed to issue create subnet transaction with: %s\n", err)
 		return
 	}
-	createNetTxID := createNetTx.ID()
-	log.Printf("issued create net transaction %s in %s\n", createNetTxID, time.Since(createNetStartTime))
+	createSubnetTxID := createSubnetTx.ID()
+	log.Printf("issued create subnet transaction %s in %s\n", createSubnetTxID, time.Since(createSubnetStartTime))
 
-	transformNetStartTime := time.Now()
-	transformNetTx, err := pWallet.IssueTransformChainTx(
-		createNetTxID,
+	transformSubnetStartTime := time.Now()
+	transformSubnetTx, err := pWallet.IssueTransformChainTx(
+		createSubnetTxID,
 		createAssetTxID,
 		50*units.MegaLux,
 		100*units.MegaLux,
@@ -147,8 +146,8 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue transform net transaction with: %s\n", err)
 		return
 	}
-	transformNetTxID := transformNetTx.ID()
-	log.Printf("issued transform net transaction %s in %s\n", transformNetTxID, time.Since(transformNetStartTime))
+	transformSubnetTxID := transformSubnetTx.ID()
+	log.Printf("issued transform net transaction %s in %s\n", transformSubnetTxID, time.Since(transformSubnetStartTime))
 
 	addPermissionlessValidatorStartTime := time.Now()
 	startTime := time.Now().Add(time.Minute)
@@ -162,7 +161,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Chain: createNetTxID,
+			Chain: createSubnetTxID,
 		},
 		&signer.Empty{},
 		createAssetTx.ID(),
@@ -186,7 +185,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Chain: createNetTxID,
+			Chain: createSubnetTxID,
 		},
 		createAssetTxID,
 		&secp256k1fx.OutputOwners{},

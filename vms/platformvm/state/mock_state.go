@@ -365,6 +365,21 @@ func (mr *MockStateMockRecorder) GetChainIDByName(name any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainIDByName", reflect.TypeOf((*MockState)(nil).GetChainIDByName), name)
 }
 
+// GetChainIDs mocks base method.
+func (m *MockState) GetChainIDs() ([]ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainIDs")
+	ret0, _ := ret[0].([]ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainIDs indicates an expected call of GetChainIDs.
+func (mr *MockStateMockRecorder) GetChainIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainIDs", reflect.TypeOf((*MockState)(nil).GetChainIDs))
+}
+
 // GetChains mocks base method.
 func (m *MockState) GetChains(netID ids.ID) ([]*txs.Tx, error) {
 	m.ctrl.T.Helper()

@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"
@@ -19,7 +20,6 @@ import (
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
@@ -74,7 +74,7 @@ func main() {
 		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData{
 			ConvertChainToL1TxData: &platformvm.NetIDIndex{
 				NetId: netID[:],
-				Index:    validationIndex,
+				Index: validationIndex,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ func main() {
 	}
 
 	messageBuilder, err := p2pmessage.NewCreator(
-		
+
 		metric.NewNoOpRegistry(),
 		compression.TypeZstd,
 		time.Hour,

@@ -99,7 +99,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
 		QuantumID: constants.UnitTestID,
-		ChainID:     constants.PrimaryNetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:   ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
@@ -542,7 +542,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
 		QuantumID: networkID,
-		ChainID:     constants.PrimaryNetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:   chainID,
 	}
 

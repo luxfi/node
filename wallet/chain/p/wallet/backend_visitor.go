@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -54,7 +54,7 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
+func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	b.b.setOwner(
 		b.txID,
 		tx.Owner,

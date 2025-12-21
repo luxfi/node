@@ -79,8 +79,8 @@ func (s signatureRequestVerifier) Verify(
 	}
 
 	switch payload := payloadIntf.(type) {
-	case *message.NetToL1Conversion:
-		return s.verifyNetToL1Conversion(payload, justification)
+	case *message.ChainToL1Conversion:
+		return s.verifyChainToL1Conversion(payload, justification)
 	case *message.L1ValidatorRegistration:
 		return s.verifyL1ValidatorRegistration(payload, justification)
 	case *message.L1ValidatorWeight:
@@ -93,8 +93,8 @@ func (s signatureRequestVerifier) Verify(
 	}
 }
 
-func (s signatureRequestVerifier) verifyNetToL1Conversion(
-	msg *message.NetToL1Conversion,
+func (s signatureRequestVerifier) verifyChainToL1Conversion(
+	msg *message.ChainToL1Conversion,
 	justification []byte,
 ) error {
 	subnetID, err := ids.ToID(justification)

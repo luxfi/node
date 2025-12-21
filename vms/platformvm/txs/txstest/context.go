@@ -41,7 +41,7 @@ func newContext(
 		builderContext.StaticFeeConfig = fee.StaticConfig{
 			TxFee:                 cfg.TxFee,
 			CreateAssetTxFee:      cfg.CreateAssetTxFee,
-			CreateNetTxFee:        cfg.CreateNetTxFee,
+			CreateSubnetTxFee:     cfg.CreateNetTxFee,
 			CreateBlockchainTxFee: cfg.CreateBlockchainTxFee,
 		}
 	}

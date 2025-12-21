@@ -1240,7 +1240,7 @@ func TestStateNetOwner(t *testing.T) {
 		owner2 = fxmock.NewOwner(ctrl)
 
 		createNetTx = &txs.Tx{
-			Unsigned: &txs.CreateNetTx{
+			Unsigned: &txs.CreateSubnetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
@@ -1994,7 +1994,7 @@ func TestL1Validators(t *testing.T) {
 			assertChainsEqual(t, state, d)
 
 			// Verify that the subnetID+nodeID -> validationID mapping is correct.
-			var populatedNetIDNodeIDs = set.NewSet[subnetIDNodeID](0)
+			var populatedChainIDNodeIDs = set.NewSet[subnetIDNodeID](0)
 			for _, l1Validator := range expectedL1Validators {
 				if l1Validator.isDeleted() {
 					continue
@@ -2004,7 +2004,7 @@ func TestL1Validators(t *testing.T) {
 					subnetID: l1Validator.ChainID,
 					nodeID:   l1Validator.NodeID,
 				}
-				populatedNetIDNodeIDs.Add(subnetIDNodeID)
+				populatedChainIDNodeIDs.Add(subnetIDNodeID)
 
 				subnetIDNodeIDKey := subnetIDNodeID.Marshal()
 				validatorID, err := database.GetID(state.subnetIDNodeIDDB, subnetIDNodeIDKey)
@@ -2020,7 +2020,7 @@ func TestL1Validators(t *testing.T) {
 					subnetID: l1Validator.ChainID,
 					nodeID:   l1Validator.NodeID,
 				}
-				if populatedNetIDNodeIDs.Contains(subnetIDNodeID) {
+				if populatedChainIDNodeIDs.Contains(subnetIDNodeID) {
 					continue
 				}
 
@@ -2262,7 +2262,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			},
 		},
 		{
-			name: "L1 validators with the same NetID",
+			name: "L1 validators with the same ChainID",
 			l1Validators: []L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
@@ -2283,7 +2283,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			},
 		},
 		{
-			name: "L1 validators with different NetIDs",
+			name: "L1 validators with different ChainIDs",
 			l1Validators: []L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
@@ -2380,7 +2380,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			db := memdb.New()
 			state := newTestState(t, db)
 
-			stakersLenByNetID := make(map[ids.ID]int)
+			stakersLenByChainID := make(map[ids.ID]int)
 			stakersByTxID := make(map[ids.ID]*Staker)
 			for _, staker := range test.initial {
 				primaryStaker := &Staker{
@@ -2396,10 +2396,10 @@ func TestGetCurrentValidators(t *testing.T) {
 				require.NoError(state.PutCurrentValidator(staker))
 
 				stakersByTxID[staker.TxID] = staker
-				stakersLenByNetID[staker.ChainID]++
+				stakersLenByChainID[staker.ChainID]++
 			}
 
-			l1ValidatorsLenByNetID := make(map[ids.ID]int)
+			l1ValidatorsLenByChainID := make(map[ids.ID]int)
 			l1ValidatorsByVID := make(map[ids.ID]L1Validator)
 			for _, l1Validator := range test.l1Validators {
 				// The codec creates zero length slices rather than leaving them
@@ -2414,7 +2414,7 @@ func TestGetCurrentValidators(t *testing.T) {
 					continue
 				}
 				l1ValidatorsByVID[l1Validator.ValidationID] = l1Validator
-				l1ValidatorsLenByNetID[l1Validator.ChainID]++
+				l1ValidatorsLenByChainID[l1Validator.ChainID]++
 			}
 
 			state.SetHeight(0)
@@ -2424,8 +2424,8 @@ func TestGetCurrentValidators(t *testing.T) {
 				baseStakers, currentValidators, height, err := state.GetCurrentValidators(context.Background(), subnetID)
 				require.NoError(err)
 				require.Equal(uint64(0), height)
-				require.Len(baseStakers, stakersLenByNetID[subnetID])
-				require.Len(currentValidators, l1ValidatorsLenByNetID[subnetID])
+				require.Len(baseStakers, stakersLenByChainID[subnetID])
+				require.Len(currentValidators, l1ValidatorsLenByChainID[subnetID])
 
 				for i, currentStaker := range baseStakers {
 					require.Equalf(stakersByTxID[currentStaker.TxID], currentStaker, "index %d", i)

@@ -117,10 +117,10 @@ var (
 		gas.DBRead:  3, // get subnet auth + check for subnet transformation + check for subnet conversion
 		gas.DBWrite: 1, // put chain
 	}
-	IntrinsicCreateNetTxComplexities = gas.Dimensions{
+	IntrinsicCreateSubnetTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			wrappers.IntLen, // owner typeID
-		gas.DBWrite: 1, // write net owner
+		gas.DBWrite: 1, // write subnet owner
 	}
 	IntrinsicImportTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -857,7 +857,7 @@ func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) err
 	return err
 }
 
-func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
+func (c *complexityVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
@@ -866,7 +866,7 @@ func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicCreateNetTxComplexities.Add(
+	c.output, err = IntrinsicCreateSubnetTxComplexities.Add(
 		&baseTxComplexity,
 		&ownerComplexity,
 	)
