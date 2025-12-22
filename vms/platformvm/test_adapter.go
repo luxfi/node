@@ -9,13 +9,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/p2p"
-	luxwarp "github.com/luxfi/warp"
+	"github.com/luxfi/warp"
 )
 
 // TestAppSender is a test implementation of warp.Sender (p2p.Sender) for platformvm tests
 type TestAppSender struct{}
 
-var _ luxwarp.Sender = (*TestAppSender)(nil)
+var _ warp.Sender = (*TestAppSender)(nil)
 
 // SendRequest sends a request to the specified nodes (no-op for tests)
 func (t *TestAppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {

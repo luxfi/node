@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	luxWarp "github.com/luxfi/warp"
+	"github.com/luxfi/warp"
 )
 
 const (
@@ -53,18 +53,18 @@ type signatureRequestVerifier struct {
 
 func (s signatureRequestVerifier) Verify(
 	_ context.Context,
-	unsignedMessage *luxWarp.UnsignedMessage,
+	unsignedMessage *warp.UnsignedMessage,
 	justification []byte,
 ) error {
 	msg, err := payload.ParseAddressedCall(unsignedMessage.Payload)
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseWarpAddressedCall,
 			Message: "failed to parse warp addressed call: " + err.Error(),
 		}
 	}
 	if len(msg.SourceAddress) != 0 {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrWarpAddressedCallHasSourceAddress,
 			Message: "source address should be empty",
 		}
@@ -72,7 +72,7 @@ func (s signatureRequestVerifier) Verify(
 
 	payloadIntf, err := message.Parse(msg.Payload)
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseWarpAddressedCallPayload,
 			Message: "failed to parse warp addressed call payload: " + err.Error(),
 		}
@@ -86,7 +86,7 @@ func (s signatureRequestVerifier) Verify(
 	case *message.L1ValidatorWeight:
 		return s.verifyL1ValidatorWeight(payload)
 	default:
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrUnsupportedWarpAddressedCallPayloadType,
 			Message: fmt.Sprintf("unsupported warp addressed call payload type: %T", payloadIntf),
 		}
@@ -99,7 +99,7 @@ func (s signatureRequestVerifier) verifyChainToL1Conversion(
 ) error {
 	subnetID, err := ids.ToID(justification)
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -110,20 +110,20 @@ func (s signatureRequestVerifier) verifyChainToL1Conversion(
 
 	conversion, err := s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
 
 	if msg.ID != conversion.ConversionID {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrMismatchedConversionID,
 			Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
 		}
@@ -142,7 +142,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 
 	var justification platformvm.L1ValidatorRegistrationJustification
 	if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -154,7 +154,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 		return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	default:
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrInvalidJustificationType,
 			Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
 		}
@@ -172,13 +172,13 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	// Verify that the validator exists
 	_, err := s.state.GetL1Validator(validationID)
 	if err == database.ErrNotFound {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", validationID),
 		}
 	}
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
@@ -195,7 +195,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 ) error {
 	subnetID, err := ids.ToID(justification.GetNetId())
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseNetID,
 			Message: "failed to parse subnetID: " + err.Error(),
 		}
@@ -203,7 +203,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 
 	justificationID := subnetID.Append(justification.GetIndex())
 	if validationID != justificationID {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -215,13 +215,13 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// Verify that the provided subnetID has been converted.
 	_, err = s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
@@ -230,13 +230,13 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// Verify that the validator is not in the current state
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
@@ -255,7 +255,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 ) error {
 	justification, err := message.ParseRegisterL1Validator(justificationBytes)
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrFailedToParseRegisterL1Validator,
 			Message: "failed to parse RegisterL1Validator justification: " + err.Error(),
 		}
@@ -263,7 +263,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 
 	justificationID := justification.ValidationID()
 	if validationID != justificationID {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -275,13 +275,13 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	// Verify that the validator does not currently exist
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
@@ -299,13 +299,13 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 		ValidationID: validationID,
 	})
 	if err != nil {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to lookup expiry: " + err.Error(),
 		}
 	}
 	if !hasExpiry {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrValidationCouldBeRegistered,
 			Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
 		}
@@ -318,7 +318,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 	msg *message.L1ValidatorWeight,
 ) error {
 	if msg.Nonce == math.MaxUint64 {
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrImpossibleNonce,
 			Message: "impossible nonce",
 		}
@@ -333,22 +333,22 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 		// If the peer is attempting to verify that the weight of the validator
 		// is 0, they should be requesting a [message.L1ValidatorRegistration]
 		// with Registered set to false.
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", msg.ValidationID),
 		}
 	case err != nil:
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    0,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	case msg.Nonce+1 != l1Validator.MinNonce:
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrWrongNonce,
 			Message: fmt.Sprintf("provided nonce %d != expected nonce (%d - 1)", msg.Nonce, l1Validator.MinNonce),
 		}
 	case msg.Weight != l1Validator.Weight:
-		return &luxWarp.Error{
+		return &warp.Error{
 			Code:    ErrWrongWeight,
 			Message: fmt.Sprintf("provided weight %d != expected weight %d", msg.Weight, l1Validator.Weight),
 		}

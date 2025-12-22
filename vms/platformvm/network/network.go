@@ -20,9 +20,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/txs/mempool"
-	luxWarp "github.com/luxfi/warp"
+	"github.com/luxfi/warp"
 )
 
 type Network struct {
@@ -44,7 +43,7 @@ type warpSignerAdapter struct {
 }
 
 // Sign implements lp118.Signer interface
-func (a *warpSignerAdapter) Sign(msg *luxWarp.UnsignedMessage) ([]byte, error) {
+func (a *warpSignerAdapter) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
 	// Convert external warp message to internal warp message
 	// msg.SourceChainID is already ids.ID type
 	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
@@ -67,7 +66,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
-	appSender luxWarp.Sender,
+	appSender warp.Sender,
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,

@@ -45,9 +45,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	luxwarp "github.com/luxfi/warp"
+	"github.com/luxfi/warp"
 
 	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -66,9 +65,9 @@ var (
 	_ validators.State                          = (*VM)(nil)
 )
 
-// appSenderAdapter adapts luxwarp.Sender to the expected interface (for network.New)
+// appSenderAdapter adapts warp.Sender to the expected interface (for network.New)
 type appSenderAdapter struct {
-	luxwarp.Sender
+	warp.Sender
 }
 
 func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
@@ -80,7 +79,7 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 }
 
 func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := luxwarp.SendConfig{
+	config := warp.SendConfig{
 		NodeIDs: nodeIDs,
 	}
 	return a.Sender.SendGossip(ctx, config, appGossipBytes)
@@ -91,7 +90,7 @@ func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 }
 
 func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := luxwarp.SendConfig{
+	config := warp.SendConfig{
 		NodeIDs: nodeIDs,
 	}
 	return a.Sender.SendGossip(ctx, config, appGossipBytes)
@@ -210,10 +209,10 @@ func (vm *VM) Initialize(
 	_ = fxsIntf
 
 	// Handle appSender
-	var appSender luxwarp.Sender
+	var appSender warp.Sender
 	if appSenderIntf != nil {
 		var ok bool
-		appSender, ok = appSenderIntf.(luxwarp.Sender)
+		appSender, ok = appSenderIntf.(warp.Sender)
 		if !ok {
 			return fmt.Errorf("invalid app sender type")
 		}
