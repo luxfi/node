@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/health"
 
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -32,7 +33,7 @@ const defaultRuntimeDialTimeout = 5 * time.Second
 // This address is used by the Runtime client to send Initialize RPC to server.
 //
 // Serve starts the RPC Chain VM server and performs a handshake with the VM runtime service.
-func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption) error {
+func Serve(ctx context.Context, log log.Logger, vm block.ChainVM, opts ...grpcutils.ServerOption) error {
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)
@@ -42,7 +43,7 @@ func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption
 	go func(ctx context.Context) {
 		defer func() {
 			server.GracefulStop()
-			fmt.Println("vm server: graceful termination success")
+			log.Info("vm server: graceful termination success")
 		}()
 
 		for {
@@ -52,19 +53,19 @@ func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption
 				// that we are shutting down. Once we are in the shutdown
 				// workflow, we will gracefully exit upon receiving a SIGTERM.
 				if !allowShutdown.Get() {
-					fmt.Printf("runtime engine: ignoring signal: %s\n", s)
+					log.Debug("runtime engine: ignoring signal", "signal", s)
 					continue
 				}
 
 				switch s {
 				case syscall.SIGINT:
-					fmt.Printf("runtime engine: ignoring signal: %s\n", s)
+					log.Debug("runtime engine: ignoring signal", "signal", s)
 				case syscall.SIGTERM:
-					fmt.Printf("runtime engine: received shutdown signal: %s\n", s)
+					log.Info("runtime engine: received shutdown signal", "signal", s)
 					return
 				}
 			case <-ctx.Done():
-				fmt.Println("runtime engine: context has been cancelled")
+				log.Info("runtime engine: context has been cancelled")
 				return
 			}
 		}
@@ -88,6 +89,11 @@ func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption
 		return fmt.Errorf("failed to create new listener: %w", err)
 	}
 
+	log.Debug("initializing vm runtime",
+		"protocol", version.RPCChainVMProtocol,
+		"addr", listener.Addr().String(),
+	)
+
 	ctx, cancel := context.WithTimeout(ctx, defaultRuntimeDialTimeout)
 	defer cancel()
 	err = client.Initialize(ctx, version.RPCChainVMProtocol, listener.Addr().String())
@@ -95,6 +101,8 @@ func Serve(ctx context.Context, vm block.ChainVM, opts ...grpcutils.ServerOption
 		_ = listener.Close()
 		return fmt.Errorf("failed to initialize vm runtime: %w", err)
 	}
+
+	log.Info("vm runtime initialized successfully", "addr", listener.Addr().String())
 
 	// start RPC Chain VM server
 	grpcutils.Serve(listener, server)
