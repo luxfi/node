@@ -279,7 +279,9 @@ func getNetworkConfig(
 		return network.Config{}, err
 	}
 
-	allowPrivateIPs := !constants.ProductionNetworkIDs.Contains(networkID)
+	// Allow private IPs by default for local development and testing.
+	// Use --network-allow-private-ips=false to prohibit for production deployments.
+	allowPrivateIPs := true
 	if v.IsSet(NetworkAllowPrivateIPsKey) {
 		allowPrivateIPs = v.GetBool(NetworkAllowPrivateIPsKey)
 	}
@@ -862,6 +864,9 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig) ([]byte, ids.ID, error) {
+	// Get allow-custom-genesis flag (defaults to true for development)
+	allowCustomGenesis := v.GetBool(AllowCustomGenesisKey)
+
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
@@ -881,13 +886,13 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// try first loading genesis content directly from flag/env-var
 	if v.IsSet(GenesisFileContentKey) {
 		genesisData := v.GetString(GenesisFileContentKey)
-		return builder.FromFlag(networkID, genesisData, stakingCfg)
+		return builder.FromFlag(networkID, genesisData, stakingCfg, allowCustomGenesis)
 	}
 
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
 		genesisFileName := getExpandedArg(v, GenesisFileKey)
-		return builder.FromFile(networkID, genesisFileName, stakingCfg)
+		return builder.FromFile(networkID, genesisFileName, stakingCfg, allowCustomGenesis)
 	}
 
 	// finally if file is not specified/readable go for the predefined config

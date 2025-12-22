@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/luxfi/constants"
 )
 
 // NetworkValidator represents a validator for a specific network
@@ -32,36 +34,38 @@ type MultiNetworkNode struct {
 }
 
 // NewMultiNetworkNode creates a new multi-network node
+// Network IDs: 1 (mainnet), 2 (testnet), 3 (devnet) - P-Chain identifiers
+// Chain IDs: 96369, 96368, 96370 - C-Chain EVM identifiers (can be used as aliases)
 func NewMultiNetworkNode() *MultiNetworkNode {
 	return &MultiNetworkNode{
 		Networks: map[uint32]*NetworkValidator{
-			96369: {
-				NetworkID:   96369,
+			constants.MainnetID: { // 1
+				NetworkID:   constants.MainnetID,
 				NetworkName: "Lux Mainnet",
 				RPCPort:     9630,
 				Validators:  5,
 				ChainID:     "2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM",
 				Active:      true,
 			},
-			96368: {
-				NetworkID:   96368,
+			constants.TestnetID: { // 2
+				NetworkID:   constants.TestnetID,
 				NetworkName: "Lux Testnet",
 				RPCPort:     9620,
 				Validators:  5,
 				ChainID:     "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm",
 				Active:      true,
 			},
-			200200: {
+			200200: { // Zoo L2 Chain ID
 				NetworkID:   200200,
-				NetworkName: "Zoo Network",
+				NetworkName: "Zoo Network (L2)",
 				RPCPort:     2000,
 				Validators:  5,
 				ChainID:     "2ebCneCbwthjQ1rYT41nhd7M76Hc6YmosMAQrTFhBq8qeqh6tt",
 				Active:      true,
 			},
-			36963: {
-				NetworkID:   36963,
-				NetworkName: "Hanzo Network",
+			constants.QChainMainnetID: { // 36963 - Q-Chain
+				NetworkID:   constants.QChainMainnetID,
+				NetworkName: "Hanzo Network (Q-Chain)",
 				RPCPort:     3690,
 				Validators:  5,
 				ChainID:     "2TtHFqEAAJ6b33dromYMqfgavGPF3iCpdG3hwNMiart2aB5QHi",

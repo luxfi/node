@@ -95,6 +95,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
 	fs.String(GenesisDBTypeKey, "badgerdb", "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}")
 	fs.Uint64(GenesisBlockLimitKey, 0, "Limit number of blocks to replay during genesis (0 = all blocks)")
+	fs.Bool(AllowCustomGenesisKey, true, "Allow custom genesis for mainnet/testnet (default: true for development, set false for production)")
 
 	// Upgrade
 	fs.String(UpgradeFileKey, "", fmt.Sprintf("Specifies an upgrade config file path. Ignored when running standard networks or if %s is specified",
@@ -183,10 +184,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(NetworkCompressionTypeKey, constants.DefaultNetworkCompressionType.String(), fmt.Sprintf("Compression type for outbound messages. Must be one of [%s, %s]", compression.TypeZstd, compression.TypeNone))
 
 	fs.Duration(NetworkMaxClockDifferenceKey, constants.DefaultNetworkMaxClockDifference, "Max allowed clock difference value between this node and peers")
-	// Note: The default value is set to false here because the default
-	// networkID is mainnet. The real default value of NetworkAllowPrivateIPs is
-	// based on the networkID.
-	fs.Bool(NetworkAllowPrivateIPsKey, false, fmt.Sprintf("Allows the node to initiate outbound connection attempts to peers with private IPs. If the provided --%s is one of [%s, %s] the default is false. Oterhwise, the default is true", NetworkNameKey, constants.MainnetName, constants.TestnetName))
+	// Allow private IPs by default for local development and testing.
+	// Set to false to prohibit for production deployments.
+	fs.Bool(NetworkAllowPrivateIPsKey, true, "Allows the node to initiate outbound connection attempts to peers with private IPs. Default is true. Set to false to prohibit for security-sensitive production deployments")
 	fs.Bool(NetworkRequireValidatorToConnectKey, constants.DefaultNetworkRequireValidatorToConnect, "If true, this node will only maintain a connection with another node if this node is a validator, the other node is a validator, or the other node is a beacon")
 	fs.Uint(NetworkPeerReadBufferSizeKey, constants.DefaultNetworkPeerReadBufferSize, "Size, in bytes, of the buffer that we read peer messages into (there is one buffer per peer)")
 	fs.Uint(NetworkPeerWriteBufferSizeKey, constants.DefaultNetworkPeerWriteBufferSize, "Size, in bytes, of the buffer that we write peer messages into (there is one buffer per peer)")

@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/badgerdb"
+	// "github.com/luxfi/database/badgerdb" // Unused
 	dbmanager "github.com/luxfi/database/manager"
 	consensusctx "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/database/meterdb" // Unused
@@ -1116,44 +1116,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Get VM database from chain database manager
-		// In isolated mode, each chain gets its own BadgerDB
-		// In legacy mode, uses prefixdb on shared database
-		var vmDB database.Database
-
-		// For network 96369 C-Chain, use the migrated BadgerDB directly (legacy migration support)
-		if m.NetworkID == 96369 && chainParams.ID == m.CChainID {
-			migratedDBPath := filepath.Join(os.Getenv("HOME"), ".lux/chainData/network-96369", chainParams.ID.String(), "badgerdb/ethdb")
-			if _, err := os.Stat(migratedDBPath); err == nil {
-				m.Log.Info("Network 96369 C-Chain detected - using migrated BadgerDB",
-					log.String("path", migratedDBPath))
-				migratedDB, err := badgerdb.New(migratedDBPath, nil, "cchain", chainMetricsReg)
-				if err != nil {
-					m.Log.Error("Failed to open migrated BadgerDB, falling back to chain DB manager",
-						log.String("path", migratedDBPath),
-						log.Err(err))
-					vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
-					if err != nil {
-						return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
-					}
-				} else {
-					vmDB = migratedDB
-					m.Log.Info("Successfully opened migrated BadgerDB",
-						log.String("path", migratedDBPath))
-				}
-			} else {
-				m.Log.Warn("Migrated BadgerDB not found, using chain DB manager",
-					log.String("path", migratedDBPath))
-				vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
-				}
-			}
-		} else {
-			// Standard path: use chain database manager
-			vmDB, err = m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
-			}
+		// Get VM database from chain database manager
+		vmDB, err := m.chainDBManager.GetVMDatabase(chainParams.ID, linearChainAlias)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
 		}
 
 		// Create message channel for VM-to-Engine communication

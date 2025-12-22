@@ -164,7 +164,7 @@ func NewTestNetworkConfig(
 		NetworkID:                    networkID,
 		MaxClockDifference:           constants.DefaultNetworkMaxClockDifference,
 		PingFrequency:                constants.DefaultPingFrequency,
-		AllowPrivateIPs:              !constants.ProductionNetworkIDs.Contains(networkID),
+		AllowPrivateIPs:              true, // Allow private IPs by default for testing
 		CompressionType:              constants.DefaultNetworkCompressionType,
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,

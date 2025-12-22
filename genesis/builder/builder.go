@@ -480,16 +480,17 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 }
 
 // FromFile loads genesis config from file and builds genesis bytes
-func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	// Only protect mainnet and testnet from genesis override
-	// LocalID (1337) is allowed to use custom genesis for development flexibility
-	switch networkID {
-	case constants.MainnetID, constants.TestnetID:
-		return nil, ids.Empty, fmt.Errorf(
-			"%w: %s",
-			errOverridesStandardNetworkConfig,
-			constants.NetworkName(networkID),
-		)
+func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig, allowCustomGenesis bool) ([]byte, ids.ID, error) {
+	// Protect standard networks from custom genesis unless explicitly allowed
+	if !allowCustomGenesis {
+		switch networkID {
+		case constants.MainnetID, constants.TestnetID:
+			return nil, ids.Empty, fmt.Errorf(
+				"%w: %s",
+				errOverridesStandardNetworkConfig,
+				constants.NetworkName(networkID),
+			)
+		}
 	}
 
 	config, err := genesiscfg.GetConfigFile(filepath)
@@ -503,16 +504,17 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]b
 }
 
 // FromFlag parses base64-encoded genesis content and builds genesis bytes
-func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	// Only protect mainnet and testnet from genesis override
-	// LocalID (1337) is allowed to use custom genesis for development flexibility
-	switch networkID {
-	case constants.MainnetID, constants.TestnetID:
-		return nil, ids.Empty, fmt.Errorf(
-			"%w: %s",
-			errOverridesStandardNetworkConfig,
-			constants.NetworkName(networkID),
-		)
+func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig, allowCustomGenesis bool) ([]byte, ids.ID, error) {
+	// Protect standard networks from custom genesis unless explicitly allowed
+	if !allowCustomGenesis {
+		switch networkID {
+		case constants.MainnetID, constants.TestnetID:
+			return nil, ids.Empty, fmt.Errorf(
+				"%w: %s",
+				errOverridesStandardNetworkConfig,
+				constants.NetworkName(networkID),
+			)
+		}
 	}
 
 	data, err := base64.StdEncoding.DecodeString(genesisContent)

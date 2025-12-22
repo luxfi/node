@@ -19,6 +19,7 @@ const (
 	GenesisDBKey                             = "genesis-db"
 	GenesisDBTypeKey                         = "genesis-db-type"
 	GenesisBlockLimitKey                     = "genesis-block-limit"
+	AllowCustomGenesisKey                    = "allow-custom-genesis"
 	UpgradeFileKey                           = "upgrade-file"
 	UpgradeFileContentKey                    = "upgrade-file-content"
 	NetworkNameKey                           = "network-id"
