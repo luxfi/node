@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/qzmq"
 	"google.golang.org/grpc"
 )
@@ -250,8 +251,8 @@ func ExampleHybridTransport() {
 		EnableQuantumSecurity: true, // Quantum-secure DEX operations
 	}
 
-	// Create DEX service with hybrid transport (use NoLog for example)
-	logger := log.NoLog{}
+	// Create DEX service with hybrid transport
+	logger := log.NewTestLogger(level.Info)
 	dexService, err := NewDEXService(logger, transportConfig, serviceConfig)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create DEX service: %v", err))
