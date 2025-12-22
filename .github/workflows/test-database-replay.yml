@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.5'
+        go-version: '1.25.5'
 
     - name: Build luxd with database support
       run: |
@@ -86,7 +86,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.5'
+        go-version: '1.25.5'
 
     - name: Test database factory
       run: |
