@@ -153,7 +153,7 @@ require (
 	github.com/luxfi/threshold v1.1.2
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
-	github.com/luxfi/warp v1.16.38
+	github.com/luxfi/warp v1.16.39
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.0
 )

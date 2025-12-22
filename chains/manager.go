@@ -30,8 +30,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
-	luxwarp "github.com/luxfi/warp"
-	nodewarp "github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/warp"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
@@ -391,75 +390,12 @@ func getValidatorState(state validators.State) validators.State {
 	return &noopValidatorState{}
 }
 
-// createWarpSigner creates a warp signer from a bls.Signer using the node's warp package
-// The returned signer implements nodewarp.Signer (used by platformvm)
-// For coreth, we need a different approach - see corethWarpSignerAdapter below
-func createWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) nodewarp.Signer {
+// createWarpSigner creates a warp.Signer from a bls.Signer
+func createWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) warp.Signer {
 	if sk == nil {
 		return nil
 	}
-	return nodewarp.NewSigner(sk, networkID, chainID)
-}
-
-// corethWarpSignerAdapter wraps nodewarp.Signer to implement luxwarp.Signer for coreth
-// This is needed because coreth expects luxwarp.Signer but we create nodewarp.Signer
-type corethWarpSignerAdapter struct {
-	sk        bls.Signer
-	networkID uint32
-	chainID   ids.ID
-}
-
-// Ensure corethWarpSignerAdapter implements luxwarp.Signer
-var _ luxwarp.Signer = (*corethWarpSignerAdapter)(nil)
-
-// Sign implements luxwarp.Signer
-func (w *corethWarpSignerAdapter) Sign(msg *luxwarp.UnsignedMessage) ([]byte, error) {
-	if msg.SourceChainID != w.chainID {
-		return nil, luxwarp.ErrWrongSourceChainID
-	}
-	if msg.NetworkID != w.networkID {
-		return nil, luxwarp.ErrWrongNetworkID
-	}
-
-	sig, err := w.sk.Sign(msg.Bytes())
-	if err != nil {
-		return nil, err
-	}
-	return bls.SignatureToBytes(sig), nil
-}
-
-// noOpWarpSigner is a no-op warp signer for emergency/local mode without BLS keys
-// It implements luxwarp.Signer but returns an error for any signing requests
-type noOpWarpSigner struct {
-	networkID uint32
-	chainID   ids.ID
-}
-
-// Ensure noOpWarpSigner implements luxwarp.Signer
-var _ luxwarp.Signer = (*noOpWarpSigner)(nil)
-
-// Sign implements luxwarp.Signer - returns error since we can't actually sign
-func (w *noOpWarpSigner) Sign(msg *luxwarp.UnsignedMessage) ([]byte, error) {
-	// Return empty signature for local/emergency mode
-	// This allows the node to start without BLS keys but warp messaging will not work
-	return nil, fmt.Errorf("no-op warp signer: BLS key not configured")
-}
-
-// createCorethWarpSigner creates a warp signer specifically for coreth (C-chain)
-// This implements luxwarp.Signer interface
-func createCorethWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) luxwarp.Signer {
-	if sk == nil {
-		// Return no-op signer for emergency/local mode without BLS keys
-		return &noOpWarpSigner{
-			networkID: networkID,
-			chainID:   chainID,
-		}
-	}
-	return &corethWarpSignerAdapter{
-		sk:        sk,
-		networkID: networkID,
-		chainID:   chainID,
-	}
+	return warp.NewSigner(sk, networkID, chainID)
 }
 
 func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -1074,18 +1010,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	}
 
 	// Create warp signer for this chain using the node's BLS key
-	// For plugin VMs (rpcchainvm), we need to use nodewarp.Signer which is compatible
-	// with gwarp.Server. The gRPC layer handles the protocol conversion.
-	// C-chain (coreth) needs luxwarp.Signer
-	var warpSigner interface{}
-	if chainParams.ID == m.CChainID {
-		// C-chain uses coreth which expects luxwarp.Signer
-		warpSigner = createCorethWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
-	} else {
-		// Other chains (P-chain, X-chain, plugin VMs) use nodewarp.Signer
-		// For plugin VMs, gwarp.Server handles the gRPC protocol
-		warpSigner = createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
-	}
+	warpSigner := createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 
 	chainCtx := &consensusctx.Context{
 		NetworkID:    m.NetworkID,
@@ -1508,7 +1433,7 @@ func (m *manager) createDAG(
 			configBytes []byte,
 			toEngine chan<- engine.Message,
 			fxs []*engine.Fx,
-			appSender luxwarp.Sender,
+			appSender warp.Sender,
 		) error
 	}); ok {
 		toEngine := make(chan engine.Message, 1)
@@ -2724,12 +2649,12 @@ func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Mes
 	return nil
 }
 
-// noopWarpSender is a no-op implementation of luxwarp.Sender for cross-chain messaging
+// noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
 // Used in single-node mode where cross-chain messaging is not needed
 type noopWarpSender struct{}
 
-// Compile-time check that noopWarpSender implements luxwarp.Sender
-var _ luxwarp.Sender = (*noopWarpSender)(nil)
+// Compile-time check that noopWarpSender implements warp.Sender
+var _ warp.Sender = (*noopWarpSender)(nil)
 
 func (n *noopWarpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
@@ -2743,6 +2668,6 @@ func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, reque
 	return nil
 }
 
-func (n *noopWarpSender) SendGossip(ctx context.Context, config luxwarp.SendConfig, gossipBytes []byte) error {
+func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
 }
