@@ -7,8 +7,8 @@ package xchain
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/qzmq"
 	"google.golang.org/grpc"
 )
@@ -17,6 +17,7 @@ import (
 type DEXService struct {
 	transport *TransportManager
 	config    *ServiceConfig
+	log       log.Logger
 
 	// Separate handlers for different protocols
 	grpcHandler *GRPCHandler
@@ -36,7 +37,7 @@ type ServiceConfig struct {
 }
 
 // NewDEXService creates a new DEX service
-func NewDEXService(transportConfig *TransportConfig, serviceConfig *ServiceConfig) (*DEXService, error) {
+func NewDEXService(logger log.Logger, transportConfig *TransportConfig, serviceConfig *ServiceConfig) (*DEXService, error) {
 	// Create transport manager that handles both protocols
 	tm, err := NewTransportManager(transportConfig)
 	if err != nil {
@@ -46,6 +47,7 @@ func NewDEXService(transportConfig *TransportConfig, serviceConfig *ServiceConfi
 	service := &DEXService{
 		transport: tm,
 		config:    serviceConfig,
+		log:       logger,
 	}
 
 	// Initialize protocol-specific handlers
@@ -204,17 +206,11 @@ func (s *DEXService) Start() error {
 		return err
 	}
 
-	log.Println("X-Chain DEX Service started")
-
-	if s.config.UseGRPCForConsensus {
-		log.Println("  - Consensus: gRPC (default)")
-	}
-
-	if s.config.UseQZMQForDEX {
-		log.Println("  - DEX Operations: QZMQ (quantum-secure)")
-	} else {
-		log.Println("  - DEX Operations: gRPC (default)")
-	}
+	s.log.Info("X-Chain DEX Service started",
+		"grpcConsensus", s.config.UseGRPCForConsensus,
+		"qzmqDEX", s.config.UseQZMQForDEX,
+		"quantumSecurity", s.config.EnableQuantumSecurity,
+	)
 
 	return nil
 }
@@ -254,15 +250,16 @@ func ExampleHybridTransport() {
 		EnableQuantumSecurity: true, // Quantum-secure DEX operations
 	}
 
-	// Create DEX service with hybrid transport
-	dexService, err := NewDEXService(transportConfig, serviceConfig)
+	// Create DEX service with hybrid transport (use NoLog for example)
+	logger := log.NoLog{}
+	dexService, err := NewDEXService(logger, transportConfig, serviceConfig)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("failed to create DEX service: %v", err))
 	}
 
 	// Start the service
 	if err := dexService.Start(); err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("failed to start DEX service: %v", err))
 	}
 
 	// Example: Submit an order (will use QZMQ automatically)
@@ -277,7 +274,7 @@ func ExampleHybridTransport() {
 
 	ctx := context.Background()
 	if err := dexService.SubmitOrder(ctx, order); err != nil {
-		log.Printf("Failed to submit order: %v", err)
+		logger.Error("failed to submit order", "error", err)
 	}
 
 	// Example: Broadcast a block (will use gRPC by default)
@@ -287,9 +284,10 @@ func ExampleHybridTransport() {
 	}
 
 	if err := dexService.BroadcastBlock(ctx, block); err != nil {
-		log.Printf("Failed to broadcast block: %v", err)
+		logger.Error("failed to broadcast block", "error", err)
 	}
 
+	// Documentation output (acceptable for Example functions)
 	fmt.Println(`
 Transport Protocol Usage:
 ========================

@@ -149,7 +149,7 @@ func (a *app) Start() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println("caught panic", r)
+				a.log.Error("caught panic", "panic", r)
 			}
 			// a.log.Stop() // Not available in new log module
 			// a.logFactory.Close() // Not available

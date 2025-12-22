@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +21,7 @@ func TestNewDEXService(t *testing.T) {
 		EnableQuantumSecurity: false,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 	require.NotNil(service)
 	require.NotNil(service.transport)
@@ -43,7 +44,7 @@ func TestNewDEXService_WithQZMQ(t *testing.T) {
 		EnableQuantumSecurity: true,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 	require.NotNil(service)
 
@@ -63,7 +64,7 @@ func TestDEXService_SubmitOrder_GRPC(t *testing.T) {
 		EnableQuantumSecurity: false,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 
 	order := &Order{
@@ -97,7 +98,7 @@ func TestDEXService_SubmitOrder_QZMQ(t *testing.T) {
 		EnableQuantumSecurity: true,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 
 	order := &Order{
@@ -125,7 +126,7 @@ func TestDEXService_BroadcastBlock_GRPC(t *testing.T) {
 		EnableQuantumSecurity: false,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 
 	block := &Block{
@@ -154,7 +155,7 @@ func TestDEXService_BroadcastBlock_QZMQ(t *testing.T) {
 		EnableQuantumSecurity: true,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 
 	block := &Block{
@@ -261,7 +262,7 @@ func TestDEXService_SigningFunctions(t *testing.T) {
 		EnableQuantumSecurity: false,
 	}
 
-	service, err := NewDEXService(transportConfig, serviceConfig)
+	service, err := NewDEXService(log.NoLog{}, transportConfig, serviceConfig)
 	require.NoError(err)
 
 	// Test that signing functions return expected sizes
@@ -340,7 +341,7 @@ func TestDEXService_ErrorCases(t *testing.T) {
 
 	// This should panic due to nil dereference, so we catch it
 	require.Panics(func() {
-		NewDEXService(invalidConfig, serviceConfig)
+		NewDEXService(log.NoLog{}, invalidConfig, serviceConfig)
 	}, "Should panic with nil gRPC config")
 }
 
