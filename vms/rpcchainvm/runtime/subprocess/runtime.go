@@ -10,9 +10,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
-
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -70,13 +68,13 @@ func Bootstrap(
 	go grpcutils.Serve(listener, server)
 
 	serverAddr := listener.Addr()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", runtime.EngineAddressKey, serverAddr.String()))
-	// pass golang debug env to subprocess
-	for _, env := range os.Environ() {
-		if strings.HasPrefix(env, "GRPC_") || strings.HasPrefix(env, "GODEBUG") {
-			cmd.Env = append(cmd.Env, env)
-		}
+	// CRITICAL: If cmd.Env is already set (e.g., by tests), preserve those values
+	// and only add our required environment variable. If cmd.Env is nil,
+	// copy the parent's environment first.
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
 	}
+	cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", runtime.EngineAddressKey, serverAddr.String()))
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -87,7 +85,7 @@ func Bootstrap(
 		return nil, nil, fmt.Errorf("failed to create stderr pipe: %w", err)
 	}
 
-	// start subproccess
+	// start subprocess
 	if err := cmd.Start(); err != nil {
 		return nil, nil, fmt.Errorf("failed to start process: %w", err)
 	}
