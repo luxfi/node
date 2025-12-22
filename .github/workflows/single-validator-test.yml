@@ -19,7 +19,7 @@ on:
         default: false
 
 env:
-  GO_VERSION: '1.25.5'
+  GO_VERSION: '1.23.5'
   TEST_TIMEOUT: '10m'
   NODE_DIR: ${{ github.workspace }}
   GENESIS_DIR: ${{ github.workspace }}/../genesis
