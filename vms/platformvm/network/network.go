@@ -20,8 +20,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/warp"
+	extwarp "github.com/luxfi/warp"
 )
 
 type Network struct {
@@ -37,13 +38,13 @@ type Network struct {
 	txPullGossipFrequency time.Duration
 }
 
-// warpSignerAdapter adapts warp.Signer (node's internal) to lp118.Signer (external warp)
+// warpSignerAdapter adapts warp.Signer (node's internal) to extwarp.Signer (external warp)
 type warpSignerAdapter struct {
 	signer warp.Signer
 }
 
-// Sign implements lp118.Signer interface
-func (a *warpSignerAdapter) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
+// Sign implements extwarp.Signer interface
+func (a *warpSignerAdapter) Sign(msg *extwarp.UnsignedMessage) ([]byte, error) {
 	// Convert external warp message to internal warp message
 	// msg.SourceChainID is already ids.ID type
 	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
@@ -66,7 +67,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
-	appSender warp.Sender,
+	appSender extwarp.Sender,
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,

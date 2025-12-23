@@ -45,8 +45,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/warp"
+	extwarp "github.com/luxfi/warp"
 
 	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -65,9 +66,9 @@ var (
 	_ validators.State                          = (*VM)(nil)
 )
 
-// appSenderAdapter adapts warp.Sender to the expected interface (for network.New)
+// appSenderAdapter adapts extwarp.Sender to the expected interface (for network.New)
 type appSenderAdapter struct {
-	warp.Sender
+	extwarp.Sender
 }
 
 func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
@@ -79,7 +80,7 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 }
 
 func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := warp.SendConfig{
+	config := extwarp.SendConfig{
 		NodeIDs: nodeIDs,
 	}
 	return a.Sender.SendGossip(ctx, config, appGossipBytes)
@@ -90,10 +91,24 @@ func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 }
 
 func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := warp.SendConfig{
+	config := extwarp.SendConfig{
 		NodeIDs: nodeIDs,
 	}
 	return a.Sender.SendGossip(ctx, config, appGossipBytes)
+}
+
+// warpSignerAdapter adapts extwarp.Signer to internal warp.Signer
+type warpSignerAdapter struct {
+	extSigner extwarp.Signer
+}
+
+func (a *warpSignerAdapter) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
+	// Convert internal message to external message format
+	extMsg, err := extwarp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
+	if err != nil {
+		return nil, err
+	}
+	return a.extSigner.Sign(extMsg)
 }
 
 type VM struct {
@@ -209,10 +224,10 @@ func (vm *VM) Initialize(
 	_ = fxsIntf
 
 	// Handle appSender
-	var appSender warp.Sender
+	var appSender extwarp.Sender
 	if appSenderIntf != nil {
 		var ok bool
-		appSender, ok = appSenderIntf.(warp.Sender)
+		appSender, ok = appSenderIntf.(extwarp.Sender)
 		if !ok {
 			return fmt.Errorf("invalid app sender type")
 		}
@@ -366,11 +381,12 @@ func (vm *VM) Initialize(
 	// Type assert WarpSigner (may be nil for Platform chain)
 	var warpSigner warp.Signer
 	if chainCtx.WarpSigner != nil {
-		var ok bool
-		warpSigner, ok = chainCtx.WarpSigner.(warp.Signer)
+		extSigner, ok := chainCtx.WarpSigner.(extwarp.Signer)
 		if !ok {
 			return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
 		}
+		// Wrap external signer with adapter for internal interface
+		warpSigner = &warpSignerAdapter{extSigner: extSigner}
 	} else {
 		// Create a no-op warp signer for Platform chain
 		warpSigner = &noOpWarpSigner{}
