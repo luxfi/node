@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -45,7 +44,7 @@ const (
 	ErrWrongWeight
 )
 
-var _ lp118.Verifier = (*signatureRequestVerifier)(nil)
+var _ warp.Verifier = (*signatureRequestVerifier)(nil)
 
 type signatureRequestVerifier struct {
 	stateLock sync.Locker

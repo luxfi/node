@@ -51,7 +51,7 @@ var (
 	defaultVMAliasFilePath      = filepath.Join(defaultVMConfigDir, "aliases.json")
 	defaultChainAliasFilePath   = filepath.Join(defaultChainConfigDir, "aliases.json")
 	defaultNetConfigDir      = filepath.Join(defaultConfigDir, "subnets")
-	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins")
+	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins", "current")
 	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
 	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
 )

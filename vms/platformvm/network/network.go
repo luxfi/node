@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/p2p/lp118"
 	"github.com/luxfi/p2p/gossip"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -182,18 +181,18 @@ func New(
 	}
 
 	// We allow all peers to request warp messaging signatures
-	signatureRequestVerifier := signatureRequestVerifier{
+	verifier := signatureRequestVerifier{
 		stateLock: stateLock,
 		state:     state,
 	}
 	// Create a cache for signature requests (100 entries)
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
-	// Wrap signer to adapt node's warp.Signer to lp118.Signer (external warp)
+	// Wrap signer to adapt node's warp.Signer to extwarp.Signer
 	signerAdapter := &warpSignerAdapter{signer: signer}
-	lp118Handler := lp118.NewCachedHandler(signatureCache, signatureRequestVerifier, signerAdapter)
-	signatureRequestHandler := lp118.NewHandlerAdapter(lp118Handler)
+	cachedHandler := extwarp.NewCachedSignatureHandler(signatureCache, verifier, signerAdapter)
+	signatureHandler := extwarp.NewSignatureHandlerAdapter(cachedHandler)
 
-	if err := p2pNetwork.AddHandler(lp118.HandlerID, signatureRequestHandler); err != nil {
+	if err := p2pNetwork.AddHandler(extwarp.SignatureHandlerID, signatureHandler); err != nil {
 		return nil, err
 	}
 

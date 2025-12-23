@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/p2p/lp118"
 	consensuscontext "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
@@ -92,15 +91,15 @@ func (vm *VM) Initialize(
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
-	// Cast WarpSigner directly to lp118.Signer since both use external warp
-	warpSigner := chainContext.WarpSigner.(lp118.Signer)
-	lp118CachedHandler := lp118.NewCachedHandler(
+	// Cast WarpSigner directly to warp.Signer since both use external warp
+	warpSigner := chainContext.WarpSigner.(warp.Signer)
+	cachedHandler := warp.NewCachedSignatureHandler(
 		signatureCache,
-		lp118Verifier{},
+		xsvmVerifier{},
 		warpSigner,
 	)
-	lp118Handler := lp118.NewHandlerAdapter(lp118CachedHandler)
-	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {
+	signatureHandler := warp.NewSignatureHandlerAdapter(cachedHandler)
+	if err := vm.Network.AddHandler(warp.SignatureHandlerID, signatureHandler); err != nil {
 		return err
 	}
 
