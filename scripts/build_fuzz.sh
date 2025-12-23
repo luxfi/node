@@ -22,7 +22,8 @@ files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDi
 failed=false
 for file in ${files}
 do
-    funcs=$(grep -oP 'func \K(Fuzz\w*)' "$file")
+    # Use sed instead of grep -P for macOS compatibility
+    funcs=$(sed -n 's/^func \(Fuzz[a-zA-Z0-9_]*\).*/\1/p' "$file")
     for func in ${funcs}
     do
         echo "Fuzzing $func in $file"
