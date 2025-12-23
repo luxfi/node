@@ -18,9 +18,11 @@ runs:
   steps:
     - name: Set the project Go version in the environment
       uses: ./.github/actions/set-go-version-in-env
-    - name: Set GOPRIVATE for luxfi packages
+    - name: Set GOPRIVATE and GONOSUMDB for luxfi packages
       shell: bash
-      run: echo "GOPRIVATE=github.com/luxfi/*" >> $GITHUB_ENV
+      run: |
+        echo "GOPRIVATE=github.com/luxfi/*" >> $GITHUB_ENV
+        echo "GONOSUMDB=github.com/luxfi/*" >> $GITHUB_ENV
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
