@@ -635,7 +635,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 			)
 			require.NoError(err)
 			require.Equal(subnetID, utx.Chain)
-			require.Equal(chainID, utx.ChainID)
+			require.Equal(chainID, utx.ManagerChainID)
 			require.Equal(types.JSONByteSlice(address), utx.Address)
 			require.Equal(types.JSONByteSlice(e.memo), utx.Memo)
 			require.True(utils.IsSortedAndUnique(utx.Validators))

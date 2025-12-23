@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build qzmq
+
 // Package xchain implements X-Chain DEX service with hybrid transport
 package xchain
 
