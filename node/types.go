@@ -12,10 +12,9 @@ import (
 	"github.com/luxfi/node/network/tracker"
 )
 
-// Type aliases for router types
+// Type aliases
 type (
-	ChainRouter = Router
-	Targeter    = tracker.Targeter
+	Targeter = tracker.Targeter
 )
 
 // HealthConfig for router health monitoring

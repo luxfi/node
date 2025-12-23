@@ -134,17 +134,23 @@ func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 	v.Router.Disconnected(nodeID)
 }
 
-// Router interface stubs - forward to underlying router or no-op
+// Router interface methods - forward to underlying router
 func (v *ValidatorManager) Deprecated() {}
 
-func (v *ValidatorManager) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {}
+func (v *ValidatorManager) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
+	v.Router.AddChain(ctx, chainID, h)
+}
 
-func (v *ValidatorManager) Benched(chainID ids.ID, nodeID ids.NodeID) {}
+func (v *ValidatorManager) Benched(chainID ids.ID, nodeID ids.NodeID) {
+	v.Router.Benched(chainID, nodeID)
+}
 
-func (v *ValidatorManager) Unbenched(chainID ids.ID, nodeID ids.NodeID) {}
+func (v *ValidatorManager) Unbenched(chainID ids.ID, nodeID ids.NodeID) {
+	v.Router.Unbenched(chainID, nodeID)
+}
 
 func (v *ValidatorManager) HealthCheck(ctx context.Context) (interface{}, error) {
-	return nil, nil
+	return v.Router.HealthCheck(ctx)
 }
 
 func (v *ValidatorManager) Initialize(
@@ -161,7 +167,20 @@ func (v *ValidatorManager) Initialize(
 	peerNotConnectedF uint64,
 	connectedPeers ...ids.NodeID,
 ) error {
-	return nil
+	return v.Router.Initialize(
+		nodeID,
+		logger,
+		timeoutManager,
+		gossipFrequency,
+		harshQuittersTime,
+		harshQuittersSlashingFraction,
+		appGossipValidatorSize,
+		appGossipNonValidatorSize,
+		gossipAcceptedFrontierSize,
+		appSendQueueSize,
+		peerNotConnectedF,
+		connectedPeers...,
+	)
 }
 
 func (v *ValidatorManager) RegisterRequest(
@@ -173,8 +192,13 @@ func (v *ValidatorManager) RegisterRequest(
 	failedMsg message.InboundMessage,
 	engineType p2p.EngineType,
 ) {
+	v.Router.RegisterRequest(ctx, nodeID, chainID, requestID, op, failedMsg, engineType)
 }
 
-func (v *ValidatorManager) HandleInbound(ctx context.Context, msg message.InboundMessage) {}
+func (v *ValidatorManager) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+	v.Router.HandleInbound(ctx, msg)
+}
 
-func (v *ValidatorManager) Shutdown(ctx context.Context) {}
+func (v *ValidatorManager) Shutdown(ctx context.Context) {
+	v.Router.Shutdown(ctx)
+}

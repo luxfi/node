@@ -20,7 +20,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/math/set"

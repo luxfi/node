@@ -17,10 +17,10 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/version"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/warp"
 )
 
@@ -69,7 +69,7 @@ type NetworkClient interface {
 	// Adds the given [nodeID] to the peer
 	// list so that it can receive messages.
 	// If [nodeID] is this node's ID, this is a no-op.
-	Connected(context.Context, ids.NodeID, *version.Application) error
+	Connected(context.Context, ids.NodeID, *consensusversion.Application) error
 
 	// Removes given [nodeID] from the peer list.
 	Disconnected(context.Context, ids.NodeID) error
@@ -97,7 +97,7 @@ func NewNetworkClient(
 	log log.Logger,
 	metricsNamespace string,
 	registerer metric.Registerer,
-	minVersion *version.Application,
+	minVersion *consensusversion.Application,
 ) (NetworkClient, error) {
 	peerTracker, err := p2p.NewPeerTracker(
 		log,
@@ -356,7 +356,7 @@ func (c *networkClient) awaitResponse(
 func (c *networkClient) Connected(
 	_ context.Context,
 	nodeID ids.NodeID,
-	nodeVersion *version.Application,
+	nodeVersion *consensusversion.Application,
 ) error {
 	c.log.Debug("adding new peer", log.UserString("nodeID", nodeID.String()))
 	c.peers.Connected(nodeID, nodeVersion)

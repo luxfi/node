@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package node
 
 import (
@@ -14,65 +11,20 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/trace"
 )
 
-// inboundMessageHandler is an internal interface for handlers that can process message.InboundMessage
-type inboundMessageHandler interface {
-	HandleInbound(ctx context.Context, msg message.InboundMessage)
-}
-
-// handlerWrapper wraps a consensus handler.Handler to implement inboundMessageHandler
-type handlerWrapper struct {
-	h   handler.Handler
-	log log.Logger
-}
-
-func (w *handlerWrapper) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	// Extract request ID from message
-	requestID, _ := message.GetRequestID(msg.Message())
-
-	// Extract container bytes from the message (for Put, PushQuery, AppGossip, etc.)
-	containerBytes := message.GetContainerBytes(msg.Message())
-
-	// Map message.Op to consensus handler.Op
-	consensusOp, ok := message.ToConsensusOp(msg.Op())
-	if !ok {
-		w.log.Debug("unhandled message op",
-			log.Stringer("nodeID", msg.NodeID()),
-			log.Stringer("op", msg.Op()),
-		)
-		return
-	}
-
-	// Convert to handler.Op
-	handlerMsg := handler.Message{
-		NodeID:    ids.NodeID(msg.NodeID()),
-		RequestID: requestID,
-		Op:        handler.Op(consensusOp),
-		Message:   containerBytes,
-	}
-
-	if err := w.h.HandleInbound(ctx, handlerMsg); err != nil {
-		w.log.Debug("handler returned error",
-			log.Stringer("nodeID", msg.NodeID()),
-			log.Stringer("op", msg.Op()),
-			log.Reflect("error", err),
-		)
-	}
-}
-
-// SimpleRouter implements Router interface
-type SimpleRouter struct {
+// router implements Router interface for routing messages to chain handlers
+type chainRouter struct {
 	log            log.Logger
 	lock           sync.RWMutex
-	chains         map[ids.ID]inboundMessageHandler
+	chains         map[ids.ID]handler.Handler
 	timeoutManager timer.AdaptiveTimeoutManager
 	nodeID         ids.NodeID
 	healthConfig   HealthConfig
@@ -93,19 +45,24 @@ type requestInfo struct {
 	startTime time.Time
 }
 
-// NewSimpleRouter creates a new router
-func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) Router {
-	return &SimpleRouter{
+// NewRouter creates a new chain router
+func NewRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) Router {
+	return &chainRouter{
 		log:            logger,
-		chains:         make(map[ids.ID]inboundMessageHandler),
+		chains:         make(map[ids.ID]handler.Handler),
 		timeoutManager: timeoutManager,
 		connectedPeers: set.NewSet[ids.NodeID](10),
 		requests:       make(map[uint32]*requestInfo),
-		lastMsgTime:    time.Now(), // Initialize to now to avoid huge "no messages" time on startup
+		lastMsgTime:    time.Now(),
 	}
 }
 
-func (r *SimpleRouter) Initialize(
+// NewSimpleRouter is deprecated - use NewRouter instead
+func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) Router {
+	return NewRouter(logger, timeoutManager)
+}
+
+func (r *chainRouter) Initialize(
 	nodeID ids.NodeID,
 	logger log.Logger,
 	timeoutManager timer.AdaptiveTimeoutManager,
@@ -124,12 +81,11 @@ func (r *SimpleRouter) Initialize(
 	r.timeoutManager = timeoutManager
 	r.lastMsgTime = time.Now()
 
-	// Add initial connected peers if provided
 	for _, peerID := range connectedPeers {
 		r.connectedPeers.Add(peerID)
 	}
 
-	r.log.Info("initialized simple router",
+	r.log.Info("initialized chain router",
 		log.Stringer("nodeID", nodeID),
 		log.Int("connectedPeers", len(connectedPeers)),
 	)
@@ -137,7 +93,7 @@ func (r *SimpleRouter) Initialize(
 	return nil
 }
 
-func (r *SimpleRouter) RegisterRequest(
+func (r *chainRouter) RegisterRequest(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	chainID ids.ID,
@@ -157,7 +113,7 @@ func (r *SimpleRouter) RegisterRequest(
 	}
 }
 
-func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+func (r *chainRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {
 	r.lock.Lock()
 	r.lastMsgTime = time.Now()
 
@@ -166,57 +122,84 @@ func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	if err != nil {
 		r.lock.Unlock()
 		r.log.Debug("dropping message without chain ID",
-			log.Stringer("message", msg.Op()),
+			log.Stringer("op", msg.Op()),
 			log.Stringer("nodeID", msg.NodeID()),
 		)
 		return
 	}
 
-	h, ok := r.chains[ids.ID(chainID)]
+	h, ok := r.chains[chainID]
 	r.lock.Unlock()
 
 	if !ok {
 		r.log.Debug("dropping message for unknown chain",
 			log.Stringer("chainID", chainID),
+			log.Binary("chainIDBytes", chainID[:]),
 			log.Stringer("nodeID", msg.NodeID()),
+			log.Stringer("op", msg.Op()),
 		)
 		return
 	}
 
-	// Pass the original InboundMessage directly to the handler
-	go h.HandleInbound(ctx, msg)
+	// Convert message Op to handler Op
+	consensusOp, ok := message.ToConsensusOp(msg.Op())
+	if !ok {
+		r.log.Debug("unhandled message op",
+			log.Stringer("nodeID", msg.NodeID()),
+			log.Stringer("op", msg.Op()),
+		)
+		return
+	}
+
+	// Extract request ID and container bytes
+	requestID, _ := message.GetRequestID(msg.Message())
+	containerBytes := message.GetContainerBytes(msg.Message())
+
+	// Create handler message
+	handlerMsg := handler.Message{
+		NodeID:    ids.NodeID(msg.NodeID()),
+		RequestID: requestID,
+		Op:        handler.Op(consensusOp),
+		Message:   containerBytes,
+	}
+
+	// Dispatch to handler asynchronously
+	go func() {
+		if err := h.HandleInbound(ctx, handlerMsg); err != nil {
+			r.log.Debug("handler returned error",
+				log.Stringer("chainID", chainID),
+				log.Stringer("nodeID", msg.NodeID()),
+				log.Stringer("op", msg.Op()),
+				log.Err(err),
+			)
+		}
+	}()
 }
 
-func (r *SimpleRouter) Shutdown(ctx context.Context) {
+func (r *chainRouter) Shutdown(ctx context.Context) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	r.log.Info("shutting down router")
 
-	// Clear all chains
-	for chainID := range r.chains {
-		r.log.Debug("removing chain",
-			log.Stringer("chainID", chainID),
-		)
-	}
-
-	r.chains = make(map[ids.ID]inboundMessageHandler)
+	r.chains = make(map[ids.ID]handler.Handler)
 	r.requests = make(map[uint32]*requestInfo)
 }
 
-func (r *SimpleRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
+func (r *chainRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	// Wrap the consensus handler to implement inboundMessageHandler
-	r.chains[chainID] = &handlerWrapper{h: h, log: r.log}
+	r.chains[chainID] = h
 
 	r.log.Info("added chain to router",
 		log.Stringer("chainID", chainID),
+		log.Binary("chainIDBytes", chainID[:]),
+		log.Int("totalChains", len(r.chains)),
 	)
 }
 
-func (r *SimpleRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
+func (r *chainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -228,7 +211,7 @@ func (r *SimpleRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Applica
 	)
 }
 
-func (r *SimpleRouter) Disconnected(nodeID ids.NodeID) {
+func (r *chainRouter) Disconnected(nodeID ids.NodeID) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -238,28 +221,27 @@ func (r *SimpleRouter) Disconnected(nodeID ids.NodeID) {
 	)
 }
 
-func (r *SimpleRouter) Benched(chainID ids.ID, nodeID ids.NodeID) {
+func (r *chainRouter) Benched(chainID ids.ID, nodeID ids.NodeID) {
 	r.log.Debug("peer benched",
 		log.Stringer("chainID", chainID),
 		log.Stringer("nodeID", nodeID),
 	)
 }
 
-func (r *SimpleRouter) Unbenched(chainID ids.ID, nodeID ids.NodeID) {
+func (r *chainRouter) Unbenched(chainID ids.ID, nodeID ids.NodeID) {
 	r.log.Debug("peer unbenched",
 		log.Stringer("chainID", chainID),
 		log.Stringer("nodeID", nodeID),
 	)
 }
 
-func (r *SimpleRouter) HealthCheck(ctx context.Context) (interface{}, error) {
+func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
 	healthy := true
 	details := make(map[string]interface{})
 
-	// Check connected peers
 	connectedCount := r.connectedPeers.Len()
 	details["connectedPeers"] = connectedCount
 	if connectedCount < r.healthConfig.MinConnectedPeers {
@@ -267,7 +249,6 @@ func (r *SimpleRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 		details["error"] = "insufficient connected peers"
 	}
 
-	// Check time since last message
 	timeSinceMsg := time.Since(r.lastMsgTime)
 	details["timeSinceLastMessage"] = timeSinceMsg.String()
 	if timeSinceMsg > r.healthConfig.MaxTimeSinceMsgReceived {
@@ -275,26 +256,16 @@ func (r *SimpleRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 		details["error"] = "no recent messages"
 	}
 
-	// Check chain count
-	chainCount := len(r.chains)
-	details["chains"] = chainCount
-
-	// Check pending requests
-	requestCount := len(r.requests)
-	details["pendingRequests"] = requestCount
-
+	details["chains"] = len(r.chains)
+	details["pendingRequests"] = len(r.requests)
 	details["healthy"] = healthy
+
 	return details, nil
 }
 
-// Deprecated implements the Router interface
-func (r *SimpleRouter) Deprecated() {
-	// This method exists for compatibility
-}
+func (r *chainRouter) Deprecated() {}
 
 // Trace wraps a router with tracing capabilities
 func Trace(router Router, name string, tracer trace.Tracer) Router {
-	// For now, just return the router unchanged
-	// TODO: Implement actual tracing
 	return router
 }

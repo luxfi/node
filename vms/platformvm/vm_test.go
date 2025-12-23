@@ -40,7 +40,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	// "github.com/luxfi/node/message" // unused
 	// "github.com/luxfi/node/nets" // unused
-	// "github.com/luxfi/node/network/p2p" // unused
+	// "github.com/luxfi/p2p" // unused
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"

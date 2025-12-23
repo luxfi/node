@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/warp"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/hashing"

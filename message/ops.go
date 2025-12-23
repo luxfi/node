@@ -290,6 +290,35 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 		return m.AppBytes
 	case *p2p.AppResponse:
 		return m.AppBytes
+	// Request messages with container IDs for P-Chain sync
+	case *p2p.GetAccepted:
+		containerIDs := m.GetContainerIds()
+		if len(containerIDs) == 0 {
+			return nil
+		}
+		result := make([]byte, 0, len(containerIDs)*32)
+		for _, id := range containerIDs {
+			result = append(result, id...)
+		}
+		return result
+	case *p2p.Get:
+		return m.GetContainerId()
+	case *p2p.GetAncestors:
+		return m.GetContainerId()
+	case *p2p.PullQuery:
+		return m.GetContainerId()
+	case *p2p.AcceptedFrontier:
+		return m.GetContainerId()
+	case *p2p.Accepted:
+		containerIDs := m.GetContainerIds()
+		if len(containerIDs) == 0 {
+			return nil
+		}
+		result := make([]byte, 0, len(containerIDs)*32)
+		for _, id := range containerIDs {
+			result = append(result, id...)
+		}
+		return result
 	default:
 		return nil
 	}

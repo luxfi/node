@@ -13,9 +13,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/lp118"
-	"github.com/luxfi/node/network/p2p/gossip"
+	"github.com/luxfi/p2p"
+	"github.com/luxfi/p2p/lp118"
+	"github.com/luxfi/p2p/gossip"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -154,6 +154,7 @@ func New(
 		gossipMempool,
 		txGossipMetrics,
 		config.TargetGossipSize,
+		nil, // BloomChecker - optional
 	)
 
 	validatorHandler := p2p.NewValidatorHandler(

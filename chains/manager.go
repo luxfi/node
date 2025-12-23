@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
-	// "github.com/luxfi/node/network/p2p" // Unused
+	// "github.com/luxfi/p2p" // Unused
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
@@ -1174,7 +1174,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// This goroutine reads from the toEngine channel and triggers block building
 		// It now also gossips blocks to other validators for proper consensus
 		go func(toEng <-chan block.Message, vm block.ChainVM, logger log.Logger, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, netID ids.ID) {
-			logger.Info("starting VM notification forwarder with block gossip")
+			logger.Info("starting VM notification forwarder with block gossip",
+				log.Bool("hasNet", net != nil),
+				log.Bool("hasMsgCreator", msgCreator != nil),
+				log.Stringer("chainID", chainID),
+				log.Stringer("netID", netID))
 			for msg := range toEng {
 				logger.Debug("received VM notification, building block",
 					log.Uint32("type", uint32(msg.Type)))
@@ -1220,7 +1224,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 							logger.Info("gossiped block to validators",
 								log.Stringer("blockID", blk.ID()),
 								log.Int("sentTo", sentTo.Len()))
+
+							// Wait for block to propagate to other nodes before accepting locally
+							// This gives other validators time to receive and process the block
+							time.Sleep(100 * time.Millisecond)
 						}
+					} else {
+						logger.Warn("cannot gossip block - network or msgCreator is nil",
+							log.Stringer("blockID", blk.ID()),
+							log.Bool("hasNet", net != nil),
+							log.Bool("hasMsgCreator", msgCreator != nil))
 					}
 
 					// Accept the block into the canonical chain

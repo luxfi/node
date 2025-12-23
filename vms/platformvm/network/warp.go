@@ -13,7 +13,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p/lp118"
+	"github.com/luxfi/p2p"
+	"github.com/luxfi/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -58,13 +59,13 @@ func (s signatureRequestVerifier) Verify(
 ) error {
 	msg, err := payload.ParseAddressedCall(unsignedMessage.Payload)
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseWarpAddressedCall,
 			Message: "failed to parse warp addressed call: " + err.Error(),
 		}
 	}
 	if len(msg.SourceAddress) != 0 {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrWarpAddressedCallHasSourceAddress,
 			Message: "source address should be empty",
 		}
@@ -72,7 +73,7 @@ func (s signatureRequestVerifier) Verify(
 
 	payloadIntf, err := message.Parse(msg.Payload)
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseWarpAddressedCallPayload,
 			Message: "failed to parse warp addressed call payload: " + err.Error(),
 		}
@@ -86,7 +87,7 @@ func (s signatureRequestVerifier) Verify(
 	case *message.L1ValidatorWeight:
 		return s.verifyL1ValidatorWeight(payload)
 	default:
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrUnsupportedWarpAddressedCallPayloadType,
 			Message: fmt.Sprintf("unsupported warp addressed call payload type: %T", payloadIntf),
 		}
@@ -99,7 +100,7 @@ func (s signatureRequestVerifier) verifyChainToL1Conversion(
 ) error {
 	subnetID, err := ids.ToID(justification)
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -110,20 +111,20 @@ func (s signatureRequestVerifier) verifyChainToL1Conversion(
 
 	conversion, err := s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
 	}
 
 	if msg.ID != conversion.ConversionID {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrMismatchedConversionID,
 			Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
 		}
@@ -142,7 +143,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 
 	var justification platformvm.L1ValidatorRegistrationJustification
 	if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseJustification,
 			Message: "failed to parse justification: " + err.Error(),
 		}
@@ -154,7 +155,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 		return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	default:
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrInvalidJustificationType,
 			Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
 		}
@@ -172,13 +173,13 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	// Verify that the validator exists
 	_, err := s.state.GetL1Validator(validationID)
 	if err == database.ErrNotFound {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", validationID),
 		}
 	}
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
@@ -195,7 +196,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 ) error {
 	subnetID, err := ids.ToID(justification.GetNetId())
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseNetID,
 			Message: "failed to parse subnetID: " + err.Error(),
 		}
@@ -203,7 +204,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 
 	justificationID := subnetID.Append(justification.GetIndex())
 	if validationID != justificationID {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -215,13 +216,13 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// Verify that the provided subnetID has been converted.
 	_, err = s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrConversionDoesNotExist,
 			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
 		}
 	}
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to get subnet conversionID: " + err.Error(),
 		}
@@ -230,13 +231,13 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// Verify that the validator is not in the current state
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
@@ -255,7 +256,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 ) error {
 	justification, err := message.ParseRegisterL1Validator(justificationBytes)
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrFailedToParseRegisterL1Validator,
 			Message: "failed to parse RegisterL1Validator justification: " + err.Error(),
 		}
@@ -263,7 +264,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 
 	justificationID := justification.ValidationID()
 	if validationID != justificationID {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrMismatchedValidationID,
 			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 		}
@@ -275,13 +276,13 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	// Verify that the validator does not currently exist
 	_, err = s.state.GetL1Validator(validationID)
 	if err == nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrValidationExists,
 			Message: fmt.Sprintf("validation %q exists", validationID),
 		}
 	}
 	if err != database.ErrNotFound {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
@@ -299,13 +300,13 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 		ValidationID: validationID,
 	})
 	if err != nil {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to lookup expiry: " + err.Error(),
 		}
 	}
 	if !hasExpiry {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrValidationCouldBeRegistered,
 			Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
 		}
@@ -318,7 +319,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 	msg *message.L1ValidatorWeight,
 ) error {
 	if msg.Nonce == math.MaxUint64 {
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrImpossibleNonce,
 			Message: "impossible nonce",
 		}
@@ -333,22 +334,22 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 		// If the peer is attempting to verify that the weight of the validator
 		// is 0, they should be requesting a [message.L1ValidatorRegistration]
 		// with Registered set to false.
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrValidationDoesNotExist,
 			Message: fmt.Sprintf("validation %q does not exist", msg.ValidationID),
 		}
 	case err != nil:
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    0,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	case msg.Nonce+1 != l1Validator.MinNonce:
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrWrongNonce,
 			Message: fmt.Sprintf("provided nonce %d != expected nonce (%d - 1)", msg.Nonce, l1Validator.MinNonce),
 		}
 	case msg.Weight != l1Validator.Weight:
-		return &warp.Error{
+		return &p2p.Error{
 			Code:    ErrWrongWeight,
 			Message: fmt.Sprintf("provided weight %d != expected weight %d", msg.Weight, l1Validator.Weight),
 		}

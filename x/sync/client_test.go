@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/x/merkledb"

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	p2psdk "github.com/luxfi/node/network/p2p"
+	p2psdk "github.com/luxfi/p2p"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/proto/pb/sdk"
