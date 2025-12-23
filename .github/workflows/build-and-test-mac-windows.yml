@@ -12,6 +12,8 @@ jobs:
   run_build_tests:
     name: build_tests
     runs-on: ${{ matrix.os }}
+    env:
+      GOPRIVATE: github.com/luxfi/*
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
