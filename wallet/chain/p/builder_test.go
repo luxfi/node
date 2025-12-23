@@ -370,7 +370,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 func TestImportTx(t *testing.T) {
 	var (
 		sourceChainID = ids.GenerateTestID()
-		importedUTXOs = utxos[:1]
+		importedUTXOs = utxos[4:] // Use the last UTXO (9 Lux) which is sufficient for fees
 	)
 
 	for _, e := range testEnvironment {
