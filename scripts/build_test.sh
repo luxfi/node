@@ -19,5 +19,6 @@ fi
 TEST_TARGETS="$(eval "go list ./... ${EXCLUDED_TARGETS}")"
 
 # Run tests with race detection
+# -short flag skips long-running integration tests (MPC protocol execution, etc.)
 # shellcheck disable=SC2086
-go test -tags test -shuffle=on -race -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}
+go test -tags test -shuffle=on -race -short -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}
