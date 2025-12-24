@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -80,46 +79,4 @@ func GetConfig(b []byte) (*Config, error) {
 	}
 
 	return &ec, json.Unmarshal(b, &ec)
-}
-
-// QueueExistingChain queues an existing chain for creation with minimal parameters
-// This is used when discovering orphaned chains that have data but no CreateChainTx
-func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
-	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedChains.Contains(netID) { // This node doesn't validate this blockchain
-		return
-	}
-
-	// For existing chains, we need to provide minimal genesis data
-	// The EVM will load existing data from disk
-	genesisData := []byte(`{}`)
-
-	chainParams := chains.ChainParameters{
-		ID:          chainID,
-		ChainID:       netID,
-		GenesisData: genesisData,
-		VMID:        vmID,
-		FxIDs:       nil, // No FxIDs for existing chains
-	}
-	c.Chains.QueueChainCreation(chainParams)
-}
-
-// QueueExistingChainWithGenesis queues an existing chain with genesis data
-// This is used when discovering orphaned chains that have config data
-func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, netID ids.ID, vmID ids.ID, genesisData []byte) {
-	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedChains.Contains(netID) { // This node doesn't validate this blockchain
-		return
-	}
-
-	chainParams := chains.ChainParameters{
-		ID:          chainID,
-		ChainID:       netID,
-		GenesisData: genesisData,
-		VMID:        vmID,
-		FxIDs:       nil, // No FxIDs for existing chains
-	}
-	c.Chains.QueueChainCreation(chainParams)
 }

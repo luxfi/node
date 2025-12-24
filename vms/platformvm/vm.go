@@ -674,19 +674,22 @@ func (vm *VM) initBlockchains() error {
 		// Don't fail initialization, just log the error
 	}
 
-	if vm.SybilProtectionEnabled {
-		for chainID := range vm.TrackedChains {
-			if err := vm.createNet(chainID); err != nil {
-				return err
-			}
-		}
-	} else {
+	// When TrackAllChains is enabled OR SybilProtection is disabled,
+	// create chains for ALL subnets in state
+	if vm.TrackAllChains || !vm.SybilProtectionEnabled {
 		netIDs, err := vm.state.GetNetIDs()
 		if err != nil {
 			return err
 		}
 		for _, netID := range netIDs {
 			if err := vm.createNet(netID); err != nil {
+				return err
+			}
+		}
+	} else if vm.SybilProtectionEnabled {
+		// Only create chains for explicitly tracked subnets
+		for chainID := range vm.TrackedChains {
+			if err := vm.createNet(chainID); err != nil {
 				return err
 			}
 		}

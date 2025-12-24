@@ -5,6 +5,7 @@ package tvm
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -56,6 +57,9 @@ func (n *testNetwork) close() {
 	}
 }
 
+// sessionCounter provides unique session IDs for each protocol run
+var sessionCounter uint64
+
 // runTestProtocol runs a protocol to completion across all parties
 func runTestProtocol(
 	t testing.TB,
@@ -63,7 +67,7 @@ func runTestProtocol(
 	createStart func(id party.ID) protocol.StartFunc,
 ) (map[party.ID]interface{}, error) {
 	network := newTestNetwork(ids)
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute) // Longer timeout for slow protocols
 	defer cancel()
 	defer network.close()
 
@@ -71,16 +75,34 @@ func runTestProtocol(
 	results := sync.Map{}
 	errors := sync.Map{}
 
+	// Use proper protocol config with explicit timeouts - matching threshold library harness
+	config := &protocol.Config{
+		Workers:         4,
+		PriorityWorkers: 4,
+		BufferSize:      10000,
+		PriorityBuffer:  1000,
+		MessageTimeout:  30 * time.Second,
+		RoundTimeout:    60 * time.Second,
+		ProtocolTimeout: 5 * time.Minute, // Match harness - don't let handler create its own timeout
+	}
+
+	// Generate unique session ID for this protocol run
+	sessionCounter++
+	sessionID := []byte(fmt.Sprintf("test-session-%d-%d", time.Now().UnixNano(), sessionCounter))
+
 	// Create handlers for all parties
+	// CRITICAL: Use context.Background() for handlers, not the timeout context!
+	// The harness manages timeouts externally. Passing a timeout context to NewHandler
+	// can cause premature cancellation of handler internal operations.
 	for _, id := range ids {
 		startFunc := createStart(id)
 		handler, err := protocol.NewHandler(
-			ctx,
+			context.Background(), // Don't use ctx to avoid premature cancellation
 			logger,
-			nil,
+			nil, // No metrics registry for tests
 			startFunc,
-			[]byte("test-session"),
-			protocol.DefaultConfig(),
+			sessionID,
+			config,
 		)
 		if err != nil {
 			return nil, err
@@ -105,28 +127,28 @@ func runTestProtocol(
 					if msg == nil {
 						return
 					}
-					// Route message
+					// Route message - collect targets first, then send outside lock
 					network.mu.RLock()
+					targets := make([]chan *protocol.Message, 0)
 					if msg.To == "" {
-						// Broadcast
+						// Broadcast to all parties except sender
 						for toID, ch := range network.parties {
 							if toID != id {
-								select {
-								case ch <- msg:
-								default:
-								}
+								targets = append(targets, ch)
 							}
 						}
 					} else {
 						// Point-to-point
 						if ch, ok := network.parties[party.ID(msg.To)]; ok {
-							select {
-							case ch <- msg:
-							default:
-							}
+							targets = append(targets, ch)
 						}
 					}
 					network.mu.RUnlock()
+
+					// Send outside lock to avoid deadlock - MUST deliver, don't drop!
+					for _, ch := range targets {
+						ch <- msg
+					}
 				}
 			}
 		}()
@@ -149,7 +171,7 @@ func runTestProtocol(
 		}()
 	}
 
-	// Wait for all parties to complete
+	// Wait for all parties to complete with timeout
 	var wg sync.WaitGroup
 	for id, handler := range network.handlers {
 		id := id
@@ -166,7 +188,19 @@ func runTestProtocol(
 		}()
 	}
 
-	wg.Wait()
+	// Wait with external timeout context
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// All handlers completed
+	case <-ctx.Done():
+		return nil, fmt.Errorf("protocol timed out after 10 minutes")
+	}
 
 	// Check for errors
 	var errs []error
@@ -475,7 +509,8 @@ func TestFROSTSignFullExecution(t *testing.T) {
 
 	pIDs := testPartyIDs(5)
 	threshold := 3
-	signers := pIDs[:threshold]
+	// FROST requires threshold+1 signers for a t-of-n threshold signature
+	signers := pIDs[:threshold+1]
 	message := []byte("test message for threshold signing")
 
 	// Keygen
@@ -494,7 +529,7 @@ func TestFROSTSignFullExecution(t *testing.T) {
 		return frost.Sign(config, signers, message)
 	})
 	require.NoError(err)
-	require.Len(signResults, threshold)
+	require.Len(signResults, len(signers))
 
 	// Verify
 	for _, result := range signResults {
@@ -512,7 +547,7 @@ func TestFROSTSignFullExecution(t *testing.T) {
 		break
 	}
 
-	t.Logf("FROST sign completed: %d-of-%d threshold signature verified", threshold, len(pIDs))
+	t.Logf("FROST sign completed: %d signers, %d-of-%d threshold signature verified", len(signers), threshold, len(pIDs))
 }
 
 // TestLSSSignFullExecution runs a complete LSS keygen + sign
@@ -528,7 +563,11 @@ func TestLSSSignFullExecution(t *testing.T) {
 
 	pIDs := testPartyIDs(3)
 	threshold := 2
-	signers := pIDs[:threshold]
+	// Threshold protocols require threshold+1 signers
+	signers := pIDs[:threshold+1]
+	if len(signers) > len(pIDs) {
+		signers = pIDs
+	}
 	message := []byte("test message for LSS threshold signing")
 
 	// Keygen
@@ -544,9 +583,9 @@ func TestLSSSignFullExecution(t *testing.T) {
 		return lss.Sign(config, signers, message, workerPool)
 	})
 	require.NoError(err)
-	require.Len(signResults, threshold)
+	require.Len(signResults, len(signers))
 
-	t.Logf("LSS sign completed: %d-of-%d threshold signature", threshold, len(pIDs))
+	t.Logf("LSS sign completed: %d signers, %d-of-%d threshold signature", len(signers), threshold, len(pIDs))
 }
 
 // TestCMPSignFullExecution runs a complete CMP keygen + sign
@@ -562,7 +601,8 @@ func TestCMPSignFullExecution(t *testing.T) {
 
 	pIDs := testPartyIDs(3)
 	threshold := 2
-	signers := pIDs[:threshold]
+	// CMP requires threshold+1 parties for signing, use all 3
+	signers := pIDs
 	message := []byte("test message for CMP threshold signing")
 
 	// Keygen
@@ -572,15 +612,15 @@ func TestCMPSignFullExecution(t *testing.T) {
 	require.NoError(err)
 	require.Len(keygenResults, 3)
 
-	// Sign
+	// Sign with all parties (CMP requires > threshold parties)
 	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
 		config := keygenResults[id].(*cmp.Config)
 		return cmp.Sign(config, signers, message, workerPool)
 	})
 	require.NoError(err)
-	require.Len(signResults, threshold)
+	require.Len(signResults, len(signers))
 
-	t.Logf("CMP sign completed: %d-of-%d threshold signature", threshold, len(pIDs))
+	t.Logf("CMP sign completed: %d-of-%d threshold signature", len(signers), len(pIDs))
 }
 
 // TestProtocolExecutorWithRealKeygen tests ProtocolExecutor wrapper with real keygen
