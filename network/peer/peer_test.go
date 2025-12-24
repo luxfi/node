@@ -27,6 +27,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -105,7 +106,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		metric.NewRegistry(),
-		constants.DefaultNetworkCompressionType,
+		compression.Type(constants.DefaultNetworkCompressionType),
 		10*time.Second,
 	)
 	require.NoError(t, err)

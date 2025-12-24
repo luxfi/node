@@ -5,12 +5,14 @@ package tvm
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/threshold/pkg/math/curve"
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
@@ -71,7 +73,8 @@ func runTestProtocol(
 	defer cancel()
 	defer network.close()
 
-	logger := log.NewNoOpLogger()
+	// Use real logger to see protocol errors
+	logger := log.NewTestLogger(level.Debug)
 	results := sync.Map{}
 	errors := sync.Map{}
 
@@ -202,9 +205,10 @@ func runTestProtocol(
 		return nil, fmt.Errorf("protocol timed out after 10 minutes")
 	}
 
-	// Check for errors
+	// Check for errors - log all errors for debugging
 	var errs []error
 	errors.Range(func(key, value interface{}) bool {
+		t.Logf("Handler %v error: %v", key, value)
 		errs = append(errs, value.(error))
 		return true
 	})
@@ -568,7 +572,8 @@ func TestLSSSignFullExecution(t *testing.T) {
 	if len(signers) > len(pIDs) {
 		signers = pIDs
 	}
-	message := []byte("test message for LSS threshold signing")
+	// LSS requires exactly 32-byte message hash
+	messageHash := sha256.Sum256([]byte("test message for LSS threshold signing"))
 
 	// Keygen
 	keygenResults, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
@@ -577,11 +582,14 @@ func TestLSSSignFullExecution(t *testing.T) {
 	require.NoError(err)
 	require.Len(keygenResults, 3)
 
-	// Sign
+	// Sign - use nil pool to isolate from keygen pool issues
 	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
 		config := keygenResults[id].(*lss.Config)
-		return lss.Sign(config, signers, message, workerPool)
+		return lss.Sign(config, signers, messageHash[:], nil)
 	})
+	if err != nil {
+		t.Logf("Sign error: %v", err)
+	}
 	require.NoError(err)
 	require.Len(signResults, len(signers))
 

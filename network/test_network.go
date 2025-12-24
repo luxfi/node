@@ -38,6 +38,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -165,7 +166,7 @@ func NewTestNetworkConfig(
 		MaxClockDifference:           constants.DefaultNetworkMaxClockDifference,
 		PingFrequency:                constants.DefaultPingFrequency,
 		AllowPrivateIPs:              true, // Allow private IPs by default for testing
-		CompressionType:              constants.DefaultNetworkCompressionType,
+		CompressionType:              compression.Type(constants.DefaultNetworkCompressionType),
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
 		TrackedChains:             trackedChains,
@@ -203,7 +204,7 @@ func NewTestNetwork(
 ) (Network, error) {
 	msgCreator, err := message.NewCreator(
 		registry,
-		constants.DefaultNetworkCompressionType,
+		compression.Type(constants.DefaultNetworkCompressionType),
 		constants.DefaultNetworkMaximumInboundTimeout,
 	)
 	if err != nil {

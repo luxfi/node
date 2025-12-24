@@ -31,6 +31,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
@@ -138,7 +139,7 @@ var (
 		PingFrequency:      constants.DefaultPingFrequency,
 		AllowPrivateIPs:    true,
 
-		CompressionType: constants.DefaultNetworkCompressionType,
+		CompressionType: compression.Type(constants.DefaultNetworkCompressionType),
 
 		UptimeCalculator:  &uptime.NoOpCalculator{},
 		UptimeMetricFreq:  30 * time.Second,
@@ -227,7 +228,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		metric.NewRegistry(),
-		constants.DefaultNetworkCompressionType,
+		compression.Type(constants.DefaultNetworkCompressionType),
 		10*time.Second,
 	)
 	require.NoError(t, err)

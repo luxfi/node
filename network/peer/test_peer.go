@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
@@ -83,7 +84,7 @@ func StartTestPeer(
 
 	mc, err := message.NewCreator(
 		promRegistry,
-		constants.DefaultNetworkCompressionType,
+		compression.Type(constants.DefaultNetworkCompressionType),
 		10*time.Second,
 	)
 	if err != nil {
