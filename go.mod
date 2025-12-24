@@ -29,9 +29,9 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.44
+	github.com/luxfi/consensus v1.22.45
 	github.com/luxfi/crypto v1.17.25
-	github.com/luxfi/database v1.2.15
+	github.com/luxfi/database v1.2.16
 	github.com/luxfi/ids v1.2.5
 	github.com/luxfi/ledger-lux-go v1.0.2
 	github.com/luxfi/log v1.1.26
@@ -147,13 +147,13 @@ require (
 	github.com/luxfi/geth v1.16.61
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.2
-	github.com/luxfi/p2p v1.18.1
+	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/ringtail v0.1.1
 	github.com/luxfi/threshold v1.1.2
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
-	github.com/luxfi/warp v1.18.1
+	github.com/luxfi/warp v1.18.2
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.0
 )
