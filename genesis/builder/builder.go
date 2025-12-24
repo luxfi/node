@@ -232,10 +232,10 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	var validatorCfg fee.Config
 
 	switch networkID {
-	case constants.MainnetID, constants.LuxMainnetID:
+	case constants.MainnetID:
 		dynamicCfg = MainnetDynamicFeeConfig
 		validatorCfg = MainnetValidatorFeeConfig
-	case constants.TestnetID, constants.LuxTestnetID:
+	case constants.TestnetID:
 		dynamicCfg = TestnetDynamicFeeConfig
 		validatorCfg = TestnetValidatorFeeConfig
 	default:
@@ -533,7 +533,7 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 
 // FromDatabase returns genesis data for database replay mode
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	config := genesiscfg.GetConfig(constants.LocalID)
+	config := genesiscfg.GetConfig(constants.CustomID)
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE"
 	return FromConfig(config)

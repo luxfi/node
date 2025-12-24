@@ -57,7 +57,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -28,7 +29,7 @@ import (
 	"github.com/luxfi/warp"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
@@ -268,6 +269,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.log.Info("initializing VM via gRPC", log.Stringer("chainID", chainID))
 	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, nil, appSenderClient); err != nil {
+		// DEBUG: Write actual error to file since log is no-op
+		if f, ferr := os.OpenFile("/tmp/vm-server-init-error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); ferr == nil {
+			fmt.Fprintf(f, "[%s] VM Initialize failed for chain %s: %v\n", time.Now().Format(time.RFC3339), chainID, err)
+			f.Close()
+		}
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)

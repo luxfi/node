@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/database"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/internal/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
@@ -33,7 +34,7 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/warp"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/chain"
@@ -245,6 +246,25 @@ func (vm *VMClient) Initialize(
 			if err == nil {
 				chainCtx.PublicKey = pk
 			}
+		}
+		// NetworkUpgrades conversion - critical for plugin VMs
+		if ctx.NetworkUpgrades != nil {
+			if upgrades, ok := ctx.NetworkUpgrades.(upgrade.Config); ok {
+				chainCtx.NetworkUpgrades = upgrades
+			} else if upgradesPtr, ok := ctx.NetworkUpgrades.(*upgrade.Config); ok && upgradesPtr != nil {
+				chainCtx.NetworkUpgrades = *upgradesPtr
+			} else {
+				// Fall back to network-specific defaults
+				chainCtx.NetworkUpgrades = upgrade.GetConfig(ctx.NetworkID)
+				if vm.logger != nil {
+					vm.logger.Warn("NetworkUpgrades has unrecognized type, using network defaults",
+						log.String("type", fmt.Sprintf("%T", ctx.NetworkUpgrades)),
+						log.Uint32("networkID", ctx.NetworkID))
+				}
+			}
+		} else {
+			// No NetworkUpgrades provided, use network-specific defaults
+			chainCtx.NetworkUpgrades = upgrade.GetConfig(ctx.NetworkID)
 		}
 	default:
 		return fmt.Errorf("invalid chain context type: expected *rpcchainvm.Context or *consensuscontext.Context, got %T", chainCtxIface)

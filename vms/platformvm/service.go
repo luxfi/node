@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 	safemath "github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/gas"

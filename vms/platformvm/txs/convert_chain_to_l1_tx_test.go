@@ -16,8 +16,8 @@ import (
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 
 	cryptohashing "github.com/luxfi/crypto/hashing"

@@ -19,7 +19,7 @@ func TestGetStakingConfig(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"LocalID", constants.LocalID},
+		{"CustomID", constants.CustomID},
 		{"Custom", 12345},
 	}
 
@@ -49,7 +49,7 @@ func TestGetTxFeeConfig(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"LocalID", constants.LocalID},
+		{"CustomID", constants.CustomID},
 		{"Custom", 12345},
 	}
 
@@ -79,7 +79,7 @@ func TestGetBootstrappers(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"LocalID", constants.LocalID},
+		{"CustomID", constants.CustomID},
 	}
 
 	for _, tt := range tests {
@@ -108,7 +108,7 @@ func TestSampleBootstrappers(t *testing.T) {
 		{"Mainnet_5", constants.MainnetID, 5},
 		{"Mainnet_10", constants.MainnetID, 10},
 		{"Testnet_3", constants.TestnetID, 3},
-		{"Local_0", constants.LocalID, 0},
+		{"Custom_0", constants.CustomID, 0},
 	}
 
 	for _, tt := range tests {
@@ -134,9 +134,9 @@ func TestGetConfig(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"LuxMainnet", constants.LuxMainnetID},
-		{"LuxTestnet", constants.LuxTestnetID},
-		{"LocalID", constants.LocalID},
+		{"MainnetChainID", constants.MainnetChainID},
+		{"TestnetChainID", constants.TestnetChainID},
+		{"CustomID", constants.CustomID},
 	}
 
 	for _, tt := range tests {

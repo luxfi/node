@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	// "github.com/luxfi/log" // Unused
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/math/set"

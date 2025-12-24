@@ -43,7 +43,7 @@ import (
 	// "github.com/luxfi/p2p" // unused
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	// "github.com/luxfi/node/utils/math/meter" // unused
 	// "github.com/luxfi/node/utils/resource" // unused
 	// "github.com/luxfi/node/utils/timer" // unused

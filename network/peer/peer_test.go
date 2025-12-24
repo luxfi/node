@@ -139,7 +139,7 @@ func newConfig(t *testing.T) *Config {
 		MyChains:          nil,
 		Beacons:              validators.NewManager(),
 		Validators:           validators.NewManager(),
-		NetworkID:            constants.LocalID,
+		NetworkID:            constants.CustomID,
 		PingFrequency:        constants.DefaultPingFrequency,
 		PongTimeout:          constants.DefaultPingPongTimeout,
 		MaxClockDifference:   time.Minute,

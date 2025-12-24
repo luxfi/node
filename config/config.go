@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
@@ -831,7 +831,7 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	}
 
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+	case constants.MainnetID, constants.TestnetID, constants.CustomID:
 		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
 			constants.NetworkName(networkID),
 		)
@@ -1372,11 +1372,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	//
 	// Network ID - use network name (shorthand flags removed)
 	// if v.GetBool(MainnetKey) {
-	// 	nodeConfig.NetworkID = constants.LuxMainnetID
+	// 	nodeConfig.NetworkID = constants.MainnetChainID
 	// } else if v.GetBool(TestnetKey) {
-	// 	nodeConfig.NetworkID = constants.LuxTestnetID
-	// } else if v.GetBool(LocalnetKey) {
-	// 	nodeConfig.NetworkID = constants.LocalID
+	// 	nodeConfig.NetworkID = constants.TestnetChainID
+	// } else if v.GetBool(CustomnetKey) {
+	// 	nodeConfig.NetworkID = constants.CustomID
 	// } else {
 	networkName := v.GetString(NetworkNameKey)
 	nodeConfig.NetworkID, err = constants.NetworkID(networkName)

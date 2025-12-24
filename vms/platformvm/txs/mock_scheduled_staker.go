@@ -14,7 +14,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	bls "github.com/luxfi/node/utils/crypto/bls"
+	bls "github.com/luxfi/crypto/bls"
 	gomock "go.uber.org/mock/gomock"
 )
 

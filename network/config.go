@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 )
 
 // HealthConfig describes parameters for network layer health checks.

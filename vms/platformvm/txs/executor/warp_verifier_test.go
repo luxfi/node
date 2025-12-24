@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )

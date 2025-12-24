@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/crypto/threshold"
 	_ "github.com/luxfi/crypto/threshold/bls" // Register BLS threshold scheme
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
 )
 

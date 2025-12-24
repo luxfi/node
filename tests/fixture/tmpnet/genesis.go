@@ -171,5 +171,5 @@ func ValidateGenesis(genesisBytes []byte) error {
 
 // GetDefaultNetworkID returns the default network ID for testing
 func GetDefaultNetworkID() uint32 {
-	return constants.LocalID
+	return constants.CustomID
 }

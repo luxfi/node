@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/maybe"

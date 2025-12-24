@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 )
 
 // SignerTests is a list of all signer tests
