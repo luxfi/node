@@ -79,7 +79,7 @@ jobs:
           ./build/luxd --version
           
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: luxd-binary
           path: node/build/luxd
@@ -251,7 +251,7 @@ jobs:
           
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-logs-${{ matrix.test-scenario.name }}
           path: |

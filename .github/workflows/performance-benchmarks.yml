@@ -72,7 +72,7 @@ jobs:
         cp gpu_benchmarks.txt benchmark_results/
 
     - name: Upload Benchmark Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: performance-benchmarks
         path: benchmark_results/
