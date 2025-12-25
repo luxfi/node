@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/wallet/keychain"
+	"github.com/luxfi/keychain"
 )
 
 var _ Signer = (*txSigner)(nil)

@@ -7,7 +7,7 @@ package secp256k1fx
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/wallet/keychain"
+	"github.com/luxfi/keychain"
 )
 
 // Ensure Keychain implements keychain.Keychain interface

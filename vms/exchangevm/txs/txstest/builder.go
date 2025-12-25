@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	wkeychain "github.com/luxfi/node/wallet/keychain"
+	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 

@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/keychain"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
@@ -43,9 +43,9 @@ func (kc *KeychainAdapter) Addresses() set.Set[ids.ShortID] {
 	return kc.Keychain.Addrs
 }
 
-// Get implements wallet/keychain.Keychain (returns wallet/keychain.Signer, not utils/crypto/keychain.Signer)
+// Get implements keychain.Keychain
 func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
-	return kc.Keychain.GetWallet(addr)
+	return kc.Keychain.Get(addr)
 }
 
 // GetEth implements EthKeychain

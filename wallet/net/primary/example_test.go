@@ -30,7 +30,7 @@ func ExampleWallet() {
 		return
 	}
 	kc := secp256k1fx.NewKeychain(localKey)
-	wkc := kc.AsWalletKeychain()
+	wkc := NewKeychainAdapter(kc)
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
 	// [LocalAPIURI] is hosting.

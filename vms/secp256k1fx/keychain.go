@@ -13,21 +13,19 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
-	ukeychain "github.com/luxfi/node/utils/crypto/keychain"
-	wkeychain "github.com/luxfi/node/wallet/keychain"
 )
 
 var (
 	errCantSpend = errors.New("unable to spend this UTXO")
 
-	// Compile-time assertions that luxSigner implements both Signer interfaces
-	_ wkeychain.Signer = (*luxSigner)(nil)
-	_ ukeychain.Signer = (*luxSigner)(nil)
+	// Compile-time assertions that luxSigner implements keychain.Signer
+	_ keychain.Signer = (*luxSigner)(nil)
 
-	// Compile-time assertion that Keychain implements utils/crypto/keychain.Keychain
-	_ ukeychain.Keychain = (*Keychain)(nil)
+	// Compile-time assertion that Keychain implements keychain.Keychain
+	_ keychain.Keychain = (*Keychain)(nil)
 )
 
 // luxSigner wraps a secp256k1.PrivateKey to implement wallet/keychain.Signer
@@ -104,8 +102,8 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 }
 
 // Get a key from the keychain and return whether the key existed.
-// Returns ukeychain.Signer to implement utils/crypto/keychain.Keychain
-func (kc Keychain) Get(id ids.ShortID) (ukeychain.Signer, bool) {
+// Returns keychain.Signer to implement keychain.Keychain
+func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 	signer, exists := kc.get(id)
 	if !exists {
 		return nil, false
@@ -113,52 +111,16 @@ func (kc Keychain) Get(id ids.ShortID) (ukeychain.Signer, bool) {
 	return &luxSigner{key: signer}, true
 }
 
-// GetWallet gets a key from the keychain for wallet operations.
-// Returns wkeychain.Signer to maintain compatibility with existing wallet code
-func (kc Keychain) GetWallet(id ids.ShortID) (wkeychain.Signer, bool) {
-	signer, exists := kc.get(id)
-	if !exists {
-		return nil, false
-	}
-	return &luxSigner{key: signer}, true
-}
-
-// GetEthWallet gets a key from the keychain by Ethereum address for wallet operations.
-// Returns wkeychain.Signer to maintain compatibility with wallet code
-func (kc Keychain) GetEthWallet(addr gethcommon.Address) (wkeychain.Signer, bool) {
+// GetEth gets a key from the keychain by Ethereum address.
+// Returns keychain.Signer for wallet operations
+func (kc Keychain) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return &luxSigner{key: kc.Keys[i]}, true
 	}
 	return nil, false
 }
 
-// WalletKeychain wraps a Keychain to implement wallet keychain interfaces
-type WalletKeychain struct {
-	*Keychain
-}
 
-// Get implements wallet/keychain.Keychain
-func (wkc WalletKeychain) Get(id ids.ShortID) (wkeychain.Signer, bool) {
-	return wkc.Keychain.GetWallet(id)
-}
-
-// GetEth implements wallet/chain/c.EthKeychain
-func (wkc WalletKeychain) GetEth(addr gethcommon.Address) (wkeychain.Signer, bool) {
-	return wkc.Keychain.GetEthWallet(addr)
-}
-
-// AsWalletKeychain wraps a Keychain to implement wallet interfaces
-func (kc *Keychain) AsWalletKeychain() WalletKeychain {
-	return WalletKeychain{Keychain: kc}
-}
-
-// GetEth gets a key from the keychain by Ethereum address and returns whether the key existed.
-func (kc Keychain) GetEth(addr gethcommon.Address) (ukeychain.Signer, bool) {
-	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
-		return &luxSigner{key: kc.Keys[i]}, true
-	}
-	return nil, false
-}
 
 // AddressSet returns a set of addresses this keychain manages
 func (kc Keychain) AddressSet() set.Set[ids.ShortID] {

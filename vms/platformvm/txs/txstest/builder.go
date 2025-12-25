@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
-	wkeychain "github.com/luxfi/node/wallet/keychain"
+	wkeychain "github.com/luxfi/keychain"
 )
 
 func NewWalletFactory(

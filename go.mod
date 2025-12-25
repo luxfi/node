@@ -147,7 +147,7 @@ require (
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.2
 	github.com/luxfi/p2p v1.18.2
-	github.com/luxfi/qzmq v0.1.1
+	github.com/luxfi/qzmq v0.1.3
 	github.com/luxfi/ringtail v0.1.1
 	github.com/luxfi/threshold v1.1.3
 	github.com/luxfi/trace v0.1.4
