@@ -473,14 +473,25 @@ func TestCMPKeygenFullExecution(t *testing.T) {
 
 	require := require.New(t)
 
-	workerPool := pool.NewPool(4)
-	defer workerPool.TearDown()
-
 	pIDs := testPartyIDs(3)
 	threshold := 2
 
+	// CRITICAL: Each party needs its OWN pool!
+	// The Pool type is NOT thread-safe for concurrent Search calls.
+	// Sharing a pool across parties causes deadlock when multiple parties
+	// concurrently call Finalize which uses pool.Search for Paillier prime generation.
+	pools := make(map[party.ID]*pool.Pool)
+	for _, id := range pIDs {
+		pools[id] = pool.NewPool(4)
+	}
+	defer func() {
+		for _, p := range pools {
+			p.TearDown()
+		}
+	}()
+
 	results, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
-		return cmp.Keygen(curve.Secp256k1{}, id, pIDs, threshold, workerPool)
+		return cmp.Keygen(curve.Secp256k1{}, id, pIDs, threshold, pools[id])
 	})
 	require.NoError(err)
 	require.Len(results, 3)
@@ -604,30 +615,46 @@ func TestCMPSignFullExecution(t *testing.T) {
 
 	require := require.New(t)
 
-	workerPool := pool.NewPool(4)
-	defer workerPool.TearDown()
-
 	pIDs := testPartyIDs(3)
 	threshold := 2
 	// CMP requires threshold+1 parties for signing, use all 3
 	signers := pIDs
 	message := []byte("test message for CMP threshold signing")
 
+	// CRITICAL: Each party needs its OWN pool!
+	// The Pool type is NOT thread-safe for concurrent Search calls.
+	keygenPools := make(map[party.ID]*pool.Pool)
+	for _, id := range pIDs {
+		keygenPools[id] = pool.NewPool(4)
+	}
+	defer func() {
+		for _, p := range keygenPools {
+			p.TearDown()
+		}
+	}()
+
 	// Keygen
 	keygenResults, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
-		return cmp.Keygen(curve.Secp256k1{}, id, pIDs, threshold, workerPool)
+		return cmp.Keygen(curve.Secp256k1{}, id, pIDs, threshold, keygenPools[id])
 	})
 	require.NoError(err)
 	require.Len(keygenResults, 3)
 
 	// Sign with all parties (CMP requires > threshold parties)
-	// Create fresh pool for signing to isolate from keygen
-	signPool := pool.NewPool(4)
-	defer signPool.TearDown()
+	// Create fresh per-party pools for signing
+	signPools := make(map[party.ID]*pool.Pool)
+	for _, id := range signers {
+		signPools[id] = pool.NewPool(4)
+	}
+	defer func() {
+		for _, p := range signPools {
+			p.TearDown()
+		}
+	}()
 
 	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
 		config := keygenResults[id].(*cmp.Config)
-		return cmp.Sign(config, signers, message, signPool)
+		return cmp.Sign(config, signers, message, signPools[id])
 	})
 	require.NoError(err)
 	require.Len(signResults, len(signers))
