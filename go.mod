@@ -148,7 +148,7 @@ require (
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/ringtail v0.1.1
-	github.com/luxfi/threshold v1.1.9
+	github.com/luxfi/threshold v1.1.10
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
 	github.com/luxfi/warp v1.18.2
