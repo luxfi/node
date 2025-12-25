@@ -33,7 +33,8 @@ require (
 	github.com/luxfi/crypto v1.17.25
 	github.com/luxfi/database v1.2.16
 	github.com/luxfi/ids v1.2.5
-	github.com/luxfi/ledger-lux-go v1.0.2
+	github.com/luxfi/keychain v1.0.0
+	github.com/luxfi/ledger v1.1.0
 	github.com/luxfi/log v1.1.26
 	github.com/luxfi/math v1.2.0
 	github.com/luxfi/metric v1.4.8
@@ -103,7 +104,6 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
@@ -127,7 +127,6 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
-	github.com/zondax/ledger-go v1.0.1 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -150,7 +149,7 @@ require (
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/ringtail v0.1.1
-	github.com/luxfi/threshold v1.1.2
+	github.com/luxfi/threshold v1.1.3
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
 	github.com/luxfi/warp v1.18.2
@@ -215,7 +214,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
-	github.com/zondax/golem v0.27.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
@@ -224,5 +222,3 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/threshold => /Users/z/work/lux/threshold
