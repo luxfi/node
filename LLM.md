@@ -2,6 +2,60 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Keychain/Ledger Package Consolidation - 2025-12-24
+
+### Summary
+Consolidated ledger and keychain packages to eliminate dependency bloat and create a unified interface.
+
+### Changes
+
+**New Shared Packages:**
+- `github.com/luxfi/keychain` v1.0.0 - Unified keychain interfaces (Signer, Keychain, Ledger)
+- `github.com/luxfi/ledger` v1.1.0 - Ledger hardware wallet with HID (no golem)
+
+**Removed:**
+- `github.com/luxfi/ledger-lux-go` - Replaced by luxfi/ledger
+- `github.com/zondax/ledger-go` - No longer needed
+- `github.com/zondax/golem` - Eliminated (was bringing 121 transitive deps)
+
+**Dependency Reduction:**
+- Before: 414 modules
+- After: 359 modules
+- Reduction: 55 modules (13%)
+
+**Files Updated:**
+- `utils/crypto/ledger/ledger.go` - Uses luxfi/ledger instead of ledger-lux-go
+- `vms/secp256k1fx/keychain.go` - Simplified, uses shared keychain
+- `wallet/chain/p/signer*.go` - Uses shared keychain
+- `wallet/chain/x/signer*.go` - Uses shared keychain
+- `wallet/net/primary/wallet.go` - Uses KeychainAdapter
+
+**Interface:**
+```go
+// github.com/luxfi/keychain
+type Signer interface {
+    SignHash([]byte) ([]byte, error)
+    Sign([]byte) ([]byte, error)
+    Address() ids.ShortID
+}
+
+type Keychain interface {
+    Get(addr ids.ShortID) (Signer, bool)
+    Addresses() set.Set[ids.ShortID]
+}
+
+type Ledger interface {
+    Address(displayHRP string, addressIndex uint32) (ids.ShortID, error)
+    SignHash(hash []byte, addressIndex uint32) ([]byte, error)
+    Sign(hash []byte, addressIndex uint32) ([]byte, error)
+    SignTransaction(rawUnsignedHash []byte, addressIndices []uint32) ([][]byte, error)
+    GetAddresses(addressIndices []uint32) ([]ids.ShortID, error)
+    Disconnect() error
+}
+```
+
+---
+
 ## P-Chain Message Routing Fix - 2025-12-19
 
 ### Summary

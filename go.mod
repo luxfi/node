@@ -34,7 +34,7 @@ require (
 	github.com/luxfi/database v1.2.16
 	github.com/luxfi/ids v1.2.5
 	github.com/luxfi/keychain v1.0.0
-	github.com/luxfi/ledger v1.1.0
+	github.com/luxfi/ledger v1.1.1
 	github.com/luxfi/log v1.1.26
 	github.com/luxfi/math v1.2.0
 	github.com/luxfi/metric v1.4.8
@@ -126,7 +126,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	github.com/zondax/hid v0.9.2 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -147,7 +146,7 @@ require (
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.2
 	github.com/luxfi/p2p v1.18.2
-	github.com/luxfi/qzmq v0.1.3
+	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/ringtail v0.1.1
 	github.com/luxfi/threshold v1.1.3
 	github.com/luxfi/trace v0.1.4
@@ -192,6 +191,7 @@ require (
 	github.com/luxfi/codec v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
+	github.com/luxfi/hid v0.9.2 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
