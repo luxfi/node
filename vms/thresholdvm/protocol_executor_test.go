@@ -621,9 +621,13 @@ func TestCMPSignFullExecution(t *testing.T) {
 	require.Len(keygenResults, 3)
 
 	// Sign with all parties (CMP requires > threshold parties)
+	// Create fresh pool for signing to isolate from keygen
+	signPool := pool.NewPool(4)
+	defer signPool.TearDown()
+
 	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
 		config := keygenResults[id].(*cmp.Config)
-		return cmp.Sign(config, signers, message, workerPool)
+		return cmp.Sign(config, signers, message, signPool)
 	})
 	require.NoError(err)
 	require.Len(signResults, len(signers))
