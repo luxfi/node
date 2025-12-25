@@ -244,6 +244,30 @@ func (pe *ProtocolExecutor) RunCMPKeygen(
 	return runProtocol[*cmpconfig.Config](ctx, pe, sessionID, startFunc, messageRouter)
 }
 
+// RunCMPSign executes a complete CMP signing protocol.
+func (pe *ProtocolExecutor) RunCMPSign(
+	ctx context.Context,
+	sessionID string,
+	config *cmpconfig.Config,
+	signers []party.ID,
+	messageHash []byte,
+	messageRouter MessageRouter,
+) (*ECDSASignature, error) {
+	startFunc := pe.CMPSignStartFunc(config, signers, messageHash)
+	return runProtocol[*ECDSASignature](ctx, pe, sessionID, startFunc, messageRouter)
+}
+
+// RunCMPRefresh executes a complete CMP key refresh protocol.
+func (pe *ProtocolExecutor) RunCMPRefresh(
+	ctx context.Context,
+	sessionID string,
+	config *cmpconfig.Config,
+	messageRouter MessageRouter,
+) (*cmpconfig.Config, error) {
+	startFunc := pe.CMPRefreshStartFunc(config)
+	return runProtocol[*cmpconfig.Config](ctx, pe, sessionID, startFunc, messageRouter)
+}
+
 // RunFROSTKeygen executes a complete FROST key generation protocol.
 func (pe *ProtocolExecutor) RunFROSTKeygen(
 	ctx context.Context,

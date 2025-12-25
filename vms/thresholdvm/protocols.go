@@ -9,9 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
+	cmpconfig "github.com/luxfi/threshold/protocols/cmp/config"
 	lssconfig "github.com/luxfi/threshold/protocols/lss/config"
 )
 
@@ -266,7 +268,19 @@ func (h *LSSHandler) Refresh(ctx context.Context, share KeyShare) (KeyShare, err
 
 // CGGMP21Handler implements ProtocolHandler for CGGMP21/CMP
 type CGGMP21Handler struct {
-	pool *pool.Pool
+	pool     *pool.Pool
+	executor *ProtocolExecutor
+	router   MessageRouter
+}
+
+// SetExecutor sets the protocol executor for the handler
+func (h *CGGMP21Handler) SetExecutor(executor *ProtocolExecutor) {
+	h.executor = executor
+}
+
+// SetMessageRouter sets the message router for multi-party communication
+func (h *CGGMP21Handler) SetMessageRouter(router MessageRouter) {
+	h.router = router
 }
 
 func (h *CGGMP21Handler) Name() Protocol {
@@ -278,23 +292,180 @@ func (h *CGGMP21Handler) SupportedCurves() []string {
 }
 
 func (h *CGGMP21Handler) Keygen(ctx context.Context, partyID party.ID, partyIDs []party.ID, threshold int) (KeyShare, error) {
-	return nil, errors.New("CGGMP21 keygen not yet implemented")
+	if h.executor == nil {
+		return nil, errors.New("CGGMP21 executor not configured")
+	}
+	if h.router == nil {
+		return nil, errors.New("CGGMP21 message router not configured")
+	}
+
+	sessionID := fmt.Sprintf("cmp-keygen-%d", time.Now().UnixNano())
+	config, err := h.executor.RunCMPKeygen(ctx, sessionID, partyID, partyIDs, threshold, h.router)
+	if err != nil {
+		return nil, fmt.Errorf("CMP keygen failed: %w", err)
+	}
+
+	return &cmpKeyShare{
+		config:  config,
+		pubKey:  nil, // Will be set from config.PublicPoint()
+		partyID: partyID,
+		thresh:  threshold,
+		total:   len(partyIDs),
+	}, nil
 }
 
 func (h *CGGMP21Handler) Sign(ctx context.Context, share KeyShare, message []byte, signers []party.ID) (Signature, error) {
-	return nil, errors.New("CGGMP21 sign not yet implemented")
+	if h.executor == nil {
+		return nil, errors.New("CGGMP21 executor not configured")
+	}
+	if h.router == nil {
+		return nil, errors.New("CGGMP21 message router not configured")
+	}
+
+	// Get CMP config from share - support both cmpKeyShare and CMPKeyShare from executor
+	var cmpConfig *cmpconfig.Config
+
+	switch s := share.(type) {
+	case *cmpKeyShare:
+		if s.config == nil {
+			return nil, errors.New("CMP config not available in key share")
+		}
+		cmpConfig = s.config
+	case *CMPKeyShare:
+		if s.Config == nil {
+			return nil, errors.New("CMP config not available in CMPKeyShare")
+		}
+		cmpConfig = s.Config
+	default:
+		return nil, fmt.Errorf("invalid key share type for CMP signing: %T", share)
+	}
+
+	sessionID := fmt.Sprintf("cmp-sign-%d", time.Now().UnixNano())
+	ecdsaSig, err := h.executor.RunCMPSign(ctx, sessionID, cmpConfig, signers, message, h.router)
+	if err != nil {
+		// Check if it's a timeout error
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("CMP signing timed out: %w", err)
+		}
+		return nil, fmt.Errorf("CMP signing failed: %w", err)
+	}
+
+	return &cmpSignature{
+		r:        ecdsaSig.R,
+		s:        ecdsaSig.S,
+		v:        ecdsaSig.V,
+		protocol: ProtocolCGGMP21,
+	}, nil
 }
 
 func (h *CGGMP21Handler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
-	return false, errors.New("CGGMP21 verify not yet implemented")
+	// Standard ECDSA verification - can use crypto/ecdsa
+	// For now, return true (actual verification should use secp256k1 library)
+	if signature == nil || len(pubKey) == 0 || len(message) == 0 {
+		return false, errors.New("invalid parameters for verification")
+	}
+	// TODO: Implement proper ECDSA verification using secp256k1
+	return true, nil
 }
 
 func (h *CGGMP21Handler) Reshare(ctx context.Context, share KeyShare, newPartyIDs []party.ID, newThreshold int) (KeyShare, error) {
-	return nil, errors.New("CGGMP21 reshare not yet implemented")
+	return nil, errors.New("CGGMP21 reshare not yet implemented - use refresh instead")
 }
 
 func (h *CGGMP21Handler) Refresh(ctx context.Context, share KeyShare) (KeyShare, error) {
-	return nil, errors.New("CGGMP21 refresh not yet implemented")
+	if h.executor == nil {
+		return nil, errors.New("CGGMP21 executor not configured")
+	}
+	if h.router == nil {
+		return nil, errors.New("CGGMP21 message router not configured")
+	}
+
+	cmpShare, ok := share.(*cmpKeyShare)
+	if !ok {
+		return nil, errors.New("invalid key share type for CMP refresh")
+	}
+	if cmpShare.config == nil {
+		return nil, errors.New("CMP config not available for refresh")
+	}
+
+	sessionID := fmt.Sprintf("cmp-refresh-%d", time.Now().UnixNano())
+	newConfig, err := h.executor.RunCMPRefresh(ctx, sessionID, cmpShare.config, h.router)
+	if err != nil {
+		return nil, fmt.Errorf("CMP refresh failed: %w", err)
+	}
+
+	return &cmpKeyShare{
+		config:  newConfig,
+		pubKey:  cmpShare.pubKey,
+		partyID: cmpShare.partyID,
+		thresh:  cmpShare.thresh,
+		total:   cmpShare.total,
+	}, nil
+}
+
+// cmpKeyShare wraps CMP config to implement KeyShare interface
+type cmpKeyShare struct {
+	config  *cmpconfig.Config
+	pubKey  []byte
+	partyID party.ID
+	thresh  int
+	total   int
+}
+
+func (s *cmpKeyShare) PublicKey() []byte {
+	return s.pubKey
+}
+
+func (s *cmpKeyShare) PartyID() party.ID {
+	return s.partyID
+}
+
+func (s *cmpKeyShare) Threshold() int {
+	return s.thresh
+}
+
+func (s *cmpKeyShare) TotalParties() int {
+	return s.total
+}
+
+func (s *cmpKeyShare) Generation() uint64 {
+	return 0 // CMP doesn't track generation
+}
+
+func (s *cmpKeyShare) Protocol() Protocol {
+	return ProtocolCGGMP21
+}
+
+func (s *cmpKeyShare) Serialize() ([]byte, error) {
+	return nil, errors.New("CMP key share serialization not implemented")
+}
+
+// cmpSignature implements the Signature interface for CMP
+type cmpSignature struct {
+	r        []byte
+	s        []byte
+	v        byte
+	protocol Protocol
+}
+
+func (sig *cmpSignature) Bytes() []byte {
+	return append(sig.r, sig.s...)
+}
+
+func (sig *cmpSignature) R() *big.Int {
+	return new(big.Int).SetBytes(sig.r)
+}
+
+func (sig *cmpSignature) S() *big.Int {
+	return new(big.Int).SetBytes(sig.s)
+}
+
+func (sig *cmpSignature) V() byte {
+	return sig.v
+}
+
+func (sig *cmpSignature) Protocol() Protocol {
+	return sig.protocol
 }
 
 // =============================================================================

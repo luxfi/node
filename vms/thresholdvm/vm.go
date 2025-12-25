@@ -98,6 +98,12 @@ type VM struct {
 	// Protocol Registry - supports multiple threshold protocols
 	protocolRegistry *ProtocolRegistry
 
+	// Protocol Executor - handles actual protocol execution with timeouts
+	protocolExecutor *ProtocolExecutor
+
+	// Message Router for multi-party communication
+	messageRouter MessageRouter
+
 	// LSS MPC Protocol Components (default protocol)
 	lssConfig   *lssconfig.Config // LSS config for this party (after keygen)
 	partyID     party.ID          // This party's ID
@@ -257,8 +263,19 @@ func (vm *VM) Initialize(
 	// Create worker pool for MPC operations
 	vm.pool = pool.NewPool(16) // 16 workers for parallel MPC
 
+	// Initialize protocol executor for handling protocol execution with proper timeouts
+	vm.protocolExecutor = NewProtocolExecutor(vm.pool, vm.log)
+
 	// Initialize protocol registry with all supported protocols
 	vm.protocolRegistry = NewProtocolRegistry(vm.pool)
+
+	// Wire the protocol executor to handlers that need it (CMP, LSS)
+	if cmpHandler, err := vm.protocolRegistry.Get(ProtocolCGGMP21); err == nil {
+		if h, ok := cmpHandler.(*CGGMP21Handler); ok {
+			h.SetExecutor(vm.protocolExecutor)
+			// Message router will be set when multi-party communication is established
+		}
+	}
 
 	// Parse genesis
 	genesis := &Genesis{}
@@ -954,7 +971,11 @@ func (vm *VM) runSigning(session *SigningSession, key *ManagedKey) {
 		return
 	}
 
-	ctx := context.Background()
+	// Create context with timeout based on session expiration
+	// Use SessionTimeout from config for signing operations
+	ctx, cancel := context.WithTimeout(context.Background(), vm.config.SessionTimeout)
+	defer cancel()
+
 	sig, err := handler.Sign(ctx, share, session.MessageHash, key.PartyIDs)
 
 	vm.mu.Lock()
