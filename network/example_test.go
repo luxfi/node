@@ -127,7 +127,6 @@ func ExampleNewTestNetwork() {
 	)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create test network config: %v", err))
-		return
 	}
 	network, err := NewTestNetwork(
 		log,

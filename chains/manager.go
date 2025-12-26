@@ -8,6 +8,7 @@ import (
 	// xvm "github.com/luxfi/node/vms/exchangevm" // Unused
 	"context"
 	"crypto"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -902,6 +903,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Initialize the VM if it supports the Initialize interface
+		// Inject automining config for dev mode (applies to C-Chain/coreth)
+		vmConfigBytes := m.injectAutominingConfig(chainConfig.Config)
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		err = vm.Initialize(
 			context.TODO(),
@@ -909,7 +912,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			vmDB,
 			chainParams.GenesisData,
 			chainConfig.Upgrade,
-			chainConfig.Config,
+			vmConfigBytes,
 			toEngine,
 			fxsInterface,
 			nil, // appSender - not needed for simple VMs
@@ -1157,6 +1160,9 @@ func (m *manager) createDAG(
 			log.Err(err))
 		chainConfig = ChainConfig{}
 	}
+
+	// Inject automining config for dev mode (applies to C-Chain/coreth)
+	chainConfig.Config = m.injectAutominingConfig(chainConfig.Config)
 
 	// Get chain alias for database directory naming
 	chainAlias := chainParams.ID.String()
@@ -1528,6 +1534,41 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 	}
 
 	return ChainConfig{}, nil
+}
+
+// injectAutominingConfig modifies the config bytes to include enable-automining flag
+// when dev mode automining is enabled. This is used for C-Chain (coreth) to enable
+// anvil-like block production behavior.
+func (m *manager) injectAutominingConfig(configBytes []byte) []byte {
+	if !m.EnableAutomining {
+		return configBytes
+	}
+
+	// Parse existing config or create empty object
+	var config map[string]interface{}
+	if len(configBytes) > 0 {
+		if err := json.Unmarshal(configBytes, &config); err != nil {
+			// If we can't parse existing config, create new one with just automining
+			m.Log.Warn("failed to parse chain config for automining injection, creating new config",
+				log.Err(err))
+			config = make(map[string]interface{})
+		}
+	} else {
+		config = make(map[string]interface{})
+	}
+
+	// Inject enable-automining flag
+	config["enable-automining"] = true
+
+	// Serialize back to JSON
+	modifiedBytes, err := json.Marshal(config)
+	if err != nil {
+		m.Log.Warn("failed to marshal modified chain config", log.Err(err))
+		return configBytes
+	}
+
+	m.Log.Info("injected enable-automining into chain config")
+	return modifiedBytes
 }
 
 func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error) {

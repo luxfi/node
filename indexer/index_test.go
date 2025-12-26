@@ -26,7 +26,7 @@ func TestIndex(t *testing.T) {
 	testChainID := ids.GenerateTestID()
 	ctx := consensustest.Context(t, testChainID)
 
-	idx, err := newIndex(baseDB, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(baseDB, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Populate "containers" with random IDs/bytes
@@ -79,7 +79,7 @@ func TestIndex(t *testing.T) {
 
 	// Create a new index by directly using the same base database
 	// Don't close the old index to avoid closing the baseDB
-	idx, err = newIndex(baseDB, log.NoLog{}, mockable.Clock{})
+	idx, err = newIndex(baseDB, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Get all of the containers
@@ -112,7 +112,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
 	ctx := consensustest.Context(t, testChainID)
-	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
@@ -151,7 +151,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
 	ctx := consensustest.Context(t, testChainID)
-	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice

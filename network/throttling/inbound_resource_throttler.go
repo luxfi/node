@@ -41,7 +41,7 @@ type noSystemThrottler struct{}
 func (noSystemThrottler) Acquire(context.Context, ids.NodeID) {}
 
 type SystemThrottlerConfig struct {
-	Clock mockable.Clock `json:"-"`
+	Clock *mockable.Clock `json:"-"`
 	// The maximum amount of time we'll wait before re-checking whether a call
 	// to [Acquire] can return.
 	MaxRecheckDelay time.Duration `json:"maxRecheckDelay"`

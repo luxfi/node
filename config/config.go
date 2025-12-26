@@ -926,24 +926,87 @@ func buildDevModeGenesis(stakingCfg *builder.StakingConfig) ([]byte, ids.ID, err
 		copy(rewardAddress[:], nodeID[:20])
 	}
 
-	// Get C-Chain genesis from custom network config
-	cChainGenesis := ""
-	customConfig := builder.GetConfig(constants.CustomID)
-	if customConfig != nil && customConfig.CChainGenesis != "" {
-		cChainGenesis = customConfig.CChainGenesis
-	}
-
-	// Create dev mode config
+	// Create dev mode config with embedded C-Chain genesis
 	devCfg := builder.DevModeConfig{
 		NodeID:        nodeID,
 		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
 		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
 		RewardAddress: rewardAddress,
-		CChainGenesis: cChainGenesis,
+		CChainGenesis: devModeCChainGenesis,
 	}
 
 	return builder.ForDevMode(devCfg, stakingCfg)
 }
+
+// devModeCChainGenesis is the default C-Chain genesis for dev mode.
+// Chain ID 1337, funds Lux Treasury (0x9011) and Anvil/Hardhat accounts.
+const devModeCChainGenesis = `{
+  "config": {
+    "chainId": 1337,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "muirGlacierBlock": 0,
+    "berlinBlock": 0,
+    "londonBlock": 0,
+    "arrowGlacierBlock": 0,
+    "grayGlacierBlock": 0,
+    "mergeNetsplitBlock": 0,
+    "shanghaiTime": 0,
+    "cancunTime": 253399622400,
+    "terminalTotalDifficulty": 0,
+    "subnetEVMTimestamp": 0,
+    "durangoTimestamp": 0,
+    "etnaTimestamp": 253399622400,
+    "feeConfig": {
+      "gasLimit": 12000000,
+      "targetBlockRate": 2,
+      "minBaseFee": 25000000000,
+      "targetGas": 60000000,
+      "baseFeeChangeDenominator": 36,
+      "minBlockGasCost": 0,
+      "maxBlockGasCost": 1000000,
+      "blockGasCostStep": 200000
+    },
+    "warpConfig": {
+      "blockTimestamp": 0,
+      "quorumNumerator": 67,
+      "requirePrimaryNetworkSigners": false
+    }
+  },
+  "alloc": {
+    "9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "90F79bf6EB2c4f870365E785982E1f101E93b906": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x",
+  "gasLimit": "0xb71b00",
+  "difficulty": "0x0",
+  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "number": "0x0",
+  "gasUsed": "0x0",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+}`
 
 func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackChainsStr := v.GetString(TrackChainsKey)

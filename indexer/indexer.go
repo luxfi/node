@@ -65,6 +65,7 @@ type Indexer interface {
 // NewIndexer returns a new Indexer and registers a new endpoint on the given API server.
 func NewIndexer(config Config) (Indexer, error) {
 	indexer := &indexer{
+		clock:                &mockable.Clock{},
 		log:                  config.Log,
 		db:                   config.DB,
 		allowIncompleteIndex: config.AllowIncompleteIndex,
@@ -88,7 +89,7 @@ func NewIndexer(config Config) (Indexer, error) {
 }
 
 type indexer struct {
-	clock  mockable.Clock
+	clock  *mockable.Clock
 	lock   sync.RWMutex
 	log    log.Logger
 	db     database.Database

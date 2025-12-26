@@ -335,16 +335,9 @@ func awaitTxAccepted(
 	ticker := time.NewTicker(freq)
 	defer ticker.Stop()
 
-	for {
-		// TODO: Implement proper GetTxStatus
-		_ = txID
-		// For now, assume transaction is accepted
-		return nil
-
-		select {
-		case <-ticker.C:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	// TODO: Implement proper GetTxStatus polling
+	// For now, assume transaction is accepted immediately
+	_ = txID
+	_ = ticker
+	return nil
 }

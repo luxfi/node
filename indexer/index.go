@@ -40,7 +40,7 @@ var (
 // Invariant: index assumes that Accept is called, before the container is
 // committed to the database of the VM, in the order they were accepted.
 type index struct {
-	clock mockable.Clock
+	clock *mockable.Clock
 	lock  sync.RWMutex
 	// The index of the next accepted transaction
 	nextAcceptedIndex uint64
@@ -61,7 +61,7 @@ type index struct {
 func newIndex(
 	baseDB database.Database,
 	log log.Logger,
-	clock mockable.Clock,
+	clock *mockable.Clock,
 ) (*index, error) {
 	vDB := versiondb.New(baseDB)
 	indexToContainer := prefixdb.New(indexToContainerPrefix, vDB)
