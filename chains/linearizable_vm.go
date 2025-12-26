@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/warp"
 )
@@ -113,50 +112,6 @@ func (d *dbManagerWrapper) Close() error {
 	return nil
 }
 
-// blockAppSenderWrapper wraps warp.Sender to implement block.AppSender
-type blockAppSenderWrapper struct {
-	appSender warp.Sender
-}
-
-func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
-	if b.appSender == nil {
-		return errors.New("app sender is nil")
-	}
-	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
-	for _, nodeID := range nodeIDs {
-		nodeIDSet.Add(nodeID)
-	}
-	return b.appSender.SendRequest(ctx, nodeIDSet, requestID, appRequestBytes)
-}
-
-func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	if b.appSender == nil {
-		return errors.New("app sender is nil")
-	}
-	return b.appSender.SendResponse(ctx, nodeID, requestID, appResponseBytes)
-}
-
-func (b *blockAppSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	if b.appSender == nil {
-		return errors.New("app sender is nil")
-	}
-	return b.appSender.SendError(ctx, nodeID, requestID, errorCode, errorMessage)
-}
-
-func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
-	if b.appSender == nil {
-		return errors.New("app sender is nil")
-	}
-	// Convert slice to set and create SendConfig
-	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
-	for _, nodeID := range nodeIDs {
-		nodeIDSet.Add(nodeID)
-	}
-	config := warp.SendConfig{
-		NodeIDs: nodeIDSet,
-	}
-	return b.appSender.SendGossip(ctx, config, appGossipBytes)
-}
 
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a
 // call to Linearize. This enables the proposervm to provide its toEngine

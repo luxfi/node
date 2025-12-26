@@ -5,12 +5,10 @@
 package chains
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -177,12 +175,3 @@ func TestIsBootstrapped(t *testing.T) {
 	require.False(m.IsBootstrapped(chainID))
 }
 
-// mockHandler is a minimal handler implementation for testing
-type mockHandler struct {
-	handler.Handler
-	ctx context.Context
-}
-
-func (h *mockHandler) Context() context.Context {
-	return h.ctx
-}
