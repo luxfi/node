@@ -867,6 +867,11 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// Get allow-custom-genesis flag (defaults to true for development)
 	allowCustomGenesis := v.GetBool(AllowCustomGenesisKey)
 
+	// Handle dev mode genesis - dynamically generate genesis with the node's own credentials
+	if v.GetBool(DevModeKey) && !v.IsSet(GenesisFileKey) && !v.IsSet(GenesisFileContentKey) && !v.IsSet(GenesisDBKey) {
+		return buildDevModeGenesis(stakingCfg)
+	}
+
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
@@ -898,6 +903,46 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// finally if file is not specified/readable go for the predefined config
 	config := builder.GetConfig(networkID)
 	return builder.FromConfig(config)
+}
+
+// buildDevModeGenesis creates a genesis configuration for single-node development mode.
+// It uses the node's own credentials as the sole validator.
+func buildDevModeGenesis(stakingCfg *builder.StakingConfig) ([]byte, ids.ID, error) {
+	// Parse node ID from staking config
+	nodeID, err := ids.NodeIDFromString(stakingCfg.NodeID)
+	if err != nil {
+		return nil, ids.Empty, fmt.Errorf("failed to parse node ID for dev mode: %w", err)
+	}
+
+	// Lux Treasury address: 0x9011E888251AB053B7bD1cdB598Db4f9DEd94714
+	// This is derived from LUX_MNEMONIC and funded on C-Chain
+	var rewardAddress ids.ShortID
+	treasuryAddr := "9011E888251AB053B7bD1cdB598Db4f9DEd94714"
+	treasuryBytes, err := ids.ShortFromString(treasuryAddr)
+	if err == nil {
+		rewardAddress = treasuryBytes
+	} else {
+		// Fall back to a deterministic address derived from node ID
+		copy(rewardAddress[:], nodeID[:20])
+	}
+
+	// Get C-Chain genesis from custom network config
+	cChainGenesis := ""
+	customConfig := builder.GetConfig(constants.CustomID)
+	if customConfig != nil && customConfig.CChainGenesis != "" {
+		cChainGenesis = customConfig.CChainGenesis
+	}
+
+	// Create dev mode config
+	devCfg := builder.DevModeConfig{
+		NodeID:        nodeID,
+		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
+		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
+		RewardAddress: rewardAddress,
+		CChainGenesis: cChainGenesis,
+	}
+
+	return builder.ForDevMode(devCfg, stakingCfg)
 }
 
 func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
@@ -1338,6 +1383,21 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		v.Set(POASingleNodeModeKey, true)
 		v.Set(SkipBootstrapKey, true)
 		v.Set(NetworkHealthMinPeersKey, 0)
+		// Enable automining for anvil-like behavior (auto-produce blocks on transactions)
+		v.Set(EnableAutominingKey, true)
+		// Use custom network (ID 1337) by default for dev mode unless explicitly set
+		// This gives a standard dev chain ID like Hardhat/Anvil (1337)
+		if !v.IsSet(NetworkNameKey) {
+			v.Set(NetworkNameKey, "custom") // maps to network ID 1337
+		}
+		// Use ephemeral staking credentials for dev mode unless explicitly set
+		// This avoids needing to match genesis validators with local staking keys
+		if !v.IsSet(StakingEphemeralCertEnabledKey) && !v.IsSet(StakingTLSKeyContentKey) && !v.IsSet(StakingTLSKeyPathKey) {
+			v.Set(StakingEphemeralCertEnabledKey, true)
+		}
+		if !v.IsSet(StakingEphemeralSignerEnabledKey) && !v.IsSet(StakingSignerKeyContentKey) && !v.IsSet(StakingSignerKeyPathKey) {
+			v.Set(StakingEphemeralSignerEnabledKey, true)
+		}
 	}
 
 	nodeConfig.PluginDir, err = getPluginDir(v)

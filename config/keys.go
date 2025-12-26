@@ -224,7 +224,7 @@ const (
 	ProcessContextFileKey                              = "process-context-file"
 
 	// Development and LP Keys
-	DevModeKey     = "dev-mode"
+	DevModeKey     = "dev"
 	LPSupportKey   = "lp-support"
 	LPObjectKey    = "lp-object"
 

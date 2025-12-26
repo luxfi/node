@@ -638,6 +638,77 @@ func validateConfig(networkID uint32, config *genesiscfg.Config, stakingCfg *Sta
 	return nil
 }
 
+// DevModeConfig holds configuration for dev mode genesis
+type DevModeConfig struct {
+	NodeID        ids.NodeID        // The validator node ID
+	BLSPublicKey  string            // BLS public key hex
+	BLSPopProof   string            // BLS proof of possession hex
+	RewardAddress ids.ShortID       // Reward/allocation address
+	CChainGenesis string            // C-Chain genesis JSON
+}
+
+// ForDevMode creates a genesis configuration suitable for single-node development mode.
+// It creates a single validator with far-future stake time and funds the treasury address.
+func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
+	// Genesis start time: now
+	startTime := uint64(time.Now().Unix())
+	
+	// Far-future stake duration: 100 years in seconds
+	// This ensures the validator never expires during development
+	const hundredYears = 100 * 365 * 24 * 60 * 60
+	
+	// Create allocation for the reward address
+	// Initial staked amount: 1B LUX (enough to be a validator)
+	const oneMillionLUX = 1_000_000_000_000_000 // 1M LUX in nLUX
+	const oneBillionLUX = 1_000_000_000_000_000_000 // 1B LUX in nLUX
+	
+	allocation := genesiscfg.Allocation{
+		ETHAddr:       cfg.RewardAddress, // Same as LUX addr for simplicity
+		LUXAddr:       cfg.RewardAddress,
+		InitialAmount: oneMillionLUX, // Initial unlocked amount
+		UnlockSchedule: []genesiscfg.LockedAmount{
+			{
+				Amount:   oneBillionLUX, // Staked amount
+				Locktime: 0,             // No lock time
+			},
+		},
+	}
+	
+	// Create the single staker
+	var signer *genesiscfg.ProofOfPossession
+	if cfg.BLSPublicKey != "" && cfg.BLSPopProof != "" {
+		signer = &genesiscfg.ProofOfPossession{
+			PublicKey:         cfg.BLSPublicKey,
+			ProofOfPossession: cfg.BLSPopProof,
+		}
+	}
+	
+	staker := genesiscfg.Staker{
+		NodeID:        cfg.NodeID,
+		RewardAddress: cfg.RewardAddress,
+		DelegationFee: 1000000, // 100% delegation fee (no delegators in dev mode)
+		Signer:        signer,
+		Weight:        oneBillionLUX,
+		StartTime:     startTime,
+		EndTime:       startTime + hundredYears,
+	}
+	
+	// Build the genesis config
+	config := &genesiscfg.Config{
+		NetworkID:                  constants.CustomID,
+		Allocations:                []genesiscfg.Allocation{allocation},
+		StartTime:                  startTime,
+		InitialStakeDuration:       hundredYears,
+		InitialStakeDurationOffset: 0,
+		InitialStakedFunds:         []ids.ShortID{cfg.RewardAddress},
+		InitialStakers:             []genesiscfg.Staker{staker},
+		CChainGenesis:              cfg.CChainGenesis,
+		Message:                    "Lux Development Mode Genesis",
+	}
+	
+	return FromConfig(config)
+}
+
 // splitAllocations splits allocations across multiple stakers
 func splitAllocations(allocations []genesiscfg.Allocation, numSplits int) [][]genesiscfg.Allocation {
 	if numSplits == 0 {

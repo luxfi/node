@@ -60,7 +60,7 @@ var (
 		EtnaTime:                  time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
 		FortunaTime:               time.Date(2025, time.November, 25, 16, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
-		GraniteEpochDuration:      5 * time.Minute,
+		GraniteEpochDuration:      30 * time.Second, // Faster epochs for testnet
 	}
 	Default = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
