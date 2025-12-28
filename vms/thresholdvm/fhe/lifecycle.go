@@ -585,6 +585,18 @@ func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, shareBytes []byte)
 		return fmt.Errorf("DKG not in share phase: %s", lm.currentDKG.Status)
 	}
 	
+	// Verify participant (SECURITY: prevent non-committee members from injecting shares)
+	found := false
+	for _, p := range lm.currentDKG.Participants {
+		if p == nodeID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("node %s not a DKG participant", nodeID)
+	}
+	
 	// Deserialize the ShamirSecretShare from bytes
 	shamirShare := lm.currentDKG.thresholdizer.AllocateThresholdSecretShare()
 	if err := shamirShare.UnmarshalBinary(shareBytes); err != nil {
@@ -846,11 +858,16 @@ func (lm *LifecycleManager) GetDKGState() *DKGState {
 	return lm.currentDKG.Clone()
 }
 
-// GetTransitionState returns the current transition state
+// GetTransitionState returns a copy of the current transition state
 func (lm *LifecycleManager) GetTransitionState() *TransitionState {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	return lm.currentTransition
+	if lm.currentTransition == nil {
+		return nil
+	}
+	// Return a copy to prevent external mutation of internal state
+	copy := *lm.currentTransition
+	return &copy
 }
 
 // IsTransitioning returns whether an epoch transition is in progress

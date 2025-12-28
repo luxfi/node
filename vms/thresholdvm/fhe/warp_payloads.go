@@ -168,16 +168,16 @@ func ParseFHEDecryptRequestV1(data []byte) (*FHEDecryptRequestV1, error) {
 //   [66:98]:  source_chain_id (32 bytes)
 //   [98:106]: epoch (8 bytes)
 //   [106]:    status (1 byte)
-//   [107:139]: committee_signature (32 bytes) - aggregated BLS signature
-//   [139:143]: plaintext_len (4 bytes)
-//   [143:...]: plaintext (variable)
+//   [107:203]: committee_signature (96 bytes) - aggregated BLS12-381 signature (compressed G2 point)
+//   [203:207]: plaintext_len (4 bytes)
+//   [207:...]: plaintext (variable)
 type FHEDecryptResultV1 struct {
 	RequestID          [32]byte
 	ResultHandle       [32]byte
 	SourceChainID      ids.ID
 	Epoch              uint64
 	Status             uint8
-	CommitteeSignature [32]byte
+	CommitteeSignature [96]byte // BLS12-381 signature is 96 bytes (compressed G2)
 	Plaintext          []byte
 }
 
@@ -190,7 +190,7 @@ const (
 
 // Bytes serializes the result to wire format
 func (r *FHEDecryptResultV1) Bytes() []byte {
-	buf := make([]byte, 143+len(r.Plaintext))
+	buf := make([]byte, 207+len(r.Plaintext)) // 2+32+32+32+8+1+96+4 = 207 fixed + plaintext
 	offset := 0
 	
 	buf[offset] = PayloadVersionV1
@@ -212,7 +212,7 @@ func (r *FHEDecryptResultV1) Bytes() []byte {
 	offset++
 	
 	copy(buf[offset:], r.CommitteeSignature[:])
-	offset += 32
+	offset += 96 // BLS signature is 96 bytes
 	
 	binary.BigEndian.PutUint32(buf[offset:], uint32(len(r.Plaintext)))
 	offset += 4
@@ -224,7 +224,7 @@ func (r *FHEDecryptResultV1) Bytes() []byte {
 
 // ParseFHEDecryptResultV1 parses a decrypt result from wire format
 func ParseFHEDecryptResultV1(data []byte) (*FHEDecryptResultV1, error) {
-	if len(data) < 143 {
+	if len(data) < 207 { // 2+32+32+32+8+1+96+4 = 207 minimum
 		return nil, ErrPayloadTooShort
 	}
 	
@@ -252,7 +252,7 @@ func ParseFHEDecryptResultV1(data []byte) (*FHEDecryptResultV1, error) {
 	offset++
 	
 	copy(r.CommitteeSignature[:], data[offset:])
-	offset += 32
+	offset += 96 // BLS signature is 96 bytes
 	
 	plaintextLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
@@ -392,7 +392,7 @@ func ParseFHEReencryptRequestV1(data []byte) (*FHEReencryptRequestV1, error) {
 //   [106]:    status (1 byte)
 //   [107:127]: callback (20 bytes)
 //   [127:131]: callback_selector (4 bytes)
-//   [131:163]: signature (32 bytes)
+//   [131:227]: signature (96 bytes) - BLS12-381 signature (compressed G2 point)
 type FHETaskResultV1 struct {
 	TaskID           [32]byte
 	ResultHandle     [32]byte
@@ -401,7 +401,7 @@ type FHETaskResultV1 struct {
 	Status           uint8
 	Callback         [20]byte
 	CallbackSelector [4]byte
-	Signature        [32]byte
+	Signature        [96]byte // BLS12-381 signature is 96 bytes (compressed G2)
 }
 
 const (
@@ -412,7 +412,7 @@ const (
 
 // Bytes serializes the task result to wire format
 func (r *FHETaskResultV1) Bytes() []byte {
-	buf := make([]byte, 163)
+	buf := make([]byte, 227) // 2+32+32+32+8+1+20+4+96 = 227
 	offset := 0
 	
 	buf[offset] = PayloadVersionV1
@@ -438,13 +438,14 @@ func (r *FHETaskResultV1) Bytes() []byte {
 	copy(buf[offset:], r.CallbackSelector[:])
 	offset += 4
 	copy(buf[offset:], r.Signature[:])
+	// offset += 96 // BLS signature is 96 bytes (end of buffer)
 	
 	return buf
 }
 
 // ParseFHETaskResultV1 parses a task result from wire format
 func ParseFHETaskResultV1(data []byte) (*FHETaskResultV1, error) {
-	if len(data) < 163 {
+	if len(data) < 227 { // 2+32+32+32+8+1+20+4+96 = 227 minimum
 		return nil, ErrPayloadTooShort
 	}
 	
@@ -476,6 +477,7 @@ func ParseFHETaskResultV1(data []byte) (*FHETaskResultV1, error) {
 	copy(r.CallbackSelector[:], data[offset:])
 	offset += 4
 	copy(r.Signature[:], data[offset:])
+	// BLS signature is 96 bytes
 	
 	return r, nil
 }

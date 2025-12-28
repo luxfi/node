@@ -76,8 +76,8 @@ func TestFHEDecryptResultV1BytesAndParse(t *testing.T) {
 	var resultHandle [32]byte
 	copy(resultHandle[:], []byte("result-handle-12345678901234"))
 
-	var signature [32]byte
-	copy(signature[:], []byte("committee-signature-12345678"))
+	var signature [96]byte // BLS12-381 signature (96 bytes)
+	copy(signature[:], []byte("bls-signature-96-bytes-padded-for-testing-purposes-12345678901234567890123456789012345678"))
 
 	result := &FHEDecryptResultV1{
 		RequestID:          requestID,
@@ -185,8 +185,8 @@ func TestFHETaskResultV1BytesAndParse(t *testing.T) {
 	var selector [4]byte
 	copy(selector[:], []byte{0xAB, 0xCD, 0xEF, 0x12})
 
-	var signature [32]byte
-	copy(signature[:], []byte("signature-data-12345678901234"))
+	var signature [96]byte // BLS12-381 signature (96 bytes)
+	copy(signature[:], []byte("bls-signature-96-bytes-padded-for-testing-purposes-12345678901234567890123456789012345678"))
 
 	result := &FHETaskResultV1{
 		TaskID:           taskID,
@@ -201,7 +201,7 @@ func TestFHETaskResultV1BytesAndParse(t *testing.T) {
 
 	// Serialize
 	data := result.Bytes()
-	require.Len(data, 163)
+	require.Len(data, 227) // 2+32+32+32+8+1+20+4+96 = 227
 
 	// Parse back
 	parsed, err := ParseFHETaskResultV1(data)
