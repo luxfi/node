@@ -10,9 +10,44 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/lattice/v6/core/rlwe"
+	"github.com/luxfi/lattice/v6/multiparty"
 	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
 )
+
+// createTestShamirShare creates a valid ShamirSecretShare for testing using
+// the lattice multiparty library. This generates a proper share that can be
+// deserialized by the DKG ceremony.
+func createTestShamirShare(t *testing.T, nodeID ids.NodeID, threshold int) []byte {
+	t.Helper()
+
+	// Create RLWE parameters matching the DKG defaults
+	params, err := rlwe.NewParametersFromLiteral(defaultRLWEParams)
+	require.NoError(t, err)
+
+	// Create thresholdizer
+	thresholdizer := multiparty.NewThresholdizer(&params)
+
+	// Generate a test secret key
+	kgen := rlwe.NewKeyGenerator(params)
+	sk := kgen.GenSecretKeyNew()
+
+	// Create Shamir polynomial from secret key
+	poly, err := thresholdizer.GenShamirPolynomial(threshold, sk)
+	require.NoError(t, err)
+
+	// Generate share for this participant (use nodeID hash as public point)
+	point := multiparty.ShamirPublicPoint(hashNodeIDToPoint(nodeID.String()))
+	share := thresholdizer.AllocateThresholdSecretShare()
+	thresholdizer.GenShamirSecretShare(point, poly, &share)
+
+	// Serialize the share
+	shareBytes, err := share.MarshalBinary()
+	require.NoError(t, err)
+
+	return shareBytes
+}
 
 func newTestLifecycleManager(t *testing.T) (*LifecycleManager, *Registry) {
 	db := memdb.New()
@@ -242,15 +277,17 @@ func TestDKGSharePhase(t *testing.T) {
 	require.NoError(t, lm.SubmitDKGCommitment(node1, bytes.Repeat([]byte{0xAA}, 32)))
 	require.NoError(t, lm.SubmitDKGCommitment(node2, bytes.Repeat([]byte{0x55}, 32)))
 
-	// Submit shares
-	err := lm.SubmitDKGShare(node1, []byte("share1"))
+	// Submit shares (using proper Shamir secret shares)
+	share1 := createTestShamirShare(t, node1, 2)
+	err := lm.SubmitDKGShare(node1, share1)
 	require.NoError(t, err)
 
 	state := lm.GetDKGState()
 	require.Equal(t, DKGSharePhase, state.Status)
 
 	// Submit second share - should complete DKG
-	err = lm.SubmitDKGShare(node2, []byte("share2"))
+	share2 := createTestShamirShare(t, node2, 2)
+	err = lm.SubmitDKGShare(node2, share2)
 	require.NoError(t, err)
 
 	state = lm.GetDKGState()
@@ -314,8 +351,8 @@ func TestDKGCallback(t *testing.T) {
 	require.NoError(t, lm.StartDKG(5, participants, 2))
 	require.NoError(t, lm.SubmitDKGCommitment(node1, bytes.Repeat([]byte{0xAA}, 32)))
 	require.NoError(t, lm.SubmitDKGCommitment(node2, bytes.Repeat([]byte{0x55}, 32)))
-	require.NoError(t, lm.SubmitDKGShare(node1, []byte("share1")))
-	require.NoError(t, lm.SubmitDKGShare(node2, []byte("share2")))
+	require.NoError(t, lm.SubmitDKGShare(node1, createTestShamirShare(t, node1, 2)))
+	require.NoError(t, lm.SubmitDKGShare(node2, createTestShamirShare(t, node2, 2)))
 
 	require.Equal(t, uint64(5), callbackEpoch)
 	require.NotEmpty(t, callbackPK)
@@ -670,11 +707,11 @@ func TestFinalizeTransition(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, lm.IsTransitioning())
 
-	// Complete DKG
+	// Complete DKG with proper Shamir shares
 	require.NoError(t, lm.SubmitDKGCommitment(node1, bytes.Repeat([]byte{0xAA}, 32)))
 	require.NoError(t, lm.SubmitDKGCommitment(node2, bytes.Repeat([]byte{0x55}, 32)))
-	require.NoError(t, lm.SubmitDKGShare(node1, []byte("share1")))
-	require.NoError(t, lm.SubmitDKGShare(node2, []byte("share2")))
+	require.NoError(t, lm.SubmitDKGShare(node1, createTestShamirShare(t, node1, 2)))
+	require.NoError(t, lm.SubmitDKGShare(node2, createTestShamirShare(t, node2, 2)))
 
 	// Update transition to finalizing phase manually for test
 	// Also set StartedAt to block-compatible value for the test
@@ -714,11 +751,11 @@ func TestEpochChangeCallback(t *testing.T) {
 	// Force transition
 	require.NoError(t, lm.ForceEpochTransition())
 
-	// Complete DKG
+	// Complete DKG with proper Shamir shares
 	require.NoError(t, lm.SubmitDKGCommitment(node1, bytes.Repeat([]byte{0xAA}, 32)))
 	require.NoError(t, lm.SubmitDKGCommitment(node2, bytes.Repeat([]byte{0x55}, 32)))
-	require.NoError(t, lm.SubmitDKGShare(node1, []byte("share1")))
-	require.NoError(t, lm.SubmitDKGShare(node2, []byte("share2")))
+	require.NoError(t, lm.SubmitDKGShare(node1, createTestShamirShare(t, node1, 2)))
+	require.NoError(t, lm.SubmitDKGShare(node2, createTestShamirShare(t, node2, 2)))
 
 	// Update transition to finalizing phase
 	// Set StartedAt to block-compatible value for the test
@@ -899,7 +936,8 @@ func TestSubmitDKGShareWrongPhase(t *testing.T) {
 	require.NoError(t, lm.StartDKG(1, participants, 2))
 
 	// Try to submit share before commit phase complete
-	err := lm.SubmitDKGShare(node1, []byte("share"))
+	share := createTestShamirShare(t, node1, 2)
+	err := lm.SubmitDKGShare(node1, share)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "DKG not in share phase")
 }
@@ -909,8 +947,8 @@ func TestSubmitDKGShareNotStarted(t *testing.T) {
 	require.NoError(t, lm.Start())
 	defer lm.Stop()
 
-	// No DKG started
-	err := lm.SubmitDKGShare(ids.GenerateTestNodeID(), []byte("share"))
+	// No DKG started - share bytes don't matter since it fails before deserialization
+	err := lm.SubmitDKGShare(ids.GenerateTestNodeID(), []byte("dummy"))
 	require.ErrorIs(t, err, ErrDKGNotStarted)
 }
 

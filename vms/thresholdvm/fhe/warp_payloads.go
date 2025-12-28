@@ -29,6 +29,15 @@ var (
 	ErrInvalidPayloadType    = errors.New("invalid payload type")
 	ErrPayloadTooShort       = errors.New("payload too short")
 	ErrPayloadMalformed      = errors.New("payload malformed")
+	ErrPayloadTooLarge       = errors.New("payload field too large")
+)
+
+// Maximum sizes for variable-length fields (DoS protection)
+const (
+	MaxPlaintextSize   = 1024 * 1024      // 1MB max plaintext
+	MaxPublicKeySize   = 64 * 1024        // 64KB max public key
+	MaxSignatureSize   = 1024             // 1KB max signature
+	MaxWarpPayloadSize = 2 * 1024 * 1024  // 2MB max total payload
 )
 
 // =====================
@@ -248,6 +257,10 @@ func ParseFHEDecryptResultV1(data []byte) (*FHEDecryptResultV1, error) {
 	plaintextLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
 	
+	if plaintextLen > MaxPlaintextSize {
+		return nil, fmt.Errorf("%w: plaintext size %d exceeds max %d", ErrPayloadTooLarge, plaintextLen, MaxPlaintextSize)
+	}
+	
 	if len(data) < offset+int(plaintextLen) {
 		return nil, ErrPayloadMalformed
 	}
@@ -349,6 +362,10 @@ func ParseFHEReencryptRequestV1(data []byte) (*FHEReencryptRequestV1, error) {
 	
 	pubKeyLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
+	
+	if pubKeyLen > MaxPublicKeySize {
+		return nil, fmt.Errorf("%w: public key size %d exceeds max %d", ErrPayloadTooLarge, pubKeyLen, MaxPublicKeySize)
+	}
 	
 	if len(data) < offset+int(pubKeyLen) {
 		return nil, ErrPayloadMalformed
@@ -538,6 +555,10 @@ func ParseFHEKeyRotationV1(data []byte) (*FHEKeyRotationV1, error) {
 	
 	pubKeyLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
+	
+	if pubKeyLen > MaxPublicKeySize {
+		return nil, fmt.Errorf("%w: public key size %d exceeds max %d", ErrPayloadTooLarge, pubKeyLen, MaxPublicKeySize)
+	}
 	
 	if len(data) < offset+int(pubKeyLen) {
 		return nil, ErrPayloadMalformed

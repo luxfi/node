@@ -108,19 +108,32 @@ func TestRegistryPermit(t *testing.T) {
 	permitID := [32]byte{0x11, 0x22, 0x33}
 	handle := [32]byte{0x44, 0x55}
 	grantee := [20]byte{0xcc, 0xdd}
+	grantor := [20]byte{0xaa, 0xbb}
+
+	// First register the ciphertext (required for ownership verification)
+	ctMeta := &CiphertextMeta{
+		Handle:  handle,
+		Owner:   grantor, // Owner must match permit grantor
+		Type:    1,
+		Level:   0,
+		Size:    1024,
+		ChainID: ids.GenerateTestID(),
+	}
+	err := registry.RegisterCiphertext(ctMeta)
+	require.NoError(t, err)
 
 	permit := &Permit{
 		PermitID:   permitID,
 		Handle:     handle,
 		Grantee:    grantee,
-		Grantor:    [20]byte{0xaa, 0xbb},
+		Grantor:    grantor,
 		Operations: PermitOpDecrypt | PermitOpReencrypt,
 		Expiry:     time.Now().Add(time.Hour).Unix(),
 		ChainID:    ids.GenerateTestID(),
 	}
 
 	// Create permit
-	err := registry.CreatePermit(permit)
+	err = registry.CreatePermit(permit)
 	require.NoError(t, err)
 
 	// Get permit
@@ -188,4 +201,175 @@ func TestRequestStatusString(t *testing.T) {
 	require.Equal(t, "failed", RequestFailed.String())
 	require.Equal(t, "expired", RequestExpired.String())
 	require.Equal(t, "unknown", RequestStatus(99).String())
+}
+
+func TestRegistrySession(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	session := &SessionState{
+		SessionID:        "test-session-1",
+		CiphertextHandle: [32]byte{0x11, 0x22},
+		Threshold:        3,
+		Participants:     []ids.NodeID{ids.GenerateTestNodeID(), ids.GenerateTestNodeID()},
+		SharesReceived:   0,
+		Status:           SessionActive,
+	}
+
+	// Save session
+	err := registry.SaveSession(session)
+	require.NoError(t, err)
+	require.NotZero(t, session.CreatedAt)
+
+	// Retrieve session
+	retrieved, err := registry.GetSession("test-session-1")
+	require.NoError(t, err)
+	require.Equal(t, session.SessionID, retrieved.SessionID)
+	require.Equal(t, session.Threshold, retrieved.Threshold)
+	require.Equal(t, SessionActive, retrieved.Status)
+
+	// Update session
+	session.SharesReceived = 2
+	session.Status = SessionCompleted
+	err = registry.SaveSession(session)
+	require.NoError(t, err)
+
+	retrieved, err = registry.GetSession("test-session-1")
+	require.NoError(t, err)
+	require.Equal(t, 2, retrieved.SharesReceived)
+	require.Equal(t, SessionCompleted, retrieved.Status)
+
+	// Delete session
+	err = registry.DeleteSession("test-session-1")
+	require.NoError(t, err)
+
+	// Should be gone
+	_, err = registry.GetSession("test-session-1")
+	require.ErrorIs(t, err, ErrSessionNotFound)
+}
+
+func TestRegistryRevokePermit(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	permitID := [32]byte{0x11, 0x22, 0x33}
+	permit := &Permit{
+		PermitID:   permitID,
+		Handle:     [32]byte{0x44, 0x55},
+		Grantee:    [20]byte{0xcc, 0xdd},
+		Grantor:    [20]byte{0xaa, 0xbb},
+		Operations: PermitOpDecrypt,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+		ChainID:    ids.GenerateTestID(),
+	}
+
+	// Create permit
+	err := registry.CreatePermit(permit)
+	require.NoError(t, err)
+
+	// Verify it exists
+	_, err = registry.GetPermit(permitID)
+	require.NoError(t, err)
+
+	// Revoke permit
+	err = registry.RevokePermit(permitID)
+	require.NoError(t, err)
+
+	// Should be gone
+	_, err = registry.GetPermit(permitID)
+	require.ErrorIs(t, err, ErrPermitNotFound)
+}
+
+func TestRegistryPermitExpired(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	// First register a ciphertext
+	ctMeta := &CiphertextMeta{
+		Handle: [32]byte{0x44, 0x55},
+		Owner:  [20]byte{0xaa, 0xbb},
+		Type:   1,
+	}
+	require.NoError(t, registry.RegisterCiphertext(ctMeta))
+
+	permitID := [32]byte{0x11, 0x22, 0x33}
+	permit := &Permit{
+		PermitID:   permitID,
+		Handle:     [32]byte{0x44, 0x55},
+		Grantee:    [20]byte{0xcc, 0xdd},
+		Grantor:    [20]byte{0xaa, 0xbb},
+		Operations: PermitOpDecrypt,
+		Expiry:     time.Now().Add(-time.Hour).Unix(), // Already expired
+		ChainID:    ids.GenerateTestID(),
+	}
+
+	require.NoError(t, registry.CreatePermit(permit))
+
+	// Verify should fail due to expiry
+	err := registry.VerifyPermit(permitID, permit.Handle, permit.Grantee, PermitOpDecrypt)
+	require.ErrorIs(t, err, ErrPermitExpired)
+}
+
+func TestRegistryVerifyPermitGrantorNotOwner(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	// Register ciphertext with owner
+	owner := [20]byte{0xaa, 0xbb}
+	ctMeta := &CiphertextMeta{
+		Handle: [32]byte{0x44, 0x55},
+		Owner:  owner,
+		Type:   1,
+	}
+	require.NoError(t, registry.RegisterCiphertext(ctMeta))
+
+	// Create permit with different grantor (not the owner)
+	permitID := [32]byte{0x11, 0x22, 0x33}
+	permit := &Permit{
+		PermitID:   permitID,
+		Handle:     [32]byte{0x44, 0x55},
+		Grantee:    [20]byte{0xcc, 0xdd},
+		Grantor:    [20]byte{0xff, 0xff}, // Different from owner
+		Operations: PermitOpDecrypt,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	require.NoError(t, registry.CreatePermit(permit))
+
+	// Verify should fail - grantor doesn't own the ciphertext
+	err := registry.VerifyPermit(permitID, permit.Handle, permit.Grantee, PermitOpDecrypt)
+	require.ErrorIs(t, err, ErrPermitInvalid)
+}
+
+func TestRegistryClose(t *testing.T) {
+	registry := newTestRegistry(t)
+	err := registry.Close()
+	require.NoError(t, err)
+}
+
+func TestRegistryDecryptRequestUpdateNotFound(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	// Try to update non-existent request
+	err := registry.UpdateDecryptRequest([32]byte{0xff}, RequestCompleted, [32]byte{}, "")
+	require.ErrorIs(t, err, ErrRequestNotFound)
+}
+
+func TestRegistryAddCommitteeMemberUpdate(t *testing.T) {
+	registry := newTestRegistry(t)
+
+	// Set initial epoch with a committee member
+	nodeID := ids.GenerateTestNodeID()
+	member := &CommitteeMember{
+		NodeID:    nodeID,
+		PublicKey: []byte("pk1"),
+		Weight:    100,
+		Index:     0,
+	}
+	require.NoError(t, registry.AddCommitteeMember(member))
+
+	// Update same member with new weight
+	member.Weight = 200
+	require.NoError(t, registry.AddCommitteeMember(member))
+
+	// Verify weight was updated
+	members, err := registry.GetCommittee()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(members))
+	require.Equal(t, uint64(200), members[0].Weight)
 }

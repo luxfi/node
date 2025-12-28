@@ -354,6 +354,15 @@ func (r *Registry) VerifyPermit(permitID [32]byte, handle [32]byte, grantee [20]
 		return ErrPermitInvalid
 	}
 	
+	// Verify grantor owns the ciphertext (critical security check)
+	meta, err := r.GetCiphertextMeta(handle)
+	if err != nil {
+		return fmt.Errorf("ciphertext lookup failed: %w", err)
+	}
+	if meta.Owner != permit.Grantor {
+		return ErrPermitInvalid // Grantor doesn't own the ciphertext
+	}
+	
 	// Check expiry
 	if permit.Expiry > 0 && time.Now().Unix() > permit.Expiry {
 		return ErrPermitExpired
