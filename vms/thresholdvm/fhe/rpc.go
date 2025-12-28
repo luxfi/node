@@ -22,7 +22,15 @@ var (
 	ErrRequestInProgress  = errors.New("request already in progress")
 	ErrBatchTooLarge      = errors.New("batch size exceeds maximum")
 	ErrEpochNotReady      = errors.New("epoch not ready")
+	ErrUnauthorized       = errors.New("caller not authorized")
+	ErrAuthRequired       = errors.New("authentication required")
 )
+
+// Authenticator verifies RPC caller identity
+type Authenticator interface {
+	// GetCallerAddress extracts the authenticated caller address from context
+	GetCallerAddress(ctx context.Context) ([20]byte, error)
+}
 
 const (
 	MaxBatchSize = 100
@@ -34,16 +42,37 @@ type FHEService struct {
 	integration *ThresholdFHEIntegration
 	logger      log.Logger
 	chainID     ids.ID
+	auth        Authenticator
+}
+
+// FHEServiceOption configures an FHEService
+type FHEServiceOption func(*FHEService)
+
+// WithAuthenticator sets the authenticator for RPC caller verification
+func WithAuthenticator(auth Authenticator) FHEServiceOption {
+	return func(s *FHEService) {
+		s.auth = auth
+	}
 }
 
 // NewFHEService creates a new FHE RPC service
-func NewFHEService(registry *Registry, integration *ThresholdFHEIntegration, logger log.Logger, chainID ids.ID) *FHEService {
-	return &FHEService{
+func NewFHEService(registry *Registry, integration *ThresholdFHEIntegration, logger log.Logger, chainID ids.ID, opts ...FHEServiceOption) *FHEService {
+	s := &FHEService{
 		registry:    registry,
 		integration: integration,
 		logger:      logger,
 		chainID:     chainID,
 	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	if s.auth == nil {
+		logger.Warn("FHEService created without authenticator - RPC methods will not verify caller identity")
+	}
+
+	return s
 }
 
 // ========================
@@ -163,7 +192,7 @@ type RegisterCiphertextReply struct {
 }
 
 // RegisterCiphertext registers a new ciphertext
-func (s *FHEService) RegisterCiphertext(_ context.Context, args *RegisterCiphertextArgs, reply *RegisterCiphertextReply) error {
+func (s *FHEService) RegisterCiphertext(ctx context.Context, args *RegisterCiphertextArgs, reply *RegisterCiphertextReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -182,6 +211,17 @@ func (s *FHEService) RegisterCiphertext(_ context.Context, args *RegisterCiphert
 	var owner [20]byte
 	copy(handle[:], handleBytes)
 	copy(owner[:], ownerBytes)
+
+	// Verify caller is the owner being registered
+	if s.auth != nil {
+		caller, err := s.auth.GetCallerAddress(ctx)
+		if err != nil {
+			return fmt.Errorf("%w: %v", ErrAuthRequired, err)
+		}
+		if caller != owner {
+			return fmt.Errorf("%w: caller is not the ciphertext owner", ErrUnauthorized)
+		}
+	}
 	
 	chainID := s.chainID
 	if args.ChainID != "" {
@@ -467,6 +507,9 @@ type GetDecryptBatchResultReply struct {
 
 // GetDecryptBatchResult retrieves multiple decrypt results
 func (s *FHEService) GetDecryptBatchResult(ctx context.Context, args *GetDecryptBatchResultArgs, reply *GetDecryptBatchResultReply) error {
+	if len(args.RequestIDs) > MaxBatchSize {
+		return ErrBatchTooLarge
+	}
 	reply.Results = make([]GetDecryptResultReply, len(args.RequestIDs))
 	
 	for i, reqID := range args.RequestIDs {
@@ -560,7 +603,7 @@ type CreatePermitReply struct {
 }
 
 // CreatePermit creates a new access permit
-func (s *FHEService) CreatePermit(_ context.Context, args *CreatePermitArgs, reply *CreatePermitReply) error {
+func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, reply *CreatePermitReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -585,6 +628,17 @@ func (s *FHEService) CreatePermit(_ context.Context, args *CreatePermitArgs, rep
 	copy(handle[:], handleBytes)
 	copy(grantee[:], granteeBytes)
 	copy(grantor[:], grantorBytes)
+
+	// Verify caller is the grantor
+	if s.auth != nil {
+		caller, err := s.auth.GetCallerAddress(ctx)
+		if err != nil {
+			return fmt.Errorf("%w: %v", ErrAuthRequired, err)
+		}
+		if caller != grantor {
+			return fmt.Errorf("%w: caller not authorized to create permits for grantor", ErrUnauthorized)
+		}
+	}
 	
 	// Verify grantor owns the ciphertext
 	meta, err := s.registry.GetCiphertextMeta(handle)

@@ -863,8 +863,9 @@ func TestFinalizeTransitionNoTransition(t *testing.T) {
 	defer lm.Stop()
 
 	// Finalize when no transition - should return nil
-	err := lm.finalizeTransitionLocked()
+	cb, err := lm.finalizeTransitionLocked()
 	require.NoError(t, err)
+	require.Nil(t, cb)
 }
 
 func TestFinalizeTransitionDKGNotComplete(t *testing.T) {
@@ -888,9 +889,10 @@ func TestFinalizeTransitionDKGNotComplete(t *testing.T) {
 
 	// Finalize should fail because DKG not complete
 	lm.mu.Lock()
-	err := lm.finalizeTransitionLocked()
+	cb, err := lm.finalizeTransitionLocked()
 	lm.mu.Unlock()
 	require.ErrorIs(t, err, ErrDKGNotStarted)
+	require.Nil(t, cb)
 }
 
 func TestFinalizeTransitionComplete(t *testing.T) {
@@ -922,9 +924,11 @@ func TestFinalizeTransitionComplete(t *testing.T) {
 
 	// Finalize transition
 	lm.mu.Lock()
-	err := lm.finalizeTransitionLocked()
+	cb, err := lm.finalizeTransitionLocked()
 	lm.mu.Unlock()
 	require.NoError(t, err)
+	// Invoke callback after releasing lock (simulating correct caller behavior)
+	lm.invokeCallback(cb)
 
 	// Verify new epoch is active
 	epoch := registry.GetCurrentEpoch()

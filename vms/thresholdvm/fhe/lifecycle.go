@@ -188,6 +188,20 @@ func (s MemberStatus) String() string {
 	}
 }
 
+// deferredCallback holds callback information to invoke after releasing the mutex.
+// This prevents deadlock by ensuring external callbacks are never called while holding locks.
+type deferredCallback struct {
+	// DKG completion callback data
+	dkgComplete   bool
+	dkgEpoch      uint64
+	dkgPublicKey  []byte
+
+	// Epoch change callback data
+	epochChange   bool
+	oldEpoch      uint64
+	newEpoch      uint64
+}
+
 // LifecycleManager manages epoch and committee lifecycle
 type LifecycleManager struct {
 	registry   *Registry
@@ -208,6 +222,20 @@ type LifecycleManager struct {
 	
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+// invokeCallback safely invokes deferred callbacks after the mutex is released.
+// Must be called WITHOUT holding the mutex.
+func (lm *LifecycleManager) invokeCallback(cb *deferredCallback) {
+	if cb == nil {
+		return
+	}
+	if cb.dkgComplete && lm.onDKGComplete != nil {
+		lm.onDKGComplete(cb.dkgEpoch, cb.dkgPublicKey)
+	}
+	if cb.epochChange && lm.onEpochChange != nil {
+		lm.onEpochChange(cb.oldEpoch, cb.newEpoch)
+	}
 }
 
 // NewLifecycleManager creates a new lifecycle manager
@@ -247,28 +275,66 @@ func (lm *LifecycleManager) Stop() {
 
 // OnBlock processes a new block for lifecycle events
 func (lm *LifecycleManager) OnBlock(blockHeight uint64) error {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
+	var cb *deferredCallback
+	var err error
 	
-	lm.currentBlock = blockHeight
+	func() {
+		lm.mu.Lock()
+		defer lm.mu.Unlock()
+		
+		lm.currentBlock = blockHeight
+
+		// Check for DKG timeout
+		if lm.currentDKG != nil &&
+			lm.currentDKG.Status != DKGCompleted &&
+			lm.currentDKG.Status != DKGFailed &&
+			lm.currentDKG.Status != DKGAborted {
+			startTime := time.Unix(lm.currentDKG.StartedAt, 0)
+			if time.Since(startTime) > lm.config.DKGTimeout {
+				lm.logger.Warn("DKG ceremony timed out",
+					"ceremony_id", fmt.Sprintf("%x", lm.currentDKG.CeremonyID[:8]),
+					"epoch", lm.currentDKG.Epoch,
+					"started_at", lm.currentDKG.StartedAt,
+					"timeout", lm.config.DKGTimeout)
+
+				lm.currentDKG.Status = DKGFailed
+				lm.currentDKG.Error = "DKG ceremony timed out"
+				lm.currentDKG.CompletedAt = time.Now().Unix()
+
+				// Also fail the transition if in progress
+				if lm.currentTransition != nil &&
+					lm.currentTransition.Status == TransitionDKGPhase {
+					lm.currentTransition.Status = TransitionFailed
+					lm.currentTransition.Error = "DKG ceremony timed out"
+					lm.currentTransition.CompletedAt = time.Now().Unix()
+				}
+			}
+		}
+
+		// Check if we need to start an epoch transition
+		if lm.shouldStartTransition(blockHeight) {
+			err = lm.startTransitionLocked()
+			return
+		}
+		
+		// Check if we need to finalize a transition
+		if lm.currentTransition != nil && lm.shouldFinalizeTransition(blockHeight) {
+			cb, err = lm.finalizeTransitionLocked()
+			return
+		}
+		
+		// Check for key rotation
+		if lm.config.KeyRotationBlocks > 0 && blockHeight%lm.config.KeyRotationBlocks == 0 {
+			lm.logger.Info("Triggering key rotation", "block", blockHeight)
+			err = lm.startKeyRotationLocked()
+			return
+		}
+	}()
 	
-	// Check if we need to start an epoch transition
-	if lm.shouldStartTransition(blockHeight) {
-		return lm.startTransitionLocked()
-	}
+	// Invoke callback AFTER releasing the mutex to prevent deadlock
+	lm.invokeCallback(cb)
 	
-	// Check if we need to finalize a transition
-	if lm.currentTransition != nil && lm.shouldFinalizeTransition(blockHeight) {
-		return lm.finalizeTransitionLocked()
-	}
-	
-	// Check for key rotation
-	if lm.config.KeyRotationBlocks > 0 && blockHeight%lm.config.KeyRotationBlocks == 0 {
-		lm.logger.Info("Triggering key rotation", "block", blockHeight)
-		return lm.startKeyRotationLocked()
-	}
-	
-	return nil
+	return err
 }
 
 // shouldStartTransition checks if we need to start a new epoch
@@ -513,51 +579,64 @@ func (lm *LifecycleManager) SubmitDKGCommitment(nodeID ids.NodeID, commitment []
 
 // SubmitDKGShare receives an encrypted share from a participant
 func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, share []byte) error {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
+	var cb *deferredCallback
+	var err error
 	
-	if lm.currentDKG == nil {
-		return ErrDKGNotStarted
-	}
-	
-	if lm.currentDKG.Status != DKGSharePhase {
-		return fmt.Errorf("DKG not in share phase: %s", lm.currentDKG.Status)
-	}
-
-	// Verify this node is a DKG participant
-	found := false
-	for _, p := range lm.currentDKG.Participants {
-		if p == nodeID {
-			found = true
-			break
+	func() {
+		lm.mu.Lock()
+		defer lm.mu.Unlock()
+		
+		if lm.currentDKG == nil {
+			err = ErrDKGNotStarted
+			return
 		}
-	}
-	if !found {
-		return ErrNotParticipant
-	}
+		
+		if lm.currentDKG.Status != DKGSharePhase {
+			err = fmt.Errorf("DKG not in share phase: %s", lm.currentDKG.Status)
+			return
+		}
 
-	// Verify this participant submitted a commitment (proves participation)
-	if _, hasCommitment := lm.currentDKG.Commitments[nodeID.String()]; !hasCommitment {
-		return ErrMissingCommitment
-	}
+		// Verify this node is a DKG participant
+		found := false
+		for _, p := range lm.currentDKG.Participants {
+			if p == nodeID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			err = ErrNotParticipant
+			return
+		}
 
-	lm.currentDKG.Shares[nodeID.String()] = share
+		// Verify this participant submitted a commitment (proves participation)
+		if _, hasCommitment := lm.currentDKG.Commitments[nodeID.String()]; !hasCommitment {
+			err = ErrMissingCommitment
+			return
+		}
+
+		lm.currentDKG.Shares[nodeID.String()] = share
+		
+		lm.logger.Debug("Received DKG share",
+			"nodeID", nodeID,
+			"shares", len(lm.currentDKG.Shares),
+			"total", len(lm.currentDKG.Participants))
+		
+		// Check if we have enough shares
+		if len(lm.currentDKG.Shares) >= lm.currentDKG.Threshold {
+			cb, err = lm.completeDKGLocked()
+		}
+	}()
 	
-	lm.logger.Debug("Received DKG share",
-		"nodeID", nodeID,
-		"shares", len(lm.currentDKG.Shares),
-		"total", len(lm.currentDKG.Participants))
+	// Invoke callback AFTER releasing the mutex to prevent deadlock
+	lm.invokeCallback(cb)
 	
-	// Check if we have enough shares
-	if len(lm.currentDKG.Shares) >= lm.currentDKG.Threshold {
-		return lm.completeDKGLocked()
-	}
-	
-	return nil
+	return err
 }
 
-// completeDKGLocked finalizes the DKG ceremony
-func (lm *LifecycleManager) completeDKGLocked() error {
+// completeDKGLocked finalizes the DKG ceremony.
+// Returns callback info to be invoked AFTER the mutex is released.
+func (lm *LifecycleManager) completeDKGLocked() (*deferredCallback, error) {
 	// Aggregate public key from commitments
 	// In a real implementation, this would use the actual DKG protocol
 	publicKey := lm.aggregatePublicKey()
@@ -570,12 +649,12 @@ func (lm *LifecycleManager) completeDKGLocked() error {
 		"epoch", lm.currentDKG.Epoch,
 		"public_key_len", len(publicKey))
 	
-	// Notify callback
-	if lm.onDKGComplete != nil {
-		lm.onDKGComplete(lm.currentDKG.Epoch, publicKey)
-	}
-	
-	return nil
+	// Return callback info - caller will invoke after releasing lock
+	return &deferredCallback{
+		dkgComplete:  true,
+		dkgEpoch:     lm.currentDKG.Epoch,
+		dkgPublicKey: publicKey,
+	}, nil
 }
 
 // aggregatePublicKey combines commitments into the threshold public key
@@ -647,14 +726,15 @@ func (lm *LifecycleManager) startTransitionLocked() error {
 	return lm.startDKGLocked(newEpoch, participants, threshold)
 }
 
-// finalizeTransitionLocked completes the epoch transition
-func (lm *LifecycleManager) finalizeTransitionLocked() error {
+// finalizeTransitionLocked completes the epoch transition.
+// Returns callback info to be invoked AFTER the mutex is released.
+func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error) {
 	if lm.currentTransition == nil {
-		return nil
+		return nil, nil
 	}
 	
 	if lm.currentDKG == nil || lm.currentDKG.Status != DKGCompleted {
-		return ErrDKGNotStarted
+		return nil, ErrDKGNotStarted
 	}
 	
 	// End current epoch
@@ -664,7 +744,7 @@ func (lm *LifecycleManager) finalizeTransitionLocked() error {
 		epochInfo.Status = EpochEnded
 		epochInfo.EndTime = time.Now().Unix()
 		if err := lm.registry.SetEpoch(currentEpoch, epochInfo); err != nil {
-			return err
+			return nil, err
 		}
 	}
 	
@@ -680,7 +760,7 @@ func (lm *LifecycleManager) finalizeTransitionLocked() error {
 	}
 	
 	if err := lm.registry.SetEpoch(lm.currentTransition.ToEpoch, newEpochInfo); err != nil {
-		return err
+		return nil, err
 	}
 	
 	// Update transition state
@@ -700,12 +780,12 @@ func (lm *LifecycleManager) finalizeTransitionLocked() error {
 	lm.currentTransition = nil
 	lm.currentDKG = nil
 	
-	// Notify callback
-	if lm.onEpochChange != nil {
-		lm.onEpochChange(oldEpoch, newEpoch)
-	}
-	
-	return nil
+	// Return callback info - caller will invoke after releasing lock
+	return &deferredCallback{
+		epochChange: true,
+		oldEpoch:    oldEpoch,
+		newEpoch:    newEpoch,
+	}, nil
 }
 
 // startKeyRotationLocked initiates a key rotation within the current epoch

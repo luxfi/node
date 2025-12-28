@@ -28,9 +28,9 @@ var (
 	ErrDecryptionFailed   = errors.New("threshold decryption failed")
 	ErrInsufficientShares = errors.New("insufficient decryption shares")
 	ErrRequestNotFound    = errors.New("decryption request not found")
-	ErrRequestExpired     = errors.New("decryption request expired")
 	ErrAlreadyFulfilled   = errors.New("request already fulfilled")
 	ErrCiphertextNotFound = errors.New("ciphertext not found in storage")
+	// Note: ErrRequestExpired is defined in warp_payloads.go
 )
 
 // DecryptionRequest represents a pending decryption request from C-Chain

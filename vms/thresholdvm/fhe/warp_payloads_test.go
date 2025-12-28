@@ -332,7 +332,7 @@ func TestParsePayloadAllTypes(t *testing.T) {
 		SourceChainID:    ids.GenerateTestID(),
 		Epoch:            1,
 		Nonce:            100,
-		Expiry:           time.Now().Unix(),
+		Expiry:           time.Now().Add(time.Hour).Unix(), // Future expiry to pass validation
 		Requester:        requester,
 		Callback:         callback,
 		CallbackSelector: selector,
@@ -633,4 +633,138 @@ func TestParseFHEKeyRotationV1InvalidType(t *testing.T) {
 
 	_, err := ParseFHEKeyRotationV1(data)
 	require.ErrorIs(err, ErrInvalidPayloadType)
+}
+
+func TestFHEDecryptRequestV1Validate(t *testing.T) {
+	require := require.New(t)
+
+	// Test valid request with future expiry
+	request := &FHEDecryptRequestV1{
+		Expiry: time.Now().Add(time.Hour).Unix(),
+	}
+	require.NoError(request.Validate())
+
+	// Test valid request with zero expiry (no expiration)
+	request = &FHEDecryptRequestV1{
+		Expiry: 0,
+	}
+	require.NoError(request.Validate())
+
+	// Test expired request
+	request = &FHEDecryptRequestV1{
+		Expiry: time.Now().Add(-time.Hour).Unix(), // 1 hour in the past
+	}
+	require.ErrorIs(request.Validate(), ErrRequestExpired)
+}
+
+func TestParsePayloadRejectsExpiredRequest(t *testing.T) {
+	require := require.New(t)
+
+	var requestID [32]byte
+	copy(requestID[:], []byte("request-id-12345678901234567"))
+	var ctHandle [32]byte
+	copy(ctHandle[:], []byte("ciphertext-handle-1234567890"))
+	var permitID [32]byte
+	copy(permitID[:], []byte("permit-id-12345678901234567"))
+	var requester [20]byte
+	copy(requester[:], []byte("requester12345678"))
+	var callback [20]byte
+	copy(callback[:], []byte("callback-address12"))
+	var selector [4]byte
+	copy(selector[:], []byte{0xAB, 0xCD, 0xEF, 0x12})
+
+	// Create an expired request
+	request := &FHEDecryptRequestV1{
+		RequestID:        requestID,
+		CiphertextHandle: ctHandle,
+		PermitID:         permitID,
+		SourceChainID:    ids.GenerateTestID(),
+		Epoch:            1,
+		Nonce:            100,
+		Expiry:           time.Now().Add(-time.Hour).Unix(), // Expired
+		Requester:        requester,
+		Callback:         callback,
+		CallbackSelector: selector,
+		GasLimit:         1000000,
+	}
+
+	data := request.Bytes()
+	_, _, err := ParsePayload(data)
+	require.ErrorIs(err, ErrRequestExpired)
+}
+
+func TestParsePayloadAcceptsValidRequest(t *testing.T) {
+	require := require.New(t)
+
+	var requestID [32]byte
+	copy(requestID[:], []byte("request-id-12345678901234567"))
+	var ctHandle [32]byte
+	copy(ctHandle[:], []byte("ciphertext-handle-1234567890"))
+	var permitID [32]byte
+	copy(permitID[:], []byte("permit-id-12345678901234567"))
+	var requester [20]byte
+	copy(requester[:], []byte("requester12345678"))
+	var callback [20]byte
+	copy(callback[:], []byte("callback-address12"))
+	var selector [4]byte
+	copy(selector[:], []byte{0xAB, 0xCD, 0xEF, 0x12})
+
+	// Create a valid request with future expiry
+	request := &FHEDecryptRequestV1{
+		RequestID:        requestID,
+		CiphertextHandle: ctHandle,
+		PermitID:         permitID,
+		SourceChainID:    ids.GenerateTestID(),
+		Epoch:            1,
+		Nonce:            100,
+		Expiry:           time.Now().Add(time.Hour).Unix(), // Valid
+		Requester:        requester,
+		Callback:         callback,
+		CallbackSelector: selector,
+		GasLimit:         1000000,
+	}
+
+	data := request.Bytes()
+	payloadType, parsed, err := ParsePayload(data)
+	require.NoError(err)
+	require.Equal(PayloadTypeFHEDecryptRequestV1, payloadType)
+	require.NotNil(parsed)
+}
+
+func TestParsePayloadAcceptsNoExpiryRequest(t *testing.T) {
+	require := require.New(t)
+
+	var requestID [32]byte
+	copy(requestID[:], []byte("request-id-12345678901234567"))
+	var ctHandle [32]byte
+	copy(ctHandle[:], []byte("ciphertext-handle-1234567890"))
+	var permitID [32]byte
+	copy(permitID[:], []byte("permit-id-12345678901234567"))
+	var requester [20]byte
+	copy(requester[:], []byte("requester12345678"))
+	var callback [20]byte
+	copy(callback[:], []byte("callback-address12"))
+	var selector [4]byte
+	copy(selector[:], []byte{0xAB, 0xCD, 0xEF, 0x12})
+
+	// Create a request with no expiry (0 means never expires)
+	request := &FHEDecryptRequestV1{
+		RequestID:        requestID,
+		CiphertextHandle: ctHandle,
+		PermitID:         permitID,
+		SourceChainID:    ids.GenerateTestID(),
+		Epoch:            1,
+		Nonce:            100,
+		Expiry:           0, // No expiration
+		Requester:        requester,
+		Callback:         callback,
+		CallbackSelector: selector,
+		GasLimit:         1000000,
+	}
+
+	data := request.Bytes()
+	payloadType, parsed, err := ParsePayload(data)
+	require.NoError(err)
+	require.Equal(PayloadTypeFHEDecryptRequestV1, payloadType)
+	require.NotNil(parsed)
 }

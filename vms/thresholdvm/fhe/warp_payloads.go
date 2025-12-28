@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/luxfi/ids"
 )
@@ -29,6 +30,7 @@ var (
 	ErrInvalidPayloadType    = errors.New("invalid payload type")
 	ErrPayloadTooShort       = errors.New("payload too short")
 	ErrPayloadMalformed      = errors.New("payload malformed")
+	ErrRequestExpired        = errors.New("request has expired")
 )
 
 // =====================
@@ -100,6 +102,15 @@ func (r *FHEDecryptRequestV1) Bytes() []byte {
 	binary.BigEndian.PutUint32(buf[offset:], r.GasLimit)
 	
 	return buf
+}
+
+// Validate checks if the request is valid and not expired.
+// An Expiry of 0 means no expiration (infinite validity).
+func (r *FHEDecryptRequestV1) Validate() error {
+	if r.Expiry > 0 && time.Now().Unix() > r.Expiry {
+		return ErrRequestExpired
+	}
+	return nil
 }
 
 // ParseFHEDecryptRequestV1 parses a decrypt request from wire format
@@ -569,7 +580,13 @@ func ParsePayload(data []byte) (uint8, interface{}, error) {
 	switch payloadType {
 	case PayloadTypeFHEDecryptRequestV1:
 		req, err := ParseFHEDecryptRequestV1(data)
-		return payloadType, req, err
+		if err != nil {
+			return payloadType, nil, err
+		}
+		if err := req.Validate(); err != nil {
+			return payloadType, nil, err
+		}
+		return payloadType, req, nil
 	case PayloadTypeFHEDecryptResultV1:
 		res, err := ParseFHEDecryptResultV1(data)
 		return payloadType, res, err
