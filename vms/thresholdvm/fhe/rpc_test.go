@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestFHEService(t *testing.T) *FHEService {
+func newTestTFHEService(t *testing.T) *TFHEService {
 	require := require.New(t)
 
 	db := memdb.New()
@@ -37,7 +37,7 @@ func newTestFHEService(t *testing.T) *FHEService {
 	err = reg.SetEpoch(1, epochInfo)
 	require.NoError(err)
 
-	service := &FHEService{
+	service := &TFHEService{
 		logger:   log.NewNoOpLogger(),
 		registry: reg,
 		chainID:  ids.GenerateTestID(),
@@ -46,10 +46,10 @@ func newTestFHEService(t *testing.T) *FHEService {
 	return service
 }
 
-func TestFHEServiceGetPublicParams(t *testing.T) {
+func TestTFHEServiceGetPublicParams(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	args := &GetPublicParamsArgs{}
 	reply := &GetPublicParamsReply{}
@@ -63,10 +63,10 @@ func TestFHEServiceGetPublicParams(t *testing.T) {
 	require.NotEmpty(reply.ChainID)
 }
 
-func TestFHEServiceGetCommittee(t *testing.T) {
+func TestTFHEServiceGetCommittee(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	args := &GetCommitteeArgs{}
 	reply := &GetCommitteeReply{}
@@ -78,10 +78,10 @@ func TestFHEServiceGetCommittee(t *testing.T) {
 	require.Len(reply.Members, 2)
 }
 
-func TestFHEServiceRegisterCiphertext(t *testing.T) {
+func TestTFHEServiceRegisterCiphertext(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	args := &RegisterCiphertextArgs{
 		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
@@ -100,10 +100,10 @@ func TestFHEServiceRegisterCiphertext(t *testing.T) {
 	require.NotZero(reply.RegisteredAt)
 }
 
-func TestFHEServiceGetCiphertextMeta(t *testing.T) {
+func TestTFHEServiceGetCiphertextMeta(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -132,10 +132,10 @@ func TestFHEServiceGetCiphertextMeta(t *testing.T) {
 	require.Equal(uint32(1024), getReply.Size)
 }
 
-func TestFHEServiceRequestDecrypt(t *testing.T) {
+func TestTFHEServiceRequestDecrypt(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -179,10 +179,10 @@ func TestFHEServiceRequestDecrypt(t *testing.T) {
 	require.Equal(uint64(1), reply.Epoch)
 }
 
-func TestFHEServiceGetDecryptResult(t *testing.T) {
+func TestTFHEServiceGetDecryptResult(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -232,10 +232,10 @@ func TestFHEServiceGetDecryptResult(t *testing.T) {
 	require.Equal("pending", reply.Status)
 }
 
-func TestFHEServiceCreatePermit(t *testing.T) {
+func TestTFHEServiceCreatePermit(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -265,10 +265,10 @@ func TestFHEServiceCreatePermit(t *testing.T) {
 	require.NotZero(reply.CreatedAt)
 }
 
-func TestFHEServiceVerifyPermit(t *testing.T) {
+func TestTFHEServiceVerifyPermit(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	grantee := "abcdef0123456789abcdef0123456789abcdef01"
@@ -311,10 +311,10 @@ func TestFHEServiceVerifyPermit(t *testing.T) {
 	require.True(verifyReply.Valid)
 }
 
-func TestFHEServiceVerifyPermitInvalid(t *testing.T) {
+func TestTFHEServiceVerifyPermitInvalid(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// Verify non-existent permit
 	verifyArgs := &VerifyPermitArgs{
@@ -332,10 +332,10 @@ func TestFHEServiceVerifyPermitInvalid(t *testing.T) {
 	require.NotEmpty(verifyReply.Error)
 }
 
-func TestFHEServiceNotInitialized(t *testing.T) {
+func TestTFHEServiceNotInitialized(t *testing.T) {
 	require := require.New(t)
 
-	service := &FHEService{
+	service := &TFHEService{
 		logger:  log.NewNoOpLogger(),
 		chainID: ids.GenerateTestID(),
 		// registry is nil
@@ -346,10 +346,10 @@ func TestFHEServiceNotInitialized(t *testing.T) {
 	require.Equal(ErrNotInitialized, err)
 }
 
-func TestFHEServiceInvalidHandleFormat(t *testing.T) {
+func TestTFHEServiceInvalidHandleFormat(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestFHEService(t)
+	service := newTestTFHEService(t)
 
 	// Invalid hex
 	args := &RegisterCiphertextArgs{
