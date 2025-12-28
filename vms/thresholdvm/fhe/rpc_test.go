@@ -5,6 +5,7 @@ package fhe
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestTFHEService(t *testing.T) *TFHEService {
+func newTestFHEService(t *testing.T) *FHEService {
 	require := require.New(t)
 
 	db := memdb.New()
@@ -37,7 +38,7 @@ func newTestTFHEService(t *testing.T) *TFHEService {
 	err = reg.SetEpoch(1, epochInfo)
 	require.NoError(err)
 
-	service := &TFHEService{
+	service := &FHEService{
 		logger:   log.NewNoOpLogger(),
 		registry: reg,
 		chainID:  ids.GenerateTestID(),
@@ -46,10 +47,10 @@ func newTestTFHEService(t *testing.T) *TFHEService {
 	return service
 }
 
-func TestTFHEServiceGetPublicParams(t *testing.T) {
+func TestFHEServiceGetPublicParams(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	args := &GetPublicParamsArgs{}
 	reply := &GetPublicParamsReply{}
@@ -63,10 +64,10 @@ func TestTFHEServiceGetPublicParams(t *testing.T) {
 	require.NotEmpty(reply.ChainID)
 }
 
-func TestTFHEServiceGetCommittee(t *testing.T) {
+func TestFHEServiceGetCommittee(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	args := &GetCommitteeArgs{}
 	reply := &GetCommitteeReply{}
@@ -78,10 +79,10 @@ func TestTFHEServiceGetCommittee(t *testing.T) {
 	require.Len(reply.Members, 2)
 }
 
-func TestTFHEServiceRegisterCiphertext(t *testing.T) {
+func TestFHEServiceRegisterCiphertext(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	args := &RegisterCiphertextArgs{
 		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
@@ -100,10 +101,10 @@ func TestTFHEServiceRegisterCiphertext(t *testing.T) {
 	require.NotZero(reply.RegisteredAt)
 }
 
-func TestTFHEServiceGetCiphertextMeta(t *testing.T) {
+func TestFHEServiceGetCiphertextMeta(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -132,10 +133,10 @@ func TestTFHEServiceGetCiphertextMeta(t *testing.T) {
 	require.Equal(uint32(1024), getReply.Size)
 }
 
-func TestTFHEServiceRequestDecrypt(t *testing.T) {
+func TestFHEServiceRequestDecrypt(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -179,10 +180,10 @@ func TestTFHEServiceRequestDecrypt(t *testing.T) {
 	require.Equal(uint64(1), reply.Epoch)
 }
 
-func TestTFHEServiceGetDecryptResult(t *testing.T) {
+func TestFHEServiceGetDecryptResult(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -232,10 +233,10 @@ func TestTFHEServiceGetDecryptResult(t *testing.T) {
 	require.Equal("pending", reply.Status)
 }
 
-func TestTFHEServiceCreatePermit(t *testing.T) {
+func TestFHEServiceCreatePermit(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
@@ -265,10 +266,10 @@ func TestTFHEServiceCreatePermit(t *testing.T) {
 	require.NotZero(reply.CreatedAt)
 }
 
-func TestTFHEServiceVerifyPermit(t *testing.T) {
+func TestFHEServiceVerifyPermit(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	grantee := "abcdef0123456789abcdef0123456789abcdef01"
@@ -311,10 +312,10 @@ func TestTFHEServiceVerifyPermit(t *testing.T) {
 	require.True(verifyReply.Valid)
 }
 
-func TestTFHEServiceVerifyPermitInvalid(t *testing.T) {
+func TestFHEServiceVerifyPermitInvalid(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// Verify non-existent permit
 	verifyArgs := &VerifyPermitArgs{
@@ -332,10 +333,10 @@ func TestTFHEServiceVerifyPermitInvalid(t *testing.T) {
 	require.NotEmpty(verifyReply.Error)
 }
 
-func TestTFHEServiceNotInitialized(t *testing.T) {
+func TestFHEServiceNotInitialized(t *testing.T) {
 	require := require.New(t)
 
-	service := &TFHEService{
+	service := &FHEService{
 		logger:  log.NewNoOpLogger(),
 		chainID: ids.GenerateTestID(),
 		// registry is nil
@@ -346,10 +347,10 @@ func TestTFHEServiceNotInitialized(t *testing.T) {
 	require.Equal(ErrNotInitialized, err)
 }
 
-func TestTFHEServiceInvalidHandleFormat(t *testing.T) {
+func TestFHEServiceInvalidHandleFormat(t *testing.T) {
 	require := require.New(t)
 
-	service := newTestTFHEService(t)
+	service := newTestFHEService(t)
 
 	// Invalid hex
 	args := &RegisterCiphertextArgs{
@@ -368,4 +369,945 @@ func TestTFHEServiceInvalidHandleFormat(t *testing.T) {
 	args.Handle = "0102030405" // Too short
 	err = service.RegisterCiphertext(context.Background(), args, reply)
 	require.Error(err)
+}
+
+func TestFHEServiceGetCiphertextMetaNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to get non-existent ciphertext
+	args := &GetCiphertextMetaArgs{
+		Handle: "0102030405060708091011121314151617181920212223242526272829303132",
+	}
+	reply := &GetCiphertextMetaReply{}
+
+	err := service.GetCiphertextMeta(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceGetDecryptResultNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to get non-existent decrypt result
+	args := &GetDecryptResultArgs{
+		RequestID: "0102030405060708091011121314151617181920212223242526272829303132",
+	}
+	reply := &GetDecryptResultReply{}
+
+	err := service.GetDecryptResult(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceRequestDecryptInvalidHandle(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to decrypt with invalid handle format
+	args := &RequestDecryptArgs{
+		CiphertextHandle: "not-valid-hex",
+		PermitID:         "0102030405060708091011121314151617181920212223242526272829303132",
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	reply := &RequestDecryptReply{}
+
+	err := service.RequestDecrypt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceRequestDecryptCiphertextNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to decrypt non-existent ciphertext
+	args := &RequestDecryptArgs{
+		CiphertextHandle: "0102030405060708091011121314151617181920212223242526272829303132",
+		PermitID:         "0102030405060708091011121314151617181920212223242526272829303132",
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	reply := &RequestDecryptReply{}
+
+	err := service.RequestDecrypt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceCreatePermitInvalidHandle(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to create permit with invalid handle
+	args := &CreatePermitArgs{
+		Handle:     "not-valid-hex",
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	reply := &CreatePermitReply{}
+
+	err := service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceCreatePermitCiphertextNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to create permit for non-existent ciphertext
+	args := &CreatePermitArgs{
+		Handle:     "0102030405060708091011121314151617181920212223242526272829303132",
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	reply := &CreatePermitReply{}
+
+	err := service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceGetCommitteeSpecificEpoch(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	epoch := uint64(1)
+	args := &GetCommitteeArgs{
+		Epoch: &epoch,
+	}
+	reply := &GetCommitteeReply{}
+
+	err := service.GetCommittee(context.Background(), args, reply)
+	require.NoError(err)
+	require.Equal(uint64(1), reply.Epoch)
+}
+
+func TestFHEServiceGetCommitteeEpochNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	epoch := uint64(999)
+	args := &GetCommitteeArgs{
+		Epoch: &epoch,
+	}
+	reply := &GetCommitteeReply{}
+
+	err := service.GetCommittee(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestNewFHEService(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	reg, err := NewRegistry(db)
+	require.NoError(err)
+
+	logger := log.NewNoOpLogger()
+	chainID := ids.GenerateTestID()
+
+	service := NewFHEService(reg, nil, logger, chainID)
+	require.NotNil(service)
+	require.Equal(chainID, service.chainID)
+}
+
+func TestFHEServiceRequestDecryptBatch(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// First register ciphertexts
+	handle1 := "0102030405060708091011121314151617181920212223242526272829303132"
+	handle2 := "0102030405060708091011121314151617181920212223242526272829303133"
+
+	for _, handle := range []string{handle1, handle2} {
+		registerArgs := &RegisterCiphertextArgs{
+			Handle:  handle,
+			Owner:   "0102030405060708091011121314151617181920",
+			Type:    1,
+			Level:   14,
+			Size:    1024,
+		}
+		err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+		require.NoError(err)
+	}
+
+	// Create permits for each
+	for _, handle := range []string{handle1, handle2} {
+		permitArgs := &CreatePermitArgs{
+			Handle:     handle,
+			Grantor:    "0102030405060708091011121314151617181920",
+			Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+			Operations: 1,
+			Expiry:     time.Now().Add(time.Hour).Unix(),
+		}
+		permitReply := &CreatePermitReply{}
+		err := service.CreatePermit(context.Background(), permitArgs, permitReply)
+		require.NoError(err)
+	}
+
+	// Request batch decryption (need to get permit IDs first)
+	permitArgs1 := &CreatePermitArgs{
+		Handle:     handle1,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef02",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply1 := &CreatePermitReply{}
+	err := service.CreatePermit(context.Background(), permitArgs1, permitReply1)
+	require.NoError(err)
+
+	permitArgs2 := &CreatePermitArgs{
+		Handle:     handle2,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef02",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply2 := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs2, permitReply2)
+	require.NoError(err)
+
+	args := &RequestDecryptBatchArgs{
+		Requests: []RequestDecryptArgs{
+			{
+				CiphertextHandle: handle1,
+				PermitID:         permitReply1.PermitID,
+				Callback:         "abcdef0123456789abcdef0123456789abcdef02",
+				CallbackSelector: "12345678",
+			},
+			{
+				CiphertextHandle: handle2,
+				PermitID:         permitReply2.PermitID,
+				Callback:         "abcdef0123456789abcdef0123456789abcdef02",
+				CallbackSelector: "12345678",
+			},
+		},
+	}
+	reply := &RequestDecryptBatchReply{}
+
+	err = service.RequestDecryptBatch(context.Background(), args, reply)
+	require.NoError(err)
+	require.Len(reply.RequestIDs, 2)
+	require.NotEmpty(reply.RequestIDs[0])
+	require.NotEmpty(reply.RequestIDs[1])
+}
+
+func TestFHEServiceRequestDecryptBatchTooLarge(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Create batch that exceeds MaxBatchSize (100)
+	requests := make([]RequestDecryptArgs, MaxBatchSize+1)
+	for i := range requests {
+		requests[i] = RequestDecryptArgs{
+			CiphertextHandle: "0102030405060708091011121314151617181920212223242526272829303132",
+			PermitID:         "0102030405060708091011121314151617181920212223242526272829303132",
+			Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+			CallbackSelector: "12345678",
+		}
+	}
+
+	args := &RequestDecryptBatchArgs{
+		Requests: requests,
+	}
+	reply := &RequestDecryptBatchReply{}
+
+	err := service.RequestDecryptBatch(context.Background(), args, reply)
+	require.ErrorIs(err, ErrBatchTooLarge)
+}
+
+func TestFHEServiceGetDecryptBatchResult(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register and create requests
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	requestArgs := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         permitReply.PermitID,
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	requestReply := &RequestDecryptReply{}
+	err = service.RequestDecrypt(context.Background(), requestArgs, requestReply)
+	require.NoError(err)
+
+	// Get batch results
+	args := &GetDecryptBatchResultArgs{
+		RequestIDs: []string{requestReply.RequestID, "0102030405060708091011121314151617181920212223242526272829303199"},
+	}
+	reply := &GetDecryptBatchResultReply{}
+
+	err = service.GetDecryptBatchResult(context.Background(), args, reply)
+	require.NoError(err)
+	require.Len(reply.Results, 2)
+	// First should be found
+	require.Equal(requestReply.RequestID, reply.Results[0].RequestID)
+	require.Equal("pending", reply.Results[0].Status)
+	// Second should have error
+	require.NotEmpty(reply.Results[1].Error)
+}
+
+func TestFHEServiceGetRequestReceipt(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register and create a request
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	requestArgs := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         permitReply.PermitID,
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	requestReply := &RequestDecryptReply{}
+	err = service.RequestDecrypt(context.Background(), requestArgs, requestReply)
+	require.NoError(err)
+
+	// Get receipt
+	receiptArgs := &GetRequestReceiptArgs{
+		RequestID: requestReply.RequestID,
+	}
+	receiptReply := &GetRequestReceiptReply{}
+
+	err = service.GetRequestReceipt(context.Background(), receiptArgs, receiptReply)
+	require.NoError(err)
+	require.Equal(requestReply.RequestID, receiptReply.RequestID)
+	require.Equal("pending", receiptReply.Status)
+	require.NotZero(receiptReply.CreatedAt)
+}
+
+func TestFHEServiceGetRequestReceiptNotFound(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Try to get receipt for non-existent request
+	args := &GetRequestReceiptArgs{
+		RequestID: "0102030405060708091011121314151617181920212223242526272829303132",
+	}
+	reply := &GetRequestReceiptReply{}
+
+	err := service.GetRequestReceipt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceGetRequestReceiptInvalidID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Invalid hex
+	args := &GetRequestReceiptArgs{
+		RequestID: "not-valid-hex",
+	}
+	reply := &GetRequestReceiptReply{}
+
+	err := service.GetRequestReceipt(context.Background(), args, reply)
+	require.Error(err)
+
+	// Wrong length
+	args.RequestID = "0102030405"
+	err = service.GetRequestReceipt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceGetRequestReceiptCompleted(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register and create a request
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	requestArgs := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         permitReply.PermitID,
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	requestReply := &RequestDecryptReply{}
+	err = service.RequestDecrypt(context.Background(), requestArgs, requestReply)
+	require.NoError(err)
+
+	// Manually update request to completed status
+	requestBytes, _ := hex.DecodeString(requestReply.RequestID)
+	var requestID [32]byte
+	copy(requestID[:], requestBytes)
+	err = service.registry.UpdateDecryptRequest(requestID, RequestCompleted, [32]byte{0xaa, 0xbb}, "")
+	require.NoError(err)
+
+	// Get receipt - should have WarpMessageID now
+	receiptArgs := &GetRequestReceiptArgs{
+		RequestID: requestReply.RequestID,
+	}
+	receiptReply := &GetRequestReceiptReply{}
+
+	err = service.GetRequestReceipt(context.Background(), receiptArgs, receiptReply)
+	require.NoError(err)
+	require.Equal("completed", receiptReply.Status)
+	require.NotEmpty(receiptReply.WarpMessageID)
+}
+
+func TestFHEServiceCreatePermitInvalidGrantee(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext first
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Invalid grantee (not valid hex)
+	args := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "not-valid-hex",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceCreatePermitInvalidGrantor(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext first
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Invalid grantor (not valid hex)
+	args := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "not-valid-hex",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceVerifyPermitInvalidFormat(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Invalid permit ID format - VerifyPermit returns invalid with error message
+	args := &VerifyPermitArgs{
+		PermitID:  "not-valid-hex",
+		Handle:    "0102030405060708091011121314151617181920212223242526272829303132",
+		Grantee:   "abcdef0123456789abcdef0123456789abcdef01",
+		Operation: 1,
+	}
+	reply := &VerifyPermitReply{}
+
+	err := service.VerifyPermit(context.Background(), args, reply)
+	require.NoError(err)
+	require.False(reply.Valid)
+	require.NotEmpty(reply.Error)
+}
+
+func TestFHEServiceRegisterCiphertextInvalidOwner(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Invalid owner format
+	args := &RegisterCiphertextArgs{
+		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
+		Owner:   "not-valid-hex",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	reply := &RegisterCiphertextReply{}
+
+	err := service.RegisterCiphertext(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceRequestDecryptInvalidPermitID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Invalid permit ID format
+	args := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         "not-valid-hex",
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "12345678",
+	}
+	reply := &RequestDecryptReply{}
+
+	err = service.RequestDecrypt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceRequestDecryptInvalidCallback(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Create permit
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	// Invalid callback format
+	args := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         permitReply.PermitID,
+		Callback:         "not-valid-hex",
+		CallbackSelector: "12345678",
+	}
+	reply := &RequestDecryptReply{}
+
+	err = service.RequestDecrypt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceRequestDecryptInvalidCallbackSelector(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Create permit
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	// Invalid callback selector format
+	args := &RequestDecryptArgs{
+		CiphertextHandle: handle,
+		PermitID:         permitReply.PermitID,
+		Callback:         "abcdef0123456789abcdef0123456789abcdef01",
+		CallbackSelector: "not-valid",
+	}
+	reply := &RequestDecryptReply{}
+
+	err = service.RequestDecrypt(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceCreatePermitInvalidChainID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext first
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Try to create permit with invalid chain ID
+	args := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+		ChainID:    "not-a-valid-chain-id",
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "invalid chain ID")
+}
+
+func TestFHEServiceCreatePermitInvalidAttestation(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext first
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Try to create permit with invalid attestation hex
+	args := &CreatePermitArgs{
+		Handle:      handle,
+		Grantor:     "0102030405060708091011121314151617181920",
+		Grantee:     "abcdef0123456789abcdef0123456789abcdef01",
+		Operations:  1,
+		Expiry:      time.Now().Add(time.Hour).Unix(),
+		Attestation: "not-valid-hex-string",
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "invalid attestation")
+}
+
+func TestFHEServiceCreatePermitNotOwner(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext with one owner
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Try to create permit with different grantor (not the owner)
+	args := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "ffffffffffffffffffffffffffffffffffffffff", // Different from owner
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "grantor is not the ciphertext owner")
+}
+
+func TestFHEServiceGetDecryptResultInvalidRequestID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	args := &GetDecryptResultArgs{
+		RequestID: "not-valid-hex",
+	}
+	reply := &GetDecryptResultReply{}
+
+	err := service.GetDecryptResult(context.Background(), args, reply)
+	require.Error(err)
+}
+
+func TestFHEServiceCreatePermitWithValidAttestation(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext first
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Create permit with valid attestation hex
+	args := &CreatePermitArgs{
+		Handle:      handle,
+		Grantor:     "0102030405060708091011121314151617181920",
+		Grantee:     "abcdef0123456789abcdef0123456789abcdef01",
+		Operations:  1,
+		Expiry:      time.Now().Add(time.Hour).Unix(),
+		Attestation: "0102030405060708", // Valid hex
+	}
+	reply := &CreatePermitReply{}
+
+	err = service.CreatePermit(context.Background(), args, reply)
+	require.NoError(err)
+	require.NotEmpty(reply.PermitID)
+}
+
+func TestFHEServiceVerifyPermitInvalidHandle(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	args := &VerifyPermitArgs{
+		PermitID:  "0102030405060708091011121314151617181920212223242526272829303132",
+		Handle:    "not-valid-hex",
+		Grantee:   "abcdef0123456789abcdef0123456789abcdef01",
+		Operation: 1,
+	}
+	reply := &VerifyPermitReply{}
+
+	err := service.VerifyPermit(context.Background(), args, reply)
+	require.NoError(err) // Returns without error but with Valid=false
+	require.False(reply.Valid)
+	require.Contains(reply.Error, "invalid handle format")
+}
+
+func TestFHEServiceVerifyPermitInvalidGrantee(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	args := &VerifyPermitArgs{
+		PermitID:  "0102030405060708091011121314151617181920212223242526272829303132",
+		Handle:    "0102030405060708091011121314151617181920212223242526272829303132",
+		Grantee:   "not-valid-hex",
+		Operation: 1,
+	}
+	reply := &VerifyPermitReply{}
+
+	err := service.VerifyPermit(context.Background(), args, reply)
+	require.NoError(err)
+	require.False(reply.Valid)
+	require.Contains(reply.Error, "invalid grantee format")
+}
+
+func TestFHEServiceVerifyPermitValid(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Register ciphertext
+	handle := "0102030405060708091011121314151617181920212223242526272829303132"
+	registerArgs := &RegisterCiphertextArgs{
+		Handle:  handle,
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+	}
+	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
+	require.NoError(err)
+
+	// Create permit
+	permitArgs := &CreatePermitArgs{
+		Handle:     handle,
+		Grantor:    "0102030405060708091011121314151617181920",
+		Grantee:    "abcdef0123456789abcdef0123456789abcdef01",
+		Operations: 1,
+		Expiry:     time.Now().Add(time.Hour).Unix(),
+	}
+	permitReply := &CreatePermitReply{}
+	err = service.CreatePermit(context.Background(), permitArgs, permitReply)
+	require.NoError(err)
+
+	// Verify permit
+	verifyArgs := &VerifyPermitArgs{
+		PermitID:  permitReply.PermitID,
+		Handle:    handle,
+		Grantee:   "abcdef0123456789abcdef0123456789abcdef01",
+		Operation: 1,
+	}
+	verifyReply := &VerifyPermitReply{}
+
+	err = service.VerifyPermit(context.Background(), verifyArgs, verifyReply)
+	require.NoError(err)
+	require.True(verifyReply.Valid)
+	require.Empty(verifyReply.Error)
+	require.Greater(verifyReply.Expiry, int64(0))
+}
+
+func TestFHEServiceRegisterCiphertextInvalidChainID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	args := &RegisterCiphertextArgs{
+		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+		ChainID: "not-a-valid-chain-id",
+	}
+	reply := &RegisterCiphertextReply{}
+
+	err := service.RegisterCiphertext(context.Background(), args, reply)
+	require.Error(err)
+	require.Contains(err.Error(), "invalid chain ID")
+}
+
+func TestFHEServiceRegisterCiphertextWithChainID(t *testing.T) {
+	require := require.New(t)
+
+	service := newTestFHEService(t)
+
+	// Generate a valid chain ID
+	chainID := ids.GenerateTestID()
+
+	args := &RegisterCiphertextArgs{
+		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
+		Owner:   "0102030405060708091011121314151617181920",
+		Type:    1,
+		Level:   14,
+		Size:    1024,
+		ChainID: chainID.String(),
+	}
+	reply := &RegisterCiphertextReply{}
+
+	err := service.RegisterCiphertext(context.Background(), args, reply)
+	require.NoError(err)
+	require.NotEmpty(reply.Handle)
 }

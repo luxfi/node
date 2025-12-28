@@ -522,6 +522,317 @@ func TestRelayerCleanup(t *testing.T) {
 	require.Equal(ErrRequestNotFound, err)
 }
 
+func TestRelayerFetchCiphertextNoStorage(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+
+	// Create relayer without storage
+	relayer := NewRelayer(
+		logger, nil, nil, // nil storage
+		1, ids.GenerateTestID(), ids.GenerateTestID(),
+		nil, nil,
+	)
+
+	ctx := context.Background()
+	_ = relayer.Start(ctx)
+	defer relayer.Stop()
+
+	// Fetch should fail with no storage
+	_, err := relayer.fetchCiphertext(ctx, common.HexToHash("0x1234"))
+	require.Error(err)
+	require.Contains(err.Error(), "storage not configured")
+}
+
+func TestRelayerFetchCiphertextNotFound(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	storage := NewInMemoryCiphertextStorage()
+
+	relayer := NewRelayer(
+		logger, nil, storage,
+		1, ids.GenerateTestID(), ids.GenerateTestID(),
+		nil, nil,
+	)
+
+	ctx := context.Background()
+	_ = relayer.Start(ctx)
+	defer relayer.Stop()
+
+	// Fetch non-existent ciphertext
+	_, err := relayer.fetchCiphertext(ctx, common.HexToHash("0x1234"))
+	require.ErrorIs(err, ErrCiphertextNotFound)
+}
+
+func TestRelayerFetchCiphertextSuccess(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	storage := NewInMemoryCiphertextStorage()
+
+	// Store a ciphertext
+	handle := common.HexToHash("0x1234")
+	ctData := []byte("test-ciphertext-data")
+	require.NoError(storage.Put(handle, ctData))
+
+	relayer := NewRelayer(
+		logger, nil, storage,
+		1, ids.GenerateTestID(), ids.GenerateTestID(),
+		nil, nil,
+	)
+
+	ctx := context.Background()
+	_ = relayer.Start(ctx)
+	defer relayer.Stop()
+
+	// Fetch existing ciphertext
+	result, err := relayer.fetchCiphertext(ctx, handle)
+	require.NoError(err)
+	require.Equal(ctData, result)
+}
+
+func TestRelayerGetResultFulfilled(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	storage := NewInMemoryCiphertextStorage()
+
+	relayer := NewRelayer(
+		logger, nil, storage,
+		1, ids.GenerateTestID(), ids.GenerateTestID(),
+		nil, nil,
+	)
+
+	ctx := context.Background()
+	_ = relayer.Start(ctx)
+	defer relayer.Stop()
+
+	// Submit request
+	reqID := common.HexToHash("0x1234")
+	req := &DecryptionRequest{
+		RequestID:      reqID,
+		CiphertextHash: common.HexToHash("0x5678"),
+	}
+	_ = relayer.SubmitRequest(ctx, req)
+
+	// Manually mark as fulfilled
+	relayer.mu.Lock()
+	relayer.pendingRequests[reqID].Fulfilled = true
+	relayer.pendingRequests[reqID].Result = []byte("decrypted-data")
+	relayer.mu.Unlock()
+
+	// Get result
+	result, fulfilled, err := relayer.GetResult(reqID)
+	require.NoError(err)
+	require.True(fulfilled)
+	require.Equal([]byte("decrypted-data"), result)
+}
+
+func TestContributeShareSessionNotFound(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	config := DefaultThresholdConfig()
+
+	integration, err := NewThresholdFHEIntegration(logger, config, 1)
+	require.NoError(err)
+
+	// Try to contribute to non-existent session
+	_, err = integration.ContributeShare("non-existent", ids.GenerateTestNodeID(), []byte("share"))
+	require.Error(err)
+	require.Contains(err.Error(), "not found")
+}
+
+func TestContributeShareAlreadyComplete(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	// Use very low threshold for easier testing
+	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
+	config := ThresholdConfig{
+		Threshold:    1,
+		TotalParties: 2,
+		CKKSParams:   params,
+		LogBound:     128,
+	}
+
+	integration, err := NewThresholdFHEIntegration(logger, config, 1)
+	require.NoError(err)
+
+	// Generate test ciphertext
+	encoder := ckks.NewEncoder(params)
+	kgen := rlwe.NewKeyGenerator(params.Parameters)
+	sk := kgen.GenSecretKeyNew()
+	pk := kgen.GenPublicKeyNew(sk)
+	encryptor := ckks.NewEncryptor(params, pk)
+
+	integration.SetSecretKey(sk)
+
+	values := make([]complex128, params.MaxSlots())
+	values[0] = complex(42.0, 0)
+	pt := ckks.NewPlaintext(params, params.MaxLevel())
+	encoder.Encode(values, pt)
+	ct, _ := encryptor.EncryptNew(pt)
+	ctBytes, _ := ct.MarshalBinary()
+
+	// Create session
+	sessionID := "test-session"
+	requestID := common.HexToHash("0x1234")
+	err = integration.InitiateDecryption(sessionID, requestID, ctBytes)
+	require.NoError(err)
+
+	// Generate a share
+	shareBytes, err := integration.GenerateShare(sessionID)
+	require.NoError(err)
+
+	// Contribute share - threshold is 1 so this should complete
+	nodeID := ids.GenerateTestNodeID()
+	complete, err := integration.ContributeShare(sessionID, nodeID, shareBytes)
+	require.NoError(err)
+	require.True(complete)
+
+	// Try to contribute again - should return true (already complete)
+	complete, err = integration.ContributeShare(sessionID, ids.GenerateTestNodeID(), shareBytes)
+	require.NoError(err)
+	require.True(complete)
+}
+
+func TestContributeShareDuplicateNode(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
+	config := ThresholdConfig{
+		Threshold:    2, // Need 2 shares
+		TotalParties: 3,
+		CKKSParams:   params,
+		LogBound:     128,
+	}
+
+	integration, err := NewThresholdFHEIntegration(logger, config, 1)
+	require.NoError(err)
+
+	// Generate test ciphertext
+	encoder := ckks.NewEncoder(params)
+	kgen := rlwe.NewKeyGenerator(params.Parameters)
+	sk := kgen.GenSecretKeyNew()
+	pk := kgen.GenPublicKeyNew(sk)
+	encryptor := ckks.NewEncryptor(params, pk)
+
+	integration.SetSecretKey(sk)
+
+	values := make([]complex128, params.MaxSlots())
+	values[0] = complex(42.0, 0)
+	pt := ckks.NewPlaintext(params, params.MaxLevel())
+	encoder.Encode(values, pt)
+	ct, _ := encryptor.EncryptNew(pt)
+	ctBytes, _ := ct.MarshalBinary()
+
+	// Create session
+	sessionID := "test-session"
+	requestID := common.HexToHash("0x1234")
+	err = integration.InitiateDecryption(sessionID, requestID, ctBytes)
+	require.NoError(err)
+
+	// Generate a share
+	shareBytes, err := integration.GenerateShare(sessionID)
+	require.NoError(err)
+
+	// Contribute first share
+	nodeID := ids.GenerateTestNodeID()
+	complete, err := integration.ContributeShare(sessionID, nodeID, shareBytes)
+	require.NoError(err)
+	require.False(complete) // threshold is 2, only 1 share
+
+	// Try to contribute again from same node - should fail
+	_, err = integration.ContributeShare(sessionID, nodeID, shareBytes)
+	require.Error(err)
+	require.Contains(err.Error(), "already contributed")
+}
+
+// TestContributeShareInvalidShare is skipped because the underlying lattice library
+// panics on invalid share data rather than returning an error gracefully.
+
+func TestGetSessionResultNotComplete(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	config := DefaultThresholdConfig()
+
+	integration, err := NewThresholdFHEIntegration(logger, config, 1)
+	require.NoError(err)
+
+	// Generate test ciphertext
+	params := config.CKKSParams
+	encoder := ckks.NewEncoder(params)
+	kgen := rlwe.NewKeyGenerator(params.Parameters)
+	sk := kgen.GenSecretKeyNew()
+	pk := kgen.GenPublicKeyNew(sk)
+	encryptor := ckks.NewEncryptor(params, pk)
+
+	integration.SetSecretKey(sk)
+
+	values := make([]complex128, params.MaxSlots())
+	values[0] = complex(42.0, 0)
+	pt := ckks.NewPlaintext(params, params.MaxLevel())
+	encoder.Encode(values, pt)
+	ct, _ := encryptor.EncryptNew(pt)
+	ctBytes, _ := ct.MarshalBinary()
+
+	// Create session
+	sessionID := "test-session"
+	requestID := common.HexToHash("0x1234")
+	err = integration.InitiateDecryption(sessionID, requestID, ctBytes)
+	require.NoError(err)
+
+	// Get result - should not be complete
+	result, complete, err := integration.GetSessionResult(sessionID)
+	require.NoError(err)
+	require.False(complete)
+	require.Nil(result)
+}
+
+func TestGenerateShareNoSecretKey(t *testing.T) {
+	require := require.New(t)
+
+	logger := log.NewLogger("test")
+	config := DefaultThresholdConfig()
+
+	integration, err := NewThresholdFHEIntegration(logger, config, 1)
+	require.NoError(err)
+
+	// Don't set secret key
+	// Generate test ciphertext with temp key
+	params := config.CKKSParams
+	encoder := ckks.NewEncoder(params)
+	kgen := rlwe.NewKeyGenerator(params.Parameters)
+	sk := kgen.GenSecretKeyNew()
+	pk := kgen.GenPublicKeyNew(sk)
+	encryptor := ckks.NewEncryptor(params, pk)
+
+	values := make([]complex128, params.MaxSlots())
+	values[0] = complex(42.0, 0)
+	pt := ckks.NewPlaintext(params, params.MaxLevel())
+	encoder.Encode(values, pt)
+	ct, _ := encryptor.EncryptNew(pt)
+	ctBytes, _ := ct.MarshalBinary()
+
+	// Create session
+	sessionID := "test-session"
+	requestID := common.HexToHash("0x1234")
+	err = integration.InitiateDecryption(sessionID, requestID, ctBytes)
+	require.NoError(err)
+
+	// Try to generate share without secret key
+	_, err = integration.GenerateShare(sessionID)
+	require.Error(err)
+	require.Contains(err.Error(), "secret key not initialized")
+}
+
+// TestInitiateDecryptionInvalidCiphertext is skipped because the underlying lattice library
+// panics on invalid ciphertext data rather than returning an error gracefully.
+
 func BenchmarkThresholdDecryptorGenShare(b *testing.B) {
 	logger := log.NewLogger("bench")
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)

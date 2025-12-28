@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/lattice/v6/core/rlwe"
-	"github.com/luxfi/lattice/v6/multiparty"
 	"github.com/luxfi/log"
 )
 
@@ -28,6 +26,8 @@ var (
 	ErrDKGInProgress        = errors.New("DKG ceremony in progress")
 	ErrDKGNotStarted        = errors.New("DKG ceremony not started")
 	ErrDKGFailed            = errors.New("DKG ceremony failed")
+	ErrMissingCommitment    = errors.New("participant must submit commitment first")
+	ErrNotParticipant       = errors.New("node is not a DKG participant")
 	ErrTransitionInProgress = errors.New("epoch transition in progress")
 	ErrInvalidThreshold     = errors.New("invalid threshold")
 	ErrEpochExpired         = errors.New("epoch has expired")
@@ -65,7 +65,6 @@ func DefaultLifecycleConfig() *LifecycleConfig {
 }
 
 // DKGState represents the state of a DKG ceremony
-// Note: All access to this struct must be done while holding LifecycleManager.mu
 type DKGState struct {
 	CeremonyID    [32]byte         `json:"ceremony_id"`
 	Epoch         uint64           `json:"epoch"`
@@ -78,45 +77,6 @@ type DKGState struct {
 	StartedAt     int64            `json:"started_at"`
 	CompletedAt   int64            `json:"completed_at,omitempty"`
 	Error         string           `json:"error,omitempty"`
-	
-	// Threshold crypto state (not serialized)
-	shamirShares  map[string]*multiparty.ShamirSecretShare `json:"-"`
-	thresholdizer *multiparty.Thresholdizer                `json:"-"`
-	rlweParams    *rlwe.Parameters                         `json:"-"`
-}
-
-// Clone creates a deep copy of DKGState safe for external use
-// Note: Internal crypto state (shamirShares, thresholdizer, rlweParams) is NOT cloned
-func (s *DKGState) Clone() *DKGState {
-	if s == nil {
-		return nil
-	}
-	clone := &DKGState{
-		CeremonyID:   s.CeremonyID,
-		Epoch:        s.Epoch,
-		Threshold:    s.Threshold,
-		Status:       s.Status,
-		StartedAt:    s.StartedAt,
-		CompletedAt:  s.CompletedAt,
-		Error:        s.Error,
-	}
-	clone.Participants = make([]ids.NodeID, len(s.Participants))
-	copy(clone.Participants, s.Participants)
-	if s.PublicKey != nil {
-		clone.PublicKey = make([]byte, len(s.PublicKey))
-		copy(clone.PublicKey, s.PublicKey)
-	}
-	clone.Shares = make(map[string][]byte, len(s.Shares))
-	for k, v := range s.Shares {
-		clone.Shares[k] = append([]byte(nil), v...)
-	}
-	clone.Commitments = make(map[string][]byte, len(s.Commitments))
-	for k, v := range s.Commitments {
-		clone.Commitments[k] = append([]byte(nil), v...)
-	}
-	// Note: shamirShares, thresholdizer, rlweParams are not cloned
-	// as they contain internal crypto state that shouldn't be exposed
-	return clone
 }
 
 type DKGStatus uint8
@@ -468,14 +428,6 @@ func (lm *LifecycleManager) StartDKG(epoch uint64, participants []ids.NodeID, th
 	return lm.startDKGLocked(epoch, participants, threshold)
 }
 
-// Default RLWE parameters for FHE DKG ceremonies (LogN=10 for testing, production should use LogN>=13)
-var defaultRLWEParams rlwe.ParametersLiteral = rlwe.ParametersLiteral{
-	LogN:    10,
-	Q:       []uint64{0x200000440001, 0x7fff80001, 0x800280001, 0x7ffd80001, 0x7ffc80001},
-	P:       []uint64{0x3ffffffb80001, 0x4000000800001},
-	NTTFlag: true,
-}
-
 // startDKGLocked is the internal version that doesn't acquire the lock
 func (lm *LifecycleManager) startDKGLocked(epoch uint64, participants []ids.NodeID, threshold int) error {
 	if lm.currentDKG != nil && lm.currentDKG.Status != DKGCompleted && lm.currentDKG.Status != DKGFailed && lm.currentDKG.Status != DKGAborted {
@@ -495,27 +447,15 @@ func (lm *LifecycleManager) startDKGLocked(epoch uint64, participants []ids.Node
 		return fmt.Errorf("failed to generate ceremony ID: %w", err)
 	}
 	
-	// Initialize RLWE parameters for threshold cryptography
-	rlweParams, err := rlwe.NewParametersFromLiteral(defaultRLWEParams)
-	if err != nil {
-		return fmt.Errorf("failed to create RLWE parameters: %w", err)
-	}
-	
-	// Create thresholdizer for Shamir secret sharing
-	thresholdizer := multiparty.NewThresholdizer(&rlweParams)
-	
 	lm.currentDKG = &DKGState{
-		CeremonyID:    ceremonyID,
-		Epoch:         epoch,
-		Participants:  participants,
-		Threshold:     threshold,
-		Shares:        make(map[string][]byte),
-		Commitments:   make(map[string][]byte),
-		Status:        DKGCommitPhase,
-		StartedAt:     time.Now().Unix(),
-		shamirShares:  make(map[string]*multiparty.ShamirSecretShare),
-		thresholdizer: &thresholdizer,
-		rlweParams:    &rlweParams,
+		CeremonyID:   ceremonyID,
+		Epoch:        epoch,
+		Participants: participants,
+		Threshold:    threshold,
+		Shares:       make(map[string][]byte),
+		Commitments:  make(map[string][]byte),
+		Status:       DKGCommitPhase,
+		StartedAt:    time.Now().Unix(),
 	}
 	
 	lm.logger.Info("Started DKG ceremony",
@@ -571,9 +511,8 @@ func (lm *LifecycleManager) SubmitDKGCommitment(nodeID ids.NodeID, commitment []
 	return nil
 }
 
-// SubmitDKGShare receives a serialized ShamirSecretShare from a participant.
-// The share bytes must be a valid serialized multiparty.ShamirSecretShare.
-func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, shareBytes []byte) error {
+// SubmitDKGShare receives an encrypted share from a participant
+func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, share []byte) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	
@@ -584,8 +523,8 @@ func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, shareBytes []byte)
 	if lm.currentDKG.Status != DKGSharePhase {
 		return fmt.Errorf("DKG not in share phase: %s", lm.currentDKG.Status)
 	}
-	
-	// Verify participant (SECURITY: prevent non-committee members from injecting shares)
+
+	// Verify this node is a DKG participant
 	found := false
 	for _, p := range lm.currentDKG.Participants {
 		if p == nodeID {
@@ -594,27 +533,23 @@ func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, shareBytes []byte)
 		}
 	}
 	if !found {
-		return fmt.Errorf("node %s not a DKG participant", nodeID)
+		return ErrNotParticipant
 	}
-	
-	// Deserialize the ShamirSecretShare from bytes
-	shamirShare := lm.currentDKG.thresholdizer.AllocateThresholdSecretShare()
-	if err := shamirShare.UnmarshalBinary(shareBytes); err != nil {
-		return fmt.Errorf("invalid share format: %w", err)
+
+	// Verify this participant submitted a commitment (proves participation)
+	if _, hasCommitment := lm.currentDKG.Commitments[nodeID.String()]; !hasCommitment {
+		return ErrMissingCommitment
 	}
-	
-	// Store both serialized and deserialized forms
-	nodeKey := nodeID.String()
-	lm.currentDKG.Shares[nodeKey] = shareBytes
-	lm.currentDKG.shamirShares[nodeKey] = &shamirShare
+
+	lm.currentDKG.Shares[nodeID.String()] = share
 	
 	lm.logger.Debug("Received DKG share",
 		"nodeID", nodeID,
-		"shares", len(lm.currentDKG.shamirShares),
+		"shares", len(lm.currentDKG.Shares),
 		"total", len(lm.currentDKG.Participants))
 	
 	// Check if we have enough shares
-	if len(lm.currentDKG.shamirShares) >= lm.currentDKG.Threshold {
+	if len(lm.currentDKG.Shares) >= lm.currentDKG.Threshold {
 		return lm.completeDKGLocked()
 	}
 	
@@ -643,72 +578,19 @@ func (lm *LifecycleManager) completeDKGLocked() error {
 	return nil
 }
 
-// aggregatePublicKey combines Shamir secret shares into the threshold public key
-// using Lagrange interpolation from the luxfi/lattice multiparty package.
-// 
-// This implements the "Combine" operation from:
-// "An Efficient Threshold Access-Structure for RLWE-Based Multiparty Homomorphic Encryption"
-// Mouchet, Bertrand, Hubaux (2022) - https://eprint.iacr.org/2022/780
+// aggregatePublicKey combines commitments into the threshold public key
 func (lm *LifecycleManager) aggregatePublicKey() []byte {
-	if lm.currentDKG == nil {
-		lm.logger.Error("DKG aggregation called with no DKG state")
-		return nil
-	}
-	
-	if lm.currentDKG.thresholdizer == nil || lm.currentDKG.rlweParams == nil {
-		lm.logger.Error("DKG aggregation requires initialized thresholdizer and RLWE params")
-		return nil
-	}
-	
-	if len(lm.currentDKG.shamirShares) < lm.currentDKG.Threshold {
-		lm.logger.Error("Not enough Shamir shares for threshold",
-			"have", len(lm.currentDKG.shamirShares),
-			"need", lm.currentDKG.Threshold)
-		return nil
-	}
-	
-	// Aggregate all Shamir shares using lattice multiparty
-	aggregatedShare := lm.currentDKG.thresholdizer.AllocateThresholdSecretShare()
-	first := true
-	for _, share := range lm.currentDKG.shamirShares {
-		if first {
-			aggregatedShare = *share
-			first = false
-		} else {
-			if err := lm.currentDKG.thresholdizer.AggregateShares(aggregatedShare, *share, &aggregatedShare); err != nil {
-				lm.logger.Error("Failed to aggregate Shamir shares", "error", err)
-				return nil
+	// TODO: Implement actual public key aggregation from DKG commitments
+	// For now, return a placeholder
+	result := make([]byte, 32)
+	for _, commitment := range lm.currentDKG.Commitments {
+		if len(commitment) >= 32 {
+			for i := 0; i < 32; i++ {
+				result[i] ^= commitment[i]
 			}
 		}
 	}
-	
-	pubKeyBytes, err := aggregatedShare.MarshalBinary()
-	if err != nil {
-		lm.logger.Error("Failed to marshal aggregated public key", "error", err)
-		return nil
-	}
-	
-	lm.logger.Info("DKG aggregation completed",
-		"method", "lattice-multiparty",
-		"shares", len(lm.currentDKG.shamirShares),
-		"threshold", lm.currentDKG.Threshold,
-		"pubkey_size", len(pubKeyBytes))
-	
-	return pubKeyBytes
-}
-
-// hashNodeIDToPoint converts a node ID string to a Shamir public point using FNV-1a
-func hashNodeIDToPoint(nodeIDStr string) uint64 {
-	var h uint64 = 14695981039346656037 // FNV-1a offset basis
-	for _, c := range nodeIDStr {
-		h ^= uint64(c)
-		h *= 1099511628211 // FNV-1a prime
-	}
-	// Ensure non-zero (Shamir requires non-zero points)
-	if h == 0 {
-		h = 1
-	}
-	return h
+	return result
 }
 
 // AbortDKG aborts a DKG ceremony
@@ -851,23 +733,18 @@ func (lm *LifecycleManager) startKeyRotationLocked() error {
 	return lm.startDKGLocked(currentEpoch, participants, epochInfo.Threshold)
 }
 
-// GetDKGState returns a copy of the current DKG state (safe for external use)
+// GetDKGState returns the current DKG state
 func (lm *LifecycleManager) GetDKGState() *DKGState {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	return lm.currentDKG.Clone()
+	return lm.currentDKG
 }
 
-// GetTransitionState returns a copy of the current transition state
+// GetTransitionState returns the current transition state
 func (lm *LifecycleManager) GetTransitionState() *TransitionState {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	if lm.currentTransition == nil {
-		return nil
-	}
-	// Return a copy to prevent external mutation of internal state
-	copy := *lm.currentTransition
-	return &copy
+	return lm.currentTransition
 }
 
 // IsTransitioning returns whether an epoch transition is in progress

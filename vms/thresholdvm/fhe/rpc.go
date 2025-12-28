@@ -28,18 +28,17 @@ const (
 	MaxBatchSize = 100
 )
 
-// TFHEService provides the tfhe_* RPC interface for Threshold FHE operations on T-chain.
-// All RPC methods are exposed under the "tfhe" namespace (e.g., tfhe_getPublicParams).
-type TFHEService struct {
+// FHEService provides the RPC interface for FHE operations
+type FHEService struct {
 	registry    *Registry
 	integration *ThresholdFHEIntegration
 	logger      log.Logger
 	chainID     ids.ID
 }
 
-// NewTFHEService creates a new Threshold FHE RPC service
-func NewTFHEService(registry *Registry, integration *ThresholdFHEIntegration, logger log.Logger, chainID ids.ID) *TFHEService {
-	return &TFHEService{
+// NewFHEService creates a new FHE RPC service
+func NewFHEService(registry *Registry, integration *ThresholdFHEIntegration, logger log.Logger, chainID ids.ID) *FHEService {
+	return &FHEService{
 		registry:    registry,
 		integration: integration,
 		logger:      logger,
@@ -66,7 +65,7 @@ type GetPublicParamsReply struct {
 }
 
 // GetPublicParams returns the current FHE public parameters
-func (s *TFHEService) GetPublicParams(_ context.Context, _ *GetPublicParamsArgs, reply *GetPublicParamsReply) error {
+func (s *FHEService) GetPublicParams(_ context.Context, _ *GetPublicParamsArgs, reply *GetPublicParamsReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -111,7 +110,7 @@ type GetCommitteeReply struct {
 }
 
 // GetCommittee returns the current threshold committee
-func (s *TFHEService) GetCommittee(_ context.Context, args *GetCommitteeArgs, reply *GetCommitteeReply) error {
+func (s *FHEService) GetCommittee(_ context.Context, args *GetCommitteeArgs, reply *GetCommitteeReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -164,7 +163,7 @@ type RegisterCiphertextReply struct {
 }
 
 // RegisterCiphertext registers a new ciphertext
-func (s *TFHEService) RegisterCiphertext(_ context.Context, args *RegisterCiphertextArgs, reply *RegisterCiphertextReply) error {
+func (s *FHEService) RegisterCiphertext(_ context.Context, args *RegisterCiphertextArgs, reply *RegisterCiphertextReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -230,7 +229,7 @@ type GetCiphertextMetaReply struct {
 }
 
 // GetCiphertextMeta retrieves ciphertext metadata
-func (s *TFHEService) GetCiphertextMeta(_ context.Context, args *GetCiphertextMetaArgs, reply *GetCiphertextMetaReply) error {
+func (s *FHEService) GetCiphertextMeta(_ context.Context, args *GetCiphertextMetaArgs, reply *GetCiphertextMetaReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -283,7 +282,7 @@ type RequestDecryptReply struct {
 }
 
 // RequestDecrypt submits a threshold decryption request
-func (s *TFHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs, reply *RequestDecryptReply) error {
+func (s *FHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs, reply *RequestDecryptReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -394,7 +393,7 @@ type GetDecryptResultReply struct {
 }
 
 // GetDecryptResult retrieves the result of a decrypt request
-func (s *TFHEService) GetDecryptResult(_ context.Context, args *GetDecryptResultArgs, reply *GetDecryptResultReply) error {
+func (s *FHEService) GetDecryptResult(_ context.Context, args *GetDecryptResultArgs, reply *GetDecryptResultReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -437,7 +436,7 @@ type RequestDecryptBatchReply struct {
 }
 
 // RequestDecryptBatch submits multiple decrypt requests
-func (s *TFHEService) RequestDecryptBatch(ctx context.Context, args *RequestDecryptBatchArgs, reply *RequestDecryptBatchReply) error {
+func (s *FHEService) RequestDecryptBatch(ctx context.Context, args *RequestDecryptBatchArgs, reply *RequestDecryptBatchReply) error {
 	if len(args.Requests) > MaxBatchSize {
 		return ErrBatchTooLarge
 	}
@@ -467,7 +466,7 @@ type GetDecryptBatchResultReply struct {
 }
 
 // GetDecryptBatchResult retrieves multiple decrypt results
-func (s *TFHEService) GetDecryptBatchResult(ctx context.Context, args *GetDecryptBatchResultArgs, reply *GetDecryptBatchResultReply) error {
+func (s *FHEService) GetDecryptBatchResult(ctx context.Context, args *GetDecryptBatchResultArgs, reply *GetDecryptBatchResultReply) error {
 	reply.Results = make([]GetDecryptResultReply, len(args.RequestIDs))
 	
 	for i, reqID := range args.RequestIDs {
@@ -504,7 +503,7 @@ type GetRequestReceiptReply struct {
 }
 
 // GetRequestReceipt retrieves Warp receipt info for a request
-func (s *TFHEService) GetRequestReceipt(_ context.Context, args *GetRequestReceiptArgs, reply *GetRequestReceiptReply) error {
+func (s *FHEService) GetRequestReceipt(_ context.Context, args *GetRequestReceiptArgs, reply *GetRequestReceiptReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -561,7 +560,7 @@ type CreatePermitReply struct {
 }
 
 // CreatePermit creates a new access permit
-func (s *TFHEService) CreatePermit(_ context.Context, args *CreatePermitArgs, reply *CreatePermitReply) error {
+func (s *FHEService) CreatePermit(_ context.Context, args *CreatePermitArgs, reply *CreatePermitReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
@@ -655,7 +654,7 @@ type VerifyPermitReply struct {
 }
 
 // VerifyPermit verifies a permit is valid for an operation
-func (s *TFHEService) VerifyPermit(_ context.Context, args *VerifyPermitArgs, reply *VerifyPermitReply) error {
+func (s *FHEService) VerifyPermit(_ context.Context, args *VerifyPermitArgs, reply *VerifyPermitReply) error {
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
