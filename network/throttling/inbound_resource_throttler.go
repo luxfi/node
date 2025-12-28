@@ -101,6 +101,10 @@ func NewSystemThrottler(
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize system throttler metrics: %w", err)
 	}
+	// Default to real clock if not set (Clock is json:"-" so won't be set from config)
+	if config.Clock == nil {
+		config.Clock = &mockable.Clock{}
+	}
 	return &systemThrottler{
 		metrics:               metrics,
 		SystemThrottlerConfig: config,

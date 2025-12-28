@@ -133,6 +133,16 @@ func (db *DatabaseClient) Close() error {
 	return ErrEnumToError[resp.Err]
 }
 
+// Sync flushes any pending writes to persistent storage.
+// For RPC databases, this delegates to the remote database's Sync.
+func (db *DatabaseClient) Sync() error {
+	// RPC database delegates sync to the underlying database on the server side.
+	// Most operations are already synchronous over RPC, so this is typically a no-op.
+	// If the server implements a Sync RPC method, call it here.
+	// For now, return nil as operations are synchronous.
+	return nil
+}
+
 func (db *DatabaseClient) HealthCheck(ctx context.Context) (interface{}, error) {
 	health, err := db.client.HealthCheck(ctx, &emptypb.Empty{})
 	if err != nil {

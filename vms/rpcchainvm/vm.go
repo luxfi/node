@@ -72,22 +72,33 @@ func Serve(ctx context.Context, log log.Logger, vm block.ChainVM, opts ...grpcut
 	}(ctx)
 
 	// address of Runtime server from ENV
+	log.Info("rpcchainvm.Serve: getting runtime address from env", "key", runtime.EngineAddressKey)
 	runtimeAddr := os.Getenv(runtime.EngineAddressKey)
 	if runtimeAddr == "" {
 		return fmt.Errorf("required env var missing: %q", runtime.EngineAddressKey)
 	}
+	log.Info("rpcchainvm.Serve: runtime address obtained", "addr", runtimeAddr)
 
+	log.Info("rpcchainvm.Serve: dialing runtime server", "addr", runtimeAddr)
 	clientConn, err := grpcutils.Dial(runtimeAddr)
 	if err != nil {
 		return fmt.Errorf("failed to create client conn: %w", err)
 	}
+	log.Info("rpcchainvm.Serve: dial succeeded, creating runtime client")
 
 	client := gruntime.NewClient(runtimepb.NewRuntimeClient(clientConn))
+	log.Info("rpcchainvm.Serve: creating gRPC listener")
 
 	listener, err := grpcutils.NewListener()
 	if err != nil {
 		return fmt.Errorf("failed to create new listener: %w", err)
 	}
+	log.Info("rpcchainvm.Serve: listener created", "addr", listener.Addr().String())
+
+	log.Info("rpcchainvm.Serve: calling client.Initialize",
+		"protocol", version.RPCChainVMProtocol,
+		"listenerAddr", listener.Addr().String(),
+	)
 
 	log.Debug("initializing vm runtime",
 		"protocol", version.RPCChainVMProtocol,

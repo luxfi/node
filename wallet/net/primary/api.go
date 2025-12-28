@@ -88,7 +88,6 @@ func (c *XClient) GetAtomicUTXOs(
 	options ...rpc.Option,
 ) ([][]byte, ids.ShortID, ids.ID, error) {
 	// Return empty for X-chain since atomic UTXOs are rarely needed
-	// for subnet deployments. This enables local network compatibility.
 	return nil, ids.ShortEmpty, ids.Empty, nil
 }
 
@@ -112,7 +111,6 @@ func FetchState(
 ) {
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
-	xClient := NewXClient(uri, "X")
 	// cClient := evm.NewCChainClient(uri) // Implementation note
 
 	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
@@ -133,6 +131,9 @@ func FetchState(
 	if err != nil {
 		return nil, err
 	}
+
+	// Create X-chain client using standard "X" alias
+	xClient := NewXClient(uri, "X")
 
 	// cCTX, err := c.NewContextFromClients(ctx, infoClient, xClient)
 	// if err != nil {

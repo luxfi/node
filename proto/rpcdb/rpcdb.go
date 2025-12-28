@@ -336,6 +336,12 @@ func (db *DatabaseClient) Compact(start []byte, limit []byte) error {
 	return nil
 }
 
+func (db *DatabaseClient) Sync() error {
+	// RPC database sync is a no-op on client side
+	// The server handles persistence
+	return nil
+}
+
 func (db *DatabaseClient) Close() error {
 	resp, err := db.client.Close(context.Background(), &rpcdbpb.CloseRequest{})
 	if err != nil {

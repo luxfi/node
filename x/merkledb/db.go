@@ -480,6 +480,17 @@ func (db *merkleDB) Compact(start []byte, limit []byte) error {
 	return db.baseDB.Compact(start, limit)
 }
 
+func (db *merkleDB) Sync() error {
+	db.lock.RLock()
+	defer db.lock.RUnlock()
+
+	if db.closed {
+		return database.ErrClosed
+	}
+
+	return db.baseDB.Sync()
+}
+
 func (db *merkleDB) Close() error {
 	db.commitLock.Lock()
 	defer db.commitLock.Unlock()
