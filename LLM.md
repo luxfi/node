@@ -4819,3 +4819,93 @@ LUX now uses **6 decimals** (microLUX base unit) on P-Chain/X-Chain:
 C-Chain continues to use standard EVM 18 decimals (Wei).
 
 See `utils/units/lux.go` for constants.
+
+---
+
+## FHE T-Chain Implementation - 2025-12-28
+
+### Summary
+Implemented threshold Fully Homomorphic Encryption (FHE) infrastructure for the T-Chain (ThresholdVM) with proper DKG using the luxfi/lattice multiparty package.
+
+### Architecture
+
+**Location**: `vms/thresholdvm/fhe/`
+
+**Core Components**:
+- `lifecycle.go` - Epoch/committee/DKG lifecycle management
+- `registry.go` - Ciphertext and permit management
+- `handler.go` - Warp message handling with nonce/expiry validation
+- `warp_payloads.go` - FHE request/response payloads
+
+### Key Design Decisions
+
+**1. Lattice-Based DKG Only (No Fallbacks)**
+Uses exclusively the `github.com/luxfi/lattice/multiparty` package:
+```go
+// RLWE parameters for cryptographic security
+var defaultRLWEParams = rlwe.ParametersLiteral{
+    LogN:    10,
+    Q:       []uint64{0x200000440001, 0x7fff80001, 0x800280001, 0x7ffd80001, 0x7ffc80001},
+    P:       []uint64{0x3ffffffb80001, 0x4000000800001},
+    NTTFlag: true,
+}
+
+// Proper Shamir Secret Sharing with Lagrange interpolation
+thresholdizer := multiparty.NewThresholdizer(&rlweParams)
+combiner := multiparty.NewCombiner(rlweParams, threshold)
+```
+
+**2. Security Hardening**
+- Commitment verification before accepting DKG shares
+- Caller authentication on permit creation
+- Constant-time comparisons using `crypto/subtle`
+- Nonce/expiry validation to prevent replay attacks
+- Lock release before callbacks to prevent deadlocks
+
+**3. State Persistence**
+DKG ceremonies persist across node restarts:
+```go
+type persistedState struct {
+    CurrentEpoch     uint64
+    CommitteeNodeIDs []string
+    PublicKey        []byte
+    DKGState         *persistedDKGState
+}
+```
+
+### Test Coverage
+- 106 tests passing
+- 85.3% code coverage
+- Proper Shamir share generation in tests using lattice multiparty
+
+### Key Commits
+```
+a65f8f9ec0 fhe: comprehensive security fixes from CTO swarm review
+78e4d51496 security(thresholdvm/fhe): fix critical security issues from CTO audit
+323877830d fhe: implement proper DKG using lattice multiparty Shamir secret sharing
+```
+
+### Usage
+
+**DKG Flow**:
+1. `StartNewEpoch()` - Initialize new epoch with committee
+2. `SubmitDKGShare()` - Submit Shamir shares with commitment verification
+3. `FinalizeDKG()` - Lagrange interpolation to derive threshold public key
+4. `RequestDecryption()` - Threshold decryption via Warp messaging
+
+**Permit System**:
+```go
+// Create permit (requires caller authentication)
+registry.CreatePermit(&Permit{
+    Handle:  ciphertextHandle,
+    Grantor: ownerAddress,
+    Grantee: authorizedAddress,
+}, callerAddress)
+
+// Verify permit with constant-time comparison
+registry.VerifyPermit(handle, grantee)
+```
+
+### Dependencies
+- `github.com/luxfi/lattice` v6.x - Lattice-based cryptography
+- Uses `multiparty.Thresholdizer`, `multiparty.Combiner`, `multiparty.ShamirSecretShare`
