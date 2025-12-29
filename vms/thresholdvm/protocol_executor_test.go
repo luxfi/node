@@ -567,14 +567,70 @@ func TestFROSTSignFullExecution(t *testing.T) {
 }
 
 // TestLSSSignFullExecution runs a complete LSS keygen + sign
-// KNOWN ISSUE: The LSS sign protocol has a livelock bug in the upstream threshold library.
-// The library's own TestLSSKeygenThenSign test also fails with the same timeout.
-// This test is skipped until the upstream issue is resolved.
-// See: github.com/luxfi/threshold/protocols/lss/lss_sign_integration_test.go
+// The livelock bug in the threshold library has been fixed.
 func TestLSSSignFullExecution(t *testing.T) {
-	// Skip: LSS sign protocol has upstream livelock - library's own integration test fails
-	// The keygen works but sign hangs at round 20 waiting for broadcasts
-	t.Skip("skipping LSS sign: upstream livelock bug in threshold library (TestLSSKeygenThenSign also fails)")
+	if testing.Short() {
+		t.Skip("skipping LSS sign execution in short mode")
+	}
+
+	require := require.New(t)
+
+	pIDs := testPartyIDs(5)
+	threshold := 3
+	// LSS uses exactly `threshold` signers (not threshold+1 like CMP)
+	signers := pIDs[:threshold]
+	// LSS sign requires exactly 32 bytes (SHA-256 hash)
+	messageHash := make([]byte, 32)
+	copy(messageHash, []byte("test message hash for LSS sign"))
+
+	// Create per-party pools for keygen
+	keygenPools := make(map[party.ID]*pool.Pool)
+	for _, id := range pIDs {
+		keygenPools[id] = pool.NewPool(4)
+	}
+	defer func() {
+		for _, p := range keygenPools {
+			p.TearDown()
+		}
+	}()
+
+	// Run LSS Keygen
+	t.Log("Running LSS keygen...")
+	keygenResults, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
+		return lss.Keygen(curve.Secp256k1{}, id, pIDs, threshold, keygenPools[id])
+	})
+	require.NoError(err)
+	require.Len(keygenResults, len(pIDs))
+
+	// Extract configs
+	configs := make(map[party.ID]*lss.Config)
+	for id, result := range keygenResults {
+		config, ok := result.(*lss.Config)
+		require.True(ok, "result should be *lss.Config for party %s", id)
+		configs[id] = config
+	}
+	t.Logf("LSS keygen completed: %d parties, threshold %d", len(pIDs), threshold)
+
+	// Create per-party pools for signing
+	signPools := make(map[party.ID]*pool.Pool)
+	for _, id := range signers {
+		signPools[id] = pool.NewPool(4)
+	}
+	defer func() {
+		for _, p := range signPools {
+			p.TearDown()
+		}
+	}()
+
+	// Run LSS Sign with threshold signers
+	t.Logf("Running LSS sign with signers: %v", signers)
+	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
+		return lss.Sign(configs[id], signers, messageHash, signPools[id])
+	})
+	require.NoError(err)
+	require.Len(signResults, len(signers))
+
+	t.Logf("LSS sign completed: %d signers, %d-of-%d threshold signature", len(signers), threshold, len(pIDs))
 }
 
 // TestCMPSignFullExecution runs a complete CMP keygen + sign
