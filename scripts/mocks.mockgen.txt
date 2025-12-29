@@ -18,7 +18,6 @@ github.com/luxfi/node/consensus/networking/tracker=Tracker=consensus/networking/
 github.com/luxfi/node/consensus/uptime=Calculator=consensus/uptime/mock_calculator.go
 github.com/luxfi/node/consensus/validators=State=consensus/validators/mock_state.go
 github.com/luxfi/node/consensus/validators=NetConnector=consensus/validators/mock_subnet_connector.go
-github.com/luxfi/node/utils/crypto/keychain=Ledger=utils/crypto/keychain/mock_ledger.go
 github.com/luxfi/node/utils/filesystem=Reader=utils/filesystem/mock_io.go
 github.com/luxfi/node/utils/hashing=Hasher=utils/hashing/mock_hasher.go
 github.com/luxfi/node/utils/resource=User=utils/resource/mock_user.go
