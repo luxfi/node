@@ -5,6 +5,7 @@ package fhe
 
 import (
 	"context"
+	"math/big"
 	"sync"
 	"testing"
 	"time"
@@ -396,7 +397,7 @@ func TestInMemoryCiphertextStorageOperations(t *testing.T) {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				handle := common.BigToHash(common.Big1.SetUint64(uint64(idx)))
+				handle := common.BigToHash(new(big.Int).SetUint64(uint64(idx)))
 				data := []byte{byte(idx)}
 				storage.Put(handle, data)
 			}(i)
@@ -405,7 +406,7 @@ func TestInMemoryCiphertextStorageOperations(t *testing.T) {
 
 		// Verify all writes
 		for i := 0; i < numGoroutines; i++ {
-			handle := common.BigToHash(common.Big1.SetUint64(uint64(i)))
+			handle := common.BigToHash(new(big.Int).SetUint64(uint64(i)))
 			data, err := storage.Get(handle)
 			require.NoError(err)
 			require.Equal([]byte{byte(i)}, data)
@@ -416,7 +417,7 @@ func TestInMemoryCiphertextStorageOperations(t *testing.T) {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				handle := common.BigToHash(common.Big1.SetUint64(uint64(idx)))
+				handle := common.BigToHash(new(big.Int).SetUint64(uint64(idx)))
 				_, _ = storage.Get(handle)
 			}(i)
 		}
