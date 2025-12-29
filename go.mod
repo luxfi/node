@@ -30,11 +30,10 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.46
-	github.com/luxfi/crypto v1.17.26
+	github.com/luxfi/crypto v1.17.27
 	github.com/luxfi/database v1.2.17
 	github.com/luxfi/ids v1.2.5
 	github.com/luxfi/keychain v1.0.1
-	github.com/luxfi/ledger v1.1.2
 	github.com/luxfi/log v1.1.26
 	github.com/luxfi/math v1.2.0
 	github.com/luxfi/metric v1.4.8
@@ -86,7 +85,6 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
@@ -190,12 +188,11 @@ require (
 	github.com/luxfi/cache v1.1.0 // indirect
 	github.com/luxfi/codec v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
+	github.com/luxfi/fhe v1.2.0 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
-	github.com/luxfi/hid v0.9.3 // indirect
-	github.com/luxfi/precompiles v0.1.8 // indirect
+	github.com/luxfi/precompiles v0.1.10 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
-	github.com/luxfi/tfhe v1.0.0 // indirect
 	github.com/luxfi/utils v1.1.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
