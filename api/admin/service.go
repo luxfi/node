@@ -14,7 +14,7 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

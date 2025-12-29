@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 func TestWriteMsgLen(t *testing.T) {

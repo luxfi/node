@@ -31,7 +31,7 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"

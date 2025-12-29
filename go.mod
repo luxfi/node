@@ -137,7 +137,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/constants v1.3.1
+	github.com/luxfi/const v1.4.0
 	github.com/luxfi/coreth v0.15.66
 	github.com/luxfi/genesis v1.5.16
 	github.com/luxfi/geth v1.16.64

@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/fxs"

@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/nets"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 var ErrNoPrimaryNetworkConfig = errors.New("no net config for primary network found")

@@ -40,7 +40,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"

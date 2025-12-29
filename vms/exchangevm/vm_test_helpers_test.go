@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/warp"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/upgrade"

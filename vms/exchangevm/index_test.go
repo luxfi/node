@@ -22,7 +22,7 @@ import (
 
 	"github.com/luxfi/node/utils"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 
 	"github.com/luxfi/crypto/secp256k1"
 

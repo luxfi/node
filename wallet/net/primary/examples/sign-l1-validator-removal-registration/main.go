@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/p2p"

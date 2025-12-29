@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 var staleSocketTimeout = 100 * time.Millisecond

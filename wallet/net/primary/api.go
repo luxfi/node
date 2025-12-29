@@ -11,7 +11,7 @@ import (
 	gethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"

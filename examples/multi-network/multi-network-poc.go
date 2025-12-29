@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 // NetworkValidator represents a validator for a specific network

@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/maybe"

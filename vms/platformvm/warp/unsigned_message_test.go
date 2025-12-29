@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 func TestUnsignedMessage(t *testing.T) {

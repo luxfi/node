@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/ids"
 )
 

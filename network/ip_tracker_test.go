@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"

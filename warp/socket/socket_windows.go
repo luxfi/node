@@ -12,7 +12,7 @@ import (
 
 	"github.com/Microsoft/go-winio"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 // listen creates a net.Listen backed by a Windows named pipe

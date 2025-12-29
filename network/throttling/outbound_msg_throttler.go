@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 )
 
 var (

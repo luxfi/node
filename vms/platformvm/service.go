@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 	safemath "github.com/luxfi/node/utils/math"

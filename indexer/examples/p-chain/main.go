@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/wallet/net/primary"
 
 	platformvmblock "github.com/luxfi/node/vms/platformvm/block"

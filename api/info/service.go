@@ -19,7 +19,7 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
