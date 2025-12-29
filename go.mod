@@ -187,6 +187,7 @@ require (
 	github.com/luxfi/address v1.0.0 // indirect
 	github.com/luxfi/cache v1.1.0 // indirect
 	github.com/luxfi/codec v1.1.0 // indirect
+	github.com/luxfi/constants v1.2.4 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/fhe v1.2.0 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
@@ -224,5 +225,7 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
 
 replace github.com/luxfi/fhe => ../fhe
+
+replace github.com/luxfi/genesis => ../genesis
 
 exclude github.com/ethereum/go-ethereum v1.10.26
