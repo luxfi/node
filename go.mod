@@ -140,14 +140,14 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
 	github.com/luxfi/constants v1.3.0
-	github.com/luxfi/coreth v0.15.64
+	github.com/luxfi/coreth v0.15.66
 	github.com/luxfi/genesis v1.5.16
 	github.com/luxfi/geth v1.16.64
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v6 v6.1.2
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
-	github.com/luxfi/ringtail v0.1.1
+	github.com/luxfi/ringtail v0.1.2
 	github.com/luxfi/threshold v1.1.10
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/vm v1.0.1
@@ -187,14 +187,16 @@ require (
 	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.0.0 // indirect
-	github.com/luxfi/cache v1.0.0 // indirect
+	github.com/luxfi/cache v1.1.0 // indirect
 	github.com/luxfi/codec v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/hid v0.9.2 // indirect
-	github.com/luxfi/precompiles v0.1.6 // indirect
+	github.com/luxfi/precompiles v0.1.8 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
+	github.com/luxfi/tfhe v1.0.0 // indirect
+	github.com/luxfi/utils v1.1.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -223,7 +225,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/coreth => ../coreth
 
 exclude github.com/ethereum/go-ethereum v1.10.26

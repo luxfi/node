@@ -5,7 +5,6 @@ package tvm
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"sync"
 	"testing"
@@ -447,20 +446,13 @@ func TestLSSKeygenFullExecution(t *testing.T) {
 	pIDs := testPartyIDs(3)
 	threshold := 2
 
-	// CRITICAL: Each party needs its OWN pool!
-	// The Pool type is NOT thread-safe for concurrent Search calls.
-	keygenPools := make(map[party.ID]*pool.Pool)
-	for _, id := range pIDs {
-		keygenPools[id] = pool.NewPool(4)
-	}
-	defer func() {
-		for _, p := range keygenPools {
-			p.TearDown()
-		}
-	}()
+	// LSS uses a shared pool - use pool.NewPool(0) for default workers
+	// This matches the LSS library's own integration tests
+	sharedPool := pool.NewPool(0)
+	defer sharedPool.TearDown()
 
 	results, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
-		return lss.Keygen(curve.Secp256k1{}, id, pIDs, threshold, keygenPools[id])
+		return lss.Keygen(curve.Secp256k1{}, id, pIDs, threshold, sharedPool)
 	})
 	require.NoError(err)
 	require.Len(results, 3)
@@ -575,68 +567,14 @@ func TestFROSTSignFullExecution(t *testing.T) {
 }
 
 // TestLSSSignFullExecution runs a complete LSS keygen + sign
+// KNOWN ISSUE: The LSS sign protocol has a livelock bug in the upstream threshold library.
+// The library's own TestLSSKeygenThenSign test also fails with the same timeout.
+// This test is skipped until the upstream issue is resolved.
+// See: github.com/luxfi/threshold/protocols/lss/lss_sign_integration_test.go
 func TestLSSSignFullExecution(t *testing.T) {
-	// LSS signing protocol has a known livelock issue where parties wait indefinitely
-	// for broadcasts from each other. Skipping until the upstream LSS library is fixed.
-	t.Skip("skipping LSS sign - known protocol livelock issue")
-
-	if testing.Short() {
-		t.Skip("skipping LSS sign execution in short mode")
-	}
-
-	require := require.New(t)
-
-	pIDs := testPartyIDs(3)
-	threshold := 2
-	// Threshold protocols require threshold+1 signers
-	signers := pIDs[:threshold+1]
-	if len(signers) > len(pIDs) {
-		signers = pIDs
-	}
-	// LSS requires exactly 32-byte message hash
-	messageHash := sha256.Sum256([]byte("test message for LSS threshold signing"))
-
-	// CRITICAL: Each party needs its OWN pool!
-	// The Pool type is NOT thread-safe for concurrent Search calls.
-	keygenPools := make(map[party.ID]*pool.Pool)
-	for _, id := range pIDs {
-		keygenPools[id] = pool.NewPool(4)
-	}
-	defer func() {
-		for _, p := range keygenPools {
-			p.TearDown()
-		}
-	}()
-
-	// Keygen
-	keygenResults, err := runTestProtocol(t, pIDs, func(id party.ID) protocol.StartFunc {
-		return lss.Keygen(curve.Secp256k1{}, id, pIDs, threshold, keygenPools[id])
-	})
-	require.NoError(err)
-	require.Len(keygenResults, 3)
-
-	// Sign - create fresh per-party pools for signing
-	signPools := make(map[party.ID]*pool.Pool)
-	for _, id := range signers {
-		signPools[id] = pool.NewPool(4)
-	}
-	defer func() {
-		for _, p := range signPools {
-			p.TearDown()
-		}
-	}()
-
-	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
-		config := keygenResults[id].(*lss.Config)
-		return lss.Sign(config, signers, messageHash[:], signPools[id])
-	})
-	if err != nil {
-		t.Logf("Sign error: %v", err)
-	}
-	require.NoError(err)
-	require.Len(signResults, len(signers))
-
-	t.Logf("LSS sign completed: %d signers, %d-of-%d threshold signature", len(signers), threshold, len(pIDs))
+	// Skip: LSS sign protocol has upstream livelock - library's own integration test fails
+	// The keygen works but sign hangs at round 20 waiting for broadcasts
+	t.Skip("skipping LSS sign: upstream livelock bug in threshold library (TestLSSKeygenThenSign also fails)")
 }
 
 // TestCMPSignFullExecution runs a complete CMP keygen + sign
