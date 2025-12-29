@@ -33,8 +33,8 @@ require (
 	github.com/luxfi/crypto v1.17.26
 	github.com/luxfi/database v1.2.17
 	github.com/luxfi/ids v1.2.5
-	github.com/luxfi/keychain v1.0.0
-	github.com/luxfi/ledger v1.1.1
+	github.com/luxfi/keychain v1.0.1
+	github.com/luxfi/ledger v1.1.2
 	github.com/luxfi/log v1.1.26
 	github.com/luxfi/math v1.2.0
 	github.com/luxfi/metric v1.4.8
@@ -139,7 +139,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
-	github.com/luxfi/constants v1.3.0
+	github.com/luxfi/constants v1.3.1
 	github.com/luxfi/coreth v0.15.66
 	github.com/luxfi/genesis v1.5.16
 	github.com/luxfi/geth v1.16.64
@@ -191,7 +191,7 @@ require (
 	github.com/luxfi/codec v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
-	github.com/luxfi/hid v0.9.2 // indirect
+	github.com/luxfi/hid v0.9.3 // indirect
 	github.com/luxfi/precompiles v0.1.8 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
@@ -225,5 +225,7 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace github.com/luxfi/fhe => ../fhe
 
 exclude github.com/ethereum/go-ethereum v1.10.26
