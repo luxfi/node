@@ -1,5 +1,5 @@
-connectrpc.com/connect v1.18.1 h1:PAg7CjSAGvscaf6YZKUefjoih5Z/qYkyaTrBW8xvYPw=
-connectrpc.com/connect v1.18.1/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
+connectrpc.com/connect v1.19.1 h1:R5M57z05+90EfEvCY1b7hBxDVOUl45PrtXtAV2fOC14=
+connectrpc.com/connect v1.19.1/go.mod h1:tN20fjdGlewnSFeZxLKb0xwIZ6ozc3OQs2hTXy4du9w=
 connectrpc.com/grpcreflect v1.3.0 h1:Y4V+ACf8/vOb1XOc251Qun7jMB75gCUNw6llvB9csXc=
 connectrpc.com/grpcreflect v1.3.0/go.mod h1:nfloOtCS8VUQOQ1+GTdFzVg2CJo4ZGaat8JIovCtDYs=
 github.com/ALTree/bigfloat v0.2.0 h1:AwNzawrpFuw55/YDVlcPw0F0cmmXrmngBHhVrvdXPvM=
@@ -12,8 +12,8 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251221085550-b8e13ca38217 h1:RNTau6sw5B3ltE+2GlzEom63eBMzoLUc+dhjmdIwNpI=
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251221085550-b8e13ca38217/go.mod h1:ioLG6R+5bUSO1oeGSDxOV3FADARuMoytZCSX6MEMQkI=
-github.com/StephenButtolph/canoto v0.17.2 h1:kRLJwtYk0bzdGEeEvwHaVmmDm0HFHxrS0VlVN5Hyo7U=
-github.com/StephenButtolph/canoto v0.17.2/go.mod h1:IcnAHC6nJUfQFVR9y60ko2ecUqqHHSB6UwI9NnBFZnE=
+github.com/StephenButtolph/canoto v0.17.3 h1:lvsnYD4b96vD1knnmp1xCmZqfYpY/jSeRozGdOfdvGI=
+github.com/StephenButtolph/canoto v0.17.3/go.mod h1:IcnAHC6nJUfQFVR9y60ko2ecUqqHHSB6UwI9NnBFZnE=
 github.com/VictoriaMetrics/fastcache v1.13.2 h1:2XTB49aLSuCex7e9P5rqrfQcMkzGjh5Vq3GMFa8YpCA=
 github.com/VictoriaMetrics/fastcache v1.13.2/go.mod h1:hHXhl4DA2fTL2HTZDJFXWgW0LNjo6B+4aj2Wmng3TjU=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=

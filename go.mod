@@ -12,10 +12,10 @@ go 1.25.5
 exclude github.com/luxfi/geth v1.16.1
 
 require (
-	connectrpc.com/connect v1.18.1
+	connectrpc.com/connect v1.19.1
 	connectrpc.com/grpcreflect v1.3.0
 	github.com/DataDog/zstd v1.5.7
-	github.com/StephenButtolph/canoto v0.17.2
+	github.com/StephenButtolph/canoto v0.17.3
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
@@ -65,7 +65,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.46.0
-	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
+	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93 // indirect
 	golang.org/x/mod v0.31.0
 	golang.org/x/net v0.48.0
 	golang.org/x/sync v0.19.0
@@ -148,6 +148,7 @@ require (
 	github.com/luxfi/ringtail v0.1.2
 	github.com/luxfi/threshold v1.1.11
 	github.com/luxfi/trace v0.1.4
+	github.com/luxfi/utils v1.1.0
 	github.com/luxfi/vm v1.0.1
 	github.com/luxfi/warp v1.18.2
 	github.com/spaolacci/murmur3 v1.1.0
@@ -194,7 +195,6 @@ require (
 	github.com/luxfi/precompiles v0.1.10 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
-	github.com/luxfi/utils v1.1.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
