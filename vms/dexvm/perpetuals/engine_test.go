@@ -85,8 +85,10 @@ func TestCreateAccountAndDeposit(t *testing.T) {
 	err := engine.Deposit(traderID, depositAmount)
 	require.NoError(err)
 
-	account, err = engine.GetAccount(traderID)
+	var accountIface interface{}
+	accountIface, err = engine.GetAccount(traderID)
 	require.NoError(err)
+	account = accountIface.(*MarginAccount)
 	require.Equal(depositAmount.Int64(), account.Balance.Int64())
 	require.Equal(depositAmount.Int64(), account.AvailableBalance.Int64())
 }
@@ -107,7 +109,8 @@ func TestWithdraw(t *testing.T) {
 	err := engine.Withdraw(traderID, withdrawAmount)
 	require.NoError(err)
 
-	account, _ := engine.GetAccount(traderID)
+	accountIface, _ := engine.GetAccount(traderID)
+	account := accountIface.(*MarginAccount)
 	expected, _ := new(big.Int).SetString("5000000000000000000000", 10)
 	require.Equal(expected.Int64(), account.Balance.Int64())
 
@@ -147,7 +150,8 @@ func TestOpenLongPosition(t *testing.T) {
 	require.Equal("BTC-PERP", position.Market)
 
 	// Check account
-	account, _ := engine.GetAccount(traderID)
+	accountIface, _ := engine.GetAccount(traderID)
+	account := accountIface.(*MarginAccount)
 	require.True(account.LockedMargin.Sign() > 0)
 	require.True(account.AvailableBalance.Cmp(depositAmount) < 0)
 }
@@ -213,7 +217,8 @@ func TestClosePosition(t *testing.T) {
 	require.Equal(ErrPositionNotFound, err)
 
 	// Verify margin is unlocked
-	account, _ := engine.GetAccount(traderID)
+	accountIface, _ := engine.GetAccount(traderID)
+	account := accountIface.(*MarginAccount)
 	require.Equal(int64(0), account.LockedMargin.Int64())
 }
 
@@ -245,8 +250,9 @@ func TestPositionPnLCalculation(t *testing.T) {
 	require.NoError(err)
 
 	// Check P&L
-	position, err := engine.GetPosition(traderID, "BTC-PERP")
+	posIface, err := engine.GetPosition(traderID, "BTC-PERP")
 	require.NoError(err)
+	position := posIface.(*Position)
 
 	// Expected P&L: (55000 - 50000) * 1 = $5000
 	expectedPnL, _ := new(big.Int).SetString("5000000000000000000000", 10)

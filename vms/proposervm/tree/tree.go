@@ -5,8 +5,8 @@ package tree
 
 import (
 	"context"
-
-	"golang.org/x/exp/maps"
+	"maps"
+	"slices"
 
 	"github.com/luxfi/ids"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
@@ -83,7 +83,7 @@ func (t *tree) Accept(ctx context.Context, blk chainblock.Block) error {
 	delete(t.nodes, parentID)
 
 	// mark the siblings of the accepted block as rejectable
-	childrenToReject := maps.Values(children)
+	childrenToReject := slices.Collect(maps.Values(children))
 
 	// reject all the rejectable blocks
 	for len(childrenToReject) > 0 {
@@ -99,7 +99,7 @@ func (t *tree) Accept(ctx context.Context, blk chainblock.Block) error {
 		// mark the progeny of this block as being rejectable
 		childID := child.ID()
 		children := t.nodes[childID]
-		childrenToReject = append(childrenToReject, maps.Values(children)...)
+		childrenToReject = append(childrenToReject, slices.Collect(maps.Values(children))...)
 		delete(t.nodes, childID)
 	}
 	return nil

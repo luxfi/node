@@ -2,14 +2,12 @@
 // See the file LICENSE for licensing terms.
 
 //go:build !linux
-// +build !linux
 
 package subprocess
 
 import (
 	"context"
 	"os/exec"
-
 
 	"github.com/luxfi/log"
 )

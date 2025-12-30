@@ -5,7 +5,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build darwin && arm64
-// +build darwin,arm64
 
 // MLX (Apple Silicon Metal) ZK accelerator implementation
 // Uses luxfi/mlx for GPU acceleration on Apple Silicon
@@ -27,9 +26,9 @@ type MLXAccelerator struct {
 	mu         sync.RWMutex
 
 	// MLX resources
-	nttKernelLoaded   bool
-	hashKernelLoaded  bool
-	msmKernelLoaded   bool
+	nttKernelLoaded  bool
+	hashKernelLoaded bool
+	msmKernelLoaded  bool
 }
 
 // NewMLXAccelerator creates an MLX-accelerated ZK prover

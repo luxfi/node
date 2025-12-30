@@ -5,7 +5,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build cgo && linux
-// +build cgo,linux
 
 // CGO/C++ ZK accelerator implementation for Linux
 // Uses OpenMP for parallel computation and SIMD intrinsics for field arithmetic

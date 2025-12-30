@@ -4909,3 +4909,64 @@ registry.VerifyPermit(handle, grantee)
 ### Dependencies
 - `github.com/luxfi/lattice` v6.x - Lattice-based cryptography
 - Uses `multiparty.Thresholdizer`, `multiparty.Combiner`, `multiparty.ShamirSecretShare`
+
+---
+
+## FHE Contracts Migration to lux/standard - 2025-12-29
+
+### Summary
+Successfully migrated FHE Solidity contracts from `~/work/luxfhe/contracts/` to `~/work/lux/standard/contracts/fhe/` for unified contract library management.
+
+### Status: ✅ COMPLETE
+- 117 FHE contracts compile successfully
+- 709 total tests passing in lux/standard
+- Type naming normalized (InEuint32 → Euint32)
+
+### Contract Structure in lux/standard
+
+```
+contracts/fhe/
+├── FHE.sol             # Core FHE library with encrypted operations
+├── TFHE.sol            # Threshold FHE gateway interface (T-Chain)
+├── IFHE.sol            # Consolidated interface definitions
+├── FheOS.sol           # FHE OS integration
+├── ICofhe.sol          # Coprocessor FHE interface
+├── gateway/            # Gateway contracts for threshold decryption
+│   ├── Gateway.sol
+│   └── GatewayCaller.sol
+├── token/ERC20/        # Confidential ERC20 tokens
+│   ├── ConfidentialERC20.sol
+│   ├── ConfidentialERC20Wrapped.sol
+│   └── ConfidentialWETH.sol
+├── governance/         # FHE governance contracts
+│   ├── ConfidentialGovernorAlpha.sol
+│   └── ConfidentialERC20Votes.sol
+└── test/               # Test contracts for FHE operations
+    ├── PermissionedV2Counter.sol
+    ├── TypedSealedOutputsTest.sol
+    └── ...
+```
+
+### Key Type Changes
+- `InEuint32` → `Euint32`
+- `InEuint64` → `Euint64`
+- `InEbool` → `Ebool`
+- `InEaddress` → `Eaddress`
+
+### Precompile Addresses (from IFHE.sol)
+
+| Precompile | Address |
+|------------|---------|
+| Fheos | `0x0200000000000000000000000000000000000080` |
+| ACL | `0x0200000000000000000000000000000000000081` |
+| InputVerifier | `0x0200000000000000000000000000000000000082` |
+| Gateway | `0x0200000000000000000000000000000000000083` |
+
+### Build Command
+```bash
+cd ~/work/lux/standard
+forge build --contracts contracts/fhe
+```
+
+### Note on Patents
+FHE patent documentation is in the private `~/work/lux/patents/fhe/` directory (not in public repos to preserve novelty).

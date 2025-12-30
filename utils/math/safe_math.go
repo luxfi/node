@@ -5,9 +5,12 @@ package math
 
 import (
 	"errors"
-
-	"golang.org/x/exp/constraints"
 )
+
+// Unsigned is a constraint that permits any unsigned integer type.
+type Unsigned interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
 
 var (
 	ErrOverflow  = errors.New("overflow")
@@ -21,14 +24,14 @@ var (
 )
 
 // MaxUint returns the maximum value of an unsigned integer of type T.
-func MaxUint[T constraints.Unsigned]() T {
+func MaxUint[T Unsigned]() T {
 	return ^T(0)
 }
 
 // Add returns:
 // 1) a + b
 // 2) If there is overflow, an error
-func Add[T constraints.Unsigned](a, b T) (T, error) {
+func Add[T Unsigned](a, b T) (T, error) {
 	if a > MaxUint[T]()-b {
 		return 0, ErrOverflow
 	}
@@ -38,7 +41,7 @@ func Add[T constraints.Unsigned](a, b T) (T, error) {
 // Sub returns:
 // 1) a - b
 // 2) If there is underflow, an error
-func Sub[T constraints.Unsigned](a, b T) (T, error) {
+func Sub[T Unsigned](a, b T) (T, error) {
 	if a < b {
 		return 0, ErrUnderflow
 	}
@@ -48,13 +51,13 @@ func Sub[T constraints.Unsigned](a, b T) (T, error) {
 // Mul returns:
 // 1) a * b
 // 2) If there is overflow, an error
-func Mul[T constraints.Unsigned](a, b T) (T, error) {
+func Mul[T Unsigned](a, b T) (T, error) {
 	if b != 0 && a > MaxUint[T]()/b {
 		return 0, ErrOverflow
 	}
 	return a * b, nil
 }
 
-func AbsDiff[T constraints.Unsigned](a, b T) T {
+func AbsDiff[T Unsigned](a, b T) T {
 	return max(a, b) - min(a, b)
 }

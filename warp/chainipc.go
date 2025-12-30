@@ -6,9 +6,9 @@ package warp
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
-
-	"golang.org/x/exp/maps"
+	"slices"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -114,7 +114,7 @@ func (cipcs *ChainIPCs) Unpublish(chainID ids.ID) (bool, error) {
 
 // GetPublishedBlockchains returns the chains that are currently being published
 func (cipcs *ChainIPCs) GetPublishedBlockchains() []ids.ID {
-	return maps.Keys(cipcs.chains)
+	return slices.Collect(maps.Keys(cipcs.chains))
 }
 
 func (cipcs *ChainIPCs) Shutdown() error {

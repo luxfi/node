@@ -8,9 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
@@ -135,7 +135,7 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*ValidatorData) (CanonicalValidat
 	}
 
 	// Sort validators by public key
-	vdrList := maps.Values(pkToValidator)
+	vdrList := slices.Collect(maps.Values(pkToValidator))
 	utils.Sort(vdrList)
 	return CanonicalValidatorSet{Validators: vdrList, TotalWeight: totalWeight}, nil
 }

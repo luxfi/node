@@ -5,7 +5,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build !cgo || !linux
-// +build !cgo !linux
 
 package accel
 

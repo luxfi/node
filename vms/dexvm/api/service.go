@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/vms/dexvm/liquidity"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 )
@@ -30,6 +31,35 @@ type VM interface {
 	GetOrderbook(symbol string) (*orderbook.Orderbook, error)
 	GetOrCreateOrderbook(symbol string) *orderbook.Orderbook
 	GetLiquidityManager() *liquidity.Manager
+	GetPerpetualsEngine() PerpetualsEngine
+	GetCommitmentStore() CommitmentStore
+	GetADLEngine() ADLEngine
+}
+
+// PerpetualsEngine interface for perpetuals trading.
+type PerpetualsEngine interface {
+	GetMarket(symbol string) (interface{}, error)
+	GetAllMarkets() []interface{}
+	GetAccount(traderID ids.ID) (interface{}, error)
+	GetPosition(traderID ids.ID, market string) (interface{}, error)
+	GetAllPositions(traderID ids.ID) ([]interface{}, error)
+	GetInsuranceFund() *big.Int
+	GetMarginRatio(traderID ids.ID) (*big.Int, error)
+}
+
+// CommitmentStore interface for MEV protection.
+type CommitmentStore interface {
+	GetCommitment(hash ids.ID) (interface{}, bool)
+	GetSenderCommitments(sender ids.ShortID) []interface{}
+	Statistics() interface{}
+}
+
+// ADLEngine interface for auto-deleveraging.
+type ADLEngine interface {
+	GetCandidateCount(symbol string) (longs, shorts int)
+	Statistics() interface{}
+	GetEvents(limit int) []interface{}
+	ShouldTriggerADL(currentFund, targetFund *big.Int) bool
 }
 
 // Service provides the RPC API for the DEX VM.
@@ -592,5 +622,429 @@ func (s *Service) GetStats(_ *http.Request, args *GetStatsArgs, reply *GetStatsR
 	reply.TradeCount = tradeCount
 	reply.LastTradeTime = lastTradeTime
 
+	return nil
+}
+
+// ============================================
+// Perpetuals APIs (dex.*)
+// ============================================
+
+// GetMarketsArgs is the argument for the GetMarkets API.
+type GetMarketsArgs struct{}
+
+// GetMarketsReply is the reply for the GetMarkets API.
+type GetMarketsReply struct {
+	Markets []interface{} `json:"markets"`
+}
+
+// GetMarkets returns all perpetual markets.
+func (s *Service) GetMarkets(_ *http.Request, _ *GetMarketsArgs, reply *GetMarketsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	reply.Markets = engine.GetAllMarkets()
+	return nil
+}
+
+// GetMarketArgs is the argument for the GetMarket API.
+type GetMarketArgs struct {
+	Symbol string `json:"symbol"`
+}
+
+// GetMarketReply is the reply for the GetMarket API.
+type GetMarketReply struct {
+	Market interface{} `json:"market"`
+}
+
+// GetMarket returns a specific perpetual market.
+func (s *Service) GetMarket(_ *http.Request, args *GetMarketArgs, reply *GetMarketReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	if args.Symbol == "" {
+		return fmt.Errorf("%w: symbol required", ErrInvalidRequest)
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	market, err := engine.GetMarket(args.Symbol)
+	if err != nil {
+		return err
+	}
+
+	reply.Market = market
+	return nil
+}
+
+// GetPositionArgs is the argument for the GetPosition API.
+type GetPositionArgs struct {
+	TraderID string `json:"traderId"`
+	Symbol   string `json:"symbol"`
+}
+
+// GetPositionReply is the reply for the GetPosition API.
+type GetPositionReply struct {
+	Position interface{} `json:"position"`
+}
+
+// GetPosition returns a trader's position for a market.
+func (s *Service) GetPosition(_ *http.Request, args *GetPositionArgs, reply *GetPositionReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	traderID, err := ids.FromString(args.TraderID)
+	if err != nil {
+		return fmt.Errorf("%w: invalid trader ID", ErrInvalidRequest)
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	position, err := engine.GetPosition(traderID, args.Symbol)
+	if err != nil {
+		return err
+	}
+
+	reply.Position = position
+	return nil
+}
+
+// GetPositionsArgs is the argument for the GetPositions API.
+type GetPositionsArgs struct {
+	TraderID string `json:"traderId"`
+}
+
+// GetPositionsReply is the reply for the GetPositions API.
+type GetPositionsReply struct {
+	Positions []interface{} `json:"positions"`
+}
+
+// GetPositions returns all positions for a trader.
+func (s *Service) GetPositions(_ *http.Request, args *GetPositionsArgs, reply *GetPositionsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	traderID, err := ids.FromString(args.TraderID)
+	if err != nil {
+		return fmt.Errorf("%w: invalid trader ID", ErrInvalidRequest)
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	positions, err := engine.GetAllPositions(traderID)
+	if err != nil {
+		return err
+	}
+
+	reply.Positions = positions
+	return nil
+}
+
+// GetAccountArgs is the argument for the GetAccount API.
+type GetAccountArgs struct {
+	TraderID string `json:"traderId"`
+}
+
+// GetAccountReply is the reply for the GetAccount API.
+type GetAccountReply struct {
+	Account     interface{} `json:"account"`
+	MarginRatio string      `json:"marginRatio"`
+}
+
+// GetAccount returns a trader's margin account.
+func (s *Service) GetAccount(_ *http.Request, args *GetAccountArgs, reply *GetAccountReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	traderID, err := ids.FromString(args.TraderID)
+	if err != nil {
+		return fmt.Errorf("%w: invalid trader ID", ErrInvalidRequest)
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	account, err := engine.GetAccount(traderID)
+	if err != nil {
+		return err
+	}
+
+	marginRatio, err := engine.GetMarginRatio(traderID)
+	if err != nil {
+		marginRatio = big.NewInt(0)
+	}
+
+	reply.Account = account
+	reply.MarginRatio = marginRatio.String()
+	return nil
+}
+
+// GetFundingRateArgs is the argument for the GetFundingRate API.
+type GetFundingRateArgs struct {
+	Symbol string `json:"symbol"`
+}
+
+// GetFundingRateReply is the reply for the GetFundingRate API.
+type GetFundingRateReply struct {
+	FundingRate     string `json:"fundingRate"`
+	NextFundingTime int64  `json:"nextFundingTime"`
+}
+
+// GetFundingRate returns the funding rate for a perpetual market.
+func (s *Service) GetFundingRate(_ *http.Request, args *GetFundingRateArgs, reply *GetFundingRateReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	market, err := engine.GetMarket(args.Symbol)
+	if err != nil {
+		return err
+	}
+
+	// Market is an interface{}, we'll return it as JSON
+	// The actual struct contains FundingRate and NextFundingTime
+	reply.FundingRate = "0" // Will be populated from market data
+	reply.NextFundingTime = time.Now().Add(8 * time.Hour).Unix()
+
+	// Type assertion to get actual values if possible
+	if m, ok := market.(interface{ GetFundingInfo() (string, int64) }); ok {
+		reply.FundingRate, reply.NextFundingTime = m.GetFundingInfo()
+	}
+
+	return nil
+}
+
+// GetInsuranceFundArgs is the argument for the GetInsuranceFund API.
+type GetInsuranceFundArgs struct{}
+
+// GetInsuranceFundReply is the reply for the GetInsuranceFund API.
+type GetInsuranceFundReply struct {
+	Balance string `json:"balance"`
+}
+
+// GetInsuranceFund returns the insurance fund balance.
+func (s *Service) GetInsuranceFund(_ *http.Request, _ *GetInsuranceFundArgs, reply *GetInsuranceFundReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+	if engine == nil {
+		return errors.New("perpetuals engine not available")
+	}
+
+	balance := engine.GetInsuranceFund()
+	reply.Balance = balance.String()
+	return nil
+}
+
+// ============================================
+// MEV Protection APIs (dex.*)
+// ============================================
+
+// GetCommitmentArgs is the argument for the GetCommitment API.
+type GetCommitmentArgs struct {
+	CommitmentHash string `json:"commitmentHash"`
+}
+
+// GetCommitmentReply is the reply for the GetCommitment API.
+type GetCommitmentReply struct {
+	Commitment interface{} `json:"commitment"`
+	Found      bool        `json:"found"`
+}
+
+// GetCommitment returns a commitment by hash.
+func (s *Service) GetCommitment(_ *http.Request, args *GetCommitmentArgs, reply *GetCommitmentReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	hash, err := ids.FromString(args.CommitmentHash)
+	if err != nil {
+		return fmt.Errorf("%w: invalid commitment hash", ErrInvalidRequest)
+	}
+
+	store := s.vm.GetCommitmentStore()
+	if store == nil {
+		return errors.New("MEV protection not available")
+	}
+
+	commitment, found := store.GetCommitment(hash)
+	reply.Commitment = commitment
+	reply.Found = found
+	return nil
+}
+
+// GetCommitmentsArgs is the argument for the GetCommitments API.
+type GetCommitmentsArgs struct {
+	Sender string `json:"sender"`
+}
+
+// GetCommitmentsReply is the reply for the GetCommitments API.
+type GetCommitmentsReply struct {
+	Commitments []interface{} `json:"commitments"`
+}
+
+// GetCommitments returns all pending commitments for a sender.
+func (s *Service) GetCommitments(_ *http.Request, args *GetCommitmentsArgs, reply *GetCommitmentsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	sender, err := ids.ShortFromString(args.Sender)
+	if err != nil {
+		return fmt.Errorf("%w: invalid sender address", ErrInvalidRequest)
+	}
+
+	store := s.vm.GetCommitmentStore()
+	if store == nil {
+		return errors.New("MEV protection not available")
+	}
+
+	reply.Commitments = store.GetSenderCommitments(sender)
+	return nil
+}
+
+// GetMEVStatsArgs is the argument for the GetMEVStats API.
+type GetMEVStatsArgs struct{}
+
+// GetMEVStatsReply is the reply for the GetMEVStats API.
+type GetMEVStatsReply struct {
+	Stats interface{} `json:"stats"`
+}
+
+// GetMEVStats returns MEV protection statistics.
+func (s *Service) GetMEVStats(_ *http.Request, _ *GetMEVStatsArgs, reply *GetMEVStatsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	store := s.vm.GetCommitmentStore()
+	if store == nil {
+		return errors.New("MEV protection not available")
+	}
+
+	reply.Stats = store.Statistics()
+	return nil
+}
+
+// ============================================
+// Auto-Deleveraging (ADL) APIs (dex.*)
+// ============================================
+
+// GetADLStatusArgs is the argument for the GetADLStatus API.
+type GetADLStatusArgs struct {
+	Symbol string `json:"symbol"`
+}
+
+// GetADLStatusReply is the reply for the GetADLStatus API.
+type GetADLStatusReply struct {
+	LongCandidates  int  `json:"longCandidates"`
+	ShortCandidates int  `json:"shortCandidates"`
+	ShouldTrigger   bool `json:"shouldTrigger"`
+}
+
+// GetADLStatus returns ADL status for a symbol.
+func (s *Service) GetADLStatus(_ *http.Request, args *GetADLStatusArgs, reply *GetADLStatusReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	adl := s.vm.GetADLEngine()
+	if adl == nil {
+		return errors.New("ADL engine not available")
+	}
+
+	engine := s.vm.GetPerpetualsEngine()
+
+	longs, shorts := adl.GetCandidateCount(args.Symbol)
+	reply.LongCandidates = longs
+	reply.ShortCandidates = shorts
+
+	// Check if ADL should trigger based on insurance fund
+	if engine != nil {
+		insuranceFund := engine.GetInsuranceFund()
+		targetFund := big.NewInt(10_000_000_000000) // $10M target
+		reply.ShouldTrigger = adl.ShouldTriggerADL(insuranceFund, targetFund)
+	}
+
+	return nil
+}
+
+// GetADLStatsArgs is the argument for the GetADLStats API.
+type GetADLStatsArgs struct{}
+
+// GetADLStatsReply is the reply for the GetADLStats API.
+type GetADLStatsReply struct {
+	Stats interface{} `json:"stats"`
+}
+
+// GetADLStats returns ADL engine statistics.
+func (s *Service) GetADLStats(_ *http.Request, _ *GetADLStatsArgs, reply *GetADLStatsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	adl := s.vm.GetADLEngine()
+	if adl == nil {
+		return errors.New("ADL engine not available")
+	}
+
+	reply.Stats = adl.Statistics()
+	return nil
+}
+
+// GetADLEventsArgs is the argument for the GetADLEvents API.
+type GetADLEventsArgs struct {
+	Limit int `json:"limit"`
+}
+
+// GetADLEventsReply is the reply for the GetADLEvents API.
+type GetADLEventsReply struct {
+	Events []interface{} `json:"events"`
+}
+
+// GetADLEvents returns recent ADL events.
+func (s *Service) GetADLEvents(_ *http.Request, args *GetADLEventsArgs, reply *GetADLEventsReply) error {
+	if !s.vm.IsBootstrapped() {
+		return ErrNotBootstrapped
+	}
+
+	adl := s.vm.GetADLEngine()
+	if adl == nil {
+		return errors.New("ADL engine not available")
+	}
+
+	limit := args.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+
+	reply.Events = adl.GetEvents(limit)
 	return nil
 }

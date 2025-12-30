@@ -32,6 +32,8 @@ const (
 	TxCreatePool
 	TxCrossChainSwap
 	TxCrossChainTransfer
+	TxCommitOrder  // MEV protection: commit order hash
+	TxRevealOrder  // MEV protection: reveal order details
 )
 
 func (t TxType) String() string {
@@ -52,6 +54,10 @@ func (t TxType) String() string {
 		return "cross_chain_swap"
 	case TxCrossChainTransfer:
 		return "cross_chain_transfer"
+	case TxCommitOrder:
+		return "commit_order"
+	case TxRevealOrder:
+		return "reveal_order"
 	default:
 		return "unknown"
 	}
@@ -406,6 +412,105 @@ func (tx *CrossChainTransferTx) Verify() error {
 	return nil
 }
 
+// CommitOrderTx represents a commit phase for MEV-protected order placement.
+// Users submit hash(order || salt) without revealing order details.
+type CommitOrderTx struct {
+	BaseTx
+	// CommitmentHash is SHA256(order_bytes || salt)
+	CommitmentHash ids.ID `json:"commitmentHash"`
+}
+
+// NewCommitOrderTx creates a new commit order transaction.
+func NewCommitOrderTx(from ids.ShortID, nonce uint64, commitmentHash ids.ID) *CommitOrderTx {
+	return &CommitOrderTx{
+		BaseTx: BaseTx{
+			TxType:    TxCommitOrder,
+			From:      from,
+			Nonce:     nonce,
+			GasPrice:  500,  // Lower gas for commit
+			GasLimit:  30000,
+			CreatedAt: time.Now().UnixNano(),
+		},
+		CommitmentHash: commitmentHash,
+	}
+}
+
+func (tx *CommitOrderTx) Verify() error {
+	if tx.CommitmentHash == ids.Empty {
+		return errors.New("commitment hash cannot be empty")
+	}
+	return nil
+}
+
+// RevealOrderTx represents a reveal phase for MEV-protected order placement.
+// Users reveal the actual order and salt to match their commitment.
+type RevealOrderTx struct {
+	BaseTx
+	// CommitmentHash links to the original commitment
+	CommitmentHash ids.ID `json:"commitmentHash"`
+
+	// Salt is the 32-byte random salt used in commitment
+	Salt [32]byte `json:"salt"`
+
+	// Order details being revealed
+	Symbol      string `json:"symbol"`
+	Side        uint8  `json:"side"`     // 0 = Buy, 1 = Sell
+	OrderType   uint8  `json:"orderType"` // 0 = Limit, 1 = Market, etc.
+	Price       uint64 `json:"price"`
+	Quantity    uint64 `json:"quantity"`
+	StopPrice   uint64 `json:"stopPrice"`
+	PostOnly    bool   `json:"postOnly"`
+	ReduceOnly  bool   `json:"reduceOnly"`
+	TimeInForce string `json:"timeInForce"` // GTC, IOC, FOK
+	ExpiresAt   int64  `json:"expiresAt"`
+}
+
+// NewRevealOrderTx creates a new reveal order transaction.
+func NewRevealOrderTx(
+	from ids.ShortID,
+	nonce uint64,
+	commitmentHash ids.ID,
+	salt [32]byte,
+	symbol string,
+	side uint8,
+	orderType uint8,
+	price, quantity uint64,
+	timeInForce string,
+) *RevealOrderTx {
+	return &RevealOrderTx{
+		BaseTx: BaseTx{
+			TxType:    TxRevealOrder,
+			From:      from,
+			Nonce:     nonce,
+			GasPrice:  1000,
+			GasLimit:  100000,
+			CreatedAt: time.Now().UnixNano(),
+		},
+		CommitmentHash: commitmentHash,
+		Salt:           salt,
+		Symbol:         symbol,
+		Side:           side,
+		OrderType:      orderType,
+		Price:          price,
+		Quantity:       quantity,
+		TimeInForce:    timeInForce,
+	}
+}
+
+func (tx *RevealOrderTx) Verify() error {
+	if tx.CommitmentHash == ids.Empty {
+		return errors.New("commitment hash cannot be empty")
+	}
+	if tx.Quantity == 0 {
+		return ErrInvalidAmount
+	}
+	if tx.OrderType == 0 && tx.Price == 0 { // Limit order needs price
+		return ErrInvalidPrice
+	}
+	// Salt verification is done in commit-reveal matching, not here
+	return nil
+}
+
 // TxParser parses raw transaction bytes.
 type TxParser struct{}
 
@@ -433,6 +538,10 @@ func (p *TxParser) Parse(data []byte) (Tx, error) {
 		return p.parseCrossChainSwap(data)
 	case TxCrossChainTransfer:
 		return p.parseCrossChainTransfer(data)
+	case TxCommitOrder:
+		return p.parseCommitOrder(data)
+	case TxRevealOrder:
+		return p.parseRevealOrder(data)
 	default:
 		return nil, ErrInvalidTxType
 	}
@@ -491,6 +600,20 @@ func (p *TxParser) parseCrossChainSwap(data []byte) (*CrossChainSwapTx, error) {
 func (p *TxParser) parseCrossChainTransfer(data []byte) (*CrossChainTransferTx, error) {
 	tx := &CrossChainTransferTx{}
 	tx.TxType = TxCrossChainTransfer
+	tx.bytes = data
+	return tx, nil
+}
+
+func (p *TxParser) parseCommitOrder(data []byte) (*CommitOrderTx, error) {
+	tx := &CommitOrderTx{}
+	tx.TxType = TxCommitOrder
+	tx.bytes = data
+	return tx, nil
+}
+
+func (p *TxParser) parseRevealOrder(data []byte) (*RevealOrderTx, error) {
+	tx := &RevealOrderTx{}
+	tx.TxType = TxRevealOrder
 	tx.bytes = data
 	return tx, nil
 }

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"sync"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
@@ -1106,7 +1106,7 @@ func findChildDifference(node1, node2 *merkledb.ProofNode, startIndex int) (byte
 		}
 	}
 
-	sortedChildIndices := maps.Keys(childIndices)
+	sortedChildIndices := slices.Collect(maps.Keys(childIndices))
 	slices.Sort(sortedChildIndices)
 	var (
 		child1, child2 ids.ID

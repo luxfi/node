@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/node/vms/dexvm/api"
 	"github.com/luxfi/node/vms/dexvm/config"
 	"github.com/luxfi/node/vms/dexvm/liquidity"
+	"github.com/luxfi/node/vms/dexvm/mev"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 	"github.com/luxfi/node/vms/dexvm/perpetuals"
 	"github.com/luxfi/warp"
@@ -106,9 +107,11 @@ type VM struct {
 	appSender warp.Sender
 
 	// DEX components (all operations on these are deterministic)
-	orderbooks    map[string]*orderbook.Orderbook // symbol -> orderbook
-	liquidityMgr  *liquidity.Manager
-	perpetualsEng *perpetuals.Engine // Perpetual futures engine
+	orderbooks      map[string]*orderbook.Orderbook      // symbol -> orderbook
+	liquidityMgr    *liquidity.Manager                   // AMM liquidity pools
+	perpetualsEng   *perpetuals.Engine                   // Perpetual futures engine
+	commitmentStore *mev.CommitmentStore                 // MEV protection commit-reveal
+	adlEngine       *perpetuals.AutoDeleveragingEngine   // Auto-deleveraging
 
 	// Block state
 	currentBlockHeight uint64
@@ -173,6 +176,8 @@ func (vm *VM) Initialize(
 	vm.orderbooks = make(map[string]*orderbook.Orderbook)
 	vm.liquidityMgr = liquidity.NewManager()
 	vm.perpetualsEng = perpetuals.NewEngine()
+	vm.commitmentStore = mev.NewCommitmentStore()
+	vm.adlEngine = perpetuals.NewAutoDeleveragingEngine(perpetuals.DefaultADLConfig())
 
 	// Initialize block state
 	vm.currentBlockHeight = 0
@@ -365,7 +370,11 @@ func (vm *VM) shouldProcessFunding(blockTime time.Time) bool {
 func (vm *VM) processFunding(blockTime time.Time) []*perpetuals.FundingPayment {
 	var allPayments []*perpetuals.FundingPayment
 
-	for _, market := range vm.perpetualsEng.GetAllMarkets() {
+	for _, m := range vm.perpetualsEng.GetAllMarkets() {
+		market, ok := m.(*perpetuals.Market)
+		if !ok {
+			continue
+		}
 		payments, err := vm.perpetualsEng.ProcessFunding(market.Symbol)
 		if err != nil {
 			if vm.log != nil {
@@ -384,7 +393,11 @@ func (vm *VM) processFunding(blockTime time.Time) []*perpetuals.FundingPayment {
 func (vm *VM) processLiquidations() []*perpetuals.LiquidationEvent {
 	var allLiquidations []*perpetuals.LiquidationEvent
 
-	for _, market := range vm.perpetualsEng.GetAllMarkets() {
+	for _, m := range vm.perpetualsEng.GetAllMarkets() {
+		market, ok := m.(*perpetuals.Market)
+		if !ok {
+			continue
+		}
 		liquidations, err := vm.perpetualsEng.CheckAndLiquidate(market.Symbol)
 		if err != nil {
 			if vm.log != nil {
@@ -542,8 +555,18 @@ func (vm *VM) GetLiquidityManager() *liquidity.Manager {
 }
 
 // GetPerpetualsEngine returns the perpetual futures engine.
-func (vm *VM) GetPerpetualsEngine() *perpetuals.Engine {
+func (vm *VM) GetPerpetualsEngine() api.PerpetualsEngine {
 	return vm.perpetualsEng
+}
+
+// GetCommitmentStore returns the MEV protection commitment store.
+func (vm *VM) GetCommitmentStore() api.CommitmentStore {
+	return vm.commitmentStore
+}
+
+// GetADLEngine returns the auto-deleveraging engine.
+func (vm *VM) GetADLEngine() api.ADLEngine {
+	return vm.adlEngine
 }
 
 // IsBootstrapped returns true if the VM is fully bootstrapped.

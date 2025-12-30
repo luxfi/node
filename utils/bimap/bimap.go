@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-
-	"golang.org/x/exp/maps"
+	"maps"
+	"slices"
 
 	"github.com/luxfi/node/utils"
 )
@@ -114,13 +114,13 @@ func (m *BiMap[K, V]) DeleteValue(val V) (K, bool) {
 
 // Keys returns the keys of the map. The keys will be in an indeterminate order.
 func (m *BiMap[K, _]) Keys() []K {
-	return maps.Keys(m.keyToValue)
+	return slices.Collect(maps.Keys(m.keyToValue))
 }
 
 // Values returns the values of the map. The values will be in an indeterminate
 // order.
 func (m *BiMap[_, V]) Values() []V {
-	return maps.Values(m.keyToValue)
+	return slices.Collect(maps.Values(m.keyToValue))
 }
 
 // Len return the number of entries in this map.

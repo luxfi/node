@@ -2,7 +2,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build go1.23
-// +build go1.23
 
 package debug
 

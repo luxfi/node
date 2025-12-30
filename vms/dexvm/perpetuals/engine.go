@@ -160,8 +160,8 @@ func (e *Engine) CreateMarket(
 	return market, nil
 }
 
-// GetMarket returns a market by symbol
-func (e *Engine) GetMarket(symbol string) (*Market, error) {
+// GetMarket returns a market by symbol. Returns interface{} for API compatibility.
+func (e *Engine) GetMarket(symbol string) (interface{}, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
@@ -172,12 +172,12 @@ func (e *Engine) GetMarket(symbol string) (*Market, error) {
 	return market, nil
 }
 
-// GetAllMarkets returns all markets
-func (e *Engine) GetAllMarkets() []*Market {
+// GetAllMarkets returns all markets as interface{} slice for API compatibility.
+func (e *Engine) GetAllMarkets() []interface{} {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	markets := make([]*Market, 0, len(e.markets))
+	markets := make([]interface{}, 0, len(e.markets))
 	for _, m := range e.markets {
 		markets = append(markets, m)
 	}
@@ -198,8 +198,8 @@ func (e *Engine) CreateAccount(traderID ids.ID) *MarginAccount {
 	return account
 }
 
-// GetAccount returns a trader's margin account
-func (e *Engine) GetAccount(traderID ids.ID) (*MarginAccount, error) {
+// GetAccount returns a trader's margin account. Returns interface{} for API compatibility.
+func (e *Engine) GetAccount(traderID ids.ID) (interface{}, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
@@ -458,8 +458,8 @@ func (e *Engine) closePositionInternal(account *MarginAccount, position *Positio
 	return pnl
 }
 
-// GetPosition returns a position
-func (e *Engine) GetPosition(traderID ids.ID, market string) (*Position, error) {
+// GetPosition returns a position. Returns interface{} for API compatibility.
+func (e *Engine) GetPosition(traderID ids.ID, market string) (interface{}, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
@@ -480,8 +480,8 @@ func (e *Engine) GetPosition(traderID ids.ID, market string) (*Position, error) 
 	return position, nil
 }
 
-// GetAllPositions returns all positions for a trader
-func (e *Engine) GetAllPositions(traderID ids.ID) ([]*Position, error) {
+// GetAllPositions returns all positions for a trader. Returns []interface{} for API compatibility.
+func (e *Engine) GetAllPositions(traderID ids.ID) ([]interface{}, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
@@ -490,7 +490,7 @@ func (e *Engine) GetAllPositions(traderID ids.ID) ([]*Position, error) {
 		return nil, errors.New("account not found")
 	}
 
-	positions := make([]*Position, 0, len(account.Positions))
+	positions := make([]interface{}, 0, len(account.Positions))
 	for market, pos := range account.Positions {
 		mkt := e.markets[market]
 		pos.UnrealizedPnL = e.calculatePnL(pos, mkt.MarkPrice)

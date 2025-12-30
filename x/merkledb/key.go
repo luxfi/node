@@ -7,11 +7,10 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"unsafe"
-
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -31,7 +30,7 @@ var (
 		8: BranchFactor256,
 	}
 
-	validTokenSizes = maps.Keys(tokenSizeToBranchFactor)
+	validTokenSizes = slices.Collect(maps.Keys(tokenSizeToBranchFactor))
 
 	validBranchFactors = []BranchFactor{
 		BranchFactor2,

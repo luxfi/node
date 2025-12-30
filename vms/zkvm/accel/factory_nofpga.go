@@ -5,7 +5,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build !fpga
-// +build !fpga
 
 package accel
 

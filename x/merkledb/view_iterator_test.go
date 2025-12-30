@@ -8,13 +8,13 @@ package merkledb
 import (
 	"bytes"
 	"context"
+	"maps"
 	"math/rand"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/maybe"
@@ -259,7 +259,7 @@ func Test_View_Iterator_Random(t *testing.T) {
 	}
 
 	iter := view3.NewIterator()
-	uniqueKeys := maps.Keys(uniqueKeyChanges)
+	uniqueKeys := slices.Collect(maps.Keys(uniqueKeyChanges))
 	slices.Sort(uniqueKeys)
 	i := 0
 	for iter.Next() {

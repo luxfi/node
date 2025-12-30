@@ -16,10 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"maps"
+	"slices"
+
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/consensus/protocol/chain"
 	validators "github.com/luxfi/consensus/validator"
@@ -1583,10 +1585,10 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			var nodeIDs []ids.NodeID
 			if len(stakersByTxID) > 0 {
 				// pick the first staker
-				nodeIDs = append(nodeIDs, maps.Values(stakersByTxID)[0].NodeID)
+				nodeIDs = append(nodeIDs, slices.Collect(maps.Values(stakersByTxID))[0].NodeID)
 			}
 			if len(l1ValidatorsByVID) > 0 {
-				nodeIDs = append(nodeIDs, maps.Values(l1ValidatorsByVID)[0].NodeID)
+				nodeIDs = append(nodeIDs, slices.Collect(maps.Values(l1ValidatorsByVID))[0].NodeID)
 			}
 
 			args.NodeIDs = nodeIDs

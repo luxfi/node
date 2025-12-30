@@ -7,9 +7,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/buffer"
@@ -391,7 +390,7 @@ func (th *trieHistory) getChangesToGetToRoot(rootID ids.ID, start maybe.Maybe[[]
 		}
 	}
 
-	sortedKeys := maps.Keys(keyChanges)
+	sortedKeys := slices.Collect(maps.Keys(keyChanges))
 	slices.SortFunc(sortedKeys, func(a, b Key) int {
 		return a.Compare(b)
 	})

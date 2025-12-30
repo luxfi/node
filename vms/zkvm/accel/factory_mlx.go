@@ -5,7 +5,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build darwin && arm64
-// +build darwin,arm64
 
 package accel
 

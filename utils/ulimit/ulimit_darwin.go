@@ -2,14 +2,12 @@
 // See the file LICENSE for licensing terms.
 
 //go:build darwin
-// +build darwin
 
 package ulimit
 
 import (
 	"fmt"
 	"syscall"
-
 
 	"github.com/luxfi/log"
 )

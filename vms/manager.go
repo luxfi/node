@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"sync"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/interfaces"
@@ -126,7 +126,7 @@ func (m *manager) ListFactories() ([]ids.ID, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return maps.Keys(m.factories), nil
+	return slices.Collect(maps.Keys(m.factories)), nil
 }
 
 func (m *manager) Versions() (map[string]string, error) {

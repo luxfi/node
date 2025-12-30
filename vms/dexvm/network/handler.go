@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/luxfi/ids"
@@ -149,11 +150,11 @@ type Handler struct {
 	syncHandler    func(*Message) error
 	warpHandler    func(*Message) error
 	
-	// Statistics
-	messagesSent     uint64
-	messagesReceived uint64
-	bytesIn          uint64
-	bytesOut         uint64
+	// Statistics (atomic for thread-safe access)
+	messagesSent     atomic.Uint64
+	messagesReceived atomic.Uint64
+	bytesIn          atomic.Uint64
+	bytesOut         atomic.Uint64
 }
 
 // NewHandler creates a new network handler.
@@ -167,21 +168,29 @@ func NewHandler(log log.Logger, chainID ids.ID) *Handler {
 
 // SetOrderHandler sets the handler for order gossip messages.
 func (h *Handler) SetOrderHandler(handler func(*Message) error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.orderHandler = handler
 }
 
 // SetTradeHandler sets the handler for trade gossip messages.
 func (h *Handler) SetTradeHandler(handler func(*Message) error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.tradeHandler = handler
 }
 
 // SetSyncHandler sets the handler for sync messages.
 func (h *Handler) SetSyncHandler(handler func(*Message) error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.syncHandler = handler
 }
 
 // SetWarpHandler sets the handler for Warp messages.
 func (h *Handler) SetWarpHandler(handler func(*Message) error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.warpHandler = handler
 }
 
@@ -192,27 +201,32 @@ func (h *Handler) HandleGossip(ctx context.Context, nodeID ids.NodeID, msgBytes 
 		h.log.Warn("Failed to decode gossip message", "error", err)
 		return err
 	}
-	
+
 	msg.Sender = nodeID
-	
-	h.mu.Lock()
-	h.messagesReceived++
-	h.bytesIn += uint64(len(msgBytes))
-	h.mu.Unlock()
-	
+
+	// Use atomic counters - no lock needed for statistics
+	h.messagesReceived.Add(1)
+	h.bytesIn.Add(uint64(len(msgBytes)))
+
+	// Copy handler reference under lock to avoid race with SetXxxHandler
+	h.mu.RLock()
+	orderHandler := h.orderHandler
+	tradeHandler := h.tradeHandler
+	h.mu.RUnlock()
+
 	switch msg.Type {
 	case MsgOrderGossip:
-		if h.orderHandler != nil {
-			return h.orderHandler(msg)
+		if orderHandler != nil {
+			return orderHandler(msg)
 		}
 	case MsgTradeGossip:
-		if h.tradeHandler != nil {
-			return h.tradeHandler(msg)
+		if tradeHandler != nil {
+			return tradeHandler(msg)
 		}
 	default:
 		return ErrUnknownMessageType
 	}
-	
+
 	return nil
 }
 
@@ -231,18 +245,22 @@ func (h *Handler) HandleRequest(
 	
 	msg.Sender = nodeID
 	msg.RequestID = requestID
-	
-	h.mu.Lock()
-	h.messagesReceived++
-	h.bytesIn += uint64(len(msgBytes))
-	h.mu.Unlock()
-	
+
+	// Use atomic counters - no lock needed for statistics
+	h.messagesReceived.Add(1)
+	h.bytesIn.Add(uint64(len(msgBytes)))
+
+	// Copy handler reference under lock to avoid race with SetXxxHandler
+	h.mu.RLock()
+	syncHandler := h.syncHandler
+	h.mu.RUnlock()
+
 	var response *Message
-	
+
 	switch msg.Type {
 	case MsgOrderbookSync:
-		if h.syncHandler != nil {
-			if err := h.syncHandler(msg); err != nil {
+		if syncHandler != nil {
+			if err := syncHandler(msg); err != nil {
 				return nil, err
 			}
 		}
@@ -253,8 +271,8 @@ func (h *Handler) HandleRequest(
 			Timestamp: time.Now().UnixNano(),
 		}
 	case MsgPoolSync:
-		if h.syncHandler != nil {
-			if err := h.syncHandler(msg); err != nil {
+		if syncHandler != nil {
+			if err := syncHandler(msg); err != nil {
 				return nil, err
 			}
 		}
@@ -267,7 +285,7 @@ func (h *Handler) HandleRequest(
 	default:
 		return nil, ErrUnknownMessageType
 	}
-	
+
 	return response.Encode(), nil
 }
 
@@ -320,23 +338,28 @@ func (h *Handler) HandleCrossChainRequest(
 		"type", msg.Type,
 		"requestID", requestID,
 	)
-	
+
+	// Copy handler reference under lock to avoid race with SetXxxHandler
+	h.mu.RLock()
+	warpHandler := h.warpHandler
+	h.mu.RUnlock()
+
 	switch msg.Type {
 	case MsgCrossChainSwap:
-		if h.warpHandler != nil {
-			if err := h.warpHandler(msg); err != nil {
+		if warpHandler != nil {
+			if err := warpHandler(msg); err != nil {
 				return nil, err
 			}
 		}
 	case MsgCrossChainTransfer:
-		if h.warpHandler != nil {
-			if err := h.warpHandler(msg); err != nil {
+		if warpHandler != nil {
+			if err := warpHandler(msg); err != nil {
 				return nil, err
 			}
 		}
 	case MsgWarpMessage:
-		if h.warpHandler != nil {
-			if err := h.warpHandler(msg); err != nil {
+		if warpHandler != nil {
+			if err := warpHandler(msg); err != nil {
 				return nil, err
 			}
 		}
@@ -415,12 +438,11 @@ func (h *Handler) SendRequest(
 	msg.Timestamp = time.Now().UnixNano()
 	
 	msgBytes := msg.Encode()
-	
-	h.mu.Lock()
-	h.messagesSent++
-	h.bytesOut += uint64(len(msgBytes))
-	h.mu.Unlock()
-	
+
+	// Use atomic counters - no lock needed for statistics
+	h.messagesSent.Add(1)
+	h.bytesOut.Add(uint64(len(msgBytes)))
+
 	if err := sendFunc(nodeID, requestID, msgBytes); err != nil {
 		return nil, err
 	}
@@ -442,20 +464,18 @@ func (h *Handler) Gossip(msg *Message, gossipFunc func([]byte) error) error {
 	msg.Timestamp = time.Now().UnixNano()
 	
 	msgBytes := msg.Encode()
-	
-	h.mu.Lock()
-	h.messagesSent++
-	h.bytesOut += uint64(len(msgBytes))
-	h.mu.Unlock()
-	
+
+	// Use atomic counters - no lock needed for statistics
+	h.messagesSent.Add(1)
+	h.bytesOut.Add(uint64(len(msgBytes)))
+
 	return gossipFunc(msgBytes)
 }
 
 // Stats returns network statistics.
 func (h *Handler) Stats() (sent, received, bytesIn, bytesOut uint64) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.messagesSent, h.messagesReceived, h.bytesIn, h.bytesOut
+	// Use atomic Load - no lock needed for statistics
+	return h.messagesSent.Load(), h.messagesReceived.Load(), h.bytesIn.Load(), h.bytesOut.Load()
 }
 
 // WarpManager manages cross-chain Warp messaging.

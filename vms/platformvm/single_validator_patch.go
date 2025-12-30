@@ -2,7 +2,6 @@
 // See the file LICENSE for licensing terms.
 
 //go:build singlevalidator
-// +build singlevalidator
 
 package platformvm
 

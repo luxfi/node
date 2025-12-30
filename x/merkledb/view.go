@@ -7,11 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -185,7 +185,7 @@ func newView(
 		}
 	}
 
-	sortedKeys := maps.Keys(keyChanges)
+	sortedKeys := slices.Collect(maps.Keys(keyChanges))
 	slices.SortFunc(sortedKeys, func(a, b Key) int {
 		return a.Compare(b)
 	})

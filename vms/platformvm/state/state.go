@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -2537,7 +2537,7 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 	// This is important when multiple inactive validators share the same
 	// effectiveNodeID (ids.EmptyNodeID), as the first one processed sets
 	// the TxID in the validators manager.
-	sortedValidationIDs := maps.Keys(s.l1ValidatorsDiff.modified)
+	sortedValidationIDs := slices.Collect(maps.Keys(s.l1ValidatorsDiff.modified))
 	slices.SortFunc(sortedValidationIDs, func(a, b ids.ID) int {
 		return a.Compare(b)
 	})
@@ -2849,7 +2849,7 @@ func (s *state) writeCurrentStakers(codecVersion uint16) error {
 			}
 		}
 	}
-	maps.Clear(s.currentStakers.validatorDiffs)
+	clear(s.currentStakers.validatorDiffs)
 	return nil
 }
 

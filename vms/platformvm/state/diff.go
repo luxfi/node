@@ -6,11 +6,10 @@ package state
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -625,7 +624,7 @@ func (d *diff) Apply(baseState Chain) error {
 	// This is important when multiple inactive validators share the same
 	// effectiveNodeID (ids.EmptyNodeID), as the first one processed sets
 	// the TxID in the validators manager.
-	sortedValidationIDs := maps.Keys(d.l1ValidatorsDiff.modified)
+	sortedValidationIDs := slices.Collect(maps.Keys(d.l1ValidatorsDiff.modified))
 	slices.SortFunc(sortedValidationIDs, func(a, b ids.ID) int {
 		return a.Compare(b)
 	})
