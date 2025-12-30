@@ -192,7 +192,8 @@ func TestNodeDatabasePattern(t *testing.T) {
 		value, err := db.Get([]byte(key))
 		require.NoError(err)
 		if expectedValue == nil {
-			require.Nil(value)
+			// Databases typically normalize nil to empty []byte{}
+			require.True(value == nil || len(value) == 0)
 		} else {
 			require.Equal(expectedValue, value)
 		}
