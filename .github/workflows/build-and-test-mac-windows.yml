@@ -15,6 +15,7 @@ jobs:
     env:
       GOPRIVATE: github.com/luxfi/*
       GONOSUMDB: github.com/luxfi/*
+      CGO_ENABLED: 0  # Disable CGO for CI builds (uses pure Go fallbacks)
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
