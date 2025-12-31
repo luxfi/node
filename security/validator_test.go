@@ -4,6 +4,7 @@
 package security
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -24,22 +25,42 @@ func TestInputValidator(t *testing.T) {
 	})
 
 	t.Run("ValidateFilePath", func(t *testing.T) {
-		v.AllowedPathPrefixes = []string{"/tmp", "/var/tmp"}
+		// Use platform-specific paths
+		if runtime.GOOS == "windows" {
+			v.AllowedPathPrefixes = []string{"C:\\tmp", "C:\\var\\tmp"}
 
-		// Valid paths
-		require.NoError(t, v.ValidateFilePath("/tmp/test.txt"))
-		require.NoError(t, v.ValidateFilePath("/var/tmp/data.log"))
+			// Valid paths
+			require.NoError(t, v.ValidateFilePath("C:\\tmp\\test.txt"))
+			require.NoError(t, v.ValidateFilePath("C:\\var\\tmp\\data.log"))
 
-		// Path traversal attempts
-		require.Error(t, v.ValidateFilePath("/tmp/../etc/passwd"))
-		require.Error(t, v.ValidateFilePath("../../etc/passwd"))
+			// Path traversal attempts
+			require.Error(t, v.ValidateFilePath("C:\\tmp\\..\\etc\\passwd"))
+			require.Error(t, v.ValidateFilePath("..\\..\\etc\\passwd"))
 
-		// Not absolute
-		require.Error(t, v.ValidateFilePath("relative/path.txt"))
+			// Not absolute
+			require.Error(t, v.ValidateFilePath("relative\\path.txt"))
 
-		// Outside allowed prefixes
-		require.Error(t, v.ValidateFilePath("/etc/passwd"))
-		require.Error(t, v.ValidateFilePath("/home/user/file.txt"))
+			// Outside allowed prefixes
+			require.Error(t, v.ValidateFilePath("C:\\etc\\passwd"))
+			require.Error(t, v.ValidateFilePath("C:\\Users\\user\\file.txt"))
+		} else {
+			v.AllowedPathPrefixes = []string{"/tmp", "/var/tmp"}
+
+			// Valid paths
+			require.NoError(t, v.ValidateFilePath("/tmp/test.txt"))
+			require.NoError(t, v.ValidateFilePath("/var/tmp/data.log"))
+
+			// Path traversal attempts
+			require.Error(t, v.ValidateFilePath("/tmp/../etc/passwd"))
+			require.Error(t, v.ValidateFilePath("../../etc/passwd"))
+
+			// Not absolute
+			require.Error(t, v.ValidateFilePath("relative/path.txt"))
+
+			// Outside allowed prefixes
+			require.Error(t, v.ValidateFilePath("/etc/passwd"))
+			require.Error(t, v.ValidateFilePath("/home/user/file.txt"))
+		}
 	})
 
 	t.Run("ValidateIPAddress", func(t *testing.T) {
