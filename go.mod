@@ -14,7 +14,7 @@ exclude github.com/luxfi/geth v1.16.1
 require (
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/grpcreflect v1.3.0
-	github.com/DataDog/zstd v1.5.7
+	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/StephenButtolph/canoto v0.17.3
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/cockroachdb/pebble v1.1.5 // indirect
@@ -164,7 +164,6 @@ require (
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
-	github.com/crate-crypto/go-kzg-4844 v1.1.0 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/dgraph-io/badger/v4 v4.9.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.3.0 // indirect
@@ -189,10 +188,11 @@ require (
 	github.com/luxfi/address v1.0.0 // indirect
 	github.com/luxfi/cache v1.1.0 // indirect
 	github.com/luxfi/codec v1.1.0 // indirect
+	github.com/luxfi/constants v1.3.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/fhe v1.4.1 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
-	github.com/luxfi/precompile v0.2.0 // indirect
+	github.com/luxfi/precompiles v0.1.10 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
@@ -223,11 +223,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace github.com/luxfi/coreth => /Users/z/work/lux/coreth
-
-replace github.com/luxfi/geth => /Users/z/work/lux/geth
-
-replace github.com/luxfi/precompile => /Users/z/work/lux/precompile
 
 exclude github.com/ethereum/go-ethereum v1.10.26
