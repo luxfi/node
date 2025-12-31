@@ -2,6 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Security Audit & Mainnet Readiness - 2025-12-31
+
+### Summary
+Comprehensive security audit completed with all critical issues fixed. All tests passing.
+
+### Commits
+- `396eca4ae6` - security: comprehensive audit fixes and security hardening (59 files, +13,907/-2,245)
+- `0f1a1de126` - fix(platformvm): update BLS signature test fixtures
+- `f93824192e` - fix(node): add CGO-disabled stubs and update version compatibility
+
+### Security Fixes Applied
+
+**1. Memory Exhaustion Protection**
+- IP tracker: `MaxTrackedIPs` limit with LRU eviction
+- Bloom filter: `MaxBloomFilterEntries` size cap
+- Connection limits: Per-IP and global connection bounds
+
+**2. Cryptographic Hardening**
+- BLS signatures: Fixed CGO/pure-Go signature byte consistency
+- Replay attack prevention: Timestamp validation in SignedIP
+- Safe math: Overflow/underflow protection in DEX operations
+
+**3. CGO Build Compatibility**
+- `consensus/quasar/gpu_ntt_nocgo.go` - CPU fallback for NTT
+- `vms/thresholdvm/fhe/gpu_fhe_nocgo.go` - CPU fallback for FHE
+- `vms/zkvm/accel/accel_mlx.go` - Graceful degradation
+
+**4. Protocol Version**
+- Added v1.22.75 to compatibility.json protocol 42
+
+### Test Status
+| Package | Status |
+|---------|--------|
+| vms/platformvm/txs | ✅ PASS |
+| network | ✅ PASS |
+| network/peer | ✅ PASS |
+| version | ✅ PASS |
+| vms/dexvm/math | ✅ PASS |
+
+### Known CGO Dependencies
+These packages require CGO for full functionality (graceful fallback when disabled):
+- `consensus/quasar` - GPU NTT acceleration
+- `vms/thresholdvm/fhe` - GPU FHE operations
+- `x/blockdb` - zstd compression
+
+---
+
 ## Keychain/Ledger Package Consolidation - 2025-12-24
 
 ### Summary

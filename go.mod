@@ -29,8 +29,8 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.46
-	github.com/luxfi/crypto v1.17.29
+	github.com/luxfi/consensus v1.22.47
+	github.com/luxfi/crypto v1.17.31
 	github.com/luxfi/database v1.2.17
 	github.com/luxfi/ids v1.2.5
 	github.com/luxfi/keychain v1.0.1
@@ -224,12 +224,5 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
-replace (
-	github.com/luxfi/consensus => ../consensus
-	github.com/luxfi/crypto => ../crypto
-	github.com/luxfi/lattice/v7 => ../lattice
-	github.com/luxfi/precompile => ../precompile
-)
 
 exclude github.com/ethereum/go-ethereum v1.10.26

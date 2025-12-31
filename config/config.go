@@ -1461,6 +1461,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		if !v.IsSet(StakingEphemeralSignerEnabledKey) && !v.IsSet(StakingSignerKeyContentKey) && !v.IsSet(StakingSignerKeyPathKey) {
 			v.Set(StakingEphemeralSignerEnabledKey, true)
 		}
+		// Use port 8545 for dev mode (standard Ethereum RPC port, like Anvil/Hardhat)
+		// This avoids conflicts with mainnet (9630), testnet (9640), devnet (9650) ports
+		if !v.IsSet(HTTPPortKey) {
+			v.Set(HTTPPortKey, 8545)
+		}
 	}
 
 	nodeConfig.PluginDir, err = getPluginDir(v)
