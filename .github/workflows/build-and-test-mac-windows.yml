@@ -5,6 +5,7 @@ on:
     tags:
       - "*" # Push events to every tag
     branches:
+      - main
       - dev
       - master
 
