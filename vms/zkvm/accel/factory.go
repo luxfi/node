@@ -1,135 +1,109 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Factory for ZK accelerator backends
-// Build tags control which implementations are available:
-//   - Default: Pure Go (always available)
-//   - darwin,arm64: MLX (Apple Silicon Metal)
-//   - cgo,linux: CGO/C++ with OpenMP
-//   - fpga: FPGA acceleration (AMD Versal, AWS F2, Intel Stratix)
-
+// Package accel provides hardware acceleration for ZK operations.
+//
+// Backend selection uses a priority-based registry:
+//   - Pure Go (priority 0): Always available, no dependencies
+//   - MLX (priority 100): CGO path - Metal/CUDA/CPU fallback via luxcpp
+//   - FPGA (priority 200): Optional, requires fpga build tag
+//
+// With CGO_ENABLED=0: Pure Go backend
+// With CGO_ENABLED=1: MLX backend (highest priority, handles GPU/CPU internally)
 package accel
 
 import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
+	"sort"
 	"strings"
+	"sync"
 )
 
 var (
-	ErrUnsupportedBackend = errors.New("unsupported acceleration backend")
-	ErrBackendNotCompiled = errors.New("backend not compiled into binary")
+	ErrNoBackend = errors.New("no accelerator backend registered")
 )
 
-// NewAccelerator creates the appropriate ZK accelerator based on configuration
-// Priority (if Backend is Auto):
-//   1. FPGA (if compiled with -tags fpga and hardware available)
-//   2. MLX (if on Apple Silicon)
-//   3. CGO (if compiled with CGO_ENABLED=1 on Linux)
-//   4. Go (always available)
+// backendCtor holds a backend constructor with its priority
+type backendCtor struct {
+	name     string
+	priority int
+	new      func(Config) (Accelerator, error)
+}
+
+var (
+	ctors   []backendCtor
+	ctorsMu sync.RWMutex
+)
+
+// Register adds a backend constructor with the given priority.
+// Higher priority backends are preferred. Called from init() in backend files.
+func Register(name string, priority int, ctor func(Config) (Accelerator, error)) {
+	ctorsMu.Lock()
+	defer ctorsMu.Unlock()
+	ctors = append(ctors, backendCtor{name: name, priority: priority, new: ctor})
+}
+
+// NewAccelerator creates the best available accelerator.
+// Uses LUX_ZK_BACKEND env var to force a specific backend, otherwise picks highest priority.
 func NewAccelerator(config Config) (Accelerator, error) {
-	if config.Backend == BackendAuto {
-		config.Backend = detectBestBackend()
+	ctorsMu.RLock()
+	defer ctorsMu.RUnlock()
+
+	if len(ctors) == 0 {
+		return nil, ErrNoBackend
 	}
 
-	// Allow environment override
+	// Sort by priority descending
+	sorted := make([]backendCtor, len(ctors))
+	copy(sorted, ctors)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].priority > sorted[j].priority
+	})
+
+	// Check for environment override
 	if envBackend := os.Getenv("LUX_ZK_BACKEND"); envBackend != "" {
-		switch strings.ToLower(envBackend) {
-		case "go":
-			config.Backend = BackendGo
-		case "mlx":
-			config.Backend = BackendMLX
-		case "cgo":
-			config.Backend = BackendCGO
-		case "fpga":
-			config.Backend = BackendFPGA
-		case "cuda":
-			config.Backend = BackendCUDA
+		envBackend = strings.ToLower(envBackend)
+		for _, c := range sorted {
+			if strings.ToLower(c.name) == envBackend {
+				return c.new(config)
+			}
 		}
+		return nil, fmt.Errorf("requested backend %q not available", envBackend)
 	}
 
-	switch config.Backend {
-	case BackendGo:
-		return NewGoAccelerator(config)
-
-	case BackendMLX:
-		return newMLXAccelerator(config)
-
-	case BackendCGO:
-		return newCGOAccelerator(config)
-
-	case BackendFPGA:
-		return newFPGAAccelerator(config)
-
-	case BackendCUDA:
-		// CUDA backend - future implementation
-		return nil, fmt.Errorf("%w: CUDA (coming soon)", ErrBackendNotCompiled)
-
-	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedBackend, config.Backend)
-	}
+	// Use highest priority backend
+	return sorted[0].new(config)
 }
 
-// detectBestBackend automatically selects the best available backend
-func detectBestBackend() Backend {
-	// Check for FPGA first (highest priority if available)
-	if isFPGAAvailable() {
-		return BackendFPGA
-	}
+// GetAvailableBackends returns names of all registered backends, sorted by priority
+func GetAvailableBackends() []string {
+	ctorsMu.RLock()
+	defer ctorsMu.RUnlock()
 
-	// Check for Apple Silicon (MLX)
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
-		if isMLXAvailable() {
-			return BackendMLX
-		}
-	}
+	sorted := make([]backendCtor, len(ctors))
+	copy(sorted, ctors)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].priority > sorted[j].priority
+	})
 
-	// Check for CGO on Linux
-	if runtime.GOOS == "linux" && isCGOAvailable() {
-		return BackendCGO
+	names := make([]string, len(sorted))
+	for i, c := range sorted {
+		names[i] = c.name
 	}
-
-	// Default to pure Go
-	return BackendGo
+	return names
 }
 
-// GetAvailableBackends returns all backends compiled into the binary
-func GetAvailableBackends() []Backend {
-	backends := []Backend{BackendGo} // Go is always available
-
-	if isMLXAvailable() {
-		backends = append(backends, BackendMLX)
-	}
-
-	if isCGOAvailable() {
-		backends = append(backends, BackendCGO)
-	}
-
-	if isFPGAAvailable() {
-		backends = append(backends, BackendFPGA)
-	}
-
-	return backends
-}
-
-// BackendInfo returns information about a backend
-func BackendInfo(backend Backend) string {
-	switch backend {
-	case BackendGo:
-		return "Pure Go implementation - portable, no dependencies"
-	case BackendMLX:
-		return "Apple Silicon Metal via MLX - GPU accelerated NTT/MSM"
-	case BackendCGO:
-		return "C++ with OpenMP - parallel CPU acceleration on Linux"
-	case BackendCUDA:
-		return "NVIDIA CUDA - GPU accelerated (coming soon)"
-	case BackendFPGA:
-		return "FPGA acceleration - AMD Versal, AWS F2, Intel Stratix"
+// BackendInfo returns description of a backend
+func BackendInfo(name string) string {
+	switch strings.ToLower(name) {
+	case "pure", "go":
+		return "Pure Go - portable, no dependencies"
+	case "mlx":
+		return "MLX - GPU acceleration via Metal/CUDA with CPU fallback"
+	case "fpga":
+		return "FPGA - hardware acceleration (AMD Versal, AWS F2, Intel Stratix)"
 	default:
 		return "Unknown backend"
 	}

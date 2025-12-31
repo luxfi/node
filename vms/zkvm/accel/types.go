@@ -1,11 +1,14 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Package accel provides cross-platform hardware acceleration for Z-Chain ZK operations.
-// Supports pure Go (default), MLX (Apple Silicon), CGO/C++ (Linux), and CUDA (future).
+// Package accel provides hardware acceleration for ZK operations.
+//
+// Two backends:
+//   - Pure Go: Always available, portable
+//   - MLX: CGO path with Metal/CUDA/CPU fallback via luxcpp
+//
+// With CGO_ENABLED=0: Pure Go
+// With CGO_ENABLED=1: MLX (auto-selects Metal, CUDA, or optimized CPU)
 package accel
 
 import (
@@ -17,12 +20,9 @@ import (
 type Backend string
 
 const (
-	BackendGo    Backend = "Go"     // Pure Go implementation
-	BackendMLX   Backend = "MLX"    // Apple Silicon Metal via MLX
-	BackendCGO   Backend = "CGO"    // C++ via CGO (Linux/CUDA)
-	BackendCUDA  Backend = "CUDA"   // Direct CUDA (future)
-	BackendFPGA  Backend = "FPGA"   // FPGA acceleration (future)
-	BackendAuto  Backend = "Auto"   // Auto-detect best backend
+	BackendGo   Backend = "pure" // Pure Go implementation
+	BackendMLX  Backend = "mlx"  // MLX: Metal/CUDA/CPU via luxcpp
+	BackendFPGA Backend = "fpga" // FPGA acceleration (optional build tag)
 )
 
 var (
@@ -48,7 +48,6 @@ type Config struct {
 // DefaultConfig returns default accelerator configuration
 func DefaultConfig() Config {
 	return Config{
-		Backend:       BackendAuto,
 		MaxBatchSize:  1024,
 		NumThreads:    0, // 0 = auto-detect
 		EnableFHE:     false,

@@ -1,13 +1,13 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
+//go:build cgo && (darwin || linux)
 
-//go:build darwin && arm64
-
-// MLX (Apple Silicon Metal) ZK accelerator implementation
-// Uses luxfi/mlx for GPU acceleration on Apple Silicon
+// MLX ZK accelerator implementation using luxcpp C++ libraries.
+// MLX handles backend selection automatically:
+//   - Metal on macOS/Apple Silicon
+//   - CUDA on Linux with NVIDIA GPU
+//   - Optimized CPU fallback otherwise
 
 package accel
 
@@ -39,9 +39,18 @@ func NewMLXAccelerator(config Config) (*MLXAccelerator, error) {
 		return nil, err
 	}
 
+	// Detect device based on platform
+	device := "CPU (optimized)"
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		device = "Apple Silicon (Metal)"
+	} else if runtime.GOOS == "linux" {
+		// MLX will detect CUDA if available, otherwise CPU
+		device = "GPU/CPU (auto-detected)"
+	}
+
 	acc := &MLXAccelerator{
 		config:     config,
-		device:     "Apple Silicon (Metal)",
+		device:     device,
 		goFallback: goAcc,
 	}
 
@@ -80,7 +89,8 @@ func (a *MLXAccelerator) Device() string {
 }
 
 func (a *MLXAccelerator) IsGPUAvailable() bool {
-	return runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
+	// MLX handles GPU detection internally (Metal on macOS, CUDA on Linux)
+	return true
 }
 
 func (a *MLXAccelerator) Capabilities() Capabilities {

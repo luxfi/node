@@ -6,9 +6,10 @@ package accel
 import "testing"
 
 func TestNewAccelerator(t *testing.T) {
-	config := DefaultConfig()
-	config.Backend = BackendGo // Force Go backend for testing
+	// Force pure backend via env var for testing
+	t.Setenv("LUX_ZK_BACKEND", "pure")
 
+	config := DefaultConfig()
 	acc, err := NewAccelerator(config)
 	if err != nil {
 		t.Fatalf("NewAccelerator failed: %v", err)
@@ -16,7 +17,7 @@ func TestNewAccelerator(t *testing.T) {
 	defer acc.Close()
 
 	if acc.Backend() != BackendGo {
-		t.Errorf("Expected BackendGo, got %v", acc.Backend())
+		t.Errorf("Expected pure backend, got %v", acc.Backend())
 	}
 }
 
@@ -364,22 +365,22 @@ func TestGoAccelerator_FHE_Enabled(t *testing.T) {
 func TestGetAvailableBackends(t *testing.T) {
 	backends := GetAvailableBackends()
 
-	// Go backend should always be available
-	hasGo := false
+	// Pure backend should always be available
+	hasPure := false
 	for _, b := range backends {
-		if b == BackendGo {
-			hasGo = true
+		if b == "pure" {
+			hasPure = true
 			break
 		}
 	}
 
-	if !hasGo {
-		t.Error("Go backend should always be available")
+	if !hasPure {
+		t.Error("Pure backend should always be available")
 	}
 }
 
 func TestBackendInfo(t *testing.T) {
-	backends := []Backend{BackendGo, BackendMLX, BackendCGO, BackendCUDA, BackendFPGA}
+	backends := []string{"pure", "mlx", "fpga"}
 
 	for _, b := range backends {
 		info := BackendInfo(b)
@@ -401,7 +402,7 @@ func TestGoAccelerator_Benchmark(t *testing.T) {
 	result := acc.Benchmark(10)
 
 	if result.Backend != BackendGo {
-		t.Errorf("Expected BackendGo, got %v", result.Backend)
+		t.Errorf("Expected pure backend, got %v", result.Backend)
 	}
 
 	if result.NTTOpsPerSec <= 0 {
