@@ -13,6 +13,12 @@
 name: 'Install Go toolchain with project defaults'
 description: 'Install a go toolchain with project defaults'
 
+inputs:
+  github-token:
+    description: 'GitHub token for private repo access'
+    required: false
+    default: ''
+
 runs:
   using: composite
   steps:
@@ -23,6 +29,11 @@ runs:
       run: |
         echo "GOPRIVATE=github.com/luxfi/*" >> $GITHUB_ENV
         echo "GONOSUMDB=github.com/luxfi/*" >> $GITHUB_ENV
+    - name: Configure git for private repo access
+      if: inputs.github-token != ''
+      shell: bash
+      run: |
+        git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
