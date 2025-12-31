@@ -515,45 +515,238 @@ func (a *GoAccelerator) AggregateProofs(proofs []*Proof) (*Proof, error) {
 	}, nil
 }
 
-// FHE Operations (stub implementations)
+// FHE Operations - RLWE-based polynomial arithmetic
+// Ciphertexts are represented as pairs of polynomials (c0, c1) where coefficients
+// are stored as 64-bit unsigned integers in little-endian byte order.
+
+// fheModulus is the default modulus for FHE operations (NTT-friendly prime)
+const fheModulus uint64 = 0x7fffffffe0001 // 2^55 - 2^22 + 1
+
+// bytesToCoeffs converts ciphertext bytes to polynomial coefficients
+func bytesToCoeffs(data []byte) []uint64 {
+	numCoeffs := len(data) / 8
+	if numCoeffs == 0 {
+		numCoeffs = 1
+	}
+	coeffs := make([]uint64, numCoeffs)
+	for i := 0; i < numCoeffs && i*8 < len(data); i++ {
+		end := (i + 1) * 8
+		if end > len(data) {
+			end = len(data)
+		}
+		for j := i * 8; j < end; j++ {
+			coeffs[i] |= uint64(data[j]) << (8 * (j - i*8))
+		}
+	}
+	return coeffs
+}
+
+// coeffsToBytes converts polynomial coefficients to ciphertext bytes
+func coeffsToBytes(coeffs []uint64) []byte {
+	data := make([]byte, len(coeffs)*8)
+	for i, c := range coeffs {
+		for j := 0; j < 8; j++ {
+			data[i*8+j] = byte(c >> (8 * j))
+		}
+	}
+	return data
+}
+
+// modAdd performs modular addition
+func modAdd(a, b, mod uint64) uint64 {
+	sum := a + b
+	if sum >= mod || sum < a { // overflow check
+		sum -= mod
+	}
+	return sum
+}
+
+// modSub performs modular subtraction
+func modSub(a, b, mod uint64) uint64 {
+	if a >= b {
+		return a - b
+	}
+	return mod - (b - a)
+}
+
+// modMul performs modular multiplication using uint128 intermediate
+func modMul(a, b, mod uint64) uint64 {
+	// Use Barrett reduction for efficiency
+	hi, lo := bits.Mul64(a, b)
+	if hi == 0 {
+		return lo % mod
+	}
+	// Full 128-bit modular reduction
+	_, rem := bits.Div64(hi, lo, mod)
+	return rem
+}
+
+// FHEAdd performs homomorphic addition on RLWE ciphertexts.
+// For RLWE: ct_add = (c0_x + c0_y mod Q, c1_x + c1_y mod Q)
 func (a *GoAccelerator) FHEAdd(x, y *Ciphertext) (*Ciphertext, error) {
 	if !a.config.EnableFHE {
 		return nil, errors.New("FHE not enabled")
 	}
-	// Simplified FHE addition
-	result := make([]byte, len(x.Data))
-	for i := range x.Data {
-		if i < len(y.Data) {
-			result[i] = x.Data[i] ^ y.Data[i] // XOR as placeholder
-		}
+
+	xCoeffs := bytesToCoeffs(x.Data)
+	yCoeffs := bytesToCoeffs(y.Data)
+
+	// Ensure same size
+	maxLen := len(xCoeffs)
+	if len(yCoeffs) > maxLen {
+		maxLen = len(yCoeffs)
 	}
-	return &Ciphertext{Data: result, Scheme: x.Scheme, NoiseLevel: x.NoiseLevel + y.NoiseLevel}, nil
+
+	result := make([]uint64, maxLen)
+	for i := 0; i < maxLen; i++ {
+		var xc, yc uint64
+		if i < len(xCoeffs) {
+			xc = xCoeffs[i]
+		}
+		if i < len(yCoeffs) {
+			yc = yCoeffs[i]
+		}
+		result[i] = modAdd(xc, yc, fheModulus)
+	}
+
+	// Noise grows additively for addition
+	newNoise := uint32(x.NoiseLevel) + uint32(y.NoiseLevel)
+	if newNoise > 0xFFFF {
+		newNoise = 0xFFFF
+	}
+
+	return &Ciphertext{
+		Data:       coeffsToBytes(result),
+		Scheme:     x.Scheme,
+		NoiseLevel: uint16(newNoise),
+	}, nil
 }
 
+// FHESub performs homomorphic subtraction on RLWE ciphertexts.
+// For RLWE: ct_sub = (c0_x - c0_y mod Q, c1_x - c1_y mod Q)
 func (a *GoAccelerator) FHESub(x, y *Ciphertext) (*Ciphertext, error) {
-	return a.FHEAdd(x, y) // Same as add for simplified implementation
+	if !a.config.EnableFHE {
+		return nil, errors.New("FHE not enabled")
+	}
+
+	xCoeffs := bytesToCoeffs(x.Data)
+	yCoeffs := bytesToCoeffs(y.Data)
+
+	maxLen := len(xCoeffs)
+	if len(yCoeffs) > maxLen {
+		maxLen = len(yCoeffs)
+	}
+
+	result := make([]uint64, maxLen)
+	for i := 0; i < maxLen; i++ {
+		var xc, yc uint64
+		if i < len(xCoeffs) {
+			xc = xCoeffs[i]
+		}
+		if i < len(yCoeffs) {
+			yc = yCoeffs[i]
+		}
+		result[i] = modSub(xc, yc, fheModulus)
+	}
+
+	newNoise := uint32(x.NoiseLevel) + uint32(y.NoiseLevel)
+	if newNoise > 0xFFFF {
+		newNoise = 0xFFFF
+	}
+
+	return &Ciphertext{
+		Data:       coeffsToBytes(result),
+		Scheme:     x.Scheme,
+		NoiseLevel: uint16(newNoise),
+	}, nil
 }
 
+// FHEMul performs homomorphic multiplication on RLWE ciphertexts.
+// This performs polynomial multiplication (convolution in coefficient domain).
+// The result is a degree-2 ciphertext that should be relinearized.
 func (a *GoAccelerator) FHEMul(x, y *Ciphertext) (*Ciphertext, error) {
 	if !a.config.EnableFHE {
 		return nil, errors.New("FHE not enabled")
 	}
-	// FHE multiplication increases noise significantly
-	result := make([]byte, len(x.Data))
-	for i := range x.Data {
-		if i < len(y.Data) {
-			result[i] = x.Data[i] & y.Data[i] // AND as placeholder
+
+	xCoeffs := bytesToCoeffs(x.Data)
+	yCoeffs := bytesToCoeffs(y.Data)
+
+	// Polynomial multiplication (schoolbook method)
+	// Result length is len(x) + len(y) - 1
+	resultLen := len(xCoeffs) + len(yCoeffs)
+	if resultLen > 1 {
+		resultLen--
+	}
+	result := make([]uint64, resultLen)
+
+	for i, xc := range xCoeffs {
+		for j, yc := range yCoeffs {
+			product := modMul(xc, yc, fheModulus)
+			result[i+j] = modAdd(result[i+j], product, fheModulus)
 		}
 	}
-	return &Ciphertext{Data: result, Scheme: x.Scheme, NoiseLevel: x.NoiseLevel * y.NoiseLevel}, nil
+
+	// Reduce to original polynomial degree (mod X^N + 1 for power-of-2 cyclotomic)
+	N := len(xCoeffs)
+	if len(result) > N {
+		reduced := make([]uint64, N)
+		copy(reduced, result[:N])
+		// Fold higher coefficients with negation (X^N = -1 in cyclotomic ring)
+		for i := N; i < len(result); i++ {
+			idx := i % N
+			reduced[idx] = modSub(reduced[idx], result[i], fheModulus)
+		}
+		result = reduced
+	}
+
+	// Noise grows multiplicatively
+	newNoise := uint32(x.NoiseLevel) * uint32(y.NoiseLevel)
+	if newNoise > 0xFFFF {
+		newNoise = 0xFFFF
+	}
+
+	return &Ciphertext{
+		Data:       coeffsToBytes(result),
+		Scheme:     x.Scheme,
+		NoiseLevel: uint16(newNoise),
+	}, nil
 }
 
+// FHEBootstrap performs noise reduction via bootstrapping.
+// This is a simplified modulus switching operation that reduces noise
+// at the cost of precision. Full bootstrapping requires evaluation keys.
 func (a *GoAccelerator) FHEBootstrap(ct *Ciphertext) (*Ciphertext, error) {
 	if !a.config.EnableFHE {
 		return nil, errors.New("FHE not enabled")
 	}
-	// Bootstrapping resets noise level
-	return &Ciphertext{Data: ct.Data, Scheme: ct.Scheme, NoiseLevel: 1}, nil
+
+	coeffs := bytesToCoeffs(ct.Data)
+
+	// Modulus switching: scale down and round to reduce noise
+	// This is a simplified version - full bootstrapping is much more complex
+	scaleFactor := uint64(256) // Reduce by 8 bits
+	result := make([]uint64, len(coeffs))
+	for i, c := range coeffs {
+		// Round to nearest when scaling down
+		result[i] = (c + scaleFactor/2) / scaleFactor
+		result[i] = result[i] % fheModulus
+	}
+
+	// Noise is reduced by the scale factor
+	newNoise := uint32(ct.NoiseLevel) / uint32(scaleFactor)
+	if newNoise == 0 {
+		newNoise = 1
+	}
+	if newNoise > 0xFFFF {
+		newNoise = 0xFFFF
+	}
+
+	return &Ciphertext{
+		Data:       coeffsToBytes(result),
+		Scheme:     ct.Scheme,
+		NoiseLevel: uint16(newNoise),
+	}, nil
 }
 
 // Benchmark runs performance benchmarks

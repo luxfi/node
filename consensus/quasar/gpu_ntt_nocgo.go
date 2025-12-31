@@ -3,81 +3,29 @@
 
 //go:build !cgo
 
+// Package quasar provides NTT operations for Ringtail consensus.
+// This file provides pure Go CPU implementation when CGO is not available.
+// All operations use the luxfi/lattice library which provides optimized
+// NTT implementations in pure Go.
 package quasar
 
 import (
-	"errors"
+	"sync"
+	"sync/atomic"
 
 	"github.com/luxfi/lattice/v7/ring"
 )
 
-var errGPUNotAvailable = errors.New("GPU acceleration not available (CGO disabled)")
-
-// GPUNTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
-// This is a stub implementation when CGO is not available.
+// GPUNTTAccelerator provides NTT operations for Ringtail.
+// When CGO is disabled, this uses the pure Go lattice library
+// which provides optimized CPU-based NTT transforms.
 type GPUNTTAccelerator struct {
-	enabled bool
+	enabled  bool
+	stats    GPUNTTStats
+	statsmu  sync.RWMutex
 }
 
-// NewGPUNTTAccelerator creates a new GPU NTT accelerator.
-// Returns a disabled accelerator when CGO is not available.
-func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
-	return &GPUNTTAccelerator{enabled: false}, nil
-}
-
-// IsEnabled returns whether GPU acceleration is available.
-func (g *GPUNTTAccelerator) IsEnabled() bool {
-	return false
-}
-
-// Backend returns the name of the active GPU backend.
-func (g *GPUNTTAccelerator) Backend() string {
-	return "CPU (CGO disabled)"
-}
-
-// NTTForward performs forward NTT on a polynomial.
-// Falls back to CPU since GPU is not available.
-func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
-	r.NTT(poly, poly)
-	return nil
-}
-
-// NTTInverse performs inverse NTT on a polynomial.
-// Falls back to CPU since GPU is not available.
-func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
-	r.INTT(poly, poly)
-	return nil
-}
-
-// BatchNTTForward performs forward NTT on multiple polynomials.
-// Falls back to CPU since GPU is not available.
-func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
-	for _, poly := range polys {
-		r.NTT(poly, poly)
-	}
-	return nil
-}
-
-// BatchNTTInverse performs inverse NTT on multiple polynomials.
-// Falls back to CPU since GPU is not available.
-func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
-	for _, poly := range polys {
-		r.INTT(poly, poly)
-	}
-	return nil
-}
-
-// PolyMul performs polynomial multiplication.
-// Falls back to CPU since GPU is not available.
-func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
-	r.MulCoeffsBarrett(a, b, out)
-	return nil
-}
-
-// ClearCache clears the GPU NTT context cache.
-func (g *GPUNTTAccelerator) ClearCache() {}
-
-// GPUNTTStats returns GPU accelerator statistics.
+// GPUNTTStats tracks NTT accelerator statistics.
 type GPUNTTStats struct {
 	Enabled       bool
 	Backend       string
@@ -85,17 +33,163 @@ type GPUNTTStats struct {
 	TotalOps      uint64
 }
 
-// Stats returns current GPU NTT accelerator statistics.
+// NewGPUNTTAccelerator creates a new NTT accelerator using pure Go lattice library.
+func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
+	return &GPUNTTAccelerator{
+		enabled: true, // CPU implementation is always available
+		stats: GPUNTTStats{
+			Enabled: true,
+			Backend: "CPU (Pure Go)",
+		},
+	}, nil
+}
+
+// IsEnabled returns true - CPU implementation is always available.
+func (g *GPUNTTAccelerator) IsEnabled() bool {
+	return true
+}
+
+// Backend returns the backend name.
+func (g *GPUNTTAccelerator) Backend() string {
+	return "CPU (Pure Go lattice)"
+}
+
+// NTTForward performs forward NTT on a polynomial using lattice library.
+func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
+	r.NTT(poly, poly)
+	atomic.AddUint64(&g.stats.TotalOps, 1)
+	return nil
+}
+
+// NTTInverse performs inverse NTT on a polynomial using lattice library.
+func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
+	r.INTT(poly, poly)
+	atomic.AddUint64(&g.stats.TotalOps, 1)
+	return nil
+}
+
+// BatchNTTForward performs forward NTT on multiple polynomials.
+// Uses parallel processing for better performance on multi-core CPUs.
+func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
+	if len(polys) == 0 {
+		return nil
+	}
+
+	// For small batches, process sequentially
+	if len(polys) < 8 {
+		for _, poly := range polys {
+			r.NTT(poly, poly)
+		}
+		atomic.AddUint64(&g.stats.TotalOps, uint64(len(polys)))
+		return nil
+	}
+
+	// For larger batches, use parallel processing
+	var wg sync.WaitGroup
+	numWorkers := 4
+	chunkSize := (len(polys) + numWorkers - 1) / numWorkers
+
+	for i := 0; i < numWorkers; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if end > len(polys) {
+			end = len(polys)
+		}
+		if start >= end {
+			break
+		}
+
+		wg.Add(1)
+		go func(batch []ring.Poly) {
+			defer wg.Done()
+			for _, poly := range batch {
+				r.NTT(poly, poly)
+			}
+		}(polys[start:end])
+	}
+	wg.Wait()
+
+	atomic.AddUint64(&g.stats.TotalOps, uint64(len(polys)))
+	return nil
+}
+
+// BatchNTTInverse performs inverse NTT on multiple polynomials.
+// Uses parallel processing for better performance on multi-core CPUs.
+func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
+	if len(polys) == 0 {
+		return nil
+	}
+
+	// For small batches, process sequentially
+	if len(polys) < 8 {
+		for _, poly := range polys {
+			r.INTT(poly, poly)
+		}
+		atomic.AddUint64(&g.stats.TotalOps, uint64(len(polys)))
+		return nil
+	}
+
+	// For larger batches, use parallel processing
+	var wg sync.WaitGroup
+	numWorkers := 4
+	chunkSize := (len(polys) + numWorkers - 1) / numWorkers
+
+	for i := 0; i < numWorkers; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if end > len(polys) {
+			end = len(polys)
+		}
+		if start >= end {
+			break
+		}
+
+		wg.Add(1)
+		go func(batch []ring.Poly) {
+			defer wg.Done()
+			for _, poly := range batch {
+				r.INTT(poly, poly)
+			}
+		}(polys[start:end])
+	}
+	wg.Wait()
+
+	atomic.AddUint64(&g.stats.TotalOps, uint64(len(polys)))
+	return nil
+}
+
+// PolyMul performs polynomial multiplication using Barrett reduction.
+func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
+	r.MulCoeffsBarrett(a, b, out)
+	atomic.AddUint64(&g.stats.TotalOps, 1)
+	return nil
+}
+
+// ClearCache is a no-op for CPU implementation (no GPU cache).
+func (g *GPUNTTAccelerator) ClearCache() {}
+
+// Stats returns current NTT accelerator statistics.
 func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
+	g.statsmu.RLock()
+	defer g.statsmu.RUnlock()
 	return GPUNTTStats{
-		Enabled:     false,
-		Backend:     "CPU (CGO disabled)",
+		Enabled:     true,
+		Backend:     "CPU (Pure Go lattice)",
 		CachedRings: 0,
-		TotalOps:    0,
+		TotalOps:    atomic.LoadUint64(&g.stats.TotalOps),
 	}
 }
 
-// GetGPUAccelerator returns the global GPU NTT accelerator instance.
+// Global accelerator instance
+var (
+	globalAccelerator     *GPUNTTAccelerator
+	globalAcceleratorOnce sync.Once
+)
+
+// GetGPUAccelerator returns the global NTT accelerator instance.
 func GetGPUAccelerator() (*GPUNTTAccelerator, error) {
-	return NewGPUNTTAccelerator()
+	globalAcceleratorOnce.Do(func() {
+		globalAccelerator, _ = NewGPUNTTAccelerator()
+	})
+	return globalAccelerator, nil
 }
