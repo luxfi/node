@@ -13,10 +13,10 @@ import (
 
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/lattice/v6/core/rlwe"
-	"github.com/luxfi/lattice/v6/multiparty"
-	mpckks "github.com/luxfi/lattice/v6/multiparty/mpckks"
-	"github.com/luxfi/lattice/v6/schemes/ckks"
+	"github.com/luxfi/lattice/v7/core/rlwe"
+	"github.com/luxfi/lattice/v7/multiparty"
+	mpckks "github.com/luxfi/lattice/v7/multiparty/mpckks"
+	"github.com/luxfi/lattice/v7/schemes/ckks"
 	"github.com/luxfi/log"
 )
 

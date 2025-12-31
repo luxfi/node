@@ -4,13 +4,17 @@
 package warp
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
 
+	"github.com/cloudflare/circl/kem/mlkem/mlkem768"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/threshold"
 	_ "github.com/luxfi/crypto/threshold/bls" // Register BLS threshold scheme
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
 )
 
@@ -437,36 +441,24 @@ func (e *EncryptedWarpPayload) String() string {
 // mlkemEncapsulate performs ML-KEM-768 encapsulation
 // Returns: (sharedSecret, ciphertext, error)
 func mlkemEncapsulate(publicKey []byte) ([]byte, []byte, error) {
-	// TODO: Connect to actual ML-KEM implementation from
-	// github.com/cloudflare/circl/kem/mlkem/mlkem768
-	// or github.com/luxfi/crypto/mlkem
-	//
-	// For now, provide placeholder that generates deterministic test values
-
 	if len(publicKey) != MLKEM768PublicKeyLen {
-		return nil, nil, errors.New("invalid public key length")
+		return nil, nil, fmt.Errorf("invalid public key length: got %d, expected %d",
+			len(publicKey), MLKEM768PublicKeyLen)
 	}
 
-	// Placeholder implementation for testing
-	// Real implementation:
-	// scheme := mlkem768.Scheme()
-	// pk, _ := scheme.UnmarshalBinaryPublicKey(publicKey)
-	// ct, ss, _ := scheme.Encapsulate(pk)
-	// return ss, ct, nil
+	// Get the ML-KEM-768 scheme
+	scheme := mlkem768.Scheme()
 
-	// Generate deterministic shared secret from public key (32 bytes)
-	// This is NOT cryptographically secure - just for testing structure
-	sharedSecret := make([]byte, MLKEM768SharedSecretLen)
-	for i := range sharedSecret {
-		sharedSecret[i] = publicKey[i%len(publicKey)] ^ byte(i*7+3)
+	// Unmarshal the public key
+	pk, err := scheme.UnmarshalBinaryPublicKey(publicKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 
-	// Generate placeholder ciphertext embedding the same derivation info
-	// First 32 bytes contain the key derivation seed for decapsulation
-	ciphertext := make([]byte, MLKEM768CiphertextLen)
-	copy(ciphertext[:MLKEM768SharedSecretLen], sharedSecret)
-	for i := MLKEM768SharedSecretLen; i < len(ciphertext); i++ {
-		ciphertext[i] = publicKey[i%len(publicKey)] ^ byte(i)
+	// Encapsulate to generate shared secret and ciphertext
+	ciphertext, sharedSecret, err := scheme.Encapsulate(pk)
+	if err != nil {
+		return nil, nil, fmt.Errorf("ML-KEM encapsulation failed: %w", err)
 	}
 
 	return sharedSecret, ciphertext, nil
@@ -475,22 +467,25 @@ func mlkemEncapsulate(publicKey []byte) ([]byte, []byte, error) {
 // mlkemDecapsulate performs ML-KEM-768 decapsulation
 // Returns: (sharedSecret, error)
 func mlkemDecapsulate(privateKey []byte, ciphertext []byte) ([]byte, error) {
-	// TODO: Connect to actual ML-KEM implementation
-	//
-	// Real implementation:
-	// scheme := mlkem768.Scheme()
-	// sk, _ := scheme.UnmarshalBinaryPrivateKey(privateKey)
-	// ss, _ := scheme.Decapsulate(sk, ciphertext)
-	// return ss, nil
-
 	if len(ciphertext) != MLKEM768CiphertextLen {
-		return nil, errors.New("invalid ciphertext length")
+		return nil, fmt.Errorf("invalid ciphertext length: got %d, expected %d",
+			len(ciphertext), MLKEM768CiphertextLen)
 	}
 
-	// Placeholder: extract shared secret from ciphertext (first 32 bytes)
-	// This matches the encapsulate placeholder for testing
-	sharedSecret := make([]byte, MLKEM768SharedSecretLen)
-	copy(sharedSecret, ciphertext[:MLKEM768SharedSecretLen])
+	// Get the ML-KEM-768 scheme
+	scheme := mlkem768.Scheme()
+
+	// Unmarshal the private key
+	sk, err := scheme.UnmarshalBinaryPrivateKey(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal private key: %w", err)
+	}
+
+	// Decapsulate to recover the shared secret
+	sharedSecret, err := scheme.Decapsulate(sk, ciphertext)
+	if err != nil {
+		return nil, fmt.Errorf("ML-KEM decapsulation failed: %w", err)
+	}
 
 	return sharedSecret, nil
 }
@@ -501,13 +496,6 @@ func mlkemDecapsulate(privateKey []byte, ciphertext []byte) ([]byte, error) {
 
 // aesGCMEncrypt encrypts plaintext using AES-256-GCM
 func aesGCMEncrypt(key []byte, nonce []byte, plaintext []byte) ([]byte, error) {
-	// TODO: Use crypto/aes and crypto/cipher for real implementation
-	//
-	// Real implementation:
-	// block, _ := aes.NewCipher(key)
-	// gcm, _ := cipher.NewGCM(block)
-	// return gcm.Seal(nil, nonce, plaintext, nil), nil
-
 	if len(key) != 32 {
 		return nil, errors.New("AES-256 requires 32-byte key")
 	}
@@ -515,28 +503,25 @@ func aesGCMEncrypt(key []byte, nonce []byte, plaintext []byte) ([]byte, error) {
 		return nil, errors.New("AES-GCM requires 12-byte nonce")
 	}
 
-	// Placeholder: XOR encryption for testing (NOT SECURE - replace with real AES-GCM)
-	ciphertext := make([]byte, len(plaintext)+AESGCMTagLen)
-	for i, b := range plaintext {
-		ciphertext[i] = b ^ key[i%len(key)] ^ nonce[i%len(nonce)]
-	}
-	// Append placeholder auth tag
-	for i := 0; i < AESGCMTagLen; i++ {
-		ciphertext[len(plaintext)+i] = key[i] ^ nonce[i%len(nonce)]
+	// Create AES cipher
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
+	// Create GCM mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	// Encrypt and authenticate
+	ciphertext := gcm.Seal(nil, nonce, plaintext, nil)
 	return ciphertext, nil
 }
 
 // aesGCMDecrypt decrypts ciphertext using AES-256-GCM
 func aesGCMDecrypt(key []byte, nonce []byte, ciphertext []byte) ([]byte, error) {
-	// TODO: Use crypto/aes and crypto/cipher for real implementation
-	//
-	// Real implementation:
-	// block, _ := aes.NewCipher(key)
-	// gcm, _ := cipher.NewGCM(block)
-	// return gcm.Open(nil, nonce, ciphertext, nil)
-
 	if len(key) != 32 {
 		return nil, errors.New("AES-256 requires 32-byte key")
 	}
@@ -547,19 +532,22 @@ func aesGCMDecrypt(key []byte, nonce []byte, ciphertext []byte) ([]byte, error) 
 		return nil, errors.New("ciphertext too short")
 	}
 
-	// Verify auth tag (placeholder)
-	tagStart := len(ciphertext) - AESGCMTagLen
-	for i := 0; i < AESGCMTagLen; i++ {
-		expected := key[i] ^ nonce[i%len(nonce)]
-		if ciphertext[tagStart+i] != expected {
-			return nil, errors.New("authentication failed")
-		}
+	// Create AES cipher
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
-	// Placeholder: XOR decryption for testing (NOT SECURE)
-	plaintext := make([]byte, tagStart)
-	for i := 0; i < tagStart; i++ {
-		plaintext[i] = ciphertext[i] ^ key[i%len(key)] ^ nonce[i%len(nonce)]
+	// Create GCM mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	// Decrypt and verify authentication
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, fmt.Errorf("authentication failed: %w", err)
 	}
 
 	return plaintext, nil
@@ -567,17 +555,10 @@ func aesGCMDecrypt(key []byte, nonce []byte, ciphertext []byte) ([]byte, error) 
 
 // generateSecureRandom generates cryptographically secure random bytes
 func generateSecureRandom(length int) ([]byte, error) {
-	// TODO: Use crypto/rand for real implementation
-	//
-	// Real implementation:
-	// b := make([]byte, length)
-	// _, err := rand.Read(b)
-	// return b, err
-
-	// Placeholder: deterministic for testing
 	b := make([]byte, length)
-	for i := range b {
-		b[i] = byte(i * 17)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random bytes: %w", err)
 	}
 	return b, nil
 }
@@ -736,104 +717,87 @@ func (s *HybridBLSRTSignature) String() string {
 
 // AggregateRingtailPublicKeys aggregates multiple Ringtail public keys
 // into a single combined public key for threshold verification.
-// This uses the threshold package's SchemeRingtail when available,
-// falling back to XOR-based aggregation as a placeholder.
+// This uses the threshold package's SchemeRingtail.
 func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	if len(publicKeys) == 0 {
 		return nil, errors.New("no public keys to aggregate")
 	}
 
-	// Determine the expected key length from the first key
+	// Validate all keys have consistent length
 	keyLen := len(publicKeys[0])
-	for _, pk := range publicKeys {
+	for i, pk := range publicKeys {
 		if len(pk) != keyLen {
-			return nil, errors.New("inconsistent public key lengths")
+			return nil, fmt.Errorf("inconsistent public key lengths: key %d has length %d, expected %d",
+				i, len(pk), keyLen)
 		}
 	}
 
-	// Try to use SchemeRingtail from threshold package if available
-	if threshold.HasScheme(threshold.SchemeRingtail) {
-		scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
-		if err == nil {
-			// Parse and aggregate using the threshold scheme
-			// This provides proper lattice-based key aggregation
-			parsedKeys := make([]threshold.PublicKey, len(publicKeys))
-			for i, pk := range publicKeys {
-				parsed, err := scheme.ParsePublicKey(pk)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse public key %d: %w", i, err)
-				}
-				parsedKeys[i] = parsed
-			}
-			// Note: threshold.Scheme doesn't have aggregate keys method yet
-			// This is a placeholder for when it's added
-			// For now, fall through to the XOR fallback
-		}
+	// Get the Ringtail threshold scheme
+	if !threshold.HasScheme(threshold.SchemeRingtail) {
+		return nil, errors.New("Ringtail threshold scheme is not registered")
 	}
 
-	// Fallback: XOR-based aggregation (placeholder for lattice math)
-	// For lattice-based signatures, proper aggregation would sum
-	// public key matrices modulo q. This XOR is NOT cryptographically
-	// correct but allows testing the infrastructure.
-	aggregated := make([]byte, keyLen)
-	copy(aggregated, publicKeys[0])
-
-	for i := 1; i < len(publicKeys); i++ {
-		for j := 0; j < keyLen; j++ {
-			aggregated[j] ^= publicKeys[i][j]
-		}
+	scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Ringtail scheme: %w", err)
 	}
 
-	return aggregated, nil
+	// Parse all public keys using the threshold scheme
+	parsedKeys := make([]threshold.PublicKey, len(publicKeys))
+	for i, pk := range publicKeys {
+		parsed, err := scheme.ParsePublicKey(pk)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public key %d: %w", i, err)
+		}
+		parsedKeys[i] = parsed
+	}
+
+	// For threshold signatures, the "aggregated" public key is typically
+	// just the group public key that all shares were generated from.
+	// In Ringtail threshold protocol, all signers share the same group key,
+	// so we can use any of the parsed keys directly.
+	// The actual threshold verification is done by the scheme's verifier.
+	//
+	// Return the first public key as the aggregated key since they should
+	// all represent the same group public key in a proper threshold setup.
+	return parsedKeys[0].Bytes(), nil
 }
 
 // VerifyRingtailSignature verifies a Ringtail lattice-based signature.
-// This uses the threshold package's SchemeRingtail verifier when available.
+// This uses the threshold package's SchemeRingtail verifier.
 func VerifyRingtailSignature(publicKey []byte, message []byte, signature []byte) bool {
 	// Basic sanity checks
 	if len(publicKey) < 32 || len(signature) < 64 || len(message) == 0 {
 		return false
 	}
 
-	// Try to use SchemeRingtail from threshold package if available
-	if threshold.HasScheme(threshold.SchemeRingtail) {
-		scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
-		if err == nil {
-			// Parse the public key
-			pk, err := scheme.ParsePublicKey(publicKey)
-			if err != nil {
-				return false
-			}
-
-			// Create a verifier for the public key
-			verifier, err := scheme.NewVerifier(pk)
-			if err != nil {
-				return false
-			}
-
-			// Verify using the threshold verifier
-			return verifier.VerifyBytes(message, signature)
-		}
+	// Get the Ringtail threshold scheme
+	if !threshold.HasScheme(threshold.SchemeRingtail) {
+		// Ringtail scheme must be registered for production use
+		// This should be done via: import _ "github.com/luxfi/crypto/threshold/ringtail"
+		return false
 	}
 
-	// Fallback: structural validation only
-	// This is a placeholder for testing - NOT cryptographically secure
-	// In production, SchemeRingtail MUST be registered and available
-	return verifyRingtailStructural(publicKey, message, signature)
-}
+	scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+	if err != nil {
+		return false
+	}
 
-// verifyRingtailStructural performs basic structural validation of a Ringtail signature.
-// This is NOT cryptographically secure and is only for testing infrastructure.
-// Production use requires the SchemeRingtail to be registered.
-func verifyRingtailStructural(publicKey []byte, message []byte, signature []byte) bool {
-	// Basic structural checks:
-	// 1. Signature length should be consistent with security level
-	// 2. Public key length should be consistent
-	// 3. Message should not be empty
-	//
-	// WARNING: This does NOT perform actual lattice verification.
-	// It only checks that the data is structurally valid.
-	return len(signature) >= 64 && len(publicKey) >= 32 && len(message) > 0
+	// Parse the public key
+	pk, err := scheme.ParsePublicKey(publicKey)
+	if err != nil {
+		return false
+	}
+
+	// Create a verifier for the public key
+	verifier, err := scheme.NewVerifier(pk)
+	if err != nil {
+		return false
+	}
+
+	// Verify using the threshold verifier
+	// This performs full lattice-based signature verification
+	return verifier.VerifyBytes(message, signature)
 }
 
 // min returns the smaller of two integers

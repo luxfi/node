@@ -30,7 +30,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.46
-	github.com/luxfi/crypto v1.17.27
+	github.com/luxfi/crypto v1.17.29
 	github.com/luxfi/database v1.2.17
 	github.com/luxfi/ids v1.2.5
 	github.com/luxfi/keychain v1.0.1
@@ -90,7 +90,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
 	github.com/cockroachdb/redact v1.1.6 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
-	github.com/consensys/gnark-crypto v0.19.2 // indirect
+	github.com/consensys/gnark-crypto v0.19.2
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
@@ -134,6 +134,7 @@ require (
 )
 
 require (
+	github.com/cloudflare/circl v1.6.2-0.20251204010831-23491bd573cf
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
@@ -142,10 +143,10 @@ require (
 	github.com/luxfi/genesis v1.5.17
 	github.com/luxfi/geth v1.16.66
 	github.com/luxfi/go-bip39 v1.1.2
-	github.com/luxfi/lattice/v6 v6.1.2
+	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
-	github.com/luxfi/ringtail v0.1.2
+	github.com/luxfi/ringtail v0.2.0
 	github.com/luxfi/threshold v1.1.11
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/utils v1.1.0
@@ -160,7 +161,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251221085550-b8e13ca38217 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
-	github.com/cloudflare/circl v1.6.2-0.20251204010831-23491bd573cf // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
@@ -192,6 +192,7 @@ require (
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/fhe v1.2.0 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
+	github.com/luxfi/lattice/v6 v6.1.2 // indirect
 	github.com/luxfi/precompiles v0.1.10 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
@@ -223,5 +224,12 @@ require (
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+
+replace (
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/lattice/v7 => ../lattice
+	github.com/luxfi/precompile => ../precompiles
+)
 
 exclude github.com/ethereum/go-ethereum v1.10.26

@@ -6,6 +6,7 @@ package warp
 import (
 	"testing"
 
+	"github.com/cloudflare/circl/kem/mlkem/mlkem768"
 	"github.com/luxfi/ids"
 	"github.com/stretchr/testify/require"
 )
@@ -129,11 +130,12 @@ func TestNewPrivateTeleportMessage(t *testing.T) {
 	payload := []byte("confidential cross-chain data")
 	nonce := uint64(42)
 
-	// Generate test ML-KEM key pair (placeholder)
-	recipientPubKey := make([]byte, MLKEM768PublicKeyLen)
-	for i := range recipientPubKey {
-		recipientPubKey[i] = byte(i)
-	}
+	// Generate real ML-KEM-768 key pair
+	scheme := mlkem768.Scheme()
+	pubKey, _, err := scheme.GenerateKeyPair()
+	require.NoError(err)
+	recipientPubKey, err := pubKey.MarshalBinary()
+	require.NoError(err)
 	recipientKeyID := []byte("recipient-key-123")
 
 	msg, err := NewPrivateTeleportMessage(sourceChain, destChain, nonce, payload, recipientPubKey, recipientKeyID)
@@ -156,15 +158,14 @@ func TestPrivateTeleportMessageDecrypt(t *testing.T) {
 	originalPayload := []byte("secret message for cross-chain transfer")
 	nonce := uint64(999)
 
-	// Generate test keys
-	recipientPubKey := make([]byte, MLKEM768PublicKeyLen)
-	recipientPrivKey := make([]byte, 2400)
-	for i := range recipientPubKey {
-		recipientPubKey[i] = byte(i)
-	}
-	for i := range recipientPrivKey {
-		recipientPrivKey[i] = byte(i)
-	}
+	// Generate real ML-KEM-768 key pair
+	scheme := mlkem768.Scheme()
+	pubKey, privKey, err := scheme.GenerateKeyPair()
+	require.NoError(err)
+	recipientPubKey, err := pubKey.MarshalBinary()
+	require.NoError(err)
+	recipientPrivKey, err := privKey.MarshalBinary()
+	require.NoError(err)
 	recipientKeyID := []byte("test-key")
 
 	// Create encrypted message

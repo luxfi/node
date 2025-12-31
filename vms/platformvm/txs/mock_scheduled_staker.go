@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/ids"
 	bls "github.com/luxfi/crypto/bls"
+	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,6 +40,20 @@ func NewMockScheduledStaker(ctrl *gomock.Controller) *MockScheduledStaker {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScheduledStaker) EXPECT() *MockScheduledStakerMockRecorder {
 	return m.recorder
+}
+
+// ChainID mocks base method.
+func (m *MockScheduledStaker) ChainID() ids.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChainID")
+	ret0, _ := ret[0].(ids.ID)
+	return ret0
+}
+
+// ChainID indicates an expected call of ChainID.
+func (mr *MockScheduledStakerMockRecorder) ChainID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainID", reflect.TypeOf((*MockScheduledStaker)(nil).ChainID))
 }
 
 // CurrentPriority mocks base method.
@@ -68,20 +82,6 @@ func (m *MockScheduledStaker) EndTime() time.Time {
 func (mr *MockScheduledStakerMockRecorder) EndTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndTime", reflect.TypeOf((*MockScheduledStaker)(nil).EndTime))
-}
-
-// ChainID mocks base method.
-func (m *MockScheduledStaker) ChainID() ids.ID {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChainID")
-	ret0, _ := ret[0].(ids.ID)
-	return ret0
-}
-
-// ChainID indicates an expected call of ChainID.
-func (mr *MockScheduledStakerMockRecorder) ChainID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainID", reflect.TypeOf((*MockScheduledStaker)(nil).ChainID))
 }
 
 // NodeID mocks base method.

@@ -1,3 +1,5 @@
+//go:build cgo
+
 // Copyright (C) 2019-2024, Lux Partners Limited. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -10,8 +12,8 @@ import (
 
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/lattice/v6/core/rlwe"
-	"github.com/luxfi/lattice/v6/schemes/ckks"
+	"github.com/luxfi/lattice/v7/core/rlwe"
+	"github.com/luxfi/lattice/v7/schemes/ckks"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/stretchr/testify/require"

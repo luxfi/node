@@ -5,16 +5,18 @@ package gvm
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/chain/block"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -50,6 +52,10 @@ type GConfig struct {
 	// Index configuration
 	AutoIndex      bool `serialize:"true" json:"autoIndex"`
 	IndexBatchSize int  `serialize:"true" json:"indexBatchSize"`
+
+	// Authentication configuration
+	RequireAuth bool     `serialize:"true" json:"requireAuth"`
+	APIKeys     []string `serialize:"true" json:"apiKeys"`
 }
 
 // VM implements the chain.ChainVM interface for the Graph Chain (G-Chain)
@@ -229,11 +235,18 @@ func (vm *VM) Version(context.Context) (string, error) {
 // CreateHandlers implements the common.VM interface
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	handler := &apiHandler{vm: vm}
+
+	// Wrap sensitive endpoints with authentication if required
+	var graphqlHandler http.Handler = handler
+	if vm.config.RequireAuth {
+		graphqlHandler = authMiddleware(handler, vm.config.APIKeys)
+	}
+
 	return map[string]http.Handler{
-		"/graphql": handler,
-		"/schema":  handler,
-		"/query":   handler,
-		"/index":   handler,
+		"/graphql": graphqlHandler,
+		"/schema":  handler, // Schema can be public
+		"/query":   graphqlHandler,
+		"/index":   handler, // Index metadata can be public
 	}, nil
 }
 
@@ -461,4 +474,37 @@ func (h *apiHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 func (h *apiHandler) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(h.vm.dataIndexes)
+}
+
+// authMiddleware validates API key from Authorization header
+func authMiddleware(next http.Handler, validKeys []string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Unauthorized: missing Authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		// Support both "Bearer <token>" and just "<token>"
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		token = strings.TrimSpace(token)
+
+		// Validate token against configured API keys (constant-time comparison)
+		var valid bool
+		for _, validKey := range validKeys {
+			if subtle.ConstantTimeCompare([]byte(token), []byte(validKey)) == 1 {
+				valid = true
+				break
+			}
+		}
+
+		if !valid {
+			http.Error(w, "Unauthorized: invalid API key", http.StatusUnauthorized)
+			return
+		}
+
+		// Token is valid, proceed
+		next.ServeHTTP(w, r)
+	})
 }

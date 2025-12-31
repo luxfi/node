@@ -144,7 +144,14 @@ type VM struct {
 	toEngine chan<- core.Message
 	log      log.Logger
 
-	// MPC components using threshold CMP protocol
+	// MPC components using threshold protocol
+	mpcKeyManager      *MPCKeyManager               // Threshold key management
+	mpcCoordinator     *MPCCoordinator              // Signing coordination
+	bridgeSigner       *BridgeSigner                // Bridge message signing
+	deliverySigner     *DeliveryConfirmationSigner  // Delivery confirmation signing
+	messageValidator   *BridgeMessageValidator      // Message validation
+
+	// Deprecated: Legacy MPC fields (kept for reference)
 	mpcConfig   *config.Config // CMP config for this party (after keygen)
 	mpcPartyID  party.ID       // This party's ID in MPC protocol
 	mpcPartyIDs []party.ID     // All party IDs in the MPC group
@@ -293,6 +300,31 @@ func (vm *VM) Initialize(
 
 	// Note: mpcConfig and mpcPartyIDs will be populated during keygen
 	// which happens when validators join the bridge network
+
+	// Initialize new MPC key manager
+	keyManager, err := NewMPCKeyManager(vm.log)
+	if err != nil {
+		return fmt.Errorf("failed to create MPC key manager: %w", err)
+	}
+	vm.mpcKeyManager = keyManager
+
+	// Initialize MPC coordinator
+	vm.mpcCoordinator = NewMPCCoordinator(vm.mpcKeyManager, vm.log)
+
+	// Initialize bridge signer
+	vm.bridgeSigner = NewBridgeSigner(vm.mpcKeyManager, vm.mpcCoordinator, vm.log)
+
+	// Initialize delivery confirmation signer
+	vm.deliverySigner = NewDeliveryConfirmationSigner(vm.mpcKeyManager, vm.mpcCoordinator, vm.log)
+
+	// Initialize message validator
+	vm.messageValidator = NewBridgeMessageValidator(
+		vm.bridgeSigner,
+		vm.deliverySigner,
+		vm.config.MinConfirmations,
+		true, // require delivery confirmations
+		vm.log,
+	)
 
 	// Initialize bridge registry
 	vm.bridgeRegistry = &BridgeRegistry{

@@ -7,6 +7,8 @@ package kmsvm
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
@@ -50,32 +52,32 @@ const (
 )
 
 var (
-	errVMShutdown          = errors.New("VM is shutting down")
-	errKeyNotFound         = errors.New("key not found")
-	errKeyExists           = errors.New("key already exists")
-	errInvalidThreshold    = errors.New("invalid threshold")
-	errInsufficientShares  = errors.New("insufficient shares for reconstruction")
-	errInvalidSignature    = errors.New("invalid signature")
-	errMLKEMNotEnabled     = errors.New("ML-KEM not enabled")
-	errMLDSANotEnabled     = errors.New("ML-DSA not enabled")
-	errValidatorNotFound   = errors.New("validator not found")
+	errVMShutdown         = errors.New("VM is shutting down")
+	errKeyNotFound        = errors.New("key not found")
+	errKeyExists          = errors.New("key already exists")
+	errInvalidThreshold   = errors.New("invalid threshold")
+	errInsufficientShares = errors.New("insufficient shares for reconstruction")
+	errInvalidSignature   = errors.New("invalid signature")
+	errMLKEMNotEnabled    = errors.New("ML-KEM not enabled")
+	errMLDSANotEnabled    = errors.New("ML-DSA not enabled")
+	errValidatorNotFound  = errors.New("validator not found")
 )
 
 // KeyMetadata stores information about a distributed key.
 type KeyMetadata struct {
-	ID           ids.ID            `json:"id"`
-	Name         string            `json:"name"`
-	Algorithm    string            `json:"algorithm"`
-	KeyType      string            `json:"keyType"`
-	PublicKey    []byte            `json:"publicKey"`
-	Threshold    int               `json:"threshold"`
-	TotalShares  int               `json:"totalShares"`
-	Validators   []string          `json:"validators"`
-	CreatedAt    time.Time         `json:"createdAt"`
-	UpdatedAt    time.Time         `json:"updatedAt"`
-	Status       string            `json:"status"`
-	Tags         []string          `json:"tags"`
-	Metadata     map[string]string `json:"metadata"`
+	ID          ids.ID            `json:"id"`
+	Name        string            `json:"name"`
+	Algorithm   string            `json:"algorithm"`
+	KeyType     string            `json:"keyType"`
+	PublicKey   []byte            `json:"publicKey"`
+	Threshold   int               `json:"threshold"`
+	TotalShares int               `json:"totalShares"`
+	Validators  []string          `json:"validators"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
+	Status      string            `json:"status"`
+	Tags        []string          `json:"tags"`
+	Metadata    map[string]string `json:"metadata"`
 }
 
 // KeyShare represents a share of a distributed key.
@@ -101,18 +103,18 @@ type VM struct {
 	networkID    uint32
 
 	// Key management
-	keys         map[ids.ID]*KeyMetadata
-	keysByName   map[string]ids.ID
-	shares       map[ids.ID][]*KeyShare
-	keysLock     sync.RWMutex
+	keys       map[ids.ID]*KeyMetadata
+	keysByName map[string]ids.ID
+	shares     map[ids.ID][]*KeyShare
+	keysLock   sync.RWMutex
 
 	// ML-KEM keys cache
-	mlkemCache   *cache.LRU[ids.ID, *mlkem.PrivateKey]
+	mlkemCache    *cache.LRU[ids.ID, *mlkem.PrivateKey]
 	mlkemPubCache *cache.LRU[ids.ID, *mlkem.PublicKey]
 
 	// Transaction pool
-	pendingTxs   []*Transaction
-	txLock       sync.Mutex
+	pendingTxs []*Transaction
+	txLock     sync.Mutex
 
 	// State management
 	state        database.Database
@@ -120,14 +122,14 @@ type VM struct {
 	height       uint64
 
 	// HTTP service
-	rpcServer    *rpc.Server
+	rpcServer *rpc.Server
 
 	// Lifecycle
 	shuttingDown bool
 	shutdownLock sync.RWMutex
 
 	// Clock
-	clock        mockable.Clock
+	clock mockable.Clock
 }
 
 // Initialize initializes the K-Chain VM.
@@ -397,12 +399,36 @@ func (vm *VM) Encrypt(ctx context.Context, keyID ids.ID, plaintext []byte) ([]by
 		return nil, nil, fmt.Errorf("failed to encapsulate: %w", err)
 	}
 
-	// Use shared secret to encrypt plaintext (simplified - real impl would use AES-GCM)
-	// For demo, just XOR with repeated shared secret
-	encrypted := make([]byte, len(plaintext))
-	for i := range plaintext {
-		encrypted[i] = plaintext[i] ^ sharedSecret[i%len(sharedSecret)]
+	// Use AES-GCM for authenticated encryption
+	// Derive a 32-byte key from the shared secret (use first 32 bytes or hash if needed)
+	var key [32]byte
+	if len(sharedSecret) >= 32 {
+		copy(key[:], sharedSecret[:32])
+	} else {
+		// If shared secret is shorter, repeat it
+		for i := range key {
+			key[i] = sharedSecret[i%len(sharedSecret)]
+		}
 	}
+
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	// Generate random nonce
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, nil, fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	// Encrypt and authenticate
+	encrypted := gcm.Seal(nonce, nonce, plaintext, nil)
 
 	return encrypted, ciphertext, nil
 }

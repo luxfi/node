@@ -31,6 +31,15 @@ const (
 	// least once per bloom filter reset.
 	maxIPEntriesPerNode = 2
 
+	// MaxTrackedIPs limits the number of tracked IPs to prevent memory exhaustion.
+	// This allows for ~10k validators plus some manual tracking headroom.
+	MaxTrackedIPs = 10000
+
+	// MaxBloomFilterEntries enforces an absolute limit on bloom filter size.
+	// With maxIPEntriesPerNode=2 and MaxTrackedIPs=10000, the bloom filter
+	// could theoretically need ~20k entries. We use 4x for safety margin.
+	MaxBloomFilterEntries = MaxTrackedIPs * maxIPEntriesPerNode * 4
+
 	untrackedTimestamp = -2
 	olderTimestamp     = -1
 	sameTimestamp      = 0
@@ -404,6 +413,11 @@ func (i *ipTracker) OnValidatorAdded(netID ids.ID, nodeID ids.NodeID, weight uin
 func (i *ipTracker) addTrackableID(nodeID ids.NodeID, netID *ids.ID) {
 	nodeTracker, previouslyTracked := i.tracked[nodeID]
 	if !previouslyTracked {
+		// Enforce tracked IP limit to prevent memory exhaustion
+		if len(i.tracked) >= MaxTrackedIPs {
+			i.evictOldestTrackedIP()
+		}
+
 		i.numTrackedPeers.Inc()
 		nodeTracker = &trackedNode{
 			validatedNets: make(set.Set[ids.ID]),
@@ -575,6 +589,16 @@ func (i *ipTracker) resetBloom() error {
 		count,
 		targetFalsePositiveProbability,
 	)
+
+	// Enforce absolute maximum bloom filter size to prevent unbounded growth
+	if numEntries > MaxBloomFilterEntries {
+		i.log.Warn("bloom filter size exceeds maximum, capping",
+			"requested", numEntries,
+			"maximum", MaxBloomFilterEntries,
+		)
+		numEntries = MaxBloomFilterEntries
+	}
+
 	newFilter, err := bloom.New(numHashes, numEntries)
 	if err != nil {
 		return err
@@ -664,4 +688,75 @@ func (i *ipTracker) OnChainTracked(chainID ids.ID) {
 	i.log.Info("now tracking chain for IP gossip",
 		log.Stringer("chainID", chainID),
 	)
+}
+
+// evictOldestTrackedIP removes the oldest tracked IP that can be deleted.
+// This prevents memory exhaustion from excessive IP tracking.
+// Caller must hold i.lock.
+func (i *ipTracker) evictOldestTrackedIP() {
+	var (
+		oldestNodeID    ids.NodeID
+		oldestTimestamp uint64 = ^uint64(0) // max uint64
+		found           bool
+	)
+
+	// First pass: Try to find a node that can be deleted normally
+	for nodeID, node := range i.tracked {
+		if !node.canDelete() {
+			continue
+		}
+
+		// Skip nodes without IPs
+		if node.ip == nil {
+			delete(i.tracked, nodeID)
+			i.numTrackedPeers.Dec()
+			return
+		}
+
+		if node.ip.Timestamp < oldestTimestamp {
+			oldestTimestamp = node.ip.Timestamp
+			oldestNodeID = nodeID
+			found = true
+		}
+	}
+
+	if found {
+		delete(i.tracked, oldestNodeID)
+		i.numTrackedPeers.Dec()
+		i.log.Debug("evicted oldest deletable IP",
+			log.Stringer("nodeID", oldestNodeID),
+			"timestamp", oldestTimestamp,
+		)
+		return
+	}
+
+	// Second pass: If no deletable nodes found and we're at the limit,
+	// forcibly evict the oldest manually tracked node (not a current validator)
+	oldestTimestamp = ^uint64(0) // reset
+	for nodeID, node := range i.tracked {
+		// Never evict current validators
+		if node.validatedNets.Len() > 0 {
+			continue
+		}
+
+		// Skip nodes without IPs
+		if node.ip == nil {
+			continue
+		}
+
+		if node.ip.Timestamp < oldestTimestamp {
+			oldestTimestamp = node.ip.Timestamp
+			oldestNodeID = nodeID
+			found = true
+		}
+	}
+
+	if found {
+		delete(i.tracked, oldestNodeID)
+		i.numTrackedPeers.Dec()
+		i.log.Warn("forcibly evicted oldest manually tracked IP due to limit",
+			log.Stringer("nodeID", oldestNodeID),
+			"timestamp", oldestTimestamp,
+		)
+	}
 }

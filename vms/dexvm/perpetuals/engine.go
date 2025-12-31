@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/dexvm/oracle"
 )
 
 var (
@@ -46,6 +47,7 @@ type Engine struct {
 	insuranceFund    *big.Int // Global insurance fund
 	lastFundingTime  time.Time
 	priceOracle      PriceOracle
+	twapOracle       *oracle.TWAPOracle // TWAP oracle for manipulation-resistant pricing
 }
 
 // PriceOracle provides price feeds for the engine
@@ -94,6 +96,7 @@ func NewEngine() *Engine {
 		fundingPayments: make([]*FundingPayment, 0),
 		insuranceFund:   big.NewInt(0),
 		lastFundingTime: time.Now(),
+		twapOracle:      oracle.NewTWAPOracle(30 * time.Minute), // 30-minute TWAP window
 	}
 	e.priceOracle = &DefaultPriceOracle{engine: e}
 	return e
@@ -104,6 +107,16 @@ func (e *Engine) SetPriceOracle(oracle PriceOracle) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.priceOracle = oracle
+}
+
+// GetTWAPPrice returns the time-weighted average price for a market.
+// This should be used for liquidations to prevent flash crash manipulation.
+func (e *Engine) GetTWAPPrice(market string) (*big.Int, error) {
+	price, err := e.twapOracle.GetPrice(market)
+	if err != nil {
+		return nil, err
+	}
+	return price, nil
 }
 
 // CreateMarket creates a new perpetual market
@@ -568,6 +581,13 @@ func (e *Engine) CheckAndLiquidate(market string) ([]*LiquidationEvent, error) {
 		return nil, ErrMarketNotFound
 	}
 
+	// SECURITY: Use TWAP price for liquidations to prevent flash crash manipulation
+	twapPrice, err := e.twapOracle.GetPrice(market)
+	if err != nil {
+		// Fallback to mark price if TWAP unavailable (e.g., insufficient history)
+		twapPrice = mkt.MarkPrice
+	}
+
 	var liquidations []*LiquidationEvent
 
 	for _, account := range e.accounts {
@@ -577,10 +597,10 @@ func (e *Engine) CheckAndLiquidate(market string) ([]*LiquidationEvent, error) {
 		}
 
 		shouldLiquidate := false
-		if position.Side == Long && mkt.MarkPrice.Cmp(position.LiquidationPrice) <= 0 {
+		if position.Side == Long && twapPrice.Cmp(position.LiquidationPrice) <= 0 {
 			shouldLiquidate = true
 		}
-		if position.Side == Short && mkt.MarkPrice.Cmp(position.LiquidationPrice) >= 0 {
+		if position.Side == Short && twapPrice.Cmp(position.LiquidationPrice) >= 0 {
 			shouldLiquidate = true
 		}
 

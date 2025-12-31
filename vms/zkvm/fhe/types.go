@@ -13,7 +13,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/lattice/v6/core/rlwe"
+	"github.com/luxfi/lattice/v7/core/rlwe"
 )
 
 // EncryptedType represents the type of encrypted value
