@@ -11,9 +11,9 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory ab
 git_commit="${LUXD_COMMIT:-$(git --git-dir="${LUX_PATH}/.git" rev-parse HEAD)}"
 commit_hash="${git_commit::8}"
 
-# Extract version from git tag - always use git, never fallback to hardcoded
+# Extract version from git tag - try git first, then fallback to version file
 # Examples: v1.22.19 -> 1.22.19, v1.22.19-0-g7dc749f -> 1.22.19
-git_raw_version="${LUXD_VERSION:-$(git --git-dir="${LUX_PATH}/.git" describe --tags --always 2>/dev/null)}"
+git_raw_version="${LUXD_VERSION:-$(git --git-dir="${LUX_PATH}/.git" describe --tags --always 2>/dev/null || echo "")}"
 
 # Strip leading 'v' if present
 git_raw_version="${git_raw_version#v}"
@@ -24,10 +24,23 @@ if [[ "$git_raw_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
     version_major="${BASH_REMATCH[1]}"
     version_minor="${BASH_REMATCH[2]}"
     version_patch="${BASH_REMATCH[3]}"
+elif [[ -f "${LUX_PATH}/VERSION" ]]; then
+    # Fallback to VERSION file for CI builds without tags
+    version_content=$(cat "${LUX_PATH}/VERSION")
+    if [[ "$version_content" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+        version_major="${BASH_REMATCH[1]}"
+        version_minor="${BASH_REMATCH[2]}"
+        version_patch="${BASH_REMATCH[3]}"
+    else
+        echo "ERROR: VERSION file content '$version_content' is not semantic version format (X.Y.Z)"
+        exit 1
+    fi
 else
-    echo "ERROR: Git tag '$git_raw_version' is not semantic version format (X.Y.Z)"
-    echo "Please tag the repository with a proper semver tag: git tag v1.22.20"
-    exit 1
+    # Default version for development/CI builds without git tags
+    echo "WARNING: No git tag found and no VERSION file - using default 0.0.0-dev"
+    version_major="0"
+    version_minor="0"
+    version_patch="0"
 fi
 
 git_version="${version_major}.${version_minor}.${version_patch}"
