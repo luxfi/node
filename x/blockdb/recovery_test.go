@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/DataDog/zstd"
+	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils/compression"
@@ -20,7 +20,7 @@ import (
 
 func getCompressedBlockSize(block []byte) (uint32, error) {
 	// Use the same compressor configuration as the database
-	compressor, err := compression.NewZstdCompressorWithLevel(math.MaxUint32, zstd.BestSpeed)
+	compressor, err := compression.NewZstdCompressorWithLevel(math.MaxUint32, zstd.SpeedFastest)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create compressor: %w", err)
 	}

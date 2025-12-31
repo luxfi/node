@@ -761,8 +761,9 @@ func TestRelayerConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
+			// Use new big.Int to avoid race on shared common.Big1
 			req := &DecryptionRequest{
-				RequestID: common.BigToHash(common.Big1.SetUint64(uint64(idx))),
+				RequestID: common.BigToHash(new(big.Int).SetUint64(uint64(idx))),
 			}
 			relayer.SubmitRequest(context.Background(), req)
 		}(i)
@@ -773,7 +774,8 @@ func TestRelayerConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			reqID := common.BigToHash(common.Big1.SetUint64(uint64(idx)))
+			// Use new big.Int to avoid race on shared common.Big1
+			reqID := common.BigToHash(new(big.Int).SetUint64(uint64(idx)))
 			relayer.GetResult(reqID)
 		}(i)
 	}

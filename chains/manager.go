@@ -1559,6 +1559,9 @@ func (m *manager) injectAutominingConfig(configBytes []byte) []byte {
 
 	// Inject enable-automining flag
 	config["enable-automining"] = true
+	// Inject skip-block-fee flag to allow block generation without requiring transaction fees
+	// This is necessary for dev mode APIs (eth_setBalance, eth_setStorageAt, evm_mine, etc.)
+	config["skip-block-fee"] = true
 
 	// Serialize back to JSON
 	modifiedBytes, err := json.Marshal(config)
@@ -1567,7 +1570,7 @@ func (m *manager) injectAutominingConfig(configBytes []byte) []byte {
 		return configBytes
 	}
 
-	m.Log.Info("injected enable-automining into chain config")
+	m.Log.Info("injected enable-automining and skip-block-fee into chain config")
 	return modifiedBytes
 }
 
