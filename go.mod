@@ -229,7 +229,7 @@ replace (
 	github.com/luxfi/consensus => ../consensus
 	github.com/luxfi/crypto => ../crypto
 	github.com/luxfi/lattice/v7 => ../lattice
-	github.com/luxfi/precompile => ../precompiles
+	github.com/luxfi/precompile => ../precompile
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
