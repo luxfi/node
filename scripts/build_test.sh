@@ -18,7 +18,11 @@ fi
 # Get test targets
 TEST_TARGETS="$(eval "go list ./... ${EXCLUDED_TARGETS}")"
 
-# Run tests with race detection
+# Run tests (with race detection if CGO is enabled)
 # -short flag skips long-running integration tests (MPC protocol execution, etc.)
+RACE_FLAG=""
+if [[ "${CGO_ENABLED:-1}" != "0" ]]; then
+  RACE_FLAG="-race"
+fi
 # shellcheck disable=SC2086
-go test -tags test -shuffle=on -race -short -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}
+go test -tags test -shuffle=on ${RACE_FLAG} -short -timeout="${TIMEOUT:-120s}" -coverprofile="coverage.out" -covermode="atomic" ${TEST_TARGETS}
