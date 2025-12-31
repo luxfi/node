@@ -24,9 +24,9 @@ if [[ "$git_raw_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
     version_major="${BASH_REMATCH[1]}"
     version_minor="${BASH_REMATCH[2]}"
     version_patch="${BASH_REMATCH[3]}"
-elif [[ -f "${LUX_PATH}/VERSION" ]]; then
-    # Fallback to VERSION file for CI builds without tags
-    version_content=$(cat "${LUX_PATH}/VERSION")
+elif [[ -f "${LUX_PATH}/version.txt" ]]; then
+    # Fallback to version.txt file for CI builds without tags
+    version_content=$(cat "${LUX_PATH}/version.txt")
     if [[ "$version_content" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
         version_major="${BASH_REMATCH[1]}"
         version_minor="${BASH_REMATCH[2]}"
