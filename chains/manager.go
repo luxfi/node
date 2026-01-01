@@ -941,107 +941,38 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 		}
 
-		consensusEngine := consensuschain.New()
+		// Create integrated consensus engine - the ONE right way to set up chain consensus
+		// This consolidates: engine creation, emitter wiring, VM registration
+		var blockBuilder consensuschain.BlockBuilder
+		if bb, ok := vm.(consensuschain.BlockBuilder); ok {
+			blockBuilder = bb
+			m.Log.Info("registered VM with consensus engine for block building",
+				log.Stringer("chainID", chainParams.ID))
+		} else {
+			m.Log.Warn("VM does not implement BlockBuilder interface, block building disabled",
+				log.Stringer("chainID", chainParams.ID))
+		}
 
-		// Start the consensus engine - this sets bootstrapped = true
-		// Required for health checks and bootstrap monitoring
+		consensusEngine := consensuschain.NewIntegratedEngine(consensuschain.NetworkConfig{
+			ChainID:  chainParams.ID,
+			NetID:    chainParams.ChainID,
+			Logger:   m.Log,
+			Gossiper: &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
+			VM:       blockBuilder,
+		})
+
+		// Start the consensus engine
 		if err := consensusEngine.Start(context.TODO(), true); err != nil {
 			m.Log.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
 			return nil, fmt.Errorf("failed to start consensus engine: %w", err)
 		}
-		m.Log.Info("consensus engine started", log.Stringer("chainID", chainParams.ID))
+		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
+			log.Stringer("chainID", chainParams.ID))
 
-		// Wire up VM notifications to the consensus engine
-		// This goroutine reads from the toEngine channel and triggers block building
-		// It now also gossips blocks to other validators for proper consensus
-		go func(toEng <-chan block.Message, vm block.ChainVM, logger log.Logger, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, netID ids.ID) {
-			logger.Info("starting VM notification forwarder with block gossip",
-				log.Bool("hasNet", net != nil),
-				log.Bool("hasMsgCreator", msgCreator != nil),
-				log.Stringer("chainID", chainID),
-				log.Stringer("netID", netID))
-			for msg := range toEng {
-				logger.Debug("received VM notification, building block",
-					log.Uint32("type", uint32(msg.Type)))
-
-				// Build block directly when VM notifies us of pending transactions
-				// Type 0 = PendingTxs (ready for block building)
-				if msg.Type == 0 {
-					ctx := context.Background()
-					blk, err := vm.BuildBlock(ctx)
-					if err != nil {
-						logger.Debug("failed to build block",
-							log.Err(err))
-						continue
-					}
-					logger.Info("built block from VM notification",
-						log.Stringer("blockID", blk.ID()),
-						log.Uint64("height", blk.Height()))
-
-					// Verify the block before accepting
-					if err := blk.Verify(ctx); err != nil {
-						logger.Error("failed to verify built block",
-							log.Stringer("blockID", blk.ID()),
-							log.Err(err))
-						continue
-					}
-
-					// Gossip the block to validators before accepting locally
-					// This ensures other nodes receive and process the block
-					if net != nil && msgCreator != nil {
-						blkBytes := blk.Bytes()
-						// Create Put message with the block bytes
-						// Put is used to push a block to other nodes
-						putMsg, err := msgCreator.Put(chainID, 0, blkBytes)
-						if err != nil {
-							logger.Warn("failed to create Put message for block gossip",
-								log.Stringer("blockID", blk.ID()),
-								log.Err(err))
-						} else {
-							// Gossip to all validators
-							// numValidatorsToSend=-1 means all validators
-							// numNonValidatorsToSend=0, numPeersToSend=0 for validators only
-							sentTo := net.Gossip(putMsg, nil, netID, -1, 0, 0)
-							logger.Info("gossiped block to validators",
-								log.Stringer("blockID", blk.ID()),
-								log.Int("sentTo", sentTo.Len()))
-
-							// Wait for block to propagate to other nodes before accepting locally
-							// This gives other validators time to receive and process the block
-							time.Sleep(100 * time.Millisecond)
-						}
-					} else {
-						logger.Warn("cannot gossip block - network or msgCreator is nil",
-							log.Stringer("blockID", blk.ID()),
-							log.Bool("hasNet", net != nil),
-							log.Bool("hasMsgCreator", msgCreator != nil))
-					}
-
-					// Accept the block into the canonical chain
-					if err := blk.Accept(ctx); err != nil {
-						logger.Error("failed to accept built block",
-							log.Stringer("blockID", blk.ID()),
-							log.Err(err))
-						continue
-					}
-
-					// Set this block as the preferred tip
-					if err := vm.SetPreference(ctx, blk.ID()); err != nil {
-						logger.Warn("failed to set preference to accepted block",
-							log.Stringer("blockID", blk.ID()),
-							log.Err(err))
-						// Continue anyway - block is accepted
-					}
-
-					logger.Info("successfully accepted block into canonical chain",
-						log.Stringer("blockID", blk.ID()),
-						log.Uint64("height", blk.Height()))
-				}
-			}
-			logger.Info("VM notification forwarder stopped")
-		}(toEngine, vm, m.Log, m.Net, m.MsgCreator, chainParams.ID, chainParams.ChainID)
+		// Forward VM notifications to consensus (single goroutine)
+		go consensusEngine.ForwardVMNotifications(toEngine)
 
 		chain = &chainInfo{
 			Name:    chainCtx.ChainID.String(),
@@ -1938,4 +1869,51 @@ func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, reque
 
 func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
+}
+
+// networkGossiper implements consensuschain.Gossiper for Lux consensus integration.
+// It adapts the node's network layer to the minimal Gossiper interface used by
+// the integrated consensus engine.
+type networkGossiper struct {
+	net        network.Network
+	msgCreator message.OutboundMsgBuilder
+}
+
+// Compile-time check that networkGossiper implements Gossiper
+var _ consensuschain.Gossiper = (*networkGossiper)(nil)
+
+// GossipPut broadcasts a Put message with block data to validators.
+func (g *networkGossiper) GossipPut(chainID ids.ID, netID ids.ID, blockData []byte) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+
+	putMsg, err := g.msgCreator.Put(chainID, 0, blockData)
+	if err != nil {
+		return 0
+	}
+
+	// Gossip to all validators (-1 = all validators)
+	sentTo := g.net.Gossip(putMsg, nil, netID, -1, 0, 0)
+	return sentTo.Len()
+}
+
+// SendPullQuery sends a PullQuery to specific validators requesting votes.
+func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID ids.ID, validators []ids.NodeID) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+
+	pullMsg, err := g.msgCreator.PullQuery(chainID, 0, 5*time.Second, blockID, 0)
+	if err != nil {
+		return 0
+	}
+
+	validatorSet := set.NewSet[ids.NodeID](len(validators))
+	for _, v := range validators {
+		validatorSet.Add(v)
+	}
+
+	sentTo := g.net.Send(pullMsg, validatorSet, netID, 0)
+	return sentTo.Len()
 }

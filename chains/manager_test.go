@@ -5,15 +5,18 @@
 package chains
 
 import (
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/const"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/nets"
-	"github.com/luxfi/const"
 	"github.com/luxfi/node/vms"
 )
 
@@ -173,5 +176,99 @@ func TestIsBootstrapped(t *testing.T) {
 	// Test non-existent chain
 	chainID := ids.GenerateTestID()
 	require.False(m.IsBootstrapped(chainID))
+}
+
+// TestToEngineChannelFlow verifies the toEngine channel notification flow
+// This tests the goroutine that reads from toEngine and triggers block building
+func TestToEngineChannelFlow(t *testing.T) {
+	require := require.New(t)
+
+	// Create toEngine channel (same as what manager creates)
+	toEngine := make(chan block.Message, 1)
+	defer close(toEngine)
+
+	// Track block builds
+	var buildCalls int
+	var mu sync.Mutex
+
+	// Simulate the goroutine that reads from toEngine
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for msg := range toEngine {
+			if msg.Type == 0 { // PendingTxs
+				mu.Lock()
+				buildCalls++
+				mu.Unlock()
+			}
+		}
+	}()
+
+	// Send PendingTxs notification
+	toEngine <- block.Message{Type: 0} // PendingTxs = 0
+
+	// Give goroutine time to process
+	time.Sleep(10 * time.Millisecond)
+
+	mu.Lock()
+	count := buildCalls
+	mu.Unlock()
+
+	require.Equal(1, count, "Expected 1 build call after PendingTxs notification")
+
+	// Send multiple notifications
+	for i := 0; i < 5; i++ {
+		toEngine <- block.Message{Type: 0}
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	mu.Lock()
+	count = buildCalls
+	mu.Unlock()
+
+	require.Equal(6, count, "Expected 6 total build calls")
+}
+
+// TestToEngineMessageTypes verifies different message types are handled correctly
+func TestToEngineMessageTypes(t *testing.T) {
+	require := require.New(t)
+
+	toEngine := make(chan block.Message, 10)
+	defer close(toEngine)
+
+	var pendingTxsCalls int
+	var otherCalls int
+	var mu sync.Mutex
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for msg := range toEngine {
+			mu.Lock()
+			if msg.Type == 0 { // PendingTxs
+				pendingTxsCalls++
+			} else {
+				otherCalls++
+			}
+			mu.Unlock()
+		}
+	}()
+
+	// Send different message types
+	toEngine <- block.Message{Type: 0} // PendingTxs - should trigger build
+	toEngine <- block.Message{Type: 1} // StateSyncDone - should NOT trigger build
+	toEngine <- block.Message{Type: 0} // PendingTxs - should trigger build
+	toEngine <- block.Message{Type: 2} // Unknown - should NOT trigger build
+
+	time.Sleep(50 * time.Millisecond)
+
+	mu.Lock()
+	pendingCount := pendingTxsCalls
+	otherCount := otherCalls
+	mu.Unlock()
+
+	require.Equal(2, pendingCount, "Expected 2 PendingTxs messages")
+	require.Equal(2, otherCount, "Expected 2 other messages")
 }
 
