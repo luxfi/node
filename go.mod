@@ -41,7 +41,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
-	github.com/onsi/ginkgo/v2 v2.25.1
+	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/pires/go-proxyproto v0.8.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -137,17 +137,18 @@ require (
 	github.com/cloudflare/circl v1.6.2
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/ai v0.0.0-20251211041856-0feda9795706
+	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
 	github.com/luxfi/const v1.4.0
-	github.com/luxfi/coreth v0.15.67
+	github.com/luxfi/coreth v0.15.71
+	github.com/luxfi/fhe v1.4.1
 	github.com/luxfi/genesis v1.5.17
-	github.com/luxfi/geth v1.16.66
+	github.com/luxfi/geth v1.16.67
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/ringtail v0.2.0
-	github.com/luxfi/threshold v1.1.11
+	github.com/luxfi/threshold v1.5.0
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/utils v1.1.0
 	github.com/luxfi/vm v1.0.1
@@ -164,6 +165,7 @@ require (
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
+	github.com/crate-crypto/go-kzg-4844 v1.1.0 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/dgraph-io/badger/v4 v4.9.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.3.0 // indirect
@@ -188,11 +190,9 @@ require (
 	github.com/luxfi/address v1.0.0 // indirect
 	github.com/luxfi/cache v1.1.0 // indirect
 	github.com/luxfi/codec v1.1.0 // indirect
-	github.com/luxfi/constants v1.3.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
-	github.com/luxfi/fhe v1.4.1 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
-	github.com/luxfi/precompiles v0.1.10 // indirect
+	github.com/luxfi/precompile v0.4.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect
@@ -217,7 +217,6 @@ require (
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 )
