@@ -223,4 +223,8 @@ require (
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
 
+replace github.com/luxfi/coreth => ../coreth
+
+replace github.com/luxfi/vm => ../vm
+
 exclude github.com/ethereum/go-ethereum v1.10.26

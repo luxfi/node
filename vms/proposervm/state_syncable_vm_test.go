@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"

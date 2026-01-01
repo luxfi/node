@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/vm/chain"
 	platformwarp "github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"

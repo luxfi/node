@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	proposerBlock "github.com/luxfi/node/vms/proposervm/block"

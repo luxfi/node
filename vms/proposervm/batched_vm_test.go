@@ -28,7 +28,7 @@ import (
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/vm/chain/blocktest"
 
 	blockbuilder "github.com/luxfi/node/vms/proposervm/block"
 )

@@ -17,7 +17,7 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	componentblocktest "github.com/luxfi/node/vms/components/chain/blocktest"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
