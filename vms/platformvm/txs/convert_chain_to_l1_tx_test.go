@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 
-	cryptohashing "github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -702,7 +702,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				},
 				ChainAuth: validNetAuth,
 			},
-			expectedErr: cryptohashing.ErrInvalidHashLen,
+			expectedErr: hash.ErrInvalidHashLen,
 		},
 		{
 			name: "invalid validator nodeID",

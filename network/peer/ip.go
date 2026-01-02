@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids/utils/wrappers"
 	"github.com/luxfi/node/staking"
 )
@@ -40,7 +40,7 @@ func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner bls.Signer) (*Sign
 	ipBytes := ip.bytes()
 	tlsSignature, err := tlsSigner.Sign(
 		rand.Reader,
-		hashing.ComputeHash256(ipBytes),
+		hash.ComputeHash256(ipBytes),
 		crypto.SHA256,
 	)
 	if err != nil {

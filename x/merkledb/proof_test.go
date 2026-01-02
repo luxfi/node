@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -217,13 +217,13 @@ func Test_Proof_ValueOrHashMatches(t *testing.T) {
 	require := require.New(t)
 
 	require.True(valueOrHashMatches(SHA256Hasher, maybe.Some([]byte{0}), maybe.Some([]byte{0})))
-	require.False(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Some(hashing.ComputeHash256([]byte{0}))))
+	require.False(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Some(hash.ComputeHash256([]byte{0}))))
 	require.True(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Nothing[[]byte]()))
 
 	require.False(valueOrHashMatches(SHA256Hasher, maybe.Some([]byte{0}), maybe.Nothing[[]byte]()))
 	require.False(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Some([]byte{0})))
-	require.False(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Some(hashing.ComputeHash256([]byte{1}))))
-	require.False(valueOrHashMatches(SHA256Hasher, maybe.Some(hashing.ComputeHash256([]byte{0})), maybe.Nothing[[]byte]()))
+	require.False(valueOrHashMatches(SHA256Hasher, maybe.Nothing[[]byte](), maybe.Some(hash.ComputeHash256([]byte{1}))))
+	require.False(valueOrHashMatches(SHA256Hasher, maybe.Some(hash.ComputeHash256([]byte{0})), maybe.Nothing[[]byte]()))
 }
 
 func Test_RangeProof_Extra_Value(t *testing.T) {
@@ -1514,7 +1514,7 @@ func TestProofNodeUnmarshalProtoInvalidChildBytes(t *testing.T) {
 
 	var unmarshaledNode ProofNode
 	err := unmarshaledNode.UnmarshalProto(protoNode)
-	require.ErrorIs(t, err, hashing.ErrInvalidHashLen)
+	require.ErrorIs(t, err, hash.ErrInvalidHashLen)
 }
 
 func TestProofNodeUnmarshalProtoInvalidChildIndex(t *testing.T) {
