@@ -29,7 +29,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.47
+	github.com/luxfi/consensus v1.22.48
 	github.com/luxfi/crypto v1.17.31
 	github.com/luxfi/database v1.2.17
 	github.com/luxfi/ids v1.2.5
