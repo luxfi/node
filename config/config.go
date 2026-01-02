@@ -48,7 +48,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/crypto/hashing"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations
