@@ -26,6 +26,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12, ubuntu-20.04, ubuntu-22.04, windows-2022, custom-arm64-focal, custom-arm64-jammy]
+        cgo: ['0', '1']
+        exclude:
+          # CGO tests on Windows are limited
+          - os: windows-2022
+            cgo: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-focal-deps
@@ -35,11 +40,21 @@ jobs:
         shell: bash
         if: matrix.os == 'windows-2022'
         run: echo "TIMEOUT=240s" >> "$GITHUB_ENV"
+      - name: Install C++ dependencies for CGO
+        if: matrix.cgo == '1' && runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzmq3-dev libczmq-dev libsodium-dev build-essential
+      - name: Install C++ dependencies for CGO (macOS)
+        if: matrix.cgo == '1' && runner.os == 'macOS'
+        run: |
+          brew install zeromq czmq libsodium || true
       - name: build_test
         shell: bash
         run: ./scripts/build_test.sh
         env:
           TIMEOUT: ${{ env.TIMEOUT }}
+          CGO_ENABLED: ${{ matrix.cgo }}
   Fuzz:
     runs-on: ubuntu-22.04
     steps:
