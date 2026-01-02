@@ -151,7 +151,7 @@ require (
 	github.com/luxfi/threshold v1.5.0
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/utils v1.1.0
-	github.com/luxfi/vm v1.0.1
+	github.com/luxfi/vm v1.0.2
 	github.com/luxfi/warp v1.18.2
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.1
@@ -223,10 +223,4 @@ require (
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
 
-replace github.com/luxfi/coreth => ../coreth
-
-replace github.com/luxfi/vm => ../vm
-
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/consensus => ../consensus

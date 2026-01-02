@@ -88,7 +88,93 @@ var (
 	errCannotReadDirectory                    = errors.New("cannot read directory")
 	errUnmarshalling                          = errors.New("unmarshalling failed")
 	errFileDoesNotExist                       = errors.New("file does not exist")
+	errDevNetworkGenesisMismatch              = errors.New("genesis mismatch: dev-network.json exists but produces different genesis hash; delete datadir or use original network config")
 )
+
+// DevNetworkConfig captures immutable network state for dev mode persistence.
+// Once written to dev-network.json, this ensures the same genesis is produced
+// on every restart, making C-Chain/EVM state persistence work correctly.
+type DevNetworkConfig struct {
+	// Version for forward compatibility
+	Version int `json:"version"`
+
+	// Genesis start time - captured on first boot, reused on restart
+	StartTime uint64 `json:"startTime"`
+
+	// Node identity
+	NodeID string `json:"nodeId"`
+
+	// BLS credentials (hex-encoded)
+	BLSPublicKey string `json:"blsPublicKey"`
+	BLSPopProof  string `json:"blsPopProof"`
+
+	// Computed genesis bytes and hash (for verification)
+	GenesisBytes []byte `json:"genesisBytes"`
+	GenesisHash  string `json:"genesisHash"` // Actual hash of GenesisBytes
+
+	// X-Chain asset ID (LUX token ID)
+	XAssetID string `json:"xAssetId"`
+
+	// C-Chain genesis (stored separately for EVM immutability)
+	CChainGenesis string `json:"cChainGenesis"`
+}
+
+const (
+	devNetworkConfigVersion  = 1
+	devNetworkConfigFilename = "dev-network.json"
+)
+
+// loadDevNetworkConfig attempts to load dev-network.json from the data directory.
+// Returns nil if the file doesn't exist (first boot scenario).
+func loadDevNetworkConfig(dataDir string) (*DevNetworkConfig, error) {
+	path := filepath.Join(dataDir, devNetworkConfigFilename)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil // First boot - no config yet
+		}
+		return nil, fmt.Errorf("failed to read dev network config: %w", err)
+	}
+
+	var cfg DevNetworkConfig
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse dev network config: %w", err)
+	}
+
+	if cfg.Version != devNetworkConfigVersion {
+		return nil, fmt.Errorf("unsupported dev network config version: %d (expected %d)", cfg.Version, devNetworkConfigVersion)
+	}
+
+	return &cfg, nil
+}
+
+// saveDevNetworkConfig atomically writes the dev network config to disk.
+// Uses write-to-temp-then-rename pattern for crash safety.
+func saveDevNetworkConfig(dataDir string, cfg *DevNetworkConfig) error {
+	path := filepath.Join(dataDir, devNetworkConfigFilename)
+	tempPath := path + ".tmp"
+
+	cfg.Version = devNetworkConfigVersion
+
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal dev network config: %w", err)
+	}
+
+	// Write to temp file
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
+		return fmt.Errorf("failed to write temp dev network config: %w", err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tempPath, path); err != nil {
+		os.Remove(tempPath) // Clean up on failure
+		return fmt.Errorf("failed to rename dev network config: %w", err)
+	}
+
+	return nil
+}
 
 func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Start with default parameters
@@ -863,13 +949,13 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	return upgradeConfig, nil
 }
 
-func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig) ([]byte, ids.ID, error) {
+func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
 	// Get allow-custom-genesis flag (defaults to true for development)
 	allowCustomGenesis := v.GetBool(AllowCustomGenesisKey)
 
 	// Handle dev mode genesis - dynamically generate genesis with the node's own credentials
 	if v.GetBool(DevModeKey) && !v.IsSet(GenesisFileKey) && !v.IsSet(GenesisFileContentKey) && !v.IsSet(GenesisDBKey) {
-		return buildDevModeGenesis(stakingCfg)
+		return getOrCreateDevModeGenesis(stakingCfg, dataDir)
 	}
 
 	// Check if genesis-db is specified for database replay
@@ -905,9 +991,86 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	return builder.FromConfig(config)
 }
 
+// getOrCreateDevModeGenesis handles dev mode genesis with persistence.
+// On first boot: generates genesis, saves to dev-network.json, returns genesis.
+// On restart: loads from dev-network.json to ensure genesis hash stability.
+func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
+	// Try to load existing dev network config
+	devCfg, err := loadDevNetworkConfig(dataDir)
+	if err != nil {
+		return nil, ids.Empty, fmt.Errorf("failed to load dev network config: %w", err)
+	}
+
+	if devCfg != nil {
+		// Existing config found - verify it matches current node credentials
+		expectedNodeID := stakingCfg.NodeID
+		expectedBLSPK := fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey)
+		expectedBLSPoP := fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession)
+
+		if devCfg.NodeID != expectedNodeID {
+			return nil, ids.Empty, fmt.Errorf("dev-network.json nodeID mismatch: config has %s, node has %s; delete %s/dev-network.json to regenerate",
+				devCfg.NodeID, expectedNodeID, dataDir)
+		}
+		if devCfg.BLSPublicKey != expectedBLSPK {
+			return nil, ids.Empty, fmt.Errorf("dev-network.json BLS public key mismatch; delete %s/dev-network.json to regenerate", dataDir)
+		}
+		if devCfg.BLSPopProof != expectedBLSPoP {
+			return nil, ids.Empty, fmt.Errorf("dev-network.json BLS PoP mismatch; delete %s/dev-network.json to regenerate", dataDir)
+		}
+
+		// Credentials match - return stored genesis
+		genesisHash, err := ids.FromString(devCfg.GenesisHash)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("invalid genesis hash in dev-network.json: %w", err)
+		}
+
+		log.Info("loaded dev network config",
+			"path", filepath.Join(dataDir, devNetworkConfigFilename),
+			"genesisHash", devCfg.GenesisHash,
+			"startTime", devCfg.StartTime,
+		)
+
+		return devCfg.GenesisBytes, genesisHash, nil
+	}
+
+	// First boot - generate new genesis with current timestamp
+	startTime := uint64(time.Now().Unix())
+
+	genesisBytes, genesisHash, err := buildDevModeGenesis(stakingCfg, startTime)
+	if err != nil {
+		return nil, ids.Empty, err
+	}
+
+	// Save for future restarts
+	newDevCfg := &DevNetworkConfig{
+		StartTime:     startTime,
+		NodeID:        stakingCfg.NodeID,
+		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
+		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
+		GenesisBytes:  genesisBytes,
+		GenesisHash:   genesisHash.String(),
+		CChainGenesis: devModeCChainGenesis,
+	}
+
+	if err := saveDevNetworkConfig(dataDir, newDevCfg); err != nil {
+		// Log warning but don't fail - genesis is still valid
+		log.Warn("failed to save dev network config (persistence may not work on restart)",
+			"error", err,
+		)
+	} else {
+		log.Info("created dev network config",
+			"path", filepath.Join(dataDir, devNetworkConfigFilename),
+			"genesisHash", genesisHash.String(),
+			"startTime", startTime,
+		)
+	}
+
+	return genesisBytes, genesisHash, nil
+}
+
 // buildDevModeGenesis creates a genesis configuration for single-node development mode.
 // It uses the node's own credentials as the sole validator.
-func buildDevModeGenesis(stakingCfg *builder.StakingConfig) ([]byte, ids.ID, error) {
+func buildDevModeGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([]byte, ids.ID, error) {
 	// Parse node ID from staking config
 	nodeID, err := ids.NodeIDFromString(stakingCfg.NodeID)
 	if err != nil {
@@ -933,6 +1096,7 @@ func buildDevModeGenesis(stakingCfg *builder.StakingConfig) ([]byte, ids.ID, err
 		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
 		RewardAddress: rewardAddress,
 		CChainGenesis: devModeCChainGenesis,
+		StartTime:     startTime, // Use provided start time for determinism
 	}
 
 	return builder.ForDevMode(devCfg, stakingCfg)
@@ -1673,7 +1837,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		}
 	}
 
-	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg)
+	// Get data directory for dev network config persistence
+	dataDir := getExpandedArg(v, DataDirKey)
+
+	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}

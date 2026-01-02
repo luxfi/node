@@ -640,18 +640,22 @@ func validateConfig(networkID uint32, config *genesiscfg.Config, stakingCfg *Sta
 
 // DevModeConfig holds configuration for dev mode genesis
 type DevModeConfig struct {
-	NodeID        ids.NodeID        // The validator node ID
-	BLSPublicKey  string            // BLS public key hex
-	BLSPopProof   string            // BLS proof of possession hex
-	RewardAddress ids.ShortID       // Reward/allocation address
-	CChainGenesis string            // C-Chain genesis JSON
+	NodeID        ids.NodeID  // The validator node ID
+	BLSPublicKey  string      // BLS public key hex
+	BLSPopProof   string      // BLS proof of possession hex
+	RewardAddress ids.ShortID // Reward/allocation address
+	CChainGenesis string      // C-Chain genesis JSON
+	StartTime     uint64      // Genesis start time (if 0, uses time.Now())
 }
 
 // ForDevMode creates a genesis configuration suitable for single-node development mode.
 // It creates a single validator with far-future stake time and funds the treasury address.
 func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	// Genesis start time: now
-	startTime := uint64(time.Now().Unix())
+	// Genesis start time: use provided time or fall back to now
+	startTime := cfg.StartTime
+	if startTime == 0 {
+		startTime = uint64(time.Now().Unix())
+	}
 	
 	// Far-future stake duration: 100 years in seconds
 	// This ensures the validator never expires during development
