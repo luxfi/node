@@ -48,7 +48,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations
@@ -1039,7 +1039,7 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 		}
 
 		// Compute actual hash from stored bytes to verify integrity
-		computedHashBytes := hashing.ComputeHash256(devCfg.GenesisBytes)
+		computedHashBytes := hash.ComputeHash256(devCfg.GenesisBytes)
 		computedHash, err := ids.ToID(computedHashBytes)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to convert computed hash to ID: %w", err)
@@ -1075,7 +1075,7 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 	}
 
 	// Compute actual genesis hash from bytes (this is what the node uses for DB validation)
-	genesisHashBytes := hashing.ComputeHash256(genesisBytes)
+	genesisHashBytes := hash.ComputeHash256(genesisBytes)
 	genesisHash, err := ids.ToID(genesisHashBytes)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to convert genesis hash to ID: %w", err)
