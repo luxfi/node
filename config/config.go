@@ -48,6 +48,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations
@@ -994,6 +995,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 // getOrCreateDevModeGenesis handles dev mode genesis with persistence.
 // On first boot: generates genesis, saves to dev-network.json, returns genesis.
 // On restart: loads from dev-network.json to ensure genesis hash stability.
+// Returns: (genesisBytes, xAssetID, error) - xAssetID is the LUX token asset ID
 func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
 	// Try to load existing dev network config
 	devCfg, err := loadDevNetworkConfig(dataDir)
@@ -1002,53 +1004,93 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 	}
 
 	if devCfg != nil {
-		// Existing config found - verify it matches current node credentials
+		// Existing config found - check if credentials match
+		// In dev mode with ephemeral certs, credentials will change on restart.
+		// We log a warning but continue with the stored genesis since dev mode
+		// is single-node and doesn't require credential consistency.
 		expectedNodeID := stakingCfg.NodeID
 		expectedBLSPK := fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey)
 		expectedBLSPoP := fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession)
 
+		credentialsMismatch := false
 		if devCfg.NodeID != expectedNodeID {
-			return nil, ids.Empty, fmt.Errorf("dev-network.json nodeID mismatch: config has %s, node has %s; delete %s/dev-network.json to regenerate",
-				devCfg.NodeID, expectedNodeID, dataDir)
+			log.Warn("dev-network.json nodeID mismatch (using stored genesis anyway for dev mode)",
+				"stored", devCfg.NodeID,
+				"current", expectedNodeID,
+			)
+			credentialsMismatch = true
 		}
 		if devCfg.BLSPublicKey != expectedBLSPK {
-			return nil, ids.Empty, fmt.Errorf("dev-network.json BLS public key mismatch; delete %s/dev-network.json to regenerate", dataDir)
+			log.Warn("dev-network.json BLS public key mismatch (using stored genesis anyway for dev mode)")
+			credentialsMismatch = true
 		}
 		if devCfg.BLSPopProof != expectedBLSPoP {
-			return nil, ids.Empty, fmt.Errorf("dev-network.json BLS PoP mismatch; delete %s/dev-network.json to regenerate", dataDir)
+			log.Warn("dev-network.json BLS PoP mismatch (using stored genesis anyway for dev mode)")
+			credentialsMismatch = true
+		}
+		if credentialsMismatch {
+			log.Warn("credentials changed since first boot - for persistent staking, use --staking-ephemeral-cert-enabled=false with persistent key files")
 		}
 
-		// Credentials match - return stored genesis
-		genesisHash, err := ids.FromString(devCfg.GenesisHash)
+		// Verify the stored genesis hash matches what we'll compute from the bytes
+		storedHash, err := ids.FromString(devCfg.GenesisHash)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("invalid genesis hash in dev-network.json: %w", err)
+		}
+
+		// Compute actual hash from stored bytes to verify integrity
+		computedHashBytes := hashing.ComputeHash256(devCfg.GenesisBytes)
+		computedHash, err := ids.ToID(computedHashBytes)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("failed to convert computed hash to ID: %w", err)
+		}
+
+		if storedHash != computedHash {
+			return nil, ids.Empty, fmt.Errorf("genesis bytes corrupted: stored hash %s != computed hash %s", storedHash, computedHash)
+		}
+
+		// Parse stored X-Chain asset ID
+		xAssetID, err := ids.FromString(devCfg.XAssetID)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("invalid xAssetId in dev-network.json: %w", err)
 		}
 
 		log.Info("loaded dev network config",
 			"path", filepath.Join(dataDir, devNetworkConfigFilename),
 			"genesisHash", devCfg.GenesisHash,
+			"xAssetID", devCfg.XAssetID,
 			"startTime", devCfg.StartTime,
 		)
 
-		return devCfg.GenesisBytes, genesisHash, nil
+		return devCfg.GenesisBytes, xAssetID, nil
 	}
 
 	// First boot - generate new genesis with current timestamp
 	startTime := uint64(time.Now().Unix())
 
-	genesisBytes, genesisHash, err := buildDevModeGenesis(stakingCfg, startTime)
+	// buildDevModeGenesis returns (genesisBytes, xAssetID) - the LUX token asset ID
+	genesisBytes, xAssetID, err := buildDevModeGenesis(stakingCfg, startTime)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
 
+	// Compute actual genesis hash from bytes (this is what the node uses for DB validation)
+	genesisHashBytes := hashing.ComputeHash256(genesisBytes)
+	genesisHash, err := ids.ToID(genesisHashBytes)
+	if err != nil {
+		return nil, ids.Empty, fmt.Errorf("failed to convert genesis hash to ID: %w", err)
+	}
+
 	// Save for future restarts
 	newDevCfg := &DevNetworkConfig{
+		Version:       devNetworkConfigVersion,
 		StartTime:     startTime,
 		NodeID:        stakingCfg.NodeID,
 		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
 		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
 		GenesisBytes:  genesisBytes,
 		GenesisHash:   genesisHash.String(),
+		XAssetID:      xAssetID.String(),
 		CChainGenesis: devModeCChainGenesis,
 	}
 
@@ -1061,11 +1103,12 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 		log.Info("created dev network config",
 			"path", filepath.Join(dataDir, devNetworkConfigFilename),
 			"genesisHash", genesisHash.String(),
+			"xAssetID", xAssetID.String(),
 			"startTime", startTime,
 		)
 	}
 
-	return genesisBytes, genesisHash, nil
+	return genesisBytes, xAssetID, nil
 }
 
 // buildDevModeGenesis creates a genesis configuration for single-node development mode.
