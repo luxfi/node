@@ -200,7 +200,7 @@ jobs:
               --db-dir=/tmp/luxd-test/db \
               --log-dir=/tmp/luxd-test/logs \
               --log-level=${LOG_LEVEL:-info} \
-              --dev-mode \
+              --dev \
               --genesis-file=genesis/genesis_mainnet.json \
               --skip-bootstrap \
               $EXTRA_FLAGS &
@@ -318,7 +318,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/test-db \
             --log-dir=/tmp/test-logs \
-            --dev-mode \
+            --dev \
             --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
@@ -406,7 +406,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/test-skip-bootstrap \
             --log-dir=/tmp/test-logs \
-            --dev-mode \
+            --dev \
             --skip-bootstrap &
           
           NODE_PID=$!
@@ -466,7 +466,7 @@ jobs:
             --staking-port=9651 \
             --db-dir=/tmp/perf-db \
             --log-dir=/tmp/perf-logs \
-            --dev-mode \
+            --dev \
             --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
