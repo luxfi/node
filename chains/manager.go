@@ -954,11 +954,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		consensusEngine := consensuschain.NewIntegratedEngine(consensuschain.NetworkConfig{
-			ChainID:  chainParams.ID,
-			NetID:    chainParams.ChainID,
-			Logger:   m.Log,
-			Gossiper: &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
-			VM:       blockBuilder,
+			ChainID:   chainParams.ID,
+			NetworkID: chainParams.ChainID, // PrimaryNetworkID for P/X/C chains
+			Logger:    m.Log,
+			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
+			VM:        blockBuilder,
 		})
 
 		// Start the consensus engine
@@ -979,7 +979,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Context: chainCtx,
 			VM:      vm, // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			Handler: newBlockHandler(vm, m.Log),
+			Handler: newBlockHandler(vm, m.Log, consensusEngine),
 		}
 	default:
 		return nil, fmt.Errorf("unsupported VM type: %T", vm)
@@ -1627,10 +1627,11 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 type blockHandler struct {
 	vm     block.ChainVM
 	logger log.Logger
+	engine *consensuschain.IntegratedEngine // Consensus engine for proper block handling
 }
 
-func newBlockHandler(vm block.ChainVM, logger log.Logger) *blockHandler {
-	return &blockHandler{vm: vm, logger: logger}
+func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.IntegratedEngine) *blockHandler {
+	return &blockHandler{vm: vm, logger: logger, engine: engine}
 }
 
 func (b *blockHandler) Context() *consensusctx.Context                 { return nil }
@@ -1650,51 +1651,33 @@ func (b *blockHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, reque
 	return nil
 }
 func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
-	// Process incoming block from gossip
-	if b.vm == nil {
+	// Route incoming block through consensus engine instead of auto-accepting
+	// This enables proper quorum-based block acceptance
+	if b.engine == nil {
+		b.logger.Warn("no consensus engine - cannot process incoming block",
+			log.Stringer("from", nodeID))
 		return nil
 	}
 
-	// Parse the block bytes
-	blk, err := b.vm.ParseBlock(ctx, container)
+	// Use the consensus engine to handle the block properly:
+	// 1. Parse and verify the block
+	// 2. Add to pending blocks
+	// 3. Vote on the block
+	// 4. Accept only when quorum is reached
+	blk, err := b.engine.HandleIncomingBlock(ctx, container, nodeID)
 	if err != nil {
-		b.logger.Debug("failed to parse gossiped block",
+		b.logger.Debug("failed to handle incoming block",
 			log.Stringer("from", nodeID),
 			log.Err(err))
-		return nil // Don't return error - just skip invalid blocks
-	}
-
-	b.logger.Info("received gossiped block",
-		log.Stringer("from", nodeID),
-		log.Stringer("blockID", blk.ID()),
-		log.Uint64("height", blk.Height()))
-
-	// Verify the block
-	if err := blk.Verify(ctx); err != nil {
-		b.logger.Debug("gossiped block failed verification",
-			log.Stringer("blockID", blk.ID()),
-			log.Err(err))
 		return nil
 	}
 
-	// Accept the block
-	if err := blk.Accept(ctx); err != nil {
-		b.logger.Warn("failed to accept gossiped block",
+	if blk != nil {
+		b.logger.Info("processed incoming block through consensus",
+			log.Stringer("from", nodeID),
 			log.Stringer("blockID", blk.ID()),
-			log.Err(err))
-		return nil
+			log.Uint64("height", blk.Height()))
 	}
-
-	// Set preference to the new block
-	if err := b.vm.SetPreference(ctx, blk.ID()); err != nil {
-		b.logger.Debug("failed to set preference to gossiped block",
-			log.Stringer("blockID", blk.ID()),
-			log.Err(err))
-	}
-
-	b.logger.Info("accepted gossiped block",
-		log.Stringer("blockID", blk.ID()),
-		log.Uint64("height", blk.Height()))
 
 	return nil
 }
@@ -1898,7 +1881,8 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, netID ids.ID, blockData []by
 	return sentTo.Len()
 }
 
-// SendPullQuery sends a PullQuery to specific validators requesting votes.
+// SendPullQuery sends a PullQuery to validators requesting votes on a block.
+// If validators is nil or empty, broadcasts to all validators (like GossipPut).
 func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID ids.ID, validators []ids.NodeID) int {
 	if g.net == nil || g.msgCreator == nil {
 		return 0
@@ -1909,6 +1893,13 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID id
 		return 0
 	}
 
+	// If no specific validators provided, broadcast to all validators
+	if len(validators) == 0 {
+		sentTo := g.net.Gossip(pullMsg, nil, netID, -1, 0, 0)
+		return sentTo.Len()
+	}
+
+	// Otherwise, send to specific validators
 	validatorSet := set.NewSet[ids.NodeID](len(validators))
 	for _, v := range validators {
 		validatorSet.Add(v)

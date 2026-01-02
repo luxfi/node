@@ -228,3 +228,5 @@ replace github.com/luxfi/coreth => ../coreth
 replace github.com/luxfi/vm => ../vm
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace github.com/luxfi/consensus => ../consensus
