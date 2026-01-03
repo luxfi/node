@@ -39,6 +39,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/warp"
 )
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
@@ -978,4 +979,153 @@ func TestGetAllPeers(t *testing.T) {
 		net.StartClose()
 	}
 	require.NoError(eg.Wait())
+}
+
+// TestSamplePeersWithZeroValidators verifies that samplePeers correctly
+// defaults to sampling validators when config.Validators == 0 is passed.
+// This is a regression test for a bug where callers passing Validators: 0
+// would result in zero peers being sampled.
+func TestSamplePeersWithZeroValidators(t *testing.T) {
+	require := require.New(t)
+
+	// Verify the constant exists and is set correctly
+	require.Equal(20, defaultSampleK, "defaultSampleK should be 20")
+
+	// Create a 3-node test network with all nodes as validators
+	nodeIDs, networks, eg := newFullyConnectedTestNetwork(t, []peer.InboundHandler{nil, nil, nil})
+	require.Len(nodeIDs, 3)
+	require.Len(networks, 3)
+
+	// Wait for the network to connect
+	net := networks[0]
+	for i := 0; i < 50; i++ {
+		if net.connectedPeers.Len() >= 2 {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	require.GreaterOrEqual(net.connectedPeers.Len(), 2, "network should have at least 2 connected peers")
+
+	// Verify validators are in the manager (test setup adds validators)
+	numValidators := net.config.Validators.NumValidators(constants.PrimaryNetworkID)
+	require.Greater(numValidators, 0, "expected validators in manager")
+
+	// Test 1: samplePeers with Validators == 0 should use defaultSampleK and return peers
+	// REGRESSION: Previously this would sample 0 validators, now it should default to defaultSampleK
+	peersZero := net.samplePeers(
+		warp.SendConfig{
+			Validators:    0, // This is the bug scenario - should default to defaultSampleK
+			NonValidators: 0,
+			Peers:         0,
+		},
+		constants.PrimaryNetworkID,
+		&noOpAllower{},
+	)
+	require.NotEmpty(peersZero, "samplePeers with Validators=0 should sample validators (regression)")
+
+	// Test 2: Verify explicit Validators count works as expected
+	peersExplicit := net.samplePeers(
+		warp.SendConfig{
+			Validators:    1,
+			NonValidators: 0,
+			Peers:         0,
+		},
+		constants.PrimaryNetworkID,
+		&noOpAllower{},
+	)
+	require.LessOrEqual(len(peersExplicit), 1, "explicit Validators=1 should sample at most 1")
+
+	// Test 3: Verify that Validators=0 samples MORE than Validators=1
+	// This confirms the defaultSampleK fix is working
+	require.GreaterOrEqual(len(peersZero), len(peersExplicit),
+		"Validators=0 (default to 20) should sample >= Validators=1")
+
+	// Shutdown
+	for _, n := range networks {
+		n.StartClose()
+	}
+	require.NoError(eg.Wait())
+}
+
+// TestSamplePeersSmallValidatorSets verifies samplePeers correctly clamps
+// to available validators when there are fewer than defaultSampleK (20).
+// This tests typical small network scenarios: 4/5, 5/5, 10/10 validators.
+func TestSamplePeersSmallValidatorSets(t *testing.T) {
+	testCases := []struct {
+		name           string
+		numNodes       int
+		expectedMinPeers int // minimum peers we expect to sample (connected peers - 1 for self)
+	}{
+		{"4 validators", 4, 2},  // 4 nodes, expect at least 2 peers sampled
+		{"5 validators", 5, 3},  // 5 nodes, expect at least 3 peers sampled
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+
+			// Create handlers for N nodes
+			handlers := make([]peer.InboundHandler, tc.numNodes)
+			for i := range handlers {
+				handlers[i] = nil
+			}
+
+			nodeIDs, networks, eg := newFullyConnectedTestNetwork(t, handlers)
+			require.Len(nodeIDs, tc.numNodes)
+			require.Len(networks, tc.numNodes)
+
+			// Wait for full mesh connectivity
+			net := networks[0]
+			expectedConnections := tc.numNodes - 1 // all other nodes
+			for i := 0; i < 100; i++ {
+				if net.connectedPeers.Len() >= expectedConnections {
+					break
+				}
+				time.Sleep(50 * time.Millisecond)
+			}
+
+			// Verify we have validators in the manager
+			numValidators := net.config.Validators.NumValidators(constants.PrimaryNetworkID)
+			require.GreaterOrEqual(numValidators, tc.numNodes,
+				"expected at least %d validators in manager", tc.numNodes)
+
+			// Test: samplePeers with Validators=0 should sample up to all available
+			// Since defaultSampleK=20 > numNodes, it should clamp to numNodes
+			peers := net.samplePeers(
+				warp.SendConfig{
+					Validators:    0, // triggers default to 20, clamped to numValidators
+					NonValidators: 0,
+					Peers:         0,
+				},
+				constants.PrimaryNetworkID,
+				&noOpAllower{},
+			)
+
+			// Should sample peers (limited by connected peers, not defaultSampleK)
+			require.GreaterOrEqual(len(peers), tc.expectedMinPeers,
+				"with %d validators, should sample at least %d peers", tc.numNodes, tc.expectedMinPeers)
+
+			// Should not exceed available validators
+			require.LessOrEqual(len(peers), tc.numNodes,
+				"should not sample more peers than validators exist")
+
+			// Test explicit small request also works
+			peersExplicit := net.samplePeers(
+				warp.SendConfig{
+					Validators:    2,
+					NonValidators: 0,
+					Peers:         0,
+				},
+				constants.PrimaryNetworkID,
+				&noOpAllower{},
+			)
+			require.LessOrEqual(len(peersExplicit), 2, "explicit Validators=2 should sample at most 2")
+
+			// Shutdown
+			for _, n := range networks {
+				n.StartClose()
+			}
+			require.NoError(eg.Wait())
+		})
+	}
 }

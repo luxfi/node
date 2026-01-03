@@ -29,7 +29,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.49
+	github.com/luxfi/consensus v1.22.50
 	github.com/luxfi/crypto v1.17.34
 	github.com/luxfi/database v1.17.35
 	github.com/luxfi/ids v1.2.7
@@ -141,13 +141,12 @@ require (
 	github.com/luxfi/const v1.4.0
 	github.com/luxfi/coreth v0.15.71
 	github.com/luxfi/fhe v1.4.1
-	github.com/luxfi/genesis v1.5.17
+	github.com/luxfi/genesis v1.5.19
 	github.com/luxfi/geth v1.16.67
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
-	github.com/luxfi/ringtail v0.2.0
 	github.com/luxfi/threshold v1.5.0
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/utils v1.1.0
@@ -193,6 +192,7 @@ require (
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/precompile v0.4.0 // indirect
+	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.2 // indirect

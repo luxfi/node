@@ -725,12 +725,12 @@ func (p *peer) shouldDisconnect() bool {
 	}
 
 	// Convert []byte public key to *bls.PublicKey
-	blsPublicKey, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
-	if err != nil {
+	// Validator's public key is stored in uncompressed format (96 bytes)
+	blsPublicKey := bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey)
+	if blsPublicKey == nil {
 		p.Log.Debug(disconnectingLog,
 			log.String("reason", "invalid BLS public key"),
 			log.Stringer("nodeID", p.id),
-			"error", err,
 		)
 		return true
 	}

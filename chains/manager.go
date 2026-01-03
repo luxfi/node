@@ -303,6 +303,7 @@ type ManagerConfig struct {
 	EnableAutomining          bool            // Enable automining in POA mode
 	XChainID                  ids.ID          // ID of the X-Chain,
 	CChainID                  ids.ID          // ID of the C-Chain,
+	DChainID                  ids.ID          // ID of the D-Chain (DEX),
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
 	TimeoutManager            timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                    health.Registerer
@@ -712,6 +713,24 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		}
 	}
 
+	// Log prominent chain creation success message with endpoints
+	vmName := constants.VMName(chainParams.VMID)
+	chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
+	m.Log.Info("╔══════════════════════════════════════════════════════════════════╗")
+	m.Log.Info("║ CHAIN CREATED SUCCESSFULLY                                       ║",
+		log.String("vmName", vmName),
+		log.String("chainAlias", chainAlias),
+	)
+	m.Log.Info("║ Chain ID:", log.Stringer("chainID", chainParams.ID))
+	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
+	m.Log.Info("║ Network ID:", log.Stringer("netID", chainParams.ChainID))
+	m.Log.Info("║ Endpoints available at:")
+	m.Log.Info("║   → /ext/bc/" + chainParams.ID.String())
+	if chainAlias != chainParams.ID.String() {
+		m.Log.Info("║   → /ext/bc/" + chainAlias)
+	}
+	m.Log.Info("╚══════════════════════════════════════════════════════════════════╝")
+
 	// Tell the chain to start processing messages.
 	// If the X, P, or C Chain panics, do not attempt to recover
 	if chain.Engine != nil {
@@ -865,7 +884,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			beacons = &emptyValidatorManager{}
 			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
-		_ = beacons // TODO: Use beacons for validator management
+		// Note: For linear chains, the consensus engine uses networkGossiper
+		// which samples validators from m.Net (network's validator manager).
+		// The validator manager (n.vdrs) is populated by PlatformVM during
+		// its initialization via state.initValidatorSets(). Beacons are not
+		// directly used here but are available for future beacon-based bootstrap.
+		_ = beacons
 
 		// Create simple linear chain with basic consensus engine
 		m.Log.Info("creating linear chain", log.Stringer("chainID", chainCtx.ChainID))
@@ -953,9 +977,27 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				log.Stringer("chainID", chainParams.ID))
 		}
 
+		// For native/primary network chains (P/C/X/Q/A/B/T/Z etc.), use PrimaryNetworkID for validator lookups.
+		// Native chains all have IDs with first 31 bytes zero, last byte is the chain letter (e.g., 'P', 'C').
+		// Validators are registered under constants.PrimaryNetworkID (ids.Empty), not individual chain IDs.
+		// For L1/subnet chains, use the subnet's validator set ID (chainParams.ChainID).
+		networkID := chainParams.ChainID
+		isNative := ids.IsNativeChain(chainParams.ID)
+		if isNative {
+			// Native chains (P, C, X, Q, A, B, T, Z, G, I, K) use PrimaryNetworkID for validator lookups
+			networkID = constants.PrimaryNetworkID
+		}
+		m.Log.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("chainParams.ChainID", chainParams.ChainID),
+			log.Bool("isNativeChain", isNative),
+			log.Stringer("networkIDForValidators", networkID),
+			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
+		)
+
 		consensusEngine := consensuschain.NewIntegratedEngine(consensuschain.NetworkConfig{
 			ChainID:   chainParams.ID,
-			NetworkID: chainParams.ChainID, // PrimaryNetworkID for P/X/C chains
+			NetworkID: networkID,
 			Logger:    m.Log,
 			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
 			VM:        blockBuilder,
@@ -979,7 +1021,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Context: chainCtx,
 			VM:      vm, // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			Handler: newBlockHandler(vm, m.Log, consensusEngine),
+			Handler: newBlockHandler(vm, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID),
 		}
 	default:
 		return nil, fmt.Errorf("unsupported VM type: %T", vm)
@@ -1225,10 +1267,16 @@ func (m *manager) createDAG(
 	}, nil
 }
 
+// errBootstrapTimeout is returned when a chain fails to bootstrap within the timeout period
+var errBootstrapTimeout = errors.New("chain failed to bootstrap within timeout")
+
 // monitorBootstrap monitors when a chain finishes bootstrapping and notifies the subnet.
 // This is critical for health checks because the health check queries m.Nets.Bootstrapping()
 // which returns subnets that have chains still in bootstrapping state. Without this notification,
 // the health check would permanently report "subnets not bootstrapped".
+//
+// IMPORTANT: If bootstrap times out, the chain is NOT marked as bootstrapped. This ensures
+// real bootstrap failures are surfaced rather than masked by forcing a "ready" state.
 func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
 	// Check if the engine supports IsBootstrapped
 	type bootstrapChecker interface {
@@ -1250,23 +1298,59 @@ func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
 	defer ticker.Stop()
 
 	// Set a reasonable timeout (5 minutes for local networks)
+	// After timeout, we do NOT mark as bootstrapped - this is a real failure
 	timeout := time.NewTimer(5 * time.Minute)
 	defer timeout.Stop()
+
+	// Track polling count for diagnostics
+	pollCount := 0
 
 	for {
 		select {
 		case <-ticker.C:
+			pollCount++
 			if checker.IsBootstrapped() {
 				m.Log.Info("chain finished bootstrapping, notifying subnet",
-					log.Stringer("chainID", chainID))
+					log.Stringer("chainID", chainID),
+					log.Int("pollCount", pollCount))
 				sb.Bootstrapped(chainID)
 				return
 			}
 		case <-timeout.C:
-			// Timeout reached, mark as bootstrapped anyway to prevent permanent unhealthy state
-			m.Log.Warn("bootstrap monitoring timeout, marking chain as bootstrapped",
-				log.Stringer("chainID", chainID))
-			sb.Bootstrapped(chainID)
+			// Timeout reached - this is a real bootstrap failure
+			// DO NOT mark as bootstrapped - this masks real failures and causes unpredictable behavior
+			m.Log.Error("chain bootstrap timeout - chain NOT marked as bootstrapped",
+				log.Stringer("chainID", chainID),
+				log.Int("pollCount", pollCount),
+				log.String("lastState", "still bootstrapping after 5 minutes"),
+				log.Err(errBootstrapTimeout))
+
+			// Stop the engine with the bootstrap timeout error
+			// This ensures the chain is properly marked as failed
+			if err := engine.StopWithError(context.Background(), errBootstrapTimeout); err != nil {
+				m.Log.Error("failed to stop engine after bootstrap timeout",
+					log.Stringer("chainID", chainID),
+					log.Err(err))
+			}
+
+			// Register a health check that reports the bootstrap failure
+			chainAlias := m.PrimaryAliasOrDefault(chainID)
+			healthErr := m.Health.RegisterHealthCheck(
+				chainAlias+"-bootstrap",
+				health.CheckerFunc(func(context.Context) (interface{}, error) {
+					return map[string]interface{}{
+						"chainID":   chainID.String(),
+						"error":     "bootstrap timeout",
+						"pollCount": pollCount,
+					}, errBootstrapTimeout
+				}),
+				health.ApplicationTag,
+			)
+			if healthErr != nil {
+				m.Log.Error("failed to register bootstrap timeout health check",
+					log.Stringer("chainID", chainID),
+					log.Err(healthErr))
+			}
 			return
 		case <-m.chainCreatorShutdownCh:
 			// Manager is shutting down
@@ -1625,13 +1709,23 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // blockHandler implements handler.Handler interface and processes incoming blocks
 // This enables block propagation between validators
 type blockHandler struct {
-	vm     block.ChainVM
-	logger log.Logger
-	engine *consensuschain.IntegratedEngine // Consensus engine for proper block handling
+	vm         block.ChainVM
+	logger     log.Logger
+	engine     *consensuschain.IntegratedEngine // Consensus engine for proper block handling
+	net        network.Network                  // Network for sending Chits responses
+	msgCreator message.OutboundMsgBuilder       // Message creator for Chits responses
+	chainID    ids.ID                           // Chain ID for message routing
 }
 
-func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.IntegratedEngine) *blockHandler {
-	return &blockHandler{vm: vm, logger: logger, engine: engine}
+func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.IntegratedEngine, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID) *blockHandler {
+	return &blockHandler{
+		vm:         vm,
+		logger:     logger,
+		engine:     engine,
+		net:        net,
+		msgCreator: msgCreator,
+		chainID:    chainID,
+	}
 }
 
 func (b *blockHandler) Context() *consensusctx.Context                 { return nil }
@@ -1686,6 +1780,72 @@ func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	return b.Put(ctx, nodeID, requestID, container)
 }
 func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	// PullQuery requests a vote on a block identified by containerID
+	// We need to respond with Chits containing our preferred vote
+
+	if b.net == nil || b.msgCreator == nil {
+		b.logger.Debug("cannot respond to PullQuery - no network sender",
+			log.Stringer("from", nodeID),
+			log.Stringer("blockID", containerID))
+		return nil
+	}
+
+	// Try to get the block from the VM
+	blk, err := b.vm.GetBlock(ctx, containerID)
+	if err != nil {
+		b.logger.Debug("cannot respond to PullQuery - block not found",
+			log.Stringer("from", nodeID),
+			log.Stringer("blockID", containerID),
+			log.Err(err))
+		return nil
+	}
+
+	// Verify the block before voting for it
+	if err := blk.Verify(ctx); err != nil {
+		b.logger.Debug("cannot respond to PullQuery - block verification failed",
+			log.Stringer("from", nodeID),
+			log.Stringer("blockID", containerID),
+			log.Err(err))
+		return nil
+	}
+
+	// Get the accepted block ID (last accepted) for the acceptedID field
+	acceptedBlkID := containerID
+	acceptedHeight := blk.Height()
+
+	// Try to get the last accepted block for more accurate acceptedID
+	if lastAccepted, err := b.vm.LastAccepted(ctx); err == nil && lastAccepted != ids.Empty {
+		acceptedBlkID = lastAccepted
+		if acceptedBlk, err := b.vm.GetBlock(ctx, lastAccepted); err == nil {
+			acceptedHeight = acceptedBlk.Height()
+		}
+	}
+
+	// Create Chits message
+	// preferredID: the block we're voting for
+	// preferredIDAtHeight: same as preferredID for now (could be optimized)
+	// acceptedID: the last accepted block
+	// acceptedHeight: height of the accepted block
+	chitsMsg, err := b.msgCreator.Chits(b.chainID, requestID, containerID, containerID, acceptedBlkID, acceptedHeight)
+	if err != nil {
+		b.logger.Error("failed to create Chits message",
+			log.Stringer("from", nodeID),
+			log.Stringer("blockID", containerID),
+			log.Err(err))
+		return nil
+	}
+
+	// Send Chits response to the requesting node
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+
+	sentTo := b.net.Send(chitsMsg, nodeSet, ids.Empty, 0)
+	b.logger.Debug("responded to PullQuery with Chits",
+		log.Stringer("from", nodeID),
+		log.Stringer("blockID", containerID),
+		log.Uint64("height", blk.Height()),
+		log.Int("sentTo", sentTo.Len()))
+
 	return nil
 }
 func (b *blockHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
@@ -1742,6 +1902,37 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 		// Put and PushQuery contain block data - process it
 		if len(msg.Message) > 0 {
 			return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
+		}
+	case handler.Chits:
+		// Chits contain vote for a block (preferredID)
+		if len(msg.Message) >= 32 && b.engine != nil {
+			var preferredID ids.ID
+			copy(preferredID[:], msg.Message[:32])
+
+			// Derive Accept from block verification:
+			// Accept=true only if we have the block AND it verifies
+			accept := false
+			if b.vm != nil {
+				if blk, err := b.vm.GetBlock(ctx, preferredID); err == nil {
+					if err := blk.Verify(ctx); err == nil {
+						accept = true
+					}
+				}
+			}
+
+			vote := consensuschain.Vote{
+				BlockID:  preferredID,
+				NodeID:   msg.NodeID,
+				Accept:   accept,
+				SignedAt: time.Now(),
+			}
+
+			b.engine.ReceiveVote(vote)
+
+			b.logger.Debug("received vote via Chits",
+				log.Stringer("from", msg.NodeID),
+				log.Stringer("blockID", preferredID),
+				log.Bool("accept", accept))
 		}
 	}
 	return nil
@@ -1866,7 +2057,7 @@ type networkGossiper struct {
 var _ consensuschain.Gossiper = (*networkGossiper)(nil)
 
 // GossipPut broadcasts a Put message with block data to validators.
-func (g *networkGossiper) GossipPut(chainID ids.ID, netID ids.ID, blockData []byte) int {
+func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData []byte) int {
 	if g.net == nil || g.msgCreator == nil {
 		return 0
 	}
@@ -1877,13 +2068,13 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, netID ids.ID, blockData []by
 	}
 
 	// Gossip to all validators (-1 = all validators)
-	sentTo := g.net.Gossip(putMsg, nil, netID, -1, 0, 0)
+	sentTo := g.net.Gossip(putMsg, nil, networkID, -1, 0, 0)
 	return sentTo.Len()
 }
 
 // SendPullQuery sends a PullQuery to validators requesting votes on a block.
 // If validators is nil or empty, broadcasts to all validators (like GossipPut).
-func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID ids.ID, validators []ids.NodeID) int {
+func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockID ids.ID, validators []ids.NodeID) int {
 	if g.net == nil || g.msgCreator == nil {
 		return 0
 	}
@@ -1895,7 +2086,7 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID id
 
 	// If no specific validators provided, broadcast to all validators
 	if len(validators) == 0 {
-		sentTo := g.net.Gossip(pullMsg, nil, netID, -1, 0, 0)
+		sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
 		return sentTo.Len()
 	}
 
@@ -1905,6 +2096,28 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, netID ids.ID, blockID id
 		validatorSet.Add(v)
 	}
 
-	sentTo := g.net.Send(pullMsg, validatorSet, netID, 0)
+	sentTo := g.net.Send(pullMsg, validatorSet, networkID, 0)
 	return sentTo.Len()
 }
+
+// SendChit sends a vote response (Chit) back to the node that requested our vote.
+// This is called after verifying a block received via PullQuery.
+func (g *networkGossiper) SendChit(toNodeID ids.NodeID, chainID ids.ID, requestID uint32, preferredID ids.ID) error {
+	if g.net == nil || g.msgCreator == nil {
+		return nil
+	}
+
+	// Create Chits message with the preferred block ID
+	// For now, we use the preferredID as both preferred and accepted
+	// since we've verified the block before sending the chit
+	chitsMsg, err := g.msgCreator.Chits(chainID, requestID, preferredID, preferredID, preferredID, 0)
+	if err != nil {
+		return err
+	}
+
+	// Send to the specific node
+	nodeSet := set.Of(toNodeID)
+	g.net.Send(chitsMsg, nodeSet, ids.Empty, 0)
+	return nil
+}
+

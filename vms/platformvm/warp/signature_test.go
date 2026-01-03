@@ -28,17 +28,17 @@ func getTestValidators() map[ids.NodeID]*validators.GetValidatorOutput {
 	return map[ids.NodeID]*validators.GetValidatorOutput{
 		testVdrs[0].nodeID: {
 			NodeID:    testVdrs[0].nodeID,
-			PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
+			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
 			Weight:    testVdrs[0].vdr.Weight,
 		},
 		testVdrs[1].nodeID: {
 			NodeID:    testVdrs[1].nodeID,
-			PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
+			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 			Weight:    testVdrs[1].vdr.Weight,
 		},
 		testVdrs[2].nodeID: {
 			NodeID:    testVdrs[2].nodeID,
-			PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[2].vdr.PublicKey),
+			PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[2].vdr.PublicKey),
 			Weight:    testVdrs[2].vdr.Weight,
 		},
 	}
@@ -129,12 +129,12 @@ func TestSignatureVerification(t *testing.T) {
 				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, sourceChainID).Return(map[ids.NodeID]*validators.GetValidatorOutput{
 					testVdrs[0].nodeID: {
 						NodeID:    testVdrs[0].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[0].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
 						Weight:    math.MaxUint64,
 					},
 					testVdrs[1].nodeID: {
 						NodeID:    testVdrs[1].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 						Weight:    math.MaxUint64,
 					},
 				}, nil)
@@ -576,12 +576,12 @@ func TestSignatureVerification(t *testing.T) {
 					},
 					testVdrs[1].nodeID: {
 						NodeID:    testVdrs[1].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 						Weight:    testVdrs[1].vdr.Weight,
 					},
 					testVdrs[2].nodeID: {
 						NodeID:    testVdrs[2].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[2].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[2].vdr.PublicKey),
 						Weight:    testVdrs[2].vdr.Weight,
 					},
 				}, nil)
@@ -639,12 +639,12 @@ func TestSignatureVerification(t *testing.T) {
 					},
 					testVdrs[1].nodeID: {
 						NodeID:    testVdrs[1].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[2].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[2].vdr.PublicKey),
 						Weight:    testVdrs[1].vdr.Weight,
 					},
 					testVdrs[2].nodeID: {
 						NodeID:    testVdrs[2].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[2].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[2].vdr.PublicKey),
 						Weight:    testVdrs[2].vdr.Weight,
 					},
 				}, nil)
@@ -699,12 +699,12 @@ func TestSignatureVerification(t *testing.T) {
 					},
 					testVdrs[1].nodeID: {
 						NodeID:    testVdrs[1].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[1].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 						Weight:    testVdrs[1].vdr.Weight,
 					},
 					testVdrs[2].nodeID: {
 						NodeID:    testVdrs[2].nodeID,
-						PublicKey: bls.PublicKeyToCompressedBytes(testVdrs[2].vdr.PublicKey),
+						PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[2].vdr.PublicKey),
 						Weight:    testVdrs[2].vdr.Weight,
 					},
 				}, nil)

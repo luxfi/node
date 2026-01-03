@@ -8,6 +8,7 @@ package network
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -27,6 +28,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
@@ -40,9 +42,12 @@ import (
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/txs"
 
 	safemath "github.com/luxfi/math/math"
 )
+
 
 const (
 	PrimaryNetworkValidatorHealthKey = "primary network validator health"
@@ -295,10 +300,126 @@ func NewNetwork(
 	}
 	// Track all recent validators to optimistically connect to them before the
 	// P-chain has finished syncing.
-	genesisConfig := builder.GetConfig(config.NetworkID)
-	if genesisConfig != nil {
-		for _, staker := range genesisConfig.InitialStakers {
-			ipTracker.ManuallyTrack(staker.NodeID)
+	//
+	// CRITICAL: We first try to parse the actual genesis bytes passed to the node.
+	// This ensures we use the correct validators for networks started with custom
+	// genesis (e.g., netrunner) rather than canonical configs which may differ.
+	var genesisStakers []struct {
+		NodeID ids.NodeID
+		Weight uint64
+		BLSKey []byte
+	}
+
+	// First, try to parse actual genesis bytes from node config using P-chain codec
+	if len(config.GenesisBytes) > 0 {
+		parsedGenesis, err := genesis.Parse(config.GenesisBytes)
+		if err == nil && len(parsedGenesis.Validators) > 0 {
+			log.Info("using actual P-chain genesis bytes for initial stakers",
+				zap.Int("count", len(parsedGenesis.Validators)),
+			)
+			for _, validatorTx := range parsedGenesis.Validators {
+				// Extract validator details from the transaction
+				switch tx := validatorTx.Unsigned.(type) {
+				case *txs.AddPermissionlessValidatorTx:
+					nodeID := tx.Validator.NodeID
+					weight := tx.Validator.Wght
+					if weight == 0 {
+						weight = 1 // Default weight for validators without explicit weight
+					}
+
+					// Get BLS public key from signer
+					var blsKey []byte
+					if tx.Signer != nil {
+						if pubKey := tx.Signer.Key(); pubKey != nil {
+							blsKey = bls.PublicKeyToCompressedBytes(pubKey)
+						}
+					}
+
+					genesisStakers = append(genesisStakers, struct {
+						NodeID ids.NodeID
+						Weight uint64
+						BLSKey []byte
+					}{
+						NodeID: nodeID,
+						Weight: weight,
+						BLSKey: blsKey,
+					})
+					log.Debug("parsed genesis validator from P-chain genesis",
+						zap.Stringer("nodeID", nodeID),
+						zap.Uint64("weight", weight),
+						zap.Int("blsKeyLen", len(blsKey)),
+					)
+				default:
+					log.Warn("unknown validator tx type in genesis",
+						zap.String("type", fmt.Sprintf("%T", validatorTx.Unsigned)),
+					)
+				}
+			}
+		} else if err != nil {
+			log.Debug("failed to parse P-chain genesis bytes, will try canonical config",
+				zap.Error(err),
+			)
+		}
+	}
+
+	// Fall back to canonical config if no genesis bytes or parsing failed
+	if len(genesisStakers) == 0 {
+		genesisConfig := builder.GetConfig(config.NetworkID)
+		if genesisConfig != nil && len(genesisConfig.InitialStakers) > 0 {
+			log.Info("using canonical genesis config for initial stakers",
+				zap.Int("count", len(genesisConfig.InitialStakers)),
+			)
+			for _, staker := range genesisConfig.InitialStakers {
+				var blsKey []byte
+				if staker.Signer != nil && staker.Signer.PublicKey != "" {
+					blsKey, _ = base64.StdEncoding.DecodeString(staker.Signer.PublicKey)
+				}
+				weight := staker.Weight
+				if weight == 0 {
+					weight = 1
+				}
+				genesisStakers = append(genesisStakers, struct {
+					NodeID ids.NodeID
+					Weight uint64
+					BLSKey []byte
+				}{
+					NodeID: staker.NodeID,
+					Weight: weight,
+					BLSKey: blsKey,
+				})
+			}
+		}
+	}
+
+	// Add all genesis stakers to validators manager and track their IPs
+	for _, staker := range genesisStakers {
+		ipTracker.ManuallyTrack(staker.NodeID)
+
+		// CRITICAL FIX: Add genesis validators to the validators manager
+		// so the network layer can sample them for consensus voting.
+		// Without this, NumValidators() returns 0 and SendPullQuery fails
+		// because samplePeers() has no validators to query.
+
+		// Generate a dummy txID from nodeID for genesis validators
+		dummyTxID := ids.Empty
+		copy(dummyTxID[:], staker.NodeID.Bytes())
+
+		if err := config.Validators.AddStaker(
+			constants.PrimaryNetworkID,
+			staker.NodeID,
+			staker.BLSKey,
+			dummyTxID,
+			staker.Weight,
+		); err != nil {
+			log.Warn("failed to add genesis validator",
+				zap.Stringer("nodeID", staker.NodeID),
+				zap.Error(err),
+			)
+		} else {
+			log.Info("added genesis validator to network",
+				zap.Stringer("nodeID", staker.NodeID),
+				zap.Uint64("weight", staker.Weight),
+			)
 		}
 	}
 
@@ -379,12 +500,14 @@ func (n *network) Send(
 	// Only sample additional peers if no specific nodeIDs were requested
 	var sampledPeers []peer.Peer
 	if nodeIDs.Len() == 0 {
-		// Create default send config for sampling
+		// Create default send config for sampling.
+		// We sample validators by default (defaultSampleK) to ensure
+		// consensus messages reach validators.
 		sendConfig := warp.SendConfig{
-			NodeIDs:       nil, // Don't restrict to specific nodes for sampling
-			Validators:    0,   // No specific validator requirement
-			NonValidators: 0,   // No specific non-validator requirement
-			Peers:         1,   // Sample 1 peer by default
+			NodeIDs:       nil,            // Don't restrict to specific nodes for sampling
+			Validators:    defaultSampleK, // Sample validators (samplePeers will clamp to available)
+			NonValidators: 0,              // No specific non-validator requirement
+			Peers:         1,              // Sample 1 peer by default
 		}
 		sampledPeers = n.samplePeers(sendConfig, netID, allower)
 	}
@@ -889,9 +1012,17 @@ func (n *network) getPeers(
 	return peers
 }
 
+// defaultSampleK is the default sample size when Validators is 0.
+// This matches the consensus K parameter from DefaultCoreParams().
+const defaultSampleK = 20
+
 // samplePeers samples connected peers attempting to align with the number of
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
+//
+// IMPORTANT: If config.Validators == 0, we default to sampling up to
+// defaultSampleK validators rather than sampling none. This prevents
+// the common bug where callers forget to set Validators.
 func (n *network) samplePeers(
 	config warp.SendConfig,
 	netID ids.ID,
@@ -900,16 +1031,73 @@ func (n *network) samplePeers(
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsToSample := min(config.Validators, n.config.Validators.NumValidators(netID))
+	numValidatorsInManager := n.config.Validators.NumValidators(netID)
+
+	// FIX: If Validators == 0 was passed (likely caller forgot to set it),
+	// default to sampling up to defaultSampleK validators instead of none.
+	requestedValidators := config.Validators
+	if requestedValidators <= 0 {
+		requestedValidators = defaultSampleK
+	}
+	numValidatorsToSample := min(requestedValidators, numValidatorsInManager)
+
+	// Debug logging for validator sampling - using WARN to ensure visibility
+	if numValidatorsInManager == 0 {
+		log.Warn("[VALIDATOR DEBUG] samplePeers: NO validators found in manager!",
+			"netID", netID,
+			"configValidators", config.Validators,
+			"requestedValidators", requestedValidators,
+			"numValidatorsInManager", numValidatorsInManager,
+			"validatorManagerPtr", fmt.Sprintf("%p", n.config.Validators),
+			"numNets", n.config.Validators.NumNets(),
+		)
+	} else {
+		log.Debug("samplePeers: validator counts",
+			"netID", netID,
+			"configValidators", config.Validators,
+			"requestedValidators", requestedValidators,
+			"numValidatorsInManager", numValidatorsInManager,
+			"numValidatorsToSample", numValidatorsToSample,
+		)
+	}
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
 
+	// Debug: Log peer info before sampling
+	log.Debug("[VALIDATOR DEBUG] samplePeers: about to sample",
+		"netID", netID,
+		"numConnectedPeers", n.connectedPeers.Len(),
+		"numValidatorsToSample", numValidatorsToSample,
+		"configValidators", config.Validators,
+		"requestedValidators", requestedValidators,
+		"configNonValidators", config.NonValidators,
+		"configPeers", config.Peers,
+	)
+
 	return n.connectedPeers.Sample(
 		numValidatorsToSample+config.NonValidators+config.Peers,
 		func(p peer.Peer) bool {
-			// Only return peers that are tracking [chainID]
-			if trackedChains := p.TrackedChains(); !trackedChains.Contains(netID) {
+			trackedChains := p.TrackedChains()
+
+			// CRITICAL FIX: For Primary Network, trackedChains contains actual chain IDs
+			// (P-chain, X-chain, C-chain), NOT the abstract PrimaryNetworkID (ids.Empty).
+			// All connected peers implicitly track the Primary Network if they're connected,
+			// so we skip the chain tracking check for Primary Network.
+			isPrimaryNetwork := netID == constants.PrimaryNetworkID
+			containsNetID := isPrimaryNetwork || trackedChains.Contains(netID)
+
+			// Debug: Log each peer's tracked chains
+			log.Debug("[VALIDATOR DEBUG] samplePeers filter: checking peer",
+				"peerID", p.ID(),
+				"netID", netID,
+				"isPrimaryNetwork", isPrimaryNetwork,
+				"trackedChains", trackedChains.List(),
+				"containsNetID", containsNetID,
+			)
+
+			// Only return peers that are tracking [netID]
+			if !containsNetID {
 				return false
 			}
 

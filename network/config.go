@@ -146,6 +146,12 @@ type Config struct {
 	// Validators are the current validators in the Lux network
 	Validators validators.Manager `json:"-"`
 
+	// GenesisBytes is the raw genesis configuration passed to the node.
+	// This is used to extract the actual initial stakers for the network,
+	// rather than relying on canonical genesis configs which may differ
+	// from the actual genesis used (e.g., in netrunner-generated networks).
+	GenesisBytes []byte `json:"-"`
+
 	UptimeCalculator uptime.Calculator `json:"-"`
 
 	// UptimeMetricFreq marks how frequently this node will recalculate the

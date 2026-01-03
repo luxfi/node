@@ -30,7 +30,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 
 			return sk, &validators.GetValidatorOutput{
 				NodeID:    ids.GenerateTestNodeID(),
-				PublicKey: bls.PublicKeyToCompressedBytes(sk.PublicKey()),
+				PublicKey: bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
 				Weight:    1,
 			}
 		}

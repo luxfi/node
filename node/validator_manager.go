@@ -74,20 +74,41 @@ func NewValidatorManager(cfg ValidatorManagerConfig) *ValidatorManager {
 }
 
 func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
-	// Track validator locally when sybil protection is disabled
+	// When sybil protection is disabled, add connecting peers as validators
+	// so they can participate in consensus voting
 	if v.sybilProtectionDisabled && constants.PrimaryNetworkID == netID {
+		// Add to the actual validator manager so network layer can find them
+		// Generate a dummy txID from the nodeID (same pattern as node.go line 585-586)
+		dummyTxID := ids.Empty
+		copy(dummyTxID[:], nodeID.Bytes())
+
+		err := v.vdrs.AddStaker(
+			constants.PrimaryNetworkID,
+			nodeID,
+			nil, // No BLS public key for dynamically discovered validators
+			dummyTxID,
+			v.weight,
+		)
+		if err != nil {
+			v.log.Warn("failed to add validator on connect",
+				log.Stringer("nodeID", nodeID),
+				log.Reflect("error", err),
+			)
+		} else {
+			v.log.Info("added validator on connect (sybil protection disabled)",
+				log.Stringer("nodeID", nodeID),
+				log.Stringer("netID", netID),
+				log.Uint64("weight", v.weight),
+			)
+		}
+
+		// Also track locally for our records
 		v.mu.Lock()
 		if v.validators[netID] == nil {
 			v.validators[netID] = make(map[ids.NodeID]uint64)
 		}
 		v.validators[netID][nodeID] = v.weight
 		v.mu.Unlock()
-
-		v.log.Debug("tracked validator connection",
-			log.Stringer("nodeID", nodeID),
-			log.Stringer("netID", netID),
-			log.Uint64("weight", v.weight),
-		)
 	}
 
 	// Track beacon connections for bootstrap
@@ -109,18 +130,28 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 }
 
 func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
-	// Remove from local tracking when sybil protection is disabled
+	// Remove from validator manager when sybil protection is disabled
 	if v.sybilProtectionDisabled {
+		// Remove from the actual validator manager
+		err := v.vdrs.RemoveWeight(constants.PrimaryNetworkID, nodeID, v.weight)
+		if err != nil {
+			v.log.Debug("failed to remove validator weight on disconnect (may not exist)",
+				log.Stringer("nodeID", nodeID),
+				log.Reflect("error", err),
+			)
+		} else {
+			v.log.Info("removed validator on disconnect (sybil protection disabled)",
+				log.Stringer("nodeID", nodeID),
+				log.Stringer("netID", constants.PrimaryNetworkID),
+			)
+		}
+
+		// Also remove from local tracking
 		v.mu.Lock()
 		if v.validators[constants.PrimaryNetworkID] != nil {
 			delete(v.validators[constants.PrimaryNetworkID], nodeID)
 		}
 		v.mu.Unlock()
-
-		v.log.Debug("removed validator",
-			log.Stringer("nodeID", nodeID),
-			log.Stringer("netID", constants.PrimaryNetworkID),
-		)
 	}
 
 	// Track beacon disconnections

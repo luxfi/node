@@ -24,9 +24,11 @@ import (
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	xchaintxs "github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/propertyfx"
@@ -42,12 +44,15 @@ var (
 	XChainAliases = []string{"X", "xvm"}
 	// CChainAliases are the default aliases for the C-Chain
 	CChainAliases = []string{"C", "evm"}
+	// DChainAliases are the default aliases for the D-Chain (DEX)
+	DChainAliases = []string{"D", "dex", "dexvm"}
 
 	// VMAliases are the default aliases for VMs
 	VMAliases = map[ids.ID][]string{
 		constants.PlatformVMID: {"platform"},
 		constants.XVMID:        {"xvm"},
 		constants.EVMID:        {"evm"},
+		constants.DexVMID:      {"dexvm", "dex"},
 		secp256k1fx.ID:         {"secp256k1fx"},
 		nftfx.ID:               {"nftfx"},
 		propertyfx.ID:          {"propertyfx"},
@@ -74,6 +79,37 @@ func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper IP %q: %w", b.IP, err)
 	}
 	return Bootstrapper{ID: nodeID, IP: ip}, nil
+}
+
+// parseProofOfPossession converts a genesis config ProofOfPossession (with hex strings)
+// to a node signer.ProofOfPossession (with byte arrays).
+func parseProofOfPossession(pop *genesiscfg.ProofOfPossession) (*signer.ProofOfPossession, error) {
+	if pop == nil {
+		return nil, nil
+	}
+
+	// Decode the public key from hex string (may have 0x prefix)
+	pkBytes, err := formatting.Decode(formatting.HexNC, pop.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode publicKey: %w", err)
+	}
+
+	// Decode the proof of possession from hex string (may have 0x prefix)
+	popBytes, err := formatting.Decode(formatting.HexNC, pop.ProofOfPossession)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode proofOfPossession: %w", err)
+	}
+
+	result := &signer.ProofOfPossession{}
+	copy(result.PublicKey[:], pkBytes)
+	copy(result.ProofOfPossession[:], popBytes)
+
+	// Verify the proof of possession is valid
+	if err := result.Verify(); err != nil {
+		return nil, fmt.Errorf("invalid proof of possession: %w", err)
+	}
+
+	return result, nil
 }
 
 // GetBootstrappers returns parsed bootstrappers for the network
@@ -422,6 +458,15 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, fmt.Errorf("failed to format bech32 reward address: %w", err)
 		}
 
+		// Parse the BLS proof of possession if present
+		var blsSigner *signer.ProofOfPossession
+		if staker.Signer != nil {
+			blsSigner, err = parseProofOfPossession(staker.Signer)
+			if err != nil {
+				return nil, ids.Empty, fmt.Errorf("failed to parse proof of possession for staker %d: %w", i, err)
+			}
+		}
+
 		validators = append(validators, genesis.PermissionlessValidator{
 			Validator: genesis.Validator{
 				StartTime: startTime,
@@ -435,6 +480,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			},
 			Staked:             allocations,
 			ExactDelegationFee: staker.DelegationFee,
+			Signer:             blsSigner,
 		})
 	}
 
@@ -456,6 +502,12 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			ChainID:       constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
+		},
+		{
+			GenesisData: []byte(config.DChainGenesis),
+			ChainID:       constants.PrimaryNetworkID,
+			VMID:        constants.DexVMID,
+			Name:        "D-Chain",
 		},
 	}
 
@@ -593,6 +645,16 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "evm"),
 			}
 			chainAliases[chainID] = CChainAliases
+		case constants.DexVMID:
+			apiAliases[endpoint] = []string{
+				"D",
+				"dex",
+				"dexvm",
+				path.Join(constants.ChainAliasPrefix, "D"),
+				path.Join(constants.ChainAliasPrefix, "dex"),
+				path.Join(constants.ChainAliasPrefix, "dexvm"),
+			}
+			chainAliases[chainID] = DChainAliases
 		}
 	}
 	return apiAliases, chainAliases, nil

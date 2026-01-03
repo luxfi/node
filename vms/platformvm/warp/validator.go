@@ -103,8 +103,9 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*ValidatorData) (CanonicalValidat
 		}
 
 		// Convert []byte to *bls.PublicKey
-		blsPK, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
-		if err != nil {
+		// Validator's public key is stored in uncompressed format (96 bytes)
+		blsPK := bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey)
+		if blsPK == nil {
 			continue // Skip invalid public keys
 		}
 

@@ -37,10 +37,12 @@ type Factory struct {
 }
 
 // New implements vms.Factory interface.
-// It creates a new DEX VM instance with the factory's configuration.
+// It creates a new DEX ChainVM instance with the factory's configuration.
+// The ChainVM wrapper implements block.ChainVM for integration with the chains manager.
 func (f *Factory) New(logger log.Logger) (interface{}, error) {
-	return &VM{
-		Config: f.Config,
-		log:    logger,
-	}, nil
+	// Create the ChainVM wrapper which implements block.ChainVM
+	chainVM := NewChainVM(logger)
+	// Apply factory config to inner VM
+	chainVM.inner.Config = f.Config
+	return chainVM, nil
 }

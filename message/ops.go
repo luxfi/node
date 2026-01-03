@@ -307,6 +307,9 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 		return m.GetContainerId()
 	case *p2p.PullQuery:
 		return m.GetContainerId()
+	case *p2p.Chits:
+		// For Chits messages, return the PreferredId (the block being voted for)
+		return m.GetPreferredId()
 	case *p2p.AcceptedFrontier:
 		return m.GetContainerId()
 	case *p2p.Accepted:

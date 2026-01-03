@@ -71,6 +71,7 @@ import (
 	bvm "github.com/luxfi/node/vms/bridgevm"
 	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/exchangevm"
+	kmsvm "github.com/luxfi/node/vms/kmsvm"
 	graphvm "github.com/luxfi/node/vms/graphvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -226,6 +227,12 @@ func New(
 		logger.Warn("sybil control is not enforced")
 		n.vdrs = newOverriddenManager(constants.PrimaryNetworkID, n.vdrs)
 	}
+
+	// NOTE: Validators are populated by PlatformVM during its initialization.
+	// The network layer will use n.vdrs which gets populated when PlatformVM
+	// loads validators from genesis. Do NOT pre-populate n.vdrs here as it
+	// breaks PlatformVM's assumption that the validator set starts empty.
+
 	if err := n.initResourceManager(); err != nil {
 		return nil, fmt.Errorf("problem initializing resource manager: %w", err)
 	}
@@ -627,6 +634,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.ResourceTracker = &resourceTrackerAdapter{tracker: n.resourceTracker}
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
+	n.Config.NetworkConfig.GenesisBytes = n.Config.GenesisBytes
 
 	// Wrap the router to implement network.ExternalHandler
 	externalHandler := &externalHandlerWrapper{router: consensusRouter}
@@ -1051,11 +1059,18 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	}
 	cChainID := createEVMTx.ID()
 
+	createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
+	if err != nil {
+		return err
+	}
+	dChainID := createDexVMTx.ID()
+
 	// If any of these chains die, the node shuts down
 	criticalChains := set.Of(
 		constants.PlatformChainID,
 		xChainID,
 		cChainID,
+		dChainID,
 	)
 
 	_, err = metric.MakeAndRegister(
@@ -1110,6 +1125,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			XAssetID:                  luxAssetID,
 			XChainID:                  xChainID,
 			CChainID:                  cChainID,
+			DChainID:                  dChainID,
 			CriticalChains:            criticalChains,
 			TimeoutManager:            n.timeoutManager,
 			Health:                    n.health,
@@ -1155,6 +1171,14 @@ func (n *Node) initVMs() error {
 	// allows the node's validator sets to be determined by network connections.
 	if !n.Config.SybilProtectionEnabled {
 		vdrs = nodevalidators.NewManager()
+		n.Log.Warn("[VALIDATOR DEBUG] Sybil protection DISABLED - using separate validator manager for PlatformVM")
+	} else {
+		n.Log.Info("[VALIDATOR DEBUG] Sybil protection ENABLED - sharing validator manager",
+			"nodeVdrsPtr", fmt.Sprintf("%p", n.vdrs),
+			"platformVdrsPtr", fmt.Sprintf("%p", vdrs),
+			"networkVdrsPtr", fmt.Sprintf("%p", n.Config.NetworkConfig.Validators),
+			"sameInstance", n.vdrs == n.Config.NetworkConfig.Validators,
+		)
 	}
 
 	// Register the VMs that Lux supports
@@ -1278,6 +1302,32 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("D-Chain VM registered successfully")
+
+	// Register K-Chain VM (KMSVM) - Key Management Service
+	n.Log.Info("Registering K-Chain VM (KMS)", "vmID", constants.KMSVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.KMSVMID, kmsvm.NewDefaultFactory())
+	if err != nil {
+		n.Log.Error("Failed to register K-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("K-Chain VM registered successfully")
+
+	// Log summary of all registered VMs
+	n.Log.Info("═══════════════════════════════════════════════════════════════════")
+	n.Log.Info("ALL VMs REGISTERED SUCCESSFULLY - 11 chains ready")
+	n.Log.Info("───────────────────────────────────────────────────────────────────")
+	n.Log.Info("P-Chain (Platform): Validators & staking", "vmID", constants.PlatformVMID)
+	n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
+	n.Log.Info("C-Chain (Contract): EVM smart contracts", "vmID", constants.EVMID)
+	n.Log.Info("Q-Chain (Quantum):  Post-quantum security", "vmID", constants.QuantumVMID)
+	n.Log.Info("A-Chain (AI):       AI/ML inference", "vmID", constants.AIVMID)
+	n.Log.Info("B-Chain (Bridge):   Cross-chain bridge", "vmID", constants.BridgeVMID)
+	n.Log.Info("T-Chain (Threshold): Threshold signatures", "vmID", constants.ThresholdVMID)
+	n.Log.Info("Z-Chain (ZK):       Zero-knowledge proofs", "vmID", constants.ZKVMID)
+	n.Log.Info("G-Chain (Graph):    GraphQL data layer", "vmID", constants.GraphVMID)
+	n.Log.Info("D-Chain (DEX):      Decentralized exchange", "vmID", constants.DexVMID)
+	n.Log.Info("K-Chain (KMS):      Key management service", "vmID", constants.KMSVMID)
+	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
@@ -1553,7 +1603,9 @@ func (n *Node) initHealthAPI() error {
 		}
 
 		nodePK := n.Config.StakingSigningKey.PublicKey()
-		nodePKBytes := bls.PublicKeyToCompressedBytes(nodePK)
+		// Validator's public key is stored in uncompressed format (96 bytes),
+		// so we compare using uncompressed bytes
+		nodePKBytes := bls.PublicKeyToUncompressedBytes(nodePK)
 		if bytes.Equal(nodePKBytes, vdrPK) {
 			return "node has the correct BLS key", nil
 		}

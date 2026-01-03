@@ -232,9 +232,17 @@ func (vm *VM) Initialize(
 			return fmt.Errorf("invalid app sender type")
 		}
 	}
-	// Initialize logger
-	vm.log = log.NoLog{}
-	vm.log.Debug("initializing platform chain")
+	// Initialize logger from chain context
+	if chainCtx != nil && chainCtx.Log != nil {
+		if logger, ok := chainCtx.Log.(log.Logger); ok {
+			vm.log = logger
+		} else {
+			vm.log = log.NoLog{}
+		}
+	} else {
+		vm.log = log.NoLog{}
+	}
+	vm.log.Info("initializing platform chain")
 
 	// Log deferred toEngine channel status now that logger is set up
 	if toEngineChannelType != "" {
@@ -251,6 +259,10 @@ func (vm *VM) Initialize(
 	if err != nil {
 		return fmt.Errorf("failed to get execution config: %w", err)
 	}
+	// Merge CLI flag value for SybilProtectionEnabled from internal config
+	// The internal config (vm.Internal) has the correct value from node CLI flags
+	// while execConfig parsed from chain config bytes defaults to false
+	execConfig.SybilProtectionEnabled = vm.SybilProtectionEnabled
 	vm.log.Info("using VM execution config", "config", execConfig)
 
 	// Get metrics registerer from chain context, or create new one if not available

@@ -122,8 +122,8 @@ type QuantumFinality struct {
 type Quasar struct {
 	mu sync.RWMutex
 
-	log    log.Logger
-	hybrid *quasar.Hybrid
+	log  log.Logger
+	core *quasar.Quasar
 
 	// Chain connections
 	pChain          PChainProvider
@@ -150,14 +150,14 @@ type Quasar struct {
 
 // NewQuasar creates a new Quasar consensus hub
 func NewQuasar(log log.Logger, threshold int, quorumNum, quorumDen uint64) (*Quasar, error) {
-	hybrid, err := quasar.NewHybrid(threshold)
+	core, err := quasar.NewQuasar(threshold)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create hybrid engine: %w", err)
+		return nil, fmt.Errorf("failed to create quasar core: %w", err)
 	}
 
 	return &Quasar{
 		log:        log,
-		hybrid:     hybrid,
+		core:       core,
 		threshold:  threshold,
 		quorumNum:  quorumNum,
 		quorumDen:  quorumDen,
@@ -291,10 +291,10 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	// Sync validators to hybrid engine
+	// Sync validators to quasar core
 	for _, v := range event.Validators {
 		if v.Active {
-			_ = q.hybrid.AddValidator(v.NodeID.String(), v.Weight)
+			_, _ = q.core.AddValidator(v.NodeID.String(), v.Weight)
 		}
 	}
 
@@ -416,14 +416,14 @@ func (q *Quasar) createMessage(event FinalityEvent) []byte {
 func (q *Quasar) collectBLS(event FinalityEvent, msg []byte) ([]byte, []byte, uint64, error) {
 	var signerBitset []byte
 	var signerWeight uint64
-	signatures := make([]*quasar.HybridSignature, 0, len(event.Validators))
+	signatures := make([]*quasar.QuasarSig, 0, len(event.Validators))
 
 	for i, v := range event.Validators {
 		if !v.Active {
 			continue
 		}
 
-		sig, err := q.hybrid.SignMessage(v.NodeID.String(), msg)
+		sig, err := q.core.SignMessage(v.NodeID.String(), msg)
 		if err != nil {
 			continue // Skip failed signers
 		}
@@ -443,7 +443,7 @@ func (q *Quasar) collectBLS(event FinalityEvent, msg []byte) ([]byte, []byte, ui
 		return nil, nil, 0, errors.New("no BLS signatures")
 	}
 
-	agg, err := q.hybrid.AggregateSignatures(msg, signatures)
+	agg, err := q.core.AggregateSignatures(msg, signatures)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -540,7 +540,7 @@ func (q *Quasar) Verify(finality *QuantumFinality) error {
 	putUint64BE(msg[32:40], finality.PChainHeight)
 	putUint64BE(msg[40:48], uint64(finality.Timestamp.UnixNano()))
 
-	if !q.hybrid.VerifyAggregatedSignature(msg, agg) {
+	if !q.core.VerifyAggregatedSignature(msg, agg) {
 		return ErrBLSFailed
 	}
 
@@ -593,9 +593,9 @@ type QuasarStats struct {
 	RingtailReady     bool
 }
 
-// GetHybrid returns the underlying hybrid engine for testing
-func (q *Quasar) GetHybrid() *quasar.Hybrid {
-	return q.hybrid
+// GetCore returns the underlying quasar core for testing
+func (q *Quasar) GetCore() *quasar.Quasar {
+	return q.core
 }
 
 // GetRingtail returns the Ringtail coordinator

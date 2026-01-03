@@ -48,7 +48,7 @@ func TestDexVMFactory(t *testing.T) {
 	vm, err := factory.New(nil)
 	require.NoError(err, "Factory.New should not fail")
 	require.NotNil(vm, "Factory.New should return a VM")
-	require.IsType(&dexvm.VM{}, vm, "Factory.New should return a *dexvm.VM")
+	require.IsType(&dexvm.ChainVM{}, vm, "Factory.New should return a *dexvm.ChainVM")
 }
 
 // DEXGenesisConfig represents the genesis configuration for DEX VM.

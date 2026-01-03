@@ -350,7 +350,8 @@ func TestQuasarWithRingtail(t *testing.T) {
 		require.NoError(t, err)
 		defer pchain.Close()
 
-		require.Equal(t, 3, q.ringtail.Threshold(), "Threshold should be 3")
+		// With 5 parties, threshold = (5 * 2 / 3) + 1 = 4
+		require.Equal(t, 4, q.ringtail.Threshold(), "Threshold should be 4 for 5 parties")
 		require.Equal(t, 5, q.ringtail.NumParties(), "NumParties should be 5")
 	})
 }
