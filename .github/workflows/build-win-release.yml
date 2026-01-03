@@ -39,8 +39,7 @@ jobs:
         shell: bash
 
       - name: Build the node binary
-        # CGO_ENABLED=0 builds pure-Go binary without C dependencies (lattice GPU, etc.)
-        run: CGO_ENABLED=0 ./scripts/build.sh
+        run: ./scripts/build.sh
         shell: bash
 
       - name: Create zip

@@ -64,7 +64,6 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
 
 # Build node. The build environment is configured with build_env.sh from the step
 # enabling cross-compilation.
-# CGO_ENABLED=0 builds pure-Go binary without C dependencies (lattice GPU, etc.)
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
@@ -72,7 +71,6 @@ RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
-    export CGO_ENABLED=0 && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Create this directory in the builder to avoid requiring anything to be executed in the

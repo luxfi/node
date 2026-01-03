@@ -1903,6 +1903,14 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 		if len(msg.Message) > 0 {
 			return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
 		}
+	case handler.PullQuery:
+		// PullQuery asks for a vote on a block identified by ID
+		// Extract the blockID from the message and respond with Chits
+		if len(msg.Message) >= 32 {
+			var containerID ids.ID
+			copy(containerID[:], msg.Message[:32])
+			return b.PullQuery(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second), containerID)
+		}
 	case handler.Chits:
 		// Chits contain vote for a block (preferredID)
 		if len(msg.Message) >= 32 && b.engine != nil {
