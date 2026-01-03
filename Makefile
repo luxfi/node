@@ -1,9 +1,9 @@
 # Makefile for Lux Node
 
-.PHONY: all build build-cgo build-nocgo build-mlx build-release build-release-upx test test-cgo test-nocgo clean fmt lint install-mockgen mockgen
+.PHONY: all build build-mlx build-release build-release-upx test clean fmt lint install-mockgen mockgen
 
-# Configuration toggles
-CGO ?= 0
+# Configuration
+CGO_ENABLED ?= 1
 FIPS_STRICT ?= 0
 
 # FIPS 140-3 always enabled (required for blockchain/financial systems)
@@ -13,8 +13,7 @@ ifeq ($(FIPS_STRICT),1)
 else
 	export GODEBUG := fips140=on
 endif
-
-export CGO_ENABLED := $(CGO)
+export CGO_ENABLED
 
 # Environment block for all go commands
 ENV := GOFIPS140=$(GOFIPS140) GODEBUG=$(GODEBUG) CGO_ENABLED=$(CGO_ENABLED)
@@ -39,51 +38,29 @@ all: build
 # Verify FIPS environment
 verify-fips:
 	@echo "$(GREEN)Verifying FIPS 140-3 Environment...$(NC)"
-	@echo "FIPS: $(FIPS)"
-	@echo "CGO: $(CGO)"
 	@echo "FIPS_STRICT: $(FIPS_STRICT)"
 	@echo "GOFIPS140: $(GOFIPS140)"
 	@echo "GODEBUG: $(GODEBUG)"
-	@echo "CGO_ENABLED: $(CGO_ENABLED)"
+	@echo "CGO_ENABLED: $${CGO_ENABLED:-not set}"
 	@echo "$(GREEN)✓ Environment ready$(NC)"
 
-# Default build (uses current FIPS and CGO settings)
+# Default build
 build:
-	@echo "$(GREEN)Building luxd (FIPS=$(FIPS) CGO=$(CGO))...$(NC)"
+	@echo "$(GREEN)Building luxd...$(NC)"
 	@$(ENV) ./scripts/build.sh
 	@echo "$(GREEN)✓ Build complete$(NC)"
 
-# Convenience aliases
-build-cgo:
-	@$(MAKE) build CGO=1
-
-build-nocgo:
-	@$(MAKE) build CGO=0
-
-build-fips:
-	@$(MAKE) build FIPS=1
-
-# Default test (uses current FIPS and CGO settings)
+# Default test
 test:
-	@echo "$(GREEN)Running tests (FIPS=$(FIPS) CGO=$(CGO))...$(NC)"
+	@echo "$(GREEN)Running tests...$(NC)"
 	@$(ENV) go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
 
-# Convenience aliases
-test-cgo:
-	@$(MAKE) test CGO=1
-
-test-nocgo:
-	@$(MAKE) test CGO=0
-
-test-fips:
-	@$(MAKE) test FIPS=1
-
 test-short:
-	@echo "Running short tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@echo "Running short tests..."
 	@$(ENV) go test -short -race -timeout=60s $(TEST_PACKAGES)
 
 test-100:
-	@echo "$(GREEN)=== ENSURING 100% TEST PASS RATE (FIPS=$(FIPS) CGO=$(CGO)) ===$(NC)"
+	@echo "$(GREEN)=== ENSURING 100% TEST PASS RATE ===$(NC)"
 	@$(ENV) go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
 
 fmt:
@@ -110,26 +87,50 @@ mockgen: install-mockgen
 
 # Specific test targets
 test-unit:
-	@echo "Running unit tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@echo "Running unit tests..."
 	@$(ENV) go test -short -race $(TEST_PACKAGES)
 
 test-integration:
-	@echo "Running integration tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@echo "Running integration tests..."
 	@$(ENV) go test -run Integration -race -timeout=300s $(TEST_PACKAGES)
 
 test-e2e:
-	@echo "Running e2e tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@echo "Running e2e tests..."
 	@$(ENV) ./scripts/tests.e2e.sh
 
 # Build specific binaries
 luxd:
-	@echo "Building luxd (FIPS=$(FIPS) CGO=$(CGO))..."
+	@echo "Building luxd..."
 	@$(ENV) ./scripts/build.sh
 
 # Installation targets
+# Install to $GOPATH/bin (default go install behavior)
 install:
-	@echo "Installing luxd (FIPS=$(FIPS) CGO=$(CGO))..."
-	@$(ENV) go install -v ./cmd/luxd
+	@echo "Installing luxd to $(GOBIN)..."
+	@$(ENV) go install -v ./main
+	@echo "$(GREEN)✓ Installed to $(GOBIN)/luxd$(NC)"
+	@echo "Make sure $(GOBIN) is in your PATH"
+
+# Install to /usr/local/bin (system-wide, requires sudo)
+install-system: build
+	@echo "Installing luxd to /usr/local/bin..."
+	@sudo cp build/luxd /usr/local/bin/luxd
+	@sudo chmod +x /usr/local/bin/luxd
+	@echo "$(GREEN)✓ Installed to /usr/local/bin/luxd$(NC)"
+
+# Install to ~/.local/bin (user-local, no sudo needed)
+install-local: build
+	@mkdir -p $(HOME)/.local/bin
+	@cp build/luxd $(HOME)/.local/bin/luxd
+	@chmod +x $(HOME)/.local/bin/luxd
+	@echo "$(GREEN)✓ Installed to $(HOME)/.local/bin/luxd$(NC)"
+	@echo "Make sure $(HOME)/.local/bin is in your PATH"
+
+# Symlink from build dir (for development)
+install-dev: build
+	@echo "Creating symlink for development..."
+	@ln -sf $(PWD)/build/luxd $(GOBIN)/luxd
+	@echo "$(GREEN)✓ Symlinked $(PWD)/build/luxd -> $(GOBIN)/luxd$(NC)"
 
 # Development helpers
 dev-setup:
@@ -152,7 +153,7 @@ test-package:
 		echo "Usage: make test-package PKG=./path/to/package"; \
 		exit 1; \
 	fi
-	@echo "Testing package: $(PKG) (FIPS=$(FIPS) CGO=$(CGO))"
+	@echo "Testing package: $(PKG)"
 	@$(ENV) go test -race -timeout=$(TEST_TIMEOUT) $(PKG)
 
 # Node runtime targets
@@ -217,30 +218,22 @@ help:
 	@echo "$(GREEN)Lux Node Build System$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Configuration:$(NC)"
-	@echo "  FIPS ?= 1         - Enable FIPS 140-3 mode (default: 1)"
-	@echo "  CGO ?= 0          - Enable CGO (default: 0)"
-	@echo "  FIPS_STRICT ?= 0  - Use FIPS strict mode (fips140=only) (default: 0)"
+	@echo "  CGO_ENABLED=1   - CGO enabled by default for C++/GPU backends"
+	@echo "  FIPS_STRICT=0   - FIPS 140-3 always enabled, strict mode optional"
 	@echo ""
 	@echo "  Examples:"
-	@echo "    make build              # Default: FIPS=1 CGO=0"
-	@echo "    make build FIPS=0       # Build without FIPS"
-	@echo "    make build CGO=1        # Build with CGO"
-	@echo "    make test FIPS=1 CGO=1  # Test with both FIPS and CGO"
+	@echo "    make build                    # Build with CGO (default)"
+	@echo "    CGO_ENABLED=0 make build      # Build without CGO"
 	@echo ""
 	@echo "$(GREEN)Build Targets:$(NC)"
-	@echo "  build         - Build luxd binary (uses FIPS=$(FIPS) CGO=$(CGO))"
+	@echo "  build         - Build luxd binary"
 	@echo "  build-release - Build smallest possible release binary (~46MB)"
 	@echo "  build-release-upx - Build release + UPX compression (~20MB)"
-	@echo "  build-fips    - Build with FIPS enabled (FIPS=1)"
-	@echo "  build-cgo     - Build with CGO enabled (CGO=1)"
-	@echo "  build-nocgo   - Build without CGO (CGO=0)"
-	@echo "  verify-fips   - Show current FIPS/CGO configuration"
+	@echo "  build-mlx     - Build with MLX GPU acceleration (requires CGO)"
+	@echo "  verify-fips   - Show current environment configuration"
 	@echo ""
 	@echo "$(GREEN)Test Targets:$(NC)"
-	@echo "  test          - Run all tests (uses FIPS=$(FIPS) CGO=$(CGO))"
-	@echo "  test-fips     - Run tests with FIPS enabled (FIPS=1)"
-	@echo "  test-cgo      - Run tests with CGO enabled (CGO=1)"
-	@echo "  test-nocgo    - Run tests without CGO (CGO=0)"
+	@echo "  test          - Run all tests (FIPS 140-3 enabled)"
 	@echo "  test-short    - Run short tests only"
 	@echo "  test-100      - Ensure 100% test pass rate"
 	@echo "  test-unit     - Run unit tests"
