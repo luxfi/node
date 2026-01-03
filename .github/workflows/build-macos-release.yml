@@ -37,8 +37,9 @@ jobs:
       - run: go version
 
       # Runs a single command using the runners shell
+      # CGO_ENABLED=0 builds pure-Go binary without C dependencies (lattice GPU, etc.)
       - name: Build the luxd binary
-        run: ./scripts/run_task.sh build
+        run: CGO_ENABLED=0 ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
