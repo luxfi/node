@@ -244,7 +244,7 @@ func InboundChits(
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,
-		op:     ChitsOp,
+		op:     QbitOp,
 		message: &p2p.Chits{
 			ChainId:             chainID[:],
 			RequestId:           requestID,

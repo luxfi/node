@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/math"
 )
 
 var (

@@ -518,8 +518,8 @@ func TestMessage(t *testing.T) {
 			bytesSaved:       false,
 		},
 		{
-			desc: "chits message with no compression",
-			op:   ChitsOp,
+			desc: "qbit message with no compression",
+			op:   QbitOp,
 			msg: &p2p.Message{
 				Message: &p2p.Message_Chits{
 					Chits: &p2p.Chits{

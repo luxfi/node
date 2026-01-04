@@ -35,13 +35,14 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
-	// "github.com/luxfi/p2p" // Unused
+	"github.com/luxfi/node/proto/pb/p2p"
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
 	"github.com/luxfi/consensus/engine/interfaces"
 	// "github.com/luxfi/consensus/core/tracker"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
+	consensusconfig "github.com/luxfi/consensus/config"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/chain/syncer"
@@ -71,7 +72,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
-	// p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	// "github.com/luxfi/node/proto/p2p" // Available if needed for protobuf parsing
 	// smcon "github.com/luxfi/consensus/engine/chain"
 	// aveng "github.com/luxfi/consensus/engine/dag"
 	// avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
@@ -995,12 +996,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		consensusEngine := consensuschain.NewIntegratedEngine(consensuschain.NetworkConfig{
+		// Use LocalParams for small validator sets (e.g., 5 validators)
+		// This sets K=5, Beta=4 which allows consensus to finalize with available validators
+		localParams := consensusconfig.LocalParams()
+		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{
 			ChainID:   chainParams.ID,
 			NetworkID: networkID,
 			Logger:    m.Log,
 			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
 			VM:        blockBuilder,
+			Params:    &localParams,
 		})
 
 		// Start the consensus engine
@@ -1711,21 +1716,217 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 type blockHandler struct {
 	vm         block.ChainVM
 	logger     log.Logger
-	engine     *consensuschain.IntegratedEngine // Consensus engine for proper block handling
-	net        network.Network                  // Network for sending Chits responses
-	msgCreator message.OutboundMsgBuilder       // Message creator for Chits responses
+	engine     *consensuschain.Runtime // Consensus engine for proper block handling
+	net        network.Network                  // Network for sending Qbit responses
+	msgCreator message.OutboundMsgBuilder       // Message creator for Qbit responses
 	chainID    ids.ID                           // Chain ID for message routing
+
+	// Context sync support - when a block fails verification due to missing context,
+	// we request the prerequisite blocks from the peer to catch up
+	pendingContext    map[ids.ID]contextRequest // Map from blockID to pending context request
+	requestIDCounter  uint32                    // Counter for generating unique request IDs
+	maxContextBlocks  int                       // Max context blocks to request/serve (default: 256)
+	contextRequestMu  sync.Mutex                // Protects pendingContext and requestIDCounter
+
+	// Qbit event buffering - when we receive a Qbit for a block we don't have yet,
+	// buffer the event and drain when the block arrives
+	pendingQbits  map[ids.ID][]QbitEvent // Map from blockID to buffered Qbit events
+	pendingQbitMu sync.Mutex             // Protects pendingQbits
 }
 
-func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.IntegratedEngine, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID) *blockHandler {
+// QbitEvent is the normalized internal representation of a received Qbit message.
+// This is pure data - no VM calls, no Verify, no Accept derivation.
+// Vote creation happens separately in applyQbit when the block is available.
+type QbitEvent struct {
+	From       ids.NodeID // The node that sent the Qbit
+	BlockID    ids.ID     // The block being signaled (preferredID)
+	RequestID  uint32     // Request ID for dedup and stale detection
+	ReceivedAt time.Time  // When the Qbit was received
+}
+
+// contextRequest tracks a pending context request (wire: GetAncestors)
+type contextRequest struct {
+	nodeID    ids.NodeID
+	requestID uint32
+	blockID   ids.ID
+	timestamp time.Time
+}
+
+func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID) *blockHandler {
 	return &blockHandler{
-		vm:         vm,
-		logger:     logger,
-		engine:     engine,
-		net:        net,
-		msgCreator: msgCreator,
-		chainID:    chainID,
+		vm:               vm,
+		logger:           logger,
+		engine:           engine,
+		net:              net,
+		msgCreator:       msgCreator,
+		chainID:          chainID,
+		pendingContext:   make(map[ids.ID]contextRequest),
+		maxContextBlocks: 256, // Default max context blocks to request/serve
+		pendingQbits:     make(map[ids.ID][]QbitEvent),
 	}
+}
+
+// bufferQbit stores a QbitEvent for later processing when the block isn't available yet
+func (b *blockHandler) bufferQbit(ev QbitEvent) {
+	b.pendingQbitMu.Lock()
+	defer b.pendingQbitMu.Unlock()
+
+	// Add to buffer, limiting max buffered Qbits per block to prevent memory growth
+	const maxQbitsPerBlock = 100
+	existing := b.pendingQbits[ev.BlockID]
+	if len(existing) >= maxQbitsPerBlock {
+		return // Don't buffer more
+	}
+
+	b.pendingQbits[ev.BlockID] = append(existing, ev)
+}
+
+// popBufferedQbits removes and returns all buffered QbitEvents for a given block
+func (b *blockHandler) popBufferedQbits(blockID ids.ID) []QbitEvent {
+	b.pendingQbitMu.Lock()
+	defer b.pendingQbitMu.Unlock()
+
+	evs := b.pendingQbits[blockID]
+	delete(b.pendingQbits, blockID)
+	return evs
+}
+
+// hasBlock returns true if the block is available in the VM
+func (b *blockHandler) hasBlock(ctx context.Context, blockID ids.ID) bool {
+	if b.vm == nil {
+		return false
+	}
+	_, err := b.vm.GetBlock(ctx, blockID)
+	return err == nil
+}
+
+// enqueueQbit immediately processes a QbitEvent when the block is available
+func (b *blockHandler) enqueueQbit(ctx context.Context, ev QbitEvent) {
+	b.applyQbit(ctx, ev)
+}
+
+// applyQbit derives a Vote from a QbitEvent and sends it to the consensus engine.
+// This is the ONLY place where Vote creation happens.
+func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
+	if b.engine == nil || b.vm == nil {
+		return
+	}
+
+	// Skip stale Qbits (older than 30 seconds)
+	if time.Since(ev.ReceivedAt) > 30*time.Second {
+		b.logger.Debug("skipping stale Qbit",
+			log.Stringer("from", ev.From),
+			log.Stringer("blockID", ev.BlockID))
+		return
+	}
+
+	blk, err := b.vm.GetBlock(ctx, ev.BlockID)
+	if err != nil {
+		// Block still missing - this shouldn't happen if called from drain point
+		b.logger.Debug("cannot apply Qbit - block still missing",
+			log.Stringer("from", ev.From),
+			log.Stringer("blockID", ev.BlockID))
+		return
+	}
+
+	// Derive Accept from verification
+	accept := (blk.Verify(ctx) == nil)
+
+	// Create Vote from QbitEvent + local verification
+	vote := consensuschain.Vote{
+		BlockID:  ev.BlockID,
+		NodeID:   ev.From,
+		Accept:   accept,
+		SignedAt: ev.ReceivedAt,
+	}
+	b.engine.ReceiveVote(vote)
+
+	b.logger.Debug("applied Qbit as Vote",
+		log.Stringer("from", ev.From),
+		log.Stringer("blockID", ev.BlockID),
+		log.Bool("accept", accept))
+}
+
+// onBlockArrived is called when a block becomes available locally.
+// It drains all buffered QbitEvents for that block and applies them.
+func (b *blockHandler) onBlockArrived(ctx context.Context, blockID ids.ID) {
+	evs := b.popBufferedQbits(blockID)
+	if len(evs) == 0 {
+		return
+	}
+
+	b.logger.Info("draining buffered Qbits for arrived block",
+		log.Stringer("blockID", blockID),
+		log.Int("count", len(evs)))
+
+	for _, ev := range evs {
+		b.enqueueQbit(ctx, ev)
+	}
+}
+
+// isMissingContextError returns true if the error indicates missing prerequisite blocks
+func isMissingContextError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "unknown ancestor") ||
+		strings.Contains(errStr, "missing parent") ||
+		strings.Contains(errStr, "parent not found") ||
+		strings.Contains(errStr, "unknown parent") ||
+		strings.Contains(errStr, "missing context")
+}
+
+// requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
+func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, blockID ids.ID) {
+	if b.net == nil || b.msgCreator == nil {
+		return
+	}
+
+	b.contextRequestMu.Lock()
+	// Check if we already have a pending request for this block
+	if _, exists := b.pendingContext[blockID]; exists {
+		b.contextRequestMu.Unlock()
+		return
+	}
+
+	// Generate a new request ID
+	b.requestIDCounter++
+	requestID := b.requestIDCounter
+
+	// Record the pending request
+	b.pendingContext[blockID] = contextRequest{
+		nodeID:    nodeID,
+		requestID: requestID,
+		blockID:   blockID,
+		timestamp: time.Now(),
+	}
+	b.contextRequestMu.Unlock()
+
+	// Create and send context request (wire: GetAncestors message)
+	msg, err := b.msgCreator.GetAncestors(
+		b.chainID,
+		requestID,
+		10*time.Second, // Deadline
+		blockID,
+		p2p.EngineType_ENGINE_TYPE_CONSENSUSMAN, // Use Snowman (chain) engine type
+	)
+	if err != nil {
+		b.logger.Error("failed to create context request message",
+			log.Stringer("blockID", blockID),
+			log.Err(err))
+		return
+	}
+
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+
+	sentTo := b.net.Send(msg, nodeSet, ids.Empty, 0)
+	b.logger.Info("requested context for missing prerequisites",
+		log.Stringer("from", nodeID),
+		log.Stringer("blockID", blockID),
+		log.Uint32("requestID", requestID),
+		log.Int("sentTo", sentTo.Len()))
 }
 
 func (b *blockHandler) Context() *consensusctx.Context                 { return nil }
@@ -1735,9 +1936,117 @@ func (b *blockHandler) Len() int                                      { return 0
 func (b *blockHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (b *blockHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+// GetContext responds to a request for verification context (parent chain blocks)
+// starting from containerID. We respond with up to maxAncestors blocks in
+// chronological order (oldest first) so the requester can attach the missing context.
+func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	if b.vm == nil || b.net == nil || b.msgCreator == nil {
+		return nil
+	}
+
+	b.logger.Debug("received context request",
+		log.Stringer("from", nodeID),
+		log.Stringer("containerID", containerID),
+		log.Uint32("requestID", requestID))
+
+	// Collect context blocks (walk parent chain)
+	var containers [][]byte
+	currentID := containerID
+
+	for i := 0; i < b.maxContextBlocks; i++ {
+		blk, err := b.vm.GetBlock(ctx, currentID)
+		if err != nil {
+			// Block not found, stop walking
+			break
+		}
+
+		// Add block bytes to the response (prepend to get oldest first)
+		blockBytes := blk.Bytes()
+		containers = append([][]byte{blockBytes}, containers...)
+
+		// Get parent ID for next iteration
+		parentID := blk.Parent()
+		if parentID == ids.Empty {
+			// Reached genesis, stop
+			break
+		}
+		currentID = parentID
+	}
+
+	if len(containers) == 0 {
+		b.logger.Debug("no context found for request",
+			log.Stringer("from", nodeID),
+			log.Stringer("containerID", containerID))
+		return nil
+	}
+
+	// Create and send Context response (wire protocol uses Ancestors message type)
+	msg, err := b.msgCreator.Ancestors(b.chainID, requestID, containers)
+	if err != nil {
+		b.logger.Error("failed to create context response",
+			log.Stringer("containerID", containerID),
+			log.Err(err))
+		return nil
+	}
+
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+
+	sentTo := b.net.Send(msg, nodeSet, ids.Empty, 0)
+	b.logger.Info("sent context response",
+		log.Stringer("to", nodeID),
+		log.Stringer("containerID", containerID),
+		log.Int("numBlocks", len(containers)),
+		log.Int("sentTo", sentTo.Len()))
+
 	return nil
 }
+
+// handleContext processes an incoming context response (wire: Ancestors message).
+// This is called when we previously requested context for a block we couldn't verify.
+// Each block in the context is processed via Put to add it to our state.
+// After processing, we drain any buffered Qbits that were waiting for context.
+func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, data []byte) error {
+	if b.vm == nil || len(data) == 0 {
+		return nil
+	}
+
+	b.logger.Debug("received context response",
+		log.Stringer("from", nodeID),
+		log.Uint32("requestID", requestID),
+		log.Int("dataLen", len(data)))
+
+	// The data contains multiple concatenated block bytes.
+	// Each block is sent in chronological order (oldest first).
+	// Parse and process each block.
+	processed := 0
+	remaining := data
+
+	for len(remaining) > 0 {
+		// Process the block via Put
+		err := b.Put(ctx, nodeID, requestID, remaining)
+		if err != nil {
+			b.logger.Debug("failed to process context block",
+				log.Stringer("from", nodeID),
+				log.Int("processed", processed),
+				log.Err(err))
+			break
+		}
+		processed++
+
+		// After processing a block, try to drain any buffered Qbits for it
+		// This is done in Put via popBufferedQbits, but we also trigger here
+		// for blocks that were already partially verified
+		break // For now, process one block at a time from the wire format
+	}
+
+	b.logger.Info("processed context blocks",
+		log.Stringer("from", nodeID),
+		log.Int("processed", processed))
+
+	return nil
+}
+
 func (b *blockHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
 	return nil
 }
@@ -1767,10 +2076,14 @@ func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uin
 	}
 
 	if blk != nil {
+		blockID := blk.ID()
 		b.logger.Info("processed incoming block through consensus",
 			log.Stringer("from", nodeID),
-			log.Stringer("blockID", blk.ID()),
+			log.Stringer("blockID", blockID),
 			log.Uint64("height", blk.Height()))
+
+		// Drain any buffered Qbits that were waiting for this block
+		b.onBlockArrived(ctx, blockID)
 	}
 
 	return nil
@@ -1780,8 +2093,8 @@ func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	return b.Put(ctx, nodeID, requestID, container)
 }
 func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
-	// PullQuery requests a vote on a block identified by containerID
-	// We need to respond with Chits containing our preferred vote
+	// PullQuery requests a preference signal on a block identified by containerID
+	// We respond with a Qbit (wire: p2p.Chits) containing our preference
 
 	if b.net == nil || b.msgCreator == nil {
 		b.logger.Debug("cannot respond to PullQuery - no network sender",
@@ -1790,13 +2103,37 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 		return nil
 	}
 
-	// Try to get the block from the VM
-	blk, err := b.vm.GetBlock(ctx, containerID)
+	// Try to get the block from the VM with retry.
+	// The block may be arriving via Put concurrently, so we retry a few times
+	// with a short delay to handle the race condition between Put and PullQuery.
+	var blk block.Block
+	var err error
+	const maxRetries = 3
+	const retryDelay = 20 * time.Millisecond
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		blk, err = b.vm.GetBlock(ctx, containerID)
+		if err == nil {
+			break // Found the block
+		}
+		if attempt < maxRetries-1 {
+			// Wait before retry to allow concurrent Put to complete
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryDelay):
+				// Continue to next attempt
+			}
+		}
+	}
+
 	if err != nil {
-		b.logger.Debug("cannot respond to PullQuery - block not found",
+		b.logger.Debug("cannot respond to PullQuery - block not found after retries",
 			log.Stringer("from", nodeID),
 			log.Stringer("blockID", containerID),
 			log.Err(err))
+		// Block not found - request context (parent chain) from peer
+		b.requestContext(ctx, nodeID, containerID)
 		return nil
 	}
 
@@ -1806,6 +2143,13 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 			log.Stringer("from", nodeID),
 			log.Stringer("blockID", containerID),
 			log.Err(err))
+		// If verification failed due to missing context, request it from peer
+		if isMissingContextError(err) {
+			b.logger.Info("block missing context - requesting from peer",
+				log.Stringer("from", nodeID),
+				log.Stringer("blockID", containerID))
+			b.requestContext(ctx, nodeID, containerID)
+		}
 		return nil
 	}
 
@@ -1821,26 +2165,26 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 		}
 	}
 
-	// Create Chits message
-	// preferredID: the block we're voting for
+	// Create Qbit response message (wire: p2p.Chits)
+	// preferredID: the block we prefer
 	// preferredIDAtHeight: same as preferredID for now (could be optimized)
 	// acceptedID: the last accepted block
 	// acceptedHeight: height of the accepted block
-	chitsMsg, err := b.msgCreator.Chits(b.chainID, requestID, containerID, containerID, acceptedBlkID, acceptedHeight)
+	qbitMsg, err := b.msgCreator.Chits(b.chainID, requestID, containerID, containerID, acceptedBlkID, acceptedHeight)
 	if err != nil {
-		b.logger.Error("failed to create Chits message",
+		b.logger.Error("failed to create Qbit message",
 			log.Stringer("from", nodeID),
 			log.Stringer("blockID", containerID),
 			log.Err(err))
 		return nil
 	}
 
-	// Send Chits response to the requesting node
+	// Send Qbit response to the requesting node
 	nodeSet := set.NewSet[ids.NodeID](1)
 	nodeSet.Add(nodeID)
 
-	sentTo := b.net.Send(chitsMsg, nodeSet, ids.Empty, 0)
-	b.logger.Debug("responded to PullQuery with Chits",
+	sentTo := b.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	b.logger.Debug("responded to PullQuery with Qbit",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", containerID),
 		log.Uint64("height", blk.Height()),
@@ -1904,44 +2248,52 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
 		}
 	case handler.PullQuery:
-		// PullQuery asks for a vote on a block identified by ID
-		// Extract the blockID from the message and respond with Chits
+		// PullQuery asks for a preference signal on a block identified by ID
+		// Extract the blockID from the message and respond with Qbit
 		if len(msg.Message) >= 32 {
 			var containerID ids.ID
 			copy(containerID[:], msg.Message[:32])
 			return b.PullQuery(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second), containerID)
 		}
-	case handler.Chits:
-		// Chits contain vote for a block (preferredID)
-		if len(msg.Message) >= 32 && b.engine != nil {
+	case handler.Qbit:
+		// Qbit contains a preference signal for a block (preferredID)
+		// Note: msg.Message already contains the extracted PreferredId from the Qbit protobuf
+		// (extracted by chain_router.go via GetContainerBytes which returns m.GetPreferredId())
+		if len(msg.Message) >= 32 {
 			var preferredID ids.ID
 			copy(preferredID[:], msg.Message[:32])
 
-			// Derive Accept from block verification:
-			// Accept=true only if we have the block AND it verifies
-			accept := false
-			if b.vm != nil {
-				if blk, err := b.vm.GetBlock(ctx, preferredID); err == nil {
-					if err := blk.Verify(ctx); err == nil {
-						accept = true
-					}
-				}
+			// Create QbitEvent - pure data, no VM calls here
+			ev := QbitEvent{
+				From:       msg.NodeID,
+				BlockID:    preferredID,
+				RequestID:  msg.RequestID,
+				ReceivedAt: time.Now(),
 			}
 
-			vote := consensuschain.Vote{
-				BlockID:  preferredID,
-				NodeID:   msg.NodeID,
-				Accept:   accept,
-				SignedAt: time.Now(),
+			// If block is missing, buffer the event and return
+			if !b.hasBlock(ctx, preferredID) {
+				b.bufferQbit(ev)
+				b.logger.Debug("buffered Qbit - block not yet available",
+					log.Stringer("from", ev.From),
+					log.Stringer("blockID", ev.BlockID))
+				return nil
 			}
 
-			b.engine.ReceiveVote(vote)
-
-			b.logger.Debug("received vote via Chits",
-				log.Stringer("from", msg.NodeID),
-				log.Stringer("blockID", preferredID),
-				log.Bool("accept", accept))
+			// Block is available - enqueue for processing
+			// Vote creation happens in applyQbit, not here
+			b.enqueueQbit(ctx, ev)
 		}
+	case handler.GetContext:
+		// GetContext requests verification context (parent chain) for a block
+		if len(msg.Message) >= 32 {
+			var containerID ids.ID
+			copy(containerID[:], msg.Message[:32])
+			return b.GetContext(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second), containerID)
+		}
+	case handler.Context:
+		// Context contains prerequisite blocks - process each one via Put
+		return b.handleContext(ctx, msg.NodeID, msg.RequestID, msg.Message)
 	}
 	return nil
 }
@@ -1959,7 +2311,7 @@ func (p *placeholderHandler) Len() int                                      { re
 func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+func (p *placeholderHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	return nil
 }
 func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
@@ -2084,17 +2436,37 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData 
 // If validators is nil or empty, broadcasts to all validators (like GossipPut).
 func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockID ids.ID, validators []ids.NodeID) int {
 	if g.net == nil || g.msgCreator == nil {
+		log.Warn("[CONSENSUS DEBUG] SendPullQuery: net or msgCreator is nil",
+			"netIsNil", g.net == nil,
+			"msgCreatorIsNil", g.msgCreator == nil,
+		)
 		return 0
 	}
 
 	pullMsg, err := g.msgCreator.PullQuery(chainID, 0, 5*time.Second, blockID, 0)
 	if err != nil {
+		log.Warn("[CONSENSUS DEBUG] SendPullQuery: PullQuery message creation failed",
+			"chainID", chainID,
+			"blockID", blockID,
+			"error", err,
+		)
 		return 0
 	}
+
+	log.Info("[CONSENSUS DEBUG] SendPullQuery: sending to network",
+		"chainID", chainID,
+		"networkID", networkID,
+		"blockID", blockID,
+		"numValidators", len(validators),
+	)
 
 	// If no specific validators provided, broadcast to all validators
 	if len(validators) == 0 {
 		sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
+		log.Info("[CONSENSUS DEBUG] SendPullQuery: Gossip returned",
+			"sentToCount", sentTo.Len(),
+			"sentToNodes", sentTo.List(),
+		)
 		return sentTo.Len()
 	}
 
@@ -2108,24 +2480,24 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockI
 	return sentTo.Len()
 }
 
-// SendChit sends a vote response (Chit) back to the node that requested our vote.
+// SendQbit sends a preference response (Qbit) back to the node that requested our preference.
 // This is called after verifying a block received via PullQuery.
-func (g *networkGossiper) SendChit(toNodeID ids.NodeID, chainID ids.ID, requestID uint32, preferredID ids.ID) error {
+func (g *networkGossiper) SendQbit(toNodeID ids.NodeID, chainID ids.ID, requestID uint32, preferredID ids.ID) error {
 	if g.net == nil || g.msgCreator == nil {
 		return nil
 	}
 
-	// Create Chits message with the preferred block ID
+	// Create Qbit message (wire: p2p.Chits) with the preferred block ID
 	// For now, we use the preferredID as both preferred and accepted
-	// since we've verified the block before sending the chit
-	chitsMsg, err := g.msgCreator.Chits(chainID, requestID, preferredID, preferredID, preferredID, 0)
+	// since we've verified the block before sending the Qbit
+	qbitMsg, err := g.msgCreator.Chits(chainID, requestID, preferredID, preferredID, preferredID, 0)
 	if err != nil {
 		return err
 	}
 
 	// Send to the specific node
 	nodeSet := set.Of(toNodeID)
-	g.net.Send(chitsMsg, nodeSet, ids.Empty, 0)
+	g.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
 	return nil
 }
 

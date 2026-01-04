@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"math"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/math"
 )
 
 var ErrInsufficientCapacity = errors.New("insufficient capacity")

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/math"
 )
 
 // GetBalance returns the current balance of [addrs]

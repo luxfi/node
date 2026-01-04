@@ -58,7 +58,7 @@ import (
 
 	"github.com/luxfi/node/vms/types"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/math"
 )
 
 var defaultValidatorNodeID = ids.GenerateTestNodeID()

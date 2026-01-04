@@ -7,7 +7,7 @@ package sampler
 import (
 	"cmp"
 
-	"github.com/luxfi/math/math"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/utils"
 )
 

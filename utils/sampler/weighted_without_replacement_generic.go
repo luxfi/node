@@ -3,7 +3,7 @@
 
 package sampler
 
-import "github.com/luxfi/math/math"
+import "github.com/luxfi/math"
 
 type weightedWithoutReplacementGeneric struct {
 	u Uniform

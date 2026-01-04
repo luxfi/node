@@ -23,6 +23,8 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/proposervm"
+
+	consensusconfig "github.com/luxfi/consensus/config"
 )
 
 const (
@@ -314,18 +316,19 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(BootstrapAncestorsMaxContainersSentKey, 2000, "Max number of containers in an Ancestors message sent by this node")
 	fs.Uint(BootstrapAncestorsMaxContainersReceivedKey, 2000, "This node reads at most this many containers from an incoming Ancestors message")
 
-	// Consensus
-// 	fs.Int(ConsensusSampleSizeKey, consensus.DefaultParameters.K, "Number of nodes to query for each network poll")
-// 	fs.Int(ConsensusQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
-// 	fs.Int(ConsensusPreferenceQuorumSizeKey, consensus.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
-// 	fs.Int(ConsensusConfidenceQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
-// 
-// 	fs.Int(ConsensusCommitThresholdKey, consensus.DefaultParameters.Beta, "Beta value to use for consensus")
+	// Consensus - use defaults from consensus config package
+	defaultParams := consensusconfig.DefaultParams()
+	fs.Int(ConsensusSampleSizeKey, defaultParams.K, "Number of nodes to query for each network poll")
+	fs.Int(ConsensusQuorumSizeKey, defaultParams.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+	fs.Int(ConsensusPreferenceQuorumSizeKey, defaultParams.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+	fs.Int(ConsensusConfidenceQuorumSizeKey, defaultParams.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
 
-// 	fs.Int(ConsensusConcurrentRepollsKey, consensus.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
-// 	fs.Int(ConsensusOptimalProcessingKey, consensus.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
-// 	fs.Int(ConsensusMaxProcessingKey, consensus.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
-// 	fs.Duration(ConsensusMaxTimeProcessingKey, consensus.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+	fs.Int(ConsensusCommitThresholdKey, int(defaultParams.Beta), "Beta value to use for consensus")
+
+	fs.Int(ConsensusConcurrentRepollsKey, defaultParams.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
+	fs.Int(ConsensusOptimalProcessingKey, defaultParams.OptimalProcessing, "Optimal number of processing containers in consensus")
+	fs.Int(ConsensusMaxProcessingKey, defaultParams.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
+	fs.Duration(ConsensusMaxTimeProcessingKey, defaultParams.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")

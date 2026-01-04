@@ -10,7 +10,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"

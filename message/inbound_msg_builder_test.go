@@ -319,7 +319,7 @@ func TestInboundMsgBuilder(t *testing.T) {
 				nodeID,
 			)
 
-			require.Equal(ChitsOp, msg.Op())
+			require.Equal(QbitOp, msg.Op())
 			require.Equal(nodeID, msg.NodeID())
 			require.Equal(mockable.MaxTime, msg.Expiration())
 			require.IsType(&p2p.Chits{}, msg.Message())

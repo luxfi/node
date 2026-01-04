@@ -48,7 +48,7 @@ const (
 	PushQueryOp
 	PullQueryOp
 	QueryFailedOp
-	ChitsOp
+	QbitOp // Authenticated preference signal (formerly ChitsOp)
 	// Application:
 	AppRequestOp
 	AppErrorOp
@@ -89,9 +89,10 @@ var (
 		GetAcceptedFailedOp:             AcceptedOp,
 		GetAncestorsFailedOp:            AncestorsOp,
 		GetFailedOp:                     PutOp,
-		QueryFailedOp:                   ChitsOp,
+		QueryFailedOp:                   QbitOp,
 		AppErrorOp:                      AppResponseOp,
 	}
+
 
 	errUnknownMessageType = errors.New("unknown message type")
 )
@@ -154,8 +155,8 @@ func (op Op) String() string {
 		return "pull_query"
 	case QueryFailedOp:
 		return "query_failed"
-	case ChitsOp:
-		return "chits"
+	case QbitOp:
+		return "qbit"
 	// Application
 	case AppRequestOp:
 		return "app_request"
@@ -265,8 +266,12 @@ func ToConsensusOp(op Op) (byte, bool) {
 		return 6, true // PushQuery
 	case PullQueryOp:
 		return 7, true // PullQuery
-	case ChitsOp:
-		return 8, true // Chits
+	case QbitOp:
+		return 8, true // Qbit
+	case GetAncestorsOp:
+		return 9, true // GetContext (wire protocol still uses GetAncestors)
+	case AncestorsOp:
+		return 10, true // Context (wire protocol still uses Ancestors)
 	default:
 		return 0, false
 	}
@@ -308,7 +313,7 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 	case *p2p.PullQuery:
 		return m.GetContainerId()
 	case *p2p.Chits:
-		// For Chits messages, return the PreferredId (the block being voted for)
+		// For Qbit messages (formerly Chits), return the PreferredId (the block being voted for)
 		return m.GetPreferredId()
 	case *p2p.AcceptedFrontier:
 		return m.GetContainerId()
@@ -368,7 +373,7 @@ func ToOp(m *p2p.Message) (Op, error) {
 	case *p2p.Message_PullQuery:
 		return PullQueryOp, nil
 	case *p2p.Message_Chits:
-		return ChitsOp, nil
+		return QbitOp, nil
 	case *p2p.Message_AppRequest:
 		return AppRequestOp, nil
 	case *p2p.Message_AppResponse:
