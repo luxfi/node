@@ -49,6 +49,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	extwarp "github.com/luxfi/warp"
 
+	consensuschain "github.com/luxfi/consensus/engine/chain"
 	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
@@ -62,6 +63,7 @@ import (
 var (
 	_ consensusmanblock.ChainVM                      = (*VM)(nil)
 	_ consensusmanblock.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ consensuschain.BlockBuilder                    = (*VM)(nil) // For consensus engine integration
 	_ secp256k1fx.VM                            = (*VM)(nil)
 	_ validators.State                          = (*VM)(nil)
 )
@@ -923,6 +925,16 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.manager.LastAccepted(), nil
 }
 
+// BuildBlock implements consensuschain.BlockBuilder for consensus engine integration.
+// This method is required for the consensus engine to be able to build new P-chain blocks.
+// It delegates to the embedded Builder which handles the actual block construction.
+func (vm *VM) BuildBlock(ctx context.Context) (consensusmanblock.Block, error) {
+	if vm.Builder == nil {
+		return nil, errors.New("block builder not initialized")
+	}
+	return vm.Builder.BuildBlock(ctx)
+}
+
 // SetPreference sets the preferred block to be the one with ID [blkID]
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
 	vm.manager.SetPreference(blkID)
@@ -1108,9 +1120,18 @@ func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 // WaitForEvent blocks until either the given context is cancelled, or a message is returned
 // This is required by the linearblock.ChainVM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	// For now, just block until context is cancelled
-	<-ctx.Done()
-	return nil, ctx.Err()
+	// Delegate to the Builder which waits for mempool transactions or staker changes
+	if vm.Builder == nil {
+		// Before initialization, block until context is cancelled
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	msg, err := vm.Builder.WaitForEvent(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vm.log.Debug("WaitForEvent returning", log.String("msgType", msg.Type.String()))
+	return msg, nil
 }
 
 // noOpWarpSigner is a no-op implementation of warp.Signer for chains that don't need warp signing

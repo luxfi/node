@@ -1018,6 +1018,49 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
 			log.Stringer("chainID", chainParams.ID))
 
+		// Bridge VM's WaitForEvent to toEngine channel.
+		// This is the critical missing piece: ForwardVMNotifications reads from toEngine,
+		// but nothing was writing to it! This goroutine calls WaitForEvent on the VM
+		// and writes the result to toEngine, which ForwardVMNotifications then reads
+		// and forwards to the consensus engine via Notify().
+		go func() {
+			ctx := context.Background()
+			for {
+				// Call WaitForEvent on the VM - this blocks until there are pending txs
+				// or staker changes that should trigger block building
+				result, err := vm.WaitForEvent(ctx)
+				if err != nil {
+					if ctx.Err() != nil {
+						// Context cancelled, exit gracefully
+						return
+					}
+					m.Log.Warn("WaitForEvent error, retrying",
+						log.Stringer("chainID", chainParams.ID),
+						log.Err(err))
+					continue
+				}
+
+				// Convert the result to block.Message
+				// WaitForEvent returns a consensuscore.Message which has a Type field
+				if msg, ok := result.(interface{ Type() engine.MessageType }); ok {
+					toEngine <- block.Message{Type: block.MessageType(msg.Type())}
+					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned, forwarding to toEngine",
+						log.Stringer("chainID", chainParams.ID))
+				} else if msgStruct, ok := result.(struct{ Type engine.MessageType }); ok {
+					toEngine <- block.Message{Type: block.MessageType(msgStruct.Type)}
+					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned struct, forwarding to toEngine",
+						log.Stringer("chainID", chainParams.ID))
+				} else {
+					// Try to get the type directly if it's a consensuscore.Message
+					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned unknown type, sending PendingTxs",
+						log.Stringer("chainID", chainParams.ID),
+						log.String("resultType", fmt.Sprintf("%T", result)))
+					// Default to PendingTxs since that's the most common trigger
+					toEngine <- block.Message{Type: block.PendingTxs}
+				}
+			}
+		}()
+
 		// Forward VM notifications to consensus (single goroutine)
 		go consensusEngine.ForwardVMNotifications(toEngine)
 
@@ -1829,13 +1872,26 @@ func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
 		return
 	}
 
-	blk, err := b.vm.GetBlock(ctx, ev.BlockID)
-	if err != nil {
-		// Block still missing - this shouldn't happen if called from drain point
-		b.logger.Debug("cannot apply Qbit - block still missing",
-			log.Stringer("from", ev.From),
+	// First check if the block is in consensus pending (recently proposed but not yet finalized).
+	// This is critical: when we receive votes for a block we proposed, the block may only be in
+	// pendingBlocks (not yet stored in VM).
+	var blk block.Block
+	var err error
+
+	if pendingBlk, ok := b.engine.GetPendingBlock(ev.BlockID); ok {
+		blk = pendingBlk
+		b.logger.Debug("using block from consensus pending",
 			log.Stringer("blockID", ev.BlockID))
-		return
+	} else {
+		// Fall back to VM storage for already-verified blocks
+		blk, err = b.vm.GetBlock(ctx, ev.BlockID)
+		if err != nil {
+			// Block still missing - this shouldn't happen if called from drain point
+			b.logger.Debug("cannot apply Qbit - block still missing",
+				log.Stringer("from", ev.From),
+				log.Stringer("blockID", ev.BlockID))
+			return
+		}
 	}
 
 	// Derive Accept from verification
