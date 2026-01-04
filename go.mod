@@ -145,6 +145,7 @@ require (
 	github.com/luxfi/geth v1.16.67
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
+	github.com/luxfi/math/safe v0.0.0-20260104022233-fd27f2ecb00e
 	github.com/luxfi/p2p v1.18.2
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/threshold v1.5.0
@@ -224,3 +225,5 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace github.com/luxfi/consensus => ../consensus
