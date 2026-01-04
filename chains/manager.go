@@ -1791,8 +1791,17 @@ func (b *blockHandler) popBufferedQbits(blockID ids.ID) []QbitEvent {
 	return evs
 }
 
-// hasBlock returns true if the block is available in the VM
+// hasBlock returns true if the block is available (either in consensus pendingBlocks or VM storage).
+// This is critical for Qbit handling: when we receive votes for a block we've built or received,
+// the block may only be in pendingBlocks (not yet verified/stored in VM).
 func (b *blockHandler) hasBlock(ctx context.Context, blockID ids.ID) bool {
+	// First check if the block is in consensus pending (built or received but not yet finalized).
+	// This allows votes to be processed for blocks we're currently considering in consensus.
+	if b.engine != nil && b.engine.HasPendingBlock(blockID) {
+		return true
+	}
+
+	// Fall back to checking VM storage for verified blocks
 	if b.vm == nil {
 		return false
 	}
@@ -2089,8 +2098,67 @@ func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uin
 	return nil
 }
 func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
-	// Handle PushQuery the same as Put - process the block
-	return b.Put(ctx, nodeID, requestID, container)
+	// PushQuery sends block data AND expects a Qbit response
+	// 1. First process the block (same as Put)
+	if err := b.Put(ctx, nodeID, requestID, container); err != nil {
+		return err
+	}
+
+	// 2. Extract block ID from container to send Qbit response
+	if b.net == nil || b.msgCreator == nil || b.vm == nil {
+		return nil // Can't send response without network
+	}
+
+	// Parse the block to get its ID
+	blk, err := b.vm.ParseBlock(ctx, container)
+	if err != nil {
+		b.logger.Debug("cannot respond to PushQuery - failed to parse block",
+			log.Stringer("from", nodeID),
+			log.Err(err))
+		return nil
+	}
+	blockID := blk.ID()
+
+	// Get the last accepted block for the Qbit message
+	acceptedBlkID, err := b.vm.LastAccepted(ctx)
+	if err != nil {
+		b.logger.Debug("cannot respond to PushQuery - failed to get last accepted",
+			log.Stringer("from", nodeID),
+			log.Err(err))
+		return nil
+	}
+	acceptedBlk, err := b.vm.GetBlock(ctx, acceptedBlkID)
+	if err != nil {
+		b.logger.Debug("cannot respond to PushQuery - failed to get accepted block",
+			log.Stringer("from", nodeID),
+			log.Stringer("acceptedBlkID", acceptedBlkID),
+			log.Err(err))
+		return nil
+	}
+	acceptedHeight := acceptedBlk.Height()
+
+	// Create Qbit response message (wire: p2p.Chits)
+	qbitMsg, err := b.msgCreator.Chits(b.chainID, requestID, blockID, blockID, acceptedBlkID, acceptedHeight)
+	if err != nil {
+		b.logger.Error("failed to create Qbit message for PushQuery",
+			log.Stringer("from", nodeID),
+			log.Stringer("blockID", blockID),
+			log.Err(err))
+		return nil
+	}
+
+	// Send Qbit response to the requesting node
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+
+	sentTo := b.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	b.logger.Debug("responded to PushQuery with Qbit",
+		log.Stringer("from", nodeID),
+		log.Stringer("blockID", blockID),
+		log.Uint64("height", blk.Height()),
+		log.Int("sentTo", sentTo.Len()))
+
+	return nil
 }
 func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	// PullQuery requests a preference signal on a block identified by containerID
