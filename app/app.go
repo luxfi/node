@@ -20,9 +20,9 @@ import (
 )
 
 const Header = `
-         ▼▼▼▼▼
-		  ▼▼▼
-		   ▼
+▼▼▼▼▼
+ ▼▼▼
+  ▼
 `
 
 var _ App = (*app)(nil)
@@ -57,7 +57,7 @@ func New(config nodeconfig.Config) (App, error) {
 	debugLevel, _ := log.ToLevel("debug")
 	logFactory := log.NewFactoryWithConfig(log.Config{
 		RotatingWriterConfig: log.RotatingWriterConfig{
-			MaxSize:   100,                        // 100MB per log file
+			MaxSize:   100, // 100MB per log file
 			MaxFiles:  10,
 			MaxAge:    30,                         // 30 days
 			Directory: config.DatabaseConfig.Path, // Use db path for logs

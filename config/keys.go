@@ -228,6 +228,12 @@ const (
 	LPSupportKey   = "lp-support"
 	LPObjectKey    = "lp-object"
 
+	// GPU Acceleration Keys
+	GPUEnabledKey  = "gpu-enabled"
+	GPUBackendKey  = "gpu-backend"
+	GPUDeviceKey   = "gpu-device"
+	GPULogLevelKey = "gpu-log-level"
+
 	// POA Mode Keys
 	POAModeEnabledKey     = "poa-mode-enabled"
 	POASingleNodeModeKey  = "poa-single-node-mode"

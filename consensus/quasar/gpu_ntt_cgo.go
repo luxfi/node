@@ -25,6 +25,7 @@ import (
 
 	"github.com/luxfi/lattice/v7/gpu"
 	"github.com/luxfi/lattice/v7/ring"
+	"github.com/luxfi/node/config"
 )
 
 // GPUNTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
@@ -35,11 +36,37 @@ type GPUNTTAccelerator struct {
 	enabled  bool
 }
 
+// GPUNTTOptions holds options for creating a GPU NTT accelerator.
+type GPUNTTOptions struct {
+	// Enabled controls whether GPU acceleration is used
+	Enabled bool
+	// Backend specifies which GPU backend to use: "auto", "metal", "cuda", "cpu"
+	Backend string
+	// DeviceIndex specifies which GPU device to use
+	DeviceIndex int
+}
+
 // NewGPUNTTAccelerator creates a new GPU NTT accelerator.
 // It auto-detects available GPU backends (Metal on macOS, CUDA on Linux).
 func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
+	return NewGPUNTTAcceleratorWithOptions(GPUNTTOptions{})
+}
+
+// NewGPUNTTAcceleratorWithOptions creates a new GPU NTT accelerator with custom options.
+// If options are zero-valued, it uses the global GPU config.
+func NewGPUNTTAcceleratorWithOptions(opts GPUNTTOptions) (*GPUNTTAccelerator, error) {
+	// Get global config if options not specified
+	gpuCfg := config.GetGlobalGPUConfig()
+
+	// Determine if GPU should be enabled
+	enabled := gpuCfg.Enabled
+	if opts.Backend == "cpu" {
+		enabled = false
+	}
+
 	// Check if GPU is available via libLattice
-	available := gpu.GPUAvailable()
+	// The backend (Metal/CUDA) is auto-detected by libLattice at runtime
+	available := gpu.GPUAvailable() && enabled
 
 	return &GPUNTTAccelerator{
 		contexts: make(map[uint64]*gpu.NTTContext),

@@ -1686,6 +1686,17 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
+	// GPU configuration - must be initialized early before any GPU accelerators
+	gpuConfig := GPUConfig{
+		Enabled:     v.GetBool(GPUEnabledKey),
+		Backend:     v.GetString(GPUBackendKey),
+		DeviceIndex: v.GetInt(GPUDeviceKey),
+		LogLevel:    v.GetString(GPULogLevelKey),
+	}
+	if err := SetGlobalGPUConfig(gpuConfig); err != nil {
+		return node.Config{}, fmt.Errorf("invalid GPU configuration: %w", err)
+	}
+
 	nodeConfig.ConsensusShutdownTimeout = v.GetDuration(ConsensusShutdownTimeoutKey)
 	if nodeConfig.ConsensusShutdownTimeout < 0 {
 		return node.Config{}, fmt.Errorf("%q must be >= 0", ConsensusShutdownTimeoutKey)

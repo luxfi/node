@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/lattice/v7/gpu"
 	"github.com/luxfi/lattice/v7/ring"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/config"
 )
 
 // GPUFHEAccelerator provides GPU-accelerated FHE operations for ThresholdVM.
@@ -43,16 +44,44 @@ type GPUFHEStats struct {
 	TotalGPUTimeNs    uint64
 }
 
+// GPUFHEOptions holds options for creating a GPU FHE accelerator.
+type GPUFHEOptions struct {
+	// Enabled controls whether GPU acceleration is used
+	Enabled bool
+	// Backend specifies which GPU backend to use: "auto", "metal", "cuda", "cpu"
+	Backend string
+}
+
 // NewGPUFHEAccelerator creates a new GPU FHE accelerator for ThresholdVM.
 func NewGPUFHEAccelerator(logger log.Logger) (*GPUFHEAccelerator, error) {
-	available := gpu.GPUAvailable()
+	return NewGPUFHEAcceleratorWithOptions(logger, GPUFHEOptions{})
+}
+
+// NewGPUFHEAcceleratorWithOptions creates a new GPU FHE accelerator with custom options.
+// If options are zero-valued, it uses the global GPU config.
+func NewGPUFHEAcceleratorWithOptions(logger log.Logger, opts GPUFHEOptions) (*GPUFHEAccelerator, error) {
+	// Get global config if options not specified
+	gpuCfg := config.GetGlobalGPUConfig()
+
+	// Determine if GPU should be enabled
+	enabled := gpuCfg.Enabled
+	if opts.Backend == "cpu" {
+		enabled = false
+	}
+
+	// Check if GPU is available via libLattice
+	// The backend (Metal/CUDA) is auto-detected by libLattice at runtime
+	available := gpu.GPUAvailable() && enabled
 
 	if logger != nil {
 		if available {
 			logger.Info("GPU FHE acceleration enabled",
-				"backend", gpu.GetBackend())
+				"backend", gpu.GetBackend(),
+				"configBackend", gpuCfg.Backend)
 		} else {
-			logger.Warn("GPU FHE acceleration not available, using CPU fallback")
+			logger.Warn("GPU FHE acceleration not available, using CPU fallback",
+				"gpuConfigEnabled", gpuCfg.Enabled,
+				"gpuAvailable", gpu.GPUAvailable())
 		}
 	}
 

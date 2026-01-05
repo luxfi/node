@@ -39,3 +39,21 @@ export GOPROXY="${GOPROXY:-https://proxy.golang.org}"
 # Use GOPRIVATE to bypass Go proxy for luxfi packages (zip too large for proxy)
 export GOPRIVATE="${GOPRIVATE:-github.com/luxfi/*}"
 export GONOSUMDB="${GONOSUMDB:-github.com/luxfi/*}"
+
+# Configure pkg-config path for C++ libraries (luxcpp)
+# Searches for installed libraries in common locations
+LUXCPP_ROOT="${LUXCPP_ROOT:-}"
+if [ -z "$LUXCPP_ROOT" ]; then
+    # Try to find luxcpp relative to this repo
+    if [ -d "$LUX_PATH/../luxcpp/install/lib/pkgconfig" ]; then
+        LUXCPP_ROOT="$LUX_PATH/../luxcpp/install"
+    elif [ -d "$HOME/work/luxcpp/install/lib/pkgconfig" ]; then
+        LUXCPP_ROOT="$HOME/work/luxcpp/install"
+    fi
+fi
+
+if [ -n "$LUXCPP_ROOT" ] && [ -d "$LUXCPP_ROOT/lib/pkgconfig" ]; then
+    export PKG_CONFIG_PATH="${LUXCPP_ROOT}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+    export LD_LIBRARY_PATH="${LUXCPP_ROOT}/lib:${LD_LIBRARY_PATH:-}"
+    export DYLD_LIBRARY_PATH="${LUXCPP_ROOT}/lib:${DYLD_LIBRARY_PATH:-}"
+fi

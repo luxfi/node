@@ -84,6 +84,8 @@ import (
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
+
+	gpuconfig "github.com/luxfi/node/config"
 )
 
 const (
@@ -152,6 +154,18 @@ func New(
 		log.Reflect("nodePOP", pop),
 		log.Reflect("providedFlags", n.Config.ProvidedFlags),
 		log.Reflect("config", n.Config),
+	)
+
+	// Log GPU acceleration status
+	gpuCfg := gpuconfig.GetGlobalGPUConfig()
+	gpuBackend := gpuCfg.ResolveBackend()
+	gpuAvailable := cgoEnabled && gpuCfg.Enabled && gpuBackend != "cpu"
+	logger.Info("GPU acceleration status",
+		log.Bool("available", gpuAvailable),
+		log.String("backend", gpuBackend),
+		log.Bool("enabled", gpuCfg.Enabled),
+		log.Bool("cgoEnabled", cgoEnabled),
+		log.Int("deviceIndex", gpuCfg.DeviceIndex),
 	)
 
 	n.VMFactoryLog = n.Log // Use main log instead of vm-factory specific log

@@ -401,6 +401,12 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(POAMinBlockTimeKey, 1*time.Second, "Minimum time between blocks in POA mode")
 	fs.StringSlice(POAAuthorizedNodesKey, nil, "List of authorized nodes for POA mode")
 
+	// GPU Acceleration
+	fs.Bool(GPUEnabledKey, true, "Enable GPU acceleration for cryptographic operations (auto-detects Metal on macOS, CUDA on Linux)")
+	fs.String(GPUBackendKey, "auto", "GPU backend to use. Options: auto (auto-detect), metal (macOS), cuda (Linux), cpu (fallback)")
+	fs.Int(GPUDeviceKey, 0, "GPU device index to use when multiple GPUs are available")
+	fs.String(GPULogLevelKey, "warn", "GPU subsystem log level. Options: debug, info, warn, error")
+
 	// Force flags
 	fs.Bool(ForceIgnoreChecksumKey, false, "Force ignore checksum validation errors (use with caution)")
 }
