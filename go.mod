@@ -30,12 +30,12 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.50
-	github.com/luxfi/crypto v1.17.34
+	github.com/luxfi/crypto v1.17.37
 	github.com/luxfi/database v1.17.35
 	github.com/luxfi/ids v1.2.7
 	github.com/luxfi/keychain v1.0.1
 	github.com/luxfi/log v1.2.1
-	github.com/luxfi/math v1.2.0
+	github.com/luxfi/math v1.2.2
 	github.com/luxfi/metric v1.4.8
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -146,7 +146,7 @@ require (
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.0-20260104022233-fd27f2ecb00e
-	github.com/luxfi/p2p v1.18.2
+	github.com/luxfi/p2p v1.18.4
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/threshold v1.5.0
 	github.com/luxfi/trace v0.1.4
@@ -192,6 +192,8 @@ require (
 	github.com/luxfi/codec v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
+	github.com/luxfi/gpu v0.30.0 // indirect
+	github.com/luxfi/math/big v0.1.0 // indirect
 	github.com/luxfi/precompile v0.4.0 // indirect
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect

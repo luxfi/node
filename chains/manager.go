@@ -2379,8 +2379,8 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			copy(containerID[:], msg.Message[:32])
 			return b.PullQuery(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second), containerID)
 		}
-	case handler.Qbit:
-		// Qbit contains a preference signal for a block (preferredID)
+	case handler.Vote:
+		// Vote contains a preference signal for a block (preferredID)
 		// Note: msg.Message already contains the extracted PreferredId from the Qbit protobuf
 		// (extracted by chain_router.go via GetContainerBytes which returns m.GetPreferredId())
 		if len(msg.Message) >= 32 {
@@ -2622,6 +2622,27 @@ func (g *networkGossiper) SendQbit(toNodeID ids.NodeID, chainID ids.ID, requestI
 	// Send to the specific node
 	nodeSet := set.Of(toNodeID)
 	g.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	return nil
+}
+
+// SendVote sends a vote response back to the proposer node after fast-follow acceptance.
+// This is required by the consensuschain.Gossiper interface.
+func (g *networkGossiper) SendVote(chainID ids.ID, toNodeID ids.NodeID, blockID ids.ID) error {
+	if g.net == nil || g.msgCreator == nil {
+		return nil
+	}
+
+	// Create a Chits message to send the vote
+	// Use blockID as all three IDs (preferred, accepted, last accepted)
+	// since this is a positive vote confirming we've accepted the block
+	voteMsg, err := g.msgCreator.Chits(chainID, 0, blockID, blockID, blockID, 0)
+	if err != nil {
+		return err
+	}
+
+	// Send to the proposer node
+	nodeSet := set.Of(toNodeID)
+	g.net.Send(voteMsg, nodeSet, ids.Empty, 0)
 	return nil
 }
 
