@@ -140,9 +140,9 @@ require (
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
 	github.com/luxfi/const v1.4.0
 	github.com/luxfi/coreth v0.15.71
-	github.com/luxfi/fhe v1.4.1
+	github.com/luxfi/fhe v1.7.6-0.20260106060801-28e308e4c2f8
 	github.com/luxfi/genesis v1.5.19
-	github.com/luxfi/geth v1.16.67
+	github.com/luxfi/geth v1.16.68
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.0-20260104022233-fd27f2ecb00e
@@ -194,7 +194,7 @@ require (
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/gpu v0.30.0 // indirect
 	github.com/luxfi/math/big v0.1.0 // indirect
-	github.com/luxfi/precompile v0.4.0 // indirect
+	github.com/luxfi/precompile v0.4.2-0.20260106060917-a71a62021cde // indirect
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/staking v1.0.0 // indirect
