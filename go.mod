@@ -29,7 +29,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.50
+	github.com/luxfi/consensus v1.22.51
 	github.com/luxfi/crypto v1.17.37
 	github.com/luxfi/database v1.17.35
 	github.com/luxfi/ids v1.2.7
@@ -57,10 +57,10 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.39.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.37.0
-	go.opentelemetry.io/otel/sdk v1.37.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0
+	go.opentelemetry.io/otel/sdk v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
@@ -73,8 +73,8 @@ require (
 	golang.org/x/time v0.14.0
 	golang.org/x/tools v0.40.0
 	gonum.org/v1/gonum v0.16.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8
-	google.golang.org/grpc v1.75.1
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b
+	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -105,8 +105,8 @@ require (
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/pprof v0.0.0-20251213031049-b05bdaca462f // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.4 // indirect
+	github.com/hashicorp/golang-lru v1.0.2
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.2
@@ -125,11 +125,11 @@ require (
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
+	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20251222181119-0a764e51fe1b // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
@@ -210,8 +210,7 @@ require (
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pion/transport/v3 v3.1.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
+	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/status-im/keycard-go v0.3.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
@@ -228,4 +227,40 @@ replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc 
 
 exclude github.com/ethereum/go-ethereum v1.10.26
 
-replace github.com/luxfi/consensus => ../consensus
+// Local development: point to local repos
+replace (
+	github.com/luxfi/address => ../address
+	github.com/luxfi/ai => ../ai
+	github.com/luxfi/cache => ../cache
+	github.com/luxfi/codec => ../codec
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/const => ../const
+	github.com/luxfi/coreth => ../coreth
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
+	github.com/luxfi/fhe => ../fhe
+	github.com/luxfi/genesis => ../genesis
+	github.com/luxfi/geth => ../geth
+	github.com/luxfi/go-bip32 => ../go-bip32
+	github.com/luxfi/go-bip39 => ../go-bip39
+	github.com/luxfi/gpu => ../gpu
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/keychain => ../keychain
+	github.com/luxfi/lattice/v7 => ../lattice
+	github.com/luxfi/log => ../log
+	github.com/luxfi/math => ../math
+	github.com/luxfi/math/big => ../math/big
+	github.com/luxfi/math/safe => ../math/safe
+	github.com/luxfi/metric => ../metric
+	github.com/luxfi/mock => ../mock
+	github.com/luxfi/p2p => ../p2p
+	github.com/luxfi/precompile => ../precompile
+	github.com/luxfi/ringtail => ../ringtail
+	github.com/luxfi/sampler => ../sampler
+	github.com/luxfi/staking => ../staking
+	github.com/luxfi/threshold => ../threshold
+	github.com/luxfi/trace => ../trace
+	github.com/luxfi/utils => ../utils
+	github.com/luxfi/vm => ../vm
+	github.com/luxfi/warp => ../warp
+)
