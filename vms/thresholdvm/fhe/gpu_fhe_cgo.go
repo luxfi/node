@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/lattice/v7/ring"
 	"github.com/luxfi/log"
-	"github.com/luxfi/lux/accel"
+	"github.com/luxfi/accel"
 	"github.com/luxfi/node/config"
 )
 

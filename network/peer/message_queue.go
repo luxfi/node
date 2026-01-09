@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/utils/buffer"
+	"github.com/luxfi/container/buffer"
 )
 
 const initialQueueSize = 64

@@ -44,8 +44,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/utils/hashing"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/utils/maybe"
 	"github.com/luxfi/utils/wrappers"
 	"github.com/luxfi/vm/platformvm/fx"
@@ -2334,7 +2334,7 @@ func (s *state) init(genesisBytes []byte) error {
 	// Create the genesis block and save it as being accepted (We don't do
 	// genesisBlock.Accept() because then it'd look for genesisBlock's
 	// non-existent parent)
-	genesisID := hashing.ComputeHash256Array(genesisBytes)
+	genesisID := hash.ComputeHash256Array(genesisBytes)
 	genesisBlock, err := block.NewApricotCommitBlock(genesisID, 0 /*height*/)
 	if err != nil {
 		return err

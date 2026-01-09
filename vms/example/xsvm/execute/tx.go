@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utils/wrappers"
 )
 
@@ -150,7 +150,7 @@ func (t *Tx) Import(i *tx.Import) error {
 		)
 	}
 
-	var loanID ids.ID = hashing.ComputeHash256Array(message.UnsignedMessage.Bytes())
+	var loanID ids.ID = hash.ComputeHash256Array(message.UnsignedMessage.Bytes())
 	hasLoanID, err := state.HasLoanID(t.Database, message.SourceChainID, loanID)
 	if hasLoanID {
 		return errDuplicateImport

@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 // Stateless blocks are blocks as they are marshalled/unmarshalled and sent over
@@ -27,7 +27,7 @@ func (b *Stateless) Time() time.Time {
 
 func (b *Stateless) ID() (ids.ID, error) {
 	bytes, err := Codec.Marshal(CodecVersion, b)
-	return hashing.ComputeHash256Array(bytes), err
+	return hash.ComputeHash256Array(bytes), err
 }
 
 func Parse(bytes []byte) (*Stateless, error) {

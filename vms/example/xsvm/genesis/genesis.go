@@ -6,7 +6,7 @@ package genesis
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 type Genesis struct {
@@ -31,7 +31,7 @@ func Block(genesis *Genesis) (*block.Stateless, error) {
 		return nil, err
 	}
 	return &block.Stateless{
-		ParentID:  hashing.ComputeHash256Array(bytes),
+		ParentID:  hash.ComputeHash256Array(bytes),
 		Timestamp: genesis.Timestamp,
 	}, nil
 }

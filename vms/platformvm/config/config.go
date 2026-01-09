@@ -32,7 +32,7 @@ var Default = Config{
 	TxFee:                         constants.MilliLux,
 	CreateAssetTxFee:              constants.MilliLux,
 	CreateNetTxFee:                constants.Lux,
-	CreateBlockchainTxFee:         constants.Lux,
+	CreateChainTxFee:         constants.Lux,
 	AddPrimaryNetworkValidatorFee: 0,
 	AddPrimaryNetworkDelegatorFee: 0,
 }
@@ -62,7 +62,7 @@ type Config struct {
 	TxFee                         uint64 `json:"tx-fee"`
 	CreateAssetTxFee              uint64 `json:"create-asset-tx-fee"`
 	CreateNetTxFee                uint64 `json:"create-chain-tx-fee"`
-	CreateBlockchainTxFee         uint64 `json:"create-blockchain-tx-fee"`
+	CreateChainTxFee         uint64 `json:"create-blockchain-tx-fee"`
 	AddPrimaryNetworkValidatorFee uint64 `json:"add-primary-network-validator-fee"`
 	AddPrimaryNetworkDelegatorFee uint64 `json:"add-primary-network-delegator-fee"`
 }

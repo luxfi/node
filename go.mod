@@ -143,7 +143,7 @@ require (
 	github.com/luxfi/geth v1.16.69
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
-	github.com/luxfi/lux/accel v0.0.0
+	github.com/luxfi/accel v0.1.0
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/p2p v1.18.7
 	github.com/luxfi/qzmq v0.1.4

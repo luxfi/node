@@ -106,7 +106,7 @@ func (w *withOptions) IssueAddDelegatorTx(
 	)
 }
 
-func (w *withOptions) IssueCreateChainTx(
+func (w *withOptions) IssueCreateBlockchainTx(
 	chainID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
@@ -114,7 +114,7 @@ func (w *withOptions) IssueCreateChainTx(
 	chainName string,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateChainTx(
+	return w.wallet.IssueCreateBlockchainTx(
 		chainID,
 		genesis,
 		vmID,

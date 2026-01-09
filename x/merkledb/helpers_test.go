@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utils/maybe"
 )
 
@@ -74,7 +74,7 @@ func newRandomProofNode(r *rand.Rand) ProofNode {
 	if hasValue {
 		// use the hash instead when length is greater than the hash length
 		if len(val) >= HashLength {
-			val = hashing.ComputeHash256(val)
+			val = hash.ComputeHash256(val)
 		} else if len(val) == 0 {
 			// We do this because when we encode a value of []byte{} we will later
 			// decode it as nil.

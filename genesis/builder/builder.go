@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/utils/sampler"
+	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/vm/nftfx"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/propertyfx"

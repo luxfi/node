@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 var hashChangedNodesTests = []struct {
@@ -72,7 +72,7 @@ func makeViewForHashChangedNodes(t require.TestingT, numKeys uint64, parallelism
 		k := binary.AppendUvarint(nil, i)
 		ops = append(ops, database.BatchOp{
 			Key:   k,
-			Value: hashing.ComputeHash256(k),
+			Value: hash.ComputeHash256(k),
 		})
 	}
 

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/p2p/gossip"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/secp256k1fx"
 )
 
@@ -67,7 +67,7 @@ func (tx *Tx) Initialize(c codec.Manager) error {
 func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 	tx.Unsigned.SetBytes(unsignedBytes)
 	tx.bytes = signedBytes
-	tx.TxID = hashing.ComputeHash256Array(signedBytes)
+	tx.TxID = hash.ComputeHash256Array(signedBytes)
 }
 
 // Parse signed tx starting from its byte representation.
@@ -148,7 +148,7 @@ func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
 	}
 
 	// Attach credentials
-	hash := hashing.ComputeHash256(unsignedBytes)
+	hash := hash.ComputeHash256(unsignedBytes)
 	for _, keys := range signers {
 		cred := &secp256k1fx.Credential{
 			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),

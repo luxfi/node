@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"

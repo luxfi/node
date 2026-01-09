@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/secp256k1fx"
 )
 
@@ -88,7 +88,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 
 	// Replace a valid signature with one from another key
 	// Modify the chain authorization credential (last credential)
-	sig, err := key.SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
+	sig, err := key.SignHash(hash.ComputeHash256(tx.Unsigned.Bytes()))
 	require.NoError(err)
 	lastCredIdx := len(tx.Creds) - 1
 	copy(tx.Creds[lastCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)

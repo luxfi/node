@@ -9,7 +9,7 @@ type Visitor interface {
 	AddValidatorTx(*AddValidatorTx) error
 	AddChainValidatorTx(*AddChainValidatorTx) error
 	AddDelegatorTx(*AddDelegatorTx) error
-	CreateBlockchainTx(*CreateBlockchainTx) error
+	CreateNetworkTx(*CreateNetworkTx) error
 	CreateChainTx(*CreateChainTx) error
 	ImportTx(*ImportTx) error
 	ExportTx(*ExportTx) error

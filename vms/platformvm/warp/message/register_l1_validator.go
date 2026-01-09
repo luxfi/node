@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
 )
@@ -77,7 +77,7 @@ func (r *RegisterL1Validator) Verify() error {
 }
 
 func (r *RegisterL1Validator) ValidationID() ids.ID {
-	return hashing.ComputeHash256Array(r.Bytes())
+	return hash.ComputeHash256Array(r.Bytes())
 }
 
 // NewRegisterL1Validator creates a new initialized RegisterL1Validator.

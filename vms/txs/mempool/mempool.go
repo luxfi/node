@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/utils/linked"
 	"github.com/luxfi/utils/lock"
-	"github.com/luxfi/utils/setmap"
+	"github.com/luxfi/container/setmap"
 )
 
 const (

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 // BenchmarkMemoryDatabase benchmarks in-memory database operations
@@ -319,7 +319,7 @@ func BenchmarkDatabaseKeyGeneration(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			data := fmt.Sprintf("key-%d", i)
-			_ = hashing.ComputeHash256([]byte(data))
+			_ = hash.ComputeHash256([]byte(data))
 		}
 	})
 

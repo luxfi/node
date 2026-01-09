@@ -64,7 +64,7 @@ func (c *staticVisitor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 }
 
 func (c *staticVisitor) CreateChainTx(*txs.CreateChainTx) error {
-	c.fee = c.config.CreateBlockchainTxFee
+	c.fee = c.config.CreateChainTxFee
 	return nil
 }
 
@@ -150,8 +150,8 @@ func (v *staticVisitor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	return nil
 }
 
-func (v *staticVisitor) CreateChainTx(*txs.CreateChainTx) error {
-	v.fee = v.config.CreateChainTxFee
+func (v *staticVisitor) CreateNetworkTx(*txs.CreateNetworkTx) error {
+	v.fee = v.config.CreateNetworkTxFee
 	return nil
 }
 

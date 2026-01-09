@@ -45,7 +45,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"
@@ -819,7 +819,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 
 		// Replace a valid signature with one from keys[3]
 		// The chain authorization credential is the LAST credential (not first)
-		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
+		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hash.ComputeHash256(tx.Unsigned.Bytes()))
 		require.NoError(err)
 		chainAuthCredIdx := len(tx.Creds) - 1
 		copy(tx.Creds[chainAuthCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)
@@ -2387,7 +2387,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
 			CreateNetTxFee:        constants.Lux,
-			CreateBlockchainTxFee: constants.Lux,
+			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
@@ -2573,7 +2573,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 							TxFee:                 constants.MilliLux,
 							CreateAssetTxFee:      constants.MilliLux,
 							CreateNetTxFee:        constants.Lux,
-							CreateBlockchainTxFee: constants.Lux,
+							CreateChainTxFee: constants.Lux,
 						},
 						InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
 					},
@@ -2723,7 +2723,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
 			CreateNetTxFee:        constants.Lux,
-			CreateBlockchainTxFee: constants.Lux,
+			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
@@ -3259,7 +3259,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
 			CreateNetTxFee:        constants.Lux,
-			CreateBlockchainTxFee: constants.Lux,
+			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
@@ -3770,7 +3770,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
 			CreateNetTxFee:        constants.Lux,
-			CreateBlockchainTxFee: constants.Lux,
+			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
@@ -4072,7 +4072,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
 			CreateNetTxFee:        constants.Lux,
-			CreateBlockchainTxFee: constants.Lux,
+			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,

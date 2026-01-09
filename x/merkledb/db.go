@@ -249,7 +249,7 @@ type merkleDB struct {
 
 	// hashNodesKeyPool controls the number of goroutines that are created
 	// inside [hashChangedNode] at any given time and provides slices for the
-	// keys needed while hashing.
+	// keys needed while hash.
 	hashNodesKeyPool *bytesPool
 
 	tokenSize int

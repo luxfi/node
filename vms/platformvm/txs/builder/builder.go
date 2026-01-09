@@ -381,7 +381,7 @@ func (b *builder) NewCreateChainTx(
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	createBlockchainTxFee := b.cfg.CreateBlockchainTxFee
+	createBlockchainTxFee := b.cfg.CreateChainTxFee
 	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createBlockchainTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)

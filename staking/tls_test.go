@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 func TestMakeKeys(t *testing.T) {
@@ -22,7 +22,7 @@ func TestMakeKeys(t *testing.T) {
 	require.NoError(err)
 
 	msg := fmt.Appendf(nil, "msg %d", time.Now().Unix())
-	msgHash := hashing.ComputeHash256(msg)
+	msgHash := hash.ComputeHash256(msg)
 
 	sig, err := cert.PrivateKey.(crypto.Signer).Sign(rand.Reader, msgHash, crypto.SHA256)
 	require.NoError(err)

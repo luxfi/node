@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 
 	"github.com/luxfi/utils/wrappers"
 

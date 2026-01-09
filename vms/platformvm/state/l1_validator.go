@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/utils/math"
 	"github.com/luxfi/utils/maybe"
 )

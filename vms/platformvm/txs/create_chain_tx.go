@@ -5,43 +5,79 @@ package txs
 
 import (
 	"context"
+	"errors"
+	"unicode"
 
 	consensusctx "github.com/luxfi/consensus/context"
-
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/utils"
 )
 
-var _ UnsignedTx = (*CreateChainTx)(nil)
+const (
+	MaxNameLen    = 128
+	MaxGenesisLen = constants.MiB
+)
 
-// CreateChainTx is an unsigned proposal to create a new chain
+var (
+	_ UnsignedTx = (*CreateChainTx)(nil)
+
+	ErrCantValidatePrimaryNetwork = errors.New("new blockchain can't be validated by primary network")
+
+	errInvalidVMID             = errors.New("invalid VM ID")
+	errFxIDsNotSortedAndUnique = errors.New("feature extensions IDs must be sorted and unique")
+	errNameTooLong             = errors.New("name too long")
+	errGenesisTooLong          = errors.New("genesis too long")
+	errIllegalNameCharacter    = errors.New("illegal name character")
+)
+
+// CreateChainTx is an unsigned createChainTx
 type CreateChainTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// Who is authorized to manage this chain
-	Owner fx.Owner `serialize:"true" json:"owner"`
+	// ID of the Chain that validates this blockchain
+	ChainID ids.ID `serialize:"true" json:"chainID"`
+	// A human readable name for the blockchain; need not be unique
+	BlockchainName string `serialize:"true" json:"blockchainName"`
+	// ID of the VM running on the new blockchain
+	VMID ids.ID `serialize:"true" json:"vmID"`
+	// IDs of the feature extensions running on the new blockchain
+	FxIDs []ids.ID `serialize:"true" json:"fxIDs"`
+	// Byte representation of genesis state of the new blockchain
+	GenesisData []byte `serialize:"true" json:"genesisData"`
+	// Authorizes this blockchain to be added to this chain
+	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [CreateChainTx]. Also sets the [ctx] to the given [vm.ctx] so that
-// the addresses can be json marshalled into human readable format
-func (tx *CreateChainTx) InitCtx(ctx *consensusctx.Context) {
-	tx.BaseTx.InitCtx(ctx)
-	// Owner doesn't have InitCtx method
-}
-
-// SyntacticVerify verifies that this transaction is well-formed
 func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
+	case tx.ChainID == constants.PrimaryNetworkID:
+		return ErrCantValidatePrimaryNetwork
+	case len(tx.BlockchainName) > MaxNameLen:
+		return errNameTooLong
+	case tx.VMID == ids.Empty:
+		return errInvalidVMID
+	case !utils.IsSortedAndUnique(tx.FxIDs):
+		return errFxIDsNotSortedAndUnique
+	case len(tx.GenesisData) > MaxGenesisLen:
+		return errGenesisTooLong
+	}
+
+	for _, r := range tx.BlockchainName {
+		if r > unicode.MaxASCII || (!unicode.IsLetter(r) && !unicode.IsNumber(r) && r != ' ') {
+			return errIllegalNameCharacter
+		}
 	}
 
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.Owner.Verify(); err != nil {
+	if err := tx.ChainAuth.Verify(); err != nil {
 		return err
 	}
 

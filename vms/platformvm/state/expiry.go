@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 )
 
 // expiryEntry = [timestamp] + [validationID]

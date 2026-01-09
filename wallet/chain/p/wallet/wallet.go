@@ -96,7 +96,7 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueCreateChainTx creates, signs, and issues a new chain in the named
+	// IssueCreateBlockchainTx creates, signs, and issues a new blockchain in the named
 	// chain.
 	//
 	// - [chainID] specifies the chain to launch the chain in.
@@ -105,7 +105,7 @@ type Wallet interface {
 	// - [fxIDs] specifies all the feature extensions that the vm should be
 	//   running with.
 	// - [chainName] specifies a human readable name for the chain.
-	IssueCreateChainTx(
+	IssueCreateBlockchainTx(
 		chainID ids.ID,
 		genesis []byte,
 		vmID ids.ID,
@@ -400,7 +400,7 @@ func (w *wallet) IssueAddDelegatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateChainTx(
+func (w *wallet) IssueCreateBlockchainTx(
 	chainID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
@@ -408,7 +408,7 @@ func (w *wallet) IssueCreateChainTx(
 	chainName string,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateChainTx(chainID, genesis, vmID, fxIDs, chainName, options...)
+	utx, err := w.builder.NewCreateBlockchainTx(chainID, genesis, vmID, fxIDs, chainName, options...)
 	if err != nil {
 		return nil, err
 	}

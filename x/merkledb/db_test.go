@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utils/maybe"
 )
 
@@ -129,7 +129,7 @@ func Test_MerkleDB_DB_Load_Root_From_DB(t *testing.T) {
 		k := []byte(strconv.Itoa(i))
 		ops = append(ops, database.BatchOp{
 			Key:   k,
-			Value: hashing.ComputeHash256(k),
+			Value: hash.ComputeHash256(k),
 		})
 	}
 	view, err := db.NewView(context.Background(), ViewChanges{BatchOps: ops})
@@ -177,7 +177,7 @@ func Test_MerkleDB_DB_Rebuild(t *testing.T) {
 		k := []byte(strconv.Itoa(i))
 		ops = append(ops, database.BatchOp{
 			Key:   k,
-			Value: hashing.ComputeHash256(k),
+			Value: hash.ComputeHash256(k),
 		})
 	}
 	view, err := db.NewView(context.Background(), ViewChanges{BatchOps: ops})
@@ -1330,7 +1330,7 @@ func BenchmarkCommitView(b *testing.B) {
 		k := binary.AppendUvarint(nil, uint64(i))
 		ops[i] = database.BatchOp{
 			Key:   k,
-			Value: hashing.ComputeHash256(k),
+			Value: hash.ComputeHash256(k),
 		}
 	}
 
@@ -1363,7 +1363,7 @@ func BenchmarkIteration(b *testing.B) {
 		k := binary.AppendUvarint(nil, uint64(i))
 		ops[i] = database.BatchOp{
 			Key:   k,
-			Value: hashing.ComputeHash256(k),
+			Value: hash.ComputeHash256(k),
 		}
 	}
 

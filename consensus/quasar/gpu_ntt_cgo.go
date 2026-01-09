@@ -26,7 +26,7 @@ import (
 	"sync/atomic"
 
 	"github.com/luxfi/lattice/v7/ring"
-	"github.com/luxfi/lux/accel"
+	"github.com/luxfi/accel"
 	"github.com/luxfi/node/config"
 )
 

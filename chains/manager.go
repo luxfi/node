@@ -60,7 +60,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/utils/buffer"
+	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/utils/perms"
 	"github.com/luxfi/vm/fx"
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates

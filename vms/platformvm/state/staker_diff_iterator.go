@@ -6,7 +6,7 @@ package state
 import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/utils/heap"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 )
 
 var (

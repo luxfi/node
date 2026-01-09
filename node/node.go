@@ -73,7 +73,7 @@ import (
 	"github.com/luxfi/utils"
 	"github.com/luxfi/utils/dynamicip"
 	"github.com/luxfi/utils/filesystem"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utils/ips"
 	"github.com/luxfi/utils/perms"
 	"github.com/luxfi/utils/profiler"
@@ -808,7 +808,7 @@ func (n *Node) initDatabase() error {
 		return fmt.Errorf("couldn't create database: %w", err)
 	}
 
-	rawExpectedGenesisHash := hashing.ComputeHash256(n.Config.GenesisBytes)
+	rawExpectedGenesisHash := hash.ComputeHash256(n.Config.GenesisBytes)
 
 	rawGenesisHash, err := n.DB.Get(genesisHashKey)
 	if err == database.ErrNotFound {

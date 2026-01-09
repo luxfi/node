@@ -44,7 +44,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/vm/secp256k1fx"
 
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"

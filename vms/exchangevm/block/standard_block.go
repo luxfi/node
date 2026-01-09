@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 var _ Block = (*StandardBlock)(nil)
@@ -30,7 +30,7 @@ type StandardBlock struct {
 }
 
 func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
-	b.BlockID = hashing.ComputeHash256Array(bytes)
+	b.BlockID = hash.ComputeHash256Array(bytes)
 	b.bytes = bytes
 	for _, tx := range b.Transactions {
 		if err := tx.Initialize(cm); err != nil {
@@ -90,7 +90,7 @@ func NewStandardBlock(
 		return nil, fmt.Errorf("couldn't marshal block: %w", err)
 	}
 
-	blk.BlockID = hashing.ComputeHash256Array(bytes)
+	blk.BlockID = hash.ComputeHash256Array(bytes)
 	blk.bytes = bytes
 	return blk, nil
 }

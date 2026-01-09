@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utils/maybe"
 	"github.com/luxfi/warp"
 
@@ -39,12 +39,12 @@ var (
 
 	errInvalidBytesLimit    = errors.New("bytes limit must be greater than 0")
 	errInvalidKeyLimit      = errors.New("key limit must be greater than 0")
-	errInvalidStartRootHash = fmt.Errorf("start root hash must have length %d", hashing.HashLen)
-	errInvalidEndRootHash   = fmt.Errorf("end root hash must have length %d", hashing.HashLen)
+	errInvalidStartRootHash = fmt.Errorf("start root hash must have length %d", hash.HashLen)
+	errInvalidEndRootHash   = fmt.Errorf("end root hash must have length %d", hash.HashLen)
 	errInvalidStartKey      = errors.New("start key is Nothing but has value")
 	errInvalidEndKey        = errors.New("end key is Nothing but has value")
 	errInvalidBounds        = errors.New("start key is greater than end key")
-	errInvalidRootHash      = fmt.Errorf("root hash must have length %d", hashing.HashLen)
+	errInvalidRootHash      = fmt.Errorf("root hash must have length %d", hash.HashLen)
 
 	_ p2p.Handler = (*GetChangeProofHandler)(nil)
 	_ p2p.Handler = (*GetRangeProofHandler)(nil)
@@ -295,9 +295,9 @@ func validateChangeProofRequest(req *pb.SyncGetChangeProofRequest) error {
 		return errInvalidBytesLimit
 	case req.KeyLimit == 0:
 		return errInvalidKeyLimit
-	case len(req.StartRootHash) != hashing.HashLen:
+	case len(req.StartRootHash) != hash.HashLen:
 		return errInvalidStartRootHash
-	case len(req.EndRootHash) != hashing.HashLen:
+	case len(req.EndRootHash) != hash.HashLen:
 		return errInvalidEndRootHash
 	case bytes.Equal(req.EndRootHash, ids.Empty[:]):
 		return merkledb.ErrEmptyProof

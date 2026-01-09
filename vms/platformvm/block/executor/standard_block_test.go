@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/vm/secp256k1fx"
 )
 

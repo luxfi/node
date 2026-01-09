@@ -11,7 +11,7 @@ import (
 	"slices"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/buffer"
+	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/utils/heap"
 	"github.com/luxfi/utils/maybe"
 )

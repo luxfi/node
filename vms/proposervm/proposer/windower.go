@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/sampler"
+	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/utils/wrappers"
 )
 

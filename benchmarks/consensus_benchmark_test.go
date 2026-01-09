@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 // BenchmarkHashingComputeHash256 benchmarks SHA256 hashing performance
@@ -24,7 +24,7 @@ func BenchmarkHashingComputeHash256(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		_ = hashing.ComputeHash256(data)
+		_ = hash.ComputeHash256(data)
 	}
 
 	b.SetBytes(int64(len(data)))
@@ -41,7 +41,7 @@ func BenchmarkHashingComputeHash256Array(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		_ = hashing.ComputeHash256Array(data)
+		_ = hash.ComputeHash256Array(data)
 	}
 
 	b.SetBytes(int64(len(data)))
@@ -55,7 +55,7 @@ func BenchmarkIDGeneration(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		_ = ids.ID(hashing.ComputeHash256(data))
+		_ = ids.ID(hash.ComputeHash256(data))
 	}
 }
 

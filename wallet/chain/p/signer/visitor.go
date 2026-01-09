@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/secp256k1fx"
 )
 
@@ -333,7 +333,7 @@ func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 	if err != nil {
 		return fmt.Errorf("couldn't marshal unsigned tx: %w", err)
 	}
-	unsignedHash := hashing.ComputeHash256(unsignedBytes)
+	unsignedHash := hash.ComputeHash256(unsignedBytes)
 
 	if expectedLen := len(txSigners); expectedLen != len(tx.Creds) {
 		tx.Creds = make([]verify.Verifiable, expectedLen)

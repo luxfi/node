@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 func getNodeValue(t Trie, key string) ([]byte, error) {
@@ -932,7 +932,7 @@ func Test_Trie_MultipleStates(t *testing.T) {
 			for i := 0; i < initialSet; i++ {
 				k := []byte(strconv.Itoa(i))
 				kv = append(kv, k)
-				ops = append(ops, database.BatchOp{Key: k, Value: hashing.ComputeHash256(k)})
+				ops = append(ops, database.BatchOp{Key: k, Value: hash.ComputeHash256(k)})
 			}
 			root, err := db.NewView(
 				context.Background(),
@@ -970,7 +970,7 @@ func Test_Trie_MultipleStates(t *testing.T) {
 					// New Key
 					for index := range concurrentStates {
 						k := []byte(strconv.Itoa(newStart))
-						concurrentOps[index] = append(concurrentOps[index], database.BatchOp{Key: k, Value: hashing.ComputeHash256(k)})
+						concurrentOps[index] = append(concurrentOps[index], database.BatchOp{Key: k, Value: hash.ComputeHash256(k)})
 					}
 					newStart++
 				} else {
@@ -985,7 +985,7 @@ func Test_Trie_MultipleStates(t *testing.T) {
 						} else {
 							require.Equal(pastV, v)
 						}
-						concurrentOps[index] = append(concurrentOps[index], database.BatchOp{Key: selectedKey, Value: hashing.ComputeHash256(v)})
+						concurrentOps[index] = append(concurrentOps[index], database.BatchOp{Key: selectedKey, Value: hash.ComputeHash256(v)})
 					}
 				}
 			}

@@ -42,7 +42,7 @@ func newContext(
 			TxFee:                 cfg.TxFee,
 			CreateAssetTxFee:      cfg.CreateAssetTxFee,
 			CreateChainTxFee:      cfg.CreateNetTxFee,
-			CreateBlockchainTxFee: cfg.CreateBlockchainTxFee,
+			CreateChainTxFee: cfg.CreateChainTxFee,
 		}
 	}
 

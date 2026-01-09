@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/window"
+	"github.com/luxfi/container/window"
 )
 
 const (

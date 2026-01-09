@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/iterator"
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/utils/math"
 
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"

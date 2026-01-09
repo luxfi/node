@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/utils/bloom"
 	"github.com/luxfi/utils/ips"
-	"github.com/luxfi/utils/sampler"
+	"github.com/luxfi/container/sampler"
 )
 
 const (

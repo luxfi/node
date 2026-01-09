@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 func BenchmarkSign(b *testing.B) {
@@ -19,7 +19,7 @@ func BenchmarkSign(b *testing.B) {
 
 	signer := tlsCert.PrivateKey.(crypto.Signer)
 	msg := []byte("msg")
-	hash := hashing.ComputeHash256(msg)
+	hash := hash.ComputeHash256(msg)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -36,7 +36,7 @@ func BenchmarkVerify(b *testing.B) {
 	msg := []byte("msg")
 	signature, err := signer.Sign(
 		rand.Reader,
-		hashing.ComputeHash256(msg),
+		hash.ComputeHash256(msg),
 		crypto.SHA256,
 	)
 	require.NoError(b, err)

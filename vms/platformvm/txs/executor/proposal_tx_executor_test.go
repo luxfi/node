@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/vm/secp256k1fx"
 )
 
@@ -720,7 +720,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 
 		// Replace a valid signature with one from keys[3]
 		// The chain authorization credential is the LAST credential (not first)
-		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hashing.ComputeHash256(tx.Unsigned.Bytes()))
+		sig, err := genesistest.DefaultFundedKeys[3].SignHash(hash.ComputeHash256(tx.Unsigned.Bytes()))
 		require.NoError(err)
 		chainAuthCredIdx := len(tx.Creds) - 1
 		copy(tx.Creds[chainAuthCredIdx].(*secp256k1fx.Credential).Sigs[0][:], sig)

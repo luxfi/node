@@ -245,7 +245,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return nil
 }
 
-func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
+func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	// Make sure this transaction is well formed.
 	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
 		return err

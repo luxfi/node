@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 	safemath "github.com/luxfi/utils/math"
 	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/vm/secp256k1fx"
@@ -580,7 +580,7 @@ func (h *handler) VerifySpendUTXOs(
 			lockedConsumedAsset = make(map[uint64]map[ids.ID]uint64)
 			lockedConsumed[realAssetID] = lockedConsumedAsset
 		}
-		ownerID := hashing.ComputeHash256Array(ownerBytes)
+		ownerID := hash.ComputeHash256Array(ownerBytes)
 		owners, ok := lockedConsumedAsset[locktime]
 		if !ok {
 			owners = make(map[ids.ID]uint64)
@@ -629,7 +629,7 @@ func (h *handler) VerifySpendUTXOs(
 			lockedProducedAsset = make(map[uint64]map[ids.ID]uint64)
 			lockedProduced[assetID] = lockedProducedAsset
 		}
-		ownerID := hashing.ComputeHash256Array(ownerBytes)
+		ownerID := hash.ComputeHash256Array(ownerBytes)
 		owners, ok := lockedProducedAsset[locktime]
 		if !ok {
 			owners = make(map[ids.ID]uint64)

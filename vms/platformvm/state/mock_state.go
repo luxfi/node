@@ -24,7 +24,7 @@ import (
 	block "github.com/luxfi/node/vms/platformvm/block"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	iterator "github.com/luxfi/utils/iterator"
+	iterator "github.com/luxfi/container/iterator"
 	fx "github.com/luxfi/vm/platformvm/fx"
 	gomock "go.uber.org/mock/gomock"
 )
