@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/address"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )

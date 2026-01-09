@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls"
 )
 

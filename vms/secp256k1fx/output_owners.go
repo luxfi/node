@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 )

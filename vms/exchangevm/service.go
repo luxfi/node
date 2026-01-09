@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -12,19 +11,19 @@ import (
 	"net/http"
 
 	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/log"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/exchangevm/txs"
 
 	safemath "github.com/luxfi/math"
 	avajson "github.com/luxfi/node/utils/json"
@@ -665,7 +664,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	}
 
 	now := s.vm.clock.Unix()
-	assetIDs := make(set.Set[ids.ID])       // IDs of assets the address has a non-zero balance of
+	assetIDs := make(set.Set[ids.ID])   // IDs of assets the address has a non-zero balance of
 	balances := make(map[ids.ID]uint64) // key: ID (as bytes). value: balance of that asset
 	for _, utxo := range utxos {
 		// TODO make this not specific to *secp256k1fx.TransferOutput
@@ -717,11 +716,11 @@ type Owners struct {
 // CreateAssetArgs are arguments for passing into CreateAsset
 type CreateAssetArgs struct {
 	JSONSpendHeader           // User, password, from addrs, change addr
-	Name                string    `json:"name"`
-	Symbol              string    `json:"symbol"`
-	Denomination        byte      `json:"denomination"`
-	InitialHolders      []*Holder `json:"initialHolders"`
-	MinterSets          []Owners  `json:"minterSets"`
+	Name            string    `json:"name"`
+	Symbol          string    `json:"symbol"`
+	Denomination    byte      `json:"denomination"`
+	InitialHolders  []*Holder `json:"initialHolders"`
+	MinterSets      []Owners  `json:"minterSets"`
 }
 
 // AssetIDChangeAddr is an asset ID and a change address
@@ -895,9 +894,9 @@ func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs,
 // CreateNFTAssetArgs are arguments for passing into CreateNFTAsset requests
 type CreateNFTAssetArgs struct {
 	JSONSpendHeader          // User, password, from addrs, change addr
-	Name                string   `json:"name"`
-	Symbol              string   `json:"symbol"`
-	MinterSets          []Owners `json:"minterSets"`
+	Name            string   `json:"name"`
+	Symbol          string   `json:"symbol"`
+	MinterSets      []Owners `json:"minterSets"`
 }
 
 // CreateNFTAsset returns ID of the newly created asset
@@ -1325,9 +1324,9 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 // MintArgs are arguments for passing into Mint requests
 type MintArgs struct {
 	JSONSpendHeader                // User, password, from addrs, change addr
-	Amount              avajson.Uint64 `json:"amount"`
-	AssetID             string         `json:"assetID"`
-	To                  string         `json:"to"`
+	Amount          avajson.Uint64 `json:"amount"`
+	AssetID         string         `json:"assetID"`
+	To              string         `json:"to"`
 }
 
 // Mint issues a transaction that mints more of the asset
@@ -1462,9 +1461,9 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 // SendNFTArgs are arguments for passing into SendNFT requests
 type SendNFTArgs struct {
 	JSONSpendHeader                // User, password, from addrs, change addr
-	AssetID             string         `json:"assetID"`
-	GroupID             avajson.Uint32 `json:"groupID"`
-	To                  string         `json:"to"`
+	AssetID         string         `json:"assetID"`
+	GroupID         avajson.Uint32 `json:"groupID"`
+	To              string         `json:"to"`
 }
 
 // SendNFT sends an NFT
@@ -1588,10 +1587,10 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 // MintNFTArgs are arguments for passing into MintNFT requests
 type MintNFTArgs struct {
 	JSONSpendHeader                     // User, password, from addrs, change addr
-	AssetID             string              `json:"assetID"`
-	Payload             string              `json:"payload"`
-	To                  string              `json:"to"`
-	Encoding            formatting.Encoding `json:"encoding"`
+	AssetID         string              `json:"assetID"`
+	Payload         string              `json:"payload"`
+	To              string              `json:"to"`
+	Encoding        formatting.Encoding `json:"encoding"`
 }
 
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction

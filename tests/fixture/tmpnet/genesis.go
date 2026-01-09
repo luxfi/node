@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/units"
 )
 

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"

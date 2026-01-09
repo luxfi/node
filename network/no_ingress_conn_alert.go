@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 )
 
 // ErrNoIngressConnections denotes that no node is connected to this validator.

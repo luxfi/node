@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )

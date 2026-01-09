@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer/mockable"

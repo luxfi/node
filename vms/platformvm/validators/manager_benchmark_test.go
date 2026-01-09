@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/timer/mockable"
 

@@ -74,9 +74,9 @@ func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
 		}),
 	}
 	err := errors.Join(
-		reg.Register(m.requestsFailed),
-		reg.Register(m.requestsMade),
-		reg.Register(m.requestsSucceeded),
+		reg.Register(metric.AsCollector(m.requestsFailed)),
+		reg.Register(metric.AsCollector(m.requestsMade)),
+		reg.Register(metric.AsCollector(m.requestsSucceeded)),
 	)
 	return &m, err
 }

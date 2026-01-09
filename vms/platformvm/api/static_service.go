@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/luxfi/address"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/genesis"

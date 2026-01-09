@@ -1,18 +1,17 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/const"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/rpc"
 )
 
 // WalletClient for interacting with exchangevm managed wallet.

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"runtime"
 	"slices"
 	"sync"
@@ -877,6 +878,16 @@ func (db *merkleDB) HealthCheck(ctx context.Context) (interface{}, error) {
 		return nil, database.ErrClosed
 	}
 	return db.baseDB.HealthCheck(ctx)
+}
+
+// Backup delegates to the underlying database.
+func (db *merkleDB) Backup(w io.Writer, since uint64) (uint64, error) {
+	return db.baseDB.Backup(w, since)
+}
+
+// Load delegates to the underlying database.
+func (db *merkleDB) Load(r io.Reader) error {
+	return db.baseDB.Load(r)
 }
 
 func (db *merkleDB) NewBatch() database.Batch {

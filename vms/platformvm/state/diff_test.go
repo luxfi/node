@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"

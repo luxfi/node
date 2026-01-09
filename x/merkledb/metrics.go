@@ -118,9 +118,9 @@ func newMetrics(prefix string, reg metric.Registerer) (merkleDBMetrics, error) {
 		}, lookupLabels),
 	}
 	err := errors.Join(
-		reg.Register(m.hashes),
-		reg.Register(m.io),
-		reg.Register(m.lookup),
+		reg.Register(metric.AsCollector(m.hashes)),
+		reg.Register(metric.AsCollector(m.io)),
+		reg.Register(metric.AsCollector(m.lookup)),
 	)
 	return &m, err
 }

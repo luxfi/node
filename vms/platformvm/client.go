@@ -7,20 +7,20 @@ import (
 	"context"
 	"time"
 
+	"github.com/luxfi/address"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/const"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/rpc"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
@@ -191,14 +191,14 @@ func (c *Client) GetNet(ctx context.Context, subnetID ids.ID, options ...rpc.Opt
 	}
 
 	return GetNetClientResponse{
-		IsPermissioned:           res.IsPermissioned,
-		ControlKeys:              controlKeys,
-		Threshold:                uint32(res.Threshold),
-		Locktime:                 uint64(res.Locktime),
+		IsPermissioned:        res.IsPermissioned,
+		ControlKeys:           controlKeys,
+		Threshold:             uint32(res.Threshold),
+		Locktime:              uint64(res.Locktime),
 		NetTransformationTxID: res.NetTransformationTxID,
-		ConversionID:             res.ConversionID,
-		ManagerChainID:           res.ManagerChainID,
-		ManagerAddress:           res.ManagerAddress,
+		ConversionID:          res.ConversionID,
+		ManagerChainID:        res.ManagerChainID,
+		ManagerAddress:        res.ManagerAddress,
 	}, nil
 }
 
@@ -270,7 +270,7 @@ func (c *Client) GetCurrentValidators(
 
 // L1Validator is the response from calling GetL1Validator on the API client.
 type L1Validator struct {
-	NetID              ids.ID
+	NetID                 ids.ID
 	NodeID                ids.NodeID
 	PublicKey             *bls.PublicKey
 	RemainingBalanceOwner *secp256k1fx.OutputOwners
@@ -326,7 +326,7 @@ func (c *Client) GetL1Validator(
 	}
 
 	return L1Validator{
-		NetID:  res.NetID,
+		NetID:     res.NetID,
 		NodeID:    res.NodeID,
 		PublicKey: pk,
 		RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -362,7 +362,7 @@ func (c *Client) SampleValidators(ctx context.Context, subnetID ids.ID, sampleSi
 	res := &SampleValidatorsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.sampleValidators", &SampleValidatorsArgs{
 		NetID: subnetID,
-		Size:     json.Uint16(sampleSize),
+		Size:  json.Uint16(sampleSize),
 	}, res, options...)
 	return res.Validators, err
 }
@@ -547,8 +547,8 @@ func (c *Client) GetValidatorsAt(
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	res := &GetValidatorsAtReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getValidatorsAt", &GetValidatorsAtArgs{
-		NetID: subnetID,
-		Height:   height,
+		NetID:  subnetID,
+		Height: height,
 	}, res, options...)
 	return res.Validators, err
 }

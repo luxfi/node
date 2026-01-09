@@ -7,7 +7,7 @@ package api
 import (
 	"context"
 
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/rpc"
 )
 
 var _ StaticClient = (*staticClient)(nil)

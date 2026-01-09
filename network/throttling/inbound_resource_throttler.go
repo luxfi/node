@@ -83,9 +83,9 @@ func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*system
 		}),
 	}
 	err := errors.Join(
-		reg.Register(m.totalWaits),
-		reg.Register(m.totalNoWaits),
-		reg.Register(m.awaitingAcquire),
+		reg.Register(metric.AsCollector(m.totalWaits)),
+		reg.Register(metric.AsCollector(m.totalNoWaits)),
+		reg.Register(metric.AsCollector(m.awaitingAcquire)),
 	)
 	return m, err
 }

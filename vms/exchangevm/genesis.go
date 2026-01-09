@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/components/lux"

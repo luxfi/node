@@ -84,7 +84,7 @@ func newBandwidthThrottler(
 			}),
 		},
 	}
-	errs.Add(registerer.Register(t.metrics.awaitingAcquire))
+	errs.Add(registerer.Register(metric.AsCollector(t.metrics.awaitingAcquire)))
 	return t, errs.Err
 }
 

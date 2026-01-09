@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
 )

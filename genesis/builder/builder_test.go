@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 )
 
 func TestGetStakingConfig(t *testing.T) {

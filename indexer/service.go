@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/database"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
 )
 

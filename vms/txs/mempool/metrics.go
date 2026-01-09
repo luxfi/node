@@ -5,7 +5,6 @@ package mempool
 
 import (
 	"github.com/luxfi/metric"
-
 )
 
 type mempoolMetrics struct {
@@ -25,11 +24,11 @@ func newMetrics(registerer metric.Registerer) (*mempoolMetrics, error) {
 		}),
 	}
 
-	err := registerer.Register(m.numTxs)
+	err := registerer.Register(metric.AsCollector(m.numTxs))
 	if err != nil {
 		return nil, err
 	}
-	err = registerer.Register(m.bytesUsed)
+	err = registerer.Register(metric.AsCollector(m.bytesUsed))
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,7 @@ package pubsub
 
 import (
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 	"github.com/luxfi/node/utils/json"
 )
 

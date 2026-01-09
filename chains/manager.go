@@ -56,7 +56,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	utilmetric "github.com/luxfi/node/utils/metric"

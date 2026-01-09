@@ -155,21 +155,21 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	m.APIInterceptor = apiRequestMetrics
 
 	errs.Add(
-		registerer.Register(m.timeUntilUnstake),
-		registerer.Register(m.timeUntilNetUnstake),
-		registerer.Register(m.localStake),
-		registerer.Register(m.totalStake),
-		registerer.Register(m.gasConsumed),
-		registerer.Register(m.gasCapacity),
-		registerer.Register(m.activeL1Validators),
-		registerer.Register(m.excess),
-		registerer.Register(m.price),
-		registerer.Register(m.accruedValidatorFees),
+		registerer.Register(metric.AsCollector(m.timeUntilUnstake)),
+		registerer.Register(metric.AsCollector(m.timeUntilNetUnstake)),
+		registerer.Register(metric.AsCollector(m.localStake)),
+		registerer.Register(metric.AsCollector(m.totalStake)),
+		registerer.Register(metric.AsCollector(m.gasConsumed)),
+		registerer.Register(metric.AsCollector(m.gasCapacity)),
+		registerer.Register(metric.AsCollector(m.activeL1Validators)),
+		registerer.Register(metric.AsCollector(m.excess)),
+		registerer.Register(metric.AsCollector(m.price)),
+		registerer.Register(metric.AsCollector(m.accruedValidatorFees)),
 
-		registerer.Register(m.validatorSetsCreated),
-		registerer.Register(m.validatorSetsCached),
-		registerer.Register(m.validatorSetsHeightDiff),
-		registerer.Register(m.validatorSetsDuration),
+		registerer.Register(metric.AsCollector(m.validatorSetsCreated)),
+		registerer.Register(metric.AsCollector(m.validatorSetsCached)),
+		registerer.Register(metric.AsCollector(m.validatorSetsHeightDiff)),
+		registerer.Register(metric.AsCollector(m.validatorSetsDuration)),
 	)
 
 	return m, errs.Err

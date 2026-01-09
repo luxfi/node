@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"

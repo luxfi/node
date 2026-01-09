@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"

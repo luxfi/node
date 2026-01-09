@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"

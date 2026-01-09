@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	validators "github.com/luxfi/consensus/validator"
 )
 

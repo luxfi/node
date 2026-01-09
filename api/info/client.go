@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/rpc"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 

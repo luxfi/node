@@ -10,9 +10,9 @@ import (
 
 	gethcommon "github.com/luxfi/geth/common"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/formatting"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
@@ -59,7 +59,7 @@ func (s *luxSigner) AddressBytes() []byte {
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex  map[gethcommon.Address]int
+	ethAddrToKeyIndex map[gethcommon.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
@@ -72,7 +72,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex:  make(map[gethcommon.Address]int),
+		ethAddrToKeyIndex: make(map[gethcommon.Address]int),
 		Addrs:             make(set.Set[ids.ShortID]),
 		EthAddrs:          make(set.Set[gethcommon.Address]),
 	}
@@ -119,8 +119,6 @@ func (kc Keychain) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
 	}
 	return nil, false
 }
-
-
 
 // AddressSet returns a set of addresses this keychain manages
 func (kc Keychain) AddressSet() set.Set[ids.ShortID] {

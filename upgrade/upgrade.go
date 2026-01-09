@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 )
 
 var (

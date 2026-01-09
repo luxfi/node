@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"

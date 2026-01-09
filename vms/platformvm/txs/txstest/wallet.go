@@ -11,7 +11,7 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"

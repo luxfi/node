@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -10,17 +9,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/luxfi/address"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/node/vms/exchangevm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
 )

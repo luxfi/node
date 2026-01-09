@@ -6,6 +6,8 @@ package rpcdb
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"sync"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -150,6 +152,16 @@ func (db *DatabaseClient) HealthCheck(ctx context.Context) (interface{}, error) 
 	}
 
 	return json.RawMessage(health.Details), nil
+}
+
+// Backup is not supported over the RPC database client.
+func (db *DatabaseClient) Backup(_ io.Writer, _ uint64) (uint64, error) {
+	return 0, errors.New("rpcdb: backup not supported")
+}
+
+// Load is not supported over the RPC database client.
+func (db *DatabaseClient) Load(_ io.Reader) error {
+	return errors.New("rpcdb: load not supported")
 }
 
 type batch struct {

@@ -7,9 +7,9 @@ package keystore
 import (
 	"context"
 
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/rpc"
 )
 
 var _ Client = (*client)(nil)

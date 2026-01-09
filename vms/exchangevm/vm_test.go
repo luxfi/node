@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"

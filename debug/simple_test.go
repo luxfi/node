@@ -5,7 +5,7 @@ package debug
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	validators "github.com/luxfi/consensus/validator"
 	"testing"
 )

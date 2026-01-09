@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/pubsub/bloom"
-	"github.com/luxfi/const"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/address"
 )
 
 func TestAddAddressesParseAddresses(t *testing.T) {

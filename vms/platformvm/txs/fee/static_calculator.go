@@ -5,7 +5,7 @@
 package fee
 
 import (
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

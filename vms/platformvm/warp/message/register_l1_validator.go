@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"

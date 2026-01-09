@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 )
 
 func cachedBlockSize(_ ids.ID, bw *BlockWrapper) int {

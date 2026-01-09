@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/networking/handler"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"

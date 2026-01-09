@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"

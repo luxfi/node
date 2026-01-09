@@ -276,10 +276,10 @@ func NewCachedValidatorState(
 		),
 	}
 
-	if err := registerer.Register(metrics.hits); err != nil {
+	if err := registerer.Register(metric.AsCollector(metrics.hits)); err != nil {
 		return nil, fmt.Errorf("failed to register cache hits metric: %w", err)
 	}
-	if err := registerer.Register(metrics.misses); err != nil {
+	if err := registerer.Register(metric.AsCollector(metrics.misses)); err != nil {
 		return nil, fmt.Errorf("failed to register cache misses metric: %w", err)
 	}
 

@@ -38,7 +38,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"

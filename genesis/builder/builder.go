@@ -15,16 +15,16 @@ import (
 	"path"
 	"time"
 
+	"github.com/luxfi/address"
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/const"
-	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	xchaintxs "github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -488,7 +488,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
-			ChainID:       constants.PrimaryNetworkID,
+			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.XVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
@@ -499,13 +499,13 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		},
 		{
 			GenesisData: []byte(config.CChainGenesis),
-			ChainID:       constants.PrimaryNetworkID,
+			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},
 		{
 			GenesisData: []byte(config.DChainGenesis),
-			ChainID:       constants.PrimaryNetworkID,
+			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.DexVMID,
 			Name:        "D-Chain",
 		},
@@ -718,16 +718,16 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 	if startTime == 0 {
 		startTime = uint64(time.Now().Unix())
 	}
-	
+
 	// Far-future stake duration: 100 years in seconds
 	// This ensures the validator never expires during development
 	const hundredYears = 100 * 365 * 24 * 60 * 60
-	
+
 	// Create allocation for the reward address
 	// Initial staked amount: 1B LUX (enough to be a validator)
-	const oneMillionLUX = 1_000_000_000_000_000 // 1M LUX in nLUX
+	const oneMillionLUX = 1_000_000_000_000_000     // 1M LUX in nLUX
 	const oneBillionLUX = 1_000_000_000_000_000_000 // 1B LUX in nLUX
-	
+
 	allocation := genesiscfg.Allocation{
 		ETHAddr:       cfg.RewardAddress, // Same as LUX addr for simplicity
 		LUXAddr:       cfg.RewardAddress,
@@ -739,7 +739,7 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 			},
 		},
 	}
-	
+
 	// Create the single staker
 	var signer *genesiscfg.ProofOfPossession
 	if cfg.BLSPublicKey != "" && cfg.BLSPopProof != "" {
@@ -748,7 +748,7 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 			ProofOfPossession: cfg.BLSPopProof,
 		}
 	}
-	
+
 	staker := genesiscfg.Staker{
 		NodeID:        cfg.NodeID,
 		RewardAddress: cfg.RewardAddress,
@@ -758,7 +758,7 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 		StartTime:     startTime,
 		EndTime:       startTime + hundredYears,
 	}
-	
+
 	// Build the genesis config
 	config := &genesiscfg.Config{
 		NetworkID:                  constants.CustomID,
@@ -771,7 +771,7 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 		CChainGenesis:              cfg.CChainGenesis,
 		Message:                    "Lux Development Mode Genesis",
 	}
-	
+
 	return FromConfig(config)
 }
 

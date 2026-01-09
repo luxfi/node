@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/address"
 )
 
 func main() {

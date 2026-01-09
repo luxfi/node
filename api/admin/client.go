@@ -6,11 +6,11 @@ package admin
 import (
 	"context"
 
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/rpc"
 )
 
 type Client struct {

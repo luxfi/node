@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus/validator/uptime"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"

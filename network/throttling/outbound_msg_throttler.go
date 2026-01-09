@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 )
 
 var (
@@ -199,11 +199,11 @@ func (m *outboundMsgThrottlerMetrics) initialize(registerer metric.Registerer) e
 		Help: "Number of messages waiting to be sent",
 	})
 	return errors.Join(
-		registerer.Register(m.acquireSuccesses),
-		registerer.Register(m.acquireFailures),
-		registerer.Register(m.remainingAtLargeBytes),
-		registerer.Register(m.remainingVdrBytes),
-		registerer.Register(m.awaitingRelease),
+		registerer.Register(metric.AsCollector(m.acquireSuccesses)),
+		registerer.Register(metric.AsCollector(m.acquireFailures)),
+		registerer.Register(metric.AsCollector(m.remainingAtLargeBytes)),
+		registerer.Register(metric.AsCollector(m.remainingVdrBytes)),
+		registerer.Register(metric.AsCollector(m.awaitingRelease)),
 	)
 }
 

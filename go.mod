@@ -103,7 +103,6 @@ require (
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/pprof v0.0.0-20251213031049-b05bdaca462f // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.4 // indirect
 	github.com/hashicorp/golang-lru v1.0.2
@@ -138,7 +137,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
-	github.com/luxfi/const v1.4.0
+	github.com/luxfi/constants v1.4.2
 	github.com/luxfi/coreth v0.15.71
 	github.com/luxfi/fhe v1.7.6-0.20260106060801-28e308e4c2f8
 	github.com/luxfi/genesis v1.5.19
@@ -223,44 +222,4 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
-
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-// Local development: point to local repos
-replace (
-	github.com/luxfi/address => ../address
-	github.com/luxfi/ai => ../ai
-	github.com/luxfi/cache => ../cache
-	github.com/luxfi/codec => ../codec
-	github.com/luxfi/consensus => ../consensus
-	github.com/luxfi/const => ../const
-	github.com/luxfi/coreth => ../coreth
-	github.com/luxfi/crypto => ../crypto
-	github.com/luxfi/database => ../database
-	github.com/luxfi/fhe => ../fhe
-	github.com/luxfi/genesis => ../genesis
-	github.com/luxfi/geth => ../geth
-	github.com/luxfi/go-bip32 => ../go-bip32
-	github.com/luxfi/go-bip39 => ../go-bip39
-	github.com/luxfi/gpu => ../gpu
-	github.com/luxfi/ids => ../ids
-	github.com/luxfi/keychain => ../keychain
-	github.com/luxfi/lattice/v7 => ../lattice
-	github.com/luxfi/log => ../log
-	github.com/luxfi/math => ../math
-	github.com/luxfi/math/big => ../math/big
-	github.com/luxfi/math/safe => ../math/safe
-	github.com/luxfi/metric => ../metric
-	github.com/luxfi/mock => ../mock
-	github.com/luxfi/p2p => ../p2p
-	github.com/luxfi/precompile => ../precompile
-	github.com/luxfi/ringtail => ../ringtail
-	github.com/luxfi/sampler => ../sampler
-	github.com/luxfi/staking => ../staking
-	github.com/luxfi/threshold => ../threshold
-	github.com/luxfi/trace => ../trace
-	github.com/luxfi/utils => ../utils
-	github.com/luxfi/vm => ../vm
-	github.com/luxfi/warp => ../warp
-)

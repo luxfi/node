@@ -9,6 +9,8 @@ package rpcdb
 
 import (
 	"context"
+	"errors"
+	"io"
 	"sync"
 
 	"github.com/luxfi/database"
@@ -320,6 +322,16 @@ func (db *DatabaseClient) NewIteratorWithStartAndPrefix(start []byte, prefix []b
 		db: db,
 		id: resp.Id,
 	}
+}
+
+// Backup is not supported over the RPC database client.
+func (db *DatabaseClient) Backup(_ io.Writer, _ uint64) (uint64, error) {
+	return 0, errors.New("rpcdb: backup not supported")
+}
+
+// Load is not supported over the RPC database client.
+func (db *DatabaseClient) Load(_ io.Reader) error {
+	return errors.New("rpcdb: load not supported")
 }
 
 func (db *DatabaseClient) Compact(start []byte, limit []byte) error {

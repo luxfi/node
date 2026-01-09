@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/linked"
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
@@ -336,10 +336,10 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error
 		Help: "Number of messages currently being read/handled",
 	})
 	errs.Add(
-		reg.Register(m.remainingAtLargeBytes),
-		reg.Register(m.remainingVdrBytes),
-		reg.Register(m.awaitingAcquire),
-		reg.Register(m.awaitingRelease),
+		reg.Register(metric.AsCollector(m.remainingAtLargeBytes)),
+		reg.Register(metric.AsCollector(m.remainingVdrBytes)),
+		reg.Register(metric.AsCollector(m.awaitingAcquire)),
+		reg.Register(metric.AsCollector(m.awaitingRelease)),
 	)
 	return errs.Err
 }

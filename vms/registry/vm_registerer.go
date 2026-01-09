@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms"
 )
 

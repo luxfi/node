@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/api"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/trace"
-	// "github.com/luxfi/const"  // Unused after handler registration moved
+	// "github.com/luxfi/constantsants"  // Unused after handler registration moved
 	"github.com/luxfi/log"
 )
 

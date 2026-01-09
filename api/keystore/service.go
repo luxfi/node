@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting"
 )
 
 type service struct {

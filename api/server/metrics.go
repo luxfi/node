@@ -39,13 +39,13 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 		),
 	}
 
-	if err := registerer.Register(m.requests); err != nil {
+	if err := registerer.Register(metric.AsCollector(m.requests)); err != nil {
 		return nil, err
 	}
-	if err := registerer.Register(m.duration); err != nil {
+	if err := registerer.Register(metric.AsCollector(m.duration)); err != nil {
 		return nil, err
 	}
-	if err := registerer.Register(m.inflight); err != nil {
+	if err := registerer.Register(metric.AsCollector(m.inflight)); err != nil {
 		return nil, err
 	}
 

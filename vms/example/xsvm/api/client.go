@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/const"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/constantsants"
+	"github.com/luxfi/rpc"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/tx"

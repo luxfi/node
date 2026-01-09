@@ -17,7 +17,7 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/const"
+	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/sampler"
 )

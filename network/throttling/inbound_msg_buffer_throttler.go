@@ -146,7 +146,7 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) err
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})
 	errs.Add(
-		reg.Register(m.awaitingAcquire),
+		reg.Register(metric.AsCollector(m.awaitingAcquire)),
 	)
 	return errs.Err
 }
