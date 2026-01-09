@@ -8,13 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestCreateAssetTxSerialization(t *testing.T) {
@@ -355,7 +354,7 @@ func TestCreateAssetTxSerializationAgain(t *testing.T) {
 		unsignedTx.Outs = append(unsignedTx.Outs, &lux.TransferableOutput{
 			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 20 * units.KiloLux,
+				Amt: 20 * constants.KiloLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{addr},

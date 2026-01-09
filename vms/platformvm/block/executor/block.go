@@ -7,13 +7,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/ids"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 )
 
 var (
-	_ block.Block             = (*Block)(nil)
+	_ block.Block = (*Block)(nil)
 	// _ block.OracleBlock       = (*Block)(nil) // TODO: Check if OracleBlock interface exists
 	_ block.WithVerifyContext = (*Block)(nil)
 )

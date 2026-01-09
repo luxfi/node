@@ -34,20 +34,20 @@ type Config struct {
 	MaxPoolsPerPair uint16 `json:"maxPoolsPerPair"`
 
 	// OrderbookConfig
-	MaxOrdersPerAccount uint32 `json:"maxOrdersPerAccount"`
-	MaxOrderSize        uint64 `json:"maxOrderSize"`
-	MinOrderSize        uint64 `json:"minOrderSize"`
+	MaxOrdersPerAccount uint32        `json:"maxOrdersPerAccount"`
+	MaxOrderSize        uint64        `json:"maxOrderSize"`
+	MinOrderSize        uint64        `json:"minOrderSize"`
 	OrderExpirationTime time.Duration `json:"orderExpirationTime"`
 
 	// Cross-chain configuration
-	WarpEnabled      bool     `json:"warpEnabled"`
-	TeleportEnabled  bool     `json:"teleportEnabled"`
-	TrustedChains    []ids.ID `json:"trustedChains"`
+	WarpEnabled     bool     `json:"warpEnabled"`
+	TeleportEnabled bool     `json:"teleportEnabled"`
+	TrustedChains   []ids.ID `json:"trustedChains"`
 
 	// Block configuration
-	BlockInterval    time.Duration `json:"blockInterval"`
-	MaxBlockSize     uint64        `json:"maxBlockSize"`
-	MaxTxsPerBlock   uint32        `json:"maxTxsPerBlock"`
+	BlockInterval  time.Duration `json:"blockInterval"`
+	MaxBlockSize   uint64        `json:"maxBlockSize"`
+	MaxTxsPerBlock uint32        `json:"maxTxsPerBlock"`
 }
 
 // DefaultConfig returns the default configuration for the DEX VM.
@@ -74,7 +74,7 @@ func DefaultConfig() Config {
 		TrustedChains:   nil,
 
 		BlockInterval:  1 * time.Millisecond, // 1ms blocks for HFT (ultra-low latency)
-		MaxBlockSize:   2 * 1024 * 1024,        // 2MB
+		MaxBlockSize:   2 * 1024 * 1024,      // 2MB
 		MaxTxsPerBlock: 10000,
 	}
 }

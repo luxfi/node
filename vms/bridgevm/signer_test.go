@@ -49,7 +49,7 @@ func TestSignerSetOptInRegistration(t *testing.T) {
 		require.True(result.Success)
 		require.True(result.Registered)
 		require.False(result.Waitlisted)
-		require.False(result.ReshareNeeded) // LP-333: NO reshare on opt-in
+		require.False(result.ReshareNeeded)           // LP-333: NO reshare on opt-in
 		require.Equal(uint64(0), result.CurrentEpoch) // Epoch should NOT change
 		require.Equal(i, result.SignerIndex)
 	}
@@ -310,10 +310,10 @@ func TestThresholdCalculation(t *testing.T) {
 		numSigners        int
 		expectedThreshold int
 	}{
-		{1, 1},   // floor(1 * 0.67) = 0, but minimum is 1
-		{2, 1},   // floor(2 * 0.67) = 1
-		{3, 2},   // floor(3 * 0.67) = 2
-		{10, 6},  // floor(10 * 0.67) = 6
+		{1, 1},    // floor(1 * 0.67) = 0, but minimum is 1
+		{2, 1},    // floor(2 * 0.67) = 1
+		{3, 2},    // floor(3 * 0.67) = 2
+		{10, 6},   // floor(10 * 0.67) = 6
 		{100, 67}, // floor(100 * 0.67) = 67
 	}
 
@@ -377,7 +377,7 @@ func TestSlashSignerPartial(t *testing.T) {
 	require.NoError(err)
 	require.True(result.Success)
 	require.Equal(nodeID.String(), result.NodeID)
-	require.Equal(initialBond/10, result.SlashedAmount) // 15M LUX slashed
+	require.Equal(initialBond/10, result.SlashedAmount)             // 15M LUX slashed
 	require.Equal(initialBond-initialBond/10, result.RemainingBond) // 135M remaining
 	require.Equal(1, result.TotalSlashCount)
 	require.False(result.RemovedFromSet) // Still above 100M minimum
@@ -426,7 +426,7 @@ func TestSlashSignerRemoval(t *testing.T) {
 	result, err := vm.SlashSigner(input)
 	require.NoError(err)
 	require.True(result.Success)
-	require.True(result.RemovedFromSet) // Removed because bond < 100M
+	require.True(result.RemovedFromSet)                 // Removed because bond < 100M
 	require.Equal(uint64(1), vm.signerSet.CurrentEpoch) // Epoch incremented
 
 	// Signer should be removed
@@ -491,4 +491,3 @@ func TestSlashSignerInvalidPercent(t *testing.T) {
 	require.Error(err)
 	require.Contains(err.Error(), "between 1 and 100")
 }
-

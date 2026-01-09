@@ -14,24 +14,23 @@ import (
 
 	"github.com/luxfi/log"
 
-
-	"github.com/luxfi/ids"
 	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
-	consensusctx "github.com/luxfi/consensus/context"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
@@ -45,7 +44,7 @@ func (a *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(weights))
 	for nodeID, weight := range weights {
 		result[nodeID] = &validators.GetValidatorOutput{
@@ -115,7 +114,7 @@ func (a *validatorStateAdapter) GetWarpValidatorSets(ctx context.Context, height
 const (
 	// targetBlockSize is maximum number of transaction bytes to place into a
 	// StandardBlock
-	targetBlockSize = 128 * units.KiB
+	targetBlockSize = 128 * constants.KiB
 
 	// maxTimeToSleep is the maximum time to sleep between checking if a block
 	// should be produced.

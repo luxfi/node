@@ -8,14 +8,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 
 	// Create adapter for the keychain
-	amount := 500 * units.MilliLux
+	amount := 500 * constants.MilliLux
 	locktime := uint64(time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC).Unix())
 	destAddrStr := "P-local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u"
 

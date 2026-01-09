@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 )
 
 func TestParse(t *testing.T) {

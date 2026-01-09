@@ -72,23 +72,23 @@ const (
 
 // Protocol identifiers matching thresholdvm/protocols.go
 const (
-	ProtocolLSS     = "lss"
-	ProtocolCGGMP21 = "cggmp21"
-	ProtocolBLS     = "bls"
+	ProtocolLSS      = "lss"
+	ProtocolCGGMP21  = "cggmp21"
+	ProtocolBLS      = "bls"
 	ProtocolRingtail = "ringtail"
-	ProtocolFrost   = "frost"
+	ProtocolFrost    = "frost"
 )
 
 // Error definitions
 var (
-	ErrInvalidInput       = errors.New("invalid input")
-	ErrInvalidSelector    = errors.New("invalid function selector")
-	ErrUnauthorized       = errors.New("unauthorized caller")
-	ErrSessionNotFound    = errors.New("session not found")
-	ErrKeyNotFound        = errors.New("key not found")
-	ErrInvalidProtocol    = errors.New("invalid protocol")
-	ErrInvalidThreshold   = errors.New("invalid threshold")
-	ErrWarpSendFailed     = errors.New("warp message send failed")
+	ErrInvalidInput     = errors.New("invalid input")
+	ErrInvalidSelector  = errors.New("invalid function selector")
+	ErrUnauthorized     = errors.New("unauthorized caller")
+	ErrSessionNotFound  = errors.New("session not found")
+	ErrKeyNotFound      = errors.New("key not found")
+	ErrInvalidProtocol  = errors.New("invalid protocol")
+	ErrInvalidThreshold = errors.New("invalid threshold")
+	ErrWarpSendFailed   = errors.New("warp message send failed")
 )
 
 // ThresholdPrecompile implements the EVM precompile interface for threshold operations.

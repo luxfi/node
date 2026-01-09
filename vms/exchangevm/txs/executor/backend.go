@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package executor
 
 import (
@@ -11,7 +10,7 @@ import (
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/fxs"

@@ -9,13 +9,13 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/proto/pb/io/reader"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/proto/pb/io/reader"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxfi/node/proto/pb/http"
-	responsewriterpb "github.com/luxfi/node/proto/pb/http/responsewriter"
+	httppb "github.com/luxfi/vm/proto/pb/http"
+	responsewriterpb "github.com/luxfi/vm/proto/pb/http/responsewriter"
 )
 
 var _ http.Handler = (*Client)(nil)

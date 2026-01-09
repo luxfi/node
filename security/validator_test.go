@@ -81,7 +81,7 @@ func TestInputValidator(t *testing.T) {
 
 		// Invalid
 		require.Error(t, v.ValidateIPAddress("not_a_valid-host!"))
-		require.Error(t, v.ValidateIPAddress("192.168.1.256")) // Invalid octet
+		require.Error(t, v.ValidateIPAddress("192.168.1.256"))          // Invalid octet
 		require.Error(t, v.ValidateIPAddress(strings.Repeat("a", 254))) // Too long
 	})
 

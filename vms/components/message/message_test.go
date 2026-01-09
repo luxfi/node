@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package message
 
 import (
@@ -11,7 +10,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 
 	pb "github.com/luxfi/node/proto/pb/message"
 )

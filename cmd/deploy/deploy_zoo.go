@@ -6,16 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -100,7 +100,7 @@ func main() {
 	pSigner = signer.New(kc, pBackend)
 
 	unsignedCreateChainTx, err := pBuilder.NewCreateChainTx(
-		netID,      // Net ID to create blockchain on
+		netID,       // Net ID to create blockchain on
 		genesisData, // Genesis data
 		xsvmID,      // VM ID
 		nil,         // No FX IDs

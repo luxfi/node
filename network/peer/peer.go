@@ -20,19 +20,19 @@ import (
 
 	"github.com/luxfi/log"
 
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/bloom"
+	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 const (
@@ -229,7 +229,7 @@ func Start(
 		onClosingCtxCancel: onClosingCtxCancel,
 		onClosed:           make(chan struct{}),
 		getPeerListChan:    make(chan struct{}, 1),
-		trackedChains:     make(set.Set[ids.ID]),
+		trackedChains:      make(set.Set[ids.ID]),
 	}
 
 	if isIngress {
@@ -292,7 +292,7 @@ func (p *peer) Info() Info {
 		LastSent:       p.LastSent(),
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
-		TrackedChains: p.trackedChains,
+		TrackedChains:  p.trackedChains,
 		// TODO: Add support for SupportedLPs and ObjectedLPs
 	}
 }

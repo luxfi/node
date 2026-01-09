@@ -9,15 +9,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 	netID := ids.FromStringOrPanic("2DeHa7Qb6sufPkmQcFWG2uCd4pBPv9WB6dkzroiMQhd1NSRtof")
 	chainID := ids.FromStringOrPanic("E8nTR9TtRwfkS7XFjTYUYHENQ91mkPMtDUwwCeu7rNgBBtkqu")
 	addressHex := ""
-	weight := units.Schmeckle
+	weight := constants.Schmeckle
 
 	address, err := hex.DecodeString(addressHex)
 	if err != nil {
@@ -89,7 +89,7 @@ func main() {
 			{
 				NodeID:                nodeID[:],
 				Weight:                weight,
-				Balance:               units.Lux,
+				Balance:               constants.Lux,
 				Signer:                *nodePoP,
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},

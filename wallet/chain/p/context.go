@@ -6,9 +6,8 @@ package p
 import (
 	"context"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/wallet/chain/p/builder"
@@ -58,14 +57,14 @@ func NewContextFromClients(
 		GasPrice:          gasPriceMultiplier * gasPrice,
 		// Static fee config - use defaults matching platformvm/config
 		StaticFeeConfig: fee.StaticConfig{
-			TxFee:                         units.MilliLux,
-			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateSubnetTxFee:                units.Lux,
-			CreateBlockchainTxFee:         units.Lux,
+			TxFee:                         constants.MilliLux,
+			CreateAssetTxFee:              10 * constants.MilliLux,
+			CreateSubnetTxFee:             constants.Lux,
+			CreateBlockchainTxFee:         constants.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:            units.MilliLux,
-			AddSubnetDelegatorFee:            units.MilliLux,
+			AddSubnetValidatorFee:         constants.MilliLux,
+			AddSubnetDelegatorFee:         constants.MilliLux,
 		},
 	}, nil
 }

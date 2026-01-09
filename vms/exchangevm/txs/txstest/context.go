@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package txstest
 
 import (
@@ -24,7 +23,7 @@ func newContext(
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		XAssetID:       feeAssetID,
+		XAssetID:         feeAssetID,
 		BaseTxFee:        cfg.TxFee,
 		CreateAssetTxFee: cfg.CreateAssetTxFee,
 	}

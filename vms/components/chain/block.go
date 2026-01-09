@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	_ block.Block           = (*BlockWrapper)(nil)
+	_ block.Block             = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")

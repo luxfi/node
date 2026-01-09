@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package lux
 
 import (
@@ -13,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/vm/utils"
 )
 
 var (

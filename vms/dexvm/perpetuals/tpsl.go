@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	ErrInvalidTPSL        = errors.New("invalid take profit/stop loss configuration")
-	ErrTPSLAlreadyExists  = errors.New("TP/SL order already exists for position")
-	ErrTPSLNotFound       = errors.New("TP/SL order not found")
-	ErrTPBelowEntry       = errors.New("take profit must be above entry for long, below for short")
-	ErrSLAboveEntry       = errors.New("stop loss must be below entry for long, above for short")
+	ErrInvalidTPSL       = errors.New("invalid take profit/stop loss configuration")
+	ErrTPSLAlreadyExists = errors.New("TP/SL order already exists for position")
+	ErrTPSLNotFound      = errors.New("TP/SL order not found")
+	ErrTPBelowEntry      = errors.New("take profit must be above entry for long, below for short")
+	ErrSLAboveEntry      = errors.New("stop loss must be below entry for long, above for short")
 )
 
 // TPSLType represents the type of TP/SL order
@@ -52,31 +52,31 @@ const (
 
 // TPSLOrder represents a Take Profit or Stop Loss order
 type TPSLOrder struct {
-	ID            ids.ID      // Unique order ID
-	PositionID    ids.ID      // Associated position
-	TraderID      ids.ID      // Trader who owns this
-	Market        string      // Market symbol
-	Type          TPSLType    // Take profit or Stop loss
-	Side          Side        // Side to close (opposite of position side)
-	TriggerPrice  *big.Int    // Price at which to trigger
-	TriggerType   TriggerType // What price to watch
-	OrderPrice    *big.Int    // Execution price (nil = market order)
-	Size          *big.Int    // Size to close (nil = full position)
-	SizePercent   uint16      // Size as percentage (0-10000 basis points)
+	ID           ids.ID      // Unique order ID
+	PositionID   ids.ID      // Associated position
+	TraderID     ids.ID      // Trader who owns this
+	Market       string      // Market symbol
+	Type         TPSLType    // Take profit or Stop loss
+	Side         Side        // Side to close (opposite of position side)
+	TriggerPrice *big.Int    // Price at which to trigger
+	TriggerType  TriggerType // What price to watch
+	OrderPrice   *big.Int    // Execution price (nil = market order)
+	Size         *big.Int    // Size to close (nil = full position)
+	SizePercent  uint16      // Size as percentage (0-10000 basis points)
 
 	// Trailing stop specific
-	TrailingDelta *big.Int // Distance to trail from high/low
-	TrailingPercent uint16 // Trail as percentage
+	TrailingDelta   *big.Int // Distance to trail from high/low
+	TrailingPercent uint16   // Trail as percentage
 	ActivationPrice *big.Int // Price at which trailing starts
-	HighestPrice  *big.Int // Highest price since activation (for long)
-	LowestPrice   *big.Int // Lowest price since activation (for short)
+	HighestPrice    *big.Int // Highest price since activation (for long)
+	LowestPrice     *big.Int // Lowest price since activation (for short)
 
 	// Metadata
-	Status       TPSLStatus
-	TriggeredAt  *time.Time
-	ExecutedAt   *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Status      TPSLStatus
+	TriggeredAt *time.Time
+	ExecutedAt  *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // TPSLStatus represents the status of a TP/SL order
@@ -138,26 +138,26 @@ func (o *TPSLOrder) Clone() *TPSLOrder {
 	}
 	return &TPSLOrder{
 		ID:              o.ID,
-		PositionID:     o.PositionID,
-		TraderID:       o.TraderID,
-		Market:         o.Market,
-		Type:           o.Type,
-		Side:           o.Side,
-		TriggerPrice:   cloneBigInt(o.TriggerPrice),
-		TriggerType:    o.TriggerType,
-		OrderPrice:     cloneBigInt(o.OrderPrice),
-		Size:           cloneBigInt(o.Size),
-		SizePercent:    o.SizePercent,
-		TrailingDelta:  cloneBigInt(o.TrailingDelta),
+		PositionID:      o.PositionID,
+		TraderID:        o.TraderID,
+		Market:          o.Market,
+		Type:            o.Type,
+		Side:            o.Side,
+		TriggerPrice:    cloneBigInt(o.TriggerPrice),
+		TriggerType:     o.TriggerType,
+		OrderPrice:      cloneBigInt(o.OrderPrice),
+		Size:            cloneBigInt(o.Size),
+		SizePercent:     o.SizePercent,
+		TrailingDelta:   cloneBigInt(o.TrailingDelta),
 		TrailingPercent: o.TrailingPercent,
 		ActivationPrice: cloneBigInt(o.ActivationPrice),
-		HighestPrice:   cloneBigInt(o.HighestPrice),
-		LowestPrice:    cloneBigInt(o.LowestPrice),
-		Status:         o.Status,
-		TriggeredAt:    o.TriggeredAt,
-		ExecutedAt:     o.ExecutedAt,
-		CreatedAt:      o.CreatedAt,
-		UpdatedAt:      o.UpdatedAt,
+		HighestPrice:    cloneBigInt(o.HighestPrice),
+		LowestPrice:     cloneBigInt(o.LowestPrice),
+		Status:          o.Status,
+		TriggeredAt:     o.TriggeredAt,
+		ExecutedAt:      o.ExecutedAt,
+		CreatedAt:       o.CreatedAt,
+		UpdatedAt:       o.UpdatedAt,
 	}
 }
 
@@ -310,7 +310,7 @@ func UpdateTrailingStop(order *TPSLOrder, positionSide Side, currentPrice *big.I
 
 // TPSLManager manages TP/SL orders
 type TPSLManager struct {
-	orders         map[ids.ID]*TPSLOrder // All TP/SL orders by ID
+	orders         map[ids.ID]*TPSLOrder   // All TP/SL orders by ID
 	ordersByPos    map[ids.ID][]*TPSLOrder // Orders by position ID
 	ordersByTrader map[ids.ID][]*TPSLOrder // Orders by trader ID
 }
@@ -404,20 +404,20 @@ func (m *TPSLManager) CreateTrailingStop(
 	now := time.Now()
 	order := &TPSLOrder{
 		ID:              ids.GenerateTestID(),
-		PositionID:     positionID,
-		TraderID:       traderID,
-		Market:         market,
-		Type:           TrailingStopOrder,
-		Side:           positionSide.Opposite(),
-		TriggerType:    TriggerOnMarkPrice,
-		TrailingDelta:  cloneBigInt(trailingDelta),
+		PositionID:      positionID,
+		TraderID:        traderID,
+		Market:          market,
+		Type:            TrailingStopOrder,
+		Side:            positionSide.Opposite(),
+		TriggerType:     TriggerOnMarkPrice,
+		TrailingDelta:   cloneBigInt(trailingDelta),
 		TrailingPercent: trailingPercent,
 		ActivationPrice: cloneBigInt(activationPrice),
-		Size:           cloneBigInt(size),
-		SizePercent:    sizePercent,
-		Status:         TPSLActive,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		Size:            cloneBigInt(size),
+		SizePercent:     sizePercent,
+		Status:          TPSLActive,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	m.orders[order.ID] = order

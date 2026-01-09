@@ -24,8 +24,8 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/summary"
+	"github.com/luxfi/vm/chain/blocktest"
 )
 
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {

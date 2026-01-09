@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus/validator/uptime"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -20,13 +20,13 @@ import (
 var (
 	_ block.Visitor = (*options)(nil)
 
-	ErrNotOracle                          = errors.New("block doesn't have options")
-	errUnexpectedProposalTxType           = errors.New("unexpected proposal transaction type")
-	errFailedFetchingStakerTx             = errors.New("failed fetching staker transaction")
-	errUnexpectedStakerTxType             = errors.New("unexpected staker transaction type")
-	errFailedFetchingPrimaryStaker        = errors.New("failed fetching primary staker")
+	ErrNotOracle                       = errors.New("block doesn't have options")
+	errUnexpectedProposalTxType        = errors.New("unexpected proposal transaction type")
+	errFailedFetchingStakerTx          = errors.New("failed fetching staker transaction")
+	errUnexpectedStakerTxType          = errors.New("unexpected staker transaction type")
+	errFailedFetchingPrimaryStaker     = errors.New("failed fetching primary staker")
 	errFailedFetchingNetTransformation = errors.New("failed fetching net transformation")
-	errFailedCalculatingUptime            = errors.New("failed calculating uptime")
+	errFailedCalculatingUptime         = errors.New("failed calculating uptime")
 )
 
 // options supports build new option blocks

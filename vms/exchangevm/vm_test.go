@@ -12,6 +12,7 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -19,13 +20,12 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	xvmtxs "github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestInvalidFx(t *testing.T) {
@@ -50,7 +50,7 @@ func TestInvalidFx(t *testing.T) {
 		[]interface{}{ // fxs
 			nil,
 		},
-		nil,          // appSender
+		nil, // appSender
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -76,14 +76,14 @@ func TestFxInitializationFailure(t *testing.T) {
 	}
 	err := vm.Initialize(
 		context.Background(),
-		ctx,          // chainCtx
-		memdb.New(),  // dbManager
-		genesisBytes, // genesisBytes
-		nil,          // upgradeBytes
-		nil,          // configBytes
-		toEngine,     // toEngine
+		ctx,               // chainCtx
+		memdb.New(),       // dbManager
+		genesisBytes,      // genesisBytes
+		nil,               // upgradeBytes
+		nil,               // configBytes
+		toEngine,          // toEngine
 		[]interface{}{fx}, // fxs
-		nil,          // appSender
+		nil,               // appSender
 	)
 	require.ErrorIs(err, errUnknownFx)
 }
@@ -658,7 +658,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
 	var (
-		luxID     = genesisTx.ID()
+		luxID      = genesisTx.ID()
 		key        = keys[0]
 		kc         = secp256k1fx.NewKeychain(key)
 		to         = key.PublicKey().Address()

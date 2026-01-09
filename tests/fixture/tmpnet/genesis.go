@@ -11,10 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/ids"
 )
 
 // GenesisConfig represents genesis configuration
@@ -32,10 +31,10 @@ type GenesisConfig struct {
 
 // Allocation represents an initial fund allocation
 type Allocation struct {
-	ETHAddr        string          `json:"ethAddr"`
-	LUXAddr        string          `json:"luxAddr"`
-	InitialAmount  uint64          `json:"initialAmount"`
-	UnlockSchedule []UnlockPeriod  `json:"unlockSchedule,omitempty"`
+	ETHAddr        string         `json:"ethAddr"`
+	LUXAddr        string         `json:"luxAddr"`
+	InitialAmount  uint64         `json:"initialAmount"`
+	UnlockSchedule []UnlockPeriod `json:"unlockSchedule,omitempty"`
 }
 
 // UnlockPeriod represents a vesting unlock period
@@ -72,7 +71,7 @@ func NewTestGenesisWithFunds(
 		addr := key.Address()
 		allocation := Allocation{
 			LUXAddr:       addr.String(),
-			InitialAmount: 300 * units.MegaLux, // 300M LUX per funded key
+			InitialAmount: 300 * constants.MegaLux, // 300M LUX per funded key
 		}
 		config.Allocations = append(config.Allocations, allocation)
 		config.InitialStakedFunds = append(config.InitialStakedFunds, addr.String())
@@ -101,31 +100,31 @@ func NewTestGenesisWithFunds(
 // getBasicCChainGenesis returns a basic C-Chain genesis configuration
 func getBasicCChainGenesis(networkID uint32) string {
 	chainID := int64(networkID)
-	
+
 	genesis := map[string]interface{}{
 		"config": map[string]interface{}{
-			"chainId":                     chainID,
-			"homesteadBlock":              0,
-			"eip150Block":                 0,
-			"eip155Block":                 0,
-			"eip158Block":                 0,
-			"byzantiumBlock":              0,
-			"constantinopleBlock":         0,
-			"petersburgBlock":             0,
-			"istanbulBlock":               0,
-			"muirGlacierBlock":            0,
-			"apricotPhase1BlockTimestamp": 0,
-			"apricotPhase2BlockTimestamp": 0,
-			"apricotPhase3BlockTimestamp": 0,
-			"apricotPhase4BlockTimestamp": 0,
-			"apricotPhase5BlockTimestamp": 0,
-			"apricotPhasePre6BlockTimestamp": 0,
-			"apricotPhase6BlockTimestamp": 0,
+			"chainId":                         chainID,
+			"homesteadBlock":                  0,
+			"eip150Block":                     0,
+			"eip155Block":                     0,
+			"eip158Block":                     0,
+			"byzantiumBlock":                  0,
+			"constantinopleBlock":             0,
+			"petersburgBlock":                 0,
+			"istanbulBlock":                   0,
+			"muirGlacierBlock":                0,
+			"apricotPhase1BlockTimestamp":     0,
+			"apricotPhase2BlockTimestamp":     0,
+			"apricotPhase3BlockTimestamp":     0,
+			"apricotPhase4BlockTimestamp":     0,
+			"apricotPhase5BlockTimestamp":     0,
+			"apricotPhasePre6BlockTimestamp":  0,
+			"apricotPhase6BlockTimestamp":     0,
 			"apricotPhasePost6BlockTimestamp": 0,
-			"banffBlockTimestamp":         0,
-			"cortinaBlockTimestamp":       0,
-			"durangoBlockTimestamp":       0,
-			"etnaTimestamp":               0,
+			"banffBlockTimestamp":             0,
+			"cortinaBlockTimestamp":           0,
+			"durangoBlockTimestamp":           0,
+			"etnaTimestamp":                   0,
 		},
 		"nonce":      "0x0",
 		"timestamp":  "0x0",

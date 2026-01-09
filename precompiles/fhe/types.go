@@ -22,12 +22,12 @@ import (
 // Precompile addresses for FHE operations
 const (
 	// Arithmetic operations
-	FHEAddAddress      = 0x0080
-	FHESubAddress      = 0x0081
-	FHEMulAddress      = 0x0082
-	FHEDivAddress      = 0x0083
-	FHERemAddress      = 0x0084
-	FHENegAddress      = 0x0085
+	FHEAddAddress = 0x0080
+	FHESubAddress = 0x0081
+	FHEMulAddress = 0x0082
+	FHEDivAddress = 0x0083
+	FHERemAddress = 0x0084
+	FHENegAddress = 0x0085
 
 	// Comparison operations
 	FHELeAddress = 0x0086
@@ -218,15 +218,15 @@ var GasCosts = map[uint64]uint64{
 
 // Errors
 var (
-	ErrInvalidInput           = errors.New("fhe: invalid input")
-	ErrInvalidHandle          = errors.New("fhe: invalid ciphertext handle")
-	ErrHandleNotFound         = errors.New("fhe: ciphertext handle not found")
-	ErrTypeMismatch           = errors.New("fhe: operand type mismatch")
-	ErrInsufficientLevels     = errors.New("fhe: insufficient multiplicative levels")
-	ErrUnauthorized           = errors.New("fhe: unauthorized access to ciphertext")
-	ErrDecryptionFailed       = errors.New("fhe: threshold decryption failed")
-	ErrOperationNotSupported  = errors.New("fhe: operation not supported")
-	ErrInvalidCiphertext      = errors.New("fhe: invalid ciphertext data")
+	ErrInvalidInput          = errors.New("fhe: invalid input")
+	ErrInvalidHandle         = errors.New("fhe: invalid ciphertext handle")
+	ErrHandleNotFound        = errors.New("fhe: ciphertext handle not found")
+	ErrTypeMismatch          = errors.New("fhe: operand type mismatch")
+	ErrInsufficientLevels    = errors.New("fhe: insufficient multiplicative levels")
+	ErrUnauthorized          = errors.New("fhe: unauthorized access to ciphertext")
+	ErrDecryptionFailed      = errors.New("fhe: threshold decryption failed")
+	ErrOperationNotSupported = errors.New("fhe: operation not supported")
+	ErrInvalidCiphertext     = errors.New("fhe: invalid ciphertext data")
 )
 
 // ParseHandle extracts a 32-byte handle from input bytes at given offset

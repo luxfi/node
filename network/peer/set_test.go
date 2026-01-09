@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/vm/utils"
 )
 
 func TestSet(t *testing.T) {

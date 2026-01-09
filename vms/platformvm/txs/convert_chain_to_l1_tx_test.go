@@ -12,21 +12,20 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/utils"
 
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
 )
 
 var (
@@ -89,8 +88,8 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 			0x11, 0x22, 0x33, 0x44,
-	})
-)
+		})
+	)
 
 	tests := []struct {
 		name          string
@@ -116,7 +115,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 									ID: luxAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
-									Amt: units.MilliLux,
+									Amt: constants.MilliLux,
 									Input: secp256k1fx.Input{
 										SigIndices: []uint32{5},
 									},
@@ -128,8 +127,8 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 				},
 				Chain:          subnetID,
 				ManagerChainID: managerChainID,
-				Address:    managerAddress,
-				Validators: []*ConvertChainToL1Validator{},
+				Address:        managerAddress,
+				Validators:     []*ConvertChainToL1Validator{},
 				ChainAuth: &secp256k1fx.Input{
 					SigIndices: []uint32{3},
 				},
@@ -253,7 +252,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 									ID: luxAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
-									Amt: units.Lux,
+									Amt: constants.Lux,
 									Input: secp256k1fx.Input{
 										SigIndices: []uint32{2, 5},
 									},
@@ -298,12 +297,12 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 				},
 				Chain:          subnetID,
 				ManagerChainID: managerChainID,
-				Address: managerAddress,
+				Address:        managerAddress,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:  nodeID[:],
 						Weight:  0x0102030405060708,
-						Balance: units.Lux,
+						Balance: constants.Lux,
 						Signer:  *pop,
 						RemainingBalanceOwner: message.PChainOwner{
 							Threshold: 1,
@@ -551,7 +550,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 			txJSON, err := json.MarshalIndent(test.tx, "", "\t")
 			require.NoError(err)
 			require.JSONEq(string(test.expectedJSON), string(txJSON))
-	})
+		})
 	}
 }
 
@@ -569,7 +568,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				BlockchainID: ctx.ChainID,
 			},
 		}
-		validNetID   = ids.GenerateTestID()
+		validNetID      = ids.GenerateTestID()
 		invalidAddress  = make(types.JSONByteSlice, MaxChainAddressLength+1)
 		validValidators = []*ConvertChainToL1Validator{
 			{
@@ -605,10 +604,10 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				BaseTx: BaseTx{
 					SyntacticallyVerified: true,
 				},
-				Chain:     constants.PrimaryNetworkID,
+				Chain:      constants.PrimaryNetworkID,
 				Address:    invalidAddress,
 				Validators: nil,
-				ChainAuth: invalidNetAuth,
+				ChainAuth:  invalidNetAuth,
 			},
 			expectedErr: nil,
 		},
@@ -616,9 +615,9 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetID",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:     constants.PrimaryNetworkID,
+				Chain:      constants.PrimaryNetworkID,
 				Validators: validValidators,
-				ChainAuth: validNetAuth,
+				ChainAuth:  validNetAuth,
 			},
 			expectedErr: ErrConvertPermissionlessChain,
 		},
@@ -626,10 +625,10 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid address",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:     validNetID,
+				Chain:      validNetID,
 				Address:    invalidAddress,
 				Validators: validValidators,
-				ChainAuth: validNetAuth,
+				ChainAuth:  validNetAuth,
 			},
 			expectedErr: ErrAddressTooLong,
 		},
@@ -637,9 +636,9 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid number of validators",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:     validNetID,
+				Chain:      validNetID,
 				Validators: nil,
-				ChainAuth: validNetAuth,
+				ChainAuth:  validNetAuth,
 			},
 			expectedErr: ErrConvertMustIncludeValidators,
 		},
@@ -647,7 +646,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator order",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: []byte{
@@ -672,7 +671,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator weight",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -690,7 +689,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator nodeID length",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen + 1),
@@ -708,7 +707,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator nodeID",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                ids.EmptyNodeID[:],
@@ -726,7 +725,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator pop",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -744,7 +743,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator remaining balance owner",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: utils.RandomBytes(ids.NodeIDLen),
@@ -764,7 +763,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator deactivation owner",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain: validNetID,
+				Chain:  validNetID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -784,9 +783,9 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid BaseTx",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     BaseTx{},
-				Chain:     validNetID,
+				Chain:      validNetID,
 				Validators: validValidators,
-				ChainAuth: validNetAuth,
+				ChainAuth:  validNetAuth,
 			},
 			expectedErr: lux.ErrWrongNetworkID,
 		},
@@ -794,9 +793,9 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:     validNetID,
+				Chain:      validNetID,
 				Validators: validValidators,
-				ChainAuth: invalidNetAuth,
+				ChainAuth:  invalidNetAuth,
 			},
 			expectedErr: secp256k1fx.ErrInputIndicesNotSortedUnique,
 		},
@@ -804,9 +803,9 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:     validNetID,
+				Chain:      validNetID,
 				Validators: validValidators,
-				ChainAuth: validNetAuth,
+				ChainAuth:  validNetAuth,
 			},
 			expectedErr: nil,
 		},
@@ -822,6 +821,6 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(test.tx.SyntacticallyVerified)
-	})
+		})
 	}
 }

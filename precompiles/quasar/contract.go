@@ -19,8 +19,8 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/luxfi/node/consensus/quasar"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/quasar"
 )
 
 var (
@@ -36,11 +36,11 @@ var (
 
 // Gas costs for precompile operations
 const (
-	GetQuasarStateGas     uint64 = 2_000  // Read-only state query
-	GetValidatorInfoGas   uint64 = 5_000  // Validator lookup + key retrieval
-	GetConsensusMetricsGas uint64 = 3_000 // Metrics aggregation
-	GetFinalityGas        uint64 = 10_000 // Block finality proof retrieval
-	GetRingtailStatsGas   uint64 = 2_000  // Ringtail state query
+	GetQuasarStateGas      uint64 = 2_000  // Read-only state query
+	GetValidatorInfoGas    uint64 = 5_000  // Validator lookup + key retrieval
+	GetConsensusMetricsGas uint64 = 3_000  // Metrics aggregation
+	GetFinalityGas         uint64 = 10_000 // Block finality proof retrieval
+	GetRingtailStatsGas    uint64 = 2_000  // Ringtail state query
 )
 
 // Function selectors (first 4 bytes of keccak256 hash)

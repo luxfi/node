@@ -17,28 +17,27 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/tracker"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validator/uptime"
-	"github.com/luxfi/metric"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/bloom"
+	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/vm/utils/ips"
 	"github.com/luxfi/warp"
 )
 
@@ -98,12 +97,12 @@ var (
 		},
 		InboundMsgThrottlerConfig: throttling.InboundMsgThrottlerConfig{
 			MsgByteThrottlerConfig: throttling.MsgByteThrottlerConfig{
-				VdrAllocSize:        1 * units.GiB,
-				AtLargeAllocSize:    1 * units.GiB,
+				VdrAllocSize:        1 * constants.GiB,
+				AtLargeAllocSize:    1 * constants.GiB,
 				NodeMaxAtLargeBytes: constants.DefaultMaxMessageSize,
 			},
 			BandwidthThrottlerConfig: throttling.BandwidthThrottlerConfig{
-				RefillRate:   units.MiB,
+				RefillRate:   constants.MiB,
 				MaxBurstSize: constants.DefaultMaxMessageSize,
 			},
 			CPUThrottlerConfig: throttling.SystemThrottlerConfig{
@@ -115,8 +114,8 @@ var (
 			},
 		},
 		OutboundMsgThrottlerConfig: throttling.MsgByteThrottlerConfig{
-			VdrAllocSize:        1 * units.GiB,
-			AtLargeAllocSize:    1 * units.GiB,
+			VdrAllocSize:        1 * constants.GiB,
+			AtLargeAllocSize:    1 * constants.GiB,
 			NodeMaxAtLargeBytes: constants.DefaultMaxMessageSize,
 		},
 		MaxInboundConnsPerSec: 100,
@@ -361,24 +360,24 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []peer.InboundHandler) 
 
 func TestNewNetwork(t *testing.T) {
 	require := require.New(t)
-	
+
 	// Create context with timeout to prevent hanging
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	_, networks, eg := newFullyConnectedTestNetwork(t, []peer.InboundHandler{nil, nil, nil})
-	
+
 	// Start closing networks
 	for _, net := range networks {
 		net.StartClose()
 	}
-	
+
 	// Wait with context
 	done := make(chan error, 1)
 	go func() {
 		done <- eg.Wait()
 	}()
-	
+
 	select {
 	case err := <-done:
 		require.NoError(err)
@@ -402,7 +401,7 @@ func TestIngressConnCount(t *testing.T) {
 	// Complete the mesh by having node 2 also connect to node 1
 	// This creates the asymmetric ingress pattern: {0, 1, 2}
 	// - Node 0: receives from nodes 1,2 → ingress = 2
-	// - Node 1: receives from node 2 → ingress = 1  
+	// - Node 1: receives from node 2 → ingress = 1
 	// - Node 2: only makes outgoing → ingress = 0
 	node1IP := networks[1].config.MyIPPort.Get()
 	t.Logf("Network %s tracking peer %s at %s", nodeIDs[2], nodeIDs[1], node1IP)
@@ -864,8 +863,8 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			dialer,
 			&testHandler{
 				networkInboundHandler: nil,
-				ConnectedF:     nil,
-				DisconnectedF:  nil,
+				ConnectedF:            nil,
+				DisconnectedF:         nil,
 			},
 		)
 		require.NoError(err)
@@ -920,8 +919,8 @@ func TestGetAllPeers(t *testing.T) {
 		dialer,
 		&testHandler{
 			networkInboundHandler: nil,
-			ConnectedF:     nil,
-			DisconnectedF:  nil,
+			ConnectedF:            nil,
+			DisconnectedF:         nil,
 		},
 	)
 	require.NoError(err)
@@ -1052,12 +1051,12 @@ func TestSamplePeersWithZeroValidators(t *testing.T) {
 // This tests typical small network scenarios: 4/5, 5/5, 10/10 validators.
 func TestSamplePeersSmallValidatorSets(t *testing.T) {
 	testCases := []struct {
-		name           string
-		numNodes       int
+		name             string
+		numNodes         int
 		expectedMinPeers int // minimum peers we expect to sample (connected peers - 1 for self)
 	}{
-		{"4 validators", 4, 2},  // 4 nodes, expect at least 2 peers sampled
-		{"5 validators", 5, 3},  // 5 nodes, expect at least 3 peers sampled
+		{"4 validators", 4, 2}, // 4 nodes, expect at least 2 peers sampled
+		{"5 validators", 5, 3}, // 5 nodes, expect at least 3 peers sampled
 	}
 
 	for _, tc := range testCases {

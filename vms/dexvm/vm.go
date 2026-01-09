@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/api"
 	"github.com/luxfi/node/vms/dexvm/config"
@@ -28,6 +27,7 @@ import (
 	"github.com/luxfi/node/vms/dexvm/mev"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 	"github.com/luxfi/node/vms/dexvm/perpetuals"
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/luxfi/warp"
 )
 
@@ -107,11 +107,11 @@ type VM struct {
 	appSender warp.Sender
 
 	// DEX components (all operations on these are deterministic)
-	orderbooks      map[string]*orderbook.Orderbook      // symbol -> orderbook
-	liquidityMgr    *liquidity.Manager                   // AMM liquidity pools
-	perpetualsEng   *perpetuals.Engine                   // Perpetual futures engine
-	commitmentStore *mev.CommitmentStore                 // MEV protection commit-reveal
-	adlEngine       *perpetuals.AutoDeleveragingEngine   // Auto-deleveraging
+	orderbooks      map[string]*orderbook.Orderbook    // symbol -> orderbook
+	liquidityMgr    *liquidity.Manager                 // AMM liquidity pools
+	perpetualsEng   *perpetuals.Engine                 // Perpetual futures engine
+	commitmentStore *mev.CommitmentStore               // MEV protection commit-reveal
+	adlEngine       *perpetuals.AutoDeleveragingEngine // Auto-deleveraging
 
 	// Block state
 	currentBlockHeight uint64

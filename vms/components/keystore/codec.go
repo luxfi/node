@@ -1,15 +1,14 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package keystore
 
 import (
 	"errors"
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const CodecVersion = 0

@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	ErrNotInitialized     = errors.New("FHE service not initialized")
-	ErrInvalidHandle      = errors.New("invalid ciphertext handle")
-	ErrInvalidPermit      = errors.New("invalid permit")
-	ErrRequestInProgress  = errors.New("request already in progress")
-	ErrBatchTooLarge      = errors.New("batch size exceeds maximum")
-	ErrEpochNotReady      = errors.New("epoch not ready")
-	ErrUnauthorized       = errors.New("caller not authorized")
-	ErrAuthRequired       = errors.New("authentication required")
+	ErrNotInitialized    = errors.New("FHE service not initialized")
+	ErrInvalidHandle     = errors.New("invalid ciphertext handle")
+	ErrInvalidPermit     = errors.New("invalid permit")
+	ErrRequestInProgress = errors.New("request already in progress")
+	ErrBatchTooLarge     = errors.New("batch size exceeds maximum")
+	ErrEpochNotReady     = errors.New("epoch not ready")
+	ErrUnauthorized      = errors.New("caller not authorized")
+	ErrAuthRequired      = errors.New("authentication required")
 )
 
 // Authenticator verifies RPC caller identity
@@ -84,13 +84,13 @@ type GetPublicParamsArgs struct{}
 
 // GetPublicParamsReply contains FHE public parameters
 type GetPublicParamsReply struct {
-	Epoch       uint64 `json:"epoch"`
-	LogN        int    `json:"logN"`
-	LogQP       int    `json:"logQP"`  // Total bits for Q*P
-	LogScale    int    `json:"logScale"`
-	Threshold   int    `json:"threshold"`
-	PublicKey   string `json:"publicKey"`   // hex-encoded
-	ChainID     string `json:"chainId"`
+	Epoch     uint64 `json:"epoch"`
+	LogN      int    `json:"logN"`
+	LogQP     int    `json:"logQP"` // Total bits for Q*P
+	LogScale  int    `json:"logScale"`
+	Threshold int    `json:"threshold"`
+	PublicKey string `json:"publicKey"` // hex-encoded
+	ChainID   string `json:"chainId"`
 }
 
 // GetPublicParams returns the current FHE public parameters
@@ -98,15 +98,15 @@ func (s *FHEService) GetPublicParams(_ context.Context, _ *GetPublicParamsArgs, 
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	epoch := s.registry.GetCurrentEpoch()
 	epochInfo, err := s.registry.GetEpoch(epoch)
 	if err != nil {
 		return fmt.Errorf("failed to get epoch info: %w", err)
 	}
-	
+
 	config := DefaultThresholdConfig()
-	
+
 	reply.Epoch = epoch
 	reply.LogN = config.CKKSParams.LogN()
 	reply.LogQP = int(config.CKKSParams.LogQ() + config.CKKSParams.LogP())
@@ -114,7 +114,7 @@ func (s *FHEService) GetPublicParams(_ context.Context, _ *GetPublicParamsArgs, 
 	reply.Threshold = epochInfo.Threshold
 	reply.PublicKey = hex.EncodeToString(epochInfo.PublicKey)
 	reply.ChainID = s.chainID.String()
-	
+
 	return nil
 }
 
@@ -143,21 +143,21 @@ func (s *FHEService) GetCommittee(_ context.Context, args *GetCommitteeArgs, rep
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	epoch := s.registry.GetCurrentEpoch()
 	if args.Epoch != nil {
 		epoch = *args.Epoch
 	}
-	
+
 	epochInfo, err := s.registry.GetEpoch(epoch)
 	if err != nil {
 		return fmt.Errorf("failed to get epoch info: %w", err)
 	}
-	
+
 	reply.Epoch = epoch
 	reply.Threshold = epochInfo.Threshold
 	reply.Members = make([]CommitteeMemberInfo, len(epochInfo.Committee))
-	
+
 	for i, member := range epochInfo.Committee {
 		reply.Members[i] = CommitteeMemberInfo{
 			NodeID:    member.NodeID.String(),
@@ -166,7 +166,7 @@ func (s *FHEService) GetCommittee(_ context.Context, args *GetCommitteeArgs, rep
 			Index:     member.Index,
 		}
 	}
-	
+
 	return nil
 }
 
@@ -176,12 +176,12 @@ func (s *FHEService) GetCommittee(_ context.Context, args *GetCommitteeArgs, rep
 
 // RegisterCiphertextArgs contains the ciphertext to register
 type RegisterCiphertextArgs struct {
-	Handle   string `json:"handle"`   // hex-encoded 32 bytes
-	Owner    string `json:"owner"`    // hex-encoded 20 bytes
-	Type     uint8  `json:"type"`
-	Level    int    `json:"level"`
-	Size     uint32 `json:"size"`
-	ChainID  string `json:"chainId,omitempty"`
+	Handle  string `json:"handle"` // hex-encoded 32 bytes
+	Owner   string `json:"owner"`  // hex-encoded 20 bytes
+	Type    uint8  `json:"type"`
+	Level   int    `json:"level"`
+	Size    uint32 `json:"size"`
+	ChainID string `json:"chainId,omitempty"`
 }
 
 // RegisterCiphertextReply contains the registration result
@@ -196,17 +196,17 @@ func (s *FHEService) RegisterCiphertext(ctx context.Context, args *RegisterCiphe
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	handleBytes, err := hex.DecodeString(args.Handle)
 	if err != nil || len(handleBytes) != 32 {
 		return ErrInvalidHandle
 	}
-	
+
 	ownerBytes, err := hex.DecodeString(args.Owner)
 	if err != nil || len(ownerBytes) != 20 {
 		return fmt.Errorf("invalid owner address")
 	}
-	
+
 	var handle [32]byte
 	var owner [20]byte
 	copy(handle[:], handleBytes)
@@ -222,7 +222,7 @@ func (s *FHEService) RegisterCiphertext(ctx context.Context, args *RegisterCiphe
 			return fmt.Errorf("%w: caller is not the ciphertext owner", ErrUnauthorized)
 		}
 	}
-	
+
 	chainID := s.chainID
 	if args.ChainID != "" {
 		chainID, err = ids.FromString(args.ChainID)
@@ -230,7 +230,7 @@ func (s *FHEService) RegisterCiphertext(ctx context.Context, args *RegisterCiphe
 			return fmt.Errorf("invalid chain ID: %w", err)
 		}
 	}
-	
+
 	meta := &CiphertextMeta{
 		Handle:  handle,
 		Owner:   owner,
@@ -239,15 +239,15 @@ func (s *FHEService) RegisterCiphertext(ctx context.Context, args *RegisterCiphe
 		Size:    args.Size,
 		ChainID: chainID,
 	}
-	
+
 	if err := s.registry.RegisterCiphertext(meta); err != nil {
 		return fmt.Errorf("failed to register ciphertext: %w", err)
 	}
-	
+
 	reply.Handle = args.Handle
 	reply.Epoch = meta.Epoch
 	reply.RegisteredAt = meta.RegisteredAt
-	
+
 	return nil
 }
 
@@ -273,20 +273,20 @@ func (s *FHEService) GetCiphertextMeta(_ context.Context, args *GetCiphertextMet
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	handleBytes, err := hex.DecodeString(args.Handle)
 	if err != nil || len(handleBytes) != 32 {
 		return ErrInvalidHandle
 	}
-	
+
 	var handle [32]byte
 	copy(handle[:], handleBytes)
-	
+
 	meta, err := s.registry.GetCiphertextMeta(handle)
 	if err != nil {
 		return err
 	}
-	
+
 	reply.Handle = hex.EncodeToString(meta.Handle[:])
 	reply.Owner = hex.EncodeToString(meta.Owner[:])
 	reply.Type = meta.Type
@@ -295,7 +295,7 @@ func (s *FHEService) GetCiphertextMeta(_ context.Context, args *GetCiphertextMet
 	reply.RegisteredAt = meta.RegisteredAt
 	reply.Size = meta.Size
 	reply.ChainID = meta.ChainID.String()
-	
+
 	return nil
 }
 
@@ -326,28 +326,28 @@ func (s *FHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs,
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	// Parse inputs
 	handleBytes, err := hex.DecodeString(args.CiphertextHandle)
 	if err != nil || len(handleBytes) != 32 {
 		return ErrInvalidHandle
 	}
-	
+
 	permitBytes, err := hex.DecodeString(args.PermitID)
 	if err != nil || len(permitBytes) != 32 {
 		return ErrInvalidPermit
 	}
-	
+
 	callbackBytes, err := hex.DecodeString(args.Callback)
 	if err != nil || len(callbackBytes) != 20 {
 		return fmt.Errorf("invalid callback address")
 	}
-	
+
 	selectorBytes, err := hex.DecodeString(args.CallbackSelector)
 	if err != nil || len(selectorBytes) != 4 {
 		return fmt.Errorf("invalid callback selector")
 	}
-	
+
 	var handle, permit [32]byte
 	var callback [20]byte
 	var selector [4]byte
@@ -355,25 +355,25 @@ func (s *FHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs,
 	copy(permit[:], permitBytes)
 	copy(callback[:], callbackBytes)
 	copy(selector[:], selectorBytes)
-	
+
 	// Verify ciphertext exists
 	_, err = s.registry.GetCiphertextMeta(handle)
 	if err != nil {
 		return fmt.Errorf("ciphertext not found: %w", err)
 	}
-	
+
 	// Verify permit
 	if err := s.registry.VerifyPermit(permit, handle, callback, PermitOpDecrypt); err != nil {
 		return fmt.Errorf("permit verification failed: %w", err)
 	}
-	
+
 	// Generate request ID
 	epoch := s.registry.GetCurrentEpoch()
 	requestData := append(handle[:], permit[:]...)
 	requestData = append(requestData, callback[:]...)
 	requestData = append(requestData, []byte(fmt.Sprintf("%d%d", epoch, time.Now().UnixNano()))...)
 	requestID := sha256.Sum256(requestData)
-	
+
 	// Parse source chain
 	sourceChain := s.chainID
 	if args.SourceChain != "" {
@@ -382,13 +382,13 @@ func (s *FHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs,
 			return fmt.Errorf("invalid source chain: %w", err)
 		}
 	}
-	
+
 	// Set default expiry (1 hour)
 	expiry := args.Expiry
 	if expiry == 0 {
 		expiry = time.Now().Add(time.Hour).Unix()
 	}
-	
+
 	// Create decrypt request
 	req := &DecryptRequest{
 		RequestID:        requestID,
@@ -399,20 +399,20 @@ func (s *FHEService) RequestDecrypt(_ context.Context, args *RequestDecryptArgs,
 		SourceChain:      sourceChain,
 		Expiry:           expiry,
 	}
-	
+
 	if err := s.registry.CreateDecryptRequest(req); err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	reply.RequestID = hex.EncodeToString(requestID[:])
 	reply.Epoch = epoch
 	reply.Status = RequestPending.String()
-	
+
 	s.logger.Info("Decrypt request created",
 		log.String("requestID", reply.RequestID),
 		log.Uint64("epoch", epoch),
 	)
-	
+
 	return nil
 }
 
@@ -437,30 +437,30 @@ func (s *FHEService) GetDecryptResult(_ context.Context, args *GetDecryptResultA
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	requestBytes, err := hex.DecodeString(args.RequestID)
 	if err != nil || len(requestBytes) != 32 {
 		return fmt.Errorf("invalid request ID")
 	}
-	
+
 	var requestID [32]byte
 	copy(requestID[:], requestBytes)
-	
+
 	req, err := s.registry.GetDecryptRequest(requestID)
 	if err != nil {
 		return err
 	}
-	
+
 	reply.RequestID = args.RequestID
 	reply.Status = req.Status.String()
 	reply.CreatedAt = req.CreatedAt
 	reply.CompletedAt = req.CompletedAt
 	reply.Error = req.Error
-	
+
 	if req.Status == RequestCompleted {
 		reply.ResultHandle = hex.EncodeToString(req.ResultHandle[:])
 	}
-	
+
 	return nil
 }
 
@@ -480,10 +480,10 @@ func (s *FHEService) RequestDecryptBatch(ctx context.Context, args *RequestDecry
 	if len(args.Requests) > MaxBatchSize {
 		return ErrBatchTooLarge
 	}
-	
+
 	reply.RequestIDs = make([]string, len(args.Requests))
 	reply.Epoch = s.registry.GetCurrentEpoch()
-	
+
 	for i, req := range args.Requests {
 		var singleReply RequestDecryptReply
 		if err := s.RequestDecrypt(ctx, &req, &singleReply); err != nil {
@@ -491,7 +491,7 @@ func (s *FHEService) RequestDecryptBatch(ctx context.Context, args *RequestDecry
 		}
 		reply.RequestIDs[i] = singleReply.RequestID
 	}
-	
+
 	return nil
 }
 
@@ -511,7 +511,7 @@ func (s *FHEService) GetDecryptBatchResult(ctx context.Context, args *GetDecrypt
 		return ErrBatchTooLarge
 	}
 	reply.Results = make([]GetDecryptResultReply, len(args.RequestIDs))
-	
+
 	for i, reqID := range args.RequestIDs {
 		var singleReply GetDecryptResultReply
 		if err := s.GetDecryptResult(ctx, &GetDecryptResultArgs{RequestID: reqID}, &singleReply); err != nil {
@@ -520,7 +520,7 @@ func (s *FHEService) GetDecryptBatchResult(ctx context.Context, args *GetDecrypt
 		}
 		reply.Results[i] = singleReply
 	}
-	
+
 	return nil
 }
 
@@ -550,34 +550,34 @@ func (s *FHEService) GetRequestReceipt(_ context.Context, args *GetRequestReceip
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	requestBytes, err := hex.DecodeString(args.RequestID)
 	if err != nil || len(requestBytes) != 32 {
 		return fmt.Errorf("invalid request ID")
 	}
-	
+
 	var requestID [32]byte
 	copy(requestID[:], requestBytes)
-	
+
 	req, err := s.registry.GetDecryptRequest(requestID)
 	if err != nil {
 		return err
 	}
-	
+
 	reply.RequestID = args.RequestID
 	reply.Status = req.Status.String()
 	reply.Epoch = req.Epoch
 	reply.SourceChain = req.SourceChain.String()
 	reply.CreatedAt = req.CreatedAt
 	reply.ProcessedAt = req.CompletedAt
-	
+
 	// WarpMessageID and TxID would be populated by the actual processing
 	// For now, derive a pseudo ID from the request
 	if req.Status == RequestCompleted || req.Status == RequestFailed {
 		warpID := sha256.Sum256(append([]byte("warp:"), requestID[:]...))
 		reply.WarpMessageID = hex.EncodeToString(warpID[:])
 	}
-	
+
 	return nil
 }
 
@@ -587,11 +587,11 @@ func (s *FHEService) GetRequestReceipt(_ context.Context, args *GetRequestReceip
 
 // CreatePermitArgs contains permit creation parameters
 type CreatePermitArgs struct {
-	Handle      string `json:"handle"`      // hex-encoded 32 bytes
-	Grantee     string `json:"grantee"`     // hex-encoded 20 bytes
-	Grantor     string `json:"grantor"`     // hex-encoded 20 bytes
-	Operations  uint32 `json:"operations"`  // bitmask
-	Expiry      int64  `json:"expiry"`      // Unix timestamp
+	Handle      string `json:"handle"`                // hex-encoded 32 bytes
+	Grantee     string `json:"grantee"`               // hex-encoded 20 bytes
+	Grantor     string `json:"grantor"`               // hex-encoded 20 bytes
+	Operations  uint32 `json:"operations"`            // bitmask
+	Expiry      int64  `json:"expiry"`                // Unix timestamp
 	Attestation string `json:"attestation,omitempty"` // hex-encoded
 	ChainID     string `json:"chainId,omitempty"`
 }
@@ -607,22 +607,22 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	handleBytes, err := hex.DecodeString(args.Handle)
 	if err != nil || len(handleBytes) != 32 {
 		return ErrInvalidHandle
 	}
-	
+
 	granteeBytes, err := hex.DecodeString(args.Grantee)
 	if err != nil || len(granteeBytes) != 20 {
 		return fmt.Errorf("invalid grantee address")
 	}
-	
+
 	grantorBytes, err := hex.DecodeString(args.Grantor)
 	if err != nil || len(grantorBytes) != 20 {
 		return fmt.Errorf("invalid grantor address")
 	}
-	
+
 	var handle [32]byte
 	var grantee, grantor [20]byte
 	copy(handle[:], handleBytes)
@@ -639,7 +639,7 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 			return fmt.Errorf("%w: caller not authorized to create permits for grantor", ErrUnauthorized)
 		}
 	}
-	
+
 	// Verify grantor owns the ciphertext
 	meta, err := s.registry.GetCiphertextMeta(handle)
 	if err != nil {
@@ -648,13 +648,13 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 	if meta.Owner != grantor {
 		return fmt.Errorf("grantor is not the ciphertext owner")
 	}
-	
+
 	// Generate permit ID
 	permitData := append(handle[:], grantee[:]...)
 	permitData = append(permitData, grantor[:]...)
 	permitData = append(permitData, []byte(fmt.Sprintf("%d%d", args.Operations, time.Now().UnixNano()))...)
 	permitID := sha256.Sum256(permitData)
-	
+
 	chainID := s.chainID
 	if args.ChainID != "" {
 		chainID, err = ids.FromString(args.ChainID)
@@ -662,7 +662,7 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 			return fmt.Errorf("invalid chain ID: %w", err)
 		}
 	}
-	
+
 	var attestation []byte
 	if args.Attestation != "" {
 		attestation, err = hex.DecodeString(args.Attestation)
@@ -670,7 +670,7 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 			return fmt.Errorf("invalid attestation: %w", err)
 		}
 	}
-	
+
 	permit := &Permit{
 		PermitID:    permitID,
 		Handle:      handle,
@@ -681,14 +681,14 @@ func (s *FHEService) CreatePermit(ctx context.Context, args *CreatePermitArgs, r
 		Attestation: attestation,
 		ChainID:     chainID,
 	}
-	
+
 	if err := s.registry.CreatePermit(permit); err != nil {
 		return fmt.Errorf("failed to create permit: %w", err)
 	}
-	
+
 	reply.PermitID = hex.EncodeToString(permitID[:])
 	reply.CreatedAt = permit.CreatedAt
-	
+
 	return nil
 }
 
@@ -702,9 +702,9 @@ type VerifyPermitArgs struct {
 
 // VerifyPermitReply contains verification result
 type VerifyPermitReply struct {
-	Valid   bool   `json:"valid"`
-	Error   string `json:"error,omitempty"`
-	Expiry  int64  `json:"expiry,omitempty"`
+	Valid  bool   `json:"valid"`
+	Error  string `json:"error,omitempty"`
+	Expiry int64  `json:"expiry,omitempty"`
 }
 
 // VerifyPermit verifies a permit is valid for an operation
@@ -712,47 +712,47 @@ func (s *FHEService) VerifyPermit(_ context.Context, args *VerifyPermitArgs, rep
 	if s.registry == nil {
 		return ErrNotInitialized
 	}
-	
+
 	permitBytes, err := hex.DecodeString(args.PermitID)
 	if err != nil || len(permitBytes) != 32 {
 		reply.Valid = false
 		reply.Error = "invalid permit ID format"
 		return nil
 	}
-	
+
 	handleBytes, err := hex.DecodeString(args.Handle)
 	if err != nil || len(handleBytes) != 32 {
 		reply.Valid = false
 		reply.Error = "invalid handle format"
 		return nil
 	}
-	
+
 	granteeBytes, err := hex.DecodeString(args.Grantee)
 	if err != nil || len(granteeBytes) != 20 {
 		reply.Valid = false
 		reply.Error = "invalid grantee format"
 		return nil
 	}
-	
+
 	var permitID, handle [32]byte
 	var grantee [20]byte
 	copy(permitID[:], permitBytes)
 	copy(handle[:], handleBytes)
 	copy(grantee[:], granteeBytes)
-	
+
 	err = s.registry.VerifyPermit(permitID, handle, grantee, args.Operation)
 	if err != nil {
 		reply.Valid = false
 		reply.Error = err.Error()
 		return nil
 	}
-	
+
 	// Get expiry for valid permits
 	permit, _ := s.registry.GetPermit(permitID)
 	if permit != nil {
 		reply.Expiry = permit.Expiry
 	}
-	
+
 	reply.Valid = true
 	return nil
 }

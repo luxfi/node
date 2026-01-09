@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"

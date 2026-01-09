@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package qvm
 
 import (
@@ -16,8 +15,8 @@ import (
 
 var (
 	errBlockVerificationFailed = errors.New("block verification failed")
-	errInvalidBlockHeight     = errors.New("invalid block height")
-	errInvalidParentID       = errors.New("invalid parent ID")
+	errInvalidBlockHeight      = errors.New("invalid block height")
+	errInvalidParentID         = errors.New("invalid parent ID")
 )
 
 // Block represents a QVM block with quantum features

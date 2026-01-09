@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {
@@ -28,15 +28,14 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   ids.GenerateTestID(),
+
+		ChainID: ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		
-		ChainID:    testChainID,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
-		NodeID:     nodeID,
+		NodeID:   nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
@@ -165,15 +164,14 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   ids.GenerateTestID(),
+
+		ChainID: ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		
-		ChainID:    testChainID,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
-		NodeID:     nodeID,
+		NodeID:   nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 

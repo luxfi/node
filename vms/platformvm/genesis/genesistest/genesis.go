@@ -9,27 +9,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 
 	platformvmgenesis "github.com/luxfi/node/vms/platformvm/genesis"
 )
 
 const (
 	DefaultValidatorDuration = 28 * 24 * time.Hour
-	DefaultValidatorWeight   = 5 * units.MilliLux
-	DefaultInitialBalance    = 110 * units.MegaLux // Increased to 110M LUX to cover all executor test fees (L1 validators, conversions, etc.)
+	DefaultValidatorWeight   = 5 * constants.MilliLux
+	DefaultInitialBalance    = 110 * constants.MegaLux // Increased to 110M LUX to cover all executor test fees (L1 validators, conversions, etc.)
 
 	ValidatorDelegationShares = reward.PercentDenominator
 	XChainName                = "x"
-	InitialSupply             = 360 * units.MegaLux
+	InitialSupply             = 360 * constants.MegaLux
 )
 
 var (
@@ -160,10 +159,10 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},
-		ChainID:      constants.PrimaryNetworkID, // Changed from NetID to NetID in regenesis
-		BlockchainName:  XChainName,
-		VMID:       constants.XVMID, // Changed from AVMID to XVMID in Lux
-		ChainAuth: &secp256k1fx.Input{},
+		ChainID:        constants.PrimaryNetworkID, // Changed from NetID to NetID in regenesis
+		BlockchainName: XChainName,
+		VMID:           constants.XVMID, // Changed from AVMID to XVMID in Lux
+		ChainAuth:      &secp256k1fx.Input{},
 	}
 	chainTx := &txs.Tx{Unsigned: chain}
 	require.NoError(chainTx.Initialize(txs.GenesisCodec))

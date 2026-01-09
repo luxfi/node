@@ -68,10 +68,10 @@ func (o *SimplePriceOracle) GetPrice(asset string) (*big.Int, error) {
 
 // Engine is the core lending protocol engine.
 type Engine struct {
-	pools        map[string]*LendingPool           // Asset -> Pool
-	accounts     map[ids.ShortID]*UserAccount      // User -> Account
-	liquidations []*LiquidationEvent               // Liquidation history
-	oracle       PriceOracle                       // Price oracle
+	pools        map[string]*LendingPool      // Asset -> Pool
+	accounts     map[ids.ShortID]*UserAccount // User -> Account
+	liquidations []*LiquidationEvent          // Liquidation history
+	oracle       PriceOracle                  // Price oracle
 	mu           sync.RWMutex
 }
 

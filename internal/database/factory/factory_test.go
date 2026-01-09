@@ -108,7 +108,7 @@ func TestMeterDBWrappingWithReadOnly(t *testing.T) {
 	// Open as read-only
 	// Create a new gatherer for read-only database to avoid namespace conflicts
 	gathererReadOnly := metrics.NewMultiGatherer()
-	
+
 	dbReadOnly, err := New(
 		badgerdb.Name,
 		dbPath,

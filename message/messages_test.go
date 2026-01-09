@@ -4,8 +4,8 @@
 package message
 
 import (
-	"github.com/luxfi/metric"
 	"bytes"
+	"github.com/luxfi/metric"
 	"net"
 	"testing"
 	"time"
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 func TestMessage(t *testing.T) {
@@ -95,14 +95,14 @@ func TestMessage(t *testing.T) {
 			msg: &p2p.Message{
 				Message: &p2p.Message_Handshake{
 					Handshake: &p2p.Handshake{
-						NetworkId:      uint32(1337),
-						MyTime:         uint64(nowUnix),
-						IpAddr:         []byte(net.IPv6zero),
-						IpPort:         9631,
-						IpSigningTime:  uint64(nowUnix),
-						IpNodeIdSig:    []byte{'y', 'e', 'e', 't'},
-						TrackedNets: [][]byte{testID[:]},
-						IpBlsSig:       []byte{'y', 'e', 'e', 't', '2'},
+						NetworkId:     uint32(1337),
+						MyTime:        uint64(nowUnix),
+						IpAddr:        []byte(net.IPv6zero),
+						IpPort:        9631,
+						IpSigningTime: uint64(nowUnix),
+						IpNodeIdSig:   []byte{'y', 'e', 'e', 't'},
+						TrackedNets:   [][]byte{testID[:]},
+						IpBlsSig:      []byte{'y', 'e', 'e', 't', '2'},
 					},
 				},
 			},

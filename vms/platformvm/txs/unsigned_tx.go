@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 // ContextInitializable defines the interface for initializing context

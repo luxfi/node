@@ -94,21 +94,21 @@ func (s OrderStatus) String() string {
 
 // Order represents a trading order in the orderbook.
 type Order struct {
-	ID            ids.ID      `json:"id"`
-	Owner         ids.ShortID `json:"owner"`
-	Symbol        string      `json:"symbol"`
-	Side          Side        `json:"side"`
-	Type          OrderType   `json:"type"`
-	Price         uint64      `json:"price"`         // Price in quote asset (scaled by 1e18)
-	Quantity      uint64      `json:"quantity"`      // Quantity in base asset (scaled by 1e18)
-	FilledQty     uint64      `json:"filledQty"`     // Already filled quantity
-	StopPrice     uint64      `json:"stopPrice"`     // For stop orders
-	Status        OrderStatus `json:"status"`
-	CreatedAt     int64       `json:"createdAt"`     // Unix timestamp in nanoseconds
-	ExpiresAt     int64       `json:"expiresAt"`     // Unix timestamp in nanoseconds
-	PostOnly      bool        `json:"postOnly"`      // Only add liquidity
-	ReduceOnly    bool        `json:"reduceOnly"`    // Only reduce position
-	TimeInForce   string      `json:"timeInForce"`   // GTC, IOC, FOK
+	ID          ids.ID      `json:"id"`
+	Owner       ids.ShortID `json:"owner"`
+	Symbol      string      `json:"symbol"`
+	Side        Side        `json:"side"`
+	Type        OrderType   `json:"type"`
+	Price       uint64      `json:"price"`     // Price in quote asset (scaled by 1e18)
+	Quantity    uint64      `json:"quantity"`  // Quantity in base asset (scaled by 1e18)
+	FilledQty   uint64      `json:"filledQty"` // Already filled quantity
+	StopPrice   uint64      `json:"stopPrice"` // For stop orders
+	Status      OrderStatus `json:"status"`
+	CreatedAt   int64       `json:"createdAt"`   // Unix timestamp in nanoseconds
+	ExpiresAt   int64       `json:"expiresAt"`   // Unix timestamp in nanoseconds
+	PostOnly    bool        `json:"postOnly"`    // Only add liquidity
+	ReduceOnly  bool        `json:"reduceOnly"`  // Only reduce position
+	TimeInForce string      `json:"timeInForce"` // GTC, IOC, FOK
 }
 
 // RemainingQuantity returns the unfilled quantity.
@@ -265,16 +265,16 @@ func (ob *Orderbook) matchOrder(order *Order) []*Trade {
 
 			// Create trade
 			trade := &Trade{
-				ID:          ids.GenerateTestID(), // In production, use proper ID generation
-				Symbol:      ob.symbol,
-				MakerOrder:  makerOrder.ID,
-				TakerOrder:  order.ID,
-				Maker:       makerOrder.Owner,
-				Taker:       order.Owner,
-				Side:        order.Side,
-				Price:       price,
-				Quantity:    fillQty,
-				Timestamp:   time.Now().UnixNano(),
+				ID:         ids.GenerateTestID(), // In production, use proper ID generation
+				Symbol:     ob.symbol,
+				MakerOrder: makerOrder.ID,
+				TakerOrder: order.ID,
+				Maker:      makerOrder.Owner,
+				Taker:      order.Owner,
+				Side:       order.Side,
+				Price:      price,
+				Quantity:   fillQty,
+				Timestamp:  time.Now().UnixNano(),
 			}
 			trades = append(trades, trade)
 

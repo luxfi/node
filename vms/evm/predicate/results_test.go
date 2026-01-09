@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/codec"
 )
 
 // Valid result parsing is tested by [TestBlockResultsBytes]

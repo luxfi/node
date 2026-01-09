@@ -17,8 +17,8 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/block"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 )
 
 // Ensure that a byzantine node issuing an invalid PreForkBlock (Y) when the

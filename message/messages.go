@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/vm/utils/timer/mockable"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package qvm
 
 import (
@@ -86,14 +85,14 @@ func (tx *BaseTransaction) Execute() error {
 
 // TransactionPool manages pending transactions
 type TransactionPool struct {
-	pending    map[ids.ID]Transaction
-	queue      []Transaction
-	maxSize    int
-	batchSize  int
-	log        log.Logger
-	mu         sync.RWMutex
-	closed     bool
-	closeChan  chan struct{}
+	pending   map[ids.ID]Transaction
+	queue     []Transaction
+	maxSize   int
+	batchSize int
+	log       log.Logger
+	mu        sync.RWMutex
+	closed    bool
+	closeChan chan struct{}
 }
 
 // NewTransactionPool creates a new transaction pool

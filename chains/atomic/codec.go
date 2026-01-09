@@ -6,8 +6,8 @@ package atomic
 import (
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const CodecVersion = 0

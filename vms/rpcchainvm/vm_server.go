@@ -16,26 +16,26 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/corruptabledb"
-	"github.com/luxfi/node/internal/database/rpcdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/internal/ids/galiasreader"
-	"github.com/luxfi/log"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/warp"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/internal/database/rpcdb"
+	"github.com/luxfi/node/internal/ids/galiasreader"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/warp"
 
 	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -364,12 +364,12 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	type vmWithHandlers interface {
 		CreateHandlers(context.Context) (map[string]http.Handler, error)
 	}
-	
+
 	handlerVM, ok := vm.vm.(vmWithHandlers)
 	if !ok {
 		return &vmpb.CreateHandlersResponse{}, nil
 	}
-	
+
 	handlers, err := handlerVM.CreateHandlers(ctx)
 	if err != nil {
 		return nil, err
@@ -399,12 +399,12 @@ func (vm *VMServer) NewHTTPHandler(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	type vmWithHTTPHandler interface {
 		NewHTTPHandler(context.Context) (interface{}, error)
 	}
-	
+
 	handlerVM, ok := vm.vm.(vmWithHTTPHandler)
 	if !ok {
 		return &vmpb.NewHTTPHandlerResponse{}, nil
 	}
-	
+
 	handlerIface, err := handlerVM.NewHTTPHandler(ctx)
 	if err != nil {
 		return nil, err
@@ -413,7 +413,7 @@ func (vm *VMServer) NewHTTPHandler(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	if handlerIface == nil {
 		return &vmpb.NewHTTPHandlerResponse{}, nil
 	}
-	
+
 	handler, ok := handlerIface.(http.Handler)
 	if !ok {
 		return nil, errors.New("NewHTTPHandler did not return http.Handler")
@@ -440,14 +440,14 @@ func (vm *VMServer) WaitForEvent(ctx context.Context, _ *emptypb.Empty) (*vmpb.W
 	if err != nil {
 		vm.log.Debug("Received error while waiting for event", "error", err)
 	}
-	
+
 	var msgEnum vmpb.Message
 	if message != nil {
 		if msgVal, ok := message.(int32); ok {
 			msgEnum = vmpb.Message(msgVal)
 		}
 	}
-	
+
 	return &vmpb.WaitForEventResponse{
 		Message: msgEnum,
 	}, err
@@ -608,7 +608,7 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 	type vmWithHealthCheck interface {
 		HealthCheck(context.Context) (interface{}, error)
 	}
-	
+
 	var vmHealth interface{}
 	if healthVM, ok := vm.vm.(vmWithHealthCheck); ok {
 		var err error
@@ -617,7 +617,7 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 			return &vmpb.HealthResponse{}, err
 		}
 	}
-	
+
 	dbHealth, err := vm.db.HealthCheck(ctx)
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
@@ -689,7 +689,7 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 	if failedVM, ok := vm.vm.(vmWithAppRequestFailed); ok {
 		return &emptypb.Empty{}, failedVM.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
 	}
-	
+
 	// AppRequestFailed is optional
 	return &emptypb.Empty{}, nil
 }

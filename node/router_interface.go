@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package node
 
 import (
@@ -12,8 +11,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 // Router handles message routing between chains

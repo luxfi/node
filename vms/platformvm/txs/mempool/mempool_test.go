@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package mempool
 
 import (
@@ -19,7 +18,7 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/txs"
 
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var preFundedKeys = secp256k1.TestKeys()
@@ -181,12 +180,12 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 					},
 				}},
 			}},
-			ChainID:       ids.GenerateTestID(),
-			BlockchainName:   "chainName",
-			VMID:        ids.GenerateTestID(),
-			FxIDs:       []ids.ID{ids.GenerateTestID()},
-			GenesisData: []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
-			ChainAuth:     &secp256k1fx.Input{SigIndices: []uint32{1}},
+			ChainID:        ids.GenerateTestID(),
+			BlockchainName: "chainName",
+			VMID:           ids.GenerateTestID(),
+			FxIDs:          []ids.ID{ids.GenerateTestID()},
+			GenesisData:    []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
+			ChainAuth:      &secp256k1fx.Input{SigIndices: []uint32{1}},
 		}
 
 		tx, err := txs.NewSigned(utx, txs.Codec, nil)

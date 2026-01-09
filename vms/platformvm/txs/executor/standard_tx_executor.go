@@ -11,22 +11,22 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/math"
 )
 
 // TODO: Before Etna, ensure that the maximum number of expiries to track is
@@ -548,7 +548,7 @@ func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
 		//            second entry.
 		map[ids.ID]uint64{
 			e.backend.Ctx.XAssetID: fee,
-			tx.AssetID:               totalRewardAmount,
+			tx.AssetID:             totalRewardAmount,
 		},
 	); err != nil {
 		return err

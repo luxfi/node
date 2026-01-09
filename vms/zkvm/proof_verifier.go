@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zvm
 
 import (
@@ -21,21 +20,21 @@ import (
 
 // ProofVerifier verifies zero-knowledge proofs
 type ProofVerifier struct {
-	config       ZConfig
-	log          log.Logger
-	
+	config ZConfig
+	log    log.Logger
+
 	// Proof verification cache
-	proofCache   *lru.Cache
-	
+	proofCache *lru.Cache
+
 	// Verifying keys
-	verifyingKeys map[string][]byte  // circuit type -> verifying key
-	
+	verifyingKeys map[string][]byte // circuit type -> verifying key
+
 	// Statistics
-	verifyCount  uint64
-	cacheHits    uint64
-	cacheMisses  uint64
-	
-	mu           sync.RWMutex
+	verifyCount uint64
+	cacheHits   uint64
+	cacheMisses uint64
+
+	mu sync.RWMutex
 }
 
 // NewProofVerifier creates a new proof verifier
@@ -45,19 +44,19 @@ func NewProofVerifier(config ZConfig, log log.Logger) (*ProofVerifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	pv := &ProofVerifier{
 		config:        config,
 		log:           log,
 		proofCache:    cache,
 		verifyingKeys: make(map[string][]byte),
 	}
-	
+
 	// Load verifying keys
 	if err := pv.loadVerifyingKeys(); err != nil {
 		return nil, err
 	}
-	
+
 	return pv, nil
 }
 
@@ -66,17 +65,17 @@ func (pv *ProofVerifier) VerifyTransactionProof(tx *Transaction) error {
 	if tx.Proof == nil {
 		return errors.New("transaction missing proof")
 	}
-	
+
 	// Check cache first
 	proofHash := pv.hashProof(tx.Proof)
-	
+
 	pv.mu.Lock()
 	pv.verifyCount++
-	
+
 	if cached, ok := pv.proofCache.Get(string(proofHash)); ok {
 		pv.cacheHits++
 		pv.mu.Unlock()
-		
+
 		if cached.(bool) {
 			return nil
 		}
@@ -84,7 +83,7 @@ func (pv *ProofVerifier) VerifyTransactionProof(tx *Transaction) error {
 	}
 	pv.cacheMisses++
 	pv.mu.Unlock()
-	
+
 	// Verify proof based on type
 	var err error
 	switch tx.Proof.ProofType {
@@ -99,10 +98,10 @@ func (pv *ProofVerifier) VerifyTransactionProof(tx *Transaction) error {
 	default:
 		err = errors.New("unsupported proof type")
 	}
-	
+
 	// Cache result
 	pv.proofCache.Add(string(proofHash), err == nil)
-	
+
 	return err
 }
 
@@ -111,17 +110,17 @@ func (pv *ProofVerifier) VerifyBlockProof(block *Block) error {
 	if block.BlockProof == nil {
 		return nil // Block proof is optional
 	}
-	
+
 	// Verify that the block proof correctly aggregates all transaction proofs
 	// This is a placeholder - in production, use proper proof aggregation
-	
+
 	// Check that all transactions have valid proofs
 	for _, tx := range block.Txs {
 		if err := pv.VerifyTransactionProof(tx); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -234,35 +233,35 @@ func (pv *ProofVerifier) verifyPublicInputs(tx *Transaction) error {
 	if len(tx.Proof.PublicInputs) == 0 {
 		return errors.New("no public inputs provided")
 	}
-	
+
 	// Verify nullifiers are included in public inputs
 	for i, nullifier := range tx.Nullifiers {
 		if i >= len(tx.Proof.PublicInputs) {
 			return errors.New("missing public input for nullifier")
 		}
-		
+
 		// In production, properly encode and compare
 		// For now, basic length check
 		if len(tx.Proof.PublicInputs[i]) != len(nullifier) {
 			return errors.New("public input mismatch for nullifier")
 		}
 	}
-	
+
 	// Verify output commitments are included
 	outputCommitments := tx.GetOutputCommitments()
 	offset := len(tx.Nullifiers)
-	
+
 	for i, commitment := range outputCommitments {
 		idx := offset + i
 		if idx >= len(tx.Proof.PublicInputs) {
 			return errors.New("missing public input for output commitment")
 		}
-		
+
 		if len(tx.Proof.PublicInputs[idx]) != len(commitment) {
 			return errors.New("public input mismatch for output commitment")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -270,21 +269,21 @@ func (pv *ProofVerifier) verifyPublicInputs(tx *Transaction) error {
 func (pv *ProofVerifier) loadVerifyingKeys() error {
 	// In production, load from files or embedded data
 	// For now, create dummy keys
-	
+
 	// Transfer circuit verifying key
 	pv.verifyingKeys[string(TransactionTypeTransfer)] = make([]byte, 1024)
-	
+
 	// Shield circuit verifying key
 	pv.verifyingKeys[string(TransactionTypeShield)] = make([]byte, 1024)
-	
+
 	// Unshield circuit verifying key
 	pv.verifyingKeys[string(TransactionTypeUnshield)] = make([]byte, 1024)
-	
+
 	pv.log.Info("Loaded verifying keys",
 		log.Int("count", len(pv.verifyingKeys)),
 		log.String("proofSystem", pv.config.ProofSystem),
 	)
-	
+
 	return nil
 }
 
@@ -293,11 +292,11 @@ func (pv *ProofVerifier) hashProof(proof *ZKProof) []byte {
 	h := sha256.New()
 	h.Write([]byte(proof.ProofType))
 	h.Write(proof.ProofData)
-	
+
 	for _, input := range proof.PublicInputs {
 		h.Write(input)
 	}
-	
+
 	return h.Sum(nil)
 }
 
@@ -310,7 +309,7 @@ func (pv *ProofVerifier) GetCacheSize() int {
 func (pv *ProofVerifier) GetStats() (verifyCount, cacheHits, cacheMisses uint64) {
 	pv.mu.RLock()
 	defer pv.mu.RUnlock()
-	
+
 	return pv.verifyCount, pv.cacheHits, pv.cacheMisses
 }
 
@@ -328,8 +327,8 @@ func (pv *ProofVerifier) ClearCache() {
 
 // Groth16Proof represents a Groth16 proof structure
 type Groth16Proof struct {
-	Ar bn254.G1Affine // Proof component A
-	Bs bn254.G2Affine // Proof component B
+	Ar  bn254.G1Affine // Proof component A
+	Bs  bn254.G2Affine // Proof component B
 	Krs bn254.G1Affine // Proof component C
 }
 
@@ -581,32 +580,32 @@ func (br *bytesReader) Read(p []byte) (n int, err error) {
 // PLONKProof represents a PLONK proof structure
 type PLONKProof struct {
 	// Commitments (7 G1 points)
-	LCommit  bn254.G1Affine // Wire L commitment
-	RCommit  bn254.G1Affine // Wire R commitment
-	OCommit  bn254.G1Affine // Wire O commitment
-	ZCommit  bn254.G1Affine // Permutation polynomial commitment
-	TLow     bn254.G1Affine // Quotient polynomial low
-	TMid     bn254.G1Affine // Quotient polynomial mid
-	THigh    bn254.G1Affine // Quotient polynomial high
+	LCommit bn254.G1Affine // Wire L commitment
+	RCommit bn254.G1Affine // Wire R commitment
+	OCommit bn254.G1Affine // Wire O commitment
+	ZCommit bn254.G1Affine // Permutation polynomial commitment
+	TLow    bn254.G1Affine // Quotient polynomial low
+	TMid    bn254.G1Affine // Quotient polynomial mid
+	THigh   bn254.G1Affine // Quotient polynomial high
 
 	// Opening proof components
-	WzOpening bn254.G1Affine // Opening at z
+	WzOpening  bn254.G1Affine // Opening at z
 	WzwOpening bn254.G1Affine // Opening at z*omega
 
 	// Evaluation proofs (scalars)
-	AEval   fr.Element // a(z) evaluation
-	BEval   fr.Element // b(z) evaluation
-	CEval   fr.Element // c(z) evaluation
+	AEval     fr.Element // a(z) evaluation
+	BEval     fr.Element // b(z) evaluation
+	CEval     fr.Element // c(z) evaluation
 	SigmaEval fr.Element // sigma permutation evaluation
-	ZEval   fr.Element // z(z*omega) evaluation
+	ZEval     fr.Element // z(z*omega) evaluation
 }
 
 // PLONKVerifyingKey represents a PLONK verifying key
 type PLONKVerifyingKey struct {
 	// SRS elements
-	G1       bn254.G1Affine // Generator in G1
-	G2       bn254.G2Affine // Generator in G2
-	G2Alpha  bn254.G2Affine // [alpha]_2
+	G1      bn254.G1Affine // Generator in G1
+	G2      bn254.G2Affine // Generator in G2
+	G2Alpha bn254.G2Affine // [alpha]_2
 
 	// Selector commitments
 	QLCommit bn254.G1Affine // Left selector
@@ -621,9 +620,9 @@ type PLONKVerifyingKey struct {
 	S3Commit bn254.G1Affine // Sigma_3 permutation
 
 	// Domain parameters
-	N       uint64 // Circuit size (power of 2)
-	K1, K2  fr.Element // Coset generators
-	Omega   fr.Element // Root of unity
+	N      uint64     // Circuit size (power of 2)
+	K1, K2 fr.Element // Coset generators
+	Omega  fr.Element // Root of unity
 }
 
 // verifyPLONKWithGnark performs actual PLONK verification
@@ -869,28 +868,28 @@ type STARKProof struct {
 	FRILayers []FRILayer
 
 	// Trace commitments
-	TraceCommitment []byte
+	TraceCommitment       []byte
 	CompositionCommitment []byte
 
 	// Query responses
 	QueryResponses []QueryResponse
 
 	// Out-of-domain samples
-	OODTraceValues [][]byte
+	OODTraceValues      [][]byte
 	OODConstraintValues [][]byte
 }
 
 // FRILayer represents a single FRI fold layer
 type FRILayer struct {
-	Commitment []byte  // Merkle root
-	Alpha      []byte  // Folding challenge
+	Commitment []byte // Merkle root
+	Alpha      []byte // Folding challenge
 }
 
 // QueryResponse represents a query response with Merkle authentication
 type QueryResponse struct {
-	Index       uint64
-	Values      [][]byte
-	MerklePath  [][]byte
+	Index      uint64
+	Values     [][]byte
+	MerklePath [][]byte
 }
 
 // verifySTARKProof verifies a STARK proof
@@ -1109,8 +1108,8 @@ func deserializeSTARKProof(data []byte) (*STARKProof, error) {
 // BulletproofRangeProof represents a Bulletproof range proof structure
 type BulletproofRangeProof struct {
 	// Pedersen commitment components
-	A  bn254.G1Affine // Vector commitment
-	S  bn254.G1Affine // Blinding commitment
+	A bn254.G1Affine // Vector commitment
+	S bn254.G1Affine // Blinding commitment
 
 	// Polynomial commitments
 	T1 bn254.G1Affine // Polynomial commitment T1
@@ -1122,8 +1121,8 @@ type BulletproofRangeProof struct {
 	Tx   fr.Element // Evaluation t(x)
 
 	// Inner product proof components
-	L []bn254.G1Affine // Left inner product commitments
-	R []bn254.G1Affine // Right inner product commitments
+	L  []bn254.G1Affine // Left inner product commitments
+	R  []bn254.G1Affine // Right inner product commitments
 	A0 fr.Element       // Final scalar a
 	B0 fr.Element       // Final scalar b
 }

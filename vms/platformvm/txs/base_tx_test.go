@@ -5,20 +5,19 @@ package txs
 
 import (
 	consensusctx "github.com/luxfi/consensus/context"
-	
+
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 func TestBaseTxSerialization(t *testing.T) {
@@ -49,7 +48,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	simpleBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   constants.MainnetID,
+			NetworkID:    constants.MainnetID,
 			BlockchainID: ids.Empty, // Use empty for serialization test
 			Outs:         []*lux.TransferableOutput{},
 			Ins: []*lux.TransferableInput{
@@ -62,7 +61,7 @@ func TestBaseTxSerialization(t *testing.T) {
 						ID: luxAssetID,
 					},
 					In: &secp256k1fx.TransferInput{
-						Amt: units.MilliLux,
+						Amt: constants.MilliLux,
 						Input: secp256k1fx.Input{
 							SigIndices: []uint32{5},
 						},
@@ -74,10 +73,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	testChainID := ids.Empty // Use empty for serialization test
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
@@ -129,7 +127,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	complexBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   constants.MainnetID,
+			NetworkID:    constants.MainnetID,
 			BlockchainID: ids.Empty, // Use empty for serialization test
 			Outs: []*lux.TransferableOutput{
 				{
@@ -177,7 +175,7 @@ func TestBaseTxSerialization(t *testing.T) {
 						ID: luxAssetID,
 					},
 					In: &secp256k1fx.TransferInput{
-						Amt: units.Lux,
+						Amt: constants.Lux,
 						Input: secp256k1fx.Input{
 							SigIndices: []uint32{2, 5},
 						},
@@ -223,10 +221,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
@@ -374,10 +371,9 @@ func TestBaseTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexBaseTx.InitCtx(ctx3)

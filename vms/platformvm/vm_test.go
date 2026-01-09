@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensusctx "github.com/luxfi/consensus/context"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/core" // unused
@@ -26,8 +26,8 @@ import (
 	// "github.com/luxfi/consensus/networking/sender" // unused
 	// "github.com/luxfi/consensus/networking/sender/sendertest" // unused
 	// "github.com/luxfi/consensus/networking/timeout" // unused
-	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
 	// "github.com/luxfi/crypto/bls" // unused
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -41,28 +41,28 @@ import (
 	// "github.com/luxfi/node/message" // unused
 	// "github.com/luxfi/node/nets" // unused
 	// "github.com/luxfi/p2p" // unused
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	// "github.com/luxfi/node/utils/math/meter" // unused
-	// "github.com/luxfi/node/utils/resource" // unused
-	// "github.com/luxfi/node/utils/timer" // unused
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	// "github.com/luxfi/vm/utils/math/meter" // unused
+	// "github.com/luxfi/vm/utils/resource" // unused
+	// "github.com/luxfi/vm/utils/timer" // unused
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/vm/platformvm/signer"
 	// "github.com/luxfi/node/vms/platformvm/state" // unused after TestGenesis simplification
 	"github.com/luxfi/node/vms/platformvm/status"
 	// "github.com/luxfi/node/vms/platformvm/testcontext" // unused - using consensustest.Context instead
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/vm/secp256k1fx"
 	// "github.com/luxfi/metric" // unused
 
 	// p2ppb "github.com/luxfi/node/proto/pb/p2p" // unused
@@ -79,7 +79,7 @@ import (
 )
 
 const (
-	defaultMinDelegatorStake = 1 * units.MilliLux
+	defaultMinDelegatorStake = 1 * constants.MilliLux
 	defaultMinValidatorStake = 5 * defaultMinDelegatorStake
 	defaultMaxValidatorStake = 100 * defaultMinValidatorStake
 
@@ -92,7 +92,7 @@ var (
 		MaxConsumptionRate: .12 * reward.PercentDenominator,
 		MinConsumptionRate: .10 * reward.PercentDenominator,
 		MintingPeriod:      365 * 24 * time.Hour,
-		SupplyCap:          720 * units.MegaLux,
+		SupplyCap:          720 * constants.MegaLux,
 	}
 
 	latestForkTime = genesistest.DefaultValidatorStartTime.Add(time.Second)
@@ -214,16 +214,16 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	dynamicConfigBytes := []byte(`{"network":{"max-validator-set-staleness":0}}`)
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,                                        // chainCtxIntf
-		chainDB,                                    // dbManagerIntf
+		ctx,     // chainCtxIntf
+		chainDB, // dbManagerIntf
 		genesistest.NewBytes(t, genesistest.Config{
-			InitialBalance: 200*units.Lux + 20000, // Doubled + 20000 nanoLux buffer for fee precision (was 10000, increased to fix 1949 shortfall)
+			InitialBalance: 200*constants.Lux + 20000, // Doubled + 20000 nanoLux buffer for fee precision (was 10000, increased to fix 1949 shortfall)
 		}), // genesisBytes
-		nil,                                        // upgradeBytes
-		dynamicConfigBytes,                         // configBytes
-		make(chan linearblock.Message, 1),         // toEngineIntf
-		nil,                                        // fxsIntf
-		appSender,                                  // appSenderIntf
+		nil,                               // upgradeBytes
+		dynamicConfigBytes,                // configBytes
+		make(chan linearblock.Message, 1), // toEngineIntf
+		nil,                               // fxsIntf
+		appSender,                         // appSenderIntf
 	))
 
 	// align chain time and local clock
@@ -310,10 +310,10 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 	}
 	// Create a basic Config for wallet
 	walletConfig := &config.Config{
-		TxFee: units.MilliLux,
-		CreateAssetTxFee: units.MilliLux,
-		CreateNetTxFee: units.Lux,
-		CreateBlockchainTxFee: units.Lux,
+		TxFee:                 constants.MilliLux,
+		CreateAssetTxFee:      constants.MilliLux,
+		CreateNetTxFee:        constants.Lux,
+		CreateBlockchainTxFee: constants.Lux,
 	}
 	return txstest.NewWalletWithOptions(
 		t,
@@ -347,7 +347,7 @@ func TestGenesis(t *testing.T) {
 	require.NotNil(genesisBlock)
 
 	genesisState := genesistest.New(t, genesistest.Config{
-		InitialBalance: 200*units.Lux + 20000, // Match defaultVM config (doubled + 20000 nanoLux buffer)
+		InitialBalance: 200*constants.Lux + 20000, // Match defaultVM config (doubled + 20000 nanoLux buffer)
 	})
 
 	// Ensure all the genesis UTXOs are there with correct amounts
@@ -384,8 +384,8 @@ func TestAddValidatorCommit(t *testing.T) {
 	wallet := newWallet(t, vm, walletConfig{})
 
 	var (
-		endTime      = vm.Clock().Time().Add(defaultMinStakingDuration)
-		nodeID       = ids.GenerateTestNodeID()
+		endTime = vm.Clock().Time().Add(defaultMinStakingDuration)
+		nodeID  = ids.GenerateTestNodeID()
 		// Use an address that actually has funds from genesis
 		rewardsOwner = &secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1038,7 +1038,7 @@ func TestAtomicImport(t *testing.T) {
 		UTXOID: utxoID,
 		Asset:  lux.Asset{ID: vm.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          50 * units.MicroLux,
+			Amt:          50 * constants.MicroLux,
 			OutputOwners: *importOwners,
 		},
 	}
@@ -1176,7 +1176,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	firstChainDB := prefixdb.New([]byte{2}, baseDB)
 	appSender := &TestAppSender{}
-	
+
 	require.NoError(firstVM.Initialize(
 		context.Background(),
 		firstCtx,
@@ -1283,7 +1283,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	t.Skip("Test disabled: requires complete rewrite for new consensus APIs")
 	// Original test code removed due to deprecated APIs:
-	// - router.ChainRouter no longer exists  
+	// - router.ChainRouter no longer exists
 	// - timeout.Manager.Dispatch()/Stop() methods removed
 	// - sendertest.External has changed
 	// - bootstrap.Config API completely changed
@@ -1855,7 +1855,7 @@ func TestBaseTx(t *testing.T) {
 			{
 				Asset: lux.Asset{ID: vm.ctx.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 100 * units.MicroLux,
+					Amt: 100 * constants.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs: []ids.ShortID{
@@ -1892,7 +1892,7 @@ func TestPruneMempool(t *testing.T) {
 			{
 				Asset: lux.Asset{ID: vm.ctx.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 100 * units.MicroLux,
+					Amt: 100 * constants.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs: []ids.ShortID{

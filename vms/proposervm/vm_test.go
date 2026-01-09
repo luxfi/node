@@ -28,10 +28,10 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/timer/mockable"
-	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )

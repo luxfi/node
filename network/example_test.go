@@ -9,19 +9,19 @@ package network
 import (
 	"context"
 	"fmt"
-	
+
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis/builder"
-	"github.com/luxfi/node/message"
 	consensuscore "github.com/luxfi/consensus/core"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/genesis/builder"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
 )
 

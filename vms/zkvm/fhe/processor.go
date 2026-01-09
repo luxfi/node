@@ -11,11 +11,11 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/lattice/v7/core/rlwe"
-	"github.com/luxfi/lattice/v7/schemes/ckks"
 	"github.com/luxfi/lattice/v7/circuits/ckks/comparison"
 	"github.com/luxfi/lattice/v7/circuits/ckks/minimax"
+	"github.com/luxfi/lattice/v7/core/rlwe"
 	"github.com/luxfi/lattice/v7/multiparty"
+	"github.com/luxfi/lattice/v7/schemes/ckks"
 	"github.com/luxfi/log"
 )
 
@@ -45,19 +45,19 @@ type Config struct {
 // 128-bit security, suitable for financial computations
 func DefaultConfig() Config {
 	return Config{
-		LogN:            14,                              // 2^14 = 16384 slots
+		LogN:            14,                                    // 2^14 = 16384 slots
 		LogQ:            []int{55, 45, 45, 45, 45, 45, 45, 45}, // 8 levels
-		LogP:            []int{61, 61},                   // Key-switching modulus
-		LogDefaultScale: 45,                              // 45-bit precision
-		Threshold:       67,                              // 67-of-100 threshold (2/3)
-		MaxOperations:   6,                               // 6 mults before bootstrap
+		LogP:            []int{61, 61},                         // Key-switching modulus
+		LogDefaultScale: 45,                                    // 45-bit precision
+		Threshold:       67,                                    // 67-of-100 threshold (2/3)
+		MaxOperations:   6,                                     // 6 mults before bootstrap
 	}
 }
 
 // Processor is the main FHE computation engine
 type Processor struct {
-	config   Config
-	log      log.Logger
+	config Config
+	log    log.Logger
 
 	// CKKS parameters and components
 	params    ckks.Parameters

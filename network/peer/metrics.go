@@ -85,8 +85,7 @@ func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
 			ioOpLabels,
 		),
 	}
-	return m, errors.Join(
-	)
+	return m, errors.Join()
 }
 
 // Sent updates the metrics for having sent [msg].

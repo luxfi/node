@@ -35,7 +35,7 @@ func newContext(
 		builderContext.ComplexityWeights = internalCfg.DynamicFeeConfig.Weights
 		builderContext.GasPrice = internalCfg.DynamicFeeConfig.MinPrice
 	}
-	
+
 	// Always populate static fees as fallback or for non-dynamic transactions
 	if cfg != nil {
 		builderContext.StaticFeeConfig = fee.StaticConfig{

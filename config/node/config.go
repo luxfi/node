@@ -8,22 +8,22 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/benchlist"
 	// "github.com/luxfi/consensus/core/router" // Unused
-	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/nets"
-	"github.com/luxfi/trace"
-	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/trace"
 	// "github.com/luxfi/log" // Unused
-	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/vm/utils/profiler"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 type APIIndexerConfig struct {
@@ -142,7 +142,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	LuxAssetID  ids.ID `json:"luxAssetID"`
+	LuxAssetID   ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

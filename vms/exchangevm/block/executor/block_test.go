@@ -12,22 +12,22 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/mock/gomock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/mock/gomock"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/metrics/metricsmock"
-	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/state/statemock"
+	"github.com/luxfi/node/vms/exchangevm/txs"
+	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
-	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestBlockVerify(t *testing.T) {

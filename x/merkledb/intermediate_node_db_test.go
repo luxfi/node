@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 // Tests:
@@ -294,9 +294,9 @@ func Benchmark_IntermediateNodeDB_ConstructDBKey(b *testing.B) {
 			memdb.New(),
 			utils.NewBytesPool(),
 			&mockMetrics{},
-			units.MiB,
-			units.MiB,
-			units.MiB,
+			constants.MiB,
+			constants.MiB,
+			constants.MiB,
 			tokenSize,
 			DefaultHasher,
 		)

@@ -150,8 +150,8 @@ func TestADLExecute(t *testing.T) {
 	event, err := engine.Execute(
 		"BTC-USD",
 		liquidatedPosID,
-		true, // Long liquidated
-		500,  // Size to deleverage
+		true,         // Long liquidated
+		500,          // Size to deleverage
 		48000_000000, // Bankruptcy price
 		insuranceFund,
 	)

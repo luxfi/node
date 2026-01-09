@@ -3,29 +3,14 @@
 
 package verify
 
-type Verifiable interface {
-	Verify() error
-}
+import vmverify "github.com/luxfi/vm/components/verify"
 
-type State interface {
-	Verifiable
-	IsState
-}
-
-type IsState interface {
-	isState()
-}
-
-type IsNotState interface {
-	isState() error
-}
+type Verifiable = vmverify.Verifiable
+type State = vmverify.State
+type IsState = vmverify.IsState
+type IsNotState = vmverify.IsNotState
 
 // All returns nil if all the verifiables were verified with no errors
 func All(verifiables ...Verifiable) error {
-	for _, verifiable := range verifiables {
-		if err := verifiable.Verify(); err != nil {
-			return err
-		}
-	}
-	return nil
+	return vmverify.All(verifiables...)
 }

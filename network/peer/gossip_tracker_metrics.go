@@ -8,7 +8,6 @@ package peer
 
 import (
 	"github.com/luxfi/metric"
-
 )
 
 type gossipTrackerMetrics struct {

@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package keystore
 
 import (
@@ -17,8 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/password"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/password"
 )
 
 const (

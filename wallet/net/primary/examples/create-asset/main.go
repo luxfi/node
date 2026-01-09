@@ -8,12 +8,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 		map[uint32][]verify.State{
 			0: {
 				&secp256k1fx.TransferOutput{
-					Amt:          units.Schmeckle,
+					Amt:          constants.Schmeckle,
 					OutputOwners: *owner,
 				},
 			},

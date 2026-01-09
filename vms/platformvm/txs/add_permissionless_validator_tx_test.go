@@ -12,19 +12,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 
 	safemath "github.com/luxfi/math"
 )
@@ -71,7 +70,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	simpleAddPrimaryTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -84,7 +83,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloLux,
+							Amt: 2 * constants.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -98,9 +97,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			NodeID: nodeID,
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
-			Wght:   2 * units.KiloLux,
+			Wght:   2 * constants.KiloLux,
 		},
-		Chain: constants.PrimaryNetworkID,
+		Chain:  constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -108,7 +107,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 					ID: luxAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -139,10 +138,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
@@ -282,7 +280,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	complexAddPrimaryTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -345,7 +343,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MegaLux,
+							Amt: constants.MegaLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -392,9 +390,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			NodeID: nodeID,
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
-			Wght:   5 * units.KiloLux,
+			Wght:   5 * constants.KiloLux,
 		},
-		Chain: constants.PrimaryNetworkID,
+		Chain:  constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -402,7 +400,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 					ID: luxAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -419,7 +417,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 				Out: &stakeable.LockOut{
 					Locktime: 987654321,
 					TransferableOut: &secp256k1fx.TransferOutput{
-						Amt: 3 * units.KiloLux,
+						Amt: 3 * constants.KiloLux,
 						OutputOwners: secp256k1fx.OutputOwners{
 							Locktime:  87654321,
 							Threshold: 0,
@@ -444,10 +442,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		DelegationShares: reward.PercentDenominator,
 	}
 	ctx = &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
@@ -753,7 +750,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	simpleAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -766,7 +763,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MilliLux,
+							Amt: constants.MilliLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -797,7 +794,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 			End:    12346,
 			Wght:   1,
 		},
-		Chain:    netID,
+		Chain:  netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -836,10 +833,9 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
@@ -977,7 +973,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	complexAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -1040,7 +1036,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MegaLux,
+							Amt: constants.MegaLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -1089,7 +1085,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 			End:    12345 + 1,
 			Wght:   9,
 		},
-		Chain:    netID,
+		Chain:  netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -1139,9 +1135,9 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		DelegationShares: reward.PercentDenominator,
 	}
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx2))
@@ -1399,9 +1395,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
-		
-		
-		ChainID:   chainID,
+
+		ChainID: chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -1412,7 +1407,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   networkID,
+			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -1525,7 +1520,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1555,7 +1550,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    constants.PrimaryNetworkID,
+					Chain:  constants.PrimaryNetworkID,
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1588,7 +1583,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1617,7 +1612,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1655,7 +1650,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1694,7 +1689,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1733,7 +1728,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1772,7 +1767,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   2,
 					},
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					Signer: &signer.Empty{},
 					StakeOuts: []*lux.TransferableOutput{
 						{
@@ -1811,7 +1806,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   2,
 					},
-					Chain:    constants.PrimaryNetworkID,
+					Chain:  constants.PrimaryNetworkID,
 					Signer: blsPOP,
 					StakeOuts: []*lux.TransferableOutput{
 						{

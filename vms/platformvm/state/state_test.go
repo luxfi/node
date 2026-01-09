@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"context"
 	"maps"
-	"slices"
 	"math"
 	"math/rand"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -19,44 +19,43 @@ import (
 
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/choices"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/iterator"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/iterator"
 
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/vm/utils/wrappers"
 
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
 
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/vm/platformvm/signer"
 
 	"github.com/luxfi/node/vms/platformvm/status"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
 
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/types"
 
 	safemath "github.com/luxfi/math"
 )
@@ -83,7 +82,7 @@ func newTestState(t testing.TB, db database.Database) *state {
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaLux,
+			SupplyCap:          720 * constants.MegaLux,
 		}),
 	)
 	require.NoError(t, err)
@@ -591,7 +590,7 @@ func createPermissionlessValidatorTx(t testing.TB, subnetID ids.ID, validatorsDa
 							ID: ids.GenerateTestID(),
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloLux,
+							Amt: 2 * constants.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -602,7 +601,7 @@ func createPermissionlessValidatorTx(t testing.TB, subnetID ids.ID, validatorsDa
 			},
 		},
 		Validator: validatorsData,
-		Chain:       subnetID,
+		Chain:     subnetID,
 		Signer:    sig,
 
 		StakeOuts: []*lux.TransferableOutput{
@@ -611,7 +610,7 @@ func createPermissionlessValidatorTx(t testing.TB, subnetID ids.ID, validatorsDa
 					ID: ids.GenerateTestID(),
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -657,7 +656,7 @@ func createPermissionlessDelegatorTx(netID ids.ID, delegatorData txs.Validator) 
 							ID: ids.GenerateTestID(),
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloLux,
+							Amt: 2 * constants.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -668,7 +667,7 @@ func createPermissionlessDelegatorTx(netID ids.ID, delegatorData txs.Validator) 
 			},
 		},
 		Validator: delegatorData,
-		Chain:       netID,
+		Chain:     netID,
 
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -676,7 +675,7 @@ func createPermissionlessDelegatorTx(netID ids.ID, delegatorData txs.Validator) 
 					ID: ids.GenerateTestID(),
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -818,7 +817,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       sk.PublicKey(),
-			ChainID:        constants.PrimaryNetworkID,
+			ChainID:         constants.PrimaryNetworkID,
 			Weight:          uint64(i + 1),
 			StartTime:       startTime.Add(timeOffset),
 			EndTime:         endTime.Add(timeOffset),
@@ -830,7 +829,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          primaryStaker.NodeID,
 			PublicKey:       nil, // Key is inherited from the primary network
-			ChainID:        subnetID,
+			ChainID:         subnetID,
 			Weight:          uint64(i + 1),
 			StartTime:       primaryStaker.StartTime,
 			EndTime:         primaryStaker.EndTime,
@@ -998,7 +997,7 @@ func TestState_ApplyValidatorDiffs(t *testing.T) {
 				subnetStakers[2], subnetStakers[3], subnetStakers[4],
 			},
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{},
-			expectedNetValidatorSet:  map[ids.NodeID]*validators.GetValidatorOutput{},
+			expectedNetValidatorSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 		},
 		{
 			// Do nothing
@@ -1572,7 +1571,7 @@ func TestStateExpiryCommitAndLoad(t *testing.T) {
 func TestL1Validators(t *testing.T) {
 	l1Validator := L1Validator{
 		ValidationID: ids.GenerateTestID(),
-		ChainID:     ids.GenerateTestID(),
+		ChainID:      ids.GenerateTestID(),
 		NodeID:       ids.GenerateTestNodeID(),
 	}
 
@@ -1599,7 +1598,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1612,7 +1611,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          ids.GenerateTestID(),
+					ChainID:           ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1625,7 +1624,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1635,7 +1634,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID: l1Validator.ValidationID,
-					ChainID:     l1Validator.ChainID,
+					ChainID:      l1Validator.ChainID,
 					NodeID:       l1Validator.NodeID,
 					PublicKey:    pkBytes,
 					Weight:       0, // Removed
@@ -1647,7 +1646,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1657,7 +1656,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID: l1Validator.ValidationID,
-					ChainID:     l1Validator.ChainID,
+					ChainID:      l1Validator.ChainID,
 					NodeID:       l1Validator.NodeID,
 					PublicKey:    pkBytes,
 					Weight:       0, // Removed
@@ -1669,7 +1668,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1679,7 +1678,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            2, // Increased
@@ -1692,7 +1691,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1702,7 +1701,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            2, // Increased
@@ -1715,7 +1714,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            2, // Not removed
@@ -1725,7 +1724,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Decreased
@@ -1738,7 +1737,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1748,7 +1747,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1761,7 +1760,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1771,7 +1770,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1784,7 +1783,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1794,7 +1793,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            2, // Not removed
@@ -1802,7 +1801,7 @@ func TestL1Validators(t *testing.T) {
 				},
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            3, // Not removed
@@ -1815,7 +1814,7 @@ func TestL1Validators(t *testing.T) {
 			initial: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1825,14 +1824,14 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID: l1Validator.ValidationID,
-					ChainID:     l1Validator.ChainID,
+					ChainID:      l1Validator.ChainID,
 					NodeID:       l1Validator.NodeID,
 					PublicKey:    pkBytes,
 					Weight:       0, // Removed
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         otherPKBytes,
 					Weight:            1, // Not removed
@@ -1845,7 +1844,7 @@ func TestL1Validators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      l1Validator.ValidationID,
-					ChainID:          l1Validator.ChainID,
+					ChainID:           l1Validator.ChainID,
 					NodeID:            l1Validator.NodeID,
 					PublicKey:         pkBytes,
 					Weight:            1, // Not removed
@@ -1853,7 +1852,7 @@ func TestL1Validators(t *testing.T) {
 				},
 				{
 					ValidationID: l1Validator.ValidationID,
-					ChainID:     l1Validator.ChainID,
+					ChainID:      l1Validator.ChainID,
 					NodeID:       l1Validator.NodeID,
 					PublicKey:    pkBytes,
 					Weight:       0, // Removed
@@ -1872,7 +1871,7 @@ func TestL1Validators(t *testing.T) {
 				return []L1Validator{
 					{
 						ValidationID:      validationID1,
-						ChainID:             l1Validator.ChainID,
+						ChainID:           l1Validator.ChainID,
 						NodeID:            ids.NodeID{0x01},
 						PublicKey:         pkBytes,
 						Weight:            1, // Not removed
@@ -1880,7 +1879,7 @@ func TestL1Validators(t *testing.T) {
 					},
 					{
 						ValidationID:      validationID2,
-						ChainID:             l1Validator.ChainID,
+						ChainID:           l1Validator.ChainID,
 						NodeID:            ids.NodeID{0x02},
 						PublicKey:         pkBytes,
 						Weight:            1, // Not removed
@@ -2114,7 +2113,7 @@ func TestLoadL1ValidatorAndLegacy(t *testing.T) {
 		TxID:            addNetValidator.ID(),
 		NodeID:          defaultValidatorNodeID,
 		PublicKey:       nil,
-		ChainID:        subnetID,
+		ChainID:         subnetID,
 		Weight:          weight,
 		StartTime:       genesistest.DefaultValidatorStartTime,
 		EndTime:         genesistest.DefaultValidatorEndTime,
@@ -2129,7 +2128,7 @@ func TestLoadL1ValidatorAndLegacy(t *testing.T) {
 
 	l1Validator := L1Validator{
 		ValidationID:          ids.GenerateTestID(),
-		ChainID:              legacyStaker.ChainID,
+		ChainID:               legacyStaker.ChainID,
 		NodeID:                ids.GenerateTestNodeID(),
 		PublicKey:             pkBytes,
 		RemainingBalanceOwner: utils.RandomBytes(32),
@@ -2164,7 +2163,7 @@ func TestL1ValidatorAfterLegacyRemoval(t *testing.T) {
 		TxID:            ids.GenerateTestID(),
 		NodeID:          defaultValidatorNodeID,
 		PublicKey:       nil,
-		ChainID:        ids.GenerateTestID(),
+		ChainID:         ids.GenerateTestID(),
 		Weight:          1,
 		StartTime:       genesistest.DefaultValidatorStartTime,
 		EndTime:         genesistest.DefaultValidatorEndTime,
@@ -2179,7 +2178,7 @@ func TestL1ValidatorAfterLegacyRemoval(t *testing.T) {
 
 	l1Validator := L1Validator{
 		ValidationID:          ids.GenerateTestID(),
-		ChainID:              legacyStaker.ChainID,
+		ChainID:               legacyStaker.ChainID,
 		NodeID:                legacyStaker.NodeID,
 		PublicKey:             utils.RandomBytes(bls.PublicKeyLen),
 		RemainingBalanceOwner: utils.RandomBytes(32),
@@ -2224,7 +2223,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			initial: []*Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID1,
+					ChainID:   subnetID1,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -2232,7 +2231,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID1,
+					ChainID:   subnetID1,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -2245,7 +2244,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			initial: []*Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID1,
+					ChainID:   subnetID1,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -2253,7 +2252,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID2,
+					ChainID:   subnetID2,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -2266,7 +2265,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID1,
+					ChainID:      subnetID1,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    uint64(now.Unix()),
 					PublicKey:    pkBytes,
@@ -2274,7 +2273,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID1,
+					ChainID:      subnetID1,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    uint64(now.Unix()) + 1,
@@ -2287,7 +2286,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID1,
+					ChainID:      subnetID1,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    uint64(now.Unix()),
 					PublicKey:    pkBytes,
@@ -2295,7 +2294,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID2,
+					ChainID:      subnetID2,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    uint64(now.Unix()) + 1,
@@ -2308,7 +2307,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			initial: []*Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID1,
+					ChainID:   subnetID1,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    123123,
@@ -2316,7 +2315,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID2,
+					ChainID:   subnetID2,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -2324,7 +2323,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID1,
+					ChainID:   subnetID1,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    0,
@@ -2334,7 +2333,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID1,
+					ChainID:           subnetID1,
 					NodeID:            ids.GenerateTestNodeID(),
 					StartTime:         uint64(now.Unix()),
 					PublicKey:         pkBytes,
@@ -2344,7 +2343,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID2,
+					ChainID:           subnetID2,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         uint64(now.Unix()) + 1,
@@ -2353,7 +2352,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID1,
+					ChainID:           subnetID1,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					StartTime:         uint64(now.Unix()) + 2,
@@ -2362,7 +2361,7 @@ func TestGetCurrentValidators(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID1,
+					ChainID:           subnetID1,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         uint64(now.Unix()) + 3,
@@ -2385,7 +2384,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			for _, staker := range test.initial {
 				primaryStaker := &Staker{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  constants.PrimaryNetworkID,
+					ChainID:   constants.PrimaryNetworkID,
 					NodeID:    staker.NodeID,
 					PublicKey: staker.PublicKey,
 					Weight:    5,

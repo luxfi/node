@@ -19,9 +19,9 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/staking"
 )
 

@@ -5,7 +5,7 @@ package block
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 type option struct {

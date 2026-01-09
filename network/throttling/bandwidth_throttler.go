@@ -11,11 +11,10 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+	utilmetric "github.com/luxfi/metric"
 )
 
 var _ bandwidthThrottler = (*bandwidthThrottlerImpl)(nil)
@@ -61,7 +60,7 @@ func newBandwidthThrottler(
 	registerer metric.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
-	errs := wrappers.Errs{}
+	errs := metric.Errs{}
 	registry, ok := registerer.(metric.Registry)
 	if !ok {
 		errs.Add(nil)

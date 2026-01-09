@@ -11,9 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/coremock"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
@@ -23,17 +23,14 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/p2p"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/network"
@@ -46,13 +43,15 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/validators/validatorstest"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/vms/platformvm/warp"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 
 	validators "github.com/luxfi/consensus/validator"
@@ -296,10 +295,10 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	}
 	// Create a minimal Config for the wallet
 	walletCfg := &config.Config{
-		TxFee:                         units.MilliLux,
-		CreateAssetTxFee:              units.MilliLux,
-		CreateNetTxFee:             units.Lux,
-		CreateBlockchainTxFee:         units.Lux,
+		TxFee:                         constants.MilliLux,
+		CreateAssetTxFee:              constants.MilliLux,
+		CreateNetTxFee:                constants.Lux,
+		CreateBlockchainTxFee:         constants.Lux,
 		AddPrimaryNetworkValidatorFee: 0,
 		AddPrimaryNetworkDelegatorFee: 0,
 	}
@@ -366,16 +365,16 @@ func defaultConfig(f upgradetest.Fork) *config.Internal {
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
-		MinValidatorStake:      5 * units.MilliLux,
-		MaxValidatorStake:      500 * units.MilliLux,
-		MinDelegatorStake:      1 * units.MilliLux,
+		MinValidatorStake:      5 * constants.MilliLux,
+		MaxValidatorStake:      500 * constants.MilliLux,
+		MinDelegatorStake:      1 * constants.MilliLux,
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig: reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaLux,
+			SupplyCap:          720 * constants.MegaLux,
 		},
 		UpgradeConfig: upgrades,
 	}

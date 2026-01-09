@@ -4,10 +4,10 @@
 package chain
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensuschain "github.com/luxfi/consensus/engine/chain"
-	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"

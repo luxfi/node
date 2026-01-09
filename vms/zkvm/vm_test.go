@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
 
@@ -34,7 +34,7 @@ func TestVMInitialize(t *testing.T) {
 		Timestamp: 1607144400,
 		InitialTxs: []*Transaction{
 			{
-				Type:    TransactionTypeMint,
+				Type: TransactionTypeMint,
 				Outputs: []*ShieldedOutput{
 					{
 						Commitment:      make([]byte, 32),
@@ -188,7 +188,7 @@ func setupTestVM(t *testing.T) *VM {
 	db := memdb.New()
 
 	genesis := &Genesis{
-		Timestamp: 1607144400,
+		Timestamp:  1607144400,
 		InitialTxs: []*Transaction{},
 	}
 	genesisBytes, _ := Codec.Marshal(codecVersion, genesis)
@@ -218,7 +218,7 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	db := memdb.New()
 
 	genesis := &Genesis{
-		Timestamp: 1607144400,
+		Timestamp:  1607144400,
 		InitialTxs: []*Transaction{},
 	}
 	genesisBytes, _ := Codec.Marshal(codecVersion, genesis)

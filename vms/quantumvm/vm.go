@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package qvm
 
 import (
@@ -23,11 +22,11 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/quantumvm/config"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/luxfi/warp"
 )
 
@@ -43,11 +42,11 @@ const (
 )
 
 var (
-	errNotImplemented            = errors.New("not implemented")
-	errNoPendingTxs              = errors.New("no pending transactions")
-	errVMShutdown                = errors.New("VM is shutting down")
-	errInvalidQuantumStamp       = errors.New("invalid quantum stamp")
-	errParallelProcessingFailed  = errors.New("parallel transaction processing failed")
+	errNotImplemented           = errors.New("not implemented")
+	errNoPendingTxs             = errors.New("no pending transactions")
+	errVMShutdown               = errors.New("VM is shutting down")
+	errInvalidQuantumStamp      = errors.New("invalid quantum stamp")
+	errParallelProcessingFailed = errors.New("parallel transaction processing failed")
 )
 
 // BCLookup provides blockchain alias lookup
@@ -68,22 +67,22 @@ type VM struct {
 	config.Config
 
 	// Core components
-	ctx             context.Context
+	ctx context.Context
 	// consensusCtx    *consensusctx.Context
-	log             log.Logger
-	db              database.Database
-	versiondb       *versiondb.Database
-	blockchainID    ids.ID
-	ChainAlias      string
-	NetworkID       uint32
+	log          log.Logger
+	db           database.Database
+	versiondb    *versiondb.Database
+	blockchainID ids.ID
+	ChainAlias   string
+	NetworkID    uint32
 
 	// Quantum components
-	quantumSigner   *quantum.QuantumSigner
-	quantumCache    *cache.LRU[ids.ID, *quantum.QuantumSignature]
+	quantumSigner *quantum.QuantumSigner
+	quantumCache  *cache.LRU[ids.ID, *quantum.QuantumSignature]
 
 	// Hybrid P/Q consensus bridge (connects P-Chain BLS + Q-Chain Ringtail)
 	// Uses Quasar consensus for dual BLS+Ringtail threshold signatures
-	quasarBridge    *QuasarBridge
+	quasarBridge *QuasarBridge
 
 	// Consensus and validation
 	// validators      validators.Manager
@@ -91,12 +90,12 @@ type VM struct {
 	// consensusEngine consensus.Consensus
 
 	// Metrics and monitoring
-	metrics         metric.Registry
+	metrics metric.Registry
 
 	// State management
-	state           database.Database
-	shuttingDown    bool
-	shuttingDownMu  sync.RWMutex
+	state          database.Database
+	shuttingDown   bool
+	shuttingDownMu sync.RWMutex
 
 	// Transaction processing
 	txPool          *TransactionPool
@@ -104,18 +103,18 @@ type VM struct {
 	workerPool      *sync.Pool
 
 	// Clock and timing
-	clock           mockable.Clock
+	clock mockable.Clock
 
 	// Network communication
-	bcLookup        BCLookup
-	sharedMemory    SharedMemory
+	bcLookup     BCLookup
+	sharedMemory SharedMemory
 
 	// HTTP service
-	httpServer      *http.Server
-	rpcServer       *rpc.Server
+	httpServer *http.Server
+	rpcServer  *rpc.Server
 
 	// Synchronization
-	lock            sync.RWMutex
+	lock sync.RWMutex
 }
 
 // Initialize initializes the VM with the given context
@@ -528,11 +527,11 @@ func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
 	defer vm.lock.RUnlock()
 
 	health := map[string]interface{}{
-		"healthy": !vm.isShuttingDown(),
-		"version": Version,
-		"quantumEnabled": vm.Config.QuantumStampEnabled,
+		"healthy":         !vm.isShuttingDown(),
+		"version":         Version,
+		"quantumEnabled":  vm.Config.QuantumStampEnabled,
 		"ringtailEnabled": vm.Config.RingtailEnabled,
-		"pendingTxs": vm.txPool.PendingCount(),
+		"pendingTxs":      vm.txPool.PendingCount(),
 	}
 
 	return health, nil
@@ -676,4 +675,3 @@ func (vm *VM) VerifyStamp(stamp interface{}) error {
 		return errors.New("unsupported stamp type")
 	}
 }
-

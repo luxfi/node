@@ -11,9 +11,9 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/vm/utils"
 )
 
 var (

@@ -14,7 +14,7 @@ import (
 func TestManagerImplementsInterface(t *testing.T) {
 	// This test will fail at compile time if manager doesn't implement Manager
 	var _ vmvalidators.Manager = manager{}
-	
+
 	// Verify the singleton Manager also implements the interface
 	var _ vmvalidators.Manager = Manager
 }

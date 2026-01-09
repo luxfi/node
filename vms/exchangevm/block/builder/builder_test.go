@@ -14,18 +14,16 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/codecmock"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/codecmock"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	blkexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
 	"github.com/luxfi/node/vms/exchangevm/block/executor/executormock"
@@ -37,6 +35,8 @@ import (
 	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 const trackChecksums = false

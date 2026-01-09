@@ -13,13 +13,13 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/p2p"
 	"github.com/luxfi/p2p/gossip"
 	"github.com/luxfi/warp"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/txs/mempool"
 )
 
 var (

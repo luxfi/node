@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package keystore
 
 import (
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const (
 	CodecVersion = 0
 
-	maxPackerSize = 1 * units.GiB // max size, in bytes, of something being marshalled by Marshal()
+	maxPackerSize = 1 * constants.GiB // max size, in bytes, of something being marshalled by Marshal()
 )
 
 var Codec codec.Manager

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/metric"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -71,9 +71,9 @@ func (g *prefixGatherer) Deregister(prefix string) bool {
 }
 
 type prefixedGatherer struct {
-	prefix      string
-	prefixPtr   *string // Cached pointer for when suffix is empty
-	gatherer    metric.Gatherer
+	prefix    string
+	prefixPtr *string // Cached pointer for when suffix is empty
+	gatherer  metric.Gatherer
 }
 
 func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {

@@ -87,7 +87,7 @@ func (tc *SimpleTestContext) Cleanup() {
 		if tc.panicHandler != nil {
 			tc.panicHandler(r)
 		}
-		
+
 		errorString, ok := r.(string)
 		if !ok || errorString != failNowMessage {
 			// Retain the panic data to raise after cleanup

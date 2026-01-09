@@ -133,7 +133,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	if parentIsOracle && child.SignedBlock.Proposer() != ids.EmptyNodeID {
 		return errChildOfPreForkBlockHasProposer
 	}
-	
+
 	if err := verifyIsNotOracleBlock(ctx, b.Block); err != nil {
 		return err
 	}

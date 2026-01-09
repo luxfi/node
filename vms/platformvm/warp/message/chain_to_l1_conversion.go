@@ -6,10 +6,10 @@ package message
 import (
 	"fmt"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 type ChainToL1ConversionValidatorData struct {
@@ -19,9 +19,9 @@ type ChainToL1ConversionValidatorData struct {
 }
 
 type ChainToL1ConversionData struct {
-	ChainID        ids.ID                               `serialize:"true" json:"chainID"`
-	ManagerChainID ids.ID                               `serialize:"true" json:"managerChainID"`
-	ManagerAddress types.JSONByteSlice                  `serialize:"true" json:"managerAddress"`
+	ChainID        ids.ID                             `serialize:"true" json:"chainID"`
+	ManagerChainID ids.ID                             `serialize:"true" json:"managerChainID"`
+	ManagerAddress types.JSONByteSlice                `serialize:"true" json:"managerAddress"`
 	Validators     []ChainToL1ConversionValidatorData `serialize:"true" json:"validators"`
 }
 

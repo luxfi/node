@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 // FuzzStateTransitions tests state transitions with random operations
@@ -50,7 +50,7 @@ func FuzzStateTransitions(f *testing.F) {
 				TxID:            ids.GenerateTestID(),
 				NodeID:          nodeID,
 				PublicKey:       nil,
-				ChainID:           constants.PrimaryNetworkID,
+				ChainID:         constants.PrimaryNetworkID,
 				Weight:          amount,
 				StartTime:       startTime,
 				EndTime:         endTime,
@@ -113,11 +113,11 @@ func FuzzStateTransitions(f *testing.F) {
 			chainID := ids.GenerateTestID()
 			createChainTx := &txs.Tx{
 				Unsigned: &txs.CreateChainTx{
-					ChainID:       ids.GenerateTestID(),
-					BlockchainName:   "test-chain",
-					VMID:        ids.GenerateTestID(),
-					FxIDs:       []ids.ID{},
-					GenesisData: []byte("genesis"),
+					ChainID:        ids.GenerateTestID(),
+					BlockchainName: "test-chain",
+					VMID:           ids.GenerateTestID(),
+					FxIDs:          []ids.ID{},
+					GenesisData:    []byte("genesis"),
 				},
 			}
 
@@ -127,7 +127,6 @@ func FuzzStateTransitions(f *testing.F) {
 			// Chain operations don't have a direct Get method
 			// Just verify the add doesn't error
 			_ = chainID
-
 
 		case 3:
 			// Test reward UTXO operations
@@ -168,10 +167,10 @@ func FuzzStateTransitions(f *testing.F) {
 			// Add a subnet transformation
 			s.AddNetTransformation(&txs.Tx{
 				Unsigned: &txs.TransformChainTx{
-					Chain:           subnetID,
-					AssetID:       ids.GenerateTestID(),
-					InitialSupply: amount,
-					MaximumSupply: amount * 2,
+					Chain:              subnetID,
+					AssetID:            ids.GenerateTestID(),
+					InitialSupply:      amount,
+					MaximumSupply:      amount * 2,
 					MinConsumptionRate: 100000,
 					MaxConsumptionRate: 120000,
 					MinValidatorStake:  1000,
@@ -291,7 +290,7 @@ func FuzzValidatorSet(f *testing.F) {
 				TxID:            ids.GenerateTestID(),
 				NodeID:          ids.GenerateTestNodeID(),
 				PublicKey:       nil,
-				ChainID:           constants.PrimaryNetworkID,
+				ChainID:         constants.PrimaryNetworkID,
 				Weight:          weight,
 				StartTime:       time.Now().Add(time.Duration(i) * time.Hour),
 				EndTime:         time.Now().Add(time.Duration(24+i) * time.Hour),
@@ -316,7 +315,7 @@ func FuzzValidatorSet(f *testing.F) {
 
 		expectedCount := initialCount + len(validators)
 		if len(currentValidators) != expectedCount {
-			t.Errorf("Validator count mismatch: got %v, want %v (initial: %v, added: %v)", 
+			t.Errorf("Validator count mismatch: got %v, want %v (initial: %v, added: %v)",
 				len(currentValidators), expectedCount, initialCount, len(validators))
 		}
 

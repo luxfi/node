@@ -1,10 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package state
 
-import "github.com/luxfi/node/utils/heap"
+import "github.com/luxfi/vm/utils/heap"
 
 var _ StakerIterator = (*mergedIterator)(nil)
 

@@ -35,12 +35,12 @@ const (
 
 // QuantumSigner handles quantum signature operations using ML-DSA (Dilithium)
 type QuantumSigner struct {
-	log             log.Logger
+	log              log.Logger
 	algorithmVersion uint32
-	mldsaMode       mldsa.Mode
-	stampWindow     time.Duration
-	sigCache        *cache.LRU[ids.ID, *QuantumSignature]
-	mu              sync.RWMutex
+	mldsaMode        mldsa.Mode
+	stampWindow      time.Duration
+	sigCache         *cache.LRU[ids.ID, *QuantumSignature]
+	mu               sync.RWMutex
 }
 
 // QuantumSignature represents a quantum-resistant signature

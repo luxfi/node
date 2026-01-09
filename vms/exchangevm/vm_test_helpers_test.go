@@ -14,23 +14,22 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/address"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/warp"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/address"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/txs/txstest"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/warp"
 )
 
 // Test keys for use in tests
@@ -41,9 +40,9 @@ var durango = upgradetest.GetConfig(upgradetest.Durango)
 
 // Test constants
 const (
-	// Increased from 50000 to 10*units.Lux to match larger genesis allocation
+	// Increased from 50000 to 10*constants.Lux to match larger genesis allocation
 	// This ensures tests have enough funds for sequential transactions
-	startBalance uint64 = 10 * units.Lux // 10 LUX = 10,000,000,000 nanoLux
+	startBalance uint64 = 10 * constants.Lux // 10 LUX = 10,000,000,000 nanoLux
 	testTxFee    uint64 = 1000
 )
 
@@ -59,13 +58,13 @@ type envConfig struct {
 
 // testEnv is the test environment
 type testEnv struct {
-	vm            *VM
-	consensusCtx  *consensusctx.Context
-	genesisBytes  []byte
-	genesisTx     *txs.Tx
-	testLock      *sync.Mutex
-	txBuilder     *txstest.Builder
-	sharedMemory  *atomic.Memory
+	vm           *VM
+	consensusCtx *consensusctx.Context
+	genesisBytes []byte
+	genesisTx    *txs.Tx
+	testLock     *sync.Mutex
+	txBuilder    *txstest.Builder
+	sharedMemory *atomic.Memory
 }
 
 // newGenesisBytesTest creates test genesis bytes
@@ -86,7 +85,7 @@ func newGenesisBytesTest(t *testing.T) []byte {
 			InitialState: AssetInitialState{
 				FixedCap: []GenesisHolder{
 					{
-						Amount:  1000 * units.Lux,
+						Amount:  1000 * constants.Lux,
 						Address: addr,
 					},
 				},
@@ -221,7 +220,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 			Fx: &secp256k1fx.Fx{},
 		},
 	}
-	
+
 	if len(config.additionalFxs) == 0 {
 		// No additional Fxs specified - add default nftfx and propertyfx
 		fxs = append(fxs,
@@ -278,13 +277,13 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	txBuilder.SetContextIDs(ctx.NetworkID, ctx.ChainID)
 
 	env := &testEnv{
-		vm:            vm,
-		consensusCtx:  ctx,
-		genesisBytes:  genesisBytes,
-		genesisTx:     genesisTx,
-		testLock:      testLock,
-		txBuilder:     txBuilder,
-		sharedMemory:  sharedMemory,
+		vm:           vm,
+		consensusCtx: ctx,
+		genesisBytes: genesisBytes,
+		genesisTx:    genesisTx,
+		testLock:     testLock,
+		txBuilder:    txBuilder,
+		sharedMemory: sharedMemory,
 	}
 
 	// Register cleanup to prevent goroutine leaks
@@ -337,8 +336,6 @@ func issueAndAccept(require *require.Assertions, vm *VM, tx *txs.Tx) {
 	require.Equal(uint8(choices.Accepted), uint8(blkIntf.Status()))
 }
 
-
-
 // newTx creates a simple test transaction
 func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser, assetName string) *txs.Tx {
 	require := require.New(tb)
@@ -347,7 +344,7 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 	// Genesis creates 1000 LUX for keys[0]
 	// This tx spends the entire UTXO and creates a change output back to keys[0]
 	// Must account for transaction fee (testTxFee = 1000 nanoLux)
-	inputAmt := uint64(1000 * units.Lux)
+	inputAmt := uint64(1000 * constants.Lux)
 	outputAmt := inputAmt - testTxFee // Deduct fee from output
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{

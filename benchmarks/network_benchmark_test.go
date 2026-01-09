@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 // BenchmarkMessageCompression benchmarks message compression

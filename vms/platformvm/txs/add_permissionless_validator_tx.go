@@ -9,16 +9,16 @@ import (
 	"fmt"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var (

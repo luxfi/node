@@ -11,15 +11,14 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
 )
 
 //go:embed disable_l1_validator_tx_test.json
@@ -111,7 +110,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.Lux,
+							Amt: constants.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},

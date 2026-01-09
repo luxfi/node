@@ -18,37 +18,37 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/log"
 	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/node/benchlist"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/genesis/builder"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/storage"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/vm/utils/perms"
+	"github.com/luxfi/vm/utils/profiler"
+	"github.com/luxfi/vm/utils/storage"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations
@@ -180,7 +180,7 @@ func saveDevNetworkConfig(dataDir string, cfg *DevNetworkConfig) error {
 func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Start with default parameters
 	p := consensusconfig.DefaultParams()
-	
+
 	// Override with config values if set
 	if v.IsSet(ConsensusSampleSizeKey) {
 		p.K = v.GetInt(ConsensusSampleSizeKey)
@@ -1787,20 +1787,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Router
-// 	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
+	// 	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
 	if err != nil {
 		return node.Config{}, err
 	}
-// 	// Convert RouterHealthConfig to node.HealthConfig
-// 	nodeConfig.RouterHealthConfig = node.HealthConfig{
-// 		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
-// 		MaxTimeSinceMsgSent:     routerHealthCfg.MaxOutstandingDuration,
-// 		MaxPortionSendQueueFull: routerHealthCfg.MaxDropRate,
-// 		MinConnectedPeers:       1,
-// 		ReadTimeout:             routerHealthCfg.MaxRunTimeRequests,
-// 		WriteTimeout:            routerHealthCfg.MaxRunTimeRequests,
-// 		MaxSendFailRate:         routerHealthCfg.MaxDropRate,
-// 	}
+	// 	// Convert RouterHealthConfig to node.HealthConfig
+	// 	nodeConfig.RouterHealthConfig = node.HealthConfig{
+	// 		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
+	// 		MaxTimeSinceMsgSent:     routerHealthCfg.MaxOutstandingDuration,
+	// 		MaxPortionSendQueueFull: routerHealthCfg.MaxDropRate,
+	// 		MinConnectedPeers:       1,
+	// 		ReadTimeout:             routerHealthCfg.MaxRunTimeRequests,
+	// 		WriteTimeout:            routerHealthCfg.MaxRunTimeRequests,
+	// 		MaxSendFailRate:         routerHealthCfg.MaxDropRate,
+	// 	}
 
 	// Metrics
 	nodeConfig.MeterVMEnabled = v.GetBool(MeterVMsEnabledKey)
@@ -1844,16 +1844,16 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config
-// 	prismParams := PrismParameters{
-// 		K:               primaryNetworkConfig.ConsensusParameters.K,
-// 		AlphaPreference: primaryNetworkConfig.ConsensusParameters.AlphaPreference,
-// 		AlphaConfidence: primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
-// 	}
+	// 	prismParams := PrismParameters{
+	// 		K:               primaryNetworkConfig.ConsensusParameters.K,
+	// 		AlphaPreference: primaryNetworkConfig.ConsensusParameters.AlphaPreference,
+	// 		AlphaConfidence: primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
+	// 	}
 	// getBenchlistConfig is called for validation only
-// 	_, err = getBenchlistConfig(v, prismParams)
-// 	if err != nil {
-// 		return node.Config{}, err
-// 	}
+	// 	_, err = getBenchlistConfig(v, prismParams)
+	// 	if err != nil {
+	// 		return node.Config{}, err
+	// 	}
 	// benchlist.Config from consensus package only has Deprecated field
 	nodeConfig.BenchlistConfig = benchlist.Config{
 		Deprecated: false,
@@ -1944,27 +1944,27 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-// 	cpuTargeterCfg, err := getCPUTargeterConfig(v)
+	// 	cpuTargeterCfg, err := getCPUTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
 	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
-// 	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
-// 		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
-// 		MaxNonVdrUsage:     cpuTargeterCfg.MaxNonVdrUsage,
-// 		MaxNonVdrNodeUsage: cpuTargeterCfg.MaxNonVdrNodeUsage,
-// 	}
+	// 	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
+	// 		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
+	// 		MaxNonVdrUsage:     cpuTargeterCfg.MaxNonVdrUsage,
+	// 		MaxNonVdrNodeUsage: cpuTargeterCfg.MaxNonVdrNodeUsage,
+	// 	}
 
-// 	diskTargeterCfg, err := getDiskTargeterConfig(v)
+	// 	diskTargeterCfg, err := getDiskTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
 	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
-// 	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
-// 		VdrAlloc:           diskTargeterCfg.VdrAlloc,
-// 		MaxNonVdrUsage:     diskTargeterCfg.MaxNonVdrUsage,
-// 		MaxNonVdrNodeUsage: diskTargeterCfg.MaxNonVdrNodeUsage,
-// 	}
+	// 	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
+	// 		VdrAlloc:           diskTargeterCfg.VdrAlloc,
+	// 		MaxNonVdrUsage:     diskTargeterCfg.MaxNonVdrUsage,
+	// 		MaxNonVdrNodeUsage: diskTargeterCfg.MaxNonVdrNodeUsage,
+	// 	}
 
 	nodeConfig.TraceConfig, err = getTraceConfig(v)
 	if err != nil {
@@ -1978,9 +1978,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ProvidedFlags = providedFlags(v)
 
 	// Initialize logger if not already set
-// 	if nodeConfig.Log == nil {
-// 		nodeConfig.Log = log.New()
-// 	}
+	// 	if nodeConfig.Log == nil {
+	// 		nodeConfig.Log = log.New()
+	// 	}
 
 	return nodeConfig, nil
 }

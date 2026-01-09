@@ -9,14 +9,14 @@ import (
 	"bytes"
 	"errors"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 const MaxChainAddressLength = 4096

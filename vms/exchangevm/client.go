@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -10,14 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/address"
 	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/formatting"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/address"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/rpc"
+	"github.com/luxfi/vm/utils/json"
 )
 
 var ErrRejected = errors.New("rejected")

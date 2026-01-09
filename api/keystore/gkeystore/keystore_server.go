@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package gkeystore
 
 import (
@@ -9,7 +8,7 @@ import (
 	"github.com/luxfi/database"
 
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
 )

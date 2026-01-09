@@ -13,16 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 
 	safemath "github.com/luxfi/math"
 )
@@ -32,10 +31,9 @@ var errCustom = errors.New("custom error")
 // testContext creates a test context with the given parameters
 func testContext(networkID uint32, chainID, luxAssetID ids.ID) *consensusctx.Context {
 	return &consensusctx.Context{
-		NetworkID:  networkID,
-		
-		
-		ChainID:    chainID,
+		NetworkID: networkID,
+
+		ChainID:  chainID,
 		XAssetID: luxAssetID,
 	}
 }
@@ -90,7 +88,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 2 * units.KiloLux,
+							Amt: 2 * constants.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -104,7 +102,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			NodeID: nodeID,
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
-			Wght:   2 * units.KiloLux,
+			Wght:   2 * constants.KiloLux,
 		},
 		Chain: constants.PrimaryNetworkID,
 		StakeOuts: []*lux.TransferableOutput{
@@ -113,7 +111,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					ID: luxAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -136,10 +134,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := &consensusctx.Context{
-		NetworkID:  1,
-		
-		
-		ChainID:    testChainID,
+		NetworkID: 1,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
@@ -303,7 +300,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MegaLux,
+							Amt: constants.MegaLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -350,7 +347,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			NodeID: nodeID,
 			Start:  12345,
 			End:    12345 + 200*24*60*60,
-			Wght:   5 * units.KiloLux,
+			Wght:   5 * constants.KiloLux,
 		},
 		Chain: constants.PrimaryNetworkID,
 		StakeOuts: []*lux.TransferableOutput{
@@ -359,7 +356,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					ID: luxAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: 2 * units.KiloLux,
+					Amt: 2 * constants.KiloLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Locktime:  0,
 						Threshold: 1,
@@ -376,7 +373,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				Out: &stakeable.LockOut{
 					Locktime: 987654321,
 					TransferableOut: &secp256k1fx.TransferOutput{
-						Amt: 3 * units.KiloLux,
+						Amt: 3 * constants.KiloLux,
 						OutputOwners: secp256k1fx.OutputOwners{
 							Locktime:  87654321,
 							Threshold: 0,
@@ -393,10 +390,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		},
 	}
 	ctx = &consensusctx.Context{
-		NetworkID:  1,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: 1,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
@@ -627,10 +623,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
@@ -820,7 +815,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MilliLux,
+							Amt: constants.MilliLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{1},
 							},
@@ -882,15 +877,13 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   ids.GenerateTestID(),
+
+		ChainID: ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		NetworkID:  1,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: 1,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
@@ -1075,7 +1068,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MegaLux,
+							Amt: constants.MegaLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -1165,10 +1158,9 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		},
 	}
 	ctx = &consensusctx.Context{
-		NetworkID:  1,
-		
-		
-		ChainID:    constants.PlatformChainID,
+		NetworkID: 1,
+
+		ChainID:  constants.PlatformChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
@@ -1399,10 +1391,9 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexAddNetTx.InitCtx(ctx3)
@@ -1551,9 +1542,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 
 	_ = &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   chainID,
+
+		ChainID: chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -1893,9 +1883,8 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			testCtx := &consensusctx.Context{
 				NetworkID: networkID,
-				
-				ChainID:   chainID,
-				
+
+				ChainID: chainID,
 			}
 			err := tx.SyntacticVerify(testCtx)
 			require.ErrorIs(t, err, tt.err)

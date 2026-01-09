@@ -41,7 +41,7 @@ type Config struct {
 	MaxBatchSize  int     `json:"maxBatchSize"`
 	NumThreads    int     `json:"numThreads"`
 	EnableFHE     bool    `json:"enableFHE"`
-	ProofSystem   string  `json:"proofSystem"` // groth16, plonk, stark
+	ProofSystem   string  `json:"proofSystem"`   // groth16, plonk, stark
 	SecurityLevel int     `json:"securityLevel"` // 128, 192, 256
 }
 
@@ -102,18 +102,18 @@ type Ciphertext struct {
 
 // NTTConfig configuration for Number Theoretic Transform
 type NTTConfig struct {
-	LogN     int    // log2 of polynomial degree
-	Modulus  uint64 // Field modulus
-	Forward  bool   // Forward or inverse NTT
-	InPlace  bool   // Modify input in place
+	LogN    int    // log2 of polynomial degree
+	Modulus uint64 // Field modulus
+	Forward bool   // Forward or inverse NTT
+	InPlace bool   // Modify input in place
 }
 
 // MSMConfig configuration for Multi-Scalar Multiplication
 type MSMConfig struct {
-	NumPoints    int
-	ScalarBits   int
-	WindowSize   int
-	UsePrecomp   bool
+	NumPoints  int
+	ScalarBits int
+	WindowSize int
+	UsePrecomp bool
 }
 
 // HashConfig configuration for hash operations
@@ -156,27 +156,27 @@ type Accelerator interface {
 
 // Capabilities describes what the accelerator supports
 type Capabilities struct {
-	SupportsNTT        bool
-	SupportsMSM        bool
-	SupportsGroth16    bool
-	SupportsPLONK      bool
-	SupportsSTARK      bool
-	SupportsFHE        bool
-	MaxPolynomialDeg   int
-	MaxMSMPoints       int
-	MaxBatchSize       int
-	ParallelProofs     int
+	SupportsNTT      bool
+	SupportsMSM      bool
+	SupportsGroth16  bool
+	SupportsPLONK    bool
+	SupportsSTARK    bool
+	SupportsFHE      bool
+	MaxPolynomialDeg int
+	MaxMSMPoints     int
+	MaxBatchSize     int
+	ParallelProofs   int
 }
 
 // BenchmarkResult contains benchmark results
 type BenchmarkResult struct {
-	Backend        Backend
-	Device         string
-	NTTOpsPerSec   float64
-	MSMOpsPerSec   float64
-	HashOpsPerSec  float64
-	ProofsPerSec   float64
-	LatencyNs      int64
+	Backend       Backend
+	Device        string
+	NTTOpsPerSec  float64
+	MSMOpsPerSec  float64
+	HashOpsPerSec float64
+	ProofsPerSec  float64
+	LatencyNs     int64
 }
 
 // String returns a string representation of the benchmark

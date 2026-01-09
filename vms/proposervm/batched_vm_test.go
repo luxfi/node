@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
@@ -47,7 +47,6 @@ func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// Not available in test state, return empty ID
 	return ids.Empty, nil
 }
-
 
 func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Use the test state's GetValidatorSet directly
@@ -658,7 +657,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 			},
 		},
 	}
-	
+
 	vm := VM{
 		ctx:       &consensus.Context{ChainID: chainID},
 		ChainVM:   testVM,

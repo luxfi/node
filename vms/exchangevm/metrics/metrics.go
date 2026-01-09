@@ -7,11 +7,11 @@ import (
 	"errors"
 
 	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 var _ Metrics = (*metricsImpl)(nil)

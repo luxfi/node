@@ -65,7 +65,7 @@ type ThresholdConfig struct {
 // DefaultThresholdConfig returns default threshold configuration
 func DefaultThresholdConfig() ThresholdConfig {
 	return ThresholdConfig{
-		Threshold:     67,  // 67-of-100 (2/3 majority)
+		Threshold:     67, // 67-of-100 (2/3 majority)
 		TotalParties:  100,
 		PartyID:       1,
 		NoiseFlooding: 1 << 30, // Standard noise flooding
@@ -81,10 +81,10 @@ type DecryptionSession struct {
 	Ciphertext *Ciphertext
 
 	// Shares collected from parties
-	PublicShares   map[uint64]*multiparty.KeySwitchShare
-	SecretShares   map[uint64]*multiparty.AdditiveShareBigint
-	ActiveParties  []multiparty.ShamirPublicPoint
-	SharesMu       sync.RWMutex
+	PublicShares  map[uint64]*multiparty.KeySwitchShare
+	SecretShares  map[uint64]*multiparty.AdditiveShareBigint
+	ActiveParties []multiparty.ShamirPublicPoint
+	SharesMu      sync.RWMutex
 
 	// Result when decryption is complete
 	Result    []complex128

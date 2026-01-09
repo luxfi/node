@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package tvm
 
 import (
@@ -18,9 +17,9 @@ import (
 
 // Client provides access to T-Chain MPC services
 type Client struct {
-	endpoint    string
-	chainID     string // Requesting chain's ID
-	httpClient  *http.Client
+	endpoint   string
+	chainID    string // Requesting chain's ID
+	httpClient *http.Client
 }
 
 // NewClient creates a new T-Chain client

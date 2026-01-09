@@ -12,16 +12,15 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 func TestTransformChainTxSerialization(t *testing.T) {
@@ -59,7 +58,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	simpleTransformTx := &TransformChainTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -72,7 +71,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: 10 * units.Lux,
+							Amt: 10 * constants.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{5},
 							},
@@ -97,7 +96,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice{},
 			},
 		},
-		Chain:                      netID,
+		Chain:                    netID,
 		AssetID:                  customAssetID,
 		InitialSupply:            0x1000000000000000,
 		MaximumSupply:            0xffffffffffffffff,
@@ -117,10 +116,9 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
@@ -234,7 +232,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	complexTransformTx := &TransformChainTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
@@ -282,7 +280,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.KiloLux,
+							Amt: constants.KiloLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -325,7 +323,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 			},
 		},
-		Chain:                      netID,
+		Chain:                    netID,
 		AssetID:                  customAssetID,
 		InitialSupply:            0x1000000000000000,
 		MaximumSupply:            0x1000000000000000,
@@ -346,10 +344,9 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
@@ -525,7 +522,6 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0a,
 		// number of signatures needed in authorization
 		0x00, 0x00, 0x00, 0x00,
-
 	}
 	var unsignedComplexTransformTx UnsignedTx = complexTransformTx
 	unsignedComplexTransformTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransformTx)
@@ -536,10 +532,9 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexTransformTx.InitCtx(ctx3)
@@ -654,10 +649,9 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 	)
 
 	ctx := &consensusctx.Context{
-		NetworkID:  networkID, // Must match tx.NetworkID
-		
-		
-		ChainID:    chainID,
+		NetworkID: networkID, // Must match tx.NetworkID
+
+		ChainID:  chainID,
 		XAssetID: luxAssetID,
 	}
 
@@ -669,7 +663,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   networkID,
+			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -699,7 +693,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx: validBaseTx,
-					Chain:    constants.PrimaryNetworkID,
+					Chain:  constants.PrimaryNetworkID,
 				}
 			},
 			err: errCantTransformPrimaryNetwork,
@@ -709,7 +703,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:  validBaseTx,
-					Chain:     ids.GenerateTestID(),
+					Chain:   ids.GenerateTestID(),
 					AssetID: ids.Empty,
 				}
 			},
@@ -720,7 +714,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:        validBaseTx,
-					Chain:           ids.GenerateTestID(),
+					Chain:         ids.GenerateTestID(),
 					AssetID:       luxAssetID,
 					InitialSupply: 1, // Non-zero to hit LUX assetID error first
 					MaximumSupply: 1,
@@ -733,7 +727,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:        validBaseTx,
-					Chain:           ids.GenerateTestID(),
+					Chain:         ids.GenerateTestID(),
 					AssetID:       ids.GenerateTestID(),
 					InitialSupply: 0,
 				}
@@ -745,7 +739,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:        validBaseTx,
-					Chain:           ids.GenerateTestID(),
+					Chain:         ids.GenerateTestID(),
 					AssetID:       ids.GenerateTestID(),
 					InitialSupply: 2,
 					MaximumSupply: 1,
@@ -758,7 +752,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      1,
 					MaximumSupply:      1,
@@ -773,7 +767,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      1,
 					MaximumSupply:      1,
@@ -788,7 +782,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      1,
 					MaximumSupply:      1,
@@ -804,7 +798,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      1,
 					MaximumSupply:      1,
@@ -820,7 +814,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -837,7 +831,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -854,7 +848,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -872,7 +866,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -891,7 +885,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -911,7 +905,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:             validBaseTx,
-					Chain:                ids.GenerateTestID(),
+					Chain:              ids.GenerateTestID(),
 					AssetID:            ids.GenerateTestID(),
 					InitialSupply:      10,
 					MaximumSupply:      10,
@@ -932,7 +926,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:                   validBaseTx,
-					Chain:                      ids.GenerateTestID(),
+					Chain:                    ids.GenerateTestID(),
 					AssetID:                  ids.GenerateTestID(),
 					InitialSupply:            10,
 					MaximumSupply:            10,
@@ -954,7 +948,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:                   validBaseTx,
-					Chain:                      ids.GenerateTestID(),
+					Chain:                    ids.GenerateTestID(),
 					AssetID:                  ids.GenerateTestID(),
 					InitialSupply:            10,
 					MaximumSupply:            10,
@@ -980,7 +974,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
 				return &TransformChainTx{
 					BaseTx:                   validBaseTx,
-					Chain:                      ids.GenerateTestID(),
+					Chain:                    ids.GenerateTestID(),
 					AssetID:                  ids.GenerateTestID(),
 					InitialSupply:            10,
 					MaximumSupply:            10,
@@ -994,7 +988,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
-					ChainAuth:               invalidNetAuth,
+					ChainAuth:                invalidNetAuth,
 				}
 			},
 			err: errInvalidNetAuth,
@@ -1004,7 +998,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransformChainTx {
 				return &TransformChainTx{
 					BaseTx:                   invalidBaseTx,
-					Chain:                      ids.GenerateTestID(),
+					Chain:                    ids.GenerateTestID(),
 					AssetID:                  ids.GenerateTestID(),
 					InitialSupply:            10,
 					MaximumSupply:            10,
@@ -1030,7 +1024,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 				validNetAuth.EXPECT().Verify().Return(nil)
 				return &TransformChainTx{
 					BaseTx:                   validBaseTx,
-					Chain:                      ids.GenerateTestID(),
+					Chain:                    ids.GenerateTestID(),
 					AssetID:                  ids.GenerateTestID(),
 					InitialSupply:            10,
 					MaximumSupply:            10,
@@ -1044,7 +1038,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
-					ChainAuth:               validNetAuth,
+					ChainAuth:                validNetAuth,
 				}
 			},
 			err: nil,
@@ -1058,6 +1052,6 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			err := tx.SyntacticVerify(ctx)
 			require.ErrorIs(t, err, tt.err)
-	})
+		})
 	}
 }

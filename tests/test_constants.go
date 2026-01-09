@@ -7,7 +7,7 @@ package tests
 // These are standard Ethereum units used across the ecosystem
 const (
 	Wei   = 1
-	GWei  = 1_000_000_000 // 1e9 Wei
+	GWei  = 1_000_000_000             // 1e9 Wei
 	Ether = 1_000_000_000_000_000_000 // 1e18 Wei
 )
 

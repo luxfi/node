@@ -18,6 +18,7 @@ import (
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
@@ -25,11 +26,9 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -46,7 +45,7 @@ const (
 	// blocks.
 	DefaultNumHistoricalBlocks uint64 = 0
 
-	innerBlkCacheSize = 64 * units.MiB
+	innerBlkCacheSize = 64 * constants.MiB
 )
 
 var (

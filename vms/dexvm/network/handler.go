@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	ErrInvalidMessage    = errors.New("invalid message")
+	ErrInvalidMessage     = errors.New("invalid message")
 	ErrUnknownMessageType = errors.New("unknown message type")
-	ErrPeerNotConnected  = errors.New("peer not connected")
-	ErrRequestTimeout    = errors.New("request timed out")
+	ErrPeerNotConnected   = errors.New("peer not connected")
+	ErrRequestTimeout     = errors.New("request timed out")
 )
 
 // MessageType represents the type of network message.
@@ -72,28 +72,28 @@ func (m *Message) Encode() []byte {
 	// Format: type (1) + requestID (4) + chainID (32) + sender (20) + timestamp (8) + payloadLen (4) + payload
 	size := 1 + 4 + 32 + 20 + 8 + 4 + len(m.Payload)
 	data := make([]byte, size)
-	
+
 	offset := 0
 	data[offset] = byte(m.Type)
 	offset++
-	
+
 	binary.BigEndian.PutUint32(data[offset:], m.RequestID)
 	offset += 4
-	
+
 	copy(data[offset:], m.ChainID[:])
 	offset += 32
-	
+
 	copy(data[offset:], m.Sender[:])
 	offset += 20
-	
+
 	binary.BigEndian.PutUint64(data[offset:], uint64(m.Timestamp))
 	offset += 8
-	
+
 	binary.BigEndian.PutUint32(data[offset:], uint32(len(m.Payload)))
 	offset += 4
-	
+
 	copy(data[offset:], m.Payload)
-	
+
 	return data
 }
 
@@ -102,54 +102,54 @@ func DecodeMessage(data []byte) (*Message, error) {
 	if len(data) < 69 { // Minimum size
 		return nil, ErrInvalidMessage
 	}
-	
+
 	m := &Message{}
 	offset := 0
-	
+
 	m.Type = MessageType(data[offset])
 	offset++
-	
+
 	m.RequestID = binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	copy(m.ChainID[:], data[offset:offset+32])
 	offset += 32
-	
+
 	copy(m.Sender[:], data[offset:offset+20])
 	offset += 20
-	
+
 	m.Timestamp = int64(binary.BigEndian.Uint64(data[offset:]))
 	offset += 8
-	
+
 	payloadLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	if offset+int(payloadLen) > len(data) {
 		return nil, ErrInvalidMessage
 	}
-	
+
 	m.Payload = make([]byte, payloadLen)
 	copy(m.Payload, data[offset:offset+int(payloadLen)])
-	
+
 	return m, nil
 }
 
 // Handler handles network messages for the DEX VM.
 type Handler struct {
-	mu            sync.RWMutex
-	log           log.Logger
-	chainID       ids.ID
-	
+	mu      sync.RWMutex
+	log     log.Logger
+	chainID ids.ID
+
 	// Pending requests
 	pendingRequests map[uint32]chan *Message
 	nextRequestID   uint32
-	
+
 	// Message handlers
-	orderHandler   func(*Message) error
-	tradeHandler   func(*Message) error
-	syncHandler    func(*Message) error
-	warpHandler    func(*Message) error
-	
+	orderHandler func(*Message) error
+	tradeHandler func(*Message) error
+	syncHandler  func(*Message) error
+	warpHandler  func(*Message) error
+
 	// Statistics (atomic for thread-safe access)
 	messagesSent     atomic.Uint64
 	messagesReceived atomic.Uint64
@@ -242,7 +242,7 @@ func (h *Handler) HandleRequest(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	msg.Sender = nodeID
 	msg.RequestID = requestID
 
@@ -299,21 +299,21 @@ func (h *Handler) HandleResponse(ctx context.Context, nodeID ids.NodeID, request
 	}
 	delete(h.pendingRequests, requestID)
 	h.mu.Unlock()
-	
+
 	msg, err := DecodeMessage(responseBytes)
 	if err != nil {
 		return err
 	}
-	
+
 	msg.Sender = nodeID
 	msg.RequestID = requestID
-	
+
 	select {
 	case respChan <- msg:
 	default:
 		// Channel full or closed
 	}
-	
+
 	return nil
 }
 
@@ -329,10 +329,10 @@ func (h *Handler) HandleCrossChainRequest(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	msg.ChainID = sourceChainID
 	msg.RequestID = requestID
-	
+
 	h.log.Debug("Received cross-chain request",
 		"sourceChain", sourceChainID,
 		"type", msg.Type,
@@ -366,7 +366,7 @@ func (h *Handler) HandleCrossChainRequest(
 	default:
 		return nil, ErrUnknownMessageType
 	}
-	
+
 	// Create response
 	response := &Message{
 		Type:      msg.Type,
@@ -375,7 +375,7 @@ func (h *Handler) HandleCrossChainRequest(
 		Timestamp: time.Now().UnixNano(),
 		Payload:   []byte("ok"),
 	}
-	
+
 	return response.Encode(), nil
 }
 
@@ -394,20 +394,20 @@ func (h *Handler) HandleCrossChainResponse(
 	}
 	delete(h.pendingRequests, requestID)
 	h.mu.Unlock()
-	
+
 	msg, err := DecodeMessage(responseBytes)
 	if err != nil {
 		return err
 	}
-	
+
 	msg.ChainID = sourceChainID
 	msg.RequestID = requestID
-	
+
 	select {
 	case respChan <- msg:
 	default:
 	}
-	
+
 	return nil
 }
 
@@ -422,21 +422,21 @@ func (h *Handler) SendRequest(
 	h.mu.Lock()
 	requestID := h.nextRequestID
 	h.nextRequestID++
-	
+
 	respChan := make(chan *Message, 1)
 	h.pendingRequests[requestID] = respChan
 	h.mu.Unlock()
-	
+
 	defer func() {
 		h.mu.Lock()
 		delete(h.pendingRequests, requestID)
 		h.mu.Unlock()
 	}()
-	
+
 	msg.RequestID = requestID
 	msg.ChainID = h.chainID
 	msg.Timestamp = time.Now().UnixNano()
-	
+
 	msgBytes := msg.Encode()
 
 	// Use atomic counters - no lock needed for statistics
@@ -446,7 +446,7 @@ func (h *Handler) SendRequest(
 	if err := sendFunc(nodeID, requestID, msgBytes); err != nil {
 		return nil, err
 	}
-	
+
 	// Wait for response
 	select {
 	case response := <-respChan:
@@ -462,7 +462,7 @@ func (h *Handler) SendRequest(
 func (h *Handler) Gossip(msg *Message, gossipFunc func([]byte) error) error {
 	msg.ChainID = h.chainID
 	msg.Timestamp = time.Now().UnixNano()
-	
+
 	msgBytes := msg.Encode()
 
 	// Use atomic counters - no lock needed for statistics
@@ -489,15 +489,15 @@ type WarpManager struct {
 
 // WarpMessage represents a cross-chain Warp message.
 type WarpMessage struct {
-	ID             ids.ID
-	SourceChain    ids.ID
-	DestChain      ids.ID
-	Payload        []byte
-	Signature      []byte
-	Validators     []ids.NodeID
-	ValidatorSigs  [][]byte
-	Timestamp      int64
-	Deadline       int64
+	ID            ids.ID
+	SourceChain   ids.ID
+	DestChain     ids.ID
+	Payload       []byte
+	Signature     []byte
+	Validators    []ids.NodeID
+	ValidatorSigs [][]byte
+	Timestamp     int64
+	Deadline      int64
 }
 
 // NewWarpManager creates a new Warp manager.
@@ -506,7 +506,7 @@ func NewWarpManager(log log.Logger, chainID ids.ID, trustedChains []ids.ID) *War
 	for _, chain := range trustedChains {
 		trusted[chain] = true
 	}
-	
+
 	return &WarpManager{
 		log:             log,
 		chainID:         chainID,
@@ -542,27 +542,27 @@ func (w *WarpManager) ProcessIncomingMessage(msg *WarpMessage) error {
 	if !w.IsTrustedChain(msg.SourceChain) {
 		return errors.New("source chain not trusted")
 	}
-	
+
 	// Verify message is for this chain
 	if msg.DestChain != w.chainID {
 		return errors.New("message not for this chain")
 	}
-	
+
 	// Verify deadline
 	if msg.Deadline > 0 && time.Now().UnixNano() > msg.Deadline {
 		return errors.New("message expired")
 	}
-	
+
 	// Store pending message
 	w.mu.Lock()
 	w.pendingMessages[msg.ID] = msg
 	w.mu.Unlock()
-	
+
 	w.log.Debug("Received Warp message",
 		"id", msg.ID,
 		"source", msg.SourceChain,
 	)
-	
+
 	return nil
 }
 

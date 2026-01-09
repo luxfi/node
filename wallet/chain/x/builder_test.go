@@ -10,18 +10,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/net/primary/common/utxotest"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var (
@@ -38,8 +37,8 @@ var (
 		NetworkID:        constants.UnitTestID,
 		BlockchainID:     xChainID,
 		XAssetID:         luxAssetID,
-		BaseTxFee:        units.MicroLux,
-		CreateAssetTxFee: 99 * units.MilliLux,
+		BaseTxFee:        constants.MicroLux,
+		CreateAssetTxFee: 99 * constants.MilliLux,
 	}
 )
 
@@ -69,7 +68,7 @@ func TestBaseTx(t *testing.T) {
 		outputsToMove = []*lux.TransferableOutput{{
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 7 * units.Lux,
+				Amt: 7 * constants.Lux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{utxoAddr},
@@ -431,7 +430,7 @@ func TestExportTx(t *testing.T) {
 		exportedOutputs = []*lux.TransferableOutput{{
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 7 * units.Lux,
+				Amt: 7 * constants.Lux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{utxoAddr},
@@ -471,7 +470,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			},
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 2 * units.MilliLux,
+				Amt: 2 * constants.MilliLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
 					Addrs:     []ids.ShortID{utxosKey.PublicKey().Address()},
@@ -541,7 +540,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			},
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 9 * units.Lux,
+				Amt: 9 * constants.Lux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
 					Addrs:     []ids.ShortID{utxosKey.PublicKey().Address()},

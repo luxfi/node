@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 

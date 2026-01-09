@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var _ Block = (*StandardBlock)(nil)
@@ -39,7 +39,6 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	}
 	return nil
 }
-
 
 func (b *StandardBlock) ID() ids.ID {
 	return b.BlockID
@@ -95,4 +94,3 @@ func NewStandardBlock(
 	blk.bytes = bytes
 	return blk, nil
 }
-

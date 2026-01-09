@@ -10,25 +10,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   ids.GenerateTestID(),
+
+		ChainID: ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		
-		ChainID:   testChainID,
+
+		ChainID: testChainID,
 	}
 	testNet1ID := ids.GenerateTestID()
 
@@ -159,12 +157,12 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 					Ins:          inputs,
 					Outs:         outputs,
 				}},
-				ChainID:       test.netID,
-				BlockchainName:   test.chainName,
-				VMID:        test.vmID,
-				FxIDs:       test.fxIDs,
-				GenesisData: test.genesisData,
-				ChainAuth:     subnetAuth,
+				ChainID:        test.netID,
+				BlockchainName: test.chainName,
+				VMID:           test.vmID,
+				FxIDs:          test.fxIDs,
+				GenesisData:    test.genesisData,
+				ChainAuth:      subnetAuth,
 			}
 
 			signers := [][]*secp256k1.PrivateKey{preFundedKeys}

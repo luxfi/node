@@ -4,7 +4,6 @@
 package run
 
 import (
-
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/node/vms/example/xsvm"

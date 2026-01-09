@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package pubsub
 
 import (
@@ -11,17 +10,17 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
 )
 
 const (
 	// Size of the ws read buffer
-	readBufferSize = units.KiB
+	readBufferSize = constants.KiB
 
 	// Size of the ws write buffer
-	writeBufferSize = units.KiB
+	writeBufferSize = constants.KiB
 
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -33,13 +32,13 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 10 * units.KiB // bytes
+	maxMessageSize = 10 * constants.KiB // bytes
 
 	// Maximum number of pending messages to send to a peer.
 	maxPendingMessages = 1024 // messages
 
 	// MaxBytes the max number of bytes for a filter
-	MaxBytes = 1 * units.MiB
+	MaxBytes = 1 * constants.MiB
 
 	// MaxAddresses the max number of addresses allowed
 	MaxAddresses = 10000

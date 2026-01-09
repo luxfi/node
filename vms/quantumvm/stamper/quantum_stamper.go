@@ -17,13 +17,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/vms/quantumvm/quantum"
-	"github.com/luxfi/log"
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/crypto/slhdsa"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/vms/quantumvm/quantum"
 )
 
 var (
@@ -31,19 +31,19 @@ var (
 	ErrInvalidBlockHeight    = errors.New("invalid block height")
 	ErrStampAlreadyExists    = errors.New("quantum stamp already exists")
 	ErrStampVerificationFail = errors.New("quantum stamp verification failed")
-	ErrQChainNotSynced      = errors.New("Q-chain not synchronized")
-	ErrInvalidSignatureMode = errors.New("invalid signature mode")
+	ErrQChainNotSynced       = errors.New("Q-chain not synchronized")
+	ErrInvalidSignatureMode  = errors.New("invalid signature mode")
 )
 
 // QuantumStampMode defines the post-quantum signature algorithm
 type QuantumStampMode uint8
 
 const (
-	StampModeMLDSA44  QuantumStampMode = 0 // Crystal-Dilithium Level 2 (fast, smaller)
-	StampModeMLDSA65  QuantumStampMode = 1 // Crystal-Dilithium Level 3 (balanced)
-	StampModeMLDSA87  QuantumStampMode = 2 // Crystal-Dilithium Level 5 (highest security)
-	StampModeSLHDSA   QuantumStampMode = 3 // SPHINCS+ (stateless hash-based)
-	StampModeHybrid   QuantumStampMode = 4 // Hybrid ML-DSA + SLH-DSA
+	StampModeMLDSA44 QuantumStampMode = 0 // Crystal-Dilithium Level 2 (fast, smaller)
+	StampModeMLDSA65 QuantumStampMode = 1 // Crystal-Dilithium Level 3 (balanced)
+	StampModeMLDSA87 QuantumStampMode = 2 // Crystal-Dilithium Level 5 (highest security)
+	StampModeSLHDSA  QuantumStampMode = 3 // SPHINCS+ (stateless hash-based)
+	StampModeHybrid  QuantumStampMode = 4 // Hybrid ML-DSA + SLH-DSA
 )
 
 // QuantumStamp represents a quantum-resistant stamp for a C-Chain block
@@ -55,12 +55,12 @@ type QuantumStamp struct {
 	QChainHash   common.Hash `json:"qchainHash"`
 
 	// Quantum signature data
-	Mode           QuantumStampMode `json:"mode"`
-	Timestamp      time.Time        `json:"timestamp"`
-	MLDSASignature []byte          `json:"mldsaSignature,omitempty"`
-	SLHDSASignature []byte         `json:"slhdsaSignature,omitempty"`
-	PublicKeyML    []byte          `json:"publicKeyML,omitempty"`
-	PublicKeySLH   []byte          `json:"publicKeySLH,omitempty"`
+	Mode            QuantumStampMode `json:"mode"`
+	Timestamp       time.Time        `json:"timestamp"`
+	MLDSASignature  []byte           `json:"mldsaSignature,omitempty"`
+	SLHDSASignature []byte           `json:"slhdsaSignature,omitempty"`
+	PublicKeyML     []byte           `json:"publicKeyML,omitempty"`
+	PublicKeySLH    []byte           `json:"publicKeySLH,omitempty"`
 
 	// Metadata
 	StateRoot    common.Hash `json:"stateRoot"`
@@ -75,9 +75,9 @@ type QuantumStamp struct {
 
 // QuantumStamper handles quantum stamping of C-Chain blocks
 type QuantumStamper struct {
-	log           log.Logger
-	enabled       atomic.Bool
-	mode          QuantumStampMode
+	log     log.Logger
+	enabled atomic.Bool
+	mode    QuantumStampMode
 
 	// Quantum signers
 	mldsaSigner   *MLDSASigner
@@ -85,19 +85,19 @@ type QuantumStamper struct {
 	quantumSigner *quantum.QuantumSigner
 
 	// Block tracking
-	cchainHeight  atomic.Uint64
-	qchainHeight  atomic.Uint64
-	stampCache    *cache.LRU[common.Hash, *QuantumStamp]
+	cchainHeight atomic.Uint64
+	qchainHeight atomic.Uint64
+	stampCache   *cache.LRU[common.Hash, *QuantumStamp]
 
 	// Synchronization
-	mu            sync.RWMutex
-	stampQueue    chan *stampRequest
-	verifyQueue   chan *verifyRequest
+	mu          sync.RWMutex
+	stampQueue  chan *stampRequest
+	verifyQueue chan *verifyRequest
 
 	// Metrics
-	stampsCreated atomic.Uint64
+	stampsCreated  atomic.Uint64
 	stampsVerified atomic.Uint64
-	stampsFailed  atomic.Uint64
+	stampsFailed   atomic.Uint64
 }
 
 type stampRequest struct {
@@ -129,11 +129,11 @@ type SLHDSASigner struct {
 // NewQuantumStamper creates a new quantum stamper for C-Chain blocks
 func NewQuantumStamper(log log.Logger, mode QuantumStampMode, cacheSize int) (*QuantumStamper, error) {
 	qs := &QuantumStamper{
-		log:          log,
-		mode:         mode,
-		stampCache:   &cache.LRU[common.Hash, *QuantumStamp]{Size: cacheSize},
-		stampQueue:   make(chan *stampRequest, 100),
-		verifyQueue:  make(chan *verifyRequest, 100),
+		log:         log,
+		mode:        mode,
+		stampCache:  &cache.LRU[common.Hash, *QuantumStamp]{Size: cacheSize},
+		stampQueue:  make(chan *stampRequest, 100),
+		verifyQueue: make(chan *verifyRequest, 100),
 	}
 
 	// Initialize quantum signers based on mode
@@ -272,15 +272,15 @@ func (qs *QuantumStamper) createStamp(block *types.Block) (*QuantumStamp, error)
 
 	// Create stamp data
 	stamp := &QuantumStamp{
-		CChainHeight:  blockHeight,
-		CChainHash:    blockHash,
-		QChainHeight:  qHeight,
-		Mode:          qs.mode,
-		Timestamp:     time.Now(),
-		StateRoot:     block.Root(),
-		ReceiptsRoot:  block.ReceiptHash(),
-		GasUsed:       block.GasUsed(),
-		Nonce:         generateNonce(),
+		CChainHeight: blockHeight,
+		CChainHash:   blockHash,
+		QChainHeight: qHeight,
+		Mode:         qs.mode,
+		Timestamp:    time.Now(),
+		StateRoot:    block.Root(),
+		ReceiptsRoot: block.ReceiptHash(),
+		GasUsed:      block.GasUsed(),
+		Nonce:        generateNonce(),
 	}
 
 	// Set logs bloom (limited to 256 bytes for efficiency)

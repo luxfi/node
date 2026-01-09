@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package messenger
 
 import (
@@ -35,13 +34,13 @@ func (s *Server) Notify(_ context.Context, req *messengerpb.NotifyRequest) (*mes
 	// Convert protobuf Message to consensuscore.Message
 	var nodeID ids.NodeID
 	copy(nodeID[:], req.Message.NodeId)
-	
+
 	msg := consensuscore.Message{
 		Type:    consensuscore.MessageType(req.Message.Type),
 		NodeID:  nodeID,
 		Content: req.Message.Content,
 	}
-	
+
 	select {
 	case s.messenger <- msg:
 		return &messengerpb.NotifyResponse{}, nil

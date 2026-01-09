@@ -14,92 +14,92 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/evm/lp226"
-	"github.com/luxfi/node/vms/proposervm/lp181"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 )
 
 // TestGraniteActivation tests that granite activates at the correct timestamp
 func TestGraniteActivation(t *testing.T) {
 	tests := []struct {
-		name       string
-		config     upgrade.Config
-		timestamp  time.Time
+		name           string
+		config         upgrade.Config
+		timestamp      time.Time
 		shouldBeActive bool
 	}{
 		{
-			name:       "pre_granite",
-			config:     upgrade.Default,
-			timestamp:  upgrade.InitiallyActiveTime,
+			name:           "pre_granite",
+			config:         upgrade.Default,
+			timestamp:      upgrade.InitiallyActiveTime,
 			shouldBeActive: false,
 		},
 		{
-			name:       "exactly_at_granite",
-			config:     upgrade.Config{
-				ApricotPhase1Time: upgrade.InitiallyActiveTime,
-				ApricotPhase2Time: upgrade.InitiallyActiveTime,
-				ApricotPhase3Time: upgrade.InitiallyActiveTime,
-				ApricotPhase4Time: upgrade.InitiallyActiveTime,
-				ApricotPhase5Time: upgrade.InitiallyActiveTime,
-				ApricotPhasePre6Time: upgrade.InitiallyActiveTime,
-				ApricotPhase6Time: upgrade.InitiallyActiveTime,
+			name: "exactly_at_granite",
+			config: upgrade.Config{
+				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase3Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase4Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase5Time:     upgrade.InitiallyActiveTime,
+				ApricotPhasePre6Time:  upgrade.InitiallyActiveTime,
+				ApricotPhase6Time:     upgrade.InitiallyActiveTime,
 				ApricotPhasePost6Time: upgrade.InitiallyActiveTime,
-				BanffTime: upgrade.InitiallyActiveTime,
-				CortinaTime: upgrade.InitiallyActiveTime,
-				DurangoTime: upgrade.InitiallyActiveTime,
-				EtnaTime: upgrade.InitiallyActiveTime,
-				FortunaTime: upgrade.InitiallyActiveTime,
-				GraniteTime: upgrade.InitiallyActiveTime.Add(time.Hour),
-				GraniteEpochDuration: 30 * time.Second,
+				BanffTime:             upgrade.InitiallyActiveTime,
+				CortinaTime:           upgrade.InitiallyActiveTime,
+				DurangoTime:           upgrade.InitiallyActiveTime,
+				EtnaTime:              upgrade.InitiallyActiveTime,
+				FortunaTime:           upgrade.InitiallyActiveTime,
+				GraniteTime:           upgrade.InitiallyActiveTime.Add(time.Hour),
+				GraniteEpochDuration:  30 * time.Second,
 			},
-			timestamp:  upgrade.InitiallyActiveTime.Add(time.Hour),
+			timestamp:      upgrade.InitiallyActiveTime.Add(time.Hour),
 			shouldBeActive: true,
 		},
 		{
-			name:       "after_granite",
-			config:     upgrade.Config{
-				ApricotPhase1Time: upgrade.InitiallyActiveTime,
-				ApricotPhase2Time: upgrade.InitiallyActiveTime,
-				ApricotPhase3Time: upgrade.InitiallyActiveTime,
-				ApricotPhase4Time: upgrade.InitiallyActiveTime,
-				ApricotPhase5Time: upgrade.InitiallyActiveTime,
-				ApricotPhasePre6Time: upgrade.InitiallyActiveTime,
-				ApricotPhase6Time: upgrade.InitiallyActiveTime,
+			name: "after_granite",
+			config: upgrade.Config{
+				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase3Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase4Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase5Time:     upgrade.InitiallyActiveTime,
+				ApricotPhasePre6Time:  upgrade.InitiallyActiveTime,
+				ApricotPhase6Time:     upgrade.InitiallyActiveTime,
 				ApricotPhasePost6Time: upgrade.InitiallyActiveTime,
-				BanffTime: upgrade.InitiallyActiveTime,
-				CortinaTime: upgrade.InitiallyActiveTime,
-				DurangoTime: upgrade.InitiallyActiveTime,
-				EtnaTime: upgrade.InitiallyActiveTime,
-				FortunaTime: upgrade.InitiallyActiveTime,
-				GraniteTime: upgrade.InitiallyActiveTime.Add(time.Hour),
-				GraniteEpochDuration: 30 * time.Second,
+				BanffTime:             upgrade.InitiallyActiveTime,
+				CortinaTime:           upgrade.InitiallyActiveTime,
+				DurangoTime:           upgrade.InitiallyActiveTime,
+				EtnaTime:              upgrade.InitiallyActiveTime,
+				FortunaTime:           upgrade.InitiallyActiveTime,
+				GraniteTime:           upgrade.InitiallyActiveTime.Add(time.Hour),
+				GraniteEpochDuration:  30 * time.Second,
 			},
-			timestamp:  upgrade.InitiallyActiveTime.Add(2 * time.Hour),
+			timestamp:      upgrade.InitiallyActiveTime.Add(2 * time.Hour),
 			shouldBeActive: true,
 		},
 		{
-			name:       "one_nanosecond_before_granite",
-			config:     upgrade.Config{
-				ApricotPhase1Time: upgrade.InitiallyActiveTime,
-				ApricotPhase2Time: upgrade.InitiallyActiveTime,
-				ApricotPhase3Time: upgrade.InitiallyActiveTime,
-				ApricotPhase4Time: upgrade.InitiallyActiveTime,
-				ApricotPhase5Time: upgrade.InitiallyActiveTime,
-				ApricotPhasePre6Time: upgrade.InitiallyActiveTime,
-				ApricotPhase6Time: upgrade.InitiallyActiveTime,
+			name: "one_nanosecond_before_granite",
+			config: upgrade.Config{
+				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase3Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase4Time:     upgrade.InitiallyActiveTime,
+				ApricotPhase5Time:     upgrade.InitiallyActiveTime,
+				ApricotPhasePre6Time:  upgrade.InitiallyActiveTime,
+				ApricotPhase6Time:     upgrade.InitiallyActiveTime,
 				ApricotPhasePost6Time: upgrade.InitiallyActiveTime,
-				BanffTime: upgrade.InitiallyActiveTime,
-				CortinaTime: upgrade.InitiallyActiveTime,
-				DurangoTime: upgrade.InitiallyActiveTime,
-				EtnaTime: upgrade.InitiallyActiveTime,
-				FortunaTime: upgrade.InitiallyActiveTime,
-				GraniteTime: upgrade.InitiallyActiveTime.Add(time.Hour),
-				GraniteEpochDuration: 30 * time.Second,
+				BanffTime:             upgrade.InitiallyActiveTime,
+				CortinaTime:           upgrade.InitiallyActiveTime,
+				DurangoTime:           upgrade.InitiallyActiveTime,
+				EtnaTime:              upgrade.InitiallyActiveTime,
+				FortunaTime:           upgrade.InitiallyActiveTime,
+				GraniteTime:           upgrade.InitiallyActiveTime.Add(time.Hour),
+				GraniteEpochDuration:  30 * time.Second,
 			},
-			timestamp:  upgrade.InitiallyActiveTime.Add(time.Hour - time.Nanosecond),
+			timestamp:      upgrade.InitiallyActiveTime.Add(time.Hour - time.Nanosecond),
 			shouldBeActive: false,
 		},
 	}
@@ -236,10 +236,10 @@ func TestLP181_PChainHeightCaching(t *testing.T) {
 	now := upgrade.InitiallyActiveTime.Add(24 * time.Hour)
 
 	tests := []struct {
-		name            string
-		currentEpoch    statelessblock.Epoch
-		expectedHeight  uint64
-		shouldBeCached  bool
+		name           string
+		currentEpoch   statelessblock.Epoch
+		expectedHeight uint64
+		shouldBeCached bool
 	}{
 		{
 			name: "first_epoch_height",
@@ -262,8 +262,8 @@ func TestLP181_PChainHeightCaching(t *testing.T) {
 			shouldBeCached: true,
 		},
 		{
-			name: "empty_epoch_no_cache",
-			currentEpoch: statelessblock.Epoch{},
+			name:           "empty_epoch_no_cache",
+			currentEpoch:   statelessblock.Epoch{},
 			expectedHeight: 0,
 			shouldBeCached: false,
 		},
@@ -281,10 +281,10 @@ func TestLP181_PChainHeightCaching(t *testing.T) {
 // TestLP204_Secp256r1Precompile tests secp256r1 signature verification
 func TestLP204_Secp256r1Precompile(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupKey       func() (*ecdsa.PrivateKey, []byte, []byte, []byte)
-		expectedValid  bool
-		expectedGas    uint64
+		name          string
+		setupKey      func() (*ecdsa.PrivateKey, []byte, []byte, []byte)
+		expectedValid bool
+		expectedGas   uint64
 	}{
 		{
 			name: "valid_p256_signature",
@@ -397,32 +397,32 @@ func TestLP204_BiometricWalletIntegration(t *testing.T) {
 // TestLP226_DynamicBlockTiming tests LP-226 dynamic block timing
 func TestLP226_DynamicBlockTiming(t *testing.T) {
 	tests := []struct {
-		name            string
-		delayExcess     lp226.DelayExcess
-		expectedDelay   uint64
-		minDelay        uint64
-		maxDelay        uint64
+		name          string
+		delayExcess   lp226.DelayExcess
+		expectedDelay uint64
+		minDelay      uint64
+		maxDelay      uint64
 	}{
 		{
-			name:            "minimum_delay_1ms",
-			delayExcess:     0,
-			expectedDelay:   lp226.MinDelayMilliseconds,
-			minDelay:        1,
-			maxDelay:        1,
+			name:          "minimum_delay_1ms",
+			delayExcess:   0,
+			expectedDelay: lp226.MinDelayMilliseconds,
+			minDelay:      1,
+			maxDelay:      1,
 		},
 		{
-			name:            "initial_delay_2000ms",
-			delayExcess:     lp226.InitialDelayExcess,
-			expectedDelay:   2000, // ≈2000ms
-			minDelay:        1900,
-			maxDelay:        2100,
+			name:          "initial_delay_2000ms",
+			delayExcess:   lp226.InitialDelayExcess,
+			expectedDelay: 2000, // ≈2000ms
+			minDelay:      1900,
+			maxDelay:      2100,
 		},
 		{
-			name:            "sub_second_block_timing",
-			delayExcess:     lp226.DelayExcess(100000),
-			expectedDelay:   0, // Will be calculated
-			minDelay:        1,
-			maxDelay:        10,
+			name:          "sub_second_block_timing",
+			delayExcess:   lp226.DelayExcess(100000),
+			expectedDelay: 0, // Will be calculated
+			minDelay:      1,
+			maxDelay:      10,
 		},
 	}
 
@@ -444,10 +444,10 @@ func TestLP226_DynamicBlockTiming(t *testing.T) {
 // TestLP226_DelayExcessCalculation tests delay excess updates
 func TestLP226_DelayExcessCalculation(t *testing.T) {
 	tests := []struct {
-		name                 string
-		currentExcess        lp226.DelayExcess
-		desiredDelay         uint64
-		expectedMaxChange    uint64
+		name              string
+		currentExcess     lp226.DelayExcess
+		desiredDelay      uint64
+		expectedMaxChange uint64
 	}{
 		{
 			name:              "increase_delay_excess",
@@ -503,34 +503,34 @@ func TestLP226_DelayExcessCalculation(t *testing.T) {
 // TestLP226_UnderLoadConditions tests block timing under different loads
 func TestLP226_UnderLoadConditions(t *testing.T) {
 	tests := []struct {
-		name            string
-		initialExcess   lp226.DelayExcess
-		targetTPS       int
-		iterations      int
+		name             string
+		initialExcess    lp226.DelayExcess
+		targetTPS        int
+		iterations       int
 		expectedMinDelay uint64
 		expectedMaxDelay uint64
 	}{
 		{
-			name:            "high_load_fast_blocks",
-			initialExcess:   lp226.InitialDelayExcess,
-			targetTPS:       1000,
-			iterations:      100,
+			name:             "high_load_fast_blocks",
+			initialExcess:    lp226.InitialDelayExcess,
+			targetTPS:        1000,
+			iterations:       100,
 			expectedMinDelay: 1,
 			expectedMaxDelay: 3000, // Adjusted: MaxDelayExcessDiff limits rate of change
 		},
 		{
-			name:            "medium_load",
-			initialExcess:   lp226.InitialDelayExcess,
-			targetTPS:       100,
-			iterations:      50,
+			name:             "medium_load",
+			initialExcess:    lp226.InitialDelayExcess,
+			targetTPS:        100,
+			iterations:       50,
 			expectedMinDelay: 10,
 			expectedMaxDelay: 2500, // Adjusted: MaxDelayExcessDiff limits rate of change
 		},
 		{
-			name:            "low_load_slower_blocks",
-			initialExcess:   lp226.InitialDelayExcess,
-			targetTPS:       10,
-			iterations:      20,
+			name:             "low_load_slower_blocks",
+			initialExcess:    lp226.InitialDelayExcess,
+			targetTPS:        10,
+			iterations:       20,
 			expectedMinDelay: 100,
 			expectedMaxDelay: 2500, // Adjusted: MaxDelayExcessDiff limits rate of change
 		},
@@ -611,46 +611,46 @@ func TestGraniteRollbackScenarios(t *testing.T) {
 	graniteTime := upgrade.InitiallyActiveTime.Add(time.Hour)
 
 	config := upgrade.Config{
-		ApricotPhase1Time: upgrade.InitiallyActiveTime,
-		ApricotPhase2Time: upgrade.InitiallyActiveTime,
-		ApricotPhase3Time: upgrade.InitiallyActiveTime,
-		ApricotPhase4Time: upgrade.InitiallyActiveTime,
-		ApricotPhase5Time: upgrade.InitiallyActiveTime,
-		ApricotPhasePre6Time: upgrade.InitiallyActiveTime,
-		ApricotPhase6Time: upgrade.InitiallyActiveTime,
+		ApricotPhase1Time:     upgrade.InitiallyActiveTime,
+		ApricotPhase2Time:     upgrade.InitiallyActiveTime,
+		ApricotPhase3Time:     upgrade.InitiallyActiveTime,
+		ApricotPhase4Time:     upgrade.InitiallyActiveTime,
+		ApricotPhase5Time:     upgrade.InitiallyActiveTime,
+		ApricotPhasePre6Time:  upgrade.InitiallyActiveTime,
+		ApricotPhase6Time:     upgrade.InitiallyActiveTime,
 		ApricotPhasePost6Time: upgrade.InitiallyActiveTime,
-		BanffTime: upgrade.InitiallyActiveTime,
-		CortinaTime: upgrade.InitiallyActiveTime,
-		DurangoTime: upgrade.InitiallyActiveTime,
-		EtnaTime: upgrade.InitiallyActiveTime,
-		FortunaTime: upgrade.InitiallyActiveTime,
-		GraniteTime: graniteTime,
-		GraniteEpochDuration: 30 * time.Second,
+		BanffTime:             upgrade.InitiallyActiveTime,
+		CortinaTime:           upgrade.InitiallyActiveTime,
+		DurangoTime:           upgrade.InitiallyActiveTime,
+		EtnaTime:              upgrade.InitiallyActiveTime,
+		FortunaTime:           upgrade.InitiallyActiveTime,
+		GraniteTime:           graniteTime,
+		GraniteEpochDuration:  30 * time.Second,
 	}
 
 	tests := []struct {
-		name              string
-		blockTimestamp    time.Time
-		expectGranite     bool
-		expectEpoch       bool
+		name           string
+		blockTimestamp time.Time
+		expectGranite  bool
+		expectEpoch    bool
 	}{
 		{
-			name:              "before_granite",
-			blockTimestamp:    graniteTime.Add(-time.Second),
-			expectGranite:     false,
-			expectEpoch:       false,
+			name:           "before_granite",
+			blockTimestamp: graniteTime.Add(-time.Second),
+			expectGranite:  false,
+			expectEpoch:    false,
 		},
 		{
-			name:              "at_granite_activation",
-			blockTimestamp:    graniteTime,
-			expectGranite:     true,
-			expectEpoch:       true,
+			name:           "at_granite_activation",
+			blockTimestamp: graniteTime,
+			expectGranite:  true,
+			expectEpoch:    true,
 		},
 		{
-			name:              "after_granite",
-			blockTimestamp:    graniteTime.Add(time.Minute),
-			expectGranite:     true,
-			expectEpoch:       true,
+			name:           "after_granite",
+			blockTimestamp: graniteTime.Add(time.Minute),
+			expectGranite:  true,
+			expectEpoch:    true,
 		},
 	}
 
@@ -676,28 +676,28 @@ func TestGraniteRollbackScenarios(t *testing.T) {
 // TestGraniteNetworkIDConfiguration tests granite configuration across network IDs
 func TestGraniteNetworkIDConfiguration(t *testing.T) {
 	tests := []struct {
-		name              string
-		networkID         uint32
+		name                  string
+		networkID             uint32
 		expectedEpochDuration time.Duration
-		expectScheduled   bool
+		expectScheduled       bool
 	}{
 		{
-			name:              "mainnet",
-			networkID:         constants.MainnetID,
+			name:                  "mainnet",
+			networkID:             constants.MainnetID,
 			expectedEpochDuration: 5 * time.Minute,
-			expectScheduled:   false, // Unscheduled
+			expectScheduled:       false, // Unscheduled
 		},
 		{
-			name:              "testnet",
-			networkID:         constants.TestnetID,
+			name:                  "testnet",
+			networkID:             constants.TestnetID,
 			expectedEpochDuration: 30 * time.Second,
-			expectScheduled:   false, // Unscheduled
+			expectScheduled:       false, // Unscheduled
 		},
 		{
-			name:              "local_default",
-			networkID:         12345, // Any other ID
+			name:                  "local_default",
+			networkID:             12345, // Any other ID
 			expectedEpochDuration: 30 * time.Second,
-			expectScheduled:   false, // Unscheduled
+			expectScheduled:       false, // Unscheduled
 		},
 	}
 

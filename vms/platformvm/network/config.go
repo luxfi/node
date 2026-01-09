@@ -1,18 +1,17 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package network
 
 import (
 	"time"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
 )
 
 var DefaultConfig = Config{
 	MaxValidatorSetStaleness:                    time.Minute,
-	TargetGossipSize:                            20 * units.KiB,
+	TargetGossipSize:                            20 * constants.KiB,
 	PushGossipPercentStake:                      .9,
 	PushGossipNumValidators:                     100,
 	PushGossipNumPeers:                          0,

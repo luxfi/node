@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package executor
 
 import (
@@ -16,14 +15,14 @@ import (
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestAcceptorVisitProposalBlock(t *testing.T) {
@@ -119,8 +118,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state: s,
-			ctx:   ctx,
+			state:        s,
+			ctx:          ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -149,7 +148,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	childID := ids.GenerateTestID()
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	batch := databasemock.NewBatch(ctrl)
-	
+
 	// Set expected calls on the state for the second call.
 	// These must be in the exact order they are called by the acceptor
 	gomock.InOrder(
@@ -201,8 +200,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state: s,
-			ctx:   ctx,
+			state:        s,
+			ctx:          ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -235,7 +234,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	atomicRequests := make(map[ids.ID]*atomic.Requests)
 	calledOnAcceptFunc := false
 	batch := databasemock.NewBatch(ctrl)
-	
+
 	// Set expected calls on the state for the second call.
 	// These must be in the exact order they are called by the acceptor
 	gomock.InOrder(
@@ -251,7 +250,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 
 	acceptor.backend.blkIDToState[blk.ID()] = &blockState{
 		statelessBlock: blk,
-		onAcceptState: onAcceptState,
+		onAcceptState:  onAcceptState,
 		onAcceptFunc: func() {
 			calledOnAcceptFunc = true
 		},
@@ -292,8 +291,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state: s,
-			ctx:   ctx,
+			state:        s,
+			ctx:          ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -349,8 +348,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
 		statelessBlock: blk,
-		onAcceptState: parentState.onCommitState,
-		onAcceptFunc:  parentState.onAcceptFunc,
+		onAcceptState:  parentState.onCommitState,
+		onAcceptFunc:   parentState.onAcceptFunc,
 
 		inputs:         parentState.inputs,
 		timestamp:      parentOnCommitState.GetTimestamp(),
@@ -403,8 +402,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		backend: &backend{
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
-			state: s,
-			ctx:   ctx,
+			state:        s,
+			ctx:          ctx,
 		},
 		metrics:    metrics.Noop,
 		validators: validators.TestManager,
@@ -460,8 +459,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
 		statelessBlock: blk,
-		onAcceptState: parentState.onAbortState,
-		onAcceptFunc:  parentState.onAcceptFunc,
+		onAcceptState:  parentState.onAbortState,
+		onAcceptFunc:   parentState.onAcceptFunc,
 
 		inputs:         parentState.inputs,
 		timestamp:      parentOnAbortState.GetTimestamp(),

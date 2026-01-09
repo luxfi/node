@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package index
 
 import "github.com/luxfi/metric"
@@ -29,7 +28,7 @@ func newMetrics(registerer metric.Registerer) (*indexMetrics, error) {
 		}
 		return m, nil
 	}
-	
+
 	// If not available, create noop metrics
 	return &indexMetrics{
 		numObjects:    metric.NewNoopGauge("index_num_objects"),

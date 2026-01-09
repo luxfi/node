@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zvm
 
 import (
@@ -17,8 +16,8 @@ import (
 
 // StateTree manages a sparse Merkle tree of the UTXO set
 type StateTree struct {
-	db     database.Database
-	log    log.Logger
+	db  database.Database
+	log log.Logger
 
 	// Current state
 	currentRoot []byte
@@ -64,17 +63,17 @@ func NewStateTree(db database.Database, log log.Logger) (*StateTree, error) {
 func (st *StateTree) ApplyTransaction(tx *Transaction) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	
+
 	// Remove spent UTXOs (nullifiers)
 	for _, nullifier := range tx.Nullifiers {
 		st.pendingRemoves = append(st.pendingRemoves, nullifier)
 	}
-	
+
 	// Add new UTXOs (output commitments)
 	for _, output := range tx.Outputs {
 		st.pendingAdds = append(st.pendingAdds, output.Commitment)
 	}
-	
+
 	return nil
 }
 
@@ -82,23 +81,23 @@ func (st *StateTree) ApplyTransaction(tx *Transaction) error {
 func (st *StateTree) ComputeRoot() ([]byte, error) {
 	st.mu.RLock()
 	defer st.mu.RUnlock()
-	
+
 	// In production, this would compute the actual Merkle tree root
 	// For now, we compute a simple hash of all changes
-	
+
 	h := sha256.New()
 	h.Write(st.currentRoot)
-	
+
 	// Include additions
 	for _, add := range st.pendingAdds {
 		h.Write(add)
 	}
-	
+
 	// Include removals
 	for _, remove := range st.pendingRemoves {
 		h.Write(remove)
 	}
-	
+
 	return h.Sum(nil), nil
 }
 
@@ -106,25 +105,25 @@ func (st *StateTree) ComputeRoot() ([]byte, error) {
 func (st *StateTree) Finalize(newRoot []byte) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	
+
 	// Update root
 	st.currentRoot = newRoot
-	
+
 	// Clear pending changes
 	st.pendingAdds = nil
 	st.pendingRemoves = nil
-	
+
 	// Save root to database
 	if err := st.db.Put([]byte("state_root"), newRoot); err != nil {
 		return err
 	}
-	
+
 	st.log.Debug("State tree finalized",
 		log.String("root", fmt.Sprintf("%x", newRoot[:8])),
 		log.Int("adds", len(st.pendingAdds)),
 		log.Int("removes", len(st.pendingRemoves)),
 	)
-	
+
 	return nil
 }
 

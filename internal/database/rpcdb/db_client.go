@@ -13,8 +13,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/utils"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )

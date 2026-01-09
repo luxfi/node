@@ -15,26 +15,23 @@ import (
 	"go.uber.org/mock/gomock"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -44,12 +41,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/validators/validatorstest"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/vm/secp256k1fx"
 
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )
@@ -61,7 +60,7 @@ const (
 	defaultMinStakingDuration = 24 * time.Hour
 	defaultMaxStakingDuration = 365 * 24 * time.Hour
 
-	defaultTxFee = 100 * units.NanoLux
+	defaultTxFee = 100 * constants.NanoLux
 )
 
 var testNet1 *txs.Tx
@@ -75,26 +74,26 @@ type staker struct {
 }
 
 type test struct {
-	description           string
-	stakers               []staker
-	subnetStakers         []staker
-	advanceTimeTo         []time.Time
-	expectedStakers       map[ids.NodeID]stakerStatus
+	description        string
+	stakers            []staker
+	subnetStakers      []staker
+	advanceTimeTo      []time.Time
+	expectedStakers    map[ids.NodeID]stakerStatus
 	expectedNetStakers map[ids.NodeID]stakerStatus
 }
 
 // testContext provides a mock context for testing
 type testContext struct {
 	context.Context // embed stdlib context
-	NetworkID    uint32
-	ChainID      ids.ID
-	NodeID       ids.NodeID
-	XChainID     ids.ID
-	CChainID     ids.ID
-	XAssetID     ids.ID
-	Log          log.Logger
-	Lock         *sync.RWMutex
-	SharedMemory atomic.SharedMemory
+	NetworkID       uint32
+	ChainID         ids.ID
+	NodeID          ids.NodeID
+	XChainID        ids.ID
+	CChainID        ids.ID
+	XAssetID        ids.ID
+	Log             log.Logger
+	Lock            *sync.RWMutex
+	SharedMemory    atomic.SharedMemory
 }
 
 type environment struct {
@@ -128,7 +127,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 
 	// Create consensus context from consensustest
 	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	
+
 	// Build our testContext from the consensus context
 	res.ctx = &testContext{
 		Context:      context.Background(),
@@ -180,7 +179,6 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
-
 	}
 
 	registerer := metric.NewRegistry()
@@ -246,18 +244,15 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
-	
+
 	// Get consensus context
 	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	
 
-
-	
 	return txstest.NewWallet(
 		t,
 		consensusCtx,
 		&config.Config{
-			TrackedChains:            e.config.TrackedChains,
+			TrackedChains:          e.config.TrackedChains,
 			SybilProtectionEnabled: e.config.SybilProtectionEnabled,
 			Chains:                 e.config.Chains,
 		},
@@ -320,17 +315,17 @@ func defaultConfig(f upgradetest.Fork) *config.Internal {
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
-		TrackedChains:            set.Of(constants.PrimaryNetworkID),
-		MinValidatorStake:      5 * units.MilliLux,
-		MaxValidatorStake:      500 * units.MilliLux,
-		MinDelegatorStake:      1 * units.MilliLux,
+		TrackedChains:          set.Of(constants.PrimaryNetworkID),
+		MinValidatorStake:      5 * constants.MilliLux,
+		MaxValidatorStake:      500 * constants.MilliLux,
+		MinDelegatorStake:      1 * constants.MilliLux,
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig: reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
 			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaLux,
+			SupplyCap:          720 * constants.MegaLux,
 		},
 		UpgradeConfig: upgrades,
 	}

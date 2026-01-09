@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	ErrBlockTooLarge     = errors.New("block exceeds maximum size")
-	ErrTooManyTxs        = errors.New("block contains too many transactions")
-	ErrInvalidBlockTime  = errors.New("invalid block timestamp")
-	ErrInvalidParent     = errors.New("invalid parent block")
-	ErrBlockNotVerified  = errors.New("block not verified")
+	ErrBlockTooLarge    = errors.New("block exceeds maximum size")
+	ErrTooManyTxs       = errors.New("block contains too many transactions")
+	ErrInvalidBlockTime = errors.New("invalid block timestamp")
+	ErrInvalidParent    = errors.New("invalid parent block")
+	ErrBlockNotVerified = errors.New("block not verified")
 )
 
 // Status represents the verification status of a block.
@@ -58,21 +58,21 @@ type Block struct {
 
 	// Block content
 	transactions []txs.Tx
-	
+
 	// Merkle roots
 	txRoot    ids.ID
 	stateRoot ids.ID
-	
+
 	// Producer info
 	producer  ids.NodeID
 	signature []byte
-	
+
 	// Verification status
-	status    Status
-	verified  bool
-	
+	status   Status
+	verified bool
+
 	// Serialized bytes
-	bytes     []byte
+	bytes []byte
 }
 
 // NewBlock creates a new block.
@@ -211,53 +211,53 @@ func (b *Block) serialize() []byte {
 	// Calculate size
 	// Header: parentID (32) + height (8) + timestamp (8) + txRoot (32) + stateRoot (32) + producer (20) + sigLen (4) + sig
 	// Txs: numTxs (4) + [txLen (4) + txBytes]...
-	
+
 	sigLen := len(b.signature)
 	txsSize := 4
 	for _, tx := range b.transactions {
 		txsSize += 4 + len(tx.Bytes())
 	}
-	
+
 	headerSize := 32 + 8 + 8 + 32 + 32 + 20 + 4 + sigLen
 	totalSize := headerSize + txsSize
-	
+
 	data := make([]byte, totalSize)
 	offset := 0
-	
+
 	// Parent ID
 	copy(data[offset:], b.parentID[:])
 	offset += 32
-	
+
 	// Height
 	binary.BigEndian.PutUint64(data[offset:], b.height)
 	offset += 8
-	
+
 	// Timestamp
 	binary.BigEndian.PutUint64(data[offset:], uint64(b.timestamp))
 	offset += 8
-	
+
 	// TX Root
 	copy(data[offset:], b.txRoot[:])
 	offset += 32
-	
+
 	// State Root
 	copy(data[offset:], b.stateRoot[:])
 	offset += 32
-	
+
 	// Producer
 	copy(data[offset:], b.producer[:])
 	offset += 20
-	
+
 	// Signature length and signature
 	binary.BigEndian.PutUint32(data[offset:], uint32(sigLen))
 	offset += 4
 	copy(data[offset:], b.signature)
 	offset += sigLen
-	
+
 	// Number of transactions
 	binary.BigEndian.PutUint32(data[offset:], uint32(len(b.transactions)))
 	offset += 4
-	
+
 	// Transactions
 	for _, tx := range b.transactions {
 		txBytes := tx.Bytes()
@@ -266,7 +266,7 @@ func (b *Block) serialize() []byte {
 		copy(data[offset:], txBytes)
 		offset += len(txBytes)
 	}
-	
+
 	return data
 }
 
@@ -287,58 +287,58 @@ func (p *BlockParser) Parse(data []byte) (*Block, error) {
 	if len(data) < 136 { // Minimum header size
 		return nil, errors.New("block data too short")
 	}
-	
+
 	b := &Block{
 		bytes: data,
 	}
-	
+
 	offset := 0
-	
+
 	// Parent ID
 	copy(b.parentID[:], data[offset:offset+32])
 	offset += 32
-	
+
 	// Height
 	b.height = binary.BigEndian.Uint64(data[offset:])
 	offset += 8
-	
+
 	// Timestamp
 	b.timestamp = int64(binary.BigEndian.Uint64(data[offset:]))
 	offset += 8
-	
+
 	// TX Root
 	copy(b.txRoot[:], data[offset:offset+32])
 	offset += 32
-	
+
 	// State Root
 	copy(b.stateRoot[:], data[offset:offset+32])
 	offset += 32
-	
+
 	// Producer
 	copy(b.producer[:], data[offset:offset+20])
 	offset += 20
-	
+
 	// Signature length and signature
 	if offset+4 > len(data) {
 		return nil, errors.New("invalid block: missing signature length")
 	}
 	sigLen := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	if offset+int(sigLen) > len(data) {
 		return nil, errors.New("invalid block: signature truncated")
 	}
 	b.signature = make([]byte, sigLen)
 	copy(b.signature, data[offset:offset+int(sigLen)])
 	offset += int(sigLen)
-	
+
 	// Number of transactions
 	if offset+4 > len(data) {
 		return nil, errors.New("invalid block: missing tx count")
 	}
 	numTxs := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	// Parse transactions
 	b.transactions = make([]txs.Tx, 0, numTxs)
 	for i := uint32(0); i < numTxs; i++ {
@@ -347,34 +347,34 @@ func (p *BlockParser) Parse(data []byte) (*Block, error) {
 		}
 		txLen := binary.BigEndian.Uint32(data[offset:])
 		offset += 4
-		
+
 		if offset+int(txLen) > len(data) {
 			return nil, errors.New("invalid block: tx data truncated")
 		}
 		txBytes := data[offset : offset+int(txLen)]
 		offset += int(txLen)
-		
+
 		tx, err := p.txParser.Parse(txBytes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse tx %d: %w", i, err)
 		}
 		b.transactions = append(b.transactions, tx)
 	}
-	
+
 	// Compute ID
 	b.id = b.computeID()
-	
+
 	return b, nil
 }
 
 // Builder builds new blocks.
 type Builder struct {
-	parentID     ids.ID
-	height       uint64
-	maxBlockSize uint64
+	parentID       ids.ID
+	height         uint64
+	maxBlockSize   uint64
 	maxTxsPerBlock uint32
-	transactions []txs.Tx
-	currentSize  uint64
+	transactions   []txs.Tx
+	currentSize    uint64
 }
 
 // NewBuilder creates a new block builder.
@@ -392,15 +392,15 @@ func NewBuilder(parentID ids.ID, height uint64, maxBlockSize uint64, maxTxsPerBl
 // AddTx adds a transaction to the pending block.
 func (b *Builder) AddTx(tx txs.Tx) error {
 	txSize := uint64(len(tx.Bytes()) + 4) // tx bytes + length prefix
-	
+
 	if b.currentSize+txSize > b.maxBlockSize {
 		return ErrBlockTooLarge
 	}
-	
+
 	if uint32(len(b.transactions)) >= b.maxTxsPerBlock {
 		return ErrTooManyTxs
 	}
-	
+
 	b.transactions = append(b.transactions, tx)
 	b.currentSize += txSize
 	return nil

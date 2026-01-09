@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/address"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 func main() {

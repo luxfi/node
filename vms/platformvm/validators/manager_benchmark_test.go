@@ -11,14 +11,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/ids"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -43,9 +43,9 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 
 	db, err := badgerdb.New(
 		b.TempDir(),
-		nil,  // configBytes - use default
-		"",   // namespace
-		nil,  // metrics
+		nil, // configBytes - use default
+		"",  // namespace
+		nil, // metrics
 	)
 	require.NoError(err)
 	defer func() {
@@ -118,8 +118,8 @@ func addPrimaryValidator(
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
 		PublicKey:       sk.PublicKey(),
-		ChainID:        constants.PrimaryNetworkID,
-		Weight:          2 * units.MegaLux,
+		ChainID:         constants.PrimaryNetworkID,
+		Weight:          2 * constants.MegaLux,
 		StartTime:       startTime,
 		EndTime:         endTime,
 		PotentialReward: 0,
@@ -150,8 +150,8 @@ func addNetValidator(
 	if err := s.PutCurrentValidator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		ChainID:           netID,
-		Weight:          1 * units.Lux,
+		ChainID:         netID,
+		Weight:          1 * constants.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,
 		PotentialReward: 0,
@@ -184,8 +184,8 @@ func addNetDelegator(
 	s.PutCurrentDelegator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		ChainID:           netID,
-		Weight:          1 * units.Lux,
+		ChainID:         netID,
+		Weight:          1 * constants.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,
 		PotentialReward: 0,

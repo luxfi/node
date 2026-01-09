@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/cachetest"
-	"github.com/luxfi/ids"
 )
 
 func TestSizedLRU(t *testing.T) {

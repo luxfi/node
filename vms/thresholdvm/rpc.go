@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package tvm
 
 import (
@@ -43,18 +42,18 @@ func (e *RPCError) Error() string {
 
 // Error codes
 const (
-	RPCErrorInvalidRequest    = -32600
-	RPCErrorMethodNotFound    = -32601
-	RPCErrorInvalidParams     = -32602
-	RPCErrorInternal          = -32603
-	RPCErrorMPCNotReady       = -32001
-	RPCErrorUnauthorized      = -32002
-	RPCErrorQuotaExceeded     = -32003
-	RPCErrorSessionNotFound   = -32004
-	RPCErrorKeyNotFound       = -32005
-	RPCErrorProtocolNotFound  = -32006
-	RPCErrorKeygenInProgress  = -32007
-	RPCErrorInvalidProtocol   = -32008
+	RPCErrorInvalidRequest   = -32600
+	RPCErrorMethodNotFound   = -32601
+	RPCErrorInvalidParams    = -32602
+	RPCErrorInternal         = -32603
+	RPCErrorMPCNotReady      = -32001
+	RPCErrorUnauthorized     = -32002
+	RPCErrorQuotaExceeded    = -32003
+	RPCErrorSessionNotFound  = -32004
+	RPCErrorKeyNotFound      = -32005
+	RPCErrorProtocolNotFound = -32006
+	RPCErrorKeygenInProgress = -32007
+	RPCErrorInvalidProtocol  = -32008
 )
 
 // createRPCHandler creates the JSON-RPC handler
@@ -175,22 +174,22 @@ func (vm *VM) handleRPCMethod(method string, params json.RawMessage) (interface{
 
 // KeygenParams contains parameters for key generation
 type KeygenParams struct {
-	KeyID        string   `json:"keyId"`
-	Protocol     string   `json:"protocol"`     // lss, cggmp21, bls, ringtail
-	RequestedBy  string   `json:"requestedBy"`  // Chain ID
-	Threshold    int      `json:"threshold"`    // Optional override
-	TotalParties int      `json:"totalParties"` // Optional override
+	KeyID        string `json:"keyId"`
+	Protocol     string `json:"protocol"`     // lss, cggmp21, bls, ringtail
+	RequestedBy  string `json:"requestedBy"`  // Chain ID
+	Threshold    int    `json:"threshold"`    // Optional override
+	TotalParties int    `json:"totalParties"` // Optional override
 }
 
 // KeygenResult contains the result of key generation
 type KeygenResult struct {
-	SessionID    string   `json:"sessionId"`
-	KeyID        string   `json:"keyId"`
-	Protocol     string   `json:"protocol"`
-	Status       string   `json:"status"`
-	Threshold    int      `json:"threshold"`
-	TotalParties int      `json:"totalParties"`
-	StartedAt    int64    `json:"startedAt"`
+	SessionID    string `json:"sessionId"`
+	KeyID        string `json:"keyId"`
+	Protocol     string `json:"protocol"`
+	Status       string `json:"status"`
+	Threshold    int    `json:"threshold"`
+	TotalParties int    `json:"totalParties"`
+	StartedAt    int64  `json:"startedAt"`
 }
 
 func (vm *VM) rpcKeygen(params json.RawMessage) (*KeygenResult, error) {
@@ -343,10 +342,10 @@ type GetSignatureParams struct {
 type SignatureResult struct {
 	SessionID     string   `json:"sessionId"`
 	Status        string   `json:"status"`
-	Signature     string   `json:"signature,omitempty"`     // Hex encoded
-	R             string   `json:"r,omitempty"`             // Hex encoded
-	S             string   `json:"s,omitempty"`             // Hex encoded
-	V             int      `json:"v,omitempty"`             // Recovery ID
+	Signature     string   `json:"signature,omitempty"` // Hex encoded
+	R             string   `json:"r,omitempty"`         // Hex encoded
+	S             string   `json:"s,omitempty"`         // Hex encoded
+	V             int      `json:"v,omitempty"`         // Recovery ID
 	SignerParties []string `json:"signerParties,omitempty"`
 	CompletedAt   int64    `json:"completedAt,omitempty"`
 	Error         string   `json:"error,omitempty"`
@@ -396,7 +395,7 @@ func (vm *VM) rpcGetSignature(params json.RawMessage) (*SignatureResult, error) 
 // BatchSignParams contains parameters for batch signing
 type BatchSignParams struct {
 	KeyID           string   `json:"keyId"`
-	MessageHashes   []string `json:"messageHashes"`   // Hex encoded
+	MessageHashes   []string `json:"messageHashes"` // Hex encoded
 	RequestingChain string   `json:"requestingChain"`
 }
 
@@ -495,10 +494,10 @@ func (vm *VM) rpcRefresh(params json.RawMessage) (*KeygenResult, error) {
 	}
 
 	return &KeygenResult{
-		SessionID:    session.SessionID,
-		KeyID:        session.KeyID,
-		Status:       session.Status,
-		StartedAt:    session.StartedAt.Unix(),
+		SessionID: session.SessionID,
+		KeyID:     session.KeyID,
+		Status:    session.Status,
+		StartedAt: session.StartedAt.Unix(),
 	}, nil
 }
 
@@ -666,15 +665,15 @@ type GetSessionsParams struct {
 
 // SessionInfo contains session information
 type SessionInfo struct {
-	SessionID       string   `json:"sessionId"`
-	Type            string   `json:"type"` // keygen, sign, reshare
-	KeyID           string   `json:"keyId"`
-	Status          string   `json:"status"`
-	RequestingChain string   `json:"requestingChain,omitempty"`
-	CreatedAt       int64    `json:"createdAt"`
-	ExpiresAt       int64    `json:"expiresAt,omitempty"`
-	CompletedAt     int64    `json:"completedAt,omitempty"`
-	Error           string   `json:"error,omitempty"`
+	SessionID       string `json:"sessionId"`
+	Type            string `json:"type"` // keygen, sign, reshare
+	KeyID           string `json:"keyId"`
+	Status          string `json:"status"`
+	RequestingChain string `json:"requestingChain,omitempty"`
+	CreatedAt       int64  `json:"createdAt"`
+	ExpiresAt       int64  `json:"expiresAt,omitempty"`
+	CompletedAt     int64  `json:"completedAt,omitempty"`
+	Error           string `json:"error,omitempty"`
 }
 
 func (vm *VM) rpcGetSessions(params json.RawMessage) ([]SessionInfo, error) {
@@ -807,17 +806,17 @@ func (vm *VM) rpcGetInfo() (*ThresholdInfo, error) {
 	}
 
 	return &ThresholdInfo{
-		Version:          Version.String(),
-		NodeID:           vm.ctx.NodeID.String(),
-		ChainID:          vm.ctx.ChainID.String(),
-		MPCReady:         vm.mpcReady,
-		ActiveKeyID:      vm.activeKeyID,
-		Threshold:        vm.config.Threshold,
-		TotalParties:     vm.config.TotalParties,
+		Version:            Version.String(),
+		NodeID:             vm.ctx.NodeID.String(),
+		ChainID:            vm.ctx.ChainID.String(),
+		MPCReady:           vm.mpcReady,
+		ActiveKeyID:        vm.activeKeyID,
+		Threshold:          vm.config.Threshold,
+		TotalParties:       vm.config.TotalParties,
 		SupportedProtocols: protocols,
-		AuthorizedChains: chains,
-		TotalKeys:        len(vm.keys),
-		ActiveSessions:   len(vm.signingSessions),
+		AuthorizedChains:   chains,
+		TotalKeys:          len(vm.keys),
+		ActiveSessions:     len(vm.signingSessions),
 	}, nil
 }
 
@@ -844,10 +843,10 @@ func (vm *VM) rpcGetStats() (*NetworkStats, error) {
 
 // PartyInfo contains party information
 type PartyInfo struct {
-	PartyID  string `json:"partyId"`
-	NodeID   string `json:"nodeId"`
-	IsLocal  bool   `json:"isLocal"`
-	Active   bool   `json:"active"`
+	PartyID string `json:"partyId"`
+	NodeID  string `json:"nodeId"`
+	IsLocal bool   `json:"isLocal"`
+	Active  bool   `json:"active"`
 }
 
 func (vm *VM) rpcGetParties() ([]PartyInfo, error) {

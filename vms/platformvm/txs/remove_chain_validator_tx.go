@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 )

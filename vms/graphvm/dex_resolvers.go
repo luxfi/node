@@ -18,71 +18,71 @@ import (
 
 // DexFactory represents DEX factory stats (Uniswap-compatible)
 type DexFactory struct {
-	ID                          string   `json:"id"`
-	PoolCount                   int64    `json:"poolCount"`
-	PairCount                   int64    `json:"pairCount"` // v2 compat
-	TxCount                     int64    `json:"txCount"`
-	TotalVolumeUSD              string   `json:"totalVolumeUSD"`
-	TotalVolumeETH              string   `json:"totalVolumeETH"`
-	TotalFeesUSD                string   `json:"totalFeesUSD"`
-	TotalValueLockedUSD         string   `json:"totalValueLockedUSD"`
-	TotalLiquidityUSD           string   `json:"totalLiquidityUSD"` // v2 compat
-	TotalValueLockedETH         string   `json:"totalValueLockedETH"`
+	ID                  string `json:"id"`
+	PoolCount           int64  `json:"poolCount"`
+	PairCount           int64  `json:"pairCount"` // v2 compat
+	TxCount             int64  `json:"txCount"`
+	TotalVolumeUSD      string `json:"totalVolumeUSD"`
+	TotalVolumeETH      string `json:"totalVolumeETH"`
+	TotalFeesUSD        string `json:"totalFeesUSD"`
+	TotalValueLockedUSD string `json:"totalValueLockedUSD"`
+	TotalLiquidityUSD   string `json:"totalLiquidityUSD"` // v2 compat
+	TotalValueLockedETH string `json:"totalValueLockedETH"`
 }
 
 // Bundle represents ETH/native price in USD
 type Bundle struct {
 	ID          string `json:"id"`
 	EthPriceUSD string `json:"ethPriceUSD"`
-	EthPrice    string `json:"ethPrice"` // v2 compat (same as ethPriceUSD)
+	EthPrice    string `json:"ethPrice"`    // v2 compat (same as ethPriceUSD)
 	LuxPriceUSD string `json:"luxPriceUSD"` // native token price
 }
 
 // Token represents ERC20 token metadata and stats
 type Token struct {
-	ID                      string   `json:"id"` // address
-	Symbol                  string   `json:"symbol"`
-	Name                    string   `json:"name"`
-	Decimals                int64    `json:"decimals"`
-	TotalSupply             string   `json:"totalSupply"`
-	Volume                  string   `json:"volume"`
-	VolumeUSD               string   `json:"volumeUSD"`
-	UntrackedVolumeUSD      string   `json:"untrackedVolumeUSD"`
-	FeesUSD                 string   `json:"feesUSD"`
-	TxCount                 int64    `json:"txCount"`
-	PoolCount               int64    `json:"poolCount"`
-	TotalValueLocked        string   `json:"totalValueLocked"`
-	TotalValueLockedUSD     string   `json:"totalValueLockedUSD"`
-	TotalLiquidity          string   `json:"totalLiquidity"` // v2 compat
-	DerivedETH              string   `json:"derivedETH"`
-	DerivedLUX              string   `json:"derivedLUX"` // native token derived price
-	TradeVolume             string   `json:"tradeVolume"` // v2 compat
-	TradeVolumeUSD          string   `json:"tradeVolumeUSD"` // v2 compat
+	ID                  string `json:"id"` // address
+	Symbol              string `json:"symbol"`
+	Name                string `json:"name"`
+	Decimals            int64  `json:"decimals"`
+	TotalSupply         string `json:"totalSupply"`
+	Volume              string `json:"volume"`
+	VolumeUSD           string `json:"volumeUSD"`
+	UntrackedVolumeUSD  string `json:"untrackedVolumeUSD"`
+	FeesUSD             string `json:"feesUSD"`
+	TxCount             int64  `json:"txCount"`
+	PoolCount           int64  `json:"poolCount"`
+	TotalValueLocked    string `json:"totalValueLocked"`
+	TotalValueLockedUSD string `json:"totalValueLockedUSD"`
+	TotalLiquidity      string `json:"totalLiquidity"` // v2 compat
+	DerivedETH          string `json:"derivedETH"`
+	DerivedLUX          string `json:"derivedLUX"`     // native token derived price
+	TradeVolume         string `json:"tradeVolume"`    // v2 compat
+	TradeVolumeUSD      string `json:"tradeVolumeUSD"` // v2 compat
 }
 
 // Pool represents a v3-style concentrated liquidity pool
 type Pool struct {
-	ID                      string `json:"id"` // address
-	CreatedAtTimestamp      int64  `json:"createdAtTimestamp"`
-	CreatedAtBlockNumber    int64  `json:"createdAtBlockNumber"`
-	Token0                  *Token `json:"token0"`
-	Token1                  *Token `json:"token1"`
-	FeeTier                 int64  `json:"feeTier"`
-	Liquidity               string `json:"liquidity"`
-	SqrtPrice               string `json:"sqrtPrice"`
-	Token0Price             string `json:"token0Price"`
-	Token1Price             string `json:"token1Price"`
-	Tick                    int64  `json:"tick"`
-	ObservationIndex        int64  `json:"observationIndex"`
-	VolumeToken0            string `json:"volumeToken0"`
-	VolumeToken1            string `json:"volumeToken1"`
-	VolumeUSD               string `json:"volumeUSD"`
-	FeesUSD                 string `json:"feesUSD"`
-	TxCount                 int64  `json:"txCount"`
-	TotalValueLockedToken0  string `json:"totalValueLockedToken0"`
-	TotalValueLockedToken1  string `json:"totalValueLockedToken1"`
-	TotalValueLockedETH     string `json:"totalValueLockedETH"`
-	TotalValueLockedUSD     string `json:"totalValueLockedUSD"`
+	ID                     string `json:"id"` // address
+	CreatedAtTimestamp     int64  `json:"createdAtTimestamp"`
+	CreatedAtBlockNumber   int64  `json:"createdAtBlockNumber"`
+	Token0                 *Token `json:"token0"`
+	Token1                 *Token `json:"token1"`
+	FeeTier                int64  `json:"feeTier"`
+	Liquidity              string `json:"liquidity"`
+	SqrtPrice              string `json:"sqrtPrice"`
+	Token0Price            string `json:"token0Price"`
+	Token1Price            string `json:"token1Price"`
+	Tick                   int64  `json:"tick"`
+	ObservationIndex       int64  `json:"observationIndex"`
+	VolumeToken0           string `json:"volumeToken0"`
+	VolumeToken1           string `json:"volumeToken1"`
+	VolumeUSD              string `json:"volumeUSD"`
+	FeesUSD                string `json:"feesUSD"`
+	TxCount                int64  `json:"txCount"`
+	TotalValueLockedToken0 string `json:"totalValueLockedToken0"`
+	TotalValueLockedToken1 string `json:"totalValueLockedToken1"`
+	TotalValueLockedETH    string `json:"totalValueLockedETH"`
+	TotalValueLockedUSD    string `json:"totalValueLockedUSD"`
 }
 
 // Pair represents a v2-style constant product AMM pair
@@ -121,26 +121,26 @@ type Tick struct {
 
 // Swap represents a swap event
 type Swap struct {
-	ID          string `json:"id"` // txHash#logIndex
-	Transaction string `json:"transaction"`
-	Timestamp   int64  `json:"timestamp"`
-	Pool        string `json:"pool"`
-	Pair        string `json:"pair"` // v2 compat
-	Token0      string `json:"token0"`
-	Token1      string `json:"token1"`
-	Sender      string `json:"sender"`
-	Recipient   string `json:"recipient"`
-	Origin      string `json:"origin"`
-	Amount0     string `json:"amount0"`
-	Amount1     string `json:"amount1"`
-	Amount0In   string `json:"amount0In"`  // v2
-	Amount0Out  string `json:"amount0Out"` // v2
-	Amount1In   string `json:"amount1In"`  // v2
-	Amount1Out  string `json:"amount1Out"` // v2
-	AmountUSD   string `json:"amountUSD"`
+	ID           string `json:"id"` // txHash#logIndex
+	Transaction  string `json:"transaction"`
+	Timestamp    int64  `json:"timestamp"`
+	Pool         string `json:"pool"`
+	Pair         string `json:"pair"` // v2 compat
+	Token0       string `json:"token0"`
+	Token1       string `json:"token1"`
+	Sender       string `json:"sender"`
+	Recipient    string `json:"recipient"`
+	Origin       string `json:"origin"`
+	Amount0      string `json:"amount0"`
+	Amount1      string `json:"amount1"`
+	Amount0In    string `json:"amount0In"`  // v2
+	Amount0Out   string `json:"amount0Out"` // v2
+	Amount1In    string `json:"amount1In"`  // v2
+	Amount1Out   string `json:"amount1Out"` // v2
+	AmountUSD    string `json:"amountUSD"`
 	SqrtPriceX96 string `json:"sqrtPriceX96"` // v3
-	Tick        int64  `json:"tick"` // v3
-	LogIndex    int64  `json:"logIndex"`
+	Tick         int64  `json:"tick"`         // v3
+	LogIndex     int64  `json:"logIndex"`
 }
 
 // Mint represents a liquidity add event
@@ -155,7 +155,7 @@ type Mint struct {
 	Owner       string `json:"owner"`
 	Sender      string `json:"sender"`
 	Origin      string `json:"origin"`
-	Amount      string `json:"amount"`   // liquidity amount
+	Amount      string `json:"amount"` // liquidity amount
 	Amount0     string `json:"amount0"`
 	Amount1     string `json:"amount1"`
 	AmountUSD   string `json:"amountUSD"`
@@ -266,42 +266,42 @@ type PoolHourData struct {
 
 // PairDayData represents daily v2 pair stats
 type PairDayData struct {
-	ID                 string `json:"id"`
-	Date               int64  `json:"date"`
-	PairAddress        string `json:"pairAddress"`
-	Token0             string `json:"token0"`
-	Token1             string `json:"token1"`
-	Reserve0           string `json:"reserve0"`
-	Reserve1           string `json:"reserve1"`
-	TotalSupply        string `json:"totalSupply"`
-	ReserveUSD         string `json:"reserveUSD"`
-	DailyVolumeToken0  string `json:"dailyVolumeToken0"`
-	DailyVolumeToken1  string `json:"dailyVolumeToken1"`
-	DailyVolumeUSD     string `json:"dailyVolumeUSD"`
-	DailyTxns          int64  `json:"dailyTxns"`
+	ID                string `json:"id"`
+	Date              int64  `json:"date"`
+	PairAddress       string `json:"pairAddress"`
+	Token0            string `json:"token0"`
+	Token1            string `json:"token1"`
+	Reserve0          string `json:"reserve0"`
+	Reserve1          string `json:"reserve1"`
+	TotalSupply       string `json:"totalSupply"`
+	ReserveUSD        string `json:"reserveUSD"`
+	DailyVolumeToken0 string `json:"dailyVolumeToken0"`
+	DailyVolumeToken1 string `json:"dailyVolumeToken1"`
+	DailyVolumeUSD    string `json:"dailyVolumeUSD"`
+	DailyTxns         int64  `json:"dailyTxns"`
 }
 
 // Database key prefixes for DEX data
 const (
-	PrefixFactory       = "dex:factory:"
-	PrefixBundle        = "dex:bundle:"
-	PrefixToken         = "dex:token:"
-	PrefixPool          = "dex:pool:"
-	PrefixPair          = "dex:pair:"
-	PrefixTick          = "dex:tick:"
-	PrefixSwap          = "dex:swap:"
-	PrefixMint          = "dex:mint:"
-	PrefixBurn          = "dex:burn:"
-	PrefixTokenDay      = "dex:tokenday:"
-	PrefixTokenHour     = "dex:tokenhour:"
-	PrefixPoolDay       = "dex:poolday:"
-	PrefixPoolHour      = "dex:poolhour:"
-	PrefixPairDay       = "dex:pairday:"
+	PrefixFactory   = "dex:factory:"
+	PrefixBundle    = "dex:bundle:"
+	PrefixToken     = "dex:token:"
+	PrefixPool      = "dex:pool:"
+	PrefixPair      = "dex:pair:"
+	PrefixTick      = "dex:tick:"
+	PrefixSwap      = "dex:swap:"
+	PrefixMint      = "dex:mint:"
+	PrefixBurn      = "dex:burn:"
+	PrefixTokenDay  = "dex:tokenday:"
+	PrefixTokenHour = "dex:tokenhour:"
+	PrefixPoolDay   = "dex:poolday:"
+	PrefixPoolHour  = "dex:poolhour:"
+	PrefixPairDay   = "dex:pairday:"
 	// Index prefixes for efficient queries
-	PrefixPoolByToken   = "idx:pool:token:"
-	PrefixPairByToken   = "idx:pair:token:"
-	PrefixSwapByPool    = "idx:swap:pool:"
-	PrefixSwapByToken   = "idx:swap:token:"
+	PrefixPoolByToken = "idx:pool:token:"
+	PrefixPairByToken = "idx:pair:token:"
+	PrefixSwapByPool  = "idx:swap:pool:"
+	PrefixSwapByToken = "idx:swap:token:"
 )
 
 // registerDexResolvers adds DEX-specific GraphQL resolvers

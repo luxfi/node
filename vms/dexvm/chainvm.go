@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	luxvm "github.com/luxfi/vm"

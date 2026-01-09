@@ -1,21 +1,20 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
 	"cmp"
 	"fmt"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/address"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
 )
 
 // Genesis represents the genesis state of the XVM
@@ -25,7 +24,7 @@ type Genesis struct {
 
 // GenesisAsset represents an asset in the genesis block
 type GenesisAsset struct {
-	Alias             string            `serialize:"true"`
+	Alias             string `serialize:"true"`
 	txs.CreateAssetTx `serialize:"true"`
 }
 

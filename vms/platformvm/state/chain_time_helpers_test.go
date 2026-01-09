@@ -9,17 +9,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
 	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
@@ -89,7 +88,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 	config := validatorfee.Config{
 		Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
 		Target:                   builder.LocalValidatorFeeConfig.Target,
-		MinPrice:                 gas.Price(2 * units.NanoLux), // Increase minimum price to test fractional seconds
+		MinPrice:                 gas.Price(2 * constants.NanoLux), // Increase minimum price to test fractional seconds
 		ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 	}
 
@@ -112,7 +111,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 					TxID:      ids.GenerateTestID(),
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: nil,
-					ChainID:  constants.PrimaryNetworkID,
+					ChainID:   constants.PrimaryNetworkID,
 					Weight:    1,
 					StartTime: genesistest.DefaultValidatorStartTime.Add(time.Second),
 					EndTime:   genesistest.DefaultValidatorEndTime,
@@ -128,7 +127,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          ids.GenerateTestID(),
+					ChainID:           ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 1, // This validator should be evicted in .5 seconds, which is rounded to 0.
@@ -142,7 +141,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          ids.GenerateTestID(),
+					ChainID:           ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 2, // This validator should be evicted in 1 second.
@@ -156,7 +155,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          ids.GenerateTestID(),
+					ChainID:           ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 3, // This validator should be evicted in 1.5 seconds, which is rounded to 1.
@@ -170,10 +169,10 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          ids.GenerateTestID(),
+					ChainID:           ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
-					EndAccumulatedFee: 10 * units.Lux, // 10 LUX = 10M microLux, lasts ~58 days at 2 nanoLux/sec, well past the 28-day validator end time.
+					EndAccumulatedFee: 10 * constants.Lux, // 10 LUX = 10M microLux, lasts ~58 days at 2 nanoLux/sec, well past the 28-day validator end time.
 				},
 			},
 			maxTime:  mockable.MaxTime,

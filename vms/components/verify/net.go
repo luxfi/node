@@ -20,7 +20,7 @@ var (
 // ChainContext provides context for chain operations
 type ChainContext struct {
 	ChainID        ids.ID
-	NetID       ids.ID
+	NetID          ids.ID
 	ValidatorState ValidatorState
 }
 

@@ -14,9 +14,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/vm/utils/wrappers"
 
-	connpb "github.com/luxfi/node/proto/pb/net/conn"
+	connpb "github.com/luxfi/vm/proto/pb/net/conn"
 )
 
 var _ net.Conn = (*Client)(nil)

@@ -6,9 +6,9 @@ package export
 import (
 	"github.com/spf13/pflag"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -29,7 +29,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String(DestinationChainIDKey, "", "Chain to send the asset to")
 	flags.Uint64(MaxFeeKey, 0, "Maximum fee to spend")
 	flags.Bool(IsReturnKey, false, "Mark this transaction as returning funds")
-	flags.Uint64(AmountKey, units.Schmeckle, "Amount to send")
+	flags.Uint64(AmountKey, constants.Schmeckle, "Amount to send")
 	flags.String(ToKey, "", "Destination address (required)")
 	flags.String(PrivateKeyKey, "", "Private key to sign the transaction (required)")
 }

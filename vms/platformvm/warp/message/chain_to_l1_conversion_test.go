@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 func TestChainToL1ConversionID(t *testing.T) {

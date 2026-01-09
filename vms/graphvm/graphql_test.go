@@ -28,10 +28,10 @@ func TestQueryExecutor_BasicQueries(t *testing.T) {
 	executor := NewQueryExecutor(db, config)
 
 	tests := []struct {
-		name     string
-		query    string
-		wantErr  bool
-		checkFn  func(t *testing.T, response *GraphQLResponse)
+		name    string
+		query   string
+		wantErr bool
+		checkFn func(t *testing.T, response *GraphQLResponse)
 	}{
 		{
 			name:  "chain info query",

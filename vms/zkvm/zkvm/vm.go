@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zkvm
 
 import (
@@ -14,22 +13,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/log"
 	ethcommon "github.com/luxfi/geth/common"
+	"github.com/luxfi/log"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/warp"
 
 	consensusversion "github.com/luxfi/consensus/version"
 )
 
 const (
-	Name = "zkvm"
+	Name      = "zkvm"
 	vmVersion = "v0.0.1"
 )
 
@@ -38,8 +37,8 @@ var (
 	// _ block.ChainVM = (*VM)(nil)
 	// _ validators.Connector = (*VM)(nil)
 
-	errNotImplemented = errors.New("not implemented")
-	errInvalidProof   = errors.New("invalid proof")
+	errNotImplemented  = errors.New("not implemented")
+	errInvalidProof    = errors.New("invalid proof")
 	errChallengeFailed = errors.New("challenge failed")
 )
 
@@ -59,15 +58,15 @@ type VM struct {
 	preferredID ids.ID
 
 	// ZK-specific fields
-	challenges     map[ids.ID]*Challenge
-	proofRegistry  map[ids.ID]*ZKProof
-	fraudProofs    map[ids.ID]*FraudProof
-	verifierKeys   map[string]*VerifierKey
-	
+	challenges    map[ids.ID]*Challenge
+	proofRegistry map[ids.ID]*ZKProof
+	fraudProofs   map[ids.ID]*FraudProof
+	verifierKeys  map[string]*VerifierKey
+
 	// Privacy features
-	shieldedPool   *ShieldedPool
-	nullifierSet   map[ethcommon.Hash]bool
-	
+	shieldedPool *ShieldedPool
+	nullifierSet map[ethcommon.Hash]bool
+
 	// Synchronization
 	challengeMu sync.RWMutex
 	proofMu     sync.RWMutex
@@ -75,41 +74,41 @@ type VM struct {
 
 // Challenge represents a fraud proof challenge
 type Challenge struct {
-	ID              ids.ID          `json:"id"`
-	Type            ChallengeType   `json:"type"`
-	TargetChain     ids.ID          `json:"targetChain"`
-	TargetBlock     ids.ID          `json:"targetBlock"`
-	TargetTx        ids.ID          `json:"targetTx,omitempty"`
-	Challenger      ids.ShortID     `json:"challenger"`
-	Defender        ids.ShortID     `json:"defender"`
-	Status          ChallengeStatus `json:"status"`
-	CreatedAt       int64           `json:"createdAt"`
-	ResolvedAt      int64           `json:"resolvedAt,omitempty"`
-	Evidence        []byte          `json:"evidence"`
-	DefenderProof   []byte          `json:"defenderProof,omitempty"`
-	Resolution      []byte          `json:"resolution,omitempty"`
+	ID            ids.ID          `json:"id"`
+	Type          ChallengeType   `json:"type"`
+	TargetChain   ids.ID          `json:"targetChain"`
+	TargetBlock   ids.ID          `json:"targetBlock"`
+	TargetTx      ids.ID          `json:"targetTx,omitempty"`
+	Challenger    ids.ShortID     `json:"challenger"`
+	Defender      ids.ShortID     `json:"defender"`
+	Status        ChallengeStatus `json:"status"`
+	CreatedAt     int64           `json:"createdAt"`
+	ResolvedAt    int64           `json:"resolvedAt,omitempty"`
+	Evidence      []byte          `json:"evidence"`
+	DefenderProof []byte          `json:"defenderProof,omitempty"`
+	Resolution    []byte          `json:"resolution,omitempty"`
 }
 
 // ZKProof represents a zero-knowledge proof
 type ZKProof struct {
-	ID           ids.ID     `json:"id"`
-	ProofType    string     `json:"proofType"`
-	PublicInputs []byte     `json:"publicInputs"`
-	Proof        []byte     `json:"proof"`
-	VerifierKey  string     `json:"verifierKey"`
-	Verified     bool       `json:"verified"`
-	SubmittedAt  int64      `json:"submittedAt"`
+	ID           ids.ID `json:"id"`
+	ProofType    string `json:"proofType"`
+	PublicInputs []byte `json:"publicInputs"`
+	Proof        []byte `json:"proof"`
+	VerifierKey  string `json:"verifierKey"`
+	Verified     bool   `json:"verified"`
+	SubmittedAt  int64  `json:"submittedAt"`
 }
 
 // FraudProof represents a fraud proof for optimistic rollup
 type FraudProof struct {
-	ID              ids.ID   `json:"id"`
-	StateRoot       ids.ID   `json:"stateRoot"`
-	DisputedTx      ids.ID   `json:"disputedTx"`
-	PreState        []byte   `json:"preState"`
-	PostState       []byte   `json:"postState"`
-	ExecutionTrace  []byte   `json:"executionTrace"`
-	WitnessData     []byte   `json:"witnessData"`
+	ID             ids.ID `json:"id"`
+	StateRoot      ids.ID `json:"stateRoot"`
+	DisputedTx     ids.ID `json:"disputedTx"`
+	PreState       []byte `json:"preState"`
+	PostState      []byte `json:"postState"`
+	ExecutionTrace []byte `json:"executionTrace"`
+	WitnessData    []byte `json:"witnessData"`
 }
 
 // VerifierKey represents a ZK verifier key
@@ -122,9 +121,9 @@ type VerifierKey struct {
 
 // ShieldedPool represents the privacy pool
 type ShieldedPool struct {
-	TotalSupply  uint64                 `json:"totalSupply"`
-	Notes        map[ethcommon.Hash]bool `json:"notes"`
-	Commitments  []ethcommon.Hash       `json:"commitments"`
+	TotalSupply uint64                  `json:"totalSupply"`
+	Notes       map[ethcommon.Hash]bool `json:"notes"`
+	Commitments []ethcommon.Hash        `json:"commitments"`
 }
 
 // ChallengeType represents the type of challenge
@@ -215,10 +214,10 @@ func (vm *VM) Version(context.Context) (string, error) {
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	handler := &apiHandler{vm: vm}
 	return map[string]http.Handler{
-		"/zk":         handler,
-		"/challenge":  handler,
-		"/proof":      handler,
-		"/privacy":    handler,
+		"/zk":        handler,
+		"/challenge": handler,
+		"/proof":     handler,
+		"/privacy":   handler,
 	}, nil
 }
 
@@ -227,11 +226,11 @@ func (vm *VM) HealthCheck(context.Context) (any, error) {
 	vm.challengeMu.RLock()
 	challengeCount := len(vm.challenges)
 	vm.challengeMu.RUnlock()
-	
+
 	vm.proofMu.RLock()
 	proofCount := len(vm.proofRegistry)
 	vm.proofMu.RUnlock()
-	
+
 	return map[string]interface{}{
 		"version":       vmVersion,
 		"challenges":    challengeCount,
@@ -323,12 +322,12 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 // parseGenesis parses the genesis data
 func (vm *VM) parseGenesis(genesisBytes []byte) error {
 	type Genesis struct {
-		VerifierKeys []VerifierKey `json:"verifierKeys"`
+		VerifierKeys  []VerifierKey `json:"verifierKeys"`
 		PrivacyConfig struct {
 			InitialShieldedSupply uint64 `json:"initialShieldedSupply"`
 		} `json:"privacyConfig"`
 	}
-	
+
 	var genesis Genesis
 	if err := json.Unmarshal(genesisBytes, &genesis); err != nil {
 		return err
@@ -338,7 +337,7 @@ func (vm *VM) parseGenesis(genesisBytes []byte) error {
 	for _, key := range genesis.VerifierKeys {
 		vm.verifierKeys[key.ID] = &key
 	}
-	
+
 	// Initialize shielded pool
 	vm.shieldedPool.TotalSupply = genesis.PrivacyConfig.InitialShieldedSupply
 
@@ -349,19 +348,19 @@ func (vm *VM) parseGenesis(genesisBytes []byte) error {
 func (vm *VM) StartChallenge(challenge *Challenge) error {
 	vm.challengeMu.Lock()
 	defer vm.challengeMu.Unlock()
-	
+
 	challenge.Status = ChallengePending
 	challenge.CreatedAt = time.Now().Unix()
-	
+
 	vm.challenges[challenge.ID] = challenge
-	
+
 	// Trigger block building (send empty message to trigger)
 	msg := core.Message{Type: core.PendingTxs}
 	select {
 	case vm.toEngine <- msg:
 	default:
 	}
-	
+
 	return nil
 }
 
@@ -371,19 +370,19 @@ func (vm *VM) VerifyZKProof(proof *ZKProof) error {
 	if !exists {
 		return errors.New("verifier key not found")
 	}
-	
+
 	// TODO: Implement actual ZK proof verification
 	// This would involve calling a SNARK/STARK verification library
 	proof.Verified = vm.mockVerifyProof(proof, verifierKey)
-	
+
 	if !proof.Verified {
 		return errInvalidProof
 	}
-	
+
 	vm.proofMu.Lock()
 	vm.proofRegistry[proof.ID] = proof
 	vm.proofMu.Unlock()
-	
+
 	return nil
 }
 

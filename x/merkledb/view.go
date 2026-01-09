@@ -15,8 +15,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/maybe"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )

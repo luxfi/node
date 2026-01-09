@@ -25,10 +25,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/kchainvm/config"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/luxfi/warp"
 )
 
@@ -50,32 +50,32 @@ const (
 )
 
 var (
-	errVMShutdown          = errors.New("VM is shutting down")
-	errKeyNotFound         = errors.New("key not found")
-	errKeyExists           = errors.New("key already exists")
-	errInvalidThreshold    = errors.New("invalid threshold")
-	errInsufficientShares  = errors.New("insufficient shares for reconstruction")
-	errInvalidSignature    = errors.New("invalid signature")
-	errMLKEMNotEnabled     = errors.New("ML-KEM not enabled")
-	errMLDSANotEnabled     = errors.New("ML-DSA not enabled")
-	errValidatorNotFound   = errors.New("validator not found")
+	errVMShutdown         = errors.New("VM is shutting down")
+	errKeyNotFound        = errors.New("key not found")
+	errKeyExists          = errors.New("key already exists")
+	errInvalidThreshold   = errors.New("invalid threshold")
+	errInsufficientShares = errors.New("insufficient shares for reconstruction")
+	errInvalidSignature   = errors.New("invalid signature")
+	errMLKEMNotEnabled    = errors.New("ML-KEM not enabled")
+	errMLDSANotEnabled    = errors.New("ML-DSA not enabled")
+	errValidatorNotFound  = errors.New("validator not found")
 )
 
 // KeyMetadata stores information about a distributed key.
 type KeyMetadata struct {
-	ID           ids.ID            `json:"id"`
-	Name         string            `json:"name"`
-	Algorithm    string            `json:"algorithm"`
-	KeyType      string            `json:"keyType"`
-	PublicKey    []byte            `json:"publicKey"`
-	Threshold    int               `json:"threshold"`
-	TotalShares  int               `json:"totalShares"`
-	Validators   []string          `json:"validators"`
-	CreatedAt    time.Time         `json:"createdAt"`
-	UpdatedAt    time.Time         `json:"updatedAt"`
-	Status       string            `json:"status"`
-	Tags         []string          `json:"tags"`
-	Metadata     map[string]string `json:"metadata"`
+	ID          ids.ID            `json:"id"`
+	Name        string            `json:"name"`
+	Algorithm   string            `json:"algorithm"`
+	KeyType     string            `json:"keyType"`
+	PublicKey   []byte            `json:"publicKey"`
+	Threshold   int               `json:"threshold"`
+	TotalShares int               `json:"totalShares"`
+	Validators  []string          `json:"validators"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
+	Status      string            `json:"status"`
+	Tags        []string          `json:"tags"`
+	Metadata    map[string]string `json:"metadata"`
 }
 
 // KeyShare represents a share of a distributed key.
@@ -101,18 +101,18 @@ type VM struct {
 	networkID    uint32
 
 	// Key management
-	keys         map[ids.ID]*KeyMetadata
-	keysByName   map[string]ids.ID
-	shares       map[ids.ID][]*KeyShare
-	keysLock     sync.RWMutex
+	keys       map[ids.ID]*KeyMetadata
+	keysByName map[string]ids.ID
+	shares     map[ids.ID][]*KeyShare
+	keysLock   sync.RWMutex
 
 	// ML-KEM keys cache
-	mlkemCache   *cache.LRU[ids.ID, *mlkem.PrivateKey]
+	mlkemCache    *cache.LRU[ids.ID, *mlkem.PrivateKey]
 	mlkemPubCache *cache.LRU[ids.ID, *mlkem.PublicKey]
 
 	// Transaction pool
-	pendingTxs   []*Transaction
-	txLock       sync.Mutex
+	pendingTxs []*Transaction
+	txLock     sync.Mutex
 
 	// State management
 	state        database.Database
@@ -120,14 +120,14 @@ type VM struct {
 	height       uint64
 
 	// HTTP service
-	rpcServer    *rpc.Server
+	rpcServer *rpc.Server
 
 	// Lifecycle
 	shuttingDown bool
 	shutdownLock sync.RWMutex
 
 	// Clock
-	clock        mockable.Clock
+	clock mockable.Clock
 }
 
 // Initialize initializes the K-Chain VM.

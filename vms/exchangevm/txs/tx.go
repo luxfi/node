@@ -9,20 +9,19 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/p2p/gossip"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/p2p/gossip"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var _ gossip.Gossipable = (*Tx)(nil)
 
 type UnsignedTx interface {
-
 	SetBytes(unsignedBytes []byte)
 	Bytes() []byte
 

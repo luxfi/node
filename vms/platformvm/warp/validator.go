@@ -12,15 +12,15 @@ import (
 	"slices"
 	"time"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/math"
 )
 
 var (
@@ -38,10 +38,10 @@ type ValidatorState interface {
 
 // ValidatorData contains the data for a single validator
 type ValidatorData struct {
-	NodeID           ids.NodeID
-	PublicKey        []byte // BLS public key (classical)
-	RingtailPubKey   []byte // Ringtail public key (post-quantum)
-	Weight           uint64
+	NodeID         ids.NodeID
+	PublicKey      []byte // BLS public key (classical)
+	RingtailPubKey []byte // Ringtail public key (post-quantum)
+	Weight         uint64
 }
 
 type CanonicalValidatorSet struct {
@@ -52,11 +52,11 @@ type CanonicalValidatorSet struct {
 }
 
 type Validator struct {
-	PublicKey        *bls.PublicKey
-	PublicKeyBytes   []byte
-	RingtailPubKey   []byte // Post-quantum Ringtail public key
-	Weight           uint64
-	NodeIDs          []ids.NodeID
+	PublicKey      *bls.PublicKey
+	PublicKeyBytes []byte
+	RingtailPubKey []byte // Post-quantum Ringtail public key
+	Weight         uint64
+	NodeIDs        []ids.NodeID
 }
 
 func (v *Validator) Compare(o *Validator) int {

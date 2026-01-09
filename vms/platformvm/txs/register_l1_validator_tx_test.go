@@ -12,17 +12,16 @@ import (
 
 	_ "embed"
 
+	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 //go:embed register_l1_validator_tx_test.json
@@ -31,7 +30,7 @@ var registerL1ValidatorTxJSON []byte
 func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	require := require.New(t)
 
-	const balance = units.Lux
+	const balance = constants.Lux
 
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
@@ -118,7 +117,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.Lux,
+							Amt: constants.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},

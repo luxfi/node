@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/vm/utils/ips"
 )
 
 // TestIPTracker_MaxTrackedIPsLimit verifies that the IP tracker enforces

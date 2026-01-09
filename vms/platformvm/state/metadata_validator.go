@@ -6,12 +6,12 @@ package state
 import (
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 // preDelegateeRewardSize is the size of codec marshalling

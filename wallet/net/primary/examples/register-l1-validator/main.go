@@ -10,18 +10,18 @@ import (
 	"log"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -136,7 +136,7 @@ func main() {
 
 	registerL1ValidatorStartTime := time.Now()
 	registerL1ValidatorTx, err := wallet.P().IssueRegisterL1ValidatorTx(
-		units.Lux,
+		constants.Lux,
 		nodePoP.ProofOfPossession,
 		warp.Bytes(),
 	)

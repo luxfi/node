@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {

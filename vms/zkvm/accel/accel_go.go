@@ -20,11 +20,11 @@ import (
 
 // GoAccelerator is the pure Go implementation of the ZK accelerator
 type GoAccelerator struct {
-	config       Config
-	numWorkers   int
-	twiddles     []FieldElement // Precomputed twiddle factors for NTT
-	twiddlesInv  []FieldElement // Inverse twiddle factors
-	mu           sync.RWMutex
+	config      Config
+	numWorkers  int
+	twiddles    []FieldElement // Precomputed twiddle factors for NTT
+	twiddlesInv []FieldElement // Inverse twiddle factors
+	mu          sync.RWMutex
 }
 
 // NewGoAccelerator creates a pure Go accelerator
@@ -337,7 +337,7 @@ func (a *GoAccelerator) poseidonHash(input []FieldElement) (FieldElement, error)
 	// Production would use full spec with proper round constants
 
 	state := make([]FieldElement, 12) // State size t=12
-	rate := 8                          // Rate r=8
+	rate := 8                         // Rate r=8
 
 	// Absorb input
 	for i := 0; i < len(input); i += rate {
@@ -508,9 +508,9 @@ func (a *GoAccelerator) AggregateProofs(proofs []*Proof) (*Proof, error) {
 		ProofBytes: proofBytes,
 		PublicIO:   allPublicIO,
 		Metadata: map[string]interface{}{
-			"aggregated":  true,
-			"proofCount":  len(proofs),
-			"backend":     string(a.Backend()),
+			"aggregated": true,
+			"proofCount": len(proofs),
+			"backend":    string(a.Backend()),
 		},
 	}, nil
 }

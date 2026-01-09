@@ -16,21 +16,21 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 const (
 	rebuildViewSizeFractionOfCacheSize   = 50
 	minRebuildViewSizePerCommit          = 1000
-	clearBatchSize                       = units.MiB
-	rebuildIntermediateDeletionWriteSize = units.MiB
+	clearBatchSize                       = constants.MiB
+	rebuildIntermediateDeletionWriteSize = constants.MiB
 	valueNodePrefixLen                   = 1
 	cacheEntryOverHead                   = 8
 )
@@ -163,10 +163,10 @@ func NewConfig() Config {
 		Hasher:                      DefaultHasher,
 		RootGenConcurrency:          0,
 		HistoryLength:               300,
-		ValueNodeCacheSize:          units.MiB,
-		IntermediateNodeCacheSize:   units.MiB,
-		IntermediateWriteBufferSize: units.KiB,
-		IntermediateWriteBatchSize:  256 * units.KiB,
+		ValueNodeCacheSize:          constants.MiB,
+		IntermediateNodeCacheSize:   constants.MiB,
+		IntermediateWriteBufferSize: constants.KiB,
+		IntermediateWriteBatchSize:  256 * constants.KiB,
 		TraceLevel:                  InfoTrace,
 		Tracer:                      trace.Noop,
 	}

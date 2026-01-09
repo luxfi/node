@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package bvm
 
 import (
@@ -12,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
-	core "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -83,8 +82,8 @@ type SignerInfo struct {
 	Active     bool       `json:"active"`
 	JoinedAt   time.Time  `json:"joinedAt"`
 	SlotIndex  int        `json:"slotIndex"`
-	Slashed    bool       `json:"slashed"`      // True if this signer has been slashed
-	SlashCount int        `json:"slashCount"`   // Number of times slashed
+	Slashed    bool       `json:"slashed"`    // True if this signer has been slashed
+	SlashCount int        `json:"slashCount"` // Number of times slashed
 }
 
 // RegisterValidatorInput is the input for registering as a bridge signer
@@ -145,11 +144,11 @@ type VM struct {
 	log      log.Logger
 
 	// MPC components using threshold protocol
-	mpcKeyManager      *MPCKeyManager               // Threshold key management
-	mpcCoordinator     *MPCCoordinator              // Signing coordination
-	bridgeSigner       *BridgeSigner                // Bridge message signing
-	deliverySigner     *DeliveryConfirmationSigner  // Delivery confirmation signing
-	messageValidator   *BridgeMessageValidator      // Message validation
+	mpcKeyManager    *MPCKeyManager              // Threshold key management
+	mpcCoordinator   *MPCCoordinator             // Signing coordination
+	bridgeSigner     *BridgeSigner               // Bridge message signing
+	deliverySigner   *DeliveryConfirmationSigner // Delivery confirmation signing
+	messageValidator *BridgeMessageValidator     // Message validation
 
 	// Deprecated: Legacy MPC fields (kept for reference)
 	mpcConfig   *config.Config // CMP config for this party (after keygen)
@@ -917,13 +916,13 @@ type SlashSignerInput struct {
 
 // SlashSignerResult is the result of slashing a bridge signer
 type SlashSignerResult struct {
-	Success        bool   `json:"success"`
-	NodeID         string `json:"nodeId"`
-	SlashedAmount  uint64 `json:"slashedAmount"`
-	RemainingBond  uint64 `json:"remainingBond"`
-	TotalSlashCount int   `json:"totalSlashCount"`
-	RemovedFromSet bool   `json:"removedFromSet"`
-	Message        string `json:"message"`
+	Success         bool   `json:"success"`
+	NodeID          string `json:"nodeId"`
+	SlashedAmount   uint64 `json:"slashedAmount"`
+	RemainingBond   uint64 `json:"remainingBond"`
+	TotalSlashCount int    `json:"totalSlashCount"`
+	RemovedFromSet  bool   `json:"removedFromSet"`
+	Message         string `json:"message"`
 }
 
 // SlashSigner slashes a misbehaving bridge signer's bond
@@ -977,13 +976,13 @@ func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
 	}
 
 	result := &SlashSignerResult{
-		Success:        true,
-		NodeID:         input.NodeID.String(),
-		SlashedAmount:  slashAmount,
-		RemainingBond:  remainingBond,
+		Success:         true,
+		NodeID:          input.NodeID.String(),
+		SlashedAmount:   slashAmount,
+		RemainingBond:   remainingBond,
 		TotalSlashCount: signer.SlashCount,
-		RemovedFromSet: false,
-		Message:        fmt.Sprintf("slashed %d%% of bond (%d LUX)", input.SlashPercent, slashAmount/1e9),
+		RemovedFromSet:  false,
+		Message:         fmt.Sprintf("slashed %d%% of bond (%d LUX)", input.SlashPercent, slashAmount/1e9),
 	}
 
 	// If bond drops below minimum (100M LUX), remove from signer set

@@ -6,13 +6,13 @@ package config
 import (
 	"time"
 
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"

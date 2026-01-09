@@ -10,27 +10,27 @@ import (
 
 	"connectrpc.com/grpcreflect"
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
+	consensuscontext "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/p2p"
-	consensuscontext "github.com/luxfi/consensus/context"
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/warp"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/p2p"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/warp"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -71,7 +71,9 @@ func (vm *VM) Initialize(
 	)
 
 	metrics := metric.NewRegistry()
-	if metricsReg, ok := chainContext.Metrics.(interface{ Register(string, interface{}) error }); ok {
+	if metricsReg, ok := chainContext.Metrics.(interface {
+		Register(string, interface{}) error
+	}); ok {
 		if err := metricsReg.Register("p2p", metrics); err != nil {
 			return err
 		}

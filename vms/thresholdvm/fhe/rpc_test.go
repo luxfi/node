@@ -85,11 +85,11 @@ func TestFHEServiceRegisterCiphertext(t *testing.T) {
 	service := newTestFHEService(t)
 
 	args := &RegisterCiphertextArgs{
-		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: "0102030405060708091011121314151617181920212223242526272829303132",
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	reply := &RegisterCiphertextReply{}
 
@@ -109,11 +109,11 @@ func TestFHEServiceGetCiphertextMeta(t *testing.T) {
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	registerReply := &RegisterCiphertextReply{}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, registerReply)
@@ -141,11 +141,11 @@ func TestFHEServiceRequestDecrypt(t *testing.T) {
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	registerReply := &RegisterCiphertextReply{}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, registerReply)
@@ -188,11 +188,11 @@ func TestFHEServiceGetDecryptResult(t *testing.T) {
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -241,11 +241,11 @@ func TestFHEServiceCreatePermit(t *testing.T) {
 	// First register a ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -276,11 +276,11 @@ func TestFHEServiceVerifyPermit(t *testing.T) {
 
 	// First register a ciphertext
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -354,11 +354,11 @@ func TestFHEServiceInvalidHandleFormat(t *testing.T) {
 
 	// Invalid hex
 	args := &RegisterCiphertextArgs{
-		Handle:  "not-valid-hex",
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: "not-valid-hex",
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	reply := &RegisterCiphertextReply{}
 
@@ -532,11 +532,11 @@ func TestFHEServiceRequestDecryptBatch(t *testing.T) {
 
 	for _, handle := range []string{handle1, handle2} {
 		registerArgs := &RegisterCiphertextArgs{
-			Handle:  handle,
-			Owner:   "0102030405060708091011121314151617181920",
-			Type:    1,
-			Level:   14,
-			Size:    1024,
+			Handle: handle,
+			Owner:  "0102030405060708091011121314151617181920",
+			Type:   1,
+			Level:  14,
+			Size:   1024,
 		}
 		err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 		require.NoError(err)
@@ -637,11 +637,11 @@ func TestFHEServiceGetDecryptBatchResult(t *testing.T) {
 	// Register and create requests
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -691,11 +691,11 @@ func TestFHEServiceGetRequestReceipt(t *testing.T) {
 	// Register and create a request
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -777,11 +777,11 @@ func TestFHEServiceGetRequestReceiptCompleted(t *testing.T) {
 	// Register and create a request
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -834,11 +834,11 @@ func TestFHEServiceCreatePermitInvalidGrantee(t *testing.T) {
 	// Register ciphertext first
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -865,11 +865,11 @@ func TestFHEServiceCreatePermitInvalidGrantor(t *testing.T) {
 	// Register ciphertext first
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -915,11 +915,11 @@ func TestFHEServiceRegisterCiphertextInvalidOwner(t *testing.T) {
 
 	// Invalid owner format
 	args := &RegisterCiphertextArgs{
-		Handle:  "0102030405060708091011121314151617181920212223242526272829303132",
-		Owner:   "not-valid-hex",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: "0102030405060708091011121314151617181920212223242526272829303132",
+		Owner:  "not-valid-hex",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	reply := &RegisterCiphertextReply{}
 
@@ -935,11 +935,11 @@ func TestFHEServiceRequestDecryptInvalidPermitID(t *testing.T) {
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -965,11 +965,11 @@ func TestFHEServiceRequestDecryptInvalidCallback(t *testing.T) {
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1007,11 +1007,11 @@ func TestFHEServiceRequestDecryptInvalidCallbackSelector(t *testing.T) {
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1049,11 +1049,11 @@ func TestFHEServiceCreatePermitInvalidChainID(t *testing.T) {
 	// Register ciphertext first
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1082,11 +1082,11 @@ func TestFHEServiceCreatePermitInvalidAttestation(t *testing.T) {
 	// Register ciphertext first
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1115,11 +1115,11 @@ func TestFHEServiceCreatePermitNotOwner(t *testing.T) {
 	// Register ciphertext with one owner
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1161,11 +1161,11 @@ func TestFHEServiceCreatePermitWithValidAttestation(t *testing.T) {
 	// Register ciphertext first
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)
@@ -1232,11 +1232,11 @@ func TestFHEServiceVerifyPermitValid(t *testing.T) {
 	// Register ciphertext
 	handle := "0102030405060708091011121314151617181920212223242526272829303132"
 	registerArgs := &RegisterCiphertextArgs{
-		Handle:  handle,
-		Owner:   "0102030405060708091011121314151617181920",
-		Type:    1,
-		Level:   14,
-		Size:    1024,
+		Handle: handle,
+		Owner:  "0102030405060708091011121314151617181920",
+		Type:   1,
+		Level:  14,
+		Size:   1024,
 	}
 	err := service.RegisterCiphertext(context.Background(), registerArgs, &RegisterCiphertextReply{})
 	require.NoError(err)

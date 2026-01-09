@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	nodeconsensus "github.com/luxfi/node/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
@@ -19,9 +18,10 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/wrappers"
+	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 const (

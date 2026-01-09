@@ -94,15 +94,15 @@ type GetSignerSetInfoArgs struct{}
 
 // GetSignerSetInfoReply is the reply for bridge_getSignerSetInfo
 type GetSignerSetInfoReply struct {
-	TotalSigners   int                     `json:"totalSigners"`
-	Threshold      int                     `json:"threshold"`
-	MaxSigners     int                     `json:"maxSigners"`
-	CurrentEpoch   uint64                  `json:"currentEpoch"`
-	SetFrozen      bool                    `json:"setFrozen"`
-	RemainingSlots int                     `json:"remainingSlots"`
-	WaitlistSize   int                     `json:"waitlistSize"`
-	Signers        []SignerInfoReply       `json:"signers"`
-	PublicKey      string                  `json:"publicKey,omitempty"`
+	TotalSigners   int               `json:"totalSigners"`
+	Threshold      int               `json:"threshold"`
+	MaxSigners     int               `json:"maxSigners"`
+	CurrentEpoch   uint64            `json:"currentEpoch"`
+	SetFrozen      bool              `json:"setFrozen"`
+	RemainingSlots int               `json:"remainingSlots"`
+	WaitlistSize   int               `json:"waitlistSize"`
+	Signers        []SignerInfoReply `json:"signers"`
+	PublicKey      string            `json:"publicKey,omitempty"`
 }
 
 // SignerInfoReply contains signer information for RPC replies

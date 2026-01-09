@@ -11,28 +11,24 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
+	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -46,7 +42,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
 	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
@@ -201,7 +200,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 			t,
 			verifier.ctx,
 			&config.Config{
-				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
+				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},
@@ -214,7 +213,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		exportedOutput = &lux.TransferableOutput{
 			Asset: lux.Asset{ID: verifier.ctx.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt:          units.NanoLux,
+				Amt:          constants.NanoLux,
 				OutputOwners: secp256k1fx.OutputOwners{},
 			},
 		}
@@ -324,7 +323,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 			},
 			Asset: lux.Asset{ID: ctx.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt:          units.Lux,
+				Amt:          constants.Lux,
 				OutputOwners: owner,
 			},
 		}
@@ -360,7 +359,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 			t,
 			verifier.ctx,
 			&config.Config{
-				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
+				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},
@@ -704,9 +703,9 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				Mempool:      mempool,
 				state:        s,
 				ctx: &consensuscontext.Context{
-			NetworkID: constants.UnitTestID,
-			ChainID:   constants.PlatformChainID,
-		},
+					NetworkID: constants.UnitTestID,
+					ChainID:   constants.PlatformChainID,
+				},
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -806,9 +805,9 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				Mempool:      mempool,
 				state:        s,
 				ctx: &consensuscontext.Context{
-			NetworkID: constants.UnitTestID,
-			ChainID:   constants.PlatformChainID,
-		},
+					NetworkID: constants.UnitTestID,
+					ChainID:   constants.PlatformChainID,
+				},
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -1162,7 +1161,7 @@ func TestBlockExecutionWithComplexity(t *testing.T) {
 		verifier.ctx,
 		txstest.WalletConfig{
 			Config: &config.Config{
-				TrackedChains:            verifier.txExecutorBackend.Config.TrackedChains,
+				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
 				Chains:                 verifier.txExecutorBackend.Config.Chains,
 			},
@@ -1271,16 +1270,16 @@ func TestDeactivateLowBalanceL1Validators(t *testing.T) {
 		newL1Validator = func(endAccumulatedFee uint64) state.L1Validator {
 			return state.L1Validator{
 				ValidationID:      ids.GenerateTestID(),
-				ChainID:          ids.GenerateTestID(),
+				ChainID:           ids.GenerateTestID(),
 				NodeID:            ids.GenerateTestNodeID(),
 				PublicKey:         pkBytes,
 				Weight:            1,
 				EndAccumulatedFee: endAccumulatedFee,
 			}
 		}
-		fractionalTimeL1Validator0 = newL1Validator(1 * units.NanoLux) // lasts .5 seconds
-		fractionalTimeL1Validator1 = newL1Validator(1 * units.NanoLux) // lasts .5 seconds
-		wholeTimeL1Validator       = newL1Validator(2 * units.NanoLux) // lasts 1 second
+		fractionalTimeL1Validator0 = newL1Validator(1 * constants.NanoLux) // lasts .5 seconds
+		fractionalTimeL1Validator1 = newL1Validator(1 * constants.NanoLux) // lasts .5 seconds
+		wholeTimeL1Validator       = newL1Validator(2 * constants.NanoLux) // lasts 1 second
 	)
 
 	tests := []struct {
@@ -1343,7 +1342,7 @@ func TestDeactivateLowBalanceL1Validators(t *testing.T) {
 			config := validatorfee.Config{
 				Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
 				Target:                   builder.LocalValidatorFeeConfig.Target,
-				MinPrice:                 gas.Price(2 * units.NanoLux), // Min price is increased to allow fractional fees
+				MinPrice:                 gas.Price(2 * constants.NanoLux), // Min price is increased to allow fractional fees
 				ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 			}
 			lowBalanceL1ValidatorsEvicted, err := deactivateLowBalanceL1Validators(config, diff)
@@ -1366,11 +1365,11 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 
 	fractionalTimeL1Validator := state.L1Validator{
 		ValidationID:      ids.GenerateTestID(),
-		ChainID:          ids.GenerateTestID(),
+		ChainID:           ids.GenerateTestID(),
 		NodeID:            ids.GenerateTestNodeID(),
 		PublicKey:         bls.PublicKeyToUncompressedBytes(signer.PublicKey()),
 		Weight:            1,
-		EndAccumulatedFee: 3 * units.NanoLux, // lasts 1.5 seconds
+		EndAccumulatedFee: 3 * constants.NanoLux, // lasts 1.5 seconds
 	}
 
 	tests := []struct {
@@ -1431,7 +1430,7 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 				ValidatorFeeConfig: validatorfee.Config{
 					Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
 					Target:                   builder.LocalValidatorFeeConfig.Target,
-					MinPrice:                 gas.Price(2 * units.NanoLux), // Min price is increased to allow fractional fees
+					MinPrice:                 gas.Price(2 * constants.NanoLux), // Min price is increased to allow fractional fees
 					ExcessConversionConstant: builder.LocalValidatorFeeConfig.ExcessConversionConstant,
 				},
 			})

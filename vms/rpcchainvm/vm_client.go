@@ -20,31 +20,31 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/database"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/internal/database/rpcdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/internal/ids/galiasreader"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/warp"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/vm/chain"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/internal/database/rpcdb"
+	"github.com/luxfi/node/internal/ids/galiasreader"
+	"github.com/luxfi/node/upgrade"
 	platformwarp "github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/vm/chain"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/utils/resource"
+	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/warp"
 
 	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -369,17 +369,17 @@ func (vm *VMClient) Initialize(
 	if chainCtx.PublicKey != nil {
 		publicKeyBytes = bls.PublicKeyToCompressedBytes(chainCtx.PublicKey)
 	}
-	
+
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
 		NetworkId:       chainCtx.NetworkID,
-		NetId:        chainCtx.ChainID[:],
+		NetId:           chainCtx.ChainID[:],
 		ChainId:         chainCtx.ChainID[:],
 		NodeId:          chainCtx.NodeID.Bytes(),
 		PublicKey:       publicKeyBytes,
 		NetworkUpgrades: networkUpgrades,
 		XChainId:        chainCtx.XChainID[:],
 		CChainId:        chainCtx.CChainID[:],
-		LuxAssetId:     chainCtx.LUXAssetID[:],
+		LuxAssetId:      chainCtx.LUXAssetID[:],
 		ChainDataDir:    chainCtx.ChainDataDir,
 		GenesisBytes:    genesisBytes,
 		UpgradeBytes:    upgradeBytes,
@@ -426,15 +426,15 @@ func (vm *VMClient) Initialize(
 	if vm.State == nil {
 		wrappedBlk := &protocolBlockWrapper{blockClient: lastAcceptedBlk}
 		vm.State = chain.NewState(&chain.Config{
-			DecidedCacheSize:     1024,
-			MissingCacheSize:     1024,
-			UnverifiedCacheSize:  64,
-			BytesToIDCacheSize:   512,
-			LastAcceptedBlock:    wrappedBlk,
-			GetBlock:             vm.GetBlock,
-			UnmarshalBlock:       vm.ParseBlock,
+			DecidedCacheSize:      1024,
+			MissingCacheSize:      1024,
+			UnverifiedCacheSize:   64,
+			BytesToIDCacheSize:    512,
+			LastAcceptedBlock:     wrappedBlk,
+			GetBlock:              vm.GetBlock,
+			UnmarshalBlock:        vm.ParseBlock,
 			BatchedUnmarshalBlock: vm.BatchedParseBlock,
-			BuildBlock:           vm.BuildBlock,
+			BuildBlock:            vm.BuildBlock,
 		})
 	}
 

@@ -6,15 +6,15 @@ package payload
 import (
 	"errors"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const (
 	CodecVersion = 0
 
-	MaxMessageSize = 24 * units.KiB
+	MaxMessageSize = 24 * constants.KiB
 )
 
 var Codec codec.Manager

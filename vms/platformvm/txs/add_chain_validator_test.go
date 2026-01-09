@@ -11,12 +11,12 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 // Note: Consider refactoring to use table tests for better test organization
@@ -27,10 +27,9 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   testChainID,
-		NodeID:    nodeID,
+
+		ChainID: testChainID,
+		NodeID:  nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
@@ -153,10 +152,9 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   testChainID,
-		NodeID:    nodeID,
+
+		ChainID: testChainID,
+		NodeID:  nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 

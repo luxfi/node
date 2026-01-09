@@ -39,7 +39,7 @@ func TestMeterDBMetricsRegistration(t *testing.T) {
 		nil,   // config
 		gatherer,
 		logger,
-		"lux_db",     // dbNamespace
+		"lux_db",      // dbNamespace
 		"lux_meterdb", // meterDBNamespace
 	)
 	require.NoError(err)

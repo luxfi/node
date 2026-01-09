@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/units"
 )
 
 func equal(require *require.Assertions, want, have Block) {
@@ -38,7 +38,7 @@ func TestBlockSizeLimit(t *testing.T) {
 	parentID := ids.ID{1}
 	timestamp := time.Unix(123, 0)
 	pChainHeight := uint64(2)
-	innerBlockBytes := bytes.Repeat([]byte{0}, 270*units.KiB)
+	innerBlockBytes := bytes.Repeat([]byte{0}, 270*constants.KiB)
 
 	// with the large limit, it should be able to build large blocks
 	_, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)

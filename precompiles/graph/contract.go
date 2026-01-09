@@ -19,12 +19,12 @@ var GraphPrecompileAddress = [20]byte{0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 // Function selectors (first 4 bytes of keccak256 of function signature).
 var (
 	// Mutations
-	SelectorCreateNode  = [4]byte{0x01, 0x00, 0x00, 0x01} // createNode(bytes32,string,bytes)
-	SelectorDeleteNode  = [4]byte{0x01, 0x00, 0x00, 0x02} // deleteNode(bytes32)
-	SelectorCreateEdge  = [4]byte{0x01, 0x00, 0x00, 0x03} // createEdge(bytes32,bytes32,bytes32,string,bytes)
-	SelectorDeleteEdge  = [4]byte{0x01, 0x00, 0x00, 0x04} // deleteEdge(bytes32)
-	SelectorUpdateNode  = [4]byte{0x01, 0x00, 0x00, 0x05} // updateNode(bytes32,bytes)
-	SelectorUpdateEdge  = [4]byte{0x01, 0x00, 0x00, 0x06} // updateEdge(bytes32,bytes)
+	SelectorCreateNode = [4]byte{0x01, 0x00, 0x00, 0x01} // createNode(bytes32,string,bytes)
+	SelectorDeleteNode = [4]byte{0x01, 0x00, 0x00, 0x02} // deleteNode(bytes32)
+	SelectorCreateEdge = [4]byte{0x01, 0x00, 0x00, 0x03} // createEdge(bytes32,bytes32,bytes32,string,bytes)
+	SelectorDeleteEdge = [4]byte{0x01, 0x00, 0x00, 0x04} // deleteEdge(bytes32)
+	SelectorUpdateNode = [4]byte{0x01, 0x00, 0x00, 0x05} // updateNode(bytes32,bytes)
+	SelectorUpdateEdge = [4]byte{0x01, 0x00, 0x00, 0x06} // updateEdge(bytes32,bytes)
 
 	// Queries
 	SelectorGetNode           = [4]byte{0x02, 0x00, 0x00, 0x01} // getNode(bytes32)
@@ -52,26 +52,26 @@ var (
 
 // Gas costs for operations.
 const (
-	GasCreateNode  = 20000
-	GasDeleteNode  = 15000
-	GasCreateEdge  = 25000
-	GasDeleteEdge  = 15000
-	GasUpdateNode  = 10000
-	GasUpdateEdge  = 10000
-	GasGetNode     = 2000
-	GasGetEdge     = 2000
-	GasQueryBase   = 5000
-	GasQueryPerItem = 1000
-	GasBFSBase     = 10000
-	GasBFSPerNode  = 500
-	GasDFSBase     = 10000
-	GasDFSPerNode  = 500
-	GasShortestPath = 15000
-	GasHasCycle    = 20000
-	GasSubgraphMatch = 50000
-	GasTriangleCount = 100000
+	GasCreateNode          = 20000
+	GasDeleteNode          = 15000
+	GasCreateEdge          = 25000
+	GasDeleteEdge          = 15000
+	GasUpdateNode          = 10000
+	GasUpdateEdge          = 10000
+	GasGetNode             = 2000
+	GasGetEdge             = 2000
+	GasQueryBase           = 5000
+	GasQueryPerItem        = 1000
+	GasBFSBase             = 10000
+	GasBFSPerNode          = 500
+	GasDFSBase             = 10000
+	GasDFSPerNode          = 500
+	GasShortestPath        = 15000
+	GasHasCycle            = 20000
+	GasSubgraphMatch       = 50000
+	GasTriangleCount       = 100000
 	GasConnectedComponents = 50000
-	GasGetCount    = 1000
+	GasGetCount            = 1000
 )
 
 // GraphContract implements the graph database precompile.

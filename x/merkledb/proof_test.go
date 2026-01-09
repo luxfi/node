@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/utils/maybe"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )

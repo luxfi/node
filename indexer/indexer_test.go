@@ -14,15 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	nodeconsensus "github.com/luxfi/node/consensus"
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/engine/interfaces"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/utils"
+	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/vm/utils"
 )
 
 // mockChainVM is a simple mock for testing that implements interfaces.VM

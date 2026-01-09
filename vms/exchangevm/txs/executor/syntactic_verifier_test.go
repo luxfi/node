@@ -9,19 +9,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/node/utils/timer/mockable"
 
-	"github.com/luxfi/ids"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 
 	safemath "github.com/luxfi/math"
 )
@@ -104,10 +104,10 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	luxCtx.NetworkID = constants.UnitTestID
 	luxCtx.ChainID = chainID
 	backend := &Backend{
-		Ctx:        ctx,
-		LuxCtx:     luxCtx,
-		CChainID:   cChainID,
-		Config:     &feeConfig,
+		Ctx:      ctx,
+		LuxCtx:   luxCtx,
+		CChainID: cChainID,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -499,10 +499,10 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	luxCtx.NetworkID = constants.UnitTestID
 	luxCtx.ChainID = chainID
 	backend := &Backend{
-		Ctx:        ctx,
-		LuxCtx:     luxCtx,
-		CChainID:   cChainID,
-		Config:     &feeConfig,
+		Ctx:      ctx,
+		LuxCtx:   luxCtx,
+		CChainID: cChainID,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

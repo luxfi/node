@@ -91,11 +91,11 @@ func TestCalculateInitialMargin(t *testing.T) {
 		leverage uint16
 		expected *big.Int
 	}{
-		{10, notional(1000)},  // 10x -> $1,000 margin
-		{20, notional(500)},   // 20x -> $500 margin
-		{100, notional(100)},  // 100x -> $100 margin
-		{500, notional(20)},   // 500x -> $20 margin
-		{1000, notional(10)},  // 1000x -> $10 margin
+		{10, notional(1000)}, // 10x -> $1,000 margin
+		{20, notional(500)},  // 20x -> $500 margin
+		{100, notional(100)}, // 100x -> $100 margin
+		{500, notional(20)},  // 500x -> $20 margin
+		{1000, notional(10)}, // 1000x -> $10 margin
 	}
 
 	for _, tt := range tests {

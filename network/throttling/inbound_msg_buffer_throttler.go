@@ -11,8 +11,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+	utilmetric "github.com/luxfi/metric"
 )
 
 // See inbound_msg_throttler.go
@@ -129,7 +128,7 @@ type inboundMsgBufferThrottlerMetrics struct {
 }
 
 func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) error {
-	errs := wrappers.Errs{}
+	errs := metric.Errs{}
 	registry, ok := reg.(metric.Registry)
 	if !ok {
 		errs.Add(nil)

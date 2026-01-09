@@ -9,20 +9,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestAdvanceTimeTo_UpdatesFeeState(t *testing.T) {
@@ -266,7 +266,7 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 		}
 
 		// Very high balance for validators that should NOT be evicted
-		keeperBalance = uint64(1000 * units.Lux)
+		keeperBalance = uint64(1000 * constants.Lux)
 
 		currentTime = genesistest.DefaultValidatorStartTime
 		newTime     = currentTime.Add(timeToAdvance)
@@ -278,11 +278,11 @@ func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
 	)
 
 	tests := []struct {
-		name                    string
-		numEvict                int  // number of validators to evict
-		numKeep                 int  // number of validators to keep
-		expectedModified        bool
-		expectedExcess          gas.Gas
+		name             string
+		numEvict         int // number of validators to evict
+		numKeep          int // number of validators to keep
+		expectedModified bool
+		expectedExcess   gas.Gas
 	}{
 		{
 			name:             "no L1 validators",

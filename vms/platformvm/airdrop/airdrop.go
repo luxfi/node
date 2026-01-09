@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package airdrop
 
 import (
@@ -12,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-		"github.com/luxfi/geth/common"
-		"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethclient"
 
-	"github.com/luxfi/node/config"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/config"
 )
 
 var (
@@ -191,12 +190,12 @@ func (m *Manager) GetAirdropStats() *AirdropStats {
 	}
 
 	return &AirdropStats{
-		TotalREQLHolders:   uint64(len(m.reqlSnapshots)),
-		TotalLUXAllocated:  totalAllocated,
-		TotalClaims:        uint64(len(m.claims)),
-		TotalLUXClaimed:    totalClaimed,
-		ConversionRatio:    m.config.ConversionRatio,
-		ClaimPeriodEnds:    m.getClaimDeadline(),
+		TotalREQLHolders:  uint64(len(m.reqlSnapshots)),
+		TotalLUXAllocated: totalAllocated,
+		TotalClaims:       uint64(len(m.claims)),
+		TotalLUXClaimed:   totalClaimed,
+		ConversionRatio:   m.config.ConversionRatio,
+		ClaimPeriodEnds:   m.getClaimDeadline(),
 	}
 }
 
@@ -220,7 +219,7 @@ func (m *Manager) loadSnapshot() error {
 	mockSnapshots := []REQLSnapshot{
 		{
 			Address:       common.HexToAddress("0x1234567890123456789012345678901234567890"),
-			REQLBalance:   new(big.Int).Mul(big.NewInt(1000000), big.NewInt(1e18)), // 1M REQL
+			REQLBalance:   new(big.Int).Mul(big.NewInt(1000000), big.NewInt(1e18)),   // 1M REQL
 			LUXAllocation: new(big.Int).Mul(big.NewInt(1000000000), big.NewInt(1e9)), // 1B LUX
 		},
 		// Add more snapshot entries...
@@ -277,7 +276,7 @@ func (m *Manager) processClaim(ctx context.Context, claim *AirdropClaim) (ids.ID
 	// 1. Create a vesting transaction on P-Chain
 	// 2. Mint tokens to the specified LUX address
 	// 3. Apply vesting schedule
-	
+
 	// For now, return a mock transaction ID
 	return ids.GenerateTestID(), nil
 }

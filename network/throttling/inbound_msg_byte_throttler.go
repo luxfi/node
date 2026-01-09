@@ -12,12 +12,11 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/linked"
-	utilmetric "github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+		"github.com/luxfi/constants"
+		"github.com/luxfi/ids"
+		"github.com/luxfi/vm/utils/linked"
+		utilmetric "github.com/luxfi/metric"
 )
 
 // See inbound_msg_throttler.go
@@ -307,7 +306,7 @@ type inboundMsgByteThrottlerMetrics struct {
 }
 
 func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error {
-	errs := wrappers.Errs{}
+	errs := metric.Errs{}
 	registry, ok := reg.(metric.Registry)
 	if !ok {
 		errs.Add(nil)

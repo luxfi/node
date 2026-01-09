@@ -92,8 +92,8 @@ func TestDEXService_SubmitOrder_QZMQ(t *testing.T) {
 	transportConfig := XChainDEXConfig()
 	transportConfig.QZMQConfig.ConsensusPort = 15000 // Use unique port
 	transportConfig.QZMQConfig.DEXPort = 16000       // Use unique port
-	transportConfig.NetworkPipes.P2PPort = 19651    // Use unique port
-	transportConfig.NetworkPipes.RPCPort = 19630    // Use unique port
+	transportConfig.NetworkPipes.P2PPort = 19651     // Use unique port
+	transportConfig.NetworkPipes.RPCPort = 19630     // Use unique port
 
 	serviceConfig := &ServiceConfig{
 		UseGRPCForConsensus:   true,
@@ -149,8 +149,8 @@ func TestDEXService_BroadcastBlock_QZMQ(t *testing.T) {
 	transportConfig.Type = TransportQZMQ
 	transportConfig.QZMQConfig.ConsensusPort = 25000 // Use unique port
 	transportConfig.QZMQConfig.DEXPort = 26000       // Use unique port
-	transportConfig.NetworkPipes.P2PPort = 29651    // Use unique port
-	transportConfig.NetworkPipes.RPCPort = 29630    // Use unique port
+	transportConfig.NetworkPipes.P2PPort = 29651     // Use unique port
+	transportConfig.NetworkPipes.RPCPort = 29630     // Use unique port
 
 	serviceConfig := &ServiceConfig{
 		UseGRPCForConsensus:   false,
@@ -172,8 +172,8 @@ func TestDEXService_BroadcastBlock_QZMQ(t *testing.T) {
 
 func TestConvertOrderSide(t *testing.T) {
 	tests := []struct {
-		input    string
-		isBuy    bool
+		input string
+		isBuy bool
 	}{
 		{"buy", true},
 		{"sell", false},

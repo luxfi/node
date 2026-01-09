@@ -15,30 +15,30 @@ import (
 )
 
 var (
-	ErrAccountNotFound = errors.New("account not found")
+	ErrAccountNotFound     = errors.New("account not found")
 	ErrInsufficientBalance = errors.New("insufficient balance")
-	ErrStateCorrupted = errors.New("state corrupted")
+	ErrStateCorrupted      = errors.New("state corrupted")
 
 	// Database prefixes
-	prefixAccount     = []byte("account:")
-	prefixBalance     = []byte("balance:")
-	prefixOrder       = []byte("order:")
-	prefixPool        = []byte("pool:")
-	prefixPosition    = []byte("position:")
-	prefixNonce       = []byte("nonce:")
-	prefixBlock       = []byte("block:")
-	prefixTx          = []byte("tx:")
-	prefixLastBlock   = []byte("lastBlock")
+	prefixAccount   = []byte("account:")
+	prefixBalance   = []byte("balance:")
+	prefixOrder     = []byte("order:")
+	prefixPool      = []byte("pool:")
+	prefixPosition  = []byte("position:")
+	prefixNonce     = []byte("nonce:")
+	prefixBlock     = []byte("block:")
+	prefixTx        = []byte("tx:")
+	prefixLastBlock = []byte("lastBlock")
 )
 
 // Account represents a user account in the DEX.
 type Account struct {
-	Address    ids.ShortID          `json:"address"`
-	Nonce      uint64               `json:"nonce"`
-	Balances   map[ids.ID]uint64    `json:"balances"`   // token -> balance
-	OpenOrders []ids.ID             `json:"openOrders"` // list of open order IDs
-	LPTokens   map[ids.ID]uint64    `json:"lpTokens"`   // pool -> LP token balance
-	CreatedAt  int64                `json:"createdAt"`
+	Address    ids.ShortID       `json:"address"`
+	Nonce      uint64            `json:"nonce"`
+	Balances   map[ids.ID]uint64 `json:"balances"`   // token -> balance
+	OpenOrders []ids.ID          `json:"openOrders"` // list of open order IDs
+	LPTokens   map[ids.ID]uint64 `json:"lpTokens"`   // pool -> LP token balance
+	CreatedAt  int64             `json:"createdAt"`
 }
 
 // State manages the persistent state of the DEX VM.
@@ -47,8 +47,8 @@ type State struct {
 	db database.Database
 
 	// Cached state
-	accounts   map[ids.ShortID]*Account
-	lastBlockID ids.ID
+	accounts        map[ids.ShortID]*Account
+	lastBlockID     ids.ID
 	lastBlockHeight uint64
 }
 
@@ -372,42 +372,42 @@ func (s *State) encodeAccount(acc *Account) ([]byte, error) {
 	// Format: address (20) + nonce (8) + num_balances (4) + [token (32) + balance (8)]... + ...
 	size := 20 + 8 + 4 + len(acc.Balances)*40 + 4 + len(acc.OpenOrders)*32 + 4 + len(acc.LPTokens)*40
 	data := make([]byte, size)
-	
+
 	offset := 0
 	copy(data[offset:], acc.Address[:])
 	offset += 20
-	
+
 	binary.BigEndian.PutUint64(data[offset:], acc.Nonce)
 	offset += 8
-	
+
 	binary.BigEndian.PutUint32(data[offset:], uint32(len(acc.Balances)))
 	offset += 4
-	
+
 	for token, balance := range acc.Balances {
 		copy(data[offset:], token[:])
 		offset += 32
 		binary.BigEndian.PutUint64(data[offset:], balance)
 		offset += 8
 	}
-	
+
 	binary.BigEndian.PutUint32(data[offset:], uint32(len(acc.OpenOrders)))
 	offset += 4
-	
+
 	for _, orderID := range acc.OpenOrders {
 		copy(data[offset:], orderID[:])
 		offset += 32
 	}
-	
+
 	binary.BigEndian.PutUint32(data[offset:], uint32(len(acc.LPTokens)))
 	offset += 4
-	
+
 	for poolID, balance := range acc.LPTokens {
 		copy(data[offset:], poolID[:])
 		offset += 32
 		binary.BigEndian.PutUint64(data[offset:], balance)
 		offset += 8
 	}
-	
+
 	return data[:offset], nil
 }
 
@@ -421,17 +421,17 @@ func (s *State) decodeAccount(data []byte) (*Account, error) {
 		OpenOrders: make([]ids.ID, 0),
 		LPTokens:   make(map[ids.ID]uint64),
 	}
-	
+
 	offset := 0
 	copy(acc.Address[:], data[offset:offset+20])
 	offset += 20
-	
+
 	acc.Nonce = binary.BigEndian.Uint64(data[offset:])
 	offset += 8
-	
+
 	numBalances := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	for i := uint32(0); i < numBalances; i++ {
 		var token ids.ID
 		copy(token[:], data[offset:offset+32])
@@ -440,28 +440,28 @@ func (s *State) decodeAccount(data []byte) (*Account, error) {
 		offset += 8
 		acc.Balances[token] = balance
 	}
-	
+
 	if offset >= len(data) {
 		return acc, nil
 	}
-	
+
 	numOrders := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	for i := uint32(0); i < numOrders; i++ {
 		var orderID ids.ID
 		copy(orderID[:], data[offset:offset+32])
 		offset += 32
 		acc.OpenOrders = append(acc.OpenOrders, orderID)
 	}
-	
+
 	if offset >= len(data) {
 		return acc, nil
 	}
-	
+
 	numLPTokens := binary.BigEndian.Uint32(data[offset:])
 	offset += 4
-	
+
 	for i := uint32(0); i < numLPTokens; i++ {
 		var poolID ids.ID
 		copy(poolID[:], data[offset:offset+32])
@@ -470,6 +470,6 @@ func (s *State) decodeAccount(data []byte) (*Account, error) {
 		offset += 8
 		acc.LPTokens[poolID] = balance
 	}
-	
+
 	return acc, nil
 }

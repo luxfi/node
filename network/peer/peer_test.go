@@ -18,22 +18,22 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 type testPeer struct {
@@ -137,7 +137,7 @@ func newConfig(t *testing.T) *Config {
 		Network:              TestNetwork,
 		Router:               nil,
 		VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-		MyChains:          nil,
+		MyChains:             nil,
 		Beacons:              validators.NewManager(),
 		Validators:           validators.NewManager(),
 		NetworkID:            constants.CustomID,
@@ -324,22 +324,22 @@ func TestTrackedChains(t *testing.T) {
 	}{
 		{
 			name:             "primary network only",
-			trackedChains:   makeChainIDs(0),
+			trackedChains:    makeChainIDs(0),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "single chain",
-			trackedChains:   makeChainIDs(1),
+			trackedChains:    makeChainIDs(1),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "max chains",
-			trackedChains:   makeChainIDs(maxNumTrackedChains),
+			trackedChains:    makeChainIDs(maxNumTrackedChains),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "too many chains",
-			trackedChains:   makeChainIDs(maxNumTrackedChains + 1),
+			trackedChains:    makeChainIDs(maxNumTrackedChains + 1),
 			shouldDisconnect: true,
 		},
 	}

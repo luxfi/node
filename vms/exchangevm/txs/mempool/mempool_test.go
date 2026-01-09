@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package mempool
 
 import (
@@ -12,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/vm/utils"
 
 	"github.com/luxfi/node/vms/exchangevm/txs"
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/vms/components/gas"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/vm/utils/math"
 )
 
 const (

@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -20,9 +19,9 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/vm/utils"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 
 	"github.com/luxfi/crypto/secp256k1"
 
@@ -32,7 +31,7 @@ import (
 
 	"github.com/luxfi/node/vms/components/lux"
 
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestIndexTransaction_Ordered(t *testing.T) {

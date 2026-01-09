@@ -13,10 +13,10 @@ import (
 
 // FlagVars holds test configuration flags
 type FlagVars struct {
-	NetworkDir        string
-	ReuseNetwork      bool
-	RestartNetwork    bool
-	StopNetwork       bool
+	NetworkDir           string
+	ReuseNetwork         bool
+	RestartNetwork       bool
+	StopNetwork          bool
 	NetworkShutdownDelay string
 }
 

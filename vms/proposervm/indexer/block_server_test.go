@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package indexer
 
 import (
@@ -11,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/ids"
 )
 
 var (

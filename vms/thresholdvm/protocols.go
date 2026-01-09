@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package tvm
 
 import (
@@ -190,12 +189,12 @@ type LSSHandler struct {
 
 // lssKeyShare wraps LSS config to implement KeyShare
 type lssKeyShare struct {
-	config   *lssconfig.Config
-	pubKey   []byte
-	partyID  party.ID
-	thresh   int
-	total    int
-	gen      uint64
+	config  *lssconfig.Config
+	pubKey  []byte
+	partyID party.ID
+	thresh  int
+	total   int
+	gen     uint64
 }
 
 func (s *lssKeyShare) PublicKey() []byte {

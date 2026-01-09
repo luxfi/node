@@ -11,9 +11,9 @@ import (
 	"slices"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/node/utils/heap"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/vm/utils/buffer"
+	"github.com/luxfi/vm/utils/heap"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 var (

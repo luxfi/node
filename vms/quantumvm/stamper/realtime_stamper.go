@@ -13,12 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/event"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -29,13 +29,13 @@ var (
 
 // RealtimeStamperConfig configuration for real-time quantum stamping
 type RealtimeStamperConfig struct {
-	Mode              QuantumStampMode
-	CacheSize         int
-	StampingInterval  time.Duration // Minimum interval between stamps
-	BatchSize         int           // Number of blocks to batch stamp
-	VerifyPrevious    bool          // Verify previous stamps on startup
-	PersistenceDB     ethdb.Database
-	EnableMetrics     bool
+	Mode             QuantumStampMode
+	CacheSize        int
+	StampingInterval time.Duration // Minimum interval between stamps
+	BatchSize        int           // Number of blocks to batch stamp
+	VerifyPrevious   bool          // Verify previous stamps on startup
+	PersistenceDB    ethdb.Database
+	EnableMetrics    bool
 }
 
 // RealtimeQuantumStamper provides real-time quantum stamping for C-Chain blocks
@@ -46,16 +46,16 @@ type RealtimeQuantumStamper struct {
 	logger     log.Logger
 
 	// Block subscription
-	blockChan  chan *types.Block
-	blockSub   event.Subscription
-	headChan   chan core.ChainHeadEvent
-	headSub    event.Subscription
+	blockChan chan *types.Block
+	blockSub  event.Subscription
+	headChan  chan core.ChainHeadEvent
+	headSub   event.Subscription
 
 	// Control
-	ctx        context.Context
-	cancel     context.CancelFunc
-	running    bool
-	mu         sync.RWMutex
+	ctx     context.Context
+	cancel  context.CancelFunc
+	running bool
+	mu      sync.RWMutex
 
 	// Batching
 	batchMu    sync.Mutex
@@ -63,19 +63,19 @@ type RealtimeQuantumStamper struct {
 	batchTimer *time.Timer
 
 	// Metrics
-	metrics    *StamperMetrics
+	metrics *StamperMetrics
 }
 
 // StamperMetrics tracks stamping performance metrics
 type StamperMetrics struct {
-	BlocksReceived     uint64
-	BlocksStamped      uint64
-	BlocksVerified     uint64
-	StampingErrors     uint64
-	AvgStampingTimeMs  float64
-	LastStampedHeight  uint64
-	LastStampedHash    common.Hash
-	QChainHeight       uint64
+	BlocksReceived    uint64
+	BlocksStamped     uint64
+	BlocksVerified    uint64
+	StampingErrors    uint64
+	AvgStampingTimeMs float64
+	LastStampedHeight uint64
+	LastStampedHash   common.Hash
+	QChainHeight      uint64
 }
 
 // NewRealtimeQuantumStamper creates a new real-time quantum stamper
@@ -503,15 +503,15 @@ func (rts *RealtimeQuantumStamper) GetStampInfo(blockHash common.Hash) (map[stri
 	}
 
 	info := map[string]interface{}{
-		"cchain_height":  stamp.CChainHeight,
-		"cchain_hash":    stamp.CChainHash.Hex(),
-		"qchain_height":  stamp.QChainHeight,
-		"qchain_hash":    stamp.QChainHash.Hex(),
-		"mode":           stamp.Mode,
-		"timestamp":      stamp.Timestamp.Format(time.RFC3339),
-		"state_root":     stamp.StateRoot.Hex(),
-		"receipts_root":  stamp.ReceiptsRoot.Hex(),
-		"gas_used":       stamp.GasUsed,
+		"cchain_height": stamp.CChainHeight,
+		"cchain_hash":   stamp.CChainHash.Hex(),
+		"qchain_height": stamp.QChainHeight,
+		"qchain_hash":   stamp.QChainHash.Hex(),
+		"mode":          stamp.Mode,
+		"timestamp":     stamp.Timestamp.Format(time.RFC3339),
+		"state_root":    stamp.StateRoot.Hex(),
+		"receipts_root": stamp.ReceiptsRoot.Hex(),
+		"gas_used":      stamp.GasUsed,
 	}
 
 	// Add signature info

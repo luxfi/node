@@ -29,7 +29,7 @@ func TestDefaultReferralTiers(t *testing.T) {
 
 	// Tier 1 should be base tier
 	require.Equal(uint8(1), tiers[0].Tier)
-	require.Equal(uint16(500), tiers[0].ReferrerRebate)   // 5%
+	require.Equal(uint16(500), tiers[0].ReferrerRebate)  // 5%
 	require.Equal(uint16(500), tiers[0].RefereeDiscount) // 5%
 
 	// Top tier should have highest rates
@@ -197,7 +197,7 @@ func TestProcessTradeNoReferral(t *testing.T) {
 
 	payment, actualFee, err := engine.ProcessTradeRebate(traderID, tradeID, "BTC-PERP", notional(100000), tradeFee)
 	require.NoError(err)
-	require.Nil(payment)           // No rebate
+	require.Nil(payment)               // No rebate
 	require.Equal(tradeFee, actualFee) // Full fee
 }
 

@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"

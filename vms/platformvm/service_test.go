@@ -23,54 +23,46 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/protocol/chain"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/address"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/chain"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/address"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
 
-	avajson "github.com/luxfi/node/utils/json"
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	avajson "github.com/luxfi/vm/utils/json"
 )
 
 var encodings = []formatting.Encoding{
@@ -739,7 +731,7 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.Nil(vdr.Delegators)
 
 		innerArgs := GetCurrentValidatorsArgs{
-			ChainID:   constants.PrimaryNetworkID,
+			ChainID: constants.PrimaryNetworkID,
 			NodeIDs: []ids.NodeID{vdr.NodeID},
 		}
 		innerResponse := GetCurrentValidatorsReply{}
@@ -892,7 +884,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 		{
 			name: "specific height",
 			args: GetValidatorsAtArgs{
-				Height:   pchainapi.Height(12345),
+				Height:  pchainapi.Height(12345),
 				ChainID: subnetID,
 			},
 			json: `{"height":"12345","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
@@ -900,7 +892,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 		{
 			name: "proposed height",
 			args: GetValidatorsAtArgs{
-				Height:   pchainapi.ProposedHeight,
+				Height:  pchainapi.ProposedHeight,
 				ChainID: subnetID,
 			},
 			json: `{"height":"proposed","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
@@ -1370,7 +1362,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID,
+					ChainID:   subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -1378,7 +1370,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID,
+					ChainID:   subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -1391,7 +1383,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID,
+					ChainID:      subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    0,
 					PublicKey:    pkBytes,
@@ -1399,7 +1391,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:     subnetID,
+					ChainID:      subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    1,
@@ -1412,7 +1404,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID,
+					ChainID:   subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    123123,
@@ -1420,7 +1412,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  subnetID,
+					ChainID:   subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    0,
@@ -1430,7 +1422,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID,
+					ChainID:           subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					StartTime:         0,
 					PublicKey:         pkBytes,
@@ -1440,7 +1432,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID,
+					ChainID:           subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					StartTime:         2,
@@ -1449,7 +1441,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:          subnetID,
+					ChainID:           subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         3,
@@ -1470,7 +1462,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			for _, staker := range test.initial {
 				primaryStaker := &state.Staker{
 					TxID:      ids.GenerateTestID(),
-					ChainID:  constants.PrimaryNetworkID,
+					ChainID:   constants.PrimaryNetworkID,
 					NodeID:    staker.NodeID,
 					PublicKey: staker.PublicKey,
 					Weight:    5,

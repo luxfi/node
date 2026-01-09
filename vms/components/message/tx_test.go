@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package message
 
 import (
@@ -9,14 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/vm/utils"
 )
 
 func TestTx(t *testing.T) {
 	require := require.New(t)
 
-	tx := utils.RandomBytes(256 * units.KiB)
+	tx := utils.RandomBytes(256 * constants.KiB)
 	builtMsg := Tx{
 		Tx: tx,
 	}

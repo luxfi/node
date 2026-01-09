@@ -32,11 +32,11 @@ type FHEProtocolHandler struct {
 	total     int
 
 	// Key management
-	publicKey    *rlwe.PublicKey
-	secretShare  *rlwe.SecretKey
-	shamirShare  *multiparty.ShamirSecretShare
-	relinKey     *rlwe.RelinearizationKey
-	galoisKeys   *rlwe.GaloisKey
+	publicKey   *rlwe.PublicKey
+	secretShare *rlwe.SecretKey
+	shamirShare *multiparty.ShamirSecretShare
+	relinKey    *rlwe.RelinearizationKey
+	galoisKeys  *rlwe.GaloisKey
 
 	// Threshold decryptor
 	decryptor *ThresholdDecryptor
@@ -55,21 +55,21 @@ type FHESession struct {
 	Type      FHESessionType
 	Status    FHESessionStatus
 	Requester [20]byte // Contract address
-	
+
 	// For decryption
 	Ciphertext *Ciphertext
-	
+
 	// For keygen
 	KeygenRound int
-	
+
 	// Collected shares
 	Shares     map[uint64][]byte
 	ShareCount int
-	
+
 	// Result
 	Result []byte
 	Error  error
-	
+
 	mu sync.RWMutex
 }
 

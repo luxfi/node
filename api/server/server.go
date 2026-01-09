@@ -12,19 +12,19 @@ import (
 	"net/http"
 	// "net/url"   // Unused after handler registration moved to chain manager
 	// "path"      // Unused after handler registration moved to chain manager
-	"strings"
-	"sync"
-	"time"
-	"github.com/rs/cors"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"github.com/luxfi/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/trace"
-	// "github.com/luxfi/constantsants"  // Unused after handler registration moved
+	"github.com/rs/cors"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"strings"
+	"sync"
+	"time"
+	// "github.com/luxfi/constants"  // Unused after handler registration moved
 	"github.com/luxfi/log"
 )
 
@@ -156,58 +156,58 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	// after VM initialization. This RegisterChain method is called too early (before
 	// VM initialization) and would cause nil pointer dereference if we call CreateHandlers here.
 	// The chain manager will call CreateHandlers at the appropriate time after notifyRegistrants.
-	
+
 	s.log.Debug("chain registered (handlers will be created by chain manager)",
 		log.String("chainName", chainName),
 		log.Stringer("chainID", ctx.ChainID),
 	)
-	
+
 	// DISABLED: Handler registration moved to chains/manager.go:createChain()
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
 	// defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
 
 	// DISABLED: Register each endpoint
 	/*
-	for extension, handler := range pathRouteHandlers {
-		// Validate that the route being added is valid
-		// e.g. "/foo" and "" are ok but "\n" is not
-		_, err := url.ParseRequestURI(extension)
-		if extension != "" && err != nil {
-			s.log.Error("could not add route to chain's API handler",
-				log.UserString("reason", "route is malformed"),
+		for extension, handler := range pathRouteHandlers {
+			// Validate that the route being added is valid
+			// e.g. "/foo" and "" are ok but "\n" is not
+			_, err := url.ParseRequestURI(extension)
+			if extension != "" && err != nil {
+				s.log.Error("could not add route to chain's API handler",
+					log.UserString("reason", "route is malformed"),
+					log.Err(err),
+				)
+				continue
+			}
+			if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
+				s.log.Error("error adding route",
+					log.Err(err),
+				)
+			}
+		}
+
+		ctx.Lock.Lock()
+		headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
+		ctx.Lock.Unlock()
+		if err != nil {
+			s.log.Error("failed to create header route handler",
+				log.String("chainName", chainName),
 				log.Err(err),
 			)
-			continue
+			return
 		}
-		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
-			s.log.Error("error adding route",
-				log.Err(err),
+
+		if headerRouteHandler == nil {
+			return
+		}
+
+		headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
+		if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
+			s.log.Error(
+				"failed to add header route",
+				log.String("chainName", chainName),
 			)
 		}
-	}
-
-	ctx.Lock.Lock()
-	headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
-	ctx.Lock.Unlock()
-	if err != nil {
-		s.log.Error("failed to create header route handler",
-			log.String("chainName", chainName),
-			log.Err(err),
-		)
-		return
-	}
-
-	if headerRouteHandler == nil {
-		return
-	}
-
-	headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
-	if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
-		s.log.Error(
-			"failed to add header route",
-			log.String("chainName", chainName),
-		)
-	}
 	*/
 }
 

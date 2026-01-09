@@ -15,10 +15,10 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/dexvm/config"
 	"github.com/luxfi/warp"
@@ -53,11 +53,11 @@ func TestDexVMFactory(t *testing.T) {
 
 // DEXGenesisConfig represents the genesis configuration for DEX VM.
 type DEXGenesisConfig struct {
-	BlockInterval     string             `json:"blockInterval"`
-	MaxOrdersPerBlock int                `json:"maxOrdersPerBlock"`
-	TradingPairs      []TradingPairSpec  `json:"tradingPairs"`
-	Fees              FeeConfig          `json:"fees"`
-	Perpetuals        PerpetualsConfig   `json:"perpetuals"`
+	BlockInterval     string            `json:"blockInterval"`
+	MaxOrdersPerBlock int               `json:"maxOrdersPerBlock"`
+	TradingPairs      []TradingPairSpec `json:"tradingPairs"`
+	Fees              FeeConfig         `json:"fees"`
+	Perpetuals        PerpetualsConfig  `json:"perpetuals"`
 }
 
 // TradingPairSpec defines a trading pair configuration.
@@ -77,10 +77,10 @@ type FeeConfig struct {
 
 // PerpetualsConfig defines perpetuals settings.
 type PerpetualsConfig struct {
-	Enabled                  bool   `json:"enabled"`
-	MaxLeverage              int    `json:"maxLeverage"`
-	FundingInterval          string `json:"fundingInterval"`
-	MaintenanceMarginRatio   string `json:"maintenanceMarginRatio"`
+	Enabled                bool   `json:"enabled"`
+	MaxLeverage            int    `json:"maxLeverage"`
+	FundingInterval        string `json:"fundingInterval"`
+	MaintenanceMarginRatio string `json:"maintenanceMarginRatio"`
 }
 
 // TestDexVMGenesisFormat tests that DEX VM accepts valid genesis configurations.

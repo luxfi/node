@@ -24,13 +24,13 @@ import (
 )
 
 var (
-	ErrCommitmentNotFound      = errors.New("commitment not found")
-	ErrCommitmentExpired       = errors.New("commitment expired")
-	ErrCommitmentAlreadyUsed   = errors.New("commitment already revealed")
-	ErrCommitmentMismatch      = errors.New("reveal does not match commitment")
-	ErrCommitmentTooEarly      = errors.New("reveal too early - minimum delay not met")
-	ErrInvalidSalt             = errors.New("invalid salt length")
-	ErrDuplicateCommitment     = errors.New("duplicate commitment")
+	ErrCommitmentNotFound    = errors.New("commitment not found")
+	ErrCommitmentExpired     = errors.New("commitment expired")
+	ErrCommitmentAlreadyUsed = errors.New("commitment already revealed")
+	ErrCommitmentMismatch    = errors.New("reveal does not match commitment")
+	ErrCommitmentTooEarly    = errors.New("reveal too early - minimum delay not met")
+	ErrInvalidSalt           = errors.New("invalid salt length")
+	ErrDuplicateCommitment   = errors.New("duplicate commitment")
 )
 
 const (
@@ -85,25 +85,25 @@ type CommitmentStore struct {
 	senderCommitments map[ids.ShortID][]ids.ID
 
 	// Configuration
-	minRevealDelay     time.Duration
-	maxRevealDelay     time.Duration
-	commitmentGrace    time.Duration
+	minRevealDelay  time.Duration
+	maxRevealDelay  time.Duration
+	commitmentGrace time.Duration
 
 	// Statistics
-	totalCommits   uint64
-	totalReveals   uint64
-	totalExpired   uint64
-	totalMismatch  uint64
+	totalCommits  uint64
+	totalReveals  uint64
+	totalExpired  uint64
+	totalMismatch uint64
 }
 
 // NewCommitmentStore creates a new commitment store with default config.
 func NewCommitmentStore() *CommitmentStore {
 	return &CommitmentStore{
-		commitments:        make(map[ids.ID]*Commitment),
-		senderCommitments:  make(map[ids.ShortID][]ids.ID),
-		minRevealDelay:     DefaultMinRevealDelay,
-		maxRevealDelay:     DefaultMaxRevealDelay,
-		commitmentGrace:    DefaultCommitmentGracePeriod,
+		commitments:       make(map[ids.ID]*Commitment),
+		senderCommitments: make(map[ids.ShortID][]ids.ID),
+		minRevealDelay:    DefaultMinRevealDelay,
+		maxRevealDelay:    DefaultMaxRevealDelay,
+		commitmentGrace:   DefaultCommitmentGracePeriod,
 	}
 }
 
@@ -299,11 +299,11 @@ func (cs *CommitmentStore) CleanupExpired(currentTime time.Time) int {
 
 // Statistics returns commit-reveal statistics.
 type CommitmentStats struct {
-	TotalCommits      uint64 `json:"totalCommits"`
-	TotalReveals      uint64 `json:"totalReveals"`
-	TotalExpired      uint64 `json:"totalExpired"`
-	TotalMismatch     uint64 `json:"totalMismatch"`
-	PendingCommitments int   `json:"pendingCommitments"`
+	TotalCommits       uint64 `json:"totalCommits"`
+	TotalReveals       uint64 `json:"totalReveals"`
+	TotalExpired       uint64 `json:"totalExpired"`
+	TotalMismatch      uint64 `json:"totalMismatch"`
+	PendingCommitments int    `json:"pendingCommitments"`
 }
 
 // Statistics returns commit-reveal statistics as interface{} for API compatibility.

@@ -10,11 +10,11 @@ import (
 
 	"errors"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var (

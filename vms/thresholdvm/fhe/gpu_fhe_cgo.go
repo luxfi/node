@@ -11,7 +11,8 @@
 //   - Batch FHE operations for throughput
 //
 // Architecture:
-//   luxcpp/lattice (C++ GPU) → lux/lattice/gpu (Go CGO) → ThresholdVM FHE
+//
+//	luxcpp/lattice (C++ GPU) → lux/lattice/gpu (Go CGO) → ThresholdVM FHE
 package fhe
 
 import (
@@ -36,12 +37,12 @@ type GPUFHEAccelerator struct {
 
 // GPUFHEStats tracks GPU acceleration statistics
 type GPUFHEStats struct {
-	NTTForwardCalls   uint64
-	NTTInverseCalls   uint64
-	PolyMulCalls      uint64
-	BatchCalls        uint64
-	GPUFallbackCalls  uint64
-	TotalGPUTimeNs    uint64
+	NTTForwardCalls  uint64
+	NTTInverseCalls  uint64
+	PolyMulCalls     uint64
+	BatchCalls       uint64
+	GPUFallbackCalls uint64
+	TotalGPUTimeNs   uint64
 }
 
 // GPUFHEOptions holds options for creating a GPU FHE accelerator.

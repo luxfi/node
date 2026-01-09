@@ -12,17 +12,17 @@ import (
 	"net/netip"
 	"time"
 
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/node/network/dialer"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -140,8 +140,8 @@ type Config struct {
 
 	// TrackedChains of the node.
 	// It must not include the primary network ID.
-	TrackedChains set.Set[ids.ID] `json:"-"`
-	Beacons        validators.Manager `json:"-"`
+	TrackedChains set.Set[ids.ID]    `json:"-"`
+	Beacons       validators.Manager `json:"-"`
 
 	// Validators are the current validators in the Lux network
 	Validators validators.Manager `json:"-"`

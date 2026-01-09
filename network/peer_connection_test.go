@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
-	"github.com/luxfi/metric"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTwoNodePeerConnection(t *testing.T) {

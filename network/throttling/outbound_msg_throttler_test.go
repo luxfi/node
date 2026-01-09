@@ -10,12 +10,12 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/message/messagemock"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/log"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {

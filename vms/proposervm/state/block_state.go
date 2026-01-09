@@ -7,19 +7,18 @@ import (
 	"errors"
 
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
-const blockCacheSize = 64 * units.MiB
+const blockCacheSize = 64 * constants.MiB
 
 var (
 	errBlockWrongVersion = errors.New("wrong version")

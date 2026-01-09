@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -18,6 +17,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/vm/utils/math"
 
 	"github.com/luxfi/node/vms/components/gas"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"

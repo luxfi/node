@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/math/set"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"

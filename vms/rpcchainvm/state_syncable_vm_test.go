@@ -13,26 +13,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
 )
 
 // StateSummary implements block.StateSummary for testing
 type StateSummary struct {
-	IDV      ids.ID
-	HeightV  uint64
-	BytesV   []byte
-	AcceptF  func(context.Context) (block.StateSyncMode, error)
+	IDV     ids.ID
+	HeightV uint64
+	BytesV  []byte
+	AcceptF func(context.Context) (block.StateSyncMode, error)
 }
 
 func (s *StateSummary) ID() ids.ID {
@@ -98,27 +98,63 @@ type StateSyncEnabledMock struct {
 func (m *StateSyncEnabledMock) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes, upgradeBytes, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
 	return m.chainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
 }
-func (m *StateSyncEnabledMock) SetState(ctx context.Context, state uint32) error { return m.chainVM.SetState(ctx, state) }
+func (m *StateSyncEnabledMock) SetState(ctx context.Context, state uint32) error {
+	return m.chainVM.SetState(ctx, state)
+}
 func (m *StateSyncEnabledMock) Shutdown(ctx context.Context) error { return m.chainVM.Shutdown(ctx) }
-func (m *StateSyncEnabledMock) Version(ctx context.Context) (string, error) { return m.chainVM.Version(ctx) }
-func (m *StateSyncEnabledMock) NewHTTPHandler(ctx context.Context) (interface{}, error) { return m.chainVM.NewHTTPHandler(ctx) }
-func (m *StateSyncEnabledMock) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error { return m.chainVM.Connected(ctx, nodeID, nodeVersion) }
-func (m *StateSyncEnabledMock) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return m.chainVM.Disconnected(ctx, nodeID) }
-func (m *StateSyncEnabledMock) HealthCheck(ctx context.Context) (interface{}, error) { return m.chainVM.HealthCheck(ctx) }
-func (m *StateSyncEnabledMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) { return m.chainVM.ParseBlock(ctx, bytes) }
-func (m *StateSyncEnabledMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) { return m.chainVM.GetBlock(ctx, id) }
-func (m *StateSyncEnabledMock) BuildBlock(ctx context.Context) (block.Block, error) { return m.chainVM.BuildBlock(ctx) }
-func (m *StateSyncEnabledMock) SetPreference(ctx context.Context, id ids.ID) error { return m.chainVM.SetPreference(ctx, id) }
-func (m *StateSyncEnabledMock) LastAccepted(ctx context.Context) (ids.ID, error) { return m.chainVM.LastAccepted(ctx) }
-func (m *StateSyncEnabledMock) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) { return m.chainVM.GetBlockIDAtHeight(ctx, height) }
-func (m *StateSyncEnabledMock) WaitForEvent(ctx context.Context) (interface{}, error) { return m.chainVM.WaitForEvent(ctx) }
+func (m *StateSyncEnabledMock) Version(ctx context.Context) (string, error) {
+	return m.chainVM.Version(ctx)
+}
+func (m *StateSyncEnabledMock) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+	return m.chainVM.NewHTTPHandler(ctx)
+}
+func (m *StateSyncEnabledMock) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+	return m.chainVM.Connected(ctx, nodeID, nodeVersion)
+}
+func (m *StateSyncEnabledMock) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	return m.chainVM.Disconnected(ctx, nodeID)
+}
+func (m *StateSyncEnabledMock) HealthCheck(ctx context.Context) (interface{}, error) {
+	return m.chainVM.HealthCheck(ctx)
+}
+func (m *StateSyncEnabledMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	return m.chainVM.ParseBlock(ctx, bytes)
+}
+func (m *StateSyncEnabledMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	return m.chainVM.GetBlock(ctx, id)
+}
+func (m *StateSyncEnabledMock) BuildBlock(ctx context.Context) (block.Block, error) {
+	return m.chainVM.BuildBlock(ctx)
+}
+func (m *StateSyncEnabledMock) SetPreference(ctx context.Context, id ids.ID) error {
+	return m.chainVM.SetPreference(ctx, id)
+}
+func (m *StateSyncEnabledMock) LastAccepted(ctx context.Context) (ids.ID, error) {
+	return m.chainVM.LastAccepted(ctx)
+}
+func (m *StateSyncEnabledMock) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	return m.chainVM.GetBlockIDAtHeight(ctx, height)
+}
+func (m *StateSyncEnabledMock) WaitForEvent(ctx context.Context) (interface{}, error) {
+	return m.chainVM.WaitForEvent(ctx)
+}
 
 // Forward StateSyncableVM methods
-func (m *StateSyncEnabledMock) StateSyncEnabled(ctx context.Context) (bool, error) { return m.ssVM.StateSyncEnabled(ctx) }
-func (m *StateSyncEnabledMock) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) { return m.ssVM.GetOngoingSyncStateSummary(ctx) }
-func (m *StateSyncEnabledMock) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) { return m.ssVM.GetLastStateSummary(ctx) }
-func (m *StateSyncEnabledMock) ParseStateSummary(ctx context.Context, bytes []byte) (block.StateSummary, error) { return m.ssVM.ParseStateSummary(ctx, bytes) }
-func (m *StateSyncEnabledMock) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) { return m.ssVM.GetStateSummary(ctx, height) }
+func (m *StateSyncEnabledMock) StateSyncEnabled(ctx context.Context) (bool, error) {
+	return m.ssVM.StateSyncEnabled(ctx)
+}
+func (m *StateSyncEnabledMock) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	return m.ssVM.GetOngoingSyncStateSummary(ctx)
+}
+func (m *StateSyncEnabledMock) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	return m.ssVM.GetLastStateSummary(ctx)
+}
+func (m *StateSyncEnabledMock) ParseStateSummary(ctx context.Context, bytes []byte) (block.StateSummary, error) {
+	return m.ssVM.ParseStateSummary(ctx, bytes)
+}
+func (m *StateSyncEnabledMock) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	return m.ssVM.GetStateSummary(ctx, height)
+}
 
 func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
 	// test key is "stateSyncEnabledTestKey"

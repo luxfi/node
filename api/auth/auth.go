@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package auth
 
 import (
@@ -19,9 +18,9 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/password"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/password"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 const (

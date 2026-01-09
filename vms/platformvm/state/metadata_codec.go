@@ -7,8 +7,8 @@ import (
 	"errors"
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const (
@@ -22,8 +22,8 @@ const (
 var MetadataCodec codec.Manager
 
 func init() {
-	c0 := linearcodec.New([]string{CodecVersion0Tag})
-	c1 := linearcodec.New([]string{CodecVersion0Tag, CodecVersion1Tag})
+	c0 := linearcodec.NewDefault()
+	c1 := linearcodec.NewDefault()
 	MetadataCodec = codec.NewManager(math.MaxInt32)
 
 	err := errors.Join(

@@ -1,13 +1,12 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package keystore
 
 import (
 	"context"
 
-	"github.com/luxfi/formatting"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/rpc"
 )

@@ -14,8 +14,8 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {

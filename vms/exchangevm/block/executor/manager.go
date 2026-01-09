@@ -10,13 +10,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/metrics"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var (

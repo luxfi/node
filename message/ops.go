@@ -93,7 +93,6 @@ var (
 		AppErrorOp:                      AppResponseOp,
 	}
 
-
 	errUnknownMessageType = errors.New("unknown message type")
 )
 

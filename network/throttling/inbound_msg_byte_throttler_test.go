@@ -4,16 +4,16 @@
 package throttling
 
 import (
-	"github.com/luxfi/metric"
 	"context"
+	"github.com/luxfi/metric"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
 

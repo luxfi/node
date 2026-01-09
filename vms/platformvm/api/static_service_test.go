@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package api
 
 import (
@@ -9,12 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/vm/utils/json"
 )
 
 func TestBuildGenesisInvalidUTXOBalance(t *testing.T) {

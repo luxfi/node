@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/ids"
 )
 
 // testValidatorState is a test implementation of ValidatorState

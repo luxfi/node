@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package bloom
 
 import (
@@ -9,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
 )
 
 func TestNew(t *testing.T) {
@@ -17,7 +16,7 @@ func TestNew(t *testing.T) {
 		require  = require.New(t)
 		maxN     = 10000
 		p        = 0.1
-		maxBytes = 1 * units.MiB // 1 MiB
+		maxBytes = 1 * constants.MiB // 1 MiB
 	)
 	f, err := New(maxN, p, maxBytes)
 	require.NoError(err)

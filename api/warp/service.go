@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package warp
 
 import (
@@ -14,8 +13,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/warp"
+	"github.com/luxfi/vm/utils/json"
 )
 
 type Service struct {

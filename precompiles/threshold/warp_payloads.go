@@ -14,16 +14,16 @@ const (
 	PayloadVersionV1 uint8 = 0x01
 
 	// Threshold operation types
-	PayloadTypeKeygenRequest   uint8 = 0x10
-	PayloadTypeKeygenResult    uint8 = 0x11
-	PayloadTypeSignRequest     uint8 = 0x12
-	PayloadTypeSignResult      uint8 = 0x13
-	PayloadTypeRefreshRequest  uint8 = 0x14
-	PayloadTypeRefreshResult   uint8 = 0x15
-	PayloadTypeReshareRequest  uint8 = 0x16
-	PayloadTypeReshareResult   uint8 = 0x17
-	PayloadTypeQueryRequest    uint8 = 0x18
-	PayloadTypeQueryResult     uint8 = 0x19
+	PayloadTypeKeygenRequest  uint8 = 0x10
+	PayloadTypeKeygenResult   uint8 = 0x11
+	PayloadTypeSignRequest    uint8 = 0x12
+	PayloadTypeSignResult     uint8 = 0x13
+	PayloadTypeRefreshRequest uint8 = 0x14
+	PayloadTypeRefreshResult  uint8 = 0x15
+	PayloadTypeReshareRequest uint8 = 0x16
+	PayloadTypeReshareResult  uint8 = 0x17
+	PayloadTypeQueryRequest   uint8 = 0x18
+	PayloadTypeQueryResult    uint8 = 0x19
 )
 
 // Result status codes
@@ -42,27 +42,28 @@ var (
 
 // KeygenRequestPayload is the Warp payload for DKG requests to T-Chain.
 // Wire format:
-//   [0]:      version (1 byte)
-//   [1]:      type (1 byte) = 0x10
-//   [2:34]:   request_id (32 bytes)
-//   [34:66]:  key_id (32 bytes)
-//   [66:98]:  source_chain_id (32 bytes)
-//   [98]:     protocol (1 byte) - 0=LSS, 1=CMP, 2=BLS, 3=Ringtail, 4=FROST
-//   [99]:     threshold (1 byte)
-//   [100]:    total_parties (1 byte)
-//   [101:109]: nonce (8 bytes)
-//   [109:117]: expiry (8 bytes, unix timestamp)
-//   [117:137]: requester (20 bytes, caller address)
+//
+//	[0]:      version (1 byte)
+//	[1]:      type (1 byte) = 0x10
+//	[2:34]:   request_id (32 bytes)
+//	[34:66]:  key_id (32 bytes)
+//	[66:98]:  source_chain_id (32 bytes)
+//	[98]:     protocol (1 byte) - 0=LSS, 1=CMP, 2=BLS, 3=Ringtail, 4=FROST
+//	[99]:     threshold (1 byte)
+//	[100]:    total_parties (1 byte)
+//	[101:109]: nonce (8 bytes)
+//	[109:117]: expiry (8 bytes, unix timestamp)
+//	[117:137]: requester (20 bytes, caller address)
 type KeygenRequestPayload struct {
-	RequestID    [32]byte
-	KeyID        [32]byte
+	RequestID     [32]byte
+	KeyID         [32]byte
 	SourceChainID [32]byte
-	Protocol     uint8
-	Threshold    uint8
-	TotalParties uint8
-	Nonce        uint64
-	Expiry       int64
-	Requester    [20]byte
+	Protocol      uint8
+	Threshold     uint8
+	TotalParties  uint8
+	Nonce         uint64
+	Expiry        int64
+	Requester     [20]byte
 }
 
 // Bytes serializes the keygen request to wire format.
@@ -141,26 +142,27 @@ func ParseKeygenRequestPayload(data []byte) (*KeygenRequestPayload, error) {
 
 // SignRequestPayload is the Warp payload for threshold signing requests.
 // Wire format:
-//   [0]:      version (1 byte)
-//   [1]:      type (1 byte) = 0x12
-//   [2:34]:   request_id (32 bytes)
-//   [34:66]:  key_id (32 bytes)
-//   [66:98]:  message_hash (32 bytes)
-//   [98:130]: source_chain_id (32 bytes)
-//   [130:138]: nonce (8 bytes)
-//   [138:146]: expiry (8 bytes)
-//   [146:166]: requester (20 bytes)
-//   [166:186]: callback (20 bytes)
-//   [186:190]: callback_selector (4 bytes)
+//
+//	[0]:      version (1 byte)
+//	[1]:      type (1 byte) = 0x12
+//	[2:34]:   request_id (32 bytes)
+//	[34:66]:  key_id (32 bytes)
+//	[66:98]:  message_hash (32 bytes)
+//	[98:130]: source_chain_id (32 bytes)
+//	[130:138]: nonce (8 bytes)
+//	[138:146]: expiry (8 bytes)
+//	[146:166]: requester (20 bytes)
+//	[166:186]: callback (20 bytes)
+//	[186:190]: callback_selector (4 bytes)
 type SignRequestPayload struct {
-	RequestID       [32]byte
-	KeyID           [32]byte
-	MessageHash     [32]byte
-	SourceChainID   [32]byte
-	Nonce           uint64
-	Expiry          int64
-	Requester       [20]byte
-	Callback        [20]byte
+	RequestID        [32]byte
+	KeyID            [32]byte
+	MessageHash      [32]byte
+	SourceChainID    [32]byte
+	Nonce            uint64
+	Expiry           int64
+	Requester        [20]byte
+	Callback         [20]byte
 	CallbackSelector [4]byte
 }
 
@@ -238,14 +240,15 @@ func ParseSignRequestPayload(data []byte) (*SignRequestPayload, error) {
 
 // SignResultPayload is the Warp payload for signature results from T-Chain.
 // Wire format:
-//   [0]:      version (1 byte)
-//   [1]:      type (1 byte) = 0x13
-//   [2:34]:   request_id (32 bytes)
-//   [34]:     status (1 byte)
-//   [35:67]:  r (32 bytes)
-//   [67:99]:  s (32 bytes)
-//   [99]:     v (1 byte)
-//   [100:132]: committee_signature (32 bytes) - aggregated validator signature
+//
+//	[0]:      version (1 byte)
+//	[1]:      type (1 byte) = 0x13
+//	[2:34]:   request_id (32 bytes)
+//	[34]:     status (1 byte)
+//	[35:67]:  r (32 bytes)
+//	[67:99]:  s (32 bytes)
+//	[99]:     v (1 byte)
+//	[100:132]: committee_signature (32 bytes) - aggregated validator signature
 type SignResultPayload struct {
 	RequestID          [32]byte
 	Status             uint8
@@ -356,15 +359,15 @@ func (p *RefreshRequestPayload) Bytes() []byte {
 
 // ReshareRequestPayload is the Warp payload for key resharing requests.
 type ReshareRequestPayload struct {
-	RequestID      [32]byte
-	KeyID          [32]byte
-	SourceChainID  [32]byte
-	NewThreshold   uint8
+	RequestID       [32]byte
+	KeyID           [32]byte
+	SourceChainID   [32]byte
+	NewThreshold    uint8
 	NumParticipants uint8
-	Participants   [][20]byte // Variable length
-	Nonce          uint64
-	Expiry         int64
-	Requester      [20]byte
+	Participants    [][20]byte // Variable length
+	Nonce           uint64
+	Expiry          int64
+	Requester       [20]byte
 }
 
 // Bytes serializes the reshare request to wire format.
@@ -447,12 +450,12 @@ func encodeRefreshRequest(keyID [32]byte) []byte {
 
 func encodeReshareRequest(keyID [32]byte, participants [][20]byte, newThreshold uint8) []byte {
 	payload := &ReshareRequestPayload{
-		KeyID:          keyID,
-		NewThreshold:   newThreshold,
+		KeyID:           keyID,
+		NewThreshold:    newThreshold,
 		NumParticipants: uint8(len(participants)),
-		Participants:   participants,
-		Nonce:          uint64(time.Now().UnixNano()),
-		Expiry:         time.Now().Add(10 * time.Minute).Unix(),
+		Participants:    participants,
+		Nonce:           uint64(time.Now().UnixNano()),
+		Expiry:          time.Now().Add(10 * time.Minute).Unix(),
 	}
 	copy(payload.RequestID[:], keyID[:])
 	return payload.Bytes()

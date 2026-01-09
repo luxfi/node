@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package pubsub
 
 import (
@@ -9,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
+	"github.com/luxfi/address"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/pubsub/bloom"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/address"
 )
 
 func TestAddAddressesParseAddresses(t *testing.T) {

@@ -15,39 +15,39 @@ import (
 
 var (
 	// Errors
-	ErrMarketNotFound       = errors.New("market not found")
-	ErrMarketExists         = errors.New("market already exists")
-	ErrPositionNotFound     = errors.New("position not found")
-	ErrInsufficientMargin   = errors.New("insufficient margin")
-	ErrInsufficientBalance  = errors.New("insufficient balance")
-	ErrExceedsMaxLeverage   = errors.New("exceeds maximum leverage")
-	ErrOrderSizeTooSmall    = errors.New("order size below minimum")
-	ErrInvalidPrice         = errors.New("invalid price")
-	ErrReduceOnlyViolation  = errors.New("reduce-only order would increase position")
+	ErrMarketNotFound         = errors.New("market not found")
+	ErrMarketExists           = errors.New("market already exists")
+	ErrPositionNotFound       = errors.New("position not found")
+	ErrInsufficientMargin     = errors.New("insufficient margin")
+	ErrInsufficientBalance    = errors.New("insufficient balance")
+	ErrExceedsMaxLeverage     = errors.New("exceeds maximum leverage")
+	ErrOrderSizeTooSmall      = errors.New("order size below minimum")
+	ErrInvalidPrice           = errors.New("invalid price")
+	ErrReduceOnlyViolation    = errors.New("reduce-only order would increase position")
 	ErrPositionWouldLiquidate = errors.New("position would be immediately liquidatable")
-	ErrNoOpenPosition       = errors.New("no open position to close")
-	ErrInvalidLeverage      = errors.New("invalid leverage")
+	ErrNoOpenPosition         = errors.New("no open position to close")
+	ErrInvalidLeverage        = errors.New("invalid leverage")
 
 	// Constants
 	PrecisionFactor = new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil) // 1e18 for price precision
-	BasisPointDenom = big.NewInt(10000)                                      // 10000 basis points = 100%
+	BasisPointDenom = big.NewInt(10000)                                     // 10000 basis points = 100%
 )
 
 // Engine is the main perpetuals trading engine
 type Engine struct {
-	mu               sync.RWMutex
-	markets          map[string]*Market
-	accounts         map[ids.ID]*MarginAccount
-	positions        map[ids.ID]*Position
-	orders           map[ids.ID]*Order
-	ordersByMarket   map[string][]*Order // Active orders by market
-	trades           []*Trade
-	liquidations     []*LiquidationEvent
-	fundingPayments  []*FundingPayment
-	insuranceFund    *big.Int // Global insurance fund
-	lastFundingTime  time.Time
-	priceOracle      PriceOracle
-	twapOracle       *oracle.TWAPOracle // TWAP oracle for manipulation-resistant pricing
+	mu              sync.RWMutex
+	markets         map[string]*Market
+	accounts        map[ids.ID]*MarginAccount
+	positions       map[ids.ID]*Position
+	orders          map[ids.ID]*Order
+	ordersByMarket  map[string][]*Order // Active orders by market
+	trades          []*Trade
+	liquidations    []*LiquidationEvent
+	fundingPayments []*FundingPayment
+	insuranceFund   *big.Int // Global insurance fund
+	lastFundingTime time.Time
+	priceOracle     PriceOracle
+	twapOracle      *oracle.TWAPOracle // TWAP oracle for manipulation-resistant pricing
 }
 
 // PriceOracle provides price feeds for the engine

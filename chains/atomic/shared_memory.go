@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/vm/utils"
 )
 
 var _ SharedMemory = (*sharedMemory)(nil)

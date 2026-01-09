@@ -46,51 +46,51 @@ func (t PoolType) String() string {
 
 // Pool represents an AMM liquidity pool.
 type Pool struct {
-	ID         ids.ID      `json:"id"`
-	Token0     ids.ID      `json:"token0"`     // First token in the pair
-	Token1     ids.ID      `json:"token1"`     // Second token in the pair
-	Reserve0   *big.Int    `json:"reserve0"`   // Reserve of token0
-	Reserve1   *big.Int    `json:"reserve1"`   // Reserve of token1
-	Type       PoolType    `json:"type"`
-	FeeBps     uint16      `json:"feeBps"`     // Trading fee in basis points
-	TotalSupply *big.Int   `json:"totalSupply"` // Total LP tokens
+	ID          ids.ID   `json:"id"`
+	Token0      ids.ID   `json:"token0"`   // First token in the pair
+	Token1      ids.ID   `json:"token1"`   // Second token in the pair
+	Reserve0    *big.Int `json:"reserve0"` // Reserve of token0
+	Reserve1    *big.Int `json:"reserve1"` // Reserve of token1
+	Type        PoolType `json:"type"`
+	FeeBps      uint16   `json:"feeBps"`      // Trading fee in basis points
+	TotalSupply *big.Int `json:"totalSupply"` // Total LP tokens
 
 	// Concentrated liquidity parameters (for Concentrated type)
-	TickLower  int32       `json:"tickLower,omitempty"`
-	TickUpper  int32       `json:"tickUpper,omitempty"`
-	SqrtPriceX96 *big.Int  `json:"sqrtPriceX96,omitempty"`
+	TickLower    int32    `json:"tickLower,omitempty"`
+	TickUpper    int32    `json:"tickUpper,omitempty"`
+	SqrtPriceX96 *big.Int `json:"sqrtPriceX96,omitempty"`
 
 	// Statistics
-	Volume0    *big.Int    `json:"volume0"`    // Cumulative volume in token0
-	Volume1    *big.Int    `json:"volume1"`    // Cumulative volume in token1
-	Fees0      *big.Int    `json:"fees0"`      // Cumulative fees in token0
-	Fees1      *big.Int    `json:"fees1"`      // Cumulative fees in token1
-	TxCount    uint64      `json:"txCount"`    // Total transaction count
+	Volume0 *big.Int `json:"volume0"` // Cumulative volume in token0
+	Volume1 *big.Int `json:"volume1"` // Cumulative volume in token1
+	Fees0   *big.Int `json:"fees0"`   // Cumulative fees in token0
+	Fees1   *big.Int `json:"fees1"`   // Cumulative fees in token1
+	TxCount uint64   `json:"txCount"` // Total transaction count
 
-	CreatedAt  int64       `json:"createdAt"`
-	UpdatedAt  int64       `json:"updatedAt"`
+	CreatedAt int64 `json:"createdAt"`
+	UpdatedAt int64 `json:"updatedAt"`
 }
 
 // LPPosition represents a liquidity provider's position in a pool.
 type LPPosition struct {
-	Owner       ids.ShortID `json:"owner"`
-	PoolID      ids.ID      `json:"poolId"`
-	Liquidity   *big.Int    `json:"liquidity"`   // LP tokens held
-	Token0Owed  *big.Int    `json:"token0Owed"`  // Unclaimed token0 fees
-	Token1Owed  *big.Int    `json:"token1Owed"`  // Unclaimed token1 fees
-	TickLower   int32       `json:"tickLower,omitempty"`   // For concentrated
-	TickUpper   int32       `json:"tickUpper,omitempty"`   // For concentrated
-	CreatedAt   int64       `json:"createdAt"`
+	Owner      ids.ShortID `json:"owner"`
+	PoolID     ids.ID      `json:"poolId"`
+	Liquidity  *big.Int    `json:"liquidity"`           // LP tokens held
+	Token0Owed *big.Int    `json:"token0Owed"`          // Unclaimed token0 fees
+	Token1Owed *big.Int    `json:"token1Owed"`          // Unclaimed token1 fees
+	TickLower  int32       `json:"tickLower,omitempty"` // For concentrated
+	TickUpper  int32       `json:"tickUpper,omitempty"` // For concentrated
+	CreatedAt  int64       `json:"createdAt"`
 }
 
 // SwapResult contains the result of a swap operation.
 type SwapResult struct {
-	AmountIn     *big.Int `json:"amountIn"`
-	AmountOut    *big.Int `json:"amountOut"`
-	Fee          *big.Int `json:"fee"`
-	PriceImpact  uint64   `json:"priceImpact"` // In basis points
-	NewReserve0  *big.Int `json:"newReserve0"`
-	NewReserve1  *big.Int `json:"newReserve1"`
+	AmountIn    *big.Int `json:"amountIn"`
+	AmountOut   *big.Int `json:"amountOut"`
+	Fee         *big.Int `json:"fee"`
+	PriceImpact uint64   `json:"priceImpact"` // In basis points
+	NewReserve0 *big.Int `json:"newReserve0"`
+	NewReserve1 *big.Int `json:"newReserve1"`
 }
 
 // Manager manages all liquidity pools.

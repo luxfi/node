@@ -69,11 +69,11 @@ func (s *Service) handleProviders(w http.ResponseWriter, r *http.Request) {
 
 // RegisterProviderRequest is the request for registering a provider
 type RegisterProviderRequest struct {
-	ID             string                       `json:"id"`
-	WalletAddress  string                       `json:"wallet_address"`
-	Endpoint       string                       `json:"endpoint"`
-	GPUs           []aivm.GPUInfo               `json:"gpus"`
-	GPUAttestation *attestation.GPUAttestation  `json:"gpu_attestation,omitempty"`
+	ID             string                      `json:"id"`
+	WalletAddress  string                      `json:"wallet_address"`
+	Endpoint       string                      `json:"endpoint"`
+	GPUs           []aivm.GPUInfo              `json:"gpus"`
+	GPUAttestation *attestation.GPUAttestation `json:"gpu_attestation,omitempty"`
 }
 
 // handleRegisterProvider registers a new provider
@@ -253,10 +253,10 @@ func (s *Service) handleVerifyAttestation(w http.ResponseWriter, r *http.Request
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"verified":    status.Attested,
-		"trustScore":  status.TrustScore,
-		"mode":        status.Mode,
-		"hardwareCC":  status.HardwareCC,
+		"verified":   status.Attested,
+		"trustScore": status.TrustScore,
+		"mode":       status.Mode,
+		"hardwareCC": status.HardwareCC,
 	})
 }
 

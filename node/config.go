@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package node
 
 import (
@@ -9,21 +8,21 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/genesis/pkg/genesis"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/vm/utils/profiler"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 type APIIndexerConfig struct {

@@ -35,7 +35,7 @@ type ConsensusNetwork struct {
 
 // PrimaryNode simulates a primary network validator.
 type PrimaryNode struct {
-	ID          ids.NodeID
+	ID            ids.NodeID
 	ValidatedSets map[ids.ID]bool // Subnets this node validates
 }
 

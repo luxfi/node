@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package qvm
 
 import (
@@ -75,9 +74,9 @@ type GenerateRingtailKeyArgs struct{}
 
 // GenerateRingtailKeyReply is the reply for GenerateRingtailKey
 type GenerateRingtailKeyReply struct {
-	PublicKey  string `json:"publicKey"`
-	Version    uint32 `json:"version"`
-	KeySize    int    `json:"keySize"`
+	PublicKey string `json:"publicKey"`
+	Version   uint32 `json:"version"`
+	KeySize   int    `json:"keySize"`
 }
 
 // GenerateRingtailKey generates a new Ringtail key pair
@@ -106,9 +105,9 @@ type SignWithQuantumArgs struct {
 
 // SignWithQuantumReply is the reply for SignWithQuantum
 type SignWithQuantumReply struct {
-	Signature  string `json:"signature"`
-	Algorithm  uint32 `json:"algorithm"`
-	Timestamp  int64  `json:"timestamp"`
+	Signature string `json:"signature"`
+	Algorithm uint32 `json:"algorithm"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 // SignWithQuantum signs a message with quantum signature
@@ -195,12 +194,12 @@ type GetHealthArgs struct{}
 
 // GetHealthReply is the reply for GetHealth
 type GetHealthReply struct {
-	Healthy          bool   `json:"healthy"`
-	Version          string `json:"version"`
-	QuantumEnabled   bool   `json:"quantumEnabled"`
-	RingtailEnabled  bool   `json:"ringtailEnabled"`
-	PendingTxCount   int    `json:"pendingTxCount"`
-	ParallelWorkers  int    `json:"parallelWorkers"`
+	Healthy         bool   `json:"healthy"`
+	Version         string `json:"version"`
+	QuantumEnabled  bool   `json:"quantumEnabled"`
+	RingtailEnabled bool   `json:"ringtailEnabled"`
+	PendingTxCount  int    `json:"pendingTxCount"`
+	ParallelWorkers int    `json:"parallelWorkers"`
 }
 
 // GetHealth returns the health status of the QVM

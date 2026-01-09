@@ -11,18 +11,18 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/iterator"
 )
 
 type nilStateGetter struct{}
@@ -286,7 +286,7 @@ func TestDiffExpiry(t *testing.T) {
 func TestDiffL1ValidatorsErrors(t *testing.T) {
 	l1Validator := L1Validator{
 		ValidationID: ids.GenerateTestID(),
-		ChainID:     ids.GenerateTestID(),
+		ChainID:      ids.GenerateTestID(),
 		NodeID:       ids.GenerateTestNodeID(),
 		Weight:       1, // Not removed
 	}
@@ -393,9 +393,9 @@ func TestDiffCurrentValidator(t *testing.T) {
 
 	// Put a current validator
 	currentValidator := &Staker{
-		TxID:   ids.GenerateTestID(),
-		ChainID:  ids.GenerateTestID(),
-		NodeID: ids.GenerateTestNodeID(),
+		TxID:    ids.GenerateTestID(),
+		ChainID: ids.GenerateTestID(),
+		NodeID:  ids.GenerateTestNodeID(),
 	}
 	require.NoError(d.PutCurrentValidator(currentValidator))
 
@@ -430,9 +430,9 @@ func TestDiffPendingValidator(t *testing.T) {
 
 	// Put a pending validator
 	pendingValidator := &Staker{
-		TxID:   ids.GenerateTestID(),
-		ChainID:  ids.GenerateTestID(),
-		NodeID: ids.GenerateTestNodeID(),
+		TxID:    ids.GenerateTestID(),
+		ChainID: ids.GenerateTestID(),
+		NodeID:  ids.GenerateTestNodeID(),
 	}
 	require.NoError(d.PutPendingValidator(pendingValidator))
 
@@ -455,9 +455,9 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	currentDelegator := &Staker{
-		TxID:   ids.GenerateTestID(),
-		ChainID:  ids.GenerateTestID(),
-		NodeID: ids.GenerateTestNodeID(),
+		TxID:    ids.GenerateTestID(),
+		ChainID: ids.GenerateTestID(),
+		NodeID:  ids.GenerateTestNodeID(),
 	}
 
 	state := NewMockState(ctrl)
@@ -501,9 +501,9 @@ func TestDiffPendingDelegator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	pendingDelegator := &Staker{
-		TxID:   ids.GenerateTestID(),
-		ChainID:  ids.GenerateTestID(),
-		NodeID: ids.GenerateTestNodeID(),
+		TxID:    ids.GenerateTestID(),
+		ChainID: ids.GenerateTestID(),
+		NodeID:  ids.GenerateTestNodeID(),
 	}
 
 	state := NewMockState(ctrl)

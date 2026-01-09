@@ -19,14 +19,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/dbtest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 // newDB returns a new merkle database with the underlying type so that tests can access unexported fields
@@ -1216,8 +1216,8 @@ func insertRandomKeyValues(
 	numKeyValues uint,
 	deletePortion float64,
 ) {
-	maxKeyLen := units.KiB
-	maxValLen := 4 * units.KiB
+	maxKeyLen := constants.KiB
+	maxValLen := 4 * constants.KiB
 
 	require.GreaterOrEqual(deletePortion, float64(0))
 	require.LessOrEqual(deletePortion, float64(1))

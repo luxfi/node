@@ -8,13 +8,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestIndex(t *testing.T) {

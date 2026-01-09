@@ -12,20 +12,20 @@ import (
 
 	"github.com/luxfi/metric"
 
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 const maxMessageToSend = 1024
@@ -121,7 +121,7 @@ func StartTestPeer(
 			Network:              TestNetwork,
 			Router:               router,
 			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-			MyChains:          make(set.Set[ids.ID]),
+			MyChains:             make(set.Set[ids.ID]),
 			Beacons:              &testValidatorManager{},
 			Validators:           &testValidatorManager{},
 			NetworkID:            networkID,

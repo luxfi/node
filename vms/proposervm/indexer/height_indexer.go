@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package indexer
 
 import (
@@ -11,8 +10,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/proposervm/state"
+	"github.com/luxfi/vm/utils"
 )
 
 // default number of heights to index before committing

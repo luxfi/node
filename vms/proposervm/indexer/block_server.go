@@ -1,15 +1,14 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package indexer
 
 import (
 	"context"
 
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 // BlockServer represents all requests heightIndexer can issue

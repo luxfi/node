@@ -1,13 +1,12 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package txs
 
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/math/set"

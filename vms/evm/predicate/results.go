@@ -11,10 +11,10 @@ import (
 
 	"github.com/luxfi/geth/common"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 	// For a block with a maximum gas limit of 100M, the block can include up to 500 validated predicates based contributing to the size of Result.
 	//
 	// At 61 bytes / validated predicate, this yields ~30KB, which is well short of the 1MB cap.
-	maxResultsSize = units.MiB
+	maxResultsSize = constants.MiB
 )
 
 var resultsCodec codec.Manager

@@ -10,11 +10,11 @@
 package executor
 
 import (
-	reflect "reflect"
 	gomock "go.uber.org/mock/gomock"
+	reflect "reflect"
 
-	ids "github.com/luxfi/ids"
 	consensusman "github.com/luxfi/consensus/engine/chain/block"
+	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/utils/json"
 )
 
 type Info struct {
@@ -23,7 +23,7 @@ type Info struct {
 	LastSent       time.Time       `json:"lastSent"`
 	LastReceived   time.Time       `json:"lastReceived"`
 	ObservedUptime json.Uint32     `json:"observedUptime"`
-	TrackedChains set.Set[ids.ID] `json:"trackedChains"`
-	SupportedLPs  set.Set[uint32] `json:"supportedLPs"`
-	ObjectedLPs   set.Set[uint32] `json:"objectedLPs"`
+	TrackedChains  set.Set[ids.ID] `json:"trackedChains"`
+	SupportedLPs   set.Set[uint32] `json:"supportedLPs"`
+	ObjectedLPs    set.Set[uint32] `json:"objectedLPs"`
 }

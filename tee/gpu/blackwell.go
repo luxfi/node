@@ -5,16 +5,16 @@ package gpu
 
 // BlackwellTEE provides NVIDIA Blackwell GPU TEE support
 type BlackwellTEE struct {
-    Enabled bool
-    CCMode  bool
+	Enabled bool
+	CCMode  bool
 }
 
 func (b *BlackwellTEE) Initialize() error {
-    // Initialize NVIDIA GPU Confidential Computing
-    return nil
+	// Initialize NVIDIA GPU Confidential Computing
+	return nil
 }
 
 func (b *BlackwellTEE) Attest(data []byte) ([]byte, error) {
-    // Generate GPU TEE attestation quote
-    return []byte("blackwell-quote"), nil
+	// Generate GPU TEE attestation quote
+	return []byte("blackwell-quote"), nil
 }

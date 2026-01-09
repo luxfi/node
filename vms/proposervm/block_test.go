@@ -28,9 +28,9 @@ import (
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
-	"github.com/luxfi/node/utils/timer/mockable"
-	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
@@ -452,7 +452,7 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 	proVM.Set(blockTime)
 
 	innerBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
-	// Build an unsigned block since Granite is not activated yet  
+	// Build an unsigned block since Granite is not activated yet
 	// This block has a non-zero epoch which should fail before Granite
 	slb, err := statelessblock.BuildUnsigned(
 		proVM.preferred,

@@ -99,7 +99,7 @@ func (t *TWAP) RecordNow(price *big.Int) {
 // Must be called with lock held.
 func (t *TWAP) pruneOldObservations(now time.Time) {
 	cutoff := now.Add(-2 * t.window)
-	
+
 	// Find first observation that's within the window
 	startIdx := 0
 	for i, obs := range t.observations {

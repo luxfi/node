@@ -9,16 +9,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestAtomicTxImports(t *testing.T) {
@@ -45,7 +45,7 @@ func TestAtomicTxImports(t *testing.T) {
 		},
 		Asset: lux.Asset{ID: env.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          70 * units.MilliLux,
+			Amt:          70 * constants.MilliLux,
 			OutputOwners: *owner,
 		},
 	}

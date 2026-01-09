@@ -10,15 +10,15 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/math"
 )
 
 var (
@@ -71,7 +71,7 @@ type Builder interface {
 	// - [symbol] specifies a human readable abbreviation for this asset.
 	// - [denomination] specifies how many times the asset can be split. For
 	//   example, a denomination of [4] would mean that the smallest unit of the
-	//   asset would be 0.001 units.
+	//   asset would be 0.001 constants.
 	// - [initialState] specifies the supported feature extensions for this
 	//   asset as well as the initial outputs for the asset.
 	NewCreateAssetTx(

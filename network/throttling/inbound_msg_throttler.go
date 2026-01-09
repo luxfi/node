@@ -8,10 +8,10 @@ import (
 
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/tracker"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/network/tracker"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)

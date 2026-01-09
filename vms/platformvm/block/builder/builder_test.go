@@ -12,20 +12,19 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/chain"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -107,7 +106,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		now    = env.backend.Clk.Time()
 		nodeID = ids.GenerateTestNodeID()
 
-		defaultValidatorStake = 100 * units.MilliLux
+		defaultValidatorStake = 100 * constants.MilliLux
 		validatorStartTime    = now.Add(2 * txexecutor.SyncBound)
 		validatorEndTime      = validatorStartTime.Add(360 * 24 * time.Hour)
 	)
@@ -192,11 +191,11 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.NoError(err)
 		commitBlk := options[0]
 		require.NoError(commitBlk.Verify(context.Background()))
-		
+
 		// Accept both proposal and commit blocks
 		require.NoError(blk.Accept(context.Background()))
 		require.NoError(commitBlk.Accept(context.Background()))
-		
+
 		// Commit state after accepting
 		require.NoError(env.state.Commit())
 		commitBlkID := commitBlk.ID()
@@ -320,7 +319,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 
 	var (
 		now                   = env.backend.Clk.Time()
-		defaultValidatorStake = 100 * units.MilliLux
+		defaultValidatorStake = 100 * constants.MilliLux
 
 		// Add a validator ending in [MaxStakeDuration]
 		validatorEndTime = now.Add(env.config.MaxStakeDuration)

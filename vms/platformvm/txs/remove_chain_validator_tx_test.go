@@ -13,15 +13,14 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 var errInvalidNetAuth = errors.New("invalid net auth")
@@ -66,7 +65,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	simpleRemoveValidatorTx := &RemoveChainValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -79,7 +78,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MilliLux,
+							Amt: constants.MilliLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{5},
 							},
@@ -90,7 +89,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Chain:    netID,
+		Chain:  netID,
 		ChainAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
@@ -98,14 +97,13 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
 		NetworkID: constants.UnitTestID,
-		
-		
-		ChainID:   ids.GenerateTestID(),
+
+		ChainID: ids.GenerateTestID(),
 	}
 	ctx = &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(ctx))
@@ -173,7 +171,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	complexRemoveValidatorTx := &RemoveChainValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
@@ -221,7 +219,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.Lux,
+							Amt: constants.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -265,7 +263,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Chain:    netID,
+		Chain:  netID,
 		ChainAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
@@ -273,9 +271,9 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
@@ -436,9 +434,9 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexRemoveValidatorTx.InitCtx(ctx3)
@@ -541,9 +539,8 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
-		
-		
-		ChainID:   chainID,
+
+		ChainID: chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -556,7 +553,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   networkID,
+			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -603,7 +600,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 					BaseTx: validBaseTx,
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
-					Chain:    constants.PrimaryNetworkID,
+					Chain:  constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrRemovePrimaryNetworkValidator,
@@ -618,8 +615,8 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 					// Set netID so we don't error on that check.
 					Chain: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
-					NodeID:     ids.GenerateTestNodeID(),
-					BaseTx:     validBaseTx,
+					NodeID:    ids.GenerateTestNodeID(),
+					BaseTx:    validBaseTx,
 					ChainAuth: invalidNetAuth,
 				}
 			},
@@ -635,8 +632,8 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 					// Set netID so we don't error on that check.
 					Chain: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
-					NodeID:     ids.GenerateTestNodeID(),
-					BaseTx:     validBaseTx,
+					NodeID:    ids.GenerateTestNodeID(),
+					BaseTx:    validBaseTx,
 					ChainAuth: validNetAuth,
 				}
 			},

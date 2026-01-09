@@ -14,14 +14,14 @@ import (
 
 // Storage prefixes for database keys.
 var (
-	prefixNode         = []byte("graph:node:")
-	prefixEdge         = []byte("graph:edge:")
-	prefixNodeLabel    = []byte("graph:nodeLabel:")    // label -> []NodeID
-	prefixEdgeLabel    = []byte("graph:edgeLabel:")    // label -> []EdgeID
-	prefixOutgoing     = []byte("graph:out:")          // nodeID -> []EdgeID
-	prefixIncoming     = []byte("graph:in:")           // nodeID -> []EdgeID
-	prefixNodeCount    = []byte("graph:meta:nodeCount")
-	prefixEdgeCount    = []byte("graph:meta:edgeCount")
+	prefixNode      = []byte("graph:node:")
+	prefixEdge      = []byte("graph:edge:")
+	prefixNodeLabel = []byte("graph:nodeLabel:") // label -> []NodeID
+	prefixEdgeLabel = []byte("graph:edgeLabel:") // label -> []EdgeID
+	prefixOutgoing  = []byte("graph:out:")       // nodeID -> []EdgeID
+	prefixIncoming  = []byte("graph:in:")        // nodeID -> []EdgeID
+	prefixNodeCount = []byte("graph:meta:nodeCount")
+	prefixEdgeCount = []byte("graph:meta:edgeCount")
 )
 
 // GraphStorage provides persistent storage for graph data.

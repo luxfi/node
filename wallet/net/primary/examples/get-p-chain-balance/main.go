@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary"

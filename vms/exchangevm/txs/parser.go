@@ -9,11 +9,11 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 // CodecVersion is the current default codec version
@@ -35,8 +35,8 @@ type Parser interface {
 type parser struct {
 	cm  codec.Manager
 	gcm codec.Manager
-	c   linearcodec.Codec
-	gc  linearcodec.Codec
+	c   *linearcodec.Codec
+	gc  *linearcodec.Codec
 }
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {

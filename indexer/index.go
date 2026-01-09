@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"sync"
 
-	nodeconsensus "github.com/luxfi/node/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/timer/mockable"
+	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 // Maximum number of containers IDs that can be fetched at a time in a call to

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func TestImportTxSerialization(t *testing.T) {

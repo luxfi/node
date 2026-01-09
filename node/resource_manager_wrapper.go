@@ -1,12 +1,11 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package node
 
 import (
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/utils/resource"
+	"github.com/luxfi/vm/utils/resource"
 )
 
 // resourceManagerWrapper adapts resource.Manager to tracker.ResourceManager

@@ -1,43 +1,42 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package config
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
 )
 
 var DefaultExecutionConfig = ExecutionConfig{
-	Network:                      DefaultNetworkConfig,
-	BlockCacheSize:               64 * units.MiB,
-	TxCacheSize:                  128 * units.MiB,
-	TransformedNetTxCacheSize: 4 * units.MiB,
-	RewardUTXOsCacheSize:         2048,
-	ChainCacheSize:               2048,
-	ChainDBCacheSize:             2048,
-	BlockIDCacheSize:             8192,
-	FxOwnerCacheSize:             4 * units.MiB,
-	ChecksumsEnabled:             false,
-	MempoolPruneFrequency:        30 * time.Minute,
+	Network:                   DefaultNetworkConfig,
+	BlockCacheSize:            64 * constants.MiB,
+	TxCacheSize:               128 * constants.MiB,
+	TransformedNetTxCacheSize: 4 * constants.MiB,
+	RewardUTXOsCacheSize:      2048,
+	ChainCacheSize:            2048,
+	ChainDBCacheSize:          2048,
+	BlockIDCacheSize:          8192,
+	FxOwnerCacheSize:          4 * constants.MiB,
+	ChecksumsEnabled:          false,
+	MempoolPruneFrequency:     30 * time.Minute,
 }
 
 // ExecutionConfig provides execution parameters of PlatformVM
 type ExecutionConfig struct {
-	Network                      NetworkConfig `json:"network"`
-	BlockCacheSize               int            `json:"block-cache-size"`
-	TxCacheSize                  int            `json:"tx-cache-size"`
-	TransformedNetTxCacheSize int            `json:"transformed-subnet-tx-cache-size"`
-	RewardUTXOsCacheSize         int            `json:"reward-utxos-cache-size"`
-	ChainCacheSize               int            `json:"chain-cache-size"`
-	ChainDBCacheSize             int            `json:"chain-db-cache-size"`
-	BlockIDCacheSize             int            `json:"block-id-cache-size"`
-	FxOwnerCacheSize             int            `json:"fx-owner-cache-size"`
-	ChecksumsEnabled             bool           `json:"checksums-enabled"`
-	MempoolPruneFrequency        time.Duration  `json:"mempool-prune-frequency"`
+	Network                   NetworkConfig `json:"network"`
+	BlockCacheSize            int           `json:"block-cache-size"`
+	TxCacheSize               int           `json:"tx-cache-size"`
+	TransformedNetTxCacheSize int           `json:"transformed-subnet-tx-cache-size"`
+	RewardUTXOsCacheSize      int           `json:"reward-utxos-cache-size"`
+	ChainCacheSize            int           `json:"chain-cache-size"`
+	ChainDBCacheSize          int           `json:"chain-db-cache-size"`
+	BlockIDCacheSize          int           `json:"block-id-cache-size"`
+	FxOwnerCacheSize          int           `json:"fx-owner-cache-size"`
+	ChecksumsEnabled          bool          `json:"checksums-enabled"`
+	MempoolPruneFrequency     time.Duration `json:"mempool-prune-frequency"`
 }
 
 // GetExecutionConfig returns an ExecutionConfig

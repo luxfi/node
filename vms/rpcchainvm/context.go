@@ -4,29 +4,29 @@
 package rpcchainvm
 
 import (
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/upgrade"
-	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 // Context is the node-specific context for RPC chain VM
 type Context struct {
 	NetworkID       uint32
-	NetID        ids.ID
+	NetID           ids.ID
 	ChainID         ids.ID
 	NodeID          ids.NodeID
 	PublicKey       *bls.PublicKey
 	NetworkUpgrades upgrade.Config
 
-	XChainID       ids.ID
-	CChainID       ids.ID
-	LUXAssetID     ids.ID
-	ChainDataDir   string
+	XChainID     ids.ID
+	CChainID     ids.ID
+	LUXAssetID   ids.ID
+	ChainDataDir string
 
 	Log            log.Logger
 	SharedMemory   atomic.SharedMemory

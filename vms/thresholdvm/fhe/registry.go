@@ -17,49 +17,49 @@ import (
 
 var (
 	// Database prefixes for different registries
-	ciphertextPrefix      = []byte("ct:")
-	decryptRequestPrefix  = []byte("dr:")
-	permitPrefix          = []byte("pm:")
-	sessionPrefix         = []byte("ss:")
-	committeePrefix       = []byte("cm:")
-	epochPrefix           = []byte("ep:")
+	ciphertextPrefix     = []byte("ct:")
+	decryptRequestPrefix = []byte("dr:")
+	permitPrefix         = []byte("pm:")
+	sessionPrefix        = []byte("ss:")
+	committeePrefix      = []byte("cm:")
+	epochPrefix          = []byte("ep:")
 
 	// Note: ErrCiphertextNotFound and ErrRequestNotFound are defined in relayer.go
-	ErrPermitNotFound     = errors.New("permit not found")
-	ErrSessionNotFound    = errors.New("session not found")
-	ErrPermitExpired      = errors.New("permit expired")
-	ErrPermitInvalid      = errors.New("permit invalid")
-	ErrEpochMismatch      = errors.New("epoch mismatch")
+	ErrPermitNotFound  = errors.New("permit not found")
+	ErrSessionNotFound = errors.New("session not found")
+	ErrPermitExpired   = errors.New("permit expired")
+	ErrPermitInvalid   = errors.New("permit invalid")
+	ErrEpochMismatch   = errors.New("epoch mismatch")
 )
 
 // CiphertextMeta stores metadata for registered ciphertexts
 type CiphertextMeta struct {
-	Handle      [32]byte `json:"handle"`
-	Owner       [20]byte `json:"owner"`
-	Type        uint8    `json:"type"`
-	Level       int      `json:"level"`
-	Epoch       uint64   `json:"epoch"`
-	RegisteredAt int64   `json:"registered_at"`
-	Size        uint32   `json:"size"`
-	ChainID     ids.ID   `json:"chain_id"`
+	Handle       [32]byte `json:"handle"`
+	Owner        [20]byte `json:"owner"`
+	Type         uint8    `json:"type"`
+	Level        int      `json:"level"`
+	Epoch        uint64   `json:"epoch"`
+	RegisteredAt int64    `json:"registered_at"`
+	Size         uint32   `json:"size"`
+	ChainID      ids.ID   `json:"chain_id"`
 }
 
 // DecryptRequest represents a threshold decryption request
 type DecryptRequest struct {
-	RequestID        [32]byte `json:"request_id"`
-	CiphertextHandle [32]byte `json:"ciphertext_handle"`
-	Requester        [20]byte `json:"requester"`
-	Callback         [20]byte `json:"callback"`
-	CallbackSelector [4]byte  `json:"callback_selector"`
-	SourceChain      ids.ID   `json:"source_chain"`
-	Epoch            uint64   `json:"epoch"`
-	Nonce            uint64   `json:"nonce"`
-	Expiry           int64    `json:"expiry"`
+	RequestID        [32]byte      `json:"request_id"`
+	CiphertextHandle [32]byte      `json:"ciphertext_handle"`
+	Requester        [20]byte      `json:"requester"`
+	Callback         [20]byte      `json:"callback"`
+	CallbackSelector [4]byte       `json:"callback_selector"`
+	SourceChain      ids.ID        `json:"source_chain"`
+	Epoch            uint64        `json:"epoch"`
+	Nonce            uint64        `json:"nonce"`
+	Expiry           int64         `json:"expiry"`
 	Status           RequestStatus `json:"status"`
-	CreatedAt        int64    `json:"created_at"`
-	CompletedAt      int64    `json:"completed_at,omitempty"`
-	ResultHandle     [32]byte `json:"result_handle,omitempty"`
-	Error            string   `json:"error,omitempty"`
+	CreatedAt        int64         `json:"created_at"`
+	CompletedAt      int64         `json:"completed_at,omitempty"`
+	ResultHandle     [32]byte      `json:"result_handle,omitempty"`
+	Error            string        `json:"error,omitempty"`
 }
 
 // RequestStatus represents the status of a decrypt request
@@ -121,13 +121,13 @@ type CommitteeMember struct {
 
 // EpochInfo stores epoch-related information
 type EpochInfo struct {
-	Epoch         uint64            `json:"epoch"`
-	StartTime     int64             `json:"start_time"`
-	EndTime       int64             `json:"end_time,omitempty"`
-	Committee     []CommitteeMember `json:"committee"`
-	Threshold     int               `json:"threshold"`
-	PublicKey     []byte            `json:"public_key"`
-	Status        EpochStatus       `json:"status"`
+	Epoch     uint64            `json:"epoch"`
+	StartTime int64             `json:"start_time"`
+	EndTime   int64             `json:"end_time,omitempty"`
+	Committee []CommitteeMember `json:"committee"`
+	Threshold int               `json:"threshold"`
+	PublicKey []byte            `json:"public_key"`
+	Status    EpochStatus       `json:"status"`
 }
 
 type EpochStatus uint8
@@ -150,7 +150,7 @@ func NewRegistry(db database.Database) (*Registry, error) {
 	r := &Registry{
 		db: db,
 	}
-	
+
 	// Load current epoch
 	epochBytes, err := db.Get(append(epochPrefix, []byte("current")...))
 	if err != nil && !errors.Is(err, database.ErrNotFound) {
@@ -159,7 +159,7 @@ func NewRegistry(db database.Database) (*Registry, error) {
 	if epochBytes != nil {
 		r.epoch = binary.BigEndian.Uint64(epochBytes)
 	}
-	
+
 	return r, nil
 }
 
@@ -171,15 +171,15 @@ func NewRegistry(db database.Database) (*Registry, error) {
 func (r *Registry) RegisterCiphertext(meta *CiphertextMeta) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	meta.RegisteredAt = time.Now().Unix()
 	meta.Epoch = r.epoch
-	
+
 	data, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("failed to marshal ciphertext meta: %w", err)
 	}
-	
+
 	key := append(ciphertextPrefix, meta.Handle[:]...)
 	return r.db.Put(key, data)
 }
@@ -188,7 +188,7 @@ func (r *Registry) RegisterCiphertext(meta *CiphertextMeta) error {
 func (r *Registry) GetCiphertextMeta(handle [32]byte) (*CiphertextMeta, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	key := append(ciphertextPrefix, handle[:]...)
 	data, err := r.db.Get(key)
 	if err != nil {
@@ -197,12 +197,12 @@ func (r *Registry) GetCiphertextMeta(handle [32]byte) (*CiphertextMeta, error) {
 		}
 		return nil, err
 	}
-	
+
 	var meta CiphertextMeta
 	if err := json.Unmarshal(data, &meta); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal ciphertext meta: %w", err)
 	}
-	
+
 	return &meta, nil
 }
 
@@ -210,7 +210,7 @@ func (r *Registry) GetCiphertextMeta(handle [32]byte) (*CiphertextMeta, error) {
 func (r *Registry) DeleteCiphertext(handle [32]byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	key := append(ciphertextPrefix, handle[:]...)
 	return r.db.Delete(key)
 }
@@ -223,16 +223,16 @@ func (r *Registry) DeleteCiphertext(handle [32]byte) error {
 func (r *Registry) CreateDecryptRequest(req *DecryptRequest) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	req.CreatedAt = time.Now().Unix()
 	req.Status = RequestPending
 	req.Epoch = r.epoch
-	
+
 	data, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal decrypt request: %w", err)
 	}
-	
+
 	key := append(decryptRequestPrefix, req.RequestID[:]...)
 	return r.db.Put(key, data)
 }
@@ -241,7 +241,7 @@ func (r *Registry) CreateDecryptRequest(req *DecryptRequest) error {
 func (r *Registry) GetDecryptRequest(requestID [32]byte) (*DecryptRequest, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	key := append(decryptRequestPrefix, requestID[:]...)
 	data, err := r.db.Get(key)
 	if err != nil {
@@ -250,12 +250,12 @@ func (r *Registry) GetDecryptRequest(requestID [32]byte) (*DecryptRequest, error
 		}
 		return nil, err
 	}
-	
+
 	var req DecryptRequest
 	if err := json.Unmarshal(data, &req); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal decrypt request: %w", err)
 	}
-	
+
 	return &req, nil
 }
 
@@ -263,7 +263,7 @@ func (r *Registry) GetDecryptRequest(requestID [32]byte) (*DecryptRequest, error
 func (r *Registry) UpdateDecryptRequest(requestID [32]byte, status RequestStatus, result [32]byte, errMsg string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	key := append(decryptRequestPrefix, requestID[:]...)
 	data, err := r.db.Get(key)
 	if err != nil {
@@ -272,12 +272,12 @@ func (r *Registry) UpdateDecryptRequest(requestID [32]byte, status RequestStatus
 		}
 		return err
 	}
-	
+
 	var req DecryptRequest
 	if err := json.Unmarshal(data, &req); err != nil {
 		return fmt.Errorf("failed to unmarshal decrypt request: %w", err)
 	}
-	
+
 	req.Status = status
 	if status == RequestCompleted {
 		req.CompletedAt = time.Now().Unix()
@@ -286,12 +286,12 @@ func (r *Registry) UpdateDecryptRequest(requestID [32]byte, status RequestStatus
 	if errMsg != "" {
 		req.Error = errMsg
 	}
-	
+
 	updatedData, err := json.Marshal(&req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal updated request: %w", err)
 	}
-	
+
 	return r.db.Put(key, updatedData)
 }
 
@@ -303,14 +303,14 @@ func (r *Registry) UpdateDecryptRequest(requestID [32]byte, status RequestStatus
 func (r *Registry) CreatePermit(permit *Permit) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	permit.CreatedAt = time.Now().Unix()
-	
+
 	data, err := json.Marshal(permit)
 	if err != nil {
 		return fmt.Errorf("failed to marshal permit: %w", err)
 	}
-	
+
 	key := append(permitPrefix, permit.PermitID[:]...)
 	return r.db.Put(key, data)
 }
@@ -319,7 +319,7 @@ func (r *Registry) CreatePermit(permit *Permit) error {
 func (r *Registry) GetPermit(permitID [32]byte) (*Permit, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	key := append(permitPrefix, permitID[:]...)
 	data, err := r.db.Get(key)
 	if err != nil {
@@ -328,12 +328,12 @@ func (r *Registry) GetPermit(permitID [32]byte) (*Permit, error) {
 		}
 		return nil, err
 	}
-	
+
 	var permit Permit
 	if err := json.Unmarshal(data, &permit); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal permit: %w", err)
 	}
-	
+
 	return &permit, nil
 }
 
@@ -343,27 +343,27 @@ func (r *Registry) VerifyPermit(permitID [32]byte, handle [32]byte, grantee [20]
 	if err != nil {
 		return err
 	}
-	
+
 	// Check handle matches
 	if permit.Handle != handle {
 		return ErrPermitInvalid
 	}
-	
+
 	// Check grantee matches
 	if permit.Grantee != grantee {
 		return ErrPermitInvalid
 	}
-	
+
 	// Check expiry
 	if permit.Expiry > 0 && time.Now().Unix() > permit.Expiry {
 		return ErrPermitExpired
 	}
-	
+
 	// Check operation allowed
 	if permit.Operations&operation == 0 {
 		return ErrPermitInvalid
 	}
-	
+
 	return nil
 }
 
@@ -371,7 +371,7 @@ func (r *Registry) VerifyPermit(permitID [32]byte, handle [32]byte, grantee [20]
 func (r *Registry) RevokePermit(permitID [32]byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	key := append(permitPrefix, permitID[:]...)
 	return r.db.Delete(key)
 }
@@ -382,16 +382,16 @@ func (r *Registry) RevokePermit(permitID [32]byte) error {
 
 // SessionState stores the state of a threshold decryption session
 type SessionState struct {
-	SessionID        string            `json:"session_id"`
-	CiphertextHandle [32]byte          `json:"ciphertext_handle"`
-	Epoch            uint64            `json:"epoch"`
-	Threshold        int               `json:"threshold"`
-	Participants     []ids.NodeID      `json:"participants"`
-	SharesReceived   int               `json:"shares_received"`
-	Status           SessionStatus     `json:"status"`
-	CreatedAt        int64             `json:"created_at"`
-	CompletedAt      int64             `json:"completed_at,omitempty"`
-	Result           []byte            `json:"result,omitempty"`
+	SessionID        string        `json:"session_id"`
+	CiphertextHandle [32]byte      `json:"ciphertext_handle"`
+	Epoch            uint64        `json:"epoch"`
+	Threshold        int           `json:"threshold"`
+	Participants     []ids.NodeID  `json:"participants"`
+	SharesReceived   int           `json:"shares_received"`
+	Status           SessionStatus `json:"status"`
+	CreatedAt        int64         `json:"created_at"`
+	CompletedAt      int64         `json:"completed_at,omitempty"`
+	Result           []byte        `json:"result,omitempty"`
 }
 
 type SessionStatus uint8
@@ -407,17 +407,17 @@ const (
 func (r *Registry) SaveSession(session *SessionState) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if session.CreatedAt == 0 {
 		session.CreatedAt = time.Now().Unix()
 	}
 	session.Epoch = r.epoch
-	
+
 	data, err := json.Marshal(session)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session: %w", err)
 	}
-	
+
 	key := append(sessionPrefix, []byte(session.SessionID)...)
 	return r.db.Put(key, data)
 }
@@ -426,7 +426,7 @@ func (r *Registry) SaveSession(session *SessionState) error {
 func (r *Registry) GetSession(sessionID string) (*SessionState, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	key := append(sessionPrefix, []byte(sessionID)...)
 	data, err := r.db.Get(key)
 	if err != nil {
@@ -435,12 +435,12 @@ func (r *Registry) GetSession(sessionID string) (*SessionState, error) {
 		}
 		return nil, err
 	}
-	
+
 	var session SessionState
 	if err := json.Unmarshal(data, &session); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
 	}
-	
+
 	return &session, nil
 }
 
@@ -448,7 +448,7 @@ func (r *Registry) GetSession(sessionID string) (*SessionState, error) {
 func (r *Registry) DeleteSession(sessionID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	key := append(sessionPrefix, []byte(sessionID)...)
 	return r.db.Delete(key)
 }
@@ -461,19 +461,19 @@ func (r *Registry) DeleteSession(sessionID string) error {
 func (r *Registry) SetEpoch(epoch uint64, info *EpochInfo) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Store epoch info
 	infoData, err := json.Marshal(info)
 	if err != nil {
 		return fmt.Errorf("failed to marshal epoch info: %w", err)
 	}
-	
+
 	epochKey := make([]byte, 8)
 	binary.BigEndian.PutUint64(epochKey, epoch)
 	if err := r.db.Put(append(epochPrefix, epochKey...), infoData); err != nil {
 		return err
 	}
-	
+
 	// Update current epoch pointer
 	currentKey := append(epochPrefix, []byte("current")...)
 	r.epoch = epoch
@@ -484,20 +484,20 @@ func (r *Registry) SetEpoch(epoch uint64, info *EpochInfo) error {
 func (r *Registry) GetEpoch(epoch uint64) (*EpochInfo, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	epochKey := make([]byte, 8)
 	binary.BigEndian.PutUint64(epochKey, epoch)
-	
+
 	data, err := r.db.Get(append(epochPrefix, epochKey...))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var info EpochInfo
 	if err := json.Unmarshal(data, &info); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal epoch info: %w", err)
 	}
-	
+
 	return &info, nil
 }
 
@@ -521,11 +521,11 @@ func (r *Registry) GetCommittee() ([]CommitteeMember, error) {
 func (r *Registry) AddCommitteeMember(member *CommitteeMember) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	epoch := r.epoch
 	key := append(epochPrefix, encodeUint64(epoch)...)
 	data, err := r.db.Get(key)
-	
+
 	var info EpochInfo
 	if err == nil {
 		if err := json.Unmarshal(data, &info); err != nil {
@@ -534,7 +534,7 @@ func (r *Registry) AddCommitteeMember(member *CommitteeMember) error {
 	} else {
 		info = EpochInfo{Epoch: epoch, Status: EpochActive, Threshold: 67}
 	}
-	
+
 	// Check if member already exists
 	for i, m := range info.Committee {
 		if m.NodeID == member.NodeID {
@@ -543,7 +543,7 @@ func (r *Registry) AddCommitteeMember(member *CommitteeMember) error {
 		}
 	}
 	info.Committee = append(info.Committee, *member)
-	
+
 save:
 	updatedData, err := json.Marshal(&info)
 	if err != nil {
@@ -570,19 +570,19 @@ func (r *Registry) GetCommitteeMember(nodeID ids.NodeID) (*CommitteeMember, erro
 func (r *Registry) RemoveCommitteeMember(nodeID ids.NodeID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	epoch := r.epoch
 	key := append(epochPrefix, encodeUint64(epoch)...)
 	data, err := r.db.Get(key)
 	if err != nil {
 		return nil // No epoch, nothing to remove
 	}
-	
+
 	var info EpochInfo
 	if err := json.Unmarshal(data, &info); err != nil {
 		return fmt.Errorf("failed to unmarshal epoch info: %w", err)
 	}
-	
+
 	// Find and remove member
 	newCommittee := make([]CommitteeMember, 0, len(info.Committee))
 	for _, m := range info.Committee {
@@ -591,7 +591,7 @@ func (r *Registry) RemoveCommitteeMember(nodeID ids.NodeID) error {
 		}
 	}
 	info.Committee = newCommittee
-	
+
 	updatedData, err := json.Marshal(&info)
 	if err != nil {
 		return fmt.Errorf("failed to marshal epoch info: %w", err)

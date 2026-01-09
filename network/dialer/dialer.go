@@ -13,9 +13,9 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/luxfi/log"
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/log"
 )
 
 var _ Dialer = (*dialer)(nil)

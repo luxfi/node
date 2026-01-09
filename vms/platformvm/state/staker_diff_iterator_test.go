@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/iterator"
 )
 
 func TestStakerDiffIterator(t *testing.T) {

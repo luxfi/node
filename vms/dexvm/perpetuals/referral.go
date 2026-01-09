@@ -12,21 +12,21 @@ import (
 )
 
 var (
-	ErrReferralCodeExists     = errors.New("referral code already exists")
-	ErrReferralCodeNotFound   = errors.New("referral code not found")
-	ErrSelfReferral           = errors.New("cannot use own referral code")
-	ErrAlreadyReferred        = errors.New("user already has a referrer")
-	ErrInvalidRebateRate      = errors.New("invalid rebate rate")
-	ErrReferralNotActive      = errors.New("referral program not active")
+	ErrReferralCodeExists   = errors.New("referral code already exists")
+	ErrReferralCodeNotFound = errors.New("referral code not found")
+	ErrSelfReferral         = errors.New("cannot use own referral code")
+	ErrAlreadyReferred      = errors.New("user already has a referrer")
+	ErrInvalidRebateRate    = errors.New("invalid rebate rate")
+	ErrReferralNotActive    = errors.New("referral program not active")
 )
 
 // ReferralTier represents a tier in the referral program
 type ReferralTier struct {
-	Tier             uint8    // Tier level (1-6)
-	MinVolume        *big.Int // Minimum 30-day trading volume
-	MinReferrals     uint32   // Minimum active referrals
-	ReferrerRebate   uint16   // Rebate % for referrer (basis points, 10000 = 100%)
-	RefereeDiscount  uint16   // Fee discount % for referee (basis points)
+	Tier            uint8    // Tier level (1-6)
+	MinVolume       *big.Int // Minimum 30-day trading volume
+	MinReferrals    uint32   // Minimum active referrals
+	ReferrerRebate  uint16   // Rebate % for referrer (basis points, 10000 = 100%)
+	RefereeDiscount uint16   // Fee discount % for referee (basis points)
 }
 
 // DefaultReferralTiers returns the standard referral tiers
@@ -35,98 +35,98 @@ func DefaultReferralTiers() []*ReferralTier {
 
 	return []*ReferralTier{
 		{
-			Tier:             1,
-			MinVolume:        big.NewInt(0),
-			MinReferrals:     0,
-			ReferrerRebate:   500,  // 5% rebate to referrer
-			RefereeDiscount:  500,  // 5% discount for referee
+			Tier:            1,
+			MinVolume:       big.NewInt(0),
+			MinReferrals:    0,
+			ReferrerRebate:  500, // 5% rebate to referrer
+			RefereeDiscount: 500, // 5% discount for referee
 		},
 		{
-			Tier:             2,
-			MinVolume:        new(big.Int).Mul(scale, big.NewInt(1000000)),   // $1M volume
-			MinReferrals:     3,
-			ReferrerRebate:   1000, // 10%
-			RefereeDiscount:  1000, // 10%
+			Tier:            2,
+			MinVolume:       new(big.Int).Mul(scale, big.NewInt(1000000)), // $1M volume
+			MinReferrals:    3,
+			ReferrerRebate:  1000, // 10%
+			RefereeDiscount: 1000, // 10%
 		},
 		{
-			Tier:             3,
-			MinVolume:        new(big.Int).Mul(scale, big.NewInt(5000000)),   // $5M volume
-			MinReferrals:     10,
-			ReferrerRebate:   1500, // 15%
-			RefereeDiscount:  1000, // 10%
+			Tier:            3,
+			MinVolume:       new(big.Int).Mul(scale, big.NewInt(5000000)), // $5M volume
+			MinReferrals:    10,
+			ReferrerRebate:  1500, // 15%
+			RefereeDiscount: 1000, // 10%
 		},
 		{
-			Tier:             4,
-			MinVolume:        new(big.Int).Mul(scale, big.NewInt(25000000)),  // $25M volume
-			MinReferrals:     25,
-			ReferrerRebate:   2000, // 20%
-			RefereeDiscount:  1000, // 10%
+			Tier:            4,
+			MinVolume:       new(big.Int).Mul(scale, big.NewInt(25000000)), // $25M volume
+			MinReferrals:    25,
+			ReferrerRebate:  2000, // 20%
+			RefereeDiscount: 1000, // 10%
 		},
 		{
-			Tier:             5,
-			MinVolume:        new(big.Int).Mul(scale, big.NewInt(100000000)), // $100M volume
-			MinReferrals:     50,
-			ReferrerRebate:   2500, // 25%
-			RefereeDiscount:  1500, // 15%
+			Tier:            5,
+			MinVolume:       new(big.Int).Mul(scale, big.NewInt(100000000)), // $100M volume
+			MinReferrals:    50,
+			ReferrerRebate:  2500, // 25%
+			RefereeDiscount: 1500, // 15%
 		},
 		{
-			Tier:             6,
-			MinVolume:        new(big.Int).Mul(scale, big.NewInt(500000000)), // $500M volume
-			MinReferrals:     100,
-			ReferrerRebate:   3000, // 30%
-			RefereeDiscount:  2000, // 20%
+			Tier:            6,
+			MinVolume:       new(big.Int).Mul(scale, big.NewInt(500000000)), // $500M volume
+			MinReferrals:    100,
+			ReferrerRebate:  3000, // 30%
+			RefereeDiscount: 2000, // 20%
 		},
 	}
 }
 
 // ReferralCode represents a referral code
 type ReferralCode struct {
-	Code         string      // Unique referral code
-	Owner        ids.ID      // Owner of the code
-	CustomRebate uint16      // Custom rebate rate (0 = use tier default)
-	IsActive     bool        // Whether code is active
+	Code         string // Unique referral code
+	Owner        ids.ID // Owner of the code
+	CustomRebate uint16 // Custom rebate rate (0 = use tier default)
+	IsActive     bool   // Whether code is active
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
 // Referrer represents a referrer in the system
 type Referrer struct {
-	ID                ids.ID       // Referrer ID
-	Codes             []string     // Active referral codes
-	Tier              uint8        // Current tier
-	TotalReferrals    uint32       // Total number of referrals
-	ActiveReferrals   uint32       // Active referrals (traded in last 30 days)
-	TotalVolume       *big.Int     // Total referred volume
-	Volume30d         *big.Int     // Last 30 day referred volume
-	TotalRebates      *big.Int     // Total rebates earned
-	PendingRebates    *big.Int     // Pending rebates to claim
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID              ids.ID   // Referrer ID
+	Codes           []string // Active referral codes
+	Tier            uint8    // Current tier
+	TotalReferrals  uint32   // Total number of referrals
+	ActiveReferrals uint32   // Active referrals (traded in last 30 days)
+	TotalVolume     *big.Int // Total referred volume
+	Volume30d       *big.Int // Last 30 day referred volume
+	TotalRebates    *big.Int // Total rebates earned
+	PendingRebates  *big.Int // Pending rebates to claim
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Referee represents a referred user
 type Referee struct {
-	ID              ids.ID    // Referee ID
-	ReferrerID      ids.ID    // Who referred them
-	ReferralCode    string    // Code used
-	TotalVolume     *big.Int  // Total trading volume
-	TotalDiscount   *big.Int  // Total fee discounts received
-	IsActive        bool      // Active in last 30 days
-	ReferredAt      time.Time
-	LastActiveAt    time.Time
+	ID            ids.ID   // Referee ID
+	ReferrerID    ids.ID   // Who referred them
+	ReferralCode  string   // Code used
+	TotalVolume   *big.Int // Total trading volume
+	TotalDiscount *big.Int // Total fee discounts received
+	IsActive      bool     // Active in last 30 days
+	ReferredAt    time.Time
+	LastActiveAt  time.Time
 }
 
 // RebatePayment represents a rebate payment
 type RebatePayment struct {
-	ID           ids.ID    // Payment ID
-	ReferrerID   ids.ID    // Recipient
-	RefereeID    ids.ID    // Source trader
-	TradeID      ids.ID    // Associated trade
-	Market       string    // Market
-	TradeVolume  *big.Int  // Trade notional volume
-	TradeFee     *big.Int  // Original trade fee
-	RebateAmount *big.Int  // Rebate amount
-	Tier         uint8     // Tier at time of payment
+	ID           ids.ID   // Payment ID
+	ReferrerID   ids.ID   // Recipient
+	RefereeID    ids.ID   // Source trader
+	TradeID      ids.ID   // Associated trade
+	Market       string   // Market
+	TradeVolume  *big.Int // Trade notional volume
+	TradeFee     *big.Int // Original trade fee
+	RebateAmount *big.Int // Rebate amount
+	Tier         uint8    // Tier at time of payment
 	Timestamp    time.Time
 }
 
@@ -143,37 +143,37 @@ type ReferralStats struct {
 // ReferralEngine manages the referral/rebate system
 type ReferralEngine struct {
 	tiers        []*ReferralTier
-	codes        map[string]*ReferralCode    // Code -> ReferralCode
-	referrers    map[ids.ID]*Referrer        // ReferrerID -> Referrer
-	referees     map[ids.ID]*Referee         // RefereeID -> Referee
-	codesByOwner map[ids.ID][]string         // OwnerID -> []codes
-	payments     []*RebatePayment            // All rebate payments
+	codes        map[string]*ReferralCode // Code -> ReferralCode
+	referrers    map[ids.ID]*Referrer     // ReferrerID -> Referrer
+	referees     map[ids.ID]*Referee      // RefereeID -> Referee
+	codesByOwner map[ids.ID][]string      // OwnerID -> []codes
+	payments     []*RebatePayment         // All rebate payments
 	stats        *ReferralStats
 
 	// Configuration
-	maxCodesPerUser  uint8
-	defaultDiscount  uint16 // Default referee discount (basis points)
-	defaultRebate    uint16 // Default referrer rebate (basis points)
-	programActive    bool
+	maxCodesPerUser uint8
+	defaultDiscount uint16 // Default referee discount (basis points)
+	defaultRebate   uint16 // Default referrer rebate (basis points)
+	programActive   bool
 }
 
 // NewReferralEngine creates a new referral engine
 func NewReferralEngine() *ReferralEngine {
 	return &ReferralEngine{
-		tiers:           DefaultReferralTiers(),
-		codes:           make(map[string]*ReferralCode),
-		referrers:       make(map[ids.ID]*Referrer),
-		referees:        make(map[ids.ID]*Referee),
-		codesByOwner:    make(map[ids.ID][]string),
-		payments:        make([]*RebatePayment, 0),
-		stats:           &ReferralStats{
+		tiers:        DefaultReferralTiers(),
+		codes:        make(map[string]*ReferralCode),
+		referrers:    make(map[ids.ID]*Referrer),
+		referees:     make(map[ids.ID]*Referee),
+		codesByOwner: make(map[ids.ID][]string),
+		payments:     make([]*RebatePayment, 0),
+		stats: &ReferralStats{
 			TotalRebatesPaid:    big.NewInt(0),
 			TotalDiscountsGiven: big.NewInt(0),
 			Volume30d:           big.NewInt(0),
 		},
 		maxCodesPerUser: 5,
-		defaultDiscount: 500,  // 5%
-		defaultRebate:   500,  // 5%
+		defaultDiscount: 500, // 5%
+		defaultRebate:   500, // 5%
 		programActive:   true,
 	}
 }
@@ -253,14 +253,14 @@ func (e *ReferralEngine) UseReferralCode(userID ids.ID, code string) error {
 
 	now := time.Now()
 	referee := &Referee{
-		ID:           userID,
-		ReferrerID:   refCode.Owner,
-		ReferralCode: code,
-		TotalVolume:  big.NewInt(0),
+		ID:            userID,
+		ReferrerID:    refCode.Owner,
+		ReferralCode:  code,
+		TotalVolume:   big.NewInt(0),
 		TotalDiscount: big.NewInt(0),
-		IsActive:     true,
-		ReferredAt:   now,
-		LastActiveAt: now,
+		IsActive:      true,
+		ReferredAt:    now,
+		LastActiveAt:  now,
 	}
 	e.referees[userID] = referee
 
@@ -501,16 +501,16 @@ func DefaultVIPTiers() []*VIPTier {
 	scale := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
 
 	return []*VIPTier{
-		{Tier: 0, MinVolume30d: big.NewInt(0), MakerFee: 10, TakerFee: 50},                                          // 0.1% / 0.5%
-		{Tier: 1, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(1000000)), MakerFee: 8, TakerFee: 45},             // $1M
-		{Tier: 2, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(5000000)), MakerFee: 6, TakerFee: 40},             // $5M
-		{Tier: 3, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(10000000)), MakerFee: 4, TakerFee: 35},            // $10M
-		{Tier: 4, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(25000000)), MakerFee: 2, TakerFee: 30},            // $25M
-		{Tier: 5, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(50000000)), MakerFee: 0, TakerFee: 27},            // $50M (negative maker = rebate)
-		{Tier: 6, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(100000000)), MakerFee: 0, TakerFee: 25},           // $100M (maker rebate)
-		{Tier: 7, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(250000000)), MakerFee: 0, TakerFee: 22},           // $250M
-		{Tier: 8, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(500000000)), MakerFee: 0, TakerFee: 20},           // $500M
-		{Tier: 9, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(1000000000)), MakerFee: 0, TakerFee: 15},          // $1B (MM tier)
+		{Tier: 0, MinVolume30d: big.NewInt(0), MakerFee: 10, TakerFee: 50},                                  // 0.1% / 0.5%
+		{Tier: 1, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(1000000)), MakerFee: 8, TakerFee: 45},    // $1M
+		{Tier: 2, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(5000000)), MakerFee: 6, TakerFee: 40},    // $5M
+		{Tier: 3, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(10000000)), MakerFee: 4, TakerFee: 35},   // $10M
+		{Tier: 4, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(25000000)), MakerFee: 2, TakerFee: 30},   // $25M
+		{Tier: 5, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(50000000)), MakerFee: 0, TakerFee: 27},   // $50M (negative maker = rebate)
+		{Tier: 6, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(100000000)), MakerFee: 0, TakerFee: 25},  // $100M (maker rebate)
+		{Tier: 7, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(250000000)), MakerFee: 0, TakerFee: 22},  // $250M
+		{Tier: 8, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(500000000)), MakerFee: 0, TakerFee: 20},  // $500M
+		{Tier: 9, MinVolume30d: new(big.Int).Mul(scale, big.NewInt(1000000000)), MakerFee: 0, TakerFee: 15}, // $1B (MM tier)
 	}
 }
 

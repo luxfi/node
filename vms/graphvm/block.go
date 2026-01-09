@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var (

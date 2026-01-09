@@ -1,13 +1,12 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package bloom
 
 import (
 	"errors"
 
-	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/vm/utils/bloom"
 )
 
 const bytesPerHash = 8

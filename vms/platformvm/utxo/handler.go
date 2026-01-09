@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package utxo
 
 import (
@@ -9,20 +8,19 @@ import (
 	"errors"
 	"fmt"
 
-
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/node/utils/hashing"
-	safemath "github.com/luxfi/node/utils/math"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/hashing"
+	safemath "github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var (

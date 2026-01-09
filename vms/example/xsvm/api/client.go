@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/rpc"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/rpc"
 )
 
 const DefaultPollingInterval = 50 * time.Millisecond

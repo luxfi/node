@@ -22,11 +22,11 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/utils/compression"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/vm/utils/compression"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/vm/utils/math"
 )
 
 const (

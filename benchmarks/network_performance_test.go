@@ -23,56 +23,56 @@ type NetworkPerformanceConfig struct {
 	ChainType       string // Chain type: "P", "C", or "X"
 	BlockCount      int    // Number of blocks to generate
 	Concurrency     int    // Number of concurrent operations
-	EnableProfiling bool  // Enable memory/CPU profiling
-	EnableGPU       bool  // Enable MLX GPU acceleration
+	EnableProfiling bool   // Enable memory/CPU profiling
+	EnableGPU       bool   // Enable MLX GPU acceleration
 	WalletCount     int    // Number of wallets/accounts for parallel simulation
 	Parallelism     int    // Level of parallel operations (1=sequential, 2+=parallel)
 }
 
 // NetworkStats tracks network performance metrics
 type NetworkStats struct {
-	BytesSent     int64 // Total bytes sent
-	BytesReceived int64 // Total bytes received
-	MessagesSent  int64 // Total messages sent
-	MessagesReceived int64 // Total messages received
-	AvgLatency    float64 // Average message latency (ms)
+	BytesSent        int64   // Total bytes sent
+	BytesReceived    int64   // Total bytes received
+	MessagesSent     int64   // Total messages sent
+	MessagesReceived int64   // Total messages received
+	AvgLatency       float64 // Average message latency (ms)
 }
 
 // NetworkPerformanceResults stores benchmark results
 type NetworkPerformanceResults struct {
-	ChainType        string
-	BlocksGenerated  int
-	BlocksPerSecond  float64
-	AvgBlockTime     time.Duration
-	Throughput       float64
-	Latency          time.Duration
-	MemoryPerBlock   int64
-	ErrorRate        float64
-	Duration         time.Duration
-	GPUStats         GPUPerformanceStats
-	NetworkStats     NetworkStats
+	ChainType       string
+	BlocksGenerated int
+	BlocksPerSecond float64
+	AvgBlockTime    time.Duration
+	Throughput      float64
+	Latency         time.Duration
+	MemoryPerBlock  int64
+	ErrorRate       float64
+	Duration        time.Duration
+	GPUStats        GPUPerformanceStats
+	NetworkStats    NetworkStats
 }
 
 // GPUPerformanceStats stores GPU acceleration performance metrics
 type GPUPerformanceStats struct {
-	Enabled           bool
-	Operations        int64
-	AvgGPUTime        float64 // in milliseconds
-	Throughput        float64 // operations per second
-	MemoryUsage       int64   // bytes
-	SpeedupFactor     float64 // speedup compared to CPU
+	Enabled       bool
+	Operations    int64
+	AvgGPUTime    float64 // in milliseconds
+	Throughput    float64 // operations per second
+	MemoryUsage   int64   // bytes
+	SpeedupFactor float64 // speedup compared to CPU
 }
 
 // BenchmarkNetworkPerformance5Nodes benchmarks 5-node network performance
 func BenchmarkNetworkPerformance5Nodes(b *testing.B) {
 	// Test all chain types
 	chainTypes := []string{"P", "C", "X"}
-	
+
 	for _, chainType := range chainTypes {
 		b.Run(fmt.Sprintf("Chain_%s", chainType), func(b *testing.B) {
 			benchmarkChainPerformance(b, chainType, false)
 		})
-		
+
 		b.Run(fmt.Sprintf("Chain_%s_GPU", chainType), func(b *testing.B) {
 			benchmarkChainPerformance(b, chainType, true)
 		})
@@ -84,7 +84,7 @@ func BenchmarkNetworkPerformance5Nodes(b *testing.B) {
 func BenchmarkNetworkScaling(b *testing.B) {
 	chainTypes := []string{"P", "C", "X"}
 	nodeCounts := []int{5, 10, 25, 50, 100} // Test scaling from 5 to 100 nodes
-	
+
 	for _, nodeCount := range nodeCounts {
 		for _, chainType := range chainTypes {
 			b.Run(fmt.Sprintf("Nodes_%d_Chain_%s", nodeCount, chainType), func(b *testing.B) {
@@ -99,41 +99,41 @@ func BenchmarkNetworkScaling(b *testing.B) {
 					WalletCount:     100,
 					Parallelism:     4,
 				}
-				
+
 				// Initialize results
 				results := NetworkPerformanceResults{
 					ChainType: chainType,
 				}
-				
+
 				// Reset timer and start benchmark
 				b.ResetTimer()
 				b.ReportAllocs()
-				
+
 				startTime := time.Now()
-				
+
 				// Simulate network operations
 				for i := 0; i < b.N; i++ {
 					if err := simulateNetworkOperation(context.Background(), &config, &results, i); err != nil {
 						b.Error(err)
 						return
 					}
-					
+
 					// Add some randomness to simulate real network conditions
 					time.Sleep(time.Microsecond * time.Duration(rand.Intn(50)))
 				}
-				
+
 				// Calculate metrics
 				results.Duration = time.Since(startTime)
 				if results.BlocksGenerated > 0 {
 					results.BlocksPerSecond = float64(results.BlocksGenerated) / results.Duration.Seconds()
 					results.Throughput = float64(results.BlocksGenerated) / results.Duration.Seconds()
 				}
-				
+
 				// Report metrics
 				b.ReportMetric(results.BlocksPerSecond, "blocks/sec")
 				b.ReportMetric(results.AvgBlockTime.Seconds()*1000, "avg_block_time_ms")
 				b.ReportMetric(results.Throughput, "throughput_ops/sec")
-				
+
 				// Log results
 				b.Logf("Scaling Test: %d nodes, %s-chain", nodeCount, chainType)
 				b.Logf("  Blocks Generated: %d", results.BlocksGenerated)
@@ -148,7 +148,7 @@ func BenchmarkNetworkScaling(b *testing.B) {
 // This demonstrates the competitive advantages of Wave FPC and GPU acceleration
 func BenchmarkBestCasePerformance(b *testing.B) {
 	chainTypes := []string{"P", "C", "X"}
-	
+
 	for _, chainType := range chainTypes {
 		b.Run(fmt.Sprintf("Chain_%s_BestCase", chainType), func(b *testing.B) {
 			// Best case configuration: Maximum parallelism + GPU
@@ -160,43 +160,43 @@ func BenchmarkBestCasePerformance(b *testing.B) {
 				EnableProfiling: true,
 				EnableGPU:       true, // GPU acceleration
 				WalletCount:     1000, // Many wallets
-				Parallelism:     8,   // High parallelism
+				Parallelism:     8,    // High parallelism
 			}
-			
+
 			// Initialize results
 			results := NetworkPerformanceResults{
 				ChainType: chainType,
 			}
-			
+
 			// Reset timer and start benchmark
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			startTime := time.Now()
-			
+
 			// Simulate network operations with best-case settings
 			for i := 0; i < b.N; i++ {
 				if err := simulateNetworkOperation(context.Background(), &config, &results, i); err != nil {
 					b.Error(err)
 					return
 				}
-				
+
 				// Minimal randomness for best case
 				time.Sleep(time.Microsecond * time.Duration(rand.Intn(10)))
 			}
-			
+
 			// Calculate metrics
 			results.Duration = time.Since(startTime)
 			if results.BlocksGenerated > 0 {
 				results.BlocksPerSecond = float64(results.BlocksGenerated) / results.Duration.Seconds()
 				results.Throughput = float64(results.BlocksGenerated) / results.Duration.Seconds()
 			}
-			
+
 			// Report metrics
 			b.ReportMetric(results.BlocksPerSecond, "blocks/sec")
 			b.ReportMetric(results.AvgBlockTime.Seconds()*1000, "avg_block_time_ms")
 			b.ReportMetric(results.Throughput, "throughput_ops/sec")
-			
+
 			// Log results
 			b.Logf("Best Case: %s-chain with 100 nodes, GPU, 1000 wallets, 8x parallelism", chainType)
 			b.Logf("  Blocks Generated: %d", results.BlocksGenerated)
@@ -211,7 +211,7 @@ func BenchmarkPChainPerformance(b *testing.B) {
 	b.Run("CPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "P", false)
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "P", true)
 	})
@@ -222,7 +222,7 @@ func BenchmarkCChainPerformance(b *testing.B) {
 	b.Run("CPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "C", false)
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "C", true)
 	})
@@ -233,7 +233,7 @@ func BenchmarkXChainPerformance(b *testing.B) {
 	b.Run("CPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "X", false)
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		benchmarkChainPerformance(b, "X", true)
 	})
@@ -244,7 +244,7 @@ func benchmarkChainPerformance(b *testing.B, chainType string, enableGPU bool) {
 	// Setup
 	ctx := context.Background()
 	_ = ctx // Use context to prevent optimization
-	
+
 	// Create network configuration
 	config := NetworkPerformanceConfig{
 		NodeCount:       5,
@@ -256,7 +256,7 @@ func benchmarkChainPerformance(b *testing.B, chainType string, enableGPU bool) {
 		WalletCount:     100, // Simulate 100 wallets for parallel operations
 		Parallelism:     4,   // 4x parallel operations
 	}
-	
+
 	// Initialize results
 	results := NetworkPerformanceResults{
 		ChainType: chainType,
@@ -264,35 +264,35 @@ func benchmarkChainPerformance(b *testing.B, chainType string, enableGPU bool) {
 			Enabled: enableGPU,
 		},
 	}
-	
+
 	// Reset timer and start benchmark
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	startTime := time.Now()
-	
+
 	// Simulate network operations
 	for i := 0; i < b.N; i++ {
 		if err := simulateNetworkOperation(context.Background(), &config, &results, i); err != nil {
 			b.Error(err)
 			return
 		}
-		
+
 		// Add some randomness to simulate real network conditions
 		time.Sleep(time.Microsecond * time.Duration(rand.Intn(50)))
 	}
-	
+
 	// Calculate metrics
 	results.Duration = time.Since(startTime)
 	if results.BlocksGenerated > 0 {
 		results.BlocksPerSecond = float64(results.BlocksGenerated) / results.Duration.Seconds()
 		results.Throughput = float64(results.BlocksGenerated) / results.Duration.Seconds()
 	}
-	
+
 	// Calculate GPU metrics if enabled
 	if results.GPUStats.Enabled && results.GPUStats.Operations > 0 {
 		results.GPUStats.Throughput = float64(results.GPUStats.Operations) / results.Duration.Seconds()
-		
+
 		// Calculate speedup factor (simulated for now)
 		cpuTime := float64(results.BlocksGenerated) * 0.15 // 150μs per block CPU
 		gpuTime := results.GPUStats.AvgGPUTime * float64(results.GPUStats.Operations) / 1000
@@ -300,30 +300,30 @@ func benchmarkChainPerformance(b *testing.B, chainType string, enableGPU bool) {
 			results.GPUStats.SpeedupFactor = cpuTime / gpuTime
 		}
 	}
-	
+
 	// Report metrics
 	b.ReportMetric(results.BlocksPerSecond, "blocks/sec")
 	b.ReportMetric(results.AvgBlockTime.Seconds()*1000, "avg_block_time_ms")
 	b.ReportMetric(results.Throughput, "throughput_ops/sec")
-	
+
 	if results.GPUStats.Enabled {
 		b.ReportMetric(results.GPUStats.Throughput, "gpu_throughput_ops/sec")
 		b.ReportMetric(results.GPUStats.SpeedupFactor, "gpu_speedup_x")
 	}
-	
+
 	// Log results
 	b.Logf("Chain %s Performance (%s):", chainType, getBackendName(enableGPU))
 	b.Logf("  Blocks Generated: %d", results.BlocksGenerated)
 	b.Logf("  Blocks/Sec: %.2f", results.BlocksPerSecond)
 	b.Logf("  Avg Block Time: %v", results.AvgBlockTime)
 	b.Logf("  Throughput: %.2f ops/sec", results.Throughput)
-	
+
 	if results.GPUStats.Enabled {
 		b.Logf("  GPU Operations: %d", results.GPUStats.Operations)
 		b.Logf("  GPU Throughput: %.2f ops/sec", results.GPUStats.Throughput)
 		b.Logf("  GPU Speedup: %.2fx", results.GPUStats.SpeedupFactor)
 	}
-	
+
 	b.Logf("  Duration: %v", results.Duration)
 }
 
@@ -339,37 +339,37 @@ func getBackendName(enableGPU bool) string {
 // Enhanced to support parallel wallet operations and demonstrate Wave FPC scalability
 func simulateNetworkOperation(ctx context.Context, config *NetworkPerformanceConfig, results *NetworkPerformanceResults, operationID int) error {
 	blockStart := time.Now()
-	
+
 	// Simulate parallel wallet operations (enhanced for Wave FPC scalability)
 	if config.WalletCount > 1 && config.Parallelism > 1 {
 		// Parallel wallet processing - demonstrates Wave FPC scalability benefits
 		simulateParallelWalletOperations(config, results)
 	}
-	
+
 	// Simulate consensus process
 	if err := simulateConsensus(config.ChainType, config.EnableGPU); err != nil {
 		return err
 	}
-	
+
 	// Simulate transaction processing
 	if err := simulateTransactionProcessing(config.ChainType, config.EnableGPU); err != nil {
 		return err
 	}
-	
+
 	// Simulate network propagation
 	if err := simulateNetworkPropagation(config.NodeCount); err != nil {
 		return err
 	}
-	
+
 	// Update results
 	results.BlocksGenerated++
 	blockDuration := time.Since(blockStart)
 	if results.BlocksGenerated == 1 {
 		results.AvgBlockTime = blockDuration
 	} else {
-		results.AvgBlockTime = (results.AvgBlockTime * time.Duration(results.BlocksGenerated-1) + blockDuration) / time.Duration(results.BlocksGenerated)
+		results.AvgBlockTime = (results.AvgBlockTime*time.Duration(results.BlocksGenerated-1) + blockDuration) / time.Duration(results.BlocksGenerated)
 	}
-	
+
 	return nil
 }
 
@@ -383,12 +383,12 @@ func simulateConsensus(chainType string, enableGPU bool) error {
 	// Create context with timeout for better resource management
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	// Add context value for GPU optimization tracking
 	if enableGPU {
 		ctx = context.WithValue(ctx, "gpu_mode", true)
 	}
-	
+
 	if enableGPU {
 		// GPU-accelerated consensus (MLX)
 		// Wave FPC benefits significantly from GPU parallelism due to its leaderless, parallel design
@@ -460,10 +460,10 @@ func simulateParallelWalletOperations(config *NetworkPerformanceConfig, results 
 	// Simulate parallel wallet processing
 	// Wave FPC's leaderless design enables excellent parallelism
 	walletOperations := config.WalletCount * config.Parallelism
-	
+
 	// Calculate parallelism benefit
 	// Wave FPC scales well with multiple concurrent operations
-	
+
 	// Simulate the performance benefit of parallel wallet operations
 	// This demonstrates how Wave FPC handles concurrent operations efficiently
 	if config.EnableGPU {
@@ -475,7 +475,7 @@ func simulateParallelWalletOperations(config *NetworkPerformanceConfig, results 
 		// Wave FPC provides good scalability even on CPU
 		time.Sleep(time.Duration(10*config.Parallelism) * time.Microsecond)
 	}
-	
+
 	// Update network stats to reflect parallel operations
 	results.NetworkStats.MessagesSent += int64(walletOperations)
 	results.NetworkStats.BytesSent += int64(walletOperations * 512) // ~512 bytes per wallet op
@@ -486,7 +486,7 @@ func simulateNetworkPropagation(nodeCount int) error {
 	// Simulate network latency based on number of nodes
 	baseLatency := 50 * time.Microsecond
 	networkLatency := baseLatency * time.Duration(nodeCount/2)
-	
+
 	time.Sleep(networkLatency)
 	return nil
 }
@@ -495,9 +495,9 @@ func simulateNetworkPropagation(nodeCount int) error {
 func BenchmarkConsensusPerformance(b *testing.B) {
 	// Test different consensus scenarios
 	scenarios := []struct {
-		name string
+		name  string
 		nodes int
-		gpu    bool
+		gpu   bool
 	}{
 		{"SmallNetwork_CPU", 3, false},
 		{"SmallNetwork_GPU", 3, true},
@@ -506,7 +506,7 @@ func BenchmarkConsensusPerformance(b *testing.B) {
 		{"LargeNetwork_CPU", 10, false},
 		{"LargeNetwork_GPU", 10, true},
 	}
-	
+
 	for _, scenario := range scenarios {
 		b.Run(scenario.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -523,16 +523,16 @@ func simulateConsensusWithNodes(nodeCount int, enableGPU bool) {
 	if enableGPU {
 		baseTime = 20 * time.Microsecond // 5x faster with GPU
 	}
-	
+
 	networkOverhead := time.Duration(nodeCount*10) * time.Microsecond
-	
+
 	time.Sleep(baseTime + networkOverhead)
 }
 
 // BenchmarkBlockPropagation benchmarks block propagation performance
 func BenchmarkBlockPropagation(b *testing.B) {
 	blockSizes := []int{1024, 4096, 16384, 65536} // 1KB, 4KB, 16KB, 64KB
-	
+
 	for _, size := range blockSizes {
 		b.Run(fmt.Sprintf("BlockSize_%dB", size), func(b *testing.B) {
 			b.SetBytes(int64(size))
@@ -548,7 +548,7 @@ func simulateBlockPropagation(blockSize int) {
 	// Base latency plus size-based latency
 	baseLatency := 50 * time.Microsecond
 	sizeLatency := time.Duration(blockSize/1024) * time.Microsecond // 1μs per KB
-	
+
 	time.Sleep(baseLatency + sizeLatency)
 }
 
@@ -556,7 +556,7 @@ func simulateBlockPropagation(blockSize int) {
 func BenchmarkMemoryUsage(b *testing.B) {
 	// Test memory usage with different block sizes
 	blockSizes := []int{100, 500, 1000, 5000}
-	
+
 	for _, size := range blockSizes {
 		b.Run(fmt.Sprintf("Blocks_%d", size), func(b *testing.B) {
 			b.ReportAllocs()
@@ -575,18 +575,18 @@ func BenchmarkPChainValidatorOperations(b *testing.B) {
 			// Create validator
 			validatorID := ids.GenerateTestNodeID()
 			_ = validatorID
-			
+
 			// Simulate validation
 			time.Sleep(20 * time.Microsecond)
 		}
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// Create validator
 			validatorID := ids.GenerateTestNodeID()
 			_ = validatorID
-			
+
 			// Simulate GPU-accelerated validation
 			time.Sleep(4 * time.Microsecond) // 5x faster
 		}
@@ -601,7 +601,7 @@ func BenchmarkCChainEVMOperations(b *testing.B) {
 			time.Sleep(100 * time.Microsecond)
 		}
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// Simulate GPU-accelerated contract execution
@@ -617,18 +617,18 @@ func BenchmarkXChainAssetOperations(b *testing.B) {
 			// Create asset
 			assetID := ids.GenerateTestID()
 			_ = assetID
-			
+
 			// Simulate transfer
 			time.Sleep(50 * time.Microsecond)
 		}
 	})
-	
+
 	b.Run("GPU", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// Create asset
 			assetID := ids.GenerateTestID()
 			_ = assetID
-			
+
 			// Simulate GPU-accelerated transfer
 			time.Sleep(10 * time.Microsecond) // 5x faster
 		}
@@ -644,14 +644,14 @@ func BenchmarkGPUAcceleration(b *testing.B) {
 			time.Sleep(150 * time.Microsecond)
 		}
 	})
-	
+
 	b.Run("MLX_GPU", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// Simulate GPU-accelerated consensus
 			time.Sleep(30 * time.Microsecond) // 5x faster
 		}
 	})
-	
+
 	b.Run("MLX_GPU_LargeBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// Simulate GPU-accelerated large batch processing

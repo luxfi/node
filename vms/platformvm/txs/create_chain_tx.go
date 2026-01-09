@@ -9,16 +9,15 @@ import (
 	"unicode"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/vm/utils"
 )
 
 const (
 	MaxNameLen    = 128
-	MaxGenesisLen = units.MiB
+	MaxGenesisLen = constants.MiB
 )
 
 var (

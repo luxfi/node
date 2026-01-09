@@ -10,23 +10,23 @@ import (
 )
 
 var (
-	ErrInvalidThreshold    = errors.New("invalid threshold configuration")
-	ErrInvalidValidators   = errors.New("invalid validators configuration")
-	ErrInvalidAlgorithm    = errors.New("invalid algorithm configuration")
-	ErrInvalidPort         = errors.New("invalid port configuration")
+	ErrInvalidThreshold  = errors.New("invalid threshold configuration")
+	ErrInvalidValidators = errors.New("invalid validators configuration")
+	ErrInvalidAlgorithm  = errors.New("invalid algorithm configuration")
+	ErrInvalidPort       = errors.New("invalid port configuration")
 )
 
 // Config holds configuration for the K-Chain VM.
 type Config struct {
 	// Network settings
-	NetworkID    uint32 `json:"networkId"`
-	ChainID      string `json:"chainId"`
-	ListenPort   uint16 `json:"listenPort"`   // Default: 9630
+	NetworkID  uint32 `json:"networkId"`
+	ChainID    string `json:"chainId"`
+	ListenPort uint16 `json:"listenPort"` // Default: 9630
 
 	// ML-KEM configuration
-	MLKEMEnabled     bool   `json:"mlkemEnabled"`
+	MLKEMEnabled       bool `json:"mlkemEnabled"`
 	MLKEMSecurityLevel int  `json:"mlkemSecurityLevel"` // 512, 768, or 1024
-	MLDSAEnabled     bool   `json:"mldsaEnabled"`
+	MLDSAEnabled       bool `json:"mldsaEnabled"`
 	MLDSASecurityLevel int  `json:"mldsaSecurityLevel"` // 44, 65, or 87
 
 	// Threshold configuration
@@ -35,33 +35,33 @@ type Config struct {
 	MaxShares          int `json:"maxShares"`          // Maximum shares allowed
 
 	// Validator configuration
-	Validators       []string `json:"validators"`
-	ValidatorTimeout time.Duration `json:"validatorTimeout"`
+	Validators        []string      `json:"validators"`
+	ValidatorTimeout  time.Duration `json:"validatorTimeout"`
 	HeartbeatInterval time.Duration `json:"heartbeatInterval"`
 
 	// Storage configuration
-	DataDir          string `json:"dataDir"`
-	MaxKeys          int    `json:"maxKeys"`
-	ShareCacheSize   int    `json:"shareCacheSize"`
+	DataDir        string `json:"dataDir"`
+	MaxKeys        int    `json:"maxKeys"`
+	ShareCacheSize int    `json:"shareCacheSize"`
 
 	// Security configuration
-	TLSEnabled       bool   `json:"tlsEnabled"`
-	TLSCertPath      string `json:"tlsCertPath"`
-	TLSKeyPath       string `json:"tlsKeyPath"`
-	MTLSEnabled      bool   `json:"mtlsEnabled"`
-	MTLSCAPath       string `json:"mtlsCaPath"`
+	TLSEnabled  bool   `json:"tlsEnabled"`
+	TLSCertPath string `json:"tlsCertPath"`
+	TLSKeyPath  string `json:"tlsKeyPath"`
+	MTLSEnabled bool   `json:"mtlsEnabled"`
+	MTLSCAPath  string `json:"mtlsCaPath"`
 
 	// Performance configuration
-	MaxParallelOps   int `json:"maxParallelOps"`
-	BatchSize        int `json:"batchSize"`
+	MaxParallelOps int `json:"maxParallelOps"`
+	BatchSize      int `json:"batchSize"`
 
 	// Block configuration
-	BlockInterval    time.Duration `json:"blockInterval"`
-	MaxTxsPerBlock   int           `json:"maxTxsPerBlock"`
+	BlockInterval  time.Duration `json:"blockInterval"`
+	MaxTxsPerBlock int           `json:"maxTxsPerBlock"`
 
 	// Proactive resharing
-	ReshareEnabled   bool          `json:"reshareEnabled"`
-	ReshareInterval  time.Duration `json:"reshareInterval"`
+	ReshareEnabled  bool          `json:"reshareEnabled"`
+	ReshareInterval time.Duration `json:"reshareInterval"`
 }
 
 // DefaultConfig returns a config with default values.

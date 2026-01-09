@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package tvm
 
 import (
@@ -16,15 +15,15 @@ import (
 
 // Operation types
 const (
-	OpTypeKeygen   = "keygen"
-	OpTypeSign     = "sign"
-	OpTypeReshare  = "reshare"
-	OpTypeRefresh  = "refresh"
+	OpTypeKeygen  = "keygen"
+	OpTypeSign    = "sign"
+	OpTypeReshare = "reshare"
+	OpTypeRefresh = "refresh"
 )
 
 // Operation represents an MPC operation recorded in a block
 type Operation struct {
-	Type            string `json:"type"`    // keygen, sign, reshare, refresh
+	Type            string `json:"type"` // keygen, sign, reshare, refresh
 	SessionID       string `json:"sessionId"`
 	KeyID           string `json:"keyId"`
 	Protocol        string `json:"protocol,omitempty"`

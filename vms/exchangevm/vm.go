@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -14,40 +13,40 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	metrics "github.com/luxfi/metric"
 
 	consensusctx "github.com/luxfi/consensus/context"
+	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
-	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
-	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/warp"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/pubsub"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/network"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/utxo"
+	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/linked"
+	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/warp"
 
 	blockbuilder "github.com/luxfi/node/vms/exchangevm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
@@ -334,15 +333,13 @@ func (vm *VM) initialize(
 		if fxContainer == nil {
 			return errIncompatibleFx
 		}
-		
+
 		// Type assert to extensions.Fx
 		fx, ok := fxContainer.Fx.(extensions.Fx)
 		if !ok {
 			return errIncompatibleFx
 		}
-		
 
-		
 		typedFxs[i] = fx
 		vm.fxs[i] = &extensions.ParsedFx{
 			ID: fxContainer.ID,
@@ -552,7 +549,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	// Note: toEngine parameter is for compatibility with LinearizableVMWithEngine interface
 	// The XVM uses its own internal channel for mempool communication
 	_ = toEngine
-	
+
 	// Create a channel for mempool to engine communication
 	vm.toEngine = make(chan engine.Message, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer)

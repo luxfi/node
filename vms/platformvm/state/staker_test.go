@@ -11,11 +11,11 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/signer/signermock"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/platformvm/signer/signermock"
 )
 
 var errCustom = errors.New("custom")
@@ -150,7 +150,7 @@ func TestNewCurrentStaker(t *testing.T) {
 		TxID:            txID,
 		NodeID:          stakerTx.NodeID(),
 		PublicKey:       publicKey,
-		ChainID:        stakerTx.ChainID(),
+		ChainID:         stakerTx.ChainID(),
 		Weight:          stakerTx.Weight(),
 		StartTime:       startTime,
 		EndTime:         stakerTx.EndTime(),
@@ -183,7 +183,7 @@ func TestNewPendingStaker(t *testing.T) {
 		TxID:      txID,
 		NodeID:    stakerTx.NodeID(),
 		PublicKey: publicKey,
-		ChainID:  stakerTx.ChainID(),
+		ChainID:   stakerTx.ChainID(),
 		Weight:    stakerTx.Weight(),
 		StartTime: stakerTx.StartTime(),
 		EndTime:   stakerTx.EndTime(),
@@ -219,6 +219,6 @@ func generateStakerTx(require *require.Assertions) *txs.AddPermissionlessValidat
 			Wght:   weight,
 		},
 		Signer: pop,
-		Chain: subnetID,
+		Chain:  subnetID,
 	}
 }

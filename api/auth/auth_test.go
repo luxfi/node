@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package auth
 
 import (
@@ -20,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/password"
+	"github.com/luxfi/vm/utils/password"
 )
 
 var (

@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var hashChangedNodesTests = []struct {

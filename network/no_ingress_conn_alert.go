@@ -9,9 +9,9 @@ package network
 import (
 	"errors"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 )
 
 // ErrNoIngressConnections denotes that no node is connected to this validator.

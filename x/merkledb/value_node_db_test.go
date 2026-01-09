@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 // Test putting, modifying, deleting, and getting key-node pairs.

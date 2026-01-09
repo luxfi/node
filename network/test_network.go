@@ -18,34 +18,33 @@ import (
 
 	"github.com/luxfi/metric"
 
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	nodevalidators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	consensusset "github.com/luxfi/math/set"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/message"
-	nodevalidators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 var (
 	errClosed = errors.New("closed")
 
-	_ net.Listener    = (*noopListener)(nil)
+	_ net.Listener = (*noopListener)(nil)
 	_ nets.Allower = (*nodeIDConnector)(nil)
 )
 
@@ -169,7 +168,7 @@ func NewTestNetworkConfig(
 		CompressionType:              compression.Type(constants.DefaultNetworkCompressionType),
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
-		TrackedChains:             trackedChains,
+		TrackedChains:                trackedChains,
 		Beacons:                      nodevalidators.NewManager(),
 		Validators:                   nodevalidators.NewManager(),
 		UptimeCalculator:             &uptime.NoOpCalculator{},
@@ -188,9 +187,9 @@ func NewTestNetworkConfig(
 		),
 		DiskTargeter: tracker.NewTargeter(
 			&tracker.TargeterConfig{
-				VdrAlloc:           1000 * units.GiB,
-				MaxNonVdrUsage:     1000 * units.GiB,
-				MaxNonVdrNodeUsage: 1000 * units.GiB,
+				VdrAlloc:           1000 * constants.GiB,
+				MaxNonVdrUsage:     1000 * constants.GiB,
+				MaxNonVdrNodeUsage: 1000 * constants.GiB,
 			},
 		),
 	}, nil
@@ -339,7 +338,7 @@ func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.
 }
 func (n *noOpValidatorsManager) GetValidatorIDs(netID ids.ID) []ids.NodeID { return nil }
 func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int            { return 0 }
-func (n *noOpValidatorsManager) NumNets() int                           { return 0 }
+func (n *noOpValidatorsManager) NumNets() int                              { return 0 }
 func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }

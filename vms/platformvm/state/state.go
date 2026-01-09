@@ -19,8 +19,9 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
@@ -31,24 +32,23 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/timer"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/vm/utils/timer"
+	"github.com/luxfi/vm/utils/wrappers"
 
 	safemath "github.com/luxfi/math"
 )
@@ -65,7 +65,7 @@ var (
 	_ State = (*state)(nil)
 
 	errValidatorSetAlreadyPopulated   = errors.New("validator set already populated")
-	errIsNotNet                    = errors.New("is not a subnet")
+	errIsNotNet                       = errors.New("is not a subnet")
 	errMissingPrimaryNetworkValidator = errors.New("missing primary network validator")
 
 	BlockIDPrefix                 = []byte("blockID")
@@ -76,23 +76,23 @@ var (
 	ValidatorPrefix               = []byte("validator")
 	DelegatorPrefix               = []byte("delegator")
 	NetValidatorPrefix            = []byte("subnetValidator")
-	NetDelegatorPrefix         = []byte("subnetDelegator")
+	NetDelegatorPrefix            = []byte("subnetDelegator")
 	ValidatorWeightDiffsPrefix    = []byte("flatValidatorDiffs")
 	ValidatorPublicKeyDiffsPrefix = []byte("flatPublicKeyDiffs")
 	TxPrefix                      = []byte("tx")
 	RewardUTXOsPrefix             = []byte("rewardUTXOs")
 	UTXOPrefix                    = []byte("utxo")
-	NetPrefix                  = []byte("subnet")
-	NetOwnerPrefix             = []byte("subnetOwner")
-	NetToL1ConversionPrefix    = []byte("subnetToL1Conversion")
-	TransformedNetPrefix       = []byte("transformedNet")
+	NetPrefix                     = []byte("subnet")
+	NetOwnerPrefix                = []byte("subnetOwner")
+	NetToL1ConversionPrefix       = []byte("subnetToL1Conversion")
+	TransformedNetPrefix          = []byte("transformedNet")
 	SupplyPrefix                  = []byte("supply")
 	ChainPrefix                   = []byte("chain")
 	ChainNamePrefix               = []byte("chainName") // maps lowercase chain name -> chainID
 	ExpiryReplayProtectionPrefix  = []byte("expiryReplayProtection")
 	L1Prefix                      = []byte("l1")
 	WeightsPrefix                 = []byte("weights")
-	ChainIDNodeIDPrefix          = []byte("subnetIDNodeID")
+	ChainIDNodeIDPrefix           = []byte("subnetIDNodeID")
 	ActivePrefix                  = []byte("active")
 	InactivePrefix                = []byte("inactive")
 	SingletonPrefix               = []byte("singleton")
@@ -378,13 +378,13 @@ type state struct {
 	l1ValidatorsDiff     *l1ValidatorsDiff
 	l1ValidatorsDiffLock sync.RWMutex // Protects concurrent access to l1ValidatorsDiff
 	l1ValidatorsDB       database.Database
-	weightsCache        cache.Cacher[ids.ID, uint64] // subnetID -> total L1 validator weight
-	weightsDB           database.Database
-	subnetIDNodeIDCache cache.Cacher[subnetIDNodeID, bool] // subnetID+nodeID -> is validator
-	subnetIDNodeIDDB    database.Database
-	activeDB            database.Database
-	inactiveCache       cache.Cacher[ids.ID, maybe.Maybe[L1Validator]] // validationID -> L1Validator
-	inactiveDB          database.Database
+	weightsCache         cache.Cacher[ids.ID, uint64] // subnetID -> total L1 validator weight
+	weightsDB            database.Database
+	subnetIDNodeIDCache  cache.Cacher[subnetIDNodeID, bool] // subnetID+nodeID -> is validator
+	subnetIDNodeIDDB     database.Database
+	activeDB             database.Database
+	inactiveCache        cache.Cacher[ids.ID, maybe.Maybe[L1Validator]] // validationID -> L1Validator
+	inactiveDB           database.Database
 
 	currentStakers *baseStakers
 	pendingStakers *baseStakers
@@ -402,23 +402,23 @@ type state struct {
 	blockCache  cache.Cacher[ids.ID, block.Block] // cache of blockID -> Block; if the entry is nil, it is not in the database
 	blockDB     database.Database
 
-	validatorsDB                 database.Database
-	currentValidatorsDB          database.Database
-	currentValidatorBaseDB       database.Database
-	currentValidatorList         linkeddb.LinkedDB
-	currentDelegatorBaseDB       database.Database
-	currentDelegatorList         linkeddb.LinkedDB
-	currentNetValidatorBaseDB    database.Database
-	currentNetValidatorList      linkeddb.LinkedDB
+	validatorsDB              database.Database
+	currentValidatorsDB       database.Database
+	currentValidatorBaseDB    database.Database
+	currentValidatorList      linkeddb.LinkedDB
+	currentDelegatorBaseDB    database.Database
+	currentDelegatorList      linkeddb.LinkedDB
+	currentNetValidatorBaseDB database.Database
+	currentNetValidatorList   linkeddb.LinkedDB
 	currentNetDelegatorBaseDB database.Database
 	currentNetDelegatorList   linkeddb.LinkedDB
-	pendingValidatorsDB          database.Database
-	pendingValidatorBaseDB       database.Database
-	pendingValidatorList         linkeddb.LinkedDB
-	pendingDelegatorBaseDB       database.Database
-	pendingDelegatorList         linkeddb.LinkedDB
-	pendingNetValidatorBaseDB    database.Database
-	pendingNetValidatorList      linkeddb.LinkedDB
+	pendingValidatorsDB       database.Database
+	pendingValidatorBaseDB    database.Database
+	pendingValidatorList      linkeddb.LinkedDB
+	pendingDelegatorBaseDB    database.Database
+	pendingDelegatorList      linkeddb.LinkedDB
+	pendingNetValidatorBaseDB database.Database
+	pendingNetValidatorList   linkeddb.LinkedDB
 	pendingNetDelegatorBaseDB database.Database
 	pendingNetDelegatorList   linkeddb.LinkedDB
 
@@ -439,8 +439,8 @@ type state struct {
 
 	cachedChainIDs []ids.ID // nil if the subnets haven't been loaded
 	addedChainIDs  []ids.ID
-	subnetBaseDB database.Database
-	subnetDB     linkeddb.LinkedDB
+	subnetBaseDB   database.Database
+	subnetDB       linkeddb.LinkedDB
 
 	subnetOwners     map[ids.ID]fx.Owner                  // map of netID -> owner
 	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of netID -> owner; if the entry is nil, it is not in the database
@@ -803,27 +803,27 @@ func New(
 
 		l1Validators: make(map[ids.ID]L1Validator),
 
-		validatorsDB:                 validatorsDB,
-		currentValidatorsDB:          currentValidatorsDB,
-		currentValidatorBaseDB:       currentValidatorBaseDB,
-		currentValidatorList:         linkeddb.NewDefault(currentValidatorBaseDB),
-		currentDelegatorBaseDB:       currentDelegatorBaseDB,
-		currentDelegatorList:         linkeddb.NewDefault(currentDelegatorBaseDB),
-		currentNetValidatorBaseDB:    currentNetValidatorBaseDB,
-		currentNetValidatorList:      linkeddb.NewDefault(currentNetValidatorBaseDB),
+		validatorsDB:              validatorsDB,
+		currentValidatorsDB:       currentValidatorsDB,
+		currentValidatorBaseDB:    currentValidatorBaseDB,
+		currentValidatorList:      linkeddb.NewDefault(currentValidatorBaseDB),
+		currentDelegatorBaseDB:    currentDelegatorBaseDB,
+		currentDelegatorList:      linkeddb.NewDefault(currentDelegatorBaseDB),
+		currentNetValidatorBaseDB: currentNetValidatorBaseDB,
+		currentNetValidatorList:   linkeddb.NewDefault(currentNetValidatorBaseDB),
 		currentNetDelegatorBaseDB: currentNetDelegatorBaseDB,
 		currentNetDelegatorList:   linkeddb.NewDefault(currentNetDelegatorBaseDB),
-		pendingValidatorsDB:          pendingValidatorsDB,
-		pendingValidatorBaseDB:       pendingValidatorBaseDB,
-		pendingValidatorList:         linkeddb.NewDefault(pendingValidatorBaseDB),
-		pendingDelegatorBaseDB:       pendingDelegatorBaseDB,
-		pendingDelegatorList:         linkeddb.NewDefault(pendingDelegatorBaseDB),
-		pendingNetValidatorBaseDB:    pendingNetValidatorBaseDB,
-		pendingNetValidatorList:      linkeddb.NewDefault(pendingNetValidatorBaseDB),
+		pendingValidatorsDB:       pendingValidatorsDB,
+		pendingValidatorBaseDB:    pendingValidatorBaseDB,
+		pendingValidatorList:      linkeddb.NewDefault(pendingValidatorBaseDB),
+		pendingDelegatorBaseDB:    pendingDelegatorBaseDB,
+		pendingDelegatorList:      linkeddb.NewDefault(pendingDelegatorBaseDB),
+		pendingNetValidatorBaseDB: pendingNetValidatorBaseDB,
+		pendingNetValidatorList:   linkeddb.NewDefault(pendingNetValidatorBaseDB),
 		pendingNetDelegatorBaseDB: pendingNetDelegatorBaseDB,
 		pendingNetDelegatorList:   linkeddb.NewDefault(pendingNetDelegatorBaseDB),
-		validatorWeightDiffsDB:       validatorWeightDiffsDB,
-		validatorPublicKeyDiffsDB:    validatorPublicKeyDiffsDB,
+		validatorWeightDiffsDB:    validatorWeightDiffsDB,
+		validatorPublicKeyDiffsDB: validatorPublicKeyDiffsDB,
 
 		addedTxs: make(map[ids.ID]*txAndStatus),
 		txDB:     prefixdb.New(TxPrefix, baseDB),
@@ -2669,10 +2669,10 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 }
 
 type validatorDiff struct {
-	weightDiff      ValidatorWeightDiff
-	prevPublicKey   []byte
-	newPublicKey    []byte
-	hadRemoval      bool // True if pass 1 processed a removal for this (netID, nodeID)
+	weightDiff    ValidatorWeightDiff
+	prevPublicKey []byte
+	newPublicKey  []byte
+	hadRemoval    bool // True if pass 1 processed a removal for this (netID, nodeID)
 }
 
 // calculateValidatorDiffs calculates the validator set diff contained by the

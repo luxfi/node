@@ -165,10 +165,10 @@ func (s *Service) GetOrderbook(_ *http.Request, args *GetOrderbookArgs, reply *G
 
 // PlaceOrderArgs is the argument for the PlaceOrder API.
 type PlaceOrderArgs struct {
-	Owner       string `json:"owner"`       // hex-encoded address
+	Owner       string `json:"owner"` // hex-encoded address
 	Symbol      string `json:"symbol"`
-	Side        string `json:"side"`        // "buy" or "sell"
-	Type        string `json:"type"`        // "limit", "market", etc.
+	Side        string `json:"side"` // "buy" or "sell"
+	Type        string `json:"type"` // "limit", "market", etc.
 	Price       uint64 `json:"price"`
 	Quantity    uint64 `json:"quantity"`
 	TimeInForce string `json:"timeInForce"` // "GTC", "IOC", "FOK"

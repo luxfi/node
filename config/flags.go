@@ -13,16 +13,15 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/ulimit"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/vm/utils/dynamicip"
+	"github.com/luxfi/vm/utils/ulimit"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 )
@@ -31,7 +30,7 @@ const (
 	DefaultHTTPPort    = 9630
 	DefaultStakingPort = 9631
 
-	LuxNodeDataDirVar    = "LUXD_DATA_DIR"
+	LuxNodeDataDirVar        = "LUXD_DATA_DIR"
 	defaultUnexpandedDataDir = "$" + LuxNodeDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
@@ -52,7 +51,7 @@ var (
 	defaultVMConfigDir          = filepath.Join(defaultConfigDir, "vms")
 	defaultVMAliasFilePath      = filepath.Join(defaultVMConfigDir, "aliases.json")
 	defaultChainAliasFilePath   = filepath.Join(defaultChainConfigDir, "aliases.json")
-	defaultNetConfigDir      = filepath.Join(defaultConfigDir, "subnets")
+	defaultNetConfigDir         = filepath.Join(defaultConfigDir, "subnets")
 	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins", "current")
 	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
 	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
@@ -106,9 +105,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
-// 	fs.Bool(MainnetKey, false, "Connect to Lux mainnet (network ID 96369)")
-// 	fs.Bool(TestnetKey, false, "Connect to Lux testnet (network ID 96368)")
-// 	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 1337)")
+	// 	fs.Bool(MainnetKey, false, "Connect to Lux mainnet (network ID 96369)")
+	// 	fs.Bool(TestnetKey, false, "Connect to Lux testnet (network ID 96368)")
+	// 	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 1337)")
 
 	// LP flagging
 	fs.IntSlice(LPSupportKey, nil, "LPs to support adoption")
@@ -149,7 +148,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Lux")
 	fs.String(LogLevelKey, "info", "The log level. Should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
 	fs.String(LogDisplayLevelKey, "", "The log display level. If left blank, will inherit the value of log-level. Otherwise, should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
-// 	fs.String(LogFormatKey, "auto", "Format to use for log output. Should be one of {auto, json, terminal}")
+	// 	fs.String(LogFormatKey, "auto", "Format to use for log output. Should be one of {auto, json, terminal}")
 	fs.Uint(LogRotaterMaxSizeKey, 8, "The maximum file size in megabytes of the log file before it gets rotated.")
 	fs.Uint(LogRotaterMaxFilesKey, 7, "The maximum number of old log files to retain. 0 means retain all old log files.")
 	fs.Uint(LogRotaterMaxAgeKey, 0, "The maximum number of days to retain old log files based on the timestamp encoded in their filename. 0 means retain all old log files.")
@@ -373,8 +372,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(SystemTrackerProcessingHalflifeKey, 15*time.Second, "Halflife to use for the processing requests tracker. Larger halflife --> usage metrics change more slowly")
 	fs.Duration(SystemTrackerCPUHalflifeKey, 15*time.Second, "Halflife to use for the cpu tracker. Larger halflife --> cpu usage metrics change more slowly")
 	fs.Duration(SystemTrackerDiskHalflifeKey, time.Minute, "Halflife to use for the disk tracker. Larger halflife --> disk usage metrics change more slowly")
-	fs.Uint64(SystemTrackerRequiredAvailableDiskSpaceKey, units.GiB/2, "Minimum number of available bytes on disk, under which the node will shutdown.")
-	fs.Uint64(SystemTrackerWarningThresholdAvailableDiskSpaceKey, units.GiB, fmt.Sprintf("Warning threshold for the number of available bytes on disk, under which the node will be considered unhealthy.  Must be >= [%s]", SystemTrackerRequiredAvailableDiskSpaceKey))
+	fs.Uint64(SystemTrackerRequiredAvailableDiskSpaceKey, constants.GiB/2, "Minimum number of available bytes on disk, under which the node will shutdown.")
+	fs.Uint64(SystemTrackerWarningThresholdAvailableDiskSpaceKey, constants.GiB, fmt.Sprintf("Warning threshold for the number of available bytes on disk, under which the node will be considered unhealthy.  Must be >= [%s]", SystemTrackerRequiredAvailableDiskSpaceKey))
 
 	// CPU management
 	fs.Float64(CPUVdrAllocKey, float64(runtime.NumCPU()), "Maximum number of CPUs to allocate for use by validators. Value should be in range [0, total core count]")
@@ -382,9 +381,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Float64(CPUMaxNonVdrNodeUsageKey, float64(runtime.NumCPU())/8, "Maximum number of CPUs that a non-validator can utilize. Value should be in range [0, total core count]")
 
 	// Disk management
-	fs.Float64(DiskVdrAllocKey, 1000*units.GiB, "Maximum number of disk reads/writes per second to allocate for use by validators. Must be > 0")
-	fs.Float64(DiskMaxNonVdrUsageKey, 1000*units.GiB, "Number of disk reads/writes per second that, if fully utilized, will rate limit all non-validators. Must be >= 0")
-	fs.Float64(DiskMaxNonVdrNodeUsageKey, 1000*units.GiB, "Maximum number of disk reads/writes per second that a non-validator can utilize. Must be >= 0")
+	fs.Float64(DiskVdrAllocKey, 1000*constants.GiB, "Maximum number of disk reads/writes per second to allocate for use by validators. Must be > 0")
+	fs.Float64(DiskMaxNonVdrUsageKey, 1000*constants.GiB, "Number of disk reads/writes per second that, if fully utilized, will rate limit all non-validators. Must be >= 0")
+	fs.Float64(DiskMaxNonVdrNodeUsageKey, 1000*constants.GiB, "Maximum number of disk reads/writes per second that a non-validator can utilize. Must be >= 0")
 
 	// Opentelemetry tracing
 	fs.String(TracingExporterTypeKey, trace.Disabled.String(), fmt.Sprintf("Type of exporter to use for tracing. Options are [%s, %s, %s]", trace.Disabled, trace.GRPC, trace.HTTP))

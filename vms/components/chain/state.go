@@ -8,14 +8,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/constantsants"
 )
 
 func cachedBlockSize(_ ids.ID, bw *BlockWrapper) int {

@@ -51,7 +51,7 @@ func TestCalculateTPPrice(t *testing.T) {
 
 	// Long +10% TP
 	tpLong := CalculateTPPrice(Long, entryPrice, 1000) // 10% = 1000 basis points
-	expected := notional(55000)                         // $55,000
+	expected := notional(55000)                        // $55,000
 	require.Equal(expected, tpLong)
 
 	// Short +10% TP (below entry)
@@ -220,8 +220,8 @@ func TestTPSLManagerCreate(t *testing.T) {
 		TakeProfitOrder,
 		notional(55000), // TP at $55K
 		TriggerOnMarkPrice,
-		nil, // Market order
-		nil, // Full position
+		nil,   // Market order
+		nil,   // Full position
 		10000, // 100%
 	)
 	require.NoError(err)

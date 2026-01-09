@@ -14,12 +14,12 @@ import (
 
 // Transaction types
 const (
-	TxTypeCreateKey      = 1
-	TxTypeDeleteKey      = 2
-	TxTypeDistributeKey  = 3
-	TxTypeReshareKey     = 4
-	TxTypeUpdateKeyMeta  = 5
-	TxTypeRevokeKey      = 6
+	TxTypeCreateKey     = 1
+	TxTypeDeleteKey     = 2
+	TxTypeDistributeKey = 3
+	TxTypeReshareKey    = 4
+	TxTypeUpdateKeyMeta = 5
+	TxTypeRevokeKey     = 6
 )
 
 var (

@@ -12,29 +12,29 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensusctx "github.com/luxfi/consensus/context"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/chain"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -107,7 +107,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 		iterator.FromSlice(&state.Staker{
 			TxID:      addValTx.ID(),
 			NodeID:    utx.NodeID(),
-			ChainID:  utx.ChainID(),
+			ChainID:   utx.ChainID(),
 			StartTime: utx.StartTime(),
 			NextTime:  chainTime,
 			EndTime:   chainTime,

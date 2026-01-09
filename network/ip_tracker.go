@@ -12,14 +12,14 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/vm/utils/bloom"
+	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/vm/utils/sampler"
 )
 
 const (
@@ -61,16 +61,16 @@ func newIPTracker(
 
 	metricsInstance := metric.NewWithRegistry("ip_tracker", registry)
 	tracker := &ipTracker{
-		trackedNets:    trackedNets,
-		log:               log,
-		numTrackedPeers:   metricsInstance.NewGauge("tracked_peers", "number of peers this node is monitoring"),
-		numGossipableIPs:  metricsInstance.NewGauge("gossipable_ips", "number of IPs this node considers able to be gossiped"),
-		numTrackedNets: metricsInstance.NewGauge("tracked_nets", "number of nets this node is monitoring"),
-		bloomMetrics:      bloomMetrics,
-		tracked:           make(map[ids.NodeID]*trackedNode),
-		bloomAdditions:    make(map[ids.NodeID]int),
-		connected:         make(map[ids.NodeID]*connectedNode),
-		net:            make(map[ids.ID]*gossipableNet),
+		trackedNets:      trackedNets,
+		log:              log,
+		numTrackedPeers:  metricsInstance.NewGauge("tracked_peers", "number of peers this node is monitoring"),
+		numGossipableIPs: metricsInstance.NewGauge("gossipable_ips", "number of IPs this node considers able to be gossiped"),
+		numTrackedNets:   metricsInstance.NewGauge("tracked_nets", "number of nets this node is monitoring"),
+		bloomMetrics:     bloomMetrics,
+		tracked:          make(map[ids.NodeID]*trackedNode),
+		bloomAdditions:   make(map[ids.NodeID]int),
+		connected:        make(map[ids.NodeID]*connectedNode),
+		net:              make(map[ids.ID]*gossipableNet),
 	}
 	return tracker, tracker.resetBloom()
 }
@@ -199,12 +199,12 @@ func (s *gossipableNet) canDelete() bool {
 
 type ipTracker struct {
 	// trackedNets does not include the primary network.
-	trackedNets    set.Set[ids.ID]
-	log               log.Logger
-	numTrackedPeers   metric.Gauge
-	numGossipableIPs  metric.Gauge // IPs are not deduplicated across nets
-	numTrackedNets metric.Gauge
-	bloomMetrics      *bloom.Metrics
+	trackedNets      set.Set[ids.ID]
+	log              log.Logger
+	numTrackedPeers  metric.Gauge
+	numGossipableIPs metric.Gauge // IPs are not deduplicated across nets
+	numTrackedNets   metric.Gauge
+	bloomMetrics     *bloom.Metrics
 
 	lock    sync.RWMutex
 	tracked map[ids.NodeID]*trackedNode
@@ -341,7 +341,7 @@ func (i *ipTracker) Connected(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]
 
 	i.connected[ip.NodeID] = &connectedNode{
 		trackedNets: trackedNets,
-		ip:             ip,
+		ip:          ip,
 	}
 
 	timestampComparison, trackedNode := i.addIP(ip)
@@ -480,7 +480,8 @@ func (i *ipTracker) addGossipableID(nodeID ids.NodeID, netID ids.ID, manuallyGos
 	}
 }
 
-func (*ipTracker) OnValidatorLightChanged(netID ids.ID, nodeID ids.NodeID, oldLight, newLight uint64) {}
+func (*ipTracker) OnValidatorLightChanged(netID ids.ID, nodeID ids.NodeID, oldLight, newLight uint64) {
+}
 
 func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light uint64) {
 	i.lock.Lock()

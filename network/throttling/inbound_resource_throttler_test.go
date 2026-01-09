@@ -6,8 +6,8 @@
 package throttling
 
 import (
-	"github.com/luxfi/metric"
 	"context"
+	"github.com/luxfi/metric"
 	"reflect"
 	"testing"
 	"time"
@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/network/tracker/trackermock"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/vm/utils/math/meter"
+	"github.com/luxfi/vm/utils/resource"
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/stretchr/testify/require"
 )
 

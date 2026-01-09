@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/p2p"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/trace"
 )
 

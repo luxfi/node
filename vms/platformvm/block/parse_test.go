@@ -11,10 +11,10 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var preFundedKeys = secp256k1.TestKeys()
@@ -362,12 +362,12 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 				}},
 				Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}},
-			ChainID:       ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
-			BlockchainName:   "a chain",
-			VMID:        ids.GenerateTestID(),
-			FxIDs:       []ids.ID{ids.GenerateTestID()},
-			GenesisData: []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
-			ChainAuth:  &secp256k1fx.Input{SigIndices: []uint32{1}},
+			ChainID:        ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
+			BlockchainName: "a chain",
+			VMID:           ids.GenerateTestID(),
+			FxIDs:          []ids.ID{ids.GenerateTestID()},
+			GenesisData:    []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
+			ChainAuth:      &secp256k1fx.Input{SigIndices: []uint32{1}},
 		}
 
 		signers := [][]*secp256k1.PrivateKey{{preFundedKeys[0]}}

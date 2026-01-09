@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 )
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-
 	ID() ids.ID
 	Parent() ids.ID
 	Height() uint64

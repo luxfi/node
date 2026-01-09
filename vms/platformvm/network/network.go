@@ -11,16 +11,16 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/p2p"
-	"github.com/luxfi/p2p/gossip"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/p2p"
+	"github.com/luxfi/p2p/gossip"
 	extwarp "github.com/luxfi/warp"
 )
 

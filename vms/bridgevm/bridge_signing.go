@@ -299,11 +299,11 @@ func (s *DeliveryConfirmationSigner) VerifyDeliveryConfirmation(messageID ids.ID
 
 // BridgeMessageValidator validates bridge messages and their delivery confirmations
 type BridgeMessageValidator struct {
-	bridgeSigner      *BridgeSigner
-	deliverySigner    *DeliveryConfirmationSigner
-	minConfirmations  uint32
+	bridgeSigner           *BridgeSigner
+	deliverySigner         *DeliveryConfirmationSigner
+	minConfirmations       uint32
 	requireDeliveryConfirm bool
-	log               log.Logger
+	log                    log.Logger
 }
 
 // NewBridgeMessageValidator creates a new validator

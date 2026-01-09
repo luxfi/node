@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package lux
 
 import (
@@ -10,8 +9,8 @@ import (
 	"math"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/utils"
 
 	safemath "github.com/luxfi/math"
 )
@@ -69,7 +68,7 @@ func GetPaginatedUTXOs(
 	var (
 		utxos      []*UTXO
 		seen       = set.NewSet[ids.ID](limit) // IDs of UTXOs already in the list
-		searchSize = limit                      // the limit diminishes which can impact the expected return
+		searchSize = limit                     // the limit diminishes which can impact the expected return
 		addrsList  = addrs.List()
 	)
 	utils.Sort(addrsList) // enforces the same ordering for pagination

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
 )
 
 var (

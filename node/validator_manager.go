@@ -8,15 +8,15 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/networking/handler"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 var _ Router = (*ValidatorManager)(nil)

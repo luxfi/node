@@ -12,31 +12,30 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/node/wallet/net/primary/common/utxotest"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 var (
@@ -85,7 +84,7 @@ var (
 	luxOutput = &lux.TransferableOutput{
 		Asset: lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          7 * units.Lux,
+			Amt:          7 * constants.Lux,
 			OutputOwners: utxoOwner,
 		},
 	}
@@ -101,7 +100,7 @@ var (
 		Validator: txs.Validator{
 			NodeID: nodeID,
 			End:    uint64(time.Now().Add(time.Hour).Unix()),
-			Wght:   2 * units.Lux,
+			Wght:   2 * constants.Lux,
 		},
 		Chain: constants.PrimaryNetworkID,
 	}
@@ -463,8 +462,8 @@ func TestAddPermissionlessValidatorTx(t *testing.T) {
 
 	var (
 		utxos = []*lux.UTXO{
-			makeUTXO(1 * units.NanoLux), // small UTXO
-			makeUTXO(9 * units.Lux),     // large UTXO
+			makeUTXO(1 * constants.NanoLux), // small UTXO
+			makeUTXO(9 * constants.Lux),     // large UTXO
 		}
 
 		validationRewardsOwner        = rewardsOwner
@@ -590,7 +589,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 			{
 				NodeID:  utils.RandomBytes(ids.NodeIDLen),
 				Weight:  rand.Uint64(), //#nosec G404
-				Balance: units.Lux,
+				Balance: constants.Lux,
 				Signer:  *pop0,
 				RemainingBalanceOwner: message.PChainOwner{
 					Threshold: 1,
@@ -608,7 +607,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 			{
 				NodeID:                utils.RandomBytes(ids.NodeIDLen),
 				Weight:                rand.Uint64(), //#nosec G404
-				Balance:               2 * units.Lux,
+				Balance:               2 * constants.Lux,
 				Signer:                *pop1,
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},
@@ -648,7 +647,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 				nil,
 				nil,
 				map[ids.ID]uint64{
-					e.context.XAssetID: 3 * units.Lux, // Balance of the validators
+					e.context.XAssetID: 3 * constants.Lux, // Balance of the validators
 				},
 			)
 		})
@@ -660,7 +659,7 @@ func TestRegisterL1ValidatorTx(t *testing.T) {
 		expiry = 1731005097
 		weight = 7905001371
 
-		balance = units.Lux
+		balance = constants.Lux
 	)
 
 	sk, err := localsigner.New()
@@ -838,7 +837,7 @@ func TestSetL1ValidatorWeightTx(t *testing.T) {
 }
 
 func TestIncreaseL1ValidatorBalanceTx(t *testing.T) {
-	const balance = units.Lux
+	const balance = constants.Lux
 	validationID := ids.GenerateTestID()
 	for _, e := range testEnvironment {
 		t.Run(e.name, func(t *testing.T) {
@@ -922,7 +921,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			},
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 2 * units.MilliLux,
+				Amt: 2 * constants.MilliLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
 					Addrs:     []ids.ShortID{utxosAddr},
@@ -939,7 +938,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			Out: &stakeable.LockOut{
 				Locktime: uint64(time.Now().Add(time.Hour).Unix()),
 				TransferableOut: &secp256k1fx.TransferOutput{
-					Amt: 3 * units.MilliLux,
+					Amt: 3 * constants.MilliLux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{utxosAddr},
@@ -954,7 +953,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			},
 			Asset: lux.Asset{ID: subnetAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 99 * units.MegaLux,
+				Amt: 99 * constants.MegaLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
 					Addrs:     []ids.ShortID{utxosAddr},
@@ -971,7 +970,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			Out: &stakeable.LockOut{
 				Locktime: uint64(time.Now().Add(time.Hour).Unix()),
 				TransferableOut: &secp256k1fx.TransferOutput{
-					Amt: 88 * units.Lux,
+					Amt: 88 * constants.Lux,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{utxosAddr},
@@ -986,7 +985,7 @@ func makeTestUTXOs(utxosKey *secp256k1.PrivateKey) []*lux.UTXO {
 			},
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 9 * units.Lux,
+				Amt: 9 * constants.Lux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  0,
 					Addrs:     []ids.ShortID{utxosAddr},

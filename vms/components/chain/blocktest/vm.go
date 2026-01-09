@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package blocktest
 
 import (
@@ -230,10 +229,10 @@ func (vm *StateSyncableVM) GetStateSummary(ctx context.Context, height uint64) (
 
 // StateSummary is a test state summary that implements block.StateSummary
 type StateSummary struct {
-	IDV      ids.ID
-	HeightV  uint64
-	BytesV   []byte
-	AcceptF  func(context.Context) (block.StateSyncMode, error)
+	IDV     ids.ID
+	HeightV uint64
+	BytesV  []byte
+	AcceptF func(context.Context) (block.StateSyncMode, error)
 }
 
 func (s *StateSummary) ID() ids.ID {

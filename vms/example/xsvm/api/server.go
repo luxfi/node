@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"sync"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"

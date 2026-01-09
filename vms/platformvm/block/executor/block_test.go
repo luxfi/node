@@ -13,10 +13,10 @@ import (
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/constantsants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -50,7 +50,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -76,7 +76,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -111,7 +111,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -148,7 +148,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -188,7 +188,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -238,7 +238,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -294,7 +294,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -349,7 +349,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -411,7 +411,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{
@@ -473,7 +473,7 @@ func TestBlockOptions(t *testing.T) {
 						},
 						Uptimes: &uptime.NoOpCalculator{},
 					},
-				Log: log.NoLog{},
+					Log: log.NoLog{},
 				}
 
 				return &Block{

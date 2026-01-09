@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package node
 
 import (
@@ -11,13 +10,13 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/router"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 // routerAdapter adapts the node Router interface to router.Router interface

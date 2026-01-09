@@ -6,8 +6,8 @@ package throttling
 import (
 	"sync"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
 

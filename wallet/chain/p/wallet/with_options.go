@@ -6,16 +6,16 @@ package wallet
 import (
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/vm/secp256k1fx"
 
-	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
+	vmsigner "github.com/luxfi/vm/platformvm/signer"
 )
 
 var _ Wallet = (*withOptions)(nil)

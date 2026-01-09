@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package warp
 
 import (
@@ -12,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 const (

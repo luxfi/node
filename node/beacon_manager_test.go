@@ -10,15 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/networking/handler"
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer"
-	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils/timer"
 )
 
 const numValidators = 10
@@ -57,8 +57,8 @@ func (m *mockRouter) RegisterRequest(
 ) {
 }
 
-func (m *mockRouter) HandleInbound(ctx context.Context, msg message.InboundMessage)           {}
-func (m *mockRouter) Shutdown(ctx context.Context)                                            {}
+func (m *mockRouter) HandleInbound(ctx context.Context, msg message.InboundMessage)   {}
+func (m *mockRouter) Shutdown(ctx context.Context)                                    {}
 func (m *mockRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {}
 
 func (m *mockRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {

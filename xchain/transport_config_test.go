@@ -375,7 +375,7 @@ func TestTransportManager_ErrorCases(t *testing.T) {
 
 	// Test with invalid gRPC configuration
 	config := DefaultTransportConfig()
-	config.GRPCConfig.Port = -1 // Invalid port
+	config.GRPCConfig.Port = -1                             // Invalid port
 	config.NetworkPipes.Peers = []string{"invalid:invalid"} // Invalid peer format
 
 	tm, err := NewTransportManager(config)

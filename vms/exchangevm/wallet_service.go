@@ -9,16 +9,16 @@ import (
 	"maps"
 	"net/http"
 
-	"github.com/luxfi/formatting"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/linked"
 )
 
 type WalletService struct {

@@ -4,8 +4,8 @@
 package executor
 
 import (
-	"github.com/luxfi/log"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 

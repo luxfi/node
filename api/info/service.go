@@ -11,56 +11,55 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/node/chains"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
 	// "github.com/luxfi/consensus/networking/benchlist" // Unused
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/json"
 )
 
 var (
 	errNoChainProvided = errors.New("argument 'chain' not given")
 
 	mainnetGetTxFeeResponse = GetTxFeeResponse{
-		CreateNetTxFee:                json.Uint64(1 * units.Lux),
-		TransformChainTxFee:             json.Uint64(10 * units.Lux),
-		CreateBlockchainTxFee:         json.Uint64(1 * units.Lux),
+		CreateNetTxFee:                json.Uint64(1 * constants.Lux),
+		TransformChainTxFee:           json.Uint64(10 * constants.Lux),
+		CreateBlockchainTxFee:         json.Uint64(1 * constants.Lux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddNetValidatorFee:            json.Uint64(units.MilliLux),
-		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(constants.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(constants.MilliLux),
 	}
 	fujiGetTxFeeResponse = GetTxFeeResponse{
-		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
-		TransformChainTxFee:             json.Uint64(1 * units.Lux),
-		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
+		CreateNetTxFee:                json.Uint64(100 * constants.MilliLux),
+		TransformChainTxFee:           json.Uint64(1 * constants.Lux),
+		CreateBlockchainTxFee:         json.Uint64(100 * constants.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddNetValidatorFee:            json.Uint64(units.MilliLux),
-		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(constants.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(constants.MilliLux),
 	}
 	defaultGetTxFeeResponse = GetTxFeeResponse{
-		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
-		TransformChainTxFee:             json.Uint64(100 * units.MilliLux),
-		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
+		CreateNetTxFee:                json.Uint64(100 * constants.MilliLux),
+		TransformChainTxFee:           json.Uint64(100 * constants.MilliLux),
+		CreateBlockchainTxFee:         json.Uint64(100 * constants.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddNetValidatorFee:            json.Uint64(units.MilliLux),
-		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(constants.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(constants.MilliLux),
 	}
 )
 
@@ -425,7 +424,7 @@ type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
 	CreateNetTxFee                json.Uint64 `json:"createNetTxFee"`
-	TransformChainTxFee             json.Uint64 `json:"transformNetTxFee"`
+	TransformChainTxFee           json.Uint64 `json:"transformNetTxFee"`
 	CreateBlockchainTxFee         json.Uint64 `json:"createBlockchainTxFee"`
 	AddPrimaryNetworkValidatorFee json.Uint64 `json:"addPrimaryNetworkValidatorFee"`
 	AddPrimaryNetworkDelegatorFee json.Uint64 `json:"addPrimaryNetworkDelegatorFee"`

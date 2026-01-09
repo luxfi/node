@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 // Package tvm implements the Threshold VM (T-Chain) - MPC as a service for all Lux chains
 package tvm
 
@@ -15,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
-	core "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -39,17 +38,17 @@ var (
 	}
 
 	// Error definitions
-	ErrNotInitialized       = errors.New("MPC not initialized")
-	ErrKeygenInProgress     = errors.New("keygen already in progress")
-	ErrSigningInProgress    = errors.New("signing session already in progress")
-	ErrInvalidThreshold     = errors.New("invalid threshold configuration")
-	ErrInsufficientParties  = errors.New("insufficient parties for operation")
-	ErrSessionNotFound      = errors.New("session not found")
-	ErrSessionExpired       = errors.New("session expired")
-	ErrUnauthorizedChain    = errors.New("unauthorized chain")
-	ErrQuotaExceeded        = errors.New("signing quota exceeded")
-	ErrInvalidSignature     = errors.New("invalid signature")
-	ErrKeyNotFound          = errors.New("key not found")
+	ErrNotInitialized      = errors.New("MPC not initialized")
+	ErrKeygenInProgress    = errors.New("keygen already in progress")
+	ErrSigningInProgress   = errors.New("signing session already in progress")
+	ErrInvalidThreshold    = errors.New("invalid threshold configuration")
+	ErrInsufficientParties = errors.New("insufficient parties for operation")
+	ErrSessionNotFound     = errors.New("session not found")
+	ErrSessionExpired      = errors.New("session expired")
+	ErrUnauthorizedChain   = errors.New("unauthorized chain")
+	ErrQuotaExceeded       = errors.New("signing quota exceeded")
+	ErrInvalidSignature    = errors.New("invalid signature")
+	ErrKeyNotFound         = errors.New("key not found")
 )
 
 // ThresholdConfig contains VM configuration
@@ -105,11 +104,11 @@ type VM struct {
 	messageRouter MessageRouter
 
 	// LSS MPC Protocol Components (default protocol)
-	lssConfig   *lssconfig.Config // LSS config for this party (after keygen)
-	partyID     party.ID          // This party's ID
-	partyIDs    []party.ID        // All party IDs in the MPC group
-	pool        *pool.Pool        // Worker pool for MPC operations
-	mpcReady    bool              // Whether MPC is ready for signing
+	lssConfig *lssconfig.Config // LSS config for this party (after keygen)
+	partyID   party.ID          // This party's ID
+	partyIDs  []party.ID        // All party IDs in the MPC group
+	pool      *pool.Pool        // Worker pool for MPC operations
+	mpcReady  bool              // Whether MPC is ready for signing
 
 	// Key Management
 	keys           map[string]*ManagedKey // KeyID -> Key configuration
@@ -121,8 +120,8 @@ type VM struct {
 	sessionsByChain map[string][]string // ChainID -> SessionIDs
 
 	// Quota Tracking
-	dailySigningCount map[string]uint64    // ChainID -> count today
-	quotaResetTime    time.Time            // When to reset quotas
+	dailySigningCount map[string]uint64 // ChainID -> count today
+	quotaResetTime    time.Time         // When to reset quotas
 
 	// Block Management
 	preferred      ids.ID
@@ -147,9 +146,9 @@ type ManagedKey struct {
 	Generation   uint64            `json:"generation"`   // Key generation number
 	CreatedAt    time.Time         `json:"createdAt"`
 	LastUsedAt   time.Time         `json:"lastUsedAt"`
-	SignCount    uint64            `json:"signCount"`    // Total signatures made
-	Status       string            `json:"status"`       // active, rotating, expired
-	Config       *lssconfig.Config `json:"-"`            // LSS configuration (not serialized)
+	SignCount    uint64            `json:"signCount"` // Total signatures made
+	Status       string            `json:"status"`    // active, rotating, expired
+	Config       *lssconfig.Config `json:"-"`         // LSS configuration (not serialized)
 	PartyIDs     []party.ID        `json:"partyIds"`
 }
 
@@ -318,15 +317,15 @@ func (vm *VM) parseConfig(configBytes []byte) error {
 	if len(configBytes) == 0 {
 		// Default configuration
 		vm.config = ThresholdConfig{
-			Threshold:         2,
-			TotalParties:      3,
-			SessionTimeout:    5 * time.Minute,
-			MaxActiveSessions: 100,
+			Threshold:           2,
+			TotalParties:        3,
+			SessionTimeout:      5 * time.Minute,
+			MaxActiveSessions:   100,
 			MaxSessionsPerChain: 10,
-			KeyRotationPeriod: 30 * 24 * time.Hour,
-			MaxKeyAge:         90 * 24 * time.Hour,
-			DailySigningQuota: make(map[string]uint64),
-			AuthorizedChains:  make(map[string]*ChainPermissions),
+			KeyRotationPeriod:   30 * 24 * time.Hour,
+			MaxKeyAge:           90 * 24 * time.Hour,
+			DailySigningQuota:   make(map[string]uint64),
+			AuthorizedChains:    make(map[string]*ChainPermissions),
 		}
 
 		// Default authorized chains (all internal Lux chains)
@@ -1574,12 +1573,12 @@ func (vm *VM) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 // CrossChainMPCRequest is the request format for cross-chain MPC operations
 type CrossChainMPCRequest struct {
-	Type            string   `json:"type"` // sign, keygen, reshare
-	RequestingChain string   `json:"requestingChain"`
-	KeyID           string   `json:"keyId"`
-	KeyType         string   `json:"keyType,omitempty"`
-	MessageHash     []byte   `json:"messageHash,omitempty"`
-	MessageType     string   `json:"messageType,omitempty"`
+	Type            string `json:"type"` // sign, keygen, reshare
+	RequestingChain string `json:"requestingChain"`
+	KeyID           string `json:"keyId"`
+	KeyType         string `json:"keyType,omitempty"`
+	MessageHash     []byte `json:"messageHash,omitempty"`
+	MessageType     string `json:"messageType,omitempty"`
 }
 
 // Genesis represents the genesis state

@@ -479,7 +479,7 @@ func TestDoCleanup(t *testing.T) {
 		relayer.pendingRequests[reqID] = &DecryptionRequest{
 			RequestID: reqID,
 			Timestamp: time.Now().Add(-200 * time.Millisecond), // Older than timeout
-			Fulfilled: true,                                     // But fulfilled
+			Fulfilled: true,                                    // But fulfilled
 		}
 		relayer.mu.Unlock()
 

@@ -16,11 +16,11 @@ import (
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/utils"
 
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	runtimepb "github.com/luxfi/node/proto/pb/vm/runtime"

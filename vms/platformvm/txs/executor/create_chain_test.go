@@ -9,17 +9,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 // Ensure Execute fails when there are not enough control sigs
@@ -221,7 +221,7 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			config := *env.config
 			subnetID := testNet1.ID()
 			wallet := newWallet(t, env, walletConfig{
-				config:    &config,
+				config: &config,
 				netIDs: []ids.ID{subnetID},
 			})
 

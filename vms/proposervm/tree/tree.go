@@ -8,8 +8,8 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/luxfi/ids"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/ids"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner

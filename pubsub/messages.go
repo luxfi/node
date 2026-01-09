@@ -1,13 +1,12 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package pubsub
 
 import (
-	"github.com/luxfi/node/api"
 	"github.com/luxfi/address"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/vm/utils/json"
 )
 
 // NewBloom command for a new bloom filter

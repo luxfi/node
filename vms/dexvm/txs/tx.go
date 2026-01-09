@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	ErrInvalidSignature = errors.New("invalid signature")
-	ErrInvalidTxType    = errors.New("invalid transaction type")
-	ErrInvalidAmount    = errors.New("invalid amount")
-	ErrInvalidPrice     = errors.New("invalid price")
+	ErrInvalidSignature  = errors.New("invalid signature")
+	ErrInvalidTxType     = errors.New("invalid transaction type")
+	ErrInvalidAmount     = errors.New("invalid amount")
+	ErrInvalidPrice      = errors.New("invalid price")
 	ErrInsufficientFunds = errors.New("insufficient funds")
 )
 
@@ -32,8 +32,8 @@ const (
 	TxCreatePool
 	TxCrossChainSwap
 	TxCrossChainTransfer
-	TxCommitOrder  // MEV protection: commit order hash
-	TxRevealOrder  // MEV protection: reveal order details
+	TxCommitOrder // MEV protection: commit order hash
+	TxRevealOrder // MEV protection: reveal order details
 )
 
 func (t TxType) String() string {
@@ -81,28 +81,28 @@ type Tx interface {
 
 // BaseTx contains common fields for all transactions.
 type BaseTx struct {
-	TxID       ids.ID      `json:"id"`
-	TxType     TxType      `json:"type"`
-	From       ids.ShortID `json:"from"`
-	Nonce      uint64      `json:"nonce"`
-	GasPrice   uint64      `json:"gasPrice"`
-	GasLimit   uint64      `json:"gasLimit"`
-	CreatedAt  int64       `json:"createdAt"`
-	Signature  []byte      `json:"signature"`
-	bytes      []byte
+	TxID      ids.ID      `json:"id"`
+	TxType    TxType      `json:"type"`
+	From      ids.ShortID `json:"from"`
+	Nonce     uint64      `json:"nonce"`
+	GasPrice  uint64      `json:"gasPrice"`
+	GasLimit  uint64      `json:"gasLimit"`
+	CreatedAt int64       `json:"createdAt"`
+	Signature []byte      `json:"signature"`
+	bytes     []byte
 }
 
-func (tx *BaseTx) ID() ids.ID         { return tx.TxID }
-func (tx *BaseTx) Type() TxType       { return tx.TxType }
+func (tx *BaseTx) ID() ids.ID          { return tx.TxID }
+func (tx *BaseTx) Type() TxType        { return tx.TxType }
 func (tx *BaseTx) Sender() ids.ShortID { return tx.From }
-func (tx *BaseTx) Timestamp() int64   { return tx.CreatedAt }
-func (tx *BaseTx) Bytes() []byte      { return tx.bytes }
+func (tx *BaseTx) Timestamp() int64    { return tx.CreatedAt }
+func (tx *BaseTx) Bytes() []byte       { return tx.bytes }
 
 // PlaceOrderTx represents a place order transaction.
 type PlaceOrderTx struct {
 	BaseTx
 	Symbol      string `json:"symbol"`
-	Side        uint8  `json:"side"`     // 0 = Buy, 1 = Sell
+	Side        uint8  `json:"side"`      // 0 = Buy, 1 = Sell
 	OrderType   uint8  `json:"orderType"` // 0 = Limit, 1 = Market, etc.
 	Price       uint64 `json:"price"`
 	Quantity    uint64 `json:"quantity"`
@@ -184,13 +184,13 @@ func (tx *CancelOrderTx) Verify() error {
 // SwapTx represents an AMM swap transaction.
 type SwapTx struct {
 	BaseTx
-	PoolID        ids.ID `json:"poolId"`
-	TokenIn       ids.ID `json:"tokenIn"`
-	TokenOut      ids.ID `json:"tokenOut"`
-	AmountIn      uint64 `json:"amountIn"`
-	MinAmountOut  uint64 `json:"minAmountOut"`
-	MaxSlippage   uint16 `json:"maxSlippage"` // In basis points
-	Deadline      int64  `json:"deadline"`
+	PoolID       ids.ID `json:"poolId"`
+	TokenIn      ids.ID `json:"tokenIn"`
+	TokenOut     ids.ID `json:"tokenOut"`
+	AmountIn     uint64 `json:"amountIn"`
+	MinAmountOut uint64 `json:"minAmountOut"`
+	MaxSlippage  uint16 `json:"maxSlippage"` // In basis points
+	Deadline     int64  `json:"deadline"`
 }
 
 // NewSwapTx creates a new swap transaction.
@@ -234,11 +234,11 @@ func (tx *SwapTx) Verify() error {
 // AddLiquidityTx represents adding liquidity to a pool.
 type AddLiquidityTx struct {
 	BaseTx
-	PoolID         ids.ID `json:"poolId"`
-	Token0Amount   uint64 `json:"token0Amount"`
-	Token1Amount   uint64 `json:"token1Amount"`
-	MinLPTokens    uint64 `json:"minLPTokens"`
-	Deadline       int64  `json:"deadline"`
+	PoolID       ids.ID `json:"poolId"`
+	Token0Amount uint64 `json:"token0Amount"`
+	Token1Amount uint64 `json:"token1Amount"`
+	MinLPTokens  uint64 `json:"minLPTokens"`
+	Deadline     int64  `json:"deadline"`
 }
 
 // NewAddLiquidityTx creates a new add liquidity transaction.
@@ -275,11 +275,11 @@ func (tx *AddLiquidityTx) Verify() error {
 // RemoveLiquidityTx represents removing liquidity from a pool.
 type RemoveLiquidityTx struct {
 	BaseTx
-	PoolID         ids.ID `json:"poolId"`
-	LPTokenAmount  uint64 `json:"lpTokenAmount"`
-	MinToken0      uint64 `json:"minToken0"`
-	MinToken1      uint64 `json:"minToken1"`
-	Deadline       int64  `json:"deadline"`
+	PoolID        ids.ID `json:"poolId"`
+	LPTokenAmount uint64 `json:"lpTokenAmount"`
+	MinToken0     uint64 `json:"minToken0"`
+	MinToken1     uint64 `json:"minToken1"`
+	Deadline      int64  `json:"deadline"`
 }
 
 // NewRemoveLiquidityTx creates a new remove liquidity transaction.
@@ -316,15 +316,15 @@ func (tx *RemoveLiquidityTx) Verify() error {
 // CreatePoolTx represents creating a new liquidity pool.
 type CreatePoolTx struct {
 	BaseTx
-	Token0         ids.ID `json:"token0"`
-	Token1         ids.ID `json:"token1"`
-	PoolType       uint8  `json:"poolType"` // 0 = ConstantProduct, 1 = StableSwap, 2 = Concentrated
-	SwapFeeBps     uint16 `json:"swapFeeBps"`
-	InitialToken0  uint64 `json:"initialToken0"`
-	InitialToken1  uint64 `json:"initialToken1"`
+	Token0        ids.ID `json:"token0"`
+	Token1        ids.ID `json:"token1"`
+	PoolType      uint8  `json:"poolType"` // 0 = ConstantProduct, 1 = StableSwap, 2 = Concentrated
+	SwapFeeBps    uint16 `json:"swapFeeBps"`
+	InitialToken0 uint64 `json:"initialToken0"`
+	InitialToken1 uint64 `json:"initialToken1"`
 	// For concentrated liquidity
-	TickLower      int32  `json:"tickLower"`
-	TickUpper      int32  `json:"tickUpper"`
+	TickLower int32 `json:"tickLower"`
+	TickUpper int32 `json:"tickUpper"`
 }
 
 // NewCreatePoolTx creates a new create pool transaction.
@@ -370,15 +370,15 @@ func (tx *CreatePoolTx) Verify() error {
 // CrossChainSwapTx represents a cross-chain atomic swap via Warp.
 type CrossChainSwapTx struct {
 	BaseTx
-	SourceChain    ids.ID      `json:"sourceChain"`
-	DestChain      ids.ID      `json:"destChain"`
-	TokenIn        ids.ID      `json:"tokenIn"`
-	TokenOut       ids.ID      `json:"tokenOut"`
-	AmountIn       uint64      `json:"amountIn"`
-	MinAmountOut   uint64      `json:"minAmountOut"`
-	Recipient      ids.ShortID `json:"recipient"`
-	WarpMessageID  ids.ID      `json:"warpMessageId"`
-	Deadline       int64       `json:"deadline"`
+	SourceChain   ids.ID      `json:"sourceChain"`
+	DestChain     ids.ID      `json:"destChain"`
+	TokenIn       ids.ID      `json:"tokenIn"`
+	TokenOut      ids.ID      `json:"tokenOut"`
+	AmountIn      uint64      `json:"amountIn"`
+	MinAmountOut  uint64      `json:"minAmountOut"`
+	Recipient     ids.ShortID `json:"recipient"`
+	WarpMessageID ids.ID      `json:"warpMessageId"`
+	Deadline      int64       `json:"deadline"`
 }
 
 func (tx *CrossChainSwapTx) Verify() error {
@@ -394,12 +394,12 @@ func (tx *CrossChainSwapTx) Verify() error {
 // CrossChainTransferTx represents a cross-chain token transfer via Warp.
 type CrossChainTransferTx struct {
 	BaseTx
-	SourceChain    ids.ID      `json:"sourceChain"`
-	DestChain      ids.ID      `json:"destChain"`
-	Token          ids.ID      `json:"token"`
-	Amount         uint64      `json:"amount"`
-	Recipient      ids.ShortID `json:"recipient"`
-	WarpMessageID  ids.ID      `json:"warpMessageId"`
+	SourceChain   ids.ID      `json:"sourceChain"`
+	DestChain     ids.ID      `json:"destChain"`
+	Token         ids.ID      `json:"token"`
+	Amount        uint64      `json:"amount"`
+	Recipient     ids.ShortID `json:"recipient"`
+	WarpMessageID ids.ID      `json:"warpMessageId"`
 }
 
 func (tx *CrossChainTransferTx) Verify() error {
@@ -427,7 +427,7 @@ func NewCommitOrderTx(from ids.ShortID, nonce uint64, commitmentHash ids.ID) *Co
 			TxType:    TxCommitOrder,
 			From:      from,
 			Nonce:     nonce,
-			GasPrice:  500,  // Lower gas for commit
+			GasPrice:  500, // Lower gas for commit
 			GasLimit:  30000,
 			CreatedAt: time.Now().UnixNano(),
 		},
@@ -454,7 +454,7 @@ type RevealOrderTx struct {
 
 	// Order details being revealed
 	Symbol      string `json:"symbol"`
-	Side        uint8  `json:"side"`     // 0 = Buy, 1 = Sell
+	Side        uint8  `json:"side"`      // 0 = Buy, 1 = Sell
 	OrderType   uint8  `json:"orderType"` // 0 = Limit, 1 = Market, etc.
 	Price       uint64 `json:"price"`
 	Quantity    uint64 `json:"quantity"`

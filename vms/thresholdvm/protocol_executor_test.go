@@ -824,10 +824,10 @@ func TestBLSThresholdWithDifferentSignerSets(t *testing.T) {
 
 	// Test multiple signer combinations
 	signerSets := [][]party.ID{
-		{pIDs[0], pIDs[1], pIDs[2]},       // First 3
-		{pIDs[2], pIDs[3], pIDs[4]},       // Last 3
-		{pIDs[0], pIDs[2], pIDs[4]},       // Every other
-		{pIDs[1], pIDs[2], pIDs[3]},       // Middle 3
+		{pIDs[0], pIDs[1], pIDs[2]},          // First 3
+		{pIDs[2], pIDs[3], pIDs[4]},          // Last 3
+		{pIDs[0], pIDs[2], pIDs[4]},          // Every other
+		{pIDs[1], pIDs[2], pIDs[3]},          // Middle 3
 		{pIDs[0], pIDs[1], pIDs[2], pIDs[3]}, // More than threshold
 	}
 

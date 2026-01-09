@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/p2p"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
+	"github.com/luxfi/p2p"
 )
 
 var _ p2p.Sender = (*Client)(nil)

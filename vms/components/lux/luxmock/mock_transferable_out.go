@@ -17,8 +17,8 @@ import (
 	"reflect"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	gomock "go.uber.org/mock/gomock"
 	verify "github.com/luxfi/node/vms/components/verify"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockTransferableOut is a mock of TransferableOut interface.

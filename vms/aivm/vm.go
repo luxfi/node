@@ -23,11 +23,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/log"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/version"
 

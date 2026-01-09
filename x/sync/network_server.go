@@ -12,14 +12,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/p2p"
-	"github.com/luxfi/warp"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/p2p"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/warp"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
@@ -31,7 +30,7 @@ const (
 	maxKeyValuesLimit = 2048
 	// Estimated max overhead, in bytes, of putting a proof into a message.
 	// We use this to ensure that the proof we generate is not too large to fit in a message.
-	estimatedMessageOverhead = 4 * units.KiB
+	estimatedMessageOverhead = 4 * constants.KiB
 	maxByteSizeLimit         = constants.DefaultMaxMessageSize - estimatedMessageOverhead
 )
 

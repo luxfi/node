@@ -8,16 +8,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func ExampleWallet() {
@@ -70,7 +69,7 @@ func ExampleWallet() {
 		map[uint32][]verify.State{
 			0: {
 				&secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaLux,
+					Amt:          100 * constants.MegaLux,
 					OutputOwners: *owner,
 				},
 			},
@@ -93,7 +92,7 @@ func ExampleWallet() {
 					ID: createAssetTxID,
 				},
 				Out: &secp256k1fx.TransferOutput{
-					Amt:          100 * units.MegaLux,
+					Amt:          100 * constants.MegaLux,
 					OutputOwners: *owner,
 				},
 			},
@@ -129,12 +128,12 @@ func ExampleWallet() {
 	transformSubnetTx, err := pWallet.IssueTransformChainTx(
 		createSubnetTxID,
 		createAssetTxID,
-		50*units.MegaLux,
-		100*units.MegaLux,
+		50*constants.MegaLux,
+		100*constants.MegaLux,
 		reward.PercentDenominator,
 		reward.PercentDenominator,
 		1,
-		100*units.MegaLux,
+		100*constants.MegaLux,
 		time.Second,
 		365*24*time.Hour,
 		0,
@@ -159,7 +158,7 @@ func ExampleWallet() {
 				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaLux,
+				Wght:   25 * constants.MegaLux,
 			},
 			Chain: createSubnetTxID,
 		},
@@ -183,7 +182,7 @@ func ExampleWallet() {
 				NodeID: testNodeID,
 				Start:  uint64(startTime.Unix()),
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
-				Wght:   25 * units.MegaLux,
+				Wght:   25 * constants.MegaLux,
 			},
 			Chain: createSubnetTxID,
 		},

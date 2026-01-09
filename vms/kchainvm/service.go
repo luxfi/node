@@ -291,9 +291,9 @@ type HealthArgs struct{}
 
 // HealthReply contains the response for Health.
 type HealthReply struct {
-	Healthy    bool            `json:"healthy"`
-	Version    string          `json:"version"`
-	Validators map[string]bool `json:"validators"`
+	Healthy    bool             `json:"healthy"`
+	Version    string           `json:"version"`
+	Validators map[string]bool  `json:"validators"`
 	Latency    map[string]int64 `json:"latency"`
 }
 

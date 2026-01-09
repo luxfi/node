@@ -7,16 +7,16 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 const (

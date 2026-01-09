@@ -7,14 +7,14 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var _ Verifier = (*verifier)(nil)

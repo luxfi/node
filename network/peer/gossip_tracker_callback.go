@@ -1,14 +1,13 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package peer
 
 import (
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/ids"
 )
 
 var _ validators.SetCallbackListener = (*GossipTrackerCallback)(nil)

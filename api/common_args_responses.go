@@ -6,10 +6,10 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/luxfi/formatting"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/ids"
 
-	avajson "github.com/luxfi/node/utils/json"
+	avajson "github.com/luxfi/vm/utils/json"
 )
 
 // This file contains structs used in arguments and responses in services

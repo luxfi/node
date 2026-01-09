@@ -8,19 +8,19 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 type Builder struct {
@@ -254,8 +254,8 @@ func (k *keychainAdapter) Addresses() set.Set[ids.ShortID] {
 
 func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Signer) {
 	var (
-		addrs     = kc.Addresses()
-		wa        = &walletUTXOsAdapter{
+		addrs = kc.Addresses()
+		wa    = &walletUTXOsAdapter{
 			utxos: b.utxos,
 			addrs: addrs,
 		}

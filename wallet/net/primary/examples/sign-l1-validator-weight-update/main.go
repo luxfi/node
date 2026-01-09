@@ -13,15 +13,15 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/api/info"
-	p2psdk "github.com/luxfi/p2p"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
+	p2psdk "github.com/luxfi/p2p"
+	"github.com/luxfi/vm/utils/compression"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"

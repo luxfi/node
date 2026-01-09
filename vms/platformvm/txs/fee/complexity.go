@@ -8,21 +8,21 @@ package fee
 import (
 	"errors"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 // Signature verification costs were conservatively based on benchmarks run on
@@ -89,8 +89,8 @@ const (
 
 	intrinsicInputDBRead = 1
 
-	intrinsicInputDBWrite                   = 1
-	intrinsicOutputDBWrite                  = 1
+	intrinsicInputDBWrite                     = 1
+	intrinsicOutputDBWrite                    = 1
 	intrinsicConvertChainToL1ValidatorDBWrite = 4 // weight diff + pub key diff + subnetID/nodeID + validationID
 )
 

@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zvm
 
 import (
@@ -32,84 +31,84 @@ const (
 
 // Transaction represents a confidential transaction
 type Transaction struct {
-	ID       ids.ID          `json:"id"`
-	Type     TransactionType `json:"type"`
-	Version  uint8           `json:"version"`
-	
+	ID      ids.ID          `json:"id"`
+	Type    TransactionType `json:"type"`
+	Version uint8           `json:"version"`
+
 	// Transparent inputs/outputs (for shield/unshield)
 	TransparentInputs  []*TransparentInput  `json:"transparentInputs,omitempty"`
 	TransparentOutputs []*TransparentOutput `json:"transparentOutputs,omitempty"`
-	
+
 	// Shielded components
-	Nullifiers [][]byte        `json:"nullifiers"`      // Spent note nullifiers
-	Outputs    []*ShieldedOutput `json:"outputs"`        // New shielded outputs
-	
+	Nullifiers [][]byte          `json:"nullifiers"` // Spent note nullifiers
+	Outputs    []*ShieldedOutput `json:"outputs"`    // New shielded outputs
+
 	// Zero-knowledge proof
-	Proof      *ZKProof        `json:"proof"`
-	
+	Proof *ZKProof `json:"proof"`
+
 	// FHE operations (optional)
-	FHEData    *FHEData        `json:"fheData,omitempty"`
-	
+	FHEData *FHEData `json:"fheData,omitempty"`
+
 	// Transaction metadata
-	Fee        uint64          `json:"fee"`
-	Expiry     uint64          `json:"expiry"`          // Block height
-	Memo       []byte          `json:"memo,omitempty"`  // Encrypted memo
-	
+	Fee    uint64 `json:"fee"`
+	Expiry uint64 `json:"expiry"`         // Block height
+	Memo   []byte `json:"memo,omitempty"` // Encrypted memo
+
 	// Signature for transparent components
-	Signature  []byte          `json:"signature,omitempty"`
+	Signature []byte `json:"signature,omitempty"`
 }
 
 // TransparentInput represents an unshielded input
 type TransparentInput struct {
-	TxID       ids.ID `json:"txId"`
-	OutputIdx  uint32 `json:"outputIdx"`
-	Amount     uint64 `json:"amount"`
-	Address    []byte `json:"address"`
+	TxID      ids.ID `json:"txId"`
+	OutputIdx uint32 `json:"outputIdx"`
+	Amount    uint64 `json:"amount"`
+	Address   []byte `json:"address"`
 }
 
 // TransparentOutput represents an unshielded output
 type TransparentOutput struct {
-	Amount     uint64 `json:"amount"`
-	Address    []byte `json:"address"`
-	AssetID    ids.ID `json:"assetId"`
+	Amount  uint64 `json:"amount"`
+	Address []byte `json:"address"`
+	AssetID ids.ID `json:"assetId"`
 }
 
 // ShieldedOutput represents a confidential output
 type ShieldedOutput struct {
 	// Commitment to the note (amount and address)
 	Commitment []byte `json:"commitment"`
-	
+
 	// Encrypted note ciphertext
 	EncryptedNote []byte `json:"encryptedNote"`
-	
+
 	// Ephemeral public key for note encryption
 	EphemeralPubKey []byte `json:"ephemeralPubKey"`
-	
+
 	// Output proof (rangeproof for amount)
 	OutputProof []byte `json:"outputProof"`
 }
 
 // ZKProof represents a zero-knowledge proof
 type ZKProof struct {
-	ProofType  string `json:"proofType"`  // groth16, plonk, etc.
-	ProofData  []byte `json:"proofData"`
+	ProofType    string   `json:"proofType"` // groth16, plonk, etc.
+	ProofData    []byte   `json:"proofData"`
 	PublicInputs [][]byte `json:"publicInputs"`
-	
+
 	// Cached verification result
-	verified   *bool
+	verified *bool
 }
 
 // FHEData represents fully homomorphic encryption data
 type FHEData struct {
 	// Encrypted computation inputs
 	EncryptedInputs [][]byte `json:"encryptedInputs"`
-	
+
 	// Computation circuit
-	CircuitID  string `json:"circuitId"`
-	
+	CircuitID string `json:"circuitId"`
+
 	// Encrypted result
 	EncryptedResult []byte `json:"encryptedResult"`
-	
+
 	// Proof of correct computation
 	ComputationProof []byte `json:"computationProof"`
 }
@@ -126,30 +125,30 @@ type Note struct {
 // ComputeID computes the transaction ID
 func (tx *Transaction) ComputeID() ids.ID {
 	h := sha256.New()
-	
+
 	// Include transaction type and version
 	h.Write([]byte{byte(tx.Type), tx.Version})
-	
+
 	// Include nullifiers
 	for _, nullifier := range tx.Nullifiers {
 		h.Write(nullifier)
 	}
-	
+
 	// Include output commitments
 	for _, output := range tx.Outputs {
 		h.Write(output.Commitment)
 	}
-	
+
 	// Include proof
 	if tx.Proof != nil {
 		h.Write([]byte(tx.Proof.ProofType))
 		h.Write(tx.Proof.ProofData)
 	}
-	
+
 	// Include fee and expiry
 	binary.Write(h, binary.BigEndian, tx.Fee)
 	binary.Write(h, binary.BigEndian, tx.Expiry)
-	
+
 	return ids.ID(h.Sum(nil))
 }
 
@@ -178,21 +177,21 @@ func (tx *Transaction) ValidateBasic() error {
 	if tx.Type > TransactionTypeUnshield {
 		return errInvalidTransactionType
 	}
-	
+
 	// Check nullifiers and outputs
 	if len(tx.Nullifiers) == 0 && len(tx.TransparentInputs) == 0 {
 		return errNoInputs
 	}
-	
+
 	if len(tx.Outputs) == 0 && len(tx.TransparentOutputs) == 0 {
 		return errNoOutputs
 	}
-	
+
 	// Check proof
 	if tx.Proof == nil {
 		return errMissingProof
 	}
-	
+
 	// Type-specific validation
 	switch tx.Type {
 	case TransactionTypeTransfer:
@@ -200,20 +199,20 @@ func (tx *Transaction) ValidateBasic() error {
 		if len(tx.Nullifiers) == 0 || len(tx.Outputs) == 0 {
 			return errInvalidTransferTransaction
 		}
-		
+
 	case TransactionTypeShield:
 		// Must have transparent inputs and shielded outputs
 		if len(tx.TransparentInputs) == 0 || len(tx.Outputs) == 0 {
 			return errInvalidShieldTransaction
 		}
-		
+
 	case TransactionTypeUnshield:
 		// Must have shielded inputs and transparent outputs
 		if len(tx.Nullifiers) == 0 || len(tx.TransparentOutputs) == 0 {
 			return errInvalidUnshieldTransaction
 		}
 	}
-	
+
 	return nil
 }
 
@@ -478,7 +477,7 @@ var (
 	errInvalidTransactionType     = errors.New("invalid transaction type")
 	errNoInputs                   = errors.New("transaction has no inputs")
 	errNoOutputs                  = errors.New("transaction has no outputs")
-	errMissingProof              = errors.New("transaction missing proof")
+	errMissingProof               = errors.New("transaction missing proof")
 	errInvalidTransferTransaction = errors.New("invalid transfer transaction")
 	errInvalidShieldTransaction   = errors.New("invalid shield transaction")
 	errInvalidUnshieldTransaction = errors.New("invalid unshield transaction")

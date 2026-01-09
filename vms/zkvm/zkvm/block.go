@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zkvm
 
 import (
@@ -11,9 +10,9 @@ import (
 
 	ethcommon "github.com/luxfi/geth/common"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var (
@@ -31,15 +30,15 @@ type Block struct {
 	parentID  ids.ID
 	height    uint64
 	timestamp time.Time
-	
+
 	// ZK-specific block data
-	challenges      []*ChallengeUpdate
-	zkProofs        []*ZKProof
-	fraudProofs     []*FraudProof
-	privacyActions  []*PrivacyAction
-	
-	status    choices.Status
-	bytes     []byte
+	challenges     []*ChallengeUpdate
+	zkProofs       []*ZKProof
+	fraudProofs    []*FraudProof
+	privacyActions []*PrivacyAction
+
+	status choices.Status
+	bytes  []byte
 }
 
 // ChallengeUpdate represents an update to a challenge
@@ -52,11 +51,11 @@ type ChallengeUpdate struct {
 
 // PrivacyAction represents a privacy-related action
 type PrivacyAction struct {
-	Type         PrivacyActionType `json:"type"`
-	Commitment   ethcommon.Hash    `json:"commitment,omitempty"`
-	Nullifier    ethcommon.Hash    `json:"nullifier,omitempty"`
-	Amount       uint64            `json:"amount,omitempty"`
-	Proof        []byte            `json:"proof"`
+	Type       PrivacyActionType `json:"type"`
+	Commitment ethcommon.Hash    `json:"commitment,omitempty"`
+	Nullifier  ethcommon.Hash    `json:"nullifier,omitempty"`
+	Amount     uint64            `json:"amount,omitempty"`
+	Proof      []byte            `json:"proof"`
 }
 
 // PrivacyActionType represents the type of privacy action
@@ -76,7 +75,7 @@ func (b *Block) ID() ids.ID {
 // Accept implements the chain.Block interface
 func (b *Block) Accept(context.Context) error {
 	b.status = choices.Accepted
-	
+
 	// Process challenge updates
 	b.vm.challengeMu.Lock()
 	for _, update := range b.challenges {
@@ -92,7 +91,7 @@ func (b *Block) Accept(context.Context) error {
 		}
 	}
 	b.vm.challengeMu.Unlock()
-	
+
 	// Process ZK proofs
 	b.vm.proofMu.Lock()
 	for _, proof := range b.zkProofs {
@@ -100,12 +99,12 @@ func (b *Block) Accept(context.Context) error {
 		b.vm.proofRegistry[proof.ID] = proof
 	}
 	b.vm.proofMu.Unlock()
-	
+
 	// Process fraud proofs
 	for _, fraudProof := range b.fraudProofs {
 		b.vm.fraudProofs[fraudProof.ID] = fraudProof
 	}
-	
+
 	// Process privacy actions
 	for _, action := range b.privacyActions {
 		switch action.Type {
@@ -130,10 +129,10 @@ func (b *Block) Accept(context.Context) error {
 			b.vm.shieldedPool.Notes[action.Commitment] = true
 		}
 	}
-	
+
 	// Update last accepted
 	b.vm.preferredID = b.id
-	
+
 	return nil
 }
 
@@ -174,21 +173,21 @@ func (b *Block) Verify(ctx context.Context) error {
 	if b.height == 0 && b.parentID != ids.Empty {
 		return errInvalidBlock
 	}
-	
+
 	// Verify challenges
 	for _, update := range b.challenges {
 		if _, exists := b.vm.challenges[update.ChallengeID]; !exists {
 			return errors.New("update for unknown challenge")
 		}
 	}
-	
+
 	// Verify ZK proofs
 	for _, proof := range b.zkProofs {
 		if err := b.vm.VerifyZKProof(proof); err != nil {
 			return err
 		}
 	}
-	
+
 	// Verify privacy actions
 	for _, action := range b.privacyActions {
 		switch action.Type {
@@ -203,7 +202,7 @@ func (b *Block) Verify(ctx context.Context) error {
 			// TODO: Verify the ZK proof for the action
 		}
 	}
-	
+
 	b.status = choices.Processing
 	return nil
 }

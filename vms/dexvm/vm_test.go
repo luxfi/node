@@ -10,13 +10,13 @@ import (
 
 	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
-	luxvm "github.com/luxfi/vm"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/config"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
+	luxvm "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 	"github.com/stretchr/testify/require"
 )
@@ -340,8 +340,8 @@ func TestVMProcessBlockWithOrders(t *testing.T) {
 		Symbol:    "LUX/USDT",
 		Side:      orderbook.Buy,
 		Type:      orderbook.Limit,
-		Price:     10000000000000000000, // 10 USDT
-		Quantity:  1000000000000000000,  // 1 LUX
+		Price:     10000000000000000000,         // 10 USDT
+		Quantity:  1000000000000000000,          // 1 LUX
 		CreatedAt: time.Now().UnixNano() - 1000, // Earlier
 	}
 	_, err = ob.AddOrder(buyOrder)

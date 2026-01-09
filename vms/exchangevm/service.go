@@ -11,22 +11,22 @@ import (
 	"net/http"
 
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
-	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
 
 	safemath "github.com/luxfi/math"
-	avajson "github.com/luxfi/node/utils/json"
+	avajson "github.com/luxfi/vm/utils/json"
 )
 
 const (

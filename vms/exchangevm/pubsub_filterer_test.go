@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package exchangevm
 
 import (
@@ -13,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 type mockFilter struct {

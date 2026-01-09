@@ -9,15 +9,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 func TestL1Validator_Compare(t *testing.T) {
@@ -234,7 +234,7 @@ func TestDeleteL1Validator(t *testing.T) {
 func newL1Validator() L1Validator {
 	return L1Validator{
 		ValidationID:          ids.GenerateTestID(),
-		ChainID:              ids.GenerateTestID(),
+		ChainID:               ids.GenerateTestID(),
 		NodeID:                ids.GenerateTestNodeID(),
 		PublicKey:             utils.RandomBytes(bls.PublicKeyLen),
 		RemainingBalanceOwner: utils.RandomBytes(32),

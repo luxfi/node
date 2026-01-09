@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 var (
@@ -46,14 +46,14 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 	msg := p2p.Message{
 		Message: &p2p.Message_Handshake{
 			Handshake: &p2p.Handshake{
-				NetworkId:      uint32(1337),
-				MyTime:         uint64(time.Now().Unix()),
-				IpAddr:         []byte(net.IPv4(1, 2, 3, 4).To16()),
-				IpPort:         0,
-				IpSigningTime:  uint64(time.Now().Unix()),
-				IpNodeIdSig:    []byte{'y', 'e', 'e', 't'},
-				TrackedNets: [][]byte{id[:]},
-				IpBlsSig:       []byte{'y', 'e', 'e', 't', '2'},
+				NetworkId:     uint32(1337),
+				MyTime:        uint64(time.Now().Unix()),
+				IpAddr:        []byte(net.IPv4(1, 2, 3, 4).To16()),
+				IpPort:        0,
+				IpSigningTime: uint64(time.Now().Unix()),
+				IpNodeIdSig:   []byte{'y', 'e', 'e', 't'},
+				TrackedNets:   [][]byte{id[:]},
+				IpBlsSig:      []byte{'y', 'e', 'e', 't', '2'},
 			},
 		},
 	}
@@ -102,14 +102,14 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 	msg := p2p.Message{
 		Message: &p2p.Message_Handshake{
 			Handshake: &p2p.Handshake{
-				NetworkId:      uint32(1337),
-				MyTime:         uint64(time.Now().Unix()),
-				IpAddr:         []byte(net.IPv4(1, 2, 3, 4).To16()),
-				IpPort:         0,
-				IpSigningTime:  uint64(time.Now().Unix()),
-				IpNodeIdSig:    []byte{'y', 'e', 'e', 't'},
-				TrackedNets: [][]byte{id[:]},
-				IpBlsSig:       []byte{'y', 'e', 'e', 't', '2'},
+				NetworkId:     uint32(1337),
+				MyTime:        uint64(time.Now().Unix()),
+				IpAddr:        []byte(net.IPv4(1, 2, 3, 4).To16()),
+				IpPort:        0,
+				IpSigningTime: uint64(time.Now().Unix()),
+				IpNodeIdSig:   []byte{'y', 'e', 'e', 't'},
+				TrackedNets:   [][]byte{id[:]},
+				IpBlsSig:      []byte{'y', 'e', 'e', 't', '2'},
 			},
 		},
 	}

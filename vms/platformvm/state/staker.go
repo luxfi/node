@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -102,7 +102,7 @@ func NewCurrentStaker(
 		TxID:            txID,
 		NodeID:          staker.NodeID(),
 		PublicKey:       publicKey,
-		ChainID:           staker.ChainID(),
+		ChainID:         staker.ChainID(),
 		Weight:          staker.Weight(),
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -122,7 +122,7 @@ func NewPendingStaker(txID ids.ID, staker txs.ScheduledStaker) (*Staker, error) 
 		TxID:      txID,
 		NodeID:    staker.NodeID(),
 		PublicKey: publicKey,
-		ChainID:     staker.ChainID(),
+		ChainID:   staker.ChainID(),
 		Weight:    staker.Weight(),
 		StartTime: startTime,
 		EndTime:   staker.EndTime(),

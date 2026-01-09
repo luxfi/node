@@ -66,17 +66,17 @@ func DefaultLifecycleConfig() *LifecycleConfig {
 
 // DKGState represents the state of a DKG ceremony
 type DKGState struct {
-	CeremonyID    [32]byte         `json:"ceremony_id"`
-	Epoch         uint64           `json:"epoch"`
-	Participants  []ids.NodeID     `json:"participants"`
-	Threshold     int              `json:"threshold"`
-	Shares        map[string][]byte `json:"shares"` // NodeID hex -> encrypted share
-	Commitments   map[string][]byte `json:"commitments"`
-	PublicKey     []byte           `json:"public_key,omitempty"`
-	Status        DKGStatus        `json:"status"`
-	StartedAt     int64            `json:"started_at"`
-	CompletedAt   int64            `json:"completed_at,omitempty"`
-	Error         string           `json:"error,omitempty"`
+	CeremonyID   [32]byte          `json:"ceremony_id"`
+	Epoch        uint64            `json:"epoch"`
+	Participants []ids.NodeID      `json:"participants"`
+	Threshold    int               `json:"threshold"`
+	Shares       map[string][]byte `json:"shares"` // NodeID hex -> encrypted share
+	Commitments  map[string][]byte `json:"commitments"`
+	PublicKey    []byte            `json:"public_key,omitempty"`
+	Status       DKGStatus         `json:"status"`
+	StartedAt    int64             `json:"started_at"`
+	CompletedAt  int64             `json:"completed_at,omitempty"`
+	Error        string            `json:"error,omitempty"`
 }
 
 type DKGStatus uint8
@@ -111,14 +111,14 @@ func (s DKGStatus) String() string {
 
 // TransitionState tracks epoch transition progress
 type TransitionState struct {
-	FromEpoch       uint64    `json:"from_epoch"`
-	ToEpoch         uint64    `json:"to_epoch"`
+	FromEpoch       uint64           `json:"from_epoch"`
+	ToEpoch         uint64           `json:"to_epoch"`
 	Status          TransitionStatus `json:"status"`
-	StartedAt       int64     `json:"started_at"`
-	CompletedAt     int64     `json:"completed_at,omitempty"`
-	PendingRequests int       `json:"pending_requests"`
-	MigratedCount   int       `json:"migrated_count"`
-	Error           string    `json:"error,omitempty"`
+	StartedAt       int64            `json:"started_at"`
+	CompletedAt     int64            `json:"completed_at,omitempty"`
+	PendingRequests int              `json:"pending_requests"`
+	MigratedCount   int              `json:"migrated_count"`
+	Error           string           `json:"error,omitempty"`
 }
 
 type TransitionStatus uint8
@@ -153,11 +153,11 @@ func (s TransitionStatus) String() string {
 
 // MemberRegistration represents a pending committee member registration
 type MemberRegistration struct {
-	NodeID       ids.NodeID `json:"node_id"`
-	PublicKey    []byte     `json:"public_key"`
-	Stake        uint64     `json:"stake"`
-	RegisteredAt int64      `json:"registered_at"`
-	ActivatedAt  int64      `json:"activated_at,omitempty"`
+	NodeID       ids.NodeID   `json:"node_id"`
+	PublicKey    []byte       `json:"public_key"`
+	Stake        uint64       `json:"stake"`
+	RegisteredAt int64        `json:"registered_at"`
+	ActivatedAt  int64        `json:"activated_at,omitempty"`
 	Status       MemberStatus `json:"status"`
 }
 
@@ -192,34 +192,34 @@ func (s MemberStatus) String() string {
 // This prevents deadlock by ensuring external callbacks are never called while holding locks.
 type deferredCallback struct {
 	// DKG completion callback data
-	dkgComplete   bool
-	dkgEpoch      uint64
-	dkgPublicKey  []byte
+	dkgComplete  bool
+	dkgEpoch     uint64
+	dkgPublicKey []byte
 
 	// Epoch change callback data
-	epochChange   bool
-	oldEpoch      uint64
-	newEpoch      uint64
+	epochChange bool
+	oldEpoch    uint64
+	newEpoch    uint64
 }
 
 // LifecycleManager manages epoch and committee lifecycle
 type LifecycleManager struct {
-	registry   *Registry
-	config     *LifecycleConfig
-	logger     log.Logger
-	
-	mu              sync.RWMutex
-	currentDKG      *DKGState
+	registry *Registry
+	config   *LifecycleConfig
+	logger   log.Logger
+
+	mu                sync.RWMutex
+	currentDKG        *DKGState
 	currentTransition *TransitionState
-	
+
 	// Callbacks
-	onEpochChange    func(oldEpoch, newEpoch uint64)
+	onEpochChange     func(oldEpoch, newEpoch uint64)
 	onCommitteeChange func(members []CommitteeMember)
-	onDKGComplete    func(epoch uint64, publicKey []byte)
-	
+	onDKGComplete     func(epoch uint64, publicKey []byte)
+
 	// Block tracking
 	currentBlock uint64
-	
+
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -243,9 +243,9 @@ func NewLifecycleManager(registry *Registry, config *LifecycleConfig, logger log
 	if config == nil {
 		config = DefaultLifecycleConfig()
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &LifecycleManager{
 		registry: registry,
 		config:   config,
@@ -258,12 +258,12 @@ func NewLifecycleManager(registry *Registry, config *LifecycleConfig, logger log
 // Start begins lifecycle management
 func (lm *LifecycleManager) Start() error {
 	lm.logger.Info("Starting FHE lifecycle manager")
-	
+
 	// Load any pending DKG or transition state
 	if err := lm.loadState(); err != nil {
 		return fmt.Errorf("failed to load lifecycle state: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -277,11 +277,11 @@ func (lm *LifecycleManager) Stop() {
 func (lm *LifecycleManager) OnBlock(blockHeight uint64) error {
 	var cb *deferredCallback
 	var err error
-	
+
 	func() {
 		lm.mu.Lock()
 		defer lm.mu.Unlock()
-		
+
 		lm.currentBlock = blockHeight
 
 		// Check for DKG timeout
@@ -316,13 +316,13 @@ func (lm *LifecycleManager) OnBlock(blockHeight uint64) error {
 			err = lm.startTransitionLocked()
 			return
 		}
-		
+
 		// Check if we need to finalize a transition
 		if lm.currentTransition != nil && lm.shouldFinalizeTransition(blockHeight) {
 			cb, err = lm.finalizeTransitionLocked()
 			return
 		}
-		
+
 		// Check for key rotation
 		if lm.config.KeyRotationBlocks > 0 && blockHeight%lm.config.KeyRotationBlocks == 0 {
 			lm.logger.Info("Triggering key rotation", "block", blockHeight)
@@ -330,10 +330,10 @@ func (lm *LifecycleManager) OnBlock(blockHeight uint64) error {
 			return
 		}
 	}()
-	
+
 	// Invoke callback AFTER releasing the mutex to prevent deadlock
 	lm.invokeCallback(cb)
-	
+
 	return err
 }
 
@@ -342,13 +342,13 @@ func (lm *LifecycleManager) shouldStartTransition(blockHeight uint64) bool {
 	if lm.currentTransition != nil {
 		return false // Already transitioning
 	}
-	
+
 	epoch := lm.registry.GetCurrentEpoch()
 	epochInfo, err := lm.registry.GetEpoch(epoch)
 	if err != nil {
 		return false
 	}
-	
+
 	// Check if epoch has exceeded duration
 	epochStartBlock := uint64(epochInfo.StartTime) // Assuming StartTime is block height for now
 	return blockHeight >= epochStartBlock+lm.config.EpochDuration
@@ -359,13 +359,13 @@ func (lm *LifecycleManager) shouldFinalizeTransition(blockHeight uint64) bool {
 	if lm.currentTransition == nil {
 		return false
 	}
-	
+
 	// Must be past grace period and DKG must be complete
 	transitionStart := uint64(lm.currentTransition.StartedAt)
 	if blockHeight < transitionStart+lm.config.GracePeriod {
 		return false
 	}
-	
+
 	return lm.currentTransition.Status == TransitionFinalizingPhase
 }
 
@@ -373,13 +373,13 @@ func (lm *LifecycleManager) shouldFinalizeTransition(blockHeight uint64) bool {
 func (lm *LifecycleManager) RegisterMember(nodeID ids.NodeID, publicKey []byte, stake uint64) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	// Check if member already exists
 	_, err := lm.registry.GetCommitteeMember(nodeID)
 	if err == nil {
 		return ErrMemberAlreadyExists
 	}
-	
+
 	// Check committee size
 	members, err := lm.registry.GetCommittee()
 	if err != nil {
@@ -388,7 +388,7 @@ func (lm *LifecycleManager) RegisterMember(nodeID ids.NodeID, publicKey []byte, 
 	if len(members) >= lm.config.MaxCommitteeSize {
 		return ErrCommitteeFull
 	}
-	
+
 	// Add member (will be activated on next epoch)
 	member := &CommitteeMember{
 		NodeID:    nodeID,
@@ -396,16 +396,16 @@ func (lm *LifecycleManager) RegisterMember(nodeID ids.NodeID, publicKey []byte, 
 		Weight:    stake,
 		Index:     len(members),
 	}
-	
+
 	if err := lm.registry.AddCommitteeMember(member); err != nil {
 		return err
 	}
-	
+
 	lm.logger.Info("Registered committee member",
 		"nodeID", nodeID,
 		"stake", stake,
 		"index", member.Index)
-	
+
 	return nil
 }
 
@@ -413,25 +413,25 @@ func (lm *LifecycleManager) RegisterMember(nodeID ids.NodeID, publicKey []byte, 
 func (lm *LifecycleManager) RemoveMember(nodeID ids.NodeID) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	if err := lm.registry.RemoveCommitteeMember(nodeID); err != nil {
 		return err
 	}
-	
+
 	lm.logger.Info("Removed committee member", "nodeID", nodeID)
-	
+
 	// Check if we still have enough members
 	members, err := lm.registry.GetCommittee()
 	if err != nil {
 		return err
 	}
-	
+
 	if len(members) < lm.config.MinCommitteeSize {
 		lm.logger.Warn("Committee below minimum size",
 			"current", len(members),
 			"min", lm.config.MinCommitteeSize)
 	}
-	
+
 	return nil
 }
 
@@ -439,18 +439,18 @@ func (lm *LifecycleManager) RemoveMember(nodeID ids.NodeID) error {
 func (lm *LifecycleManager) SlashMember(nodeID ids.NodeID, reason string) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	lm.logger.Warn("Slashing committee member",
 		"nodeID", nodeID,
 		"reason", reason)
-	
+
 	// Remove from active committee
 	if err := lm.registry.RemoveCommitteeMember(nodeID); err != nil {
 		return err
 	}
-	
+
 	// TODO: Emit slashing event for on-chain penalty
-	
+
 	return nil
 }
 
@@ -458,15 +458,15 @@ func (lm *LifecycleManager) SlashMember(nodeID ids.NodeID, reason string) error 
 func (lm *LifecycleManager) InitiateEpoch(committee []CommitteeMember, threshold int, publicKey []byte) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	if len(committee) < lm.config.MinCommitteeSize {
 		return fmt.Errorf("committee size %d below minimum %d", len(committee), lm.config.MinCommitteeSize)
 	}
-	
+
 	if threshold <= 0 || threshold > len(committee) {
 		return ErrInvalidThreshold
 	}
-	
+
 	epochInfo := &EpochInfo{
 		Epoch:     1,
 		StartTime: time.Now().Unix(),
@@ -475,15 +475,15 @@ func (lm *LifecycleManager) InitiateEpoch(committee []CommitteeMember, threshold
 		PublicKey: publicKey,
 		Status:    EpochActive,
 	}
-	
+
 	if err := lm.registry.SetEpoch(1, epochInfo); err != nil {
 		return err
 	}
-	
+
 	lm.logger.Info("Initiated first epoch",
 		"committee_size", len(committee),
 		"threshold", threshold)
-	
+
 	return nil
 }
 
@@ -499,20 +499,20 @@ func (lm *LifecycleManager) startDKGLocked(epoch uint64, participants []ids.Node
 	if lm.currentDKG != nil && lm.currentDKG.Status != DKGCompleted && lm.currentDKG.Status != DKGFailed && lm.currentDKG.Status != DKGAborted {
 		return ErrDKGInProgress
 	}
-	
+
 	if len(participants) < lm.config.MinCommitteeSize {
 		return fmt.Errorf("not enough participants: %d < %d", len(participants), lm.config.MinCommitteeSize)
 	}
-	
+
 	if threshold <= 0 || threshold > len(participants) {
 		return ErrInvalidThreshold
 	}
-	
+
 	var ceremonyID [32]byte
 	if _, err := rand.Read(ceremonyID[:]); err != nil {
 		return fmt.Errorf("failed to generate ceremony ID: %w", err)
 	}
-	
+
 	lm.currentDKG = &DKGState{
 		CeremonyID:   ceremonyID,
 		Epoch:        epoch,
@@ -523,15 +523,15 @@ func (lm *LifecycleManager) startDKGLocked(epoch uint64, participants []ids.Node
 		Status:       DKGCommitPhase,
 		StartedAt:    time.Now().Unix(),
 	}
-	
+
 	lm.logger.Info("Started DKG ceremony",
 		"ceremony_id", fmt.Sprintf("%x", ceremonyID[:8]),
 		"epoch", epoch,
 		"participants", len(participants),
 		"threshold", threshold)
-	
+
 	// TODO: Broadcast DKG start message to participants
-	
+
 	return nil
 }
 
@@ -539,15 +539,15 @@ func (lm *LifecycleManager) startDKGLocked(epoch uint64, participants []ids.Node
 func (lm *LifecycleManager) SubmitDKGCommitment(nodeID ids.NodeID, commitment []byte) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	if lm.currentDKG == nil {
 		return ErrDKGNotStarted
 	}
-	
+
 	if lm.currentDKG.Status != DKGCommitPhase {
 		return fmt.Errorf("DKG not in commit phase: %s", lm.currentDKG.Status)
 	}
-	
+
 	// Verify participant
 	found := false
 	for _, p := range lm.currentDKG.Participants {
@@ -559,21 +559,21 @@ func (lm *LifecycleManager) SubmitDKGCommitment(nodeID ids.NodeID, commitment []
 	if !found {
 		return fmt.Errorf("node %s not a DKG participant", nodeID)
 	}
-	
+
 	lm.currentDKG.Commitments[nodeID.String()] = commitment
-	
+
 	lm.logger.Debug("Received DKG commitment",
 		"nodeID", nodeID,
 		"commitments", len(lm.currentDKG.Commitments),
 		"total", len(lm.currentDKG.Participants))
-	
+
 	// Check if we have all commitments
 	if len(lm.currentDKG.Commitments) == len(lm.currentDKG.Participants) {
 		lm.currentDKG.Status = DKGSharePhase
 		lm.logger.Info("DKG moving to share phase")
 		// TODO: Broadcast share phase start
 	}
-	
+
 	return nil
 }
 
@@ -581,16 +581,16 @@ func (lm *LifecycleManager) SubmitDKGCommitment(nodeID ids.NodeID, commitment []
 func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, share []byte) error {
 	var cb *deferredCallback
 	var err error
-	
+
 	func() {
 		lm.mu.Lock()
 		defer lm.mu.Unlock()
-		
+
 		if lm.currentDKG == nil {
 			err = ErrDKGNotStarted
 			return
 		}
-		
+
 		if lm.currentDKG.Status != DKGSharePhase {
 			err = fmt.Errorf("DKG not in share phase: %s", lm.currentDKG.Status)
 			return
@@ -616,21 +616,21 @@ func (lm *LifecycleManager) SubmitDKGShare(nodeID ids.NodeID, share []byte) erro
 		}
 
 		lm.currentDKG.Shares[nodeID.String()] = share
-		
+
 		lm.logger.Debug("Received DKG share",
 			"nodeID", nodeID,
 			"shares", len(lm.currentDKG.Shares),
 			"total", len(lm.currentDKG.Participants))
-		
+
 		// Check if we have enough shares
 		if len(lm.currentDKG.Shares) >= lm.currentDKG.Threshold {
 			cb, err = lm.completeDKGLocked()
 		}
 	}()
-	
+
 	// Invoke callback AFTER releasing the mutex to prevent deadlock
 	lm.invokeCallback(cb)
-	
+
 	return err
 }
 
@@ -640,15 +640,15 @@ func (lm *LifecycleManager) completeDKGLocked() (*deferredCallback, error) {
 	// Aggregate public key from commitments
 	// In a real implementation, this would use the actual DKG protocol
 	publicKey := lm.aggregatePublicKey()
-	
+
 	lm.currentDKG.PublicKey = publicKey
 	lm.currentDKG.Status = DKGCompleted
 	lm.currentDKG.CompletedAt = time.Now().Unix()
-	
+
 	lm.logger.Info("DKG ceremony completed",
 		"epoch", lm.currentDKG.Epoch,
 		"public_key_len", len(publicKey))
-	
+
 	// Return callback info - caller will invoke after releasing lock
 	return &deferredCallback{
 		dkgComplete:  true,
@@ -676,17 +676,17 @@ func (lm *LifecycleManager) aggregatePublicKey() []byte {
 func (lm *LifecycleManager) AbortDKG(reason string) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	if lm.currentDKG == nil {
 		return ErrDKGNotStarted
 	}
-	
+
 	lm.currentDKG.Status = DKGAborted
 	lm.currentDKG.Error = reason
 	lm.currentDKG.CompletedAt = time.Now().Unix()
-	
+
 	lm.logger.Warn("DKG ceremony aborted", "reason", reason)
-	
+
 	return nil
 }
 
@@ -694,35 +694,35 @@ func (lm *LifecycleManager) AbortDKG(reason string) error {
 func (lm *LifecycleManager) startTransitionLocked() error {
 	currentEpoch := lm.registry.GetCurrentEpoch()
 	newEpoch := currentEpoch + 1
-	
+
 	lm.currentTransition = &TransitionState{
 		FromEpoch: currentEpoch,
 		ToEpoch:   newEpoch,
 		Status:    TransitionDKGPhase,
 		StartedAt: time.Now().Unix(),
 	}
-	
+
 	lm.logger.Info("Starting epoch transition",
 		"from", currentEpoch,
 		"to", newEpoch)
-	
+
 	// Get current committee for new DKG
 	members, err := lm.registry.GetCommittee()
 	if err != nil {
 		return err
 	}
-	
+
 	participants := make([]ids.NodeID, len(members))
 	for i, m := range members {
 		participants[i] = m.NodeID
 	}
-	
+
 	// Start DKG for new epoch
 	threshold := lm.config.DefaultThreshold
 	if threshold > len(participants) {
 		threshold = (len(participants) * 2) / 3 // 2/3 majority
 	}
-	
+
 	return lm.startDKGLocked(newEpoch, participants, threshold)
 }
 
@@ -732,11 +732,11 @@ func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error
 	if lm.currentTransition == nil {
 		return nil, nil
 	}
-	
+
 	if lm.currentDKG == nil || lm.currentDKG.Status != DKGCompleted {
 		return nil, ErrDKGNotStarted
 	}
-	
+
 	// End current epoch
 	currentEpoch := lm.registry.GetCurrentEpoch()
 	epochInfo, err := lm.registry.GetEpoch(currentEpoch)
@@ -747,7 +747,7 @@ func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error
 			return nil, err
 		}
 	}
-	
+
 	// Create new epoch with DKG results
 	members, _ := lm.registry.GetCommittee()
 	newEpochInfo := &EpochInfo{
@@ -758,28 +758,28 @@ func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error
 		PublicKey: lm.currentDKG.PublicKey,
 		Status:    EpochActive,
 	}
-	
+
 	if err := lm.registry.SetEpoch(lm.currentTransition.ToEpoch, newEpochInfo); err != nil {
 		return nil, err
 	}
-	
+
 	// Update transition state
 	lm.currentTransition.Status = TransitionCompleted
 	lm.currentTransition.CompletedAt = time.Now().Unix()
-	
+
 	oldEpoch := lm.currentTransition.FromEpoch
 	newEpoch := lm.currentTransition.ToEpoch
-	
+
 	lm.logger.Info("Epoch transition completed",
 		"from", oldEpoch,
 		"to", newEpoch,
 		"committee_size", len(members),
 		"threshold", lm.currentDKG.Threshold)
-	
+
 	// Clear transition state
 	lm.currentTransition = nil
 	lm.currentDKG = nil
-	
+
 	// Return callback info - caller will invoke after releasing lock
 	return &deferredCallback{
 		epochChange: true,
@@ -792,23 +792,23 @@ func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error
 func (lm *LifecycleManager) startKeyRotationLocked() error {
 	// Key rotation uses re-encryption rather than full epoch transition
 	// This allows refreshing keys without changing the epoch
-	
+
 	currentEpoch := lm.registry.GetCurrentEpoch()
 	members, err := lm.registry.GetCommittee()
 	if err != nil {
 		return err
 	}
-	
+
 	participants := make([]ids.NodeID, len(members))
 	for i, m := range members {
 		participants[i] = m.NodeID
 	}
-	
+
 	epochInfo, err := lm.registry.GetEpoch(currentEpoch)
 	if err != nil {
 		return err
 	}
-	
+
 	// Start a new DKG but stay in the same epoch
 	return lm.startDKGLocked(currentEpoch, participants, epochInfo.Threshold)
 }
@@ -840,7 +840,7 @@ func (lm *LifecycleManager) GetCommitteeWeight() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	var total uint64
 	for _, m := range members {
 		total += m.Weight
@@ -855,11 +855,11 @@ func (lm *LifecycleManager) ValidateThresholdMet(participantCount int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if participantCount < epochInfo.Threshold {
 		return ErrInsufficientWeight
 	}
-	
+
 	return nil
 }
 
@@ -887,7 +887,7 @@ func (lm *LifecycleManager) loadState() error {
 func (lm *LifecycleManager) persistState() error {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	
+
 	// Persist DKG state if active
 	if lm.currentDKG != nil {
 		data, err := json.Marshal(lm.currentDKG)
@@ -899,7 +899,7 @@ func (lm *LifecycleManager) persistState() error {
 			return err
 		}
 	}
-	
+
 	// Persist transition state if active
 	if lm.currentTransition != nil {
 		data, err := json.Marshal(lm.currentTransition)
@@ -911,7 +911,7 @@ func (lm *LifecycleManager) persistState() error {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -930,7 +930,7 @@ func (lm *LifecycleManager) GetEpochKeyInfo(epoch uint64) (*EpochKeyInfo, error)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &EpochKeyInfo{
 		Epoch:     epoch,
 		PublicKey: epochInfo.PublicKey,
@@ -944,37 +944,37 @@ func (lm *LifecycleManager) GetEpochKeyInfo(epoch uint64) (*EpochKeyInfo, error)
 func (lm *LifecycleManager) ForceEpochTransition() error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	
+
 	if lm.currentTransition != nil {
 		return ErrTransitionInProgress
 	}
-	
+
 	lm.logger.Warn("Forcing epoch transition")
 	return lm.startTransitionLocked()
 }
 
 // GetLifecycleStatus returns overall lifecycle status
 type LifecycleStatus struct {
-	CurrentEpoch     uint64            `json:"current_epoch"`
-	CurrentBlock     uint64            `json:"current_block"`
-	CommitteeSize    int               `json:"committee_size"`
-	Threshold        int               `json:"threshold"`
-	IsTransitioning  bool              `json:"is_transitioning"`
-	DKGStatus        string            `json:"dkg_status,omitempty"`
-	TransitionStatus string            `json:"transition_status,omitempty"`
-	EpochProgress    float64           `json:"epoch_progress"`
+	CurrentEpoch     uint64  `json:"current_epoch"`
+	CurrentBlock     uint64  `json:"current_block"`
+	CommitteeSize    int     `json:"committee_size"`
+	Threshold        int     `json:"threshold"`
+	IsTransitioning  bool    `json:"is_transitioning"`
+	DKGStatus        string  `json:"dkg_status,omitempty"`
+	TransitionStatus string  `json:"transition_status,omitempty"`
+	EpochProgress    float64 `json:"epoch_progress"`
 }
 
 func (lm *LifecycleManager) GetStatus() (*LifecycleStatus, error) {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	
+
 	epoch := lm.registry.GetCurrentEpoch()
 	epochInfo, err := lm.registry.GetEpoch(epoch)
 	if err != nil {
 		epochInfo = &EpochInfo{}
 	}
-	
+
 	status := &LifecycleStatus{
 		CurrentEpoch:    epoch,
 		CurrentBlock:    lm.currentBlock,
@@ -982,15 +982,15 @@ func (lm *LifecycleManager) GetStatus() (*LifecycleStatus, error) {
 		Threshold:       epochInfo.Threshold,
 		IsTransitioning: lm.currentTransition != nil,
 	}
-	
+
 	if lm.currentDKG != nil {
 		status.DKGStatus = lm.currentDKG.Status.String()
 	}
-	
+
 	if lm.currentTransition != nil {
 		status.TransitionStatus = lm.currentTransition.Status.String()
 	}
-	
+
 	// Calculate epoch progress
 	epochStart := uint64(epochInfo.StartTime)
 	if lm.config.EpochDuration > 0 && lm.currentBlock >= epochStart {
@@ -1000,6 +1000,6 @@ func (lm *LifecycleManager) GetStatus() (*LifecycleStatus, error) {
 		}
 		status.EpochProgress = progress
 	}
-	
+
 	return status, nil
 }

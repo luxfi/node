@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/iterator"
 )
 
 func TestBaseStakersPruning(t *testing.T) {
@@ -259,7 +259,7 @@ func newTestStaker() *Staker {
 	return &Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          ids.GenerateTestNodeID(),
-		ChainID:           ids.GenerateTestID(),
+		ChainID:         ids.GenerateTestID(),
 		Weight:          1,
 		StartTime:       startTime,
 		EndTime:         endTime,

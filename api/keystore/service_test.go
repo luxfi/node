@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package keystore
 
 import (
@@ -11,12 +10,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/password"
+	"github.com/luxfi/vm/utils/password"
 )
 
 // strongPassword defines a password used for the following tests that

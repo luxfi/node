@@ -20,9 +20,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/vm/utils/compression"
 )
 
 func TestNew_Params(t *testing.T) {

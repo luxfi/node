@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package api
 
 import (
@@ -11,18 +10,18 @@ import (
 	"net/http"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/formatting"
+	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/genesis"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/json"
 )
 
 // Note that since a Lux network has exactly one Platform Chain,
@@ -364,12 +363,12 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
-			ChainID:       chain.NetID,
-			BlockchainName:   chain.Name,
-			VMID:        chain.VMID,
-			FxIDs:       chain.FxIDs,
-			GenesisData: genesisBytes,
-			ChainAuth:  &secp256k1fx.Input{},
+			ChainID:        chain.NetID,
+			BlockchainName: chain.Name,
+			VMID:           chain.VMID,
+			FxIDs:          chain.FxIDs,
+			GenesisData:    genesisBytes,
+			ChainAuth:      &secp256k1fx.Input{},
 		}}
 		if err := tx.Initialize(txs.GenesisCodec); err != nil {
 			return err

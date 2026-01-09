@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package zvm
 
 import (
@@ -17,25 +16,25 @@ import (
 
 // Mempool manages pending transactions
 type Mempool struct {
-	log         log.Logger
-	maxSize     int
-	
+	log     log.Logger
+	maxSize int
+
 	// Transaction storage
-	txs         map[ids.ID]*MempoolTx
-	txHeap      TxHeap
-	
+	txs    map[ids.ID]*MempoolTx
+	txHeap TxHeap
+
 	// Nullifier tracking to prevent conflicts
-	nullifiers  map[string]ids.ID  // nullifier -> txID
-	
-	mu          sync.RWMutex
+	nullifiers map[string]ids.ID // nullifier -> txID
+
+	mu sync.RWMutex
 }
 
 // MempoolTx represents a transaction in the mempool
 type MempoolTx struct {
-	tx          *Transaction
-	addedAt     time.Time
-	feePerByte  uint64
-	priority    int  // For heap ordering
+	tx         *Transaction
+	addedAt    time.Time
+	feePerByte uint64
+	priority   int // For heap ordering
 }
 
 // NewMempool creates a new mempool
@@ -53,12 +52,12 @@ func NewMempool(maxSize int, log log.Logger) *Mempool {
 func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-	
+
 	// Check if transaction already exists
 	if _, exists := mp.txs[tx.ID]; exists {
 		return nil // Already in mempool
 	}
-	
+
 	// Check for nullifier conflicts
 	for _, nullifier := range tx.Nullifiers {
 		if existingTxID, exists := mp.nullifiers[string(nullifier)]; exists {
@@ -69,7 +68,7 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 			return errors.New("nullifier already in mempool")
 		}
 	}
-	
+
 	// Check mempool size limit
 	if len(mp.txs) >= mp.maxSize {
 		// Remove lowest priority transaction
@@ -78,34 +77,34 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 			mp.removeTxNoLock(lowest.tx.ID)
 		}
 	}
-	
+
 	// Calculate fee per byte
 	// For now, use a fixed size estimate
 	txSize := uint64(256) // Approximate transaction size
 	feePerByte := tx.Fee / txSize
-	
+
 	// Create mempool entry
 	mempoolTx := &MempoolTx{
 		tx:         tx,
 		addedAt:    time.Now(),
 		feePerByte: feePerByte,
 	}
-	
+
 	// Add to storage
 	mp.txs[tx.ID] = mempoolTx
 	heap.Push(&mp.txHeap, mempoolTx)
-	
+
 	// Track nullifiers
 	for _, nullifier := range tx.Nullifiers {
 		mp.nullifiers[string(nullifier)] = tx.ID
 	}
-	
+
 	mp.log.Debug("Added transaction to mempool",
 		log.String("txID", tx.ID.String()),
 		log.Uint64("fee", tx.Fee),
 		log.Int("mempoolSize", len(mp.txs)),
 	)
-	
+
 	return nil
 }
 
@@ -113,7 +112,7 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 func (mp *Mempool) RemoveTransaction(txID ids.ID) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-	
+
 	mp.removeTxNoLock(txID)
 }
 
@@ -123,15 +122,15 @@ func (mp *Mempool) removeTxNoLock(txID ids.ID) {
 	if !exists {
 		return
 	}
-	
+
 	// Remove from storage
 	delete(mp.txs, txID)
-	
+
 	// Remove nullifiers
 	for _, nullifier := range mempoolTx.tx.Nullifiers {
 		delete(mp.nullifiers, string(nullifier))
 	}
-	
+
 	// Remove from heap (expensive, but necessary)
 	for i, tx := range mp.txHeap {
 		if tx.tx.ID == txID {
@@ -145,19 +144,19 @@ func (mp *Mempool) removeTxNoLock(txID ids.ID) {
 func (mp *Mempool) GetPendingTransactions(limit int) []*Transaction {
 	mp.mu.RLock()
 	defer mp.mu.RUnlock()
-	
+
 	// Create a copy of the heap to sort
 	tempHeap := make(TxHeap, len(mp.txHeap))
 	copy(tempHeap, mp.txHeap)
 	heap.Init(&tempHeap)
-	
+
 	// Extract top transactions
 	txs := make([]*Transaction, 0, limit)
 	for i := 0; i < limit && tempHeap.Len() > 0; i++ {
 		mempoolTx := heap.Pop(&tempHeap).(*MempoolTx)
 		txs = append(txs, mempoolTx.tx)
 	}
-	
+
 	return txs
 }
 
@@ -165,7 +164,7 @@ func (mp *Mempool) GetPendingTransactions(limit int) []*Transaction {
 func (mp *Mempool) HasTransaction(txID ids.ID) bool {
 	mp.mu.RLock()
 	defer mp.mu.RUnlock()
-	
+
 	_, exists := mp.txs[txID]
 	return exists
 }
@@ -174,7 +173,7 @@ func (mp *Mempool) HasTransaction(txID ids.ID) bool {
 func (mp *Mempool) HasNullifier(nullifier []byte) bool {
 	mp.mu.RLock()
 	defer mp.mu.RUnlock()
-	
+
 	_, exists := mp.nullifiers[string(nullifier)]
 	return exists
 }
@@ -183,7 +182,7 @@ func (mp *Mempool) HasNullifier(nullifier []byte) bool {
 func (mp *Mempool) Size() int {
 	mp.mu.RLock()
 	defer mp.mu.RUnlock()
-	
+
 	return len(mp.txs)
 }
 
@@ -191,11 +190,11 @@ func (mp *Mempool) Size() int {
 func (mp *Mempool) Clear() {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-	
+
 	mp.txs = make(map[ids.ID]*MempoolTx)
 	mp.txHeap = make(TxHeap, 0)
 	mp.nullifiers = make(map[string]ids.ID)
-	
+
 	mp.log.Info("Mempool cleared")
 }
 
@@ -203,19 +202,19 @@ func (mp *Mempool) Clear() {
 func (mp *Mempool) PruneExpired(currentHeight uint64) {
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-	
+
 	var toRemove []ids.ID
-	
+
 	for txID, mempoolTx := range mp.txs {
 		if mempoolTx.tx.Expiry > 0 && mempoolTx.tx.Expiry < currentHeight {
 			toRemove = append(toRemove, txID)
 		}
 	}
-	
+
 	for _, txID := range toRemove {
 		mp.removeTxNoLock(txID)
 	}
-	
+
 	if len(toRemove) > 0 {
 		mp.log.Info("Pruned expired transactions",
 			log.Int("count", len(toRemove)),

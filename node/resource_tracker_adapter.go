@@ -1,14 +1,13 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package node
 
 import (
 	"time"
 
-	"github.com/luxfi/ids"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
 )
 

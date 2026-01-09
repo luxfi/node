@@ -13,22 +13,22 @@ import (
 
 func TestNewManager(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
 	require.NotNil(mgr)
-	
+
 	pools := mgr.GetAllPools()
 	require.Empty(pools)
 }
 
 func TestCreatePool(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	pool, err := mgr.CreatePool(
 		token0,
 		token1,
@@ -40,7 +40,7 @@ func TestCreatePool(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(pool)
 	require.NotEqual(ids.Empty, pool.ID)
-	
+
 	// Verify pool was created
 	fetchedPool, err := mgr.GetPool(pool.ID)
 	require.NoError(err)
@@ -51,11 +51,11 @@ func TestCreatePool(t *testing.T) {
 
 func TestCreatePoolSameToken(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token := ids.GenerateTestID()
-	
+
 	_, err := mgr.CreatePool(
 		token,
 		token, // Same token - should fail due to ErrPoolExists after canonical ordering
@@ -69,12 +69,12 @@ func TestCreatePoolSameToken(t *testing.T) {
 
 func TestGetQuote(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool with 1:2 ratio
 	pool, err := mgr.CreatePool(
 		token0,
@@ -85,7 +85,7 @@ func TestGetQuote(t *testing.T) {
 		30, // 0.3% fee
 	)
 	require.NoError(err)
-	
+
 	// Get quote for swapping token0 to token1
 	// Determine which token is token0 in the pool (canonical ordering)
 	var inputToken ids.ID
@@ -94,7 +94,7 @@ func TestGetQuote(t *testing.T) {
 	} else {
 		inputToken = token1
 	}
-	
+
 	amountOut, err := mgr.GetQuote(
 		pool.ID,
 		inputToken,
@@ -103,7 +103,7 @@ func TestGetQuote(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(amountOut)
 	require.True(amountOut.Sign() > 0)
-	
+
 	// Output should be reasonable given the reserves
 	// For constant product: amountOut = reserveOut * amountIn / (reserveIn + amountIn)
 	require.True(amountOut.Cmp(big.NewInt(0)) > 0)
@@ -111,12 +111,12 @@ func TestGetQuote(t *testing.T) {
 
 func TestSwap(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -127,10 +127,10 @@ func TestSwap(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	initialReserve0 := new(big.Int).Set(pool.Reserve0)
 	initialReserve1 := new(big.Int).Set(pool.Reserve1)
-	
+
 	// Get quote first
 	expectedOut, err := mgr.GetQuote(
 		pool.ID,
@@ -138,7 +138,7 @@ func TestSwap(t *testing.T) {
 		big.NewInt(100000000000000000),
 	)
 	require.NoError(err)
-	
+
 	// Execute swap
 	result, err := mgr.Swap(
 		pool.ID,
@@ -150,7 +150,7 @@ func TestSwap(t *testing.T) {
 	require.NotNil(result)
 	require.Equal(expectedOut.Int64(), result.AmountOut.Int64())
 	require.True(result.Fee.Sign() > 0)
-	
+
 	// Verify reserves changed
 	require.True(pool.Reserve0.Cmp(initialReserve0) > 0) // Increased
 	require.True(pool.Reserve1.Cmp(initialReserve1) < 0) // Decreased
@@ -158,12 +158,12 @@ func TestSwap(t *testing.T) {
 
 func TestSwapSlippageProtection(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -174,7 +174,7 @@ func TestSwapSlippageProtection(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	// Try swap with unrealistic minAmountOut
 	_, err = mgr.Swap(
 		pool.ID,
@@ -188,12 +188,12 @@ func TestSwapSlippageProtection(t *testing.T) {
 
 func TestAddLiquidity(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -204,21 +204,21 @@ func TestAddLiquidity(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	initialLiquidity := new(big.Int).Set(pool.TotalSupply)
 	initialReserve0 := new(big.Int).Set(pool.Reserve0)
 	initialReserve1 := new(big.Int).Set(pool.Reserve1)
-	
+
 	// Add liquidity (maintaining ratio)
 	lpTokens, err := mgr.AddLiquidity(
 		pool.ID,
 		big.NewInt(500000000000000000),  // 0.5 token0
 		big.NewInt(1000000000000000000), // 1 token1 (maintains 1:2 ratio)
-		big.NewInt(1), // Min liquidity
+		big.NewInt(1),                   // Min liquidity
 	)
 	require.NoError(err)
 	require.True(lpTokens.Sign() > 0)
-	
+
 	// Verify reserves increased
 	require.True(pool.Reserve0.Cmp(initialReserve0) > 0)
 	require.True(pool.Reserve1.Cmp(initialReserve1) > 0)
@@ -227,12 +227,12 @@ func TestAddLiquidity(t *testing.T) {
 
 func TestRemoveLiquidity(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -243,9 +243,9 @@ func TestRemoveLiquidity(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	initialLiquidity := new(big.Int).Set(pool.TotalSupply)
-	
+
 	// Remove half the liquidity
 	halfLiquidity := new(big.Int).Div(initialLiquidity, big.NewInt(2))
 	amount0, amount1, err := mgr.RemoveLiquidity(
@@ -255,11 +255,11 @@ func TestRemoveLiquidity(t *testing.T) {
 		big.NewInt(1), // Min amount1
 	)
 	require.NoError(err)
-	
+
 	// Should get back roughly half of each token
 	require.True(amount0.Sign() > 0)
 	require.True(amount1.Sign() > 0)
-	
+
 	// Liquidity should be halved
 	expectedLiquidity := new(big.Int).Sub(initialLiquidity, halfLiquidity)
 	require.Equal(expectedLiquidity.Int64(), pool.TotalSupply.Int64())
@@ -267,12 +267,12 @@ func TestRemoveLiquidity(t *testing.T) {
 
 func TestGetPoolByPair(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -283,12 +283,12 @@ func TestGetPoolByPair(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	// Find by tokens (both orderings should work)
 	foundPool, err := mgr.GetPoolByPair(token0, token1)
 	require.NoError(err)
 	require.Equal(pool.ID, foundPool.ID)
-	
+
 	foundPool, err = mgr.GetPoolByPair(token1, token0)
 	require.NoError(err)
 	require.Equal(pool.ID, foundPool.ID)
@@ -296,12 +296,12 @@ func TestGetPoolByPair(t *testing.T) {
 
 func TestPoolExists(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create first pool
 	_, err := mgr.CreatePool(
 		token0,
@@ -312,7 +312,7 @@ func TestPoolExists(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	// Try to create duplicate pool - should fail
 	_, err = mgr.CreatePool(
 		token0,
@@ -328,13 +328,13 @@ func TestPoolExists(t *testing.T) {
 
 func TestStableSwapPool(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	// Simulating stablecoins (USDT/USDC)
 	usdt := ids.GenerateTestID()
 	usdc := ids.GenerateTestID()
-	
+
 	// Create stable swap pool
 	pool, err := mgr.CreatePool(
 		usdt,
@@ -346,7 +346,7 @@ func TestStableSwapPool(t *testing.T) {
 	)
 	require.NoError(err)
 	require.Equal(StableSwap, pool.Type)
-	
+
 	// Get a swap quote
 	amountOut, err := mgr.GetQuote(
 		pool.ID,
@@ -359,12 +359,12 @@ func TestStableSwapPool(t *testing.T) {
 
 func TestConcentratedLiquidity(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create concentrated liquidity pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -380,12 +380,12 @@ func TestConcentratedLiquidity(t *testing.T) {
 
 func TestPoolStats(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
-	
+
 	// Create pool
 	reserve0, _ := new(big.Int).SetString("10000000000000000000", 10) // 10 tokens
 	reserve1, _ := new(big.Int).SetString("20000000000000000000", 10) // 20 tokens
@@ -398,7 +398,7 @@ func TestPoolStats(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	// Execute some swaps
 	for i := 0; i < 5; i++ {
 		quote, err := mgr.GetQuote(
@@ -407,7 +407,7 @@ func TestPoolStats(t *testing.T) {
 			big.NewInt(10000000000000000), // 0.01 token
 		)
 		require.NoError(err)
-		
+
 		_, err = mgr.Swap(
 			pool.ID,
 			pool.Token0,
@@ -416,7 +416,7 @@ func TestPoolStats(t *testing.T) {
 		)
 		require.NoError(err)
 	}
-	
+
 	// Check stats
 	fetchedPool, err := mgr.GetPool(pool.ID)
 	require.NoError(err)
@@ -426,13 +426,13 @@ func TestPoolStats(t *testing.T) {
 
 func TestInvalidSwapToken(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	token0 := ids.GenerateTestID()
 	token1 := ids.GenerateTestID()
 	invalidToken := ids.GenerateTestID()
-	
+
 	// Create pool
 	pool, err := mgr.CreatePool(
 		token0,
@@ -443,7 +443,7 @@ func TestInvalidSwapToken(t *testing.T) {
 		30,
 	)
 	require.NoError(err)
-	
+
 	// Try to swap with invalid token
 	_, err = mgr.Swap(
 		pool.ID,
@@ -456,15 +456,15 @@ func TestInvalidSwapToken(t *testing.T) {
 
 func TestPoolNotFound(t *testing.T) {
 	require := require.New(t)
-	
+
 	mgr := NewManager()
-	
+
 	fakePoolID := ids.GenerateTestID()
-	
+
 	_, err := mgr.GetPool(fakePoolID)
 	require.Error(err)
 	require.Equal(ErrPoolNotFound, err)
-	
+
 	_, err = mgr.Swap(
 		fakePoolID,
 		ids.GenerateTestID(),
@@ -491,9 +491,9 @@ func BenchmarkSwap(b *testing.B) {
 		ConstantProduct,
 		30,
 	)
-	
+
 	amountIn := big.NewInt(1000000000000000) // 0.001 token
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		quote, _ := mgr.GetQuote(pool.ID, pool.Token0, amountIn)
@@ -517,9 +517,9 @@ func BenchmarkGetQuote(b *testing.B) {
 		ConstantProduct,
 		30,
 	)
-	
+
 	amountIn := big.NewInt(1000000000000000)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mgr.GetQuote(pool.ID, pool.Token0, amountIn)

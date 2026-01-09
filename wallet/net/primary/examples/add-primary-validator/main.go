@@ -8,14 +8,14 @@ import (
 	"log"
 	"time"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/vm/secp256k1fx"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	// Create adapter for the keychain
 	startTime := time.Now().Add(time.Minute)
 	duration := 3 * 7 * 24 * time.Hour // 3 weeks
-	weight := 2_000 * units.Lux
+	weight := 2_000 * constants.Lux
 	validatorRewardAddr := key.Address()
 	delegatorRewardAddr := key.Address()
 	delegationFee := uint32(reward.PercentDenominator / 2) // 50%

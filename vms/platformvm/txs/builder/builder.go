@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package builder
 
 import (
@@ -12,16 +11,16 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 // Max number of items allowed in a page
@@ -405,12 +404,12 @@ func (b *builder) NewCreateChainTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		ChainID:       netID,
-		BlockchainName:   chainName,
-		VMID:        vmID,
-		FxIDs:       fxIDs,
-		GenesisData: genesisData,
-		ChainAuth:     subnetAuth,
+		ChainID:        netID,
+		BlockchainName: chainName,
+		VMID:           vmID,
+		FxIDs:          fxIDs,
+		GenesisData:    genesisData,
+		ChainAuth:      subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -610,7 +609,7 @@ func (b *builder) NewRemoveChainValidatorTx(
 			Outs:         outs,
 		}},
 		Chain:     netID,
-		NodeID:  nodeID,
+		NodeID:    nodeID,
 		ChainAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)

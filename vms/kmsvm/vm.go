@@ -27,10 +27,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/kmsvm/config"
+	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/luxfi/warp"
 )
 

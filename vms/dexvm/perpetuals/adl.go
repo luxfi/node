@@ -64,10 +64,10 @@ type ADLConfig struct {
 func DefaultADLConfig() ADLConfig {
 	return ADLConfig{
 		Enabled:                 true,
-		Threshold:               0.20,                     // 20% of target insurance fund
-		MaxReductionPerPosition: 0.50,                     // 50% max reduction
-		MinProfitForADL:         big.NewInt(100_000_000),  // $100 in 6 decimals
-		CompensationRate:        0.001,                    // 0.1%
+		Threshold:               0.20,                    // 20% of target insurance fund
+		MaxReductionPerPosition: 0.50,                    // 50% max reduction
+		MinProfitForADL:         big.NewInt(100_000_000), // $100 in 6 decimals
+		CompensationRate:        0.001,                   // 0.1%
 	}
 }
 
@@ -179,8 +179,8 @@ type AutoDeleveragingEngine struct {
 	events []*ADLEvent
 
 	// Statistics
-	totalEvents     uint64
-	totalReduced    *big.Int
+	totalEvents       uint64
+	totalReduced      *big.Int
 	totalCompensation *big.Int
 }
 

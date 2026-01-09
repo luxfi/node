@@ -590,7 +590,7 @@ var (
 			expected: State{
 				Gas: gas.State{
 					Capacity: math.MaxUint64 - 1000, // Overflow protection
-					Excess:   1_998_047_867, // 2M * NewTarget / OldTarget
+					Excess:   1_998_047_867,         // 2M * NewTarget / OldTarget
 				},
 				TargetExcess: maxTargetExcess - MaxTargetExcessDiff,
 			},

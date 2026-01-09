@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package message
 
 import (
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/vm/utils"
 )
 
 const (
 	codecVersion   = 0
-	maxMessageSize = 512 * units.KiB
+	maxMessageSize = 512 * constants.KiB
 	maxSliceLen    = maxMessageSize
 )
 

@@ -10,19 +10,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
+	"github.com/luxfi/vm/utils/timer/mockable"
 
 	. "github.com/luxfi/node/vms/platformvm/validators"
 )
@@ -50,7 +50,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       pk,
-			ChainID:        constants.PrimaryNetworkID,
+			ChainID:         constants.PrimaryNetworkID,
 			Weight:          1,
 			StartTime:       startTime,
 			EndTime:         endTime,
@@ -60,7 +60,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:      ids.GenerateTestID(),
 			NodeID:    primaryStaker.NodeID,
 			PublicKey: nil, // inherited from primaryStaker
-			ChainID:  subnetID,
+			ChainID:   subnetID,
 			Weight:    1,
 			StartTime: upgradeTime,
 			EndTime:   endTime,

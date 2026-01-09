@@ -8,7 +8,7 @@ import (
 
 	consensusctx "github.com/luxfi/consensus/context"
 
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/vm/platformvm/fx"
 )
 
 var _ UnsignedTx = (*CreateSubnetTx)(nil)

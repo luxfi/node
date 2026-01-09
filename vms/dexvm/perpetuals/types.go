@@ -58,23 +58,23 @@ func (m MarginMode) String() string {
 
 // Position represents a perpetual futures position
 type Position struct {
-	ID              ids.ID     // Unique position ID
-	Trader          ids.ID     // Trader account ID
-	Market          string     // Market symbol (e.g., "BTC-PERP")
-	Side            Side       // Long or Short
-	Size            *big.Int   // Position size in base units (e.g., satoshis)
-	EntryPrice      *big.Int   // Average entry price (scaled by 1e18)
-	Margin          *big.Int   // Margin collateral locked
-	MarginMode      MarginMode // Cross or Isolated
-	Leverage        uint16     // Leverage multiplier (e.g., 10 = 10x)
-	LiquidationPrice *big.Int  // Price at which position is liquidated
-	TakeProfit      *big.Int   // Optional take profit price
-	StopLoss        *big.Int   // Optional stop loss price
-	UnrealizedPnL   *big.Int   // Current unrealized P&L
-	RealizedPnL     *big.Int   // Total realized P&L
-	FundingPaid     *big.Int   // Total funding payments made/received
-	OpenedAt        time.Time  // When position was opened
-	UpdatedAt       time.Time  // Last update time
+	ID               ids.ID     // Unique position ID
+	Trader           ids.ID     // Trader account ID
+	Market           string     // Market symbol (e.g., "BTC-PERP")
+	Side             Side       // Long or Short
+	Size             *big.Int   // Position size in base units (e.g., satoshis)
+	EntryPrice       *big.Int   // Average entry price (scaled by 1e18)
+	Margin           *big.Int   // Margin collateral locked
+	MarginMode       MarginMode // Cross or Isolated
+	Leverage         uint16     // Leverage multiplier (e.g., 10 = 10x)
+	LiquidationPrice *big.Int   // Price at which position is liquidated
+	TakeProfit       *big.Int   // Optional take profit price
+	StopLoss         *big.Int   // Optional stop loss price
+	UnrealizedPnL    *big.Int   // Current unrealized P&L
+	RealizedPnL      *big.Int   // Total realized P&L
+	FundingPaid      *big.Int   // Total funding payments made/received
+	OpenedAt         time.Time  // When position was opened
+	UpdatedAt        time.Time  // Last update time
 }
 
 // Clone creates a deep copy of the position
@@ -102,41 +102,41 @@ func (p *Position) Clone() *Position {
 
 // Market represents a perpetual futures market
 type Market struct {
-	Symbol           string   // Market symbol (e.g., "BTC-PERP")
-	BaseAsset        ids.ID   // Base asset ID
-	QuoteAsset       ids.ID   // Quote asset ID (usually USDC)
-	IndexPrice       *big.Int // Current index price from oracle
-	MarkPrice        *big.Int // Current mark price
-	LastPrice        *big.Int // Last traded price
-	FundingRate      *big.Int // Current funding rate (scaled by 1e18)
-	NextFundingTime  time.Time // Next funding payment time
-	OpenInterestLong *big.Int // Total long open interest
-	OpenInterestShort *big.Int // Total short open interest
-	Volume24h        *big.Int // 24h trading volume
-	MaxLeverage      uint16   // Maximum allowed leverage
-	MinSize          *big.Int // Minimum position size
-	TickSize         *big.Int // Minimum price tick
-	MakerFee         uint16   // Maker fee in basis points
-	TakerFee         uint16   // Taker fee in basis points
-	MaintenanceMargin uint16  // Maintenance margin ratio in basis points
-	InitialMargin    uint16   // Initial margin ratio in basis points
-	MaxFundingRate   *big.Int // Maximum funding rate per period
-	FundingInterval  time.Duration // Funding interval (typically 8 hours)
-	InsuranceFund    *big.Int // Insurance fund balance for this market
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	Symbol            string        // Market symbol (e.g., "BTC-PERP")
+	BaseAsset         ids.ID        // Base asset ID
+	QuoteAsset        ids.ID        // Quote asset ID (usually USDC)
+	IndexPrice        *big.Int      // Current index price from oracle
+	MarkPrice         *big.Int      // Current mark price
+	LastPrice         *big.Int      // Last traded price
+	FundingRate       *big.Int      // Current funding rate (scaled by 1e18)
+	NextFundingTime   time.Time     // Next funding payment time
+	OpenInterestLong  *big.Int      // Total long open interest
+	OpenInterestShort *big.Int      // Total short open interest
+	Volume24h         *big.Int      // 24h trading volume
+	MaxLeverage       uint16        // Maximum allowed leverage
+	MinSize           *big.Int      // Minimum position size
+	TickSize          *big.Int      // Minimum price tick
+	MakerFee          uint16        // Maker fee in basis points
+	TakerFee          uint16        // Taker fee in basis points
+	MaintenanceMargin uint16        // Maintenance margin ratio in basis points
+	InitialMargin     uint16        // Initial margin ratio in basis points
+	MaxFundingRate    *big.Int      // Maximum funding rate per period
+	FundingInterval   time.Duration // Funding interval (typically 8 hours)
+	InsuranceFund     *big.Int      // Insurance fund balance for this market
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // MarginAccount represents a trader's margin account
 type MarginAccount struct {
-	TraderID         ids.ID              // Trader ID
-	Balance          *big.Int            // Total account balance
-	AvailableBalance *big.Int            // Available balance for new positions
-	LockedMargin     *big.Int            // Margin locked in positions
-	UnrealizedPnL    *big.Int            // Total unrealized P&L across all positions
-	MarginRatio      *big.Int            // Current margin ratio (scaled by 1e18)
+	TraderID         ids.ID               // Trader ID
+	Balance          *big.Int             // Total account balance
+	AvailableBalance *big.Int             // Available balance for new positions
+	LockedMargin     *big.Int             // Margin locked in positions
+	UnrealizedPnL    *big.Int             // Total unrealized P&L across all positions
+	MarginRatio      *big.Int             // Current margin ratio (scaled by 1e18)
 	Positions        map[string]*Position // Active positions by market
-	Mode             MarginMode          // Default margin mode
+	Mode             MarginMode           // Default margin mode
 	UpdatedAt        time.Time
 }
 
@@ -157,20 +157,20 @@ func NewMarginAccount(traderID ids.ID) *MarginAccount {
 
 // Order represents a perpetual futures order
 type Order struct {
-	ID           ids.ID    // Order ID
-	Trader       ids.ID    // Trader ID
-	Market       string    // Market symbol
-	Side         Side      // Long or Short
-	Size         *big.Int  // Order size
-	Price        *big.Int  // Limit price (nil for market orders)
-	IsMarket     bool      // True for market orders
-	ReduceOnly   bool      // Only reduce position, don't increase
-	PostOnly     bool      // Only maker, reject if would take
+	ID           ids.ID   // Order ID
+	Trader       ids.ID   // Trader ID
+	Market       string   // Market symbol
+	Side         Side     // Long or Short
+	Size         *big.Int // Order size
+	Price        *big.Int // Limit price (nil for market orders)
+	IsMarket     bool     // True for market orders
+	ReduceOnly   bool     // Only reduce position, don't increase
+	PostOnly     bool     // Only maker, reject if would take
 	TimeInForce  TimeInForce
-	Leverage     uint16    // Desired leverage
+	Leverage     uint16 // Desired leverage
 	MarginMode   MarginMode
-	FilledSize   *big.Int  // Amount filled
-	AvgFillPrice *big.Int  // Average fill price
+	FilledSize   *big.Int // Amount filled
+	AvgFillPrice *big.Int // Average fill price
 	Status       OrderStatus
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -228,12 +228,12 @@ type LiquidationEvent struct {
 
 // FundingPayment represents a funding payment
 type FundingPayment struct {
-	ID          ids.ID    // Payment ID
-	Position    ids.ID    // Position ID
-	Market      string    // Market symbol
-	Trader      ids.ID    // Trader ID
-	Amount      *big.Int  // Payment amount (negative = paid, positive = received)
-	FundingRate *big.Int  // Funding rate at time of payment
+	ID          ids.ID   // Payment ID
+	Position    ids.ID   // Position ID
+	Market      string   // Market symbol
+	Trader      ids.ID   // Trader ID
+	Amount      *big.Int // Payment amount (negative = paid, positive = received)
+	FundingRate *big.Int // Funding rate at time of payment
 	Timestamp   time.Time
 }
 

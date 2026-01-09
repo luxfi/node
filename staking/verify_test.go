@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 func BenchmarkSign(b *testing.B) {

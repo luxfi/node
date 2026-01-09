@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
 )
 
 func TestMessageQueue(t *testing.T) {

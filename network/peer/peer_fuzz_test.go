@@ -13,14 +13,14 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/vm/utils/ips"
 )
 
 // FuzzPeerMessageHandling tests peer message handling with random data
@@ -59,7 +59,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             nodeID,
-			MyChains:               make(set.Set[ids.ID]),
+			MyChains:             make(set.Set[ids.ID]),
 			Beacons:              nil,
 			Validators:           nil,
 			NetworkID:            networkID,
@@ -68,8 +68,8 @@ func FuzzPeerMessageHandling(f *testing.F) {
 
 		// Create peer
 		peer := &peer{
-			Config:      config,
-			id:          nodeID,
+			Config:        config,
+			id:            nodeID,
 			trackedChains: make(set.Set[ids.ID]),
 		}
 
@@ -208,7 +208,7 @@ func FuzzPeerStateMachine(f *testing.F) {
 			Router:               &testRouter{},
 			VersionCompatibility: version.GetCompatibility(time.Now()),
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyChains:               make(set.Set[ids.ID]),
+			MyChains:             make(set.Set[ids.ID]),
 			NetworkID:            1,
 			MessageCreator:       mc,
 		}
@@ -217,7 +217,7 @@ func FuzzPeerStateMachine(f *testing.F) {
 		peer := &peer{
 			Config:            config,
 			id:                ids.GenerateTestNodeID(),
-			trackedChains:       make(set.Set[ids.ID]),
+			trackedChains:     make(set.Set[ids.ID]),
 			finishedHandshake: utils.Atomic[bool]{},
 			onClosed:          make(chan struct{}),
 		}
@@ -311,15 +311,15 @@ func FuzzPeerConnection(f *testing.F) {
 			NetworkID:            1,
 			MessageCreator:       mc,
 			MyNodeID:             ids.GenerateTestNodeID(),
-			MyChains:               make(set.Set[ids.ID]),
+			MyChains:             make(set.Set[ids.ID]),
 		}
 
 		// Create peer
 		peer := &peer{
-			Config:      config,
-			id:          ids.GenerateTestNodeID(),
+			Config:        config,
+			id:            ids.GenerateTestNodeID(),
 			trackedChains: make(set.Set[ids.ID]),
-			onClosed:    make(chan struct{}),
+			onClosed:      make(chan struct{}),
 		}
 
 		// Test sending data

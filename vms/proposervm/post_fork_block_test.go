@@ -15,14 +15,14 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 
-	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus"
+	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/utils/timer/mockable"
-	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	componentblocktest "github.com/luxfi/vm/chain/blocktest"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var (

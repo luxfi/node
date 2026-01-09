@@ -10,16 +10,16 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/node/cache"
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/iterator"
+	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/vm/utils/maybe"
 )
 
 var (

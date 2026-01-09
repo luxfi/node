@@ -8,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
 )
 
 var (
@@ -49,10 +49,10 @@ type BoundedMessageQueue struct {
 	notFull  *sync.Cond
 
 	// Metrics
-	dropped    atomic.Uint64
-	enqueued   atomic.Uint64
-	dequeued   atomic.Uint64
-	highWater  atomic.Int64
+	dropped   atomic.Uint64
+	enqueued  atomic.Uint64
+	dequeued  atomic.Uint64
+	highWater atomic.Int64
 
 	// Control
 	closed atomic.Bool

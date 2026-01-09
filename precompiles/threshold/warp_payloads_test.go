@@ -10,15 +10,15 @@ import (
 
 func TestKeygenRequestPayloadRoundTrip(t *testing.T) {
 	original := &KeygenRequestPayload{
-		RequestID:    [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
-		KeyID:        [32]byte{32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+		RequestID:     [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+		KeyID:         [32]byte{32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		SourceChainID: [32]byte{0xab, 0xcd},
-		Protocol:     1,
-		Threshold:    2,
-		TotalParties: 5,
-		Nonce:        123456789,
-		Expiry:       1735689600,
-		Requester:    [20]byte{0xde, 0xad, 0xbe, 0xef},
+		Protocol:      1,
+		Threshold:     2,
+		TotalParties:  5,
+		Nonce:         123456789,
+		Expiry:        1735689600,
+		Requester:     [20]byte{0xde, 0xad, 0xbe, 0xef},
 	}
 
 	// Serialize
@@ -75,14 +75,14 @@ func TestKeygenRequestPayloadRoundTrip(t *testing.T) {
 
 func TestSignRequestPayloadRoundTrip(t *testing.T) {
 	original := &SignRequestPayload{
-		RequestID:       [32]byte{1, 2, 3, 4},
-		KeyID:           [32]byte{5, 6, 7, 8},
-		MessageHash:     [32]byte{9, 10, 11, 12},
-		SourceChainID:   [32]byte{13, 14, 15, 16},
-		Nonce:           987654321,
-		Expiry:          1735689600,
-		Requester:       [20]byte{0xaa, 0xbb, 0xcc},
-		Callback:        [20]byte{0xdd, 0xee, 0xff},
+		RequestID:        [32]byte{1, 2, 3, 4},
+		KeyID:            [32]byte{5, 6, 7, 8},
+		MessageHash:      [32]byte{9, 10, 11, 12},
+		SourceChainID:    [32]byte{13, 14, 15, 16},
+		Nonce:            987654321,
+		Expiry:           1735689600,
+		Requester:        [20]byte{0xaa, 0xbb, 0xcc},
+		Callback:         [20]byte{0xdd, 0xee, 0xff},
 		CallbackSelector: [4]byte{0x12, 0x34, 0x56, 0x78},
 	}
 
@@ -184,10 +184,10 @@ func TestRefreshRequestPayloadBytes(t *testing.T) {
 
 func TestReshareRequestPayloadBytes(t *testing.T) {
 	payload := &ReshareRequestPayload{
-		RequestID:      [32]byte{1, 2, 3},
-		KeyID:          [32]byte{4, 5, 6},
-		SourceChainID:  [32]byte{7, 8, 9},
-		NewThreshold:   3,
+		RequestID:       [32]byte{1, 2, 3},
+		KeyID:           [32]byte{4, 5, 6},
+		SourceChainID:   [32]byte{7, 8, 9},
+		NewThreshold:    3,
 		NumParticipants: 2,
 		Participants: [][20]byte{
 			{0xaa, 0xbb, 0xcc},

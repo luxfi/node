@@ -22,32 +22,31 @@ import (
 	"github.com/pires/go-proxyproto"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/log"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/warp"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/nets"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/vm/utils/bloom"
+	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/warp"
 
 	safemath "github.com/luxfi/math"
 )
-
 
 const (
 	PrimaryNetworkValidatorHealthKey = "primary network validator health"
@@ -434,7 +433,7 @@ func NewNetwork(
 		Router:               router,
 		VersionCompatibility: version.GetCompatibility(minCompatibleTime),
 		MyNodeID:             config.MyNodeID,
-		MyChains:          config.TrackedChains,
+		MyChains:             config.TrackedChains,
 		Beacons:              config.Beacons,
 		Validators:           config.Validators,
 		NetworkID:            config.NetworkID,

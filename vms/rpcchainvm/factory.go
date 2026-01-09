@@ -10,11 +10,11 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/utils/resource"
 )
 
 var _ vms.Factory = (*factory)(nil)

@@ -11,7 +11,8 @@
 // and NVIDIA GPUs via MLX (which handles Metal/CUDA/CPU fallback automatically).
 //
 // Architecture:
-//   luxcpp/lattice (C++ GPU)  →  lux/lattice/gpu (Go CGO)  →  Quasar consensus
+//
+//	luxcpp/lattice (C++ GPU)  →  lux/lattice/gpu (Go CGO)  →  Quasar consensus
 //
 // This enables consistent GPU acceleration across:
 //   - Ringtail threshold signatures
@@ -364,10 +365,10 @@ func (g *GPUNTTAccelerator) ClearCache() {
 
 // Stats returns GPU accelerator statistics.
 type GPUNTTStats struct {
-	Enabled       bool
-	Backend       string
-	CachedModuli  int
-	GPUAvailable  bool
+	Enabled      bool
+	Backend      string
+	CachedModuli int
+	GPUAvailable bool
 }
 
 // Stats returns current GPU NTT accelerator statistics.

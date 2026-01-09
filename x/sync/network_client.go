@@ -16,11 +16,11 @@ import (
 	"github.com/luxfi/metric"
 	"golang.org/x/sync/semaphore"
 
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/p2p"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	consensusversion "github.com/luxfi/consensus/version"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/warp"
 )
 

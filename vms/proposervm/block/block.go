@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/wrappers"
 )
 
 var (

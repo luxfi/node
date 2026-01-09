@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"

@@ -21,9 +21,9 @@ var (
 type TriggerType uint8
 
 const (
-	TriggerOnLastPrice TriggerType = iota // Last traded price
-	TriggerOnMarkPrice                    // Mark price (index/oracle)
-	TriggerOnIndexPrice                   // Index price only
+	TriggerOnLastPrice  TriggerType = iota // Last traded price
+	TriggerOnMarkPrice                     // Mark price (index/oracle)
+	TriggerOnIndexPrice                    // Index price only
 )
 
 // StopOrder represents a stop order waiting to be triggered
@@ -366,12 +366,12 @@ func (se *StopEngine) removePrice(prices []uint64, price uint64) []uint64 {
 
 // OCOOrder represents a One-Cancels-Other order pair
 type OCOOrder struct {
-	ID          ids.ID     `json:"id"`
-	PrimaryID   ids.ID     `json:"primaryId"`   // The limit order
-	SecondaryID ids.ID     `json:"secondaryId"` // The stop order
-	Symbol      string     `json:"symbol"`
+	ID          ids.ID      `json:"id"`
+	PrimaryID   ids.ID      `json:"primaryId"`   // The limit order
+	SecondaryID ids.ID      `json:"secondaryId"` // The stop order
+	Symbol      string      `json:"symbol"`
 	Owner       ids.ShortID `json:"owner"`
-	Status      string     `json:"status"` // "active", "triggered", "cancelled"
+	Status      string      `json:"status"` // "active", "triggered", "cancelled"
 }
 
 // OCOEngine manages OCO (One-Cancels-Other) order pairs

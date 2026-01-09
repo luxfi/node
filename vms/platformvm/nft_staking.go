@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package platformvm
 
 import (
@@ -11,20 +10,20 @@ import (
 	"math/big"
 	"sync"
 
-		"github.com/luxfi/geth/accounts/abi/bind"
-		"github.com/luxfi/geth/common"
-		"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/accounts/abi/bind"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/log"
-	
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/state"
 )
 
 var (
-	errNoNFTOwned           = errors.New("validator does not own required NFT")
-	errInvalidNFTContract   = errors.New("invalid NFT contract address")
-	errNFTNotInValidTier    = errors.New("NFT not in valid tier for staking")
-	errNFTAlreadyStaked     = errors.New("NFT already staked by another validator")
+	errNoNFTOwned         = errors.New("validator does not own required NFT")
+	errInvalidNFTContract = errors.New("invalid NFT contract address")
+	errNFTNotInValidTier  = errors.New("NFT not in valid tier for staking")
+	errNFTAlreadyStaked   = errors.New("NFT already staked by another validator")
 )
 
 // NFTStakingManager manages NFT-based validator staking
@@ -66,23 +65,23 @@ func NewNFTStakingManager(config *NFTStakingConfig, log log.Logger) (*NFTStaking
 	if !config.Enabled {
 		return nil, nil
 	}
-	
+
 	// Connect to Ethereum client
 	client, err := ethclient.Dial(config.EthRPCEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Ethereum: %w", err)
 	}
-	
+
 	// TODO: Initialize NFT contract binding
 	// This would use abigen-generated bindings in production
-	
+
 	manager := &NFTStakingManager{
 		config:     config,
 		ethClient:  client,
 		stakedNFTs: make(map[uint64]ids.NodeID),
 		log:        log,
 	}
-	
+
 	return manager, nil
 }
 
@@ -96,10 +95,10 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 	if m == nil || !m.config.Enabled {
 		return nil // NFT staking not enabled
 	}
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// Check if NFT is already staked
 	if existingNode, staked := m.stakedNFTs[tokenID]; staked {
 		if existingNode != nodeID {
@@ -108,19 +107,19 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 		// Already staked by this node, which is fine
 		return nil
 	}
-	
+
 	// Verify ownership on-chain
 	if m.nftContract != nil {
 		owner, err := (*m.nftContract).OwnerOf(&bind.CallOpts{Context: ctx}, big.NewInt(int64(tokenID)))
 		if err != nil {
 			return fmt.Errorf("failed to check NFT ownership: %w", err)
 		}
-		
+
 		if owner != ethAddress {
 			return errNoNFTOwned
 		}
 	}
-	
+
 	// Check if token is in valid tier
 	validTier := false
 	for _, tier := range m.config.ValidatorTiers {
@@ -129,20 +128,20 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 			break
 		}
 	}
-	
+
 	if !validTier {
 		return errNFTNotInValidTier
 	}
-	
+
 	// Record NFT as staked
 	m.stakedNFTs[tokenID] = nodeID
-	
+
 	m.log.Info("NFT staked for validation",
 		log.String("nodeID", nodeID.String()),
 		log.Uint64("tokenID", tokenID),
 		log.String("ethAddress", ethAddress.Hex()),
 	)
-	
+
 	return nil
 }
 
@@ -151,13 +150,13 @@ func (m *NFTStakingManager) GetStakingMultiplier(tokenID uint64) uint32 {
 	if m == nil || !m.config.Enabled {
 		return 100 // Default multiplier
 	}
-	
+
 	for _, tier := range m.config.ValidatorTiers {
 		if tokenID >= tier.MinTokenID && tokenID <= tier.MaxTokenID {
 			return tier.StakingMultiplier
 		}
 	}
-	
+
 	return 100 // Default multiplier
 }
 
@@ -166,22 +165,22 @@ func (m *NFTStakingManager) ReleaseNFT(nodeID ids.NodeID, tokenID uint64) error 
 	if m == nil || !m.config.Enabled {
 		return nil
 	}
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if stakedNode, exists := m.stakedNFTs[tokenID]; exists {
 		if stakedNode != nodeID {
 			return errors.New("NFT not staked by this node")
 		}
 		delete(m.stakedNFTs, tokenID)
-		
+
 		m.log.Info("NFT released from staking",
 			log.String("nodeID", nodeID.String()),
 			log.Uint64("tokenID", tokenID),
 		)
 	}
-	
+
 	return nil
 }
 
@@ -190,16 +189,16 @@ func (m *NFTStakingManager) GetStakedNFTs() map[uint64]ids.NodeID {
 	if m == nil || !m.config.Enabled {
 		return nil
 	}
-	
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	// Return a copy to prevent external modification
 	result := make(map[uint64]ids.NodeID)
 	for tokenID, nodeID := range m.stakedNFTs {
 		result[tokenID] = nodeID
 	}
-	
+
 	return result
 }
 
@@ -212,10 +211,10 @@ func ValidateNFTStaking(
 	if nftManager == nil || staker.ValidatorNFT == nil {
 		return nil // No NFT staking required
 	}
-	
+
 	// Parse Ethereum address from staker
 	ethAddr := common.HexToAddress(staker.ValidatorNFT.ContractAddress)
-	
+
 	// Validate NFT ownership
 	return nftManager.ValidateNFTOwnership(
 		ctx,
@@ -234,7 +233,7 @@ func ApplyNFTMultiplier(
 	if nftManager == nil {
 		return baseReward
 	}
-	
+
 	multiplier := nftManager.GetStakingMultiplier(tokenID)
 	return (baseReward * uint64(multiplier)) / 100
 }

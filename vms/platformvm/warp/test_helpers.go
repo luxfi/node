@@ -7,10 +7,10 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/utils"
 )
 
 const pChainHeight uint64 = 1337

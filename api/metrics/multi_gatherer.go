@@ -4,15 +4,14 @@
 package metrics
 
 import (
-	"sort"
 	"github.com/luxfi/metric"
+	"sort"
 
 	"fmt"
 	"slices"
 	"sync"
 
-
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/vm/utils"
 
 	dto "github.com/prometheus/client_model/go"
 )

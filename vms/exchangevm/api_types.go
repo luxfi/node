@@ -3,7 +3,7 @@
 
 package exchangevm
 
-import "github.com/luxfi/node/utils/json"
+import "github.com/luxfi/vm/utils/json"
 
 // GetTxFeeReply is the response from a GetTxFee call
 type GetTxFeeReply struct {

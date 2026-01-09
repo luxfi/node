@@ -11,16 +11,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/validator/uptime"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 // InboundHandler handles inbound messages
@@ -51,7 +51,7 @@ type Config struct {
 	VersionCompatibility version.Compatibility
 	MyNodeID             ids.NodeID
 	// MyChains does not include the primary network ID
-	MyChains        set.Set[ids.ID]
+	MyChains           set.Set[ids.ID]
 	Beacons            validators.Manager
 	Validators         validators.Manager
 	NetworkID          uint32

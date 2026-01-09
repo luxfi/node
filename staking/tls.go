@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/vm/utils/perms"
 	"golang.org/x/crypto/hkdf"
 )
 

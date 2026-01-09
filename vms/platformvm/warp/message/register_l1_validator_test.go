@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 func newBLSPublicKey(t *testing.T) [bls.PublicKeyLen]byte {
@@ -111,7 +111,7 @@ func TestRegisterL1Validator_Verify(t *testing.T) {
 		{
 			name: "Invalid NodeID Length",
 			msg: &RegisterL1Validator{
-				ChainID:     ids.GenerateTestID(),
+				ChainID:      ids.GenerateTestID(),
 				NodeID:       nil,
 				BLSPublicKey: newBLSPublicKey(t),
 				Expiry:       rand.Uint64(), //#nosec G404

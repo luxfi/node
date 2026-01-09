@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/quantumvm/config"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFactory(t *testing.T) {

@@ -30,6 +30,8 @@ import (
 
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -55,32 +57,30 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/aivm"
 	bvm "github.com/luxfi/node/vms/bridgevm"
 	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/exchangevm"
-	kmsvm "github.com/luxfi/node/vms/kmsvm"
 	graphvm "github.com/luxfi/node/vms/graphvm"
+	kmsvm "github.com/luxfi/node/vms/kmsvm"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	qvm "github.com/luxfi/node/vms/quantumvm"
-	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	tvm "github.com/luxfi/node/vms/thresholdvm"
 	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/trace"
+	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/vm/registry"
+	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/vm/utils/dynamicip"
+	"github.com/luxfi/vm/utils/filesystem"
+	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/vm/utils/perms"
+	"github.com/luxfi/vm/utils/profiler"
+	"github.com/luxfi/vm/utils/resource"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
@@ -915,7 +915,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		ChainID:         constants.PrimaryNetworkID,
+		ChainID:       constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,

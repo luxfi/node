@@ -5,23 +5,22 @@ package txs
 
 import (
 	consensusctx "github.com/luxfi/consensus/context"
-	
+
 	"encoding/json"
 	"testing"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/constantsants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils"
 )
 
 func TestTransferChainOwnershipTxSerialization(t *testing.T) {
@@ -59,7 +58,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	simpleTransferChainOwnershipTx := &TransferChainOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -72,7 +71,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.MilliLux,
+							Amt: constants.MilliLux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{5},
 							},
@@ -96,9 +95,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(simpleTransferChainOwnershipTx.SyntacticVerify(ctx))
@@ -174,7 +173,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	complexTransferChainOwnershipTx := &TransferChainOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:   constants.MainnetID,
+				NetworkID:    constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
@@ -222,7 +221,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 							ID: luxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.Lux,
+							Amt: constants.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -280,9 +279,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferChainOwnershipTx.Ins)
 	ctx2 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID,
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID,
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(ctx2))
@@ -441,7 +440,6 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77,
-	
 	}
 	var unsignedComplexTransferChainOwnershipTx UnsignedTx = complexTransferChainOwnershipTx
 	unsignedComplexTransferChainOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransferChainOwnershipTx)
@@ -452,9 +450,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	// This functionality is now handled differently
 
 	ctx3 := &consensusctx.Context{
-		NetworkID:  constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
-		
-		ChainID:    testChainID,
+		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
+
+		ChainID:  testChainID,
 		XAssetID: luxAssetID,
 	}
 	unsignedComplexTransferChainOwnershipTx.InitCtx(ctx3)
@@ -563,9 +561,8 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 
 	ctx := &consensusctx.Context{
 		NetworkID: networkID,
-		
-		
-		ChainID:   chainID,
+
+		ChainID: chainID,
 	}
 
 	// A BaseTx that already passed syntactic verification.
@@ -578,7 +575,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:   networkID,
+			NetworkID:    networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -610,7 +607,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
 				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Chain:    ids.GenerateTestID(),
+					Chain:  ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
 				}
 			},
@@ -621,7 +618,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferChainOwnershipTx {
 				return &TransferChainOwnershipTx{
 					BaseTx: validBaseTx,
-					Chain:    constants.PrimaryNetworkID,
+					Chain:  constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrTransferPermissionlessChain,
@@ -634,8 +631,8 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
 				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Chain:        ids.GenerateTestID(),
-					BaseTx:     validBaseTx,
+					Chain:     ids.GenerateTestID(),
+					BaseTx:    validBaseTx,
 					ChainAuth: invalidNetAuth,
 				}
 			},
@@ -651,10 +648,10 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 				mockOwner.EXPECT().Verify().Return(nil)
 				return &TransferChainOwnershipTx{
 					// Set netID so we don't error on that check.
-					Chain:        ids.GenerateTestID(),
-					BaseTx:     validBaseTx,
+					Chain:     ids.GenerateTestID(),
+					BaseTx:    validBaseTx,
 					ChainAuth: validNetAuth,
-					Owner:      mockOwner,
+					Owner:     mockOwner,
 				}
 			},
 			expectedErr: nil,
@@ -673,6 +670,6 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 				return
 			}
 			require.True(tx.SyntacticallyVerified)
-	})
+		})
 	}
 }

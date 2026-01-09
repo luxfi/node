@@ -7,20 +7,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/constantsants"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/vm/types"
+	"github.com/luxfi/vm/utils/hashing"
 )
 
 var (
 	ErrInvalidChainID = errors.New("invalid chain ID")
-	ErrInvalidWeight   = errors.New("invalid weight")
-	ErrInvalidNodeID   = errors.New("invalid node ID")
-	ErrInvalidOwner    = errors.New("invalid owner")
+	ErrInvalidWeight  = errors.New("invalid weight")
+	ErrInvalidNodeID  = errors.New("invalid node ID")
+	ErrInvalidOwner   = errors.New("invalid owner")
 )
 
 type PChainOwner struct {
@@ -91,7 +91,7 @@ func NewRegisterL1Validator(
 	weight uint64,
 ) (*RegisterL1Validator, error) {
 	msg := &RegisterL1Validator{
-		ChainID:              subnetID,
+		ChainID:               subnetID,
 		NodeID:                nodeID[:],
 		BLSPublicKey:          blsPublicKey,
 		Expiry:                expiry,
