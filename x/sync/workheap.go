@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/vm/utils/heap"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/heap"
+	"github.com/luxfi/utils/maybe"
 )
 
 // A priority queue of syncWorkItems.

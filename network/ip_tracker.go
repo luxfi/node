@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/vm/utils/bloom"
-	"github.com/luxfi/vm/utils/ips"
-	"github.com/luxfi/vm/utils/sampler"
+	"github.com/luxfi/utils/bloom"
+	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/utils/sampler"
 )
 
 const (

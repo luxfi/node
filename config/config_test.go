@@ -386,7 +386,7 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 			},
 			expectedErr: errUnmarshalling,
 		},
-		"subnet is not tracked": {
+		"chain is not tracked": {
 			fileName:  "Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU.json",
 			givenJSON: `{"validatorOnly": true}`,
 			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
@@ -432,20 +432,20 @@ func TestGetNetConfigsFromFile(t *testing.T) {
 			require := require.New(t)
 
 			root := t.TempDir()
-			subnetPath := filepath.Join(root, "subnets")
+			chainPath := filepath.Join(root, "chains")
 
-			configJSON := fmt.Sprintf(`{%q: %q}`, NetConfigDirKey, subnetPath)
+			configJSON := fmt.Sprintf(`{%q: %q}`, NetConfigDirKey, chainPath)
 			configFilePath := setupConfigJSON(t, root, configJSON)
 
-			setupFile(t, subnetPath, test.fileName, test.givenJSON)
+			setupFile(t, chainPath, test.fileName, test.givenJSON)
 
 			v := setupViper(configFilePath)
-			subnetConfigs, err := getNetConfigs(v, []ids.ID{netID})
+			chainConfigs, err := getNetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
 			}
-			test.testF(require, subnetConfigs)
+			test.testF(require, chainConfigs)
 		})
 	}
 }
@@ -484,7 +484,7 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
-		"default config used when subnet is not tracked": {
+		"default config used when chain is not tracked": {
 			givenJSON: `{"Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU":{"validatorOnly":true}}`,
 			testF: func(require *require.Assertions, given map[ids.ID]nets.Config) {
 				require.Equal(defaultConfigs, given)
@@ -541,12 +541,12 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 			v := setupViperFlags()
 			v.Set(NetConfigContentKey, encodedFileContent)
 
-			subnetConfigs, err := getNetConfigs(v, []ids.ID{netID})
+			chainConfigs, err := getNetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
 			}
-			test.testF(require, subnetConfigs)
+			test.testF(require, chainConfigs)
 		})
 	}
 }

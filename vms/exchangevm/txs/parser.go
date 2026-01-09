@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 )
 
 // CodecVersion is the current default codec version

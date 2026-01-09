@@ -28,11 +28,11 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/bloom"
-	"github.com/luxfi/vm/utils/ips"
-	"github.com/luxfi/vm/utils/json"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/bloom"
+	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/utils/json"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (

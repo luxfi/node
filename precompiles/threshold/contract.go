@@ -94,7 +94,7 @@ var (
 // ThresholdPrecompile implements the EVM precompile interface for threshold operations.
 // It communicates with T-Chain via Warp messaging.
 type ThresholdPrecompile struct {
-	// TChainID is the subnet ID for the T-Chain
+	// TChainID is the chain ID for the T-Chain
 	TChainID ids.ID
 
 	// warpSender sends cross-chain messages via Warp

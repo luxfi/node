@@ -14,11 +14,11 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/math"
 	"github.com/luxfi/vm/nftfx"
 	"github.com/luxfi/vm/propertyfx"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/math"
 )
 
 var (

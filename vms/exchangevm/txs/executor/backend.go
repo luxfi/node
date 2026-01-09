@@ -7,10 +7,10 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/luxfi/codec"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/config"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
@@ -24,7 +24,7 @@ type Backend struct {
 	TypeToFxIndex map[reflect.Type]int
 	Codec         codec.Manager
 	// Note: FeeAssetID may be different than ctx.XAssetID if this XVM is
-	// running in a subnet.
+	// running in a chain.
 	FeeAssetID   ids.ID
 	Bootstrapped bool
 

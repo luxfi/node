@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 // TestLazyHandlerWrapper tests that the lazy handler wrapper properly delays

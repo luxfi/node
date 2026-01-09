@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/hashing"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/utils/maybe"
 	"github.com/luxfi/warp"
 
 	pb "github.com/luxfi/node/proto/pb/sync"

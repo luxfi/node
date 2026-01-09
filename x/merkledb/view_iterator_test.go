@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 )
 
 func Test_View_Iterator(t *testing.T) {

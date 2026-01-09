@@ -24,9 +24,9 @@ import (
 
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 
-	safemath "github.com/luxfi/vm/utils/math"
+	safemath "github.com/luxfi/utils/math"
 )
 
 const (

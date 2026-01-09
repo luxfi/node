@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	nodeconsensus "github.com/luxfi/node/consensus"
-	"github.com/luxfi/vm/utils/json"
-	"github.com/luxfi/vm/utils/timer/mockable"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils/json"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (

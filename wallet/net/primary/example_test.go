@@ -115,18 +115,18 @@ func ExampleWallet() {
 	importTxID := importTx.ID()
 	log.Printf("issued X->P import %s in %s\n", importTxID, time.Since(importStartTime))
 
-	createSubnetStartTime := time.Now()
-	createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
+	createChainStartTime := time.Now()
+	createChainTx, err := pWallet.IssueCreateChainTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create subnet transaction with: %s\n", err)
+		log.Fatalf("failed to issue create chain transaction with: %s\n", err)
 		return
 	}
-	createSubnetTxID := createSubnetTx.ID()
-	log.Printf("issued create subnet transaction %s in %s\n", createSubnetTxID, time.Since(createSubnetStartTime))
+	createChainTxID := createChainTx.ID()
+	log.Printf("issued create chain transaction %s in %s\n", createChainTxID, time.Since(createChainStartTime))
 
-	transformSubnetStartTime := time.Now()
-	transformSubnetTx, err := pWallet.IssueTransformChainTx(
-		createSubnetTxID,
+	transformChainStartTime := time.Now()
+	transformChainTx, err := pWallet.IssueTransformChainTx(
+		createChainTxID,
 		createAssetTxID,
 		50*constants.MegaLux,
 		100*constants.MegaLux,
@@ -145,8 +145,8 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue transform net transaction with: %s\n", err)
 		return
 	}
-	transformSubnetTxID := transformSubnetTx.ID()
-	log.Printf("issued transform net transaction %s in %s\n", transformSubnetTxID, time.Since(transformSubnetStartTime))
+	transformChainTxID := transformChainTx.ID()
+	log.Printf("issued transform net transaction %s in %s\n", transformChainTxID, time.Since(transformChainStartTime))
 
 	addPermissionlessValidatorStartTime := time.Now()
 	startTime := time.Now().Add(time.Minute)
@@ -160,7 +160,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * constants.MegaLux,
 			},
-			Chain: createSubnetTxID,
+			Chain: createChainTxID,
 		},
 		&signer.Empty{},
 		createAssetTx.ID(),
@@ -184,7 +184,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * constants.MegaLux,
 			},
-			Chain: createSubnetTxID,
+			Chain: createChainTxID,
 		},
 		createAssetTxID,
 		&secp256k1fx.OutputOwners{},

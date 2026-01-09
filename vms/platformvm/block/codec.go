@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const CodecVersion = txs.CodecVersion

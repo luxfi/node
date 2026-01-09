@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 func TestMakeKeys(t *testing.T) {

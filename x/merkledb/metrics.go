@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	_ merkleDBMetrics = (*prometheusMetrics)(nil)
+	_ merkleDBMetrics = (*metricsImpl)(nil)
 	_ merkleDBMetrics = (*mockMetrics)(nil)
 
 	ioLabels     = []string{ioType}
@@ -87,7 +87,7 @@ type merkleDBMetrics interface {
 	ViewChangesNodeMiss()
 }
 
-type prometheusMetrics struct {
+type metricsImpl struct {
 	hashes metric.Counter
 	io     metric.CounterVec
 	lookup metric.CounterVec
@@ -100,7 +100,7 @@ func newMetrics(prefix string, reg metric.Registerer) (merkleDBMetrics, error) {
 	}
 
 	namespace := metric.AppendNamespace(prefix, "merkledb")
-	m := prometheusMetrics{
+	m := metricsImpl{
 		hashes: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "hashes",
@@ -125,47 +125,47 @@ func newMetrics(prefix string, reg metric.Registerer) (merkleDBMetrics, error) {
 	return &m, err
 }
 
-func (m *prometheusMetrics) HashCalculated() {
+func (m *metricsImpl) HashCalculated() {
 	m.hashes.Inc()
 }
 
-func (m *prometheusMetrics) DatabaseNodeRead() {
+func (m *metricsImpl) DatabaseNodeRead() {
 	m.io.With(ioReadLabels).Inc()
 }
 
-func (m *prometheusMetrics) DatabaseNodeWrite() {
+func (m *metricsImpl) DatabaseNodeWrite() {
 	m.io.With(ioWriteLabels).Inc()
 }
 
-func (m *prometheusMetrics) ValueNodeCacheHit() {
+func (m *metricsImpl) ValueNodeCacheHit() {
 	m.lookup.With(valueNodeCacheHitLabels).Inc()
 }
 
-func (m *prometheusMetrics) ValueNodeCacheMiss() {
+func (m *metricsImpl) ValueNodeCacheMiss() {
 	m.lookup.With(valueNodeCacheMissLabels).Inc()
 }
 
-func (m *prometheusMetrics) IntermediateNodeCacheHit() {
+func (m *metricsImpl) IntermediateNodeCacheHit() {
 	m.lookup.With(intermediateNodeCacheHitLabels).Inc()
 }
 
-func (m *prometheusMetrics) IntermediateNodeCacheMiss() {
+func (m *metricsImpl) IntermediateNodeCacheMiss() {
 	m.lookup.With(intermediateNodeCacheMissLabels).Inc()
 }
 
-func (m *prometheusMetrics) ViewChangesValueHit() {
+func (m *metricsImpl) ViewChangesValueHit() {
 	m.lookup.With(viewChangesValueHitLabels).Inc()
 }
 
-func (m *prometheusMetrics) ViewChangesValueMiss() {
+func (m *metricsImpl) ViewChangesValueMiss() {
 	m.lookup.With(viewChangesValueMissLabels).Inc()
 }
 
-func (m *prometheusMetrics) ViewChangesNodeHit() {
+func (m *metricsImpl) ViewChangesNodeHit() {
 	m.lookup.With(viewChangesNodeHitLabels).Inc()
 }
 
-func (m *prometheusMetrics) ViewChangesNodeMiss() {
+func (m *metricsImpl) ViewChangesNodeMiss() {
 	m.lookup.With(viewChangesNodeMissLabels).Inc()
 }
 

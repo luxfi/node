@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils/timer"
+	"github.com/luxfi/timer"
 )
 
 // Router handles message routing between chains

@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils"
 )
 
 // IPSigner will return a signedIP for the current value of our dynamic IP.

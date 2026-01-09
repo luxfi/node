@@ -31,7 +31,6 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -55,15 +54,15 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	utilmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/utils/buffer"
+	"github.com/luxfi/utils/perms"
 	"github.com/luxfi/vm/fx"
-	"github.com/luxfi/vm/utils/buffer"
-	utilmetric "github.com/luxfi/metric"
-	"github.com/luxfi/vm/utils/perms"
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/vm/nftfx"
 
@@ -120,7 +119,7 @@ var (
 
 	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or chain.ChainVM")
 	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
-	errNotBootstrapped         = errors.New("subnets not bootstrapped")
+	errNotBootstrapped         = errors.New("chains not bootstrapped")
 	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
 
 	fxs = map[ids.ID]fx.Factory{
@@ -144,7 +143,7 @@ type Manager interface {
 	// Queues a chain to be created in the future after chain creator is unblocked.
 	// This is only called from the P-chain thread to create other chains
 	// Queued chains are created only after P-chain is bootstrapped.
-	// This assumes only chains in tracked subnets are queued.
+	// This assumes only chains in tracked chains are queued.
 	QueueChainCreation(ChainParameters)
 
 	// Add a registrant [r]. Every time a chain is
@@ -312,8 +311,8 @@ type ManagerConfig struct {
 	ShutdownNodeFunc func(exitCode int)
 	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
 
-	Metrics        metric.MultiGatherer
-	MeterDBMetrics metric.MultiGatherer
+	Metrics        metrics.MultiGatherer
+	MeterDBMetrics metrics.MultiGatherer
 
 	FrontierPollFrequency   time.Duration
 	ConsensusAppConcurrency int
@@ -374,55 +373,55 @@ type manager struct {
 	// chain++ related interface to allow validators retrieval
 	validatorState validators.State
 
-	luxGatherer          metric.MultiGatherer            // chainID
-	handlerGatherer      metric.MultiGatherer            // chainID
-	meterChainVMGatherer metric.MultiGatherer            // chainID
-	meterGRAPHVMGatherer metric.MultiGatherer            // chainID
-	proposervmGatherer   metric.MultiGatherer            // chainID
-	p2pGatherer          metric.MultiGatherer            // chainID
-	linearGatherer       metric.MultiGatherer            // chainID
-	stakeGatherer        metric.MultiGatherer            // chainID
-	vmGatherer           map[ids.ID]metric.MultiGatherer // vmID -> chainID
+	luxGatherer          metrics.MultiGatherer            // chainID
+	handlerGatherer      metrics.MultiGatherer            // chainID
+	meterChainVMGatherer metrics.MultiGatherer            // chainID
+	meterGRAPHVMGatherer metrics.MultiGatherer            // chainID
+	proposervmGatherer   metrics.MultiGatherer            // chainID
+	p2pGatherer          metrics.MultiGatherer            // chainID
+	linearGatherer       metrics.MultiGatherer            // chainID
+	stakeGatherer        metrics.MultiGatherer            // chainID
+	vmGatherer           map[ids.ID]metrics.MultiGatherer // vmID -> chainID
 }
 
 // New returns a new Manager
 func New(config *ManagerConfig) (Manager, error) {
-	luxGatherer := metric.NewLabelGatherer(ChainLabel)
+	luxGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(luxNamespace, luxGatherer); err != nil {
 		return nil, err
 	}
 
-	handlerGatherer := metric.NewLabelGatherer(ChainLabel)
+	handlerGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(handlerNamespace, handlerGatherer); err != nil {
 		return nil, err
 	}
 
-	meterChainVMGatherer := metric.NewLabelGatherer(ChainLabel)
+	meterChainVMGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterchainvmNamespace, meterChainVMGatherer); err != nil {
 		return nil, err
 	}
 
-	meterGRAPHVMGatherer := metric.NewLabelGatherer(ChainLabel)
+	meterGRAPHVMGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterdagvmNamespace, meterGRAPHVMGatherer); err != nil {
 		return nil, err
 	}
 
-	proposervmGatherer := metric.NewLabelGatherer(ChainLabel)
+	proposervmGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(proposervmNamespace, proposervmGatherer); err != nil {
 		return nil, err
 	}
 
-	p2pGatherer := metric.NewLabelGatherer(ChainLabel)
+	p2pGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(p2pNamespace, p2pGatherer); err != nil {
 		return nil, err
 	}
 
-	consensusmanGatherer := metric.NewLabelGatherer(ChainLabel)
+	consensusmanGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(chainNamespace, consensusmanGatherer); err != nil {
 		return nil, err
 	}
 
-	stakeGatherer := metric.NewLabelGatherer(ChainLabel)
+	stakeGatherer := metrics.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(stakeNamespace, stakeGatherer); err != nil {
 		return nil, err
 	}
@@ -452,7 +451,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		p2pGatherer:          p2pGatherer,
 		linearGatherer:       consensusmanGatherer,
 		stakeGatherer:        stakeGatherer,
-		vmGatherer:           make(map[ids.ID]metric.MultiGatherer),
+		vmGatherer:           make(map[ids.ID]metrics.MultiGatherer),
 	}, nil
 }
 
@@ -738,9 +737,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	if chain.Engine != nil {
 		chain.Engine.Start(context.TODO(), !m.CriticalChains.Contains(chainParams.ID))
 
-		// Start a goroutine to monitor bootstrap completion and notify the subnet
+		// Start a goroutine to monitor bootstrap completion and notify the chain
 		// This is required because the health check (m.Nets.Bootstrapping()) reports
-		// subnets as not bootstrapped until sb.Bootstrapped(chainID) is called
+		// chains as not bootstrapped until sb.Bootstrapped(chainID) is called
 		go m.monitorBootstrap(chain.Engine, sb, chainParams.ID)
 	} else {
 		// DAG chains (X-Chain, Q-Chain) manage their own consensus and don't have
@@ -770,12 +769,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
 	// Create metrics gatherer for this chain
-	// The coreth EVM expects luxmetric.MultiGatherer, not *prometheus.Registry
+	// The coreth EVM expects metric.MultiGatherer, not a legacy registry type
 	m.Log.Info("Creating metrics gatherer", log.String("primaryAlias", primaryAlias))
-	chainMetricsGatherer := metric.NewMultiGatherer()
+	chainMetricsGatherer := metrics.NewMultiGatherer()
 
 	// Create a registry and register it with the gatherer
-	chainMetricsReg, err := metric.MakeAndRegister(chainMetricsGatherer, primaryAlias)
+	chainMetricsReg, err := metrics.MakeAndRegister(chainMetricsGatherer, primaryAlias)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chain metrics: %w", err)
 	}
@@ -982,7 +981,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// For native/primary network chains (P/C/X/Q/A/B/T/Z etc.), use PrimaryNetworkID for validator lookups.
 		// Native chains all have IDs with first 31 bytes zero, last byte is the chain letter (e.g., 'P', 'C').
 		// Validators are registered under constants.PrimaryNetworkID (ids.Empty), not individual chain IDs.
-		// For L1/subnet chains, use the subnet's validator set ID (chainParams.ChainID).
+		// For L1/chain chains, use the chain's validator set ID (chainParams.ChainID).
 		networkID := chainParams.ChainID
 		isNative := ids.IsNativeChain(chainParams.ID)
 		if isNative {
@@ -1321,10 +1320,10 @@ func (m *manager) createDAG(
 // errBootstrapTimeout is returned when a chain fails to bootstrap within the timeout period
 var errBootstrapTimeout = errors.New("chain failed to bootstrap within timeout")
 
-// monitorBootstrap monitors when a chain finishes bootstrapping and notifies the subnet.
+// monitorBootstrap monitors when a chain finishes bootstrapping and notifies the chain.
 // This is critical for health checks because the health check queries m.Nets.Bootstrapping()
-// which returns subnets that have chains still in bootstrapping state. Without this notification,
-// the health check would permanently report "subnets not bootstrapped".
+// which returns chains that have chains still in bootstrapping state. Without this notification,
+// the health check would permanently report "chains not bootstrapped".
 //
 // IMPORTANT: If bootstrap times out, the chain is NOT marked as bootstrapped. This ensures
 // real bootstrap failures are surfaced rather than masked by forcing a "ready" state.
@@ -1361,7 +1360,7 @@ func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
 		case <-ticker.C:
 			pollCount++
 			if checker.IsBootstrapped() {
-				m.Log.Info("chain finished bootstrapping, notifying subnet",
+				m.Log.Info("chain finished bootstrapping, notifying chain",
 					log.Stringer("chainID", chainID),
 					log.Int("pollCount", pollCount))
 				sb.Bootstrapped(chainID)

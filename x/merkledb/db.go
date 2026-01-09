@@ -22,8 +22,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/maybe"
 )
 
 const (

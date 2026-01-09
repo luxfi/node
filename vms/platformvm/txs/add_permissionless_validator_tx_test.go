@@ -17,13 +17,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
-	"github.com/luxfi/vm/utils"
 
 	safemath "github.com/luxfi/math"
 )

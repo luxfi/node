@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 )
 
 func Test_Node_Marshal(t *testing.T) {

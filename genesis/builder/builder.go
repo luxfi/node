@@ -15,9 +15,9 @@ import (
 	"path"
 	"time"
 
-	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
-	"github.com/luxfi/address/formatting"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/gas"
@@ -28,11 +28,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/utils/sampler"
 	"github.com/luxfi/vm/nftfx"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/propertyfx"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/sampler"
 
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 )

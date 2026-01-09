@@ -26,8 +26,8 @@ import (
 	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils"
 )
 
 func TestBlockVerify(t *testing.T) {

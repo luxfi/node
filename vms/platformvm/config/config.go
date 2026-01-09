@@ -42,16 +42,16 @@ type Config struct {
 	Network                       Network         `json:"network"`
 	BlockCacheSize                int             `json:"block-cache-size"`
 	TxCacheSize                   int             `json:"tx-cache-size"`
-	TransformedNetTxCacheSize     int             `json:"transformed-subnet-tx-cache-size"`
+	TransformedNetTxCacheSize     int             `json:"transformed-chain-tx-cache-size"`
 	RewardUTXOsCacheSize          int             `json:"reward-utxos-cache-size"`
 	ChainCacheSize                int             `json:"chain-cache-size"`
 	ChainDBCacheSize              int             `json:"chain-db-cache-size"`
 	BlockIDCacheSize              int             `json:"block-id-cache-size"`
 	FxOwnerCacheSize              int             `json:"fx-owner-cache-size"`
-	NetToL1ConversionCacheSize    int             `json:"subnet-to-l1-conversion-cache-size"`
+	NetToL1ConversionCacheSize    int             `json:"chain-to-l1-conversion-cache-size"`
 	L1WeightsCacheSize            int             `json:"l1-weights-cache-size"`
 	L1InactiveValidatorsCacheSize int             `json:"l1-inactive-validators-cache-size"`
-	L1NetIDNodeIDCacheSize        int             `json:"l1-subnet-id-node-id-cache-size"`
+	L1NetIDNodeIDCacheSize        int             `json:"l1-chain-id-node-id-cache-size"`
 	ChecksumsEnabled              bool            `json:"checksums-enabled"`
 	MempoolPruneFrequency         time.Duration   `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool            `json:"sybil-protection-enabled"`
@@ -61,7 +61,7 @@ type Config struct {
 	// Transaction fees
 	TxFee                         uint64 `json:"tx-fee"`
 	CreateAssetTxFee              uint64 `json:"create-asset-tx-fee"`
-	CreateNetTxFee                uint64 `json:"create-subnet-tx-fee"`
+	CreateNetTxFee                uint64 `json:"create-chain-tx-fee"`
 	CreateBlockchainTxFee         uint64 `json:"create-blockchain-tx-fee"`
 	AddPrimaryNetworkValidatorFee uint64 `json:"add-primary-network-validator-fee"`
 	AddPrimaryNetworkDelegatorFee uint64 `json:"add-primary-network-delegator-fee"`

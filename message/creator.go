@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 )
 
 var _ Creator = (*creator)(nil)

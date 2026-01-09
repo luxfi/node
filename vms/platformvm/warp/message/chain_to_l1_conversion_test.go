@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/utils/hashing"
 	"github.com/luxfi/vm/types"
-	"github.com/luxfi/vm/utils/hashing"
 )
 
 func TestChainToL1ConversionID(t *testing.T) {

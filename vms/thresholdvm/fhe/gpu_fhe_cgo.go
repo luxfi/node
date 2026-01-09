@@ -12,27 +12,27 @@
 //
 // Architecture:
 //
-//	luxcpp/lattice (C++ GPU) → lux/lattice/gpu (Go CGO) → ThresholdVM FHE
+//	lux/accel (unified GPU) → ThresholdVM FHE
 package fhe
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/lattice/v7/gpu"
 	"github.com/luxfi/lattice/v7/ring"
 	"github.com/luxfi/log"
+	"github.com/luxfi/lux/accel"
 	"github.com/luxfi/node/config"
 )
 
 // GPUFHEAccelerator provides GPU-accelerated FHE operations for ThresholdVM.
-// It wraps the lattice/gpu package to accelerate CKKS operations.
+// It uses the unified accel package to accelerate CKKS operations.
 type GPUFHEAccelerator struct {
-	mu       sync.RWMutex
-	contexts map[uint64]*gpu.NTTContext // Q modulus -> NTTContext
-	enabled  bool
-	logger   log.Logger
-	stats    *GPUFHEStats
+	mu      sync.RWMutex
+	session *accel.Session
+	enabled bool
+	logger  log.Logger
+	stats   *GPUFHEStats
 }
 
 // GPUFHEStats tracks GPU acceleration statistics
@@ -70,27 +70,39 @@ func NewGPUFHEAcceleratorWithOptions(logger log.Logger, opts GPUFHEOptions) (*GP
 		enabled = false
 	}
 
-	// Check if GPU is available via libLattice
-	// The backend (Metal/CUDA) is auto-detected by libLattice at runtime
-	available := gpu.GPUAvailable() && enabled
+	// Check if accel is available
+	available := accel.Available() && enabled
+
+	var session *accel.Session
+	if available {
+		var err error
+		session, err = accel.DefaultSession()
+		if err != nil {
+			available = false
+			if logger != nil {
+				logger.Warn("Failed to create accel session, using CPU fallback",
+					"error", err)
+			}
+		}
+	}
 
 	if logger != nil {
-		if available {
-			logger.Info("GPU FHE acceleration enabled",
-				"backend", gpu.GetBackend(),
-				"configBackend", gpuCfg.Backend)
+		if available && session != nil {
+			logger.Info("GPU FHE acceleration enabled via accel",
+				"backend", session.Backend().String(),
+				"device", session.DeviceInfo().Name)
 		} else {
 			logger.Warn("GPU FHE acceleration not available, using CPU fallback",
 				"gpuConfigEnabled", gpuCfg.Enabled,
-				"gpuAvailable", gpu.GPUAvailable())
+				"accelAvailable", accel.Available())
 		}
 	}
 
 	return &GPUFHEAccelerator{
-		contexts: make(map[uint64]*gpu.NTTContext),
-		enabled:  available,
-		logger:   logger,
-		stats:    &GPUFHEStats{},
+		session: session,
+		enabled: available && session != nil,
+		logger:  logger,
+		stats:   &GPUFHEStats{},
 	}, nil
 }
 
@@ -101,10 +113,13 @@ func (g *GPUFHEAccelerator) IsEnabled() bool {
 
 // Backend returns the active GPU backend name.
 func (g *GPUFHEAccelerator) Backend() string {
-	if !g.enabled {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	if !g.enabled || g.session == nil {
 		return "CPU (GPU not available)"
 	}
-	return gpu.GetBackend()
+	return g.session.Backend().String()
 }
 
 // Stats returns current GPU statistics.
@@ -114,27 +129,8 @@ func (g *GPUFHEAccelerator) Stats() GPUFHEStats {
 	return *g.stats
 }
 
-// getOrCreateContext gets or creates an NTT context for the given parameters.
-func (g *GPUFHEAccelerator) getOrCreateContext(N uint32, Q uint64) (*gpu.NTTContext, error) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	ctx, ok := g.contexts[Q]
-	if ok && ctx.N == N {
-		return ctx, nil
-	}
-
-	newCtx, err := gpu.NewNTTContext(N, Q)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create NTT context: %w", err)
-	}
-
-	g.contexts[Q] = newCtx
-	return newCtx, nil
-}
-
 // GPUNumberTheoreticTransformer implements ring.NumberTheoreticTransformer
-// using GPU acceleration for ThresholdVM FHE operations.
+// using GPU acceleration for ThresholdVM FHE operations via the accel package.
 type GPUNumberTheoreticTransformer struct {
 	accel    *GPUFHEAccelerator
 	N        int
@@ -167,21 +163,41 @@ func (t *GPUNumberTheoreticTransformer) Forward(p1, p2 []uint64) {
 		return
 	}
 
-	ctx, err := t.accel.getOrCreateContext(uint32(t.N), t.Q)
-	if err != nil {
+	t.accel.mu.RLock()
+	session := t.accel.session
+	t.accel.mu.RUnlock()
+
+	if session == nil {
 		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
 		return
 	}
 
-	// Copy input to output (NTT is in-place)
+	// Copy input to output
 	copy(p2, p1)
 
-	// GPU NTT
-	batch := [][]uint64{p2}
-	result, err := ctx.NTT(batch)
+	// Create tensors for GPU NTT
+	inputTensor, err := accel.NewTensorWithData[uint64](session, []int{len(p2)}, p2)
+	if err != nil {
+		t.fallback.Forward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+	defer inputTensor.Close()
+
+	outputTensor, err := accel.NewTensor[uint64](session, []int{len(p2)})
+	if err != nil {
+		t.fallback.Forward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+	defer outputTensor.Close()
+
+	// Execute GPU NTT
+	err = session.Lattice().PolynomialNTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(t.Q))
 	if err != nil {
 		t.fallback.Forward(p1, p2)
 		t.accel.mu.Lock()
@@ -190,8 +206,25 @@ func (t *GPUNumberTheoreticTransformer) Forward(p1, p2 []uint64) {
 		return
 	}
 
-	// Copy result
-	copy(p2, result[0])
+	// Sync and copy result
+	if err := session.Sync(); err != nil {
+		t.fallback.Forward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+
+	result, err := outputTensor.ToSlice()
+	if err != nil {
+		t.fallback.Forward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+
+	copy(p2, result)
 
 	t.accel.mu.Lock()
 	t.accel.stats.NTTForwardCalls++
@@ -211,21 +244,41 @@ func (t *GPUNumberTheoreticTransformer) Backward(p1, p2 []uint64) {
 		return
 	}
 
-	ctx, err := t.accel.getOrCreateContext(uint32(t.N), t.Q)
-	if err != nil {
+	t.accel.mu.RLock()
+	session := t.accel.session
+	t.accel.mu.RUnlock()
+
+	if session == nil {
 		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
 		return
 	}
 
 	// Copy input to output
 	copy(p2, p1)
 
-	// GPU INTT
-	batch := [][]uint64{p2}
-	result, err := ctx.INTT(batch)
+	// Create tensors for GPU INTT
+	inputTensor, err := accel.NewTensorWithData[uint64](session, []int{len(p2)}, p2)
+	if err != nil {
+		t.fallback.Backward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+	defer inputTensor.Close()
+
+	outputTensor, err := accel.NewTensor[uint64](session, []int{len(p2)})
+	if err != nil {
+		t.fallback.Backward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+	defer outputTensor.Close()
+
+	// Execute GPU INTT
+	err = session.Lattice().PolynomialINTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(t.Q))
 	if err != nil {
 		t.fallback.Backward(p1, p2)
 		t.accel.mu.Lock()
@@ -234,7 +287,25 @@ func (t *GPUNumberTheoreticTransformer) Backward(p1, p2 []uint64) {
 		return
 	}
 
-	copy(p2, result[0])
+	// Sync and copy result
+	if err := session.Sync(); err != nil {
+		t.fallback.Backward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+
+	result, err := outputTensor.ToSlice()
+	if err != nil {
+		t.fallback.Backward(p1, p2)
+		t.accel.mu.Lock()
+		t.accel.stats.GPUFallbackCalls++
+		t.accel.mu.Unlock()
+		return
+	}
+
+	copy(p2, result)
 
 	t.accel.mu.Lock()
 	t.accel.stats.NTTInverseCalls++
@@ -265,43 +336,68 @@ func (g *GPUFHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
+	g.mu.RLock()
+	session := g.session
+	g.mu.RUnlock()
+
+	if session == nil {
+		for i := range polys {
+			r.NTT(polys[i], polys[i])
+		}
+		return nil
+	}
+
 	if len(r.ModuliChain()) == 0 {
 		return fmt.Errorf("ring has no moduli")
 	}
 	Q := r.ModuliChain()[0]
 
-	ctx, err := g.getOrCreateContext(uint32(N), Q)
-	if err != nil {
-		// Fallback to CPU
-		for i := range polys {
-			r.NTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
-	// Build batch
-	batch := make([][]uint64, len(polys))
-	for i, poly := range polys {
-		batch[i] = make([]uint64, N)
-		if len(poly.Coeffs) > 0 && len(poly.Coeffs[0]) >= N {
-			copy(batch[i], poly.Coeffs[0])
-		}
-	}
-
-	// GPU batch NTT
-	results, err := ctx.NTT(batch)
-	if err != nil {
-		for i := range polys {
-			r.NTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
-	// Copy results back
+	// Process each polynomial using GPU
 	for i := range polys {
-		if len(polys[i].Coeffs) > 0 {
-			copy(polys[i].Coeffs[0], results[i])
+		if len(polys[i].Coeffs) == 0 || len(polys[i].Coeffs[0]) < N {
+			r.NTT(polys[i], polys[i])
+			continue
 		}
+
+		inputTensor, err := accel.NewTensorWithData[uint64](session, []int{N}, polys[i].Coeffs[0][:N])
+		if err != nil {
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		outputTensor, err := accel.NewTensor[uint64](session, []int{N})
+		if err != nil {
+			inputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		err = session.Lattice().PolynomialNTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(Q))
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		if err := session.Sync(); err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		result, err := outputTensor.ToSlice()
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		copy(polys[i].Coeffs[0], result)
+		inputTensor.Close()
+		outputTensor.Close()
 	}
 
 	g.mu.Lock()
@@ -324,40 +420,68 @@ func (g *GPUFHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
+	g.mu.RLock()
+	session := g.session
+	g.mu.RUnlock()
+
+	if session == nil {
+		for i := range polys {
+			r.INTT(polys[i], polys[i])
+		}
+		return nil
+	}
+
 	N := r.N()
 	if len(r.ModuliChain()) == 0 {
 		return fmt.Errorf("ring has no moduli")
 	}
 	Q := r.ModuliChain()[0]
 
-	ctx, err := g.getOrCreateContext(uint32(N), Q)
-	if err != nil {
-		for i := range polys {
-			r.INTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
-	batch := make([][]uint64, len(polys))
-	for i, poly := range polys {
-		batch[i] = make([]uint64, N)
-		if len(poly.Coeffs) > 0 && len(poly.Coeffs[0]) >= N {
-			copy(batch[i], poly.Coeffs[0])
-		}
-	}
-
-	results, err := ctx.INTT(batch)
-	if err != nil {
-		for i := range polys {
-			r.INTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
 	for i := range polys {
-		if len(polys[i].Coeffs) > 0 {
-			copy(polys[i].Coeffs[0], results[i])
+		if len(polys[i].Coeffs) == 0 || len(polys[i].Coeffs[0]) < N {
+			r.INTT(polys[i], polys[i])
+			continue
 		}
+
+		inputTensor, err := accel.NewTensorWithData[uint64](session, []int{N}, polys[i].Coeffs[0][:N])
+		if err != nil {
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		outputTensor, err := accel.NewTensor[uint64](session, []int{N})
+		if err != nil {
+			inputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		err = session.Lattice().PolynomialINTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(Q))
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		if err := session.Sync(); err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		result, err := outputTensor.ToSlice()
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		copy(polys[i].Coeffs[0], result)
+		inputTensor.Close()
+		outputTensor.Close()
 	}
 
 	g.mu.Lock()
@@ -381,48 +505,80 @@ func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) er
 		return nil
 	}
 
+	g.mu.RLock()
+	session := g.session
+	g.mu.RUnlock()
+
+	if session == nil {
+		for i := range a {
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+		}
+		return nil
+	}
+
 	N := r.N()
 	if len(r.ModuliChain()) == 0 {
 		return fmt.Errorf("ring has no moduli")
 	}
 	Q := r.ModuliChain()[0]
 
-	ctx, err := g.getOrCreateContext(uint32(N), Q)
-	if err != nil {
-		for i := range a {
-			r.MulCoeffsBarrett(a[i], b[i], out[i])
-		}
-		return nil
-	}
-
-	// Build batches
-	aBatch := make([][]uint64, len(a))
-	bBatch := make([][]uint64, len(b))
 	for i := range a {
-		aBatch[i] = make([]uint64, N)
-		bBatch[i] = make([]uint64, N)
-		if len(a[i].Coeffs) > 0 && len(a[i].Coeffs[0]) >= N {
-			copy(aBatch[i], a[i].Coeffs[0])
-		}
-		if len(b[i].Coeffs) > 0 && len(b[i].Coeffs[0]) >= N {
-			copy(bBatch[i], b[i].Coeffs[0])
-		}
-	}
-
-	// GPU polynomial multiplication
-	results, err := ctx.PolyMul(aBatch, bBatch)
-	if err != nil {
-		for i := range a {
+		if len(a[i].Coeffs) == 0 || len(b[i].Coeffs) == 0 || len(out[i].Coeffs) == 0 {
 			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
 		}
-		return nil
-	}
 
-	// Copy results
-	for i := range out {
-		if len(out[i].Coeffs) > 0 {
-			copy(out[i].Coeffs[0], results[i])
+		aTensor, err := accel.NewTensorWithData[uint64](session, []int{N}, a[i].Coeffs[0][:N])
+		if err != nil {
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
 		}
+
+		bTensor, err := accel.NewTensorWithData[uint64](session, []int{N}, b[i].Coeffs[0][:N])
+		if err != nil {
+			aTensor.Close()
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
+		}
+
+		outTensor, err := accel.NewTensor[uint64](session, []int{N})
+		if err != nil {
+			aTensor.Close()
+			bTensor.Close()
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
+		}
+
+		err = session.Lattice().PolynomialMul(aTensor.Untyped(), bTensor.Untyped(), outTensor.Untyped(), uint32(Q))
+		if err != nil {
+			aTensor.Close()
+			bTensor.Close()
+			outTensor.Close()
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
+		}
+
+		if err := session.Sync(); err != nil {
+			aTensor.Close()
+			bTensor.Close()
+			outTensor.Close()
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
+		}
+
+		result, err := outTensor.ToSlice()
+		if err != nil {
+			aTensor.Close()
+			bTensor.Close()
+			outTensor.Close()
+			r.MulCoeffsBarrett(a[i], b[i], out[i])
+			continue
+		}
+
+		copy(out[i].Coeffs[0], result)
+		aTensor.Close()
+		bTensor.Close()
+		outTensor.Close()
 	}
 
 	g.mu.Lock()
@@ -432,12 +588,9 @@ func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) er
 	return nil
 }
 
-// ClearCache clears all cached NTT contexts.
+// ClearCache clears any cached state.
 func (g *GPUFHEAccelerator) ClearCache() {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.contexts = make(map[uint64]*gpu.NTTContext)
-	gpu.ClearCache()
+	// No cache to clear with accel - session manages resources
 }
 
 // Close releases all GPU resources.
@@ -445,10 +598,9 @@ func (g *GPUFHEAccelerator) Close() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	for _, ctx := range g.contexts {
-		ctx.Close()
-	}
-	g.contexts = nil
+	// Session is managed by accel.DefaultSession, don't close it here
+	g.session = nil
+	g.enabled = false
 }
 
 // Global GPU accelerator instance (lazily initialized)

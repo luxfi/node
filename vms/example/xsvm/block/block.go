@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 // Stateless blocks are blocks as they are marshalled/unmarshalled and sent over

@@ -15,8 +15,8 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/luxfi/constants"
-	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/database"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -24,11 +24,11 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/json"
+	"github.com/luxfi/utils/perms"
+	"github.com/luxfi/utils/profiler"
 	"github.com/luxfi/vm/registry"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/json"
-	"github.com/luxfi/vm/utils/perms"
-	"github.com/luxfi/vm/utils/profiler"
 )
 
 const (

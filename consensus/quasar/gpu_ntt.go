@@ -27,10 +27,10 @@ type GPUNTTAccelerator struct {
 
 // GPUNTTStats tracks NTT accelerator statistics.
 type GPUNTTStats struct {
-	Enabled     bool
-	Backend     string
-	CachedRings int
-	TotalOps    uint64
+	Enabled      bool
+	Backend      string
+	TotalOps     uint64
+	GPUAvailable bool
 }
 
 // NewGPUNTTAccelerator creates a new NTT accelerator using pure Go lattice library.
@@ -173,10 +173,10 @@ func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
 	g.statsmu.RLock()
 	defer g.statsmu.RUnlock()
 	return GPUNTTStats{
-		Enabled:     true,
-		Backend:     "CPU (Pure Go lattice)",
-		CachedRings: 0,
-		TotalOps:    atomic.LoadUint64(&g.stats.TotalOps),
+		Enabled:      true,
+		Backend:      "CPU (Pure Go lattice)",
+		TotalOps:     atomic.LoadUint64(&g.stats.TotalOps),
+		GPUAvailable: false, // CPU-only build
 	}
 }
 

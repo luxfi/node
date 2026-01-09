@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 var (

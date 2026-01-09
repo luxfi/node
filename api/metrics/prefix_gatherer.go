@@ -6,10 +6,8 @@ package metrics
 import (
 	"errors"
 	"fmt"
-	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/metric"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/luxfi/metric"
 )
 
 var (
@@ -42,14 +40,11 @@ func (g *prefixGatherer) Register(prefix string, gatherer metric.Gatherer) error
 		}
 	}
 
-	prefixPtr := new(string)
-	*prefixPtr = prefix
 	g.register(
 		prefix,
 		&prefixedGatherer{
-			prefix:    prefix,
-			prefixPtr: prefixPtr,
-			gatherer:  gatherer,
+			prefix:   prefix,
+			gatherer: gatherer,
 		},
 	)
 	return nil
@@ -71,9 +66,8 @@ func (g *prefixGatherer) Deregister(prefix string) bool {
 }
 
 type prefixedGatherer struct {
-	prefix    string
-	prefixPtr *string // Cached pointer for when suffix is empty
-	gatherer  metric.Gatherer
+	prefix   string
+	gatherer metric.Gatherer
 }
 
 func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
@@ -81,15 +75,12 @@ func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
 	// is expected to still return the metrics in the case an error is returned.
 	metricFamilies, err := g.gatherer.Gather()
 	for _, metricFamily := range metricFamilies {
-		originalName := metricFamily.GetName()
+		originalName := metricFamily.Name
 		if originalName == "" {
-			// When the original name is empty, just use the prefix pointer
-			metricFamily.Name = g.prefixPtr
+			// When the original name is empty, just use the prefix
+			metricFamily.Name = g.prefix
 		} else {
-			metricFamily.Name = proto.String(utilmetric.AppendNamespace(
-				g.prefix,
-				originalName,
-			))
+			metricFamily.Name = metric.AppendNamespace(g.prefix, originalName)
 		}
 	}
 	return metricFamilies, err
@@ -108,5 +99,5 @@ func eitherIsPrefix(a, b string) bool {
 	return a == b[:len(a)] && // a is a prefix of b
 		(len(a) == 0 || // a is empty
 			len(a) == len(b) || // a is equal to b
-			b[len(a)] == utilmetric.NamespaceSeparatorByte) // a ends at a namespace boundary of b
+			b[len(a)] == metric.NamespaceSeparatorByte) // a ends at a namespace boundary of b
 }

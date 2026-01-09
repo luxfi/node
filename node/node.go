@@ -25,8 +25,6 @@ import (
 	coreth "github.com/luxfi/coreth/plugin/evm"
 
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -41,6 +39,7 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/api/keystore"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
@@ -71,16 +70,16 @@ import (
 	tvm "github.com/luxfi/node/vms/thresholdvm"
 	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/trace"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/dynamicip"
+	"github.com/luxfi/utils/filesystem"
+	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/utils/perms"
+	"github.com/luxfi/utils/profiler"
+	"github.com/luxfi/utils/resource"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/registry"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/dynamicip"
-	"github.com/luxfi/vm/utils/filesystem"
-	"github.com/luxfi/vm/utils/hashing"
-	"github.com/luxfi/vm/utils/ips"
-	"github.com/luxfi/vm/utils/perms"
-	"github.com/luxfi/vm/utils/profiler"
-	"github.com/luxfi/vm/utils/resource"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
@@ -575,7 +574,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.chainRouter = NewSimpleRouter(n.Log, nil)
 
 	// Configure benchlist
-	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
+	benchlistGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
 	// Don't assign to metric.DefaultRegisterer - it requires metric.Registerer interface
 
 	err = n.MetricsGatherer.Register(
@@ -927,7 +926,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 func (n *Node) initMetrics() error {
 	n.MetricsGatherer = metric.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = metric.NewLabelGatherer(chains.ChainLabel)
+	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1109,9 +1108,9 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	// The chain router is already initialized as a stub
 	// No further initialization needed for the stub implementation
 
-	subnets, err := chains.NewNets(n.ID, n.Config.NetConfigs)
+	chains, err := chains.NewNets(n.ID, n.Config.NetConfigs)
 	if err != nil {
-		return fmt.Errorf("failed to initialize subnets: %w", err)
+		return fmt.Errorf("failed to initialize chains: %w", err)
 	}
 
 	n.chainManager, err = chains.New(
@@ -1160,7 +1159,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            filepath.Join(n.Config.ChainDataDir, fmt.Sprintf("network-%d", n.Config.NetworkID)),
-			Nets:                                    subnets,
+			Nets:                                    chains,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
 		},
@@ -1346,7 +1345,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := metric.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1394,33 +1393,17 @@ func (n *Node) initMetricsAPI() error {
 		return nil
 	}
 
-	processReg, err := metric.MakeAndRegister(
+	if _, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		processNamespace,
-	)
-	if err != nil {
-		return err
-	}
-
-	// Current state of process metric.
-	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
-	if err := processReg.Register(processCollector); err != nil {
-		return err
-	}
-
-	// Go process metrics using debug.GCStats.
-	goCollector := collectors.NewGoCollector()
-	if err := processReg.Register(goCollector); err != nil {
+	); err != nil {
 		return err
 	}
 
 	n.Log.Info("initializing metrics API")
 
 	return n.APIServer.AddRoute(
-		promhttp.HandlerFor(
-			n.MetricsGatherer,
-			promhttp.HandlerOpts{},
-		),
+		metric.HandlerFor(n.MetricsGatherer),
 		"metrics",
 		"",
 	)

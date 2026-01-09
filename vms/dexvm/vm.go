@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/dexvm/mev"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 	"github.com/luxfi/node/vms/dexvm/perpetuals"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/warp"
 )
 

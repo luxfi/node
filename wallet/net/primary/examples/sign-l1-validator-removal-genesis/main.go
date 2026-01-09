@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
 	p2psdk "github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -72,9 +72,9 @@ func main() {
 
 	justification := platformvm.L1ValidatorRegistrationJustification{
 		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData{
-			ConvertChainToL1TxData: &platformvm.NetIDIndex{
-				NetId: netID[:],
-				Index: validationIndex,
+			ConvertChainToL1TxData: &platformvm.ChainIDIndex{
+				ChainId: netID[:],
+				Index:   validationIndex,
 			},
 		},
 	}

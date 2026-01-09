@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils/json"
 	"github.com/luxfi/warp"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"

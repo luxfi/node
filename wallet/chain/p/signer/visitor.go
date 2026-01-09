@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/utils/hashing"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/hashing"
 )
 
 var (
@@ -93,7 +93,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err

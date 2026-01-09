@@ -24,8 +24,8 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/compression"
 )
 
 const maxMessageToSend = 1024
@@ -80,10 +80,10 @@ func StartTestPeer(
 	}
 
 	// Create a metrics registry
-	promRegistry := metric.NewPrometheusRegistry()
+	reg := metric.NewRegistry()
 
 	mc, err := message.NewCreator(
-		promRegistry,
+		reg,
 		compression.Type(constants.DefaultNetworkCompressionType),
 		10*time.Second,
 	)
@@ -91,7 +91,7 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	peerMetrics, err := NewMetrics(promRegistry)
+	peerMetrics, err := NewMetrics(reg)
 	if err != nil {
 		return nil, err
 	}

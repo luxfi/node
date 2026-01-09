@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo/utxomock"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/timer/mockable"
 	"github.com/stretchr/testify/require"
 )
 
@@ -616,7 +616,7 @@ func TestGetValidatorRules(t *testing.T) {
 			expectedErr:   ErrIsNotTransformChainTx,
 		},
 		{
-			name:    "subnet",
+			name:    "chain",
 			netID:   netID,
 			backend: nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
@@ -733,7 +733,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			expectedErr:   ErrIsNotTransformChainTx,
 		},
 		{
-			name:    "subnet",
+			name:    "chain",
 			netID:   netID,
 			backend: nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {

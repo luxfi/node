@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/utils"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
-	"github.com/luxfi/vm/utils"
 )
 
 func TestTransformChainTxSerialization(t *testing.T) {
@@ -967,7 +967,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 			err: errUptimeRequirementTooLarge,
 		},
 		{
-			name: "invalid subnetAuth",
+			name: "invalid chainAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransformChainTx {
 				// This NetAuth fails verification.
 				invalidNetAuth := verifymock.NewVerifiable(ctrl)

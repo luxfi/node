@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 )
 
 func Test_newOutboundBuilder(t *testing.T) {

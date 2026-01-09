@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/dynamicip"
-	"github.com/luxfi/vm/utils/ulimit"
+	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/utils/dynamicip"
+	"github.com/luxfi/utils/ulimit"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 )
@@ -51,7 +51,7 @@ var (
 	defaultVMConfigDir          = filepath.Join(defaultConfigDir, "vms")
 	defaultVMAliasFilePath      = filepath.Join(defaultVMConfigDir, "aliases.json")
 	defaultChainAliasFilePath   = filepath.Join(defaultChainConfigDir, "aliases.json")
-	defaultNetConfigDir         = filepath.Join(defaultConfigDir, "subnets")
+	defaultNetConfigDir         = filepath.Join(defaultConfigDir, "chains")
 	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins", "current")
 	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
 	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
@@ -331,7 +331,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")
-	fs.Duration(ProposerVMMinBlockDelayKey, proposervm.DefaultMinBlockDelay, "Minimum delay to enforce when building a chain++ block for the primary network chains and the default minimum delay for subnets")
+	fs.Duration(ProposerVMMinBlockDelayKey, proposervm.DefaultMinBlockDelay, "Minimum delay to enforce when building a chain++ block for the primary network chains and the default minimum delay for chains")
 
 	// Metrics
 	fs.Bool(MeterVMsEnabledKey, true, "Enable Meter VMs to track VM performance with more granularity")
@@ -345,7 +345,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(ChainConfigDirKey, defaultChainConfigDir, fmt.Sprintf("Chain specific configurations parent directory. Ignored if %s is specified", ChainConfigContentKey))
 	fs.String(ChainConfigContentKey, "", "Specifies base64 encoded chains configurations")
 	fs.String(NetConfigDirKey, defaultNetConfigDir, fmt.Sprintf("Net specific configurations parent directory. Ignored if %s is specified", NetConfigContentKey))
-	fs.String(NetConfigContentKey, "", "Specifies base64 encoded subnets configurations")
+	fs.String(NetConfigContentKey, "", "Specifies base64 encoded chains configurations")
 
 	// Chain Data Directory
 	fs.String(ChainDataDirKey, defaultChainDataDir, "Chain specific data directory")
@@ -395,7 +395,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(ProcessContextFileKey, defaultProcessContextPath, "The path to write process context to (including PID, API URI, and staking address).")
 
 	// POA Mode
-	fs.Bool(POAModeEnabledKey, false, "Enable Proof of Authority mode for subnets")
+	fs.Bool(POAModeEnabledKey, false, "Enable Proof of Authority mode for chains")
 	fs.Bool(POASingleNodeModeKey, false, "Enable single node POA mode (no consensus required)")
 	fs.Duration(POAMinBlockTimeKey, 1*time.Second, "Minimum time between blocks in POA mode")
 	fs.StringSlice(POAAuthorizedNodesKey, nil, "List of authorized nodes for POA mode")

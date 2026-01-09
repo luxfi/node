@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	pb "github.com/luxfi/node/proto/pb/sync"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 )
 
 const verificationCacheSize = math.MaxUint16

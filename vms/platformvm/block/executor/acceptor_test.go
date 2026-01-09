@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestAcceptorVisitProposalBlock(t *testing.T) {

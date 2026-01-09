@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/utils/ips"
 )
 
 var _ OutboundMsgBuilder = (*outMsgBuilder)(nil)
@@ -248,8 +248,8 @@ func (b *outMsgBuilder) Handshake(
 	knownPeersSalt []byte,
 	requestAllNetIPs bool,
 ) (OutboundMessage, error) {
-	subsubsubnetIDBytes := make([][]byte, len(trackedNets))
-	encodeIDs(trackedNets, subsubsubnetIDBytes)
+	subsubchainIDBytes := make([][]byte, len(trackedNets))
+	encodeIDs(trackedNets, subsubchainIDBytes)
 	return b.builder.createOutbound(
 		&p2p.Message{
 			Message: &p2p.Message_Handshake{
@@ -260,7 +260,7 @@ func (b *outMsgBuilder) Handshake(
 					IpPort:        uint32(ip.Port()),
 					IpSigningTime: ipSigningTime,
 					IpNodeIdSig:   ipNodeIDSig,
-					TrackedNets:   subsubsubnetIDBytes,
+					TrackedNets:   subsubchainIDBytes,
 					Client: &p2p.Client{
 						Name:  client,
 						Major: major,

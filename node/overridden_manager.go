@@ -124,28 +124,28 @@ func (o *overriddenManager) String() string {
 	sb.WriteString(fmt.Sprintf("Overridden Validator Manager (NetID = %s): Validator Manager: (Size = %d)\n",
 		o.netID, len(validators)))
 
-	// Get all subnet IDs by checking which ones have validators
-	subnetIDs := []ids.ID{o.netID}
+	// Get all chain IDs by checking which ones have validators
+	chainIDs := []ids.ID{o.netID}
 
-	// Also check if there are validators in other subnets (for display purposes)
+	// Also check if there are validators in other chains (for display purposes)
 	// This is a bit of a hack but matches the expected test output
 	// Check a few common test IDs
 	testID1, _ := ids.FromString("2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w")
 	if testValidators := o.manager.GetValidatorIDs(testID1); len(testValidators) > 0 {
-		subnetIDs = append(subnetIDs, testID1)
+		chainIDs = append(chainIDs, testID1)
 	}
 
-	// Write validator information for each subnet
-	for _, subnetID := range subnetIDs {
-		subnetValidators := o.manager.GetMap(subnetID)
-		subnetWeight, _ := o.manager.TotalWeight(subnetID)
+	// Write validator information for each chain
+	for _, chainID := range chainIDs {
+		chainValidators := o.manager.GetMap(chainID)
+		chainWeight, _ := o.manager.TotalWeight(chainID)
 
 		sb.WriteString(fmt.Sprintf("    Net[%s]: Validator Set: (Size = %d, Weight = %d)\n",
-			subnetID, len(subnetValidators), subnetWeight))
+			chainID, len(chainValidators), chainWeight))
 
 		// Sort validators by node ID for consistent output
 		var nodeIDs []ids.NodeID
-		for nodeID := range subnetValidators {
+		for nodeID := range chainValidators {
 			nodeIDs = append(nodeIDs, nodeID)
 		}
 		// Sort by string representation
@@ -155,7 +155,7 @@ func (o *overriddenManager) String() string {
 
 		// Write each validator
 		for i, nodeID := range nodeIDs {
-			validator := subnetValidators[nodeID]
+			validator := chainValidators[nodeID]
 			sb.WriteString(fmt.Sprintf("        Validator[%d]: %s, %d\n",
 				i, nodeID, validator.Weight))
 		}

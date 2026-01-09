@@ -95,12 +95,12 @@ func (w *withOptions) NewAddChainValidatorTx(
 // Removed in regenesis
 func (w *withOptions) NewRemoveChainValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	chainID ids.ID,
 	options ...common.Option,
 ) (*txs.RemoveChainValidatorTx, error) {
 	return w.builder.NewRemoveChainValidatorTx(
 		nodeID,
-		subnetID,
+		chainID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -118,7 +118,7 @@ func (w *withOptions) NewAddDelegatorTx(
 }
 
 func (w *withOptions) NewCreateChainTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -126,7 +126,7 @@ func (w *withOptions) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	return w.builder.NewCreateChainTx(
-		subnetID,
+		chainID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -135,11 +135,11 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-func (w *withOptions) NewCreateSubnetTx(
+func (w *withOptions) NewCreateChainTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateSubnetTx, error) {
-	return w.builder.NewCreateSubnetTx(
+) (*txs.CreateChainTx, error) {
+	return w.builder.NewCreateChainTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
@@ -147,26 +147,26 @@ func (w *withOptions) NewCreateSubnetTx(
 
 // Removed in regenesis
 func (w *withOptions) NewTransferChainOwnershipTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.TransferChainOwnershipTx, error) {
 	return w.builder.NewTransferChainOwnershipTx(
-		subnetID,
+		chainID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) NewConvertChainToL1Tx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	chainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.ConvertChainToL1Tx, error) {
 	return w.builder.NewConvertChainToL1Tx(
-		subnetID,
+		chainID,
 		chainID,
 		address,
 		validators,
@@ -246,7 +246,7 @@ func (w *withOptions) NewExportTx(
 
 // Removed in regenesis
 func (w *withOptions) NewTransformChainTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -263,7 +263,7 @@ func (w *withOptions) NewTransformChainTx(
 	options ...common.Option,
 ) (*txs.TransformChainTx, error) {
 	return w.builder.NewTransformChainTx(
-		subnetID,
+		chainID,
 		assetID,
 		initialSupply,
 		maxSupply,

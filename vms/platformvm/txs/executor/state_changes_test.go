@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/vm/utils/iterator"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils/iterator"
 )
 
 func TestAdvanceTimeTo_UpdatesFeeState(t *testing.T) {

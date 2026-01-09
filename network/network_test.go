@@ -34,10 +34,10 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/bloom"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/bloom"
+	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/utils/ips"
 	"github.com/luxfi/warp"
 )
 

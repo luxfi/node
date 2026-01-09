@@ -6,8 +6,8 @@ package block
 import (
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/codec"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 )
 

@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/utils/wrappers"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/wrappers"
 )
 
 // FuzzTransactionParsing tests transaction parsing with random data
@@ -506,7 +506,7 @@ func (v *visitor) AddValidatorTx(*AddValidatorTx) error                         
 func (v *visitor) AdvanceTimeTx(*AdvanceTimeTx) error                               { return nil }
 func (v *visitor) BaseTx(*BaseTx) error                                             { return nil }
 func (v *visitor) CreateChainTx(*CreateChainTx) error                               { return nil }
-func (v *visitor) CreateSubnetTx(*CreateSubnetTx) error                             { return nil }
+func (v *visitor) CreateChainTx(*CreateChainTx) error                               { return nil }
 func (v *visitor) ExportTx(*ExportTx) error                                         { return nil }
 func (v *visitor) ImportTx(*ImportTx) error                                         { return nil }
 func (v *visitor) RemoveChainValidatorTx(*RemoveChainValidatorTx) error             { return nil }

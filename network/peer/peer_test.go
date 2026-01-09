@@ -32,8 +32,8 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/compression"
 )
 
 type testPeer struct {

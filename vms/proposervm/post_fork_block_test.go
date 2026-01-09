@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/timer/mockable"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
-	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/crypto/hash"
 )
 
 var (
@@ -26,7 +26,7 @@ type Metadata struct {
 
 // Initialize set the bytes and ID
 func (md *Metadata) Initialize(unsignedBytes, bytes []byte) {
-	md.id = hashing.ComputeHash256Array(bytes)
+	md.id = hash.ComputeHash256Array(bytes)
 	md.unsignedBytes = unsignedBytes
 	md.bytes = bytes
 }

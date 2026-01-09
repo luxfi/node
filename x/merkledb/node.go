@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 )
 
 // Representation of a node stored in the database.

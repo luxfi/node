@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/vm/utils/hashing"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/utils/wrappers"
 )
 
 func BuildUnsigned(

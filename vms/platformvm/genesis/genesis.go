@@ -14,10 +14,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/math"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/math"
 )
 
 // Note that since a Lux network has exactly one Platform Chain,

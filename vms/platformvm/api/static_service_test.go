@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/genesis"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils/json"
 )
 
 func TestBuildGenesisInvalidUTXOBalance(t *testing.T) {

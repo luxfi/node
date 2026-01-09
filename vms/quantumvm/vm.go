@@ -25,8 +25,8 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/quantumvm/config"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
-	"github.com/luxfi/vm/utils/json"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils/json"
 	"github.com/luxfi/warp"
 )
 

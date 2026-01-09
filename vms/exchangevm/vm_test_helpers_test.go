@@ -11,11 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/address"
 	consensusctx "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/address"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -138,7 +138,7 @@ func (m *mockValidatorState) GetNetworkID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 

@@ -20,11 +20,11 @@ require (
 	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/google/btree v1.1.3
-	github.com/google/renameio/v2 v2.0.0 // indirect
+	github.com/google/renameio/v2 v2.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/rpc v1.2.1
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/holiman/uint256 v1.3.2
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
@@ -40,16 +40,15 @@ require (
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
-	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/pires/go-proxyproto v0.8.1
-	github.com/prometheus/client_golang v1.23.2
-	github.com/prometheus/client_model v0.6.2
+	github.com/prometheus/client_golang v1.23.2 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/rs/cors v1.11.1
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
@@ -144,6 +143,7 @@ require (
 	github.com/luxfi/geth v1.16.69
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
+	github.com/luxfi/lux/accel v0.0.0
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/p2p v1.18.7
 	github.com/luxfi/qzmq v0.1.4
@@ -160,6 +160,7 @@ require (
 	github.com/luxfi/compress v0.0.3 // indirect
 	github.com/luxfi/concurrent v0.0.2 // indirect
 	github.com/luxfi/container v0.0.2 // indirect
+	github.com/pingcap/errors v0.11.5-0.20210425183316-da1aaba5fb63 // indirect
 )
 
 require (
@@ -199,7 +200,7 @@ require (
 	github.com/luxfi/cache v1.2.0 // indirect
 	github.com/luxfi/codec v1.1.2
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
-	github.com/luxfi/formatting v1.0.0
+	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/gpu v0.30.0 // indirect
 	github.com/luxfi/math/big v0.1.0 // indirect
@@ -223,10 +224,9 @@ require (
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pion/transport/v3 v3.1.1 // indirect
 	github.com/pkg/sftp v1.13.5 // indirect
-	github.com/posthog/posthog-go v1.6.1 // indirect
+	github.com/posthog/posthog-go v1.8.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/status-im/keycard-go v0.3.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect

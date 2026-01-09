@@ -18,16 +18,15 @@ import (
 
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -35,13 +34,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
+	safemath "github.com/luxfi/utils/math"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
-	safemath "github.com/luxfi/vm/utils/math"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
-	avajson "github.com/luxfi/vm/utils/json"
+	avajson "github.com/luxfi/utils/json"
 )
 
 const (
@@ -1304,7 +1304,7 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 				err,
 			)
 		}
-		_, ok := netTx.Unsigned.(*txs.CreateSubnetTx)
+		_, ok := netTx.Unsigned.(*txs.CreateChainTx)
 		if !ok {
 			return fmt.Errorf("%q is not a net", args.NetID)
 		}

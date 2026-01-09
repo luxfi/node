@@ -55,7 +55,7 @@ func main() {
 
 	pWallet := wallet.P()
 
-	// Owner for subnets
+	// Owner for chains
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs:     []ids.ShortID{privKey.Address()},
@@ -99,24 +99,24 @@ func main() {
 	for _, chain := range chains {
 		fmt.Printf("\n=== Creating %s ===\n", chain.Name)
 
-		// Step 1: Create subnet
-		fmt.Printf("Creating subnet for %s...\n", chain.Name)
-		createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
+		// Step 1: Create chain
+		fmt.Printf("Creating chain for %s...\n", chain.Name)
+		createChainTx, err := pWallet.IssueCreateChainTx(owner)
 		if err != nil {
-			log.Printf("Failed to create subnet for %s: %v", chain.Name, err)
+			log.Printf("Failed to create chain for %s: %v", chain.Name, err)
 			continue
 		}
-		subnetID := createSubnetTx.ID()
-		fmt.Printf("  Subnet ID: %s\n", subnetID)
+		chainID := createChainTx.ID()
+		fmt.Printf("  Chain ID: %s\n", chainID)
 
 		// Wait for acceptance
-		fmt.Println("  Waiting for subnet acceptance...")
+		fmt.Println("  Waiting for chain acceptance...")
 		time.Sleep(3 * time.Second)
 
-		// Step 2: Create blockchain in the subnet
+		// Step 2: Create blockchain in the chain
 		fmt.Printf("Creating blockchain for %s...\n", chain.Name)
 		createChainTx, err := pWallet.IssueCreateChainTx(
-			subnetID,
+			chainID,
 			[]byte(chain.Genesis),
 			evmVMID,
 			nil, // fxIDs

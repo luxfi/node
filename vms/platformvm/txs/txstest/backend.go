@@ -10,10 +10,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
+	"github.com/luxfi/vm/platformvm/fx"
 )
 
 var (
@@ -54,7 +54,7 @@ func (b *Backend) GetUTXO(_ context.Context, chainID, utxoID ids.ID) (*lux.UTXO,
 }
 
 func (b *Backend) GetOwner(_ context.Context, ownerID ids.ID) (fx.Owner, error) {
-	// For test purposes, treat ownerID as subnet ID
+	// For test purposes, treat ownerID as chain ID
 	return b.state.GetNetOwner(ownerID)
 }
 

@@ -8,8 +8,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/maybe"
 )
 
 // Tests:

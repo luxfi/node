@@ -9,11 +9,11 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/luxfi/codec"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 var (

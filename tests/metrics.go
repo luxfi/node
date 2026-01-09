@@ -9,12 +9,10 @@ import (
 
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
-
-	dto "github.com/prometheus/client_model/go"
 )
 
 // "metric name" -> "metric value"
-type NodeMetrics map[string]*dto.MetricFamily
+type NodeMetrics map[string]*metric.MetricFamily
 
 // URI -> "metric name" -> "metric value"
 type NodesMetrics map[string]NodeMetrics
@@ -51,29 +49,28 @@ func GetMetricValue(metrics NodeMetrics, name string, labels metric.Labels) (flo
 		return 0, false
 	}
 
-	for _, metric := range metricFamily.Metric {
-		if !labelsMatch(metric, labels) {
+	for _, m := range metricFamily.Metrics {
+		if !labelsMatch(m, labels) {
 			continue
 		}
 
-		switch {
-		case metric.Gauge != nil:
-			return metric.Gauge.GetValue(), true
-		case metric.Counter != nil:
-			return metric.Counter.GetValue(), true
+		// For counters and gauges, Value holds the current value
+		switch metricFamily.Type {
+		case metric.MetricTypeCounter, metric.MetricTypeGauge:
+			return m.Value.Value, true
 		}
 	}
 	return 0, false
 }
 
-func labelsMatch(metric *dto.Metric, labels metric.Labels) bool {
+func labelsMatch(m metric.Metric, labels metric.Labels) bool {
 	var found int
-	for _, label := range metric.Label {
-		expectedValue, ok := labels[label.GetName()]
+	for _, label := range m.Labels {
+		expectedValue, ok := labels[label.Name]
 		if !ok {
 			continue
 		}
-		if label.GetValue() != expectedValue {
+		if label.Value != expectedValue {
 			return false
 		}
 		found++

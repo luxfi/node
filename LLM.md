@@ -1001,7 +1001,7 @@ Used aggressive parallel agent deployment (10 agents total across 2 waves) to fi
 **Changes**:
 - Fixed duplicate imports (removed 15+ package duplicates)
 - Added LUXAssetID, WarpSigner fields to testcontext
-- Fixed prometheus imports, replaced metric.NewRegistry
+- Fixed metrics imports, replaced metric.NewRegistry
 - Fixed options_test ErrNotOracle reference
 - Updated WithIDs() method to set LUXAssetID
 **Result**: Reduced errors significantly

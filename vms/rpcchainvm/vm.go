@@ -19,8 +19,8 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/utils"
 	"github.com/luxfi/vm/rpcchainvm/grpcutils"
-	"github.com/luxfi/vm/utils"
 
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	runtimepb "github.com/luxfi/node/proto/pb/vm/runtime"

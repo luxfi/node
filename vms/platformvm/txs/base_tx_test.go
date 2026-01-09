@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/utils"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
-	"github.com/luxfi/vm/utils"
 )
 
 func TestBaseTxSerialization(t *testing.T) {

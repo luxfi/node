@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/vm/utils/hashing"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils/hashing"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (

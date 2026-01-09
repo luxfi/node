@@ -7,8 +7,8 @@
 package falconfx
 
 import (
-	"github.com/luxfi/log"
 	"github.com/luxfi/codec"
+	"github.com/luxfi/log"
 )
 
 // VM defines the required VM interface for FALCON fx

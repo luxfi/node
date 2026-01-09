@@ -15,7 +15,7 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils/wrappers"
 )
 
 var (

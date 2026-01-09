@@ -6,7 +6,7 @@ package summary
 import (
 	"fmt"
 
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 func Parse(bytes []byte) (StateSummary, error) {

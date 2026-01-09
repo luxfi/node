@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 )
 
 var (

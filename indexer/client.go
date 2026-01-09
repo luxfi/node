@@ -7,10 +7,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/address/formatting"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils/json"
 )
 
 type Client struct {

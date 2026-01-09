@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	nodeconsensus "github.com/luxfi/node/consensus"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 // mockChainVM is a simple mock for testing that implements interfaces.VM

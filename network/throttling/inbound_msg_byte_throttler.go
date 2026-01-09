@@ -13,10 +13,10 @@ import (
 	"github.com/luxfi/metric"
 
 	validators "github.com/luxfi/consensus/validator"
-		"github.com/luxfi/constants"
-		"github.com/luxfi/ids"
-		"github.com/luxfi/vm/utils/linked"
-		utilmetric "github.com/luxfi/metric"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
+	utilmetric "github.com/luxfi/metric"
+	"github.com/luxfi/utils/linked"
 )
 
 // See inbound_msg_throttler.go

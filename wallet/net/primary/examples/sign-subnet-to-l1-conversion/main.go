@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
 	p2psdk "github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -43,14 +43,14 @@ func main() {
 		log.Fatalf("failed to fetch network ID: %s\n", err)
 	}
 
-	subnetToL1Conversion, err := warpmessage.NewChainToL1Conversion(conversionID)
+	chainToL1Conversion, err := warpmessage.NewChainToL1Conversion(conversionID)
 	if err != nil {
 		log.Fatalf("failed to create NetToL1Conversion message: %s\n", err)
 	}
 
 	addressedCall, err := payload.NewAddressedCall(
 		nil,
-		subnetToL1Conversion.Bytes(),
+		chainToL1Conversion.Bytes(),
 	)
 	if err != nil {
 		log.Fatalf("failed to create AddressedCall message: %s\n", err)

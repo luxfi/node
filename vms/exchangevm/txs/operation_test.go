@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 )

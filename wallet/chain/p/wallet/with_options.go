@@ -107,7 +107,7 @@ func (w *withOptions) IssueAddDelegatorTx(
 }
 
 func (w *withOptions) IssueCreateChainTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -115,7 +115,7 @@ func (w *withOptions) IssueCreateChainTx(
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueCreateChainTx(
-		subnetID,
+		chainID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -125,11 +125,11 @@ func (w *withOptions) IssueCreateChainTx(
 }
 
 // Removed in regenesis
-func (w *withOptions) IssueCreateSubnetTx(
+func (w *withOptions) IssueCreateChainTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateSubnetTx(
+	return w.wallet.IssueCreateChainTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
@@ -137,26 +137,26 @@ func (w *withOptions) IssueCreateSubnetTx(
 
 // Removed in regenesis
 func (w *withOptions) IssueTransferChainOwnershipTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueTransferChainOwnershipTx(
-		subnetID,
+		chainID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
 func (w *withOptions) IssueConvertChainToL1Tx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	chainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueConvertChainToL1Tx(
-		subnetID,
+		chainID,
 		chainID,
 		address,
 		validators,
@@ -236,7 +236,7 @@ func (w *withOptions) IssueExportTx(
 
 // Removed in regenesis
 func (w *withOptions) IssueTransformChainTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -253,7 +253,7 @@ func (w *withOptions) IssueTransformChainTx(
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueTransformChainTx(
-		subnetID,
+		chainID,
 		assetID,
 		initialSupply,
 		maxSupply,

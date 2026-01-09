@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 // UnsignedMessage defines the standard format for an unsigned Warp message.

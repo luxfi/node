@@ -12,11 +12,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/vm/platformvm/fx"
 )
 
 var _ Backend = (*backend)(nil)
@@ -34,30 +34,30 @@ type backend struct {
 
 	context *builder.Context
 
-	subnetOwnerLock sync.RWMutex
-	subnetOwner     map[ids.ID]fx.Owner // netID -> owner
+	chainOwnerLock sync.RWMutex
+	chainOwner     map[ids.ID]fx.Owner // netID -> owner
 }
 
-func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map[ids.ID]*txs.Tx) Backend {
-	subnetOwner := make(map[ids.ID]fx.Owner)
-	for txID, tx := range subnetTxs { // first get owners from the CreateSubnetTx
-		createSubnetTx, ok := tx.Unsigned.(*txs.CreateSubnetTx)
+func NewBackend(context *builder.Context, utxos common.ChainUTXOs, chainTxs map[ids.ID]*txs.Tx) Backend {
+	chainOwner := make(map[ids.ID]fx.Owner)
+	for txID, tx := range chainTxs { // first get owners from the CreateChainTx
+		createChainTx, ok := tx.Unsigned.(*txs.CreateChainTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[txID] = createSubnetTx.Owner
+		chainOwner[txID] = createChainTx.Owner
 	}
-	for _, tx := range subnetTxs { // then check for TransferChainOwnershipTx
-		transferSubnetOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
+	for _, tx := range chainTxs { // then check for TransferChainOwnershipTx
+		transferChainOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[transferSubnetOwnershipTx.Chain] = transferSubnetOwnershipTx.Owner
+		chainOwner[transferChainOwnershipTx.Chain] = transferChainOwnershipTx.Owner
 	}
 	return &backend{
-		ChainUTXOs:  utxos,
-		context:     context,
-		subnetOwner: subnetOwner,
+		ChainUTXOs: utxos,
+		context:    context,
+		chainOwner: chainOwner,
 	}
 }
 
@@ -108,8 +108,8 @@ func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
-	v.b.setSubnetOwner(v.txID, tx.Owner)
+func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
+	v.b.setChainOwner(v.txID, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -159,7 +159,7 @@ func (v *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 }
 
 func (v *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-	v.b.setSubnetOwner(tx.Chain, tx.Owner)
+	v.b.setChainOwner(tx.Chain, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }
 
@@ -210,23 +210,23 @@ func (b *backend) removeUTXOs(ctx context.Context, sourceChain ids.ID, utxoIDs s
 }
 
 func (b *backend) GetOwner(_ context.Context, ownerID ids.ID) (fx.Owner, error) {
-	b.subnetOwnerLock.RLock()
-	defer b.subnetOwnerLock.RUnlock()
+	b.chainOwnerLock.RLock()
+	defer b.chainOwnerLock.RUnlock()
 
-	owner, exists := b.subnetOwner[ownerID]
+	owner, exists := b.chainOwner[ownerID]
 	if !exists {
 		return nil, database.ErrNotFound
 	}
 	return owner, nil
 }
 
-func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
+func (b *backend) GetChainOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
 	return b.GetOwner(context.Background(), netID)
 }
 
-func (b *backend) setSubnetOwner(netID ids.ID, owner fx.Owner) {
-	b.subnetOwnerLock.Lock()
-	defer b.subnetOwnerLock.Unlock()
+func (b *backend) setChainOwner(netID ids.ID, owner fx.Owner) {
+	b.chainOwnerLock.Lock()
+	defer b.chainOwnerLock.Unlock()
 
-	b.subnetOwner[netID] = owner
+	b.chainOwner[netID] = owner
 }

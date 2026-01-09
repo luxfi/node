@@ -59,12 +59,12 @@ func NewContextFromClients(
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                         constants.MilliLux,
 			CreateAssetTxFee:              10 * constants.MilliLux,
-			CreateSubnetTxFee:             constants.Lux,
+			CreateChainTxFee:              constants.Lux,
 			CreateBlockchainTxFee:         constants.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         constants.MilliLux,
-			AddSubnetDelegatorFee:         constants.MilliLux,
+			AddChainValidatorFee:          constants.MilliLux,
+			AddChainDelegatorFee:          constants.MilliLux,
 		},
 	}, nil
 }

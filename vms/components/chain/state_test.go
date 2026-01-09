@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/utils/hashing"
 	"github.com/luxfi/vm/chain/blocktest"
-	"github.com/luxfi/vm/utils/hashing"
 )
 
 const (

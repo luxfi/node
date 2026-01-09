@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 )
 
 var (

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils/compression"
 	"google.golang.org/protobuf/proto"
 )
 

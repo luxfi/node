@@ -119,11 +119,11 @@ func (b *builderWithOptions) NewCreateChainTx(
 	)
 }
 
-func (b *builderWithOptions) NewCreateSubnetTx(
+func (b *builderWithOptions) NewCreateChainTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateSubnetTx, error) {
-	return b.Builder.NewCreateSubnetTx(
+) (*txs.CreateChainTx, error) {
+	return b.Builder.NewCreateChainTx(
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)

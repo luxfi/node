@@ -182,7 +182,7 @@ const (
 	ChainConfigDirKey                                  = "chain-config-dir"
 	ChainConfigContentKey                              = "chain-config-content"
 	ImportChainDataKey                                 = "import-chain-data"
-	NetConfigDirKey                                    = "subnet-config-dir"
+	NetConfigDirKey                                    = "chain-config-dir"
 	NetConfigContentKey                                = "net-config-content"
 	ProfileDirKey                                      = "profile-dir"
 	ProfileContinuousEnabledKey                        = "profile-continuous-enabled"

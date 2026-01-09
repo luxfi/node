@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/utils/bloom"
-	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/utils/bloom"
+	"github.com/luxfi/utils/ips"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {

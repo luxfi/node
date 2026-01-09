@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/vm/utils/profiler"
-	"github.com/luxfi/vm/utils/timer"
+	"github.com/luxfi/timer"
+	"github.com/luxfi/utils/profiler"
 )
 
 type APIIndexerConfig struct {
@@ -194,7 +194,7 @@ type Config struct {
 	TrackedChains  set.Set[ids.ID] `json:"trackedChains"`
 	TrackAllChains bool            `json:"trackAllChains"`
 
-	NetConfigs map[ids.ID]nets.Config `json:"subnetConfigs"`
+	NetConfigs map[ids.ID]nets.Config `json:"chainConfigs"`
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

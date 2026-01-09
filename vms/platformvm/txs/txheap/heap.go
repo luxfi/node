@@ -6,7 +6,7 @@ package txheap
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/vm/utils/heap"
+	"github.com/luxfi/utils/heap"
 )
 
 type Heap interface {

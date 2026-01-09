@@ -29,8 +29,8 @@ import (
 	validators "github.com/luxfi/consensus/validator"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/timer/mockable"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
-	"github.com/luxfi/vm/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )

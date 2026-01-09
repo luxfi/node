@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/ips"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/utils/ips"
 )
 
 // FuzzPeerMessageHandling tests peer message handling with random data

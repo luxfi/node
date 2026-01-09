@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	nodeconsensus "github.com/luxfi/node/consensus"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 )
 
 // Maximum number of containers IDs that can be fetched at a time in a call to

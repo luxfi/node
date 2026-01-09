@@ -4,9 +4,9 @@
 package keystore
 
 import (
-	"github.com/luxfi/constants"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/constants"
 )
 
 const (

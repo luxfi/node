@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/warp/socket"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/wrappers"
 )
 
 var _ consensuscore.Acceptor = (*EventSockets)(nil)

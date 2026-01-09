@@ -499,8 +499,8 @@ type Ping struct {
 
 	// Uptime percentage on the primary network [0, 100]
 	Uptime uint32 `protobuf:"varint,1,opt,name=uptime,proto3" json:"uptime,omitempty"`
-	// Uptime percentage on subnets
-	NetUptimes []*NetUptime `protobuf:"bytes,2,rep,name=subnet_uptimes,json=subnetUptimes,proto3" json:"subnet_uptimes,omitempty"`
+	// Uptime percentage on chains
+	NetUptimes []*NetUptime `protobuf:"bytes,2,rep,name=chain_uptimes,json=chainUptimes,proto3" json:"chain_uptimes,omitempty"`
 }
 
 func (x *Ping) Reset() {
@@ -549,14 +549,14 @@ func (x *Ping) GetNetUptimes() []*NetUptime {
 	return nil
 }
 
-// NetUptime is a descriptor for a peer's perceived uptime on a subnet.
+// NetUptime is a descriptor for a peer's perceived uptime on a chain.
 type NetUptime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Net the peer is validating
-	NetId []byte `protobuf:"bytes,1,opt,name=subnet_id,json=subnetId,proto3" json:"subnet_id,omitempty"`
+	NetId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 	// Uptime percentage on the net [0, 100]
 	Uptime uint32 `protobuf:"varint,2,opt,name=uptime,proto3" json:"uptime,omitempty"`
 }
@@ -672,7 +672,7 @@ type Handshake struct {
 	// key.
 	IpNodeIdSig []byte `protobuf:"bytes,7,opt,name=ip_node_id_sig,json=ipNodeIdSig,proto3" json:"ip_node_id_sig,omitempty"`
 	// Nets the peer is tracking
-	TrackedNets  [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedNets,proto3" json:"tracked_subnets,omitempty"`
+	TrackedNets  [][]byte     `protobuf:"bytes,8,rep,name=tracked_chains,json=trackedNets,proto3" json:"tracked_chains,omitempty"`
 	Client       *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
 	SupportedLps []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLps,proto3" json:"supported_lps,omitempty"`
 	ObjectedLps  []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLps,proto3" json:"objected_lps,omitempty"`
@@ -3872,7 +3872,7 @@ var file_proto_p2p_p2p_proto_depIdxs = []int32{
 	27, // 21: p2p.Message.app_response:type_name -> p2p.AppResponse
 	29, // 22: p2p.Message.app_gossip:type_name -> p2p.AppGossip
 	28, // 23: p2p.Message.app_error:type_name -> p2p.AppError
-	3,  // 24: p2p.Ping.subnet_uptimes:type_name -> p2p.NetUptime
+	3,  // 24: p2p.Ping.chain_uptimes:type_name -> p2p.NetUptime
 	6,  // 25: p2p.Handshake.client:type_name -> p2p.Client
 	7,  // 26: p2p.Handshake.known_peers:type_name -> p2p.BloomFilter
 	7,  // 27: p2p.GetPeerList.known_peers:type_name -> p2p.BloomFilter

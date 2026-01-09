@@ -10,7 +10,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/address/formatting"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/lux"
@@ -18,10 +18,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/json"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/json"
 )
 
 // Note that since a Lux network has exactly one Platform Chain,

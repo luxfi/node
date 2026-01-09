@@ -69,7 +69,7 @@ func (m *L1ValidatorRegistrationJustification) GetPreimage() isL1ValidatorRegist
 	return nil
 }
 
-func (x *L1ValidatorRegistrationJustification) GetConvertChainToL1TxData() *NetIDIndex {
+func (x *L1ValidatorRegistrationJustification) GetConvertChainToL1TxData() *ChainIDIndex {
 	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData); ok {
 		return x.ConvertChainToL1TxData
 	}
@@ -90,7 +90,7 @@ type isL1ValidatorRegistrationJustification_Preimage interface {
 type L1ValidatorRegistrationJustification_ConvertChainToL1TxData struct {
 	// This should be set to obtain an attestation that a validator specified in
 	// a ConvertChainToL1Tx has been removed from the validator set.
-	ConvertChainToL1TxData *NetIDIndex `protobuf:"bytes,1,opt,name=convert_subnet_to_l1_tx_data,json=convertNetToL1TxData,proto3,oneof"`
+	ConvertChainToL1TxData *ChainIDIndex `protobuf:"bytes,1,opt,name=convert_chain_to_l1_tx_data,json=convertChainToL1TxData,proto3,oneof"`
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
@@ -108,29 +108,29 @@ func (*L1ValidatorRegistrationJustification_ConvertChainToL1TxData) isL1Validato
 func (*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage) isL1ValidatorRegistrationJustification_Preimage() {
 }
 
-type NetIDIndex struct {
+type ChainIDIndex struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NetId []byte `protobuf:"bytes,1,opt,name=subnet_id,json=subnetId,proto3" json:"subnet_id,omitempty"`
-	Index uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
+	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Index   uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
 }
 
-func (x *NetIDIndex) Reset() {
-	*x = NetIDIndex{}
+func (x *ChainIDIndex) Reset() {
+	*x = ChainIDIndex{}
 	mi := &file_platformvm_platformvm_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NetIDIndex) String() string {
+func (x *ChainIDIndex) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NetIDIndex) ProtoMessage() {}
+func (*ChainIDIndex) ProtoMessage() {}
 
-func (x *NetIDIndex) ProtoReflect() protoreflect.Message {
+func (x *ChainIDIndex) ProtoReflect() protoreflect.Message {
 	mi := &file_platformvm_platformvm_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,19 +142,19 @@ func (x *NetIDIndex) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NetIDIndex.ProtoReflect.Descriptor instead.
-func (*NetIDIndex) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChainIDIndex.ProtoReflect.Descriptor instead.
+func (*ChainIDIndex) Descriptor() ([]byte, []int) {
 	return file_platformvm_platformvm_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *NetIDIndex) GetNetId() []byte {
+func (x *ChainIDIndex) GetChainId() []byte {
 	if x != nil {
-		return x.NetId
+		return x.ChainId
 	}
 	return nil
 }
 
-func (x *NetIDIndex) GetIndex() uint32 {
+func (x *ChainIDIndex) GetIndex() uint32 {
 	if x != nil {
 		return x.Index
 	}
@@ -206,10 +206,10 @@ func file_platformvm_platformvm_proto_rawDescGZIP() []byte {
 var file_platformvm_platformvm_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_platformvm_platformvm_proto_goTypes = []any{
 	(*L1ValidatorRegistrationJustification)(nil), // 0: platformvm.L1ValidatorRegistrationJustification
-	(*NetIDIndex)(nil),                           // 1: platformvm.NetIDIndex
+	(*ChainIDIndex)(nil),                         // 1: platformvm.ChainIDIndex
 }
 var file_platformvm_platformvm_proto_depIdxs = []int32{
-	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_subnet_to_l1_tx_data:type_name -> platformvm.NetIDIndex
+	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_chain_to_l1_tx_data:type_name -> platformvm.ChainIDIndex
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

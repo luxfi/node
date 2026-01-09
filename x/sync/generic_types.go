@@ -15,8 +15,8 @@ import (
 	"github.com/google/btree"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/heap"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/heap"
+	"github.com/luxfi/utils/maybe"
 )
 
 // GenericWorkItem represents a work item that can work with any comparable type T

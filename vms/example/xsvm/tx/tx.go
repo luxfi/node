@@ -6,7 +6,7 @@ package tx
 import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 var secpCache = secp256k1.NewRecoverCache(2048)

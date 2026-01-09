@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 var preFundedKeys = secp256k1.TestKeys()

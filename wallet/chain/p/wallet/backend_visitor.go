@@ -54,7 +54,7 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	b.b.setOwner(
 		b.txID,
 		tx.Owner,

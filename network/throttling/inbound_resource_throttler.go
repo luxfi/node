@@ -14,9 +14,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 
-	timerpkg "github.com/luxfi/vm/utils/timer"
+	timerpkg "github.com/luxfi/timer"
 )
 
 const epsilon = time.Millisecond

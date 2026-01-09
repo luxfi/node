@@ -42,13 +42,13 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/timer"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/vm/utils/compression"
-	"github.com/luxfi/vm/utils/ips"
-	"github.com/luxfi/vm/utils/perms"
-	"github.com/luxfi/vm/utils/profiler"
-	"github.com/luxfi/vm/utils/storage"
-	"github.com/luxfi/vm/utils/timer"
+	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/utils/perms"
+	"github.com/luxfi/utils/profiler"
+	"github.com/luxfi/utils/storage"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations
@@ -61,7 +61,7 @@ type TrackerTargeterConfig struct {
 const (
 	chainConfigFileName  = "config"
 	chainUpgradeFileName = "upgrade"
-	subnetConfigFileExt  = ".json"
+	chainConfigFileExt   = ".json"
 )
 
 var (
@@ -1167,7 +1167,7 @@ const devModeCChainGenesis = `{
     "shanghaiTime": 0,
     "cancunTime": 0,
     "terminalTotalDifficulty": 0,
-    "subnetEVMTimestamp": 0,
+    "chainEVMTimestamp": 0,
     "durangoTimestamp": 0,
     "etnaTimestamp": 253399622400,
     "feeConfig": {
@@ -1434,16 +1434,16 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 	}
 
 	// partially parse configs to be filled by defaults later
-	subnetConfigs := make(map[ids.ID]json.RawMessage, len(netIDs))
-	if err := json.Unmarshal(netConfigContent, &subnetConfigs); err != nil {
+	chainConfigs := make(map[ids.ID]json.RawMessage, len(netIDs))
+	if err := json.Unmarshal(netConfigContent, &chainConfigs); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
 	res := make(map[ids.ID]nets.Config)
-	for _, subnetID := range netIDs {
+	for _, chainID := range netIDs {
 		config := getDefaultNetConfig(v)
 
-		if rawNetConfigBytes, ok := subnetConfigs[subnetID]; ok {
+		if rawNetConfigBytes, ok := chainConfigs[chainID]; ok {
 			if err := json.Unmarshal(rawNetConfigBytes, &config); err != nil {
 				return nil, err
 			}
@@ -1459,36 +1459,36 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 			}
 		}
 
-		res[subnetID] = config
+		res[chainID] = config
 	}
 	return res, nil
 }
 
 // getNetConfigsFromDir reads NetConfigs to node config map
-func getNetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.Config, error) {
-	subnetConfigPath, err := getPathFromDirKey(v, NetConfigDirKey)
+func getNetConfigsFromDir(v *viper.Viper, chainIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+	chainConfigPath, err := getPathFromDirKey(v, NetConfigDirKey)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetConfigs := make(map[ids.ID]nets.Config)
+	chainConfigs := make(map[ids.ID]nets.Config)
 
-	// reads subnet config files from a path and given subnetIDs and returns a map.
-	for _, subnetID := range subnetIDs {
+	// reads chain config files from a path and given chainIDs and returns a map.
+	for _, chainID := range chainIDs {
 		// Ensure default configuration
 		config := getDefaultNetConfig(v)
-		subnetConfigs[subnetID] = config
+		chainConfigs[chainID] = config
 
-		if len(subnetConfigPath) == 0 {
-			// subnet config path does not exist but not explicitly specified, so ignore it
+		if len(chainConfigPath) == 0 {
+			// chain config path does not exist but not explicitly specified, so ignore it
 			continue
 		}
 
-		filePath := filepath.Join(subnetConfigPath, subnetID.String()+subnetConfigFileExt)
+		filePath := filepath.Join(chainConfigPath, chainID.String()+chainConfigFileExt)
 		fileInfo, err := os.Stat(filePath)
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			// this subnet config does not exist, the default configuration will be used
+			// this chain config does not exist, the default configuration will be used
 			continue
 		case err != nil:
 			return nil, err
@@ -1518,10 +1518,10 @@ func getNetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.C
 			return nil, err
 		}
 
-		subnetConfigs[subnetID] = config
+		chainConfigs[chainID] = config
 	}
 
-	return subnetConfigs, nil
+	return chainConfigs, nil
 }
 
 func getDefaultNetConfig(v *viper.Viper) nets.Config {
@@ -1829,7 +1829,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Net Configs
-	subnetConfigs, err := getNetConfigs(v, nodeConfig.TrackedChains.List())
+	chainConfigs, err := getNetConfigs(v, nodeConfig.TrackedChains.List())
 	if err != nil {
 		return node.Config{}, fmt.Errorf("couldn't read net configs: %w", err)
 	}
@@ -1838,9 +1838,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	if err := primaryNetworkConfig.Valid(); err != nil {
 		return node.Config{}, fmt.Errorf("invalid consensus parameters: %w", err)
 	}
-	subnetConfigs[constants.PrimaryNetworkID] = primaryNetworkConfig
+	chainConfigs[constants.PrimaryNetworkID] = primaryNetworkConfig
 
-	nodeConfig.NetConfigs = subnetConfigs
+	nodeConfig.NetConfigs = chainConfigs
 
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config

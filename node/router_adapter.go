@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/router"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/vm/utils/timer"
+	"github.com/luxfi/timer"
 )
 
 // routerAdapter adapts the node Router interface to router.Router interface

@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/address/formatting"
 	"github.com/luxfi/database"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils/json"
 )
 
 type service struct {

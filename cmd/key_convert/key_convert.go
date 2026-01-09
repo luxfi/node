@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/luxfi/vm/utils/cb58"
+	"github.com/luxfi/utils/cb58"
 )
 
 func main() {

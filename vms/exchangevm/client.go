@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/address"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/address"
-	"github.com/luxfi/address/formatting"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils/json"
 )
 
 var ErrRejected = errors.New("rejected")

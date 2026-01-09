@@ -44,9 +44,9 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	// "github.com/luxfi/vm/utils/math/meter" // unused
-	// "github.com/luxfi/vm/utils/resource" // unused
-	// "github.com/luxfi/vm/utils/timer" // unused
+	// "github.com/luxfi/utils/math/meter" // unused
+	// "github.com/luxfi/utils/resource" // unused
+	// "github.com/luxfi/timer" // unused
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
@@ -120,7 +120,7 @@ var (
 		ExcessConversionConstant: 100,
 	}
 
-	// subnet that exists at genesis in defaultVM
+	// chain that exists at genesis in defaultVM
 	testNet1 *txs.Tx
 )
 
@@ -145,8 +145,8 @@ func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains (subnet is the network)
+func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
+	// Return Primary Network ID for all chains (chain is the network)
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -238,7 +238,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	// timing issues with mempool/builder not being fully ready.
 	// Tests that need testNet1 should create it using:
 	//   testNet1 = createTestNet(t, vm)
-	// For tests that just need a sample subnet tx for fee calculation,
+	// For tests that just need a sample chain tx for fee calculation,
 	// use genesistest.NewNet() instead.
 
 	t.Cleanup(func() {
@@ -274,12 +274,12 @@ func buildAndAcceptStandardBlock(vm *VM) error {
 	return nil
 }
 
-// createAndAcceptNet creates a new subnet (testNet1), adds it to mempool,
-// builds and accepts a block containing it. Returns the subnet transaction.
+// createAndAcceptNet creates a new chain (testNet1), adds it to mempool,
+// builds and accepts a block containing it. Returns the chain transaction.
 func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
 	require := require.New(t)
 
-	netTx, err := wallet.IssueCreateSubnetTx(
+	netTx, err := wallet.IssueCreateChainTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -587,14 +587,14 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	require.ErrorIs(err, txexecutor.ErrDuplicateValidator)
 }
 
-// Accept proposal to add validator to subnet
+// Accept proposal to add validator to chain
 func TestAddNetValidatorAccept(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Create subnet in this VM instance
+	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
 	netID := netTx.ID()
@@ -642,14 +642,14 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	require.NoError(err)
 }
 
-// Reject proposal to add validator to subnet
+// Reject proposal to add validator to chain
 func TestAddNetValidatorReject(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Create subnet in this VM instance
+	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
 	netID := netTx.ID()
@@ -879,7 +879,7 @@ func TestCreateChain(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Create subnet in this VM instance
+	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
 	netTx := createAndAcceptNet(t, vm, wallet0)
 	netID := netTx.ID()
@@ -920,8 +920,8 @@ func TestCreateChain(t *testing.T) {
 }
 
 // test where we:
-// 1) Create a subnet
-// 2) Add a validator to the subnet's current validator set
+// 1) Create a chain
+// 2) Add a validator to the chain's current validator set
 // 3) Advance timestamp to validator's end time (removing validator from current)
 func TestCreateNet(t *testing.T) {
 	require := require.New(t)
@@ -930,7 +930,7 @@ func TestCreateNet(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
-	createNetTx, err := wallet.IssueCreateSubnetTx(
+	createNetTx, err := wallet.IssueCreateChainTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{
@@ -955,17 +955,17 @@ func TestCreateNet(t *testing.T) {
 	require.NoError(err)
 	require.Contains(netIDs, netID)
 
-	// Now that we've created a new subnet, add a validator to that subnet
-	// Create a new wallet with authority over the subnet
-	subnetWallet := newWallet(t, vm, walletConfig{
+	// Now that we've created a new chain, add a validator to that chain
+	// Create a new wallet with authority over the chain
+	chainWallet := newWallet(t, vm, walletConfig{
 		netIDs: []ids.ID{netID},
 	})
 
 	nodeID := genesistest.DefaultNodeIDs[0]
 	startTime := vm.Clock().Time().Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
-	// [startTime, endTime] is subset of time keys[0] validates default subnet so tx is valid
-	addValidatorTx, err := subnetWallet.IssueAddChainValidatorTx(
+	// [startTime, endTime] is subset of time keys[0] validates default chain so tx is valid
+	addValidatorTx, err := chainWallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -1737,7 +1737,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	createNetTx, err := wallet.IssueCreateSubnetTx(
+	createNetTx, err := wallet.IssueCreateChainTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
@@ -1807,7 +1807,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	}
-	createNetTx, err := wallet.IssueCreateSubnetTx(
+	createNetTx, err := wallet.IssueCreateChainTx(
 		expectedNetOwner,
 	)
 	require.NoError(err)
@@ -1818,9 +1818,9 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	netID := createNetTx.ID()
-	subnetOwner, err := vm.state.GetNetOwner(netID)
+	chainOwner, err := vm.state.GetNetOwner(netID)
 	require.NoError(err)
-	require.Equal(expectedNetOwner, subnetOwner)
+	require.Equal(expectedNetOwner, chainOwner)
 
 	expectedNetOwner = &secp256k1fx.OutputOwners{
 		Threshold: 1,
@@ -1837,9 +1837,9 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	subnetOwner, err = vm.state.GetNetOwner(netID)
+	chainOwner, err = vm.state.GetNetOwner(netID)
 	require.NoError(err)
-	require.Equal(expectedNetOwner, subnetOwner)
+	require.Equal(expectedNetOwner, chainOwner)
 }
 
 func TestBaseTx(t *testing.T) {

@@ -22,7 +22,7 @@ func main() {
 	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
 
 	// Create adapter for the keychain
-	subnetOwner := key.Address()
+	chainOwner := key.Address()
 
 	ctx := context.Background()
 
@@ -46,7 +46,7 @@ func main() {
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			subnetOwner,
+			chainOwner,
 		},
 	}
 

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/utils/math"
 )
 
 type addValidatorRules struct {
@@ -99,7 +99,7 @@ func getDelegatorRules(
 func GetValidator(state state.Chain, netID ids.ID, nodeID ids.NodeID) (*state.Staker, error) {
 	validator, err := state.GetCurrentValidator(netID, nodeID)
 	if err == nil {
-		// This node is currently validating the subnet.
+		// This node is currently validating the chain.
 		return validator, nil
 	}
 	if err != database.ErrNotFound {

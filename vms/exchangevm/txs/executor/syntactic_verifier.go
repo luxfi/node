@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 const (

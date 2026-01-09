@@ -68,7 +68,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			expectedErr: errInvalidVMID,
 		},
 		{
-			description: "subnet ID is primary network ID",
+			description: "chain ID is primary network ID",
 			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
@@ -146,7 +146,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 					},
 				},
 			}}
-			subnetAuth := &secp256k1fx.Input{
+			chainAuth := &secp256k1fx.Input{
 				SigIndices: []uint32{0, 1},
 			}
 
@@ -162,7 +162,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 				VMID:           test.vmID,
 				FxIDs:          test.fxIDs,
 				GenesisData:    test.genesisData,
-				ChainAuth:      subnetAuth,
+				ChainAuth:      chainAuth,
 			}
 
 			signers := [][]*secp256k1.PrivateKey{preFundedKeys}

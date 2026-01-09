@@ -43,47 +43,22 @@ type Metrics struct {
 }
 
 func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
+	if registerer == nil {
+		registerer = metric.NewNoOpRegistry()
+	}
 	m := &Metrics{
-		ClockSkewCount: metric.NewCounter(metric.CounterOpts{
-			Name: "clock_skew_count",
-			Help: "number of handshake timestamps inspected (n)",
-		}),
-		ClockSkewSum: metric.NewGauge(metric.GaugeOpts{
-			Name: "clock_skew_sum",
-			Help: "sum of (peer timestamp - local timestamp) from handshake messages (s)",
-		}),
-		NumFailedToParse: metric.NewCounter(metric.CounterOpts{
-			Name: "msgs_failed_to_parse",
-			Help: "number of received messages that could not be parsed",
-		}),
-		NumSendFailed: metric.NewCounterVec(
-			metric.CounterOpts{
-				Name: "msgs_failed_to_send",
-				Help: "number of messages that failed to be sent",
-			},
-			opLabels,
-		),
-		Messages: metric.NewCounterVec(
-			metric.CounterOpts{
-				Name: "msgs",
-				Help: "number of handled messages",
-			},
-			ioOpCompressedLabels,
-		),
-		Bytes: metric.NewCounterVec(
-			metric.CounterOpts{
-				Name: "msgs_bytes",
-				Help: "number of message bytes",
-			},
-			ioOpLabels,
-		),
-		BytesSaved: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Name: "msgs_bytes_saved",
-				Help: "number of message bytes saved",
-			},
-			ioOpLabels,
-		),
+		ClockSkewCount: registerer.NewCounter("clock_skew_count", "number of handshake timestamps inspected (n)"),
+		ClockSkewSum:   registerer.NewGauge("clock_skew_sum", "sum of (peer timestamp - local timestamp) from handshake messages (s)"),
+		NumFailedToParse: registerer.NewCounter("msgs_failed_to_parse",
+			"number of received messages that could not be parsed"),
+		NumSendFailed: registerer.NewCounterVec("msgs_failed_to_send",
+			"number of messages that failed to be sent", opLabels),
+		Messages: registerer.NewCounterVec("msgs",
+			"number of handled messages", ioOpCompressedLabels),
+		Bytes: registerer.NewCounterVec("msgs_bytes",
+			"number of message bytes", ioOpLabels),
+		BytesSaved: registerer.NewGaugeVec("msgs_bytes_saved",
+			"number of message bytes saved", ioOpLabels),
 	}
 	return m, errors.Join()
 }

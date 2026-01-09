@@ -4,7 +4,6 @@
 package sync
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/luxfi/metric"
@@ -56,29 +55,24 @@ type metricsImpl struct {
 }
 
 func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
-	m := metricsImpl{
-		requestsFailed: metric.NewCounter(metric.CounterOpts{
-			Namespace: namespace,
-			Name:      "requests_failed",
-			Help:      "cumulative amount of failed proof requests",
-		}),
-		requestsMade: metric.NewCounter(metric.CounterOpts{
-			Namespace: namespace,
-			Name:      "requests_made",
-			Help:      "cumulative amount of proof requests made",
-		}),
-		requestsSucceeded: metric.NewCounter(metric.CounterOpts{
-			Namespace: namespace,
-			Name:      "requests_succeeded",
-			Help:      "cumulative amount of proof requests that were successful",
-		}),
+	if reg == nil {
+		reg = metric.NewNoOpRegistry()
 	}
-	err := errors.Join(
-		reg.Register(metric.AsCollector(m.requestsFailed)),
-		reg.Register(metric.AsCollector(m.requestsMade)),
-		reg.Register(metric.AsCollector(m.requestsSucceeded)),
-	)
-	return &m, err
+	m := metricsImpl{
+		requestsFailed: reg.NewCounter(
+			metric.AppendNamespace(namespace, "requests_failed"),
+			"cumulative amount of failed proof requests",
+		),
+		requestsMade: reg.NewCounter(
+			metric.AppendNamespace(namespace, "requests_made"),
+			"cumulative amount of proof requests made",
+		),
+		requestsSucceeded: reg.NewCounter(
+			metric.AppendNamespace(namespace, "requests_succeeded"),
+			"cumulative amount of proof requests that were successful",
+		),
+	}
+	return &m, nil
 }
 
 func (m *metricsImpl) RequestFailed() {

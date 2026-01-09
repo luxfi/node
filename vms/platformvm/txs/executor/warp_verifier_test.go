@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/codec"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/constants"
@@ -16,7 +17,6 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -104,8 +104,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.CreateChainTx{},
 		},
 		{
-			name: "CreateSubnetTx",
-			tx:   &txs.CreateSubnetTx{},
+			name: "CreateChainTx",
+			tx:   &txs.CreateChainTx{},
 		},
 		{
 			name: "ImportTx",

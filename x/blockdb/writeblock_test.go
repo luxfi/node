@@ -16,9 +16,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 
-	safemath "github.com/luxfi/vm/utils/math"
+	safemath "github.com/luxfi/utils/math"
 )
 
 func TestWriteBlock_Basic(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 // Holds intermediate nodes. That is, those without values.

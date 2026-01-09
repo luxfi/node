@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
 	"github.com/luxfi/p2p/p2ptest"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 	"github.com/luxfi/warp"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
@@ -186,7 +186,7 @@ func Test_Creation(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 }
@@ -220,7 +220,7 @@ func Test_Completion(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 
@@ -325,7 +325,7 @@ func Test_Sync_FindNextKey_InSync(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 
@@ -401,7 +401,7 @@ func Test_Sync_FindNextKey_Deleted(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 
 	// 0x12 was "deleted" and there should be no extra node in the proof since there was nothing with a common prefix
@@ -451,7 +451,7 @@ func Test_Sync_FindNextKey_BranchInLocal(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NoError(db.Put([]byte{0x11, 0x15}, []byte{4}))
 
@@ -488,7 +488,7 @@ func Test_Sync_FindNextKey_BranchInReceived(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NoError(db.Delete([]byte{0x12, 0xA0}))
 
@@ -524,7 +524,7 @@ func Test_Sync_FindNextKey_ExtraValues(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 
@@ -586,7 +586,7 @@ func TestFindNextKeyEmptyEndProof(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 
@@ -655,7 +655,7 @@ func Test_Sync_FindNextKey_DifferentChild(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 	require.NoError(syncer.Start(context.Background()))
@@ -878,7 +878,7 @@ func TestFindNextKeyRandom(t *testing.T) {
 			SimultaneousWorkLimit: 5,
 			Log:                   log.NewNoOpLogger(),
 			BranchFactor:          merkledb.BranchFactor16,
-		}, prometheus.NewRegistry())
+		}, metric.NewRegistry())
 		require.NoError(err)
 
 		gotFirstDiff, err := syncer.findNextKey(
@@ -1107,7 +1107,7 @@ func Test_Sync_Result_Correct_Root(t *testing.T) {
 				SimultaneousWorkLimit: 5,
 				Log:                   log.NewNoOpLogger(),
 				BranchFactor:          merkledb.BranchFactor16,
-			}, prometheus.NewRegistry())
+			}, metric.NewRegistry())
 
 			require.NoError(err)
 			require.NotNil(syncer)
@@ -1179,7 +1179,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 	require.NoError(syncer.Start(context.Background()))
@@ -1206,7 +1206,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(newSyncer)
 
@@ -1290,7 +1290,7 @@ func Test_Sync_Result_Correct_Root_Update_Root_During(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 	require.NotNil(syncer)
 
@@ -1337,7 +1337,7 @@ func Test_Sync_UpdateSyncTarget(t *testing.T) {
 		SimultaneousWorkLimit: 5,
 		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
-	}, prometheus.NewRegistry())
+	}, metric.NewRegistry())
 	require.NoError(err)
 
 	// Populate [m.processWork] to ensure that UpdateSyncTarget

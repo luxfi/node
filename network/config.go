@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/compression"
 )
 
 // HealthConfig describes parameters for network layer health checks.

@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/utils/math"
 )
 
 var (

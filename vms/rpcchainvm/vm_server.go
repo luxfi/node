@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/luxfi/database/corruptabledb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/internal/database/rpcdb"
@@ -32,20 +32,19 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/wrappers"
 	"github.com/luxfi/vm/rpcchainvm/grpcutils"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/wrappers"
 	"github.com/luxfi/warp"
 
-	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
-	httppb "github.com/luxfi/node/proto/pb/http"
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
+	httppb "github.com/luxfi/vm/proto/pb/http"
 )
 
 var (
@@ -159,40 +158,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	processMetrics, err := metrics.MakeAndRegister(
-		vm.metrics,
-		"process",
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Current state of process metrics
-	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
-	if err := processMetrics.Register(processCollector); err != nil {
-		return nil, err
-	}
-
-	// Go process metrics using debug.GCStats
-	goCollector := collectors.NewGoCollector()
-	if err := processMetrics.Register(goCollector); err != nil {
-		return nil, err
-	}
-
-	grpcMetrics, err := metrics.MakeAndRegister(
-		vm.metrics,
-		"grpc",
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// gRPC client metrics
-	grpcClientMetrics := grpc_metric.NewClientMetrics()
-	if err := grpcMetrics.Register(grpcClientMetrics); err != nil {
-		return nil, err
-	}
-
 	vmMetrics := metrics.NewPrefixGatherer()
 	if err := vm.metrics.Register("vm", vmMetrics); err != nil {
 		return nil, err
@@ -201,8 +166,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Dial the database
 	dbClientConn, err := grpcutils.Dial(
 		req.DbServerAddr,
-		grpcutils.WithChainUnaryInterceptor(grpcClientMetrics.UnaryClientInterceptor()),
-		grpcutils.WithChainStreamInterceptor(grpcClientMetrics.StreamClientInterceptor()),
 	)
 	if err != nil {
 		return nil, err
@@ -218,8 +181,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,
-		grpcutils.WithChainUnaryInterceptor(grpcClientMetrics.UnaryClientInterceptor()),
-		grpcutils.WithChainStreamInterceptor(grpcClientMetrics.StreamClientInterceptor()),
 	)
 	if err != nil {
 		// Ignore closing errors to return the original error
@@ -717,8 +678,8 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
-	metrics, err := vm.metrics.Gather()
-	return &vmpb.GatherResponse{MetricFamilies: metrics}, err
+	nativeMetrics, err := vm.metrics.Gather()
+	return &vmpb.GatherResponse{MetricFamilies: metric.NativeToDTO(nativeMetrics)}, err
 }
 
 func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequest) (*vmpb.GetAncestorsResponse, error) {

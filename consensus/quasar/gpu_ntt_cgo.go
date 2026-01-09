@@ -4,15 +4,15 @@
 //go:build cgo
 
 // Package quasar provides GPU-accelerated NTT operations for Ringtail consensus.
-// This bridges the lux/lattice/gpu package to enable GPU acceleration of lattice
+// This uses the unified lux/accel package for GPU acceleration of lattice
 // operations in the Ringtail threshold signature protocol.
 //
 // GPU acceleration provides 40x+ speedup for NTT operations on Apple Silicon
-// and NVIDIA GPUs via MLX (which handles Metal/CUDA/CPU fallback automatically).
+// and NVIDIA GPUs via the accel library (Metal/CUDA/CPU backends).
 //
 // Architecture:
 //
-//	luxcpp/lattice (C++ GPU)  →  lux/lattice/gpu (Go CGO)  →  Quasar consensus
+//	luxcpp/accel (C++ GPU)  →  lux/accel (Go CGO)  →  Quasar consensus
 //
 // This enables consistent GPU acceleration across:
 //   - Ringtail threshold signatures
@@ -23,18 +23,20 @@ package quasar
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 
-	"github.com/luxfi/lattice/v7/gpu"
 	"github.com/luxfi/lattice/v7/ring"
+	"github.com/luxfi/lux/accel"
 	"github.com/luxfi/node/config"
 )
 
 // GPUNTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
-// It wraps the lux/lattice/gpu package which uses MLX for Metal/CUDA/CPU backend.
+// It uses the unified lux/accel package for Metal/CUDA/CPU backends.
 type GPUNTTAccelerator struct {
 	mu       sync.RWMutex
-	contexts map[uint64]*gpu.NTTContext // Q modulus -> NTTContext
+	session  *accel.Session
 	enabled  bool
+	totalOps uint64
 }
 
 // GPUNTTOptions holds options for creating a GPU NTT accelerator.
@@ -65,13 +67,22 @@ func NewGPUNTTAcceleratorWithOptions(opts GPUNTTOptions) (*GPUNTTAccelerator, er
 		enabled = false
 	}
 
-	// Check if GPU is available via libLattice
-	// The backend (Metal/CUDA) is auto-detected by libLattice at runtime
-	available := gpu.GPUAvailable() && enabled
+	// Check if GPU is available via accel library
+	available := accel.Available() && enabled
+
+	var session *accel.Session
+	if available {
+		var err error
+		session, err = accel.DefaultSession()
+		if err != nil {
+			// Fall back to CPU mode
+			available = false
+		}
+	}
 
 	return &GPUNTTAccelerator{
-		contexts: make(map[uint64]*gpu.NTTContext),
-		enabled:  available,
+		session: session,
+		enabled: available,
 	}, nil
 }
 
@@ -84,121 +95,130 @@ func (g *GPUNTTAccelerator) IsEnabled() bool {
 
 // Backend returns the name of the active GPU backend.
 func (g *GPUNTTAccelerator) Backend() string {
-	if !g.enabled {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	if !g.enabled || g.session == nil {
 		return "CPU (GPU not available)"
 	}
-	return gpu.GetBackend()
+	return g.session.Backend().String()
 }
 
-// getOrCreateContext gets or creates an NTT context for the given ring parameters.
-func (g *GPUNTTAccelerator) getOrCreateContext(r *ring.Ring) (*gpu.NTTContext, error) {
-	// Get N and Q from ring
-	N := uint32(r.N())
+// getModulus extracts the first modulus from the ring.
+func (g *GPUNTTAccelerator) getModulus(r *ring.Ring) (uint32, error) {
 	if len(r.ModuliChain()) == 0 {
-		return nil, fmt.Errorf("ring has no moduli")
+		return 0, fmt.Errorf("ring has no moduli")
 	}
-	Q := r.ModuliChain()[0]
-
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	// Check cache
-	ctx, ok := g.contexts[Q]
-	if ok && ctx.N == N {
-		return ctx, nil
-	}
-
-	// Create new context
-	newCtx, err := gpu.NewNTTContext(N, Q)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create NTT context: %w", err)
-	}
-
-	g.contexts[Q] = newCtx
-	return newCtx, nil
+	return uint32(r.ModuliChain()[0]), nil
 }
 
 // NTTForward performs forward NTT on a polynomial using GPU acceleration.
 // Falls back to CPU if GPU is not available.
 func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
-	if !g.enabled {
+	if !g.enabled || g.session == nil {
 		// Fall back to lattice library's NTT
 		r.NTT(poly, poly)
 		return nil
 	}
 
-	ctx, err := g.getOrCreateContext(r)
-	if err != nil {
-		// Fall back to CPU
-		r.NTT(poly, poly)
-		return nil
-	}
-
-	// Convert poly to uint64 slice for GPU
 	N := r.N()
-	data := make([]uint64, N)
 	coeffs := poly.Coeffs
 	if len(coeffs) == 0 || len(coeffs[0]) < N {
 		r.NTT(poly, poly)
 		return nil
 	}
-	copy(data, coeffs[0])
 
-	// Batch of 1 polynomial
-	batch := [][]uint64{data}
-
-	// GPU NTT
-	result, err := ctx.NTT(batch)
+	Q, err := g.getModulus(r)
 	if err != nil {
-		// Fall back to CPU
+		r.NTT(poly, poly)
+		return nil
+	}
+
+	// Create input tensor from polynomial coefficients
+	inputTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, coeffs[0][:N])
+	if err != nil {
+		r.NTT(poly, poly)
+		return nil
+	}
+	defer inputTensor.Close()
+
+	// Create output tensor
+	outputTensor, err := accel.NewTensor[uint64](g.session, []int{N})
+	if err != nil {
+		r.NTT(poly, poly)
+		return nil
+	}
+	defer outputTensor.Close()
+
+	// GPU NTT via accel Lattice ops
+	if err := g.session.Lattice().PolynomialNTT(inputTensor.Untyped(), outputTensor.Untyped(), Q); err != nil {
 		r.NTT(poly, poly)
 		return nil
 	}
 
 	// Copy result back
-	copy(coeffs[0], result[0])
+	result, err := outputTensor.ToSlice()
+	if err != nil {
+		r.NTT(poly, poly)
+		return nil
+	}
+	copy(coeffs[0], result)
+	atomic.AddUint64(&g.totalOps, 1)
 	return nil
 }
 
 // NTTInverse performs inverse NTT on a polynomial using GPU acceleration.
 // Falls back to CPU if GPU is not available.
 func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
-	if !g.enabled {
+	if !g.enabled || g.session == nil {
 		// Fall back to lattice library's INTT
 		r.INTT(poly, poly)
 		return nil
 	}
 
-	ctx, err := g.getOrCreateContext(r)
-	if err != nil {
-		// Fall back to CPU
-		r.INTT(poly, poly)
-		return nil
-	}
-
-	// Convert poly to uint64 slice for GPU
 	N := r.N()
-	data := make([]uint64, N)
 	coeffs := poly.Coeffs
 	if len(coeffs) == 0 || len(coeffs[0]) < N {
 		r.INTT(poly, poly)
 		return nil
 	}
-	copy(data, coeffs[0])
 
-	// Batch of 1 polynomial
-	batch := [][]uint64{data}
-
-	// GPU INTT
-	result, err := ctx.INTT(batch)
+	Q, err := g.getModulus(r)
 	if err != nil {
-		// Fall back to CPU
+		r.INTT(poly, poly)
+		return nil
+	}
+
+	// Create input tensor from polynomial coefficients
+	inputTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, coeffs[0][:N])
+	if err != nil {
+		r.INTT(poly, poly)
+		return nil
+	}
+	defer inputTensor.Close()
+
+	// Create output tensor
+	outputTensor, err := accel.NewTensor[uint64](g.session, []int{N})
+	if err != nil {
+		r.INTT(poly, poly)
+		return nil
+	}
+	defer outputTensor.Close()
+
+	// GPU INTT via accel Lattice ops
+	if err := g.session.Lattice().PolynomialINTT(inputTensor.Untyped(), outputTensor.Untyped(), Q); err != nil {
 		r.INTT(poly, poly)
 		return nil
 	}
 
 	// Copy result back
-	copy(coeffs[0], result[0])
+	result, err := outputTensor.ToSlice()
+	if err != nil {
+		r.INTT(poly, poly)
+		return nil
+	}
+	copy(coeffs[0], result)
+	atomic.AddUint64(&g.totalOps, 1)
 	return nil
 }
 
@@ -209,7 +229,7 @@ func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
-	if !g.enabled || len(polys) < 4 {
+	if !g.enabled || g.session == nil || len(polys) < 4 {
 		// Fall back to CPU for small batches (GPU overhead not worth it)
 		for i := range polys {
 			r.NTT(polys[i], polys[i])
@@ -217,42 +237,59 @@ func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
-	ctx, err := g.getOrCreateContext(r)
+	Q, err := g.getModulus(r)
 	if err != nil {
-		// Fall back to CPU
 		for i := range polys {
 			r.NTT(polys[i], polys[i])
 		}
 		return nil
 	}
 
+	// Process each polynomial through GPU
+	// Note: For true batch performance, we'd want batch tensor operations
+	// but the current accel API operates on single polynomials
 	N := r.N()
-	batch := make([][]uint64, len(polys))
-
-	for i, poly := range polys {
-		batch[i] = make([]uint64, N)
-		if len(poly.Coeffs) > 0 && len(poly.Coeffs[0]) >= N {
-			copy(batch[i], poly.Coeffs[0])
-		}
-	}
-
-	// GPU batch NTT
-	results, err := ctx.NTT(batch)
-	if err != nil {
-		// Fall back to CPU
-		for i := range polys {
-			r.NTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
-	// Copy results back
 	for i := range polys {
-		if len(polys[i].Coeffs) > 0 {
-			copy(polys[i].Coeffs[0], results[i])
+		coeffs := polys[i].Coeffs
+		if len(coeffs) == 0 || len(coeffs[0]) < N {
+			r.NTT(polys[i], polys[i])
+			continue
 		}
+
+		inputTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, coeffs[0][:N])
+		if err != nil {
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		outputTensor, err := accel.NewTensor[uint64](g.session, []int{N})
+		if err != nil {
+			inputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		if err := g.session.Lattice().PolynomialNTT(inputTensor.Untyped(), outputTensor.Untyped(), Q); err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+
+		result, err := outputTensor.ToSlice()
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.NTT(polys[i], polys[i])
+			continue
+		}
+		copy(coeffs[0], result)
+
+		inputTensor.Close()
+		outputTensor.Close()
 	}
 
+	atomic.AddUint64(&g.totalOps, uint64(len(polys)))
 	return nil
 }
 
@@ -262,7 +299,7 @@ func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
-	if !g.enabled || len(polys) < 4 {
+	if !g.enabled || g.session == nil || len(polys) < 4 {
 		// Fall back to CPU for small batches
 		for i := range polys {
 			r.INTT(polys[i], polys[i])
@@ -270,57 +307,71 @@ func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 		return nil
 	}
 
-	ctx, err := g.getOrCreateContext(r)
+	Q, err := g.getModulus(r)
 	if err != nil {
-		// Fall back to CPU
 		for i := range polys {
 			r.INTT(polys[i], polys[i])
 		}
 		return nil
 	}
 
+	// Process each polynomial through GPU
 	N := r.N()
-	batch := make([][]uint64, len(polys))
-
-	for i, poly := range polys {
-		batch[i] = make([]uint64, N)
-		if len(poly.Coeffs) > 0 && len(poly.Coeffs[0]) >= N {
-			copy(batch[i], poly.Coeffs[0])
-		}
-	}
-
-	// GPU batch INTT
-	results, err := ctx.INTT(batch)
-	if err != nil {
-		// Fall back to CPU
-		for i := range polys {
-			r.INTT(polys[i], polys[i])
-		}
-		return nil
-	}
-
-	// Copy results back
 	for i := range polys {
-		if len(polys[i].Coeffs) > 0 {
-			copy(polys[i].Coeffs[0], results[i])
+		coeffs := polys[i].Coeffs
+		if len(coeffs) == 0 || len(coeffs[0]) < N {
+			r.INTT(polys[i], polys[i])
+			continue
 		}
+
+		inputTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, coeffs[0][:N])
+		if err != nil {
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		outputTensor, err := accel.NewTensor[uint64](g.session, []int{N})
+		if err != nil {
+			inputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		if err := g.session.Lattice().PolynomialINTT(inputTensor.Untyped(), outputTensor.Untyped(), Q); err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+
+		result, err := outputTensor.ToSlice()
+		if err != nil {
+			inputTensor.Close()
+			outputTensor.Close()
+			r.INTT(polys[i], polys[i])
+			continue
+		}
+		copy(coeffs[0], result)
+
+		inputTensor.Close()
+		outputTensor.Close()
 	}
 
+	atomic.AddUint64(&g.totalOps, uint64(len(polys)))
 	return nil
 }
 
 // PolyMul performs polynomial multiplication using GPU-accelerated NTT.
 // This multiplies polynomials a and b, storing result in out.
 func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
-	if !g.enabled {
+	if !g.enabled || g.session == nil {
 		// Fall back to CPU
 		r.MulCoeffsBarrett(a, b, out)
 		return nil
 	}
 
-	ctx, err := g.getOrCreateContext(r)
+	Q, err := g.getModulus(r)
 	if err != nil {
-		// Fall back to CPU
 		r.MulCoeffsBarrett(a, b, out)
 		return nil
 	}
@@ -328,46 +379,63 @@ func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
 	N := r.N()
 
 	// Extract coefficients
-	aData := make([]uint64, N)
-	bData := make([]uint64, N)
+	if len(a.Coeffs) == 0 || len(a.Coeffs[0]) < N ||
+		len(b.Coeffs) == 0 || len(b.Coeffs[0]) < N ||
+		len(out.Coeffs) == 0 || len(out.Coeffs[0]) < N {
+		r.MulCoeffsBarrett(a, b, out)
+		return nil
+	}
 
-	if len(a.Coeffs) > 0 && len(a.Coeffs[0]) >= N {
-		copy(aData, a.Coeffs[0])
+	// Create tensors for a, b, and output
+	aTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, a.Coeffs[0][:N])
+	if err != nil {
+		r.MulCoeffsBarrett(a, b, out)
+		return nil
 	}
-	if len(b.Coeffs) > 0 && len(b.Coeffs[0]) >= N {
-		copy(bData, b.Coeffs[0])
+	defer aTensor.Close()
+
+	bTensor, err := accel.NewTensorWithData[uint64](g.session, []int{N}, b.Coeffs[0][:N])
+	if err != nil {
+		r.MulCoeffsBarrett(a, b, out)
+		return nil
 	}
+	defer bTensor.Close()
+
+	outTensor, err := accel.NewTensor[uint64](g.session, []int{N})
+	if err != nil {
+		r.MulCoeffsBarrett(a, b, out)
+		return nil
+	}
+	defer outTensor.Close()
 
 	// GPU polynomial multiplication
-	result, err := ctx.PolyMul([][]uint64{aData}, [][]uint64{bData})
-	if err != nil {
-		// Fall back to CPU
+	if err := g.session.Lattice().PolynomialMul(aTensor.Untyped(), bTensor.Untyped(), outTensor.Untyped(), Q); err != nil {
 		r.MulCoeffsBarrett(a, b, out)
 		return nil
 	}
 
 	// Copy result back
-	if len(out.Coeffs) > 0 {
-		copy(out.Coeffs[0], result[0])
+	result, err := outTensor.ToSlice()
+	if err != nil {
+		r.MulCoeffsBarrett(a, b, out)
+		return nil
 	}
-
+	copy(out.Coeffs[0], result)
+	atomic.AddUint64(&g.totalOps, 1)
 	return nil
 }
 
-// ClearCache clears the GPU NTT context cache.
+// ClearCache is a no-op in the accel-based implementation.
+// The accel library manages its own caching internally.
 func (g *GPUNTTAccelerator) ClearCache() {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	g.contexts = make(map[uint64]*gpu.NTTContext)
-	gpu.ClearCache()
+	// No-op: accel library manages caching internally
 }
 
-// Stats returns GPU accelerator statistics.
+// GPUNTTStats returns GPU accelerator statistics.
 type GPUNTTStats struct {
 	Enabled      bool
 	Backend      string
-	CachedModuli int
+	TotalOps     uint64
 	GPUAvailable bool
 }
 
@@ -379,8 +447,8 @@ func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
 	return GPUNTTStats{
 		Enabled:      g.enabled,
 		Backend:      g.Backend(),
-		CachedModuli: len(g.contexts),
-		GPUAvailable: gpu.GPUAvailable(),
+		TotalOps:     atomic.LoadUint64(&g.totalOps),
+		GPUAvailable: accel.Available(),
 	}
 }
 

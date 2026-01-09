@@ -23,12 +23,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/address"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/protocol/chain"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/address"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
@@ -62,7 +62,7 @@ import (
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	avajson "github.com/luxfi/vm/utils/json"
+	avajson "github.com/luxfi/utils/json"
 )
 
 var encodings = []formatting.Encoding{
@@ -92,13 +92,13 @@ func TestGetProposedHeight(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 
 	// issue any transaction to put into the new block
-	subnetID := testNet1.ID()
+	chainID := testNet1.ID()
 	wallet := newWallet(t, service.vm, walletConfig{
-		subnetIDs: []ids.ID{subnetID},
+		chainIDs: []ids.ID{chainID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		subnetID,
+		chainID,
 		[]byte{},
 		constants.AVMID,
 		[]ids.ID{},
@@ -246,13 +246,13 @@ func TestGetTx(t *testing.T) {
 		{
 			"standard block",
 			func(t testing.TB, s *Service) *txs.Tx {
-				subnetID := testNet1.ID()
+				chainID := testNet1.ID()
 				wallet := newWallet(t, s.vm, walletConfig{
-					subnetIDs: []ids.ID{subnetID},
+					chainIDs: []ids.ID{chainID},
 				})
 
 				tx, err := wallet.IssueCreateChainTx(
-					subnetID,
+					chainID,
 					[]byte{},
 					constants.XVMID,
 					[]ids.ID{},
@@ -420,8 +420,8 @@ func TestGetBalance(t *testing.T) {
 		require.NoError(service.GetBalance(nil, &request, &reply))
 		balance := genesistest.DefaultInitialBalance
 		if idx == 0 {
-			// we use the first key to fund a subnet creation in [defaultGenesis].
-			// As such we need to account for the subnet creation fee
+			// we use the first key to fund a chain creation in [defaultGenesis].
+			// As such we need to account for the chain creation fee
 			balance = genesistest.DefaultInitialBalance - createNetFee
 		}
 		require.Equal(avajson.Uint64(balance), reply.Balance)
@@ -873,7 +873,7 @@ func TestGetValidatorsAt(t *testing.T) {
 }
 
 func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
-	subnetID, err := ids.FromString("u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H")
+	chainID, err := ids.FromString("u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -885,17 +885,17 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 			name: "specific height",
 			args: GetValidatorsAtArgs{
 				Height:  pchainapi.Height(12345),
-				ChainID: subnetID,
+				ChainID: chainID,
 			},
-			json: `{"height":"12345","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
+			json: `{"height":"12345","chainID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
 		{
 			name: "proposed height",
 			args: GetValidatorsAtArgs{
 				Height:  pchainapi.ProposedHeight,
-				ChainID: subnetID,
+				ChainID: chainID,
 			},
-			json: `{"height":"proposed","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
+			json: `{"height":"proposed","chainID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
 	}
 	for _, test := range tests {
@@ -956,12 +956,12 @@ func TestGetBlock(t *testing.T) {
 			service, _ := defaultService(t)
 			service.vm.ctx.Lock.Lock()
 
-			subnetID := testNet1.ID()
+			chainID := testNet1.ID()
 			wallet := newWallet(t, service.vm, walletConfig{
-				subnetIDs: []ids.ID{subnetID},
+				chainIDs: []ids.ID{chainID},
 			})
 			tx, err := wallet.IssueCreateChainTx(
-				subnetID,
+				chainID,
 				[]byte{},
 				constants.XVMID,
 				[]ids.ID{},
@@ -1337,7 +1337,7 @@ func FuzzGetFeeState(f *testing.F) {
 }
 
 func TestGetCurrentValidatorsForL1(t *testing.T) {
-	subnetID := ids.GenerateTestID()
+	chainID := ids.GenerateTestID()
 
 	sk, err := localsigner.New()
 	require.NoError(t, err)
@@ -1362,7 +1362,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:   subnetID,
+					ChainID:   chainID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -1370,7 +1370,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:   subnetID,
+					ChainID:   chainID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -1383,7 +1383,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:      subnetID,
+					ChainID:      chainID,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    0,
 					PublicKey:    pkBytes,
@@ -1391,7 +1391,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					ChainID:      subnetID,
+					ChainID:      chainID,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    1,
@@ -1404,7 +1404,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:   subnetID,
+					ChainID:   chainID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    123123,
@@ -1412,7 +1412,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					ChainID:   subnetID,
+					ChainID:   chainID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    0,
@@ -1422,7 +1422,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:           subnetID,
+					ChainID:           chainID,
 					NodeID:            ids.GenerateTestNodeID(),
 					StartTime:         0,
 					PublicKey:         pkBytes,
@@ -1432,7 +1432,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:           subnetID,
+					ChainID:           chainID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					StartTime:         2,
@@ -1441,7 +1441,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					ChainID:           subnetID,
+					ChainID:           chainID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         3,
@@ -1466,7 +1466,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 					NodeID:    staker.NodeID,
 					PublicKey: staker.PublicKey,
 					Weight:    5,
-					// start primary network staker 1 second before the subnet staker
+					// start primary network staker 1 second before the chain staker
 					StartTime: staker.StartTime.Add(-time.Second),
 					Priority:  txs.PrimaryNetworkValidatorCurrentPriority,
 				}
@@ -1479,7 +1479,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 
 			l1ValidatorsByVID := make(map[ids.ID]state.L1Validator)
 			if len(test.l1Validators) != 0 {
-				service.vm.state.SetNetToL1Conversion(subnetID,
+				service.vm.state.SetNetToL1Conversion(chainID,
 					state.NetToL1Conversion{
 						ConversionID: ids.GenerateTestID(),
 						ChainID:      ids.GenerateTestID(),
@@ -1564,7 +1564,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			}
 
 			args := GetCurrentValidatorsArgs{
-				ChainID: subnetID,
+				ChainID: chainID,
 			}
 			reply := GetCurrentValidatorsReply{}
 			require.NoError(service.GetCurrentValidators(&http.Request{}, &args, &reply))

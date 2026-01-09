@@ -1354,7 +1354,7 @@ func allFlags() []FlagSpec {
 			Key:         "proposervm-min-block-delay",
 			Type:        TypeDuration,
 			Default:     time.Second,
-			Description: "Minimum delay to enforce when building a chain++ block for the primary network chains and the default minimum delay for subnets",
+			Description: "Minimum delay to enforce when building a chain++ block for the primary network chains and the default minimum delay for chains",
 			Category:    CategoryConsensus,
 		},
 
@@ -1412,9 +1412,9 @@ func allFlags() []FlagSpec {
 			Category:    CategoryChain,
 		},
 		{
-			Key:         "subnet-config-dir",
+			Key:         "chain-config-dir",
 			Type:        TypeString,
-			Default:     "$LUXD_DATA_DIR/configs/subnets",
+			Default:     "$LUXD_DATA_DIR/configs/chains",
 			Description: "Net specific configurations parent directory. Ignored if net-config-content is specified",
 			Category:    CategoryChain,
 		},
@@ -1422,7 +1422,7 @@ func allFlags() []FlagSpec {
 			Key:         "net-config-content",
 			Type:        TypeString,
 			Default:     "",
-			Description: "Specifies base64 encoded subnets configurations",
+			Description: "Specifies base64 encoded chains configurations",
 			Category:    CategoryChain,
 		},
 		{
@@ -1674,7 +1674,7 @@ func allFlags() []FlagSpec {
 			Key:         "poa-mode-enabled",
 			Type:        TypeBool,
 			Default:     false,
-			Description: "Enable Proof of Authority mode for subnets",
+			Description: "Enable Proof of Authority mode for chains",
 			Category:    CategoryPOA,
 		},
 		{

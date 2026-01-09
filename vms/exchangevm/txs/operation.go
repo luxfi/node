@@ -8,13 +8,13 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 var (

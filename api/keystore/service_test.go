@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/vm/utils/password"
+	"github.com/luxfi/utils/password"
 )
 
 // strongPassword defines a password used for the following tests that

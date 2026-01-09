@@ -17,6 +17,8 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
 
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/interfaces"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
@@ -30,23 +32,21 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/network"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/json"
+	"github.com/luxfi/vm/platformvm/fx"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/json"
-	"github.com/luxfi/vm/utils/timer/mockable"
 	extwarp "github.com/luxfi/warp"
 
 	consensuschain "github.com/luxfi/consensus/engine/chain"
@@ -602,7 +602,7 @@ func (vm *VM) checkExistingChains() error {
 		// Check if this chain is already known
 		chains, err := vm.state.GetChains(netID)
 		if err != nil {
-			vm.log.Warn("failed to get chains for subnet",
+			vm.log.Warn("failed to get chains for chain",
 				"netID", netID.String(),
 				"error", err,
 			)
@@ -689,7 +689,7 @@ func (vm *VM) initBlockchains() error {
 	}
 
 	// When TrackAllChains is enabled OR SybilProtection is disabled,
-	// create chains for ALL subnets in state
+	// create chains for ALL chains in state
 	if vm.TrackAllChains || !vm.SybilProtectionEnabled {
 		netIDs, err := vm.state.GetNetIDs()
 		if err != nil {
@@ -701,7 +701,7 @@ func (vm *VM) initBlockchains() error {
 			}
 		}
 	} else if vm.SybilProtectionEnabled {
-		// Only create chains for explicitly tracked subnets
+		// Only create chains for explicitly tracked chains
 		for chainID := range vm.TrackedChains {
 			if err := vm.createNet(chainID); err != nil {
 				return err
@@ -840,8 +840,8 @@ func (vm *VM) onReady() error {
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
 	// for chainID := range vm.TrackedChains {
-	// 	vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
-	// 	vm.Validators.RegisterSetCallbackListener(subnetID, vl)
+	// 	vl := validators.NewLogger(vm.log, chainID, vm.ctx.NodeID)
+	// 	vm.Validators.RegisterSetCallbackListener(chainID, vl)
 	// }
 
 	// Commit state BEFORE starting background goroutines to avoid race conditions

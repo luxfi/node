@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/json"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/json"
 )
 
 type mockClient struct {

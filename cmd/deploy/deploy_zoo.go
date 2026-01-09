@@ -43,14 +43,14 @@ func main() {
 	pBuilder := builder.New(luxAddrs, luxState.PCTX, pBackend)
 	pSigner := signer.New(kc, pBackend)
 
-	// Step 1: Create a Net (subnet)
-	fmt.Println("\n=== Step 1: Creating Net (subnet) ===")
+	// Step 1: Create a Net (chain)
+	fmt.Println("\n=== Step 1: Creating Net (chain) ===")
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs:     []ids.ShortID{ownerAddr},
 	}
 
-	unsignedCreateNetTx, err := pBuilder.NewCreateSubnetTx(owner)
+	unsignedCreateNetTx, err := pBuilder.NewCreateChainTx(owner)
 	if err != nil {
 		log.Fatalf("failed to build CreateNet tx: %s\n", err)
 	}
@@ -79,7 +79,7 @@ func main() {
 	}
 	fmt.Printf("CreateNet tx accepted! Net ID: %s\n", netID)
 
-	// Accept the tx locally to register the subnet owner
+	// Accept the tx locally to register the chain owner
 	err = pBackend.AcceptTx(ctx, createNetTx)
 	if err != nil {
 		log.Fatalf("failed to accept CreateNet tx locally: %s\n", err)

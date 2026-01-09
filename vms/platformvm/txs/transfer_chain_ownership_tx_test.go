@@ -16,11 +16,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/vm/platformvm/fx/fxmock"
 	"github.com/luxfi/vm/secp256k1fx"
 	"github.com/luxfi/vm/types"
-	"github.com/luxfi/vm/utils"
 )
 
 func TestTransferChainOwnershipTxSerialization(t *testing.T) {
@@ -624,7 +624,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 			expectedErr: ErrTransferPermissionlessChain,
 		},
 		{
-			name: "invalid subnetAuth",
+			name: "invalid chainAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransferChainOwnershipTx {
 				// This NetAuth fails verification.
 				invalidNetAuth := verifymock.NewVerifiable(ctrl)

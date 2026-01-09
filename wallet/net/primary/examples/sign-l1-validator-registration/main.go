@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
 	p2psdk "github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/compression"
+	"github.com/luxfi/utils/compression"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"

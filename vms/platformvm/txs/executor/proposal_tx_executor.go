@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/vm/utils/math"
+	"github.com/luxfi/utils/math"
 )
 
 const (
@@ -91,7 +91,7 @@ func (*proposalTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (*proposalTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
 	return ErrWrongTxType
 }
 

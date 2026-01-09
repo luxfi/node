@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/utils"
 	"github.com/luxfi/vm/nftfx"
 	"github.com/luxfi/vm/propertyfx"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
 )
 
 var (

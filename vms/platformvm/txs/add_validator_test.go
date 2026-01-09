@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils/timer/mockable"
 )
 
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {

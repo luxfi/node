@@ -18,7 +18,7 @@ func main() {
 	key := keyutil.MustLoadKey()
 	uri := primary.LocalAPIURI
 	kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
-	subnetOwner := key.Address()
+	chainOwner := key.Address()
 
 	ctx := context.Background()
 
@@ -42,14 +42,14 @@ func main() {
 	owner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			subnetOwner,
+			chainOwner,
 		},
 	}
 
-	createSubnetStartTime := time.Now()
-	createSubnetTx, err := pWallet.IssueCreateSubnetTx(owner)
+	createChainStartTime := time.Now()
+	createChainTx, err := pWallet.IssueCreateChainTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create subnet transaction: %s\n", err)
+		log.Fatalf("failed to issue create chain transaction: %s\n", err)
 	}
-	log.Printf("created new net %s in %s\n", createSubnetTx.ID(), time.Since(createSubnetStartTime))
+	log.Printf("created new net %s in %s\n", createChainTx.ID(), time.Since(createChainStartTime))
 }

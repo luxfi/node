@@ -15,16 +15,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/vm/utils/maybe"
+	"github.com/luxfi/utils/maybe"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
@@ -146,7 +146,7 @@ type ManagerConfig[T any] struct {
 	Hasher merkledb.Hasher
 }
 
-func NewManager[T any](config ManagerConfig[T], registerer prometheus.Registerer) (*Manager[T], error) {
+func NewManager[T any](config ManagerConfig[T], registerer metric.Registerer) (*Manager[T], error) {
 	switch {
 	case config.RangeProofClient == nil:
 		return nil, ErrNoRangeProofClientProvided

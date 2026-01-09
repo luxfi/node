@@ -6,7 +6,7 @@ package genesis
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 type Genesis struct {

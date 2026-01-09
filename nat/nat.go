@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 const (

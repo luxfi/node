@@ -23,12 +23,12 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/utils"
+	"github.com/luxfi/utils/json"
 	"github.com/luxfi/vm/nftfx"
 	"github.com/luxfi/vm/platformvm/signer"
 	"github.com/luxfi/vm/propertyfx"
 	"github.com/luxfi/vm/secp256k1fx"
-	"github.com/luxfi/vm/utils"
-	"github.com/luxfi/vm/utils/json"
 )
 
 var (

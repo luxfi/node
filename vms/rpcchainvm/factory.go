@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/utils/resource"
 	"github.com/luxfi/vm/rpcchainvm/grpcutils"
-	"github.com/luxfi/vm/utils/resource"
 )
 
 var _ vms.Factory = (*factory)(nil)

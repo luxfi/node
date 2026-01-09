@@ -10,7 +10,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 const (

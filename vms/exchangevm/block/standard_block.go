@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/codec"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/vm/utils/hashing"
+	"github.com/luxfi/utils/hashing"
 )
 
 var _ Block = (*StandardBlock)(nil)

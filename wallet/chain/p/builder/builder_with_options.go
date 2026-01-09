@@ -135,11 +135,11 @@ func (b *builderWithOptions) NewCreateChainTx(
 	)
 }
 
-func (b *builderWithOptions) NewCreateSubnetTx(
+func (b *builderWithOptions) NewCreateChainTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateSubnetTx, error) {
-	return b.builder.NewCreateSubnetTx(
+) (*txs.CreateChainTx, error) {
+	return b.builder.NewCreateChainTx(
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)
@@ -147,12 +147,12 @@ func (b *builderWithOptions) NewCreateSubnetTx(
 
 // Removed in regenesis
 func (b *builderWithOptions) NewTransferChainOwnershipTx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.TransferChainOwnershipTx, error) {
 	return b.builder.NewTransferChainOwnershipTx(
-		subnetID,
+		chainID,
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)
@@ -254,14 +254,14 @@ func (b *builderWithOptions) NewAddPermissionlessDelegatorTx(
 }
 
 func (b *builderWithOptions) NewConvertChainToL1Tx(
-	subnetID ids.ID,
+	chainID ids.ID,
 	chainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.ConvertChainToL1Tx, error) {
 	return b.builder.NewConvertChainToL1Tx(
-		subnetID,
+		chainID,
 		chainID,
 		address,
 		validators,

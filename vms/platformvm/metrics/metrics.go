@@ -10,10 +10,10 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
+	utilmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
-	utilmetric "github.com/luxfi/metric"
-	"github.com/luxfi/vm/utils/wrappers"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (

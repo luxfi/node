@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/state"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/utils"
 )
 
 // default number of heights to index before committing

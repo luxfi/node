@@ -4,10 +4,10 @@
 package message
 
 import (
-	"github.com/luxfi/constants"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/vm/utils"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/utils"
 )
 
 const (

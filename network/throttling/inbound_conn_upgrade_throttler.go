@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/utils/timer/mockable"
+	"github.com/luxfi/timer/mockable"
 
-	timerpkg "github.com/luxfi/vm/utils/timer"
+	timerpkg "github.com/luxfi/timer"
 )
 
 var (
