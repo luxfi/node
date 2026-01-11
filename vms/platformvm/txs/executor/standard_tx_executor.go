@@ -24,9 +24,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // TODO: Before Etna, ensure that the maximum number of expiries to track is

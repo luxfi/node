@@ -40,8 +40,8 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/utils/resource"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/resource"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/vm/rpcchainvm/grpcutils"
 	"github.com/luxfi/warp"
@@ -193,7 +193,7 @@ func (vm *VMClient) Initialize(
 		}
 		// Handle type conversions for interface fields
 		if ctx.Log != nil {
-			if l, ok := ctx.Log.(log.Logger); ok {
+			if l, ok := ctx.Log.(log.Logger); ok && !l.IsZero() {
 				chainCtx.Log = l
 			}
 		}
@@ -224,7 +224,7 @@ func (vm *VMClient) Initialize(
 			} else {
 				// BCLookup is set but not a recognized type - log warning but continue
 				// This allows graceful degradation
-				if vm.logger != nil {
+				if !vm.logger.IsZero() {
 					vm.logger.Warn("BCLookup has unrecognized type, alias resolution may fail",
 						log.String("type", fmt.Sprintf("%T", ctx.BCLookup)))
 				}
@@ -252,7 +252,7 @@ func (vm *VMClient) Initialize(
 			} else {
 				// Fall back to network-specific defaults
 				chainCtx.NetworkUpgrades = upgrade.GetConfig(ctx.NetworkID)
-				if vm.logger != nil {
+				if !vm.logger.IsZero() {
 					vm.logger.Warn("NetworkUpgrades has unrecognized type, using network defaults",
 						log.String("type", fmt.Sprintf("%T", ctx.NetworkUpgrades)),
 						log.Uint32("networkID", ctx.NetworkID))
@@ -300,7 +300,7 @@ func (vm *VMClient) Initialize(
 	dbServerAddr := dbServerListener.Addr().String()
 
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(db))
-	if chainCtx.Log != nil {
+	if chainCtx.Log.IsZero() == false {
 		chainCtx.Log.Info("grpc: serving database",
 			log.String("address", dbServerAddr),
 		)
@@ -311,7 +311,7 @@ func (vm *VMClient) Initialize(
 	}
 	if chainCtx.BCLookup != nil {
 		vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-	} else if chainCtx.Log != nil {
+	} else if chainCtx.Log.IsZero() == false {
 		chainCtx.Log.Warn("BCLookup is nil - chain alias resolution will not work for plugin VM")
 	}
 	if appSenderConcrete != nil {
@@ -331,7 +331,7 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	if chainCtx.Log != nil {
+	if chainCtx.Log.IsZero() == false {
 		chainCtx.Log.Info("grpc: serving vm services",
 			log.String("address", serverAddr),
 		)

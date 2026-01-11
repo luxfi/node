@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
+	"github.com/luxfi/math"
 )
 
 var (

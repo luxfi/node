@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func main() {
@@ -46,10 +46,10 @@ func main() {
 		},
 	}
 
-	createChainStartTime := time.Now()
-	createChainTx, err := pWallet.IssueCreateChainTx(owner)
+	createNetworkStartTime := time.Now()
+	createNetworkTx, err := pWallet.IssueCreateNetworkTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create chain transaction: %s\n", err)
+		log.Fatalf("failed to issue create network transaction: %s\n", err)
 	}
-	log.Printf("created new net %s in %s\n", createChainTx.ID(), time.Since(createChainStartTime))
+	log.Printf("created new network %s in %s\n", createNetworkTx.ID(), time.Since(createNetworkStartTime))
 }

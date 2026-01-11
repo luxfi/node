@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/crypto/hash"
-	safemath "github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	hash "github.com/luxfi/crypto/hash"
+	safemath "github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (

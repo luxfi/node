@@ -40,9 +40,9 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/bloom"
-	"github.com/luxfi/utils/ips"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/net/ips"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/warp"
 
 	safemath "github.com/luxfi/math"

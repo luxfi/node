@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 type Info struct {

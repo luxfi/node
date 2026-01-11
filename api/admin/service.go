@@ -23,12 +23,12 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/utils/perms"
-	"github.com/luxfi/utils/profiler"
-	"github.com/luxfi/vm/registry"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/filesystem/perms"
+	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/node/vms/registry"
 )
 
 const (

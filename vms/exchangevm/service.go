@@ -22,11 +22,11 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/nftfx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/nftfx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	safemath "github.com/luxfi/math"
-	avajson "github.com/luxfi/utils/json"
+	avajson "github.com/luxfi/node/utils/json"
 )
 
 const (

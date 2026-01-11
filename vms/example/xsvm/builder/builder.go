@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/utils/linked"
-	"github.com/luxfi/utils/lock"
+	"github.com/luxfi/container/linked"
+	"github.com/luxfi/concurrent/lock"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"

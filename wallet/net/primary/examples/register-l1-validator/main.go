@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func main() {

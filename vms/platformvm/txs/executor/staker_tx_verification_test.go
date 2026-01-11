@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo/utxomock"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/stretchr/testify/require"
 )
 

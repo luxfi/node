@@ -54,15 +54,15 @@ import (
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	avajson "github.com/luxfi/utils/json"
+	avajson "github.com/luxfi/node/utils/json"
 )
 
 var encodings = []formatting.Encoding{

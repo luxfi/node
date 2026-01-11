@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func ExampleWallet() {

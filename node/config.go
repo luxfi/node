@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/utils/profiler"
+	"github.com/luxfi/node/utils/profiler"
 )
 
 type APIIndexerConfig struct {

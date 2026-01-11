@@ -35,7 +35,7 @@ import (
 	"github.com/luxfi/utils"
 	"github.com/luxfi/container/iterator"
 
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
@@ -45,15 +45,15 @@ import (
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 
-	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/signer"
 
 	"github.com/luxfi/node/vms/platformvm/status"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
 
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	"github.com/luxfi/vm/types"
 

@@ -35,9 +35,9 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/bloom"
-	"github.com/luxfi/utils/compression"
-	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/compress"
+	"github.com/luxfi/net/ips"
 	"github.com/luxfi/warp"
 )
 

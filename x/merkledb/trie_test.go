@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/hash"
+	hash "github.com/luxfi/crypto/hash"
 )
 
 func getNodeValue(t Trie, key string) ([]byte, error) {

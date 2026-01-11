@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // Note that since a Lux network has exactly one Platform Chain,

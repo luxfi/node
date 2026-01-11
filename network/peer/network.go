@@ -9,8 +9,8 @@ package peer
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/utils/bloom"
-	"github.com/luxfi/utils/ips"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/net/ips"
 )
 
 // Network defines the interface that is used by a peer to help establish a well

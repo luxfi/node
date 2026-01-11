@@ -44,7 +44,7 @@ func (m *txMetrics) AddValidatorTx(*txs.AddValidatorTx) error {
 // Removed in regenesis
 // func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 // 	m.numTxs.With(metric.Labels{
-// 		txLabel: "add_chain_validator",
+// 		txLabel: "add_subnet_validator",
 // 	}).Inc()
 // 	return nil
 // }
@@ -66,7 +66,7 @@ func (m *txMetrics) CreateChainTx(*txs.CreateChainTx) error {
 // Removed in regenesis
 // func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
 // 	m.numTxs.With(metric.Labels{
-// 		txLabel: "create_chain",
+// 		txLabel: "create_subnet",
 // 	}).Inc()
 // 	return nil
 // }
@@ -102,7 +102,7 @@ func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 // Removed in regenesis
 // func (m *txMetrics) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 // 	m.numTxs.With(metric.Labels{
-// 		txLabel: "remove_chain_validator",
+// 		txLabel: "remove_subnet_validator",
 // 	}).Inc()
 // 	return nil
 // }
@@ -110,7 +110,7 @@ func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 // Removed in regenesis
 // func (m *txMetrics) TransformChainTx(*txs.TransformChainTx) error {
 // 	m.numTxs.With(metric.Labels{
-// 		txLabel: "transform_chain",
+// 		txLabel: "transform_subnet",
 // 	}).Inc()
 // 	return nil
 // }
@@ -132,7 +132,7 @@ func (m *txMetrics) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegator
 // Removed in regenesis
 // func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 // 	m.numTxs.With(metric.Labels{
-// 		txLabel: "transfer_chain_ownership",
+// 		txLabel: "transfer_subnet_ownership",
 // 	}).Inc()
 // 	return nil
 // }
@@ -186,9 +186,9 @@ func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) CreateChainTx(*txs.CreateChainTx) error {
+func (m *txMetrics) CreateNetworkTx(*txs.CreateNetworkTx) error {
 	m.numTxs.With(metric.Labels{
-		txLabel: "create_chain",
+		txLabel: "create_subnet",
 	}).Inc()
 	return nil
 }

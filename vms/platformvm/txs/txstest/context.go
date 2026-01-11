@@ -39,10 +39,10 @@ func newContext(
 	// Always populate static fees as fallback or for non-dynamic transactions
 	if cfg != nil {
 		builderContext.StaticFeeConfig = fee.StaticConfig{
-			TxFee:                 cfg.TxFee,
-			CreateAssetTxFee:      cfg.CreateAssetTxFee,
-			CreateChainTxFee:      cfg.CreateNetTxFee,
-			CreateChainTxFee: cfg.CreateChainTxFee,
+			TxFee:              cfg.TxFee,
+			CreateAssetTxFee:   cfg.CreateAssetTxFee,
+			CreateNetworkTxFee: cfg.CreateNetTxFee,
+			CreateChainTxFee:   cfg.CreateChainTxFee,
 		}
 	}
 

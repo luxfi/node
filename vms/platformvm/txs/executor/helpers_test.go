@@ -12,8 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	consensuscontext "github.com/luxfi/consensus/context"
 	validators "github.com/luxfi/consensus/validator"
 	consensusuptime "github.com/luxfi/consensus/validator/uptime"
@@ -23,6 +21,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/utils"
 
@@ -34,7 +34,7 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
 
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 const (
@@ -203,11 +203,16 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 	return env
 }
 
+// walletConfig configures test wallet creation.
+//
+// Field naming follows txstest.NewWallet parameters:
+//   - ownedChainIDs: Chain IDs the keychain owns (for GetNetOwner lookups)
+//   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 type walletConfig struct {
-	config   *config.Internal
-	keys     []*secp256k1.PrivateKey
-	netIDs   []ids.ID
-	chainIDs []ids.ID
+	config               *config.Internal
+	keys                 []*secp256k1.PrivateKey
+	ownedChainIDs        []ids.ID // chains we own (for GetNetOwner)
+	importSourceChainIDs []ids.ID // chains to import atomic UTXOs from
 }
 
 func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
@@ -237,9 +242,9 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	}
 	// Create a basic Config for wallet
 	walletConfig := &config.Config{
-		TxFee:                 constants.MilliLux,
-		CreateAssetTxFee:      constants.MilliLux,
-		CreateNetTxFee:        constants.Lux,
+		TxFee:            constants.MilliLux,
+		CreateAssetTxFee: constants.MilliLux,
+		CreateNetTxFee:   constants.Lux,
 		CreateChainTxFee: constants.Lux,
 	}
 	return txstest.NewWallet(
@@ -248,9 +253,9 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		walletConfig,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
-		c.netIDs,
-		nil, // validationIDs
-		c.chainIDs,
+		c.ownedChainIDs,        // chains we own for GetNetOwner lookups
+		nil,                    // validationIDs
+		c.importSourceChainIDs, // chains to import atomic UTXOs from
 	)
 }
 

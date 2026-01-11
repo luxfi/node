@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/hash"
+	hash "github.com/luxfi/crypto/hash"
 )
 
 var (

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
 )

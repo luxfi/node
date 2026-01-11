@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/utils/math"
+	"github.com/luxfi/math"
 )
 
 const (

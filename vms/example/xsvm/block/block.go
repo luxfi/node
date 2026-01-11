@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/crypto/hash"
+	hash "github.com/luxfi/crypto/hash"
 )
 
 // Stateless blocks are blocks as they are marshalled/unmarshalled and sent over

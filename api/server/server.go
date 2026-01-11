@@ -4,28 +4,26 @@
 package server
 
 import (
-	"github.com/luxfi/metric"
-
 	"context"
 	"fmt"
 	"net"
 	"net/http"
-	// "net/url"   // Unused after handler registration moved to chain manager
-	// "path"      // Unused after handler registration moved to chain manager
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/rs/cors"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/trace"
-	"github.com/rs/cors"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"strings"
-	"sync"
-	"time"
-	// "github.com/luxfi/constants"  // Unused after handler registration moved
-	"github.com/luxfi/log"
 )
 
 const (

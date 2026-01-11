@@ -12,9 +12,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/fx"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 var _ Verifier = (*verifier)(nil)

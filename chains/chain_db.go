@@ -66,7 +66,7 @@ func (m *ChainDBManager) GetDatabase(chainID ids.ID, chainAlias string) (databas
 	chainDB := prefixdb.New(chainID[:], m.db)
 	m.chainDBs[chainID] = chainDB
 
-	if m.log != nil {
+	if !m.log.IsZero() {
 		m.log.Info("Created prefixed database for chain",
 			log.Stringer("chainID", chainID),
 			log.String("alias", chainAlias),

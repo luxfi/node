@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/math"
+	"github.com/luxfi/container/maybe"
 )
 
 var (

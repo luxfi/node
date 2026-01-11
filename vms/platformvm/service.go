@@ -34,14 +34,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	safemath "github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	safemath "github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
-	avajson "github.com/luxfi/utils/json"
+	avajson "github.com/luxfi/node/utils/json"
 )
 
 const (

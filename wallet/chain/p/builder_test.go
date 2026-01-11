@@ -32,9 +32,9 @@ import (
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/node/wallet/net/primary/common/utxotest"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 )
 

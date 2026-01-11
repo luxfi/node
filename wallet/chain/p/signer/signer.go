@@ -7,10 +7,10 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/keychain"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/keychain"
 )
 
 var _ Signer = (*txSigner)(nil)

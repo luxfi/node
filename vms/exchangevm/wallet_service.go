@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/utils/linked"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/container/linked"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 type WalletService struct {

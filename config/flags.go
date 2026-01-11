@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/utils/compression"
-	"github.com/luxfi/utils/dynamicip"
-	"github.com/luxfi/utils/ulimit"
+	compression "github.com/luxfi/compress"
+	"github.com/luxfi/net/dynamicip"
+	"github.com/luxfi/sys/ulimit"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 )

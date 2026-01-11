@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // Max number of items allowed in a page
@@ -82,11 +82,11 @@ type DecisionTxBuilder interface {
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
-	// threshold: [threshold] of [ownerAddrs] needed to manage this chain
-	// ownerAddrs: control addresses for the new chain
+	// threshold: [threshold] of [ownerAddrs] needed to manage this network
+	// ownerAddrs: control addresses for the new network
 	// keys: keys to pay the fee
 	// changeAddr: address to send change to, if there is any
-	NewCreateChainTx(
+	NewCreateNetworkTx(
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
 		keys []*secp256k1.PrivateKey,
@@ -418,14 +418,14 @@ func (b *builder) NewCreateChainTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewCreateChainTx(
+func (b *builder) NewCreateNetworkTx(
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	createChainTxFee := b.cfg.CreateNetTxFee
-	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createChainTxFee, changeAddr)
+	createNetTxFee := b.cfg.CreateNetTxFee
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createNetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -434,7 +434,7 @@ func (b *builder) NewCreateChainTx(
 	utils.Sort(ownerAddrs)
 
 	// Create the tx
-	utx := &txs.CreateChainTx{
+	utx := &txs.CreateNetworkTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,

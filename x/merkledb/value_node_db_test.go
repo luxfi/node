@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 )
 
 // Test putting, modifying, deleting, and getting key-node pairs.

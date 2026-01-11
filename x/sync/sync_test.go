@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
 	"github.com/luxfi/p2p/p2ptest"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/warp"
 
 	pb "github.com/luxfi/node/proto/pb/sync"

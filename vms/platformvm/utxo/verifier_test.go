@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
-	safemath "github.com/luxfi/utils/math"
+	safemath "github.com/luxfi/math"
 )
 
 var _ txs.UnsignedTx = (*dummyUnsignedTx)(nil)

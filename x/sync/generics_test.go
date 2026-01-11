@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 )
 
 // TestGenericWorkItem tests the generic work item implementation

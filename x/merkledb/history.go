@@ -12,8 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/container/buffer"
-	"github.com/luxfi/utils/heap"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/heap"
+	"github.com/luxfi/container/maybe"
 )
 
 var (

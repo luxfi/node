@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 package dialer
 
 import (
@@ -14,7 +11,6 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/network/throttling"
 )
 
@@ -28,8 +24,8 @@ type Dialer interface {
 }
 
 type dialer struct {
-	dialer    net.Dialer
-	log       log.Logger
+	dialer net.Dialer
+	log    log.Logger
 	network   string
 	throttler throttling.DialThrottler
 }
@@ -44,21 +40,21 @@ type Config struct {
 // [dialerConfig.connectionTimeout] gives the timeout when dialing an IP.
 // [dialerConfig.throttleRps] gives the max number of outgoing connection attempts/second.
 // If [dialerConfig.throttleRps] == 0, outgoing connections aren't rate-limited.
-func NewDialer(network string, dialerConfig Config, log log.Logger) Dialer {
+func NewDialer(network string, dialerConfig Config, logger log.Logger) Dialer {
 	var throttler throttling.DialThrottler
 	if dialerConfig.ThrottleRps <= 0 {
 		throttler = throttling.NewNoDialThrottler()
 	} else {
 		throttler = throttling.NewDialThrottler(int(dialerConfig.ThrottleRps))
 	}
-	log.Debug(
+	logger.Debug(
 		"creating dialer",
-		luxlog.Uint32("throttleRPS", dialerConfig.ThrottleRps),
-		luxlog.Duration("dialTimeout", dialerConfig.ConnectionTimeout),
+		log.Uint32("throttleRPS", dialerConfig.ThrottleRps),
+		log.Duration("dialTimeout", dialerConfig.ConnectionTimeout),
 	)
 	return &dialer{
 		dialer:    net.Dialer{Timeout: dialerConfig.ConnectionTimeout},
-		log:       log,
+		log:       logger,
 		network:   network,
 		throttler: throttler,
 	}
@@ -69,7 +65,7 @@ func (d *dialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error) 
 		return nil, err
 	}
 	d.log.Debug("dialing",
-		luxlog.Stringer("ip", ip),
+		log.Stringer("ip", ip),
 	)
 	conn, err := d.dialer.DialContext(ctx, d.network, ip.String())
 	if err != nil {

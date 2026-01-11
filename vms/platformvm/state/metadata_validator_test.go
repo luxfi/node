@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 func TestValidatorUptimes(t *testing.T) {

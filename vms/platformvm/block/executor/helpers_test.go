@@ -42,13 +42,13 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
 
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/validators/validatorstest"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )

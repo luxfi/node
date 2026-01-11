@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 // Service wraps proposervm for RPC/JSON-RPC access

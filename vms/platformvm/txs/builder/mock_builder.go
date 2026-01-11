@@ -16,7 +16,7 @@ import (
 	secp256k1 "github.com/luxfi/crypto/secp256k1"
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	secp256k1fx "github.com/luxfi/vm/secp256k1fx"
+	secp256k1fx "github.com/luxfi/utxo/secp256k1fx"
 )
 
 // MockBuilder is a mock of Builder interface.
@@ -132,19 +132,19 @@ func (mr *MockBuilderMockRecorder) NewCreateChainTx(arg0, arg1, arg2, arg3, arg4
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewCreateChainTx", reflect.TypeOf((*MockBuilder)(nil).NewCreateChainTx), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
-// NewCreateChainTx mocks base method.
-func (m *MockBuilder) NewCreateChainTx(arg0 uint32, arg1 []ids.ShortID, arg2 []*secp256k1.PrivateKey, arg3 ids.ShortID) (*txs.Tx, error) {
+// NewCreateNetworkTx mocks base method.
+func (m *MockBuilder) NewCreateNetworkTx(arg0 uint32, arg1 []ids.ShortID, arg2 []*secp256k1.PrivateKey, arg3 ids.ShortID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewCreateChainTx", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "NewCreateNetworkTx", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// NewCreateChainTx indicates an expected call of NewCreateChainTx.
-func (mr *MockBuilderMockRecorder) NewCreateChainTx(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// NewCreateNetworkTx indicates an expected call of NewCreateNetworkTx.
+func (mr *MockBuilderMockRecorder) NewCreateNetworkTx(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewCreateChainTx", reflect.TypeOf((*MockBuilder)(nil).NewCreateChainTx), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewCreateNetworkTx", reflect.TypeOf((*MockBuilder)(nil).NewCreateNetworkTx), arg0, arg1, arg2, arg3)
 }
 
 // NewExportTx mocks base method.

@@ -69,7 +69,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
 
 // BuildBlock builds a block to be added to consensus.
 func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
-	if b.backend.Log != nil {
+	if !b.backend.Log.IsZero() {
 		b.backend.Log.Debug("starting to attempt to build a block")
 	}
 

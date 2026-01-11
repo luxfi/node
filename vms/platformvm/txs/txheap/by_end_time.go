@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/heap"
+	"github.com/luxfi/container/heap"
 )
 
 var _ TimedHeap = (*byEndTime)(nil)

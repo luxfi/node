@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/p2p/gossip"
 	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (

@@ -8,17 +8,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/constants"
+	"github.com/luxfi/const"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/keychain"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/keychain"
 )
 
 var (
@@ -93,7 +93,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
+func (s *visitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err

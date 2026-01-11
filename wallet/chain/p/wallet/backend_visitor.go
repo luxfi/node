@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (
@@ -54,7 +54,7 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
+func (b *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	b.b.setOwner(
 		b.txID,
 		tx.Owner,

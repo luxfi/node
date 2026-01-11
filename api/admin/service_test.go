@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
-	"github.com/luxfi/vm/registry/registrymock"
 )
 
 type loadVMsTest struct {

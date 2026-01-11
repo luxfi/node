@@ -45,8 +45,8 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	"github.com/luxfi/node/vms/platformvm/testcontext"

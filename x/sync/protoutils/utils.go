@@ -7,7 +7,7 @@
 package protoutils
 
 import (
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )

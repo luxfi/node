@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 var ErrInsufficientFunds = errors.New("insufficient funds")

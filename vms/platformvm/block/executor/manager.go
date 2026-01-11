@@ -81,7 +81,7 @@ func NewManager(
 		preferred:         lastAccepted,
 		txExecutorBackend: txExecutorBackend,
 		validatorManager:  validatorManager,
-		Log:               log.NoLog{},
+		Log:               log.Noop(),
 	}
 }
 

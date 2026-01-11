@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/utils/maybe"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/container/maybe"
 )
 
 func getBasicDB() (*merkleDB, error) {

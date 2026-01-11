@@ -7,10 +7,10 @@ import (
 	"reflect"
 
 	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/log"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/wrappers"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (

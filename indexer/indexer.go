@@ -20,8 +20,8 @@ import (
 	"github.com/luxfi/node/chains"
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/codec/wrappers"
 )
 
 const (

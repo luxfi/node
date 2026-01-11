@@ -136,7 +136,7 @@ func (vm *ChainVM) Initialize(
 
 	vm.initialized = true
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("DEX ChainVM initialized",
 			"genesisID", genesisBlockID,
 		)
@@ -252,7 +252,7 @@ func (vm *ChainVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	// Store the block
 	vm.blocks[newID] = block
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Debug("Built block",
 			"id", newID,
 			"height", newHeight,
@@ -311,7 +311,7 @@ func (vm *ChainVM) SetPreference(ctx context.Context, blkID ids.ID) error {
 
 	vm.preferredID = blkID
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Debug("Set preference", "blockID", blkID)
 	}
 

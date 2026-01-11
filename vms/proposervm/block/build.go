@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 func BuildUnsigned(

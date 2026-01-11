@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 )
 
 type nilStateGetter struct{}

@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utils/wrappers"
 )
 
 const CodecVersion = txs.CodecVersion
@@ -26,7 +26,7 @@ var (
 
 	// genesisLinearCodec is the underlying codec for GenesisCodec.
 	// This is exposed for registering additional types from other packages.
-	genesisLinearCodec *linearcodec.Codec
+	genesisLinearCodec linearcodec.Codec
 )
 
 func init() {
@@ -34,7 +34,7 @@ func init() {
 	gc := linearcodec.NewDefault()
 
 	errs := wrappers.Errs{}
-	for _, c := range []*linearcodec.Codec{c, gc} {
+	for _, c := range []linearcodec.Codec{c, gc} {
 		errs.Add(
 			RegisterApricotTypes(c),
 			RegisterBanffTypes(c),
@@ -63,7 +63,7 @@ func RegisterGenesisType(val interface{}) error {
 
 // RegisterApricotTypes registers the type information for blocks that were
 // valid during the Apricot series of upgrades.
-func RegisterApricotTypes(targetCodec *linearcodec.Codec) error {
+func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
 		targetCodec.RegisterType(&ApricotProposalBlock{}),
 		targetCodec.RegisterType(&ApricotAbortBlock{}),
@@ -76,7 +76,7 @@ func RegisterApricotTypes(targetCodec *linearcodec.Codec) error {
 
 // RegisterBanffTypes registers the type information for blocks that were valid
 // during the Banff series of upgrades.
-func RegisterBanffTypes(targetCodec *linearcodec.Codec) error {
+func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
 		txs.RegisterBanffTypes(targetCodec),
 		targetCodec.RegisterType(&BanffProposalBlock{}),
@@ -88,12 +88,12 @@ func RegisterBanffTypes(targetCodec *linearcodec.Codec) error {
 
 // RegisterDurangoTypes registers the type information for blocks that were
 // valid during the Durango series of upgrades.
-func RegisterDurangoTypes(targetCodec *linearcodec.Codec) error {
+func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 	return txs.RegisterDurangoTypes(targetCodec)
 }
 
 // RegisterEtnaTypes registers the type information for blocks that were valid
 // during the Etna series of upgrades.
-func RegisterEtnaTypes(targetCodec *linearcodec.Codec) error {
+func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 	return txs.RegisterEtnaTypes(targetCodec)
 }

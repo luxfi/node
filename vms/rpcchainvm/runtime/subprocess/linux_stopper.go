@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {

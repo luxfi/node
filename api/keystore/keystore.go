@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/utils/password"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/password"
 )
 
 const (

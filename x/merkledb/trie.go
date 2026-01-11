@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 )
 
 type ViewChanges struct {

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 type Builder struct {

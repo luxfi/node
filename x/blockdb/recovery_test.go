@@ -15,7 +15,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/compress"
 )
 
 func getCompressedBlockSize(block []byte) (uint32, error) {

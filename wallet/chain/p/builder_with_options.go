@@ -10,8 +10,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var _ Builder = (*builderWithOptions)(nil)
@@ -119,11 +119,11 @@ func (b *builderWithOptions) NewCreateChainTx(
 	)
 }
 
-func (b *builderWithOptions) NewCreateChainTx(
+func (b *builderWithOptions) NewCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
-	return b.Builder.NewCreateChainTx(
+) (*txs.CreateNetworkTx, error) {
+	return b.Builder.NewCreateNetworkTx(
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)

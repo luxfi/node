@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/utils/packages"
+	"github.com/luxfi/node/utils/packages"
 )
 
 func TestMustNotImport(t *testing.T) {

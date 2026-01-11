@@ -19,8 +19,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux/luxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
 	safemath "github.com/luxfi/math"

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	psigner "github.com/luxfi/node/wallet/chain/p/signer"

@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/ids/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/node/staking"
 )
 

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/wallet/net/primary"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func main() {
@@ -99,24 +99,24 @@ func main() {
 	for _, chain := range chains {
 		fmt.Printf("\n=== Creating %s ===\n", chain.Name)
 
-		// Step 1: Create chain
-		fmt.Printf("Creating chain for %s...\n", chain.Name)
-		createChainTx, err := pWallet.IssueCreateChainTx(owner)
+		// Step 1: Create network (subnet)
+		fmt.Printf("Creating network for %s...\n", chain.Name)
+		createNetworkTx, err := pWallet.IssueCreateNetworkTx(owner)
 		if err != nil {
-			log.Printf("Failed to create chain for %s: %v", chain.Name, err)
+			log.Printf("Failed to create network for %s: %v", chain.Name, err)
 			continue
 		}
-		chainID := createChainTx.ID()
-		fmt.Printf("  Chain ID: %s\n", chainID)
+		networkID := createNetworkTx.ID()
+		fmt.Printf("  Network ID: %s\n", networkID)
 
 		// Wait for acceptance
-		fmt.Println("  Waiting for chain acceptance...")
+		fmt.Println("  Waiting for network acceptance...")
 		time.Sleep(3 * time.Second)
 
-		// Step 2: Create blockchain in the chain
+		// Step 2: Create blockchain in the network
 		fmt.Printf("Creating blockchain for %s...\n", chain.Name)
 		createChainTx, err := pWallet.IssueCreateChainTx(
-			chainID,
+			networkID,
 			[]byte(chain.Genesis),
 			evmVMID,
 			nil, // fxIDs

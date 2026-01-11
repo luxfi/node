@@ -23,7 +23,7 @@ import (
 	// "github.com/luxfi/log" // Unused
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/utils/profiler"
+	"github.com/luxfi/node/utils/profiler"
 )
 
 type APIIndexerConfig struct {

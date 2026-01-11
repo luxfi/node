@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 var _ Backend = (*backend)(nil)

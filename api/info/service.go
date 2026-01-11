@@ -24,11 +24,11 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/vm/nftfx"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/propertyfx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/utxo/nftfx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/propertyfx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (

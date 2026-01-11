@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 		Addrs:     []ids.ShortID{ownerAddr},
 	}
 
-	unsignedCreateNetTx, err := pBuilder.NewCreateChainTx(owner)
+	unsignedCreateNetTx, err := pBuilder.NewCreateNetworkTx(owner)
 	if err != nil {
 		log.Fatalf("failed to build CreateNet tx: %s\n", err)
 	}

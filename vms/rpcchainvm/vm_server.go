@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/vm/rpcchainvm/grpcutils"
 	"github.com/luxfi/warp"
 

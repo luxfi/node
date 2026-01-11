@@ -6,13 +6,13 @@ package builder
 import (
 	"time"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var _ Builder = (*withOptions)(nil)
@@ -118,7 +118,7 @@ func (w *withOptions) NewAddDelegatorTx(
 }
 
 func (w *withOptions) NewCreateChainTx(
-	chainID ids.ID,
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -126,7 +126,7 @@ func (w *withOptions) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	return w.builder.NewCreateChainTx(
-		chainID,
+		netID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -135,11 +135,11 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-func (w *withOptions) NewCreateChainTx(
+func (w *withOptions) NewCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
-	return w.builder.NewCreateChainTx(
+) (*txs.CreateNetworkTx, error) {
+	return w.builder.NewCreateNetworkTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
@@ -159,15 +159,15 @@ func (w *withOptions) NewTransferChainOwnershipTx(
 }
 
 func (w *withOptions) NewConvertChainToL1Tx(
-	chainID ids.ID,
-	chainID ids.ID,
+	netID ids.ID,
+	managerChainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.ConvertChainToL1Tx, error) {
 	return w.builder.NewConvertChainToL1Tx(
-		chainID,
-		chainID,
+		netID,
+		managerChainID,
 		address,
 		validators,
 		common.UnionOptions(w.options, options)...,

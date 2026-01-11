@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
@@ -154,7 +154,7 @@ func NewManager[T any](config ManagerConfig[T], registerer metric.Registerer) (*
 		return nil, ErrNoChangeProofClientProvided
 	case config.DB == nil:
 		return nil, ErrNoDatabaseProvided
-	case config.Log == nil:
+	case config.Log.IsZero():
 		return nil, ErrNoLogProvided
 	case config.SimultaneousWorkLimit == 0:
 		return nil, ErrZeroWorkLimit

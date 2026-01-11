@@ -15,10 +15,10 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/nftfx"
-	"github.com/luxfi/vm/propertyfx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/math"
+	"github.com/luxfi/utxo/nftfx"
+	"github.com/luxfi/utxo/propertyfx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (

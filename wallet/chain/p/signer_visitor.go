@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/vm/secp256k1fx"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (
@@ -101,7 +101,7 @@ func (s *signerVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *signerVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
+func (s *signerVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func (s *signerVisitor) getChainSigners(netID ids.ID, chainAuth verify.Verifiabl
 		return nil, errUnknownChainAuthType
 	}
 
-	chainTx, err := s.backend.GetTx(s.ctx, netID)
+	netTx, err := s.backend.GetTx(s.ctx, netID)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to fetch net %q: %w",
@@ -254,12 +254,12 @@ func (s *signerVisitor) getChainSigners(netID ids.ID, chainAuth verify.Verifiabl
 			err,
 		)
 	}
-	chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
+	network, ok := netTx.Unsigned.(*txs.CreateNetworkTx)
 	if !ok {
 		return nil, errWrongTxType
 	}
 
-	owner, ok := chain.Owner.(*secp256k1fx.OutputOwners)
+	owner, ok := network.Owner.(*secp256k1fx.OutputOwners)
 	if !ok {
 		return nil, errUnknownOwnerType
 	}

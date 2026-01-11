@@ -38,7 +38,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/compression"
+	compression "github.com/luxfi/compress"
 )
 
 var (

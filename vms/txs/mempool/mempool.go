@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/utils/linked"
-	"github.com/luxfi/utils/lock"
+	"github.com/luxfi/container/linked"
+	"github.com/luxfi/concurrent/lock"
 	"github.com/luxfi/container/setmap"
 )
 

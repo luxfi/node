@@ -116,7 +116,7 @@ func NewProcessor(config Config, logger log.Logger) (*Processor, error) {
 	p.thresholdizer = new(multiparty.Thresholdizer)
 	*p.thresholdizer = multiparty.NewThresholdizer(params)
 
-	if logger != nil {
+	if !logger.IsZero() {
 		logger.Info("FHE processor initialized",
 			log.Int("logN", config.LogN),
 			log.Int("levels", len(config.LogQ)),
@@ -153,7 +153,7 @@ func (p *Processor) GenerateKeys() error {
 	minimaxEval := minimax.NewEvaluator(p.params, p.evaluator, nil)
 	p.comparator = comparison.NewEvaluator(p.params, minimaxEval)
 
-	if p.log != nil {
+	if !p.log.IsZero() {
 		p.log.Info("FHE keys generated",
 			log.Int("galoisKeys", len(gks)),
 		)
@@ -188,7 +188,7 @@ func (p *Processor) GenerateThresholdShares(partyPoints []multiparty.ShamirPubli
 
 	p.parties = partyPoints
 
-	if p.log != nil {
+	if !p.log.IsZero() {
 		p.log.Info("threshold shares generated",
 			log.Int("parties", len(partyPoints)),
 			log.Int("threshold", p.threshold),

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 type Backend struct {

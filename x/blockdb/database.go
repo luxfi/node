@@ -24,9 +24,9 @@ import (
 
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/utils/compression"
+	compression "github.com/luxfi/compress"
 
-	safemath "github.com/luxfi/utils/math"
+	safemath "github.com/luxfi/math"
 )
 
 const (
@@ -208,8 +208,8 @@ func New(config DatabaseConfig, log luxlog.Logger) (*Database, error) {
 	}
 
 	databaseLog := log
-	if databaseLog == nil {
-		databaseLog = luxlog.NewNoOpLogger()
+	if databaseLog.IsZero() {
+		databaseLog = luxlog.Noop()
 	}
 
 	// from benchmarks, zstd.SpeedFastest is about 100% faster than the default

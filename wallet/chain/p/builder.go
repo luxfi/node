@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (
@@ -52,16 +52,14 @@ type Builder interface {
 		options ...common.Option,
 	) (map[ids.ID]uint64, error)
 
-	// NewBaseTx creates a new simple value transfer. Because the P-chain
-	// doesn't intend for balance transfers to occur, this method is expensive
-	// and abuses the creation of chains.
+	// NewBaseTx creates a new simple value transfer.
 	//
 	// - [outputs] specifies all the recipients and amounts that should be sent
 	//   from this transaction.
 	NewBaseTx(
 		outputs []*lux.TransferableOutput,
 		options ...common.Option,
-	) (*txs.CreateChainTx, error)
+	) (*txs.BaseTx, error)
 
 	// NewAddValidatorTx creates a new validator of the primary network.
 	//
@@ -126,14 +124,14 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.CreateChainTx, error)
 
-	// NewCreateChainTx creates a new chain with the specified owner.
+	// NewCreateNetworkTx creates a new network with the specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
-	//   validators to the chain.
-	NewCreateChainTx(
+	//   validators to the network.
+	NewCreateNetworkTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
-	) (*txs.CreateChainTx, error)
+	) (*txs.CreateNetworkTx, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
 	// the available UTXOs and import the funds to [to].
@@ -292,9 +290,9 @@ func (b *txBuilder) GetImportableBalance(
 func (b *txBuilder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
+) (*txs.BaseTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.CreateChainTxFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.TxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -314,16 +312,13 @@ func (b *txBuilder) NewBaseTx(
 	outputs = append(outputs, changeOutputs...)
 	lux.SortTransferableOutputs(outputs, txs.Codec) // sort the outputs
 
-	return &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-			Memo:         ops.Memo(),
-		}},
-		Owner: &secp256k1fx.OutputOwners{},
-	}, nil
+	return &txs.BaseTx{BaseTx: lux.BaseTx{
+		NetworkID:    b.context.NetworkID,
+		BlockchainID: constants.PlatformChainID,
+		Ins:          inputs,
+		Outs:         outputs,
+		Memo:         ops.Memo(),
+	}}, nil
 }
 
 func (b *txBuilder) NewAddValidatorTx(
@@ -469,7 +464,7 @@ func (b *txBuilder) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.CreateBlockchainTxFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateChainTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -501,12 +496,12 @@ func (b *txBuilder) NewCreateChainTx(
 	}, nil
 }
 
-func (b *txBuilder) NewCreateChainTx(
+func (b *txBuilder) NewCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
+) (*txs.CreateNetworkTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.StaticFeeConfig.CreateChainTxFee,
+		b.context.XAssetID: b.context.StaticFeeConfig.CreateNetworkTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -516,7 +511,7 @@ func (b *txBuilder) NewCreateChainTx(
 	}
 
 	utils.Sort(owner.Addrs)
-	return &txs.CreateChainTx{
+	return &txs.CreateNetworkTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
@@ -1091,7 +1086,7 @@ func (b *txBuilder) spend(
 }
 
 func (b *txBuilder) authorizeNet(netID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
-	chainTx, err := b.backend.GetTx(options.Context(), netID)
+	netTx, err := b.backend.GetTx(options.Context(), netID)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to fetch net %q: %w",
@@ -1099,12 +1094,12 @@ func (b *txBuilder) authorizeNet(netID ids.ID, options *common.Options) (*secp25
 			err,
 		)
 	}
-	chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
+	network, ok := netTx.Unsigned.(*txs.CreateNetworkTx)
 	if !ok {
 		return nil, errWrongTxType
 	}
 
-	owner, ok := chain.Owner.(*secp256k1fx.OutputOwners)
+	owner, ok := network.Owner.(*secp256k1fx.OutputOwners)
 	if !ok {
 		return nil, errUnknownOwnerType
 	}

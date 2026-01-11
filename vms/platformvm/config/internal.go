@@ -25,7 +25,7 @@ type Internal struct {
 	// The node's chain manager
 	Chains chains.Manager
 
-	// Node's validator set maps chainID -> validators of the chain
+	// Node's validator set maps netID -> validators of the net
 	//
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
@@ -103,7 +103,7 @@ func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
 
 	chainParams := chains.ChainParameters{
 		ID:          blockchainID,
-		ChainID:     tx.ChainID,
+		NetID:       tx.ChainID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,

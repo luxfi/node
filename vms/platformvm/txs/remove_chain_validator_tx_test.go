@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 )
 

@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/compress"
 )
 
 func TestDataSplitting(t *testing.T) {

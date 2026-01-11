@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/utils/compression"
-	"github.com/luxfi/utils/ips"
+	compression "github.com/luxfi/compress"
+	"github.com/luxfi/net/ips"
 )
 
 var _ OutboundMsgBuilder = (*outMsgBuilder)(nil)

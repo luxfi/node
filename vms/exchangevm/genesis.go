@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // Genesis represents the genesis state of the XVM

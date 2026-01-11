@@ -22,7 +22,7 @@ import (
 	"time"
 
 	nodevalidators "github.com/luxfi/consensus/validator"
-	coreth "github.com/luxfi/coreth/plugin/evm"
+	evm "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/metric"
 
@@ -71,15 +71,15 @@ import (
 	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/trace"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/dynamicip"
-	"github.com/luxfi/utils/filesystem"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/utils/ips"
-	"github.com/luxfi/utils/perms"
-	"github.com/luxfi/utils/profiler"
-	"github.com/luxfi/utils/resource"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/registry"
+	"github.com/luxfi/net/dynamicip"
+	"github.com/luxfi/filesystem"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/net/ips"
+	"github.com/luxfi/filesystem/perms"
+	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/resource"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/registry"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
@@ -914,7 +914,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		ChainID:       constants.PrimaryNetworkID,
+		NetID:         constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,
@@ -1108,7 +1108,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	// The chain router is already initialized as a stub
 	// No further initialization needed for the stub implementation
 
-	chains, err := chains.NewNets(n.ID, n.Config.NetConfigs)
+	netsManager, err := chains.NewNets(n.ID, n.Config.NetConfigs)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chains: %w", err)
 	}
@@ -1159,7 +1159,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            filepath.Join(n.Config.ChainDataDir, fmt.Sprintf("network-%d", n.Config.NetworkID)),
-			Nets:                                    chains,
+			Nets:                                    netsManager,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
 		},
@@ -1246,7 +1246,7 @@ func (n *Node) initVMs() error {
 
 	// Register C-Chain VM
 	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{})
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &evm.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register C-Chain VM", "error", err)
 		return err

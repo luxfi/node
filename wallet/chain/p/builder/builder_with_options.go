@@ -8,10 +8,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var _ Builder = (*builderWithOptions)(nil)
@@ -135,11 +135,11 @@ func (b *builderWithOptions) NewCreateChainTx(
 	)
 }
 
-func (b *builderWithOptions) NewCreateChainTx(
+func (b *builderWithOptions) NewCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
-	return b.builder.NewCreateChainTx(
+) (*txs.CreateNetworkTx, error) {
+	return b.builder.NewCreateNetworkTx(
 		owner,
 		common.UnionOptions(b.options, options)...,
 	)
@@ -254,15 +254,15 @@ func (b *builderWithOptions) NewAddPermissionlessDelegatorTx(
 }
 
 func (b *builderWithOptions) NewConvertChainToL1Tx(
-	chainID ids.ID,
-	chainID ids.ID,
+	netID ids.ID,
+	managerChainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.ConvertChainToL1Tx, error) {
 	return b.builder.NewConvertChainToL1Tx(
-		chainID,
-		chainID,
+		netID,
+		managerChainID,
 		address,
 		validators,
 		common.UnionOptions(b.options, options)...,

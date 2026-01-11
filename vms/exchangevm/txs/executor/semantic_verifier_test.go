@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/state/statemock"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // testSharedMemory adapts atomic.SharedMemory to executor.SharedMemory

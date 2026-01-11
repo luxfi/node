@@ -12,9 +12,9 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/node"
-	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/perms"
-	"github.com/luxfi/utils/ulimit"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/filesystem/perms"
+	"github.com/luxfi/sys/ulimit"
 
 	nodeconfig "github.com/luxfi/node/config/node"
 )

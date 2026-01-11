@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/kmsvm/config"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/json"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/warp"
 )
 

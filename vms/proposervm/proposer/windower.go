@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/math"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/container/sampler"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 // Proposer list constants

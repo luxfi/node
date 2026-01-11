@@ -61,14 +61,14 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/container/buffer"
-	"github.com/luxfi/utils/perms"
+	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/vm/fx"
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
-	"github.com/luxfi/vm/nftfx"
+	"github.com/luxfi/utxo/nftfx"
 
-	"github.com/luxfi/vm/propertyfx"
+	"github.com/luxfi/utxo/propertyfx"
 	// "github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
 	// "github.com/luxfi/node/proto/p2p" // Available if needed for protobuf parsing
@@ -177,8 +177,8 @@ type Manager interface {
 type ChainParameters struct {
 	// The ID of the blockchain being created.
 	ID ids.ID
-	// ID of the chain that validates this blockchain.
-	ChainID ids.ID
+	// ID of the Net that validates this blockchain.
+	NetID ids.ID
 	// The genesis data of this blockchain's ledger.
 	GenesisData []byte
 	// The ID of the vm this blockchain is running.
@@ -483,10 +483,10 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
-	if sb, _ := m.Nets.GetOrCreate(chainParams.ChainID); !sb.AddChain(chainParams.ID) {
+	if sb, _ := m.Nets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			log.String("reason", "chain already staged"),
-			log.Stringer("netID", chainParams.ChainID),
+			log.Stringer("netID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -496,7 +496,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	if ok := m.chainsQueue.PushRight(chainParams); !ok {
 		m.Log.Warn("skipping chain creation",
 			log.String("reason", "couldn't enqueue chain"),
-			log.Stringer("netID", chainParams.ChainID),
+			log.Stringer("netID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -509,12 +509,12 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 // bootstrapping before this function is called
 func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("creating chain",
-		log.Stringer("netID", chainParams.ChainID),
+		log.Stringer("netID", chainParams.NetID),
 		log.Stringer("chainID", chainParams.ID),
 		log.Stringer("vmID", chainParams.VMID),
 	)
 
-	sb, _ := m.Nets.GetOrCreate(chainParams.ChainID)
+	sb, _ := m.Nets.GetOrCreate(chainParams.NetID)
 
 	// Note: buildChain builds all chain's relevant objects (notably engine and handler)
 	// but does not start their operations. Starting of the handler (which could potentially
@@ -540,7 +540,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if isXChain && isVMTypeError && skipBootstrapMode {
 			chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 			m.Log.Warn("X-Chain creation failed in single validator mode - continuing without X-Chain",
-				log.Stringer("netID", chainParams.ChainID),
+				log.Stringer("netID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -555,7 +555,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				health.CheckerFunc(func(context.Context) (interface{}, error) {
 					return nil, healthCheckErr
 				}),
-				chainParams.ChainID.String(),
+				chainParams.NetID.String(),
 			)
 			if err != nil {
 				m.Log.Error("failed to register X-Chain health check",
@@ -571,7 +571,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			// unless it's X-Chain with VM type error in single validator mode (handled above)
 			m.Log.Error("error creating required chain",
-				log.Stringer("netID", chainParams.ChainID),
+				log.Stringer("netID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID),
 				log.String("errorString", fmt.Sprintf("%v", err)),
@@ -584,7 +584,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
-			log.Stringer("netID", chainParams.ChainID),
+			log.Stringer("netID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.String("chainAlias", chainAlias),
 			log.Stringer("vmID", chainParams.VMID),
@@ -595,17 +595,17 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		// created or not. This attempts to notify the node operator that their
 		// node may not be properly validating the net they expect to be
 		// validating.
-		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.ChainID, err)
+		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.NetID, err)
 		err := m.Health.RegisterHealthCheck(
 			chainAlias,
 			health.CheckerFunc(func(context.Context) (interface{}, error) {
 				return nil, healthCheckErr
 			}),
-			chainParams.ChainID.String(),
+			chainParams.NetID.String(),
 		)
 		if err != nil {
 			m.Log.Error("failed to register failing health check",
-				log.Stringer("netID", chainParams.ChainID),
+				log.Stringer("netID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -622,7 +622,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
 		m.Log.Error("failed to alias the new chain with itself",
-			log.Stringer("netID", chainParams.ChainID),
+			log.Stringer("netID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 			log.Err(err),
@@ -724,7 +724,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	)
 	m.Log.Info("║ Chain ID:", log.Stringer("chainID", chainParams.ID))
 	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
-	m.Log.Info("║ Network ID:", log.Stringer("netID", chainParams.ChainID))
+	m.Log.Info("║ Net ID:", log.Stringer("netID", chainParams.NetID))
 	m.Log.Info("║ Endpoints available at:")
 	m.Log.Info("║   → /ext/bc/" + chainParams.ID.String())
 	if chainAlias != chainParams.ID.String() {
@@ -981,8 +981,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// For native/primary network chains (P/C/X/Q/A/B/T/Z etc.), use PrimaryNetworkID for validator lookups.
 		// Native chains all have IDs with first 31 bytes zero, last byte is the chain letter (e.g., 'P', 'C').
 		// Validators are registered under constants.PrimaryNetworkID (ids.Empty), not individual chain IDs.
-		// For L1/chain chains, use the chain's validator set ID (chainParams.ChainID).
-		networkID := chainParams.ChainID
+		// For L1/net chains, use the net's validator set ID (chainParams.NetID).
+		networkID := chainParams.NetID
 		isNative := ids.IsNativeChain(chainParams.ID)
 		if isNative {
 			// Native chains (P, C, X, Q, A, B, T, Z, G, I, K) use PrimaryNetworkID for validator lookups
@@ -990,7 +990,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		m.Log.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
 			log.Stringer("chainID", chainParams.ID),
-			log.Stringer("chainParams.ChainID", chainParams.ChainID),
+			log.Stringer("chainParams.NetID", chainParams.NetID),
 			log.Bool("isNativeChain", isNative),
 			log.Stringer("networkIDForValidators", networkID),
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),

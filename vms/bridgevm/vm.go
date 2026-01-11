@@ -713,7 +713,7 @@ func (vm *VM) RegisterValidator(input *RegisterValidatorInput) (*RegisterValidat
 
 		remainingSlots := vm.config.MaxSigners - len(vm.signerSet.Signers)
 
-		if vm.log != nil {
+		if !vm.log.IsZero() {
 			vm.log.Info("validator registered as bridge signer (LP-333 opt-in)",
 				log.Stringer("nodeID", nodeID),
 				log.Int("signerIndex", signerInfo.SlotIndex),
@@ -743,7 +743,7 @@ func (vm *VM) RegisterValidator(input *RegisterValidatorInput) (*RegisterValidat
 	vm.signerSet.Waitlist = append(vm.signerSet.Waitlist, nodeID)
 	waitlistIndex := len(vm.signerSet.Waitlist) - 1
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("validator added to waitlist (signer set frozen)",
 			log.Stringer("nodeID", nodeID),
 			log.Int("waitlistIndex", waitlistIndex),
@@ -861,7 +861,7 @@ func (vm *VM) RemoveSigner(nodeID ids.NodeID, replacementNodeID *ids.NodeID) (*S
 	// Generate reshare session ID
 	reshareSession := fmt.Sprintf("reshare-epoch-%d-%s", vm.signerSet.CurrentEpoch, time.Now().Format("20060102150405"))
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("signer removed and reshare triggered (LP-333)",
 			log.Stringer("removedNodeID", nodeID),
 			log.Stringer("replacementNodeID", replacement),
@@ -964,7 +964,7 @@ func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
 	signer.Slashed = true
 	signer.SlashCount++
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Warn("bridge signer slashed",
 			log.Stringer("nodeID", input.NodeID),
 			log.String("reason", input.Reason),
@@ -1003,7 +1003,7 @@ func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
 		result.RemovedFromSet = true
 		result.Message = fmt.Sprintf("slashed %d%% of bond, signer removed (bond below 100M LUX minimum)", input.SlashPercent)
 
-		if vm.log != nil {
+		if !vm.log.IsZero() {
 			vm.log.Warn("bridge signer removed due to insufficient bond after slashing",
 				log.Stringer("nodeID", input.NodeID),
 				log.Uint64("remainingBond", remainingBond),

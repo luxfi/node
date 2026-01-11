@@ -79,14 +79,14 @@ func NewGPUFHEAcceleratorWithOptions(logger log.Logger, opts GPUFHEOptions) (*GP
 		session, err = accel.DefaultSession()
 		if err != nil {
 			available = false
-			if logger != nil {
+			if !logger.IsZero() {
 				logger.Warn("Failed to create accel session, using CPU fallback",
 					"error", err)
 			}
 		}
 	}
 
-	if logger != nil {
+	if !logger.IsZero() {
 		if available && session != nil {
 			logger.Info("GPU FHE acceleration enabled via accel",
 				"backend", session.Backend().String(),
@@ -613,7 +613,7 @@ var (
 // GetGPUFHEAccelerator returns the global GPU FHE accelerator instance.
 func GetGPUFHEAccelerator() (*GPUFHEAccelerator, error) {
 	globalGPUFHEAcceleratorOnce.Do(func() {
-		globalGPUFHEAccelerator, globalGPUFHEAcceleratorErr = NewGPUFHEAccelerator(nil)
+		globalGPUFHEAccelerator, globalGPUFHEAcceleratorErr = NewGPUFHEAccelerator(log.Noop())
 	})
 	return globalGPUFHEAccelerator, globalGPUFHEAcceleratorErr
 }

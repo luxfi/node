@@ -53,7 +53,7 @@ func Bootstrap(
 	switch {
 	case cmd == nil:
 		return nil, nil, fmt.Errorf("%w: cmd required", runtime.ErrInvalidConfig)
-	case config.Log == nil:
+	case config.Log.IsZero():
 		return nil, nil, fmt.Errorf("%w: logger required", runtime.ErrInvalidConfig)
 	case config.Stderr == nil, config.Stdout == nil:
 		return nil, nil, fmt.Errorf("%w: stderr and stdout required", runtime.ErrInvalidConfig)

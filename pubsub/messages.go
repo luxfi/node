@@ -6,7 +6,7 @@ package pubsub
 import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 // NewBloom command for a new bloom filter

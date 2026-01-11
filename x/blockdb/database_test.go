@@ -22,7 +22,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/compress"
 )
 
 func TestNew_Params(t *testing.T) {

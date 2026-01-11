@@ -9,22 +9,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/const"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/math"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
 )
 
 var (
@@ -114,7 +114,7 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.AddDelegatorTx, error)
 
-	// NewCreateChainTx creates a new chain in the named chain.
+	// NewCreateChainTx creates a new chain in the named network.
 	//
 	// - [netID] specifies the net to launch the chain in.
 	// - [genesis] specifies the initial state of the new chain.
@@ -131,14 +131,14 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.CreateChainTx, error)
 
-	// NewCreateChainTx creates a new chain with the specified owner.
+	// NewCreateNetworkTx creates a new network with the specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
-	//   validators to the chain.
-	NewCreateChainTx(
+	//   validators to the network.
+	NewCreateNetworkTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
-	) (*txs.CreateChainTx, error)
+	) (*txs.CreateNetworkTx, error)
 
 	// NewTransferChainOwnershipTx changes the owner of the named chain.
 	//
@@ -153,13 +153,13 @@ type Builder interface {
 
 	// NewConvertChainToL1Tx converts the chain to a Permissionless L1.
 	//
-	// - [chainID] specifies the chain to be converted
-	// - [chainID] specifies which chain the manager is deployed on
+	// - [netID] specifies the chain to be converted
+	// - [managerChainID] specifies which chain the manager is deployed on
 	// - [address] specifies the address of the manager
 	// - [validators] specifies the initial L1 validators of the L1
 	NewConvertChainToL1Tx(
-		chainID ids.ID,
-		chainID ids.ID,
+		netID ids.ID,
+		managerChainID ids.ID,
 		address []byte,
 		validators []*txs.ConvertChainToL1Validator,
 		options ...common.Option,
@@ -714,10 +714,10 @@ func (b *builder) NewCreateChainTx(
 	return tx, b.initCtx(tx)
 }
 
-func (b *builder) NewCreateChainTx(
+func (b *builder) NewCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateChainTx, error) {
+) (*txs.CreateNetworkTx, error) {
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
 
@@ -730,7 +730,7 @@ func (b *builder) NewCreateChainTx(
 	if err != nil {
 		return nil, err
 	}
-	complexity, err := fee.IntrinsicCreateChainTxComplexities.Add(
+	complexity, err := fee.IntrinsicCreateNetworkTxComplexities.Add(
 		&memoComplexity,
 		&ownerComplexity,
 	)
@@ -751,7 +751,7 @@ func (b *builder) NewCreateChainTx(
 	}
 
 	utils.Sort(owner.Addrs)
-	tx := &txs.CreateChainTx{
+	tx := &txs.CreateNetworkTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
@@ -829,8 +829,8 @@ func (b *builder) NewTransferChainOwnershipTx(
 }
 
 func (b *builder) NewConvertChainToL1Tx(
-	chainID ids.ID,
-	chainID ids.ID,
+	netID ids.ID,
+	managerChainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
@@ -851,7 +851,7 @@ func (b *builder) NewConvertChainToL1Tx(
 		toStake = map[ids.ID]uint64{}
 		ops     = common.NewOptions(options)
 	)
-	chainAuth, err := b.authorize(chainID, ops)
+	chainAuth, err := b.authorize(netID, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -902,8 +902,8 @@ func (b *builder) NewConvertChainToL1Tx(
 			Outs:         outputs,
 			Memo:         memo,
 		}},
-		Chain:          chainID,
-		ManagerChainID: chainID,
+		Chain:          netID,
+		ManagerChainID: managerChainID,
 		Address:        address,
 		Validators:     validators,
 		ChainAuth:      chainAuth,

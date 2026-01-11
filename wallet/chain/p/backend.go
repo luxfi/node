@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
 var _ Backend = (*backend)(nil)
@@ -40,12 +40,12 @@ type backend struct {
 
 func NewBackend(context *builder.Context, utxos common.ChainUTXOs, chainTxs map[ids.ID]*txs.Tx) Backend {
 	chainOwner := make(map[ids.ID]fx.Owner)
-	for txID, tx := range chainTxs { // first get owners from the CreateChainTx
-		createChainTx, ok := tx.Unsigned.(*txs.CreateChainTx)
+	for txID, tx := range chainTxs { // first get owners from the CreateNetworkTx
+		createNetworkTx, ok := tx.Unsigned.(*txs.CreateNetworkTx)
 		if !ok {
 			continue
 		}
-		chainOwner[txID] = createChainTx.Owner
+		chainOwner[txID] = createNetworkTx.Owner
 	}
 	for _, tx := range chainTxs { // then check for TransferChainOwnershipTx
 		transferChainOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
@@ -108,7 +108,7 @@ func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
-func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
+func (v *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	v.b.setChainOwner(v.txID, tx.Owner)
 	return v.baseTx(&tx.BaseTx)
 }

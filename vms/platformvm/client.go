@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )

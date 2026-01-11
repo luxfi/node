@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 )
 
 const (

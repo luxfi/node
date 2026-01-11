@@ -29,10 +29,10 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/bloom"
-	"github.com/luxfi/utils/ips"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/net/ips"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/codec/wrappers"
 )
 
 const (
@@ -328,7 +328,7 @@ func (p *peer) StartClose() {
 	p.startClosingOnce.Do(func() {
 		if p.conn != nil {
 			if err := p.conn.Close(); err != nil {
-				if p.Log != nil {
+				if !p.Log.IsZero() {
 					p.Log.Debug("failed to close connection",
 						log.Stringer("nodeID", p.id),
 						log.Reflect("error", err),

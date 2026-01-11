@@ -44,11 +44,11 @@ import (
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/timer"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/utils/compression"
-	"github.com/luxfi/utils/ips"
-	"github.com/luxfi/utils/perms"
-	"github.com/luxfi/utils/profiler"
-	"github.com/luxfi/utils/storage"
+	compression "github.com/luxfi/compress"
+	"github.com/luxfi/net/ips"
+	"github.com/luxfi/filesystem/perms"
+	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/filesystem/storage"
 )
 
 // TrackerTargeterConfig contains resource allocation configurations

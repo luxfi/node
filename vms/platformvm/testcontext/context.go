@@ -42,7 +42,7 @@ func New(ctx context.Context) *Context {
 	return &Context{
 		Context: ctx,
 		Lock:    &sync.RWMutex{},
-		Log:     log.NoLog{},
+		Log:     log.Noop(),
 	}
 }
 

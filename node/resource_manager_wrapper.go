@@ -5,7 +5,7 @@ package node
 
 import (
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/utils/resource"
+	"github.com/luxfi/resource"
 )
 
 // resourceManagerWrapper adapts resource.Manager to tracker.ResourceManager

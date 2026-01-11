@@ -1412,9 +1412,9 @@ func allFlags() []FlagSpec {
 			Category:    CategoryChain,
 		},
 		{
-			Key:         "chain-config-dir",
+			Key:         "net-config-dir",
 			Type:        TypeString,
-			Default:     "$LUXD_DATA_DIR/configs/chains",
+			Default:     "$LUXD_DATA_DIR/configs/nets",
 			Description: "Net specific configurations parent directory. Ignored if net-config-content is specified",
 			Category:    CategoryChain,
 		},

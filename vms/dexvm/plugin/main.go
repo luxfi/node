@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/rpcchainvm"
-	"github.com/luxfi/utils/ulimit"
+	"github.com/luxfi/sys/ulimit"
 )
 
 func main() {

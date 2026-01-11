@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func TestApricotStandardBlockTimeVerification(t *testing.T) {

@@ -23,9 +23,9 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	xvmtxs "github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/vm/nftfx"
-	"github.com/luxfi/vm/propertyfx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/nftfx"
+	"github.com/luxfi/utxo/propertyfx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 func TestInvalidFx(t *testing.T) {

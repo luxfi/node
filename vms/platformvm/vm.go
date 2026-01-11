@@ -44,9 +44,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 	extwarp "github.com/luxfi/warp"
 
 	consensuschain "github.com/luxfi/consensus/engine/chain"
@@ -236,13 +236,13 @@ func (vm *VM) Initialize(
 	}
 	// Initialize logger from chain context
 	if chainCtx != nil && chainCtx.Log != nil {
-		if logger, ok := chainCtx.Log.(log.Logger); ok {
+		if logger, ok := chainCtx.Log.(log.Logger); ok && !logger.IsZero() {
 			vm.log = logger
 		} else {
-			vm.log = log.NoLog{}
+			vm.log = log.Noop()
 		}
 	} else {
-		vm.log = log.NoLog{}
+		vm.log = log.Noop()
 	}
 	vm.log.Info("initializing platform chain")
 

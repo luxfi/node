@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	vmsigner "github.com/luxfi/vm/platformvm/signer"
+	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 )
 
 var _ Wallet = (*withOptions)(nil)
@@ -106,16 +106,16 @@ func (w *withOptions) IssueAddDelegatorTx(
 	)
 }
 
-func (w *withOptions) IssueCreateBlockchainTx(
-	chainID ids.ID,
+func (w *withOptions) IssueCreateChainTx(
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateBlockchainTx(
-		chainID,
+	return w.wallet.IssueCreateChainTx(
+		netID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -124,12 +124,11 @@ func (w *withOptions) IssueCreateBlockchainTx(
 	)
 }
 
-// Removed in regenesis
-func (w *withOptions) IssueCreateChainTx(
+func (w *withOptions) IssueCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateChainTx(
+	return w.wallet.IssueCreateNetworkTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
@@ -149,15 +148,15 @@ func (w *withOptions) IssueTransferChainOwnershipTx(
 }
 
 func (w *withOptions) IssueConvertChainToL1Tx(
-	chainID ids.ID,
-	chainID ids.ID,
+	netID ids.ID,
+	managerChainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueConvertChainToL1Tx(
-		chainID,
-		chainID,
+		netID,
+		managerChainID,
 		address,
 		validators,
 		common.UnionOptions(w.options, options)...,

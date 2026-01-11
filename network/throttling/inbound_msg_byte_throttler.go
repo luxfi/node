@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	utilmetric "github.com/luxfi/metric"
-	"github.com/luxfi/utils/linked"
+	"github.com/luxfi/container/linked"
 )
 
 // See inbound_msg_throttler.go

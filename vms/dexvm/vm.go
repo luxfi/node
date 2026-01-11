@@ -199,7 +199,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.isInitialized = true
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("DEX VM initialized (functional mode)",
 			"chainID", vm.chainID,
 			"blockInterval", vm.Config.BlockInterval,
@@ -236,14 +236,14 @@ func (vm *VM) SetState(ctx context.Context, stateNum uint32) error {
 	state := consensuscore.State(stateNum)
 	switch state {
 	case consensuscore.Bootstrapping:
-		if vm.log != nil {
+		if !vm.log.IsZero() {
 			vm.log.Info("DEX VM entering bootstrap state")
 		}
 		vm.bootstrapped = false
 		return nil
 
 	case consensuscore.Ready:
-		if vm.log != nil {
+		if !vm.log.IsZero() {
 			vm.log.Info("DEX VM entering ready state")
 		}
 		vm.bootstrapped = true
@@ -283,7 +283,7 @@ func (vm *VM) ProcessBlock(ctx context.Context, blockHeight uint64, blockTime ti
 	for _, tx := range txs {
 		if err := vm.processTx(tx, result); err != nil {
 			// Log but continue - individual tx failures don't fail the block
-			if vm.log != nil {
+			if !vm.log.IsZero() {
 				vm.log.Warn("Transaction failed", "error", err)
 			}
 		}
@@ -308,7 +308,7 @@ func (vm *VM) ProcessBlock(ctx context.Context, blockHeight uint64, blockTime ti
 	// 6. Compute state root (merkle root of all state)
 	result.StateRoot = vm.computeStateRoot()
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Debug("Block processed",
 			"height", blockHeight,
 			"trades", len(result.MatchedTrades),
@@ -345,7 +345,7 @@ func (vm *VM) matchAllOrders() []orderbook.Trade {
 		trades := ob.Match()
 		if len(trades) > 0 {
 			allTrades = append(allTrades, trades...)
-			if vm.log != nil {
+			if !vm.log.IsZero() {
 				vm.log.Debug("Matched trades", "symbol", symbol, "count", len(trades))
 			}
 		}
@@ -377,7 +377,7 @@ func (vm *VM) processFunding(blockTime time.Time) []*perpetuals.FundingPayment {
 		}
 		payments, err := vm.perpetualsEng.ProcessFunding(market.Symbol)
 		if err != nil {
-			if vm.log != nil {
+			if !vm.log.IsZero() {
 				vm.log.Warn("Failed to process funding", "market", market.Symbol, "error", err)
 			}
 			continue
@@ -400,7 +400,7 @@ func (vm *VM) processLiquidations() []*perpetuals.LiquidationEvent {
 		}
 		liquidations, err := vm.perpetualsEng.CheckAndLiquidate(market.Symbol)
 		if err != nil {
-			if vm.log != nil {
+			if !vm.log.IsZero() {
 				vm.log.Warn("Failed to check liquidations", "market", market.Symbol, "error", err)
 			}
 			continue
@@ -429,7 +429,7 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("Shutting down DEX VM")
 	}
 
@@ -442,7 +442,7 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 		}
 	}
 
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("DEX VM shutdown complete")
 	}
 
@@ -506,7 +506,7 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, v *version.Appli
 	defer vm.lock.Unlock()
 
 	vm.connectedPeers[nodeID] = v
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Debug("Peer connected", "nodeID", nodeID, "version", v)
 	}
 	return nil
@@ -518,7 +518,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	defer vm.lock.Unlock()
 
 	delete(vm.connectedPeers, nodeID)
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Debug("Peer disconnected", "nodeID", nodeID)
 	}
 	return nil

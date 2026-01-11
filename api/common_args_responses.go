@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 
-	avajson "github.com/luxfi/utils/json"
+	avajson "github.com/luxfi/node/utils/json"
 )
 
 // This file contains structs used in arguments and responses in services

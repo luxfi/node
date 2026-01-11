@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/linked"
+	"github.com/luxfi/container/linked"
 )
 
 var _ cache.Cacher[struct{}, any] = (*SizedCache[struct{}, any])(nil)

@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/vm/secp256k1fx"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // Ensure Execute fails when there are not enough control sigs

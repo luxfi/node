@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/compression"
+	compression "github.com/luxfi/compress"
 	"google.golang.org/protobuf/proto"
 )
 

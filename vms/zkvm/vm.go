@@ -352,7 +352,7 @@ func (vm *VM) SetState(ctx context.Context, state uint32) error {
 
 // Shutdown shuts down the VM
 func (vm *VM) Shutdown(ctx context.Context) error {
-	if vm.log != nil {
+	if !vm.log.IsZero() {
 		vm.log.Info("Shutting down ZK UTXO VM")
 	}
 

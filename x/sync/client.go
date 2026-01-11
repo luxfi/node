@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/x/merkledb"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )

@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	vmsigner "github.com/luxfi/vm/platformvm/signer"
+	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 )
 
 var _ Wallet = (*wallet)(nil)
@@ -96,17 +96,17 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueCreateBlockchainTx creates, signs, and issues a new blockchain in the named
-	// chain.
+	// IssueCreateChainTx creates, signs, and issues a new blockchain in the named
+	// network.
 	//
-	// - [chainID] specifies the chain to launch the chain in.
+	// - [netID] specifies the network to launch the chain in.
 	// - [genesis] specifies the initial state of the new chain.
 	// - [vmID] specifies the vm that the new chain will run.
 	// - [fxIDs] specifies all the feature extensions that the vm should be
 	//   running with.
 	// - [chainName] specifies a human readable name for the chain.
-	IssueCreateBlockchainTx(
-		chainID ids.ID,
+	IssueCreateChainTx(
+		netID ids.ID,
 		genesis []byte,
 		vmID ids.ID,
 		fxIDs []ids.ID,
@@ -114,12 +114,12 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueCreateChainTx creates, signs, and issues a new chain with the
+	// IssueCreateNetworkTx creates, signs, and issues a new network with the
 	// specified owner.
 	//
 	// - [owner] specifies who has the ability to create new chains and add new
-	//   validators to the chain.
-	IssueCreateChainTx(
+	//   validators to the network.
+	IssueCreateNetworkTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.Tx, error)
@@ -139,13 +139,13 @@ type Wallet interface {
 	// IssueConvertChainToL1Tx creates, signs, and issues a transaction that
 	// converts the chain to a Permissionless L1.
 	//
-	// - [chainID] specifies the chain to be converted
-	// - [chainID] specifies which chain the manager is deployed on
+	// - [netID] specifies the network to be converted
+	// - [managerChainID] specifies which chain the manager is deployed on
 	// - [address] specifies the address of the manager
 	// - [validators] specifies the initial L1 validators of the L1
 	IssueConvertChainToL1Tx(
-		chainID ids.ID,
-		chainID ids.ID,
+		netID ids.ID,
+		managerChainID ids.ID,
 		address []byte,
 		validators []*txs.ConvertChainToL1Validator,
 		options ...common.Option,
@@ -400,26 +400,26 @@ func (w *wallet) IssueAddDelegatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateBlockchainTx(
-	chainID ids.ID,
+func (w *wallet) IssueCreateChainTx(
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateBlockchainTx(chainID, genesis, vmID, fxIDs, chainName, options...)
+	utx, err := w.builder.NewCreateChainTx(netID, genesis, vmID, fxIDs, chainName, options...)
 	if err != nil {
 		return nil, err
 	}
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateChainTx(
+func (w *wallet) IssueCreateNetworkTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateChainTx(owner, options...)
+	utx, err := w.builder.NewCreateNetworkTx(owner, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -439,13 +439,13 @@ func (w *wallet) IssueTransferChainOwnershipTx(
 }
 
 func (w *wallet) IssueConvertChainToL1Tx(
-	chainID ids.ID,
-	chainID ids.ID,
+	netID ids.ID,
+	managerChainID ids.ID,
 	address []byte,
 	validators []*txs.ConvertChainToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewConvertChainToL1Tx(chainID, chainID, address, validators, options...)
+	utx, err := w.builder.NewConvertChainToL1Tx(netID, managerChainID, address, validators, options...)
 	if err != nil {
 		return nil, err
 	}

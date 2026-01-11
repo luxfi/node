@@ -21,19 +21,25 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/vm/platformvm/fx"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
+// NewWallet creates a test wallet for P-chain transactions.
+//
+// Parameters:
+//   - ownedChainIDs: Chain IDs that the keychain owns (for GetNetOwner lookups)
+//   - validationIDs: L1 validator IDs for deactivation owner lookups
+//   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 func NewWallet(
 	t testing.TB,
 	ctx *consensusctx.Context,
 	cfg *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
-	netIDs []ids.ID,
+	ownedChainIDs []ids.ID,
 	validationIDs []ids.ID,
-	chainIDs []ids.ID,
+	importSourceChainIDs []ids.ID,
 ) wallet.Wallet {
 	return NewWalletWithOptions(
 		t,
@@ -44,9 +50,9 @@ func NewWallet(
 		},
 		state,
 		kc,
-		netIDs,
+		ownedChainIDs,
 		validationIDs,
-		chainIDs,
+		importSourceChainIDs,
 	)
 }
 
@@ -61,9 +67,9 @@ func NewWalletWithOptions(
 	wCfg WalletConfig,
 	state state.State,
 	kc *secp256k1fx.Keychain,
-	netIDs []ids.ID,
+	ownedChainIDs []ids.ID,
 	validationIDs []ids.ID,
-	chainIDs []ids.ID,
+	importSourceChainIDs []ids.ID,
 ) wallet.Wallet {
 	var (
 		require = require.New(t)
@@ -83,10 +89,11 @@ func NewWalletWithOptions(
 		))
 	}
 
-	// Add cross-chain UTXOs from shared memory for import transactions
+	// Add cross-chain UTXOs from shared memory for import transactions.
+	// importSourceChainIDs are chains that have exported UTXOs to us (P-Chain).
 	if sm, ok := ctx.SharedMemory.(interface {
 		Indexed(chainID ids.ID, addrs [][]byte, startAddr, startUTXO []byte, limit int) ([][]byte, []byte, []byte, error)
-	}); ok && len(chainIDs) > 0 {
+	}); ok && len(importSourceChainIDs) > 0 {
 		// Convert addresses to [][]byte for SharedMemory API
 		addrsList := addrs.List()
 		addrsBytes := make([][]byte, len(addrsList))
@@ -94,11 +101,11 @@ func NewWalletWithOptions(
 			addrsBytes[i] = addr.Bytes()
 		}
 
-		for _, chainID := range chainIDs {
-			// Indexed returns UTXOs that chainID has put in our (P-Chain's) shared memory
-			// for us to import. These were exported from chainID to P-Chain.
+		for _, sourceChainID := range importSourceChainIDs {
+			// Indexed returns UTXOs that sourceChainID has put in our (P-Chain's) shared memory
+			// for us to import. These were exported from sourceChainID to P-Chain.
 			atomicUTXOs, _, _, err := sm.Indexed(
-				chainID, // The source chain we're importing from
+				sourceChainID, // The source chain we're importing from
 				addrsBytes,
 				nil,
 				nil,
@@ -119,7 +126,7 @@ func NewWalletWithOptions(
 
 				require.NoError(utxos.AddUTXO(
 					context.Background(),
-					chainID,
+					sourceChainID,
 					constants.PlatformChainID,
 					&utxo,
 				))
@@ -127,11 +134,12 @@ func NewWalletWithOptions(
 		}
 	}
 
-	owners := make(map[ids.ID]fx.Owner, len(netIDs)+len(validationIDs))
-	for _, netID := range netIDs {
-		owner, err := state.GetNetOwner(netID)
+	// Build owners map for chains we own and validators we control
+	owners := make(map[ids.ID]fx.Owner, len(ownedChainIDs)+len(validationIDs))
+	for _, chainID := range ownedChainIDs {
+		owner, err := state.GetNetOwner(chainID)
 		require.NoError(err)
-		owners[netID] = owner
+		owners[chainID] = owner
 	}
 	for _, validationID := range validationIDs {
 		l1Validator, err := state.GetL1Validator(validationID)

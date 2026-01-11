@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/maybe"
+	"github.com/luxfi/container/maybe"
 )
 
 func TestL1Validator_Compare(t *testing.T) {

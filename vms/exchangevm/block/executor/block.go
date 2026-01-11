@@ -325,7 +325,7 @@ func (b *Block) Reject(ctx context.Context) error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
-	if b.manager.backend.Log != nil {
+	if !b.manager.backend.Log.IsZero() {
 		b.manager.backend.Log.Debug(
 			"rejecting block",
 			"blkID", blkID.String(),
@@ -336,7 +336,7 @@ func (b *Block) Reject(ctx context.Context) error {
 
 	for _, tx := range b.Txs() {
 		if err := b.manager.VerifyTx(tx); err != nil {
-			if b.manager.backend.Log != nil {
+			if !b.manager.backend.Log.IsZero() {
 				b.manager.backend.Log.Debug("dropping invalidated tx",
 					"txID", tx.ID().String(),
 					"blkID", blkID.String(),
@@ -346,7 +346,7 @@ func (b *Block) Reject(ctx context.Context) error {
 			continue
 		}
 		if err := b.manager.mempool.Add(tx); err != nil {
-			if b.manager.backend.Log != nil {
+			if !b.manager.backend.Log.IsZero() {
 				b.manager.backend.Log.Debug("dropping valid tx",
 					"txID", tx.ID().String(),
 					"blkID", blkID.String(),

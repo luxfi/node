@@ -44,8 +44,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	// "github.com/luxfi/utils/math/meter" // unused
-	// "github.com/luxfi/utils/resource" // unused
+	// "github.com/luxfi/node/utils/math/meter" // unused
+	// "github.com/luxfi/resource" // unused
 	// "github.com/luxfi/timer" // unused
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/components/gas"
@@ -54,7 +54,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/vm/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	// "github.com/luxfi/node/vms/platformvm/state" // unused after TestGenesis simplification
 	"github.com/luxfi/node/vms/platformvm/status"
 	// "github.com/luxfi/node/vms/platformvm/testcontext" // unused - using consensustest.Context instead
@@ -62,7 +62,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/utxo/secp256k1fx"
 	// "github.com/luxfi/metric" // unused
 
 	// p2ppb "github.com/luxfi/node/proto/pb/p2p" // unused

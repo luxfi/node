@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
 	validators "github.com/luxfi/consensus/validator"
@@ -25,7 +26,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utils/compression"
+	"github.com/luxfi/compress"
 )
 
 const maxMessageToSend = 1024
@@ -84,7 +85,7 @@ func StartTestPeer(
 
 	mc, err := message.NewCreator(
 		reg,
-		compression.Type(constants.DefaultNetworkCompressionType),
+		compress.Type(constants.DefaultNetworkCompressionType),
 		10*time.Second,
 	)
 	if err != nil {
@@ -116,7 +117,7 @@ func StartTestPeer(
 		&Config{
 			Metrics:              peerMetrics,
 			MessageCreator:       mc,
-			Log:                  nil,
+			Log:                  log.Noop(),
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
@@ -144,7 +145,7 @@ func StartTestPeer(
 		peerID,
 		NewBlockingMessageQueue(
 			nil,
-			nil,
+			log.Noop(),
 			maxMessageToSend,
 		),
 		false,

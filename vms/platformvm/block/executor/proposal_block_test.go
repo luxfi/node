@@ -33,8 +33,8 @@ import (
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/vm/chain"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )

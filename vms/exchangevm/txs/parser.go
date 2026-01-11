@@ -9,9 +9,9 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/timer/mockable"
 )
@@ -35,8 +35,8 @@ type Parser interface {
 type parser struct {
 	cm  codec.Manager
 	gcm codec.Manager
-	c   *linearcodec.Codec
-	gc  *linearcodec.Codec
+	c   linearcodec.Codec
+	gc  linearcodec.Codec
 }
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
@@ -44,7 +44,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
-		log.NoLog{},
+		log.Noop(),
 		fxs,
 	)
 }

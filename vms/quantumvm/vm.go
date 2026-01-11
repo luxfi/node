@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/vms/quantumvm/config"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/json"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/warp"
 )
 
@@ -141,7 +141,7 @@ func (vm *VM) Initialize(
 	// vm.NetworkID = chainCtx.NetworkID
 
 	// Initialize logger
-	// if vm.log == nil {
+	// if vm.log.IsZero() {
 	//	vm.log = chainCtx.Log
 	// }
 	// vm.log.Info("initializing QVM",

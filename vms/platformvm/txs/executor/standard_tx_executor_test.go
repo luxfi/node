@@ -45,14 +45,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/net/primary/common"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/vm/platformvm/fx/fxmock"
-	"github.com/luxfi/vm/platformvm/signer"
-	"github.com/luxfi/vm/secp256k1fx"
+	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
 	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
-	safemath "github.com/luxfi/utils/math"
+	safemath "github.com/luxfi/math"
 )
 
 // This tests that the math performed during TransformChainTx execution can
@@ -1314,7 +1314,7 @@ func TestDurangoMemoField(t *testing.T) {
 				env.msm.SharedMemory = sharedMemory
 
 				wallet := newWallet(t, env, walletConfig{
-					chainIDs: []ids.ID{sourceChain},
+					netIDs: []ids.ID{sourceChain},
 				})
 
 				tx, err := wallet.IssueImportTx(
@@ -2583,7 +2583,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 					nil, // validationIDs
 					nil, // chainIDs
 				)
-				chainID   = ids.GenerateTestID()
+				managerChainID = ids.GenerateTestID()
 				address   = utils.RandomBytes(32)
 				validator = &txs.ConvertChainToL1Validator{
 					NodeID:                nodeID.Bytes(),
@@ -2596,7 +2596,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 			)
 			convertNetToL1Tx, err := wallet.IssueConvertChainToL1Tx(
 				chainID,
-				chainID,
+				managerChainID,
 				address,
 				[]*txs.ConvertChainToL1Validator{
 					validator,
@@ -2644,7 +2644,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 
 			expectedConversionID, err := message.ChainToL1ConversionID(message.ChainToL1ConversionData{
 				ChainID:        chainID,
-				ManagerChainID: chainID,
+				ManagerChainID: managerChainID,
 				ManagerAddress: address,
 				Validators: []message.ChainToL1ConversionValidatorData{
 					{
@@ -2661,7 +2661,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 			require.Equal(
 				state.NetToL1Conversion{
 					ConversionID: expectedConversionID,
-					ChainID:      chainID,
+					ChainID:      managerChainID,
 					Addr:         address,
 				},
 				stateConversion,
@@ -2783,11 +2783,11 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		initialBalance = constants.Lux
 	)
 	var (
-		chainID       = createNetTx.ID()
-		chainID       = ids.GenerateTestID()
-		address       = utils.RandomBytes(32)
-		initialNodeID = ids.GenerateTestNodeID()
-		validator     = &txs.ConvertChainToL1Validator{
+		chainID        = createNetTx.ID()
+		managerChainID = ids.GenerateTestID()
+		address        = utils.RandomBytes(32)
+		initialNodeID  = ids.GenerateTestNodeID()
+		validator      = &txs.ConvertChainToL1Validator{
 			NodeID:                initialNodeID.Bytes(),
 			Weight:                initialWeight,
 			Balance:               initialBalance,
@@ -2798,7 +2798,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	)
 	convertNetToL1Tx, err := wallet.IssueConvertChainToL1Tx(
 		chainID,
-		chainID,
+		managerChainID,
 		address,
 		[]*txs.ConvertChainToL1Validator{
 			validator,
@@ -3319,10 +3319,10 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		balance       = constants.Lux
 	)
 	var (
-		chainID   = createNetTx.ID()
-		chainID   = ids.GenerateTestID()
-		address   = utils.RandomBytes(32)
-		validator = &txs.ConvertChainToL1Validator{
+		chainID        = createNetTx.ID()
+		managerChainID = ids.GenerateTestID()
+		address        = utils.RandomBytes(32)
+		validator      = &txs.ConvertChainToL1Validator{
 			NodeID:  ids.GenerateTestNodeID().Bytes(),
 			Weight:  initialWeight,
 			Balance: balance,
@@ -3343,7 +3343,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 
 	convertNetToL1Tx, err := wallet.IssueConvertChainToL1Tx(
 		chainID,
-		chainID,
+		managerChainID,
 		address,
 		[]*txs.ConvertChainToL1Validator{
 			validator,
@@ -3830,10 +3830,10 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		initialBalance uint64 = 0
 	)
 	var (
-		chainID   = createNetTx.ID()
-		chainID   = ids.GenerateTestID()
-		address   = utils.RandomBytes(32)
-		validator = &txs.ConvertChainToL1Validator{
+		chainID        = createNetTx.ID()
+		managerChainID = ids.GenerateTestID()
+		address        = utils.RandomBytes(32)
+		validator      = &txs.ConvertChainToL1Validator{
 			NodeID:  ids.GenerateTestNodeID().Bytes(),
 			Weight:  weight,
 			Balance: initialBalance,
@@ -3854,7 +3854,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 
 	convertNetToL1Tx, err := wallet.IssueConvertChainToL1Tx(
 		chainID,
-		chainID,
+		managerChainID,
 		address,
 		[]*txs.ConvertChainToL1Validator{
 			validator,
@@ -4132,9 +4132,9 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		initialBalance = constants.Lux
 	)
 	var (
-		chainID   = createNetTx.ID()
-		chainID   = ids.GenerateTestID()
-		address   = utils.RandomBytes(32)
+		chainID        = createNetTx.ID()
+		managerChainID = ids.GenerateTestID()
+		address        = utils.RandomBytes(32)
 		validator = &txs.ConvertChainToL1Validator{
 			NodeID:  ids.GenerateTestNodeID().Bytes(),
 			Weight:  weight,
@@ -4160,7 +4160,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 
 	convertNetToL1Tx, err := wallet.IssueConvertChainToL1Tx(
 		chainID,
-		chainID,
+		managerChainID,
 		address,
 		[]*txs.ConvertChainToL1Validator{
 			validator,

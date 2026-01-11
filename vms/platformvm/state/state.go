@@ -44,11 +44,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/crypto/hash"
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/utils/maybe"
-	"github.com/luxfi/utils/wrappers"
-	"github.com/luxfi/vm/platformvm/fx"
+	"github.com/luxfi/container/maybe"
+	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/platformvm/fx"
 
 	safemath "github.com/luxfi/math"
 )
@@ -461,7 +461,7 @@ type state struct {
 	addedChains  map[ids.ID][]*txs.Tx                    // maps netID -> the newly added chains to the chain
 	chainCache   cache.Cacher[ids.ID, []*txs.Tx]         // cache of netID -> the chains after all local modifications []*txs.Tx
 	chainDBCache cache.Cacher[ids.ID, linkeddb.LinkedDB] // cache of netID -> linkedDB
-	chainDB      database.Database
+	chainsDB     database.Database                       // base database for net-specific chains
 
 	// Chain name uniqueness - maps lowercase chain name to chain ID
 	addedChainNames map[string]ids.ID            // newly added chain names (lowercase) -> chainID
@@ -856,7 +856,7 @@ func New(
 		supplyDB:         prefixdb.New(SupplyPrefix, baseDB),
 
 		addedChains:  make(map[ids.ID][]*txs.Tx),
-		chainDB:      prefixdb.New(ChainPrefix, baseDB),
+		chainsDB:     prefixdb.New(ChainPrefix, baseDB),
 		chainCache:   chainCache,
 		chainDBCache: chainDBCache,
 
@@ -1148,13 +1148,13 @@ func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 		return nil, err
 	}
 
-	chain, ok := chainIntf.Unsigned.(*txs.CreateChainTx)
+	network, ok := chainIntf.Unsigned.(*txs.CreateNetworkTx)
 	if !ok {
 		return nil, fmt.Errorf("%q %w", netID, errIsNotNet)
 	}
 
-	s.SetNetOwner(netID, chain.Owner)
-	return chain.Owner, nil
+	s.SetNetOwner(netID, network.Owner)
+	return network.Owner, nil
 }
 
 func (s *state) SetNetOwner(netID ids.ID, owner fx.Owner) {
@@ -1309,7 +1309,7 @@ func (s *state) getChainDB(netID ids.ID) linkeddb.LinkedDB {
 	if chainDB, cached := s.chainDBCache.Get(netID); cached {
 		return chainDB
 	}
-	rawChainDB := prefixdb.New(netID[:], s.chainDB)
+	rawChainDB := prefixdb.New(netID[:], s.chainsDB)
 	chainDB := linkeddb.NewDefault(rawChainDB)
 	s.chainDBCache.Put(netID, chainDB)
 	return chainDB

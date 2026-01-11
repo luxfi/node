@@ -43,9 +43,9 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/utxo"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils/json"
-	"github.com/luxfi/utils/linked"
-	"github.com/luxfi/vm/secp256k1fx"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/container/linked"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/warp"
 
 	blockbuilder "github.com/luxfi/node/vms/exchangevm/block/builder"
@@ -287,7 +287,7 @@ func (vm *VM) initialize(
 	sender warp.Sender,
 ) error {
 	// Initialize logger first
-	vm.log = log.NoLog{}
+	vm.log = log.Noop()
 
 	// Create a simple no-op handler for warp.Handler
 	noopMessageHandler := &noOpHandler{}

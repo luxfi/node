@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/codec/wrappers"
 )
 
 var _ Metrics = (*metricsImpl)(nil)
