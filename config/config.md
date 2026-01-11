@@ -128,8 +128,8 @@ and the VM will use default values if nothing is passed in.
 Full reference for all configuration options for some standard chains can be
 found in a separate [chain config flags](https://docs.lux.network/docs/nodes/chain-configs) document.
 
-Full reference for `subnet-evm` upgrade configuration can be found in a separate
-[Customize a Net](https://docs.lux.network/docs/lux-l1s/upgrade/customize-lux-l1) document.
+Full reference for Chain EVM upgrade configuration can be found in a separate
+[Customize a Chain](https://docs.lux.network/docs/lux-l1s/upgrade/customize-lux-l1) document.
 
 #### `--chain-config-content` (string)
 
@@ -161,7 +161,7 @@ The above example aliases the Blockchain whose ID is
 `"q2aTwKuyzgs8pynF7UXBZCU7DejbZbZ6EUyHr3JQzYgwNPUPi"` to `"DFK"`. Chain
 aliases are added after adding primary network aliases and before any changes to
 the aliases via the admin API. This means that the first alias included for a
-Blockchain on a Net will be treated as the `"Primary Alias"` instead of the
+Blockchain on a Chain will be treated as the `"Primary Alias"` instead of the
 full blockchainID. The Primary Alias is used in all metrics and logs.
 
 #### `--chain-aliases-file-content` (string)
@@ -586,7 +586,7 @@ Defaults to `0.1`.
 
 Partial sync enables nodes that are not primary network validators to optionally sync
 only the P-chain on the primary network. Nodes that use this option can still track
-Nets. After the Etna upgrade, nodes that use this option can also validate L1s.
+Chains. After the Etna upgrade, nodes that use this option can also validate L1s.
 This config defaults to `false`.
 
 ## Public IP
@@ -687,37 +687,37 @@ As an alternative to `--staking-tls-key-file`, it allows specifying base64
 encoded content of the TLS private key used by the node. Note that full private
 key content, with the leading and trailing header, must be base64 encoded.
 
-## Nets
+## Chains
 
-### Net Tracking
+### Chain Tracking
 
-#### `--track-subnets` (string)
+#### `--track-chains` (string)
 
-Comma separated list of Net IDs that this node would track if added to.
+Comma separated list of Chain IDs that this node would track if added to.
 Defaults to empty (will only validate the Primary Network).
 
-### Net Configs
+### Chain Configs
 
-It is possible to provide parameters for Nets. Parameters here apply to all
-chains in the specified Nets. Parameters must be specified with a
-`{subnetID}.json` config file under `--subnet-config-dir`. Lux Node loads
-configs for Nets specified in
-`--track-subnets` parameter.
+It is possible to provide parameters for Chains. Parameters here apply to all
+chains in the specified Chains. Parameters must be specified with a
+`{chainID}.json` config file under `--chain-config-dir`. Lux Node loads
+configs for chains specified in
+`--track-chains` parameter.
 
-Full reference for all configuration options for a Net can be found in a
-separate [Net Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-configs) document.
+Full reference for all configuration options for a Chain can be found in a
+separate [Chain Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-configs) document.
 
-#### `--subnet-config-dir` (`string`)
+#### `--chain-config-dir` (`string`)
 
-Specifies the directory that contains Net configs, as described above.
-Defaults to `$HOME/.node/configs/subnets`. If the flag is set explicitly,
+Specifies the directory that contains Chain configs, as described above.
+Defaults to `$HOME/.node/configs/chains`. If the flag is set explicitly,
 the specified folder must exist, or Lux Node will exit with an error. This
-flag is ignored if `--net-config-content` is specified.
+flag is ignored if `--chain-config-content` is specified.
 
-Example: Let's say we have a Net with ID
+Example: Let's say we have a Chain with ID
 `p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6`. We can create a config file
-under the default `subnet-config-dir` at
-`$HOME/.node/configs/subnets/p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6.json`.
+under the default `chain-config-dir` at
+`$HOME/.node/configs/chains/p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6.json`.
 An example config file is:
 
 ```json
@@ -734,9 +734,9 @@ An example config file is:
 By default, none of these directories and/or files exist. You would need to create them manually if needed.
 :::
 
-#### `--net-config-content` (string)
+#### `--chain-config-content` (string)
 
-As an alternative to `--subnet-config-dir`, it allows specifying base64 encoded parameters for a Net.
+As an alternative to `--chain-config-dir`, it allows specifying base64 encoded parameters for a Chain.
 
 ## Version
 
@@ -944,7 +944,7 @@ Have the ProposerVM always report the last accepted P-chain block height. Defaul
 ### `--proposervm-min-block-delay` (duration)
 
 The minimum delay to enforce when building a consensusman++ block for the primary network
-chains and the default minimum delay for subnets. Defaults to `1s`. A non-default
+chains and the default minimum delay for chains. Defaults to `1s`. A non-default
 value is only suggested for non-production nodes.
 
 ### Continuous Profiling
