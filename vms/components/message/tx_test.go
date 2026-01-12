@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/constants"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/crypto"
 )
 
 func TestTx(t *testing.T) {
 	require := require.New(t)
 
-	tx := utils.RandomBytes(256 * constants.KiB)
+	tx := crypto.RandomBytes(256 * constants.KiB)
 	builtMsg := Tx{
 		Tx: tx,
 	}
