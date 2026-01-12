@@ -2532,7 +2532,7 @@ func TestLocalParse(t *testing.T) {
 
 	db := prefixdb.New([]byte{}, memdb.New())
 
-	_ = vm.Initialize(context.Background(), &consensus.Context{
+	_ = vm.Initialize(context.Background(), &runtime.Runtime{
 		Log:     logging.NoLog{},
 		ChainID: chainID,
 	}, db, nil, nil, nil, nil, nil)

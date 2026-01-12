@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"encoding/json"
 	"testing"
@@ -94,7 +94,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -278,7 +278,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferChainOwnershipTx.Ins)
-	ctx2 := &consensusctx.Context{
+	ctx2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
@@ -446,10 +446,10 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexTransferChainOwnershipTxBytes, unsignedComplexTransferChainOwnershipTxBytes)
 
-	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &consensusctx.Context{
+	ctx3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
@@ -559,7 +559,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID: chainID,

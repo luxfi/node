@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -37,7 +37,7 @@ func createTestVM(t *testing.T) (*VM, func()) {
 	toEngine := make(chan luxvm.Message, 100)
 	appSender := warp.FakeSender{}
 
-	consensusCtx := &consensusctx.Context{
+	consensusCtx := &runtime.Runtime{
 		ChainID: chainID,
 	}
 
@@ -522,7 +522,7 @@ func BenchmarkVMInitialize(b *testing.B) {
 		toEngine := make(chan luxvm.Message, 100)
 		appSender := warp.FakeSender{}
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: chainID,
 		}
 
@@ -558,7 +558,7 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 	toEngine := make(chan luxvm.Message, 100)
 	appSender := warp.FakeSender{}
 
-	consensusCtx := &consensusctx.Context{
+	consensusCtx := &runtime.Runtime{
 		ChainID: chainID,
 	}
 

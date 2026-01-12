@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/wallet/chain/x/builder"

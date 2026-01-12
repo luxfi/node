@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -21,7 +21,7 @@ func TestVMInitialize(t *testing.T) {
 
 	// Create test context
 	ctx := context.Background()
-	chainCtx := &consensusctx.Context{
+	chainCtx := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -180,7 +180,7 @@ func TestPrivateAddress(t *testing.T) {
 
 func setupTestVM(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &consensusctx.Context{
+	chainCtx := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -210,7 +210,7 @@ func setupTestVM(t *testing.T) *VM {
 
 func setupTestVMWithPrivacy(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &consensusctx.Context{
+	chainCtx := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}

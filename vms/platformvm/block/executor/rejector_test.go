@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -132,7 +132,7 @@ func TestRejectBlock(t *testing.T) {
 			testCtx := testcontext.New(context.Background())
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &consensusctx.Context{
+					ctx: &runtime.Runtime{
 						NetworkID: testCtx.NetworkID,
 						ChainID:   testCtx.ChainID,
 						NodeID:    testCtx.NodeID,

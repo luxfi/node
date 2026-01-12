@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )

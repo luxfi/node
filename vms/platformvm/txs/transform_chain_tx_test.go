@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -115,7 +115,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -343,7 +343,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	ctx2 := &consensusctx.Context{
+	ctx2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -528,10 +528,10 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexTransformTxBytes, unsignedComplexTransformTxBytes)
 
-	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &consensusctx.Context{
+	ctx3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -648,7 +648,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 		luxAssetID = ids.GenerateTestID()
 	)
 
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: networkID, // Must match tx.NetworkID
 
 		ChainID:  chainID,

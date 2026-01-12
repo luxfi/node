@@ -28,11 +28,11 @@ func TestGetAllValidatorsAt(t *testing.T) {
 	args := GetAllValidatorsAtArgs{}
 	response := GetAllValidatorsAtReply{}
 
-	service.vm.ctx.Lock.Lock()
+	service.vm.rt.Lock.Lock()
 	lastAccepted := service.vm.manager.LastAccepted()
 	lastAcceptedBlk, err := service.vm.manager.GetBlock(lastAccepted)
 	require.NoError(err)
-	service.vm.ctx.Lock.Unlock()
+	service.vm.rt.Lock.Unlock()
 
 	// Test at genesis height
 	args.Height = pchainapi.Height(lastAcceptedBlk.Height())

@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/vm/types"
@@ -24,7 +24,7 @@ type RegisterL1ValidatorTx struct {
 	Message types.JSONByteSlice `serialize:"true" json:"message"`
 }
 
-func (tx *RegisterL1ValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *RegisterL1ValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

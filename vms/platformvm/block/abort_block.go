@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -56,7 +56,7 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(*consensusctx.Context) {}
+func (*ApricotAbortBlock) InitCtx(*runtime.Runtime) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
 	return nil

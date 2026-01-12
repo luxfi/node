@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"

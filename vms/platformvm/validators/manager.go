@@ -394,6 +394,16 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 	return chain.ChainID, nil
 }
 
+func (m *manager) GetChainID(netID ids.ID) (ids.ID, error) {
+	// For validator manager, chain ID is typically the same as network ID
+	// or can be looked up from state if needed
+	return netID, nil
+}
+
+func (m *manager) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	return m.GetNetID(context.Background(), chainID)
+}
+
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 	m.recentlyAccepted.Add(blkID)
 }

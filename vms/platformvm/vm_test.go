@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	// "github.com/luxfi/node/message" // unused
 	// "github.com/luxfi/node/nets" // unused
 	// "github.com/luxfi/p2p" // unused
@@ -123,40 +123,42 @@ var (
 	testNet1 *txs.Tx
 )
 
-// mockValidatorState implements consensusctx.ValidatorState for testing
+// mockValidatorState implements runtime.ValidatorState for testing
 type mockValidatorState struct{}
 
-// Ensure mockValidatorState implements consensusctx.ValidatorState
-var _ consensusctx.ValidatorState = (*mockValidatorState)(nil)
+// Ensure mockValidatorState implements runtime.ValidatorState
+var _ runtime.ValidatorState = (*mockValidatorState)(nil)
 
 func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
-	// Return the chain ID for the given net ID
 	return ids.Empty, nil
 }
 
 func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains
-	return constants.PrimaryNetworkID, nil
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
 
-func (m *mockValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Return an empty validator set for tests
-	return make(map[ids.NodeID]uint64), nil
+func (m *mockValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
 
 func (m *mockValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	// Return a default height for tests
 	return 100, nil
 }
 
 func (m *mockValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	// Return a minimum height for tests
 	return 0, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{Height: height, Validators: make(map[ids.NodeID]*validators.WarpValidator)}, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	return make(map[ids.ID]map[uint64]*validators.WarpSet), nil
 }
 
 type mutableSharedMemory struct {
@@ -198,7 +200,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	}
 	ctx.SharedMemory = msm
 
-	// Create a mock ValidatorState that implements consensusctx.ValidatorState
+	// Create a mock ValidatorState that implements runtime.ValidatorState
 	ctx.ValidatorState = &mockValidatorState{}
 
 	ctx.Lock.Lock()
@@ -236,8 +238,8 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	// use genesistest.NewNet() instead.
 
 	t.Cleanup(func() {
-		vm.ctx.Lock.Lock()
-		defer vm.ctx.Lock.Unlock()
+		vm.rt.Lock.Lock()
+		defer vm.rt.Lock.Unlock()
 
 		// Shutdown may return "closed" errors if channels are already closed,
 		// which is expected during test cleanup
@@ -311,7 +313,7 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 	}
 	return txstest.NewWalletWithOptions(
 		t,
-		vm.ctx,
+		vm.rt,
 		txstest.WalletConfig{
 			Config:      walletConfig,
 			InternalCfg: &vm.Internal, // Pass VM's internal config with DynamicFeeConfig
@@ -320,7 +322,7 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 		secp256k1fx.NewKeychain(c.keys...),
 		c.netIDs,
 		nil, // validationIDs
-		[]ids.ID{vm.ctx.CChainID, vm.ctx.XChainID},
+		[]ids.ID{vm.rt.CChainID, vm.rt.XChainID},
 	)
 }
 
@@ -328,8 +330,8 @@ func newWallet(t testing.TB, vm *VM, c walletConfig) wallet.Wallet {
 func TestGenesis(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Etna)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Ensure the genesis block has been accepted and stored
 	genesisBlockID, err := vm.LastAccepted(context.Background()) // lastAccepted should be ID of genesis block
@@ -372,8 +374,8 @@ func TestGenesis(t *testing.T) {
 func TestAddValidatorCommit(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -403,7 +405,7 @@ func TestAddValidatorCommit(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.XAssetID,
+		vm.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -411,8 +413,8 @@ func TestAddValidatorCommit(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
-	defer vm.ctx.Lock.Lock()
+	vm.rt.Lock.Unlock()
+	defer vm.rt.Lock.Lock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
@@ -429,8 +431,8 @@ func TestAddValidatorCommit(t *testing.T) {
 func TestInvalidAddValidatorCommit(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -484,8 +486,8 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 func TestAddValidatorReject(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -513,9 +515,9 @@ func TestAddValidatorReject(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -534,8 +536,8 @@ func TestAddValidatorReject(t *testing.T) {
 func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -567,7 +569,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.XAssetID,
+		vm.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -575,9 +577,9 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	err = vm.issueTxFromRPC(tx)
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.ErrorIs(err, txexecutor.ErrDuplicateValidator)
 }
 
@@ -585,8 +587,8 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 func TestAddNetValidatorAccept(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
@@ -622,8 +624,8 @@ func TestAddNetValidatorAccept(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
-	defer vm.ctx.Lock.Lock()
+	vm.rt.Lock.Unlock()
+	defer vm.rt.Lock.Lock()
 	require.NoError(vm.issueTxFromRPC(tx))
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
@@ -640,8 +642,8 @@ func TestAddNetValidatorAccept(t *testing.T) {
 func TestAddNetValidatorReject(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
@@ -675,9 +677,9 @@ func TestAddNetValidatorReject(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 
 	blk, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -720,8 +722,8 @@ func (n *noOpBenchlist) Unbenched(chainID ids.ID, nodeID ids.NodeID) {}
 func TestRewardValidatorAccept(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
@@ -789,8 +791,8 @@ func TestRewardValidatorAccept(t *testing.T) {
 func TestRewardValidatorReject(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.Clock().Set(genesistest.DefaultValidatorEndTime)
@@ -859,8 +861,8 @@ func TestRewardValidatorReject(t *testing.T) {
 func TestUnneededBuildBlock(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	_, err := vm.Builder.BuildBlock(context.Background())
 	require.ErrorIs(err, blockbuilder.ErrNoPendingBlocks)
@@ -870,8 +872,8 @@ func TestUnneededBuildBlock(t *testing.T) {
 func TestCreateChain(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	// Create chain in this VM instance
 	wallet0 := newWallet(t, vm, walletConfig{})
@@ -891,9 +893,9 @@ func TestCreateChain(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
@@ -920,8 +922,8 @@ func TestCreateChain(t *testing.T) {
 func TestCreateNet(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 	createNetTx, err := wallet.IssueCreateNetworkTx(
@@ -935,9 +937,9 @@ func TestCreateNet(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	netID := createNetTx.ID()
@@ -972,9 +974,9 @@ func TestCreateNet(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	txID := addValidatorTx.ID()
@@ -1003,8 +1005,8 @@ func TestCreateNet(t *testing.T) {
 func TestAtomicImport(t *testing.T) {
 	require := require.New(t)
 	vm, baseDB, mutableSharedMemory := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	recipientKey := genesistest.DefaultFundedKeys[1]
 	importOwners := &secp256k1fx.OutputOwners{
@@ -1013,24 +1015,24 @@ func TestAtomicImport(t *testing.T) {
 	}
 
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, baseDB))
-	mutableSharedMemory.SharedMemory = m.NewSharedMemory(vm.ctx.ChainID)
+	mutableSharedMemory.SharedMemory = m.NewSharedMemory(vm.rt.ChainID)
 
 	wallet := newWallet(t, vm, walletConfig{})
 	_, err := wallet.IssueImportTx(
-		vm.ctx.XChainID,
+		vm.rt.XChainID,
 		importOwners,
 	)
 	require.ErrorIs(err, walletbuilder.ErrInsufficientFunds)
 
 	// Provide the avm UTXO
-	peerSharedMemory := m.NewSharedMemory(vm.ctx.XChainID)
+	peerSharedMemory := m.NewSharedMemory(vm.rt.XChainID)
 	utxoID := lux.UTXOID{
 		TxID:        ids.GenerateTestID(),
 		OutputIndex: 1,
 	}
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: vm.ctx.XAssetID},
+		Asset:  lux.Asset{ID: vm.rt.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          50 * constants.MicroLux,
 			OutputOwners: *importOwners,
@@ -1041,7 +1043,7 @@ func TestAtomicImport(t *testing.T) {
 
 	inputID := utxo.InputID()
 	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
-		vm.ctx.ChainID: {
+		vm.rt.ChainID: {
 			PutRequests: []*atomic.Element{
 				{
 					Key:   inputID[:],
@@ -1057,14 +1059,14 @@ func TestAtomicImport(t *testing.T) {
 	// The wallet must be re-loaded because the shared memory has changed
 	wallet = newWallet(t, vm, walletConfig{})
 	tx, err := wallet.IssueImportTx(
-		vm.ctx.XChainID,
+		vm.rt.XChainID,
 		importOwners,
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(tx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
@@ -1072,8 +1074,8 @@ func TestAtomicImport(t *testing.T) {
 	require.Equal(status.Committed, txStatus)
 
 	inputID = utxoID.InputID()
-	sharedMemory := vm.ctx.SharedMemory.(atomic.SharedMemory)
-	_, err = sharedMemory.Get(vm.ctx.XChainID, [][]byte{inputID[:]})
+	sharedMemory := vm.rt.SharedMemory.(atomic.SharedMemory)
+	_, err = sharedMemory.Get(vm.rt.XChainID, [][]byte{inputID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -1081,21 +1083,21 @@ func TestAtomicImport(t *testing.T) {
 func TestOptimisticAtomicImport(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.ApricotPhase3)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    vm.ctx.NetworkID,
-			BlockchainID: vm.ctx.ChainID,
+			NetworkID:    vm.rt.NetworkID,
+			BlockchainID: vm.rt.ChainID,
 		}},
-		SourceChain: vm.ctx.XChainID,
+		SourceChain: vm.rt.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.XAssetID},
+			Asset: lux.Asset{ID: vm.rt.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1314,10 +1316,10 @@ func TestUnverifiedParent(t *testing.T) {
 		&TestAppSender{},
 	))
 
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		vm.ctx.Lock.Unlock()
+		vm.rt.Lock.Unlock()
 	}()
 
 	// include a tx1 to make the block be accepted
@@ -1332,7 +1334,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: vm.ctx.XAssetID},
+			Asset: lux.Asset{ID: vm.rt.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1369,7 +1371,7 @@ func TestUnverifiedParent(t *testing.T) {
 				TxID:        ids.Empty.Prefix(2),
 				OutputIndex: 2,
 			},
-			Asset: lux.Asset{ID: vm.ctx.XAssetID},
+			Asset: lux.Asset{ID: vm.rt.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1393,8 +1395,8 @@ func TestUnverifiedParent(t *testing.T) {
 
 func TestMaxStakeAmount(t *testing.T) {
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
 
@@ -1692,8 +1694,8 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -1719,16 +1721,16 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.XAssetID,
+		vm.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	createNetTx, err := wallet.IssueCreateNetworkTx(
@@ -1739,9 +1741,9 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	netID := createNetTx.ID()
@@ -1792,8 +1794,8 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 func TestTransferChainOwnershipTx(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -1806,9 +1808,9 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createNetTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	netID := createNetTx.ID()
@@ -1826,9 +1828,9 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(transferNetOwnershipTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	chainOwner, err = vm.state.GetNetOwner(netID)
@@ -1839,15 +1841,15 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 func TestBaseTx(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Durango)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.ctx.XAssetID},
+				Asset: lux.Asset{ID: vm.rt.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * constants.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1862,9 +1864,9 @@ func TestBaseTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(baseTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	_, txStatus, err := vm.state.GetTx(baseTx.ID())
@@ -1875,8 +1877,8 @@ func TestBaseTx(t *testing.T) {
 func TestPruneMempool(t *testing.T) {
 	require := require.New(t)
 	vm, _, _ := defaultVM(t, upgradetest.Latest)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Lock()
+	defer vm.rt.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
 
@@ -1884,7 +1886,7 @@ func TestPruneMempool(t *testing.T) {
 	baseTx, err := wallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: vm.ctx.XAssetID},
+				Asset: lux.Asset{ID: vm.rt.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 100 * constants.MicroLux,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1902,9 +1904,9 @@ func TestPruneMempool(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(baseTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 
 	// [baseTx] should be in the mempool.
 	baseTxID := baseTx.ID()
@@ -1937,7 +1939,7 @@ func TestPruneMempool(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.ctx.XAssetID,
+		vm.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		20000,
@@ -1947,9 +1949,9 @@ func TestPruneMempool(t *testing.T) {
 	)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 
 	// [addValidatorTx] and [baseTx] should be in the mempool.
 	addValidatorTxID := addValidatorTx.ID()
@@ -1961,9 +1963,9 @@ func TestPruneMempool(t *testing.T) {
 	// Advance clock to [endTime], making [addValidatorTx] invalid.
 	vm.Clock().Set(endTime)
 
-	vm.ctx.Lock.Unlock()
+	vm.rt.Lock.Unlock()
 	require.NoError(vm.pruneMempool())
-	vm.ctx.Lock.Lock()
+	vm.rt.Lock.Lock()
 
 	// [addValidatorTx] should be ejected from the mempool.
 	// [baseTx] should still be in the mempool.

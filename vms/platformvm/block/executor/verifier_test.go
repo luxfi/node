@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -54,7 +54,7 @@ import (
 type testVerifierConfig struct {
 	DB                 database.Database
 	Upgrades           upgrade.Config
-	Context            *consensuscontext.Context
+	Context            *runtime.Runtime
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -490,7 +490,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensuscontext.Context{
+		ctx: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -565,7 +565,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensuscontext.Context{
+		ctx: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -628,7 +628,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &consensuscontext.Context{
+		ctx: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -702,7 +702,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensuscontext.Context{
+				ctx: &runtime.Runtime{
 					NetworkID: constants.UnitTestID,
 					ChainID:   constants.PlatformChainID,
 				},
@@ -804,7 +804,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensuscontext.Context{
+				ctx: &runtime.Runtime{
 					NetworkID: constants.UnitTestID,
 					ChainID:   constants.PlatformChainID,
 				},
@@ -883,7 +883,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensuscontext.Context{
+		ctx: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -942,7 +942,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensuscontext.Context{
+		ctx: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -998,7 +998,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensuscontext.Context{
+			ctx: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1043,7 +1043,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensuscontext.Context{
+			ctx: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1087,7 +1087,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensuscontext.Context{
+			ctx: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1132,7 +1132,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensuscontext.Context{
+			ctx: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},

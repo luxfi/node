@@ -8,10 +8,11 @@ import (
 	"context"
 	"sync"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
+	consensusvalidators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 // Context provides a test context that mimics the old context.Context
@@ -26,8 +27,8 @@ type Context struct {
 	CChainID       ids.ID
 	DChainID       ids.ID
 	XAssetID       ids.ID // Primary asset ID (X-chain native)
-	ValidatorState interface{}
-	WarpSigner     interface{}
+	ValidatorState consensusvalidators.State
+	WarpSigner     runtime.WarpSigner
 	Log            log.Logger
 	Lock           *sync.RWMutex
 	SharedMemory   atomic.SharedMemory
@@ -46,8 +47,8 @@ func New(ctx context.Context) *Context {
 	}
 }
 
-// WithIDs sets the IDs from consensuscontext.IDs
-func (c *Context) WithIDs(ids consensuscontext.IDs) *Context {
+// WithIDs sets the IDs from runtime.IDs
+func (c *Context) WithIDs(ids runtime.IDs) *Context {
 	c.NetworkID = ids.NetworkID
 	c.ChainID = ids.ChainID
 	c.NodeID = ids.NodeID

@@ -27,32 +27,21 @@ import (
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
-// validatorStateAdapter adapts consensusctx.ValidatorState to validators.State
+// validatorStateAdapter adapts runtime.ValidatorState to validators.State
 type validatorStateAdapter struct {
-	state consensusctx.ValidatorState
+	state runtime.ValidatorState
 }
 
 func (a *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	weights, err := a.state.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(weights))
-	for nodeID, weight := range weights {
-		result[nodeID] = &validators.GetValidatorOutput{
-			NodeID: nodeID,
-			Light:  weight,
-		}
-	}
-	return result, nil
+	// runtime.ValidatorState is now an alias to validators.State, so pass through directly
+	return a.state.GetValidatorSet(ctx, height, netID)
 }
 
 func (a *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -62,6 +51,18 @@ func (a *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height
 
 func (a *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return a.state.GetCurrentHeight(ctx)
+}
+
+func (a *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return a.state.GetMinimumHeight(ctx)
+}
+
+func (a *validatorStateAdapter) GetChainID(netID ids.ID) (ids.ID, error) {
+	return a.state.GetChainID(netID)
+}
+
+func (a *validatorStateAdapter) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	return a.state.GetNetworkID(chainID)
 }
 
 func (a *validatorStateAdapter) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
@@ -648,13 +649,13 @@ func executeTx(
 	logger := backend.Ctx.Log.(log.Logger)
 	txID := tx.ID()
 
-	// Get validator state - handle both validators.State (from node) and consensusctx.ValidatorState (from tests)
+	// Get validator state - handle both validators.State (from node) and runtime.ValidatorState (from tests)
 	var stateAdapter validators.State
 	if vs, ok := backend.Ctx.ValidatorState.(validators.State); ok {
 		// Node provides validators.State directly
 		stateAdapter = vs
-	} else if vs, ok := backend.Ctx.ValidatorState.(consensusctx.ValidatorState); ok {
-		// Tests may provide consensusctx.ValidatorState, wrap it
+	} else if vs, ok := backend.Ctx.ValidatorState.(runtime.ValidatorState); ok {
+		// Tests may provide runtime.ValidatorState, wrap it
 		stateAdapter = &validatorStateAdapter{state: vs}
 	} else {
 		return false, fmt.Errorf("invalid validator state type: %T", backend.Ctx.ValidatorState)

@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
@@ -60,7 +60,7 @@ type GConfig struct {
 
 // VM implements the chain.ChainVM interface for the Graph Chain (G-Chain)
 type VM struct {
-	ctx       *consensusctx.Context
+	rt        *runtime.Runtime
 	db        database.Database
 	config    GConfig
 	toEngine  chan<- core.Message
@@ -156,9 +156,9 @@ func (vm *VM) Initialize(
 ) error {
 	// Type assertions
 	var ok bool
-	vm.ctx, ok = chainCtx.(*consensusctx.Context)
+	vm.rt, ok = chainCtx.(*runtime.Runtime)
 	if !ok {
-		return errors.New("invalid chain context type")
+		return errors.New("chain context must be *runtime.Runtime")
 	}
 
 	vm.db, ok = db.(database.Database)
@@ -205,7 +205,7 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	if logger, ok := vm.ctx.Log.(log.Logger); ok {
+	if logger, ok := vm.rt.Log.(log.Logger); ok {
 		logger.Info("initialized Graph VM",
 			log.Reflect("version", Version),
 		)

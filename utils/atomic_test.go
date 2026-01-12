@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	luxatomic "github.com/luxfi/atomic"
 )
 
 func TestAtomic(t *testing.T) {
 	require := require.New(t)
 
-	var a Atomic[bool]
+	var a luxatomic.Atomic[bool]
 	require.Zero(a.Get())
 
 	a.Set(false)
@@ -30,17 +32,17 @@ func TestAtomic(t *testing.T) {
 func TestAtomicJSON(t *testing.T) {
 	tests := []struct {
 		name     string
-		value    *Atomic[netip.AddrPort]
+		value    *luxatomic.Atomic[netip.AddrPort]
 		expected string
 	}{
 		{
 			name:     "zero value",
-			value:    new(Atomic[netip.AddrPort]),
+			value:    new(luxatomic.Atomic[netip.AddrPort]),
 			expected: `""`,
 		},
 		{
 			name: "ipv4 value",
-			value: NewAtomic(netip.AddrPortFrom(
+			value: luxatomic.NewAtomic(netip.AddrPortFrom(
 				netip.AddrFrom4([4]byte{1, 2, 3, 4}),
 				12345,
 			)),
@@ -48,7 +50,7 @@ func TestAtomicJSON(t *testing.T) {
 		},
 		{
 			name: "ipv6 loopback",
-			value: NewAtomic(netip.AddrPortFrom(
+			value: luxatomic.NewAtomic(netip.AddrPortFrom(
 				netip.IPv6Loopback(),
 				12345,
 			)),
@@ -63,7 +65,7 @@ func TestAtomicJSON(t *testing.T) {
 			require.NoError(err)
 			require.Equal(test.expected, string(b))
 
-			var parsed Atomic[netip.AddrPort]
+			var parsed luxatomic.Atomic[netip.AddrPort]
 			require.NoError(json.Unmarshal([]byte(test.expected), &parsed))
 			require.Equal(test.value.Get(), parsed.Get())
 		})

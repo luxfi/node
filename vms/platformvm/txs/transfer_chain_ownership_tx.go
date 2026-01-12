@@ -6,7 +6,7 @@ package txs
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"errors"
 
@@ -37,7 +37,7 @@ type TransferChainOwnershipTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [TransferChainOwnershipTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *TransferChainOwnershipTx) InitCtx(ctx *consensusctx.Context) {
+func (tx *TransferChainOwnershipTx) InitCtx(ctx *runtime.Runtime) {
 	tx.BaseTx.InitCtx(ctx)
 	// Initialize context for Owner if it's *secp256k1fx.OutputOwners
 	if owner, ok := tx.Owner.(*secp256k1fx.OutputOwners); ok {
@@ -45,7 +45,7 @@ func (tx *TransferChainOwnershipTx) InitCtx(ctx *consensusctx.Context) {
 	}
 }
 
-func (tx *TransferChainOwnershipTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *TransferChainOwnershipTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

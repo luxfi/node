@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -61,7 +61,7 @@ func createTestVM(t *testing.T) *dexvm.VM {
 	toEngine := make(chan consensuscore.Message, 100)
 	appSender := warp.FakeSender{} // Use warp's FakeSender
 
-	consensusCtx := &consensusctx.Context{
+	consensusCtx := &runtime.Runtime{
 		ChainID: chainID,
 	}
 
@@ -462,7 +462,7 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 		toEngine := make(chan consensuscore.Message, 100)
 		appSender := warp.FakeSender{}
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: chainID,
 		}
 

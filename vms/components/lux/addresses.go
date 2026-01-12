@@ -6,7 +6,7 @@ package lux
 import (
 	"errors"
 	"fmt"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
@@ -44,10 +44,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *consensusctx.Context
+	ctx *runtime.Runtime
 }
 
-func NewAddressManager(ctx *consensusctx.Context) AddressManager {
+func NewAddressManager(ctx *runtime.Runtime) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

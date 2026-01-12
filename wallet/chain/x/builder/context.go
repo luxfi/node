@@ -4,7 +4,7 @@
 package builder
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 )
 
@@ -22,9 +22,9 @@ func NewConsensusContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (*consensusctx.Context, error) {
+) (*runtime.Runtime, error) {
 	lookup := ids.NewAliaser()
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: networkID,
 		ChainID:   blockchainID,
 		XChainID:  blockchainID,

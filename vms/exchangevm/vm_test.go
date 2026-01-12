@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -32,7 +32,7 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()
@@ -59,7 +59,7 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()

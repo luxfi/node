@@ -6,7 +6,7 @@ package txs
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"errors"
 	"fmt"
@@ -38,7 +38,7 @@ type ExportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedExportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitCtx(ctx *consensusctx.Context) {
+func (tx *ExportTx) InitCtx(ctx *runtime.Runtime) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.ExportedOutputs {
 		out.FxID = secp256k1fx.ID
@@ -47,7 +47,7 @@ func (tx *ExportTx) InitCtx(ctx *consensusctx.Context) {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ExportTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *ExportTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

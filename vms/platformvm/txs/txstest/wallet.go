@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
@@ -33,7 +33,7 @@ import (
 //   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 func NewWallet(
 	t testing.TB,
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	cfg *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
@@ -63,7 +63,7 @@ type WalletConfig struct {
 
 func NewWalletWithOptions(
 	t testing.TB,
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	wCfg WalletConfig,
 	state state.State,
 	kc *secp256k1fx.Keychain,

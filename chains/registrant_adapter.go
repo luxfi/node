@@ -4,7 +4,7 @@
 package chains
 
 import (
-	consensus "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/node/api/server"
 )
@@ -19,6 +19,6 @@ func NewRegistrantAdapter(s server.Server) Registrant {
 	return &registrantAdapter{server: s}
 }
 
-func (r *registrantAdapter) RegisterChain(chainName string, ctx *consensus.Context, vm interfaces.VM) {
+func (r *registrantAdapter) RegisterChain(chainName string, ctx *runtime.Runtime, vm interfaces.VM) {
 	r.server.RegisterChain(chainName, ctx, vm)
 }

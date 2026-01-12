@@ -18,7 +18,7 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/codec"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/consensus/engine/dag"
@@ -92,7 +92,7 @@ type VM struct {
 	ctx context.Context
 
 	// Consensus context
-	consensusCtx *consensusctx.Context
+	consensusCtx *runtime.Runtime
 
 	// Logger for this VM
 	log log.Logger
@@ -209,7 +209,7 @@ func (vm *VM) Initialize(
 	appSender interface{},
 ) error {
 	// Try to get consensus context for chain info
-	if consensusCtx, ok := chainCtx.(*consensusctx.Context); ok {
+	if consensusCtx, ok := chainCtx.(*runtime.Runtime); ok {
 		// Store chain-specific info from consensus context
 		vm.consensusCtx = consensusCtx
 		vm.ChainID = consensusCtx.ChainID
@@ -580,7 +580,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	if vm.consensusCtx.ValidatorState == nil {
 		return fmt.Errorf("validator state not available in consensus context")
 	}
-	vs, ok := vm.consensusCtx.ValidatorState.(consensusctx.ValidatorState)
+	vs, ok := vm.consensusCtx.ValidatorState.(runtime.ValidatorState)
 	if !ok {
 		return fmt.Errorf("validator state has incorrect type")
 	}
@@ -953,7 +953,7 @@ type GetCurrentValidatorOutput struct {
 
 // validatorStateWrapper wraps validator state
 type validatorStateWrapper struct {
-	vs consensusctx.ValidatorState
+	vs runtime.ValidatorState
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -961,21 +961,8 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	// Get the validator set from consensus ValidatorState which returns map[ids.NodeID]uint64
-	valSet, err := v.vs.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to the expected format
-	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
-		result[nodeID] = &validators.GetValidatorOutput{
-			NodeID: nodeID,
-			Weight: weight,
-		}
-	}
-	return result, nil
+	// Get the validator set from consensus ValidatorState
+	return v.vs.GetValidatorSet(ctx, height, netID)
 }
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
@@ -986,20 +973,20 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 	}
 
 	// Get validators at current height
-	valSet, err := v.vs.GetValidatorSet(height, netID)
+	valSet, err := v.vs.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Convert to GetCurrentValidatorOutput format
 	result := make(map[ids.ID]*GetCurrentValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
+	for nodeID, validator := range valSet {
 		// Convert NodeID to ID by copying the bytes
 		var id ids.ID
 		copy(id[:], nodeID[:])
 		result[id] = &GetCurrentValidatorOutput{
 			NodeID: nodeID,
-			Weight: weight,
+			Weight: validator.Weight,
 		}
 	}
 
@@ -1014,22 +1001,17 @@ func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (i
 	return v.vs.GetNetworkID(chainID)
 }
 
-func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	// Get validators at specified height
-	valSet, err := v.vs.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
+func (v *validatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error) {
+	return v.vs.GetChainID(netID)
+}
 
-	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
-	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
-		result[nodeID] = &validators.GetValidatorOutput{
-			NodeID: nodeID,
-			Weight: weight,
-		}
-	}
-	return result, nil
+func (v *validatorStateWrapper) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetworkID(chainID)
+}
+
+func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get validators at specified height - now directly returns *validators.GetValidatorOutput
+	return v.vs.GetValidatorSet(ctx, height, netID)
 }
 
 func (v *validatorStateWrapper) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
@@ -1076,6 +1058,7 @@ func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, height
 
 	return result, nil
 }
+
 
 // Clock returns the VM's clock for time-related operations
 func (vm *VM) Clock() *mockable.Clock {

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 )
 
@@ -54,16 +54,16 @@ func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) er
 
 // SameChain verifies that the peerChainID is in the same network as the chain
 // represented by consensusCtx, but not the same chain. This is a convenience
-// wrapper for coreth compatibility that accepts *consensusctx.Context directly.
+// wrapper for coreth compatibility that accepts *runtime.Runtime directly.
 // With the simplified NetworkID model (1=mainnet, 2=testnet), chains on the
 // same network are always in the same "chain".
-func SameChain(ctx context.Context, consensusCtx *consensusctx.Context, peerChainID ids.ID) error {
+func SameChain(ctx context.Context, consensusCtx *runtime.Runtime, peerChainID ids.ID) error {
 	if peerChainID == consensusCtx.ChainID {
 		return ErrSameChainID
 	}
 
 	// Get the validator state from consensus context
-	vs, ok := consensusCtx.ValidatorState.(consensusctx.ValidatorState)
+	vs, ok := consensusCtx.ValidatorState.(runtime.ValidatorState)
 	if !ok {
 		return fmt.Errorf("validator state does not implement required interface")
 	}

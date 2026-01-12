@@ -6,7 +6,7 @@ package exchangevm
 import (
 	"reflect"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 )
@@ -16,7 +16,7 @@ var _ txs.Visitor = (*txInit)(nil)
 // txInit initializes FxID where required
 type txInit struct {
 	tx            *txs.Tx
-	ctx           *consensusctx.Context
+	ctx           *runtime.Runtime
 	typeToFxIndex map[reflect.Type]int
 	fxs           []*fxs.ParsedFx
 }

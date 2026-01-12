@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -127,7 +127,7 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context, vm consensuscore.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx *runtime.Runtime, vm consensuscore.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

@@ -10,49 +10,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 )
 
 // testValidatorState is a test implementation of ValidatorState
 type testValidatorState struct {
-	height     uint64
-	validators map[ids.ID]map[ids.NodeID]uint64
-	chains     map[ids.ID]ids.ID // chainID -> chainID
-	err        error
-}
-
-func (s *testValidatorState) GetCurrentHeight() (uint64, error) {
-	return s.height, s.err
-}
-
-func (s *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	if s.err != nil {
-		return nil, s.err
-	}
-	return s.validators[netID], nil
+	chains map[ids.ID]ids.ID // chainID -> netID
+	err    error
 }
 
 func (s *testValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	if s.err != nil {
 		return ids.Empty, s.err
 	}
-	if chain, ok := s.chains[chainID]; ok {
-		return chain, nil
+	if netID, ok := s.chains[chainID]; ok {
+		return netID, nil
 	}
 	return ids.Empty, errMissing
-}
-
-func (s *testValidatorState) GetChainID(blockID ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
-}
-
-func (s *testValidatorState) GetCurrentValidators(ctx context.Context, height uint64, chainID ids.ID) (map[ids.NodeID]*consensuscontext.GetValidatorOutput, error) {
-	return nil, nil
 }
 
 var errMissing = errors.New("missing")

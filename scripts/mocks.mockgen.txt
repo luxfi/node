@@ -1,5 +1,4 @@
 github.com/luxfi/node/api/server=Server=api/server/mock_server.go
-github.com/luxfi/node/chains/atomic=SharedMemory=chains/atomic/mock_shared_memory.go
 github.com/luxfi/node/codec=Manager=codec/mock_manager.go
 github.com/luxfi/node/database=Batch=database/mock_batch.go
 github.com/luxfi/node/database=Iterator=database/mock_iterator.go

@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -24,7 +24,7 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *consensusctx.Context) {
+func (t *OperationTx) InitCtx(ctx *runtime.Runtime) {
 	// FxOperation doesn't have InitCtx method
 	// for _, op := range t.Ops {
 	//     op.Op.InitCtx(ctx)
@@ -33,7 +33,7 @@ func (t *OperationTx) InitCtx(ctx *consensusctx.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *OperationTx) InitializeContext(ctx *consensusctx.Context) error {
+func (t *OperationTx) InitializeContext(ctx *runtime.Runtime) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -72,7 +72,7 @@ func (t *OperationTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *OperationTx) InitializeWithContext(ctx *consensusctx.Context) error {
+func (tx *OperationTx) InitializeWithContext(ctx *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

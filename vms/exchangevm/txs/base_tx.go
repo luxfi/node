@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/math/set"
 )
 
@@ -24,14 +24,14 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *consensusctx.Context) {
+func (t *BaseTx) InitCtx(ctx *runtime.Runtime) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *BaseTx) InitializeContext(ctx *consensusctx.Context) error {
+func (t *BaseTx) InitializeContext(ctx *runtime.Runtime) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -71,7 +71,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx *consensusctx.Context) error {
+func (tx *BaseTx) InitializeWithContext(ctx *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	tx.InitCtx(ctx)
 	return nil

@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/vm/chain/blocktest"
+	vmrpc "github.com/luxfi/vm/rpc"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 )
@@ -88,7 +89,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.Runtime().Stop(context.Background())
 
-	chainCtx := &Context{
+	chainCtx := &vmrpc.Context{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),

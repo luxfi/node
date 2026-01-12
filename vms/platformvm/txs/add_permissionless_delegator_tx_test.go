@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
@@ -29,8 +29,8 @@ import (
 var errCustom = errors.New("custom error")
 
 // testContext creates a test context with the given parameters
-func testContext(networkID uint32, chainID, luxAssetID ids.ID) *consensusctx.Context {
-	return &consensusctx.Context{
+func testContext(networkID uint32, chainID, luxAssetID ids.ID) *runtime.Runtime {
+	return &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID:  chainID,
@@ -133,7 +133,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  testChainID,
@@ -389,7 +389,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	ctx = &consensusctx.Context{
+	ctx = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
@@ -619,10 +619,10 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddPrimaryTxBytes, unsignedComplexAddPrimaryTxBytes)
 
-	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx2 := &consensusctx.Context{
+	ctx2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
@@ -875,12 +875,12 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: ids.GenerateTestID(),
 	}
-	ctx = &consensusctx.Context{
+	ctx = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
@@ -1157,7 +1157,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	ctx = &consensusctx.Context{
+	ctx = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
@@ -1387,10 +1387,10 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexAddNetTxBytes, unsignedComplexAddNetTxBytes)
 
-	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &consensusctx.Context{
+	ctx3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
@@ -1540,7 +1540,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	_ = &consensusctx.Context{
+	_ = &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: chainID,
@@ -1881,7 +1881,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			testCtx := &consensusctx.Context{
+			testCtx := &runtime.Runtime{
 				NetworkID: networkID,
 
 				ChainID: chainID,

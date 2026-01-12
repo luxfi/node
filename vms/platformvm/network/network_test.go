@@ -142,6 +142,14 @@ func (m *mockValidatorState) GetWarpValidatorSets(
 	return nil, nil
 }
 
+func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
 var _ TxVerifier = (*testTxVerifier)(nil)
 
 type testTxVerifier struct {

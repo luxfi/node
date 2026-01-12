@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"encoding/json"
 	"testing"
@@ -72,7 +72,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty for serialization test
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -220,7 +220,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	ctx2 := &consensusctx.Context{
+	ctx2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
@@ -367,10 +367,10 @@ func TestBaseTxSerialization(t *testing.T) {
 	require.NoError(err)
 	require.Equal(expectedUnsignedComplexBaseTxBytes, unsignedComplexBaseTxBytes)
 
-	// Remove aliaser as BCLookup field doesn't exist in consensus.Context
+	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &consensusctx.Context{
+	ctx3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,

@@ -90,7 +90,7 @@ func (vm *VM) ProcessBridgeMessage(ctx context.Context, message *BridgeMessage) 
 
 	// If this node is a signer, we can participate in signing
 	vm.mu.RLock()
-	isSigner := vm.HasSigner(vm.ctx.NodeID)
+	isSigner := vm.HasSigner(vm.rt.NodeID)
 	vm.mu.RUnlock()
 
 	if isSigner {

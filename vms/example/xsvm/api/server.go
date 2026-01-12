@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
@@ -34,7 +34,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -50,7 +50,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *consensusctx.Context
+	ctx     *runtime.Runtime
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain

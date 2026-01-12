@@ -4,7 +4,7 @@
 package executor
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -18,7 +18,7 @@ import (
 
 type Backend struct {
 	Config       *config.Internal
-	Ctx          *consensusctx.Context
+	Ctx          *runtime.Runtime
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier

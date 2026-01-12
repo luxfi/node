@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -34,7 +34,7 @@ type Builder interface {
 }
 
 type builder struct {
-	chainContext *consensusctx.Context
+	chainContext *runtime.Runtime
 	chain        chain.Chain
 
 	preference ids.ID
@@ -43,7 +43,7 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *consensusctx.Context, chain chain.Chain) Builder {
+func New(chainContext *runtime.Runtime, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,

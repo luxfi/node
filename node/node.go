@@ -43,7 +43,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/config/node"
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/genesis/builder"

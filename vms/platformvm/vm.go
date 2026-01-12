@@ -19,7 +19,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/interfaces"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
 	validators "github.com/luxfi/consensus/validator"
@@ -127,9 +127,9 @@ type VM struct {
 
 	uptimeManager uptime.Calculator
 
-	// The context of this vm
-	ctx *consensusctx.Context
-	db  database.Database
+	// The runtime wiring of this vm
+	rt *runtime.Runtime
+	db database.Database
 
 	// Additional fields needed for platformvm
 	log        log.Logger
@@ -166,9 +166,19 @@ type VM struct {
 	toEngine chan<- chain.Message
 }
 
-// GetChainID returns the chain ID of this VM
-func (vm *VM) GetChainID(context.Context) (ids.ID, error) {
-	return constants.PlatformChainID, nil
+// GetChainID returns the chain ID for a given network ID
+func (vm *VM) GetChainID(netID ids.ID) (ids.ID, error) {
+	// For P-chain, chain ID is the same as netID or can be constant
+	return netID, nil
+}
+
+// GetNetworkID returns the network ID for a given chain ID
+func (vm *VM) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	// For P-chain, network ID lookup from chain ID
+	if chainID == constants.PlatformChainID {
+		return constants.PrimaryNetworkID, nil
+	}
+	return chainID, nil
 }
 
 // Initialize this blockchain.
@@ -184,17 +194,17 @@ func (vm *VM) Initialize(
 	fxsIntf []interface{},
 	appSenderIntf interface{},
 ) error {
-	// Extract chain context
-	var chainCtx *consensusctx.Context
+	// Extract chain runtime
+	var chainCtx *runtime.Runtime
 	if chainCtxIntf != nil {
 		var ok bool
-		chainCtx, ok = chainCtxIntf.(*consensusctx.Context)
+		chainCtx, ok = chainCtxIntf.(*runtime.Runtime)
 		if !ok {
-			return fmt.Errorf("invalid chain context type")
+			return fmt.Errorf("chain context must be *runtime.Runtime")
 		}
 	} else {
-		// Create a minimal context if none provided
-		chainCtx = &consensusctx.Context{
+		// Create a minimal runtime if none provided
+		chainCtx = &runtime.Runtime{
 			NetworkID: 1,
 			ChainID:   constants.PlatformChainID,
 		}
@@ -267,22 +277,9 @@ func (vm *VM) Initialize(
 	execConfig.SybilProtectionEnabled = vm.SybilProtectionEnabled
 	vm.log.Info("using VM execution config", "config", execConfig)
 
-	// Get metrics registerer from chain context, or create new one if not available
-	var registerer metric.Registry
-	if chainCtx != nil && chainCtx.Metrics != nil {
-		if reg, ok := chainCtx.Metrics.(metric.Registry); ok {
-			registerer = reg
-			if registerer == nil {
-				registerer = metric.NewRegistry()
-			}
-		} else {
-			// Create new registerer if chainCtx.Metrics is not a Registry
-			registerer = metric.NewRegistry()
-		}
-	} else {
-		// Create new registerer if chainCtx.Metrics is nil
-		registerer = metric.NewRegistry()
-	}
+	// Create metrics registry - always use new registry as runtime.Metrics
+	// interface is incompatible with metric.Registry due to different Register signatures
+	registerer := metric.NewRegistry()
 
 	// Initialize platformvm-specific metrics
 	vm.metrics, err = platformvmmetrics.New(registerer)
@@ -294,7 +291,7 @@ func (vm *VM) Initialize(
 	// Create metric interface for state
 
 	// Set consensus context
-	vm.ctx = chainCtx
+	vm.rt = chainCtx
 
 	// Initialize utxo.XAssetID from the context
 	utxo.XAssetID = chainCtx.XAssetID
@@ -346,7 +343,7 @@ func (vm *VM) Initialize(
 		vm.Internal.Validators,
 		vm.Internal.UpgradeConfig,
 		execConfig,
-		vm.ctx,
+		vm.rt,
 		vm.metrics,
 		rewards,
 	)
@@ -366,7 +363,7 @@ func (vm *VM) Initialize(
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Internal,
-		Ctx:          vm.ctx,
+		Ctx:          vm.rt,
 		Clk:          &vm.nodeClock,
 		Fx:           vm.fx,
 		FlowChecker:  utxoHandler,
@@ -840,7 +837,7 @@ func (vm *VM) onReady() error {
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
 	// for chainID := range vm.TrackedChains {
-	// 	vl := validators.NewLogger(vm.log, chainID, vm.ctx.NodeID)
+	// 	vl := validators.NewLogger(vm.log, chainID, vm.rt.NodeID)
 	// 	vm.Validators.RegisterSetCallbackListener(chainID, vl)
 	// }
 
@@ -1018,7 +1015,7 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Create the service with fully initialized VM
 		service := &Service{
 			vm:                    l.vm,
-			addrManager:           lux.NewAddressManager(l.vm.ctx),
+			addrManager:           lux.NewAddressManager(l.vm.rt),
 			stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
 		}
 

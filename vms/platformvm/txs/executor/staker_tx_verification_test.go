@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"
@@ -572,7 +572,7 @@ func TestGetValidatorRules(t *testing.T) {
 			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &consensusctx.Context{
+				Ctx: &runtime.Runtime{
 					XAssetID: luxAssetID,
 				},
 			},
@@ -689,7 +689,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &consensusctx.Context{
+				Ctx: &runtime.Runtime{
 					XAssetID: luxAssetID,
 				},
 			},

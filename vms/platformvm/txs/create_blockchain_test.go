@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"testing"
 
@@ -19,12 +19,12 @@ import (
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: ids.GenerateTestID(),
 	}
-	ctx = &consensusctx.Context{
+	ctx = &runtime.Runtime{
 
 		ChainID: testChainID,
 	}

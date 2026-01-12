@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"bytes"
 	"errors"
@@ -47,7 +47,7 @@ type ConvertChainToL1Tx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *ConvertChainToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *ConvertChainToL1Tx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

@@ -16,7 +16,7 @@ import (
 	ethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/log"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -45,7 +45,7 @@ var (
 // VM implements the chain.ChainVM interface for the Zero-Knowledge Chain (Z-Chain)
 // This chain provides ZK proof verification and fraud proof processing
 type VM struct {
-	ctx         *consensusctx.Context
+	ctx         *runtime.Runtime
 	db          database.Database
 	genesisData []byte
 	toEngine    chan<- core.Message
@@ -148,7 +148,7 @@ const (
 // Initialize implements the common.VM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusctx.Context,
+	chainCtx *runtime.Runtime,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,

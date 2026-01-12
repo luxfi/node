@@ -6,7 +6,7 @@ package txs
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -36,7 +36,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*consensusctx.Context) {}
+func (*RewardValidatorTx) InitCtx(*runtime.Runtime) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -50,7 +50,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(*consensusctx.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(*runtime.Runtime) error {
 	return nil
 }
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -25,7 +25,7 @@ type testOperable struct {
 
 func (*testOperable) InitCtx(context.Context) {}
 
-func (*testOperable) InitializeContext(*consensusctx.Context) error { return nil }
+func (*testOperable) InitializeContext(*runtime.Runtime) error { return nil }
 
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs

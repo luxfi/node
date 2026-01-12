@@ -8,9 +8,8 @@ import (
 	"net/netip"
 	"time"
 
+	luxatomic "github.com/luxfi/atomic"
 	luxlog "github.com/luxfi/log"
-
-	"github.com/luxfi/node/utils"
 )
 
 const ipResolutionTimeout = 10 * time.Second
@@ -30,7 +29,7 @@ type Updater interface {
 
 type updater struct {
 	// The IP we periodically modify.
-	dynamicIP *utils.Atomic[netip.AddrPort]
+	dynamicIP *luxatomic.Atomic[netip.AddrPort]
 	// Used to find out what our public IP is.
 	resolver Resolver
 	// The parent of all contexts passed into resolver.Resolve().
@@ -49,7 +48,7 @@ type updater struct {
 // every [updateFreq]. Uses [resolver] to find
 // out what our public IP is.
 func NewUpdater(
-	dynamicIP *utils.Atomic[netip.AddrPort],
+	dynamicIP *luxatomic.Atomic[netip.AddrPort],
 	resolver Resolver,
 	updateFreq time.Duration,
 ) Updater {

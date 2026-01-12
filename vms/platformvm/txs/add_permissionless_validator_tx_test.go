@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
@@ -137,7 +137,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
@@ -441,7 +441,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx = &consensusctx.Context{
+	ctx = &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
@@ -832,7 +832,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
@@ -1134,7 +1134,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx2 := &consensusctx.Context{
+	ctx2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  constants.PlatformChainID,
@@ -1393,7 +1393,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID: chainID,

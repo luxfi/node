@@ -4,7 +4,7 @@
 package block
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"fmt"
 	"time"
@@ -15,7 +15,7 @@ import (
 
 // ContextInitializable defines the interface for initializing context
 type ContextInitializable interface {
-	InitCtx(ctx *consensusctx.Context)
+	InitCtx(ctx *runtime.Runtime)
 }
 
 // Block defines the common stateless interface for all blocks

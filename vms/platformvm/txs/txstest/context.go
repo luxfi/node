@@ -6,7 +6,7 @@ package txstest
 import (
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -15,7 +15,7 @@ import (
 )
 
 func newContext(
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	networkID uint32,
 	luxAssetID ids.ID,
 	cfg *config.Config,

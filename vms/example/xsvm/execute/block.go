@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
@@ -19,7 +19,7 @@ var errNoTxs = errors.New("no transactions")
 
 func Block(
 	ctx context.Context,
-	chainContext *consensusctx.Context,
+	chainContext *runtime.Runtime,
 	db database.KeyValueReaderWriterDeleter,
 	skipVerify bool,
 	blockContext *smblock.Context,

@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/database"
@@ -35,7 +35,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext *consensusctx.Context
+	ChainContext *runtime.Runtime
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool
@@ -184,24 +184,24 @@ func (t *Tx) Import(i *tx.Import) error {
 	)
 }
 
-// warpValidatorStateAdapter adapts consensusctx.ValidatorState to warp.ValidatorState
+// warpValidatorStateAdapter adapts runtime.ValidatorState to warp.ValidatorState
 type warpValidatorStateAdapter struct {
 	ctx context.Context
-	vs  consensusctx.ValidatorState
+	vs  runtime.ValidatorState
 }
 
 func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*warp.ValidatorData, error) {
-	validatorSet, err := w.vs.GetValidatorSet(height, netID)
+	validatorSet, err := w.vs.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, err
 	}
-	// Convert from weight map to ValidatorData map
+	// Convert from GetValidatorOutput map to ValidatorData map
 	result := make(map[ids.NodeID]*warp.ValidatorData, len(validatorSet))
-	for nodeID, weight := range validatorSet {
+	for nodeID, validator := range validatorSet {
 		result[nodeID] = &warp.ValidatorData{
 			NodeID:    nodeID,
-			PublicKey: nil, // We don't have public key info here
-			Weight:    weight,
+			PublicKey: validator.PublicKey,
+			Weight:    validator.Weight,
 		}
 	}
 	return result, nil

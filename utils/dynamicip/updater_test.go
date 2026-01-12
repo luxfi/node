@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	luxatomic "github.com/luxfi/atomic"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils"
 )
 
 var _ Resolver = (*mockResolver)(nil)
@@ -39,7 +39,7 @@ func TestNewUpdater(t *testing.T) {
 		originalAddrPort    = netip.AddrPortFrom(originalAddr, port)
 		newAddr             = netip.AddrFrom4([4]byte{1, 2, 3, 4})
 		expectedNewAddrPort = netip.AddrPortFrom(newAddr, port)
-		dynamicIP           = utils.NewAtomic(originalAddrPort)
+		dynamicIP           = luxatomic.NewAtomic(originalAddrPort)
 	)
 	resolver := &mockResolver{
 		onResolve: func(context.Context) (netip.Addr, error) {

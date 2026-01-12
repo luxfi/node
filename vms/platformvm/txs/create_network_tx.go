@@ -6,7 +6,7 @@ package txs
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/node/vms/platformvm/fx"
 )
@@ -24,13 +24,13 @@ type CreateNetworkTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [CreateNetworkTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *CreateNetworkTx) InitCtx(ctx *consensusctx.Context) {
+func (tx *CreateNetworkTx) InitCtx(ctx *runtime.Runtime) {
 	tx.BaseTx.InitCtx(ctx)
 	// Owner doesn't have InitCtx method
 }
 
 // SyntacticVerify verifies that this transaction is well-formed
-func (tx *CreateNetworkTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *CreateNetworkTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

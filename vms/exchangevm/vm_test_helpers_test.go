@@ -12,15 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/address"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/components/lux"
@@ -59,7 +60,7 @@ type envConfig struct {
 // testEnv is the test environment
 type testEnv struct {
 	vm           *VM
-	consensusCtx *consensusctx.Context
+	consensusCtx *runtime.Runtime
 	genesisBytes []byte
 	genesisTx    *txs.Tx
 	testLock     *sync.Mutex
@@ -130,6 +131,8 @@ type mockValidatorState struct {
 	chainID ids.ID
 }
 
+var _ validators.State = (*mockValidatorState)(nil)
+
 func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
 }
@@ -146,11 +149,40 @@ func (m *mockValidatorState) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (m *mockValidatorState) GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Return a simple validator set with the test node
-	return map[ids.NodeID]uint64{
-		ids.GenerateTestNodeID(): 1000,
+	nodeID := ids.GenerateTestNodeID()
+	return map[ids.NodeID]*validators.GetValidatorOutput{
+		nodeID: {
+			NodeID: nodeID,
+			Weight: 1000,
+		},
 	}, nil
+}
+
+func (m *mockValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return m.GetValidatorSet(ctx, height, netID)
+}
+
+func (m *mockValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: make(map[ids.NodeID]*validators.WarpValidator),
+	}, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+	for _, netID := range netIDs {
+		result[netID] = make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			result[netID][height] = &validators.WarpSet{
+				Height:     height,
+				Validators: make(map[ids.NodeID]*validators.WarpValidator),
+			}
+		}
+	}
+	return result, nil
 }
 
 // testSharedMemory wraps atomic.SharedMemory to match VM's SharedMemory interface
@@ -184,7 +216,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	}
 
 	chainID := ids.GenerateTestID()
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID:      constants.UnitTestID,
 		ChainID:        chainID,
 		XChainID:       ids.GenerateTestID(),

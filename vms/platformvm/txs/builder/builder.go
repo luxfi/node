@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
@@ -193,7 +193,7 @@ type ProposalTxBuilder interface {
 }
 
 func New(
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	cfg *config.Config,
 	clk *mockable.Clock,
 	fx fx.Fx,
@@ -221,7 +221,7 @@ type builder struct {
 	state state.State
 
 	cfg       *config.Config
-	ctx       *consensusctx.Context
+	ctx       *runtime.Runtime
 	NetworkID uint32
 	ChainID   ids.ID
 	XAssetID  ids.ID

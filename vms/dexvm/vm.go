@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -85,7 +85,7 @@ type VM struct {
 	lock sync.RWMutex
 
 	// Consensus context - provides chain identity and network info
-	consensusCtx *consensusctx.Context
+	consensusCtx *runtime.Runtime
 
 	// Chain identity
 	chainID ids.ID
@@ -154,7 +154,7 @@ func (vm *VM) Initialize(
 	defer vm.lock.Unlock()
 
 	// Cast consensus context
-	vm.consensusCtx = consensusCtx.(*consensusctx.Context)
+	vm.consensusCtx = consensusCtx.(*runtime.Runtime)
 	vm.chainID = vm.consensusCtx.ChainID
 
 	// Initialize logger from consensus context

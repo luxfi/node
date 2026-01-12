@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/metrics"
 	"github.com/luxfi/node/vms/exchangevm/state"

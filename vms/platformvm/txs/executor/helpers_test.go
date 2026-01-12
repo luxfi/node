@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	validators "github.com/luxfi/consensus/validator"
 	consensusuptime "github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database/memdb"
@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -118,8 +118,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 
 	fx := defaultFx(clk, ctx.Log, isBootstrapped.Get())
 
-	// Convert testcontext.Context to consensus.Context for statetest
-	consensusCtx := &consensuscontext.Context{
+	// Convert testcontext.Context to runtime.Runtime for statetest
+	consensusCtx := &runtime.Runtime{
 		NetworkID:      ctx.NetworkID,
 		ChainID:        ctx.ChainID,
 		NodeID:         ctx.NodeID,
@@ -222,8 +222,8 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
-	// Convert testcontext.Context to consensus.Context
-	consensusCtx := &consensuscontext.Context{
+	// Convert testcontext.Context to runtime.Runtime
+	consensusCtx := &runtime.Runtime{
 		NetworkID: e.ctx.NetworkID,
 
 		ChainID:        e.ctx.ChainID,

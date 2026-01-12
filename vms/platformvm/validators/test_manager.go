@@ -27,6 +27,14 @@ func (testManager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
+func (testManager) GetChainID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (testManager) GetNetworkID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
 func (testManager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }

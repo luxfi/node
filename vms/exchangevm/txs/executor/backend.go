@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/codec"
-	consContext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
@@ -18,7 +18,7 @@ import (
 
 type Backend struct {
 	Ctx           context.Context
-	LuxCtx        *consContext.Context // Lux consensus context
+	LuxCtx        *runtime.Runtime // Lux consensus context
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int
@@ -50,13 +50,13 @@ func (b *Backend) ToChainContext() *verify.ChainContext {
 	return &verify.ChainContext{
 		ChainID:        b.LuxCtx.ChainID,
 		NetID:          b.LuxCtx.ChainID,
-		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(consContext.ValidatorState)},
+		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(runtime.ValidatorState)},
 	}
 }
 
-// validatorStateAdapter adapts consensusctx.ValidatorState to verify.ValidatorState
+// validatorStateAdapter adapts runtime.ValidatorState to verify.ValidatorState
 type validatorStateAdapter struct {
-	vs consContext.ValidatorState
+	vs runtime.ValidatorState
 }
 
 func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {

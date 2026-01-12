@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/codec"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/choices"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
@@ -72,7 +72,7 @@ func newTestState(t testing.TB, db database.Database) *state {
 		validators.NewManager(),
 		upgradetest.GetConfig(upgradetest.Latest),
 		&config.Default,
-		&consensusctx.Context{
+		&runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
 			Log:       log.NoLog{},

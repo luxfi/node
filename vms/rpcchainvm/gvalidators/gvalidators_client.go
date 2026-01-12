@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gvalidators
@@ -103,4 +103,19 @@ func (c *Client) GetWarpValidatorSets(ctx context.Context, heights []uint64, net
 	}
 
 	return result, nil
+}
+
+func (c *Client) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	// Return 0 as minimum height - validators are valid from genesis
+	return 0, nil
+}
+
+func (c *Client) GetChainID(netID ids.ID) (ids.ID, error) {
+	// For RPC client, the netID is the chainID
+	return netID, nil
+}
+
+func (c *Client) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	// For RPC client, the chainID is the networkID
+	return chainID, nil
 }

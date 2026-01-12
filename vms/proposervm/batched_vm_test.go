@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/timer/mockable"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
@@ -44,6 +44,11 @@ func (v *validatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
 }
 
 func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
+	// Not available in test state, return empty ID
+	return ids.Empty, nil
+}
+
+func (v *validatorStateAdapter) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	// Not available in test state, return empty ID
 	return ids.Empty, nil
 }
@@ -659,7 +664,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	}
 
 	vm := VM{
-		ctx:       &consensus.Context{ChainID: chainID},
+		ctx:       &runtime.Runtime{ChainID: chainID},
 		ChainVM:   testVM,
 		batchedVM: testVM,
 	}

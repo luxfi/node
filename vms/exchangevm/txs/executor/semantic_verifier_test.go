@@ -11,16 +11,17 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	consContext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
-	"github.com/luxfi/log"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/log"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
@@ -95,7 +96,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	testNetID := ids.GenerateTestID()
 	backendObj := &Backend{
 		Ctx: ctx,
-		LuxCtx: &consContext.Context{
+		LuxCtx: &runtime.Runtime{
 			ChainID:        ids.GenerateTestID(),
 			ValidatorState: &testValidatorState{chainID: testNetID},
 		},
@@ -465,7 +466,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 
 	backendObj := &Backend{
 		Ctx: ctx,
-		LuxCtx: &consContext.Context{
+		LuxCtx: &runtime.Runtime{
 			ChainID:        chainID, // Use same chainID as baseTx
 			ValidatorState: &testValidatorState{chainID: chainID},
 		},
@@ -779,10 +780,12 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 }
 
-// testValidatorState is a simple stub for consensusctx.ValidatorState used in tests
+// testValidatorState is a simple stub for validators.State used in tests
 type testValidatorState struct {
 	chainID ids.ID // The chain/chain ID this validator state returns
 }
+
+var _ validators.State = (*testValidatorState)(nil)
 
 func (t *testValidatorState) GetChainID(_ ids.ID) (ids.ID, error) {
 	// Returns the chain/chain ID for the given chain
@@ -793,8 +796,12 @@ func (t *testValidatorState) GetNetworkID(_ ids.ID) (ids.ID, error) {
 	return t.chainID, nil
 }
 
-func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	return make(map[ids.NodeID]uint64), nil
+func (t *testValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
+
+func (t *testValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return t.GetValidatorSet(ctx, height, netID)
 }
 
 func (t *testValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -803,6 +810,27 @@ func (t *testValidatorState) GetCurrentHeight(ctx context.Context) (uint64, erro
 
 func (t *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	return 0, nil
+}
+
+func (t *testValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: make(map[ids.NodeID]*validators.WarpValidator),
+	}, nil
+}
+
+func (t *testValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+	for _, netID := range netIDs {
+		result[netID] = make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			result[netID][height] = &validators.WarpSet{
+				Height:     height,
+				Validators: make(map[ids.NodeID]*validators.WarpValidator),
+			}
+		}
+	}
+	return result, nil
 }
 
 func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
@@ -1005,7 +1033,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 
 	backendObj := &Backend{
 		Ctx: ctx,
-		LuxCtx: &consContext.Context{
+		LuxCtx: &runtime.Runtime{
 			ChainID:        chainID, // Use same chainID as baseTx
 			ValidatorState: &testValidatorState{chainID: chainID},
 		},

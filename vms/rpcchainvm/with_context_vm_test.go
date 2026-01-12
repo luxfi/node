@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	vmrpc "github.com/luxfi/vm/rpc"
 )
 
 var (
@@ -158,7 +159,7 @@ func TestContextVMSummary(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.Runtime().Stop(context.Background())
 
-	ctx := &Context{
+	ctx := &vmrpc.Context{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),

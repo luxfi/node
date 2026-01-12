@@ -28,6 +28,14 @@ func (manager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
+func (manager) GetChainID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (manager) GetNetworkID(ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
 func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*consensusvalidators.GetValidatorOutput, error) {
 	return nil, nil
 }

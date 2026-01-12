@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -82,7 +82,7 @@ func NewConsensusNetwork(t *testing.T) *ConsensusNetwork {
 		db := memdb.New()
 		toEngine := make(chan consensuscore.Message, 100)
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: blockchainID,
 		}
 
@@ -422,7 +422,7 @@ func BenchmarkConsensusNetwork(b *testing.B) {
 		db := memdb.New()
 		toEngine := make(chan consensuscore.Message, 100)
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: blockchainID,
 		}
 

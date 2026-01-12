@@ -15,7 +15,7 @@ package luxmock
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -74,7 +74,7 @@ func (mr *MockTransferableInMockRecorder) Cost() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockTransferableIn) InitCtx(arg0 *consensusctx.Context) {
+func (m *MockTransferableIn) InitCtx(arg0 *runtime.Runtime) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

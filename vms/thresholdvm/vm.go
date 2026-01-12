@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/crypto/secp256k1"
@@ -88,7 +88,7 @@ type ChainPermissions struct {
 
 // VM implements the Threshold VM for MPC-as-a-service
 type VM struct {
-	ctx      *consensusctx.Context
+	ctx      *runtime.Runtime
 	db       database.Database
 	config   ThresholdConfig
 	toEngine chan<- core.Message
@@ -217,7 +217,7 @@ func (vm *VM) Initialize(
 ) error {
 	// Type assertions
 	var ok bool
-	vm.ctx, ok = chainCtx.(*consensusctx.Context)
+	vm.ctx, ok = chainCtx.(*runtime.Runtime)
 	if !ok {
 		return errors.New("invalid chain context type")
 	}

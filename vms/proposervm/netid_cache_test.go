@@ -9,11 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache/lru"
 )
 
-// mockValidatorState implements consensus.ValidatorState for testing
+// mockValidatorState implements validators.State for testing
 type mockValidatorState struct {
 	getNetworkIDCallCount int
 	netIDMap              map[ids.ID]ids.ID
@@ -31,7 +32,11 @@ func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (m *mockValidatorState) GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) {
+func (m *mockValidatorState) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
+}
+
+func (m *mockValidatorState) GetCurrentValidators(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 
@@ -41,6 +46,14 @@ func (m *mockValidatorState) GetCurrentHeight(context.Context) (uint64, error) {
 
 func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSets(context.Context, []uint64, []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	return nil, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSet(context.Context, uint64, ids.ID) (*validators.WarpSet, error) {
+	return nil, nil
 }
 
 // TestValidatorStateWrapperCache verifies NetID caching in validatorStateWrapper

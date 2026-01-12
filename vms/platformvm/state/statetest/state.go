@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
@@ -35,7 +35,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *consensusctx.Context
+	Context    *runtime.Runtime
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -45,7 +45,7 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &consensusctx.Context{
+		c.Context = &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
 			Log:       log.NoLog{},

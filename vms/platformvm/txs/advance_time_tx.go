@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -37,7 +37,7 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(*consensusctx.Context) {}
+func (*AdvanceTimeTx) InitCtx(*runtime.Runtime) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -52,7 +52,7 @@ func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*AdvanceTimeTx) SyntacticVerify(*consensusctx.Context) error {
+func (*AdvanceTimeTx) SyntacticVerify(*runtime.Runtime) error {
 	return nil
 }
 

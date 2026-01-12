@@ -6,7 +6,7 @@ package stakeable
 import (
 	"errors"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/node/vms/components/lux"
 )
 
@@ -20,9 +20,9 @@ type LockOut struct {
 	lux.TransferableOut `serialize:"true" json:"output"`
 }
 
-func (s *LockOut) InitCtx(ctx *consensusctx.Context) {
+func (s *LockOut) InitCtx(ctx *runtime.Runtime) {
 	// Initialize the context for the underlying output if it supports it
-	if contextOutput, ok := s.TransferableOut.(interface{ InitCtx(*consensusctx.Context) }); ok {
+	if contextOutput, ok := s.TransferableOut.(interface{ InitCtx(*runtime.Runtime) }); ok {
 		contextOutput.InitCtx(ctx)
 	}
 }

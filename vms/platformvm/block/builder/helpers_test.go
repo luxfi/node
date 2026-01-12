@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/coremock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -64,32 +64,39 @@ const (
 
 var testNet1 *txs.Tx
 
-// mockValidatorState implements consensusctx.ValidatorState for testing
+// mockValidatorState implements validators.State for testing
 type mockValidatorState struct{}
 
 func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
-	// Return the chain ID for the given net ID
 	return ids.Empty, nil
 }
 
 func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains
 	return constants.PrimaryNetworkID, nil
 }
 
-func (m *mockValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Return an empty validator set for tests
-	return make(map[ids.NodeID]uint64), nil
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
+}
+
+func (m *mockValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
 }
 
 func (m *mockValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	// Return a default height for tests
 	return 100, nil
 }
 
 func (m *mockValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	// Return a minimum height for tests
 	return 0, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	return nil, nil
+}
+
+func (m *mockValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return nil, nil
 }
 
 type mutableSharedMemory struct {
@@ -147,7 +154,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	}
 	res.ctx.SharedMemory = res.msm
 
-	// Create a mock ValidatorState that implements consensusctx.ValidatorState
+	// Create a mock ValidatorState that implements runtime.ValidatorState
 	res.ctx.ValidatorState = &mockValidatorState{}
 
 	res.ctx.Lock.Lock()
@@ -156,8 +163,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.fx = defaultFx(t, res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
-	// Convert testcontext.Context to consensusctx.Context for state
-	stateConsensusCtx := &consensusctx.Context{
+	// Convert testcontext.Context to runtime.Runtime for state
+	stateConsensusCtx := &runtime.Runtime{
 		NetworkID: res.ctx.NetworkID,
 		ChainID:   res.ctx.ChainID,
 		NodeID:    res.ctx.NodeID,
@@ -176,8 +183,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.utxosVerifier = utxo.NewVerifier(res.clk, res.fx)
 
 	genesisID := res.state.GetLastAccepted()
-	// Convert testcontext.Context to consensusctx.Context
-	backendConsensusCtx := &consensusctx.Context{
+	// Convert testcontext.Context to runtime.Runtime
+	backendConsensusCtx := &runtime.Runtime{
 		NetworkID:      res.ctx.NetworkID,
 		ChainID:        res.ctx.ChainID,
 		NodeID:         res.ctx.NodeID,
@@ -222,13 +229,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	// Use validatorstest.Manager for validator state
 	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
 
-	// Create a mock warp signer if needed
+	// Tests don't need warp signing, so we pass nil
 	var warpSigner warp.Signer
-	if res.ctx.WarpSigner != nil {
-		if ws, ok := res.ctx.WarpSigner.(warp.Signer); ok {
-			warpSigner = ws
-		}
-	}
 
 	res.network, err = network.New(
 		res.ctx.Log,
@@ -280,8 +282,8 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
-	// Convert testcontext.Context to consensusctx.Context for wallet
-	walletCtx := &consensusctx.Context{
+	// Convert testcontext.Context to runtime.Runtime for wallet
+	walletCtx := &runtime.Runtime{
 		NetworkID:    e.ctx.NetworkID,
 		ChainID:      e.ctx.ChainID,
 		NodeID:       e.ctx.NodeID,

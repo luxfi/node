@@ -13,7 +13,7 @@ import (
 	"context"
 
 	"go.uber.org/mock/gomock"
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	reflect "reflect"
 
 	verify "github.com/luxfi/node/vms/components/verify"
@@ -153,7 +153,7 @@ func (m *MockOwner) EXPECT() *MockOwnerMockRecorder {
 }
 
 // InitCtx mocks base method.
-func (m *MockOwner) InitCtx(arg0 *consensusctx.Context) {
+func (m *MockOwner) InitCtx(arg0 *runtime.Runtime) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }
@@ -167,7 +167,7 @@ func (mr *MockOwnerMockRecorder) InitCtx(arg0 any) *gomock.Call {
 // InitializeContext mocks base method (delegates to InitCtx for compatibility).
 func (m *MockOwner) InitializeContext(arg0 context.Context) error {
 	// This method exists for interface compatibility but does nothing
-	// The actual context initialization is handled via InitCtx with consensusctx.Context
+	// The actual context initialization is handled via InitCtx with runtime.Runtime
 	return nil
 }
 

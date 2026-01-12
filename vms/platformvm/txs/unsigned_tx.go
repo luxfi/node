@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -13,7 +13,7 @@ import (
 
 // ContextInitializable defines the interface for initializing context
 type ContextInitializable interface {
-	InitCtx(ctx *consensusctx.Context)
+	InitCtx(ctx *runtime.Runtime)
 }
 
 // UnsignedTx is an unsigned transaction
@@ -30,7 +30,7 @@ type UnsignedTx interface {
 	Outputs() []*lux.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
-	SyntacticVerify(ctx *consensusctx.Context) error
+	SyntacticVerify(ctx *runtime.Runtime) error
 
 	// Visit calls [visitor] with this transaction's concrete type
 	Visit(visitor Visitor) error

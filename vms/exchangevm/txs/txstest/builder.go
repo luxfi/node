@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/config"

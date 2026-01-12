@@ -18,8 +18,8 @@ import (
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
 
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/codec"
-	"github.com/luxfi/consensus"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/constants"
@@ -363,7 +363,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *consensus.Context
+	ctx        *runtime.Runtime
 	upgrades   upgrade.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -569,7 +569,7 @@ func New(
 	validators validators.Manager,
 	upgrades upgrade.Config,
 	execCfg *config.Config,
-	ctx *consensus.Context,
+	ctx *runtime.Runtime,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {

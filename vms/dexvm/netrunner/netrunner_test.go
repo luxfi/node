@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
@@ -126,7 +126,7 @@ func TestDexVMGenesisFormat(t *testing.T) {
 	toEngine := make(chan consensuscore.Message, 100)
 	appSender := warp.FakeSender{}
 
-	consensusCtx := &consensusctx.Context{
+	consensusCtx := &runtime.Runtime{
 		ChainID: chainID,
 	}
 
@@ -172,7 +172,7 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 		toEngine := make(chan consensuscore.Message, 100)
 		appSender := warp.FakeSender{}
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: chainID,
 		}
 
@@ -283,7 +283,7 @@ func TestDexVMChainDeploymentScenario(t *testing.T) {
 		db := memdb.New()
 		toEngine := make(chan consensuscore.Message, 100)
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: blockchainID, // All validators use same chain ID
 		}
 
@@ -357,7 +357,7 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 		db := memdb.New()
 		toEngine := make(chan consensuscore.Message, 100)
 
-		consensusCtx := &consensusctx.Context{
+		consensusCtx := &runtime.Runtime{
 			ChainID: chainID,
 		}
 

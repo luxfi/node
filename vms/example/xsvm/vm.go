@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain"
@@ -47,7 +47,7 @@ import (
 type VM struct {
 	*p2p.Network
 
-	chainContext *consensuscontext.Context
+	chainContext *runtime.Runtime
 	db           database.Database
 	genesis      *genesis.Genesis
 
@@ -57,7 +57,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *consensuscontext.Context,
+	chainContext *runtime.Runtime,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -72,7 +72,7 @@ func (vm *VM) Initialize(
 
 	metrics := metric.NewRegistry()
 	if metricsReg, ok := chainContext.Metrics.(interface {
-		Register(string, interface{}) error
+		Register(name string, gatherer metric.Gatherer) error
 	}); ok {
 		if err := metricsReg.Register("p2p", metrics); err != nil {
 			return err

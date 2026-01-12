@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -25,7 +25,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: testChainID,
@@ -150,7 +150,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &consensusctx.Context{
+	ctx := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: testChainID,

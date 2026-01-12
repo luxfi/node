@@ -68,7 +68,7 @@ type VM struct {
 
 	// Core components
 	ctx context.Context
-	// consensusCtx    *consensusctx.Context
+	// consensusCtx    *runtime.Runtime
 	log          log.Logger
 	db           database.Database
 	versiondb    *versiondb.Database
@@ -120,7 +120,7 @@ type VM struct {
 // Initialize initializes the VM with the given context
 func (vm *VM) Initialize(
 	ctx context.Context,
-	// chainCtx *consensusctx.Context,
+	// chainCtx *runtime.Runtime,
 	chainCtx interface{},
 	db database.Database,
 	genesisBytes []byte,

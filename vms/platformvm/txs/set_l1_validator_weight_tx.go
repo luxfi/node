@@ -4,7 +4,7 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/vm/types"
 )
@@ -19,7 +19,7 @@ type SetL1ValidatorWeightTx struct {
 	Message types.JSONByteSlice `serialize:"true" json:"message"`
 }
 
-func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

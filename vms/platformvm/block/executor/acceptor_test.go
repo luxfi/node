@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"

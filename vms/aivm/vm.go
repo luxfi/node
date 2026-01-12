@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -83,7 +83,7 @@ func DefaultConfig() Config {
 
 // VM implements the AI Virtual Machine
 type VM struct {
-	ctx    *consensusctx.Context
+	rt     *runtime.Runtime
 	config Config
 
 	// Database
@@ -148,13 +148,14 @@ func (vm *VM) Initialize(
 	fxs []interface{},
 	appSender interface{},
 ) error {
-	// Type assertions
-	var ok bool
-	vm.ctx, ok = chainCtx.(*consensusctx.Context)
-	if !ok {
-		return errors.New("invalid chain context type")
+	// Convert chain context to Runtime
+	if rt, ok := chainCtx.(*runtime.Runtime); ok {
+		vm.rt = rt
+	} else {
+		return errors.New("chain context must be *runtime.Runtime")
 	}
 
+	var ok bool
 	vm.db, ok = db.(database.Database)
 	if !ok {
 		return errors.New("invalid database type")
@@ -171,7 +172,7 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	if logger, ok := vm.ctx.Log.(log.Logger); ok {
+	if logger, ok := vm.rt.Log.(log.Logger); ok {
 		vm.log = logger
 	} else {
 		return errors.New("invalid logger type")

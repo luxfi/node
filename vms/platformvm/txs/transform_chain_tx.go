@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
@@ -114,7 +114,7 @@ type TransformChainTx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *TransformChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *TransformChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

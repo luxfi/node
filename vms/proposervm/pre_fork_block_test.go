@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
@@ -671,7 +671,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	valState.EXPECT().GetCurrentHeight(gomock.Any()).Return(pChainHeight, nil).AnyTimes()
 
 	// Create minimal consensus context for testing
-	consensusCtx := &consensuscontext.Context{
+	consensusCtx := &runtime.Runtime{
 		NetworkID:      1,
 		ChainID:        ids.GenerateTestID(),
 		NodeID:         ids.GenerateTestNodeID(),

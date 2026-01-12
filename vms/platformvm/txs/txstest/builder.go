@@ -6,12 +6,12 @@ package txstest
 import (
 	"context"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
@@ -20,7 +20,7 @@ import (
 )
 
 func NewWalletFactory(
-	ctx *consensusctx.Context,
+	ctx *runtime.Runtime,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
@@ -40,20 +40,20 @@ func NewWalletFactoryWithAssets(
 	luxAssetID ids.ID,
 ) *WalletFactory {
 	// Put the asset ID into the context so it can be retrieved later
-	networkID := consensusctx.GetNetworkID(stdCtx)
-	ctxIDs := consensusctx.IDs{
+	networkID := runtime.GetNetworkID(stdCtx)
+	ctxIDs := runtime.IDs{
 		NetworkID: networkID,
 		ChainID:   ids.Empty,
 		NodeID:    ids.EmptyNodeID,
 		PublicKey: nil,
 		XAssetID:  luxAssetID,
 	}
-	stdCtx = consensusctx.WithIDs(stdCtx, ctxIDs)
+	stdCtx = runtime.WithIDs(stdCtx, ctxIDs)
 
 	// Extract consensus context or create one
-	consCtx := consensusctx.FromContext(stdCtx)
+	consCtx := runtime.FromContext(stdCtx)
 	if consCtx == nil {
-		consCtx = &consensusctx.Context{
+		consCtx = &runtime.Runtime{
 			NetworkID: networkID,
 			XAssetID:  luxAssetID,
 		}
@@ -67,7 +67,7 @@ func NewWalletFactoryWithAssets(
 }
 
 type WalletFactory struct {
-	ctx   *consensusctx.Context
+	ctx   *runtime.Runtime
 	cfg   *config.Config
 	state state.State
 }

@@ -4,7 +4,7 @@
 package chain
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -26,7 +26,7 @@ type Chain interface {
 }
 
 type chain struct {
-	chainContext  *consensusctx.Context
+	chainContext  *runtime.Runtime
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
@@ -36,7 +36,7 @@ type chain struct {
 	verifiedBlocks map[ids.ID]*block
 }
 
-func New(ctx *consensusctx.Context, db database.Database) (Chain, error) {
+func New(ctx *runtime.Runtime, db database.Database) (Chain, error) {
 	// Load the last accepted block data. For a newly created VM, this will be
 	// the genesis. It is assumed the genesis was processed and stored
 	// previously during VM initialization.

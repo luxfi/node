@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
@@ -137,7 +137,7 @@ type SignerReplacementResult struct {
 
 // VM implements the Bridge VM for cross-chain interoperability
 type VM struct {
-	ctx      *consensusctx.Context
+	rt       *runtime.Runtime
 	db       database.Database
 	config   BridgeConfig
 	toEngine chan<- core.Message
@@ -236,11 +236,12 @@ func (vm *VM) Initialize(
 	fxs []interface{},
 	appSender interface{},
 ) error {
-	// Type assertions
+	// Convert chain context to Runtime
 	var ok bool
-	vm.ctx, ok = chainCtx.(*consensusctx.Context)
-	if !ok {
-		return errors.New("invalid chain context type")
+	if rt, ok := chainCtx.(*runtime.Runtime); ok {
+		vm.rt = rt
+	} else {
+		return errors.New("chain context must be *runtime.Runtime")
 	}
 
 	vm.db, ok = db.(database.Database)
@@ -253,7 +254,7 @@ func (vm *VM) Initialize(
 		return errors.New("invalid message channel type")
 	}
 
-	if logger, ok := vm.ctx.Log.(log.Logger); ok {
+	if logger, ok := vm.rt.Log.(log.Logger); ok {
 		vm.log = logger
 	} else {
 		return errors.New("invalid logger type")
@@ -292,7 +293,7 @@ func (vm *VM) Initialize(
 
 	// Initialize MPC components using threshold protocol
 	// Party ID is derived from node ID
-	vm.mpcPartyID = party.ID(vm.ctx.NodeID.String())
+	vm.mpcPartyID = party.ID(vm.rt.NodeID.String())
 
 	// Create worker pool for MPC operations (8 workers)
 	vm.mpcPool = pool.NewPool(8)

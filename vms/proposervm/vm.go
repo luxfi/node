@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/runtime"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	validators "github.com/luxfi/consensus/validator"
@@ -73,7 +73,7 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	ctx            *consensuscontext.Context
+	ctx            *runtime.Runtime
 	db             *versiondb.Database
 	logger         log.Logger
 	validatorState validators.State
@@ -142,7 +142,7 @@ func (vm *VM) Initialize(
 	appSender interface{},
 ) error {
 	// Type assert the interface{} parameters to their concrete types
-	chainContext := chainCtx.(*consensuscontext.Context)
+	chainContext := chainCtx.(*runtime.Runtime)
 	vmDB := db.(database.Database)
 
 	// Explicit type conversions for interface{} fields - Rob Pike approach: no hiding complexity
@@ -871,10 +871,10 @@ func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chainblock.Block) {
 	}
 }
 
-// validatorStateWrapper wraps consensuscontext.ValidatorState to match validators.State
+// validatorStateWrapper wraps runtime.ValidatorState to match validators.State
 type validatorStateWrapper struct {
 	ctx         context.Context
-	vs          consensuscontext.ValidatorState
+	vs          runtime.ValidatorState
 	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 
@@ -883,21 +883,8 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	// Get the validator set from the consensus version which returns map[ids.NodeID]uint64
-	valSet, err := v.vs.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
-	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
-		result[nodeID] = &validators.GetValidatorOutput{
-			NodeID: nodeID,
-			Weight: weight,
-		}
-	}
-	return result, nil
+	// Pass context to the underlying validator state
+	return v.vs.GetValidatorSet(ctx, height, netID)
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -938,7 +925,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 // interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
 type interfacesToConsensusValidatorStateAdapter struct {
 	ctx         context.Context
-	vs          consensuscontext.ValidatorState
+	vs          runtime.ValidatorState
 	netIDsCache cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache
 }
 
@@ -971,32 +958,12 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetNetworkID(chainID ids.ID
 	return netID, nil
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Get the validator set from the interfaces version which takes context
-	valSet, err := a.vs.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Already in the right format - map[ids.NodeID]uint64
-	return valSet, nil
+func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Pass context to the underlying validator state
+	return a.vs.GetValidatorSet(ctx, height, netID)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	// Get the validator set from the interfaces version
-	valSet, err := a.vs.GetValidatorSet(height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*GetValidatorOutput
-	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
-		result[nodeID] = &validators.GetValidatorOutput{
-			NodeID:    nodeID,
-			Weight:    weight,
-			PublicKey: nil, // Public key not available in this interface
-		}
-	}
-	return result, nil
+	// Pass context to the underlying validator state
+	return a.vs.GetValidatorSet(ctx, height, netID)
 }
