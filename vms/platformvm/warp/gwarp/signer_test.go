@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/signertest"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 
 	pb "github.com/luxfi/node/proto/pb/warp"
 )

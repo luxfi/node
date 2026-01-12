@@ -1061,7 +1061,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	p.gotHandshake.Set(true)
 
-	peerIPs := p.Network.Peers(p.id, p.trackedChains, msg.AllNets, knownPeers, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedChains, msg.AllChains, knownPeers, salt)
 
 	// We bypass throttling here to ensure that the handshake message is
 	// acknowledged correctly.
@@ -1123,7 +1123,7 @@ func (p *peer) handleGetPeerList(msg *p2p.GetPeerList) {
 		return
 	}
 
-	peerIPs := p.Network.Peers(p.id, p.trackedChains, msg.AllNets, filter, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedChains, msg.AllChains, filter, salt)
 	if len(peerIPs) == 0 {
 		p.Log.Debug("skipping sending of empty peer list",
 			log.Stringer("nodeID", p.id),

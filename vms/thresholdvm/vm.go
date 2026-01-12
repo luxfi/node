@@ -1481,7 +1481,7 @@ func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, re
 	return nil
 }
 
-// GetBlockIDAtHeight implements the consensusman.HeightIndexedChainVM interface
+// GetBlockIDAtHeight implements the chain.HeightIndexedChainVM interface
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()

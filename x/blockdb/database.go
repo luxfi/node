@@ -205,7 +205,7 @@ func New(config DatabaseConfig, log luxlog.Logger) (*Database, error) {
 	}
 
 	databaseLog := log
-	if databaseLog.IsZero() {
+	if databaseLog == nil || databaseLog.IsZero() {
 		databaseLog = luxlog.Noop()
 	}
 

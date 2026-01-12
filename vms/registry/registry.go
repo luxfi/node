@@ -14,9 +14,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/rpcchainvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/resource"
 )
 
 var (
@@ -51,7 +52,7 @@ type VMGetterConfig struct {
 	FileReader      filesystem.Reader
 	Manager         vms.Manager
 	PluginDirectory string
-	CPUTracker      resource.Manager
+	ProcessTracker  resource.ProcessTracker
 	RuntimeTracker  runtime.Tracker
 	MetricsGatherer metric.MultiGatherer
 }
@@ -141,8 +142,14 @@ func (g *vmGetter) Get(pluginPath string) (vms.Factory, error) {
 	// Try to load as a Go plugin first
 	p, err := plugin.Open(pluginPath)
 	if err != nil {
-		// Not a Go plugin, might be a standalone binary
-		return nil, fmt.Errorf("%w: %v", ErrNotPlugin, err)
+		// Not a Go plugin - treat as rpcchainvm executable binary
+		// This is the standard approach for EVM and other VM binaries
+		return rpcchainvm.NewFactory(
+			pluginPath,
+			g.config.ProcessTracker,
+			g.config.RuntimeTracker,
+			g.config.MetricsGatherer,
+		), nil
 	}
 
 	sym, err := p.Lookup("Factory")

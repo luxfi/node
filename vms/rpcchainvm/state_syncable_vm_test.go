@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 )
 
 // StateSummary implements block.StateSummary for testing
@@ -358,6 +358,10 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	listener, err := grpcutils.NewListener()
 	require.NoError(err)
 
+	// Use log.NewWriter(io.Discard) instead of log.NoLog{} because log.NoLog{}.IsZero()
+	// returns true, which causes subprocess.Bootstrap to reject it with "logger required" error
+	testLogger := log.NewWriter(io.Discard)
+
 	status, stopper, err := subprocess.Bootstrap(
 		context.Background(),
 		listener,
@@ -365,7 +369,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 		&subprocess.Config{
 			Stderr:           os.Stderr,
 			Stdout:           io.Discard,
-			Log:              log.NoLog{},
+			Log:              testLogger,
 			HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 		},
 	)
@@ -374,7 +378,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), log.NoLog{})
+	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), testLogger)
 }
 
 func TestStateSyncEnabled(t *testing.T) {
@@ -383,7 +387,7 @@ func TestStateSyncEnabled(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// test state sync not implemented
 	// Note that enabled == false is returned rather than
@@ -413,7 +417,7 @@ func TestGetOngoingSyncStateSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetOngoingSyncStateSummary(context.Background())
@@ -437,7 +441,7 @@ func TestGetLastStateSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetLastStateSummary(context.Background())
@@ -461,7 +465,7 @@ func TestParseStateSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.ParseStateSummary(context.Background(), mockedSummary.Bytes())
@@ -489,7 +493,7 @@ func TestGetStateSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// test unimplemented case; this is just a guard
 	_, err := vm.GetStateSummary(context.Background(), mockedSummary.Height())
@@ -513,7 +517,7 @@ func TestAcceptStateSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// retrieve the summary first
 	summary, err := vm.GetStateSummary(context.Background(), mockedSummary.Height())
@@ -543,7 +547,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
 	ctx := &Context{

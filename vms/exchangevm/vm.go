@@ -407,6 +407,7 @@ func (vm *VM) initialize(
 		FeeAssetID:    vm.feeAssetID,
 		Bootstrapped:  false,
 		SharedMemory:  vm.SharedMemory,
+		Log:           vm.log,
 	}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())

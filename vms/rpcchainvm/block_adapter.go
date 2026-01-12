@@ -5,46 +5,47 @@ package rpcchainvm
 
 import (
 	consChain "github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/vm/rpc/chain"
 )
 
-// blockChainAdapter wraps blockClient to provide uint8 Status() method for consChain.Block
+// blockChainAdapter wraps chain.BlockClient to provide uint8 Status() method for consChain.Block
 type blockChainAdapter struct {
-	*blockClient
+	*chain.BlockClient
 }
 
 // Status returns the block status as uint8
 func (b *blockChainAdapter) Status() uint8 {
-	return uint8(b.blockClient.Status())
+	return uint8(b.BlockClient.Status())
 }
 
 // Ensure blockChainAdapter implements consChain.Block
 var _ consChain.Block = (*blockChainAdapter)(nil)
 
-// wrapBlockForChain converts a blockClient to have the correct Status() signature for consChain.Block
-func wrapBlockForChain(bc *blockClient) consChain.Block {
+// wrapBlockForChain converts a chain.BlockClient to have the correct Status() signature for consChain.Block
+func wrapBlockForChain(bc *chain.BlockClient) consChain.Block {
 	if bc == nil {
 		return nil
 	}
-	return &blockChainAdapter{blockClient: bc}
+	return &blockChainAdapter{BlockClient: bc}
 }
 
-// blockConsensusAdapter wraps blockClient for consensus interfaces
+// blockConsensusAdapter wraps chain.BlockClient for consensus interfaces
 type blockConsensusAdapter struct {
-	*blockClient
+	*chain.BlockClient
 }
 
 // Status returns the block status as uint8 for consensus
 func (b *blockConsensusAdapter) Status() uint8 {
-	return uint8(b.blockClient.Status())
+	return uint8(b.BlockClient.Status())
 }
 
 // Ensure blockConsensusAdapter implements consensus consChain.Block
 var _ consChain.Block = (*blockConsensusAdapter)(nil)
 
-// wrapBlockForConsensus converts a blockClient for consensus interfaces
-func wrapBlockForConsensus(bc *blockClient) consChain.Block {
+// wrapBlockForConsensus converts a chain.BlockClient for consensus interfaces
+func wrapBlockForConsensus(bc *chain.BlockClient) consChain.Block {
 	if bc == nil {
 		return nil
 	}
-	return &blockConsensusAdapter{blockClient: bc}
+	return &blockConsensusAdapter{BlockClient: bc}
 }

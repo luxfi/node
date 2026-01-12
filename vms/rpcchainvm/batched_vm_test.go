@@ -6,6 +6,7 @@ package rpcchainvm
 import (
 	"bytes"
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/vm/chain/blocktest"
 
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -84,12 +86,13 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	chainCtx := &Context{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
+		Log:       log.NewWriter(io.Discard),
 	}
 
 	require.NoError(vm.Initialize(context.Background(), chainCtx, memdb.New(), nil, nil, nil, nil, nil, nil))

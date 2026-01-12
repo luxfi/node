@@ -715,8 +715,12 @@ func TestShouldDisconnect(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			// Initialize version string in expectedPeer if present to match
-			// the lazy initialization that happens in shouldDisconnect() logging
+			// Initialize version strings in both peers to ensure consistent comparison.
+			// NoOpLogger doesn't evaluate arguments, so we must manually trigger
+			// the lazy initialization of version.String() for both peers.
+			if test.initialPeer.version != nil {
+				_ = test.initialPeer.version.String()
+			}
 			if test.expectedPeer.version != nil {
 				_ = test.expectedPeer.version.String()
 			}

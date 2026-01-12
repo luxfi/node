@@ -1356,7 +1356,7 @@ func (n *Node) initVMs() error {
 			FileReader:      filesystem.NewReader(),
 			Manager:         n.VMManager,
 			PluginDirectory: n.Config.PluginDir,
-			CPUTracker:      n.resourceManager,
+			ProcessTracker:  n.resourceManager,
 			RuntimeTracker:  n.runtimeManager,
 			MetricsGatherer: rpcchainvmMetricsGatherer,
 		}),

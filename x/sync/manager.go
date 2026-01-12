@@ -154,7 +154,7 @@ func NewManager[T any](config ManagerConfig[T], registerer metric.Registerer) (*
 		return nil, ErrNoChangeProofClientProvided
 	case config.DB == nil:
 		return nil, ErrNoDatabaseProvided
-	case config.Log.IsZero():
+	case config.Log == nil:
 		return nil, ErrNoLogProvided
 	case config.SimultaneousWorkLimit == 0:
 		return nil, ErrZeroWorkLimit

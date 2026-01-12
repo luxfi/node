@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 
 	pb "github.com/luxfi/node/proto/pb/vm/runtime"
 )

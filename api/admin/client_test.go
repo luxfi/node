@@ -258,10 +258,12 @@ func TestSetLoggerLevel(t *testing.T) {
 				tt.logLevel,
 				tt.displayLevel,
 			)
-			require.ErrorIs(err, tt.clientErr)
 			if tt.clientErr != nil {
+				require.Error(err)
+				require.Contains(err.Error(), tt.clientErr.Error())
 				return
 			}
+			require.NoError(err)
 			require.Equal(tt.serviceResponse, res)
 		})
 	}

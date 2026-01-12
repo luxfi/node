@@ -16,6 +16,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
+	"github.com/luxfi/log"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -53,7 +54,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		nil,
+		log.NoLog{},
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -418,7 +419,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		nil,
+		log.NoLog{},
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -820,7 +821,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		nil,
+		log.NoLog{},
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -940,7 +941,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		nil,
+		log.NoLog{},
 		[]fxs.Fx{
 			fx,
 		},

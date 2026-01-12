@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/database"
 
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
 )

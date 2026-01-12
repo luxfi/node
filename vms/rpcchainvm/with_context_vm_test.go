@@ -5,6 +5,7 @@ package rpcchainvm
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -154,12 +156,13 @@ func TestContextVMSummary(t *testing.T) {
 
 	// Create and start the plugin
 	vm := buildClientHelper(require, testKey)
-	defer vm.runtime.Stop(context.Background())
+	defer vm.Runtime().Stop(context.Background())
 
 	ctx := &Context{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
+		Log:       log.NewWriter(io.Discard),
 	}
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, []interface{}{}, nil))

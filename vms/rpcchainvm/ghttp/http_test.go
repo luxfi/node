@@ -18,9 +18,9 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 
-	httppb "github.com/luxfi/vm/proto/pb/http"
+	httppb "github.com/luxfi/node/proto/pb/http"
 )
 
 var _ io.Reader = (*infiniteStream)(nil)

@@ -26,22 +26,23 @@ type EngineType int32
 
 const (
 	EngineType_ENGINE_TYPE_UNSPECIFIED EngineType = 0
-	// Only the X-Chain uses lux consensus
-	EngineType_ENGINE_TYPE_DAG   EngineType = 1
-	EngineType_ENGINE_TYPE_CHAIN EngineType = 2
+	// Chain consensus (linear blockchain, used by P-Chain, C-Chain)
+	EngineType_ENGINE_TYPE_CHAIN EngineType = 1
+	// DAG consensus (used by X-Chain)
+	EngineType_ENGINE_TYPE_DAG EngineType = 2
 )
 
 // Enum value maps for EngineType.
 var (
 	EngineType_name = map[int32]string{
 		0: "ENGINE_TYPE_UNSPECIFIED",
-		1: "ENGINE_TYPE_DAG",
-		2: "ENGINE_TYPE_CHAIN",
+		1: "ENGINE_TYPE_CHAIN",
+		2: "ENGINE_TYPE_DAG",
 	}
 	EngineType_value = map[string]int32{
 		"ENGINE_TYPE_UNSPECIFIED": 0,
-		"ENGINE_TYPE_DAG":         1,
-		"ENGINE_TYPE_CHAIN":       2,
+		"ENGINE_TYPE_CHAIN":       1,
+		"ENGINE_TYPE_DAG":         2,
 	}
 )
 

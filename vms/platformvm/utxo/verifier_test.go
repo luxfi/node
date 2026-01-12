@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -36,7 +37,9 @@ func (*dummyUnsignedTx) Visit(txs.Visitor) error {
 func TestVerifySpendUTXOs(t *testing.T) {
 	fx := &secp256k1fx.Fx{}
 
-	require.NoError(t, fx.Initialize(&secp256k1fx.TestVM{}))
+	require.NoError(t, fx.Initialize(&secp256k1fx.TestVM{
+		Log: log.Noop(),
+	}))
 	require.NoError(t, fx.Bootstrapped())
 
 	luxAssetID := ids.GenerateTestID()

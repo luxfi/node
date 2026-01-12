@@ -2853,7 +2853,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	))
 	unsignedWarp := must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 		ctx.NetworkID,
-		chainID,
+		managerChainID,
 		must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 			address,
 			addressedCallPayload.Bytes(),
@@ -3013,7 +3013,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "invalid source address",
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.state.SetNetToL1Conversion(chainID, state.NetToL1Conversion{
-					ChainID: chainID,
+					ChainID: managerChainID,
 				})
 				return nil
 			},
@@ -3032,7 +3032,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 					ctx.NetworkID,
-					chainID,
+					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
 						must[*message.RegisterL1Validator](t)(message.NewRegisterL1Validator(
@@ -3067,7 +3067,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 					ctx.NetworkID,
-					chainID,
+					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
 						must[*message.RegisterL1Validator](t)(message.NewRegisterL1Validator(
@@ -3372,7 +3372,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	)
 	unsignedIncreaseWeightWarpMessage := must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 		ctx.NetworkID,
-		chainID,
+		managerChainID,
 		must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 			address,
 			must[*message.L1ValidatorWeight](t)(message.NewL1ValidatorWeight(
@@ -3397,7 +3397,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	removeValidatorWarpMessage := must[*warp.Message](t)(warp.NewMessage(
 		must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 			ctx.NetworkID,
-			chainID,
+			managerChainID,
 			must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 				address,
 				must[*message.L1ValidatorWeight](t)(message.NewL1ValidatorWeight(
@@ -3557,7 +3557,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "invalid source address",
 			updateExecutor: func(e *standardTxExecutor) error {
 				e.state.SetNetToL1Conversion(chainID, state.NetToL1Conversion{
-					ChainID: chainID,
+					ChainID: managerChainID,
 				})
 				return nil
 			},
@@ -3587,7 +3587,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
 					ctx.NetworkID,
-					chainID,
+					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
 						must[*message.L1ValidatorWeight](t)(message.NewL1ValidatorWeight(

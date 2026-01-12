@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
 	"github.com/luxfi/resource"
-	"github.com/luxfi/vm/rpcchainvm/grpcutils"
+	"github.com/luxfi/vm/rpc/grpcutils"
 )
 
 var _ vms.Factory = (*factory)(nil)

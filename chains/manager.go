@@ -94,7 +94,7 @@ const (
 	meterdagvmNamespace   = constants.PlatformName + utilmetric.NamespaceSeparator + "meterdagvm"
 	proposervmNamespace   = constants.PlatformName + utilmetric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + utilmetric.NamespaceSeparator + "p2p"
-	chainNamespace        = constants.PlatformName + utilmetric.NamespaceSeparator + "consensusman"
+	chainNamespace        = constants.PlatformName + utilmetric.NamespaceSeparator + "linear"
 	stakeNamespace        = constants.PlatformName + utilmetric.NamespaceSeparator + "stake"
 )
 
@@ -416,8 +416,8 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	consensusmanGatherer := metrics.NewLabelGatherer(ChainLabel)
-	if err := config.Metrics.Register(chainNamespace, consensusmanGatherer); err != nil {
+	linearGatherer := metrics.NewLabelGatherer(ChainLabel)
+	if err := config.Metrics.Register(chainNamespace, linearGatherer); err != nil {
 		return nil, err
 	}
 
@@ -449,7 +449,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		meterGRAPHVMGatherer: meterGRAPHVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
-		linearGatherer:       consensusmanGatherer,
+		linearGatherer:       linearGatherer,
 		stakeGatherer:        stakeGatherer,
 		vmGatherer:           make(map[ids.ID]metrics.MultiGatherer),
 	}, nil
@@ -1976,7 +1976,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		requestID,
 		10*time.Second, // Deadline
 		blockID,
-		p2p.EngineType_ENGINE_TYPE_CONSENSUSMAN, // Use Snowman (chain) engine type
+		p2p.EngineType_ENGINE_TYPE_CHAIN, // Use chain consensus engine type
 	)
 	if err != nil {
 		b.logger.Error("failed to create context request message",

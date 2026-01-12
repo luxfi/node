@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
@@ -969,6 +970,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *tx
 			TxFee:            0,
 			CreateAssetTxFee: 0,
 		},
+		Log: log.NoLog{},
 	}
 	if sharedMemory != nil {
 		backend.SharedMemory = &sharedMemoryAdapter{sm: sharedMemory}

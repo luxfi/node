@@ -49,8 +49,8 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 	extwarp "github.com/luxfi/warp"
 
-	consensuschain "github.com/luxfi/consensus/engine/chain"
-	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
+	chainengine "github.com/luxfi/consensus/engine/chain"
+	chain "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -61,9 +61,9 @@ import (
 )
 
 var (
-	_ consensusmanblock.ChainVM                      = (*VM)(nil)
-	_ consensusmanblock.BuildBlockWithContextChainVM = (*VM)(nil)
-	_ consensuschain.BlockBuilder                    = (*VM)(nil) // For consensus engine integration
+	_ chain.ChainVM                      = (*VM)(nil)
+	_ chain.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ chainengine.BlockBuilder                    = (*VM)(nil) // For consensus engine integration
 	_ secp256k1fx.VM                                 = (*VM)(nil)
 	_ validators.State                               = (*VM)(nil)
 )
@@ -163,7 +163,7 @@ type VM struct {
 
 	// toEngine is the channel to send messages to the consensus engine
 	// This is used to notify the engine when there are pending transactions
-	toEngine chan<- consensusmanblock.Message
+	toEngine chan<- chain.Message
 }
 
 // GetChainID returns the chain ID of this VM
@@ -210,10 +210,10 @@ func (vm *VM) Initialize(
 	var toEngineChannelType string
 	if toEngineIntf != nil {
 		// Try bidirectional channel first (what manager.go actually passes)
-		if toEngine, ok := toEngineIntf.(chan consensusmanblock.Message); ok {
+		if toEngine, ok := toEngineIntf.(chan chain.Message); ok {
 			vm.toEngine = toEngine
 			toEngineChannelType = "bidirectional"
-		} else if toEngine, ok := toEngineIntf.(chan<- consensusmanblock.Message); ok {
+		} else if toEngine, ok := toEngineIntf.(chan<- chain.Message); ok {
 			// Also accept send-only channel for flexibility
 			vm.toEngine = toEngine
 			toEngineChannelType = "send-only"
@@ -389,7 +389,7 @@ func (vm *VM) Initialize(
 	)
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
-	// Create wrapper for AppSender to adapt consensusmanblock.AppSender to network expected interface
+	// Create wrapper for AppSender to adapt chain.AppSender to network expected interface
 	adaptedAppSender := &appSenderAdapter{appSender}
 
 	// Type assert WarpSigner (may be nil for Platform chain)
@@ -906,7 +906,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errors.Join(errs...)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (consensusmanblock.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -916,7 +916,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (consensusmanblock.Block, 
 	return wrapBlock(vm.manager.NewBlock(statelessBlk)), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensusmanblock.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 
@@ -925,10 +925,10 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.manager.LastAccepted(), nil
 }
 
-// BuildBlock implements consensuschain.BlockBuilder for consensus engine integration.
+// BuildBlock implements chainengine.BlockBuilder for consensus engine integration.
 // This method is required for the consensus engine to be able to build new P-chain blocks.
 // It delegates to the embedded Builder which handles the actual block construction.
-func (vm *VM) BuildBlock(ctx context.Context) (consensusmanblock.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	if vm.Builder == nil {
 		return nil, errors.New("block builder not initialized")
 	}
@@ -962,10 +962,10 @@ func (vm *VM) forwardNotifications() {
 			continue
 		}
 
-		// Convert consensuscore.Message to consensusmanblock.Message
+		// Convert consensuscore.Message to chain.Message
 		// Both use uint32 for the message type (PendingTxs = 0)
-		engineMsg := consensusmanblock.Message{
-			Type: consensusmanblock.MessageType(msg.Type),
+		engineMsg := chain.Message{
+			Type: chain.MessageType(msg.Type),
 		}
 
 		// Send to the consensus engine (non-blocking to avoid deadlocks)
@@ -1112,13 +1112,13 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
 }
 
 // NewHTTPHandler returns a new HTTP handler that can handle API calls
-// This is required by the consensusmanblock.ChainVM interface
+// This is required by the chain.ChainVM interface
 func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 	return nil, nil
 }
 
 // WaitForEvent blocks until either the given context is cancelled, or a message is returned
-// This is required by the linearblock.ChainVM interface
+// This is required by the chain.ChainVM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// Delegate to the Builder which waits for mempool transactions or staker changes
 	if vm.Builder == nil {

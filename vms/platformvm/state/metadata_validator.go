@@ -20,20 +20,35 @@ import (
 // CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen
 const preDelegateeRewardSize = codec.VersionSize + 3*wrappers.LongLen
 
+// preStakerStartTimeSize is the size of codec marshalling
+// [preStakerStartTimeMetadata].
+//
+// CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen + PotentialDelegateeRewardLen
+const preStakerStartTimeSize = codec.VersionSize + 4*wrappers.LongLen
+
 var _ validatorState = (*metadata)(nil)
 
 type preDelegateeRewardMetadata struct {
-	UpDuration      time.Duration `v0:"true"`
-	LastUpdated     uint64        `v0:"true"` // Unix time in seconds
-	PotentialReward uint64        `v0:"true"`
+	UpDuration      time.Duration `serialize:"true"`
+	LastUpdated     uint64        `serialize:"true"` // Unix time in seconds
+	PotentialReward uint64        `serialize:"true"`
+}
+
+// preStakerStartTimeMetadata is used for backward compatibility with data
+// that was written before StakerStartTime was added.
+type preStakerStartTimeMetadata struct {
+	UpDuration               time.Duration `serialize:"true"`
+	LastUpdated              uint64        `serialize:"true"` // Unix time in seconds
+	PotentialReward          uint64        `serialize:"true"`
+	PotentialDelegateeReward uint64        `serialize:"true"`
 }
 
 type validatorMetadata struct {
-	UpDuration               time.Duration `v0:"true"`
-	LastUpdated              uint64        `v0:"true"` // Unix time in seconds
-	PotentialReward          uint64        `v0:"true"`
-	PotentialDelegateeReward uint64        `v0:"true"`
-	StakerStartTime          uint64        `          v1:"true"`
+	UpDuration               time.Duration `serialize:"true"`
+	LastUpdated              uint64        `serialize:"true"` // Unix time in seconds
+	PotentialReward          uint64        `serialize:"true"`
+	PotentialDelegateeReward uint64        `serialize:"true"`
+	StakerStartTime          uint64        `serialize:"true"`
 
 	txID        ids.ID
 	lastUpdated time.Time
@@ -67,8 +82,21 @@ func parseValidatorMetadata(bytes []byte, metadata *validatorMetadata) error {
 		metadata.UpDuration = tmp.UpDuration
 		metadata.LastUpdated = tmp.LastUpdated
 		metadata.PotentialReward = tmp.PotentialReward
+
+	case preStakerStartTimeSize:
+		// All fields except StakerStartTime were stored (pre-v1 format)
+		tmp := preStakerStartTimeMetadata{}
+		if _, err := MetadataCodec.Unmarshal(bytes, &tmp); err != nil {
+			return err
+		}
+
+		metadata.UpDuration = tmp.UpDuration
+		metadata.LastUpdated = tmp.LastUpdated
+		metadata.PotentialReward = tmp.PotentialReward
+		metadata.PotentialDelegateeReward = tmp.PotentialDelegateeReward
+
 	default:
-		// everything was stored
+		// everything was stored (v1+ format with StakerStartTime)
 		if _, err := MetadataCodec.Unmarshal(bytes, metadata); err != nil {
 			return err
 		}
