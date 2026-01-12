@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -36,7 +33,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/compress"
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/net/ips"
 	"github.com/luxfi/warp"
 )

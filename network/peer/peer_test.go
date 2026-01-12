@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -33,7 +30,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/compress"
+	compression "github.com/luxfi/compress"
 )
 
 type testPeer struct {

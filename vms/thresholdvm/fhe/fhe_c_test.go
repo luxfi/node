@@ -1,6 +1,6 @@
 //go:build cgo
 
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fhe
@@ -9,11 +9,12 @@ import (
 	"testing"
 
 	"github.com/luxfi/lattice/v7/ring"
+	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGPUFHEAccelerator(t *testing.T) {
-	accel, err := NewGPUFHEAccelerator(nil)
+func TestFHEAccelerator(t *testing.T) {
+	accel, err := NewFHEAccelerator(log.Noop())
 	require.NoError(t, err)
 	require.NotNil(t, accel)
 
@@ -21,8 +22,8 @@ func TestGPUFHEAccelerator(t *testing.T) {
 	t.Logf("Backend: %s", accel.Backend())
 }
 
-func TestGPUBatchNTT(t *testing.T) {
-	accel, err := NewGPUFHEAccelerator(nil)
+func TestBatchNTT(t *testing.T) {
+	accel, err := NewFHEAccelerator(log.Noop())
 	require.NoError(t, err)
 
 	// Test that batch operations work via CPU path
@@ -64,7 +65,7 @@ func TestGPUBatchNTT(t *testing.T) {
 	}
 
 	t.Logf("GPU enabled: %v, backend: %s", accel.IsEnabled(), accel.Backend())
-	t.Logf("GPU stats: %+v", accel.Stats())
+	t.Logf("Stats: %+v", accel.Stats())
 }
 
 func BenchmarkNTTForwardCPU(b *testing.B) {
@@ -84,8 +85,8 @@ func BenchmarkNTTForwardCPU(b *testing.B) {
 	}
 }
 
-func BenchmarkNTTForwardGPU(b *testing.B) {
-	accel, err := NewGPUFHEAccelerator(nil)
+func BenchmarkNTTForwardAccel(b *testing.B) {
+	accel, err := NewFHEAccelerator(log.Noop())
 	if err != nil || !accel.IsEnabled() {
 		b.Skip("GPU not available")
 	}
@@ -122,7 +123,7 @@ func BenchmarkBatchNTT256(b *testing.B) {
 }
 
 func benchmarkBatchNTT(b *testing.B, batchSize int) {
-	accel, err := NewGPUFHEAccelerator(nil)
+	accel, err := NewFHEAccelerator(log.Noop())
 	if err != nil {
 		b.Skip("GPU not available")
 	}
@@ -169,8 +170,8 @@ func BenchmarkPolyMulCPU(b *testing.B) {
 	}
 }
 
-func BenchmarkBatchPolyMulGPU(b *testing.B) {
-	accel, err := NewGPUFHEAccelerator(nil)
+func BenchmarkBatchPolyMulAccel(b *testing.B) {
+	accel, err := NewFHEAccelerator(log.Noop())
 	if err != nil || !accel.IsEnabled() {
 		b.Skip("GPU not available")
 	}

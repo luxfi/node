@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package compression
@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/units"
 )
 
-const maxMessageSize = 2 * units.MiB // Max message size. Can't import due to cycle.
+const maxMessageSize = int64(2 * units.MiB) // Max message size. Can't import due to cycle.
 
 var (
 	newCompressorFuncs = map[Type]func(maxSize int64) (Compressor, error){
@@ -38,7 +38,7 @@ var (
 func TestDecompressZipBombs(t *testing.T) {
 	for compressionType, zipBomb := range zipBombs {
 		// Make sure that the hardcoded zip bomb would be a valid message.
-		require.Less(t, len(zipBomb), maxMessageSize)
+		require.Less(t, len(zipBomb), int(maxMessageSize))
 
 		newCompressorFunc := newCompressorFuncs[compressionType]
 
@@ -95,7 +95,7 @@ func TestCompressDecompress(t *testing.T) {
 			require.NoError(err)
 			require.Equal(data, dataDecompressed)
 
-			maxMessage := utils.RandomBytes(maxMessageSize)
+			maxMessage := utils.RandomBytes(int(maxMessageSize))
 			maxMessageCompressed, err := compressor.Compress(maxMessage)
 			require.NoError(err)
 
@@ -118,7 +118,7 @@ func TestSizeLimiting(t *testing.T) {
 			compressor, err := compressorFunc(maxMessageSize)
 			require.NoError(err)
 
-			data := make([]byte, maxMessageSize+1)
+			data := make([]byte, int(maxMessageSize)+1)
 			_, err = compressor.Compress(data) // should be too large
 			require.ErrorIs(err, ErrMsgTooLarge)
 
@@ -169,7 +169,7 @@ func fuzzHelper(f *testing.F, compressionType Type) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
-		if len(data) > maxMessageSize {
+		if len(data) > int(maxMessageSize) {
 			_, err := compressor.Compress(data)
 			require.ErrorIs(err, ErrMsgTooLarge)
 		}
@@ -188,9 +188,9 @@ func BenchmarkCompress(b *testing.B) {
 	sizes := []int{
 		0,
 		256,
-		units.KiB,
-		units.MiB,
-		maxMessageSize,
+		int(units.KiB),
+		int(units.MiB),
+		int(maxMessageSize),
 	}
 	for compressionType, newCompressorFunc := range newCompressorFuncs {
 		if compressionType == TypeNone {
@@ -216,9 +216,9 @@ func BenchmarkDecompress(b *testing.B) {
 	sizes := []int{
 		0,
 		256,
-		units.KiB,
-		units.MiB,
-		maxMessageSize,
+		int(units.KiB),
+		int(units.MiB),
+		int(maxMessageSize),
 	}
 	for compressionType, newCompressorFunc := range newCompressorFuncs {
 		if compressionType == TypeNone {

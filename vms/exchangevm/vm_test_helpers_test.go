@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package exchangevm
@@ -136,10 +136,6 @@ func (m *mockValidatorState) GetChainID(ids.ID) (ids.ID, error) {
 
 func (m *mockValidatorState) GetNetworkID(ids.ID) (ids.ID, error) {
 	return m.chainID, nil
-}
-
-func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
 }
 
 func (m *mockValidatorState) GetMinimumHeight(context.Context) (uint64, error) {

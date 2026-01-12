@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -20,8 +20,6 @@ import (
 	"github.com/luxfi/constants"
 
 	"github.com/luxfi/crypto/secp256k1"
-
-	"github.com/luxfi/constants"
 
 	"github.com/luxfi/node/vms/exchangevm/block"
 

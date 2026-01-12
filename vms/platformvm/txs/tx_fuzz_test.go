@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -505,8 +505,8 @@ func (v *visitor) AddPermissionlessValidatorTx(*AddPermissionlessValidatorTx) er
 func (v *visitor) AddValidatorTx(*AddValidatorTx) error                             { return nil }
 func (v *visitor) AdvanceTimeTx(*AdvanceTimeTx) error                               { return nil }
 func (v *visitor) BaseTx(*BaseTx) error                                             { return nil }
-func (v *visitor) CreateChainTx(*CreateChainTx) error                     { return nil }
-func (v *visitor) CreateChainTx(*CreateChainTx) error                               { return nil }
+func (v *visitor) CreateChainTx(*CreateChainTx) error   { return nil }
+func (v *visitor) CreateNetworkTx(*CreateNetworkTx) error { return nil }
 func (v *visitor) ExportTx(*ExportTx) error                                         { return nil }
 func (v *visitor) ImportTx(*ImportTx) error                                         { return nil }
 func (v *visitor) RemoveChainValidatorTx(*RemoveChainValidatorTx) error             { return nil }

@@ -1,7 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blockdb
@@ -24,7 +21,7 @@ func TestDataSplitting(t *testing.T) {
 	defer cleanup()
 
 	// Override the compressor so we can have fixed size blocks
-	store.compressor = compression.NewNoCompressor()
+	store.compressor = compress.NewNoCompressor()
 
 	// create 11 blocks, 1kb each
 	numBlocks := 11
@@ -60,7 +57,7 @@ func TestDataSplitting(t *testing.T) {
 	config = config.WithDataDir(store.config.DataDir).WithIndexDir(store.config.IndexDir)
 	store, err = New(config, store.log)
 	require.NoError(t, err)
-	store.compressor = compression.NewNoCompressor()
+	store.compressor = compress.NewNoCompressor()
 	defer store.Close()
 	for i := range numBlocks {
 		readBlock, err := store.ReadBlock(uint64(i))

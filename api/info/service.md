@@ -643,7 +643,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"info.uptime",
     "params" :{
-        "subnetID":"29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
+        "netID":"29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
     }
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```

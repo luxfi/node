@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package factory
@@ -63,10 +63,10 @@ func TestMeterDBMetricsRegistration(t *testing.T) {
 	// Should have metrics from database operations
 	foundMetrics := false
 	for _, family := range families {
-		name := family.GetName()
+		name := family.Name
 		if name != "" {
 			foundMetrics = true
-			t.Logf("Found metric family: %s with %d metrics", name, len(family.GetMetric()))
+			t.Logf("Found metric family: %s with %d metrics", name, len(family.Metrics))
 		}
 	}
 
@@ -206,10 +206,10 @@ func TestNodeDatabasePattern(t *testing.T) {
 	// Track which metric types we found
 	metricTypes := make(map[string]int)
 	for _, family := range families {
-		name := family.GetName()
+		name := family.Name
 		if name != "" {
-			metricTypes[name] = len(family.GetMetric())
-			t.Logf("Found metric: %s with %d entries", name, len(family.GetMetric()))
+			metricTypes[name] = len(family.Metrics)
+			t.Logf("Found metric: %s with %d entries", name, len(family.Metrics))
 		}
 	}
 

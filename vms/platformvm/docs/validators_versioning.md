@@ -11,7 +11,7 @@ In this brief document we dive into the technicalities of how `platformVM` track
 The entry point to retrieve validator information at a given height is the `GetValidatorSet` method in the `validators` package. Here is its signature:
 
 ```golang
-GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*GetValidatorOutput, error)
+GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*GetValidatorOutput, error)
 ```
 
 `GetValidatorSet` lets any VM specify a Net and a height and returns the data of all Net validators active at the requested height, and only those.

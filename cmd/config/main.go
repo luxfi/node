@@ -127,7 +127,8 @@ func dumpMarkdown(s *spec.ConfigSpec) {
 		return string(cats[i]) < string(cats[j])
 	})
 
-	fmt.Println("## Table of Contents\n")
+	fmt.Println("## Table of Contents")
+	fmt.Println()
 	for _, cat := range cats {
 		fmt.Printf("- [%s](#%s)\n", s.Categories[cat], strings.ToLower(string(cat)))
 	}

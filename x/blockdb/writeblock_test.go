@@ -1,7 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blockdb
@@ -305,7 +302,7 @@ func TestWriteBlock_Errors(t *testing.T) {
 
 			store, cleanup := newTestDatabase(t, config)
 			if tt.disableCompression {
-				store.compressor = compression.NewNoCompressor()
+				store.compressor = compress.NewNoCompressor()
 			}
 			defer cleanup()
 

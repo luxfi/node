@@ -378,7 +378,7 @@ platform.getBlockchains() ->
   blockchains: []{
     id: string,
     name: string,
-    subnetID: string,
+    netID: string,
     vmID: string
   }
 }
@@ -387,7 +387,7 @@ platform.getBlockchains() ->
 - `blockchains` is all of the blockchains that exists on the Lux network.
 - `name` is the human-readable name of this blockchain.
 - `id` is the blockchain’s ID.
-- `subnetID` is the ID of the Net that validates this blockchain.
+- `netID` is the ID of the Net that validates this blockchain.
 - `vmID` is the ID of the Virtual Machine the blockchain runs.
 
 **Example Call:**
@@ -411,43 +411,43 @@ curl -X POST --data '{
       {
         "id": "2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM",
         "name": "X-Chain",
-        "subnetID": "11111111111111111111111111111111LpoYY",
+        "netID": "11111111111111111111111111111111LpoYY",
         "vmID": "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq"
       },
       {
         "id": "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5",
         "name": "C-Chain",
-        "subnetID": "11111111111111111111111111111111LpoYY",
+        "netID": "11111111111111111111111111111111LpoYY",
         "vmID": "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6"
       },
       {
         "id": "CqhF97NNugqYLiGaQJ2xckfmkEr8uNeGG5TQbyGcgnZ5ahQwa",
         "name": "Simple DAG Payments",
-        "subnetID": "11111111111111111111111111111111LpoYY",
+        "netID": "11111111111111111111111111111111LpoYY",
         "vmID": "sqjdyTKUSrQs1YmKDTUbdUhdstSdtRTGRbUn8sqK8B6pkZkz1"
       },
       {
         "id": "VcqKNBJsYanhVFxGyQE5CyNVYxL3ZFD7cnKptKWeVikJKQkjv",
         "name": "Simple Chain Payments",
-        "subnetID": "11111111111111111111111111111111LpoYY",
+        "netID": "11111111111111111111111111111111LpoYY",
         "vmID": "sqjchUjzDqDfBPGjfQq2tXW1UCwZTyvzAWHsNzF2cb1eVHt6w"
       },
       {
         "id": "2SMYrx4Dj6QqCEA3WjnUTYEFSnpqVTwyV3GPNgQqQZbBbFgoJX",
         "name": "Simple Timestamp Server",
-        "subnetID": "11111111111111111111111111111111LpoYY",
+        "netID": "11111111111111111111111111111111LpoYY",
         "vmID": "tGas3T58KzdjLHhBDMnH2TvrddhqTji5iZAMZ3RXs2NLpSnhH"
       },
       {
         "id": "KDYHHKjM4yTJTT8H8qPs5KXzE6gQH5TZrmP1qVr1P6qECj3XN",
         "name": "My new timestamp",
-        "subnetID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
+        "netID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
         "vmID": "tGas3T58KzdjLHhBDMnH2TvrddhqTji5iZAMZ3RXs2NLpSnhH"
       },
       {
         "id": "2TtHFqEAAJ6b33dromYMqfgavGPF3iCpdG3hwNMiart2aB5QHi",
         "name": "My new XVM",
-        "subnetID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
+        "netID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
         "vmID": "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq"
       }
     ]
@@ -514,7 +514,7 @@ an upper bound because it does not account for burnt tokens, including transacti
 
 ```
 platform.getCurrentSupply ({
-  subnetID: string // optional
+  netID: string // optional
 }) -> { supply: int }
 ```
 
@@ -527,7 +527,7 @@ curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.getCurrentSupply",
     "params": {
-        "subnetID": "11111111111111111111111111111111LpoYY"
+        "netID": "11111111111111111111111111111111LpoYY"
     },
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
@@ -555,7 +555,7 @@ List the current validators of the given Net.
 
 ```
 platform.getCurrentValidators({
-  subnetID: string, // optional
+  netID: string, // optional
   nodeIDs: string[], // optional
 }) -> {
     validators: []{
@@ -615,41 +615,41 @@ platform.getCurrentValidators({
 }
 ```
 
-- `subnetID` is the Net whose current validators are returned. If omitted, returns the current
+- `netID` is the Net whose current validators are returned. If omitted, returns the current
   validators of the Primary Network.
 - `nodeIDs` is a list of the NodeIDs of current validators to request. If omitted, all current
   validators are returned. If a specified NodeID is not in the set of current validators, it will
   not be included in the response.
-- `validators` can include different fields based on the subnet type (L1, PoA Nets, the Primary Network):
+- `validators` can include different fields based on the net type (L1, PoA Nets, the Primary Network):
   - `txID` is the validator transaction.
   - `startTime` is the Unix time when the validator starts validating the Net.
-  - `endTime` is the Unix time when the validator stops validating the Net. Ommitted if `subnetID` is a L1 Net.
+  - `endTime` is the Unix time when the validator stops validating the Net. Ommitted if `netID` is a L1 Net.
   - `nodeID` is the validator’s node ID.
   - `weight` is the validator’s weight (stake) when sampling validators.
-  - `validationID` is the ID for L1 subnet validator registration transaction. Omitted if `subnetID` is not an L1 Net.
-  - `publicKey` is the compressed BLS public key of the validator. Omitted if `subnetID` is not an L1 Net.
-  - `remainingBalanceOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that will receive any withdrawn balance. Omitted if `subnetID` is not an L1 Net.
-  - `deactivationOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that can withdraw the balance. Omitted if `subnetID` is not an L1 Net.
-  - `minNonce` is minimum nonce that must be included in a `SetL1ValidatorWeightTx` for the transaction to be valid. Omitted if `subnetID` is not an L1 Net.
-  - `balance` is current remaining balance that can be used to pay for the validators continuous fee. Omitted if `subnetID` is not an L1 Net.
+  - `validationID` is the ID for L1 net validator registration transaction. Omitted if `netID` is not an L1 Net.
+  - `publicKey` is the compressed BLS public key of the validator. Omitted if `netID` is not an L1 Net.
+  - `remainingBalanceOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that will receive any withdrawn balance. Omitted if `netID` is not an L1 Net.
+  - `deactivationOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that can withdraw the balance. Omitted if `netID` is not an L1 Net.
+  - `minNonce` is minimum nonce that must be included in a `SetL1ValidatorWeightTx` for the transaction to be valid. Omitted if `netID` is not an L1 Net.
+  - `balance` is current remaining balance that can be used to pay for the validators continuous fee. Omitted if `netID` is not an L1 Net.
   - `validationRewardOwner` is an `OutputOwners` output which includes `locktime`, `threshold` and
     array of `addresses`. Specifies the owner of the potential reward earned from staking. Omitted
-    if `subnetID` is not the Primary Network.
+    if `netID` is not the Primary Network.
   - `delegationRewardOwner` is an `OutputOwners` output which includes `locktime`, `threshold` and
-    array of `addresses`. Specifies the owner of the potential reward earned from delegations. Omitted if `subnetID` is not the Primary Network.
-  - `potentialReward` is the potential reward earned from staking. Omitted if `subnetID` is not the Primary Network.
+    array of `addresses`. Specifies the owner of the potential reward earned from delegations. Omitted if `netID` is not the Primary Network.
+  - `potentialReward` is the potential reward earned from staking. Omitted if `netID` is not the Primary Network.
   - `delegationFeeRate` is the percent fee this validator charges when others delegate stake to
-    them. Omitted if `subnetID` is not the Primary Network.
+    them. Omitted if `netID` is not the Primary Network.
   - `uptime` is the % of time the queried node has reported the peer as online and validating the
-    Net. Omitted if `subnetID` is not the Primary Network.
-  - `connected` is if the node is connected and tracks the Net. Omitted if `subnetID` is not the Primary Network.
+    Net. Omitted if `netID` is not the Primary Network.
+  - `connected` is if the node is connected and tracks the Net. Omitted if `netID` is not the Primary Network.
   - `signer` is the node's BLS public key and proof of possession. Omitted if the validator doesn't
-    have a BLS public key. Omitted if `subnetID` is not the Primary Network.
+    have a BLS public key. Omitted if `netID` is not the Primary Network.
   - `delegatorCount` is the number of delegators on this validator.
-    Omitted if `subnetID` is not the Primary Network.
+    Omitted if `netID` is not the Primary Network.
   - `delegatorWeight` is total weight of delegators on this validator.
-    Omitted if `subnetID` is not the Primary Network.
-  - `delegators` is the list of delegators to this validator. Omitted if `subnetID` is not the Primary Network. Omitted unless `nodeIDs` specifies a single NodeID.
+    Omitted if `netID` is not the Primary Network.
+  - `delegators` is the list of delegators to this validator. Omitted if `netID` is not the Primary Network. Omitted unless `nodeIDs` specifies a single NodeID.
     - `txID` is the delegator transaction.
     - `startTime` is the Unix time when the delegator started.
     - `endTime` is the Unix time when the delegator stops.
@@ -901,7 +901,7 @@ platform.getL1Validator({
     validationID: string,
 }) -> {
     validationID: string,
-    subnetID: string,
+    netID: string,
     nodeID: string,
     publicKey: string,
     remainingBalanceOwner: {
@@ -922,8 +922,8 @@ platform.getL1Validator({
 }
 ```
 
-- `validationID` is the ID for L1 subnet validator registration transaction.
-- `subnetID` is the L1 this validator is validating.
+- `validationID` is the ID for L1 net validator registration transaction.
+- `netID` is the L1 this validator is validating.
 - `nodeID` is the node ID of the validator.
 - `publicKey` is the compressed BLS public key of the validator.
 - `remainingBalanceOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that will receive any withdrawn balance.
@@ -953,7 +953,7 @@ curl -X POST --data '{
 {
   "jsonrpc": "2.0",
   "result": {
-    "subnetID": "2DeHa7Qb6sufPkmQcFWG2uCd4pBPv9WB6dkzroiMQhd1NSRtof",
+    "netID": "2DeHa7Qb6sufPkmQcFWG2uCd4pBPv9WB6dkzroiMQhd1NSRtof",
     "nodeID": "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg",
     "validationID": "9FAftNgNBrzHUMMApsSyV6RcFiL9UmCbvsCu28xdLV2mQ7CMo",
     "publicKey": "0x900c9b119b5c82d781d4b49be78c3fc7ae65f2b435b7ed9e3a8b9a03e475edff86d8a64827fec8db23a6f236afbf127d",
@@ -1022,7 +1022,7 @@ tokens that can be delegated.
 
 ```
 platform.getMinStake({
-  subnetID: string // optional
+  netID: string // optional
 }) ->
 {
   minValidatorStake : uint64,
@@ -1038,7 +1038,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"platform.getMinStake",
     "params": {
-        "subnetID":"11111111111111111111111111111111LpoYY"
+        "netID":"11111111111111111111111111111111LpoYY"
     },
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
@@ -1191,13 +1191,13 @@ Retrieve an assetID for a Net’s staking asset.
 
 ```
 platform.getStakingAssetID({
-    subnetID: string // optional
+    netID: string // optional
 }) -> {
     assetID: string
 }
 ```
 
-- `subnetID` is the Net whose assetID is requested.
+- `netID` is the Net whose assetID is requested.
 - `assetID` is the assetID for a Net’s staking asset.
 
 **Example Call:**
@@ -1207,7 +1207,7 @@ curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.getStakingAssetID",
     "params": {
-        "subnetID": "11111111111111111111111111111111LpoYY"
+        "netID": "11111111111111111111111111111111LpoYY"
     },
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
@@ -1243,26 +1243,26 @@ Get owners and info about the Net or L1.
 
 ```
 platform.getNet({
-    subnetID: string
+    netID: string
 }) ->
 {
     isPermissioned: bool,
     controlKeys: []string,
     threshold: string,
     locktime: string,
-    subnetTransformationTxID: string,
+    netTransformationTxID: string,
     conversionID: string,
     managerChainID: string,
     managerAddress: string
 }
 ```
 
-- `subnetID` is the ID of the Net to get information about. If omitted, fails.
+- `netID` is the ID of the Net to get information about. If omitted, fails.
 - `threshold` signatures from addresses in `controlKeys` are needed to make changes to
-  a permissioned subnet. If the Net is not a PoA Net, then `threshold` will be `0` and `controlKeys`
+  a permissioned net. If the Net is not a PoA Net, then `threshold` will be `0` and `controlKeys`
   will be empty.
-- changes can not be made into the subnet until `locktime` is in the past.
-- `subnetTransformationTxID` is the ID of the transaction that changed the subnet into an elastic one, if it exists.
+- changes can not be made into the net until `locktime` is in the past.
+- `netTransformationTxID` is the ID of the transaction that changed the net into an elastic one, if it exists.
 - `conversionID` is the ID of the conversion from a permissioned Net into an L1, if it exists.
 - `managerChainID` is the ChainID that has the ability to modify this L1s validator set, if it exists.
 - `managerAddress` is the address that has the ability to modify this L1s validator set, if it exists.
@@ -1273,7 +1273,7 @@ platform.getNet({
 curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.getNet",
-    "params": {"subnetID":"Vz2ArUpigHt7fyE79uF3gAXvTPLJi2LGgZoMpgNPHowUZJxBb"},
+    "params": {"netID":"Vz2ArUpigHt7fyE79uF3gAXvTPLJi2LGgZoMpgNPHowUZJxBb"},
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
 ```
@@ -1291,7 +1291,7 @@ curl -X POST --data '{
     ],
     "threshold": "1",
     "locktime": "0",
-    "subnetTransformationTxID": "11111111111111111111111111111111LpoYY",
+    "netTransformationTxID": "11111111111111111111111111111111LpoYY",
     "conversionID": "11111111111111111111111111111111LpoYY",
     "managerChainID": "11111111111111111111111111111111LpoYY",
     "managerAddress": null
@@ -1317,7 +1317,7 @@ platform.getNets({
     ids: []string
 }) ->
 {
-    subnets: []{
+    nets: []{
         id: string,
         controlKeys: []string,
         threshold: string
@@ -1349,7 +1349,7 @@ curl -X POST --data '{
 {
   "jsonrpc": "2.0",
   "result": {
-    "subnets": [
+    "nets": [
       {
         "id": "hW8Ma7dLMA7o4xmJf3AXBbo17bXzE7xnThUd3ypM4VAWo1sNJ",
         "controlKeys": [
@@ -1406,7 +1406,7 @@ Get the total amount of tokens staked on the requested Net.
 
 ```
 platform.getTotalStake({
-    subnetID: string
+    netID: string
 }) -> {
     stake: int
     weight: int
@@ -1422,7 +1422,7 @@ curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.getTotalStake",
     "params": {
-      "subnetID": "11111111111111111111111111111111LpoYY"
+      "netID": "11111111111111111111111111111111LpoYY"
     },
     "id": 1
 }
@@ -1451,7 +1451,7 @@ curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.getTotalStake",
     "params": {
-        "subnetID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
+        "netID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r",
     },
     "id": 1
 }
@@ -1805,14 +1805,14 @@ Get the validators and their weights of a Net or the Primary Network at a given 
 platform.getValidatorsAt(
     {
         height: [int|string],
-        subnetID: string, // optional
+        netID: string, // optional
     }
 )
 ```
 
 - `height` is the P-Chain height to get the validator set at, or the string literal "proposed"
   to return the validator set at this node's ProposerVM height.
-- `subnetID` is the Net ID to get the validator set of. If not given, gets validator set of the
+- `netID` is the Net ID to get the validator set of. If not given, gets validator set of the
   Primary Network.
 
 **Example Call:**
@@ -1986,7 +1986,7 @@ Sample validators from the specified Net.
 platform.sampleValidators(
     {
         size: int,
-        subnetID: string, // optional
+        netID: string, // optional
     }
 ) ->
 {
@@ -1995,7 +1995,7 @@ platform.sampleValidators(
 ```
 
 - `size` is the number of validators to sample.
-- `subnetID` is the Net to sampled from. If omitted, defaults to the Primary Network.
+- `netID` is the Net to sampled from. If omitted, defaults to the Primary Network.
 - Each element of `validators` is the ID of a validator.
 
 **Example Call:**
@@ -2037,11 +2037,11 @@ platform.validatedBy(
     {
         blockchainID: string
     }
-) -> { subnetID: string }
+) -> { netID: string }
 ```
 
 - `blockchainID` is the blockchain’s ID.
-- `subnetID` is the ID of the Net that validates the blockchain.
+- `netID` is the ID of the Net that validates the blockchain.
 
 **Example Call:**
 
@@ -2062,7 +2062,7 @@ curl -X POST --data '{
 {
   "jsonrpc": "2.0",
   "result": {
-    "subnetID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r"
+    "netID": "2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r"
   },
   "id": 1
 }
@@ -2077,12 +2077,12 @@ Get the IDs of the blockchains a Net validates.
 ```
 platform.validates(
     {
-        subnetID: string
+        netID: string
     }
 ) -> { blockchainIDs: []string }
 ```
 
-- `subnetID` is the Net’s ID.
+- `netID` is the Net’s ID.
 - Each element of `blockchainIDs` is the ID of a blockchain the Net validates.
 
 **Example Call:**
@@ -2092,7 +2092,7 @@ curl -X POST --data '{
     "jsonrpc": "2.0",
     "method": "platform.validates",
     "params": {
-        "subnetID":"2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r"
+        "netID":"2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r"
     },
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P

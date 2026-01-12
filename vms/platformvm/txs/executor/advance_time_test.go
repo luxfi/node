@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -382,7 +382,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			for _, staker := range test.chainStakers {
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{netID},
+					ownedNetworkIDs: []ids.ID{netID},
 				})
 
 				tx, err := wallet.IssueAddChainValidatorTx(
@@ -478,7 +478,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	env.config.TrackedChains.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{netID},
+		ownedNetworkIDs: []ids.ID{netID},
 	})
 
 	dummyHeight := uint64(1)
@@ -592,7 +592,7 @@ func TestTrackedNet(t *testing.T) {
 			}
 
 			wallet := newWallet(t, env, walletConfig{
-				netIDs: []ids.ID{netID},
+				ownedNetworkIDs: []ids.ID{netID},
 			})
 
 			// Add a chain validator to the staker set

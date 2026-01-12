@@ -1,6 +1,6 @@
 //go:build cgo
 
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package fhe provides GPU-accelerated FHE operations for ThresholdVM.
@@ -25,18 +25,18 @@ import (
 	"github.com/luxfi/node/config"
 )
 
-// GPUFHEAccelerator provides GPU-accelerated FHE operations for ThresholdVM.
+// FHEAccelerator provides GPU-accelerated FHE operations for ThresholdVM.
 // It uses the unified accel package to accelerate CKKS operations.
-type GPUFHEAccelerator struct {
+type FHEAccelerator struct {
 	mu      sync.RWMutex
 	session *accel.Session
 	enabled bool
 	logger  log.Logger
-	stats   *GPUFHEStats
+	stats   *FHEStats
 }
 
-// GPUFHEStats tracks GPU acceleration statistics
-type GPUFHEStats struct {
+// FHEStats tracks GPU acceleration statistics
+type FHEStats struct {
 	NTTForwardCalls  uint64
 	NTTInverseCalls  uint64
 	PolyMulCalls     uint64
@@ -45,22 +45,22 @@ type GPUFHEStats struct {
 	TotalGPUTimeNs   uint64
 }
 
-// GPUFHEOptions holds options for creating a GPU FHE accelerator.
-type GPUFHEOptions struct {
+// FHEOptions holds options for creating a GPU FHE accelerator.
+type FHEOptions struct {
 	// Enabled controls whether GPU acceleration is used
 	Enabled bool
 	// Backend specifies which GPU backend to use: "auto", "metal", "cuda", "cpu"
 	Backend string
 }
 
-// NewGPUFHEAccelerator creates a new GPU FHE accelerator for ThresholdVM.
-func NewGPUFHEAccelerator(logger log.Logger) (*GPUFHEAccelerator, error) {
-	return NewGPUFHEAcceleratorWithOptions(logger, GPUFHEOptions{})
+// NewFHEAccelerator creates a new GPU FHE accelerator for ThresholdVM.
+func NewFHEAccelerator(logger log.Logger) (*FHEAccelerator, error) {
+	return NewFHEAcceleratorWithOptions(logger, FHEOptions{})
 }
 
-// NewGPUFHEAcceleratorWithOptions creates a new GPU FHE accelerator with custom options.
+// NewFHEAcceleratorWithOptions creates a new GPU FHE accelerator with custom options.
 // If options are zero-valued, it uses the global GPU config.
-func NewGPUFHEAcceleratorWithOptions(logger log.Logger, opts GPUFHEOptions) (*GPUFHEAccelerator, error) {
+func NewFHEAcceleratorWithOptions(logger log.Logger, opts FHEOptions) (*FHEAccelerator, error) {
 	// Get global config if options not specified
 	gpuCfg := config.GetGlobalGPUConfig()
 
@@ -98,21 +98,21 @@ func NewGPUFHEAcceleratorWithOptions(logger log.Logger, opts GPUFHEOptions) (*GP
 		}
 	}
 
-	return &GPUFHEAccelerator{
+	return &FHEAccelerator{
 		session: session,
 		enabled: available && session != nil,
 		logger:  logger,
-		stats:   &GPUFHEStats{},
+		stats:   &FHEStats{},
 	}, nil
 }
 
 // IsEnabled returns whether GPU acceleration is available.
-func (g *GPUFHEAccelerator) IsEnabled() bool {
+func (g *FHEAccelerator) IsEnabled() bool {
 	return g.enabled
 }
 
 // Backend returns the active GPU backend name.
-func (g *GPUFHEAccelerator) Backend() string {
+func (g *FHEAccelerator) Backend() string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
@@ -123,203 +123,15 @@ func (g *GPUFHEAccelerator) Backend() string {
 }
 
 // Stats returns current GPU statistics.
-func (g *GPUFHEAccelerator) Stats() GPUFHEStats {
+func (g *FHEAccelerator) Stats() FHEStats {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	return *g.stats
 }
 
-// GPUNumberTheoreticTransformer implements ring.NumberTheoreticTransformer
-// using GPU acceleration for ThresholdVM FHE operations via the accel package.
-type GPUNumberTheoreticTransformer struct {
-	accel    *GPUFHEAccelerator
-	N        int
-	Q        uint64
-	nttTable *ring.NTTTable
-	fallback ring.NumberTheoreticTransformer
-}
-
-// NewGPUNumberTheoreticTransformer creates a GPU-accelerated NTT transformer.
-// This can be used to replace the CPU NTT in lattice/ring operations.
-func NewGPUNumberTheoreticTransformer(
-	accel *GPUFHEAccelerator,
-	subring *ring.SubRing,
-	n int,
-) ring.NumberTheoreticTransformer {
-	return &GPUNumberTheoreticTransformer{
-		accel:    accel,
-		N:        n,
-		Q:        subring.Modulus,
-		nttTable: subring.NTTTable,
-		fallback: ring.NewNumberTheoreticTransformerStandard(subring, n),
-	}
-}
-
-// Forward performs GPU-accelerated forward NTT.
-func (t *GPUNumberTheoreticTransformer) Forward(p1, p2 []uint64) {
-	if !t.accel.enabled || len(p1) < 1024 {
-		// Use CPU for small polynomials (GPU overhead not worth it)
-		t.fallback.Forward(p1, p2)
-		return
-	}
-
-	t.accel.mu.RLock()
-	session := t.accel.session
-	t.accel.mu.RUnlock()
-
-	if session == nil {
-		t.fallback.Forward(p1, p2)
-		return
-	}
-
-	// Copy input to output
-	copy(p2, p1)
-
-	// Create tensors for GPU NTT
-	inputTensor, err := accel.NewTensorWithData[uint64](session, []int{len(p2)}, p2)
-	if err != nil {
-		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-	defer inputTensor.Close()
-
-	outputTensor, err := accel.NewTensor[uint64](session, []int{len(p2)})
-	if err != nil {
-		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-	defer outputTensor.Close()
-
-	// Execute GPU NTT
-	err = session.Lattice().PolynomialNTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(t.Q))
-	if err != nil {
-		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	// Sync and copy result
-	if err := session.Sync(); err != nil {
-		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	result, err := outputTensor.ToSlice()
-	if err != nil {
-		t.fallback.Forward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	copy(p2, result)
-
-	t.accel.mu.Lock()
-	t.accel.stats.NTTForwardCalls++
-	t.accel.mu.Unlock()
-}
-
-// ForwardLazy performs GPU-accelerated forward NTT (lazy reduction).
-func (t *GPUNumberTheoreticTransformer) ForwardLazy(p1, p2 []uint64) {
-	// GPU NTT always does full reduction, so same as Forward
-	t.Forward(p1, p2)
-}
-
-// Backward performs GPU-accelerated inverse NTT.
-func (t *GPUNumberTheoreticTransformer) Backward(p1, p2 []uint64) {
-	if !t.accel.enabled || len(p1) < 1024 {
-		t.fallback.Backward(p1, p2)
-		return
-	}
-
-	t.accel.mu.RLock()
-	session := t.accel.session
-	t.accel.mu.RUnlock()
-
-	if session == nil {
-		t.fallback.Backward(p1, p2)
-		return
-	}
-
-	// Copy input to output
-	copy(p2, p1)
-
-	// Create tensors for GPU INTT
-	inputTensor, err := accel.NewTensorWithData[uint64](session, []int{len(p2)}, p2)
-	if err != nil {
-		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-	defer inputTensor.Close()
-
-	outputTensor, err := accel.NewTensor[uint64](session, []int{len(p2)})
-	if err != nil {
-		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-	defer outputTensor.Close()
-
-	// Execute GPU INTT
-	err = session.Lattice().PolynomialINTT(inputTensor.Untyped(), outputTensor.Untyped(), uint32(t.Q))
-	if err != nil {
-		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	// Sync and copy result
-	if err := session.Sync(); err != nil {
-		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	result, err := outputTensor.ToSlice()
-	if err != nil {
-		t.fallback.Backward(p1, p2)
-		t.accel.mu.Lock()
-		t.accel.stats.GPUFallbackCalls++
-		t.accel.mu.Unlock()
-		return
-	}
-
-	copy(p2, result)
-
-	t.accel.mu.Lock()
-	t.accel.stats.NTTInverseCalls++
-	t.accel.mu.Unlock()
-}
-
-// BackwardLazy performs GPU-accelerated inverse NTT (lazy reduction).
-func (t *GPUNumberTheoreticTransformer) BackwardLazy(p1, p2 []uint64) {
-	t.Backward(p1, p2)
-}
-
 // BatchNTTForward performs forward NTT on multiple polynomials.
 // This is the primary use case for GPU acceleration - batch operations.
-func (g *GPUFHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
+func (g *FHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -408,7 +220,7 @@ func (g *GPUFHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 }
 
 // BatchNTTInverse performs inverse NTT on multiple polynomials.
-func (g *GPUFHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
+func (g *FHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -492,7 +304,7 @@ func (g *GPUFHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 }
 
 // BatchPolyMul performs polynomial multiplication on batches using GPU.
-func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) error {
+func (g *FHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) error {
 	if len(a) != len(b) || len(a) != len(out) {
 		return fmt.Errorf("batch size mismatch")
 	}
@@ -589,12 +401,12 @@ func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) er
 }
 
 // ClearCache clears any cached state.
-func (g *GPUFHEAccelerator) ClearCache() {
+func (g *FHEAccelerator) ClearCache() {
 	// No cache to clear with accel - session manages resources
 }
 
 // Close releases all GPU resources.
-func (g *GPUFHEAccelerator) Close() {
+func (g *FHEAccelerator) Close() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -605,15 +417,15 @@ func (g *GPUFHEAccelerator) Close() {
 
 // Global GPU accelerator instance (lazily initialized)
 var (
-	globalGPUFHEAccelerator     *GPUFHEAccelerator
-	globalGPUFHEAcceleratorOnce sync.Once
-	globalGPUFHEAcceleratorErr  error
+	globalFHEAccelerator     *FHEAccelerator
+	globalFHEAcceleratorOnce sync.Once
+	globalFHEAcceleratorErr  error
 )
 
-// GetGPUFHEAccelerator returns the global GPU FHE accelerator instance.
-func GetGPUFHEAccelerator() (*GPUFHEAccelerator, error) {
-	globalGPUFHEAcceleratorOnce.Do(func() {
-		globalGPUFHEAccelerator, globalGPUFHEAcceleratorErr = NewGPUFHEAccelerator(log.Noop())
+// GetFHEAccelerator returns the global GPU FHE accelerator instance.
+func GetFHEAccelerator() (*FHEAccelerator, error) {
+	globalFHEAcceleratorOnce.Do(func() {
+		globalFHEAccelerator, globalFHEAcceleratorErr = NewFHEAccelerator(log.Noop())
 	})
-	return globalGPUFHEAccelerator, globalGPUFHEAcceleratorErr
+	return globalFHEAccelerator, globalFHEAcceleratorErr
 }

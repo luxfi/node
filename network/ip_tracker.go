@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -14,12 +11,12 @@ import (
 
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/net/ips"
-	"github.com/luxfi/container/sampler"
+	"github.com/luxfi/node/utils/bloom"
 )
 
 const (

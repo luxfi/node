@@ -1,7 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blockdb
@@ -20,7 +17,7 @@ import (
 
 func getCompressedBlockSize(block []byte) (uint32, error) {
 	// Use the same compressor configuration as the database
-	compressor, err := compression.NewZstdCompressorWithLevel(math.MaxUint32, zstd.SpeedFastest)
+	compressor, err := compress.NewZstdCompressorWithLevel(math.MaxUint32, zstd.SpeedFastest)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create compressor: %w", err)
 	}
@@ -523,7 +520,7 @@ func TestRecovery_CorruptionDetection(t *testing.T) {
 
 			store, cleanup := newTestDatabase(t, config)
 			if tt.disableCompression {
-				store.compressor = compression.NewNoCompressor()
+				store.compressor = compress.NewNoCompressor()
 			}
 			defer cleanup()
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -155,7 +155,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetUTXO(utxoID).Return(utxo, nil).AnyTimes()
 
 	// Create the tx
-	utx := &txs.CreateChainTx{
+	utx := &txs.CreateNetworkTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    env.ctx.NetworkID,
 			BlockchainID: env.ctx.ChainID,

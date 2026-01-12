@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
@@ -76,7 +76,7 @@ func TestNormalUsage(t *testing.T) {
 }
 
 func BenchmarkAdd(b *testing.B) {
-	f, err := New(8, 16*units.KiB)
+	f, err := New(8, int(16*units.KiB))
 	require.NoError(b, err)
 
 	b.ResetTimer()

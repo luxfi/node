@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -115,8 +115,8 @@ func TestNewImportTx(t *testing.T) {
 			env.msm.SharedMemory = tt.sharedMemory
 
 			wallet := newWallet(t, env, walletConfig{
-				keys:     []*secp256k1.PrivateKey{sourceKey},
-				chainIDs: []ids.ID{tt.sourceChainID},
+				keys:                 []*secp256k1.PrivateKey{sourceKey},
+				importSourceChainIDs: []ids.ID{tt.sourceChainID},
 			})
 
 			tx, err := wallet.IssueImportTx(

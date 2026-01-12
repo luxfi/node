@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -64,9 +64,9 @@ func TestMeterDBMetricsRegistration(t *testing.T) {
 	// Should have some metrics from meterdb operations
 	foundDBMetrics := false
 	for _, family := range families {
-		if family.GetName() != "" {
+		if family.Name != "" {
 			foundDBMetrics = true
-			t.Logf("Found metric: %s", family.GetName())
+			t.Logf("Found metric: %s", family.Name)
 		}
 	}
 

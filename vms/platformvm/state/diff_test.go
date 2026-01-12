@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -548,9 +548,9 @@ func TestDiffNet(t *testing.T) {
 
 	state := newTestState(t, memdb.New())
 
-	// Initialize parent with one chain
+	// Initialize parent with one network
 	parentStateCreateNetTx := &txs.Tx{
-		Unsigned: &txs.CreateChainTx{
+		Unsigned: &txs.CreateNetworkTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
@@ -569,9 +569,9 @@ func TestDiffNet(t *testing.T) {
 	diff, err := NewDiffOn(state)
 	require.NoError(err)
 
-	// Put a chain
+	// Put a network
 	createNetTx := &txs.Tx{
-		Unsigned: &txs.CreateChainTx{
+		Unsigned: &txs.CreateNetworkTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
@@ -864,7 +864,7 @@ func TestDiffNetOwner(t *testing.T) {
 		owner2 = fxmock.NewOwner(ctrl)
 
 		createNetTx = &txs.Tx{
-			Unsigned: &txs.CreateChainTx{
+			Unsigned: &txs.CreateNetworkTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
@@ -963,7 +963,7 @@ func TestDiffStacking(t *testing.T) {
 		owner3 = fxmock.NewOwner(ctrl)
 
 		createNetTx = &txs.Tx{
-			Unsigned: &txs.CreateChainTx{
+			Unsigned: &txs.CreateNetworkTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},

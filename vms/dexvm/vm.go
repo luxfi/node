@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package dexvm
@@ -156,6 +156,17 @@ func (vm *VM) Initialize(
 	// Cast consensus context
 	vm.consensusCtx = consensusCtx.(*consensusctx.Context)
 	vm.chainID = vm.consensusCtx.ChainID
+
+	// Initialize logger from consensus context
+	if vm.consensusCtx != nil && vm.consensusCtx.Log != nil {
+		if logger, ok := vm.consensusCtx.Log.(log.Logger); ok && !logger.IsZero() {
+			vm.log = logger
+		} else {
+			vm.log = log.Noop()
+		}
+	} else {
+		vm.log = log.Noop()
+	}
 
 	// Setup database
 	vm.baseDB = dbManager.(database.Database)

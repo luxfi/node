@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -17,10 +17,10 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-func TestCreateChainTxAP3FeeChange(t *testing.T) {
-	// Test the fee change at Apricot Phase 3
-	// Pre-AP3: CreateChainTxFee = 0
-	// Post-AP3: CreateChainTxFee = CreateChainTxFee from config (100 * defaultTxFee)
+func TestCreateNetworkTxAP3FeeChange(t *testing.T) {
+	// Test the fee change at Apricot Phase 3 for CreateNetworkTx
+	// Pre-AP3: CreateNetTxFee = 0
+	// Post-AP3: CreateNetTxFee = CreateNetTxFee from config (100 * defaultTxFee)
 	tests := []struct {
 		name        string
 		preAP3      bool
@@ -62,8 +62,8 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 				keys: genesistest.DefaultFundedKeys[:1],
 			})
 
-			// Create a chain using the wallet
-			tx, err := wallet.IssueCreateChainTx(
+			// Create a network using the wallet
+			tx, err := wallet.IssueCreateNetworkTx(
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs: []ids.ShortID{
@@ -108,8 +108,8 @@ func TestCreateChainTxInsufficientFunds(t *testing.T) {
 		keys: genesistest.DefaultFundedKeys[4:5], // Use a key that might not have funds
 	})
 
-	// Try to create a chain - should fail due to insufficient funds
-	_, err := wallet.IssueCreateChainTx(
+	// Try to create a network - should fail due to insufficient funds
+	_, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{

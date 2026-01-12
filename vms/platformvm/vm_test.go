@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -47,7 +47,6 @@ import (
 	// "github.com/luxfi/node/utils/math/meter" // unused
 	// "github.com/luxfi/resource" // unused
 	// "github.com/luxfi/timer" // unused
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -142,11 +141,6 @@ func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 
 func (m *mockValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// Return Primary Network ID for all chains
-	return constants.PrimaryNetworkID, nil
-}
-
-func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains (chain is the network)
 	return constants.PrimaryNetworkID, nil
 }
 
@@ -279,7 +273,7 @@ func buildAndAcceptStandardBlock(vm *VM) error {
 func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
 	require := require.New(t)
 
-	netTx, err := wallet.IssueCreateChainTx(
+	netTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -930,7 +924,7 @@ func TestCreateNet(t *testing.T) {
 	defer vm.ctx.Lock.Unlock()
 
 	wallet := newWallet(t, vm, walletConfig{})
-	createNetTx, err := wallet.IssueCreateChainTx(
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{
@@ -1737,7 +1731,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	vm.ctx.Lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
-	createNetTx, err := wallet.IssueCreateChainTx(
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
@@ -1807,7 +1801,7 @@ func TestTransferChainOwnershipTx(t *testing.T) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	}
-	createNetTx, err := wallet.IssueCreateChainTx(
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		expectedNetOwner,
 	)
 	require.NoError(err)

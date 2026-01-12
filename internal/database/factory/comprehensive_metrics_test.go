@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package factory
@@ -73,10 +73,10 @@ func TestComprehensiveMetricsWorkflow(t *testing.T) {
 	t.Log("Step 5: Verifying metrics structure")
 	metricCount := 0
 	for _, family := range families {
-		name := family.GetName()
+		name := family.Name
 		if name != "" {
 			metricCount++
-			t.Logf("   Found metric: %s with %d entries", name, len(family.GetMetric()))
+			t.Logf("   Found metric: %s with %d entries", name, len(family.Metrics))
 		}
 	}
 	require.Greater(metricCount, 0, "Should have at least one metric family")
@@ -88,7 +88,7 @@ func TestComprehensiveMetricsWorkflow(t *testing.T) {
 	foundSize := false
 
 	for _, family := range families {
-		name := family.GetName()
+		name := family.Name
 		switch {
 		case name != "" && (name == "workflow_db_workflow_db_calls" || name == "workflow_db_workflow_meterdb_calls"):
 			foundCalls = true

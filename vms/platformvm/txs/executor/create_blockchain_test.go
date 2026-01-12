@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -29,13 +29,13 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		chainID,
+		networkID,
 		nil,
 		constants.XVMID,
 		nil,
@@ -68,13 +68,13 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		chainID,
+		networkID,
 		nil,
 		constants.XVMID,
 		nil,
@@ -114,13 +114,13 @@ func TestCreateChainTxNoSuchNet(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		chainID,
+		networkID,
 		nil,
 		constants.XVMID,
 		nil,
@@ -153,13 +153,13 @@ func TestCreateChainTxValid(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		chainID,
+		networkID,
 		nil,
 		constants.XVMID,
 		nil,
@@ -219,14 +219,14 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			env.state.SetTimestamp(test.time) // to duly set fee
 
 			config := *env.config
-			chainID := testNet1.ID()
+			networkID := testNet1.ID()
 			wallet := newWallet(t, env, walletConfig{
 				config: &config,
-				netIDs: []ids.ID{chainID},
+				ownedNetworkIDs: []ids.ID{networkID},
 			})
 
 			tx, err := wallet.IssueCreateChainTx(
-				chainID,
+				networkID,
 				nil,
 				ids.GenerateTestID(),
 				nil,
@@ -257,13 +257,13 @@ func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 
 	tx, err := wallet.IssueCreateChainTx(
-		chainID,
+		networkID,
 		nil,
 		constants.XVMID,
 		nil,
@@ -278,7 +278,7 @@ func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 	require.NoError(err)
 
 	stateDiff.SetNetToL1Conversion(
-		chainID,
+		networkID,
 		state.NetToL1Conversion{
 			ConversionID: ids.GenerateTestID(),
 			ChainID:      ids.GenerateTestID(),

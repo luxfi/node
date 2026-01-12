@@ -31,7 +31,7 @@ func TestDefaultThresholdConfig(t *testing.T) {
 func TestThresholdFHEIntegrationInit(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -42,7 +42,7 @@ func TestThresholdFHEIntegrationInit(t *testing.T) {
 func TestThresholdFHEIntegrationStartStop(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -59,7 +59,7 @@ func TestThresholdFHEIntegrationStartStop(t *testing.T) {
 func TestThresholdFHEIntegrationSessionManagement(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -120,7 +120,7 @@ func TestThresholdFHEIntegrationSessionManagement(t *testing.T) {
 func TestThresholdFHEIntegrationNetworkKey(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -173,7 +173,7 @@ func TestInMemoryCiphertextStorage(t *testing.T) {
 func TestThresholdDecryptorInit(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -193,7 +193,7 @@ func TestThresholdDecryptorInit(t *testing.T) {
 func TestThresholdDecryptorWithSecretKey(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -214,7 +214,7 @@ func TestThresholdDecryptorWithSecretKey(t *testing.T) {
 func TestRelayerInit(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -241,7 +241,7 @@ func TestRelayerInit(t *testing.T) {
 func TestRelayerStartStop(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -269,7 +269,7 @@ func TestRelayerStartStop(t *testing.T) {
 func TestRelayerSubmitRequest(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -308,7 +308,7 @@ func TestRelayerSubmitRequest(t *testing.T) {
 func TestRelayerGetResult(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -350,7 +350,7 @@ func TestRelayerGetResult(t *testing.T) {
 func TestWarpHandler(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -388,7 +388,7 @@ func TestWarpHandler(t *testing.T) {
 func TestFHEDecryptionService(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	service := NewFHEDecryptionService(logger)
 	require.NotNil(service)
 
@@ -411,7 +411,7 @@ func TestFHEDecryptionService(t *testing.T) {
 func TestFHEDecryptionServiceHandlerRegistration(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	service := NewFHEDecryptionService(logger)
 
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
@@ -490,7 +490,7 @@ func TestComplexValueEncodingEmpty(t *testing.T) {
 func TestRelayerCleanup(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	decryptor, _ := NewThresholdDecryptor(logger, params, 67, 100, 1, 128, nil)
 	storage := NewInMemoryCiphertextStorage()
@@ -527,7 +527,7 @@ func TestRelayerCleanup(t *testing.T) {
 func TestRelayerFetchCiphertextNoStorage(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	// Create relayer without storage
 	relayer := NewRelayer(
@@ -549,7 +549,7 @@ func TestRelayerFetchCiphertextNoStorage(t *testing.T) {
 func TestRelayerFetchCiphertextNotFound(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	storage := NewInMemoryCiphertextStorage()
 
 	relayer := NewRelayer(
@@ -570,7 +570,7 @@ func TestRelayerFetchCiphertextNotFound(t *testing.T) {
 func TestRelayerFetchCiphertextSuccess(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	storage := NewInMemoryCiphertextStorage()
 
 	// Store a ciphertext
@@ -597,7 +597,7 @@ func TestRelayerFetchCiphertextSuccess(t *testing.T) {
 func TestRelayerGetResultFulfilled(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	storage := NewInMemoryCiphertextStorage()
 
 	relayer := NewRelayer(
@@ -634,7 +634,7 @@ func TestRelayerGetResultFulfilled(t *testing.T) {
 func TestContributeShareSessionNotFound(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -649,7 +649,7 @@ func TestContributeShareSessionNotFound(t *testing.T) {
 func TestContributeShareAlreadyComplete(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	// Use very low threshold for easier testing
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	config := ThresholdConfig{
@@ -703,7 +703,7 @@ func TestContributeShareAlreadyComplete(t *testing.T) {
 func TestContributeShareDuplicateNode(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	config := ThresholdConfig{
 		Threshold:    2, // Need 2 shares
@@ -759,7 +759,7 @@ func TestContributeShareDuplicateNode(t *testing.T) {
 func TestGetSessionResultNotComplete(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -798,7 +798,7 @@ func TestGetSessionResultNotComplete(t *testing.T) {
 func TestGenerateShareNoSecretKey(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -836,7 +836,7 @@ func TestGenerateShareNoSecretKey(t *testing.T) {
 // panics on invalid ciphertext data rather than returning an error gracefully.
 
 func BenchmarkThresholdDecryptorGenShare(b *testing.B) {
-	logger := log.NewLogger("bench")
+	logger := log.Noop()
 	params, _ := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 
 	decryptor, _ := NewThresholdDecryptor(logger, params, 67, 100, 1, 128, nil)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -272,7 +272,7 @@ func addNet(t testing.TB, env *environment) {
 	})
 
 	var err error
-	testNet1, err = wallet.IssueCreateChainTx(
+	testNet1, err = wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{

@@ -99,7 +99,7 @@ func main() {
 	for _, chain := range chains {
 		fmt.Printf("\n=== Creating %s ===\n", chain.Name)
 
-		// Step 1: Create network (subnet)
+		// Step 1: Create network (L2 chain)
 		fmt.Printf("Creating network for %s...\n", chain.Name)
 		createNetworkTx, err := pWallet.IssueCreateNetworkTx(owner)
 		if err != nil {

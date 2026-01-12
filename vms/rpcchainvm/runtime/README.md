@@ -38,7 +38,7 @@ failed to register VM {"vmID": "tGas3T58KzdjcJ2iKSyiYsWiqYctRXaPTqBCA11BqEkNg8kP
 
 ### Protocol Version Mismatch
 
-To ensure RPC compatibility the protocol version of Lux Node must match the subnet VM. To correct this error update the subnet VM's dependencies to the latest version Lux Node.
+To ensure RPC compatibility the protocol version of Lux Node must match the chain VM. To correct this error update the chain VM's dependencies to the latest version Lux Node.
 
 ```bash
 failed to register VM {"vmID": "tGas3T58KzdjcJ2iKSyiYsWiqYctRXaPTqBCA11BqEkNg8kPc", "error": "handshake failed: protocol version mismatch node: 19 vm: 18"}

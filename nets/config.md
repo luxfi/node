@@ -11,9 +11,9 @@ sidebar_position: 2
 It is possible to provide parameters for a Net. Parameters here apply to all
 chains in the specified Net.
 
-Lux Node looks for files specified with `{subnetID}.json` under
-`--subnet-config-dir` as documented
-[here](/nodes/configure/node-config-flags.md#subnet-configs).
+Lux Node looks for files specified with `{netID}.json` under
+`--net-config-dir` as documented
+[here](/nodes/configure/node-config-flags.md#net-configs).
 
 Here is an example of Net config file:
 

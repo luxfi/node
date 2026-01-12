@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -73,11 +73,6 @@ func (m *mockValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
 }
 
 func (m *mockValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
-	// Return Primary Network ID for all chains
-	return constants.PrimaryNetworkID, nil
-}
-
-func (m *mockValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
 	// Return Primary Network ID for all chains
 	return constants.PrimaryNetworkID, nil
 }
@@ -322,7 +317,7 @@ func addNet(t *testing.T, env *environment) {
 	})
 
 	var err error
-	testNet1, err = wallet.IssueCreateChainTx(
+	testNet1, err = wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{

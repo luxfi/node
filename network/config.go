@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -145,6 +142,15 @@ type Config struct {
 
 	// Validators are the current validators in the Lux network
 	Validators validators.Manager `json:"-"`
+
+	// SequencerIDForChain returns the validator-set identity that sequences chainID.
+	// This allows chains to be sequenced by a different validator set than their own.
+	// Examples:
+	//   - C-Chain → returns PrimaryNetworkID (sequenced by primary network validators)
+	//   - Zoo L2 (self-sequenced) → returns ZooChainID
+	//   - Zoo L2 (Lux-sequenced) → returns the Lux network's sequencerID
+	// Default: returns chainID (self-sequenced).
+	SequencerIDForChain func(chainID ids.ID) ids.ID `json:"-"`
 
 	// GenesisBytes is the raw genesis configuration passed to the node.
 	// This is used to extract the actual initial stakers for the network,

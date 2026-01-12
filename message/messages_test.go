@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/compress"
+	compression "github.com/luxfi/compress"
 )
 
 func TestMessage(t *testing.T) {

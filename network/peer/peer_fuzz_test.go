@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/compress"
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/net/ips"
 )
 

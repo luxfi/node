@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fhe
@@ -28,7 +28,7 @@ func newTestLifecycleManager(t *testing.T) (*LifecycleManager, *Registry) {
 		KeyRotationBlocks: 0,
 	}
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	lm := NewLifecycleManager(registry, config, logger)
 	require.NotNil(t, lm)
 
@@ -552,7 +552,7 @@ func TestRegisterMemberCommitteeFull(t *testing.T) {
 		KeyRotationBlocks: 0,
 	}
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	lm := NewLifecycleManager(registry, config, logger)
 	require.NoError(t, lm.Start())
 	defer lm.Stop()
@@ -575,7 +575,7 @@ func TestNewLifecycleManagerNilConfig(t *testing.T) {
 	registry, err := NewRegistry(db)
 	require.NoError(t, err)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	// Pass nil config - should use defaults
 	lm := NewLifecycleManager(registry, nil, logger)
@@ -731,7 +731,7 @@ func TestOnBlockKeyRotation(t *testing.T) {
 		KeyRotationBlocks: 50, // Trigger rotation every 50 blocks
 	}
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	lm := NewLifecycleManager(registry, config, logger)
 	require.NoError(t, lm.Start())
 	defer lm.Stop()
@@ -1041,7 +1041,7 @@ func TestRemoveMemberBelowMinSize(t *testing.T) {
 		KeyRotationBlocks: 100,
 	}
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	lm := NewLifecycleManager(registry, config, logger)
 	require.NoError(t, lm.Start())
 	defer lm.Stop()

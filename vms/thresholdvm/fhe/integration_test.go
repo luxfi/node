@@ -20,7 +20,7 @@ import (
 // newTestIntegration creates a ThresholdFHEIntegration for testing with optional custom config
 func newTestIntegration(t *testing.T, config *ThresholdConfig) *ThresholdFHEIntegration {
 	t.Helper()
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	if config == nil {
 		defaultConfig := DefaultThresholdConfig()
@@ -88,7 +88,7 @@ func TestDefaultThresholdConfigCKKSParams(t *testing.T) {
 func TestNewThresholdFHEIntegrationValid(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	integration, err := NewThresholdFHEIntegration(logger, config, 1)
@@ -100,7 +100,7 @@ func TestNewThresholdFHEIntegrationValid(t *testing.T) {
 func TestNewThresholdFHEIntegrationDifferentPartyIDs(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 
 	for _, partyID := range []int{0, 1, 50, 99} {
@@ -114,7 +114,7 @@ func TestNewThresholdFHEIntegrationDifferentPartyIDs(t *testing.T) {
 func TestNewThresholdFHEIntegrationCustomConfig(t *testing.T) {
 	require := require.New(t)
 
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	params, err := ckks.NewParametersFromLiteral(ckks.ExampleParameters128BitLogN14LogQP438)
 	require.NoError(err)
 
@@ -954,7 +954,7 @@ func TestMultipleSessionsParallel(t *testing.T) {
 // --- Benchmark Tests ---
 
 func BenchmarkInitiateDecryption(b *testing.B) {
-	logger := log.NewLogger("bench")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 	integration, _ := NewThresholdFHEIntegration(logger, config, 1)
 
@@ -982,7 +982,7 @@ func BenchmarkInitiateDecryption(b *testing.B) {
 }
 
 func BenchmarkGenerateShare(b *testing.B) {
-	logger := log.NewLogger("bench")
+	logger := log.Noop()
 	config := DefaultThresholdConfig()
 	integration, _ := NewThresholdFHEIntegration(logger, config, 1)
 

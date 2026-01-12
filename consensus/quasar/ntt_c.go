@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build cgo
@@ -25,22 +25,22 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luxfi/lattice/v7/ring"
 	"github.com/luxfi/accel"
+	"github.com/luxfi/lattice/v7/ring"
 	"github.com/luxfi/node/config"
 )
 
-// GPUNTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
+// NTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
 // It uses the unified lux/accel package for Metal/CUDA/CPU backends.
-type GPUNTTAccelerator struct {
+type NTTAccelerator struct {
 	mu       sync.RWMutex
 	session  *accel.Session
 	enabled  bool
 	totalOps uint64
 }
 
-// GPUNTTOptions holds options for creating a GPU NTT accelerator.
-type GPUNTTOptions struct {
+// NTTOptions holds options for creating an NTT accelerator.
+type NTTOptions struct {
 	// Enabled controls whether GPU acceleration is used
 	Enabled bool
 	// Backend specifies which GPU backend to use: "auto", "metal", "cuda", "cpu"
@@ -49,15 +49,15 @@ type GPUNTTOptions struct {
 	DeviceIndex int
 }
 
-// NewGPUNTTAccelerator creates a new GPU NTT accelerator.
+// NewNTTAccelerator creates a new NTT accelerator with GPU support.
 // It auto-detects available GPU backends (Metal on macOS, CUDA on Linux).
-func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
-	return NewGPUNTTAcceleratorWithOptions(GPUNTTOptions{})
+func NewNTTAccelerator() (*NTTAccelerator, error) {
+	return NewNTTAcceleratorWithOptions(NTTOptions{})
 }
 
-// NewGPUNTTAcceleratorWithOptions creates a new GPU NTT accelerator with custom options.
+// NewNTTAcceleratorWithOptions creates a new NTT accelerator with custom options.
 // If options are zero-valued, it uses the global GPU config.
-func NewGPUNTTAcceleratorWithOptions(opts GPUNTTOptions) (*GPUNTTAccelerator, error) {
+func NewNTTAcceleratorWithOptions(opts NTTOptions) (*NTTAccelerator, error) {
 	// Get global config if options not specified
 	gpuCfg := config.GetGlobalGPUConfig()
 
@@ -80,21 +80,21 @@ func NewGPUNTTAcceleratorWithOptions(opts GPUNTTOptions) (*GPUNTTAccelerator, er
 		}
 	}
 
-	return &GPUNTTAccelerator{
+	return &NTTAccelerator{
 		session: session,
 		enabled: available,
 	}, nil
 }
 
 // IsEnabled returns whether GPU acceleration is available.
-func (g *GPUNTTAccelerator) IsEnabled() bool {
+func (g *NTTAccelerator) IsEnabled() bool {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	return g.enabled
 }
 
 // Backend returns the name of the active GPU backend.
-func (g *GPUNTTAccelerator) Backend() string {
+func (g *NTTAccelerator) Backend() string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
@@ -105,7 +105,7 @@ func (g *GPUNTTAccelerator) Backend() string {
 }
 
 // getModulus extracts the first modulus from the ring.
-func (g *GPUNTTAccelerator) getModulus(r *ring.Ring) (uint32, error) {
+func (g *NTTAccelerator) getModulus(r *ring.Ring) (uint32, error) {
 	if len(r.ModuliChain()) == 0 {
 		return 0, fmt.Errorf("ring has no moduli")
 	}
@@ -114,7 +114,7 @@ func (g *GPUNTTAccelerator) getModulus(r *ring.Ring) (uint32, error) {
 
 // NTTForward performs forward NTT on a polynomial using GPU acceleration.
 // Falls back to CPU if GPU is not available.
-func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
+func (g *NTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
 	if !g.enabled || g.session == nil {
 		// Fall back to lattice library's NTT
 		r.NTT(poly, poly)
@@ -169,7 +169,7 @@ func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
 
 // NTTInverse performs inverse NTT on a polynomial using GPU acceleration.
 // Falls back to CPU if GPU is not available.
-func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
+func (g *NTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
 	if !g.enabled || g.session == nil {
 		// Fall back to lattice library's INTT
 		r.INTT(poly, poly)
@@ -224,7 +224,7 @@ func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
 
 // BatchNTTForward performs forward NTT on multiple polynomials in parallel.
 // This is the primary use case for GPU acceleration - batch operations.
-func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
+func (g *NTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -294,7 +294,7 @@ func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 }
 
 // BatchNTTInverse performs inverse NTT on multiple polynomials in parallel.
-func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
+func (g *NTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -363,7 +363,7 @@ func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 
 // PolyMul performs polynomial multiplication using GPU-accelerated NTT.
 // This multiplies polynomials a and b, storing result in out.
-func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
+func (g *NTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
 	if !g.enabled || g.session == nil {
 		// Fall back to CPU
 		r.MulCoeffsBarrett(a, b, out)
@@ -427,24 +427,24 @@ func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
 
 // ClearCache is a no-op in the accel-based implementation.
 // The accel library manages its own caching internally.
-func (g *GPUNTTAccelerator) ClearCache() {
+func (g *NTTAccelerator) ClearCache() {
 	// No-op: accel library manages caching internally
 }
 
-// GPUNTTStats returns GPU accelerator statistics.
-type GPUNTTStats struct {
+// NTTStats returns NTT accelerator statistics.
+type NTTStats struct {
 	Enabled      bool
 	Backend      string
 	TotalOps     uint64
 	GPUAvailable bool
 }
 
-// Stats returns current GPU NTT accelerator statistics.
-func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
+// Stats returns current NTT accelerator statistics.
+func (g *NTTAccelerator) Stats() NTTStats {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	return GPUNTTStats{
+	return NTTStats{
 		Enabled:      g.enabled,
 		Backend:      g.Backend(),
 		TotalOps:     atomic.LoadUint64(&g.totalOps),
@@ -452,18 +452,18 @@ func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
 	}
 }
 
-// Global GPU accelerator instance (lazily initialized)
+// Global NTT accelerator instance (lazily initialized)
 var (
-	globalGPUAccelerator     *GPUNTTAccelerator
-	globalGPUAcceleratorOnce sync.Once
-	globalGPUAcceleratorErr  error
+	globalNTTAccelerator     *NTTAccelerator
+	globalNTTAcceleratorOnce sync.Once
+	globalNTTAcceleratorErr  error
 )
 
-// GetGPUAccelerator returns the global GPU NTT accelerator instance.
+// GetNTTAccelerator returns the global NTT accelerator instance.
 // The accelerator is lazily initialized on first call.
-func GetGPUAccelerator() (*GPUNTTAccelerator, error) {
-	globalGPUAcceleratorOnce.Do(func() {
-		globalGPUAccelerator, globalGPUAcceleratorErr = NewGPUNTTAccelerator()
+func GetNTTAccelerator() (*NTTAccelerator, error) {
+	globalNTTAcceleratorOnce.Do(func() {
+		globalNTTAccelerator, globalNTTAcceleratorErr = NewNTTAccelerator()
 	})
-	return globalGPUAccelerator, globalGPUAcceleratorErr
+	return globalNTTAccelerator, globalNTTAcceleratorErr
 }

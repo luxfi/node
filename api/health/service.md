@@ -12,7 +12,7 @@ The frequency at which health checks are run can be specified with the [\--healt
 
 ## Filterable Health Checks
 
-The health checks that are run by the node are filterable. You can specify which health checks you want to see by using `tags` filters. Returned results will only include health checks that match the specified tags and global health checks like `network`, `database` etc. When filtered, the returned results will not show the full node health, but only a subset of filtered health checks. This means the node can still be unhealthy in unfiltered checks, even if the returned results show that the node is healthy. Lux Node supports using subnetIDs as tags.
+The health checks that are run by the node are filterable. You can specify which health checks you want to see by using `tags` filters. Returned results will only include health checks that match the specified tags and global health checks like `network`, `database` etc. When filtered, the returned results will not show the full node health, but only a subset of filtered health checks. This means the node can still be unhealthy in unfiltered checks, even if the returned results show that the node is healthy. Lux Node supports using netIDs as tags.
 
 ## GET Request
 
@@ -20,23 +20,23 @@ To get an HTTP status code response that indicates the node's health, make a `GE
 
 ### Filtering
 
-To filter GET health checks, add a `tag` query parameter to the request. The `tag` parameter is a string. For example, to filter health results by subnetID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL`, use the following query:
+To filter GET health checks, add a `tag` query parameter to the request. The `tag` parameter is a string. For example, to filter health results by netID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL`, use the following query:
 
 ```sh
 curl 'http://localhost:9630/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL'
 ```
 
-In this example returned results will contain global health checks and health checks that are related to subnetID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL`.
+In this example returned results will contain global health checks and health checks that are related to netID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL`.
 
 **Note**: This filtering can show healthy results even if the node is unhealthy in other Chains/Lux L1s.
 
-In order to filter results by multiple tags, use multiple `tag` query parameters. For example, to filter health results by subnetID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL` and `28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY` use the following query:
+In order to filter results by multiple tags, use multiple `tag` query parameters. For example, to filter health results by netID `29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL` and `28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY` use the following query:
 
 ```sh
 curl 'http://localhost:9630/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL&tag=28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY'
 ```
 
-The returned results will include health checks for both subnetIDs as well as global health checks.
+The returned results will include health checks for both netIDs as well as global health checks.
 
 ### Endpoints
 

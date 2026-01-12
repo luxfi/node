@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -377,7 +377,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 
 	{
 		// Case: Proposed validator currently validating primary network
@@ -386,7 +386,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -396,7 +396,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -420,7 +420,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// primary network validation period
 		// (note that keys[0] is a genesis validator)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -430,7 +430,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -473,7 +473,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	{
 		// Case: Proposed validator isn't in pending or current validator sets
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -483,7 +483,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -522,7 +522,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but starts validating chain before primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -532,7 +532,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -554,7 +554,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but stops validating chain after primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -564,7 +564,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating chain after stopping validating primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -586,7 +586,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network and
 		// period validating chain is subset of time validating primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -596,7 +596,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -621,7 +621,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 
 	{
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -631,7 +631,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -655,7 +655,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	// Case: Proposed validator already validating the chain
 	// First, add validator as validator of chain
 	wallet = newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 	chainTx, err := wallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
@@ -665,7 +665,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: chainID,
+			Chain: networkID,
 		},
 	)
 	require.NoError(err)
@@ -685,10 +685,10 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	{
-		// Node with ID nodeIDKey.Address() now validating chain with ID testNet1.ID
+		// Node with ID nodeIDKey.Address() now validating network with ID testNet1.ID
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -698,7 +698,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -724,7 +724,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Duplicate signatures
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -734,7 +734,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -763,7 +763,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Too few signatures
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -773,7 +773,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -802,7 +802,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 		// Case: Control Signature from invalid key (keys[3] is not a control key)
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -812,7 +812,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -838,11 +838,11 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	}
 
 	{
-		// Case: Proposed validator in pending validator set for chain
-		// First, add validator to pending validator set of chain
+		// Case: Proposed validator in pending validator set for network
+		// First, add validator to pending validator set of network
 		startTime := genesistest.DefaultValidatorStartTime.Add(time.Second)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -852,7 +852,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -892,10 +892,10 @@ func TestEtnaStandardTxExecutorAddNetValidator(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 
 	wallet := newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 	tx, err := wallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
@@ -905,7 +905,7 @@ func TestEtnaStandardTxExecutorAddNetValidator(t *testing.T) {
 				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: chainID,
+			Chain: networkID,
 		},
 	)
 	require.NoError(err)
@@ -914,7 +914,7 @@ func TestEtnaStandardTxExecutorAddNetValidator(t *testing.T) {
 	require.NoError(err)
 
 	onAcceptState.SetNetToL1Conversion(
-		chainID,
+		networkID,
 		state.NetToL1Conversion{
 			ConversionID: ids.GenerateTestID(),
 			ChainID:      ids.GenerateTestID(),
@@ -1225,9 +1225,9 @@ func TestDurangoMemoField(t *testing.T) {
 				}
 				it.Release()
 
-				chainID := testNet1.ID()
+				networkID := testNet1.ID()
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{chainID},
+					ownedNetworkIDs: []ids.ID{networkID},
 				})
 				tx, err := wallet.IssueAddChainValidatorTx(
 					&txs.ChainValidator{
@@ -1237,7 +1237,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(primaryValidator.EndTime.Unix()),
 							Wght:   defaultMinValidatorStake,
 						},
-						Chain: chainID,
+						Chain: networkID,
 					},
 					common.WithMemo(memoField),
 				)
@@ -1253,13 +1253,13 @@ func TestDurangoMemoField(t *testing.T) {
 			setupTest: func(t *testing.T, env *environment, memoField []byte) (*txs.Tx, state.Diff) {
 				require := require.New(t)
 
-				chainID := testNet1.ID()
+				networkID := testNet1.ID()
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{chainID},
+					ownedNetworkIDs: []ids.ID{networkID},
 				})
 
 				tx, err := wallet.IssueCreateChainTx(
-					chainID,
+					networkID,
 					[]byte{},
 					ids.GenerateTestID(),
 					[]ids.ID{},
@@ -1279,7 +1279,7 @@ func TestDurangoMemoField(t *testing.T) {
 				require := require.New(t)
 
 				wallet := newWallet(t, env, walletConfig{})
-				tx, err := wallet.IssueCreateChainTx(
+				tx, err := wallet.IssueCreateNetworkTx(
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -1314,7 +1314,7 @@ func TestDurangoMemoField(t *testing.T) {
 				env.msm.SharedMemory = sharedMemory
 
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{sourceChain},
+					importSourceChainIDs: []ids.ID{sourceChain},
 				})
 
 				tx, err := wallet.IssueImportTx(
@@ -1373,9 +1373,9 @@ func TestDurangoMemoField(t *testing.T) {
 
 				endTime := primaryValidator.EndTime
 
-				chainID := testNet1.ID()
+				networkID := testNet1.ID()
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{chainID},
+					ownedNetworkIDs: []ids.ID{networkID},
 				})
 				chainValTx, err := wallet.IssueAddChainValidatorTx(
 					&txs.ChainValidator{
@@ -1385,7 +1385,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(endTime.Unix()),
 							Wght:   genesistest.DefaultValidatorWeight,
 						},
-						Chain: chainID,
+						Chain: networkID,
 					},
 				)
 				require.NoError(err)
@@ -1404,7 +1404,7 @@ func TestDurangoMemoField(t *testing.T) {
 
 				tx, err := wallet.IssueRemoveChainValidatorTx(
 					primaryValidator.NodeID,
-					chainID,
+					networkID,
 					common.WithMemo(memoField),
 				)
 				require.NoError(err)
@@ -1416,13 +1416,13 @@ func TestDurangoMemoField(t *testing.T) {
 			setupTest: func(t *testing.T, env *environment, memoField []byte) (*txs.Tx, state.Diff) {
 				require := require.New(t)
 
-				chainID := testNet1.ID()
+				networkID := testNet1.ID()
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{chainID},
+					ownedNetworkIDs: []ids.ID{networkID},
 				})
 
 				tx, err := wallet.IssueTransformChainTx(
-					chainID,                   // chainID
+					networkID,                 // networkID
 					ids.GenerateTestID(),      // assetID
 					10,                        // initial supply
 					10,                        // max supply
@@ -1529,13 +1529,13 @@ func TestDurangoMemoField(t *testing.T) {
 			setupTest: func(t *testing.T, env *environment, memoField []byte) (*txs.Tx, state.Diff) {
 				require := require.New(t)
 
-				chainID := testNet1.ID()
+				networkID := testNet1.ID()
 				wallet := newWallet(t, env, walletConfig{
-					netIDs: []ids.ID{chainID},
+					ownedNetworkIDs: []ids.ID{networkID},
 				})
 
 				tx, err := wallet.IssueTransferChainOwnershipTx(
-					chainID,
+					networkID,
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -2408,8 +2408,8 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 		)
 	)
 
-	// Create the chain
-	createNetTx, err := wallet.IssueCreateChainTx(
+	// Create the network
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -2757,8 +2757,8 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	diff, err := state.NewDiffOn(baseState)
 	require.NoError(t, err)
 
-	// Create the chain
-	createNetTx, err := wallet.IssueCreateChainTx(
+	// Create the network
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -3293,8 +3293,8 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	diff, err := state.NewDiffOn(baseState)
 	require.NoError(t, err)
 
-	// Create the chain
-	createNetTx, err := wallet.IssueCreateChainTx(
+	// Create the network
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -3804,8 +3804,8 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	diff, err := state.NewDiffOn(baseState)
 	require.NoError(t, err)
 
-	// Create the chain
-	createNetTx, err := wallet.IssueCreateChainTx(
+	// Create the network
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)
@@ -4106,8 +4106,8 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	diff, err := state.NewDiffOn(baseState)
 	require.NoError(t, err)
 
-	// Create the chain
-	createNetTx, err := wallet.IssueCreateChainTx(
+	// Create the network
+	createNetTx, err := wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{},
 	)
 	require.NoError(t, err)

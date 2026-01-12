@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -419,7 +416,7 @@ func Test_Dimensions_ToGas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			actual, err := test.constants.ToGas(test.weights)
+			actual, err := test.units.ToGas(test.weights)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
 

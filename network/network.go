@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -77,13 +74,13 @@ type Message = message.OutboundMessage
 
 // ExternalSender sends messages to peers
 type ExternalSender interface {
-	Send(msg Message, nodeIDs set.Set[ids.NodeID], netID ids.ID, requestID uint32) set.Set[ids.NodeID]
-	Gossip(msg Message, nodeIDs set.Set[ids.NodeID], netID ids.ID, numValidatorsToSend int, numNonValidatorsToSend int, numPeersToSend int) set.Set[ids.NodeID]
+	Send(msg Message, nodeIDs set.Set[ids.NodeID], chainID ids.ID, requestID uint32) set.Set[ids.NodeID]
+	Gossip(msg Message, nodeIDs set.Set[ids.NodeID], chainID ids.ID, numValidatorsToSend int, numNonValidatorsToSend int, numPeersToSend int) set.Set[ids.NodeID]
 }
 
 // ExternalHandler handles incoming messages
 type ExternalHandler interface {
-	Connected(nodeID ids.NodeID, version *version.Application, netID ids.ID)
+	Connected(nodeID ids.NodeID, version *version.Application, chainID ids.ID)
 	Disconnected(nodeID ids.NodeID)
 	HandleInbound(ctx context.Context, msg message.InboundMessage)
 }
@@ -480,17 +477,39 @@ func NewNetwork(
 	return n, nil
 }
 
+// sequencerID returns the validator-set identity that sequences chainID.
+// This resolves the distinction between:
+//   - chainID: execution domain (C-Chain, Zoo L2, etc.)
+//   - sequencerID: validator-set / sequencing authority for a given chain
+//
+// For example:
+//   - C-Chain is sequenced by PrimaryNetworkID validators
+//   - A self-sequenced L2 uses its own chainID as sequencerID
+func (n *network) sequencerID(chainID ids.ID) ids.ID {
+	// Primary network is a special routing concept; membership is still primary.
+	if chainID == constants.PrimaryNetworkID {
+		return constants.PrimaryNetworkID
+	}
+	if n.config.SequencerIDForChain != nil {
+		if sid := n.config.SequencerIDForChain(chainID); sid != ids.Empty {
+			return sid
+		}
+	}
+	// Safe default: self-sequenced or unknown mapping.
+	return chainID
+}
+
 func (n *network) Send(
 	msg Message,
 	nodeIDs set.Set[ids.NodeID],
-	netID ids.ID,
+	chainID ids.ID,
 	requestID uint32,
 ) set.Set[ids.NodeID] {
 	// Create a default allowance policy that allows all connections
 	var allower nets.Allower = &noOpAllower{}
 
 	// Use provided nodeIDs directly
-	namedPeers := n.getPeers(nodeIDs, netID, allower)
+	namedPeers := n.getPeers(nodeIDs, chainID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
 		nodeIDs.Len()-len(namedPeers),
@@ -508,7 +527,7 @@ func (n *network) Send(
 			NonValidators: 0,              // No specific non-validator requirement
 			Peers:         1,              // Sample 1 peer by default
 		}
-		sampledPeers = n.samplePeers(sendConfig, netID, allower)
+		sampledPeers = n.samplePeers(sendConfig, chainID, allower)
 	}
 
 	var (
@@ -539,14 +558,14 @@ func (n *network) Send(
 func (n *network) Gossip(
 	msg Message,
 	nodeIDs set.Set[ids.NodeID],
-	netID ids.ID,
+	chainID ids.ID,
 	numValidatorsToSend int,
 	numNonValidatorsToSend int,
 	numPeersToSend int,
 ) set.Set[ids.NodeID] {
 	// If specific nodeIDs are provided, send to them directly
 	if nodeIDs != nil && nodeIDs.Len() > 0 {
-		return n.Send(msg, nodeIDs, netID, 0)
+		return n.Send(msg, nodeIDs, chainID, 0)
 	}
 
 	// Sample peers based on the gossip parameters
@@ -566,7 +585,7 @@ func (n *network) Gossip(
 		Peers:         numPeersToSend,
 	}
 
-	sampledPeers := n.samplePeers(sendConfig, netID, allower)
+	sampledPeers := n.samplePeers(sendConfig, chainID, allower)
 
 	var (
 		sentTo = set.NewSet[ids.NodeID](len(sampledPeers))
@@ -799,8 +818,8 @@ func (n *network) Peers(
 	if areWeAPrimaryNetworkValidator {
 		allowedNets = func(ids.ID) bool { return true }
 	} else {
-		allowedNets = func(netID ids.ID) bool {
-			return netID == constants.PrimaryNetworkID || n.ipTracker.trackedNets.Contains(netID)
+		allowedNets = func(chainID ids.ID) bool {
+			return chainID == constants.PrimaryNetworkID || n.ipTracker.trackedNets.Contains(chainID)
 		}
 	}
 
@@ -979,13 +998,13 @@ func (n *network) track(ip *ips.ClaimedIPPort, trackAllNets bool) error {
 //
 //   - [nodeIDs] the IDs of the peers that should be returned if they are
 //     connected.
-//   - [netID] the netID whose membership should be considered to
+//   - [chainID] the chainID whose membership should be considered to
 //     determine if the node is a validator.
 //   - [allower] interface that determines if a node is allowed to connect to
 //     the net based on its validator status.
 func (n *network) getPeers(
 	nodeIDs set.Set[ids.NodeID],
-	netID ids.ID,
+	chainID ids.ID,
 	allower nets.Allower,
 ) []peer.Peer {
 	peers := make([]peer.Peer, 0, nodeIDs.Len())
@@ -993,13 +1012,18 @@ func (n *network) getPeers(
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
 
+	// Resolve sequencerID for validator lookups
+	// chainID = execution domain (routing), sequencerID = validator membership
+	sid := n.sequencerID(chainID)
+
 	for nodeID := range nodeIDs {
 		peer, ok := n.connectedPeers.GetByID(nodeID)
 		if !ok {
 			continue
 		}
 
-		_, areTheyAValidator := n.config.Validators.GetValidator(netID, nodeID)
+		// Use sequencerID for validator membership check
+		_, areTheyAValidator := n.config.Validators.GetValidator(sid, nodeID)
 		// check if the peer is allowed to connect to the net
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
 			continue
@@ -1024,13 +1048,17 @@ const defaultSampleK = 20
 // the common bug where callers forget to set Validators.
 func (n *network) samplePeers(
 	config warp.SendConfig,
-	netID ids.ID,
+	chainID ids.ID,
 	allower nets.Allower,
 ) []peer.Peer {
+	// Resolve sequencerID for validator lookups
+	// chainID = execution domain (routing), sequencerID = validator membership
+	sid := n.sequencerID(chainID)
+
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsInManager := n.config.Validators.NumValidators(netID)
+	numValidatorsInManager := n.config.Validators.NumValidators(sid)
 
 	// FIX: If Validators == 0 was passed (likely caller forgot to set it),
 	// default to sampling up to defaultSampleK validators instead of none.
@@ -1043,7 +1071,7 @@ func (n *network) samplePeers(
 	// Debug logging for validator sampling - using WARN to ensure visibility
 	if numValidatorsInManager == 0 {
 		log.Warn("[VALIDATOR DEBUG] samplePeers: NO validators found in manager!",
-			"netID", netID,
+			"chainID", chainID,
 			"configValidators", config.Validators,
 			"requestedValidators", requestedValidators,
 			"numValidatorsInManager", numValidatorsInManager,
@@ -1052,7 +1080,7 @@ func (n *network) samplePeers(
 		)
 	} else {
 		log.Debug("samplePeers: validator counts",
-			"netID", netID,
+			"chainID", chainID,
 			"configValidators", config.Validators,
 			"requestedValidators", requestedValidators,
 			"numValidatorsInManager", numValidatorsInManager,
@@ -1065,7 +1093,7 @@ func (n *network) samplePeers(
 
 	// Debug: Log peer info before sampling
 	log.Debug("[VALIDATOR DEBUG] samplePeers: about to sample",
-		"netID", netID,
+		"chainID", chainID,
 		"numConnectedPeers", n.connectedPeers.Len(),
 		"numValidatorsToSample", numValidatorsToSample,
 		"configValidators", config.Validators,
@@ -1083,20 +1111,20 @@ func (n *network) samplePeers(
 			// (P-chain, X-chain, C-chain), NOT the abstract PrimaryNetworkID (ids.Empty).
 			// All connected peers implicitly track the Primary Network if they're connected,
 			// so we skip the chain tracking check for Primary Network.
-			isPrimaryNetwork := netID == constants.PrimaryNetworkID
-			containsNetID := isPrimaryNetwork || trackedChains.Contains(netID)
+			isPrimaryNetwork := chainID == constants.PrimaryNetworkID
+			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
 
 			// Debug: Log each peer's tracked chains
 			log.Debug("[VALIDATOR DEBUG] samplePeers filter: checking peer",
 				"peerID", p.ID(),
-				"netID", netID,
+				"chainID", chainID,
 				"isPrimaryNetwork", isPrimaryNetwork,
 				"trackedChains", trackedChains.List(),
-				"containsNetID", containsNetID,
+				"containsChainID", containsChainID,
 			)
 
-			// Only return peers that are tracking [netID]
-			if !containsNetID {
+			// Only return peers that are tracking [chainID]
+			if !containsChainID {
 				return false
 			}
 
@@ -1107,7 +1135,7 @@ func (n *network) samplePeers(
 				return false
 			}
 
-			_, areTheyAValidator := n.config.Validators.GetValidator(netID, peerID)
+			_, areTheyAValidator := n.config.Validators.GetValidator(sid, peerID)
 			// check if the peer is allowed to connect to the net
 			if !allower.IsAllowed(peerID, areTheyAValidator) {
 				return false

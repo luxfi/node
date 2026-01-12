@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -115,18 +115,18 @@ func ExampleWallet() {
 	importTxID := importTx.ID()
 	log.Printf("issued X->P import %s in %s\n", importTxID, time.Since(importStartTime))
 
-	createChainStartTime := time.Now()
-	createChainTx, err := pWallet.IssueCreateChainTx(owner)
+	createNetworkStartTime := time.Now()
+	createNetworkTx, err := pWallet.IssueCreateNetworkTx(owner)
 	if err != nil {
-		log.Fatalf("failed to issue create chain transaction with: %s\n", err)
+		log.Fatalf("failed to issue create network transaction with: %s\n", err)
 		return
 	}
-	createChainTxID := createChainTx.ID()
-	log.Printf("issued create chain transaction %s in %s\n", createChainTxID, time.Since(createChainStartTime))
+	createNetworkTxID := createNetworkTx.ID()
+	log.Printf("issued create network transaction %s in %s\n", createNetworkTxID, time.Since(createNetworkStartTime))
 
 	transformChainStartTime := time.Now()
 	transformChainTx, err := pWallet.IssueTransformChainTx(
-		createChainTxID,
+		createNetworkTxID,
 		createAssetTxID,
 		50*constants.MegaLux,
 		100*constants.MegaLux,
@@ -160,7 +160,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * constants.MegaLux,
 			},
-			Chain: createChainTxID,
+			Chain: createNetworkTxID,
 		},
 		&signer.Empty{},
 		createAssetTx.ID(),
@@ -184,7 +184,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * constants.MegaLux,
 			},
-			Chain: createChainTxID,
+			Chain: createNetworkTxID,
 		},
 		createAssetTxID,
 		&secp256k1fx.OutputOwners{},

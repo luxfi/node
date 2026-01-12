@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
@@ -28,7 +28,7 @@ import (
 // NewWallet creates a test wallet for P-chain transactions.
 //
 // Parameters:
-//   - ownedChainIDs: Chain IDs that the keychain owns (for GetNetOwner lookups)
+//   - ownedNetworkIDs: Network IDs (L1 validator sets) that the keychain owns (for GetNetOwner lookups)
 //   - validationIDs: L1 validator IDs for deactivation owner lookups
 //   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 func NewWallet(
@@ -37,7 +37,7 @@ func NewWallet(
 	cfg *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
-	ownedChainIDs []ids.ID,
+	ownedNetworkIDs []ids.ID,
 	validationIDs []ids.ID,
 	importSourceChainIDs []ids.ID,
 ) wallet.Wallet {
@@ -50,7 +50,7 @@ func NewWallet(
 		},
 		state,
 		kc,
-		ownedChainIDs,
+		ownedNetworkIDs,
 		validationIDs,
 		importSourceChainIDs,
 	)
@@ -67,7 +67,7 @@ func NewWalletWithOptions(
 	wCfg WalletConfig,
 	state state.State,
 	kc *secp256k1fx.Keychain,
-	ownedChainIDs []ids.ID,
+	ownedNetworkIDs []ids.ID,
 	validationIDs []ids.ID,
 	importSourceChainIDs []ids.ID,
 ) wallet.Wallet {
@@ -134,12 +134,12 @@ func NewWalletWithOptions(
 		}
 	}
 
-	// Build owners map for chains we own and validators we control
-	owners := make(map[ids.ID]fx.Owner, len(ownedChainIDs)+len(validationIDs))
-	for _, chainID := range ownedChainIDs {
-		owner, err := state.GetNetOwner(chainID)
+	// Build owners map for networks we own and validators we control
+	owners := make(map[ids.ID]fx.Owner, len(ownedNetworkIDs)+len(validationIDs))
+	for _, networkID := range ownedNetworkIDs {
+		owner, err := state.GetNetOwner(networkID)
 		require.NoError(err)
-		owners[chainID] = owner
+		owners[networkID] = owner
 	}
 	for _, validationID := range validationIDs {
 		l1Validator, err := state.GetL1Validator(validationID)

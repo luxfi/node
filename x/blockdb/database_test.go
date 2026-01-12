@@ -1,7 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blockdb
@@ -252,7 +249,7 @@ func TestFileCache_Eviction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store, cleanup := newTestDatabase(t, tt.config.WithMaxDataFileSize(1024*1.5))
-			store.compressor = compression.NewNoCompressor()
+			store.compressor = compress.NewNoCompressor()
 			defer cleanup()
 
 			// Override the file cache with specified size

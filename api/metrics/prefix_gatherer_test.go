@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -63,11 +63,9 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 
 func TestPrefixGatherer_Register(t *testing.T) {
 	firstPrefix := "first"
-	firstPrefixPtr := &firstPrefix
 	firstPrefixedGatherer := &prefixedGatherer{
-		prefix:    firstPrefix,
-		prefixPtr: firstPrefixPtr,
-		gatherer:  &testGatherer{},
+		prefix:   firstPrefix,
+		gatherer: &testGatherer{},
 	}
 	firstPrefixGatherer := func() *prefixGatherer {
 		return &prefixGatherer{
@@ -82,10 +80,8 @@ func TestPrefixGatherer_Register(t *testing.T) {
 		}
 	}
 	secondPrefix := "second"
-	secondPrefixPtr := &secondPrefix
 	secondPrefixedGatherer := &prefixedGatherer{
-		prefix:    secondPrefix,
-		prefixPtr: secondPrefixPtr,
+		prefix: secondPrefix,
 		gatherer: &testGatherer{
 			mfs: []*metric.MetricFamily{{}},
 		},

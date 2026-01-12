@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bloom
@@ -15,7 +15,7 @@ import (
 func TestCollisionResistance(t *testing.T) {
 	require := require.New(t)
 
-	f, err := New(8, 16*units.KiB)
+	f, err := New(8, int(16*units.KiB))
 	require.NoError(err)
 
 	Add(f, []byte("hello world?"), []byte("so salty"))

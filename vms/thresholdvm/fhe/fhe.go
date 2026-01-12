@@ -1,6 +1,6 @@
 //go:build !cgo
 
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package fhe provides FHE operations for ThresholdVM.
@@ -17,16 +17,16 @@ import (
 	"github.com/luxfi/log"
 )
 
-// GPUFHEAccelerator provides FHE operations using pure Go lattice library.
+// FHEAccelerator provides FHE operations using pure Go lattice library.
 // When CGO is disabled, this uses the CPU-based lattice library which
 // provides optimized NTT, polynomial multiplication, and ring operations.
-type GPUFHEAccelerator struct {
-	stats   *GPUFHEStats
+type FHEAccelerator struct {
+	stats   *FHEStats
 	statsmu sync.RWMutex
 }
 
-// GPUFHEStats tracks FHE acceleration statistics
-type GPUFHEStats struct {
+// FHEStats tracks FHE acceleration statistics
+type FHEStats struct {
 	NTTForwardCalls  uint64
 	NTTInverseCalls  uint64
 	PolyMulCalls     uint64
@@ -35,25 +35,25 @@ type GPUFHEStats struct {
 	TotalGPUTimeNs   uint64
 }
 
-// NewGPUFHEAccelerator creates a new FHE accelerator using pure Go lattice library.
-func NewGPUFHEAccelerator(_ log.Logger) (*GPUFHEAccelerator, error) {
-	return &GPUFHEAccelerator{
-		stats: &GPUFHEStats{},
+// NewFHEAccelerator creates a new FHE accelerator using pure Go lattice library.
+func NewFHEAccelerator(_ log.Logger) (*FHEAccelerator, error) {
+	return &FHEAccelerator{
+		stats: &FHEStats{},
 	}, nil
 }
 
 // IsEnabled returns true - CPU implementation is always available.
-func (g *GPUFHEAccelerator) IsEnabled() bool {
+func (g *FHEAccelerator) IsEnabled() bool {
 	return true
 }
 
 // Backend returns the backend name.
-func (g *GPUFHEAccelerator) Backend() string {
+func (g *FHEAccelerator) Backend() string {
 	return "CPU (Pure Go lattice)"
 }
 
 // Stats returns current FHE statistics.
-func (g *GPUFHEAccelerator) Stats() GPUFHEStats {
+func (g *FHEAccelerator) Stats() FHEStats {
 	g.statsmu.RLock()
 	defer g.statsmu.RUnlock()
 	return *g.stats
@@ -61,7 +61,7 @@ func (g *GPUFHEAccelerator) Stats() GPUFHEStats {
 
 // BatchNTTForward performs forward NTT on multiple polynomials.
 // Uses parallel processing for better performance on multi-core CPUs.
-func (g *GPUFHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
+func (g *FHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -107,7 +107,7 @@ func (g *GPUFHEAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 
 // BatchNTTInverse performs inverse NTT on multiple polynomials.
 // Uses parallel processing for better performance on multi-core CPUs.
-func (g *GPUFHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
+func (g *FHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -153,7 +153,7 @@ func (g *GPUFHEAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 
 // BatchPolyMul performs polynomial multiplication on batches.
 // Uses parallel processing for better performance on multi-core CPUs.
-func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) error {
+func (g *FHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) error {
 	if len(a) == 0 {
 		return nil
 	}
@@ -198,36 +198,21 @@ func (g *GPUFHEAccelerator) BatchPolyMul(r *ring.Ring, a, b, out []ring.Poly) er
 }
 
 // ClearCache is a no-op for CPU implementation.
-func (g *GPUFHEAccelerator) ClearCache() {}
+func (g *FHEAccelerator) ClearCache() {}
 
 // Close is a no-op for CPU implementation.
-func (g *GPUFHEAccelerator) Close() {}
+func (g *FHEAccelerator) Close() {}
 
 // Global accelerator instance
 var (
-	globalGPUFHEAccelerator     *GPUFHEAccelerator
-	globalGPUFHEAcceleratorOnce sync.Once
+	globalFHEAccelerator     *FHEAccelerator
+	globalFHEAcceleratorOnce sync.Once
 )
 
-// GetGPUFHEAccelerator returns the global FHE accelerator instance.
-func GetGPUFHEAccelerator() (*GPUFHEAccelerator, error) {
-	globalGPUFHEAcceleratorOnce.Do(func() {
-		globalGPUFHEAccelerator, _ = NewGPUFHEAccelerator(nil)
+// GetFHEAccelerator returns the global FHE accelerator instance.
+func GetFHEAccelerator() (*FHEAccelerator, error) {
+	globalFHEAcceleratorOnce.Do(func() {
+		globalFHEAccelerator, _ = NewFHEAccelerator(nil)
 	})
-	return globalGPUFHEAccelerator, nil
-}
-
-// GPUNumberTheoreticTransformer provides NTT operations using lattice library.
-// This wraps the standard lattice NTT transformer.
-type GPUNumberTheoreticTransformer struct {
-	fallback ring.NumberTheoreticTransformer
-}
-
-// NewGPUNumberTheoreticTransformer creates a CPU-based NTT transformer.
-func NewGPUNumberTheoreticTransformer(
-	_ *GPUFHEAccelerator,
-	subring *ring.SubRing,
-	n int,
-) ring.NumberTheoreticTransformer {
-	return ring.NewNumberTheoreticTransformerStandard(subring, n)
+	return globalFHEAccelerator, nil
 }

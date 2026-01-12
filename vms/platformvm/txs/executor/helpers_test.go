@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -206,12 +206,12 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 // walletConfig configures test wallet creation.
 //
 // Field naming follows txstest.NewWallet parameters:
-//   - ownedChainIDs: Chain IDs the keychain owns (for GetNetOwner lookups)
+//   - ownedNetworkIDs: Network IDs (L1 validator sets) the keychain owns (for GetNetOwner lookups)
 //   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 type walletConfig struct {
 	config               *config.Internal
 	keys                 []*secp256k1.PrivateKey
-	ownedChainIDs        []ids.ID // chains we own (for GetNetOwner)
+	ownedNetworkIDs      []ids.ID // networks (L1s) we own (for GetNetOwner)
 	importSourceChainIDs []ids.ID // chains to import atomic UTXOs from
 }
 
@@ -253,7 +253,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		walletConfig,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
-		c.ownedChainIDs,        // chains we own for GetNetOwner lookups
+		c.ownedNetworkIDs,      // networks (L1s) we own for GetNetOwner lookups
 		nil,                    // validationIDs
 		c.importSourceChainIDs, // chains to import atomic UTXOs from
 	)
@@ -267,7 +267,7 @@ func addNet(t *testing.T, env *environment) {
 	})
 
 	var err error
-	testNet1, err = wallet.IssueCreateChainTx(
+	testNet1, err = wallet.IssueCreateNetworkTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{

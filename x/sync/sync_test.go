@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 

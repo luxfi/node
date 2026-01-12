@@ -1,7 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -50,7 +47,7 @@ type Network struct {
 	Nets []*Net
 }
 
-// Net represents a net (subnet) in the network
+// Net represents a net (L2 chain) in the network
 type Net struct {
 	NetID        ids.ID
 	Chains       []*Chain

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tvm
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/log/level"
 	"github.com/luxfi/threshold/pkg/math/curve"
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
@@ -73,7 +72,7 @@ func runTestProtocol(
 	defer network.close()
 
 	// Use real logger to see protocol errors
-	logger := log.NewTestLogger(level.Debug)
+	logger := log.NewTestLogger(log.DebugLevel)
 	results := sync.Map{}
 	errors := sync.Map{}
 
@@ -244,7 +243,7 @@ func TestProtocolExecutorCreation(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 
 	pe := NewProtocolExecutor(workerPool, logger)
 	require.NotNil(pe)
@@ -258,7 +257,7 @@ func TestLSSKeygenStartFunc(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := []party.ID{"alice", "bob", "charlie"}
@@ -275,7 +274,7 @@ func TestCMPKeygenStartFunc(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := []party.ID{"alice", "bob", "charlie"}
@@ -292,7 +291,7 @@ func TestFROSTKeygenStartFunc(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := []party.ID{"alice", "bob", "charlie"}
@@ -309,7 +308,7 @@ func TestFROSTKeygenTaprootStartFunc(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := []party.ID{"alice", "bob", "charlie"}
@@ -326,7 +325,7 @@ func TestHandlerLifecycle(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := []party.ID{"alice", "bob", "charlie"}
@@ -698,7 +697,7 @@ func TestProtocolExecutorWithRealKeygen(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	pIDs := testPartyIDs(3)
@@ -885,7 +884,7 @@ func TestRingtailSessionInit(t *testing.T) {
 		}
 
 		message := []byte("test message")
-		signFunc := ringtail.Sign(cfg, pIDs[:threshold], message, workerPool)
+		signFunc := ringtail.SignWithConfig(cfg, pIDs[:threshold], message, workerPool)
 		require.NotNil(signFunc, "Sign should return a function for %s", id)
 	}
 
@@ -975,7 +974,7 @@ func TestRingtailSignFullExecution(t *testing.T) {
 	// Sign
 	signResults, err := runTestProtocol(t, signers, func(id party.ID) protocol.StartFunc {
 		config := keygenResults[id].(*ringtail.Config)
-		return ringtail.Sign(config, signers, message, workerPool)
+		return ringtail.SignWithConfig(config, signers, message, workerPool)
 	})
 	require.NoError(err)
 	require.Len(signResults, threshold)
@@ -1005,7 +1004,7 @@ func TestCMPSignTimeout(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 
 	// Create executor
 	pe := NewProtocolExecutor(workerPool, logger)
@@ -1064,7 +1063,7 @@ func TestCMPSignTimeoutWithMessage(t *testing.T) {
 	startFunc := cmp.Sign(config, pIDs, message, workerPool)
 
 	// Create handler with timeout context
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	handler, err := protocol.NewHandler(
 		ctx,
 		logger,
@@ -1095,7 +1094,7 @@ func TestCMPHandlerTimeout(t *testing.T) {
 
 	workerPool := pool.NewPool(4)
 	defer workerPool.TearDown()
-	logger := log.NewNoOpLogger()
+	logger := log.NewTestLogger(log.DebugLevel)
 	pe := NewProtocolExecutor(workerPool, logger)
 
 	// Create CMP handler

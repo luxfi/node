@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -211,11 +211,11 @@ type Engine interface {
 // noopValidatorState provides a no-op implementation of validators.State for non-staking nodes
 type noopValidatorState struct{}
 
-func (n *noopValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (n *noopValidatorState) GetValidatorSet(ctx context.Context, height uint64, chainID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
 
-func (n *noopValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (n *noopValidatorState) GetCurrentValidators(ctx context.Context, height uint64, chainID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
 
@@ -227,12 +227,12 @@ func (n *noopValidatorState) GetMinimumHeight(ctx context.Context) (uint64, erro
 	return 0, nil
 }
 
-func (n *noopValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+func (n *noopValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, chainIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
 	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
-	for _, netID := range netIDs {
-		result[netID] = make(map[uint64]*validators.WarpSet)
+	for _, chainID := range chainIDs {
+		result[chainID] = make(map[uint64]*validators.WarpSet)
 		for _, height := range heights {
-			result[netID][height] = &validators.WarpSet{
+			result[chainID][height] = &validators.WarpSet{
 				Height:     height,
 				Validators: make(map[ids.NodeID]*validators.WarpValidator),
 			}
@@ -241,7 +241,7 @@ func (n *noopValidatorState) GetWarpValidatorSets(ctx context.Context, heights [
 	return result, nil
 }
 
-func (n *noopValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+func (n *noopValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, chainID ids.ID) (*validators.WarpSet, error) {
 	return &validators.WarpSet{
 		Height:     height,
 		Validators: make(map[ids.NodeID]*validators.WarpValidator),
@@ -486,7 +486,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	if sb, _ := m.Nets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			log.String("reason", "chain already staged"),
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -496,7 +496,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	if ok := m.chainsQueue.PushRight(chainParams); !ok {
 		m.Log.Warn("skipping chain creation",
 			log.String("reason", "couldn't enqueue chain"),
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
@@ -509,7 +509,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 // bootstrapping before this function is called
 func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("creating chain",
-		log.Stringer("netID", chainParams.NetID),
+		log.Stringer("chainID", chainParams.NetID),
 		log.Stringer("chainID", chainParams.ID),
 		log.Stringer("vmID", chainParams.VMID),
 	)
@@ -540,7 +540,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if isXChain && isVMTypeError && skipBootstrapMode {
 			chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 			m.Log.Warn("X-Chain creation failed in single validator mode - continuing without X-Chain",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -571,7 +571,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			// unless it's X-Chain with VM type error in single validator mode (handled above)
 			m.Log.Error("error creating required chain",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID),
 				log.String("errorString", fmt.Sprintf("%v", err)),
@@ -584,7 +584,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.String("chainAlias", chainAlias),
 			log.Stringer("vmID", chainParams.VMID),
@@ -605,7 +605,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		)
 		if err != nil {
 			m.Log.Error("failed to register failing health check",
-				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
@@ -622,7 +622,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
 		m.Log.Error("failed to alias the new chain with itself",
-			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 			log.Err(err),
@@ -724,7 +724,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	)
 	m.Log.Info("║ Chain ID:", log.Stringer("chainID", chainParams.ID))
 	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
-	m.Log.Info("║ Net ID:", log.Stringer("netID", chainParams.NetID))
+	m.Log.Info("║ Net ID:", log.Stringer("chainID", chainParams.NetID))
 	m.Log.Info("║ Endpoints available at:")
 	m.Log.Info("║   → /ext/bc/" + chainParams.ID.String())
 	if chainAlias != chainParams.ID.String() {
@@ -1423,8 +1423,8 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 
 func (m *manager) registerBootstrappedHealthChecks() error {
 	bootstrappedCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		if netIDs := m.Nets.Bootstrapping(); len(netIDs) != 0 {
-			return netIDs, errNotBootstrapped
+		if chainIDs := m.Nets.Bootstrapping(); len(chainIDs) != 0 {
+			return chainIDs, errNotBootstrapped
 		}
 		return []ids.ID{}, nil
 	})
@@ -1663,16 +1663,16 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 // emptyValidatorManager implements validators.Manager with no validators
 type emptyValidatorManager struct{}
 
-func (e *emptyValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
+func (e *emptyValidatorManager) GetValidator(chainID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
 	return nil, false
 }
 
-func (e *emptyValidatorManager) GetValidators(netID ids.ID) (validators.Set, error) {
+func (e *emptyValidatorManager) GetValidators(chainID ids.ID) (validators.Set, error) {
 	// Return nil for empty validator set since NewEmpty doesn't exist
 	return nil, nil
 }
 
-func (e *emptyValidatorManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 {
+func (e *emptyValidatorManager) GetWeight(chainID ids.ID, nodeID ids.NodeID) uint64 {
 	return 0
 }
 
@@ -1680,11 +1680,11 @@ func (e *emptyValidatorManager) GetCurrentHeight(context.Context) (uint64, error
 	return 0, nil
 }
 
-func (e *emptyValidatorManager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (e *emptyValidatorManager) GetValidatorSet(ctx context.Context, height uint64, chainID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
 }
 
-func (e *emptyValidatorManager) GetNetIDHeight(ctx context.Context, netID ids.ID) (uint64, error) {
+func (e *emptyValidatorManager) GetChainHeight(ctx context.Context, chainID ids.ID) (uint64, error) {
 	return 0, nil
 }
 
@@ -1694,39 +1694,39 @@ func (e *emptyValidatorManager) String() string {
 	return "empty validator manager"
 }
 
-func (e *emptyValidatorManager) TotalWeight(netID ids.ID) (uint64, error) {
+func (e *emptyValidatorManager) TotalWeight(chainID ids.ID) (uint64, error) {
 	return 0, nil
 }
 
-func (e *emptyValidatorManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64 {
+func (e *emptyValidatorManager) GetLight(chainID ids.ID, nodeID ids.NodeID) uint64 {
 	return 0
 }
 
-func (e *emptyValidatorManager) TotalLight(netID ids.ID) (uint64, error) {
+func (e *emptyValidatorManager) TotalLight(chainID ids.ID) (uint64, error) {
 	return 0, nil
 }
 
-func (e *emptyValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, publicKey []byte, txID ids.ID, light uint64) error {
+func (e *emptyValidatorManager) AddStaker(chainID ids.ID, nodeID ids.NodeID, publicKey []byte, txID ids.ID, light uint64) error {
 	return nil
 }
 
-func (e *emptyValidatorManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+func (e *emptyValidatorManager) AddWeight(chainID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return nil
 }
 
-func (e *emptyValidatorManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+func (e *emptyValidatorManager) RemoveWeight(chainID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return nil
 }
 
-func (e *emptyValidatorManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
+func (e *emptyValidatorManager) GetMap(chainID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
 	return nil
 }
 
-func (e *emptyValidatorManager) GetValidatorIDs(netID ids.ID) []ids.NodeID {
+func (e *emptyValidatorManager) GetValidatorIDs(chainID ids.ID) []ids.NodeID {
 	return nil
 }
 
-func (e *emptyValidatorManager) NumValidators(netID ids.ID) int {
+func (e *emptyValidatorManager) NumValidators(chainID ids.ID) int {
 	return 0
 }
 
@@ -1734,25 +1734,25 @@ func (e *emptyValidatorManager) NumNets() int {
 	return 0
 }
 
-func (e *emptyValidatorManager) SubsetWeight(netID ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
+func (e *emptyValidatorManager) SubsetWeight(chainID ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }
 
-func (e *emptyValidatorManager) Sample(netID ids.ID, size int) ([]ids.NodeID, error) {
+func (e *emptyValidatorManager) Sample(chainID ids.ID, size int) ([]ids.NodeID, error) {
 	return nil, nil
 }
 
-func (e *emptyValidatorManager) Count(netID ids.ID) int {
+func (e *emptyValidatorManager) Count(chainID ids.ID) int {
 	return 0
 }
 
 func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
 }
 
-func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
+func (e *emptyValidatorManager) RegisterSetCallbackListener(chainID ids.ID, listener validators.SetCallbackListener) {
 }
 
-func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, chainID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 

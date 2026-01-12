@@ -1,17 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
 
 import (
-	"github.com/luxfi/metric"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/compress"
+	"github.com/luxfi/metric"
 )
 
 func Test_newOutboundBuilder(t *testing.T) {

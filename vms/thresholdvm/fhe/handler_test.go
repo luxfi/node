@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fhe
@@ -23,7 +23,7 @@ func createTestWarpMessage(payload []byte, sourceChainID ids.ID) *warp.Message {
 
 func TestWarpHandlerNilMessage(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	handler := NewWarpHandler(logger, nil)
 	require.NotNil(handler)
 
@@ -34,7 +34,7 @@ func TestWarpHandlerNilMessage(t *testing.T) {
 
 func TestWarpHandlerPayloadTooShort(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	handler := NewWarpHandler(logger, nil)
 
 	// Create a message with payload < 4 bytes
@@ -46,7 +46,7 @@ func TestWarpHandlerPayloadTooShort(t *testing.T) {
 
 func TestWarpHandlerUnknownSelector(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	handler := NewWarpHandler(logger, nil)
 
 	// Create a message with unknown selector
@@ -61,7 +61,7 @@ func TestWarpHandlerUnknownSelector(t *testing.T) {
 
 func TestWarpHandlerDecryptionRequestPayloadTooShort(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	handler := NewWarpHandler(logger, nil)
 
 	// Create a message with SelectorRequestDecryption but insufficient data
@@ -77,7 +77,7 @@ func TestWarpHandlerDecryptionRequestPayloadTooShort(t *testing.T) {
 
 func TestWarpHandlerDecryptionWithCallbackPayloadTooShort(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 	handler := NewWarpHandler(logger, nil)
 
 	// Create a message with SelectorRequestDecryptionCallback but insufficient data
@@ -108,7 +108,7 @@ func TestSelectorConstants(t *testing.T) {
 
 func TestFHEDecryptionServiceStartStop(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	service := NewFHEDecryptionService(logger)
 	require.NotNil(service)
@@ -133,7 +133,7 @@ func TestFHEDecryptionServiceStartStop(t *testing.T) {
 
 func TestFHEDecryptionServiceRegisterHandler(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	service := NewFHEDecryptionService(logger)
 	require.NotNil(service)
@@ -156,7 +156,7 @@ func TestFHEDecryptionServiceRegisterHandler(t *testing.T) {
 
 func TestFHEDecryptionServiceMultipleHandlers(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	service := NewFHEDecryptionService(logger)
 
@@ -181,7 +181,7 @@ func TestFHEDecryptionServiceMultipleHandlers(t *testing.T) {
 
 func TestNewWarpHandler(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	handler := NewWarpHandler(logger, nil)
 	require.NotNil(handler)
@@ -191,7 +191,7 @@ func TestNewWarpHandler(t *testing.T) {
 
 func TestNewFHEDecryptionService(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	service := NewFHEDecryptionService(logger)
 	require.NotNil(service)
@@ -201,7 +201,7 @@ func TestNewFHEDecryptionService(t *testing.T) {
 
 func TestWarpHandlerDecryptionRequestWithRelayer(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	// Create full relayer setup
 	storage := NewInMemoryCiphertextStorage()
@@ -231,7 +231,7 @@ func TestWarpHandlerDecryptionRequestWithRelayer(t *testing.T) {
 
 func TestWarpHandlerDecryptionWithCallbackWithRelayer(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	// Create full relayer setup
 	storage := NewInMemoryCiphertextStorage()

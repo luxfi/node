@@ -214,6 +214,7 @@ require (
 exclude github.com/ethereum/go-ethereum v1.10.26
 
 replace (
+	github.com/luxfi/accel => ../accel
 	github.com/luxfi/consensus => ../consensus
 	github.com/luxfi/coreth => ../coreth
 	github.com/luxfi/crypto => ../crypto
@@ -225,3 +226,4 @@ replace (
 	github.com/luxfi/vm => ../vm
 	github.com/luxfi/warp => ../warp
 )
+replace github.com/luxfi/genesis => ../genesis

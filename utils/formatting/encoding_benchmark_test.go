@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package formatting
@@ -20,39 +20,39 @@ func BenchmarkEncodings(b *testing.B) {
 	}{
 		{
 			encoding: Hex,
-			size:     1 * units.KiB, // 1kb
+			size:     int(1 * units.KiB), // 1kb
 		},
 		{
 			encoding: Hex,
-			size:     4 * units.KiB, // 4kb
+			size:     int(4 * units.KiB), // 4kb
 		},
 		{
 			encoding: Hex,
-			size:     32 * units.KiB, // 32kb
+			size:     int(32 * units.KiB), // 32kb
 		},
 		{
 			encoding: Hex,
-			size:     128 * units.KiB, // 128kb
+			size:     int(128 * units.KiB), // 128kb
 		},
 		{
 			encoding: Hex,
-			size:     256 * units.KiB, // 256kb
+			size:     int(256 * units.KiB), // 256kb
 		},
 		{
 			encoding: Hex,
-			size:     512 * units.KiB, // 512kb
+			size:     int(512 * units.KiB), // 512kb
 		},
 		{
 			encoding: Hex,
-			size:     1 * units.MiB, // 1mb
+			size:     int(1 * units.MiB), // 1mb
 		},
 		{
 			encoding: Hex,
-			size:     2 * units.MiB, // 2mb
+			size:     int(2 * units.MiB), // 2mb
 		},
 		{
 			encoding: Hex,
-			size:     4 * units.MiB, // 4mb
+			size:     int(4 * units.MiB), // 4mb
 		},
 	}
 	for _, benchmark := range benchmarks {

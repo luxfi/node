@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -287,13 +287,13 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
-	chainID := testNet1.ID()
+	networkID := testNet1.ID()
 	{
 		// Case: Proposed validator currently validating primary network
 		// but stops validating net after stops validating primary network
 		// (note that keys[0] is a genesis validator)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -303,7 +303,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -331,7 +331,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// primary network validation period
 		// (note that keys[0] is a genesis validator)
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -341,7 +341,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -389,7 +389,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Proposed validator isn't in pending or current validator sets
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -399,7 +399,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -442,7 +442,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but starts validating chain before primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -452,7 +452,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -478,7 +478,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network
 		// but stops validating chain after primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -488,7 +488,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating chain after stopping validating primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -514,7 +514,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator is pending validator of primary network and
 		// period validating chain is subset of time validating primary network
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -524,7 +524,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -552,7 +552,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 
 	{
 		wallet := newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -562,7 +562,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -590,7 +590,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	// Case: Proposed validator already validating the chain
 	// First, add validator as validator of chain
 	wallet = newWallet(t, env, walletConfig{
-		netIDs: []ids.ID{chainID},
+		ownedNetworkIDs: []ids.ID{networkID},
 	})
 	chainTx, err := wallet.IssueAddChainValidatorTx(
 		&txs.ChainValidator{
@@ -600,7 +600,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Chain: chainID,
+			Chain: networkID,
 		},
 	)
 	require.NoError(err)
@@ -622,7 +622,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Node with ID nodeIDKey.Address() now validating chain with ID testNet1.ID
 		wallet = newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		duplicateNetTx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -632,7 +632,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -661,7 +661,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Too few signatures
 		wallet = newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -671,7 +671,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -703,7 +703,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	{
 		// Case: Control Signature from invalid key (keys[3] is not a control key)
 		wallet = newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -713,7 +713,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)
@@ -746,7 +746,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		// Case: Proposed validator in pending validator set for chain
 		// First, add validator to pending validator set of chain
 		wallet = newWallet(t, env, walletConfig{
-			netIDs: []ids.ID{chainID},
+			ownedNetworkIDs: []ids.ID{networkID},
 		})
 		tx, err := wallet.IssueAddChainValidatorTx(
 			&txs.ChainValidator{
@@ -756,7 +756,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Chain: chainID,
+				Chain: networkID,
 			},
 		)
 		require.NoError(err)

@@ -1,6 +1,3 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
-// See the file LICENSE for licensing terms.
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -53,7 +50,7 @@ func TestParseBlockResultsInvalid(t *testing.T) {
 				},
 				make([]byte, 1<<24), // Append the bitset
 			),
-			wantErr: codec.ErrUnmarshalTooBig,
+			wantErr: codec.ErrMaxSliceLenExceeded,
 		},
 	}
 	for _, test := range tests {

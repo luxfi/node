@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/timer/mockable"
 
-	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	"github.com/luxfi/node/vms/platformvm/config"

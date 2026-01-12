@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -23,7 +23,7 @@ func TestIPTracker_MaxTrackedIPsLimit(t *testing.T) {
 
 	tracker, err := newIPTracker(
 		set.Set[ids.ID]{},
-		log.NewLogger("test"),
+		log.NewNoOpLogger(),
 		metric.NewRegistry(),
 	)
 	require.NoError(err)
@@ -61,7 +61,7 @@ func TestIPTracker_BloomFilterSizeLimit(t *testing.T) {
 
 	tracker, err := newIPTracker(
 		set.Set[ids.ID]{},
-		log.NewLogger("test"),
+		log.NewNoOpLogger(),
 		metric.NewRegistry(),
 	)
 	require.NoError(err)
@@ -103,7 +103,7 @@ func TestIPTracker_EvictsOldestFirst(t *testing.T) {
 
 	tracker, err := newIPTracker(
 		set.Set[ids.ID]{},
-		log.NewLogger("test"),
+		log.NewNoOpLogger(),
 		metric.NewRegistry(),
 	)
 	require.NoError(err)

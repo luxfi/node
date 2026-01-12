@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fhe
@@ -32,7 +32,7 @@ func (m *mockSigner) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
 // TestNewRelayer tests Relayer creation with various configurations
 func TestNewRelayer(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("valid config", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -86,7 +86,7 @@ func TestNewRelayer(t *testing.T) {
 // TestRelayerStartStopLifecycle tests the Start/Stop lifecycle
 func TestRelayerStartStopLifecycle(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("start and stop", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -142,7 +142,7 @@ func TestRelayerStartStopLifecycle(t *testing.T) {
 // TestSubmitRequest tests request submission
 func TestSubmitRequest(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("valid request", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -259,7 +259,7 @@ func TestSubmitRequest(t *testing.T) {
 // TestGetResult tests result retrieval
 func TestGetResult(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("existing fulfilled result", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -428,7 +428,7 @@ func TestInMemoryCiphertextStorageOperations(t *testing.T) {
 // TestDoCleanup tests expired request cleanup
 func TestDoCleanup(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("cleanup expired requests", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -511,7 +511,7 @@ func TestDoCleanup(t *testing.T) {
 
 // TestCleanupExpired tests the cleanupExpired goroutine
 func TestCleanupExpired(t *testing.T) {
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("cleanup stops on context cancel", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -559,7 +559,7 @@ func TestCleanupExpired(t *testing.T) {
 // TestFetchCiphertext tests ciphertext fetching
 func TestFetchCiphertext(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	t.Run("fetch existing ciphertext", func(t *testing.T) {
 		storage := NewInMemoryCiphertextStorage()
@@ -746,7 +746,7 @@ func TestDecryptionResultStruct(t *testing.T) {
 // TestRelayerConcurrentAccess tests concurrent access patterns
 func TestRelayerConcurrentAccess(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	storage := NewInMemoryCiphertextStorage()
 	relayer := NewRelayer(logger, nil, storage, 1, ids.GenerateTestID(), ids.GenerateTestID(), nil, nil)
@@ -814,7 +814,7 @@ func TestCiphertextStorageInterface(t *testing.T) {
 // TestRelayerNetworkIDAndChainIDs tests network and chain ID handling
 func TestRelayerNetworkIDAndChainIDs(t *testing.T) {
 	require := require.New(t)
-	logger := log.NewLogger("test")
+	logger := log.Noop()
 
 	storage := NewInMemoryCiphertextStorage()
 	networkID := uint32(12345)

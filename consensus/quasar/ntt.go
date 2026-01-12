@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build !cgo
@@ -16,28 +16,28 @@ import (
 	"github.com/luxfi/lattice/v7/ring"
 )
 
-// GPUNTTAccelerator provides NTT operations for Ringtail.
+// NTTAccelerator provides NTT operations for Ringtail.
 // When CGO is disabled, this uses the pure Go lattice library
 // which provides optimized CPU-based NTT transforms.
-type GPUNTTAccelerator struct {
+type NTTAccelerator struct {
 	enabled bool
-	stats   GPUNTTStats
+	stats   NTTStats
 	statsmu sync.RWMutex
 }
 
-// GPUNTTStats tracks NTT accelerator statistics.
-type GPUNTTStats struct {
+// NTTStats tracks NTT accelerator statistics.
+type NTTStats struct {
 	Enabled      bool
 	Backend      string
 	TotalOps     uint64
 	GPUAvailable bool
 }
 
-// NewGPUNTTAccelerator creates a new NTT accelerator using pure Go lattice library.
-func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
-	return &GPUNTTAccelerator{
+// NewNTTAccelerator creates a new NTT accelerator using pure Go lattice library.
+func NewNTTAccelerator() (*NTTAccelerator, error) {
+	return &NTTAccelerator{
 		enabled: true, // CPU implementation is always available
-		stats: GPUNTTStats{
+		stats: NTTStats{
 			Enabled: true,
 			Backend: "CPU (Pure Go)",
 		},
@@ -45,24 +45,24 @@ func NewGPUNTTAccelerator() (*GPUNTTAccelerator, error) {
 }
 
 // IsEnabled returns true - CPU implementation is always available.
-func (g *GPUNTTAccelerator) IsEnabled() bool {
+func (g *NTTAccelerator) IsEnabled() bool {
 	return true
 }
 
 // Backend returns the backend name.
-func (g *GPUNTTAccelerator) Backend() string {
+func (g *NTTAccelerator) Backend() string {
 	return "CPU (Pure Go lattice)"
 }
 
 // NTTForward performs forward NTT on a polynomial using lattice library.
-func (g *GPUNTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
+func (g *NTTAccelerator) NTTForward(r *ring.Ring, poly ring.Poly) error {
 	r.NTT(poly, poly)
 	atomic.AddUint64(&g.stats.TotalOps, 1)
 	return nil
 }
 
 // NTTInverse performs inverse NTT on a polynomial using lattice library.
-func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
+func (g *NTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
 	r.INTT(poly, poly)
 	atomic.AddUint64(&g.stats.TotalOps, 1)
 	return nil
@@ -70,7 +70,7 @@ func (g *GPUNTTAccelerator) NTTInverse(r *ring.Ring, poly ring.Poly) error {
 
 // BatchNTTForward performs forward NTT on multiple polynomials.
 // Uses parallel processing for better performance on multi-core CPUs.
-func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
+func (g *NTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -115,7 +115,7 @@ func (g *GPUNTTAccelerator) BatchNTTForward(r *ring.Ring, polys []ring.Poly) err
 
 // BatchNTTInverse performs inverse NTT on multiple polynomials.
 // Uses parallel processing for better performance on multi-core CPUs.
-func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
+func (g *NTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) error {
 	if len(polys) == 0 {
 		return nil
 	}
@@ -159,20 +159,20 @@ func (g *GPUNTTAccelerator) BatchNTTInverse(r *ring.Ring, polys []ring.Poly) err
 }
 
 // PolyMul performs polynomial multiplication using Barrett reduction.
-func (g *GPUNTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
+func (g *NTTAccelerator) PolyMul(r *ring.Ring, a, b, out ring.Poly) error {
 	r.MulCoeffsBarrett(a, b, out)
 	atomic.AddUint64(&g.stats.TotalOps, 1)
 	return nil
 }
 
 // ClearCache is a no-op for CPU implementation (no GPU cache).
-func (g *GPUNTTAccelerator) ClearCache() {}
+func (g *NTTAccelerator) ClearCache() {}
 
 // Stats returns current NTT accelerator statistics.
-func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
+func (g *NTTAccelerator) Stats() NTTStats {
 	g.statsmu.RLock()
 	defer g.statsmu.RUnlock()
-	return GPUNTTStats{
+	return NTTStats{
 		Enabled:      true,
 		Backend:      "CPU (Pure Go lattice)",
 		TotalOps:     atomic.LoadUint64(&g.stats.TotalOps),
@@ -182,14 +182,14 @@ func (g *GPUNTTAccelerator) Stats() GPUNTTStats {
 
 // Global accelerator instance
 var (
-	globalAccelerator     *GPUNTTAccelerator
-	globalAcceleratorOnce sync.Once
+	globalNTTAccelerator     *NTTAccelerator
+	globalNTTAcceleratorOnce sync.Once
 )
 
-// GetGPUAccelerator returns the global NTT accelerator instance.
-func GetGPUAccelerator() (*GPUNTTAccelerator, error) {
-	globalAcceleratorOnce.Do(func() {
-		globalAccelerator, _ = NewGPUNTTAccelerator()
+// GetNTTAccelerator returns the global NTT accelerator instance.
+func GetNTTAccelerator() (*NTTAccelerator, error) {
+	globalNTTAcceleratorOnce.Do(func() {
+		globalNTTAccelerator, _ = NewNTTAccelerator()
 	})
-	return globalAccelerator, nil
+	return globalNTTAccelerator, nil
 }

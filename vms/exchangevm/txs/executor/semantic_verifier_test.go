@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -790,10 +790,6 @@ func (t *testValidatorState) GetChainID(_ ids.ID) (ids.ID, error) {
 
 func (t *testValidatorState) GetNetworkID(_ ids.ID) (ids.ID, error) {
 	return t.chainID, nil
-}
-
-func (t *testValidatorState) GetChainID(_ ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
 }
 
 func (t *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
