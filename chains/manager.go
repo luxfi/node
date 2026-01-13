@@ -8,6 +8,7 @@ import (
 	// xvm "github.com/luxfi/node/vms/exchangevm" // Unused
 	"context"
 	"crypto"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1011,7 +1012,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			ChainID:   chainParams.ID,
 			NetworkID: networkID,
 			Logger:    m.Log,
-			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator},
+			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID},
 			VM:        blockBuilder,
 			Params:    &localParams,
 		})
@@ -1025,6 +1026,21 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
 			log.Stringer("chainID", chainParams.ID))
+		if blockBuilder != nil {
+			lastAcceptedID, height, err := consensuschain.SyncStateFromVM(context.TODO(), blockBuilder, consensusEngine.Transitive)
+			if err != nil {
+				m.Log.Warn("failed to sync consensus state from VM",
+					log.Stringer("chainID", chainParams.ID),
+					log.Stringer("lastAccepted", lastAcceptedID),
+					log.Uint64("height", height),
+					log.Err(err))
+			} else {
+				m.Log.Info("synced consensus state from VM",
+					log.Stringer("chainID", chainParams.ID),
+					log.Stringer("lastAccepted", lastAcceptedID),
+					log.Uint64("height", height))
+			}
+		}
 
 		// Bridge VM's WaitForEvent to toEngine channel.
 		// This is the critical missing piece: ForwardVMNotifications reads from toEngine,
@@ -1077,7 +1093,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Context: chainCtx,
 			VM:      vm,              // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			Handler: newBlockHandler(vm, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID),
+			Handler: newBlockHandler(vm, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
 		}
 	default:
 		return nil, fmt.Errorf("unsupported VM type: %T", vm)
@@ -1773,6 +1789,7 @@ type blockHandler struct {
 	net        network.Network            // Network for sending Qbit responses
 	msgCreator message.OutboundMsgBuilder // Message creator for Qbit responses
 	chainID    ids.ID                     // Chain ID for message routing
+	networkID  ids.ID                     // Network ID for validator routing
 
 	// Context sync support - when a block fails verification due to missing context,
 	// we request the prerequisite blocks from the peer to catch up
@@ -1805,7 +1822,7 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID) *blockHandler {
+func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
 	return &blockHandler{
 		vm:               vm,
 		logger:           logger,
@@ -1813,6 +1830,7 @@ func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain
 		net:              net,
 		msgCreator:       msgCreator,
 		chainID:          chainID,
+		networkID:        networkID,
 		pendingContext:   make(map[ids.ID]contextRequest),
 		maxContextBlocks: 256, // Default max context blocks to request/serve
 		pendingQbits:     make(map[ids.ID][]QbitEvent),
@@ -1996,7 +2014,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 	nodeSet := set.NewSet[ids.NodeID](1)
 	nodeSet.Add(nodeID)
 
-	sentTo := b.net.Send(msg, nodeSet, ids.Empty, 0)
+	sentTo := b.net.Send(msg, nodeSet, b.networkID, 0)
 	b.logger.Info("requested context for missing prerequisites",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", blockID),
@@ -2030,10 +2048,24 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	currentID := containerID
 
 	for i := 0; i < b.maxContextBlocks; i++ {
-		blk, err := b.vm.GetBlock(ctx, currentID)
-		if err != nil {
-			// Block not found, stop walking
-			break
+		// First check pending blocks (for recently proposed but not yet accepted blocks)
+		// This is critical: when we propose a block and send PullQuery, other validators
+		// request context for the proposed block which may not be accepted yet.
+		var blk block.Block
+		var found bool
+
+		if b.engine != nil {
+			blk, found = b.engine.GetPendingBlock(currentID)
+		}
+
+		if !found {
+			// Fall back to VM storage for accepted blocks
+			var err error
+			blk, err = b.vm.GetBlock(ctx, currentID)
+			if err != nil {
+				// Block not found in either location, stop walking
+				break
+			}
 		}
 
 		// Add block bytes to the response (prepend to get oldest first)
@@ -2068,7 +2100,7 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	nodeSet := set.NewSet[ids.NodeID](1)
 	nodeSet.Add(nodeID)
 
-	sentTo := b.net.Send(msg, nodeSet, ids.Empty, 0)
+	sentTo := b.net.Send(msg, nodeSet, b.networkID, 0)
 	b.logger.Info("sent context response",
 		log.Stringer("to", nodeID),
 		log.Stringer("containerID", containerID),
@@ -2092,16 +2124,27 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		log.Uint32("requestID", requestID),
 		log.Int("dataLen", len(data)))
 
-	// The data contains multiple concatenated block bytes.
-	// Each block is sent in chronological order (oldest first).
-	// Parse and process each block.
+	// The data encodes multiple blocks as:
+	// [len][block][len][block]... where len is a 4-byte big-endian length.
 	processed := 0
 	remaining := data
 
-	for len(remaining) > 0 {
-		// Process the block via Put
-		err := b.Put(ctx, nodeID, requestID, remaining)
-		if err != nil {
+	for len(remaining) >= 4 {
+		blockLen := int(binary.BigEndian.Uint32(remaining[:4]))
+		remaining = remaining[4:]
+		if blockLen <= 0 || blockLen > len(remaining) {
+			b.logger.Debug("invalid context block length",
+				log.Stringer("from", nodeID),
+				log.Int("processed", processed),
+				log.Int("blockLen", blockLen),
+				log.Int("remaining", len(remaining)))
+			break
+		}
+
+		blockBytes := remaining[:blockLen]
+		remaining = remaining[blockLen:]
+
+		if err := b.Put(ctx, nodeID, requestID, blockBytes); err != nil {
 			b.logger.Debug("failed to process context block",
 				log.Stringer("from", nodeID),
 				log.Int("processed", processed),
@@ -2109,11 +2152,6 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 			break
 		}
 		processed++
-
-		// After processing a block, try to drain any buffered Qbits for it
-		// This is done in Put via popBufferedQbits, but we also trigger here
-		// for blocks that were already partially verified
-		break // For now, process one block at a time from the wire format
 	}
 
 	b.logger.Info("processed context blocks",
@@ -2145,6 +2183,18 @@ func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uin
 	// 4. Accept only when quorum is reached
 	blk, err := b.engine.HandleIncomingBlock(ctx, container, nodeID)
 	if err != nil {
+		if isMissingContextError(err) {
+			if b.vm != nil {
+				missingBlk, parseErr := b.vm.ParseBlock(ctx, container)
+				if parseErr == nil {
+					b.requestContext(ctx, nodeID, missingBlk.ID())
+				} else {
+					b.logger.Debug("failed to parse missing-context block",
+						log.Stringer("from", nodeID),
+						log.Err(parseErr))
+				}
+			}
+		}
 		b.logger.Debug("failed to handle incoming block",
 			log.Stringer("from", nodeID),
 			log.Err(err))
@@ -2218,7 +2268,7 @@ func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	nodeSet := set.NewSet[ids.NodeID](1)
 	nodeSet.Add(nodeID)
 
-	sentTo := b.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	sentTo := b.net.Send(qbitMsg, nodeSet, b.networkID, 0)
 	b.logger.Debug("responded to PushQuery with Qbit",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", blockID),
@@ -2238,35 +2288,50 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 		return nil
 	}
 
-	// Try to get the block from the VM with retry.
-	// The block may be arriving via Put concurrently, so we retry a few times
-	// with a short delay to handle the race condition between Put and PullQuery.
+	// Try to get the block from pending blocks first, then VM storage.
+	// When we receive a PullQuery, the proposer has the block but it may not
+	// be in our VM storage yet. First check pending blocks (proposed but not accepted).
 	var blk block.Block
-	var err error
-	const maxRetries = 3
-	const retryDelay = 20 * time.Millisecond
+	var found bool
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		blk, err = b.vm.GetBlock(ctx, containerID)
-		if err == nil {
-			break // Found the block
+	// First check pending blocks (for recently proposed but not yet accepted blocks)
+	if b.engine != nil {
+		blk, found = b.engine.GetPendingBlock(containerID)
+		if found {
+			b.logger.Debug("found block in pending for PullQuery",
+				log.Stringer("blockID", containerID),
+				log.Uint64("height", blk.Height()))
 		}
-		if attempt < maxRetries-1 {
-			// Wait before retry to allow concurrent Put to complete
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(retryDelay):
-				// Continue to next attempt
+	}
+
+	// If not in pending, try VM storage with retries
+	if !found {
+		var err error
+		const maxRetries = 3
+		const retryDelay = 20 * time.Millisecond
+
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			blk, err = b.vm.GetBlock(ctx, containerID)
+			if err == nil {
+				found = true
+				break // Found the block
+			}
+			if attempt < maxRetries-1 {
+				// Wait before retry to allow concurrent Put to complete
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(retryDelay):
+					// Continue to next attempt
+				}
 			}
 		}
 	}
 
-	if err != nil {
-		b.logger.Debug("cannot respond to PullQuery - block not found after retries",
+	if !found {
+		b.logger.Debug("cannot respond to PullQuery - block not found in pending or storage",
 			log.Stringer("from", nodeID),
-			log.Stringer("blockID", containerID),
-			log.Err(err))
+			log.Stringer("blockID", containerID))
 		// Block not found - request context (parent chain) from peer
 		b.requestContext(ctx, nodeID, containerID)
 		return nil
@@ -2318,7 +2383,7 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 	nodeSet := set.NewSet[ids.NodeID](1)
 	nodeSet.Add(nodeID)
 
-	sentTo := b.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	sentTo := b.net.Send(qbitMsg, nodeSet, b.networkID, 0)
 	b.logger.Debug("responded to PullQuery with Qbit",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", containerID),
@@ -2546,6 +2611,7 @@ func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig,
 type networkGossiper struct {
 	net        network.Network
 	msgCreator message.OutboundMsgBuilder
+	networkID  ids.ID
 }
 
 // Compile-time check that networkGossiper implements Gossiper
@@ -2597,7 +2663,7 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockI
 
 	// If no specific validators provided, broadcast to all validators
 	if len(validators) == 0 {
-		sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
+	sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
 		log.Info("[CONSENSUS DEBUG] SendPullQuery: Gossip returned",
 			"sentToCount", sentTo.Len(),
 			"sentToNodes", sentTo.List(),
@@ -2632,7 +2698,7 @@ func (g *networkGossiper) SendQbit(toNodeID ids.NodeID, chainID ids.ID, requestI
 
 	// Send to the specific node
 	nodeSet := set.Of(toNodeID)
-	g.net.Send(qbitMsg, nodeSet, ids.Empty, 0)
+	g.net.Send(qbitMsg, nodeSet, g.networkID, 0)
 	return nil
 }
 
@@ -2653,6 +2719,6 @@ func (g *networkGossiper) SendVote(chainID ids.ID, toNodeID ids.NodeID, blockID 
 
 	// Send to the proposer node
 	nodeSet := set.Of(toNodeID)
-	g.net.Send(voteMsg, nodeSet, ids.Empty, 0)
+	g.net.Send(voteMsg, nodeSet, g.networkID, 0)
 	return nil
 }

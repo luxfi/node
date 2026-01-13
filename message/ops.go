@@ -4,6 +4,7 @@
 package message
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -284,10 +285,23 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 	case *p2p.PushQuery:
 		return m.Container
 	case *p2p.Ancestors:
-		if len(m.Containers) > 0 {
-			return m.Containers[0]
+		// Encode all containers with length prefix so handlers can decode
+		// multiple blocks from a single byte slice.
+		if len(m.Containers) == 0 {
+			return nil
 		}
-		return nil
+		totalLen := 0
+		for _, container := range m.Containers {
+			totalLen += 4 + len(container)
+		}
+		encoded := make([]byte, 0, totalLen)
+		for _, container := range m.Containers {
+			var lenBuf [4]byte
+			binary.BigEndian.PutUint32(lenBuf[:], uint32(len(container)))
+			encoded = append(encoded, lenBuf[:]...)
+			encoded = append(encoded, container...)
+		}
+		return encoded
 	case *p2p.AppGossip:
 		return m.AppBytes
 	case *p2p.AppRequest:
