@@ -139,7 +139,6 @@ require (
 	github.com/luxfi/compress v0.0.4
 	github.com/luxfi/constants v1.4.3
 	github.com/luxfi/container v0.0.4
-	github.com/luxfi/evm v0.8.32
 	github.com/luxfi/fhe v1.7.6-0.20260106060801-28e308e4c2f8
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.5.22
@@ -168,30 +167,11 @@ require (
 )
 
 require (
-	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
-	github.com/crate-crypto/go-kzg-4844 v1.1.0 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
-	github.com/dop251/goja v0.0.0-20251201205617-2bb4c724c0f9 // indirect
-	github.com/gballet/go-libpcsclite v0.0.0-20250918194357-1ec6f2e601c6 // indirect
-	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
-	github.com/hashicorp/go-bexpr v0.1.15 // indirect
-	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/luxfi/concurrent v0.0.3
 	github.com/luxfi/protocol v0.0.2 // indirect
 	github.com/luxfi/upgrade v1.0.0 // indirect
 	github.com/luxfi/version v1.0.1 // indirect
-	github.com/mitchellh/pointerstructure v1.2.1 // indirect
-	github.com/pion/dtls/v2 v2.2.12 // indirect
-	github.com/pion/logging v0.2.4 // indirect
-	github.com/pion/stun/v2 v2.0.0 // indirect
-	github.com/pion/transport/v2 v2.2.10 // indirect
-	github.com/pion/transport/v3 v3.1.1 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/status-im/keycard-go v0.3.3 // indirect
-	github.com/urfave/cli/v2 v2.27.7 // indirect
-	github.com/wlynxg/anet v0.0.5 // indirect
-	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 

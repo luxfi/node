@@ -22,7 +22,6 @@ import (
 	"time"
 
 	nodevalidators "github.com/luxfi/consensus/validator"
-	evm "github.com/luxfi/evm/plugin/evm"
 
 	"github.com/luxfi/metric"
 
@@ -1251,14 +1250,8 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("X-Chain VM registered successfully")
 
-	// Register C-Chain VM
-	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &evm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register C-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("C-Chain VM registered successfully")
+	// NOTE: C-Chain VM (EVM) is loaded as a plugin, not compiled into the node binary.
+	// Place the EVM plugin at ~/.lux/plugins/<EVMID> to enable C-Chain.
 
 	// Register Q-Chain VM (Quantum VM)
 	n.Log.Info("Registering Q-Chain VM", "vmID", constants.QuantumVMID)
