@@ -997,6 +997,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// Native chains (P, C, X, Q, A, B, T, Z, G, I, K) use PrimaryNetworkID for validator lookups
 			networkID = constants.PrimaryNetworkID
 		}
+		if m.Validators != nil && networkID != constants.PrimaryNetworkID {
+			if m.Validators.Count(networkID) == 0 {
+				m.Log.Warn("no validators found for network ID; falling back to primary network validators",
+					log.Stringer("chainID", chainParams.ID),
+					log.Stringer("networkID", networkID),
+					log.Stringer("fallbackNetworkID", constants.PrimaryNetworkID),
+				)
+				networkID = constants.PrimaryNetworkID
+			}
+		}
 		m.Log.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("chainParams.NetID", chainParams.NetID),
@@ -1065,23 +1075,36 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				}
 
 				// Convert the result to block.Message
-				// WaitForEvent returns a consensuscore.Message which has a Type field
-				if msg, ok := result.(interface{ Type() engine.MessageType }); ok {
-					toEngine <- block.Message{Type: block.MessageType(msg.Type())}
-					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned, forwarding to toEngine",
-						log.Stringer("chainID", chainParams.ID))
-				} else if msgStruct, ok := result.(struct{ Type engine.MessageType }); ok {
-					toEngine <- block.Message{Type: block.MessageType(msgStruct.Type)}
-					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned struct, forwarding to toEngine",
-						log.Stringer("chainID", chainParams.ID))
-				} else {
-					// Try to get the type directly if it's a consensuscore.Message
-					m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned unknown type, sending PendingTxs",
+				// WaitForEvent can return:
+				// 1. engine.MessageType (which is an alias for vm.MessageType = uint32)
+				// 2. interface with Type() method
+				// 3. struct with Type field
+				var msgType block.MessageType
+				switch v := result.(type) {
+				case engine.MessageType:
+					msgType = block.MessageType(v)
+					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned MessageType",
 						log.Stringer("chainID", chainParams.ID),
-						log.String("resultType", fmt.Sprintf("%T", result)))
-					// Default to PendingTxs since that's the most common trigger
-					toEngine <- block.Message{Type: block.PendingTxs}
+						log.Uint32("value", uint32(v)))
+				case interface{ Type() engine.MessageType }:
+					msgType = block.MessageType(v.Type())
+					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned interface",
+						log.Stringer("chainID", chainParams.ID))
+				case struct{ Type engine.MessageType }:
+					msgType = block.MessageType(v.Type)
+					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned struct",
+						log.Stringer("chainID", chainParams.ID))
+				default:
+					m.Log.Warn("[VM NOTIFICATION] WaitForEvent returned unknown type, defaulting to PendingTxs",
+						log.Stringer("chainID", chainParams.ID),
+						log.String("resultType", fmt.Sprintf("%T", result)),
+						log.String("resultValue", fmt.Sprintf("%v", result)))
+					msgType = block.PendingTxs
 				}
+				toEngine <- block.Message{Type: msgType}
+				m.Log.Info("[VM NOTIFICATION] Sent to toEngine channel",
+					log.Stringer("chainID", chainParams.ID),
+					log.Uint32("msgType", uint32(msgType)))
 			}
 		}()
 
