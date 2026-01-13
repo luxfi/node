@@ -139,7 +139,7 @@ require (
 	github.com/luxfi/compress v0.0.4
 	github.com/luxfi/constants v1.4.3
 	github.com/luxfi/container v0.0.4
-	github.com/luxfi/evm v1.16.20
+	github.com/luxfi/evm v0.8.32
 	github.com/luxfi/fhe v1.7.6-0.20260106060801-28e308e4c2f8
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.5.22
@@ -165,11 +165,6 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.1
-)
-
-require (
-	github.com/fjl/gencodec v0.1.1 // indirect
-	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 )
 
 require (
