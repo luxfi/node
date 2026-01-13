@@ -648,6 +648,13 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
 	n.Config.NetworkConfig.GenesisBytes = n.Config.GenesisBytes
+	// Map native chains (P/C/X/etc.) to the primary network validator set.
+	n.Config.NetworkConfig.SequencerIDForChain = func(chainID ids.ID) ids.ID {
+		if ids.IsNativeChain(chainID) {
+			return constants.PrimaryNetworkID
+		}
+		return chainID
+	}
 
 	// Wrap the router to implement network.ExternalHandler
 	externalHandler := &externalHandlerWrapper{router: consensusRouter}

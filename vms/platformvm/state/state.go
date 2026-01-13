@@ -1951,9 +1951,7 @@ func (s *state) loadCurrentValidators() error {
 
 		s.validatorState.LoadValidatorMetadata(staker.NodeID, staker.ChainID, metadata)
 	}
-	fmt.Printf("[VALIDATOR DEBUG] loadCurrentValidators: PRIMARY validators loaded: count=%d currentStakersLen=%d\n",
-		validatorCount, len(s.currentStakers.validators))
-	log.Warn("loadCurrentValidators: primary validators loaded",
+	log.Info("loadCurrentValidators: primary validators loaded",
 		"count", validatorCount,
 		"currentStakersValidatorsLen", len(s.currentStakers.validators),
 	)
@@ -2143,10 +2141,6 @@ func (s *state) loadPendingValidators() error {
 // Invariant: initValidatorSets requires loadActiveL1Validators and
 // loadCurrentValidators to have already been called.
 func (s *state) initValidatorSets() error {
-	fmt.Printf("[VALIDATOR DEBUG] initValidatorSets CALLED - validatorManagerPtr=%p\n", s.validators) // Direct print to bypass log filtering
-	log.Warn("[VALIDATOR DEBUG] initValidatorSets: STARTING NOW",
-		"validatorManagerPtr", fmt.Sprintf("%p", s.validators),
-	)
 	log.Info("initValidatorSets: starting",
 		"numNets", s.validators.NumNets(),
 		"currentStakersChains", len(s.currentStakers.validators),
@@ -2249,10 +2243,7 @@ func (s *state) initValidatorSets() error {
 
 	// Log final state
 	numValidators := s.validators.NumValidators(constants.PrimaryNetworkID)
-	fmt.Printf("[VALIDATOR DEBUG] initValidatorSets COMPLETE: validatorManagerPtr=%p primaryNetworkID=%s numValidators=%d totalWeight=%d numNets=%d\n",
-		s.validators, constants.PrimaryNetworkID, numValidators, totalWeight, s.validators.NumNets())
-	log.Warn("[VALIDATOR DEBUG] initValidatorSets: COMPLETE",
-		"validatorManagerPtr", fmt.Sprintf("%p", s.validators),
+	log.Info("initValidatorSets: complete",
 		"primaryNetworkID", constants.PrimaryNetworkID,
 		"numValidators", numValidators,
 		"totalWeight", totalWeight,

@@ -46,16 +46,37 @@ var (
 	CChainAliases = []string{"C", "evm"}
 	// DChainAliases are the default aliases for the D-Chain (DEX)
 	DChainAliases = []string{"D", "dex", "dexvm"}
+	// QChainAliases are the default aliases for the Q-Chain (Quantum)
+	QChainAliases = []string{"Q", "quantum", "quantumvm", "pq"}
+	// AChainAliases are the default aliases for the A-Chain (Attestation/AI)
+	AChainAliases = []string{"A", "attest", "ai", "aivm"}
+	// BChainAliases are the default aliases for the B-Chain (Bridge)
+	BChainAliases = []string{"B", "bridge", "bridgevm"}
+	// TChainAliases are the default aliases for the T-Chain (Threshold)
+	TChainAliases = []string{"T", "threshold", "thresholdvm", "mpc"}
+	// ZChainAliases are the default aliases for the Z-Chain (ZK)
+	ZChainAliases = []string{"Z", "zk", "zkvm"}
+	// GChainAliases are the default aliases for the G-Chain (Graph)
+	GChainAliases = []string{"G", "graph", "graphvm", "dgraph"}
+	// KChainAliases are the default aliases for the K-Chain (KMS)
+	KChainAliases = []string{"K", "kms", "kmsvm"}
 
 	// VMAliases are the default aliases for VMs
 	VMAliases = map[ids.ID][]string{
-		constants.PlatformVMID: {"platform"},
-		constants.XVMID:        {"xvm"},
-		constants.EVMID:        {"evm"},
-		constants.DexVMID:      {"dexvm", "dex"},
-		secp256k1fx.ID:         {"secp256k1fx"},
-		nftfx.ID:               {"nftfx"},
-		propertyfx.ID:          {"propertyfx"},
+		constants.PlatformVMID:  {"platform"},
+		constants.XVMID:         {"xvm"},
+		constants.EVMID:         {"evm"},
+		constants.DexVMID:       {"dexvm", "dex"},
+		constants.QuantumVMID:   {"quantumvm", "quantum", "pq"},
+		constants.AIVMID:        {"aivm", "attest", "ai"},
+		constants.BridgeVMID:    {"bridgevm", "bridge"},
+		constants.ThresholdVMID: {"thresholdvm", "threshold", "mpc"},
+		constants.ZKVMID:        {"zkvm", "zk"},
+		constants.GraphVMID:     {"graphvm", "graph", "dgraph"},
+		constants.KMSVMID:       {"kmsvm", "kms"},
+		secp256k1fx.ID:          {"secp256k1fx"},
+		nftfx.ID:                {"nftfx"},
+		propertyfx.ID:           {"propertyfx"},
 	}
 
 	errNoTxs                          = errors.New("genesis creates no transactions")
@@ -484,7 +505,10 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// Specify the chains
+	// Specify the chains - only fully implemented primary network chains
+	// NOTE: Q, A, B, T, Z, G, K chains are registered as VMs but not included
+	// in genesis chains until their BuildBlock methods are fully implemented.
+	// They currently return "not implemented" errors which prevent network startup.
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
@@ -655,6 +679,73 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "dexvm"),
 			}
 			chainAliases[chainID] = DChainAliases
+		case constants.QuantumVMID:
+			apiAliases[endpoint] = []string{
+				"Q",
+				"quantum",
+				"quantumvm",
+				"pq",
+				path.Join(constants.ChainAliasPrefix, "Q"),
+				path.Join(constants.ChainAliasPrefix, "quantum"),
+			}
+			chainAliases[chainID] = QChainAliases
+		case constants.AIVMID:
+			apiAliases[endpoint] = []string{
+				"A",
+				"attest",
+				"ai",
+				"aivm",
+				path.Join(constants.ChainAliasPrefix, "A"),
+				path.Join(constants.ChainAliasPrefix, "attest"),
+			}
+			chainAliases[chainID] = AChainAliases
+		case constants.BridgeVMID:
+			apiAliases[endpoint] = []string{
+				"B",
+				"bridge",
+				"bridgevm",
+				path.Join(constants.ChainAliasPrefix, "B"),
+				path.Join(constants.ChainAliasPrefix, "bridge"),
+			}
+			chainAliases[chainID] = BChainAliases
+		case constants.ThresholdVMID:
+			apiAliases[endpoint] = []string{
+				"T",
+				"threshold",
+				"thresholdvm",
+				"mpc",
+				path.Join(constants.ChainAliasPrefix, "T"),
+				path.Join(constants.ChainAliasPrefix, "threshold"),
+			}
+			chainAliases[chainID] = TChainAliases
+		case constants.ZKVMID:
+			apiAliases[endpoint] = []string{
+				"Z",
+				"zk",
+				"zkvm",
+				path.Join(constants.ChainAliasPrefix, "Z"),
+				path.Join(constants.ChainAliasPrefix, "zk"),
+			}
+			chainAliases[chainID] = ZChainAliases
+		case constants.GraphVMID:
+			apiAliases[endpoint] = []string{
+				"G",
+				"graph",
+				"graphvm",
+				"dgraph",
+				path.Join(constants.ChainAliasPrefix, "G"),
+				path.Join(constants.ChainAliasPrefix, "graph"),
+			}
+			chainAliases[chainID] = GChainAliases
+		case constants.KMSVMID:
+			apiAliases[endpoint] = []string{
+				"K",
+				"kms",
+				"kmsvm",
+				path.Join(constants.ChainAliasPrefix, "K"),
+				path.Join(constants.ChainAliasPrefix, "kms"),
+			}
+			chainAliases[chainID] = KChainAliases
 		}
 	}
 	return apiAliases, chainAliases, nil

@@ -319,25 +319,22 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 		blsLatency = time.Since(start)
 	}()
 
-	// Ringtail path (if coordinator is connected)
+	// Ringtail path - REQUIRED for Q-Chain validator consensus.
+	// No fallback mode: if Ringtail coordinator is not initialized,
+	// finality MUST fail to prevent accepting BLS-only proofs.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if q.ringtail == nil || !q.ringtail.IsInitialized() {
-			// Fall back to single-signer quantum stamp
-			start := time.Now()
-			fallbackProof, err := q.createQuantumStampFallback(msg)
-			if err == nil {
-				ringtailSig = NewRingtailSignature(fallbackProof, nil)
-			}
-			ringtailErr = err
-			ringtailLatency = time.Since(start)
-		} else {
-			// Full threshold signing
-			start := time.Now()
-			ringtailSig, ringtailErr = q.collectRingtail(msgStr)
-			ringtailLatency = time.Since(start)
+			// STRICT: No fallback allowed for validators.
+			// RT signatures are REQUIRED for quantum-safe consensus.
+			ringtailErr = ErrRingtailNotConnected
+			return
 		}
+		// Full threshold signing
+		start := time.Now()
+		ringtailSig, ringtailErr = q.collectRingtail(msgStr)
+		ringtailLatency = time.Since(start)
 	}()
 
 	wg.Wait()
@@ -515,14 +512,20 @@ func (q *Quasar) Subscribe() <-chan *QuantumFinality {
 	return q.finalityCh
 }
 
-// Verify verifies a hybrid finality proof
+// Verify verifies a hybrid finality proof.
+// Both BLS and Ringtail proofs are REQUIRED - no fallback mode.
+// This ensures quantum-safe consensus for Q-Chain validators.
 func (q *Quasar) Verify(finality *QuantumFinality) error {
 	if finality == nil {
 		return ErrFinalityFailed
 	}
 
-	if len(finality.BLSProof) == 0 || len(finality.RingtailProof) == 0 {
-		return ErrFinalityFailed
+	// STRICT: Both proofs are REQUIRED
+	if len(finality.BLSProof) == 0 {
+		return fmt.Errorf("%w: BLS proof missing", ErrBLSFailed)
+	}
+	if len(finality.RingtailProof) == 0 {
+		return fmt.Errorf("%w: RT proof missing - required for Q-Chain validators", ErrRingtailFailed)
 	}
 
 	if !q.checkQuorum(finality.SignerWeight, finality.TotalWeight) {
@@ -544,12 +547,19 @@ func (q *Quasar) Verify(finality *QuantumFinality) error {
 		return ErrBLSFailed
 	}
 
-	// Verify Ringtail proof exists and has valid marker
-	if len(finality.RingtailProof) < 3 || finality.RingtailProof[0] != 'R' || finality.RingtailProof[1] != 'T' {
-		// Check if it's a fallback ML-DSA signature
-		if len(finality.RingtailProof) < 8 {
-			return ErrRingtailFailed
-		}
+	// Verify Ringtail threshold signature
+	// RT signatures MUST have the "RT" prefix marker followed by threshold data
+	if len(finality.RingtailProof) < 3 {
+		return fmt.Errorf("%w: RT proof too short", ErrRingtailFailed)
+	}
+	if finality.RingtailProof[0] != 'R' || finality.RingtailProof[1] != 'T' {
+		return fmt.Errorf("%w: invalid RT proof marker", ErrRingtailFailed)
+	}
+
+	// Verify threshold signers meet minimum requirement
+	if len(finality.RingtailSigners) < q.threshold {
+		return fmt.Errorf("%w: need %d signers, have %d",
+			ErrInsufficientSigners, q.threshold, len(finality.RingtailSigners))
 	}
 
 	return nil
