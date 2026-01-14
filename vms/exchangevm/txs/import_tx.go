@@ -51,17 +51,17 @@ func (t *ImportTx) NumCredentials() int {
 	return t.BaseTx.NumCredentials() + len(t.ImportedIns)
 }
 
-func (t *ImportTx) InitCtx(ctx *runtime.Runtime) {
-	// TransferableInput doesn't have InitCtx
+func (t *ImportTx) InitRuntime(rt *runtime.Runtime) {
+	// TransferableInput doesn't have InitRuntime
 	// for _, in := range t.ImportedIns {
-	//     in.InitCtx(ctx)
+	//     in.InitRuntime(ctx)
 	// }
-	t.BaseTx.InitCtx(ctx)
+	t.BaseTx.InitRuntime(rt)
 }
 
-// InitializeContext initializes the context for this transaction
-func (t *ImportTx) InitializeContext(ctx *runtime.Runtime) error {
-	t.InitCtx(ctx)
+// InitializeRuntime initializes the context for this transaction
+func (t *ImportTx) InitializeRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
 }
 
@@ -69,8 +69,8 @@ func (t *ImportTx) Visit(v Visitor) error {
 	return v.ImportTx(t)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *ImportTx) InitializeWithContext(ctx *runtime.Runtime) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *ImportTx) InitializeWithRuntime(rt *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

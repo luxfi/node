@@ -375,7 +375,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID      = b.context.XAssetID
+		xAssetID      = b.context.XAssetID
 		txFee           = b.context.BaseTxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -426,14 +426,14 @@ func (b *builder) NewImportTx(
 	var (
 		inputs      []*lux.TransferableInput
 		outputs     = make([]*lux.TransferableOutput, 0, len(importedAmounts))
-		importedLUX = importedAmounts[luxAssetID]
+		importedLUX = importedAmounts[xAssetID]
 	)
 	if importedLUX > txFee {
-		importedAmounts[luxAssetID] -= txFee
+		importedAmounts[xAssetID] -= txFee
 	} else {
 		if importedLUX < txFee { // imported amount goes toward paying tx fee
 			toBurn := map[ids.ID]uint64{
-				luxAssetID: txFee - importedLUX,
+				xAssetID: txFee - importedLUX,
 			}
 			var err error
 			inputs, outputs, err = b.spend(toBurn, ops)
@@ -441,7 +441,7 @@ func (b *builder) NewImportTx(
 				return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 			}
 		}
-		delete(importedAmounts, luxAssetID)
+		delete(importedAmounts, xAssetID)
 	}
 
 	for assetID, amount := range importedAmounts {

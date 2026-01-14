@@ -9,13 +9,13 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/p2p/gossip"
-	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -127,14 +127,14 @@ func (tx *Tx) InputIDs() set.Set[ids.ID] {
 	return tx.Unsigned.InputIDs()
 }
 
-func (tx *Tx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *Tx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx
 	case tx.TxID == ids.Empty:
 		return errSignedTxNotInitialized
 	default:
-		return tx.Unsigned.SyntacticVerify(ctx)
+		return tx.Unsigned.SyntacticVerify(rt)
 	}
 }
 

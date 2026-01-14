@@ -13,8 +13,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/runtime"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -123,23 +124,27 @@ func TestDexVMGenesisFormat(t *testing.T) {
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan consensuscore.Message, 100)
+	toEngine := make(chan core.Message, 100)
 	appSender := warp.FakeSender{}
 
-	consensusCtx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		ChainID: chainID,
+		Log:     logger,
 	}
 
 	err = vm.Initialize(
 		context.Background(),
-		consensusCtx,
-		db,
-		genesisBytes,
-		nil, // upgrade
-		nil, // config
-		toEngine,
-		nil, // fxs
-		appSender,
+		common.VMInit{
+			Runtime:  rt,
+			DB:       db,
+			ToEngine: toEngine,
+			Sender:   appSender,
+			Log:      logger,
+			Genesis:  genesisBytes,
+			Upgrade:  nil,
+			Config:   nil,
+			Fx:       nil,
+		},
 	)
 	require.NoError(err, "VM should initialize with genesis config")
 
@@ -169,26 +174,31 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 		vm := dexvm.NewVMForTest(cfg, logger)
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 		appSender := warp.FakeSender{}
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: chainID,
+			Log:     logger,
 		}
 
 		err := vm.Initialize(
 			ctx,
-			consensusCtx,
-			db,
-			genesisBytes,
-			nil, nil,
-			toEngine,
-			nil,
-			appSender,
+			common.VMInit{
+				Runtime:  rt,
+				DB:       db,
+				ToEngine: toEngine,
+				Sender:   appSender,
+				Log:      logger,
+				Genesis:  genesisBytes,
+				Upgrade:  nil,
+				Config:   nil,
+				Fx:       nil,
+			},
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(ctx, uint32(consensuscore.Ready))
+		err = vm.SetState(ctx, uint32(core.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
 		vms[i] = vm
@@ -281,25 +291,30 @@ func TestDexVMChainDeploymentScenario(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		vm := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: blockchainID, // All validators use same chain ID
+			Log:     logger,
 		}
 
 		err := vm.Initialize(
 			ctx,
-			consensusCtx,
-			db,
-			genesisBytes,
-			nil, nil,
-			toEngine,
-			nil,
-			warp.FakeSender{},
+			common.VMInit{
+				Runtime:  rt,
+				DB:       db,
+				ToEngine: toEngine,
+				Sender:   warp.FakeSender{},
+				Log:      logger,
+				Genesis:  genesisBytes,
+				Upgrade:  nil,
+				Config:   nil,
+				Fx:       nil,
+			},
 		)
 		require.NoError(err)
 
-		err = vm.SetState(ctx, uint32(consensuscore.Ready))
+		err = vm.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 
 		validators[i] = vm
@@ -355,14 +370,25 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 		vm := dexvm.NewVMForTest(cfg, logger)
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: chainID,
+			Log:     logger,
 		}
 
-		_ = vm.Initialize(ctx, consensusCtx, db, nil, nil, nil, toEngine, nil, warp.FakeSender{})
-		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
+		_ = vm.Initialize(ctx, common.VMInit{
+			Runtime:  rt,
+			DB:       db,
+			ToEngine: toEngine,
+			Sender:   warp.FakeSender{},
+			Log:      logger,
+			Genesis:  nil,
+			Upgrade:  nil,
+			Config:   nil,
+			Fx:       nil,
+		})
+		_ = vm.SetState(ctx, uint32(core.Ready))
 
 		validators[i] = vm
 	}

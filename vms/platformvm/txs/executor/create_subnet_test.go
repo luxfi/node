@@ -42,8 +42,8 @@ func TestCreateNetworkTxAP3FeeChange(t *testing.T) {
 			require := require.New(t)
 
 			env := newEnvironment(t, upgradetest.Latest)
-			env.ctx.Lock.Lock()
-			defer env.ctx.Lock.Unlock()
+			env.rt.Lock.Lock()
+			defer env.rt.Lock.Unlock()
 
 			// Set AP3 time relative to current state timestamp
 			currentTime := env.state.GetTimestamp()
@@ -95,8 +95,8 @@ func TestCreateChainTxInsufficientFunds(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	// Set AP3 in the past so we're post-fork (fees required)
 	currentTime := env.state.GetTimestamp()

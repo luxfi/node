@@ -9,6 +9,7 @@ import (
 	"maps"
 	"net/http"
 
+	"github.com/luxfi/container/linked"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -17,7 +18,6 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/container/linked"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -273,8 +273,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    w.vm.consensusCtx.NetworkID,
-		BlockchainID: w.vm.consensusCtx.ChainID,
+		NetworkID:    w.vm.consensusRuntime.NetworkID,
+		BlockchainID: w.vm.consensusRuntime.ChainID,
 		Outs:         outs,
 		Ins:          ins,
 		Memo:         memoBytes,

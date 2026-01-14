@@ -56,7 +56,7 @@ func TestSetsAndGets(t *testing.T) {
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: env.consensusCtx.XChainID,
+		BlockchainID: env.consensusRuntime.XChainID,
 		Ins: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,

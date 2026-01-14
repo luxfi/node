@@ -283,8 +283,8 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
 	networkID := testNet1.ID()
@@ -796,8 +796,8 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 func TestProposalTxExecuteAddValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	nodeID := ids.GenerateTestNodeID()
 	chainTime := env.state.GetTimestamp()

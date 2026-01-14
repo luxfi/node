@@ -13,23 +13,24 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/warp"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
@@ -47,7 +48,7 @@ import (
 type VM struct {
 	*p2p.Network
 
-	chainContext *runtime.Runtime
+	chainRuntime *runtime.Runtime
 	db           database.Database
 	genesis      *genesis.Genesis
 
@@ -57,21 +58,22 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *runtime.Runtime,
-	db database.Database,
-	genesisBytes []byte,
-	_ []byte,
-	_ []byte,
-	_ []*core.Fx,
-	appSender warp.Sender,
+	init common.VMInit,
 ) error {
-	logger := chainContext.Log.(log.Logger)
+	chainRuntime := init.Runtime
+	db := init.DB
+	genesisBytes := init.Genesis
+	appSender := init.Sender
+	logger := init.Log
+	if logger == nil {
+		logger = chainRuntime.Log.(log.Logger)
+	}
 	logger.Info("initializing xsvm",
 		log.Stringer("version", Version),
 	)
 
 	metrics := metric.NewRegistry()
-	if metricsReg, ok := chainContext.Metrics.(interface {
+	if metricsReg, ok := chainRuntime.Metrics.(interface {
 		Register(name string, gatherer metric.Gatherer) error
 	}); ok {
 		if err := metricsReg.Register("p2p", metrics); err != nil {
@@ -94,7 +96,7 @@ func (vm *VM) Initialize(
 	// allowed for this example.
 	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
 	// Cast WarpSigner directly to warp.Signer since both use external warp
-	warpSigner := chainContext.WarpSigner.(warp.Signer)
+	warpSigner := chainRuntime.WarpSigner.(warp.Signer)
 	cachedHandler := warp.NewCachedSignatureHandler(
 		signatureCache,
 		xsvmVerifier{},
@@ -105,7 +107,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.chainContext = chainContext
+	vm.chainRuntime = chainRuntime
 	vm.db = db
 	g, err := genesis.Parse(genesisBytes)
 	if err != nil {
@@ -113,7 +115,7 @@ func (vm *VM) Initialize(
 	}
 
 	vdb := versiondb.New(vm.db)
-	chainID := chainContext.ChainID
+	chainID := chainRuntime.ChainID
 	if err := execute.Genesis(vdb, chainID, g); err != nil {
 		return fmt.Errorf("failed to initialize genesis state: %w", err)
 	}
@@ -123,12 +125,12 @@ func (vm *VM) Initialize(
 
 	vm.genesis = g
 
-	vm.chain, err = xschain.New(chainContext, vm.db)
+	vm.chain, err = xschain.New(chainRuntime, vm.db)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chain manager: %w", err)
 	}
 
-	vm.builder = builder.New(chainContext, vm.chain)
+	vm.builder = builder.New(chainRuntime, vm.chain)
 
 	logger.Info("initialized xsvm",
 		log.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
@@ -152,7 +154,7 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion inte
 }
 
 func (vm *VM) Shutdown(context.Context) error {
-	if vm.chainContext == nil {
+	if vm.chainRuntime == nil {
 		return nil
 	}
 	return vm.db.Close()
@@ -167,7 +169,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 	jsonRPCAPI := api.NewServer(
-		vm.chainContext,
+		vm.chainRuntime,
 		vm.genesis,
 		vm.db,
 		vm.chain,
@@ -186,7 +188,7 @@ func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
 	)
 	mux.Handle(reflectionPattern, reflectionHandler)
 
-	pingService := &api.PingService{Log: vm.chainContext.Log.(log.Logger)}
+	pingService := &api.PingService{Log: vm.chainRuntime.Log.(log.Logger)}
 	pingPath, pingHandler := xsvmconnect.NewPingHandler(pingService)
 	mux.Handle(pingPath, pingHandler)
 

@@ -18,7 +18,7 @@ import (
 
 type Backend struct {
 	Config       *config.Internal
-	Ctx          *runtime.Runtime
+	Runtime      *runtime.Runtime
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier

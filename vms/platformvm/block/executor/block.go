@@ -50,7 +50,7 @@ func (b *Block) VerifyWithContext(ctx context.Context, blockContext *block.Conte
 	if !warpAlreadyVerified && b.manager.txExecutorBackend.Bootstrapped.Get() {
 		err := VerifyWarpMessages(
 			ctx,
-			b.manager.ctx.NetworkID,
+			b.manager.rt.NetworkID,
 			b.manager.validatorManager,
 			blockContext.PChainHeight,
 			b,

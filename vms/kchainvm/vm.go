@@ -133,7 +133,7 @@ type VM struct {
 // Initialize initializes the K-Chain VM.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
+	chainRuntime interface{},
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,

@@ -14,8 +14,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/runtime"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -58,23 +59,27 @@ func createTestVM(t *testing.T) *dexvm.VM {
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan consensuscore.Message, 100)
+	toEngine := make(chan core.Message, 100)
 	appSender := warp.FakeSender{} // Use warp's FakeSender
 
-	consensusCtx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		ChainID: chainID,
+		Log:     logger,
 	}
 
 	err := vm.Initialize(
 		context.Background(),
-		consensusCtx,
-		db,
-		nil, // genesis
-		nil, // upgrade
-		nil, // config
-		toEngine,
-		nil, // fxs
-		appSender,
+		common.VMInit{
+			Runtime:  rt,
+			DB:       db,
+			ToEngine: toEngine,
+			Sender:   appSender,
+			Log:      logger,
+			Genesis:  nil,
+			Upgrade:  nil,
+			Config:   nil,
+			Fx:       nil,
+		},
 	)
 	require.NoError(err)
 
@@ -211,7 +216,7 @@ func TestNetworkBasic(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 
@@ -247,7 +252,7 @@ func TestNetworkOrderMatching(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 
@@ -329,11 +334,11 @@ func TestNetworkDeterminism(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network1.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 	for _, node := range network2.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 
@@ -370,7 +375,7 @@ func TestNetworkHighThroughput(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 
@@ -410,7 +415,7 @@ func TestNetworkPartialFailure(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(consensuscore.Ready))
+		err := node.VM.SetState(ctx, uint32(core.Ready))
 		require.NoError(err)
 	}
 
@@ -459,24 +464,30 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 		appSender := warp.FakeSender{}
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: chainID,
+			Log:     logger,
 		}
 
 		_ = vm.Initialize(
 			context.Background(),
-			consensusCtx,
-			db,
-			nil, nil, nil,
-			toEngine,
-			nil,
-			appSender,
+			common.VMInit{
+				Runtime:  rt,
+				DB:       db,
+				ToEngine: toEngine,
+				Sender:   appSender,
+				Log:      logger,
+				Genesis:  nil,
+				Upgrade:  nil,
+				Config:   nil,
+				Fx:       nil,
+			},
 		)
 
-		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
+		_ = vm.SetState(ctx, uint32(core.Ready))
 
 		network.Nodes[i] = &TestNode{
 			ID:        nodeID,

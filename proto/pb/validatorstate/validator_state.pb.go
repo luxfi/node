@@ -111,7 +111,7 @@ func (x *GetCurrentHeightResponse) GetHeight() uint64 {
 	return 0
 }
 
-type GetNetIDRequest struct {
+type GetChainIDRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -119,20 +119,20 @@ type GetNetIDRequest struct {
 	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
-func (x *GetNetIDRequest) Reset() {
-	*x = GetNetIDRequest{}
+func (x *GetChainIDRequest) Reset() {
+	*x = GetChainIDRequest{}
 	mi := &file_validatorstate_validator_state_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNetIDRequest) String() string {
+func (x *GetChainIDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNetIDRequest) ProtoMessage() {}
+func (*GetChainIDRequest) ProtoMessage() {}
 
-func (x *GetNetIDRequest) ProtoReflect() protoreflect.Message {
+func (x *GetChainIDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_validatorstate_validator_state_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -144,19 +144,19 @@ func (x *GetNetIDRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNetIDRequest.ProtoReflect.Descriptor instead.
-func (*GetNetIDRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetChainIDRequest.ProtoReflect.Descriptor instead.
+func (*GetChainIDRequest) Descriptor() ([]byte, []int) {
 	return file_validatorstate_validator_state_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetNetIDRequest) GetChainId() []byte {
+func (x *GetChainIDRequest) GetChainId() []byte {
 	if x != nil {
 		return x.ChainId
 	}
 	return nil
 }
 
-type GetNetIDResponse struct {
+type GetChainIDResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -164,20 +164,20 @@ type GetNetIDResponse struct {
 	ChainId []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
-func (x *GetNetIDResponse) Reset() {
-	*x = GetNetIDResponse{}
+func (x *GetChainIDResponse) Reset() {
+	*x = GetChainIDResponse{}
 	mi := &file_validatorstate_validator_state_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNetIDResponse) String() string {
+func (x *GetChainIDResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNetIDResponse) ProtoMessage() {}
+func (*GetChainIDResponse) ProtoMessage() {}
 
-func (x *GetNetIDResponse) ProtoReflect() protoreflect.Message {
+func (x *GetChainIDResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_validatorstate_validator_state_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -189,12 +189,12 @@ func (x *GetNetIDResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNetIDResponse.ProtoReflect.Descriptor instead.
-func (*GetNetIDResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetChainIDResponse.ProtoReflect.Descriptor instead.
+func (*GetChainIDResponse) Descriptor() ([]byte, []int) {
 	return file_validatorstate_validator_state_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetNetIDResponse) GetChainId() []byte {
+func (x *GetChainIDResponse) GetChainId() []byte {
 	if x != nil {
 		return x.ChainId
 	}
@@ -610,8 +610,8 @@ var file_validatorstate_validator_state_proto_msgTypes = make([]protoimpl.Messag
 var file_validatorstate_validator_state_proto_goTypes = []any{
 	(*GetMinimumHeightResponse)(nil),       // 0: validatorstate.GetMinimumHeightResponse
 	(*GetCurrentHeightResponse)(nil),       // 1: validatorstate.GetCurrentHeightResponse
-	(*GetNetIDRequest)(nil),                // 2: validatorstate.GetNetIDRequest
-	(*GetNetIDResponse)(nil),               // 3: validatorstate.GetNetIDResponse
+	(*GetChainIDRequest)(nil),                // 2: validatorstate.GetChainIDRequest
+	(*GetChainIDResponse)(nil),               // 3: validatorstate.GetChainIDResponse
 	(*GetValidatorSetRequest)(nil),         // 4: validatorstate.GetValidatorSetRequest
 	(*GetCurrentValidatorSetRequest)(nil),  // 5: validatorstate.GetCurrentValidatorSetRequest
 	(*Validator)(nil),                      // 6: validatorstate.Validator
@@ -624,12 +624,12 @@ var file_validatorstate_validator_state_proto_depIdxs = []int32{
 	6, // 1: validatorstate.GetCurrentValidatorSetResponse.validators:type_name -> validatorstate.Validator
 	9, // 2: validatorstate.ValidatorState.GetMinimumHeight:input_type -> google.protobuf.Empty
 	9, // 3: validatorstate.ValidatorState.GetCurrentHeight:input_type -> google.protobuf.Empty
-	2, // 4: validatorstate.ValidatorState.GetNetID:input_type -> validatorstate.GetNetIDRequest
+	2, // 4: validatorstate.ValidatorState.GetChainID:input_type -> validatorstate.GetChainIDRequest
 	4, // 5: validatorstate.ValidatorState.GetValidatorSet:input_type -> validatorstate.GetValidatorSetRequest
 	5, // 6: validatorstate.ValidatorState.GetCurrentValidatorSet:input_type -> validatorstate.GetCurrentValidatorSetRequest
 	0, // 7: validatorstate.ValidatorState.GetMinimumHeight:output_type -> validatorstate.GetMinimumHeightResponse
 	1, // 8: validatorstate.ValidatorState.GetCurrentHeight:output_type -> validatorstate.GetCurrentHeightResponse
-	3, // 9: validatorstate.ValidatorState.GetNetID:output_type -> validatorstate.GetNetIDResponse
+	3, // 9: validatorstate.ValidatorState.GetChainID:output_type -> validatorstate.GetChainIDResponse
 	7, // 10: validatorstate.ValidatorState.GetValidatorSet:output_type -> validatorstate.GetValidatorSetResponse
 	8, // 11: validatorstate.ValidatorState.GetCurrentValidatorSet:output_type -> validatorstate.GetCurrentValidatorSetResponse
 	7, // [7:12] is the sub-list for method output_type

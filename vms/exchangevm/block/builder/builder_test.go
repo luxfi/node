@@ -16,6 +16,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/codecmock"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -47,6 +48,10 @@ var (
 	keys    = secp256k1.TestKeys()
 )
 
+func testRuntime() *runtime.Runtime {
+	return &runtime.Runtime{ChainID: chainID}
+}
+
 func TestBuilderBuildBlock(t *testing.T) {
 	type test struct {
 		name        string
@@ -71,6 +76,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Runtime: testRuntime(),
 						Log: logger,
 					},
 					manager,
@@ -103,6 +109,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Runtime: testRuntime(),
 						Log: logger,
 					},
 					manager,
@@ -145,6 +152,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Runtime: testRuntime(),
 						Log: logger,
 					},
 					manager,
@@ -188,6 +196,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Runtime: testRuntime(),
 						Log: logger,
 					},
 					manager,
@@ -232,6 +241,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
+						Runtime: testRuntime(),
 						Log: logger,
 					},
 					manager,
@@ -328,8 +338,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx:   context.Background(),
-						Log:   log.NewNoOpLogger(),
+						Ctx:     context.Background(),
+						Runtime: testRuntime(),
+						Log:     log.NewNoOpLogger(),
 					},
 					manager,
 					&mockable.Clock{},
@@ -400,8 +411,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx:   context.Background(),
-						Log:   log.NewNoOpLogger(),
+						Ctx:     context.Background(),
+						Runtime: testRuntime(),
+						Log:     log.NewNoOpLogger(),
 					},
 					manager,
 					clock,
@@ -474,8 +486,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx:   context.Background(),
-						Log:   log.NewNoOpLogger(),
+						Ctx:     context.Background(),
+						Runtime: testRuntime(),
+						Log:     log.NewNoOpLogger(),
 					},
 					manager,
 					clock,
@@ -521,9 +534,10 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx:   context.Background(),
-		Codec: parser.Codec(),
-		Log:   log.NewNoOpLogger(),
+		Ctx:     context.Background(),
+		Runtime: testRuntime(),
+		Codec:   parser.Codec(),
+		Log:     log.NewNoOpLogger(),
 	}
 
 	baseDB := versiondb.New(memdb.New())

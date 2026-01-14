@@ -55,7 +55,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		require.NoError(env.vm.state.Commit())
 
 		// make transaction
-		tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addr)
+		tx := buildTX(env.consensusRuntime.ChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
 		issueAndAccept(require, env.vm, tx)
@@ -96,7 +96,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		require.NoError(env.vm.state.Commit())
 
 		// make transaction
-		tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addr)
+		tx := buildTX(env.consensusRuntime.ChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
 		// issue transaction
@@ -141,7 +141,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	require.NoError(env.vm.state.Commit())
 
 	// make transaction
-	tx := buildTX(env.consensusCtx.ChainID, utxoID, txAssetID, addrs...)
+	tx := buildTX(env.consensusRuntime.ChainID, utxoID, txAssetID, addrs...)
 	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
 	issueAndAccept(require, env.vm, tx)

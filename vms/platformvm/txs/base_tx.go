@@ -56,36 +56,33 @@ func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 	return tx.Outs
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
-// sets the [ctx] to the given [vm.ctx] so that the addresses can be json
+// InitRuntime sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
+// sets the [rt] to the given [vm.rt] so that the addresses can be json
 // marshalled into human readable format
-func (tx *BaseTx) InitCtx(ctx *runtime.Runtime) {
+func (tx *BaseTx) InitRuntime(rt *runtime.Runtime) {
 	for _, in := range tx.BaseTx.Ins {
 		in.FxID = secp256k1fx.ID
 	}
 	for _, out := range tx.BaseTx.Outs {
 		out.FxID = secp256k1fx.ID
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
 }
 
-// InitializeContext initializes the context for this transaction
-func (tx *BaseTx) InitializeContext(ctx context.Context) error {
-	if rt := runtime.FromContext(ctx); rt != nil {
-		tx.InitCtx(rt)
-	}
+// InitializeRuntime is a no-op. Runtime is passed explicitly.
+func (tx *BaseTx) Initialize(ctx context.Context) error {
 	return nil
 }
 
 // SyntacticVerify returns nil iff this tx is well formed
-func (tx *BaseTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *BaseTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
 	}
-	if err := tx.BaseTx.Verify(ctx); err != nil {
+	if err := tx.BaseTx.Verify(rt); err != nil {
 		return fmt.Errorf("metadata failed verification: %w", err)
 	}
 	for _, out := range tx.Outs {
@@ -110,10 +107,4 @@ func (tx *BaseTx) SyntacticVerify(ctx *runtime.Runtime) error {
 
 func (tx *BaseTx) Visit(visitor Visitor) error {
 	return visitor.BaseTx(tx)
-}
-
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
 }

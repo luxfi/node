@@ -10,8 +10,9 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/codec/wrappers"
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -19,9 +20,8 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	nodeconsensus "github.com/luxfi/node/consensus"
-	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/timer/mockable"
 )
 
 const (
@@ -127,12 +127,12 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, ctx *runtime.Runtime, vm consensuscore.VM) {
+func (i *indexer) RegisterChain(chainName string, rt *runtime.Runtime, vm consensuscore.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	// Extract chain ID from context
-	chainID := ctx.ChainID
+	// Extract chain ID from runtime
+	chainID := rt.ChainID
 
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",
@@ -140,7 +140,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *runtime.Runtime, vm conse
 			log.String("chainName", chainName),
 		)
 		return
-	} else if ctx.NetworkID != 1 && ctx.NetworkID != 2 {
+	} else if rt.NetworkID != 1 && rt.NetworkID != 2 {
 		// Only index chains on mainnet (1) or testnet (2) - skip custom networks
 		i.log.Debug("not registering chain to indexer",
 			log.String("reason", "not on mainnet or testnet"),

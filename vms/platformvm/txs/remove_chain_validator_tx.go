@@ -30,7 +30,7 @@ type RemoveChainValidatorTx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *RemoveChainValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *RemoveChainValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -41,7 +41,7 @@ func (tx *RemoveChainValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return ErrRemovePrimaryNetworkValidator
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := tx.ChainAuth.Verify(); err != nil {
@@ -56,8 +56,8 @@ func (tx *RemoveChainValidatorTx) Visit(visitor Visitor) error {
 	return visitor.RemoveChainValidatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *RemoveChainValidatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *RemoveChainValidatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

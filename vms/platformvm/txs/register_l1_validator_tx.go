@@ -24,7 +24,7 @@ type RegisterL1ValidatorTx struct {
 	Message types.JSONByteSlice `serialize:"true" json:"message"`
 }
 
-func (tx *RegisterL1ValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *RegisterL1ValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -33,7 +33,7 @@ func (tx *RegisterL1ValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 

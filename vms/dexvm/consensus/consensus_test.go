@@ -14,8 +14,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/runtime"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -80,24 +81,30 @@ func NewConsensusNetwork(t *testing.T) *ConsensusNetwork {
 		// Create DEX VM for this node
 		vm := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: blockchainID,
+			Log:     logger,
 		}
 
 		err := vm.Initialize(
 			context.Background(),
-			consensusCtx,
-			db,
-			nil, nil, nil,
-			toEngine,
-			nil,
-			warp.FakeSender{},
+			common.VMInit{
+				Runtime:  rt,
+				DB:       db,
+				ToEngine: toEngine,
+				Sender:   warp.FakeSender{},
+				Log:      logger,
+				Genesis:  nil,
+				Upgrade:  nil,
+				Config:   nil,
+				Fx:       nil,
+			},
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(context.Background(), uint32(consensuscore.Ready))
+		err = vm.SetState(context.Background(), uint32(core.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
 		network.DexNodes[i] = &DexNode{
@@ -420,14 +427,25 @@ func BenchmarkConsensusNetwork(b *testing.B) {
 
 		vm := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan consensuscore.Message, 100)
+		toEngine := make(chan core.Message, 100)
 
-		consensusCtx := &runtime.Runtime{
+		rt := &runtime.Runtime{
 			ChainID: blockchainID,
+			Log:     logger,
 		}
 
-		_ = vm.Initialize(ctx, consensusCtx, db, nil, nil, nil, toEngine, nil, warp.FakeSender{})
-		_ = vm.SetState(ctx, uint32(consensuscore.Ready))
+		_ = vm.Initialize(ctx, common.VMInit{
+			Runtime:  rt,
+			DB:       db,
+			ToEngine: toEngine,
+			Sender:   warp.FakeSender{},
+			Log:      logger,
+			Genesis:  nil,
+			Upgrade:  nil,
+			Config:   nil,
+			Fx:       nil,
+		})
+		_ = vm.SetState(ctx, uint32(core.Ready))
 
 		network.DexNodes[i] = &DexNode{
 			ID: network.PrimaryNodes[i].ID,

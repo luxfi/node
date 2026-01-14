@@ -939,7 +939,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### What's Changed
 
-- Remove lux metrics registerer from consensus context by @StephenButtolph in https://github.com/luxfi/node/pull/3087
+- Remove lux metrics registerer from Runtime by @StephenButtolph in https://github.com/luxfi/node/pull/3087
 - Remove rejection from `consensus.Add` by @StephenButtolph in https://github.com/luxfi/node/pull/3084
 - [vms/platformvm] Rename `txstest.Builder` to `txstest.WalletFactory` by @dhrubabasu in https://github.com/luxfi/node/pull/2890
 - Small metrics cleanup by @StephenButtolph in https://github.com/luxfi/node/pull/3088
@@ -1764,7 +1764,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Merkledb readme updates by @danlaine in https://github.com/luxfi/node/pull/2510
 - Gossip Test structs by @joshua-kim in https://github.com/luxfi/node/pull/2514
 - `tmpnet`: Separate node into orchestration, config and process  by @marun in https://github.com/luxfi/node/pull/2460
-- Move `consensus.DefaultConsensusContextTest` to `consensustest.ConsensusContext` by @dhrubabasu in https://github.com/luxfi/node/pull/2507
+- Move `consensus.DefaultConsensusRuntimeTest` to `consensustest.ConsensusRuntime` by @dhrubabasu in https://github.com/luxfi/node/pull/2507
 - Add gossip Marshaller interface by @joshua-kim in https://github.com/luxfi/node/pull/2509
 - Include chain creation error in health check by @marun in https://github.com/luxfi/node/pull/2519
 - Make X-chain mempool safe for concurrent use by @StephenButtolph in https://github.com/luxfi/node/pull/2520
@@ -3351,7 +3351,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 ### Consensus
 
 - Guaranteed delivery of App messages to the VM, regardless of sync status
-- Added `EngineType` to consensus context
+- Added `EngineType` to Runtime
 
 ### MerkleDB - Alpha
 

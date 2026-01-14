@@ -23,16 +23,16 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx *runtime.Runtime) {
+func (t *CreateAssetTx) InitRuntime(rt *runtime.Runtime) {
 	for _, state := range t.States {
-		state.InitCtx(ctx)
+		state.InitRuntime(rt)
 	}
-	t.BaseTx.InitCtx(ctx)
+	t.BaseTx.InitRuntime(rt)
 }
 
-// InitializeContext initializes the context for this transaction
-func (t *CreateAssetTx) InitializeContext(ctx *runtime.Runtime) error {
-	t.InitCtx(ctx)
+// InitializeRuntime initializes the context for this transaction
+func (t *CreateAssetTx) InitializeRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
 }
 
@@ -46,8 +46,8 @@ func (t *CreateAssetTx) Visit(v Visitor) error {
 	return v.CreateAssetTx(t)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateAssetTx) InitializeWithContext(ctx *runtime.Runtime) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *CreateAssetTx) InitializeWithRuntime(rt *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

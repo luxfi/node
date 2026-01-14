@@ -16,6 +16,8 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/engine/common"
+	consensusruntime "github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
@@ -95,8 +97,8 @@ type StateSyncEnabledMock struct {
 }
 
 // Forward ChainVM methods
-func (m *StateSyncEnabledMock) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes, upgradeBytes, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
-	return m.chainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
+func (m *StateSyncEnabledMock) Initialize(ctx context.Context, init common.VMInit) error {
+	return m.chainVM.Initialize(ctx, init)
 }
 func (m *StateSyncEnabledMock) SetState(ctx context.Context, state uint32) error {
 	return m.chainVM.SetState(ctx, state)
@@ -322,8 +324,6 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 	if loadExpectations {
 		gomock.InOrder(
 			ssVM.chainVM.EXPECT().Initialize(
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(), gomock.Any(), gomock.Any(),
 				gomock.Any(), gomock.Any(),
 			).Return(nil).Times(1),
 			ssVM.chainVM.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
@@ -550,13 +550,16 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	defer vm.Runtime().Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
-	ctx := &Context{
+	rt := &consensusruntime.Runtime{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
 	}
 
-	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, []interface{}{}, nil))
+	require.NoError(vm.Initialize(context.Background(), common.VMInit{
+		Runtime: rt,
+		DB:      prefixdb.New([]byte{}, memdb.New()),
+	}))
 
 	blkID, err := vm.LastAccepted(context.Background())
 	require.NoError(err)

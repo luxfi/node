@@ -21,16 +21,16 @@ type CreateNetworkTx struct {
 	Owner fx.Owner `serialize:"true" json:"owner"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [CreateNetworkTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [CreateNetworkTx]. Also sets the [rt] to the given [vm.rt] so that
 // the addresses can be json marshalled into human readable format
-func (tx *CreateNetworkTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
-	// Owner doesn't have InitCtx method
+func (tx *CreateNetworkTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
+	// Owner doesn't have InitRuntime method
 }
 
 // SyntacticVerify verifies that this transaction is well-formed
-func (tx *CreateNetworkTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *CreateNetworkTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -38,7 +38,7 @@ func (tx *CreateNetworkTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := tx.Owner.Verify(); err != nil {
@@ -53,8 +53,8 @@ func (tx *CreateNetworkTx) Visit(visitor Visitor) error {
 	return visitor.CreateNetworkTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateNetworkTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *CreateNetworkTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

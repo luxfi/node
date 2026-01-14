@@ -134,7 +134,7 @@ func (e *standardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	lux.Consume(e.state, tx.Ins)
 	lux.Produce(e.state, txID, tx.Outs)
 
-	if e.backend.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.backend.Ctx.NodeID {
+	if e.backend.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.backend.Runtime.NodeID {
 		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
 			log.String("reason", "primary network is not being fully synced"),
 			log.Stringer("txID", txID),
@@ -188,7 +188,7 @@ func (e *standardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 }
 
 func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -222,7 +222,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -247,7 +247,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 
 func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	// Make sure this transaction is well formed.
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -290,7 +290,7 @@ func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 }
 
 func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -316,12 +316,12 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	var allUTXOBytes [][]byte
 	if e.backend.Bootstrapped.Get() && !e.backend.Config.PartialSyncPrimaryNetwork {
 		// TODO: Restore SameNet check once ChainContext types are aligned
-		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.SourceChain); err != nil {
+		// if err := verify.SameNet(context.TODO(), e.backend.Runtime, tx.SourceChain); err != nil {
 		// 	return err
 		// }
 
-		if e.backend.Ctx.SharedMemory != nil {
-			if sm, ok := e.backend.Ctx.SharedMemory.(atomic.SharedMemory); ok {
+		if e.backend.Runtime.SharedMemory != nil {
+			if sm, ok := e.backend.Runtime.SharedMemory.(atomic.SharedMemory); ok {
 				var err error
 				allUTXOBytes, err = sm.Get(tx.SourceChain, utxoIDs)
 				if err != nil {
@@ -362,7 +362,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			tx.Outs,
 			e.tx.Creds,
 			map[ids.ID]uint64{
-				e.backend.Ctx.XAssetID: fee,
+				e.backend.Runtime.XAssetID: fee,
 			},
 		); err != nil {
 			return err
@@ -388,7 +388,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 }
 
 func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -406,7 +406,7 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 
 	if e.backend.Bootstrapped.Get() {
 		// TODO: Fix ChainContext type mismatch
-		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.DestinationChain); err != nil {
+		// if err := verify.SameNet(context.TODO(), e.backend.Runtime, tx.DestinationChain); err != nil {
 		// 	return err
 		// }
 	}
@@ -423,7 +423,7 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("failed verifySpend: %w", err)
@@ -511,7 +511,7 @@ func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
 		return errTransformChainTxPostEtna
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -547,7 +547,7 @@ func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
 		//            entry in this map literal from being overwritten by the
 		//            second entry.
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 			tx.AssetID:             totalRewardAmount,
 		},
 	); err != nil {
@@ -587,7 +587,7 @@ func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 
 	if e.backend.Config.PartialSyncPrimaryNetwork &&
 		tx.Chain == constants.PrimaryNetworkID &&
-		tx.Validator.NodeID == e.backend.Ctx.NodeID {
+		tx.Validator.NodeID == e.backend.Runtime.NodeID {
 		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
 			log.String("reason", "primary network is not being fully synced"),
 			log.Stringer("txID", txID),
@@ -654,7 +654,7 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 	}
 
 	// Verify the tx is well-formed
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -674,7 +674,7 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -697,7 +697,7 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 		return errEtnaUpgradeNotActive
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -787,7 +787,7 @@ func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) erro
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -825,7 +825,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 		return errEtnaUpgradeNotActive
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -850,7 +850,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -977,7 +977,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 		return errEtnaUpgradeNotActive
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -998,7 +998,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -1072,7 +1072,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 					OutputIndex: uint32(len(tx.Outs)),
 				},
 				Asset: lux.Asset{
-					ID: e.backend.Ctx.XAssetID,
+					ID: e.backend.Runtime.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: remainingBalance,
@@ -1113,7 +1113,7 @@ func (e *standardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1Vali
 		return errEtnaUpgradeNotActive
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -1139,7 +1139,7 @@ func (e *standardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1Vali
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -1185,7 +1185,7 @@ func (e *standardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) 
 		return errEtnaUpgradeNotActive
 	}
 
-	if err := e.tx.SyntacticVerify(e.backend.Ctx); err != nil {
+	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
@@ -1229,7 +1229,7 @@ func (e *standardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) 
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.backend.Ctx.XAssetID: fee,
+			e.backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -1267,7 +1267,7 @@ func (e *standardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) 
 			OutputIndex: uint32(len(tx.Outs)),
 		},
 		Asset: lux.Asset{
-			ID: e.backend.Ctx.XAssetID,
+			ID: e.backend.Runtime.XAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: remainingBalance,

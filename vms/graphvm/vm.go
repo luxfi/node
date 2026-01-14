@@ -14,9 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -145,48 +146,16 @@ const (
 // Initialize implements the common.VM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	vmInit common.VMInit,
 ) error {
-	// Type assertions
-	var ok bool
-	vm.rt, ok = chainCtx.(*runtime.Runtime)
-	if !ok {
-		return errors.New("chain context must be *runtime.Runtime")
-	}
-
-	vm.db, ok = db.(database.Database)
-	if !ok {
-		return errors.New("invalid database type")
-	}
-
-	if msgChan != nil {
-		vm.toEngine, ok = msgChan.(chan<- core.Message)
-		if !ok {
-			if biChan, ok := msgChan.(chan core.Message); ok {
-				vm.toEngine = biChan
-			} else {
-				return errors.New("invalid message channel type")
-			}
-		}
-	}
-
-	if appSender != nil {
-		vm.appSender, ok = appSender.(warp.Sender)
-		if !ok {
-			return errors.New("invalid app sender type")
-		}
-	}
+	vm.rt = vmInit.Runtime
+	vm.db = vmInit.DB
+	vm.toEngine = vmInit.ToEngine
+	vm.appSender = vmInit.Sender
 
 	// Parse config
-	if len(configBytes) > 0 {
-		if err := json.Unmarshal(configBytes, &vm.config); err != nil {
+	if len(vmInit.Config) > 0 {
+		if err := json.Unmarshal(vmInit.Config, &vm.config); err != nil {
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
 	}
@@ -199,8 +168,8 @@ func (vm *VM) Initialize(
 	vm.chainSources = make(map[ids.ID]*ChainDataSource)
 
 	// Parse genesis if needed
-	if len(genesisBytes) > 0 {
-		if err := vm.parseGenesis(genesisBytes); err != nil {
+	if len(vmInit.Genesis) > 0 {
+		if err := vm.parseGenesis(vmInit.Genesis); err != nil {
 			return fmt.Errorf("failed to parse genesis: %w", err)
 		}
 	}

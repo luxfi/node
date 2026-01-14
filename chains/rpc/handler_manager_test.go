@@ -66,7 +66,7 @@ func (s *mockServer) AddAliasesWithReadLock(endpoint string, aliases ...string) 
 }
 
 func (s *mockServer) Dispatch() error { return nil }
-func (s *mockServer) RegisterChain(chainName string, ctx *runtime.Runtime, vm consensuscore.VM) {
+func (s *mockServer) RegisterChain(chainName string, rt *runtime.Runtime, vm consensuscore.VM) {
 }
 func (s *mockServer) Shutdown() error { return nil }
 

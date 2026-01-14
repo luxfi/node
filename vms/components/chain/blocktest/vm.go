@@ -55,9 +55,9 @@ type StateSyncableVM struct {
 
 // Standard method implementations - these can be overridden by setting the F fields
 
-func (vm *VM) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgSender interface{}, validators []interface{}, registry interface{}) error {
+func (vm *VM) Initialize(ctx context.Context, chainRuntime interface{}, db interface{}, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgSender interface{}, validators []interface{}, registry interface{}) error {
 	if vm.InitializeF != nil {
-		return vm.InitializeF(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgSender, validators, registry)
+		return vm.InitializeF(ctx, chainRuntime, db, genesisBytes, upgradeBytes, configBytes, msgSender, validators, registry)
 	}
 	return nil
 }

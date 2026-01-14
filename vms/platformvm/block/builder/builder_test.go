@@ -34,8 +34,8 @@ func TestBuildBlockBasic(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	chainID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -53,9 +53,9 @@ func TestBuildBlockBasic(t *testing.T) {
 	require.NoError(err)
 
 	// Issue the transaction
-	env.ctx.Lock.Unlock()
+	env.rt.Lock.Unlock()
 	require.NoError(env.network.IssueTxFromRPC(tx))
-	env.ctx.Lock.Lock()
+	env.rt.Lock.Lock()
 
 	txID := tx.ID()
 	_, ok := env.mempool.Get(txID)
@@ -80,8 +80,8 @@ func TestBuildBlockDoesNotBuildWithEmptyMempool(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	tx, exists := env.mempool.Peek()
 	require.False(exists)
@@ -97,8 +97,8 @@ func TestBuildBlockShouldReward(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	wallet := newWallet(t, env, walletConfig{})
 
@@ -133,7 +133,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.XAssetID,
+		env.rt.XAssetID,
 		rewardOwners,
 		rewardOwners,
 		reward.PercentDenominator,
@@ -141,9 +141,9 @@ func TestBuildBlockShouldReward(t *testing.T) {
 	require.NoError(err)
 
 	// Issue the transaction
-	env.ctx.Lock.Unlock()
+	env.rt.Lock.Unlock()
 	require.NoError(env.network.IssueTxFromRPC(tx))
-	env.ctx.Lock.Lock()
+	env.rt.Lock.Lock()
 
 	txID := tx.ID()
 	_, ok := env.mempool.Get(txID)
@@ -181,7 +181,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.NoError(blk.Verify(context.Background()))
 		require.IsType(&block.BanffProposalBlock{}, blk.(*blockexecutor.Block).Block)
 
-		expectedTx, err := NewRewardValidatorTx(env.ctx, staker.TxID)
+		expectedTx, err := NewRewardValidatorTx(context.Background(), staker.TxID)
 		require.NoError(err)
 		require.Equal([]*txs.Tx{expectedTx}, blk.(*blockexecutor.Block).Block.Txs())
 
@@ -217,8 +217,8 @@ func TestBuildBlockAdvanceTime(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	var (
 		now      = env.backend.Clk.Time()
@@ -250,8 +250,8 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	chainID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -269,9 +269,9 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 	require.NoError(err)
 
 	// Issue the transaction
-	env.ctx.Lock.Unlock()
+	env.rt.Lock.Unlock()
 	require.NoError(env.network.IssueTxFromRPC(tx))
-	env.ctx.Lock.Lock()
+	env.rt.Lock.Lock()
 
 	txID := tx.ID()
 	_, ok := env.mempool.Get(txID)
@@ -308,8 +308,8 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	// Post-Durango, [StartTime] is no longer validated. Staking durations are
 	// based on the current chain timestamp and must be validated.
@@ -345,7 +345,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.XAssetID,
+		env.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -376,7 +376,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.XAssetID,
+		env.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		reward.PercentDenominator,
@@ -414,8 +414,8 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	chainID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -444,10 +444,10 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 	require.ErrorIs(err, errTestingDropped)
 
 	// Issue the transaction
-	env.ctx.Lock.Unlock()
+	env.rt.Lock.Unlock()
 	err = env.network.IssueTxFromRPC(tx)
 	require.ErrorIs(err, errTestingDropped)
-	env.ctx.Lock.Lock()
+	env.rt.Lock.Lock()
 	_, ok := env.mempool.Get(txID)
 	require.False(ok)
 
@@ -458,8 +458,8 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 
 func TestNoErrorOnUnexpectedSetPreferenceDuringBootstrapping(t *testing.T) {
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	env.isBootstrapped.Set(false)
 	env.blkManager.SetPreference(ids.GenerateTestID()) // should not panic

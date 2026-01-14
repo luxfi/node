@@ -19,12 +19,12 @@ import (
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: ids.GenerateTestID(),
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 
 		ChainID: testChainID,
 	}
@@ -152,8 +152,8 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			createChainTx := &CreateChainTx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    ctx.NetworkID,
-					BlockchainID: ctx.ChainID,
+					NetworkID:    rt.NetworkID,
+					BlockchainID: rt.ChainID,
 					Ins:          inputs,
 					Outs:         outputs,
 				}},
@@ -172,7 +172,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			createChainTx.SyntacticallyVerified = false
 			stx.Unsigned = test.setup(createChainTx)
 
-			err = stx.SyntacticVerify(ctx)
+			err = stx.SyntacticVerify(rt)
 			require.ErrorIs(err, test.expectedErr)
 		})
 	}

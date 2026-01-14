@@ -18,20 +18,23 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/codec"
-	"github.com/luxfi/consensus/runtime"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/runtime"
 	validators "github.com/luxfi/consensus/validator"
 	consensusversion "github.com/luxfi/consensus/version"
+	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/components/lux"
@@ -43,8 +46,6 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/utxo"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/container/linked"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/warp"
 
@@ -92,7 +93,7 @@ type VM struct {
 	ctx context.Context
 
 	// Consensus context
-	consensusCtx *runtime.Runtime
+	consensusRuntime *runtime.Runtime
 
 	// Logger for this VM
 	log log.Logger
@@ -196,34 +197,27 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
  ******************************************************************************
  */
 
-// Initialize with new signature for LinearizableVMWithEngine compatibility
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	dbManager interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	toEngine chan<- interface{},
-	fxs []interface{},
-	appSender interface{},
+	init common.VMInit,
 ) error {
-	// Try to get consensus context for chain info
-	if consensusCtx, ok := chainCtx.(*runtime.Runtime); ok {
-		// Store chain-specific info from consensus context
-		vm.consensusCtx = consensusCtx
-		vm.ChainID = consensusCtx.ChainID
-		vm.XChainID = consensusCtx.ChainID // For XVM, this is the same
+	// Try to get Runtime for chain info
+	if init.Runtime != nil {
+		// Store chain-specific info from Runtime
+		vm.consensusRuntime = init.Runtime
+		vm.ChainID = init.Runtime.ChainID
+		vm.XChainID = init.Runtime.ChainID // For XVM, this is the same
 
 		// SharedMemory will be set by the chains manager when the VM is created
 	}
 
-	db, ok := dbManager.(database.Database)
-	if !ok {
-		return errors.New("invalid database type")
+	db := init.DB
+	if db == nil {
+		return errors.New("invalid database: nil")
 	}
 
 	// Convert Fx types to engine.Fx
+	fxs := init.Fx
 	coreFxs := make([]*engine.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx == nil {
@@ -253,26 +247,14 @@ func (vm *VM) Initialize(
 	}
 
 	// Check sender type
+	appSender := init.Sender
 	if appSender == nil {
 		// In single-node mode, we can work without a Sender
 		// Create a no-op Sender
 		appSender = &noOpSender{}
 	}
 
-	warpSender, ok := appSender.(warp.Sender)
-	if !ok {
-		// Debug: Print actual type received
-		actualType := "nil"
-		if appSender != nil {
-			actualType = fmt.Sprintf("%T", appSender)
-		}
-		return fmt.Errorf("invalid sender type: expected warp.Sender, got %s", actualType)
-	}
-
-	// Ignore toEngine channel as XVM doesn't use it
-	_ = toEngine
-
-	return vm.initialize(ctx, ctx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, warpSender)
+	return vm.initialize(ctx, ctx, db, init.Genesis, init.Upgrade, init.Config, coreFxs, appSender)
 }
 
 // Original Initialize method renamed to initialize
@@ -316,7 +298,7 @@ func (vm *VM) initialize(
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	vm.AddressManager = lux.NewAddressManager(vm.consensusCtx)
+	vm.AddressManager = lux.NewAddressManager(vm.consensusRuntime)
 	vm.Aliaser = ids.NewAliaser()
 
 	vm.ctx = ctx
@@ -399,7 +381,7 @@ func (vm *VM) initialize(
 
 	vm.txBackend = &txexecutor.Backend{
 		Ctx:           ctx,
-		LuxCtx:        vm.consensusCtx,
+		Runtime:       vm.consensusRuntime,
 		Config:        &vm.Config,
 		Fxs:           vm.fxs,
 		TypeToFxIndex: vm.typeToFxIndex,
@@ -576,11 +558,11 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 
 	// Invariant: The context lock is not held when calling network.IssueTx.
 	// Create a wrapper for ValidatorState to match the expected interface
-	// Get ValidatorState from consensus context
-	if vm.consensusCtx.ValidatorState == nil {
-		return fmt.Errorf("validator state not available in consensus context")
+	// Get ValidatorState from Runtime
+	if vm.consensusRuntime.ValidatorState == nil {
+		return fmt.Errorf("validator state not available in Runtime")
 	}
-	vs, ok := vm.consensusCtx.ValidatorState.(runtime.ValidatorState)
+	vs, ok := vm.consensusRuntime.ValidatorState.(runtime.ValidatorState)
 	if !ok {
 		return fmt.Errorf("validator state has incorrect type")
 	}
@@ -588,8 +570,8 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 
 	vm.network, err = network.New(
 		vm.log,
-		vm.consensusCtx.NodeID,
-		vm.consensusCtx.ChainID,
+		vm.consensusRuntime.NodeID,
+		vm.consensusRuntime.ChainID,
 		validatorStateWrapper,
 		vm.parser,
 		network.NewLockedTxVerifier(
@@ -707,7 +689,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		return err
 	}
 
-	// secure this by defaulting to luxAsset
+	// secure this by defaulting to xAsset
 	// Use empty ID as default, will be set by first genesis asset
 	vm.feeAssetID = ids.Empty
 
@@ -997,10 +979,6 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 	return v.vs.GetMinimumHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetNetworkID(chainID)
-}
-
 func (v *validatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error) {
 	return v.vs.GetChainID(netID)
 }
@@ -1058,7 +1036,6 @@ func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, height
 
 	return result, nil
 }
-
 
 // Clock returns the VM's clock for time-related operations
 func (vm *VM) Clock() *mockable.Clock {

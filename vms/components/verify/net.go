@@ -26,44 +26,44 @@ type ChainContext struct {
 
 // ValidatorState provides validator state lookups
 type ValidatorState interface {
-	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+	GetChainID(chainID ids.ID) (ids.ID, error)
 }
 
-// ConsensusValidatorState wraps the consensus context ValidatorState interface
+// ConsensusValidatorState wraps the Runtime ValidatorState interface
 type ConsensusValidatorState interface {
-	GetNetID(chainID ids.ID) (ids.ID, error)
+	GetChainID(chainID ids.ID) (ids.ID, error)
 }
 
 // SameNet verifies that the provided [ctx] was provided to a chain in the
 // same chain as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) error {
-	if peerChainID == chainCtx.ChainID {
+func SameNet(ctx context.Context, chainRuntime *ChainContext, peerChainID ids.ID) error {
+	if peerChainID == chainRuntime.ChainID {
 		return ErrSameChainID
 	}
 
-	peerNetID, err := chainCtx.ValidatorState.GetNetID(ctx, peerChainID)
+	peerNetID, err := chainRuntime.ValidatorState.GetChainID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}
-	if chainCtx.NetID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.NetID, peerNetID)
+	if chainRuntime.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainRuntime.NetID, peerNetID)
 	}
 	return nil
 }
 
 // SameChain verifies that the peerChainID is in the same network as the chain
-// represented by consensusCtx, but not the same chain. This is a convenience
+// represented by consensusRuntime, but not the same chain. This is a convenience
 // wrapper for coreth compatibility that accepts *runtime.Runtime directly.
 // With the simplified NetworkID model (1=mainnet, 2=testnet), chains on the
 // same network are always in the same "chain".
-func SameChain(ctx context.Context, consensusCtx *runtime.Runtime, peerChainID ids.ID) error {
-	if peerChainID == consensusCtx.ChainID {
+func SameChain(ctx context.Context, consensusRuntime *runtime.Runtime, peerChainID ids.ID) error {
+	if peerChainID == consensusRuntime.ChainID {
 		return ErrSameChainID
 	}
 
-	// Get the validator state from consensus context
-	vs, ok := consensusCtx.ValidatorState.(runtime.ValidatorState)
+	// Get the validator state from Runtime
+	vs, ok := consensusRuntime.ValidatorState.(runtime.ValidatorState)
 	if !ok {
 		return fmt.Errorf("validator state does not implement required interface")
 	}

@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/concurrent/lock"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/container/linked"
-	"github.com/luxfi/concurrent/lock"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -34,7 +34,7 @@ type Builder interface {
 }
 
 type builder struct {
-	chainContext *runtime.Runtime
+	chainRuntime *runtime.Runtime
 	chain        chain.Chain
 
 	preference ids.ID
@@ -43,9 +43,9 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *runtime.Runtime, chain chain.Chain) Builder {
+func New(chainRuntime *runtime.Runtime, chain chain.Chain) Builder {
 	return &builder{
-		chainContext:   chainContext,
+		chainRuntime:   chainRuntime,
 		chain:          chain,
 		preference:     chain.LastAccepted(),
 		pendingTxsCond: lock.NewCond(&sync.Mutex{}),
@@ -127,7 +127,7 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 		txState := versiondb.New(currentState)
 		txExecutor := execute.Tx{
 			Context:      ctx,
-			ChainContext: b.chainContext,
+			Runtime:      b.chainRuntime,
 			Database:     txState,
 			BlockContext: blockContext,
 			TxID:         txID,

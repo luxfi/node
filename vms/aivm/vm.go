@@ -139,7 +139,7 @@ type ProviderReg struct {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
+	chainRuntime interface{},
 	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -149,7 +149,7 @@ func (vm *VM) Initialize(
 	appSender interface{},
 ) error {
 	// Convert chain context to Runtime
-	if rt, ok := chainCtx.(*runtime.Runtime); ok {
+	if rt, ok := chainRuntime.(*runtime.Runtime); ok {
 		vm.rt = rt
 	} else {
 		return errors.New("chain context must be *runtime.Runtime")

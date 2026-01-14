@@ -15,8 +15,8 @@ import (
 	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
-	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	// "github.com/luxfi/consensus/core" // unused
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
 	// "github.com/luxfi/consensus/core/coretest" // unused
 	// "github.com/luxfi/consensus/core/tracker" // unused
 	"github.com/luxfi/consensus/core/interfaces"
@@ -56,7 +56,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	// "github.com/luxfi/node/vms/platformvm/state" // unused after TestGenesis simplification
 	"github.com/luxfi/node/vms/platformvm/status"
-	// "github.com/luxfi/node/vms/platformvm/testcontext" // unused - using consensustest.Context instead
+	// "github.com/luxfi/node/vms/platformvm/testcontext" // unused - using consensustest.Runtime instead
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
@@ -192,34 +192,36 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.Clock().Set(latestForkTime)
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	rt := consensustest.Runtime(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
-		SharedMemory: m.NewSharedMemory(ctx.ChainID),
+		SharedMemory: m.NewSharedMemory(rt.ChainID),
 	}
-	ctx.SharedMemory = msm
+	rt.SharedMemory = msm
 
 	// Create a mock ValidatorState that implements runtime.ValidatorState
-	ctx.ValidatorState = &mockValidatorState{}
+	rt.ValidatorState = &mockValidatorState{}
 
-	ctx.Lock.Lock()
-	defer ctx.Lock.Unlock()
+	rt.Lock.Lock()
+	defer rt.Lock.Unlock()
 	appSender := &TestAppSender{}
 
 	dynamicConfigBytes := []byte(`{"network":{"max-validator-set-staleness":0}}`)
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,     // chainCtxIntf
-		chainDB, // dbManagerIntf
-		genesistest.NewBytes(t, genesistest.Config{
-			InitialBalance: 200*constants.Lux + 20000, // Doubled + 20000 nanoLux buffer for fee precision (was 10000, increased to fix 1949 shortfall)
-		}), // genesisBytes
-		nil,                               // upgradeBytes
-		dynamicConfigBytes,                // configBytes
-		make(chan linearblock.Message, 1), // toEngineIntf
-		nil,                               // fxsIntf
-		appSender,                         // appSenderIntf
+		common.VMInit{
+			Runtime: rt,
+			DB:      chainDB,
+			Genesis: genesistest.NewBytes(t, genesistest.Config{
+				InitialBalance: 200*constants.Lux + 20000, // Doubled + 20000 nanoLux buffer for fee precision (was 10000, increased to fix 1949 shortfall)
+			}),
+			Upgrade:  nil,
+			Config:   dynamicConfigBytes,
+			ToEngine: make(chan core.Message, 1),
+			Fx:       nil,
+			Sender:   appSender,
+		},
 	))
 
 	// align chain time and local clock
@@ -947,7 +949,7 @@ func TestCreateNet(t *testing.T) {
 	require.NoError(err)
 	require.Equal(status.Committed, txStatus)
 
-	netIDs, err := vm.state.GetNetIDs()
+	netIDs, err := vm.state.GetChainIDs()
 	require.NoError(err)
 	require.Contains(netIDs, netID)
 
@@ -1157,32 +1159,34 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := consensustest.Context(t, consensustest.PChainID)
+	firstRT := consensustest.Runtime(t, consensustest.PChainID)
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
 
 	baseDB := memdb.New()
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 	m := atomic.NewMemory(atomicDB)
-	firstCtx.SharedMemory = m.NewSharedMemory(firstCtx.ChainID)
+	firstRT.SharedMemory = m.NewSharedMemory(firstRT.ChainID)
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	firstVM.Clock().Set(initialClkTime)
-	firstCtx.Lock.Lock()
+	firstRT.Lock.Lock()
 
 	firstChainDB := prefixdb.New([]byte{2}, baseDB)
 	appSender := &TestAppSender{}
 
 	require.NoError(firstVM.Initialize(
 		context.Background(),
-		firstCtx,
-		firstChainDB,
-		genesisBytes,
-		nil,
-		nil,
-		nil,
-		nil,
-		appSender,
+		common.VMInit{
+			Runtime: firstRT,
+			DB:      firstChainDB,
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  appSender,
+		},
 	))
 
 	genesisID, err := firstVM.LastAccepted(context.Background())
@@ -1191,16 +1195,16 @@ func TestRestartFullyAccepted(t *testing.T) {
 	// include a tx to make the block be accepted
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    firstCtx.NetworkID,
-			BlockchainID: firstCtx.ChainID,
+			NetworkID:    firstRT.NetworkID,
+			BlockchainID: firstRT.ChainID,
 		}},
-		SourceChain: firstCtx.XChainID,
+		SourceChain: firstRT.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: firstCtx.XAssetID},
+			Asset: lux.Asset{ID: firstRT.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1232,7 +1236,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	require.NoError(firstAdvanceTimeBlk.Accept(context.Background()))
 
 	require.NoError(firstVM.Shutdown(context.Background()))
-	firstCtx.Lock.Unlock()
+	firstRT.Lock.Unlock()
 
 	secondVM := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
@@ -1244,27 +1248,29 @@ func TestRestartFullyAccepted(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := consensustest.Context(t, consensustest.PChainID)
-	secondCtx.SharedMemory = firstCtx.SharedMemory
+	secondRT := consensustest.Runtime(t, consensustest.PChainID)
+	secondRT.SharedMemory = firstRT.SharedMemory
 	secondVM.Clock().Set(initialClkTime)
-	secondCtx.Lock.Lock()
+	secondRT.Lock.Lock()
 	defer func() {
 		require.NoError(secondVM.Shutdown(context.Background()))
-		secondCtx.Lock.Unlock()
+		secondRT.Lock.Unlock()
 	}()
 
 	secondDB := prefixdb.New([]byte{}, db)
 	secondAppSender := &TestAppSender{}
 	require.NoError(secondVM.Initialize(
 		context.Background(),
-		secondCtx,
-		secondDB,
-		genesisBytes,
-		nil,
-		nil,
-		nil,
-		nil,
-		secondAppSender,
+		common.VMInit{
+			Runtime: secondRT,
+			DB:      secondDB,
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  secondAppSender,
+		},
 	))
 
 	lastAccepted, err := secondVM.LastAccepted(context.Background())
@@ -1302,18 +1308,20 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.Clock().Set(initialClkTime)
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	rt := consensustest.Runtime(t, consensustest.PChainID)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
-		memdb.New(),
-		genesistest.NewBytes(t, genesistest.Config{}),
-		nil,
-		nil,
-		nil,
-		nil,
-		&TestAppSender{},
+		common.VMInit{
+			Runtime: rt,
+			DB:      memdb.New(),
+			Genesis: genesistest.NewBytes(t, genesistest.Config{}),
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  &TestAppSender{},
+		},
 	))
 
 	vm.rt.Lock.Lock()
@@ -1325,10 +1333,10 @@ func TestUnverifiedParent(t *testing.T) {
 	// include a tx1 to make the block be accepted
 	tx1 := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID, // Use context's ChainID, not constants.PlatformChainID
+			NetworkID:    rt.NetworkID,
+			BlockchainID: rt.ChainID, // Use context's ChainID, not constants.PlatformChainID
 		}},
-		SourceChain: ctx.XChainID,
+		SourceChain: rt.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty.Prefix(1),
@@ -1362,10 +1370,10 @@ func TestUnverifiedParent(t *testing.T) {
 	// include a tx2 to make the block be accepted
 	tx2 := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID, // Use context's ChainID, not constants.PlatformChainID
+			NetworkID:    rt.NetworkID,
+			BlockchainID: rt.ChainID, // Use context's ChainID, not constants.PlatformChainID
 		}},
-		SourceChain: ctx.XChainID,
+		SourceChain: rt.XChainID,
 		ImportedInputs: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty.Prefix(2),
@@ -1456,21 +1464,23 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	firstCtx := consensustest.Context(t, consensustest.PChainID)
-	firstCtx.Lock.Lock()
+	firstRT := consensustest.Runtime(t, consensustest.PChainID)
+	firstRT.Lock.Lock()
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
 
 	require.NoError(firstVM.Initialize(
 		context.Background(),
-		firstCtx,
-		firstDB,
-		genesisBytes,
-		nil,
-		nil,
-		nil,
-		nil,
-		&TestAppSender{},
+		common.VMInit{
+			Runtime: firstRT,
+			DB:      firstDB,
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  &TestAppSender{},
+		},
 	))
 
 	initialClkTime := latestForkTime.Add(time.Second)
@@ -1488,7 +1498,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	// Shutdown VM to stop all genesis validator uptime.
 	// At this point they have been validating for the 20% uptime needed to be rewarded
 	require.NoError(firstVM.Shutdown(context.Background()))
-	firstCtx.Lock.Unlock()
+	firstRT.Lock.Unlock()
 
 	// Restart the VM with a larger uptime requirement
 	secondDB := prefixdb.New([]byte{}, db)
@@ -1503,28 +1513,30 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	secondCtx := consensustest.Context(t, consensustest.PChainID)
-	secondCtx.XAssetID = firstCtx.XAssetID
-	secondCtx.Lock.Lock()
+	secondRT := consensustest.Runtime(t, consensustest.PChainID)
+	secondRT.XAssetID = firstRT.XAssetID
+	secondRT.Lock.Lock()
 	defer func() {
 		require.NoError(secondVM.Shutdown(context.Background()))
-		secondCtx.Lock.Unlock()
+		secondRT.Lock.Unlock()
 	}()
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
-	secondCtx.SharedMemory = m.NewSharedMemory(secondCtx.ChainID)
+	secondRT.SharedMemory = m.NewSharedMemory(secondRT.ChainID)
 
 	require.NoError(secondVM.Initialize(
 		context.Background(),
-		secondCtx,
-		secondDB,
-		genesisBytes,
-		nil,
-		nil,
-		nil,
-		nil,
-		&TestAppSender{},
+		common.VMInit{
+			Runtime: secondRT,
+			DB:      secondDB,
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  &TestAppSender{},
+		},
 	))
 
 	secondVM.Clock().Set(vmStopTime)
@@ -1602,30 +1614,32 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
 	}}
 
-	ctx := consensustest.Context(t, consensustest.PChainID)
-	ctx.XAssetID = ids.GenerateTestID()
-	ctx.Lock.Lock()
+	rt := consensustest.Runtime(t, consensustest.PChainID)
+	rt.XAssetID = ids.GenerateTestID()
+	rt.Lock.Lock()
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+	rt.SharedMemory = m.NewSharedMemory(rt.ChainID)
 
 	// appSender := &enginetest.Sender{T: t} // enginetest package not available
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		genesistest.NewBytes(t, genesistest.Config{}),
-		nil,
-		nil,
-		nil,
-		nil,
-		&TestAppSender{},
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Genesis: genesistest.NewBytes(t, genesistest.Config{}),
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: nil,
+			Fx:      nil,
+			Sender:  &TestAppSender{},
+		},
 	))
 
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
-		ctx.Lock.Unlock()
+		rt.Lock.Unlock()
 	}()
 
 	initialClkTime := latestForkTime.Add(time.Second)

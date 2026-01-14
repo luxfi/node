@@ -45,7 +45,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -80,7 +80,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: 2 * constants.KiloLux,
@@ -104,7 +104,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -137,13 +137,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -285,7 +285,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -300,7 +300,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -340,7 +340,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -397,7 +397,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -412,7 +412,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			},
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &stakeable.LockOut{
 					Locktime: 987654321,
@@ -441,13 +441,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(rt))
 
 	_ = []byte{ // expectedUnsignedComplexAddPrimaryTxBytes - not used since we skip exact byte comparison
 		// Codec version
@@ -719,7 +719,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -760,7 +760,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -832,13 +832,13 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddNetTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
@@ -978,7 +978,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -993,7 +993,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -1033,7 +1033,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -1138,7 +1138,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx2))
 
@@ -1393,7 +1393,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID: chainID,
@@ -1840,7 +1840,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(ctx)
+			err := tx.SyntacticVerify(rt)
 			require.ErrorIs(t, err, tt.err)
 		})
 	}

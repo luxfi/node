@@ -1065,7 +1065,7 @@ func (n *Node) addDefaultVMAliases() error {
 // Create the chainManager and register the following VMs:
 // XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
-func (n *Node) initChainManager(luxAssetID ids.ID) error {
+func (n *Node) initChainManager(xAssetID ids.ID) error {
 	createXVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
 	if err != nil {
 		return err
@@ -1141,7 +1141,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			NetworkID:                 n.Config.NetworkID,
 			Server:                    n.APIServer,
 			AtomicMemory:              n.sharedMemory,
-			XAssetID:                  luxAssetID,
+			XAssetID:                  xAssetID,
 			XChainID:                  xChainID,
 			CChainID:                  cChainID,
 			DChainID:                  dChainID,

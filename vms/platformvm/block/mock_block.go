@@ -84,16 +84,16 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockBlock)(nil).ID))
 }
 
-// InitCtx mocks base method.
-func (m *MockBlock) InitCtx(ctx *runtime.Runtime) {
+// InitRuntime mocks base method.
+func (m *MockBlock) InitRuntime(rt *runtime.Runtime) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", ctx)
+	m.ctrl.Call(m, "InitRuntime", rt)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *MockBlockMockRecorder) InitCtx(ctx any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *MockBlockMockRecorder) InitRuntime(rt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*MockBlock)(nil).InitRuntime), rt)
 }
 
 // Parent mocks base method.

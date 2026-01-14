@@ -60,16 +60,16 @@ func (mr *MockTransferableOutMockRecorder) Amount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Amount", reflect.TypeOf((*MockTransferableOut)(nil).Amount))
 }
 
-// InitCtx mocks base method.
-func (m *MockTransferableOut) InitCtx(arg0 *runtime.Runtime) {
+// InitRuntime mocks base method.
+func (m *MockTransferableOut) InitRuntime(arg0 *runtime.Runtime) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitRuntime", arg0)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *MockTransferableOutMockRecorder) InitCtx(arg0 any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *MockTransferableOutMockRecorder) InitRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockTransferableOut)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*MockTransferableOut)(nil).InitRuntime), arg0)
 }
 
 // Verify mocks base method.
@@ -98,16 +98,16 @@ func (mr *MockTransferableOutMockRecorder) isState() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isState", reflect.TypeOf((*MockTransferableOut)(nil).isState))
 }
 
-// InitializeWithContext mocks base method.
-func (m *MockTransferableOut) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime mocks base method.
+func (m *MockTransferableOut) InitializeWithRuntime(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitializeWithContext", ctx)
+	ret := m.ctrl.Call(m, "InitializeWithRuntime", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InitializeWithContext indicates an expected call of InitializeWithContext.
-func (mr *MockTransferableOutMockRecorder) InitializeWithContext(ctx interface{}) *gomock.Call {
+// InitializeWithRuntime indicates an expected call of InitializeWithRuntime.
+func (mr *MockTransferableOutMockRecorder) InitializeWithRuntime(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeWithContext", reflect.TypeOf((*MockTransferableOut)(nil).InitializeWithContext), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeWithRuntime", reflect.TypeOf((*MockTransferableOut)(nil).InitializeWithRuntime), ctx)
 }

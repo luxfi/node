@@ -20,10 +20,10 @@ type LockOut struct {
 	lux.TransferableOut `serialize:"true" json:"output"`
 }
 
-func (s *LockOut) InitCtx(ctx *runtime.Runtime) {
+func (s *LockOut) InitRuntime(rt *runtime.Runtime) {
 	// Initialize the context for the underlying output if it supports it
-	if contextOutput, ok := s.TransferableOut.(interface{ InitCtx(*runtime.Runtime) }); ok {
-		contextOutput.InitCtx(ctx)
+	if contextOutput, ok := s.TransferableOut.(interface{ InitRuntime(*runtime.Runtime) }); ok {
+		contextOutput.InitRuntime(rt)
 	}
 }
 

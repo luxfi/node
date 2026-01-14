@@ -24,7 +24,7 @@ func TestIndex(t *testing.T) {
 	baseDB := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, testChainID)
+	rt := consensustest.Runtime(t, testChainID)
 
 	idx, err := newIndex(baseDB, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
@@ -38,7 +38,7 @@ func TestIndex(t *testing.T) {
 	// Accept each container and after each, make assertions
 	i := uint64(0)
 	for containerID, containerBytes := range containers {
-		require.NoError(idx.Accept(ctx, containerID, containerBytes))
+		require.NoError(idx.Accept(rt, containerID, containerBytes))
 
 		lastAcceptedIndex, ok := idx.lastAcceptedIndex()
 		require.True(ok)
@@ -111,13 +111,13 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, testChainID)
+	rt := consensustest.Runtime(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
 	for i := uint64(0); i < MaxFetchedByRange+1; i++ {
-		require.NoError(idx.Accept(ctx, ids.GenerateTestID(), utils.RandomBytes(32)))
+		require.NoError(idx.Accept(rt, ids.GenerateTestID(), utils.RandomBytes(32)))
 	}
 
 	// Page size too large
@@ -150,14 +150,14 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, testChainID)
+	rt := consensustest.Runtime(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice
 	containerID := ids.GenerateTestID()
-	require.NoError(idx.Accept(ctx, containerID, []byte{1, 2, 3}))
-	require.NoError(idx.Accept(ctx, containerID, []byte{4, 5, 6}))
+	require.NoError(idx.Accept(rt, containerID, []byte{1, 2, 3}))
+	require.NoError(idx.Accept(rt, containerID, []byte{4, 5, 6}))
 	_, err = idx.GetContainerByIndex(1)
 	require.ErrorIs(err, errNoContainerAtIndex)
 	gotContainer, err := idx.GetContainerByID(containerID)

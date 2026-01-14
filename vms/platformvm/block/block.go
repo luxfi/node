@@ -13,14 +13,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-// ContextInitializable defines the interface for initializing context
-type ContextInitializable interface {
-	InitCtx(ctx *runtime.Runtime)
+// RuntimeInitializable defines the interface for initializing context
+type RuntimeInitializable interface {
+	InitRuntime(rt *runtime.Runtime)
 }
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	ContextInitializable
+	RuntimeInitializable
 	ID() ids.ID
 	Parent() ids.ID
 	Bytes() []byte

@@ -34,7 +34,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -75,7 +75,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -95,18 +95,18 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: ids.GenerateTestID(),
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(ctx))
+	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
 		// Codec version
@@ -176,7 +176,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -216,7 +216,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.Lux,
@@ -274,7 +274,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
 	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
 
@@ -437,9 +437,9 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	unsignedComplexRemoveValidatorTx.InitCtx(ctx3)
+	unsignedComplexRemoveValidatorTx.InitRuntime(ctx3)
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
 	require.NoError(err)
@@ -537,7 +537,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID: chainID,
@@ -548,7 +548,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 		SyntacticallyVerified: true,
 	}
 	// Sanity check.
-	require.NoError(t, verifiedBaseTx.SyntacticVerify(ctx))
+	require.NoError(t, verifiedBaseTx.SyntacticVerify(rt))
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
@@ -558,7 +558,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}
 	// Sanity check.
-	require.NoError(t, validBaseTx.SyntacticVerify(ctx))
+	require.NoError(t, validBaseTx.SyntacticVerify(rt))
 	// Make sure we're not caching the verification result.
 	require.False(t, validBaseTx.SyntacticallyVerified)
 
@@ -647,7 +647,7 @@ func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(ctx)
+			err := tx.SyntacticVerify(rt)
 			require.ErrorIs(err, tt.expectedErr)
 			if tt.expectedErr != nil {
 				return

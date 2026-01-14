@@ -47,7 +47,7 @@ func New(
 	}
 }
 
-// SetContextIDs sets the network ID and chain ID from the VM's consensus context
+// SetContextIDs sets the network ID and chain ID from the VM's Runtime
 func (b *Builder) SetContextIDs(networkID uint32, chainID ids.ID) {
 	b.networkID = networkID
 	b.chainID = chainID

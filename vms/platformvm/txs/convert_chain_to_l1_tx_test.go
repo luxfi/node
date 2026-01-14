@@ -49,7 +49,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 			0x44, 0x55, 0x66, 0x77,
 		}
-		luxAssetID = ids.ID{
+		xAssetID = ids.ID{
 			0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 			0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 			0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
@@ -112,7 +112,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 									OutputIndex: 1,
 								},
 								Asset: lux.Asset{
-									ID: luxAssetID,
+									ID: xAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
 									Amt: constants.MilliLux,
@@ -209,7 +209,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 						Outs: []*lux.TransferableOutput{
 							{
 								Asset: lux.Asset{
-									ID: luxAssetID,
+									ID: xAssetID,
 								},
 								Out: &stakeable.LockOut{
 									Locktime: 87654321,
@@ -249,7 +249,7 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 									OutputIndex: 1,
 								},
 								Asset: lux.Asset{
-									ID: luxAssetID,
+									ID: xAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
 									Amt: constants.Lux,
@@ -544,8 +544,8 @@ func TestConvertChainToL1TxSerialization(t *testing.T) {
 				require.Equal(len(test.expectedBytes), len(txBytes), "serialized length should match")
 			}
 
-			ctx := consensustest.Context(t, constants.PlatformChainID)
-			test.tx.InitCtx(ctx)
+			rt := consensustest.Runtime(t, constants.PlatformChainID)
+			test.tx.InitRuntime(rt)
 
 			txJSON, err := json.MarshalIndent(test.tx, "", "\t")
 			require.NoError(err)
@@ -561,11 +561,11 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 	require.NoError(t, err)
 
 	var (
-		ctx         = consensustest.Context(t, ids.GenerateTestID())
+		rt         = consensustest.Runtime(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    ctx.NetworkID,
-				BlockchainID: ctx.ChainID,
+				NetworkID:    rt.NetworkID,
+				BlockchainID: rt.ChainID,
 			},
 		}
 		validNetID      = ids.GenerateTestID()
@@ -815,7 +815,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			err := test.tx.SyntacticVerify(ctx)
+			err := test.tx.SyntacticVerify(rt)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return

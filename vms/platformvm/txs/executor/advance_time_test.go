@@ -36,8 +36,8 @@ func newAdvanceTimeTx(t testing.TB, timestamp time.Time) (*txs.Tx, error) {
 func TestAdvanceTimeTxUpdatePrimaryNetworkStakers(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 	dummyHeight := uint64(1)
 
 	// Case: Timestamp is after next validator start time
@@ -127,8 +127,8 @@ func TestAdvanceTimeTxTimestampTooEarly(t *testing.T) {
 func TestAdvanceTimeTxTimestampTooLate(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	// Case: Timestamp is after next validator start time
 	// Add a pending validator
@@ -160,8 +160,8 @@ func TestAdvanceTimeTxTimestampTooLate(t *testing.T) {
 
 	// Case: Timestamp is after next validator end time
 	env = newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	// fast forward clock to when genesis validators stop validating
 	env.clk.Set(genesistest.DefaultValidatorEndTime)
@@ -361,8 +361,8 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			require := require.New(t)
 			env := newEnvironment(t, upgradetest.ApricotPhase5)
-			env.ctx.Lock.Lock()
-			defer env.ctx.Lock.Unlock()
+			env.rt.Lock.Lock()
+			defer env.rt.Lock.Unlock()
 
 			dummyHeight := uint64(1)
 
@@ -471,8 +471,8 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	netID := testNet1.ID()
 	env.config.TrackedChains.Add(netID)
@@ -582,8 +582,8 @@ func TestTrackedNet(t *testing.T) {
 		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
 			require := require.New(t)
 			env := newEnvironment(t, upgradetest.ApricotPhase5)
-			env.ctx.Lock.Lock()
-			defer env.ctx.Lock.Unlock()
+			env.rt.Lock.Lock()
+			defer env.rt.Lock.Unlock()
 			dummyHeight := uint64(1)
 
 			netID := testNet1.ID()
@@ -657,8 +657,8 @@ func TestTrackedNet(t *testing.T) {
 func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 	dummyHeight := uint64(1)
 
 	// Case: Timestamp is after next validator start time
@@ -764,8 +764,8 @@ func TestAdvanceTimeTxDelegatorStakerWeight(t *testing.T) {
 func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 	dummyHeight := uint64(1)
 
 	// Case: Timestamp is after next validator start time
@@ -863,8 +863,8 @@ func TestAdvanceTimeTxDelegatorStakers(t *testing.T) {
 func TestAdvanceTimeTxAfterBanff(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Durango)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 	env.clk.Set(genesistest.DefaultValidatorStartTime) // VM's clock reads the genesis time
 	upgradeTime := env.clk.Time().Add(SyncBound)
 	env.config.UpgradeConfig.BanffTime = upgradeTime
@@ -896,8 +896,8 @@ func TestAdvanceTimeTxAfterBanff(t *testing.T) {
 func TestAdvanceTimeTxUnmarshal(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	chainTime := env.state.GetTimestamp()
 	tx, err := newAdvanceTimeTx(t, chainTime.Add(time.Second))

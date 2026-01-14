@@ -23,9 +23,9 @@ type testOperable struct {
 	Outputs []verify.State `serialize:"true"`
 }
 
-func (*testOperable) InitCtx(context.Context) {}
+func (*testOperable) InitRuntime(context.Context) {}
 
-func (*testOperable) InitializeContext(*runtime.Runtime) error { return nil }
+func (*testOperable) InitializeRuntime(*runtime.Runtime) error { return nil }
 
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs

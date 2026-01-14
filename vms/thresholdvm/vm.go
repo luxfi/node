@@ -14,9 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -88,7 +89,7 @@ type ChainPermissions struct {
 
 // VM implements the Threshold VM for MPC-as-a-service
 type VM struct {
-	ctx      *runtime.Runtime
+	rt       *runtime.Runtime
 	db       database.Database
 	config   ThresholdConfig
 	toEngine chan<- core.Message
@@ -206,37 +207,12 @@ type vmStats struct {
 // Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	init common.VMInit,
 ) error {
-	// Type assertions
-	var ok bool
-	vm.ctx, ok = chainCtx.(*runtime.Runtime)
-	if !ok {
-		return errors.New("invalid chain context type")
-	}
-
-	vm.db, ok = db.(database.Database)
-	if !ok {
-		return errors.New("invalid database type")
-	}
-
-	vm.toEngine, ok = msgChan.(chan<- core.Message)
-	if !ok {
-		return errors.New("invalid message channel type")
-	}
-
-	if logger, ok := vm.ctx.Log.(log.Logger); ok {
-		vm.log = logger
-	} else {
-		return errors.New("invalid logger type")
-	}
+	vm.rt = init.Runtime
+	vm.db = init.DB
+	vm.toEngine = init.ToEngine
+	vm.log = init.Log
 
 	// Initialize maps
 	vm.pendingBlocks = make(map[ids.ID]*Block)
@@ -252,12 +228,12 @@ func (vm *VM) Initialize(
 	}
 
 	// Parse configuration
-	if err := vm.parseConfig(configBytes); err != nil {
+	if err := vm.parseConfig(init.Config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
 	// Initialize party ID from node ID
-	vm.partyID = party.ID(vm.ctx.NodeID.String())
+	vm.partyID = party.ID(vm.rt.NodeID.String())
 
 	// Create worker pool for MPC operations
 	vm.pool = pool.NewPool(16) // 16 workers for parallel MPC
@@ -278,7 +254,7 @@ func (vm *VM) Initialize(
 
 	// Parse genesis
 	genesis := &Genesis{}
-	if _, err := Codec.Unmarshal(genesisBytes, genesis); err != nil {
+	if _, err := Codec.Unmarshal(init.Genesis, genesis); err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}
 

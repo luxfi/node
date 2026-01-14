@@ -24,15 +24,15 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *runtime.Runtime) {
+func (t *BaseTx) InitRuntime(rt *runtime.Runtime) {
 	for _, out := range t.Outs {
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
 }
 
-// InitializeContext initializes the context for this transaction
-func (t *BaseTx) InitializeContext(ctx *runtime.Runtime) error {
-	t.InitCtx(ctx)
+// InitializeRuntime initializes the context for this transaction
+func (t *BaseTx) InitializeRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
 }
 
@@ -70,9 +70,9 @@ func (t *BaseTx) NumCredentials() int {
 	return len(t.Ins)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx *runtime.Runtime) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *BaseTx) InitializeWithRuntime(rt *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
-	tx.InitCtx(ctx)
+	tx.InitRuntime(rt)
 	return nil
 }

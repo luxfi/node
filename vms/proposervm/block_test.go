@@ -78,9 +78,9 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 
-	// Create consensus context with NodeID
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	consensusCtx.NodeID = nodeID
+	// Create Runtime with NodeID
+	rt := consensustest.Runtime(t, consensustest.PChainID)
+	rt.NodeID = nodeID
 
 	vm := &VM{
 		Config: Config{
@@ -91,8 +91,8 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx:            consensusCtx,
-		logger:         consensusCtx.Log.(log.Logger),
+		rt:             rt,
+		logger:         rt.Log.(log.Logger),
 		validatorState: vdrState,
 		Windower:       windower,
 	}
@@ -170,7 +170,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	// it'd be picked if block build time was before MaxVerifyDelay
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		// a validator with a weight large enough to fully fill the proposers list
-		nodeID := proVM.ctx.NodeID
+		nodeID := proVM.rt.NodeID
 		return map[ids.NodeID]*validators.GetValidatorOutput{
 			nodeID: {
 				NodeID: nodeID,
@@ -195,7 +195,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		require.IsType(&postForkBlock{}, childBlkIntf)
 
 		childBlk := childBlkIntf.(*postForkBlock)
-		require.Equal(proVM.ctx.NodeID, childBlk.Proposer()) // signed block
+		require.Equal(proVM.rt.NodeID, childBlk.Proposer()) // signed block
 	}
 
 	{
@@ -394,8 +394,8 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 	windower := proposer.NewMockWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	consensusCtx.NodeID = nodeID // Ensure the VM's nodeID matches what windower expects
+	rt := consensustest.Runtime(t, consensustest.PChainID)
+	rt.NodeID = nodeID // Ensure the VM's nodeID matches what windower expects
 	vm := &VM{
 		Config: Config{
 			Upgrades:          upgradetest.GetConfig(upgradetest.Durango), // Use Durango for pre-Etna behavior
@@ -404,7 +404,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 			Registerer:        metric.NewNoOp().Registry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx:            consensusCtx,
+		rt:             rt,
 		Windower:       windower,
 		validatorState: vdrState,
 		logger:         log.NewNoOpLogger(),
@@ -587,7 +587,7 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 				test.epoch,
 				proVM.StakingCertLeaf,
 				coreChildBlk.Bytes(),
-				proVM.ctx.ChainID,
+				proVM.rt.ChainID,
 				proVM.StakingLeafSigner,
 			)
 			require.NoError(err)

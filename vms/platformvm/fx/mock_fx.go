@@ -152,29 +152,29 @@ func (m *MockOwner) EXPECT() *MockOwnerMockRecorder {
 	return m.recorder
 }
 
-// InitCtx mocks base method.
-func (m *MockOwner) InitCtx(arg0 *runtime.Runtime) {
+// InitRuntime mocks base method.
+func (m *MockOwner) InitRuntime(arg0 *runtime.Runtime) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitRuntime", arg0)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *MockOwnerMockRecorder) InitCtx(arg0 any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *MockOwnerMockRecorder) InitRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockOwner)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*MockOwner)(nil).InitRuntime), arg0)
 }
 
-// InitializeContext mocks base method (delegates to InitCtx for compatibility).
-func (m *MockOwner) InitializeContext(arg0 context.Context) error {
+// InitializeRuntime mocks base method (delegates to InitRuntime for compatibility).
+func (m *MockOwner) InitializeRuntime(arg0 context.Context) error {
 	// This method exists for interface compatibility but does nothing
-	// The actual context initialization is handled via InitCtx with runtime.Runtime
+	// The actual context initialization is handled via InitRuntime with runtime.Runtime
 	return nil
 }
 
-// InitializeContext indicates an expected call of InitializeContext.
-func (mr *MockOwnerMockRecorder) InitializeContext(arg0 any) *gomock.Call {
+// InitializeRuntime indicates an expected call of InitializeRuntime.
+func (mr *MockOwnerMockRecorder) InitializeRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeContext", reflect.TypeOf((*MockOwner)(nil).InitializeContext), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeRuntime", reflect.TypeOf((*MockOwner)(nil).InitializeRuntime), arg0)
 }
 
 // Verify mocks base method.

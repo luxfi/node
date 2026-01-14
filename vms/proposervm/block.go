@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/consensus"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -153,7 +153,7 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	// FIX 1: Consolidate all P-chain dependent validations into single block
-	if p.vm.consensusState == uint32(consensus.Ready) {
+	if p.vm.consensusState == uint32(interfaces.Ready) {
 		// All P-chain dependent validations here - only when synced
 		// 1. Epoch validation
 		if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
@@ -307,7 +307,7 @@ func (p *postForkCommonComponents) buildChild(
 			epoch,
 			p.vm.StakingCertLeaf,
 			innerBlock.Bytes(),
-			p.vm.ctx.ChainID,
+			p.vm.rt.ChainID,
 			p.vm.StakingLeafSigner,
 		)
 	} else {
@@ -487,7 +487,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 			log.Err(err),
 		)
 		return false, err
-	case expectedProposerID == p.vm.ctx.NodeID:
+	case expectedProposerID == p.vm.rt.NodeID:
 		return true, nil // build a signed block
 	}
 
@@ -516,7 +516,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	}
 
 	parentHeight := p.innerBlk.Height()
-	proposerID := p.vm.ctx.NodeID
+	proposerID := p.vm.rt.NodeID
 	minDelay, err := p.vm.Windower.Delay(ctx, parentHeight+1, parentPChainHeight, proposerID, proposer.MaxBuildWindows)
 	if err != nil {
 		p.vm.logger.Error("unexpected build block failure",

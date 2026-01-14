@@ -8,9 +8,10 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -36,7 +37,7 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize block.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *runtime.Runtime
+	rt               *runtime.Runtime
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
@@ -80,14 +81,16 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	// Pass the toEngine channel to the VM so it can notify consensus about pending transactions
 	return vm.vmToInitialize.Initialize(
 		ctx,
-		vm.ctx,
-		&dbManagerWrapper{db: vm.db},
-		vm.genesisBytes,
-		vm.upgradeBytes,
-		vm.configBytes,
-		vm.toEngine, // toEngine channel for VM to notify consensus
-		fxsInterface,
-		vm.appSender,
+		common.VMInit{
+			Runtime:  vm.rt,
+			DB:       vm.db,
+			Genesis:  vm.genesisBytes,
+			Upgrade:  vm.upgradeBytes,
+			Config:   vm.configBytes,
+			ToEngine: vm.toEngine,
+			Fx:       fxsInterface,
+			Sender:   vm.appSender,
+		},
 	)
 }
 
@@ -130,13 +133,7 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toE
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	consensusCtx *runtime.Runtime,
-	db database.Database,
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	fxs []fx.Fx,
-	appSender warp.Sender,
+	vmInit common.VMInit,
 ) error {
 	// When Initialize is called, we need to linearize the DAG
 	// The stopVertexID should have been set by initializeOnLinearizeVM.Linearize

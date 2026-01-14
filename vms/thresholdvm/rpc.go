@@ -807,8 +807,8 @@ func (vm *VM) rpcGetInfo() (*ThresholdInfo, error) {
 
 	return &ThresholdInfo{
 		Version:            Version.String(),
-		NodeID:             vm.ctx.NodeID.String(),
-		ChainID:            vm.ctx.ChainID.String(),
+		NodeID:             vm.rt.NodeID.String(),
+		ChainID:            vm.rt.ChainID.String(),
 		MPCReady:           vm.mpcReady,
 		ActiveKeyID:        vm.activeKeyID,
 		Threshold:          vm.config.Threshold,

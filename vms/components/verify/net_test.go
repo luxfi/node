@@ -19,7 +19,7 @@ type testValidatorState struct {
 	err    error
 }
 
-func (s *testValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+func (s *testValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
 	if s.err != nil {
 		return ids.Empty, s.err
 	}
@@ -39,13 +39,13 @@ func TestSameNet(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		chainCtx *ChainContext
+		chainRuntime *ChainContext
 		chainID  ids.ID
 		result   error
 	}{
 		{
 			name: "same chain",
-			chainCtx: &ChainContext{
+			chainRuntime: &ChainContext{
 				ChainID:        chainID0,
 				NetID:          netID0,
 				ValidatorState: &testValidatorState{},
@@ -55,7 +55,7 @@ func TestSameNet(t *testing.T) {
 		},
 		{
 			name: "unknown chain",
-			chainCtx: &ChainContext{
+			chainRuntime: &ChainContext{
 				ChainID: chainID0,
 				NetID:   netID0,
 				ValidatorState: &testValidatorState{
@@ -68,7 +68,7 @@ func TestSameNet(t *testing.T) {
 		},
 		{
 			name: "wrong chain",
-			chainCtx: &ChainContext{
+			chainRuntime: &ChainContext{
 				ChainID: chainID0,
 				NetID:   netID0,
 				ValidatorState: &testValidatorState{
@@ -82,7 +82,7 @@ func TestSameNet(t *testing.T) {
 		},
 		{
 			name: "same chain",
-			chainCtx: &ChainContext{
+			chainRuntime: &ChainContext{
 				ChainID: chainID0,
 				NetID:   netID0,
 				ValidatorState: &testValidatorState{
@@ -97,7 +97,7 @@ func TestSameNet(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := SameNet(context.Background(), test.chainCtx, test.chainID)
+			result := SameNet(context.Background(), test.chainRuntime, test.chainID)
 			require.ErrorIs(t, result, test.result)
 		})
 	}

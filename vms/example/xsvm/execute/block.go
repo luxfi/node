@@ -19,7 +19,7 @@ var errNoTxs = errors.New("no transactions")
 
 func Block(
 	ctx context.Context,
-	chainContext *runtime.Runtime,
+	chainRuntime *runtime.Runtime,
 	db database.KeyValueReaderWriterDeleter,
 	skipVerify bool,
 	blockContext *smblock.Context,
@@ -40,7 +40,7 @@ func Block(
 		}
 		txExecutor := Tx{
 			Context:      ctx,
-			ChainContext: chainContext,
+			Runtime:      chainRuntime,
 			Database:     db,
 			SkipVerify:   skipVerify,
 			BlockContext: blockContext,

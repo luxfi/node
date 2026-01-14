@@ -7,16 +7,16 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/runtime"
 	validators "github.com/luxfi/consensus/validator"
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
-	hash "github.com/luxfi/crypto/hash"
-	"github.com/luxfi/codec/wrappers"
 )
 
 const (
@@ -34,9 +34,9 @@ var (
 )
 
 type Tx struct {
-	Context      context.Context
-	ChainContext *runtime.Runtime
-	Database     database.KeyValueReaderWriterDeleter
+	Context  context.Context
+	Runtime  *runtime.Runtime
+	Database database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool
 	BlockContext *block.Context
@@ -52,7 +52,7 @@ func (t *Tx) Transfer(tf *tx.Transfer) error {
 	if tf.MaxFee < t.TransferFee {
 		return errFeeTooHigh
 	}
-	if tf.ChainID != t.ChainContext.ChainID {
+	if tf.ChainID != t.Runtime.ChainID {
 		return errWrongChainID
 	}
 
@@ -68,7 +68,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	if e.MaxFee < t.ExportFee {
 		return errFeeTooHigh
 	}
-	if e.ChainID != t.ChainContext.ChainID {
+	if e.ChainID != t.Runtime.ChainID {
 		return errWrongChainID
 	}
 
@@ -84,7 +84,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	}
 
 	message, err := warp.NewUnsignedMessage(
-		t.ChainContext.NetworkID,
+		t.Runtime.NetworkID,
 		e.ChainID,
 		payload.Bytes(),
 	)
@@ -131,7 +131,7 @@ func (t *Tx) Import(i *tx.Import) error {
 	var errs wrappers.Errs
 	errs.Add(
 		state.IncrementNonce(t.Database, t.Sender, i.Nonce),
-		state.DecreaseBalance(t.Database, t.Sender, t.ChainContext.ChainID, t.ImportFee),
+		state.DecreaseBalance(t.Database, t.Sender, t.Runtime.ChainID, t.ImportFee),
 	)
 
 	payload, err := tx.ParsePayload(message.Payload)
@@ -141,7 +141,7 @@ func (t *Tx) Import(i *tx.Import) error {
 
 	if payload.IsReturn {
 		errs.Add(
-			state.IncreaseBalance(t.Database, payload.To, t.ChainContext.ChainID, payload.Amount),
+			state.IncreaseBalance(t.Database, payload.To, t.Runtime.ChainID, payload.Amount),
 			state.DecreaseLoan(t.Database, message.SourceChainID, payload.Amount),
 		)
 	} else {
@@ -167,7 +167,7 @@ func (t *Tx) Import(i *tx.Import) error {
 
 	validatorSet, err := warp.GetCanonicalValidatorSetFromChainID(
 		t.Context,
-		t.ChainContext.ValidatorState.(validators.State),
+		t.Runtime.ValidatorState.(validators.State),
 		t.BlockContext.PChainHeight,
 		message.SourceChainID,
 	)
@@ -177,7 +177,7 @@ func (t *Tx) Import(i *tx.Import) error {
 
 	return message.Signature.Verify(
 		&message.UnsignedMessage,
-		t.ChainContext.NetworkID,
+		t.Runtime.NetworkID,
 		validatorSet,
 		QuorumNumerator,
 		QuorumDenominator,

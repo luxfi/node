@@ -16,9 +16,8 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/engine/interfaces"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -63,7 +62,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx *runtime.Runtime, vm interfaces.VM)
+	RegisterChain(chainName string, rt *runtime.Runtime, vm interfaces.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -149,82 +148,29 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx *runtime.Runtime, vm interfaces.VM) {
-	// Note: HTTP handler registration is now done in chains/manager.go:createChain()
-	// after VM initialization. This RegisterChain method is called too early (before
-	// VM initialization) and would cause nil pointer dereference if we call CreateHandlers here.
-	// The chain manager will call CreateHandlers at the appropriate time after notifyRegistrants.
-
+func (s *server) RegisterChain(chainName string, rt *runtime.Runtime, vm interfaces.VM) {
 	s.log.Debug("chain registered (handlers will be created by chain manager)",
 		log.String("chainName", chainName),
-		log.Stringer("chainID", ctx.ChainID),
+		log.Stringer("chainID", rt.ChainID),
 	)
-
-	// DISABLED: Handler registration moved to chains/manager.go:createChain()
-	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	// defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
-
-	// DISABLED: Register each endpoint
-	/*
-		for extension, handler := range pathRouteHandlers {
-			// Validate that the route being added is valid
-			// e.g. "/foo" and "" are ok but "\n" is not
-			_, err := url.ParseRequestURI(extension)
-			if extension != "" && err != nil {
-				s.log.Error("could not add route to chain's API handler",
-					log.UserString("reason", "route is malformed"),
-					log.Err(err),
-				)
-				continue
-			}
-			if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
-				s.log.Error("error adding route",
-					log.Err(err),
-				)
-			}
-		}
-
-		ctx.Lock.Lock()
-		headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
-		ctx.Lock.Unlock()
-		if err != nil {
-			s.log.Error("failed to create header route handler",
-				log.String("chainName", chainName),
-				log.Err(err),
-			)
-			return
-		}
-
-		if headerRouteHandler == nil {
-			return
-		}
-
-		headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
-		if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
-			s.log.Error(
-				"failed to add header route",
-				log.String("chainName", chainName),
-			)
-		}
-	*/
 }
 
-func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *runtime.Runtime, base, endpoint string) error {
+func (s *server) addChainRoute(chainName string, handler http.Handler, rt *runtime.Runtime, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
 		log.UserString("url", url),
 		log.UserString("endpoint", endpoint),
 	)
-	handler = s.wrapMiddleware(chainName, handler, ctx)
+	handler = s.wrapMiddleware(chainName, handler, rt)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
-func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *runtime.Runtime) http.Handler {
+func (s *server) wrapMiddleware(chainName string, handler http.Handler, rt *runtime.Runtime) http.Handler {
 	if s.tracingEnabled {
 		handler = api.TraceHandler(handler, chainName, s.tracer)
 	}
 	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
-	handler = rejectMiddleware(handler, ctx)
+	handler = rejectMiddleware(handler, rt)
 	return s.metrics.wrapHandler(chainName, handler)
 }
 
@@ -256,19 +202,12 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 
 // StateGetter interface for getting chain state
 type StateGetter interface {
-	Get() consensus.State
+	Get() interfaces.State
 }
-
-// contextKey type for context values
-type contextKey string
-
-const stateHolderKey contextKey = "stateHolder"
 
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
-func rejectMiddleware(handler http.Handler, ctx *runtime.Runtime) http.Handler {
-	// TODO: Add state tracking to consensus context to properly check if chain is bootstrapped
-	// For now, allow all requests
+func rejectMiddleware(handler http.Handler, rt *runtime.Runtime) http.Handler {
 	return handler
 }
 

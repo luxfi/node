@@ -24,10 +24,6 @@ func (manager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
-}
-
 func (manager) GetChainID(ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }

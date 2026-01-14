@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
@@ -32,25 +33,27 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
-	toEngine := make(chan interface{}, 1)
+	toEngine := make(chan core.Message, 1)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,          // context
-		memdb.New(),  // database
-		genesisBytes, // genesisState
-		nil,          // upgradeBytes
-		nil,          // configBytes
-		toEngine,     // toEngine
-		[]interface{}{ // fxs
-			nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      memdb.New(),
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: toEngine,
+			Fx: []interface{}{
+				nil,
+			},
+			Sender: nil,
 		},
-		nil, // appSender
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -59,13 +62,13 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
-	toEngine := make(chan interface{}, 1)
+	toEngine := make(chan core.Message, 1)
 	fx := &core.Fx{
 		ID: ids.Empty,
 		Fx: &FxTest{
@@ -76,14 +79,16 @@ func TestFxInitializationFailure(t *testing.T) {
 	}
 	err := vm.Initialize(
 		context.Background(),
-		ctx,               // chainCtx
-		memdb.New(),       // dbManager
-		genesisBytes,      // genesisBytes
-		nil,               // upgradeBytes
-		nil,               // configBytes
-		toEngine,          // toEngine
-		[]interface{}{fx}, // fxs
-		nil,               // appSender
+		common.VMInit{
+			Runtime: rt,
+			DB:      memdb.New(),
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  nil,
+			ToEngine: toEngine,
+			Fx:      []interface{}{fx},
+			Sender:  nil,
+		},
 	)
 	require.ErrorIs(err, errUnknownFx)
 }
@@ -96,7 +101,7 @@ func TestIssueTx(t *testing.T) {
 	})
 	env.vm.Lock.Unlock()
 
-	tx := newTx(t, env.genesisBytes, env.consensusCtx.ChainID, env.vm.parser, "LUX")
+	tx := newTx(t, env.genesisBytes, env.consensusRuntime.ChainID, env.vm.parser, "LUX")
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -279,7 +284,7 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 	env.vm.Lock.Unlock()
 
 	// send first asset
-	tx := newTx(t, env.genesisBytes, env.consensusCtx.ChainID, env.vm.parser, "LUX")
+	tx := newTx(t, env.genesisBytes, env.consensusRuntime.ChainID, env.vm.parser, "LUX")
 	issueAndAccept(require, env.vm, tx)
 }
 

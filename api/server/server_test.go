@@ -23,8 +23,8 @@ func TestRejectMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusTeapot)
 	})
 
-	// Create a consensus context
-	ctx := &runtime.Runtime{
+	// Create a Runtime
+	rt := &runtime.Runtime{
 		NetworkID: 1,
 		ChainID:   ids.Empty,
 		NodeID:    ids.EmptyNodeID,
@@ -33,7 +33,7 @@ func TestRejectMiddleware(t *testing.T) {
 
 	// rejectMiddleware currently just returns the handler
 	// TODO: When state checking is implemented, add more comprehensive tests
-	middleware := rejectMiddleware(testHandler, ctx)
+	middleware := rejectMiddleware(testHandler, rt)
 	w := httptest.NewRecorder()
 	middleware.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 	require.Equal(http.StatusTeapot, w.Code)

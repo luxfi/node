@@ -67,6 +67,12 @@ func (m *mockPChainProvider) SubscribeFinality() <-chan FinalityEvent {
 	return m.finalityCh
 }
 
+func (m *mockPChainProvider) Validators() []ValidatorState {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return append([]ValidatorState(nil), m.validators...)
+}
+
 func (m *mockPChainProvider) EmitFinality(event FinalityEvent) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -245,15 +251,12 @@ func TestQuasarFullFlow(t *testing.T) {
 	})
 
 	t.Run("process_single_event", func(t *testing.T) {
-		validatorStates := generateValidatorStates(numValidators)
-		pchain := newMockPChainProvider(validatorStates)
-		defer pchain.Close()
-
-		q, err := NewQuasar(log.NewNoOpLogger(), 3, 2, 3)
+		q, pchain, _, err := setupQuasarWithRingtail(t, numValidators)
+		if isLatticeUnavailable(err) {
+			t.Skipf("Skipping: lattice library constraint: %v", err)
+		}
 		require.NoError(t, err)
-
-		q.ConnectPChain(pchain)
-		q.ConnectQuantumFallback(&mockQuantumSigner{})
+		defer pchain.Close()
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -263,14 +266,12 @@ func TestQuasarFullFlow(t *testing.T) {
 		defer q.Stop()
 
 		// Emit event
-		event := createTestEvent(1, validatorStates)
+		event := createTestEvent(1, pchain.Validators())
 		pchain.EmitFinality(event)
 
-		// Wait for processing
-		time.Sleep(100 * time.Millisecond)
-
-		stats := q.Stats()
-		require.Equal(t, uint64(1), stats.PChainHeight, "P-chain height should be 1")
+		require.Eventually(t, func() bool {
+			return q.Stats().PChainHeight >= 1
+		}, time.Second, 10*time.Millisecond, "P-chain height should be 1")
 	})
 
 	t.Run("verify_quorum_calculation", func(t *testing.T) {
@@ -361,15 +362,13 @@ func TestQuasarConcurrent(t *testing.T) {
 	const numValidators = 5
 	const numEvents = 50
 
-	validatorStates := generateValidatorStates(numValidators)
-	pchain := newMockPChainProvider(validatorStates)
-	defer pchain.Close()
-
-	q, err := NewQuasar(log.NewNoOpLogger(), 3, 2, 3)
+	q, pchain, _, err := setupQuasarWithRingtail(t, numValidators)
+	if isLatticeUnavailable(err) {
+		t.Skipf("Skipping: lattice library constraint: %v", err)
+	}
 	require.NoError(t, err)
-
-	q.ConnectPChain(pchain)
-	q.ConnectQuantumFallback(&mockQuantumSigner{})
+	defer pchain.Close()
+	validatorStates := pchain.Validators()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -11,16 +11,16 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-// ContextInitializable defines the interface for initializing context
-type ContextInitializable interface {
-	InitCtx(ctx *runtime.Runtime)
+// RuntimeInitializable defines the interface for initializing context
+type RuntimeInitializable interface {
+	InitRuntime(rt *runtime.Runtime)
 }
 
 // UnsignedTx is an unsigned transaction
 type UnsignedTx interface {
 	// TODO: Remove this initialization pattern from both the platformvm and the
 	// avm.
-	ContextInitializable
+	RuntimeInitializable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 
@@ -30,7 +30,7 @@ type UnsignedTx interface {
 	Outputs() []*lux.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
-	SyntacticVerify(ctx *runtime.Runtime) error
+	SyntacticVerify(rt *runtime.Runtime) error
 
 	// Visit calls [visitor] with this transaction's concrete type
 	Visit(visitor Visitor) error

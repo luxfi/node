@@ -9,8 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -21,7 +22,7 @@ func TestVMInitialize(t *testing.T) {
 
 	// Create test context
 	ctx := context.Background()
-	chainCtx := &runtime.Runtime{
+	chainRuntime := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -74,17 +75,13 @@ func TestVMInitialize(t *testing.T) {
 
 	// Initialize VM
 	toEngine := make(chan core.Message, 1)
-	require.NoError(vm.Initialize(
-		ctx,
-		chainCtx,
-		db,
-		genesisBytes,
-		nil, // upgradeBytes
-		configBytes,
-		toEngine, // msgChan
-		nil,      // fxs
-		nil,      // appSender
-	))
+	require.NoError(vm.Initialize(ctx, common.VMInit{
+		Runtime:  chainRuntime,
+		DB:       db,
+		Genesis:  genesisBytes,
+		Config:   configBytes,
+		ToEngine: toEngine,
+	}))
 
 	// Verify initialization
 	require.NotNil(vm.utxoDB)
@@ -180,7 +177,7 @@ func TestPrivateAddress(t *testing.T) {
 
 func setupTestVM(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &runtime.Runtime{
+	chainRuntime := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -203,14 +200,20 @@ func setupTestVM(t *testing.T) *VM {
 	vm := &VM{}
 	toEngine := make(chan core.Message, 1)
 
-	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
+	require.NoError(t, vm.Initialize(ctx, common.VMInit{
+		Runtime:  chainRuntime,
+		DB:       db,
+		Genesis:  genesisBytes,
+		Config:   configBytes,
+		ToEngine: toEngine,
+	}))
 
 	return vm
 }
 
 func setupTestVMWithPrivacy(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &runtime.Runtime{
+	chainRuntime := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -234,7 +237,13 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	vm := &VM{}
 	toEngine := make(chan core.Message, 1)
 
-	require.NoError(t, vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil))
+	require.NoError(t, vm.Initialize(ctx, common.VMInit{
+		Runtime:  chainRuntime,
+		DB:       db,
+		Genesis:  genesisBytes,
+		Config:   configBytes,
+		ToEngine: toEngine,
+	}))
 
 	return vm
 }

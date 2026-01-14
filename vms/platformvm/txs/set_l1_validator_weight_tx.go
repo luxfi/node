@@ -19,7 +19,7 @@ type SetL1ValidatorWeightTx struct {
 	Message types.JSONByteSlice `serialize:"true" json:"message"`
 }
 
-func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *SetL1ValidatorWeightTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -28,7 +28,7 @@ func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 

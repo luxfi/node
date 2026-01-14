@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/address"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
@@ -60,7 +61,7 @@ type envConfig struct {
 // testEnv is the test environment
 type testEnv struct {
 	vm           *VM
-	consensusCtx *runtime.Runtime
+	consensusRuntime *runtime.Runtime
 	genesisBytes []byte
 	genesisTx    *txs.Tx
 	testLock     *sync.Mutex
@@ -216,7 +217,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	}
 
 	chainID := ids.GenerateTestID()
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID:      constants.UnitTestID,
 		ChainID:        chainID,
 		XChainID:       ids.GenerateTestID(),
@@ -231,7 +232,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	vm := &VM{}
 	genesisBytes := newGenesisBytesTest(t.(*testing.T))
 	// Create shared memory wrapper that matches VM's interface
-	atomicMem := sharedMemory.NewSharedMemory(ctx.ChainID)
+	atomicMem := sharedMemory.NewSharedMemory(rt.ChainID)
 	vm.SharedMemory = &testSharedMemory{mem: atomicMem}
 
 	testLock := &sync.Mutex{}
@@ -274,24 +275,26 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	configBytes, err := json.Marshal(vmConfig)
 	require.NoError(err)
 
-	toEngine := make(chan interface{}, 1)
+	toEngine := make(chan core.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
-		baseDB,
-		genesisBytes,
-		nil,
-		configBytes,
-		toEngine,
-		fxs,
-		appSender,
+		common.VMInit{
+			Runtime: rt,
+			DB:      baseDB,
+			Genesis: genesisBytes,
+			Upgrade: nil,
+			Config:  configBytes,
+			ToEngine: toEngine,
+			Fx:      fxs,
+			Sender:  appSender,
+		},
 	))
 
 	// Get the genesis transaction
 	genesisTx := getCreateTxFromGenesisTest(t.(*testing.T), genesisBytes, "LUX")
 
 	// Create transaction builder with SharedMemory
-	atomicMemForBuilder := sharedMemory.NewSharedMemory(ctx.ChainID)
+	atomicMemForBuilder := sharedMemory.NewSharedMemory(rt.ChainID)
 	txBuilder := txstest.New(
 		vm.parser.Codec(),
 		context.Background(),
@@ -301,12 +304,12 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 		atomicMemForBuilder,
 	)
 
-	// Set the context IDs from the consensus context
-	txBuilder.SetContextIDs(ctx.NetworkID, ctx.ChainID)
+	// Set the context IDs from the Runtime
+	txBuilder.SetContextIDs(rt.NetworkID, rt.ChainID)
 
 	env := &testEnv{
 		vm:           vm,
-		consensusCtx: ctx,
+		consensusRuntime: rt,
 		genesisBytes: genesisBytes,
 		genesisTx:    genesisTx,
 		testLock:     testLock,

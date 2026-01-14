@@ -29,7 +29,7 @@
 }
 
 # Fix Context structs missing closing brace
-/LUXAssetID: luxAssetID,$/ {
+/LUXAssetID: xAssetID,$/ {
     print $0
     getline
     if ($0 !~ /^\t}$/) {

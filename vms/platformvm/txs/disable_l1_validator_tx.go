@@ -21,7 +21,7 @@ type DisableL1ValidatorTx struct {
 	DisableAuth verify.Verifiable `serialize:"true" json:"disableAuthorization"`
 }
 
-func (tx *DisableL1ValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *DisableL1ValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -30,7 +30,7 @@ func (tx *DisableL1ValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := tx.DisableAuth.Verify(); err != nil {

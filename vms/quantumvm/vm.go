@@ -68,7 +68,7 @@ type VM struct {
 
 	// Core components
 	ctx context.Context
-	// consensusCtx    *runtime.Runtime
+	// consensusRuntime    *runtime.Runtime
 	log          log.Logger
 	db           database.Database
 	versiondb    *versiondb.Database
@@ -120,8 +120,8 @@ type VM struct {
 // Initialize initializes the VM with the given context
 func (vm *VM) Initialize(
 	ctx context.Context,
-	// chainCtx *runtime.Runtime,
-	chainCtx interface{},
+	// chainRuntime *runtime.Runtime,
+	chainRuntime interface{},
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -135,14 +135,14 @@ func (vm *VM) Initialize(
 
 	// Set up basic context
 	vm.ctx = ctx
-	// vm.consensusCtx = chainCtx
+	// vm.consensusRuntime = chainRuntime
 	vm.db = db
-	// vm.blockchainID = chainCtx.ChainID
-	// vm.NetworkID = chainCtx.NetworkID
+	// vm.blockchainID = chainRuntime.ChainID
+	// vm.NetworkID = chainRuntime.NetworkID
 
 	// Initialize logger
 	// if vm.log.IsZero() {
-	//	vm.log = chainCtx.Log
+	//	vm.log = chainRuntime.Log
 	// }
 	// vm.log.Info("initializing QVM",
 	//	"version", Version,
@@ -184,8 +184,8 @@ func (vm *VM) Initialize(
 	vm.versiondb = versiondb.New(vm.db)
 
 	// Initialize metrics
-	// TODO: Type assert chainCtx to access Metrics
-	// vm.metrics = chainCtx.Metrics
+	// TODO: Type assert chainRuntime to access Metrics
+	// vm.metrics = chainRuntime.Metrics
 
 	// Parse genesis if provided
 	if len(genesisBytes) > 0 {

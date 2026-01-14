@@ -464,8 +464,8 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	// Make sure that we will be sampled to perform the proposals.
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			proVM.rt.NodeID: {
+				NodeID: proVM.rt.NodeID,
 				Weight: 10,
 			},
 		}, nil

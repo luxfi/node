@@ -36,11 +36,11 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *BanffProposalBlock) InitCtx(ctx *runtime.Runtime) {
+func (b *BanffProposalBlock) InitRuntime(rt *runtime.Runtime) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.InitRuntime(rt)
 	}
-	b.ApricotProposalBlock.InitCtx(ctx)
+	b.ApricotProposalBlock.InitRuntime(rt)
 }
 
 func (b *BanffProposalBlock) Timestamp() time.Time {
@@ -93,8 +93,8 @@ func (b *ApricotProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotProposalBlock) InitCtx(ctx *runtime.Runtime) {
-	b.Tx.Unsigned.InitCtx(ctx)
+func (b *ApricotProposalBlock) InitRuntime(rt *runtime.Runtime) {
+	b.Tx.Unsigned.InitRuntime(rt)
 }
 
 func (b *ApricotProposalBlock) Txs() []*txs.Tx {
@@ -123,14 +123,14 @@ func NewApricotProposalBlock(
 	return blk, initialize(blk, &blk.CommonBlock)
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *BanffProposalBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *BanffProposalBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *ApricotProposalBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *ApricotProposalBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

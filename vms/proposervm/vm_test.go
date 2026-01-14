@@ -15,9 +15,10 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/interfaces"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
@@ -25,6 +26,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -44,6 +46,16 @@ var (
 type fullVM struct {
 	*componentblocktest.ChainVM
 	*componentblocktest.StateSyncableVM
+}
+
+func (vm *fullVM) Initialize(ctx context.Context, init common.VMInit) error {
+	if vm.ChainVM.InitializeF != nil {
+		return vm.ChainVM.InitializeF(
+			ctx,
+			init,
+		)
+	}
+	return nil
 }
 
 var (
@@ -105,10 +117,7 @@ func initTestProposerVMWithGranite(
 		StateSyncableVM: &componentblocktest.StateSyncableVM{},
 	}
 
-	coreVM.InitializeF = func(context.Context, interface{}, interface{},
-		[]byte, []byte, []byte,
-		interface{}, []interface{}, interface{},
-	) error {
+	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -154,7 +163,7 @@ func initTestProposerVMWithGranite(
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		var (
-			thisNode = proVM.ctx.NodeID
+			thisNode = proVM.rt.NodeID
 			nodeID1  = ids.BuildTestNodeID([]byte{1})
 			nodeID2  = ids.BuildTestNodeID([]byte{2})
 			nodeID3  = ids.BuildTestNodeID([]byte{3})
@@ -183,32 +192,30 @@ func initTestProposerVMWithGranite(
 		}, nil
 	}
 
-	ctx := consensustest.NewContext(t)
-	ctx.ChainID = ids.ID{1}
-	ctx.NodeID = ids.NodeIDFromCert(&staking.Certificate{
+	rt := consensustest.NewRuntime(t)
+	rt.ChainID = ids.ID{1}
+	rt.NodeID = ids.NodeIDFromCert(&staking.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
-	ctx.ValidatorState = valState
+	rt.ValidatorState = valState
 
 	db := prefixdb.New([]byte{0}, memdb.New())
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	proVM.Set(componentblocktest.GenesisTimestamp)
@@ -229,7 +236,7 @@ func waitForProposerWindow(vm *VM, chainTip consensusblock.Block, pchainHeight u
 			ctx,
 			childBlockHeight,
 			pchainHeight,
-			vm.ctx.NodeID,
+			vm.rt.NodeID,
 			slot,
 		)
 		if err != nil {
@@ -505,7 +512,7 @@ func TestCoreBlockFailureCauseProposerBlockParseFailure(t *testing.T) {
 		statelessblock.Epoch{}, // Add epoch parameter
 		proVM.StakingCertLeaf,
 		innerBlk.Bytes(),
-		proVM.ctx.ChainID,
+		proVM.rt.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -550,7 +557,7 @@ func TestTwoProBlocksWrappingSameCoreBlockCanBeParsed(t *testing.T) {
 		statelessblock.Epoch{}, // Add epoch parameter
 		proVM.StakingCertLeaf,
 		innerBlk.Bytes(),
-		proVM.ctx.ChainID,
+		proVM.rt.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -569,7 +576,7 @@ func TestTwoProBlocksWrappingSameCoreBlockCanBeParsed(t *testing.T) {
 		statelessblock.Epoch{}, // Add epoch parameter
 		proVM.StakingCertLeaf,
 		innerBlk.Bytes(),
-		proVM.ctx.ChainID,
+		proVM.rt.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -632,7 +639,7 @@ func TestTwoProBlocksWithSameParentCanBothVerify(t *testing.T) {
 		}
 	}
 
-	valState := proVM.ctx.ValidatorState.(*validatorstest.State)
+	valState := proVM.rt.ValidatorState.(*validatorstest.State)
 	pChainHeight, err := valState.GetCurrentHeight(context.Background())
 	require.NoError(err)
 
@@ -859,7 +866,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 //			}, nil
 //		}
 //
-//		ctx := consensustest.NewContext(t)
+//		ctx := consensustest.NewRuntime(t)
 //		ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 //			Raw:       pTestCert.Raw,
 //			PublicKey: pTestCert.PublicKey,
@@ -897,7 +904,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 //		// Initialize shouldn't be called again
 //		coreVM.InitializeF = nil
 //
-//		require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+//		require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 //		require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 //
 //		// Notify the proposer VM of a new block on the inner block side
@@ -1093,17 +1100,7 @@ func TestInnerVMRollback(t *testing.T) {
 	}
 
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(
-			context.Context,
-			interface{},
-			interface{},
-			[]byte,
-			[]byte,
-			[]byte,
-			interface{},
-			[]interface{},
-			interface{},
-		) error {
+		InitializeF: func(_ context.Context, _ common.VMInit) error {
 			return nil
 		},
 		ParseBlockF: func(_ context.Context, b []byte) (consensusblock.Block, error) {
@@ -1127,12 +1124,12 @@ func TestInnerVMRollback(t *testing.T) {
 		),
 	}
 
-	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
+	rt.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
-	ctx.ValidatorState = valState
+	rt.ValidatorState = valState
 
 	db := memdb.New()
 
@@ -1150,17 +1147,14 @@ func TestInnerVMRollback(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Log:     log.NoLog{},
+		},
 	))
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
@@ -1229,14 +1223,11 @@ func TestInnerVMRollback(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
@@ -1261,8 +1252,8 @@ func TestInnerVMRollback(t *testing.T) {
 
 // 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 // 		return map[ids.NodeID]*validators.GetValidatorOutput{
-// 			proVM.ctx.NodeID: {
-// 				NodeID: proVM.ctx.NodeID,
+// 			proVM.rt.NodeID: {
+// 				NodeID: proVM.rt.NodeID,
 // 				Weight: 10,
 // 			},
 // 		}, nil
@@ -1577,10 +1568,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, interface{}, interface{},
-		[]byte, []byte, []byte,
-		interface{}, []interface{}, interface{},
-	) error {
+	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -1621,7 +1609,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		var (
-			thisNode = proVM.ctx.NodeID
+			thisNode = proVM.rt.NodeID
 			nodeID1  = ids.BuildTestNodeID([]byte{1})
 			nodeID2  = ids.BuildTestNodeID([]byte{2})
 			nodeID3  = ids.BuildTestNodeID([]byte{3})
@@ -1650,23 +1638,21 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		}, nil
 	}
 
-	ctx := consensustest.NewContext(t)
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	rt := consensustest.NewRuntime(t)
+	rt.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
-	ctx.ValidatorState = valState
+	rt.ValidatorState = valState
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
@@ -1675,7 +1661,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -1758,10 +1744,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, interface{}, interface{},
-		[]byte, []byte, []byte,
-		interface{}, []interface{}, interface{},
-	) error {
+	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -1802,7 +1785,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		var (
-			thisNode = proVM.ctx.NodeID
+			thisNode = proVM.rt.NodeID
 			nodeID1  = ids.BuildTestNodeID([]byte{1})
 			nodeID2  = ids.BuildTestNodeID([]byte{2})
 			nodeID3  = ids.BuildTestNodeID([]byte{3})
@@ -1831,23 +1814,21 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		}, nil
 	}
 
-	ctx := consensustest.NewContext(t)
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	rt := consensustest.NewRuntime(t)
+	rt.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
-	ctx.ValidatorState = valState
+	rt.ValidatorState = valState
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
@@ -1856,7 +1837,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -1954,15 +1935,15 @@ func TestVMInnerBlkCache(t *testing.T) {
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	ctx := consensustest.NewContext(t)
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	rt := consensustest.NewRuntime(t)
+	rt.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
+		rt,
 		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
 		nil,
 		nil,
@@ -1982,7 +1963,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		1,                    // pChainHeight,
 		vm.StakingCertLeaf,   // cert
 		blkNearTipInnerBytes, // inner blk bytes
-		vm.ctx.ChainID,       // chain ID
+		vm.rt.ChainID,       // chain ID
 		vm.StakingLeafSigner, // key
 	)
 	require.NoError(err)
@@ -2073,12 +2054,12 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	consensusCtx := consensustest.NewContext(t)
-	consensusCtx.NodeID = ids.NodeIDFromCert(pTestCert)
+	rt := consensustest.NewRuntime(t)
+	rt.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		consensusCtx,
+		rt,
 		db,
 		nil,
 		nil,
@@ -2187,7 +2168,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	initialState := []byte("genesis state")
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error {
+		InitializeF: func(_ context.Context, _ common.VMInit) error {
 			return nil
 		},
 		LastAcceptedF: func(context.Context) (ids.ID, error) {
@@ -2217,9 +2198,9 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 		},
 	}
 
-	ctx := consensustest.NewContext(t)
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
-	ctx.ValidatorState = &validatorstest.State{
+	rt := consensustest.NewRuntime(t)
+	rt.NodeID = ids.NodeIDFromCert(pTestCert)
+	rt.ValidatorState = &validatorstest.State{
 		GetCurrentHeightF: func(context.Context) (uint64, error) {
 			return defaultPChainHeight, nil
 		},
@@ -2245,20 +2226,18 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2318,6 +2297,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	issueBlock()
 	requireHeights(0, currentHeight)
 
+	rt = proVM.rt
 	require.NoError(proVM.Shutdown(context.Background()))
 
 	numHistoricalBlocks := uint64(2)
@@ -2335,20 +2315,18 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2361,6 +2339,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	issueBlock()
 	requireNumHeights(numHistoricalBlocks)
 
+	rt = proVM.rt
 	require.NoError(proVM.Shutdown(context.Background()))
 
 	newNumHistoricalBlocks := numHistoricalBlocks + 2
@@ -2378,14 +2357,12 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Genesis: initialState,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
@@ -2394,7 +2371,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2686,8 +2663,8 @@ func TestSelectChildPChainHeight(t *testing.T) {
 			}()
 
 			proVM.Clock.Set(test.time)
-			proVM.ctx.NetworkID = test.networkID
-			proVM.ctx.ChainID = test.chainID
+			proVM.rt.NetworkID = test.networkID
+			proVM.rt.ChainID = test.chainID
 
 
 			actualPChainHeight, err := proVM.selectChildPChainHeight(
@@ -2715,7 +2692,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	}
 
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(_ context.Context, _ interface{}, _ interface{}, _ []byte, _ []byte, _ []byte, _ interface{}, _ []interface{}, _ interface{}) error {
+		InitializeF: func(_ context.Context, _ common.VMInit) error {
 			return nil
 		},
 		ParseBlockF: func(_ context.Context, blkBytes []byte) (consensusblock.Block, error) {
@@ -2777,36 +2754,33 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 				return nil, fmt.Errorf("requested height (%d) > current P-chain height (%d)", height, currentPChainHeight)
 			}
 			return map[ids.NodeID]*validators.GetValidatorOutput{
-				proVM.ctx.NodeID: {
-					NodeID: proVM.ctx.NodeID,
+				proVM.rt.NodeID: {
+					NodeID: proVM.rt.NodeID,
 					Weight: 10,
 				},
 			}, nil
 		},
 	}
 
-	ctx := consensustest.Context(t, ids.ID{1})
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
-	ctx.ValidatorState = valState
+	rt := consensustest.Runtime(t, ids.ID{1})
+	rt.NodeID = ids.NodeIDFromCert(pTestCert)
+	rt.ValidatorState = valState
 
 	db := prefixdb.New([]byte{0}, memdb.New())
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Bootstrapping)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Bootstrapping)))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
@@ -2839,7 +2813,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: currentPChainHeight + 1, Number: 0, StartTime: 0},
 		pTestCert,
 		innerBlock2.Bytes(),
-		ctx.ChainID,
+		proVM.rt.ChainID,
 		pTestSigner,
 	)
 	require.NoError(err)
@@ -2854,7 +2828,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), uint32(consensus.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
 
 	// If the inner VM requests building a block, the proposervm passes that
 	// message to the consensus engine. This is really the source of the issue,

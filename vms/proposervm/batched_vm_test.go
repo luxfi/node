@@ -13,18 +13,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/timer/mockable"
 
-	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
@@ -39,11 +41,6 @@ type validatorStateAdapter struct {
 }
 
 func (v *validatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
-	// Not available in test state, return empty ID
-	return ids.Empty, nil
-}
-
-func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// Not available in test state, return empty ID
 	return ids.Empty, nil
 }
@@ -664,7 +661,7 @@ func TestBatchedParseBlockParallel(t *testing.T) {
 	}
 
 	vm := VM{
-		ctx:       &runtime.Runtime{ChainID: chainID},
+		rt:        &runtime.Runtime{ChainID: chainID},
 		ChainVM:   testVM,
 		batchedVM: testVM,
 	}
@@ -1052,14 +1049,7 @@ func initTestRemoteProposerVM(
 
 	coreVM.VM.InitializeF = func(
 		context.Context,
-		interface{},
-		interface{},
-		[]byte,
-		[]byte,
-		[]byte,
-		interface{},
-		[]interface{},
-		interface{},
+		common.VMInit,
 	) error {
 		return nil
 	}
@@ -1104,15 +1094,15 @@ func initTestRemoteProposerVM(
 		return defaultPChainHeight, nil
 	}
 
-	ctx := consensustest.Context(t, consensustest.CChainID)
+	rt := consensustest.Runtime(t, consensustest.CChainID)
 	nodeID := ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
-	ctx.NodeID = nodeID
+	rt.NodeID = nodeID
 
 	// Create adapter for consensus ValidatorState interface
-	ctx.ValidatorState = &validatorStateAdapter{state: valState}
+	rt.ValidatorState = &validatorStateAdapter{state: valState}
 
 	// Store NodeID in validator state for use in tests
 	thisNodeID := nodeID
@@ -1150,14 +1140,13 @@ func initTestRemoteProposerVM(
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
-		initialState,
-		nil,
-		nil,
-		nil,
-		[]interface{}{},
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
+			Genesis: initialState,
+			Fx:      []interface{}{},
+			Log:     log.NoLog{},
+		},
 	))
 
 	// Initialize shouldn't be called again

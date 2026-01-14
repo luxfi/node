@@ -35,7 +35,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *runtime.Runtime
+	Runtime    *runtime.Runtime
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -44,8 +44,8 @@ func New(t testing.TB, c Config) state.State {
 	if c.DB == nil {
 		c.DB = memdb.New()
 	}
-	if c.Context == nil {
-		c.Context = &runtime.Runtime{
+	if c.Runtime == nil {
+		c.Runtime = &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
 			Log:       log.NoLog{},
@@ -53,7 +53,7 @@ func New(t testing.TB, c Config) state.State {
 	}
 	if len(c.Genesis) == 0 {
 		c.Genesis = genesistest.NewBytes(t, genesistest.Config{
-			NetworkID: c.Context.NetworkID,
+			NetworkID: c.Runtime.NetworkID,
 		})
 	}
 	if c.Registerer == nil {
@@ -87,7 +87,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Validators,
 		c.Upgrades,
 		&c.Config,
-		c.Context,
+		c.Runtime,
 		c.Metrics,
 		c.Rewards,
 	)

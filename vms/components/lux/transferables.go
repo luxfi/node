@@ -8,10 +8,10 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/luxfi/codec"
 	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/utils"
 )
@@ -57,7 +57,7 @@ type TransferableIn interface {
 type TransferableOut interface {
 	verify.State
 	Amounter
-	InitCtx(*runtime.Runtime)
+	InitRuntime(*runtime.Runtime)
 }
 
 type TransferableOutput struct {
@@ -67,8 +67,8 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx *runtime.Runtime) {
-	out.Out.InitCtx(ctx)
+func (out *TransferableOutput) InitRuntime(rt *runtime.Runtime) {
+	out.Out.InitRuntime(rt)
 }
 
 // Output returns the feature extension output that this Output is using.

@@ -20,7 +20,7 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(*runtime.Runtime) {}
+func (*TestState) InitRuntime(*runtime.Runtime) {}
 
 func (v *TestState) Verify() error {
 	return v.Err
@@ -32,7 +32,7 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(*runtime.Runtime) {}
+func (*TestTransferable) InitRuntime(*runtime.Runtime) {}
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val

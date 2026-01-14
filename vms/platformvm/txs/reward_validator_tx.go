@@ -36,7 +36,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*runtime.Runtime) {}
+func (*RewardValidatorTx) InitRuntime(*runtime.Runtime) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -58,8 +58,8 @@ func (tx *RewardValidatorTx) Visit(visitor Visitor) error {
 	return visitor.RewardValidatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *RewardValidatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *RewardValidatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

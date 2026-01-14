@@ -244,10 +244,10 @@ utxoFor:
 	response.Unlockeds = newJSONBalanceMap(unlockeds)
 	response.LockedStakeables = newJSONBalanceMap(lockedStakeables)
 	response.LockedNotStakeables = newJSONBalanceMap(lockedNotStakeables)
-	response.Balance = response.Balances[s.vm.luxAssetID]
-	response.Unlocked = response.Unlockeds[s.vm.luxAssetID]
-	response.LockedStakeable = response.LockedStakeables[s.vm.luxAssetID]
-	response.LockedNotStakeable = response.LockedNotStakeables[s.vm.luxAssetID]
+	response.Balance = response.Balances[s.vm.xAssetID]
+	response.Unlocked = response.Unlockeds[s.vm.xAssetID]
+	response.LockedStakeable = response.LockedStakeables[s.vm.xAssetID]
+	response.LockedNotStakeable = response.LockedNotStakeables[s.vm.xAssetID]
 	return nil
 }
 
@@ -493,7 +493,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 
 	getAll := len(args.IDs) == 0
 	if getAll {
-		netIDs, err := s.vm.state.GetNetIDs() // all nets
+		netIDs, err := s.vm.state.GetChainIDs() // all nets
 		if err != nil {
 			return fmt.Errorf("error getting nets from database: %w", err)
 		}
@@ -619,7 +619,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	)
 
 	if args.NetID == constants.PrimaryNetworkID {
-		response.AssetID = s.vm.luxAssetID
+		response.AssetID = s.vm.xAssetID
 		return nil
 	}
 
@@ -1269,7 +1269,7 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	// GetNetID is not available in the current validators.Manager interface
+	// GetChainID is not available in the current validators.Manager interface
 	// Return primary network for now
 	response.NetID = constants.PrimaryNetworkID
 	return nil
@@ -1354,7 +1354,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	netIDs, err := s.vm.state.GetNetIDs()
+	netIDs, err := s.vm.state.GetChainIDs()
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve nets: %w", err)
 	}
@@ -1446,7 +1446,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetT
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		tx.Unsigned.InitCtx(s.vm.rt)
+		tx.Unsigned.InitRuntime(s.vm.rt)
 		result = tx
 	} else {
 		result, err = formatting.Encode(args.Encoding, tx.Bytes())
@@ -1617,7 +1617,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	}
 
 	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
-	response.Staked = response.Stakeds[s.vm.luxAssetID]
+	response.Staked = response.Stakeds[s.vm.xAssetID]
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		bytes, err := txs.Codec.Marshal(txs.CodecVersion, output)
@@ -1919,7 +1919,7 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	}
 
 	// Get all net IDs
-	netIDs, err := s.vm.state.GetNetIDs()
+	netIDs, err := s.vm.state.GetChainIDs()
 	if err != nil {
 		return fmt.Errorf("failed to get net IDs: %w", err)
 	}
@@ -1965,7 +1965,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		// block.InitCtx(s.vm.rt)
+		// block.InitRuntime(s.vm.rt)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())
@@ -2007,7 +2007,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		// block.InitCtx(s.vm.rt)
+		// block.InitRuntime(s.vm.rt)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())

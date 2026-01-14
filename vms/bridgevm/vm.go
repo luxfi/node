@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -227,32 +228,12 @@ type CompletedBridge struct {
 // Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	vmInit common.VMInit,
 ) error {
 	// Convert chain context to Runtime
-	var ok bool
-	if rt, ok := chainCtx.(*runtime.Runtime); ok {
-		vm.rt = rt
-	} else {
-		return errors.New("chain context must be *runtime.Runtime")
-	}
-
-	vm.db, ok = db.(database.Database)
-	if !ok {
-		return errors.New("invalid database type")
-	}
-
-	vm.toEngine, ok = msgChan.(chan<- core.Message)
-	if !ok {
-		return errors.New("invalid message channel type")
-	}
+	vm.rt = vmInit.Runtime
+	vm.db = vmInit.DB
+	vm.toEngine = vmInit.ToEngine
 
 	if logger, ok := vm.rt.Log.(log.Logger); ok {
 		vm.log = logger
@@ -265,7 +246,7 @@ func (vm *VM) Initialize(
 	vm.chainClients = make(map[string]ChainClient)
 
 	// Parse configuration
-	if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
+	if _, err := Codec.Unmarshal(vmInit.Config, &vm.config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
@@ -344,7 +325,7 @@ func (vm *VM) Initialize(
 
 	// Parse genesis
 	genesis := &Genesis{}
-	if _, err := Codec.Unmarshal(genesisBytes, genesis); err != nil {
+	if _, err := Codec.Unmarshal(vmInit.Genesis, genesis); err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}
 

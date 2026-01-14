@@ -20,6 +20,7 @@ var (
 	ErrEmptyPublicKey     = errors.New("no public key sent by peer")
 	ErrCurveMismatch      = errors.New("only P256 is allowed for ECDSA")
 	ErrUnsupportedKeyType = errors.New("key type is not supported")
+	ErrTLS13Required      = errors.New("TLS 1.3 is required")
 )
 
 // TLSConfig returns the TLS config that will allow secure connections to other
@@ -39,9 +40,19 @@ func TLSConfig(cert tls.Certificate, keyLogWriter io.Writer) *tls.Config {
 		// and confirmed to be safe and correct.
 		InsecureSkipVerify: true, //#nosec G402
 		MinVersion:         tls.VersionTLS13,
+		MaxVersion:         tls.VersionTLS13,
+		CurvePreferences:   []tls.CurveID{tls.X25519MLKEM768},
 		KeyLogWriter:       keyLogWriter,
-		VerifyConnection:   ValidateCertificate,
+		VerifyConnection:   ValidatePQConnection,
 	}
+}
+
+// ValidatePQConnection enforces TLS 1.3 and validates the peer certificate.
+func ValidatePQConnection(cs tls.ConnectionState) error {
+	if cs.Version != tls.VersionTLS13 {
+		return ErrTLS13Required
+	}
+	return ValidateCertificate(cs)
 }
 
 // ValidateCertificate validates TLS certificates according their public keys on the leaf certificate in the certification chain.

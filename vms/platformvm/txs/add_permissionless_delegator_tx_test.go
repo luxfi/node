@@ -29,12 +29,12 @@ import (
 var errCustom = errors.New("custom error")
 
 // testContext creates a test context with the given parameters
-func testContext(networkID uint32, chainID, luxAssetID ids.ID) *runtime.Runtime {
+func testContext(networkID uint32, chainID, xAssetID ids.ID) *runtime.Runtime {
 	return &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID:  chainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
 }
 
@@ -50,7 +50,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -85,7 +85,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: 2 * constants.KiloLux,
@@ -108,7 +108,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -133,13 +133,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -242,7 +242,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -257,7 +257,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -297,7 +297,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -353,7 +353,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -368,7 +368,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			},
 			{
 				Asset: lux.Asset{
-					ID: luxAssetID,
+					ID: xAssetID,
 				},
 				Out: &stakeable.LockOut{
 					Locktime: 987654321,
@@ -389,13 +389,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(rt))
 
 	expectedUnsignedComplexAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -626,9 +626,9 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
+	unsignedComplexAddPrimaryTx.InitRuntime(ctx2)
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
@@ -771,7 +771,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -812,7 +812,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -875,18 +875,18 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddNetTx.Ins)
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: ids.GenerateTestID(),
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddNetTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
@@ -1010,7 +1010,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -1025,7 +1025,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -1065,7 +1065,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -1157,13 +1157,13 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	ctx = &runtime.Runtime{
+	rt = &runtime.Runtime{
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
+	require.NoError(complexAddNetTx.SyntacticVerify(rt))
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
@@ -1394,9 +1394,9 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	unsignedComplexAddNetTx.InitCtx(ctx3)
+	unsignedComplexAddNetTx.InitRuntime(ctx3)
 
 	unsignedComplexAddNetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddNetTx, "", "\t")
 	require.NoError(err)

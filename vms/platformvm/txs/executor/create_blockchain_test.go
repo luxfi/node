@@ -26,8 +26,8 @@ import (
 func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -65,8 +65,8 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 func TestCreateChainTxWrongControlSig(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -111,8 +111,8 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 func TestCreateChainTxNoSuchNet(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -150,8 +150,8 @@ func TestCreateChainTxNoSuchNet(t *testing.T) {
 func TestCreateChainTxValid(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
@@ -254,8 +254,8 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Etna)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	networkID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{

@@ -15,8 +15,9 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -85,7 +86,7 @@ type VM struct {
 	lock sync.RWMutex
 
 	// Consensus context - provides chain identity and network info
-	consensusCtx *runtime.Runtime
+	consensusRuntime *runtime.Runtime
 
 	// Chain identity
 	chainID ids.ID
@@ -124,7 +125,7 @@ type VM struct {
 	shutdown      bool
 
 	// Channel for sending messages to consensus engine
-	toEngine chan consensuscore.Message
+	toEngine chan<- consensuscore.Message
 }
 
 // NewVMForTest creates a new VM instance for testing purposes.
@@ -141,25 +142,18 @@ func NewVMForTest(cfg config.Config, logger log.Logger) *VM {
 // It sets up the VM with the provided context, database, and genesis data.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	consensusCtx interface{},
-	dbManager interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	vmInit common.VMInit,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	// Cast consensus context
-	vm.consensusCtx = consensusCtx.(*runtime.Runtime)
-	vm.chainID = vm.consensusCtx.ChainID
+	// Cast Runtime
+	vm.consensusRuntime = vmInit.Runtime
+	vm.chainID = vm.consensusRuntime.ChainID
 
-	// Initialize logger from consensus context
-	if vm.consensusCtx != nil && vm.consensusCtx.Log != nil {
-		if logger, ok := vm.consensusCtx.Log.(log.Logger); ok && !logger.IsZero() {
+	// Initialize logger from Runtime
+	if vm.consensusRuntime != nil && vm.consensusRuntime.Log != nil {
+		if logger, ok := vm.consensusRuntime.Log.(log.Logger); ok && !logger.IsZero() {
 			vm.log = logger
 		} else {
 			vm.log = log.Noop()
@@ -169,15 +163,15 @@ func (vm *VM) Initialize(
 	}
 
 	// Setup database
-	vm.baseDB = dbManager.(database.Database)
+	vm.baseDB = vmInit.DB
 	vm.db = versiondb.New(vm.baseDB)
 
 	// Setup message channel
-	vm.toEngine = msgChan.(chan consensuscore.Message)
+	vm.toEngine = vmInit.ToEngine
 
 	// Setup app sender
-	if appSender != nil {
-		vm.appSender = appSender.(warp.Sender)
+	if vmInit.Sender != nil {
+		vm.appSender = vmInit.Sender
 	}
 
 	// Initialize peer tracking
@@ -196,15 +190,15 @@ func (vm *VM) Initialize(
 	vm.lastFundingTime = time.Time{}
 
 	// Parse genesis if provided
-	if len(genesisBytes) > 0 {
-		if err := vm.parseGenesis(genesisBytes); err != nil {
+	if len(vmInit.Genesis) > 0 {
+		if err := vm.parseGenesis(vmInit.Genesis); err != nil {
 			return fmt.Errorf("failed to parse genesis: %w", err)
 		}
 	}
 
 	// Parse config if provided
-	if len(configBytes) > 0 {
-		if err := vm.parseConfig(configBytes); err != nil {
+	if len(vmInit.Config) > 0 {
+		if err := vm.parseConfig(vmInit.Config); err != nil {
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
 	}

@@ -57,30 +57,30 @@ func (mr *MockUnsignedTxMockRecorder) Bytes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockUnsignedTx)(nil).Bytes))
 }
 
-// InitCtx mocks base method.
-func (m *MockUnsignedTx) InitCtx(arg0 context.Context) {
+// InitRuntime mocks base method.
+func (m *MockUnsignedTx) InitRuntime(arg0 context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitRuntime", arg0)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *MockUnsignedTxMockRecorder) InitCtx(arg0 any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *MockUnsignedTxMockRecorder) InitRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockUnsignedTx)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*MockUnsignedTx)(nil).InitRuntime), arg0)
 }
 
-// InitializeContext mocks base method.
-func (m *MockUnsignedTx) InitializeContext(arg0 context.Context) error {
+// InitializeRuntime mocks base method.
+func (m *MockUnsignedTx) InitializeRuntime(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitializeContext", arg0)
+	ret := m.ctrl.Call(m, "InitializeRuntime", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InitializeContext indicates an expected call of InitializeContext.
-func (mr *MockUnsignedTxMockRecorder) InitializeContext(arg0 any) *gomock.Call {
+// InitializeRuntime indicates an expected call of InitializeRuntime.
+func (mr *MockUnsignedTxMockRecorder) InitializeRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeContext", reflect.TypeOf((*MockUnsignedTx)(nil).InitializeContext), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeRuntime", reflect.TypeOf((*MockUnsignedTx)(nil).InitializeRuntime), arg0)
 }
 
 // InputIDs mocks base method.

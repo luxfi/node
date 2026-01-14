@@ -27,16 +27,16 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx *runtime.Runtime) {
+func (t *ExportTx) InitRuntime(rt *runtime.Runtime) {
 	for _, out := range t.ExportedOuts {
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
-	t.BaseTx.InitCtx(ctx)
+	t.BaseTx.InitRuntime(rt)
 }
 
-// InitializeContext initializes the context for this transaction
-func (t *ExportTx) InitializeContext(ctx *runtime.Runtime) error {
-	t.InitCtx(ctx)
+// InitializeRuntime initializes the context for this transaction
+func (t *ExportTx) InitializeRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
 }
 
@@ -44,8 +44,8 @@ func (t *ExportTx) Visit(v Visitor) error {
 	return v.ExportTx(t)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *ExportTx) InitializeWithContext(ctx *runtime.Runtime) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *ExportTx) InitializeWithRuntime(rt *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

@@ -31,9 +31,9 @@ type InitialState struct {
 	Outs    []verify.State `serialize:"true"  json:"outputs"`
 }
 
-func (is *InitialState) InitCtx(ctx *runtime.Runtime) {
-	// verify.State doesn't have InitCtx method
-	// The InitCtx is handled at a higher level
+func (is *InitialState) InitRuntime(rt *runtime.Runtime) {
+	// verify.State doesn't have InitRuntime method
+	// The InitRuntime is handled at a higher level
 }
 
 func (is *InitialState) Verify(c codec.Manager, numFxs int) error {

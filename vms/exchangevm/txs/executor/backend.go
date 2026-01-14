@@ -18,7 +18,7 @@ import (
 
 type Backend struct {
 	Ctx           context.Context
-	LuxCtx        *runtime.Runtime // Lux consensus context
+	Runtime       *runtime.Runtime
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int
@@ -48,9 +48,9 @@ type SharedMemory interface {
 // ToChainContext creates a verify.ChainContext from this backend
 func (b *Backend) ToChainContext() *verify.ChainContext {
 	return &verify.ChainContext{
-		ChainID:        b.LuxCtx.ChainID,
-		NetID:          b.LuxCtx.ChainID,
-		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(runtime.ValidatorState)},
+		ChainID:        b.Runtime.ChainID,
+		NetID:          b.Runtime.ChainID,
+		ValidatorState: &validatorStateAdapter{vs: b.Runtime.ValidatorState.(runtime.ValidatorState)},
 	}
 }
 
@@ -59,6 +59,6 @@ type validatorStateAdapter struct {
 	vs runtime.ValidatorState
 }
 
-func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+func (v *validatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
 	return v.vs.GetNetworkID(chainID)
 }

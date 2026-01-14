@@ -56,7 +56,7 @@ package proposervm
 // 		require.NoError(proVM.Shutdown(context.Background()))
 // 	}()
 
-// 	ctx := consensustest.Context(t, consensustest.CChainID)
+// 	rt := consensustest.Runtime(t, consensustest.CChainID)
 // 	initialState := []byte("genesis state")
 
 // 	err := proVM.Initialize(

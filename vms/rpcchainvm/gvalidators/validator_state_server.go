@@ -35,9 +35,9 @@ func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 
-func (s *Server) GetNetID(ctx context.Context, req *pb.GetNetIDRequest) (*pb.GetNetIDResponse, error) {
-	// validators.State doesn't have GetNetID - return empty ID
-	return &pb.GetNetIDResponse{
+func (s *Server) GetChainID(ctx context.Context, req *pb.GetChainIDRequest) (*pb.GetChainIDResponse, error) {
+	// validators.State doesn't have GetChainID - return empty ID
+	return &pb.GetChainIDResponse{
 		ChainId: ids.Empty[:],
 	}, nil
 }

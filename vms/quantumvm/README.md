@@ -102,7 +102,7 @@ if err != nil {
 ```go
 err := vm.Initialize(
     ctx,
-    chainCtx,
+    chainRuntime,
     db,
     genesisBytes,
     upgradeBytes,

@@ -18,17 +18,17 @@ type Context struct {
 	CreateAssetTxFee uint64
 }
 
-func NewConsensusContext(
+func NewConsensusRuntime(
 	networkID uint32,
 	blockchainID ids.ID,
-	luxAssetID ids.ID,
+	xAssetID ids.ID,
 ) (*runtime.Runtime, error) {
 	lookup := ids.NewAliaser()
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: networkID,
 		ChainID:   blockchainID,
 		XChainID:  blockchainID,
-		XAssetID:  luxAssetID,
+		XAssetID:  xAssetID,
 	}
-	return ctx, lookup.Alias(blockchainID, Alias)
+	return rt, lookup.Alias(blockchainID, Alias)
 }

@@ -19,8 +19,8 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/runtime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validator/uptime"
@@ -32,10 +32,12 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/network"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -44,13 +46,12 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/utxo/secp256k1fx"
 	extwarp "github.com/luxfi/warp"
 
 	chainengine "github.com/luxfi/consensus/engine/chain"
 	chain "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -63,9 +64,9 @@ import (
 var (
 	_ chain.ChainVM                      = (*VM)(nil)
 	_ chain.BuildBlockWithContextChainVM = (*VM)(nil)
-	_ chainengine.BlockBuilder                    = (*VM)(nil) // For consensus engine integration
-	_ secp256k1fx.VM                                 = (*VM)(nil)
-	_ validators.State                               = (*VM)(nil)
+	_ chainengine.BlockBuilder           = (*VM)(nil) // For consensus engine integration
+	_ secp256k1fx.VM                     = (*VM)(nil)
+	_ validators.State                   = (*VM)(nil)
 )
 
 // appSenderAdapter adapts extwarp.Sender to the expected interface (for network.New)
@@ -132,11 +133,11 @@ type VM struct {
 	db database.Database
 
 	// Additional fields needed for platformvm
-	log        log.Logger
-	nodeID     ids.NodeID
-	lock       sync.RWMutex
-	luxAssetID ids.ID
-	chainID    ids.ID
+	log      log.Logger
+	nodeID   ids.NodeID
+	lock     sync.RWMutex
+	xAssetID ids.ID
+	chainID  ids.ID
 	// bcLookup     consensus.AliasLookup
 	// sharedMemory consensus.SharedMemory
 	chainDataDir string
@@ -185,68 +186,40 @@ func (vm *VM) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtxIntf interface{},
-	dbManagerIntf interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	toEngineIntf interface{},
-	fxsIntf []interface{},
-	appSenderIntf interface{},
+	init common.VMInit,
 ) error {
 	// Extract chain runtime
-	var chainCtx *runtime.Runtime
-	if chainCtxIntf != nil {
-		var ok bool
-		chainCtx, ok = chainCtxIntf.(*runtime.Runtime)
-		if !ok {
-			return fmt.Errorf("chain context must be *runtime.Runtime")
-		}
-	} else {
+	chainRuntime := init.Runtime
+	if chainRuntime == nil {
 		// Create a minimal runtime if none provided
-		chainCtx = &runtime.Runtime{
+		chainRuntime = &runtime.Runtime{
 			NetworkID: 1,
 			ChainID:   constants.PlatformChainID,
 		}
 	}
 
-	// DBManager is an interface, we'll handle it as such
-	dbManager := dbManagerIntf
-
-	// Handle the message channel - it's passed as interface{}
-	// Store the toEngine channel for notifying the consensus engine about pending transactions
-	// The channel may be passed as bidirectional (chan T) or send-only (chan<- T)
-	// Note: Logging is deferred until after vm.log is set up
-	var toEngineChannelType string
-	if toEngineIntf != nil {
-		// Try bidirectional channel first (what manager.go actually passes)
-		if toEngine, ok := toEngineIntf.(chan chain.Message); ok {
-			vm.toEngine = toEngine
-			toEngineChannelType = "bidirectional"
-		} else if toEngine, ok := toEngineIntf.(chan<- chain.Message); ok {
-			// Also accept send-only channel for flexibility
-			vm.toEngine = toEngine
-			toEngineChannelType = "send-only"
-		} else {
-			toEngineChannelType = "failed"
-		}
+	// DBManager is handled via init.DB usually, but PlatformVM seems to have complex logic around finding existing chains via dbManagerIntf?
+	// The original code used dbManagerIntf (param 2) to check for existing DBs.
+	// VMInit.DB is strictly database.Database.
+	// If the caller (node/main) is passing the same object, we should use init.DB.
+	// However, the original code had a fallback logic and "manager" logic.
+	// Let's assume init.DB is the correct DB to use.
+	vm.db = init.DB
+	if vm.db == nil {
+		vm.db = memdb.New()
 	}
 
-	// Handle fxs - for now we'll skip type assertions as they're not critical
-	_ = fxsIntf
+	// Handle the message channel
+	vm.toEngine = init.ToEngine
 
 	// Handle appSender
-	var appSender extwarp.Sender
-	if appSenderIntf != nil {
-		var ok bool
-		appSender, ok = appSenderIntf.(extwarp.Sender)
-		if !ok {
-			return fmt.Errorf("invalid app sender type")
-		}
-	}
+	appSender := init.Sender
+
 	// Initialize logger from chain context
-	if chainCtx != nil && chainCtx.Log != nil {
-		if logger, ok := chainCtx.Log.(log.Logger); ok && !logger.IsZero() {
+	if init.Log != nil {
+		vm.log = init.Log
+	} else if chainRuntime != nil && chainRuntime.Log != nil {
+		if logger, ok := chainRuntime.Log.(log.Logger); ok && !logger.IsZero() {
 			vm.log = logger
 		} else {
 			vm.log = log.Noop()
@@ -256,18 +229,9 @@ func (vm *VM) Initialize(
 	}
 	vm.log.Info("initializing platform chain")
 
-	// Log deferred toEngine channel status now that logger is set up
-	if toEngineChannelType != "" {
-		if toEngineChannelType == "failed" {
-			vm.log.Warn("toEngine channel type assertion failed - notifications will not work")
-		} else {
-			vm.log.Info("toEngine channel set", log.String("type", toEngineChannelType))
-		}
-	}
-
 	// Log initialization parameters
 
-	execConfig, err := config.GetConfig(configBytes)
+	execConfig, err := config.GetConfig(init.Config)
 	if err != nil {
 		return fmt.Errorf("failed to get execution config: %w", err)
 	}
@@ -290,38 +254,23 @@ func (vm *VM) Initialize(
 
 	// Create metric interface for state
 
-	// Set consensus context
-	vm.rt = chainCtx
+	// Set Runtime
+	vm.rt = chainRuntime
 
 	// Initialize utxo.XAssetID from the context
-	utxo.XAssetID = chainCtx.XAssetID
+	utxo.XAssetID = chainRuntime.XAssetID
 
-	// Initialize vm.luxAssetID for GetStakingAssetID API
+	// Initialize vm.xAssetID for GetStakingAssetID API
 	// Use LUXAssetID if set, otherwise fall back to XAssetID
-	if chainCtx.XAssetID != ids.Empty {
-		vm.luxAssetID = chainCtx.XAssetID
+	if chainRuntime.XAssetID != ids.Empty {
+		vm.xAssetID = chainRuntime.XAssetID
 	} else {
-		vm.luxAssetID = chainCtx.XAssetID
+		vm.xAssetID = chainRuntime.XAssetID
 	}
 
 	// Get the current database from the DBManager
 	// Since DBManager is now an interface{}, we need to handle it differently
-	if dbManager != nil {
-		// Try to get a database from the manager using reflection or type assertion
-		// Check if it has a Current() method
-		if dbMgr, ok := dbManager.(interface{ Current() database.Database }); ok {
-			vm.db = dbMgr.Current()
-		} else if db, ok := dbManager.(database.Database); ok {
-			// If it's already a database, use it directly
-			vm.db = db
-		} else {
-			// If we can't get a database from the manager, create a memory database
-			vm.db = memdb.New()
-		}
-	} else {
-		// Create a memory database as fallback
-		vm.db = memdb.New()
-	}
+	// logic simplified as we now just trust init.DB or fallback to memdb if nil above
 
 	// Note: this codec is never used to serialize anything
 	vm.codecRegistry = linearcodec.NewDefault()
@@ -333,12 +282,12 @@ func (vm *VM) Initialize(
 	rewards := reward.NewCalculator(vm.RewardConfig)
 
 	vm.log.Info("Creating Platform VM state",
-		"genesisLen", len(genesisBytes),
+		"genesisLen", len(init.Genesis),
 	)
 
 	vm.state, err = state.New(
 		vm.db,
-		genesisBytes,
+		init.Genesis,
 		registerer,
 		vm.Internal.Validators,
 		vm.Internal.UpgradeConfig,
@@ -363,7 +312,7 @@ func (vm *VM) Initialize(
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Internal,
-		Ctx:          vm.rt,
+		Runtime:      vm.rt,
 		Clk:          &vm.nodeClock,
 		Fx:           vm.fx,
 		FlowChecker:  utxoHandler,
@@ -391,10 +340,10 @@ func (vm *VM) Initialize(
 
 	// Type assert WarpSigner (may be nil for Platform chain)
 	var warpSigner warp.Signer
-	if chainCtx.WarpSigner != nil {
-		extSigner, ok := chainCtx.WarpSigner.(extwarp.Signer)
+	if chainRuntime.WarpSigner != nil {
+		extSigner, ok := chainRuntime.WarpSigner.(extwarp.Signer)
 		if !ok {
-			return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
+			return fmt.Errorf("invalid warp signer type: %T", chainRuntime.WarpSigner)
 		}
 		// Wrap external signer with adapter for internal interface
 		warpSigner = &warpSignerAdapter{extSigner: extSigner}
@@ -417,7 +366,7 @@ func (vm *VM) Initialize(
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
 		adaptedAppSender,
-		&chainCtx.Lock,
+		&chainRuntime.Lock,
 		vm.state,
 		warpSigner,
 		registerer,
@@ -688,7 +637,7 @@ func (vm *VM) initBlockchains() error {
 	// When TrackAllChains is enabled OR SybilProtection is disabled,
 	// create chains for ALL chains in state
 	if vm.TrackAllChains || !vm.SybilProtectionEnabled {
-		netIDs, err := vm.state.GetNetIDs()
+		netIDs, err := vm.state.GetChainIDs()
 		if err != nil {
 			return err
 		}

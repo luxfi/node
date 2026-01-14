@@ -374,7 +374,7 @@ func (m *manager) getCurrentValidatorSet(
 	return result, nil
 }
 
-func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
+func (m *manager) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	if chainID == constants.PlatformChainID {
 		return constants.PrimaryNetworkID, nil
 	}
@@ -395,13 +395,10 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 }
 
 func (m *manager) GetChainID(netID ids.ID) (ids.ID, error) {
-	// For validator manager, chain ID is typically the same as network ID
-	// or can be looked up from state if needed
+	if netID == constants.PrimaryNetworkID {
+		return constants.PlatformChainID, nil
+	}
 	return netID, nil
-}
-
-func (m *manager) GetNetworkID(chainID ids.ID) (ids.ID, error) {
-	return m.GetNetID(context.Background(), chainID)
 }
 
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {

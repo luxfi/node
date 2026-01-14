@@ -39,16 +39,16 @@ type AddDelegatorTx struct {
 	DelegationRewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [UnsignedAddDelegatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [UnsignedAddDelegatorTx]. Also sets the [rt] to the given [vm.rt] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddDelegatorTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
+func (tx *AddDelegatorTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
-	// Owner doesn't have InitCtx method
+	// Owner doesn't have InitRuntime method
 }
 
 func (*AddDelegatorTx) ChainID() ids.ID {
@@ -80,7 +80,7 @@ func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddDelegatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *AddDelegatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -88,7 +88,7 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := verify.All(&tx.Validator, tx.DelegationRewardsOwner); err != nil {
@@ -107,8 +107,8 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		luxAssetID := ctx.XAssetID
-		if assetID != luxAssetID {
+		xAssetID := rt.XAssetID
+		if assetID != xAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
 	}
@@ -133,8 +133,8 @@ func (tx *AddDelegatorTx) Visit(visitor Visitor) error {
 	return visitor.AddDelegatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *AddDelegatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

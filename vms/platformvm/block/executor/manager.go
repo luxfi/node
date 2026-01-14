@@ -63,7 +63,7 @@ func NewManager(
 		Mempool:      mempool,
 		lastAccepted: lastAccepted,
 		state:        s,
-		ctx:          txExecutorBackend.Ctx,
+		rt:          txExecutorBackend.Runtime,
 		blkIDToState: map[ids.ID]*blockState{},
 	}
 
@@ -144,7 +144,7 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 	}
 	err = executor.VerifyWarpMessages(
 		context.TODO(),
-		m.ctx.NetworkID,
+		m.rt.NetworkID,
 		m.validatorManager,
 		recommendedPChainHeight,
 		tx.Unsigned,

@@ -50,7 +50,7 @@ type CreateChainTx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *CreateChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *CreateChainTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -74,7 +74,7 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		}
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := tx.ChainAuth.Verify(); err != nil {
@@ -89,8 +89,8 @@ func (tx *CreateChainTx) Visit(visitor Visitor) error {
 	return visitor.CreateChainTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateChainTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *CreateChainTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

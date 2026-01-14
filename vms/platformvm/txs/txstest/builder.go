@@ -4,14 +4,11 @@
 package txstest
 
 import (
-	"context"
-
 	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
@@ -20,12 +17,12 @@ import (
 )
 
 func NewWalletFactory(
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
 	return &WalletFactory{
-		ctx:   ctx,
+		rt:    rt,
 		cfg:   cfg,
 		state: state,
 	}
@@ -33,41 +30,24 @@ func NewWalletFactory(
 
 // NewWalletFactoryWithAssets creates a wallet factory with explicit asset IDs
 func NewWalletFactoryWithAssets(
-	stdCtx context.Context,
-	sharedMemory atomic.SharedMemory,
+	rt *runtime.Runtime,
 	cfg *config.Config,
 	state state.State,
-	luxAssetID ids.ID,
+	xAssetID ids.ID,
 ) *WalletFactory {
-	// Put the asset ID into the context so it can be retrieved later
-	networkID := runtime.GetNetworkID(stdCtx)
-	ctxIDs := runtime.IDs{
-		NetworkID: networkID,
-		ChainID:   ids.Empty,
-		NodeID:    ids.EmptyNodeID,
-		PublicKey: nil,
-		XAssetID:  luxAssetID,
+	if rt == nil {
+		rt = &runtime.Runtime{}
 	}
-	stdCtx = runtime.WithIDs(stdCtx, ctxIDs)
-
-	// Extract consensus context or create one
-	consCtx := runtime.FromContext(stdCtx)
-	if consCtx == nil {
-		consCtx = &runtime.Runtime{
-			NetworkID: networkID,
-			XAssetID:  luxAssetID,
-		}
-	}
-
+	rt.XAssetID = xAssetID
 	return &WalletFactory{
-		ctx:   consCtx,
+		rt:    rt,
 		cfg:   cfg,
 		state: state,
 	}
 }
 
 type WalletFactory struct {
-	ctx   *runtime.Runtime
+	rt    *runtime.Runtime
 	cfg   *config.Config
 	state state.State
 }
@@ -95,11 +75,11 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		addrSet = kc.AddressSet()
 		backend = newBackend(addrSet, w.state)
 		// Extract networkID and LUXAssetID from context
-		networkID  = w.ctx.NetworkID
-		luxAssetID = w.ctx.XAssetID
+		networkID = w.rt.NetworkID
+		xAssetID  = w.rt.XAssetID
 	)
 
-	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, nil, w.state.GetTimestamp())
+	context := newContext(w.rt, networkID, xAssetID, w.cfg, nil, w.state.GetTimestamp())
 	kcAdapter := &keychainAdapter{kc: kc}
 
 	return builder.New(addrSet, context, backend), signer.New(kcAdapter, backend)

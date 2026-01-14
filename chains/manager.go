@@ -24,27 +24,32 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/vm/chains/atomic"
+
 	// "github.com/luxfi/database/badgerdb" // Unused
 	"github.com/luxfi/consensus/runtime"
 	dbmanager "github.com/luxfi/database/manager"
+
 	// "github.com/luxfi/database/meterdb" // Unused
 	// "github.com/luxfi/database/prefixdb" // Unused
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/warp"
+
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/engine/interfaces"
+
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
+
 	// "github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
 	// "github.com/luxfi/consensus/core/router" // Deprecated - using local ChainRouter interface instead
@@ -52,7 +57,9 @@ import (
 	"github.com/luxfi/consensus/networking/timeout"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	utilmetric "github.com/luxfi/metric"
@@ -61,9 +68,8 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/container/buffer"
-	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/vm/fx"
+
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/utxo/nftfx"
 
@@ -194,7 +200,7 @@ type ChainParameters struct {
 
 type chainInfo struct {
 	Name    string
-	Context *runtime.Runtime
+	Runtime *runtime.Runtime
 	VM      interface{} // Use interface{} since VM implementations vary
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
@@ -639,7 +645,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	}
 
 	// Notify those who registered to be notified when a new chain is created
-	m.notifyRegistrants(chain.Name, chain.Context, chain.VM)
+	m.notifyRegistrants(chain.Name, chain.Runtime, chain.VM)
 
 	// Register HTTP handlers for this chain if the VM supports it
 	if vm, ok := chain.VM.(interface {
@@ -812,7 +818,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	// Create warp signer for this chain using the node's BLS key
 	warpSigner := createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 
-	chainCtx := &runtime.Runtime{
+	chainRuntime := &runtime.Runtime{
 		NetworkID: m.NetworkID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
@@ -878,7 +884,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("detected DAG VM with GetEngine()",
 			log.Stringer("chainID", chainParams.ID),
 		)
-		chain, err = m.createDAG(chainCtx, chainParams, vm, chainFxs)
+		chain, err = m.createDAG(chainRuntime, chainParams, vm, chainFxs)
 		if err != nil {
 			return nil, fmt.Errorf("error creating DAG chain: %w", err)
 		}
@@ -902,7 +908,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		_ = beacons
 
 		// Create simple linear chain with basic consensus engine
-		m.Log.Info("creating linear chain", log.Stringer("chainID", chainCtx.ChainID))
+		m.Log.Info("creating linear chain", log.Stringer("chainID", chainRuntime.ChainID))
 
 		// Initialize the VM before creating the chain
 		// Get chain configuration
@@ -942,14 +948,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		err = vm.Initialize(
 			context.TODO(),
-			chainCtx,
-			vmDB,
-			chainParams.GenesisData,
-			chainConfig.Upgrade,
-			vmConfigBytes,
-			toEngine,
-			fxsInterface,
-			nil, // appSender - not needed for simple VMs
+			common.VMInit{
+				Runtime:  chainRuntime,
+				DB:       vmDB,
+				Genesis:  chainParams.GenesisData,
+				Upgrade:  chainConfig.Upgrade,
+				Config:   vmConfigBytes,
+				ToEngine: toEngine,
+				Fx:       fxsInterface,
+				Sender:   nil, // appSender - not needed for simple VMs
+			},
 		)
 		if err != nil {
 			m.Log.Error("VM initialization failed",
@@ -967,7 +975,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("transitioning VM to normal operation",
 				log.Stringer("chainID", chainParams.ID))
-			if err := stateVM.SetState(context.TODO(), uint32(consensus.Ready)); err != nil {
+			if err := stateVM.SetState(context.TODO(), uint32(interfaces.Ready)); err != nil {
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
@@ -1112,8 +1120,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		go consensusEngine.ForwardVMNotifications(toEngine)
 
 		chain = &chainInfo{
-			Name:    chainCtx.ChainID.String(),
-			Context: chainCtx,
+			Name:    chainRuntime.ChainID.String(),
+			Runtime: chainRuntime,
 			VM:      vm,              // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
 			Handler: newBlockHandler(vm, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
@@ -1135,7 +1143,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
 }
 
-// dagVMAdapter adapts a DAG VM to consensus.VM for HTTP handler registration
+// dagVMAdapter adapts a DAG VM to interfaces.VM for HTTP handler registration
 type dagVMAdapter struct {
 	underlying interface{}
 }
@@ -1166,7 +1174,7 @@ func (v *dagVMAdapter) NewHTTPHandler(ctx context.Context) (http.Handler, error)
 	return nil, nil
 }
 
-func (v *dagVMAdapter) SetState(ctx context.Context, state consensus.State) error {
+func (v *dagVMAdapter) SetState(ctx context.Context, state interfaces.State) error {
 	if s, ok := v.underlying.(interface {
 		SetState(context.Context, uint32) error
 	}); ok {
@@ -1190,7 +1198,7 @@ func (v *dagVMAdapter) Version(ctx context.Context) (string, error) {
 
 func (v *dagVMAdapter) Initialize(
 	ctx context.Context,
-	chainCtx *runtime.Runtime,
+	chainRuntime *runtime.Runtime,
 	dbMgr dbmanager.Manager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -1204,7 +1212,7 @@ func (v *dagVMAdapter) Initialize(
 
 // createDAG creates a DAG chain (X-Chain, Q-Chain) using the VM's DAG engine
 func (m *manager) createDAG(
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	chainParams ChainParameters,
 	vm interface{},
 	fxs []*engine.Fx,
@@ -1259,7 +1267,7 @@ func (m *manager) createDAG(
 	if initVM, ok := vm.(interface {
 		Initialize(
 			ctx context.Context,
-			chainCtx interface{},
+			chainRuntime interface{},
 			db database.Database,
 			genesisBytes []byte,
 			upgradeBytes []byte,
@@ -1272,7 +1280,7 @@ func (m *manager) createDAG(
 		toEngine := make(chan engine.Message, 1)
 		err := initVM.Initialize(
 			initCtx,
-			ctx,
+			rt,
 			vmDB,
 			chainParams.GenesisData,
 			chainConfig.Upgrade,
@@ -1294,7 +1302,7 @@ func (m *manager) createDAG(
 		if initVM, ok := vm.(interface {
 			Initialize(
 				ctx context.Context,
-				chainCtx interface{},
+				chainRuntime interface{},
 				dbManager interface{},
 				genesisBytes []byte,
 				upgradeBytes []byte,
@@ -1312,7 +1320,7 @@ func (m *manager) createDAG(
 			}
 			err := initVM.Initialize(
 				initCtx,
-				ctx,
+				rt,
 				vmDB,
 				chainParams.GenesisData,
 				chainConfig.Upgrade,
@@ -1335,7 +1343,7 @@ func (m *manager) createDAG(
 		if stateVM, ok := vm.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			if err := stateVM.SetState(initCtx, uint32(consensus.Ready)); err != nil {
+			if err := stateVM.SetState(initCtx, uint32(interfaces.Ready)); err != nil {
 				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
 			}
 		}
@@ -1358,7 +1366,7 @@ func (m *manager) createDAG(
 
 	return &chainInfo{
 		Name:    chainParams.ID.String(),
-		Context: ctx,
+		Runtime: rt,
 		VM:      &dagVMAdapter{underlying: vm},
 		Handler: &placeholderHandler{},
 	}, nil
@@ -1465,7 +1473,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 	}
 
 	// For now, assume bootstrapped chains are in NormalOp
-	return true // chain.Context.State.Get() == consensus.NormalOp
+	return true // chain.Runtime.State.Get() == consensus.NormalOp
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {
@@ -1621,10 +1629,10 @@ func (m *manager) GetPendingChains(vmID ids.ID) []ChainParameters {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *runtime.Runtime, vm interface{}) {
+func (m *manager) notifyRegistrants(name string, rt *runtime.Runtime, vm interface{}) {
 	for _, registrant := range m.registrants {
 		if coreVM, ok := vm.(interfaces.VM); ok {
-			registrant.RegisterChain(name, ctx, coreVM)
+			registrant.RegisterChain(name, rt, coreVM)
 		}
 	}
 }
@@ -2045,7 +2053,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		log.Int("sentTo", sentTo.Len()))
 }
 
-func (b *blockHandler) Context() *runtime.Runtime                { return nil }
+func (b *blockHandler) Runtime() *runtime.Runtime                     { return nil }
 func (b *blockHandler) Start(ctx context.Context, startReqID uint32)  {}
 func (b *blockHandler) Push(ctx context.Context, msg handler.Message) {}
 func (b *blockHandler) Len() int                                      { return 0 }
@@ -2527,7 +2535,7 @@ func (b *blockHandler) HandleOutbound(ctx context.Context, msg handler.Message) 
 // placeholderHandler implements handler.Handler interface
 type placeholderHandler struct{}
 
-func (p *placeholderHandler) Context() *runtime.Runtime                { return nil }
+func (p *placeholderHandler) Runtime() *runtime.Runtime                     { return nil }
 func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32)  {}
 func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
 func (p *placeholderHandler) Len() int                                      { return 0 }
@@ -2686,7 +2694,7 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockI
 
 	// If no specific validators provided, broadcast to all validators
 	if len(validators) == 0 {
-	sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
+		sentTo := g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0)
 		log.Info("[CONSENSUS DEBUG] SendPullQuery: Gossip returned",
 			"sentToCount", sentTo.Len(),
 			"sentToNodes", sentTo.List(),

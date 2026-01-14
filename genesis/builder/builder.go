@@ -376,7 +376,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 	}
 
-	luxAssetID, err := XAssetID(xvmGenesisBytes)
+	xAssetID, err := XAssetID(xvmGenesisBytes)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
@@ -536,7 +536,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	}
 
 	pChainGenesis, err := genesis.New(
-		luxAssetID,
+		xAssetID,
 		config.NetworkID,
 		platformAllocations,
 		validators,
@@ -552,7 +552,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("problem while serializing platform chain's genesis state: %w", err)
 	}
-	return pChainGenesisBytes, luxAssetID, nil
+	return pChainGenesisBytes, xAssetID, nil
 }
 
 // FromFile loads genesis config from file and builds genesis bytes

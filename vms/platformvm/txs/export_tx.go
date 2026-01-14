@@ -35,19 +35,19 @@ type ExportTx struct {
 	ExportedOutputs []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [UnsignedExportTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [UnsignedExportTx]. Also sets the [rt] to the given [vm.rt] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
+func (tx *ExportTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
 	for _, out := range tx.ExportedOutputs {
 		out.FxID = secp256k1fx.ID
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ExportTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *ExportTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -57,7 +57,7 @@ func (tx *ExportTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errNoExportOutputs
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 
@@ -81,8 +81,8 @@ func (tx *ExportTx) Visit(visitor Visitor) error {
 	return visitor.ExportTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *ExportTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *ExportTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

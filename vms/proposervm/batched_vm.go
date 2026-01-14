@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/luxfi/codec/wrappers"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
@@ -102,7 +102,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainbloc
 		innerBlockBytes     = make([][]byte, 0, len(blks))
 	)
 
-	parsingResults := statelessblock.ParseBlocks(blks, vm.ctx.ChainID)
+	parsingResults := statelessblock.ParseBlocks(blks, vm.rt.ChainID)
 
 	for ; blocksIndex < len(blks); blocksIndex++ {
 		statelessBlock, err := parsingResults[blocksIndex].Block, parsingResults[blocksIndex].Err

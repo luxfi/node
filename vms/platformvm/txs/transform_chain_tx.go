@@ -114,7 +114,7 @@ type TransformChainTx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *TransformChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *TransformChainTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -124,7 +124,7 @@ func (tx *TransformChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == ctx.XAssetID:
+	case tx.AssetID == rt.XAssetID:
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero
@@ -156,7 +156,7 @@ func (tx *TransformChainTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errUptimeRequirementTooLarge
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := tx.ChainAuth.Verify(); err != nil {
@@ -171,8 +171,8 @@ func (tx *TransformChainTx) Visit(visitor Visitor) error {
 	return visitor.TransformChainTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *TransformChainTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *TransformChainTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

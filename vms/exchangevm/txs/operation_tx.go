@@ -24,17 +24,17 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *runtime.Runtime) {
-	// FxOperation doesn't have InitCtx method
+func (t *OperationTx) InitRuntime(rt *runtime.Runtime) {
+	// FxOperation doesn't have InitRuntime method
 	// for _, op := range t.Ops {
-	//     op.Op.InitCtx(ctx)
+	//     op.Op.InitRuntime(rt)
 	// }
-	t.BaseTx.InitCtx(ctx)
+	t.BaseTx.InitRuntime(rt)
 }
 
-// InitializeContext initializes the context for this transaction
-func (t *OperationTx) InitializeContext(ctx *runtime.Runtime) error {
-	t.InitCtx(ctx)
+// InitializeRuntime initializes the context for this transaction
+func (t *OperationTx) InitializeRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
 }
 
@@ -71,8 +71,8 @@ func (t *OperationTx) Visit(v Visitor) error {
 	return v.OperationTx(t)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *OperationTx) InitializeWithContext(ctx *runtime.Runtime) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *OperationTx) InitializeWithRuntime(rt *runtime.Runtime) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

@@ -49,7 +49,6 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
@@ -114,7 +113,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *testcontext.Context
+	rt             *runtime.Runtime
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
@@ -137,45 +136,37 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
 	m := atomic.NewMemory(atomicDB)
 
-	// Create test context with Lock
 	// Use PlatformChainID to match genesis transactions
-	consensusCtx := consensustest.Context(t, constants.PlatformChainID)
-	res.ctx = testcontext.New(context.Background())
-	res.ctx.NetworkID = consensusCtx.NetworkID
-	res.ctx.ChainID = consensusCtx.ChainID
-	res.ctx.NodeID = consensusCtx.NodeID
-	res.ctx.ChainID = consensusCtx.ChainID
-	res.ctx.XAssetID = consensusCtx.XAssetID
-	res.ctx.XAssetID = consensusCtx.XAssetID
-	res.ctx.XChainID = consensusCtx.XChainID
-	res.ctx.CChainID = consensusCtx.CChainID
+	res.rt = consensustest.Runtime(t, constants.PlatformChainID)
+	logger := log.NoLog{}
+	res.rt.Log = logger
 	res.msm = &mutableSharedMemory{
-		SharedMemory: m.NewSharedMemory(res.ctx.ChainID),
+		SharedMemory: m.NewSharedMemory(res.rt.ChainID),
 	}
-	res.ctx.SharedMemory = res.msm
+	res.rt.SharedMemory = res.msm
 
 	// Create a mock ValidatorState that implements runtime.ValidatorState
-	res.ctx.ValidatorState = &mockValidatorState{}
+	res.rt.ValidatorState = &mockValidatorState{}
 
-	res.ctx.Lock.Lock()
-	defer res.ctx.Lock.Unlock()
+	res.rt.Lock.Lock()
+	defer res.rt.Lock.Unlock()
 
-	res.fx = defaultFx(t, res.clk, res.ctx.Log, res.isBootstrapped.Get())
+	res.fx = defaultFx(t, res.clk, logger, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 	// Convert testcontext.Context to runtime.Runtime for state
 	stateConsensusCtx := &runtime.Runtime{
-		NetworkID: res.ctx.NetworkID,
-		ChainID:   res.ctx.ChainID,
-		NodeID:    res.ctx.NodeID,
-		XAssetID:  res.ctx.XAssetID,
-		Log:       res.ctx.Log,
+		NetworkID: res.rt.NetworkID,
+		ChainID:   res.rt.ChainID,
+		NodeID:    res.rt.NodeID,
+		XAssetID:  res.rt.XAssetID,
+		Log:       logger,
 	}
 	res.state = statetest.New(t, statetest.Config{
 		DB:         res.baseDB,
 		Genesis:    genesistest.NewBytes(t, genesistest.Config{}),
 		Validators: res.config.Validators,
-		Context:    stateConsensusCtx,
+		Runtime:    stateConsensusCtx,
 		Rewards:    rewardsCalc,
 	})
 
@@ -185,18 +176,18 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	genesisID := res.state.GetLastAccepted()
 	// Convert testcontext.Context to runtime.Runtime
 	backendConsensusCtx := &runtime.Runtime{
-		NetworkID:      res.ctx.NetworkID,
-		ChainID:        res.ctx.ChainID,
-		NodeID:         res.ctx.NodeID,
-		XAssetID:       res.ctx.XAssetID,
-		Log:            res.ctx.Log,
-		ValidatorState: res.ctx.ValidatorState,
-		SharedMemory:   res.ctx.SharedMemory,
+		NetworkID:      res.rt.NetworkID,
+		ChainID:        res.rt.ChainID,
+		NodeID:         res.rt.NodeID,
+		XAssetID:       res.rt.XAssetID,
+		Log:            logger,
+		ValidatorState: res.rt.ValidatorState,
+		SharedMemory:   res.rt.SharedMemory,
 	}
 
 	res.backend = txexecutor.Backend{
 		Config:       res.config,
-		Ctx:          backendConsensusCtx,
+		Runtime:      backendConsensusCtx,
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
@@ -227,21 +218,21 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	)
 
 	// Use validatorstest.Manager for validator state
-	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
+	txVerifier := network.NewLockedTxVerifier(&res.rt.Lock, res.blkManager)
 
 	// Tests don't need warp signing, so we pass nil
 	var warpSigner warp.Signer
 
 	res.network, err = network.New(
-		res.ctx.Log,
-		res.ctx.NodeID,
-		res.ctx.ChainID,
+		logger,
+		res.rt.NodeID,
+		res.rt.ChainID,
 		validatorstest.Manager,
 		txVerifier,
 		res.mempool,
 		res.backend.Config.PartialSyncPrimaryNetwork,
 		res.sender,
-		res.ctx.Lock,
+		&res.rt.Lock,
 		res.state,
 		warpSigner,
 		registerer,
@@ -284,11 +275,11 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	}
 	// Convert testcontext.Context to runtime.Runtime for wallet
 	walletCtx := &runtime.Runtime{
-		NetworkID:    e.ctx.NetworkID,
-		ChainID:      e.ctx.ChainID,
-		NodeID:       e.ctx.NodeID,
-		XAssetID:     e.ctx.XAssetID,
-		SharedMemory: e.ctx.SharedMemory,
+		NetworkID:    e.rt.NetworkID,
+		ChainID:      e.rt.ChainID,
+		NodeID:       e.rt.NodeID,
+		XAssetID:     e.rt.XAssetID,
+		SharedMemory: e.rt.SharedMemory,
 	}
 	// Create a minimal Config for the wallet
 	walletCfg := &config.Config{
@@ -307,7 +298,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		secp256k1fx.NewKeychain(c.keys...),
 		c.netIDs,
 		nil, // validationIDs
-		[]ids.ID{e.ctx.CChainID, e.ctx.XChainID},
+		[]ids.ID{e.rt.CChainID, e.rt.XChainID},
 	)
 }
 

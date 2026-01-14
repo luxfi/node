@@ -57,16 +57,16 @@ func (mr *UnsignedTxMockRecorder) Bytes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*UnsignedTx)(nil).Bytes))
 }
 
-// InitCtx mocks base method.
-func (m *UnsignedTx) InitCtx(ctx *runtime.Runtime) {
+// InitRuntime mocks base method.
+func (m *UnsignedTx) InitRuntime(rt *runtime.Runtime) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", ctx)
+	m.ctrl.Call(m, "InitRuntime", rt)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *UnsignedTxMockRecorder) InitCtx(ctx any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *UnsignedTxMockRecorder) InitRuntime(rt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*UnsignedTx)(nil).InitCtx), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*UnsignedTx)(nil).InitRuntime), rt)
 }
 
 // InputIDs mocks base method.
@@ -110,17 +110,17 @@ func (mr *UnsignedTxMockRecorder) SetBytes(unsignedBytes any) *gomock.Call {
 }
 
 // SyntacticVerify mocks base method.
-func (m *UnsignedTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (m *UnsignedTx) SyntacticVerify(rt *runtime.Runtime) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SyntacticVerify", ctx)
+	ret := m.ctrl.Call(m, "SyntacticVerify", rt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SyntacticVerify indicates an expected call of SyntacticVerify.
-func (mr *UnsignedTxMockRecorder) SyntacticVerify(ctx any) *gomock.Call {
+func (mr *UnsignedTxMockRecorder) SyntacticVerify(rt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyntacticVerify", reflect.TypeOf((*UnsignedTx)(nil).SyntacticVerify), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyntacticVerify", reflect.TypeOf((*UnsignedTx)(nil).SyntacticVerify), rt)
 }
 
 // Visit mocks base method.

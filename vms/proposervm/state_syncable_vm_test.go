@@ -4,6 +4,7 @@
 package proposervm
 
 import (
+	"github.com/luxfi/consensus/engine/common"
 	"bytes"
 	"context"
 	"testing"
@@ -23,6 +24,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 	"github.com/luxfi/vm/chain/blocktest"
@@ -41,10 +43,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 
 	// load innerVM expectations
-	innerVM.InitializeF = func(_ context.Context, _ interface{}, _ interface{},
-		_ []byte, _ []byte, _ []byte,
-		_ interface{}, _ []interface{}, _ interface{},
-	) error {
+	innerVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
 		return nil
 	}
 	innerVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
@@ -70,8 +69,8 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		},
 	)
 
-	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
+	rt := consensustest.Runtime(t, consensustest.CChainID)
+	rt.NodeID = ids.NodeIDFromCert(&ids.Certificate{
 		Raw:       pTestCert.Raw,
 		PublicKey: pTestCert.PublicKey,
 	})
@@ -82,24 +81,23 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			ctx.NodeID: {
-				NodeID: ctx.NodeID,
+			rt.NodeID: {
+				NodeID: rt.NodeID,
 				Light:  10,
 				Weight: 10,
 			},
 		}, nil
 	}
 
+	rt.ValidatorState = valState
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
-		prefixdb.New([]byte{}, memdb.New()),
-		blocktest.GenesisBytes,
-		nil,
-		nil,
-		valState,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      prefixdb.New([]byte{}, memdb.New()),
+			Genesis: blocktest.GenesisBytes,
+			Log:     log.NoLog{},
+		},
 	))
 	require.NoError(vm.SetState(context.Background(), uint32(consensusinterfaces.Syncing)))
 
@@ -197,7 +195,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -281,7 +279,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -368,7 +366,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -440,7 +438,7 @@ func TestParseStateSummary(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -494,7 +492,7 @@ func TestStateSummaryAccept(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -574,7 +572,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -695,7 +693,7 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk1.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -715,7 +713,7 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 		statelessblock.Epoch{PChainHeight: 100, Number: 0, StartTime: 0},
 		vm.StakingCertLeaf,
 		innerBlk2.Bytes(),
-		vm.ctx.ChainID,
+		vm.rt.ChainID,
 		vm.StakingLeafSigner,
 	)
 	require.NoError(err)

@@ -33,7 +33,7 @@ import (
 //   - importSourceChainIDs: Chain IDs to check for importable atomic UTXOs
 func NewWallet(
 	t testing.TB,
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	cfg *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
@@ -43,7 +43,7 @@ func NewWallet(
 ) wallet.Wallet {
 	return NewWalletWithOptions(
 		t,
-		ctx,
+		rt,
 		WalletConfig{
 			Config:      cfg,
 			InternalCfg: nil, // No dynamic fees by default
@@ -63,7 +63,7 @@ type WalletConfig struct {
 
 func NewWalletWithOptions(
 	t testing.TB,
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	wCfg WalletConfig,
 	state state.State,
 	kc *secp256k1fx.Keychain,
@@ -91,7 +91,7 @@ func NewWalletWithOptions(
 
 	// Add cross-chain UTXOs from shared memory for import transactions.
 	// importSourceChainIDs are chains that have exported UTXOs to us (P-Chain).
-	if sm, ok := ctx.SharedMemory.(interface {
+	if sm, ok := rt.SharedMemory.(interface {
 		Indexed(chainID ids.ID, addrs [][]byte, startAddr, startUTXO []byte, limit int) ([][]byte, []byte, []byte, error)
 	}); ok && len(importSourceChainIDs) > 0 {
 		// Convert addresses to [][]byte for SharedMemory API
@@ -158,7 +158,7 @@ func NewWalletWithOptions(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	builderContext := newContext(ctx, ctx.NetworkID, ctx.XAssetID, wCfg.Config, wCfg.InternalCfg, state.GetTimestamp())
+	builderContext := newContext(rt, rt.NetworkID, rt.XAssetID, wCfg.Config, wCfg.InternalCfg, state.GetTimestamp())
 	kcAdapter := &keychainAdapter{kc: kc}
 	return wallet.New(
 		&client{

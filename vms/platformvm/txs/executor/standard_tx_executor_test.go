@@ -63,8 +63,8 @@ var errTest = errors.New("non-nil error")
 func TestStandardTxExecutorAddValidatorTxEmptyID(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	chainTime := env.state.GetTimestamp()
 	startTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Second)
@@ -372,8 +372,8 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
 	networkID := testNet1.ID()
@@ -887,8 +887,8 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 func TestEtnaStandardTxExecutorAddNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Etna)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
 	networkID := testNet1.ID()
@@ -934,8 +934,8 @@ func TestEtnaStandardTxExecutorAddNetValidator(t *testing.T) {
 func TestBanffStandardTxExecutorAddValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	nodeID := ids.GenerateTestNodeID()
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -1174,8 +1174,8 @@ func TestDurangoDisabledTransactions(t *testing.T) {
 			require := require.New(t)
 
 			env := newEnvironment(t, upgradetest.Durango)
-			env.ctx.Lock.Lock()
-			defer env.ctx.Lock.Unlock()
+			env.rt.Lock.Lock()
+			defer env.rt.Lock.Unlock()
 
 			onAcceptState, err := state.NewDiff(env.state.GetLastAccepted(), env)
 			require.NoError(err)
@@ -1295,7 +1295,7 @@ func TestDurangoMemoField(t *testing.T) {
 				require := require.New(t)
 
 				var (
-					sourceChain  = env.ctx.XChainID
+					sourceChain  = env.rt.XChainID
 					sourceKey    = genesistest.DefaultFundedKeys[1]
 					sourceAmount = 10 * constants.Lux
 				)
@@ -1306,7 +1306,7 @@ func TestDurangoMemoField(t *testing.T) {
 					sourceKey,
 					sourceChain,
 					map[ids.ID]uint64{
-						env.ctx.XAssetID: sourceAmount,
+						env.rt.XAssetID: sourceAmount,
 					},
 					rand.NewSource(0),
 				)
@@ -1335,9 +1335,9 @@ func TestDurangoMemoField(t *testing.T) {
 
 				wallet := newWallet(t, env, walletConfig{})
 				tx, err := wallet.IssueExportTx(
-					env.ctx.XChainID,
+					env.rt.XChainID,
 					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{ID: env.ctx.XAssetID},
+						Asset: lux.Asset{ID: env.rt.XAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt:          constants.Lux,
 							OutputOwners: *owners,
@@ -1470,7 +1470,7 @@ func TestDurangoMemoField(t *testing.T) {
 						Chain: constants.PrimaryNetworkID,
 					},
 					pop,
-					env.ctx.XAssetID,
+					env.rt.XAssetID,
 					owners,
 					owners,
 					reward.PercentDenominator,
@@ -1512,7 +1512,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Chain: constants.PrimaryNetworkID,
 					},
-					env.ctx.XAssetID,
+					env.rt.XAssetID,
 					owners,
 					common.WithMemo(memoField),
 				)
@@ -1554,7 +1554,7 @@ func TestDurangoMemoField(t *testing.T) {
 				tx, err := wallet.IssueBaseTx(
 					[]*lux.TransferableOutput{
 						{
-							Asset: lux.Asset{ID: env.ctx.XAssetID},
+							Asset: lux.Asset{ID: env.rt.XAssetID},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: 1,
 								OutputOwners: secp256k1fx.OutputOwners{
@@ -1580,8 +1580,8 @@ func TestDurangoMemoField(t *testing.T) {
 			require := require.New(t)
 
 			env := newEnvironment(t, upgradetest.Durango)
-			env.ctx.Lock.Lock()
-			defer env.ctx.Lock.Unlock()
+			env.rt.Lock.Lock()
+			defer env.rt.Lock.Unlock()
 
 			feeCalculator := state.PickFeeCalculator(env.config, env.state)
 
@@ -1613,8 +1613,8 @@ func TestEtnaDisabledTransactions(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Etna)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	onAcceptState, err := state.NewDiff(env.state.GetLastAccepted(), env)
 	require.NoError(err)
@@ -1777,7 +1777,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1806,7 +1806,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1835,7 +1835,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1867,7 +1867,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1896,7 +1896,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1928,7 +1928,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1959,7 +1959,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1993,7 +1993,7 @@ func TestStandardExecutorRemoveChainValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2152,7 +2152,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2180,7 +2180,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2213,7 +2213,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2253,7 +2253,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2294,7 +2294,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2339,7 +2339,7 @@ func TestStandardExecutorTransformChainTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &runtime.Runtime{},
+						Runtime:          &runtime.Runtime{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2372,7 +2372,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = consensustest.Context(t, constants.PlatformChainID)
+		rt           = consensustest.Runtime(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
 			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
@@ -2390,7 +2390,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
-			ctx,
+			rt,
 			txstest.WalletConfig{
 				Config:      walletConfig,
 				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -2422,7 +2422,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 			Bootstrapped: utils.NewAtomic(true),
 			Fx:           fx,
 			FlowChecker:  flowChecker,
-			Ctx:          ctx,
+			Runtime:          rt,
 		},
 		state.PickFeeCalculator(defaultConfig, baseState),
 		createNetTx,
@@ -2455,7 +2455,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
+				e.backend.Runtime = consensustest.Runtime(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -2566,7 +2566,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 			var (
 				wallet = txstest.NewWalletWithOptions(
 					t,
-					ctx,
+					rt,
 					txstest.WalletConfig{
 						Config: &config.Config{
 							TxFee:                 constants.MilliLux,
@@ -2613,7 +2613,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 					Bootstrapped: utils.NewAtomic(true),
 					Fx:           fx,
 					FlowChecker:  flowChecker,
-					Ctx:          ctx,
+					Runtime:          rt,
 				},
 				feeCalculator: state.PickFeeCalculator(defaultConfig, baseState),
 				tx:            convertNetToL1Tx,
@@ -2707,7 +2707,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = consensustest.Context(t, constants.PlatformChainID)
+		rt           = consensustest.Runtime(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
 			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
@@ -2715,7 +2715,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		}
 		baseState = statetest.New(t, statetest.Config{
 			Upgrades: defaultConfig.UpgradeConfig,
-			Context:  ctx,
+			Runtime:  rt,
 		})
 		// Create a basic Config for wallet
 		walletConfig = &config.Config{
@@ -2726,7 +2726,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
-			ctx,
+			rt,
 			txstest.WalletConfig{
 				Config:      walletConfig,
 				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -2747,7 +2747,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			Bootstrapped: utils.NewAtomic(true),
 			Fx:           fx,
 			FlowChecker:  flowChecker,
-			Ctx:          ctx,
+			Runtime:          rt,
 		}
 		feeCalculator = state.PickFeeCalculator(defaultConfig, baseState)
 	)
@@ -2851,7 +2851,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		weight,
 	))
 	unsignedWarp := must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-		ctx.NetworkID,
+		rt.NetworkID,
 		managerChainID,
 		must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 			address,
@@ -2892,7 +2892,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
+				e.backend.Runtime = consensustest.Runtime(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -2931,7 +2931,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "invalid warp payload",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.Hash](t)(payload.NewHash(ids.Empty)).Bytes(),
 				)),
@@ -2943,7 +2943,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "invalid addressed call",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -2958,7 +2958,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "invalid addressed call payload",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -2981,7 +2981,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "chain conversion not found",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3030,7 +3030,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "message expiry too far in the future",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3065,7 +3065,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			name: "invalid PoP",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3135,7 +3135,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			// Create the RegisterL1ValidatorTx
 			wallet := txstest.NewWalletWithOptions(
 				t,
-				ctx,
+				rt,
 				txstest.WalletConfig{
 					Config:      walletConfig,
 					InternalCfg: defaultConfig, // Use dynamic fees to match executor
@@ -3172,7 +3172,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 					Bootstrapped: utils.NewAtomic(true),
 					Fx:           fx,
 					FlowChecker:  flowChecker,
-					Ctx:          ctx,
+					Runtime:          rt,
 				},
 				feeCalculator: state.PickFeeCalculator(defaultConfig, baseState),
 				tx:            registerL1ValidatorTx,
@@ -3243,7 +3243,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = consensustest.Context(t, constants.PlatformChainID)
+		rt           = consensustest.Runtime(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
 			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
@@ -3251,7 +3251,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		}
 		baseState = statetest.New(t, statetest.Config{
 			Upgrades: defaultConfig.UpgradeConfig,
-			Context:  ctx,
+			Runtime:  rt,
 		})
 		// Create a basic Config for wallet
 		walletConfig = &config.Config{
@@ -3262,7 +3262,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
-			ctx,
+			rt,
 			txstest.WalletConfig{
 				Config:      walletConfig,
 				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -3283,7 +3283,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			Bootstrapped: utils.NewAtomic(true),
 			Fx:           fx,
 			FlowChecker:  flowChecker,
-			Ctx:          ctx,
+			Runtime:          rt,
 		}
 		feeCalculator = state.PickFeeCalculator(defaultConfig, baseState)
 	)
@@ -3370,7 +3370,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		weight = initialWeight + 1
 	)
 	unsignedIncreaseWeightWarpMessage := must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-		ctx.NetworkID,
+		rt.NetworkID,
 		managerChainID,
 		must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 			address,
@@ -3395,7 +3395,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	))
 	removeValidatorWarpMessage := must[*warp.Message](t)(warp.NewMessage(
 		must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-			ctx.NetworkID,
+			rt.NetworkID,
 			managerChainID,
 			must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 				address,
@@ -3442,7 +3442,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
+				e.backend.Runtime = consensustest.Runtime(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -3474,7 +3474,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "invalid warp payload",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.Hash](t)(payload.NewHash(ids.Empty)).Bytes(),
 				)),
@@ -3486,7 +3486,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "invalid addressed call",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3501,7 +3501,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "invalid addressed call payload",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3520,7 +3520,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "L1 validator not found",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					chainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3585,7 +3585,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			name: "remove deactivated validator with nonce overflow",
 			message: must[*warp.Message](t)(warp.NewMessage(
 				must[*warp.UnsignedMessage](t)(warp.NewUnsignedMessage(
-					ctx.NetworkID,
+					rt.NetworkID,
 					managerChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						address,
@@ -3624,7 +3624,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			updateExecutor: increaseL1Weight(1),
 			expectedRemainingFundsUTXO: &lux.UTXO{
 				Asset: lux.Asset{
-					ID: ctx.XAssetID,
+					ID: rt.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: balance,
@@ -3653,7 +3653,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 			// Create the SetL1ValidatorWeightTx
 			wallet := txstest.NewWalletWithOptions(
 				t,
-				ctx,
+				rt,
 				txstest.WalletConfig{
 					Config:      walletConfig,
 					InternalCfg: defaultConfig, // Use dynamic fees to match executor
@@ -3685,7 +3685,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 					Bootstrapped: utils.NewAtomic(true),
 					Fx:           fx,
 					FlowChecker:  flowChecker,
-					Ctx:          ctx,
+					Runtime:          rt,
 				},
 				feeCalculator: state.PickFeeCalculator(defaultConfig, baseState),
 				tx:            setL1ValidatorWeightTx,
@@ -3754,7 +3754,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = consensustest.Context(t, constants.PlatformChainID)
+		rt           = consensustest.Runtime(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
 			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
@@ -3762,7 +3762,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		}
 		baseState = statetest.New(t, statetest.Config{
 			Upgrades: defaultConfig.UpgradeConfig,
-			Context:  ctx,
+			Runtime:  rt,
 		})
 		// Create a basic Config for wallet
 		walletConfig = &config.Config{
@@ -3773,7 +3773,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
-			ctx,
+			rt,
 			txstest.WalletConfig{
 				Config:      walletConfig,
 				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -3794,7 +3794,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			Bootstrapped: utils.NewAtomic(true),
 			Fx:           fx,
 			FlowChecker:  flowChecker,
-			Ctx:          ctx,
+			Runtime:          rt,
 		}
 		feeCalculator = state.PickFeeCalculator(defaultConfig, baseState)
 	)
@@ -3898,7 +3898,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
+				e.backend.Runtime = consensustest.Runtime(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -3973,7 +3973,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 			// Create the IncreaseL1ValidatorBalanceTx
 			wallet := txstest.NewWalletWithOptions(
 				t,
-				ctx,
+				rt,
 				txstest.WalletConfig{
 					Config:      walletConfig,
 					InternalCfg: defaultConfig, // Use dynamic fees to match executor
@@ -4006,7 +4006,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 					Bootstrapped: utils.NewAtomic(true),
 					Fx:           fx,
 					FlowChecker:  flowChecker,
-					Ctx:          ctx,
+					Runtime:          rt,
 				},
 				feeCalculator: state.PickFeeCalculator(defaultConfig, baseState),
 				tx:            increaseL1ValidatorBalanceTx,
@@ -4056,7 +4056,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.Bootstrapped())
 
 	var (
-		ctx           = consensustest.Context(t, constants.PlatformChainID)
+		rt           = consensustest.Runtime(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   builder.LocalDynamicFeeConfig,
 			ValidatorFeeConfig: builder.LocalValidatorFeeConfig,
@@ -4064,7 +4064,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		}
 		baseState = statetest.New(t, statetest.Config{
 			Upgrades: defaultConfig.UpgradeConfig,
-			Context:  ctx,
+			Runtime:  rt,
 		})
 		// Create a basic Config for wallet
 		walletConfig = &config.Config{
@@ -4075,7 +4075,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		}
 		wallet = txstest.NewWalletWithOptions(
 			t,
-			ctx,
+			rt,
 			txstest.WalletConfig{
 				Config:      walletConfig,
 				InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -4096,7 +4096,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			Bootstrapped: utils.NewAtomic(true),
 			Fx:           fx,
 			FlowChecker:  flowChecker,
-			Ctx:          ctx,
+			Runtime:          rt,
 		}
 		feeCalculator = state.PickFeeCalculator(defaultConfig, baseState)
 	)
@@ -4203,7 +4203,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
+				e.backend.Runtime = consensustest.Runtime(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -4260,7 +4260,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 			// Create the DisableL1ValidatorTx
 			wallet := txstest.NewWalletWithOptions(
 				t,
-				ctx,
+				rt,
 				txstest.WalletConfig{
 					Config:      walletConfig,
 					InternalCfg: defaultConfig, // Use dynamic fees to match executor
@@ -4293,7 +4293,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 					Bootstrapped: utils.NewAtomic(true),
 					Fx:           fx,
 					FlowChecker:  flowChecker,
-					Ctx:          ctx,
+					Runtime:          rt,
 				},
 				feeCalculator: state.PickFeeCalculator(defaultConfig, baseState),
 				tx:            disableL1ValidatorTx,
@@ -4345,7 +4345,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 				&lux.UTXO{
 					UTXOID: utxoID,
 					Asset: lux.Asset{
-						ID: ctx.XAssetID,
+						ID: rt.XAssetID,
 					},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: test.expectedBalance,

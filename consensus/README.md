@@ -48,7 +48,7 @@ The `Acceptor` interface is called before containers are committed as accepted:
 
 ```go
 type Acceptor interface {
-    Accept(ctx *consensuscontext.Context, containerID ids.ID, container []byte) error
+    Accept(rt *runtime.Runtime, containerID ids.ID, container []byte) error
 }
 ```
 

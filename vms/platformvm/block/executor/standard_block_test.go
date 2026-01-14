@@ -145,7 +145,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 			TxID: txID,
 		},
 		Asset: lux.Asset{
-			ID: env.ctx.XAssetID,
+			ID: env.rt.XAssetID,
 		},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1,
@@ -157,8 +157,8 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	// Create the tx
 	utx := &txs.CreateNetworkTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    env.ctx.NetworkID,
-			BlockchainID: env.ctx.ChainID,
+			NetworkID:    env.rt.NetworkID,
+			BlockchainID: env.rt.ChainID,
 			Ins: []*lux.TransferableInput{{
 				UTXOID: utxo.UTXOID,
 				Asset:  utxo.Asset,

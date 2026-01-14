@@ -95,8 +95,8 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 
 	// Note that this method writes [batch] to the database.
 	// Apply atomic requests via SharedMemory from context
-	if a.ctx.SharedMemory != nil {
-		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if a.rt.SharedMemory != nil {
+		sharedMemory := a.rt.SharedMemory.(atomic.SharedMemory)
 		if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
 			return fmt.Errorf(
 				"failed to atomically accept tx %s in block %s: %w",
@@ -177,8 +177,8 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 
 	// Note that this method writes [batch] to the database.
 	// Apply atomic requests via SharedMemory from context
-	if a.ctx.SharedMemory != nil {
-		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if a.rt.SharedMemory != nil {
+		sharedMemory := a.rt.SharedMemory.(atomic.SharedMemory)
 		if err := sharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
 			return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 		}
@@ -265,8 +265,8 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 
 	// Note that this method writes [batch] to the database.
 	// Apply atomic requests via SharedMemory from context
-	if a.ctx.SharedMemory != nil {
-		sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if a.rt.SharedMemory != nil {
+		sharedMemory := a.rt.SharedMemory.(atomic.SharedMemory)
 		if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
 			return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 		}

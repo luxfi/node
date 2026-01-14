@@ -11,15 +11,15 @@ import (
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
-func NewContextFromURI(ctx context.Context, uri string, luxAssetID ids.ID, baseTxFee uint64, createAssetTxFee uint64) (*builder.Context, error) {
+func NewContextFromURI(ctx context.Context, uri string, xAssetID ids.ID, baseTxFee uint64, createAssetTxFee uint64) (*builder.Context, error) {
 	infoClient := info.NewClient(uri)
-	return NewContextFromClients(ctx, infoClient, luxAssetID, baseTxFee, createAssetTxFee)
+	return NewContextFromClients(ctx, infoClient, xAssetID, baseTxFee, createAssetTxFee)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient *info.Client,
-	luxAssetID ids.ID,
+	xAssetID ids.ID,
 	baseTxFee uint64,
 	createAssetTxFee uint64,
 ) (*builder.Context, error) {
@@ -36,7 +36,7 @@ func NewContextFromClients(
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		XAssetID:         luxAssetID,
+		XAssetID:         xAssetID,
 		BaseTxFee:        baseTxFee,
 		CreateAssetTxFee: createAssetTxFee,
 	}, nil

@@ -15,17 +15,17 @@ import (
 )
 
 func newContext(
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	networkID uint32,
-	luxAssetID ids.ID,
+	xAssetID ids.ID,
 	cfg *config.Config,
 	internalCfg *config.Internal,
 	timestamp time.Time,
 ) *builder.Context {
 	builderContext := &builder.Context{
 		NetworkID: networkID,
-		ChainID:   ctx.ChainID,
-		XAssetID:  luxAssetID,
+		ChainID:   rt.ChainID,
+		XAssetID:  xAssetID,
 	}
 
 	// For test purposes, populate the fee configuration

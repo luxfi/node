@@ -22,16 +22,16 @@ type Context struct {
 	StaticFeeConfig   fee.StaticConfig
 }
 
-func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (*runtime.Runtime, error) {
-	return NewConsensusContextWithChainID(networkID, constants.PlatformChainID, luxAssetID)
+func NewConsensusRuntime(networkID uint32, xAssetID ids.ID) (*runtime.Runtime, error) {
+	return NewConsensusRuntimeWithChainID(networkID, constants.PlatformChainID, xAssetID)
 }
 
-func NewConsensusContextWithChainID(networkID uint32, chainID ids.ID, luxAssetID ids.ID) (*runtime.Runtime, error) {
+func NewConsensusRuntimeWithChainID(networkID uint32, chainID ids.ID, xAssetID ids.ID) (*runtime.Runtime, error) {
 	lookup := ids.NewAliaser()
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: networkID,
 		ChainID:   chainID,
-		XAssetID:  luxAssetID,
+		XAssetID:  xAssetID,
 	}
-	return ctx, lookup.Alias(chainID, Alias)
+	return rt, lookup.Alias(chainID, Alias)
 }

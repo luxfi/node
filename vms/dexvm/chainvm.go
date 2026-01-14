@@ -21,6 +21,8 @@ import (
 
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
+
+	"github.com/luxfi/consensus/engine/common"
 )
 
 // Ensure ChainVM implements block.ChainVM
@@ -84,34 +86,18 @@ func NewChainVM(logger log.Logger) *ChainVM {
 // Initialize implements the VM interface
 func (vm *ChainVM) Initialize(
 	ctx context.Context,
-	consensusCtx interface{},
-	dbManager interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	vmInit common.VMInit,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
 	// Store the message channel
-	if ch, ok := msgChan.(chan<- luxvm.Message); ok {
-		vm.toEngine = ch
-	}
+	vm.toEngine = vmInit.ToEngine
 
 	// Initialize the inner VM
 	if err := vm.inner.Initialize(
 		ctx,
-		consensusCtx,
-		dbManager,
-		genesisBytes,
-		upgradeBytes,
-		configBytes,
-		msgChan,
-		fxs,
-		appSender,
+		vmInit,
 	); err != nil {
 		return err
 	}

@@ -40,8 +40,8 @@ type GetProposedHeightReply struct {
 func (s *Service) GetProposedHeight(r *http.Request, _ *GetProposedHeightArgs, reply *GetProposedHeightReply) error {
 	ctx := r.Context()
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the current preferred block
 	preferredBlock, err := s.vm.getBlock(ctx, s.vm.preferred)

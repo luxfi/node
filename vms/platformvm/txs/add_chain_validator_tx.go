@@ -48,7 +48,7 @@ func (*AddChainValidatorTx) CurrentPriority() Priority {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddChainValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *AddChainValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -58,7 +58,7 @@ func (tx *AddChainValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errAddPrimaryNetworkValidator
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	if err := verify.All(&tx.Validator, tx.ChainAuth); err != nil {
@@ -74,8 +74,8 @@ func (tx *AddChainValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddChainValidatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *AddChainValidatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *AddChainValidatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

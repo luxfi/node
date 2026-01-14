@@ -36,7 +36,7 @@ type backend struct {
 	blkIDToStateLock sync.RWMutex // Protects concurrent access to blkIDToState
 	state            state.State
 
-	ctx *runtime.Runtime
+	rt *runtime.Runtime
 }
 
 // SharedMemory provides cross-chain atomic operations

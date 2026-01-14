@@ -24,7 +24,6 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/protocol/chain"
 	validators "github.com/luxfi/consensus/validator"
@@ -382,7 +381,7 @@ func TestGetTx(t *testing.T) {
 					require.Equal(tx.Bytes(), responseTxBytes)
 
 				case formatting.JSON:
-					tx.Unsigned.InitCtx(service.vm.rt)
+					tx.Unsigned.InitRuntime(service.vm.rt)
 					expectedTxJSON, err := json.Marshal(tx)
 					require.NoError(err)
 					require.JSONEq(string(expectedTxJSON), string(response.Tx))
@@ -998,7 +997,7 @@ func TestGetBlock(t *testing.T) {
 
 			switch test.encoding {
 			case formatting.JSON:
-				statelessBlock.InitCtx(service.vm.rt)
+				statelessBlock.InitRuntime(service.vm.rt)
 				expectedBlockJSON, err := json.Marshal(statelessBlock)
 				require.NoError(err)
 				require.JSONEq(string(expectedBlockJSON), string(response.Block))
@@ -1107,7 +1106,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			name: "JSON format",
 			serviceAndExpectedBlockFunc: func(_ *testing.T, ctrl *gomock.Controller) (*Service, interface{}) {
 				block := block.NewMockBlock(ctrl)
-				block.EXPECT().InitCtx(gomock.Any())
+				block.EXPECT().InitRuntime(gomock.Any())
 
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetBlockIDAtHeight(blockHeight).Return(blockID, nil)

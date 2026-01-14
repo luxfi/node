@@ -23,10 +23,6 @@ func (testManager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (testManager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
-}
-
 func (testManager) GetChainID(ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }

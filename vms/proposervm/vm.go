@@ -8,27 +8,29 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/runtime"
 	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/interfaces"
+	"github.com/luxfi/consensus/runtime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/math"
 
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -73,7 +75,8 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	ctx            *runtime.Runtime
+	lock           sync.Mutex
+	rt             *runtime.Runtime
 	db             *versiondb.Database
 	logger         log.Logger
 	validatorState validators.State
@@ -132,33 +135,28 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	init common.VMInit,
 ) error {
-	// Type assert the interface{} parameters to their concrete types
-	chainContext := chainCtx.(*runtime.Runtime)
-	vmDB := db.(database.Database)
+	vm.rt = init.Runtime
+	vm.logger = init.Log
+	vm.db = versiondb.New(prefixdb.New(dbPrefix, init.DB))
 
-	// Explicit type conversions for interface{} fields - Rob Pike approach: no hiding complexity
-	logger := chainContext.Log.(log.Logger)
-	validatorState := chainContext.ValidatorState.(validators.State)
+	if vm.rt.ValidatorState == nil {
+		return errors.New("validator state is required")
+	}
+	// Type assert validator state - we know it must be validators.State in full node
+	if vs, ok := vm.rt.ValidatorState.(validators.State); ok {
+		vm.validatorState = vs
+	} else {
+		return errors.New("invalid validator state type")
+	}
 
-	vm.ctx = chainContext
-	vm.logger = logger
-	vm.validatorState = validatorState
-	vm.db = versiondb.New(prefixdb.New(dbPrefix, vmDB))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(validatorState, constants.PrimaryNetworkID, chainContext.ChainID)
+	vm.Windower = proposer.New(vm.validatorState, constants.PrimaryNetworkID, vm.rt.ChainID)
 	vm.Tree = tree.New()
 	registry, ok := vm.Config.Registerer.(metric.Registry)
 	if !ok {
@@ -180,17 +178,7 @@ func (vm *VM) Initialize(
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
 
-	err = vm.ChainVM.Initialize(
-		ctx,
-		chainCtx,
-		db,
-		genesisBytes,
-		upgradeBytes,
-		configBytes,
-		msgChan,
-		fxs,
-		appSender,
-	)
+	err = vm.ChainVM.Initialize(ctx, init)
 	if err != nil {
 		return err
 	}
@@ -210,13 +198,13 @@ func (vm *VM) Initialize(
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:
-		logger.Info("initialized proposervm",
+		vm.logger.Info("initialized proposervm",
 			log.String("state", "after fork"),
 			log.Uint64("forkHeight", forkHeight),
 			log.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
 	case database.ErrNotFound:
-		logger.Info("initialized proposervm",
+		vm.logger.Info("initialized proposervm",
 			log.String("state", "before fork"),
 		)
 	default:
@@ -393,15 +381,15 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 }
 
 func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	// Block building is only supported if the consensus state is Ready
 	// and the vm is not state syncing.
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != uint32(consensus.Ready) {
+	if vm.consensusState != uint32(interfaces.Ready) {
 		return time.Time{}, false, nil
 	}
 
@@ -464,7 +452,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	pChainHeight uint64,
 	parentTimestamp time.Time,
 ) (time.Time, error) {
-	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, vm.ctx.NodeID, proposer.MaxBuildWindows)
+	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, vm.rt.NodeID, proposer.MaxBuildWindows)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -490,7 +478,7 @@ func (vm *VM) getPostDurangoSlotTime(
 		ctx,
 		blkHeight,
 		pChainHeight,
-		vm.ctx.NodeID,
+		vm.rt.NodeID,
 		slot,
 	)
 	// Note: The P-chain does not currently try to target any block time. It
@@ -665,7 +653,7 @@ func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte, verifySignature 
 	)
 
 	if verifySignature {
-		statelessBlock, err = statelessblock.Parse(b, vm.ctx.ChainID)
+		statelessBlock, err = statelessblock.Parse(b, vm.rt.ChainID)
 	} else {
 		statelessBlock, err = statelessblock.ParseWithoutVerification(b)
 	}
@@ -922,7 +910,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 	return make(map[ids.ID]*validators.GetValidatorOutput), height, nil
 }
 
-// interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
+// interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainRuntime
 type interfacesToConsensusValidatorStateAdapter struct {
 	ctx         context.Context
 	vs          runtime.ValidatorState

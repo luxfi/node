@@ -35,11 +35,11 @@ type ImportTx struct {
 	ImportedInputs []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [ImportTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [ImportTx]. Also sets the [rt] to the given [vm.rt] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ImportTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
+func (tx *ImportTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
 	for _, in := range tx.ImportedInputs {
 		in.FxID = secp256k1fx.ID
 	}
@@ -61,7 +61,7 @@ func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ImportTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *ImportTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -71,7 +71,7 @@ func (tx *ImportTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errNoImportInputs
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 
@@ -92,8 +92,8 @@ func (tx *ImportTx) Visit(visitor Visitor) error {
 	return visitor.ImportTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *ImportTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *ImportTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

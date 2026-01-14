@@ -6,12 +6,13 @@ package lux
 import (
 	"errors"
 	"fmt"
+
 	"github.com/luxfi/consensus/runtime"
 
+	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/address"
 )
 
 var (
@@ -44,12 +45,12 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *runtime.Runtime
+	rt *runtime.Runtime
 }
 
-func NewAddressManager(ctx *runtime.Runtime) AddressManager {
+func NewAddressManager(rt *runtime.Runtime) AddressManager {
 	return &addressManager{
-		ctx: ctx,
+		rt: rt,
 	}
 }
 
@@ -58,7 +59,7 @@ func (a *addressManager) ParseLocalAddress(addrStr string) (ids.ShortID, error) 
 	if err != nil {
 		return ids.ShortID{}, err
 	}
-	expectedChainID := a.ctx.ChainID
+	expectedChainID := a.rt.ChainID
 	if chainID != expectedChainID {
 		return ids.ShortID{}, fmt.Errorf(
 			"%w: expected %q but got %q",
@@ -76,13 +77,13 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	// Try to parse chainIDAlias as an ID directly since consensus context doesn't have BCLookup
+	// Try to parse chainIDAlias as an ID directly since Runtime doesn't have BCLookup
 	chainID, err := ids.FromString(chainIDAlias)
 	if err != nil {
 		return ids.ID{}, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
-	networkID := a.ctx.NetworkID
+	networkID := a.rt.NetworkID
 	expectedHRP := constants.GetHRP(networkID)
 	if hrp != expectedHRP {
 		return ids.Empty, ids.ShortID{}, fmt.Errorf(
@@ -100,14 +101,14 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 }
 
 func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
-	chainID := a.ctx.ChainID
+	chainID := a.rt.ChainID
 	return a.FormatAddress(chainID, addr)
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	// Use ChainID directly - consensus context doesn't have BCLookup
+	// Use ChainID directly - Runtime doesn't have BCLookup
 	chainIDAlias := chainID.String()
-	hrp := constants.GetHRP(a.ctx.NetworkID)
+	hrp := constants.GetHRP(a.rt.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }
 

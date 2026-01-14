@@ -25,8 +25,8 @@ func TestAtomicTxImports(t *testing.T) {
 	require := require.New(t)
 
 	env := newEnvironment(t, upgradetest.Latest)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	addr := genesistest.DefaultFundedKeys[0].Address()
 	owner := &secp256k1fx.OutputOwners{
@@ -36,14 +36,14 @@ func TestAtomicTxImports(t *testing.T) {
 
 	m := atomic.NewMemory(prefixdb.New([]byte{5}, env.baseDB))
 
-	env.msm.SharedMemory = m.NewSharedMemory(env.ctx.ChainID)
-	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
+	env.msm.SharedMemory = m.NewSharedMemory(env.rt.ChainID)
+	peerSharedMemory := m.NewSharedMemory(env.rt.XChainID)
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: 1,
 		},
-		Asset: lux.Asset{ID: env.ctx.XAssetID},
+		Asset: lux.Asset{ID: env.rt.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          70 * constants.MilliLux,
 			OutputOwners: *owner,
@@ -54,7 +54,7 @@ func TestAtomicTxImports(t *testing.T) {
 
 	inputID := utxo.InputID()
 	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
-		env.ctx.ChainID: {PutRequests: []*atomic.Element{{
+		env.rt.ChainID: {PutRequests: []*atomic.Element{{
 			Key:   inputID[:],
 			Value: utxoBytes,
 			Traits: [][]byte{
@@ -67,7 +67,7 @@ func TestAtomicTxImports(t *testing.T) {
 	wallet := newWallet(t, env, walletConfig{})
 
 	tx, err := wallet.IssueImportTx(
-		env.ctx.XChainID,
+		env.rt.XChainID,
 		owner,
 	)
 	require.NoError(err)

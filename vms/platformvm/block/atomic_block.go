@@ -29,8 +29,8 @@ func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotAtomicBlock) InitCtx(ctx *runtime.Runtime) {
-	b.Tx.Unsigned.InitCtx(ctx)
+func (b *ApricotAtomicBlock) InitRuntime(rt *runtime.Runtime) {
+	b.Tx.Unsigned.InitRuntime(rt)
 }
 
 func (b *ApricotAtomicBlock) Txs() []*txs.Tx {
@@ -56,8 +56,8 @@ func NewApricotAtomicBlock(
 	return blk, initialize(blk, &blk.CommonBlock)
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *ApricotAtomicBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *ApricotAtomicBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

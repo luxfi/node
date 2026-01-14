@@ -42,16 +42,16 @@ func (m *Owner) EXPECT() *OwnerMockRecorder {
 	return m.recorder
 }
 
-// InitCtx mocks base method.
-func (m *Owner) InitCtx(arg0 *runtime.Runtime) {
+// InitRuntime mocks base method.
+func (m *Owner) InitRuntime(arg0 *runtime.Runtime) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitRuntime", arg0)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *OwnerMockRecorder) InitCtx(arg0 any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *OwnerMockRecorder) InitRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*Owner)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*Owner)(nil).InitRuntime), arg0)
 }
 
 // Verify mocks base method.

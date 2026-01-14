@@ -37,7 +37,7 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(*runtime.Runtime) {}
+func (*AdvanceTimeTx) InitRuntime(*runtime.Runtime) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -60,8 +60,8 @@ func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 	return visitor.AdvanceTimeTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *AdvanceTimeTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *AdvanceTimeTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

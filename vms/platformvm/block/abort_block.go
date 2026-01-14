@@ -56,7 +56,7 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(*runtime.Runtime) {}
+func (*ApricotAbortBlock) InitRuntime(*runtime.Runtime) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
 	return nil
@@ -82,14 +82,14 @@ func NewApricotAbortBlock(
 	return blk, initialize(blk, &blk.CommonBlock)
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *BanffAbortBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *BanffAbortBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *ApricotAbortBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *ApricotAbortBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

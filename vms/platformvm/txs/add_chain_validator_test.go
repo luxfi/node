@@ -25,7 +25,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: testChainID,
@@ -40,11 +40,11 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	)
 
 	// Case : signed tx is nil
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, ErrNilSignedTx)
 
 	// Case : unsigned tx is nil
-	err = addNetValidatorTx.SyntacticVerify(ctx)
+	err = addNetValidatorTx.SyntacticVerify(rt)
 	require.ErrorIs(err, ErrNilTx)
 
 	validatorWeight := uint64(2022)
@@ -75,8 +75,8 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	}
 	addNetValidatorTx = &AddChainValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    rt.NetworkID,
+			BlockchainID: rt.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -96,14 +96,14 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	// Case: valid tx
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(ctx))
+	require.NoError(stx.SyntacticVerify(rt))
 
 	// Case: Wrong network ID
 	addNetValidatorTx.SyntacticallyVerified = false
 	addNetValidatorTx.NetworkID++
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, lux.ErrWrongNetworkID)
 	addNetValidatorTx.NetworkID--
 
@@ -112,7 +112,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	addNetValidatorTx.Chain = ids.Empty
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, errAddPrimaryNetworkValidator)
 	addNetValidatorTx.Chain = netID
 
@@ -121,7 +121,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	addNetValidatorTx.Wght = 0
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, ErrWeightTooSmall)
 	addNetValidatorTx.Wght = validatorWeight
 
@@ -132,7 +132,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	input.SigIndices[0] = input.SigIndices[1]
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, secp256k1fx.ErrInputIndicesNotSortedUnique)
 	*input = oldInput
 
@@ -141,7 +141,7 @@ func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	addNetValidatorTx.Chain = constants.PrimaryNetworkID
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	err = stx.SyntacticVerify(ctx)
+	err = stx.SyntacticVerify(rt)
 	require.ErrorIs(err, errAddPrimaryNetworkValidator)
 }
 
@@ -150,7 +150,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 
 		ChainID: testChainID,
@@ -193,8 +193,8 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	}
 	addNetValidatorTx = &AddChainValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    rt.NetworkID,
+			BlockchainID: rt.ChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -214,7 +214,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	// Case: valid tx
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
 	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(ctx))
+	require.NoError(stx.SyntacticVerify(rt))
 
 	txBytes, err := Codec.Marshal(CodecVersion, stx)
 	require.NoError(err)
@@ -222,7 +222,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	parsedTx, err := Parse(Codec, txBytes)
 	require.NoError(err)
 
-	require.NoError(parsedTx.SyntacticVerify(ctx))
+	require.NoError(parsedTx.SyntacticVerify(rt))
 	require.Equal(stx, parsedTx)
 }
 

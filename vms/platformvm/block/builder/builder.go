@@ -185,7 +185,7 @@ func (b *builder) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
-	logger := b.txExecutorBackend.Ctx.Log.(log.Logger)
+	logger := b.txExecutorBackend.Runtime.Log.(log.Logger)
 	consecutiveErrors := 0
 	for {
 		if err := ctx.Err(); err != nil {
@@ -279,7 +279,7 @@ func (b *builder) BuildBlockWithContext(
 	ctx context.Context,
 	blockContext *chainblock.Context,
 ) (chainblock.Block, error) {
-	logger := b.txExecutorBackend.Ctx.Log.(log.Logger)
+	logger := b.txExecutorBackend.Runtime.Log.(log.Logger)
 	logger.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
@@ -339,8 +339,8 @@ func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 	// Type assert ValidatorState to get GetMinimumHeight method
 	// ValidatorState may be nil during initialization, use 0 as default
 	var recommendedPChainHeight uint64
-	if b.txExecutorBackend.Ctx.ValidatorState != nil {
-		validatorState := b.txExecutorBackend.Ctx.ValidatorState.(interface {
+	if b.txExecutorBackend.Runtime.ValidatorState != nil {
+		validatorState := b.txExecutorBackend.Runtime.ValidatorState.(interface {
 			GetMinimumHeight(context.Context) (uint64, error)
 		})
 		var err error
@@ -417,7 +417,7 @@ func buildBlock(
 		)
 	}
 	if err != nil {
-		logger := builder.txExecutorBackend.Ctx.Log.(log.Logger)
+		logger := builder.txExecutorBackend.Runtime.Log.(log.Logger)
 		logger.Warn("failed to pack block transactions: " + err.Error())
 		return nil, fmt.Errorf("failed to pack block txs: %w", err)
 	}
@@ -470,7 +470,7 @@ func packDurangoBlockTxs(
 	pChainHeight uint64,
 	remainingSize int,
 ) ([]*txs.Tx, error) {
-	logger := backend.Ctx.Log.(log.Logger)
+	logger := backend.Runtime.Log.(log.Logger)
 	logger.Debug("packDurangoBlockTxs starting",
 		log.Time("timestamp", timestamp),
 		log.Uint64("pChainHeight", pChainHeight),
@@ -559,7 +559,7 @@ func packEtnaBlockTxs(
 		feeCalculator   = state.PickFeeCalculator(backend.Config, stateDiff)
 	)
 
-	logger := backend.Ctx.Log.(log.Logger)
+	logger := backend.Runtime.Log.(log.Logger)
 	logger.Debug("starting to pack block txs",
 		log.Stringer("parentID", parentID),
 		log.Time("blockTimestamp", timestamp),
@@ -646,24 +646,24 @@ func executeTx(
 
 	// Invariant: [tx] has already been syntactically verified.
 
-	logger := backend.Ctx.Log.(log.Logger)
+	logger := backend.Runtime.Log.(log.Logger)
 	txID := tx.ID()
 
 	// Get validator state - handle both validators.State (from node) and runtime.ValidatorState (from tests)
 	var stateAdapter validators.State
-	if vs, ok := backend.Ctx.ValidatorState.(validators.State); ok {
+	if vs, ok := backend.Runtime.ValidatorState.(validators.State); ok {
 		// Node provides validators.State directly
 		stateAdapter = vs
-	} else if vs, ok := backend.Ctx.ValidatorState.(runtime.ValidatorState); ok {
+	} else if vs, ok := backend.Runtime.ValidatorState.(runtime.ValidatorState); ok {
 		// Tests may provide runtime.ValidatorState, wrap it
 		stateAdapter = &validatorStateAdapter{state: vs}
 	} else {
-		return false, fmt.Errorf("invalid validator state type: %T", backend.Ctx.ValidatorState)
+		return false, fmt.Errorf("invalid validator state type: %T", backend.Runtime.ValidatorState)
 	}
 
 	err := txexecutor.VerifyWarpMessages(
 		ctx,
-		backend.Ctx.NetworkID,
+		backend.Runtime.NetworkID,
 		stateAdapter,
 		pChainHeight,
 		tx.Unsigned,

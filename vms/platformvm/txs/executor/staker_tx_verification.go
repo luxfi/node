@@ -104,7 +104,7 @@ func verifyAddValidatorTx(
 	}
 
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +176,7 @@ func verifyAddValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -195,7 +195,7 @@ func verifyAddChainValidatorTx(
 	tx *txs.AddChainValidatorTx,
 ) error {
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return err
 	}
 
@@ -269,7 +269,7 @@ func verifyAddChainValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -294,7 +294,7 @@ func verifyRemoveChainValidatorTx(
 	tx *txs.RemoveChainValidatorTx,
 ) (*state.Staker, bool, error) {
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return nil, false, err
 	}
 
@@ -349,7 +349,7 @@ func verifyRemoveChainValidatorTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, false, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -377,7 +377,7 @@ func verifyAddDelegatorTx(
 	}
 
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return nil, err
 	}
 
@@ -469,7 +469,7 @@ func verifyAddDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -488,7 +488,7 @@ func verifyAddPermissionlessValidatorTx(
 	tx *txs.AddPermissionlessValidatorTx,
 ) error {
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return err
 	}
 
@@ -591,7 +591,7 @@ func verifyAddPermissionlessValidatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -610,7 +610,7 @@ func verifyAddPermissionlessDelegatorTx(
 	tx *txs.AddPermissionlessDelegatorTx,
 ) error {
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return err
 	}
 
@@ -738,7 +738,7 @@ func verifyAddPermissionlessDelegatorTx(
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)
@@ -768,7 +768,7 @@ func verifyTransferChainOwnershipTx(
 	}
 
 	// Verify the tx is well-formed
-	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
+	if err := sTx.SyntacticVerify(backend.Runtime); err != nil {
 		return err
 	}
 
@@ -798,7 +798,7 @@ func verifyTransferChainOwnershipTx(
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			backend.Ctx.XAssetID: fee,
+			backend.Runtime.XAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("%w: %w", ErrFlowCheckFailed, err)

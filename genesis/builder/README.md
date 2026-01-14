@@ -155,7 +155,7 @@ func main() {
 
     // Build genesis bytes
     config := builder.GetConfig(constants.MainnetID)
-    genesisBytes, luxAssetID, err := builder.FromConfig(config)
+    genesisBytes, xAssetID, err := builder.FromConfig(config)
     if err != nil {
         panic(err)
     }

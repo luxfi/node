@@ -12,14 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	vmrpc "github.com/luxfi/vm/rpc"
 )
 
 var (
@@ -56,8 +57,8 @@ var (
 )
 
 // Forward ChainVM methods
-func (m *ContextEnabledVMMock) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes, upgradeBytes, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
-	return m.chainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
+func (m *ContextEnabledVMMock) Initialize(ctx context.Context, init common.VMInit) error {
+	return m.chainVM.Initialize(ctx, init)
 }
 func (m *ContextEnabledVMMock) SetState(ctx context.Context, state uint32) error {
 	return m.chainVM.SetState(ctx, state)
@@ -127,8 +128,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 		}
 		// Initialize expectations
 		ctxVM.chainVM.EXPECT().Initialize(
-			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+			gomock.Any(), gomock.Any(),
 		).Return(nil).AnyTimes()
 		ctxVM.chainVM.EXPECT().LastAccepted(gomock.Any()).Return(testPreSummaryBlk.ID(), nil).AnyTimes()
 		ctxVM.chainVM.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(testPreSummaryBlk, nil).AnyTimes()
@@ -159,14 +159,17 @@ func TestContextVMSummary(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.Runtime().Stop(context.Background())
 
-	ctx := &vmrpc.Context{
+	rt := &runtime.Runtime{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
 		Log:       log.NewWriter(io.Discard),
 	}
 
-	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, []interface{}{}, nil))
+	require.NoError(vm.Initialize(context.Background(), common.VMInit{
+		Runtime: rt,
+		DB:      memdb.New(),
+	}))
 
 	blkIntf, err := vm.BuildBlockWithContext(context.Background(), blockContext)
 	require.NoError(err)

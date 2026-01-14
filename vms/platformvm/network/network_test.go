@@ -89,10 +89,6 @@ func (m *mockValidatorState) GetCurrentHeight(ctx context.Context) (uint64, erro
 	return m.height, nil
 }
 
-func (m *mockValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
-}
-
 func (m *mockValidatorState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
@@ -325,10 +321,10 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 
-			consensusCtx := consensustest.Context(t, ids.Empty)
-			// Extract values directly from consensus context
-			nodeID := consensusCtx.NodeID
-			netID := consensusCtx.ChainID
+			rt := consensustest.Runtime(t, ids.Empty)
+			// Extract values directly from Runtime
+			nodeID := rt.NodeID
+			netID := rt.ChainID
 			// Use a simple test logger for now
 			logger := log.NoLog{}
 			// Create a mock validator state that returns sensible defaults

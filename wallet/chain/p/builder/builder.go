@@ -445,10 +445,10 @@ func (b *builder) NewAddValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddValidatorTx, error) {
-	luxAssetID := b.context.XAssetID
+	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
-		luxAssetID: vdr.Wght,
+		xAssetID: vdr.Wght,
 	}
 	ops := common.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(
@@ -600,10 +600,10 @@ func (b *builder) NewAddDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddDelegatorTx, error) {
-	luxAssetID := b.context.XAssetID
+	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
-		luxAssetID: vdr.Wght,
+		xAssetID: vdr.Wght,
 	}
 	ops := common.NewOptions(options)
 	inputs, baseOutputs, stakeOutputs, err := b.spend(
@@ -1138,7 +1138,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID      = b.context.XAssetID
+		xAssetID      = b.context.XAssetID
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmounts = make(map[ids.ID]uint64)
@@ -1185,7 +1185,7 @@ func (b *builder) NewImportTx(
 
 	outputs := make([]*lux.TransferableOutput, 0, len(importedAmounts))
 	for assetID, amount := range importedAmounts {
-		if assetID == luxAssetID {
+		if assetID == xAssetID {
 			continue
 		}
 
@@ -1223,7 +1223,7 @@ func (b *builder) NewImportTx(
 		toBurn  = map[ids.ID]uint64{}
 		toStake = map[ids.ID]uint64{}
 	)
-	excessLUX := importedAmounts[luxAssetID]
+	excessLUX := importedAmounts[xAssetID]
 
 	inputs, changeOutputs, _, err := b.spend(
 		toBurn,
@@ -1927,12 +1927,12 @@ func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1
 }
 
 func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	ctx, err := NewConsensusContext(b.context.NetworkID, b.context.XAssetID)
+	rt, err := NewConsensusRuntime(b.context.NetworkID, b.context.XAssetID)
 	if err != nil {
 		return err
 	}
 
-	tx.InitCtx(ctx)
+	tx.InitRuntime(rt)
 	return nil
 }
 

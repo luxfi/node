@@ -19,8 +19,8 @@ import (
 
 func TestNewExportTx(t *testing.T) {
 	env := newEnvironment(t, upgradetest.Banff)
-	env.ctx.Lock.Lock()
-	defer env.ctx.Lock.Unlock()
+	env.rt.Lock.Lock()
+	defer env.rt.Lock.Unlock()
 
 	tests := []struct {
 		description        string
@@ -29,12 +29,12 @@ func TestNewExportTx(t *testing.T) {
 	}{
 		{
 			description:        "P->X export",
-			destinationChainID: env.ctx.XChainID,
+			destinationChainID: env.rt.XChainID,
 			timestamp:          genesistest.DefaultValidatorStartTime,
 		},
 		{
 			description:        "P->C export",
-			destinationChainID: env.ctx.CChainID,
+			destinationChainID: env.rt.CChainID,
 			timestamp:          env.config.UpgradeConfig.ApricotPhase5Time,
 		},
 	}
@@ -48,7 +48,7 @@ func TestNewExportTx(t *testing.T) {
 			tx, err := wallet.IssueExportTx(
 				tt.destinationChainID,
 				[]*lux.TransferableOutput{{
-					Asset: lux.Asset{ID: env.ctx.XAssetID},
+					Asset: lux.Asset{ID: env.rt.XAssetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: genesistest.DefaultInitialBalance - defaultTxFee,
 						OutputOwners: secp256k1fx.OutputOwners{

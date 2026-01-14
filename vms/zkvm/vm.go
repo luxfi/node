@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -94,50 +95,32 @@ type VM struct {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	init common.VMInit,
 ) error {
-	// Convert chain context to Runtime
-	if rt, ok := chainCtx.(*runtime.Runtime); ok {
-		vm.rt = rt
-	} else {
-		return errors.New("chain context must be *runtime.Runtime")
-	}
+	vm.rt = init.Runtime
+	vm.db = init.DB
+	vm.toEngine = init.ToEngine
+	vm.log = init.Log
 
-	var ok bool
-	vm.db, ok = db.(database.Database)
-	if !ok {
-		return errors.New("invalid database type")
+	if vm.rt == nil {
+		return errors.New("runtime is nil")
 	}
-
-	if msgChan != nil {
-		vm.toEngine, ok = msgChan.(chan<- core.Message)
-		if !ok {
-			// Try bidirectional channel
-			if biChan, ok := msgChan.(chan core.Message); ok {
-				vm.toEngine = biChan
-			} else {
-				return errors.New("invalid message channel type")
-			}
+	if vm.db == nil {
+		return errors.New("database is nil")
+	}
+	if vm.log == nil {
+		// Fallback to runtime log if available, strictly this should be set in init.Log
+		if logger, ok := vm.rt.Log.(log.Logger); ok {
+			vm.log = logger
+		} else {
+			return errors.New("invalid logger type")
 		}
-	}
-
-	if logger, ok := vm.rt.Log.(log.Logger); ok {
-		vm.log = logger
-	} else {
-		return errors.New("invalid logger type")
 	}
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 
 	// Parse configuration or use defaults
-	if len(configBytes) > 0 {
-		if _, err := Codec.Unmarshal(configBytes, &vm.config); err != nil {
+	if len(init.Config) > 0 {
+		if _, err := Codec.Unmarshal(init.Config, &vm.config); err != nil {
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
 	} else {
@@ -206,7 +189,7 @@ func (vm *VM) Initialize(
 	vm.mempool = NewMempool(1000, vm.log) // Max 1000 pending txs
 
 	// Initialize genesis block
-	genesis, err := ParseGenesis(genesisBytes)
+	genesis, err := ParseGenesis(init.Genesis)
 	if err != nil {
 		return fmt.Errorf("failed to parse genesis: %w", err)
 	}

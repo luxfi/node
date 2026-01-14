@@ -82,8 +82,8 @@ type test struct {
 	expectedNetStakers map[ids.NodeID]stakerStatus
 }
 
-// testContext provides a mock context for testing
-type testContext struct {
+// testRuntime provides a mock runtime for testing
+type testRuntime struct {
 	context.Context // embed stdlib context
 	NetworkID       uint32
 	ChainID         ids.ID
@@ -104,7 +104,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *testContext
+	rt             *testRuntime
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
@@ -125,24 +125,24 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
 	m := atomic.NewMemory(atomicDB)
 
-	// Create consensus context from consensustest
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	// Create Runtime from consensustest
+	rt := consensustest.Runtime(t, consensustest.PChainID)
 
-	// Build our testContext from the consensus context
-	res.ctx = &testContext{
+	// Build our test runtime from the consensus runtime
+	res.rt = &testRuntime{
 		Context:      context.Background(),
-		NetworkID:    consensusCtx.NetworkID,
-		ChainID:      consensusCtx.ChainID,
-		NodeID:       consensusCtx.NodeID,
-		XChainID:     consensusCtx.XChainID,
-		CChainID:     consensusCtx.CChainID,
-		XAssetID:     consensusCtx.XAssetID,
-		Log:          consensusCtx.Log.(log.Logger),
-		Lock:         &consensusCtx.Lock,
-		SharedMemory: m.NewSharedMemory(consensusCtx.ChainID),
+		NetworkID:    rt.NetworkID,
+		ChainID:      rt.ChainID,
+		NodeID:       rt.NodeID,
+		XChainID:     rt.XChainID,
+		CChainID:     rt.CChainID,
+		XAssetID:     rt.XAssetID,
+		Log:          rt.Log.(log.Logger),
+		Lock:         &rt.Lock,
+		SharedMemory: m.NewSharedMemory(rt.ChainID),
 	}
 
-	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
+	res.fx = defaultFx(res.clk, res.rt.Log, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 
@@ -155,7 +155,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 			DB:         res.baseDB,
 			Genesis:    genesistest.NewBytes(t, genesistest.Config{}),
 			Validators: res.config.Validators,
-			Context:    consensusCtx,
+			Runtime:    rt,
 			Rewards:    rewardsCalc,
 		})
 
@@ -172,7 +172,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 
 	res.backend = &executor.Backend{
 		Config:       res.config,
-		Ctx:          consensusCtx,
+		Runtime:      rt,
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
@@ -213,8 +213,8 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	}
 
 	t.Cleanup(func() {
-		res.ctx.Lock.Lock()
-		defer res.ctx.Lock.Unlock()
+		res.rt.Lock.Lock()
+		defer res.rt.Lock.Unlock()
 
 		if res.mockedState != nil {
 			// state is mocked, nothing to do here
@@ -245,12 +245,12 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		c.keys = genesistest.DefaultFundedKeys
 	}
 
-	// Get consensus context
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	// Get Runtime
+	rt := consensustest.Runtime(t, consensustest.PChainID)
 
 	return txstest.NewWallet(
 		t,
-		consensusCtx,
+		rt,
 		&config.Config{
 			TrackedChains:          e.config.TrackedChains,
 			SybilProtectionEnabled: e.config.SybilProtectionEnabled,
@@ -260,7 +260,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		secp256k1fx.NewKeychain(c.keys...),
 		c.chainIDs,
 		nil, // validationIDs
-		[]ids.ID{e.ctx.CChainID, e.ctx.XChainID},
+		[]ids.ID{e.rt.CChainID, e.rt.XChainID},
 	)
 }
 

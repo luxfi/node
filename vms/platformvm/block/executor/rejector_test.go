@@ -6,19 +6,18 @@ package executor
 import (
 	"go.uber.org/mock/gomock"
 
-	"context"
 	"testing"
 	"time"
 
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -129,18 +128,10 @@ func TestRejectBlock(t *testing.T) {
 				blk.Parent(): nil,
 				blk.ID():     nil,
 			}
-			testCtx := testcontext.New(context.Background())
+			rt := consensustest.Runtime(t, constants.PlatformChainID)
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &runtime.Runtime{
-						NetworkID: testCtx.NetworkID,
-						ChainID:   testCtx.ChainID,
-						NodeID:    testCtx.NodeID,
-						XChainID:  testCtx.XChainID,
-						CChainID:  testCtx.CChainID,
-						XAssetID:  testCtx.XAssetID,
-						Log:       testCtx.Log,
-					},
+					rt: rt,
 					blkIDToState: blkIDToState,
 					Mempool:      mempool,
 					state:        state,

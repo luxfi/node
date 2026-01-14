@@ -106,7 +106,7 @@ func (i *index) Close() error {
 // Index that the given transaction is accepted
 // Returned error should be treated as fatal; the VM should not commit [containerID]
 // or any new containers as accepted.
-func (i *index) Accept(ctx *runtime.Runtime, containerID ids.ID, containerBytes []byte) error {
+func (i *index) Accept(rt *runtime.Runtime, containerID ids.ID, containerBytes []byte) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

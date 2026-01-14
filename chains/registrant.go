@@ -13,5 +13,5 @@ type Registrant interface {
 	// Called when a chain is created
 	// This function is called before the chain starts processing messages
 	// [vm] should be a vertex.DAGVM or block.ChainVM
-	RegisterChain(chainName string, ctx *runtime.Runtime, vm interfaces.VM)
+	RegisterChain(chainName string, rt *runtime.Runtime, vm interfaces.VM)
 }

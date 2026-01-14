@@ -56,16 +56,16 @@ func (mr *TransferableOutMockRecorder) Amount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Amount", reflect.TypeOf((*TransferableOut)(nil).Amount))
 }
 
-// InitCtx mocks base method.
-func (m *TransferableOut) InitCtx(arg0 context.Context) {
+// InitRuntime mocks base method.
+func (m *TransferableOut) InitRuntime(arg0 context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitRuntime", arg0)
 }
 
-// InitCtx indicates an expected call of InitCtx.
-func (mr *TransferableOutMockRecorder) InitCtx(arg0 any) *gomock.Call {
+// InitRuntime indicates an expected call of InitRuntime.
+func (mr *TransferableOutMockRecorder) InitRuntime(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*TransferableOut)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRuntime", reflect.TypeOf((*TransferableOut)(nil).InitRuntime), arg0)
 }
 
 // Verify mocks base method.

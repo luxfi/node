@@ -298,7 +298,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
-		proVM.ctx.ChainID,
+		proVM.rt.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -627,7 +627,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		statelessblock.Epoch{}, // Empty epoch
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
-		proVM.ctx.ChainID,
+		proVM.rt.ChainID,
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -670,8 +670,8 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	valState := validatorsmock.NewState(ctrl)
 	valState.EXPECT().GetCurrentHeight(gomock.Any()).Return(pChainHeight, nil).AnyTimes()
 
-	// Create minimal consensus context for testing
-	consensusCtx := &runtime.Runtime{
+	// Create minimal Runtime for testing
+	rt := &runtime.Runtime{
 		NetworkID:      1,
 		ChainID:        ids.GenerateTestID(),
 		NodeID:         ids.GenerateTestNodeID(),
@@ -681,7 +681,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	vm := &VM{
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx:            consensusCtx,
+		rt:             rt,
 		validatorState: valState,
 		logger:         log.NewNoOpLogger(),
 	}

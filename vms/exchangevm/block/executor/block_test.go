@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -966,6 +967,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *tx
 	backend := &txexecutor.Backend{
 		Bootstrapped: bootstrapped,
 		Ctx:          ctx,
+		Runtime:      &runtime.Runtime{ChainID: ids.GenerateTestID()},
 		Config: &config.Config{
 			TxFee:            0,
 			CreateAssetTxFee: 0,

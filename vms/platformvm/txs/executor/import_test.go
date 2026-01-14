@@ -44,12 +44,12 @@ func TestNewImportTx(t *testing.T) {
 	tests := []test{
 		{
 			description:   "can't pay fee",
-			sourceChainID: env.ctx.XChainID,
+			sourceChainID: env.rt.XChainID,
 			sharedMemory: fundedSharedMemory(
 				t,
 				env,
 				sourceKey,
-				env.ctx.XChainID,
+				env.rt.XChainID,
 				map[ids.ID]uint64{},
 				randSrc,
 			),
@@ -57,14 +57,14 @@ func TestNewImportTx(t *testing.T) {
 		},
 		{
 			description:   "can barely pay fee",
-			sourceChainID: env.ctx.XChainID,
+			sourceChainID: env.rt.XChainID,
 			sharedMemory: fundedSharedMemory(
 				t,
 				env,
 				sourceKey,
-				env.ctx.XChainID,
+				env.rt.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.XAssetID: 1,
+					env.rt.XAssetID: 1,
 				},
 				randSrc,
 			),
@@ -72,14 +72,14 @@ func TestNewImportTx(t *testing.T) {
 		},
 		{
 			description:   "attempting to import from C-chain",
-			sourceChainID: env.ctx.CChainID,
+			sourceChainID: env.rt.CChainID,
 			sharedMemory: fundedSharedMemory(
 				t,
 				env,
 				sourceKey,
-				env.ctx.CChainID,
+				env.rt.CChainID,
 				map[ids.ID]uint64{
-					env.ctx.XAssetID: 1,
+					env.rt.XAssetID: 1,
 				},
 				randSrc,
 			),
@@ -88,12 +88,12 @@ func TestNewImportTx(t *testing.T) {
 		},
 		{
 			description:   "attempting to import non-lux from X-chain",
-			sourceChainID: env.ctx.XChainID,
+			sourceChainID: env.rt.XChainID,
 			sharedMemory: fundedSharedMemory(
 				t,
 				env,
 				sourceKey,
-				env.ctx.XChainID,
+				env.rt.XChainID,
 				map[ids.ID]uint64{
 					customAssetID: 1,
 				},
@@ -177,7 +177,7 @@ func fundedSharedMemory(
 	fundedSharedMemoryCalls++
 	m := atomic.NewMemory(prefixdb.New([]byte{fundedSharedMemoryCalls}, env.baseDB))
 
-	sm := m.NewSharedMemory(env.ctx.ChainID)
+	sm := m.NewSharedMemory(env.rt.ChainID)
 	peerSharedMemory := m.NewSharedMemory(peerChain)
 
 	for assetID, amt := range assets {
@@ -201,7 +201,7 @@ func fundedSharedMemory(
 
 		inputID := utxo.InputID()
 		require.NoError(t, peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
-			env.ctx.ChainID: {
+			env.rt.ChainID: {
 				PutRequests: []*atomic.Element{
 					{
 						Key:   inputID[:],

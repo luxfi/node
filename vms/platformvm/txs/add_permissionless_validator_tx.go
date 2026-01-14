@@ -15,8 +15,8 @@ import (
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
@@ -59,18 +59,18 @@ type AddPermissionlessValidatorTx struct {
 	DelegationShares uint32 `serialize:"true" json:"shares"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [AddPermissionlessValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [AddPermissionlessValidatorTx]. Also sets the [rt] to the given [vm.rt] so
 // that the addresses can be json marshalled into human readable format
-func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
+func (tx *AddPermissionlessValidatorTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
-	// Owner doesn't have InitCtx method
-	// tx.ValidatorRewardsOwner.InitCtx(ctx)
-	// tx.DelegatorRewardsOwner.InitCtx(ctx)
+	// Owner doesn't have InitRuntime method
+	// tx.ValidatorRewardsOwner.InitRuntime(ctx)
+	// tx.DelegatorRewardsOwner.InitRuntime(ctx)
 }
 
 func (tx *AddPermissionlessValidatorTx) ChainID() ids.ID {
@@ -120,7 +120,7 @@ func (tx *AddPermissionlessValidatorTx) Shares() uint32 {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *AddPermissionlessValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -134,7 +134,7 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *runtime.Runtime) er
 		return errTooManyShares
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return fmt.Errorf("failed to verify BaseTx: %w", err)
 	}
 	if err := verify.All(&tx.Validator, tx.Signer, tx.ValidatorRewardsOwner, tx.DelegatorRewardsOwner); err != nil {
@@ -190,8 +190,8 @@ func (tx *AddPermissionlessValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddPermissionlessValidatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *AddPermissionlessValidatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *AddPermissionlessValidatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

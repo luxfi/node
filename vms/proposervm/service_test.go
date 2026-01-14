@@ -62,8 +62,8 @@ func TestNewHTTPHandler(t *testing.T) {
 	// The state and windower should already be initialized by initTestProposerVM
 	if proVM.Windower == nil {
 		networkID := ids.ID{}
-		copy(networkID[:], []byte{byte(proVM.ctx.NetworkID)})
-		proVM.Windower = proposer.New(valState, networkID, proVM.ctx.ChainID)
+		copy(networkID[:], []byte{byte(proVM.rt.NetworkID)})
+		proVM.Windower = proposer.New(valState, networkID, proVM.rt.ChainID)
 	}
 
 	// Test creating the HTTP handler

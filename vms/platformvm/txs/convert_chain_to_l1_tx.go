@@ -12,9 +12,9 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 )
@@ -47,7 +47,7 @@ type ConvertChainToL1Tx struct {
 	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
 }
 
-func (tx *ConvertChainToL1Tx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *ConvertChainToL1Tx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -64,7 +64,7 @@ func (tx *ConvertChainToL1Tx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return ErrConvertValidatorsNotSortedAndUnique
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return err
 	}
 	for _, vdr := range tx.Validators {

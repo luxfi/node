@@ -54,7 +54,7 @@ import (
 type testVerifierConfig struct {
 	DB                 database.Database
 	Upgrades           upgrade.Config
-	Context            *runtime.Runtime
+	Runtime            *runtime.Runtime
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -67,8 +67,8 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 	if c.Upgrades == (upgrade.Config{}) {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
-	if c.Context == nil {
-		c.Context = consensustest.Context(t, constants.PlatformChainID)
+	if c.Runtime == nil {
+		c.Runtime = consensustest.Runtime(t, constants.PlatformChainID)
 	}
 	if c.ValidatorFeeConfig == (validatorfee.Config{}) {
 		c.ValidatorFeeConfig = builder.LocalValidatorFeeConfig
@@ -81,7 +81,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 		state = statetest.New(t, statetest.Config{
 			DB:       c.DB,
 			Upgrades: c.Upgrades,
-			Context:  c.Context,
+			Runtime:  c.Runtime,
 		})
 		clock = &mockable.Clock{}
 		fx    = &secp256k1fx.Fx{}
@@ -97,7 +97,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 			lastAccepted: state.GetLastAccepted(),
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        state,
-			ctx:          c.Context,
+			rt:           c.Runtime,
 		},
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Internal{
@@ -106,9 +106,9 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 				SybilProtectionEnabled: true,
 				UpgradeConfig:          c.Upgrades,
 			},
-			Ctx: c.Context,
-			Clk: clock,
-			Fx:  fx,
+			Runtime: c.Runtime,
+			Clk:     clock,
+			Fx:      fx,
 			FlowChecker: utxo.NewVerifier(
 				clock,
 				fx,
@@ -198,7 +198,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		})
 		wallet = txstest.NewWallet(
 			t,
-			verifier.ctx,
+			verifier.rt,
 			&config.Config{
 				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
@@ -211,7 +211,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 			nil, // chainIDs
 		)
 		exportedOutput = &lux.TransferableOutput{
-			Asset: lux.Asset{ID: verifier.ctx.XAssetID},
+			Asset: lux.Asset{ID: verifier.rt.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt:          constants.NanoLux,
 				OutputOwners: secp256k1fx.OutputOwners{},
@@ -222,7 +222,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 
 	// Build the transaction that will be executed.
 	atomicTx, err := wallet.IssueExportTx(
-		verifier.ctx.XChainID,
+		verifier.rt.XChainID,
 		[]*lux.TransferableOutput{
 			exportedOutput,
 		},
@@ -277,7 +277,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 
 			timestamp: initialTimestamp,
 			atomicRequests: map[ids.ID]*atomic.Requests{
-				verifier.ctx.XChainID: {
+				verifier.rt.XChainID: {
 					PutRequests: []*atomic.Element{
 						{
 							Key:    exportedUTXOID[:],
@@ -302,15 +302,15 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		ctx = consensustest.Context(t, constants.PlatformChainID)
+		rt = consensustest.Runtime(t, constants.PlatformChainID)
 
 		baseDB  = memdb.New()
 		stateDB = prefixdb.New([]byte{0}, baseDB)
 		amDB    = prefixdb.New([]byte{1}, baseDB)
 
 		am       = atomic.NewMemory(amDB)
-		sm       = am.NewSharedMemory(ctx.ChainID)
-		xChainSM = am.NewSharedMemory(ctx.XChainID)
+		sm       = am.NewSharedMemory(rt.ChainID)
+		xChainSM = am.NewSharedMemory(rt.XChainID)
 
 		owner = secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -321,7 +321,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: ctx.XAssetID},
+			Asset: lux.Asset{ID: rt.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt:          constants.Lux,
 				OutputOwners: owner,
@@ -334,7 +334,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(xChainSM.Apply(map[ids.ID]*atomic.Requests{
-		ctx.ChainID: {
+		rt.ChainID: {
 			PutRequests: []*atomic.Element{
 				{
 					Key:   inputID[:],
@@ -347,17 +347,17 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		},
 	}))
 
-	ctx.SharedMemory = sm
+	rt.SharedMemory = sm
 
 	var (
 		verifier = newTestVerifier(t, testVerifierConfig{
 			DB:       stateDB,
 			Upgrades: upgradetest.GetConfig(upgradetest.ApricotPhase5),
-			Context:  ctx,
+			Runtime:  rt,
 		})
 		wallet = txstest.NewWallet(
 			t,
-			verifier.ctx,
+			verifier.rt,
 			&config.Config{
 				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
 				SybilProtectionEnabled: verifier.txExecutorBackend.Config.SybilProtectionEnabled,
@@ -367,14 +367,14 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 			secp256k1fx.NewKeychain(genesistest.DefaultFundedKeys[0]),
 			nil,                    // chainIDs
 			nil,                    // validationIDs
-			[]ids.ID{ctx.XChainID}, // Read the UTXO to import
+			[]ids.ID{rt.XChainID}, // Read the UTXO to import
 		)
 		initialTimestamp = verifier.state.GetTimestamp()
 	)
 
 	// Build the transaction that will be executed.
 	tx, err := wallet.IssueImportTx(
-		verifier.ctx.XChainID,
+		verifier.rt.XChainID,
 		&owner,
 	)
 	require.NoError(err)
@@ -425,7 +425,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		}
 		require.Equal(initialTimestamp, atomicBlockState.timestamp)
 		require.Equal(map[ids.ID]*atomic.Requests{
-			verifier.ctx.XChainID: {
+			verifier.rt.XChainID: {
 				RemoveRequests: [][]byte{
 					inputID[:],
 				},
@@ -490,7 +490,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &runtime.Runtime{
+		rt: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -565,7 +565,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &runtime.Runtime{
+		rt: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -628,7 +628,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &runtime.Runtime{
+		rt: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -702,7 +702,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &runtime.Runtime{
+				rt: &runtime.Runtime{
 					NetworkID: constants.UnitTestID,
 					ChainID:   constants.PlatformChainID,
 				},
@@ -804,7 +804,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &runtime.Runtime{
+				rt: &runtime.Runtime{
 					NetworkID: constants.UnitTestID,
 					ChainID:   constants.PlatformChainID,
 				},
@@ -883,7 +883,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &runtime.Runtime{
+		rt: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -942,7 +942,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &runtime.Runtime{
+		rt: &runtime.Runtime{
 			NetworkID: constants.UnitTestID,
 			ChainID:   constants.PlatformChainID,
 		},
@@ -998,7 +998,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &runtime.Runtime{
+			rt: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1043,7 +1043,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &runtime.Runtime{
+			rt: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1087,7 +1087,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &runtime.Runtime{
+			rt: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1132,7 +1132,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &runtime.Runtime{
+			rt: &runtime.Runtime{
 				NetworkID: constants.UnitTestID,
 				ChainID:   constants.PlatformChainID,
 			},
@@ -1158,7 +1158,7 @@ func TestBlockExecutionWithComplexity(t *testing.T) {
 	verifier := newTestVerifier(t, testVerifierConfig{})
 	wallet := txstest.NewWalletWithOptions(
 		t,
-		verifier.ctx,
+		verifier.rt,
 		txstest.WalletConfig{
 			Config: &config.Config{
 				TrackedChains:          verifier.txExecutorBackend.Config.TrackedChains,
@@ -1422,11 +1422,11 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			ctx := consensustest.Context(t, constants.PlatformChainID)
-			ctx.NetworkID = test.networkID
+			rt := consensustest.Runtime(t, constants.PlatformChainID)
+			rt.NetworkID = test.networkID
 			verifier := newTestVerifier(t, testVerifierConfig{
 				Upgrades: upgradetest.GetConfig(test.currentFork),
-				Context:  ctx,
+				Runtime:  rt,
 				ValidatorFeeConfig: validatorfee.Config{
 					Capacity:                 builder.LocalValidatorFeeConfig.Capacity,
 					Target:                   builder.LocalValidatorFeeConfig.Target,

@@ -17,9 +17,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/vm/chain/blocktest"
-	vmrpc "github.com/luxfi/vm/rpc"
 
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/runtime"
 )
 
 var (
@@ -55,7 +56,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 		blk2.HeightV = 2
 		blk2.TimestampV = time2
 
-		vm.InitializeF = func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error {
+		vm.InitializeF = func(context.Context, common.VMInit) error {
 			return nil
 		}
 		vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
@@ -89,14 +90,17 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.Runtime().Stop(context.Background())
 
-	chainCtx := &vmrpc.Context{
+	chainRuntime := &runtime.Runtime{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
 		Log:       log.NewWriter(io.Discard),
 	}
 
-	require.NoError(vm.Initialize(context.Background(), chainCtx, memdb.New(), nil, nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), common.VMInit{
+		Runtime: chainRuntime,
+		DB:      memdb.New(),
+	}))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

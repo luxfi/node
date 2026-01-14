@@ -32,7 +32,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -68,7 +68,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -94,13 +94,13 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		},
 	}
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	require.NoError(simpleTransferChainOwnershipTx.SyntacticVerify(ctx))
+	require.NoError(simpleTransferChainOwnershipTx.SyntacticVerify(rt))
 
 	expectedUnsignedSimpleTransferChainOwnershipTxBytes := []byte{
 		// Codec version
@@ -178,7 +178,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -218,7 +218,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: luxAssetID,
+							ID: xAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.Lux,
@@ -282,7 +282,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
 	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(ctx2))
 
@@ -453,9 +453,9 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: luxAssetID,
+		XAssetID: xAssetID,
 	}
-	unsignedComplexTransferChainOwnershipTx.InitCtx(ctx3)
+	unsignedComplexTransferChainOwnershipTx.InitRuntime(ctx3)
 
 	unsignedComplexTransferChainOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferChainOwnershipTx, "", "\t")
 	require.NoError(err)
@@ -559,7 +559,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &runtime.Runtime{
+	rt := &runtime.Runtime{
 		NetworkID: networkID,
 
 		ChainID: chainID,
@@ -570,7 +570,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 		SyntacticallyVerified: true,
 	}
 	// Sanity check.
-	require.NoError(t, verifiedBaseTx.SyntacticVerify(ctx))
+	require.NoError(t, verifiedBaseTx.SyntacticVerify(rt))
 
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
@@ -580,7 +580,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 		},
 	}
 	// Sanity check.
-	require.NoError(t, validBaseTx.SyntacticVerify(ctx))
+	require.NoError(t, validBaseTx.SyntacticVerify(rt))
 	// Make sure we're not caching the verification result.
 	require.False(t, validBaseTx.SyntacticallyVerified)
 
@@ -664,7 +664,7 @@ func TestTransferChainOwnershipTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(ctx)
+			err := tx.SyntacticVerify(rt)
 			require.ErrorIs(err, tt.expectedErr)
 			if tt.expectedErr != nil {
 				return

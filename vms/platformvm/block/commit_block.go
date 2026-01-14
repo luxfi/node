@@ -56,7 +56,7 @@ func (b *ApricotCommitBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotCommitBlock) InitCtx(*runtime.Runtime) {}
+func (*ApricotCommitBlock) InitRuntime(*runtime.Runtime) {}
 
 func (*ApricotCommitBlock) Txs() []*txs.Tx {
 	return nil
@@ -79,14 +79,14 @@ func NewApricotCommitBlock(
 	return blk, initialize(blk, &blk.CommonBlock)
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *BanffCommitBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *BanffCommitBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }
 
-// InitializeWithContext initializes the block with consensus context
-func (b *ApricotCommitBlock) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the block with Runtime
+func (b *ApricotCommitBlock) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

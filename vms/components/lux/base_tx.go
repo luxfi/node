@@ -6,6 +6,7 @@ package lux
 import (
 	"errors"
 	"fmt"
+
 	"github.com/luxfi/consensus/runtime"
 
 	"github.com/luxfi/ids"
@@ -46,13 +47,13 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx *runtime.Runtime) error {
+func (t *BaseTx) Verify(rt *runtime.Runtime) error {
 	switch {
 	case t == nil:
 		return ErrNilTx
-	case t.NetworkID != ctx.NetworkID:
+	case t.NetworkID != rt.NetworkID:
 		return ErrWrongNetworkID
-	case t.BlockchainID != ctx.ChainID:
+	case t.BlockchainID != rt.ChainID:
 		return ErrWrongChainID
 	case len(t.Memo) > MaxMemoSize:
 		return fmt.Errorf(

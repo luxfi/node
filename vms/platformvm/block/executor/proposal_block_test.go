@@ -78,7 +78,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: env.ctx.XAssetID,
+					ID: env.rt.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,
@@ -200,7 +200,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: env.ctx.XAssetID,
+					ID: env.rt.XAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 1,
@@ -1386,7 +1386,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.XAssetID,
+		env.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		10000,
@@ -1468,7 +1468,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			Chain: constants.PrimaryNetworkID,
 		},
 		pop,
-		env.ctx.XAssetID,
+		env.rt.XAssetID,
 		rewardsOwner,
 		rewardsOwner,
 		10000,
@@ -1518,10 +1518,10 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Create a context with the proper IDs
-	ctx := &runtime.Runtime{
+	// Create a runtime with the proper IDs
+	rt := &runtime.Runtime{
 		NetworkID: constants.UnitTestID,
 		ChainID:   constants.PlatformChainID,
 	}
-	return tx, tx.SyntacticVerify(ctx)
+	return tx, tx.SyntacticVerify(rt)
 }

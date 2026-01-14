@@ -14,8 +14,8 @@ import (
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -42,16 +42,16 @@ type AddValidatorTx struct {
 	DelegationShares uint32 `serialize:"true" json:"shares"`
 }
 
-// InitCtx sets the FxID fields in the inputs and outputs of this
-// [AddValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// InitRuntime sets the FxID fields in the inputs and outputs of this
+// [AddValidatorTx]. Also sets the [rt] to the given [vm.rt] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddValidatorTx) InitCtx(ctx *runtime.Runtime) {
-	tx.BaseTx.InitCtx(ctx)
+func (tx *AddValidatorTx) InitRuntime(rt *runtime.Runtime) {
+	tx.BaseTx.InitRuntime(rt)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
-		out.InitCtx(ctx)
+		out.InitRuntime(rt)
 	}
-	// Owner doesn't have InitCtx method
+	// Owner doesn't have InitRuntime method
 }
 
 func (*AddValidatorTx) ChainID() ids.ID {
@@ -91,7 +91,7 @@ func (tx *AddValidatorTx) Shares() uint32 {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
+func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -101,7 +101,7 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		return errTooManyShares
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
+	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
 		return fmt.Errorf("failed to verify BaseTx: %w", err)
 	}
 	if err := verify.All(&tx.Validator, tx.RewardsOwner); err != nil {
@@ -120,8 +120,8 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx *runtime.Runtime) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		luxAssetID := ctx.XAssetID
-		if assetID != luxAssetID {
+		xAssetID := rt.XAssetID
+		if assetID != xAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
 	}
@@ -142,8 +142,8 @@ func (tx *AddValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddValidatorTx(tx)
 }
 
-// InitializeWithContext initializes the transaction with consensus context
-func (tx *AddValidatorTx) InitializeWithContext(ctx context.Context) error {
+// InitializeWithRuntime initializes the transaction with Runtime
+func (tx *AddValidatorTx) Initialize(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

@@ -12,15 +12,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
 	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	proposerBlock "github.com/luxfi/node/vms/proposervm/block"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 )
 
 var (
@@ -535,7 +538,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 	require.NoError(proVM.Shutdown(context.Background()))
 
 	// Restart the node.
-	ctx := proVM.ctx
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 	proVM = New(
 		coreVM,
 		Config{
@@ -548,17 +551,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 		},
 	)
 
-	coreVM.InitializeF = func(
-		context.Context,
-		interface{},
-		interface{},
-		[]byte,
-		[]byte,
-		[]byte,
-		interface{},
-		[]interface{},
-		interface{},
-	) error {
+	coreVM.InitializeF = func(context.Context, common.VMInit) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
@@ -596,14 +589,11 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		ctx,
-		db,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		common.VMInit{
+			Runtime: rt,
+			DB:      db,
+			Log:     log.NoLog{},
+		},
 	))
 	defer func() {
 		require.NoError(proVM.Shutdown(context.Background()))

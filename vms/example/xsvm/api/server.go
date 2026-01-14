@@ -34,14 +34,14 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *runtime.Runtime,
+	rt *runtime.Runtime,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
 	builder builder.Builder,
 ) Server {
 	return &server{
-		ctx:     ctx,
+		rt:      rt,
 		genesis: genesis,
 		state:   state,
 		chain:   chain,
@@ -50,7 +50,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *runtime.Runtime
+	rt      *runtime.Runtime
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain
@@ -65,9 +65,9 @@ type NetworkReply struct {
 }
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
-	reply.NetworkID = s.ctx.NetworkID
-	reply.NetID = s.ctx.ChainID
-	reply.ChainID = s.ctx.ChainID
+	reply.NetworkID = s.rt.NetworkID
+	reply.NetID = s.rt.ChainID
+	reply.ChainID = s.rt.ChainID
 	return nil
 }
 
