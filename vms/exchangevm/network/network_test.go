@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/consensus/validator"
-	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"

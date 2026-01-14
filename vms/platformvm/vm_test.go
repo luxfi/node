@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	// "github.com/luxfi/consensus/engine/chain/bootstrap" // unused
 	"github.com/luxfi/consensus/core"
@@ -26,8 +26,8 @@ import (
 	// "github.com/luxfi/consensus/networking/sender" // unused
 	// "github.com/luxfi/consensus/networking/sender/sendertest" // unused
 	// "github.com/luxfi/consensus/networking/timeout" // unused
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	// "github.com/luxfi/crypto/bls" // unused
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"

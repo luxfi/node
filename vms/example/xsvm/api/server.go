@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
@@ -60,13 +60,13 @@ type server struct {
 
 type NetworkReply struct {
 	NetworkID uint32 `json:"networkID"`
-	NetID     ids.ID `json:"netID"`
+	ChainID     ids.ID `json:"netID"`
 	ChainID   ids.ID `json:"chainID"`
 }
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
 	reply.NetworkID = s.rt.NetworkID
-	reply.NetID = s.rt.ChainID
+	reply.ChainID = s.rt.ChainID
 	reply.ChainID = s.rt.ChainID
 	return nil
 }

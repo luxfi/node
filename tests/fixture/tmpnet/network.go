@@ -49,7 +49,7 @@ type Network struct {
 
 // Net represents a net (L2 chain) in the network
 type Net struct {
-	NetID        ids.ID
+	ChainID        ids.ID
 	Chains       []*Chain
 	ValidatorIDs []ids.NodeID
 }

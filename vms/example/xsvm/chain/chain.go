@@ -5,7 +5,7 @@ package chain
 
 import (
 	consensuschain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -26,7 +26,7 @@ type Chain interface {
 }
 
 type chain struct {
-	chainContext  *runtime.Runtime
+	chainRuntime  *runtime.Runtime
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
@@ -46,7 +46,7 @@ func New(rt *runtime.Runtime, db database.Database) (Chain, error) {
 	}
 
 	c := &chain{
-		chainContext:   rt,
+		chainRuntime:   rt,
 		acceptedState:  db,
 		lastAcceptedID: lastAcceptedID,
 	}

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/codec"
-	validators "github.com/luxfi/consensus/validator"
-	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"

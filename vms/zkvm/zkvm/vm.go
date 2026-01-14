@@ -19,12 +19,12 @@ import (
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/warp"
 
-	consensusversion "github.com/luxfi/consensus/version"
+	consensusversion "github.com/luxfi/version"
 )
 
 const (

@@ -20,9 +20,9 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/wrappers"
-	"github.com/luxfi/consensus/runtime"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/container/maybe"
@@ -659,7 +659,7 @@ func New(
 	chainIDNodeIDCache, err := metercacher.New(
 		"l1_validator_chain_id_node_id_cache",
 		reg,
-		lru.NewSizedCache(execCfg.L1NetIDNodeIDCacheSize, func(chainIDNodeID, bool) int {
+		lru.NewSizedCache(execCfg.L1ChainIDNodeIDCacheSize, func(chainIDNodeID, bool) int {
 			return ids.IDLen + ids.NodeIDLen + wrappers.BoolLen
 		}),
 	)

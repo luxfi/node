@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

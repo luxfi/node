@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/consensus/engine/interfaces"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"

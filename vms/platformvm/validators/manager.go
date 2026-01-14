@@ -10,7 +10,7 @@ import (
 	"maps"
 	"time"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -287,7 +287,7 @@ func (m *manager) makeValidatorSet(
 	// Verify that the target height is not in the future
 	if currentHeight < targetHeight {
 		return nil, 0, fmt.Errorf(
-			"%w with NetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
+			"%w with ChainID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
 			errUnfinalizedHeight,
 			netID,
 			currentHeight,

@@ -26,7 +26,7 @@ var Default = Config{
 	NetToL1ConversionCacheSize:    4 * constants.MiB,
 	L1WeightsCacheSize:            16 * constants.KiB,
 	L1InactiveValidatorsCacheSize: 256 * constants.KiB,
-	L1NetIDNodeIDCacheSize:        16 * constants.KiB,
+	L1ChainIDNodeIDCacheSize:        16 * constants.KiB,
 	ChecksumsEnabled:              false,
 	MempoolPruneFrequency:         30 * time.Minute,
 	TxFee:                         constants.MilliLux,
@@ -51,7 +51,7 @@ type Config struct {
 	NetToL1ConversionCacheSize    int             `json:"chain-to-l1-conversion-cache-size"`
 	L1WeightsCacheSize            int             `json:"l1-weights-cache-size"`
 	L1InactiveValidatorsCacheSize int             `json:"l1-inactive-validators-cache-size"`
-	L1NetIDNodeIDCacheSize        int             `json:"l1-chain-id-node-id-cache-size"`
+	L1ChainIDNodeIDCacheSize        int             `json:"l1-chain-id-node-id-cache-size"`
 	ChecksumsEnabled              bool            `json:"checksums-enabled"`
 	MempoolPruneFrequency         time.Duration   `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool            `json:"sybil-protection-enabled"`

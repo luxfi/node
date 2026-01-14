@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/runtime"
-	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

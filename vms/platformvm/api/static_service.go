@@ -161,13 +161,13 @@ type PrimaryDelegator struct {
 // [VMID] is the ID of the VM this chain runs.
 // [FxIDs] are the IDs of the Fxs the chain supports.
 // [Name] is a human-readable, non-unique name for the chain.
-// [NetID] is the ID of the net that validates the chain
+// [ChainID] is the ID of the net that validates the chain
 type Chain struct {
 	GenesisData string   `json:"genesisData"`
 	VMID        ids.ID   `json:"vmID"`
 	FxIDs       []ids.ID `json:"fxIDs"`
 	Name        string   `json:"name"`
-	NetID       ids.ID   `json:"netID"`
+	ChainID       ids.ID   `json:"netID"`
 }
 
 // BuildGenesisArgs are the arguments used to create
@@ -363,7 +363,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
-			ChainID:        chain.NetID,
+			ChainID:        chain.ChainID,
 			BlockchainName: chain.Name,
 			VMID:           chain.VMID,
 			FxIDs:          chain.FxIDs,

@@ -12,14 +12,14 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
@@ -28,8 +28,8 @@ import (
 
 var errCustom = errors.New("custom error")
 
-// testContext creates a test context with the given parameters
-func testContext(networkID uint32, chainID, xAssetID ids.ID) *runtime.Runtime {
+// testRuntime creates a test runtime with the given parameters.
+func testRuntime(networkID uint32, chainID, xAssetID ids.ID) *runtime.Runtime {
 	return &runtime.Runtime{
 		NetworkID: networkID,
 
@@ -622,13 +622,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexAddPrimaryTx.InitRuntime(ctx2)
+	unsignedComplexAddPrimaryTx.InitRuntime(rt2)
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
@@ -958,7 +958,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		// NetID
+		// ChainID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -1390,13 +1390,13 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &runtime.Runtime{
+	rt3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexAddNetTx.InitRuntime(ctx3)
+	unsignedComplexAddNetTx.InitRuntime(rt3)
 
 	unsignedComplexAddNetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddNetTx, "", "\t")
 	require.NoError(err)

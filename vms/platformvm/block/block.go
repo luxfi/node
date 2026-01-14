@@ -4,7 +4,7 @@
 package block
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"fmt"
 	"time"

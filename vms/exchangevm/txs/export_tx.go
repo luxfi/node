@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 )
 
 var (

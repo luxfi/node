@@ -6,7 +6,7 @@ package txs
 import (
 	"context"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"github.com/luxfi/node/vms/platformvm/fx"
 )

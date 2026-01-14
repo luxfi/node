@@ -568,7 +568,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 				BlockchainID: rt.ChainID,
 			},
 		}
-		validNetID      = ids.GenerateTestID()
+		validChainID      = ids.GenerateTestID()
 		invalidAddress  = make(types.JSONByteSlice, MaxChainAddressLength+1)
 		validValidators = []*ConvertChainToL1Validator{
 			{
@@ -625,7 +625,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid address",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:      validNetID,
+				Chain:      validChainID,
 				Address:    invalidAddress,
 				Validators: validValidators,
 				ChainAuth:  validNetAuth,
@@ -636,7 +636,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid number of validators",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:      validNetID,
+				Chain:      validChainID,
 				Validators: nil,
 				ChainAuth:  validNetAuth,
 			},
@@ -646,7 +646,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator order",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: []byte{
@@ -671,7 +671,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator weight",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -689,7 +689,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator nodeID length",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen + 1),
@@ -707,7 +707,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator nodeID",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                ids.EmptyNodeID[:],
@@ -725,7 +725,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator pop",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -743,7 +743,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator remaining balance owner",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID: utils.RandomBytes(ids.NodeIDLen),
@@ -763,7 +763,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid validator deactivation owner",
 			tx: &ConvertChainToL1Tx{
 				BaseTx: validBaseTx,
-				Chain:  validNetID,
+				Chain:  validChainID,
 				Validators: []*ConvertChainToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
@@ -783,7 +783,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid BaseTx",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     BaseTx{},
-				Chain:      validNetID,
+				Chain:      validChainID,
 				Validators: validValidators,
 				ChainAuth:  validNetAuth,
 			},
@@ -793,7 +793,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "invalid chainAuth",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:      validNetID,
+				Chain:      validChainID,
 				Validators: validValidators,
 				ChainAuth:  invalidNetAuth,
 			},
@@ -803,7 +803,7 @@ func TestConvertChainToL1TxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			tx: &ConvertChainToL1Tx{
 				BaseTx:     validBaseTx,
-				Chain:      validNetID,
+				Chain:      validChainID,
 				Validators: validValidators,
 				ChainAuth:  validNetAuth,
 			},

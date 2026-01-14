@@ -104,7 +104,7 @@ func TestConfigUnmarshal(t *testing.T) {
 			NetToL1ConversionCacheSize:    10,
 			L1WeightsCacheSize:            11,
 			L1InactiveValidatorsCacheSize: 12,
-			L1NetIDNodeIDCacheSize:        13,
+			L1ChainIDNodeIDCacheSize:        13,
 			ChecksumsEnabled:              true,
 			SybilProtectionEnabled:        true,
 			TrackedChains:                 trackedChains,

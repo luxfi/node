@@ -47,7 +47,7 @@ func TestSameNet(t *testing.T) {
 			name: "same chain",
 			chainRuntime: &ChainContext{
 				ChainID:        chainID0,
-				NetID:          netID0,
+				ChainID:          netID0,
 				ValidatorState: &testValidatorState{},
 			},
 			chainID: chainID0,
@@ -57,7 +57,7 @@ func TestSameNet(t *testing.T) {
 			name: "unknown chain",
 			chainRuntime: &ChainContext{
 				ChainID: chainID0,
-				NetID:   netID0,
+				ChainID:   netID0,
 				ValidatorState: &testValidatorState{
 					chains: map[ids.ID]ids.ID{},
 					err:    errMissing,
@@ -70,7 +70,7 @@ func TestSameNet(t *testing.T) {
 			name: "wrong chain",
 			chainRuntime: &ChainContext{
 				ChainID: chainID0,
-				NetID:   netID0,
+				ChainID:   netID0,
 				ValidatorState: &testValidatorState{
 					chains: map[ids.ID]ids.ID{
 						chainID1: netID1,
@@ -78,13 +78,13 @@ func TestSameNet(t *testing.T) {
 				},
 			},
 			chainID: chainID1,
-			result:  ErrMismatchedNetIDs,
+			result:  ErrMismatchedChainIDs,
 		},
 		{
 			name: "same chain",
 			chainRuntime: &ChainContext{
 				ChainID: chainID0,
-				NetID:   netID0,
+				ChainID:   netID0,
 				ValidatorState: &testValidatorState{
 					chains: map[ids.ID]ids.ID{
 						chainID1: netID0,

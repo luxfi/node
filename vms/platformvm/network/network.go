@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/platformvm/config"

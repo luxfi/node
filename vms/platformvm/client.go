@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/address"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/formatting"
@@ -180,7 +180,7 @@ type GetNetClientResponse struct {
 func (c *Client) GetNet(ctx context.Context, chainID ids.ID, options ...rpc.Option) (GetNetClientResponse, error) {
 	res := &GetNetResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getNet", &GetNetArgs{
-		NetID: chainID,
+		ChainID: chainID,
 	}, res, options...)
 	if err != nil {
 		return GetNetClientResponse{}, err
@@ -245,7 +245,7 @@ func (c *Client) GetNets(ctx context.Context, ids []ids.ID, options ...rpc.Optio
 func (c *Client) GetStakingAssetID(ctx context.Context, chainID ids.ID, options ...rpc.Option) (ids.ID, error) {
 	res := &GetStakingAssetIDResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getStakingAssetID", &GetStakingAssetIDArgs{
-		NetID: chainID,
+		ChainID: chainID,
 	}, res, options...)
 	return res.AssetID, err
 }
@@ -259,7 +259,7 @@ func (c *Client) GetCurrentValidators(
 ) ([]ClientPermissionlessValidator, error) {
 	res := &GetCurrentValidatorsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getCurrentValidators", &GetCurrentValidatorsArgs{
-		NetID:   netID,
+		ChainID:   netID,
 		NodeIDs: nodeIDs,
 	}, res, options...)
 	if err != nil {
@@ -270,7 +270,7 @@ func (c *Client) GetCurrentValidators(
 
 // L1Validator is the response from calling GetL1Validator on the API client.
 type L1Validator struct {
-	NetID                 ids.ID
+	ChainID                 ids.ID
 	NodeID                ids.NodeID
 	PublicKey             *bls.PublicKey
 	RemainingBalanceOwner *secp256k1fx.OutputOwners
@@ -326,7 +326,7 @@ func (c *Client) GetL1Validator(
 	}
 
 	return L1Validator{
-		NetID:     res.NetID,
+		ChainID:     res.ChainID,
 		NodeID:    res.NodeID,
 		PublicKey: pk,
 		RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -351,7 +351,7 @@ func (c *Client) GetL1Validator(
 func (c *Client) GetCurrentSupply(ctx context.Context, chainID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetCurrentSupplyReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getCurrentSupply", &GetCurrentSupplyArgs{
-		NetID: chainID,
+		ChainID: chainID,
 	}, res, options...)
 	return uint64(res.Supply), uint64(res.Height), err
 }
@@ -361,7 +361,7 @@ func (c *Client) GetCurrentSupply(ctx context.Context, chainID ids.ID, options .
 func (c *Client) SampleValidators(ctx context.Context, chainID ids.ID, sampleSize uint16, options ...rpc.Option) ([]ids.NodeID, error) {
 	res := &SampleValidatorsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.sampleValidators", &SampleValidatorsArgs{
-		NetID: chainID,
+		ChainID: chainID,
 		Size:  json.Uint16(sampleSize),
 	}, res, options...)
 	return res.Validators, err
@@ -382,14 +382,14 @@ func (c *Client) ValidatedBy(ctx context.Context, blockchainID ids.ID, options .
 	err := c.Requester.SendRequest(ctx, "platform.validatedBy", &ValidatedByArgs{
 		BlockchainID: blockchainID,
 	}, res, options...)
-	return res.NetID, err
+	return res.ChainID, err
 }
 
 // Validates returns the list of blockchains that are validated by chainID.
 func (c *Client) Validates(ctx context.Context, chainID ids.ID, options ...rpc.Option) ([]ids.ID, error) {
 	res := &ValidatesResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.validates", &ValidatesArgs{
-		NetID: chainID,
+		ChainID: chainID,
 	}, res, options...)
 	return res.BlockchainIDs, err
 }
@@ -489,7 +489,7 @@ func (c *Client) GetStake(
 func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetMinStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getMinStake", &GetMinStakeArgs{
-		NetID: chainID,
+		ChainID: chainID,
 	}, res, options...)
 	return uint64(res.MinValidatorStake), uint64(res.MinDelegatorStake), err
 }
@@ -498,7 +498,7 @@ func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc
 func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc.Option) (uint64, error) {
 	res := &GetTotalStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getTotalStake", &GetTotalStakeArgs{
-		NetID: netID,
+		ChainID: netID,
 	}, res, options...)
 	var amount json.Uint64
 	if netID == constants.PrimaryNetworkID {
@@ -547,7 +547,7 @@ func (c *Client) GetValidatorsAt(
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	res := &GetValidatorsAtReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getValidatorsAt", &GetValidatorsAtArgs{
-		NetID:  chainID,
+		ChainID:  chainID,
 		Height: height,
 	}, res, options...)
 	return res.Validators, err

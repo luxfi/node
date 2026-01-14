@@ -5,7 +5,7 @@ description: Complete API reference for the Platform Chain (P-Chain)
 
 # Platform Chain API
 
-The Platform Chain (P-Chain) is responsible for staking, validators, and subnet management. This API provides methods to interact with the P-Chain.
+The Platform Chain (P-Chain) is responsible for staking, validators, and chain management. This API provides methods to interact with the P-Chain.
 
 ## Endpoint
 
@@ -124,7 +124,7 @@ curl -X POST --data '{
 Get current validators set.
 
 **Parameters:**
-- `subnetID`: `string` - (optional) Subnet ID (omit for primary network)
+- `chainID`: `string` - (optional) Chain ID (omit for primary network)
 - `nodeIDs`: `[]string` - (optional) Filter by specific node IDs
 
 **Example Request:**
@@ -180,7 +180,7 @@ curl -X POST --data '{
 Get validators waiting to become active.
 
 **Parameters:**
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 - `nodeIDs`: `[]string` - (optional) Filter by node IDs
 
 **Example Request:**
@@ -201,7 +201,7 @@ Get validators at a specific P-Chain height.
 
 **Parameters:**
 - `height`: `uint64` - P-Chain height
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 
 **Example Request:**
 ```bash
@@ -265,7 +265,7 @@ curl -X POST --data '{
 Get minimum staking amounts.
 
 **Parameters:**
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 
 **Example Request:**
 ```bash
@@ -296,7 +296,7 @@ curl -X POST --data '{
 Get total staked on the network.
 
 **Parameters:**
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 
 **Example Request:**
 ```bash
@@ -375,13 +375,13 @@ curl -X POST --data '{
             {
                 "id": "2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX",
                 "name": "X-Chain",
-                "subnetID": "11111111111111111111111111111111LpoYY",
+                "chainID": "11111111111111111111111111111111LpoYY",
                 "vmID": "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq"
             },
             {
                 "id": "2S4rNkYfzCTzWMKiBnfRUrqW755wS1EdjB9YWkov8SBHMUZmE5",
                 "name": "C-Chain",
-                "subnetID": "11111111111111111111111111111111LpoYY",
+                "chainID": "11111111111111111111111111111111LpoYY",
                 "vmID": "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6"
             }
         ]
@@ -479,7 +479,7 @@ Status values:
 Get current LUX supply.
 
 **Parameters:**
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 
 **Example Request:**
 ```bash
@@ -493,18 +493,18 @@ curl -X POST --data '{
 
 ---
 
-### platform.getSubnets
+### platform.getChains
 
-Get all subnets.
+Get all chains.
 
 **Parameters:**
-- `ids`: `[]string` - (optional) Filter by subnet IDs
+- `ids`: `[]string` - (optional) Filter by chain IDs
 
 **Example Request:**
 ```bash
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "platform.getSubnets",
+    "method": "platform.getChains",
     "params": {},
     "id": 1
 }' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
@@ -564,13 +564,13 @@ Delegate to a validator.
 
 ---
 
-### platform.addSubnetValidator
+### platform.addChainValidator
 
-Add a subnet validator.
+Add a chain validator.
 
 **Parameters:**
 - `nodeID`: `string` - Node ID
-- `subnetID`: `string` - Subnet ID
+- `chainID`: `string` - Chain ID
 - `startTime`: `uint64` - Start time
 - `endTime`: `uint64` - End time
 - `weight`: `uint64` - Validator weight
@@ -579,9 +579,9 @@ Add a subnet validator.
 
 ---
 
-### platform.createSubnet
+### platform.createChain
 
-Create a new subnet.
+Create a new chain.
 
 **Parameters:**
 - `controlKeys`: `[]string` - Control addresses
@@ -593,10 +593,10 @@ Create a new subnet.
 
 ### platform.createBlockchain
 
-Create a blockchain in a subnet.
+Create a blockchain in a chain.
 
 **Parameters:**
-- `subnetID`: `string` - Subnet ID
+- `chainID`: `string` - Chain ID
 - `vmID`: `string` - VM ID
 - `name`: `string` - Blockchain name
 - `genesisData`: `string` - Genesis configuration
@@ -636,7 +636,7 @@ Sample validator set for consensus.
 
 **Parameters:**
 - `size`: `uint64` - Sample size
-- `subnetID`: `string` - (optional) Subnet ID
+- `chainID`: `string` - (optional) Chain ID
 
 ---
 

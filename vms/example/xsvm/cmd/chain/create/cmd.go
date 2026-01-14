@@ -70,7 +70,7 @@ func createFunc(c *cobra.Command, args []string) error {
 
 	createChainStartTime := time.Now()
 	createChainTxID, err := wallet.P().IssueCreateChainTx(
-		config.NetID,
+		config.ChainID,
 		genesisBytes,
 		constants.XSVMID,
 		nil,

@@ -1264,7 +1264,7 @@ func TestIPTracker_PreventBloomFilterAddition(t *testing.T) {
 func TestIPTracker_GetGossipableIPs(t *testing.T) {
 	netIDA := ids.GenerateTestID()
 	netIDB := ids.GenerateTestID()
-	unknownNetID := ids.GenerateTestID()
+	unknownChainID := ids.GenerateTestID()
 
 	tracker := newTestIPTracker(t)
 	tracker.Connected(ip, set.Of(constants.PrimaryNetworkID, netIDA))
@@ -1368,8 +1368,8 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 		},
 		{
 			name:      "skip unknown net",
-			toIterate: set.Of(unknownNetID),
-			allowed:   set.Of(unknownNetID),
+			toIterate: set.Of(unknownChainID),
+			allowed:   set.Of(unknownChainID),
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,

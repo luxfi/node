@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"golang.org/x/sync/semaphore"
 
-	consensusversion "github.com/luxfi/consensus/version"
+	consensusversion "github.com/luxfi/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"

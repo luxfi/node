@@ -13,10 +13,10 @@ import (
 
 	"github.com/luxfi/address"
 	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"

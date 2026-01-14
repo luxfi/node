@@ -2,11 +2,11 @@
 
 ## Recap of Lux Nets
 
-The Lux Network is composed of multiple validator sets and blockchains. A validator set defines a group of validators and their specified weights in the consensus process. A subnet is a validator set working together to achieve consensus on a set of blockchains. Every blockchain is validated by one subnet, and one subnet can validate many blockchains.
+The Lux Network is composed of multiple validator sets and blockchains. A validator set defines a group of validators and their specified weights in the consensus process. A chain is a validator set working together to achieve consensus on a set of blockchains. Every blockchain is validated by one chain, and one chain can validate many blockchains.
 
-There is a special subnet inherent to the Lux Network called the Primary Network. The Primary Network is validated by every node on the Lux network. All subnets' validator sets are required to be a subset of the Primary Network's validator set. That is, if a validator belongs to a subnet then it also belongs to the Primary Network. The Primary Network validates three blockchains that are inherent to the Lux Network: the P-Chain, C-Chain, and X-Chain.
+There is a special chain inherent to the Lux Network called the Primary Network. The Primary Network is validated by every node on the Lux network. All chains' validator sets are required to be a subset of the Primary Network's validator set. That is, if a validator belongs to a chain then it also belongs to the Primary Network. The Primary Network validates three blockchains that are inherent to the Lux Network: the P-Chain, C-Chain, and X-Chain.
 
-For each blockchain, consensus is driven by the consensus engine. For each subnet, the P-Chain, or Platform Chain, defines the validator set and the set of blockchains that are validated by the subnet.
+For each blockchain, consensus is driven by the consensus engine. For each chain, the P-Chain, or Platform Chain, defines the validator set and the set of blockchains that are validated by the chain.
 
 A blockchain consists of two components: a consensus engine and a Virtual Machine (VM). The consensus engine samples validators, handles the responses, and pushes the results of the completed polls into the consensus [code](../consensus/consensus/) to decide which containers to Accept/Reject. The VM encodes the application logic for the blockchain. The VM defines the contents of a block, the rules for determining whether a block is valid, the APIs exposed to users, the state transition that occurs if a given block is accepted, and so on.
 

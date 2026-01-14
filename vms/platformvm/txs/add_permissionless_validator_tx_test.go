@@ -11,17 +11,17 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
@@ -910,7 +910,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		// NetID
+		// ChainID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -1134,13 +1134,13 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  constants.PlatformChainID,
 		XAssetID: xAssetID,
 	}
-	require.NoError(complexAddNetTx.SyntacticVerify(ctx2))
+	require.NoError(complexAddNetTx.SyntacticVerify(rt2))
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version

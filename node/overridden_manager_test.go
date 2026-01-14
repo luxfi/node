@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 )
 
@@ -64,7 +64,7 @@ func TestOverriddenString(t *testing.T) {
 	require.NoError(m.AddStaker(netID1, nodeID1, nil, ids.Empty, 1))
 
 	om := newOverriddenManager(netID0, m)
-	expected := `Overridden Validator Manager (NetID = TtF4d2QWbk5vzQGTEPrN48x6vwgAoAmKQ9cbp79inpQmcRKES): Validator Manager: (Size = 2)
+	expected := `Overridden Validator Manager (ChainID = TtF4d2QWbk5vzQGTEPrN48x6vwgAoAmKQ9cbp79inpQmcRKES): Validator Manager: (Size = 2)
     Net[TtF4d2QWbk5vzQGTEPrN48x6vwgAoAmKQ9cbp79inpQmcRKES]: Validator Set: (Size = 2, Weight = 9223372036854775807)
         Validator[0]: NodeID-111111111111111111116DBWJs, 1
         Validator[1]: NodeID-QLbz7JHiBTspS962RLKV8GndWFwdYhk6V, 9223372036854775806

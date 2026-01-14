@@ -77,7 +77,7 @@ else
   NODE_ONLY=1
   build_antithesis_images_for_node node "" "${LUX_PATH}/Dockerfile" "${NODE_ONLY}"
 
-  # Ensure node and xsvm binaries are available to create an initial db state that includes subnets.
+  # Ensure node and xsvm binaries are available to create an initial db state that includes chains.
   echo "Building binaries required for configuring the ${TEST_SETUP} test setup"
   "${LUX_PATH}"/scripts/build.sh
   "${LUX_PATH}"/scripts/build_xsvm.sh

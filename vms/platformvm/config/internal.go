@@ -6,8 +6,8 @@ package config
 import (
 	"time"
 
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -103,7 +103,7 @@ func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
 
 	chainParams := chains.ChainParameters{
 		ID:          blockchainID,
-		NetID:       tx.ChainID,
+		ChainID:       tx.ChainID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,

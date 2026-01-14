@@ -10,8 +10,8 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
-	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"

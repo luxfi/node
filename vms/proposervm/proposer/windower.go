@@ -11,7 +11,7 @@ import (
 
 	"gonum.org/v1/gonum/mathext/prng"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
 	"github.com/luxfi/utils"

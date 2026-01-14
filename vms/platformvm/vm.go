@@ -20,17 +20,16 @@ import (
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
-	consensusversion "github.com/luxfi/consensus/version"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
+	consensusversion "github.com/luxfi/version"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -68,37 +67,6 @@ var (
 	_ secp256k1fx.VM                     = (*VM)(nil)
 	_ validators.State                   = (*VM)(nil)
 )
-
-// appSenderAdapter adapts extwarp.Sender to the expected interface (for network.New)
-type appSenderAdapter struct {
-	extwarp.Sender
-}
-
-func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	return a.Sender.SendRequest(ctx, nodeIDs, requestID, appRequestBytes)
-}
-
-func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	return a.Sender.SendResponse(ctx, nodeID, requestID, appResponseBytes)
-}
-
-func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := extwarp.SendConfig{
-		NodeIDs: nodeIDs,
-	}
-	return a.Sender.SendGossip(ctx, config, appGossipBytes)
-}
-
-func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return a.Sender.SendError(ctx, nodeID, requestID, errorCode, errorMessage)
-}
-
-func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	config := extwarp.SendConfig{
-		NodeIDs: nodeIDs,
-	}
-	return a.Sender.SendGossip(ctx, config, appGossipBytes)
-}
 
 // warpSignerAdapter adapts extwarp.Signer to internal warp.Signer
 type warpSignerAdapter struct {
@@ -215,11 +183,11 @@ func (vm *VM) Initialize(
 	// Handle appSender
 	appSender := init.Sender
 
-	// Initialize logger from chain context
+	// Initialize logger from chain runtime.
 	if init.Log != nil {
 		vm.log = init.Log
-	} else if chainRuntime != nil && chainRuntime.Log != nil {
-		if logger, ok := chainRuntime.Log.(log.Logger); ok && !logger.IsZero() {
+	} else if init.Runtime != nil && init.Runtime.Log != nil {
+		if logger, ok := init.Runtime.Log.(log.Logger); ok && !logger.IsZero() {
 			vm.log = logger
 		} else {
 			vm.log = log.Noop()
@@ -255,17 +223,17 @@ func (vm *VM) Initialize(
 	// Create metric interface for state
 
 	// Set Runtime
-	vm.rt = chainRuntime
+	vm.rt = init.Runtime
 
 	// Initialize utxo.XAssetID from the context
-	utxo.XAssetID = chainRuntime.XAssetID
+	utxo.XAssetID = init.Runtime.XAssetID
 
 	// Initialize vm.xAssetID for GetStakingAssetID API
 	// Use LUXAssetID if set, otherwise fall back to XAssetID
-	if chainRuntime.XAssetID != ids.Empty {
-		vm.xAssetID = chainRuntime.XAssetID
+	if init.Runtime.XAssetID != ids.Empty {
+		vm.xAssetID = init.Runtime.XAssetID
 	} else {
-		vm.xAssetID = chainRuntime.XAssetID
+		vm.xAssetID = init.Runtime.XAssetID
 	}
 
 	// Get the current database from the DBManager
@@ -336,14 +304,15 @@ func (vm *VM) Initialize(
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
 	// Create wrapper for AppSender to adapt chain.AppSender to network expected interface
-	adaptedAppSender := &appSenderAdapter{appSender}
+	// Create wrapper for AppSender to adapt chain.AppSender to network expected interface
+	// adaptedAppSender := &appSenderAdapter{appSender}
 
 	// Type assert WarpSigner (may be nil for Platform chain)
 	var warpSigner warp.Signer
-	if chainRuntime.WarpSigner != nil {
-		extSigner, ok := chainRuntime.WarpSigner.(extwarp.Signer)
+	if init.Runtime.WarpSigner != nil {
+		extSigner, ok := init.Runtime.WarpSigner.(extwarp.Signer)
 		if !ok {
-			return fmt.Errorf("invalid warp signer type: %T", chainRuntime.WarpSigner)
+			return fmt.Errorf("invalid warp signer type: %T", init.Runtime.WarpSigner)
 		}
 		// Wrap external signer with adapter for internal interface
 		warpSigner = &warpSignerAdapter{extSigner: extSigner}
@@ -365,8 +334,8 @@ func (vm *VM) Initialize(
 		txVerifier,
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
-		adaptedAppSender,
-		&chainRuntime.Lock,
+		appSender,
+		&init.Runtime.Lock,
 		vm.state,
 		warpSigner,
 		registerer,

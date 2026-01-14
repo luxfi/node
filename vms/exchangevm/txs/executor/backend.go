@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/codec"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
@@ -49,7 +49,7 @@ type SharedMemory interface {
 func (b *Backend) ToChainContext() *verify.ChainContext {
 	return &verify.ChainContext{
 		ChainID:        b.Runtime.ChainID,
-		NetID:          b.Runtime.ChainID,
+		ChainID:          b.Runtime.ChainID,
 		ValidatorState: &validatorStateAdapter{vs: b.Runtime.ValidatorState.(runtime.ValidatorState)},
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"

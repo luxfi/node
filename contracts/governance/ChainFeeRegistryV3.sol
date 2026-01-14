@@ -118,7 +118,7 @@ contract ChainFeeRegistryV3 is AccessControl, ReentrancyGuard {
 
     mapping(uint8 => ChainFeeConfig) public chainConfigs;
     OrderbookActionFees public orderbookFees;
-    mapping(bytes32 => ChainFeeConfig) public subnetConfigs;
+    mapping(bytes32 => ChainFeeConfig) public chainConfigs;
     uint256 public version;
     address public warpEmitter;
 

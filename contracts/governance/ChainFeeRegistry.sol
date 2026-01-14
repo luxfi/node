@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @dev Controlled by FeeGovernor via FeeTimelock
  *
  * Chain IDs:
- *   0 = P-Chain (Platform) - Staking, validators, subnets
+ *   0 = P-Chain (Platform) - Staking, validators, chains
  *   1 = X-Chain (Exchange) - UTXO asset transfers
  *   2 = A-Chain (Attestation) - Oracles, supply proofs
  *   3 = B-Chain (Bridge) - MPC cross-chain interop
@@ -55,8 +55,8 @@ contract ChainFeeRegistry is AccessControl, ReentrancyGuard {
     /// @notice Fee parameters for each chain
     mapping(uint8 => ChainFeeParams) public chainFees;
 
-    /// @notice Subnet fee parameters (subnetID => params)
-    mapping(bytes32 => ChainFeeParams) public subnetFees;
+    /// @notice Chain fee parameters (chainID => params)
+    mapping(bytes32 => ChainFeeParams) public chainFees;
 
     /// @notice Version for tracking updates (incremented on each change)
     uint256 public version;
@@ -66,7 +66,7 @@ contract ChainFeeRegistry is AccessControl, ReentrancyGuard {
 
     // Events
     event ChainFeeUpdated(uint8 indexed chainId, ChainFeeParams params, uint256 version);
-    event SubnetFeeUpdated(bytes32 indexed subnetId, ChainFeeParams params, uint256 version);
+    event ChainFeeUpdated(bytes32 indexed chainId, ChainFeeParams params, uint256 version);
     event WarpEmitterUpdated(address indexed oldEmitter, address indexed newEmitter);
     event EmergencyPause(uint8 indexed chainId, address indexed by);
     event EmergencyUnpause(uint8 indexed chainId, address indexed by);
@@ -271,17 +271,17 @@ contract ChainFeeRegistry is AccessControl, ReentrancyGuard {
         }
     }
 
-    /// @notice Update fee parameters for a subnet
-    /// @param subnetId The subnet ID (32 bytes)
+    /// @notice Update fee parameters for a chain
+    /// @param chainId The chain ID (32 bytes)
     /// @param params New fee parameters
-    function setSubnetFee(bytes32 subnetId, ChainFeeParams calldata params)
+    function setChainFee(bytes32 chainId, ChainFeeParams calldata params)
         external
         onlyRole(GOVERNOR_ROLE)
         nonReentrant
     {
         require(params.baseFee >= params.minFee, "Base fee below minimum");
 
-        subnetFees[subnetId] = ChainFeeParams({
+        chainFees[chainId] = ChainFeeParams({
             baseFee: params.baseFee,
             minFee: params.minFee,
             maxFee: params.maxFee,
@@ -292,7 +292,7 @@ contract ChainFeeRegistry is AccessControl, ReentrancyGuard {
         });
 
         version++;
-        emit SubnetFeeUpdated(subnetId, subnetFees[subnetId], version);
+        emit ChainFeeUpdated(chainId, chainFees[chainId], version);
     }
 
     /// @notice Emergency pause a chain (stops all transactions)

@@ -155,7 +155,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 	blkState := versiondb.New(parentState)
 	err = execute.Block(
 		ctx,
-		b.chain.chainContext,
+		b.chain.chainRuntime,
 		blkState,
 		false, // not bootstrapping - chainState is an interface, not a status enum
 		blockContext,

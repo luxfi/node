@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/consensus/validator"
-	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/ids"
 
 	safemath "github.com/luxfi/math"

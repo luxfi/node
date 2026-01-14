@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"encoding/json"
 	"testing"
@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify/verifymock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 )
@@ -278,13 +278,13 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferChainOwnershipTx.Ins)
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(ctx2))
+	require.NoError(complexTransferChainOwnershipTx.SyntacticVerify(rt2))
 
 	expectedUnsignedComplexTransferChainOwnershipTxBytes := []byte{
 		// Codec version
@@ -449,13 +449,13 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &runtime.Runtime{
+	rt3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexTransferChainOwnershipTx.InitRuntime(ctx3)
+	unsignedComplexTransferChainOwnershipTx.InitRuntime(rt3)
 
 	unsignedComplexTransferChainOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferChainOwnershipTx, "", "\t")
 	require.NoError(err)

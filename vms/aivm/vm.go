@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
 	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -148,11 +148,11 @@ func (vm *VM) Initialize(
 	fxs []interface{},
 	appSender interface{},
 ) error {
-	// Convert chain context to Runtime
+	// Convert chain runtime to Runtime.
 	if rt, ok := chainRuntime.(*runtime.Runtime); ok {
 		vm.rt = rt
 	} else {
-		return errors.New("chain context must be *runtime.Runtime")
+		return errors.New("chain runtime must be *runtime.Runtime")
 	}
 
 	var ok bool

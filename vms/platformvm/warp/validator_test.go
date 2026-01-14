@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/validatorsmock"
+	"github.com/luxfi/validators"
+	"github.com/luxfi/validators/validatorsmock"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"

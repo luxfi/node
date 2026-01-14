@@ -12,7 +12,7 @@ package block
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"

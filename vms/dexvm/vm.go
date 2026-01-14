@@ -17,7 +17,7 @@ import (
 
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"

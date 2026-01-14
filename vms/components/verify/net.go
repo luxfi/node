@@ -8,19 +8,19 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 )
 
 var (
 	ErrSameChainID      = errors.New("same chainID")
-	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
+	ErrMismatchedChainIDs = errors.New("mismatched netIDs")
 )
 
 // ChainContext provides context for chain operations
 type ChainContext struct {
 	ChainID        ids.ID
-	NetID          ids.ID
+	ChainID          ids.ID
 	ValidatorState ValidatorState
 }
 
@@ -42,12 +42,12 @@ func SameNet(ctx context.Context, chainRuntime *ChainContext, peerChainID ids.ID
 		return ErrSameChainID
 	}
 
-	peerNetID, err := chainRuntime.ValidatorState.GetChainID(peerChainID)
+	peerChainID, err := chainRuntime.ValidatorState.GetChainID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}
-	if chainRuntime.NetID != peerNetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainRuntime.NetID, peerNetID)
+	if chainRuntime.ChainID != peerChainID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedChainIDs, chainRuntime.ChainID, peerChainID)
 	}
 	return nil
 }

@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"encoding/json"
 	"testing"
@@ -220,13 +220,13 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
+	require.NoError(complexBaseTx.SyntacticVerify(rt2))
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
 		// Codec version
@@ -370,13 +370,13 @@ func TestBaseTxSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &runtime.Runtime{
+	rt3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexBaseTx.InitRuntime(ctx3)
+	unsignedComplexBaseTx.InitRuntime(rt3)
 
 	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")
 	require.NoError(err)

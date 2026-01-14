@@ -18,8 +18,8 @@ import (
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/consensus/engine/interfaces"
-	"github.com/luxfi/consensus/runtime"
-	validators "github.com/luxfi/consensus/validator"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -173,7 +173,7 @@ func (vm *VM) Initialize(
 	}
 	vm.innerBlkCache = innerBlkCache
 
-	// Initialize NetID cache for validator state lookups
+	// Initialize ChainID cache for validator state lookups
 	vm.netIDsCache = lru.NewCache[ids.ID, ids.ID](4096)
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)

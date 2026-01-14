@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  *   - M: Congestion multiplier (dynamic, per chain)
  *
  * Chain IDs:
- *   0 = P-Chain (Platform) - Staking, validators, subnets
+ *   0 = P-Chain (Platform) - Staking, validators, chains
  *   1 = X-Chain (Exchange) - UTXO asset transfers
  *   2 = A-Chain (Attestation) - Oracles, supply proofs
  *   3 = B-Chain (Bridge) - MPC cross-chain interop
@@ -96,8 +96,8 @@ contract ChainFeeRegistryV2 is AccessControl, ReentrancyGuard {
     /// @notice D-Chain orderbook action fees
     OrderbookActionFees public orderbookFees;
 
-    /// @notice Subnet fee parameters (subnetID => params)
-    mapping(bytes32 => ChainFeeParams) public subnetFees;
+    /// @notice Chain fee parameters (chainID => params)
+    mapping(bytes32 => ChainFeeParams) public chainFees;
 
     /// @notice Version for tracking updates
     uint256 public version;
@@ -112,7 +112,7 @@ contract ChainFeeRegistryV2 is AccessControl, ReentrancyGuard {
     event ChainFeeUpdated(uint8 indexed chainId, ChainFeeParams params, uint256 version);
     event CongestionUpdated(uint8 indexed chainId, uint32 utilization, uint32 multiplier);
     event OrderbookFeesUpdated(OrderbookActionFees fees, uint256 version);
-    event SubnetFeeUpdated(bytes32 indexed subnetId, ChainFeeParams params, uint256 version);
+    event ChainFeeUpdated(bytes32 indexed chainId, ChainFeeParams params, uint256 version);
     event WarpEmitterUpdated(address indexed oldEmitter, address indexed newEmitter);
     event EmergencyPause(uint8 indexed chainId, address indexed by);
     event EmergencyUnpause(uint8 indexed chainId, address indexed by);

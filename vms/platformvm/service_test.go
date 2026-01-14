@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/protocol/chain"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -757,7 +757,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	require.NoError(err)
 	service.vm.state.AddTx(tx, status.Committed)
 	service.vm.state.DeleteCurrentDelegator(staker)
-	require.NoError(service.vm.state.SetDelegateeReward(staker.NetID, staker.NodeID, 100000))
+	require.NoError(service.vm.state.SetDelegateeReward(staker.ChainID, staker.NodeID, 100000))
 	require.NoError(service.vm.state.Commit())
 
 	service.vm.rt.Lock.Unlock()

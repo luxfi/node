@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/consensus/utils/set"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 )

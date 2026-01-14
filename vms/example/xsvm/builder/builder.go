@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/concurrent/lock"
 	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"

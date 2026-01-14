@@ -13,7 +13,7 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/consensus/engine/interfaces"
 	gomock "go.uber.org/mock/gomock"
 )

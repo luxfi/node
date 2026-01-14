@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/codec"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"

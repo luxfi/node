@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 )
 

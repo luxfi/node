@@ -1,14 +1,13 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vms
 
 import (
-	"github.com/luxfi/vm/manager"
+	"github.com/luxfi/node/vms/manager"
 )
 
-// Re-export types from standalone vm/manager module for backward compatibility.
-// Use github.com/luxfi/vm/manager directly for new code.
+// Re-export types from manager package for backward compatibility.
 
 // Factory creates new instances of a VM
 type Factory = manager.Factory

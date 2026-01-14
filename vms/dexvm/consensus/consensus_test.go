@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

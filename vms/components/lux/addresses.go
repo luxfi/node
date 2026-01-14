@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/common"
-	consensusruntime "github.com/luxfi/consensus/runtime"
+	consensusruntime "github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"

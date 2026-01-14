@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

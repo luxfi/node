@@ -12,7 +12,7 @@ package fxmock
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )

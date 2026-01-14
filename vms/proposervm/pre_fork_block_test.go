@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
+	validatorsmock "github.com/luxfi/validators/validatorsmock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

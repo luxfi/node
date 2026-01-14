@@ -51,10 +51,10 @@ message Message {
     Chits chits = 29;
 
     // App messages:
-    AppRequest app_request = 30;
-    AppResponse app_response = 31;
-    AppGossip app_gossip = 32;
-    AppError app_error = 34;
+    Request request = 30;
+    Response response = 31;
+    Gossip gossip = 32;
+    Error error = 34;
 
     // Simplex messages:
     Simplex simplex = 36;
@@ -305,7 +305,7 @@ message Ancestors {
 
 // Get requests a container from a remote peer.
 //
-// Remote peers should respond with a Put message if they have the container.
+// Remote peers should respond to Get with a Put message if they have the container.
 message Get {
   reserved 5;
   // Chain being requested from
@@ -379,11 +379,11 @@ message Chits {
   uint64 accepted_height = 6;
 }
 
-// AppRequest is a VM-defined request.
+// Request is a VM-defined request.
 //
-// Remote peers must respond to AppRequest with a corresponding AppResponse or
-// AppError
-message AppRequest {
+// Remote peers must respond to Request with a corresponding Response or
+// Error
+message Request {
   // Chain being requested from
   bytes chain_id = 1;
   // Unique identifier for this request
@@ -394,21 +394,21 @@ message AppRequest {
   bytes app_bytes = 4;
 }
 
-// AppResponse is a VM-defined response sent in response to AppRequest
-message AppResponse {
+// Response is a VM-defined response sent in response to Request
+message Response {
   // Chain being responded from
   bytes chain_id = 1;
-  // Request id of the original AppRequest
+  // Request id of the original Request
   uint32 request_id = 2;
   // Response body
   bytes app_bytes = 3;
 }
 
-// AppError is a VM-defined error sent in response to AppRequest
-message AppError {
+// Error is a VM-defined error sent in response to Request
+message Error {
   // Chain the message is for
   bytes chain_id = 1;
-  // Request id of the original AppRequest
+  // Request id of the original Request
   uint32 request_id = 2;
   // VM defined error code. VMs may define error codes > 0.
   sint32 error_code = 3;
@@ -416,8 +416,8 @@ message AppError {
   string error_message = 4;
 }
 
-// AppGossip is a VM-defined message
-message AppGossip {
+// Gossip is a VM-defined message
+message Gossip {
   // Chain the message is for
   bytes chain_id = 1;
   // Message body

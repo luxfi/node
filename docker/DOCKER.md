@@ -110,7 +110,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - chain: 172.20.0.0/16
     internal: true  # No external access
 ```
 

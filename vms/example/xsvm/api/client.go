@@ -47,7 +47,7 @@ func (c *Client) Network(
 		resp,
 		options...,
 	)
-	return resp.NetworkID, resp.NetID, resp.ChainID, err
+	return resp.NetworkID, resp.ChainID, resp.ChainID, err
 }
 
 func (c *Client) Genesis(

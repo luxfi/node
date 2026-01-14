@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -343,13 +343,13 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
+	require.NoError(complexTransformTx.SyntacticVerify(rt2))
 
 	expectedUnsignedComplexTransformTxBytes := []byte{
 		// Codec version
@@ -531,13 +531,13 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &runtime.Runtime{
+	rt3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexTransformTx.InitRuntime(ctx3)
+	unsignedComplexTransformTx.InitRuntime(rt3)
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
 	require.NoError(err)
@@ -643,9 +643,9 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 	}
 
 	var (
-		networkID  = uint32(1337)
-		chainID    = ids.GenerateTestID()
-		xAssetID = ids.GenerateTestID()
+		networkID = uint32(1337)
+		chainID   = ids.GenerateTestID()
+		xAssetID  = ids.GenerateTestID()
 	)
 
 	rt := &runtime.Runtime{

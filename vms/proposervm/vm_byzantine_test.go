@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"

@@ -107,7 +107,7 @@ func TestQueueChainCreation(t *testing.T) {
 	netID := ids.GenerateTestID()
 	chainParams := ChainParameters{
 		ID:    chainID,
-		NetID: netID,
+		ChainID: netID,
 		VMID:  ids.GenerateTestID(),
 	}
 
@@ -118,7 +118,7 @@ func TestQueueChainCreation(t *testing.T) {
 	queuedParams, ok := mImpl.chainsQueue.PopLeft()
 	require.True(ok)
 	require.Equal(chainParams.ID, queuedParams.ID)
-	require.Equal(chainParams.NetID, queuedParams.NetID)
+	require.Equal(chainParams.ChainID, queuedParams.ChainID)
 	require.Equal(chainParams.VMID, queuedParams.VMID)
 }
 

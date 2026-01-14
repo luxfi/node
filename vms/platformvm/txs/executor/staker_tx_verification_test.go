@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"

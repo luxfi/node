@@ -12,19 +12,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
-	validators "github.com/luxfi/consensus/validator"
-	consensusuptime "github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
+	consensusuptime "github.com/luxfi/validators/uptime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/vm/chains/atomic"
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/utils"
+	"github.com/luxfi/vm/chains/atomic"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -32,9 +32,9 @@ import (
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/timer/mockable"
 
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/fx"
 
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
@@ -139,7 +139,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 
 	backend := Backend{
 		Config:       config,
-		Runtime:          rt,
+		Runtime:      rt,
 		Clk:          &mockable.Clock{},
 		Bootstrapped: &isBootstrapped,
 		Fx:           fx,
@@ -206,7 +206,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
-	// Convert testcontext.Context to runtime.Runtime
+	// Convert test runtime to runtime.Runtime.
 	rt := &runtime.Runtime{
 		NetworkID: e.rt.NetworkID,
 

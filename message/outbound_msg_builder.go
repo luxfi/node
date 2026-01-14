@@ -7,10 +7,10 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
 	compression "github.com/luxfi/compress"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/net/ips"
+	"github.com/luxfi/node/proto/pb/p2p"
 )
 
 var _ OutboundMsgBuilder = (*outMsgBuilder)(nil)
@@ -157,27 +157,27 @@ type OutboundMsgBuilder interface {
 		acceptedHeight uint64,
 	) (OutboundMessage, error)
 
-	AppRequest(
+	Request(
 		chainID ids.ID,
 		requestID uint32,
 		deadline time.Duration,
 		msg []byte,
 	) (OutboundMessage, error)
 
-	AppResponse(
+	Response(
 		chainID ids.ID,
 		requestID uint32,
 		msg []byte,
 	) (OutboundMessage, error)
 
-	AppError(
+	Error(
 		chainID ids.ID,
 		requestID uint32,
 		errorCode int32,
 		errorMessage string,
 	) (OutboundMessage, error)
 
-	AppGossip(
+	Gossip(
 		chainID ids.ID,
 		msg []byte,
 	) (OutboundMessage, error)
@@ -201,6 +201,17 @@ func newOutboundBuilder(compressionType compression.Type, builder *msgBuilder) O
 		builder:         builder,
 	}
 }
+
+// ... ping/pong omitted for brevity in prompt, only replacing targeted section ...
+// Wait, replace_file_content replaces a chunk. I need to target the Interface definitions and Implementation.
+// Interface is lines 160-188.
+// Implementation is lines 663-731.
+// I should use 2 ReplaceFile calls or one if contiguous? They are NOT contiguous.
+// I can use `multi_replace_file_content`? Or `replace_file_content` twice.
+// I'll do Interface first.
+// Oh wait, `replace_file_content` only allows ONE chunk.
+// I'll use separate calls or `multi_replace`.
+// I'll use `multi_replace_file_content` for `outbound_msg_builder.go`.
 
 func (b *outMsgBuilder) Ping(
 	primaryUptime uint32,
@@ -273,7 +284,7 @@ func (b *outMsgBuilder) Handshake(
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,
 					},
-					IpBlsSig: ipBLSSig,
+					IpBlsSig:  ipBLSSig,
 					AllChains: requestAllNetIPs,
 				},
 			},
@@ -660,7 +671,7 @@ func (b *outMsgBuilder) Chits(
 	)
 }
 
-func (b *outMsgBuilder) AppRequest(
+func (b *outMsgBuilder) Request(
 	chainID ids.ID,
 	requestID uint32,
 	deadline time.Duration,
@@ -668,8 +679,8 @@ func (b *outMsgBuilder) AppRequest(
 ) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
-			Message: &p2p.Message_AppRequest{
-				AppRequest: &p2p.AppRequest{
+			Message: &p2p.Message_Request{
+				Request: &p2p.Request{
 					ChainId:   chainID[:],
 					RequestId: requestID,
 					Deadline:  uint64(deadline),
@@ -682,11 +693,11 @@ func (b *outMsgBuilder) AppRequest(
 	)
 }
 
-func (b *outMsgBuilder) AppResponse(chainID ids.ID, requestID uint32, msg []byte) (OutboundMessage, error) {
+func (b *outMsgBuilder) Response(chainID ids.ID, requestID uint32, msg []byte) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
-			Message: &p2p.Message_AppResponse{
-				AppResponse: &p2p.AppResponse{
+			Message: &p2p.Message_Response{
+				Response: &p2p.Response{
 					ChainId:   chainID[:],
 					RequestId: requestID,
 					AppBytes:  msg,
@@ -698,11 +709,11 @@ func (b *outMsgBuilder) AppResponse(chainID ids.ID, requestID uint32, msg []byte
 	)
 }
 
-func (b *outMsgBuilder) AppError(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (OutboundMessage, error) {
+func (b *outMsgBuilder) Error(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
-			Message: &p2p.Message_AppError{
-				AppError: &p2p.AppError{
+			Message: &p2p.Message_Error{
+				Error: &p2p.Error{
 					ChainId:      chainID[:],
 					RequestId:    requestID,
 					ErrorCode:    errorCode,
@@ -715,11 +726,11 @@ func (b *outMsgBuilder) AppError(chainID ids.ID, requestID uint32, errorCode int
 	)
 }
 
-func (b *outMsgBuilder) AppGossip(chainID ids.ID, msg []byte) (OutboundMessage, error) {
+func (b *outMsgBuilder) Gossip(chainID ids.ID, msg []byte) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
-			Message: &p2p.Message_AppGossip{
-				AppGossip: &p2p.AppGossip{
+			Message: &p2p.Message_Gossip{
+				Gossip: &p2p.Gossip{
 					ChainId:  chainID[:],
 					AppBytes: msg,
 				},

@@ -4,7 +4,7 @@
 package chains
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/consensus/engine/interfaces"
 )
 

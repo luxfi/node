@@ -14,7 +14,7 @@ var (
 	ErrWeightTooSmall = errors.New("weight of this validator is too low")
 	errBadChainID     = errors.New("chain ID can't be primary network ID")
 	// Deprecated: use errBadChainID instead
-	errBadNetID = errBadChainID
+	errBadChainID = errBadChainID
 )
 
 // Validator is a validator.

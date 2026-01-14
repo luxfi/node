@@ -85,7 +85,7 @@ type HandshakeMessage struct {
     Version         string
     VersionTime     uint64
     SigBytes        []byte
-    TrackedSubnets  []ids.ID
+    TrackedChains  []ids.ID
 }
 
 func PerformHandshake(conn net.Conn) (*Peer, error) {
@@ -608,5 +608,5 @@ netstat -an | grep 9631
 
 - [Message Types](/docs/networking/messages) - Detailed message specifications
 - [Consensus Networking](/docs/networking/consensus) - Consensus-specific networking
-- [Cross-Chain Protocol](/docs/networking/cross-chain) - Subnet communication
+- [Cross-Chain Protocol](/docs/networking/cross-chain) - Chain communication
 - [Security Guide](/docs/operations/security) - Network security best practices

@@ -15,7 +15,7 @@ package luxmock
 import (
 	"context"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

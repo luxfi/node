@@ -4,7 +4,7 @@
 package benchlist
 
 import "github.com/luxfi/ids"
-import "github.com/luxfi/consensus/validator"
+import "github.com/luxfi/validators"
 
 type Config struct {
 	Deprecated bool

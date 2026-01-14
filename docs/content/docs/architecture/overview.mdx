@@ -33,13 +33,13 @@ Lux implements a 4-chain primary network architecture, each optimized for specif
 
 **Purpose:** Metadata blockchain for coordination
 - Manages validators and staking
-- Tracks subnets and their validators
+- Tracks chains and their validators
 - Handles cross-chain transfers
 - Uses Chain consensus for linear ordering
 
 **Key Features:**
 - Validator management (add, remove, delegate)
-- Subnet creation and management
+- Chain creation and management
 - Staking and rewards distribution
 - Network governance
 
@@ -267,7 +267,7 @@ type VM interface {
 2. **UTXO State** - Unspent transaction outputs
 3. **Account State** - EVM account balances
 4. **Validator State** - Staking information
-5. **Subnet State** - Subnet configurations
+5. **Chain State** - Chain configurations
 
 ## Cross-Chain Communication
 
@@ -286,7 +286,7 @@ X-Chain                    P-Chain
 
 ### Warp Messaging
 
-Native cross-subnet communication protocol:
+Native cross-chain communication protocol:
 - BLS multi-signatures for validation
 - Aggregated signatures for efficiency
 - Replay protection

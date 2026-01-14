@@ -16,8 +16,8 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/tracker"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"

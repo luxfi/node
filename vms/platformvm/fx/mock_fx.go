@@ -13,7 +13,7 @@ import (
 	"context"
 
 	"go.uber.org/mock/gomock"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	reflect "reflect"
 
 	verify "github.com/luxfi/node/vms/components/verify"

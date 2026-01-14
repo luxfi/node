@@ -256,7 +256,7 @@ func InboundChits(
 	}
 }
 
-func InboundAppRequest(
+func InboundRequest(
 	chainID ids.ID,
 	requestID uint32,
 	deadline time.Duration,
@@ -265,8 +265,8 @@ func InboundAppRequest(
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,
-		op:     AppRequestOp,
-		message: &p2p.AppRequest{
+		op:     RequestOp,
+		message: &p2p.Request{
 			ChainId:   chainID[:],
 			RequestId: requestID,
 			Deadline:  uint64(deadline),
@@ -276,7 +276,7 @@ func InboundAppRequest(
 	}
 }
 
-func InboundAppError(
+func InboundError(
 	nodeID ids.NodeID,
 	chainID ids.ID,
 	requestID uint32,
@@ -285,8 +285,8 @@ func InboundAppError(
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,
-		op:     AppErrorOp,
-		message: &p2p.AppError{
+		op:     ErrorOp,
+		message: &p2p.Error{
 			ChainId:      chainID[:],
 			RequestId:    requestID,
 			ErrorCode:    errorCode,
@@ -296,7 +296,7 @@ func InboundAppError(
 	}
 }
 
-func InboundAppResponse(
+func InboundResponse(
 	chainID ids.ID,
 	requestID uint32,
 	msg []byte,
@@ -304,11 +304,27 @@ func InboundAppResponse(
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID: nodeID,
-		op:     AppResponseOp,
-		message: &p2p.AppResponse{
+		op:     ResponseOp,
+		message: &p2p.Response{
 			ChainId:   chainID[:],
 			RequestId: requestID,
 			AppBytes:  msg,
+		},
+		expiration: mockable.MaxTime,
+	}
+}
+
+func InboundGossip(
+	chainID ids.ID,
+	msg []byte,
+	nodeID ids.NodeID,
+) InboundMessage {
+	return &inboundMessage{
+		nodeID: nodeID,
+		op:     GossipOp,
+		message: &p2p.Gossip{
+			ChainId:  chainID[:],
+			AppBytes: msg,
 		},
 		expiration: mockable.MaxTime,
 	}

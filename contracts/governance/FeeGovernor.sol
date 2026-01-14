@@ -24,7 +24,7 @@ import "./ChainFeeRegistry.sol";
  *   1. setChainFee(chainId, params) - Update single chain fees
  *   2. setChainFeesBatch(chainIds[], params[]) - Batch fee updates
  *   3. emergencyPause(chainId) - Emergency pause via multisig
- *   4. setSubnetFee(subnetId, params) - Subnet fee updates
+ *   4. setChainFee(chainId, params) - Chain fee updates
  */
 contract FeeGovernor is
     Governor,
@@ -146,14 +146,14 @@ contract FeeGovernor is
     }
 
     /**
-     * @notice Create a proposal to update subnet fees
-     * @param subnetId The subnet ID (32 bytes)
+     * @notice Create a proposal to update chain fees
+     * @param chainId The chain ID (32 bytes)
      * @param params New fee parameters
      * @param description Human-readable description
      * @return proposalId The created proposal ID
      */
-    function proposeSubnetFeeUpdate(
-        bytes32 subnetId,
+    function proposeChainFeeUpdate(
+        bytes32 chainId,
         ChainFeeRegistry.ChainFeeParams calldata params,
         string calldata description
     ) external returns (uint256 proposalId) {
@@ -164,14 +164,14 @@ contract FeeGovernor is
         targets[0] = address(feeRegistry);
         values[0] = 0;
         calldatas[0] = abi.encodeWithSelector(
-            ChainFeeRegistry.setSubnetFee.selector,
-            subnetId,
+            ChainFeeRegistry.setChainFee.selector,
+            chainId,
             params
         );
 
         proposalId = propose(targets, values, calldatas, description);
 
-        // Emit with empty chainIds (subnet update)
+        // Emit with empty chainIds (chain update)
         uint8[] memory chainIds = new uint8[](0);
         emit FeeProposalCreated(proposalId, chainIds, msg.sender, description);
     }

@@ -32,7 +32,7 @@ const (
 	ErrMismatchedConversionID
 
 	ErrInvalidJustificationType
-	ErrFailedToParseNetID
+	ErrFailedToParseChainID
 	ErrMismatchedValidationID
 	ErrValidationDoesNotExist
 	ErrValidationExists
@@ -196,7 +196,7 @@ func (s signatureRequestVerifier) verifyValidatorNotCurrentlyRegistered(
 	chainID, err := ids.ToID(justification.GetChainId())
 	if err != nil {
 		return &p2p.Error{
-			Code:    ErrFailedToParseNetID,
+			Code:    ErrFailedToParseChainID,
 			Message: "failed to parse chainID: " + err.Error(),
 		}
 	}

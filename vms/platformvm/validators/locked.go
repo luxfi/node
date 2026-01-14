@@ -7,7 +7,7 @@ import (
 	"context"
 	"sync"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 )
 

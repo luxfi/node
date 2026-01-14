@@ -11,9 +11,9 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -93,12 +93,12 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 		},
 	}
 
-	testNetID := ids.GenerateTestID()
+	testChainID := ids.GenerateTestID()
 	backendObj := &Backend{
 		Ctx: ctx,
 		Runtime: &runtime.Runtime{
 			ChainID:        ids.GenerateTestID(),
-			ValidatorState: &testValidatorState{chainID: testNetID},
+			ValidatorState: &testValidatorState{chainID: testChainID},
 		},
 		CChainID: cChainID,
 		Config:   &feeConfig,
@@ -841,7 +841,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 
 	// Set up a validator state that returns a different chainID to trigger the error
 	rt.ValidatorState = &testValidatorState{
-		chainID: ids.GenerateTestID(), // Different from rt.NetID
+		chainID: ids.GenerateTestID(), // Different from rt.ChainID
 	}
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -953,7 +953,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 		State:   state,
 		Tx:      tx,
 	})
-	require.ErrorIs(t, err, verify.ErrMismatchedNetIDs)
+	require.ErrorIs(t, err, verify.ErrMismatchedChainIDs)
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {

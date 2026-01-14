@@ -2,7 +2,7 @@
 
 Cross Net Asset Transfers README Overview
 
-[Background](#lux-subnets-and-custom-vms)
+[Background](#lux-chains-and-custom-vms)
 
 [Introduction](#introduction)
 
@@ -10,11 +10,11 @@ Cross Net Asset Transfers README Overview
 
 [Running](#running-the-vm)
 
-[Demo](#cross-subnet-transaction-example)
+[Demo](#cross-chain-transaction-example)
 
 ## Lux Nets and Custom VMs
 
-Lux is a network composed of multiple sub-networks (called [subnets][Net])
+Lux is a network composed of multiple networks 
 that each contain any number of blockchains. Each blockchain is an instance of a
 [Virtual Machine
 (VM)](https://build.lux.network/docs/quick-start/virtual-machines), much like an
@@ -24,7 +24,7 @@ defines the behavior of the blockchain where it is instantiated. For example,
 
 ## Introduction
 
-Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in a Lux [Net]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
+Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in a Lux [Net]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other chains.
 
 ## How it Works
 
@@ -36,7 +36,7 @@ If you want to send an asset to someone, you can use a `tx.Transfer` to send to 
 
 ### Export
 
-If you want to send this chain's native asset to a different subnet, you can use a `tx.Export` to send to any address on a destination chain. You may also use a `tx.Export` to return the destination chain's native asset.
+If you want to send this chain's native asset to a different chain, you can use a `tx.Export` to send to any address on a destination chain. You may also use a `tx.Export` to return the destination chain's native asset.
 
 ### Import
 
@@ -143,7 +143,7 @@ type Client interface {
   "params":{},
   "id": 1
 }
->>> {"networkID":<uint32>, "subnetID":<ID>, "chainID":<ID>}
+>>> {"networkID":<uint32>, "chainID":<ID>, "chainID":<ID>}
 ```
 
 For example:
@@ -159,7 +159,7 @@ curl --location --request POST 'http://34.235.54.228:9630/ext/bc/28iioW2fYMBnKv2
 }'
 ```
 
-> `{"jsonrpc":"2.0","result":{"networkID":1000000,"subnetID":"2gToFoYXURMQ6y4ZApFuRZN1HurGcDkwmtvkcMHNHcYarvsJN1","chainID":"28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT"},"id":1}`
+> `{"jsonrpc":"2.0","result":{"networkID":1000000,"chainID":"2gToFoYXURMQ6y4ZApFuRZN1HurGcDkwmtvkcMHNHcYarvsJN1","chainID":"28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT"},"id":1}`
 
 #### xsvm.genesis
 
@@ -284,20 +284,20 @@ To build the VM, run `./scripts/build_xsvm.sh`.
 
 ### Deploying Your Own Network
 
-Anyone can deploy their own instance of the XSVM as a subnet on Lux. All you need to do is compile it, create a genesis, and send a few txs to the
+Anyone can deploy their own instance of the XSVM as a chain on Lux. All you need to do is compile it, create a genesis, and send a few txs to the
 P-Chain.
 
-You can do this by following the [subnet tutorial] or by using the [subnet-cli].
+You can do this by following the [chain tutorial] or by using the [chain-cli].
 
 [interchain messaging]: https://github.com/luxfi/node/tree/master/vms/platformvm/warp/README.md
-[subnet tutorial]: https://build.lux.network/docs/tooling/create-lux-l1
+[chain tutorial]: https://build.lux.network/docs/tooling/create-lux-l1
 [Geth]: https://github.com/luxfi/geth
 [C-Chain]: https://build.lux.network/docs/quick-start/primary-network#c-chain
 [Net]: https://build.lux.network/docs/lux-l1s
 
 ## Cross Net Transaction Example
 
-The following example shows how to interact with the XSVM to send and receive native assets across subnets.
+The following example shows how to interact with the XSVM to send and receive native assets across chains.
 
 ### Overview of Steps
 
@@ -311,7 +311,7 @@ The following example shows how to interact with the XSVM to send and receive na
 
 ### Create and Deploy Net A, Net B
 
-Using the lux-cli, this step deploys two subnets running the XSVM. Net A will act as the sender in this demo, and Net B will act as the receiver.
+Using the lux-cli, this step deploys two chains running the XSVM. Net A will act as the sender in this demo, and Net B will act as the receiver.
 
 Steps
 
@@ -326,20 +326,20 @@ xsvm chain genesis --encoding binary > xsvm.genesis
 ### Create Net A and Net B
 
 ```bash
-lux subnet create subnetA --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
-lux subnet create subnetB --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
+lux chain create chainA --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
+lux chain create chainB --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
 ```
 
 ### Deploy Net A and Net B
 
 ```bash
-lux subnet deploy subnetA --local
-lux subnet deploy subnetB --local
+lux chain deploy chainA --local
+lux chain deploy chainB --local
 ```
 
 ### Issue Export Tx from Net A
 
-The NetID and ChainIDs are stored in the sidecar.json files in your lux-cli directory. Typically this is located at $HOME/.lux/subnets/
+The ChainID and ChainIDs are stored in the sidecar.json files in your lux-cli directory. Typically this is located at $HOME/.lux/chains/
 
 ```bash
 xsvm issue export --source-chain-id <NetA.BlockchainID> --amount <export_amount> --destination-chain-id <NetB.BlockchainID>

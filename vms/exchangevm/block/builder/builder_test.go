@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/codecmock"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"

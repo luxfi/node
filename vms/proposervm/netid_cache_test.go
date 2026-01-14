@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache/lru"
 )
@@ -56,7 +56,7 @@ func (m *mockValidatorState) GetWarpValidatorSet(context.Context, uint64, ids.ID
 	return nil, nil
 }
 
-// TestValidatorStateWrapperCache verifies NetID caching in validatorStateWrapper
+// TestValidatorStateWrapperCache verifies ChainID caching in validatorStateWrapper
 func TestValidatorStateWrapperCache(t *testing.T) {
 	require := require.New(t)
 
@@ -107,7 +107,7 @@ func TestValidatorStateWrapperCache(t *testing.T) {
 	require.Equal(2, mock.getNetworkIDCallCount, "Cached value should be used")
 }
 
-// TestInterfacesToConsensusValidatorStateAdapterCache verifies NetID caching in adapter
+// TestInterfacesToConsensusValidatorStateAdapterCache verifies ChainID caching in adapter
 func TestInterfacesToConsensusValidatorStateAdapterCache(t *testing.T) {
 	require := require.New(t)
 
@@ -140,8 +140,8 @@ func TestInterfacesToConsensusValidatorStateAdapterCache(t *testing.T) {
 	require.Equal(1, mock.getNetworkIDCallCount, "Second call should use cache")
 }
 
-// TestNetIDCacheSize verifies cache eviction works correctly
-func TestNetIDCacheSize(t *testing.T) {
+// TestChainIDCacheSize verifies cache eviction works correctly
+func TestChainIDCacheSize(t *testing.T) {
 	require := require.New(t)
 
 	mock := &mockValidatorState{

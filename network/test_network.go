@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/metric"
 
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	nodevalidators "github.com/luxfi/consensus/validator"
-	validators "github.com/luxfi/consensus/validator"
-	"github.com/luxfi/consensus/validator/uptime"
+	nodevalidators "github.com/luxfi/validators"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	nodevalidators "github.com/luxfi/consensus/validator"
-	validators "github.com/luxfi/consensus/validator"
+	nodevalidators "github.com/luxfi/validators"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 )
@@ -121,7 +121,7 @@ func (o *overriddenManager) String() string {
 	validators := o.manager.GetMap(o.netID)
 
 	// Write header
-	sb.WriteString(fmt.Sprintf("Overridden Validator Manager (NetID = %s): Validator Manager: (Size = %d)\n",
+	sb.WriteString(fmt.Sprintf("Overridden Validator Manager (ChainID = %s): Validator Manager: (Size = %d)\n",
 		o.netID, len(validators)))
 
 	// Get all chain IDs by checking which ones have validators

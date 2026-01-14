@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -270,13 +270,13 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	ctx2 := &runtime.Runtime{
+	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
+	require.NoError(complexRemoveValidatorTx.SyntacticVerify(rt2))
 
 	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
 		// Codec version
@@ -433,13 +433,13 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
 	// This functionality is now handled differently
 
-	ctx3 := &runtime.Runtime{
+	rt3 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
 		XAssetID: xAssetID,
 	}
-	unsignedComplexRemoveValidatorTx.InitRuntime(ctx3)
+	unsignedComplexRemoveValidatorTx.InitRuntime(rt3)
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
 	require.NoError(err)

@@ -117,7 +117,7 @@ export default function HomePage() {
                 P-Chain
               </h3>
               <p className="mt-2 fd-muted-foreground">
-                Platform chain for validator coordination, staking, and subnet management.
+                Platform chain for validator coordination, staking, and chain management.
                 Linear consensus with 100-year vesting schedules.
               </p>
             </Link>
@@ -250,7 +250,7 @@ export default function HomePage() {
               </h3>
               <p className="mt-2 fd-muted-foreground">
                 P2P networking layer with peer discovery, message routing,
-                and cross-chain Warp messaging for subnet communication.
+                and cross-chain Warp messaging for chain communication.
               </p>
             </Link>
 
@@ -402,8 +402,8 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs/subnets" className="hover:fd-foreground">
-                    Subnets
+                  <Link href="/docs/chains" className="hover:fd-foreground">
+                    Chains
                   </Link>
                 </li>
               </ul>

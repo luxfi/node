@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
 
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"

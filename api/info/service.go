@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
 	// "github.com/luxfi/consensus/networking/benchlist" // Unused
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"

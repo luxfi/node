@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/codec/wrappers"
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"

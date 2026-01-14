@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/luxfi/consensus/engine/interfaces"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/metric"

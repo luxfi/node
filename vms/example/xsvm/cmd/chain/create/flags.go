@@ -15,7 +15,7 @@ import (
 
 const (
 	URIKey        = "uri"
-	NetIDKey      = "chain-id"
+	ChainIDKey      = "chain-id"
 	AddressKey    = "address"
 	BalanceKey    = "balance"
 	NameKey       = "name"
@@ -24,7 +24,7 @@ const (
 
 func AddFlags(flags *pflag.FlagSet) {
 	flags.String(URIKey, primary.LocalAPIURI, "API URI to use to issue the chain creation transaction")
-	flags.String(NetIDKey, "", "Net to create the chain under")
+	flags.String(ChainIDKey, "", "Net to create the chain under")
 	flags.String(AddressKey, "", "Address to fund in the genesis (required)")
 	flags.Uint64(BalanceKey, math.MaxUint64, "Amount to provide the funded address in the genesis")
 	flags.String(NameKey, "xs", "Name of the chain to create")
@@ -33,7 +33,7 @@ func AddFlags(flags *pflag.FlagSet) {
 
 type Config struct {
 	URI        string
-	NetID      ids.ID
+	ChainID      ids.ID
 	Address    ids.ShortID
 	Balance    uint64
 	Name       string
@@ -54,7 +54,7 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 		return nil, err
 	}
 
-	netIDStr, err := flags.GetString(NetIDKey)
+	netIDStr, err := flags.GetString(ChainIDKey)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 
 	return &Config{
 		URI:        uri,
-		NetID:      netID,
+		ChainID:      netID,
 		Address:    addr,
 		Balance:    balance,
 		Name:       name,

@@ -36,7 +36,7 @@ func TestNewNetsNoPrimaryNetworkConfig(t *testing.T) {
 }
 
 func TestNetsGetOrCreate(t *testing.T) {
-	testNetID := ids.GenerateTestID()
+	testChainID := ids.GenerateTestID()
 
 	type args struct {
 		netID ids.ID
@@ -51,11 +51,11 @@ func TestNetsGetOrCreate(t *testing.T) {
 			name: "adding duplicate net is a noop",
 			args: []args{
 				{
-					netID: testNetID,
+					netID: testChainID,
 					want:  true,
 				},
 				{
-					netID: testNetID,
+					netID: testChainID,
 				},
 			},
 		},
@@ -96,7 +96,7 @@ func TestNetsGetOrCreate(t *testing.T) {
 }
 
 func TestNetConfigs(t *testing.T) {
-	testNetID := ids.GenerateTestID()
+	testChainID := ids.GenerateTestID()
 
 	tests := []struct {
 		name   string
@@ -109,18 +109,18 @@ func TestNetConfigs(t *testing.T) {
 			config: map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
 			},
-			netID: testNetID,
+			netID: testChainID,
 			want:  nets.Config{},
 		},
 		{
 			name: "use net config",
 			config: map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
-				testNetID: {
+				testChainID: {
 					ValidatorOnly: true,
 				},
 			},
-			netID: testNetID,
+			netID: testChainID,
 			want: nets.Config{
 				ValidatorOnly: true,
 			},

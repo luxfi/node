@@ -31,7 +31,7 @@ Validators must:
 
 Validators earn rewards for:
 - Validating the Primary Network (P, X, C, Q chains)
-- Validating custom subnets (additional rewards)
+- Validating custom chains (additional rewards)
 - Maintaining high uptime (>80%)
 
 Reward calculation:
@@ -352,22 +352,22 @@ curl -X POST --data '{
 }' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
 ```
 
-## Subnet Validation
+## Chain Validation
 
-### Join a Subnet
+### Join a Chain
 
-Validate additional subnets for extra rewards:
+Validate additional chains for extra rewards:
 
 ```bash
-# Add subnet validator
+# Add chain validator
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "platform.addSubnetValidator",
+    "method": "platform.addChainValidator",
     "params": {
         "username": "myuser",
         "password": "mypassword",
         "nodeID": "NodeID-xxx",
-        "subnetID": "subnet-xxx",
+        "chainID": "chain-xxx",
         "startTime": 1704067200,
         "endTime": 1735689600,
         "weight": 1000
@@ -376,9 +376,9 @@ curl -X POST --data '{
 }' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
 ```
 
-### Subnet Requirements
+### Chain Requirements
 
-Each subnet may have:
+Each chain may have:
 - Additional hardware requirements
 - Custom VM installations
 - Specific uptime requirements
@@ -480,5 +480,5 @@ Yes, but each needs:
 
 - [Monitoring Guide](/docs/operations/monitoring) - Set up comprehensive monitoring
 - [Security Guide](/docs/operations/security) - Harden your validator
-- [Subnet Creation](/docs/architecture/subnets) - Create custom blockchains
+- [Chain Creation](/docs/architecture/chains) - Create custom blockchains
 - [API Reference](/docs/api/platform) - Platform chain API details

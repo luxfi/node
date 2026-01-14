@@ -51,10 +51,10 @@ const (
 	QueryFailedOp
 	QbitOp // Authenticated preference signal (formerly ChitsOp)
 	// Application:
-	AppRequestOp
-	AppErrorOp
-	AppResponseOp
-	AppGossipOp
+	RequestOp
+	ErrorOp
+	ResponseOp
+	GossipOp
 	// Internal:
 	ConnectedOp
 	DisconnectedOp
@@ -75,8 +75,8 @@ var (
 		GetOp,
 		PushQueryOp,
 		PullQueryOp,
-		AppRequestOp,
-		AppGossipOp,
+		RequestOp,
+		GossipOp,
 		GetStateSummaryFrontierOp,
 		GetAcceptedStateSummaryOp,
 		SimplexOp,
@@ -91,7 +91,7 @@ var (
 		GetAncestorsFailedOp:            AncestorsOp,
 		GetFailedOp:                     PutOp,
 		QueryFailedOp:                   QbitOp,
-		AppErrorOp:                      AppResponseOp,
+		ErrorOp:                         ResponseOp,
 	}
 
 	errUnknownMessageType = errors.New("unknown message type")
@@ -158,13 +158,13 @@ func (op Op) String() string {
 	case QbitOp:
 		return "qbit"
 	// Application
-	case AppRequestOp:
+	case RequestOp:
 		return "app_request"
-	case AppErrorOp:
+	case ErrorOp:
 		return "app_error"
-	case AppResponseOp:
+	case ResponseOp:
 		return "app_response"
-	case AppGossipOp:
+	case GossipOp:
 		return "app_gossip"
 	// Internal
 	case ConnectedOp:
@@ -230,14 +230,14 @@ func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 	case *p2p.Message_Chits:
 		return msg.Chits, nil
 	// Application:
-	case *p2p.Message_AppRequest:
-		return msg.AppRequest, nil
-	case *p2p.Message_AppResponse:
-		return msg.AppResponse, nil
-	case *p2p.Message_AppError:
-		return msg.AppError, nil
-	case *p2p.Message_AppGossip:
-		return msg.AppGossip, nil
+	case *p2p.Message_Request:
+		return msg.Request, nil
+	case *p2p.Message_Response:
+		return msg.Response, nil
+	case *p2p.Message_Error:
+		return msg.Error, nil
+	case *p2p.Message_Gossip:
+		return msg.Gossip, nil
 	// Simplex
 	case *p2p.Message_Simplex:
 		return msg.Simplex, nil
@@ -302,11 +302,11 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 			encoded = append(encoded, container...)
 		}
 		return encoded
-	case *p2p.AppGossip:
+	case *p2p.Gossip:
 		return m.AppBytes
-	case *p2p.AppRequest:
+	case *p2p.Request:
 		return m.AppBytes
-	case *p2p.AppResponse:
+	case *p2p.Response:
 		return m.AppBytes
 	// Request messages with container IDs for P-Chain sync
 	case *p2p.GetAccepted:
@@ -387,14 +387,14 @@ func ToOp(m *p2p.Message) (Op, error) {
 		return PullQueryOp, nil
 	case *p2p.Message_Chits:
 		return QbitOp, nil
-	case *p2p.Message_AppRequest:
-		return AppRequestOp, nil
-	case *p2p.Message_AppResponse:
-		return AppResponseOp, nil
-	case *p2p.Message_AppError:
-		return AppErrorOp, nil
-	case *p2p.Message_AppGossip:
-		return AppGossipOp, nil
+	case *p2p.Message_Request:
+		return RequestOp, nil
+	case *p2p.Message_Response:
+		return ResponseOp, nil
+	case *p2p.Message_Error:
+		return ErrorOp, nil
+	case *p2p.Message_Gossip:
+		return GossipOp, nil
 	case *p2p.Message_Simplex:
 		return SimplexOp, nil
 	default:

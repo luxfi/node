@@ -182,12 +182,12 @@ Located in `vms/thresholdvm/fhe/`:
 ### 1. AppSender Interface
 Node's rpcchainvm must implement `consensuscore.AppSender`, not just `warp.Sender`.
 
-### 2. Subnet Tracking
-Nodes don't automatically track subnets. Use:
+### 2. Chain Tracking
+Nodes don't automatically track chains. Use:
 ```bash
---track-subnets=<SubnetID>
+--track-chains=<ChainID>
 ```
-Or create config: `~/.lux/runs/.../node*/subnetConfigs/<SubnetID>.json`
+Or create config: `~/.lux/runs/.../node*/chainConfigs/<ChainID>.json`
 
 ### 3. Genesis blobSchedule
 Mainnet genesis requires Cancun fork config:

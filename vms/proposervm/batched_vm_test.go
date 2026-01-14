@@ -26,10 +26,10 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validators "github.com/luxfi/consensus/validator"
-	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/vm/chain/blocktest"
 
 	blockbuilder "github.com/luxfi/node/vms/proposervm/block"

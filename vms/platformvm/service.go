@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -372,7 +372,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 // GetNetArgs are the arguments to GetNet
 type GetNetArgs struct {
 	// ID of the net to retrieve information about
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // GetNetResponse is the response from calling GetNet
@@ -395,17 +395,17 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getNet",
-		"netID", args.NetID,
+		"netID", args.ChainID,
 	)
 
-	if args.NetID == constants.PrimaryNetworkID {
+	if args.ChainID == constants.PrimaryNetworkID {
 		return errPrimaryNetworkIsNotANet
 	}
 
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	netOwner, err := s.vm.state.GetNetOwner(args.NetID)
+	netOwner, err := s.vm.state.GetNetOwner(args.ChainID)
 	if err != nil {
 		return err
 	}
@@ -426,7 +426,7 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 	response.Threshold = avajson.Uint32(owner.Threshold)
 	response.Locktime = avajson.Uint64(owner.Locktime)
 
-	switch netTransformationTx, err := s.vm.state.GetNetTransformation(args.NetID); err {
+	switch netTransformationTx, err := s.vm.state.GetNetTransformation(args.ChainID); err {
 	case nil:
 		response.IsPermissioned = false
 		response.NetTransformationTxID = netTransformationTx.ID()
@@ -437,7 +437,7 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 		return err
 	}
 
-	switch c, err := s.vm.state.GetNetToL1Conversion(args.NetID); err {
+	switch c, err := s.vm.state.GetNetToL1Conversion(args.ChainID); err {
 	case nil:
 		response.IsPermissioned = false
 		response.ConversionID = c.ConversionID
@@ -602,7 +602,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 
 // GetStakingAssetIDArgs are the arguments to GetStakingAssetID
 type GetStakingAssetIDArgs struct {
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // GetStakingAssetIDResponse is the response from calling GetStakingAssetID
@@ -618,7 +618,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 		"method", "getStakingAssetID",
 	)
 
-	if args.NetID == constants.PrimaryNetworkID {
+	if args.ChainID == constants.PrimaryNetworkID {
 		response.AssetID = s.vm.xAssetID
 		return nil
 	}
@@ -626,11 +626,11 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformNetIntf, err := s.vm.state.GetNetTransformation(args.NetID)
+	transformNetIntf, err := s.vm.state.GetNetTransformation(args.ChainID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
-			args.NetID,
+			args.ChainID,
 			err,
 		)
 	}
@@ -650,7 +650,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 type GetCurrentValidatorsArgs struct {
 	// Net we're listing the validators of
 	// If omitted, defaults to primary network
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 	// NodeIDs of validators to request. If [NodeIDs]
 	// is empty, it fetches all current validators. If
 	// some nodeIDs are not currently validators, they
@@ -722,11 +722,11 @@ func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentVa
 	defer s.vm.lock.Unlock()
 
 	// Check if net is L1
-	_, err := s.vm.state.GetNetToL1Conversion(args.NetID)
+	_, err := s.vm.state.GetNetToL1Conversion(args.ChainID)
 	if errors.Is(err, database.ErrNotFound) {
 		// Net is not L1, get validators for the net
 		reply.Validators, err = s.getPrimaryOrNetValidators(
-			args.NetID,
+			args.ChainID,
 			nodeIDs,
 		)
 		if err != nil {
@@ -741,7 +741,7 @@ func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentVa
 	// Net is L1, get validators for L1
 	reply.Validators, err = s.getL1Validators(
 		request.Context(),
-		args.NetID,
+		args.ChainID,
 		nodeIDs,
 	)
 	if err != nil {
@@ -977,7 +977,7 @@ type GetL1ValidatorArgs struct {
 
 type GetL1ValidatorReply struct {
 	platformapi.APIL1Validator
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 	// Height is the height of the last accepted block
 	Height avajson.Uint64 `json:"height"`
 }
@@ -1009,7 +1009,7 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 	}
 
 	reply.APIL1Validator = apiVdr
-	reply.NetID = l1Validator.ChainID
+	reply.ChainID = l1Validator.ChainID
 	reply.Height = avajson.Uint64(height)
 	return nil
 }
@@ -1068,7 +1068,7 @@ func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapi.AP
 
 // GetCurrentSupplyArgs are the arguments for calling GetCurrentSupply
 type GetCurrentSupplyArgs struct {
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // GetCurrentSupplyReply are the results from calling GetCurrentSupply
@@ -1087,7 +1087,7 @@ func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, 
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	supply, err := s.vm.state.GetCurrentSupply(args.NetID)
+	supply, err := s.vm.state.GetCurrentSupply(args.ChainID)
 	if err != nil {
 		return fmt.Errorf("fetching current supply failed: %w", err)
 	}
@@ -1110,7 +1110,7 @@ type SampleValidatorsArgs struct {
 
 	// ID of net to sample validators from
 	// If omitted, defaults to the primary network
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // SampleValidatorsReply are the results from calling Sample
@@ -1129,9 +1129,9 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 	// Sample is not available in consensus validators.Manager
 	// For now, return empty list
 	// TODO: Implement sampling when validators.Manager is properly integrated
-	// sample, err := s.vm.Validators.Sample(args.NetID, int(args.Size))
+	// sample, err := s.vm.Validators.Sample(args.ChainID, int(args.Size))
 	// if err != nil {
-	// 	return fmt.Errorf("sampling %s errored with %w", args.NetID, err)
+	// 	return fmt.Errorf("sampling %s errored with %w", args.ChainID, err)
 	// }
 
 	reply.Validators = []ids.NodeID{}
@@ -1256,7 +1256,7 @@ type ValidatedByArgs struct {
 // ValidatedByResponse is the reply from calling ValidatedBy
 type ValidatedByResponse struct {
 	// ID of the Net validating the specified blockchain
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // ValidatedBy returns the ID of the Net that validates [args.BlockchainID]
@@ -1271,13 +1271,13 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 
 	// GetChainID is not available in the current validators.Manager interface
 	// Return primary network for now
-	response.NetID = constants.PrimaryNetworkID
+	response.ChainID = constants.PrimaryNetworkID
 	return nil
 }
 
 // ValidatesArgs are the arguments to Validates
 type ValidatesArgs struct {
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // ValidatesResponse is the response from calling Validates
@@ -1285,7 +1285,7 @@ type ValidatesResponse struct {
 	BlockchainIDs []ids.ID `json:"blockchainIDs"`
 }
 
-// Validates returns the IDs of the blockchains validated by [args.NetID]
+// Validates returns the IDs of the blockchains validated by [args.ChainID]
 func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *ValidatesResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
@@ -1295,25 +1295,25 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	if args.NetID != constants.PrimaryNetworkID {
-		netTx, _, err := s.vm.state.GetTx(args.NetID)
+	if args.ChainID != constants.PrimaryNetworkID {
+		netTx, _, err := s.vm.state.GetTx(args.ChainID)
 		if err != nil {
 			return fmt.Errorf(
 				"problem retrieving net %q: %w",
-				args.NetID,
+				args.ChainID,
 				err,
 			)
 		}
 		_, ok := netTx.Unsigned.(*txs.CreateChainTx)
 		if !ok {
-			return fmt.Errorf("%q is not a net", args.NetID)
+			return fmt.Errorf("%q is not a net", args.ChainID)
 		}
 	}
 
 	// Get the chains that exist
-	chains, err := s.vm.state.GetChains(args.NetID)
+	chains, err := s.vm.state.GetChains(args.ChainID)
 	if err != nil {
-		return fmt.Errorf("problem retrieving chains for net %q: %w", args.NetID, err)
+		return fmt.Errorf("problem retrieving chains for net %q: %w", args.ChainID, err)
 	}
 
 	response.BlockchainIDs = make([]ids.ID, len(chains))
@@ -1332,7 +1332,7 @@ type APIBlockchain struct {
 	Name string `json:"name"`
 
 	// Net that validates the blockchain
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 
 	// Virtual Machine the blockchain runs
 	VMID ids.ID `json:"vmID"`
@@ -1379,7 +1379,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
 				ID:    chainID,
 				Name:  chain.BlockchainName,
-				NetID: netID,
+				ChainID: netID,
 				VMID:  chain.VMID,
 			})
 		}
@@ -1398,7 +1398,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
 			ID:    chainID,
 			Name:  chain.BlockchainName,
-			NetID: constants.PrimaryNetworkID,
+			ChainID: constants.PrimaryNetworkID,
 			VMID:  chain.VMID,
 		})
 	}
@@ -1636,7 +1636,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 // GetMinStakeArgs are the arguments for calling GetMinStake.
 type GetMinStakeArgs struct {
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // GetMinStakeReply is the response from calling GetMinStake.
@@ -1654,7 +1654,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 		"method", "getMinStake",
 	)
 
-	if args.NetID == constants.PrimaryNetworkID {
+	if args.ChainID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = avajson.Uint64(s.vm.MinValidatorStake)
 		reply.MinDelegatorStake = avajson.Uint64(s.vm.MinDelegatorStake)
 		return nil
@@ -1663,11 +1663,11 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformNetIntf, err := s.vm.state.GetNetTransformation(args.NetID)
+	transformNetIntf, err := s.vm.state.GetNetTransformation(args.ChainID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
-			args.NetID,
+			args.ChainID,
 			err,
 		)
 	}
@@ -1689,7 +1689,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 type GetTotalStakeArgs struct {
 	// Net we're getting the total stake
 	// If omitted returns Primary network weight
-	NetID ids.ID `json:"netID"`
+	ChainID ids.ID `json:"netID"`
 }
 
 // GetTotalStakeReply is the response from calling GetTotalStake.
@@ -1707,7 +1707,7 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 		"method", "getTotalStake",
 	)
 
-	totalWeight, err := s.vm.Validators.TotalWeight(args.NetID)
+	totalWeight, err := s.vm.Validators.TotalWeight(args.ChainID)
 	if err != nil {
 		return fmt.Errorf("couldn't get total weight: %w", err)
 	}
@@ -1784,7 +1784,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
 	Height platformapi.Height `json:"height"`
-	NetID  ids.ID             `json:"netID"`
+	ChainID  ids.ID             `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {
@@ -1856,7 +1856,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		log.String("method", "getValidatorsAt"),
 		log.Uint64("height", uint64(args.Height)),
 		log.Bool("isProposed", args.Height.IsProposed()),
-		log.Stringer("netID", args.NetID),
+		log.Stringer("netID", args.ChainID),
 	)
 
 	s.vm.lock.Lock()
@@ -1875,7 +1875,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		height = lastAcceptedBlock.Height()
 	}
 
-	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.NetID)
+	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.ChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
 	}
@@ -1889,7 +1889,7 @@ type GetAllValidatorsAtArgs struct {
 
 // GetAllValidatorsAtReply is the response from GetAllValidatorsAt
 type GetAllValidatorsAtReply struct {
-	// Map of NetID -> ValidatorSet
+	// Map of ChainID -> ValidatorSet
 	ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
 }
 

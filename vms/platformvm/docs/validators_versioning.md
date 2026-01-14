@@ -63,7 +63,7 @@ Validator diffs layout is optimized to support iteration. Validator sets are reb
 
 | Key                                | Value                                |
 |------------------------------------|--------------------------------------|
-| NetID + Reverse_Height + NodeID | serialized state.ValidatorWeightDiff |
+| ChainID + Reverse_Height + NodeID | serialized state.ValidatorWeightDiff |
 
 Note that:
 
@@ -75,7 +75,7 @@ Note that:
 
 | Key                                | Value                         |
 |------------------------------------|-------------------------------|
-| NetID + Reverse_Height + NodeID | validator.BlsKey bytes or nil |
+| ChainID + Reverse_Height + NodeID | validator.BlsKey bytes or nil |
 
 Note that:
 

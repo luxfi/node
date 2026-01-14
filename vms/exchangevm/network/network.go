@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	consensusvalidator "github.com/luxfi/consensus/validator"
+	consensusvalidator "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/exchangevm/txs"

@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/runtime"
 	"github.com/luxfi/consensus/core/coremock"
+	"github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
@@ -27,9 +27,9 @@ import (
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/network"
@@ -45,15 +45,15 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/vm/chains/atomic"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 
-	validators "github.com/luxfi/consensus/validator"
+	validators "github.com/luxfi/validators"
 )
 
 const (
@@ -154,7 +154,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.fx = defaultFx(t, res.clk, logger, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
-	// Convert testcontext.Context to runtime.Runtime for state
+	// Convert test runtime to runtime.Runtime for state.
 	stateConsensusCtx := &runtime.Runtime{
 		NetworkID: res.rt.NetworkID,
 		ChainID:   res.rt.ChainID,
@@ -174,7 +174,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.utxosVerifier = utxo.NewVerifier(res.clk, res.fx)
 
 	genesisID := res.state.GetLastAccepted()
-	// Convert testcontext.Context to runtime.Runtime
+	// Convert test runtime to runtime.Runtime.
 	backendConsensusCtx := &runtime.Runtime{
 		NetworkID:      res.rt.NetworkID,
 		ChainID:        res.rt.ChainID,
@@ -273,7 +273,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	if len(c.keys) == 0 {
 		c.keys = genesistest.DefaultFundedKeys
 	}
-	// Convert testcontext.Context to runtime.Runtime for wallet
+	// Convert test runtime to runtime.Runtime for wallet.
 	walletCtx := &runtime.Runtime{
 		NetworkID:    e.rt.NetworkID,
 		ChainID:      e.rt.ChainID,
@@ -286,7 +286,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		TxFee:                         constants.MilliLux,
 		CreateAssetTxFee:              constants.MilliLux,
 		CreateNetTxFee:                constants.Lux,
-		CreateChainTxFee:         constants.Lux,
+		CreateChainTxFee:              constants.Lux,
 		AddPrimaryNetworkValidatorFee: 0,
 		AddPrimaryNetworkDelegatorFee: 0,
 	}

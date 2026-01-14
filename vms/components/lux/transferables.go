@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/luxfi/codec"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"

@@ -4,7 +4,7 @@
 package txstest
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"

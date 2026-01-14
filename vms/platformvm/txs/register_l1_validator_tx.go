@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/vm/types"

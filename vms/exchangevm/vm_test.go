@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/runtime"
+	"github.com/luxfi/runtime"
 	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"

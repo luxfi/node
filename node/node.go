@@ -21,12 +21,12 @@ import (
 	"sync"
 	"time"
 
-	nodevalidators "github.com/luxfi/consensus/validator"
+	nodevalidators "github.com/luxfi/validators"
 
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/consensus/validator/uptime"
+	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -920,7 +920,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		NetID:         constants.PrimaryNetworkID,
+		ChainID:         constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,
