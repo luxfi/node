@@ -15,18 +15,18 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/rpc"
+	"github.com/luxfi/sdk/info"
 
 	ethcommon "github.com/luxfi/geth/common"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/network/primary/common"
 )
 
 // EthAccount represents an Ethereum account's state

@@ -13,7 +13,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	reflect "reflect"
 
-	chain "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"

@@ -8,29 +8,29 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
 	lssconfig "github.com/luxfi/threshold/protocols/lss/config"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 )
 
 var (
-	_ block.ChainVM = (*VM)(nil)
+	_ chain.ChainVM = (*VM)(nil)
 
 	Version = &version.Semantic{
 		Major: 1,
@@ -92,7 +92,7 @@ type VM struct {
 	rt       *runtime.Runtime
 	db       database.Database
 	config   ThresholdConfig
-	toEngine chan<- core.Message
+	toEngine chan<- vmcore.Message
 	log      log.Logger
 
 	// Protocol Registry - supports multiple threshold protocols
@@ -204,15 +204,22 @@ type vmStats struct {
 	mu                 sync.RWMutex
 }
 
-// Initialize implements the block.ChainVM interface
+// Initialize implements the chain.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	init common.VMInit,
+	init vmcore.Init,
 ) error {
 	vm.rt = init.Runtime
 	vm.db = init.DB
 	vm.toEngine = init.ToEngine
-	vm.log = init.Log
+	// Use init.Log if provided, otherwise fallback to Runtime.Log
+	if init.Log != nil {
+		vm.log = init.Log
+	} else if init.Runtime != nil {
+		if logger, ok := init.Runtime.Log.(log.Logger); ok {
+			vm.log = logger
+		}
+	}
 
 	// Initialize maps
 	vm.pendingBlocks = make(map[ids.ID]*Block)
@@ -252,10 +259,12 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	// Parse genesis
+	// Parse genesis - use JSON for simple genesis configuration
 	genesis := &Genesis{}
-	if _, err := Codec.Unmarshal(init.Genesis, genesis); err != nil {
-		return fmt.Errorf("failed to parse genesis: %w", err)
+	if len(init.Genesis) > 0 {
+		if err := json.Unmarshal(init.Genesis, genesis); err != nil {
+			return fmt.Errorf("failed to parse genesis: %w", err)
+		}
 	}
 
 	// Create genesis block
@@ -1219,8 +1228,8 @@ func (vm *VM) cleanupExpiredSessions() {
 	}
 }
 
-// BuildBlock implements the block.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+// BuildBlock implements the chain.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 
@@ -1285,20 +1294,23 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	return blk, nil
 }
 
-// GetBlock implements the block.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+// GetBlock implements the chain.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	if blk, exists := vm.pendingBlocks[id]; exists {
-		return blk, nil
+	// Check pending blocks (nil-safe for early calls before initialization)
+	if vm.pendingBlocks != nil {
+		if blk, exists := vm.pendingBlocks[id]; exists {
+			return blk, nil
+		}
 	}
 
 	return vm.getBlock(id)
 }
 
-// ParseBlock implements the block.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+// ParseBlock implements the chain.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
 	blk := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(bytes, blk); err != nil {
 		return nil, err
@@ -1332,16 +1344,19 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements the common.VM interface
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	return map[string]interface{}{
-		"status":         "healthy",
-		"mpcReady":       vm.mpcReady,
-		"activeKey":      vm.activeKeyID,
-		"activeSessions": len(vm.signingSessions),
-		"totalKeys":      len(vm.keys),
+	return &chain.HealthResult{
+		Healthy: vm.mpcReady,
+		Details: map[string]string{
+			"status":         "healthy",
+			"mpcReady":       fmt.Sprintf("%t", vm.mpcReady),
+			"activeKey":      vm.activeKeyID,
+			"activeSessions": fmt.Sprintf("%d", len(vm.signingSessions)),
+			"totalKeys":      fmt.Sprintf("%d", len(vm.keys)),
+		},
 	}, nil
 }
 
@@ -1369,7 +1384,7 @@ func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler
 }
 
 // Connected implements the common.VM interface
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *chain.VersionInfo) error {
 	return nil
 }
 
@@ -1378,24 +1393,24 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-// AppRequest implements the common.VM interface
-func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+// Request implements the common.VM interface
+func (vm *VM) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	// Handle MPC protocol messages
 	return nil
 }
 
-// AppResponse implements the common.VM interface
-func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+// Response implements the common.VM interface
+func (vm *VM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// AppRequestFailed implements the common.VM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
+// RequestFailed implements the common.VM interface
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
-// AppGossip implements the common.VM interface
-func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip implements the common.VM interface
+func (vm *VM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
@@ -1404,9 +1419,9 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 	return Version.String(), nil
 }
 
-// CrossChainAppRequest implements the common.VM interface
+// CrossChainRequest implements the common.VM interface
 // This is how other chains request MPC services
-func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+func (vm *VM) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
 	// Parse cross-chain MPC request
 	var req CrossChainMPCRequest
 	if _, err := Codec.Unmarshal(request, &req); err != nil {
@@ -1447,13 +1462,13 @@ func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestI
 	return nil
 }
 
-// CrossChainAppResponse implements the common.VM interface
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+// CrossChainResponse implements the common.VM interface
+func (vm *VM) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
+// CrossChainRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
@@ -1475,13 +1490,13 @@ func (vm *VM) SetState(ctx context.Context, state uint32) error {
 }
 
 // NewHTTPHandler returns HTTP handlers for the VM
-func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
-	return vm.CreateHandlers(ctx)
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return vm.createRPCHandler(), nil
 }
 
 // WaitForEvent blocks until an event occurs
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	return nil, nil
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
+	return vmcore.Message{}, nil
 }
 
 // Helper methods

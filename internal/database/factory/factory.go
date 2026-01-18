@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/database"
 	dbfactory "github.com/luxfi/database/factory"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/service/metrics"
 )
 
 // New creates a new database instance based on the provided configuration.

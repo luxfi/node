@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
@@ -102,7 +102,7 @@ func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 }
 
 // IssueTx attempts to issue a transaction into consensus
-func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
+func (w *WalletService) IssueTx(_ *http.Request, args *apitypes.FormattedTx, reply *apitypes.JSONTxID) error {
 	w.vm.log.Warn("deprecated API called",
 		log.String("service", "wallet"),
 		log.String("method", "issueTx"),

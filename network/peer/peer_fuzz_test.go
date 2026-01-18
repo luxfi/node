@@ -137,10 +137,10 @@ func FuzzPeerMessageHandling(f *testing.F) {
 		case 12: // Chits - takes 3 container IDs and acceptedHeight
 			containerID := ids.GenerateTestID()
 			msg, err = mc.Chits(chainID, requestID, containerID, containerID, containerID, 0)
-		case 13: // AppRequest
-			msg, err = mc.AppRequest(chainID, requestID, time.Second, msgData)
-		case 14: // AppResponse
-			msg, err = mc.AppResponse(chainID, requestID, msgData)
+		case 13: // Request
+			msg, err = mc.Request(chainID, requestID, time.Second, msgData)
+		case 14: // Response
+			msg, err = mc.Response(chainID, requestID, msgData)
 		default:
 			// Use raw message data
 			msg, err = mc.Ping(requestID)
@@ -328,8 +328,8 @@ func FuzzPeerConnection(f *testing.F) {
 
 		var msg message.OutboundMessage
 		if compress && len(data) > 100 {
-			// Use AppRequest which supports larger payloads
-			msg, err = mc.AppRequest(chainID, requestID, time.Second, data)
+			// Use Request which supports larger payloads
+			msg, err = mc.Request(chainID, requestID, time.Second, data)
 		} else {
 			// Use Put for smaller payloads
 			msg, err = mc.Put(chainID, requestID, data)

@@ -14,8 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -79,18 +78,18 @@ func NewConsensusNetwork(t *testing.T) *ConsensusNetwork {
 		network.PrimaryNodes[i].ValidatedSets[chainID] = true
 
 		// Create DEX VM for this node
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 
 		rt := &runtime.Runtime{
 			ChainID: blockchainID,
 			Log:     logger,
 		}
 
-		err := vm.Initialize(
+		err := vmImpl.Initialize(
 			context.Background(),
-			common.VMInit{
+			vm.Init{
 				Runtime:  rt,
 				DB:       db,
 				ToEngine: toEngine,
@@ -104,12 +103,12 @@ func NewConsensusNetwork(t *testing.T) *ConsensusNetwork {
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(context.Background(), uint32(core.Ready))
+		err = vmImpl.SetState(context.Background(), uint32(vm.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
 		network.DexNodes[i] = &DexNode{
 			ID: network.PrimaryNodes[i].ID,
-			VM: vm,
+			VM: vmImpl,
 		}
 	}
 
@@ -425,16 +424,16 @@ func BenchmarkConsensusNetwork(b *testing.B) {
 			ValidatedSets: make(map[ids.ID]bool),
 		}
 
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 
 		rt := &runtime.Runtime{
 			ChainID: blockchainID,
 			Log:     logger,
 		}
 
-		_ = vm.Initialize(ctx, common.VMInit{
+		_ = vmImpl.Initialize(ctx, vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -445,11 +444,11 @@ func BenchmarkConsensusNetwork(b *testing.B) {
 			Config:   nil,
 			Fx:       nil,
 		})
-		_ = vm.SetState(ctx, uint32(core.Ready))
+		_ = vmImpl.SetState(ctx, uint32(vm.Ready))
 
 		network.DexNodes[i] = &DexNode{
 			ID: network.PrimaryNodes[i].ID,
-			VM: vm,
+			VM: vmImpl,
 		}
 	}
 

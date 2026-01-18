@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -28,7 +28,7 @@ func TestNew(t *testing.T) {
 		EnableAutomining: true,
 		Log:              log.NewNoOpLogger(),
 		Metrics:          metric.NewMultiGatherer(),
-		VMManager:        vms.NewManager(nil, ids.NewAliaser()),
+		VMManager:        vms.NewManager(),
 		ChainDataDir:     t.TempDir(),
 	}
 
@@ -54,7 +54,7 @@ func TestSkipBootstrapTracker(t *testing.T) {
 		EnableAutomining: true,
 		Log:              log.NewNoOpLogger(),
 		Metrics:          metric.NewMultiGatherer(),
-		VMManager:        vms.NewManager(nil, ids.NewAliaser()),
+		VMManager:        vms.NewManager(),
 		ChainDataDir:     t.TempDir(),
 		// Tracker configuration not required for basic manager testing
 	}
@@ -92,7 +92,7 @@ func TestQueueChainCreation(t *testing.T) {
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
-		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
+		VMManager:    vms.NewManager(),
 		ChainDataDir: t.TempDir(),
 		Nets:         chains,
 	}
@@ -129,7 +129,7 @@ func TestLookup(t *testing.T) {
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
-		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
+		VMManager:    vms.NewManager(),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -165,7 +165,7 @@ func TestIsBootstrapped(t *testing.T) {
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
-		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
+		VMManager:    vms.NewManager(),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -183,7 +183,7 @@ func TestToEngineChannelFlow(t *testing.T) {
 	require := require.New(t)
 
 	// Create toEngine channel (same as what manager creates)
-	toEngine := make(chan block.Message, 1)
+	toEngine := make(chan vm.Message, 1)
 	defer close(toEngine)
 
 	// Track block builds
@@ -204,7 +204,7 @@ func TestToEngineChannelFlow(t *testing.T) {
 	}()
 
 	// Send PendingTxs notification
-	toEngine <- block.Message{Type: 0} // PendingTxs = 0
+	toEngine <- vm.Message{Type: 0} // PendingTxs = 0
 
 	// Give goroutine time to process
 	time.Sleep(10 * time.Millisecond)
@@ -217,7 +217,7 @@ func TestToEngineChannelFlow(t *testing.T) {
 
 	// Send multiple notifications
 	for i := 0; i < 5; i++ {
-		toEngine <- block.Message{Type: 0}
+		toEngine <- vm.Message{Type: 0}
 	}
 
 	time.Sleep(50 * time.Millisecond)
@@ -233,7 +233,7 @@ func TestToEngineChannelFlow(t *testing.T) {
 func TestToEngineMessageTypes(t *testing.T) {
 	require := require.New(t)
 
-	toEngine := make(chan block.Message, 10)
+	toEngine := make(chan vm.Message, 10)
 	defer close(toEngine)
 
 	var pendingTxsCalls int
@@ -255,10 +255,10 @@ func TestToEngineMessageTypes(t *testing.T) {
 	}()
 
 	// Send different message types
-	toEngine <- block.Message{Type: 0} // PendingTxs - should trigger build
-	toEngine <- block.Message{Type: 1} // StateSyncDone - should NOT trigger build
-	toEngine <- block.Message{Type: 0} // PendingTxs - should trigger build
-	toEngine <- block.Message{Type: 2} // Unknown - should NOT trigger build
+	toEngine <- vm.Message{Type: 0} // PendingTxs - should trigger build
+	toEngine <- vm.Message{Type: 1} // StateSyncDone - should NOT trigger build
+	toEngine <- vm.Message{Type: 0} // PendingTxs - should trigger build
+	toEngine <- vm.Message{Type: 2} // Unknown - should NOT trigger build
 
 	time.Sleep(50 * time.Millisecond)
 

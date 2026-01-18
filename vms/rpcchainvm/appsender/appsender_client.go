@@ -29,7 +29,7 @@ func (c *Client) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], r
 	for nodeID := range nodeIDs {
 		nodeIDBytes = append(nodeIDBytes, nodeID[:])
 	}
-	_, err := c.client.SendAppRequest(ctx, &appsenderpb.SendAppRequestMsg{
+	_, err := c.client.SendRequest(ctx, &appsenderpb.SendRequestMsg{
 		NodeIds:   nodeIDBytes,
 		RequestId: requestID,
 		Request:   request,
@@ -38,7 +38,7 @@ func (c *Client) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], r
 }
 
 func (c *Client) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	_, err := c.client.SendAppResponse(ctx, &appsenderpb.SendAppResponseMsg{
+	_, err := c.client.SendResponse(ctx, &appsenderpb.SendResponseMsg{
 		NodeId:    nodeID[:],
 		RequestId: requestID,
 		Response:  response,
@@ -47,7 +47,7 @@ func (c *Client) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 }
 
 func (c *Client) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	_, err := c.client.SendAppError(ctx, &appsenderpb.SendAppErrorMsg{
+	_, err := c.client.SendError(ctx, &appsenderpb.SendErrorMsg{
 		NodeId:       nodeID[:],
 		RequestId:    requestID,
 		ErrorCode:    errorCode,
@@ -57,7 +57,7 @@ func (c *Client) SendError(ctx context.Context, nodeID ids.NodeID, requestID uin
 }
 
 func (c *Client) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
-	_, err := c.client.SendAppGossip(ctx, &appsenderpb.SendAppGossipMsg{
+	_, err := c.client.SendGossip(ctx, &appsenderpb.SendGossipMsg{
 		Msg: msg,
 	})
 	return err

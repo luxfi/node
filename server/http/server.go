@@ -1,0 +1,278 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package server
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/rs/cors"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm"
+)
+
+const (
+	baseURL              = "/ext"
+	maxConcurrentStreams = 64
+)
+
+var (
+	_ PathAdder = readPathAdder{}
+	_ Server    = (*server)(nil)
+)
+
+type PathAdder interface {
+	// AddRoute registers a route to a handler.
+	AddRoute(handler http.Handler, base, endpoint string) error
+
+	// AddAliases registers aliases to the server
+	AddAliases(endpoint string, aliases ...string) error
+}
+
+type PathAdderWithReadLock interface {
+	// AddRouteWithReadLock registers a route to a handler assuming the http
+	// read lock is currently held.
+	AddRouteWithReadLock(handler http.Handler, base, endpoint string) error
+
+	// AddAliasesWithReadLock registers aliases to the server assuming the http read
+	// lock is currently held.
+	AddAliasesWithReadLock(endpoint string, aliases ...string) error
+}
+
+// Server maintains the HTTP router
+type Server interface {
+	PathAdder
+	PathAdderWithReadLock
+	// Dispatch starts the API server
+	Dispatch() error
+	// RegisterChain registers the API endpoints associated with this chain.
+	// That is, add <route, handler> pairs to server so that API calls can be
+	// made to the VM.
+	RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM)
+	// Shutdown this server
+	Shutdown() error
+}
+
+type HTTPConfig struct {
+	ReadTimeout       time.Duration `json:"readTimeout"`
+	ReadHeaderTimeout time.Duration `json:"readHeaderTimeout"`
+	WriteTimeout      time.Duration `json:"writeHeaderTimeout"`
+	IdleTimeout       time.Duration `json:"idleTimeout"`
+}
+
+type server struct {
+	// log this server writes to
+	log log.Logger
+
+	shutdownTimeout time.Duration
+
+	tracingEnabled bool
+	tracer         trace.Tracer
+
+	metrics *serverMetrics
+
+	// Maps endpoints to handlers
+	router *router
+
+	// Mutex for thread-safe operations
+	lock sync.RWMutex
+
+	srv *http.Server
+
+	// Listener used to serve traffic
+	listener net.Listener
+}
+
+// New returns an instance of a Server.
+func New(
+	log log.Logger,
+	listener net.Listener,
+	allowedOrigins []string,
+	shutdownTimeout time.Duration,
+	nodeID ids.NodeID,
+	tracingEnabled bool,
+	tracer trace.Tracer,
+	registerer metric.Registerer,
+	httpConfig HTTPConfig,
+	allowedHosts []string,
+) (Server, error) {
+	m, err := newMetrics(registerer)
+	if err != nil {
+		return nil, err
+	}
+
+	router := newRouter()
+	handler := wrapHandler(router, nodeID, allowedOrigins, allowedHosts)
+
+	httpServer := &http.Server{
+		Handler: h2c.NewHandler(
+			handler,
+			&http2.Server{
+				MaxConcurrentStreams: maxConcurrentStreams,
+			}),
+		ReadTimeout:       httpConfig.ReadTimeout,
+		ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
+		WriteTimeout:      httpConfig.WriteTimeout,
+		IdleTimeout:       httpConfig.IdleTimeout,
+	}
+
+	log.Info("API created with allowed origins: " + strings.Join(allowedOrigins, ","))
+
+	return &server{
+		log:             log,
+		shutdownTimeout: shutdownTimeout,
+		tracingEnabled:  tracingEnabled,
+		tracer:          tracer,
+		metrics:         m,
+		router:          router,
+		srv:             httpServer,
+		listener:        listener,
+	}, nil
+}
+
+func (s *server) Dispatch() error {
+	return s.srv.Serve(s.listener)
+}
+
+func (s *server) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) {
+	s.log.Debug("chain registered (handlers will be created by chain manager)",
+		log.String("chainName", chainName),
+		log.Stringer("chainID", rt.ChainID),
+	)
+}
+
+func (s *server) addChainRoute(chainName string, handler http.Handler, rt *runtime.Runtime, base, endpoint string) error {
+	url := fmt.Sprintf("%s/%s", baseURL, base)
+	s.log.Info("adding route",
+		log.UserString("url", url),
+		log.UserString("endpoint", endpoint),
+	)
+	handler = s.wrapMiddleware(chainName, handler, rt)
+	return s.router.AddRouter(url, endpoint, handler)
+}
+
+func (s *server) wrapMiddleware(chainName string, handler http.Handler, rt *runtime.Runtime) http.Handler {
+	if s.tracingEnabled {
+		handler = TraceHandler(handler, chainName, s.tracer)
+	}
+	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
+	handler = rejectMiddleware(handler, rt)
+	return s.metrics.wrapHandler(chainName, handler)
+}
+
+func (s *server) AddRoute(handler http.Handler, base, endpoint string) error {
+	return s.addRoute(handler, base, endpoint)
+}
+
+func (s *server) AddRouteWithReadLock(handler http.Handler, base, endpoint string) error {
+	s.router.lock.RUnlock()
+	defer s.router.lock.RLock()
+	return s.addRoute(handler, base, endpoint)
+}
+
+func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
+	url := fmt.Sprintf("%s/%s", baseURL, base)
+	s.log.Info("adding route",
+		log.UserString("url", url),
+		log.UserString("endpoint", endpoint),
+	)
+
+	if s.tracingEnabled {
+		handler = TraceHandler(handler, url, s.tracer)
+	}
+
+	// TODO: Add metrics wrapper when available
+	// handler = s.metric.wrapHandler(base, handler)
+	return s.router.AddRouter(url, endpoint, handler)
+}
+
+// StateGetter interface for getting chain state
+type StateGetter interface {
+	Get() vm.State
+}
+
+// Reject middleware wraps a handler. If the chain that the context describes is
+// not done state-syncing/bootstrapping, writes back an error.
+func rejectMiddleware(handler http.Handler, rt *runtime.Runtime) http.Handler {
+	return handler
+}
+
+func (s *server) AddAliases(endpoint string, aliases ...string) error {
+	url := fmt.Sprintf("%s/%s", baseURL, endpoint)
+	endpoints := make([]string, len(aliases))
+	for i, alias := range aliases {
+		endpoints[i] = fmt.Sprintf("%s/%s", baseURL, alias)
+	}
+	return s.router.AddAlias(url, endpoints...)
+}
+
+func (s *server) AddAliasesWithReadLock(endpoint string, aliases ...string) error {
+	// This is safe, as the read lock doesn't actually need to be held once the
+	// http handler is called. However, it is unlocked later, so this function
+	// must end with the lock held.
+	s.router.lock.RUnlock()
+	defer s.router.lock.RLock()
+
+	return s.AddAliases(endpoint, aliases...)
+}
+
+func (s *server) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+	err := s.srv.Shutdown(ctx)
+	cancel()
+
+	// If shutdown times out, make sure the server is still shutdown.
+	_ = s.srv.Close()
+	return err
+}
+
+type readPathAdder struct {
+	pather PathAdderWithReadLock
+}
+
+func PathWriterFromWithReadLock(pather PathAdderWithReadLock) PathAdder {
+	return readPathAdder{
+		pather: pather,
+	}
+}
+
+func (a readPathAdder) AddRoute(handler http.Handler, base, endpoint string) error {
+	return a.pather.AddRouteWithReadLock(handler, base, endpoint)
+}
+
+func (a readPathAdder) AddAliases(endpoint string, aliases ...string) error {
+	return a.pather.AddAliasesWithReadLock(endpoint, aliases...)
+}
+
+func wrapHandler(
+	handler http.Handler,
+	nodeID ids.NodeID,
+	allowedOrigins []string,
+	allowedHosts []string,
+) http.Handler {
+	h := filterInvalidHosts(handler, allowedHosts)
+	h = cors.New(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowCredentials: true,
+	}).Handler(h)
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// Attach this node's ID as a header
+			w.Header().Set("node-id", nodeID.String())
+			h.ServeHTTP(w, r)
+		},
+	)
+}

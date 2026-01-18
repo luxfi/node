@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/rpc"
 )
 
@@ -45,8 +45,8 @@ func (c *WalletClient) IssueTx(ctx context.Context, txBytes []byte, options ...r
 	if err != nil {
 		return ids.Empty, err
 	}
-	res := &api.JSONTxID{}
-	err = c.Requester.SendRequest(ctx, "wallet.issueTx", &api.FormattedTx{
+	res := &apitypes.JSONTxID{}
+	err = c.Requester.SendRequest(ctx, "wallet.issueTx", &apitypes.FormattedTx{
 		Tx:       txStr,
 		Encoding: formatting.Hex,
 	}, res, options...)

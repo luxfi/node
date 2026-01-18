@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/luxfi/codec/wrappers"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
-var _ chainblock.BatchedChainVM = (*VM)(nil)
+var _ chain.BatchedChainVM = (*VM)(nil)
 
 func (vm *VM) GetAncestors(
 	ctx context.Context,
@@ -24,7 +24,7 @@ func (vm *VM) GetAncestors(
 	maxBlocksRetrievalTime time.Duration,
 ) ([][]byte, error) {
 	if vm.batchedVM == nil {
-		return nil, chainblock.ErrRemoteVMNotImplemented
+		return nil, chain.ErrRemoteVMNotImplemented
 	}
 
 	res := make([][]byte, 0, maxBlocksNum)
@@ -79,14 +79,14 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainblock.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
 	// Handle empty input
 	if len(blks) == 0 {
 		return nil, nil
 	}
 
 	if vm.batchedVM == nil {
-		return nil, chainblock.ErrRemoteVMNotImplemented
+		return nil, chain.ErrRemoteVMNotImplemented
 	}
 
 	type partialData struct {
@@ -95,7 +95,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainbloc
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]chainblock.Block, len(blks))
+		blocks      = make([]chain.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))
@@ -113,7 +113,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainbloc
 		blkID := statelessBlock.ID()
 		block, exists := vm.verifiedBlocks[blkID]
 		if exists {
-			blocks[blocksIndex] = &blockAdapter{Block: block}
+			blocks[blocksIndex] = block
 			continue
 		}
 
@@ -135,28 +135,28 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainbloc
 		statelessBlk := statelessBlockDesc.block
 
 		if statelessSignedBlock, ok := statelessBlk.(statelessblock.SignedBlock); ok {
-			blocks[statelessBlockDesc.index] = &blockAdapter{Block: &postForkBlock{
+			blocks[statelessBlockDesc.index] = &postForkBlock{
 				SignedBlock: statelessSignedBlock,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
 					innerBlk: innerBlks[innerBlocksIndex],
 				},
-			}}
+			}
 		} else {
-			blocks[statelessBlockDesc.index] = &blockAdapter{Block: &postForkOption{
+			blocks[statelessBlockDesc.index] = &postForkOption{
 				Block: statelessBlk,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
 					innerBlk: innerBlks[innerBlocksIndex],
 				},
-			}}
+			}
 		}
 	}
 	for ; blocksIndex < len(blocks); blocksIndex, innerBlocksIndex = blocksIndex+1, innerBlocksIndex+1 {
-		blocks[blocksIndex] = &blockAdapter{Block: &preForkBlock{
-			Block: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
+		blocks[blocksIndex] = &preForkBlock{
+			Block: innerBlks[innerBlocksIndex],
 			vm:    vm,
-		}}
+		}
 	}
 	return blocks, nil
 }

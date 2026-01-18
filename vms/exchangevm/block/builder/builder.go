@@ -7,8 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus/engine"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -17,6 +16,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
+	vmcore "github.com/luxfi/vm"
 
 	blockexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
@@ -34,9 +34,9 @@ var (
 type Builder interface {
 	// WaitForEvent waits until there is at least one tx available to the
 	// builder.
-	WaitForEvent(ctx context.Context) (engine.Message, error)
+	WaitForEvent(ctx context.Context) (vmcore.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chainblock.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -63,12 +63,12 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 
 // BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
+func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	if !b.backend.Log.IsZero() {
 		b.backend.Log.Debug("starting to attempt to build a block")
 	}

@@ -10,9 +10,10 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
+	"github.com/luxfi/vm/chain"
 )
 
-func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
+func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
 	localPrimaryValidator, err := vm.state.GetCurrentValidator(
 		constants.PrimaryNetworkID,
 		vm.nodeID,
@@ -40,5 +41,5 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 			return nil, fmt.Errorf("couldn't get current chain validator of %q: %w", chainID, err)
 		}
 	}
-	return nil, nil
+	return &chain.HealthResult{Healthy: true, Details: nil}, nil
 }

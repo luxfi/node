@@ -5,7 +5,7 @@ package chains
 
 import (
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/consensus/engine/interfaces"
+	"github.com/luxfi/vm"
 )
 
 // Registrant can register the existence of a chain
@@ -13,5 +13,5 @@ type Registrant interface {
 	// Called when a chain is created
 	// This function is called before the chain starts processing messages
 	// [vm] should be a vertex.DAGVM or block.ChainVM
-	RegisterChain(chainName string, rt *runtime.Runtime, vm interfaces.VM)
+	RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM)
 }

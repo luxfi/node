@@ -47,8 +47,8 @@ func newFlakyRangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
-			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+		RequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.Error) {
+			responseBytes, appErr := handler.Request(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
 				return nil, appErr
 			}
@@ -66,7 +66,7 @@ func newFlakyRangeProofHandler(
 
 			responseBytes, err := proto.Marshal(proof.ToProto())
 			if err != nil {
-				return nil, &common.AppError{Code: 123, Message: err.Error()}
+				return nil, &common.Error{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -83,9 +83,9 @@ func newFlakyChangeProofHandler(
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
-		AppRequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+		RequestF: func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.Error) {
 			var err error
-			responseBytes, appErr := handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+			responseBytes, appErr := handler.Request(ctx, nodeID, deadline, requestBytes)
 			if appErr != nil {
 				return nil, appErr
 			}
@@ -108,7 +108,7 @@ func newFlakyChangeProofHandler(
 				},
 			})
 			if err != nil {
-				return nil, &common.AppError{Code: 123, Message: err.Error()}
+				return nil, &common.Error{Code: 123, Message: err.Error()}
 			}
 
 			return responseBytes, nil
@@ -121,12 +121,12 @@ type flakyHandler struct {
 	c *counter
 }
 
-func (f *flakyHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+func (f *flakyHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.Error) {
 	if f.c.Inc() == 0 {
-		return nil, &common.AppError{Code: 123, Message: "flake error"}
+		return nil, &common.Error{Code: 123, Message: "flake error"}
 	}
 
-	return f.Handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+	return f.Handler.Request(ctx, nodeID, deadline, requestBytes)
 }
 
 type counter struct {
@@ -152,7 +152,7 @@ type waitingHandler struct {
 	updatedRootChan chan struct{}
 }
 
-func (w *waitingHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+func (w *waitingHandler) Request(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *common.Error) {
 	<-w.updatedRootChan
-	return w.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
+	return w.handler.Request(ctx, nodeID, deadline, requestBytes)
 }

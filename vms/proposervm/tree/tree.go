@@ -8,7 +8,7 @@ import (
 	"maps"
 	"slices"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 )
 
@@ -31,46 +31,46 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(chainblock.Block)
+	Add(chain.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(chainblock.Block) (chainblock.Block, bool)
+	Get(chain.Block) (chain.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
-	Accept(context.Context, chainblock.Block) error
+	Accept(context.Context, chain.Block) error
 }
 
 type tree struct {
 	// parentID -> childID -> childBlock
-	nodes map[ids.ID]map[ids.ID]chainblock.Block
+	nodes map[ids.ID]map[ids.ID]chain.Block
 }
 
 func New() Tree {
 	return &tree{
-		nodes: make(map[ids.ID]map[ids.ID]chainblock.Block),
+		nodes: make(map[ids.ID]map[ids.ID]chain.Block),
 	}
 }
 
-func (t *tree) Add(blk chainblock.Block) {
+func (t *tree) Add(blk chain.Block) {
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
-		children = make(map[ids.ID]chainblock.Block)
+		children = make(map[ids.ID]chain.Block)
 		t.nodes[parentID] = children
 	}
 	children[blk.ID()] = blk
 }
 
-func (t *tree) Get(blk chainblock.Block) (chainblock.Block, bool) {
+func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	originalBlk, exists := children[blk.ID()]
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk chainblock.Block) error {
+func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	// accept the provided block
 	if err := blk.Accept(ctx); err != nil {
 		return err

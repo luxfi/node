@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/vm/chain/blocktest"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 )
 
@@ -18,7 +18,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 
 	tr := New()
 
-	block := chaintest.BuildChild(chaintest.Genesis)
+	block := blocktest.BuildChild(blocktest.Genesis)
 	_, contains := tr.Get(block)
 	require.False(contains)
 
@@ -39,8 +39,8 @@ func TestAcceptBlockConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
-	blockToReject := chaintest.BuildChild(chaintest.Genesis)
+	blockToAccept := blocktest.BuildChild(blocktest.Genesis)
+	blockToReject := blocktest.BuildChild(blocktest.Genesis)
 
 	// add conflicting blocks
 	tr.Add(blockToAccept)
@@ -69,9 +69,9 @@ func TestAcceptChainConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
-	blockToReject := chaintest.BuildChild(chaintest.Genesis)
-	blockToRejectChild := chaintest.BuildChild(blockToReject)
+	blockToAccept := blocktest.BuildChild(blocktest.Genesis)
+	blockToReject := blocktest.BuildChild(blocktest.Genesis)
+	blockToRejectChild := blocktest.BuildChild(blockToReject)
 
 	// add conflicting blocks.
 	tr.Add(blockToAccept)

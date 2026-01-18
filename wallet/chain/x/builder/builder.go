@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/math"
 	"github.com/luxfi/utxo/nftfx"

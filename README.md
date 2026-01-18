@@ -69,37 +69,30 @@ The `node` binary is now in the `build` directory. To run:
 ./build/node
 ```
 
-### Binary Repository
-
-Install Lux Node using an `apt` repository.
-
-#### Adding the APT Repository
-
-If you already have the APT repository added, you do not need to add it again.
-
-To add the repository on Ubuntu, run:
-
-```sh
-sudo su -
-wget -qO - https://downloads.lux.network/node.gpg.key | tee /etc/apt/trusted.gpg.d/node.asc
-source /etc/os-release && echo "deb https://downloads.lux.network/apt $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/lux.list
-exit
-```
-
-#### Installing the Latest Version
-
-After adding the APT repository, install `node` by running:
-
-```sh
-sudo apt update
-sudo apt install node
-```
-
-### Binary Install
+### Binary Install (GitHub Releases)
 
 Download the [latest build](https://github.com/luxfi/node/releases/latest) for your operating system and architecture.
 
-The Lux binary to be executed is named `node`.
+The Lux binary to be executed is named `luxd`.
+
+#### Linux (amd64/arm64)
+
+```sh
+VERSION="vX.Y.Z"
+GOARCH="amd64" # or arm64
+curl -L -o node.tar.gz "https://github.com/luxfi/node/releases/download/${VERSION}/node-linux-${GOARCH}-${VERSION}.tar.gz"
+tar -xzf node.tar.gz
+./luxd --help
+```
+
+#### macOS (amd64/arm64)
+
+```sh
+VERSION="vX.Y.Z"
+curl -L -o node.zip "https://github.com/luxfi/node/releases/download/${VERSION}/node-macos-${VERSION}.zip"
+unzip node.zip
+./luxd --help
+```
 
 ### Docker Install
 

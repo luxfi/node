@@ -8,9 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/engine/interfaces"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -28,14 +26,14 @@ func createTestVM(t *testing.T) (*VM, func()) {
 	logger := log.NewNoOpLogger()
 	cfg := config.DefaultConfig()
 
-	vm := &VM{
+	vmImpl := &VM{
 		Config: cfg,
 		log:    logger,
 	}
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan core.Message, 100)
+	toEngine := make(chan vm.Message, 100)
 	appSender := warp.FakeSender{}
 
 	rt := &runtime.Runtime{
@@ -43,9 +41,9 @@ func createTestVM(t *testing.T) (*VM, func()) {
 		Log:     logger,
 	}
 
-	err := vm.Initialize(
+	err := vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -62,49 +60,49 @@ func createTestVM(t *testing.T) (*VM, func()) {
 	cleanup := func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		vm.Shutdown(ctx)
+		vmImpl.Shutdown(ctx)
 	}
 
-	return vm, cleanup
+	return vmImpl, cleanup
 }
 
 func TestVMInitialize(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	require.True(vm.isInitialized)
-	require.False(vm.bootstrapped)
-	require.NotNil(vm.orderbooks)
-	require.NotNil(vm.liquidityMgr)
-	require.Equal(uint64(0), vm.currentBlockHeight)
+	require.True(vmImpl.isInitialized)
+	require.False(vmImpl.bootstrapped)
+	require.NotNil(vmImpl.orderbooks)
+	require.NotNil(vmImpl.liquidityMgr)
+	require.Equal(uint64(0), vmImpl.currentBlockHeight)
 }
 
 func TestVMSetState(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Set to bootstrapping
-	err := vm.SetState(context.Background(), uint32(interfaces.Bootstrapping))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Bootstrapping))
 	require.NoError(err)
-	require.False(vm.bootstrapped)
+	require.False(vmImpl.bootstrapped)
 
 	// Set to normal operation (functional mode - no background tasks)
-	err = vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err = vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
-	require.True(vm.bootstrapped)
+	require.True(vmImpl.bootstrapped)
 }
 
 func TestVMVersion(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	version, err := vm.Version(context.Background())
+	version, err := vmImpl.Version(context.Background())
 	require.NoError(err)
 	require.Equal("1.0.0", version)
 }
@@ -112,74 +110,72 @@ func TestVMVersion(t *testing.T) {
 func TestVMHealthCheck(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Before bootstrap
-	health, err := vm.HealthCheck(context.Background())
+	health, err := vmImpl.HealthCheck(context.Background())
 	require.NoError(err)
 
-	healthMap := health.(map[string]interface{})
-	require.False(healthMap["healthy"].(bool))
-	require.False(healthMap["bootstrapped"].(bool))
-	require.Equal("functional", healthMap["mode"].(string))
+	require.False(health.Healthy)
+	require.Equal("false", health.Details["bootstrapped"])
+	require.Equal("functional", health.Details["mode"])
 
 	// After bootstrap
-	vm.SetState(context.Background(), uint32(interfaces.Ready))
+	vmImpl.SetState(context.Background(), uint32(vm.Ready))
 
-	health, err = vm.HealthCheck(context.Background())
+	health, err = vmImpl.HealthCheck(context.Background())
 	require.NoError(err)
 
-	healthMap = health.(map[string]interface{})
-	require.True(healthMap["healthy"].(bool))
-	require.True(healthMap["bootstrapped"].(bool))
+	require.True(health.Healthy)
+	require.Equal("true", health.Details["bootstrapped"])
 }
 
 func TestVMPeerConnections(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	nodeID := ids.GenerateTestNodeID()
 	appVersion := &version.Application{}
 
 	// Connect peer
-	err := vm.Connected(context.Background(), nodeID, appVersion)
+	err := vmImpl.Connected(context.Background(), nodeID, appVersion)
 	require.NoError(err)
 
-	vm.lock.RLock()
-	_, exists := vm.connectedPeers[nodeID]
-	vm.lock.RUnlock()
+	vmImpl.lock.RLock()
+	_, exists := vmImpl.connectedPeers[nodeID]
+	vmImpl.lock.RUnlock()
 	require.True(exists)
 
 	// Disconnect peer
-	err = vm.Disconnected(context.Background(), nodeID)
+	err = vmImpl.Disconnected(context.Background(), nodeID)
 	require.NoError(err)
 
-	vm.lock.RLock()
-	_, exists = vm.connectedPeers[nodeID]
-	vm.lock.RUnlock()
+	vmImpl.lock.RLock()
+	_, exists = vmImpl.connectedPeers[nodeID]
+	vmImpl.lock.RUnlock()
 	require.False(exists)
 }
 
 func TestVMGetOrderbook(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Orderbook doesn't exist
-	_, err := vm.GetOrderbook("LUX/USDT")
+	_, err := vmImpl.GetOrderbook("LUX/USDT")
 	require.Error(err)
 
 	// Create orderbook
-	ob := vm.GetOrCreateOrderbook("LUX/USDT")
+	ob := vmImpl.GetOrCreateOrderbook("LUX/USDT")
 	require.NotNil(ob)
 	require.Equal("LUX/USDT", ob.Symbol())
 
 	// Get existing orderbook
-	ob2, err := vm.GetOrderbook("LUX/USDT")
+	ob2, err := vmImpl.GetOrderbook("LUX/USDT")
 	require.NoError(err)
 	require.Equal(ob, ob2)
 }
@@ -187,10 +183,10 @@ func TestVMGetOrderbook(t *testing.T) {
 func TestVMCreateHandlers(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	handlers, err := vm.CreateHandlers(context.Background())
+	handlers, err := vmImpl.CreateHandlers(context.Background())
 	require.NoError(err)
 	require.NotNil(handlers)
 	require.Contains(handlers, "")
@@ -200,51 +196,51 @@ func TestVMCreateHandlers(t *testing.T) {
 func TestVMIsBootstrapped(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	require.False(vm.IsBootstrapped())
+	require.False(vmImpl.IsBootstrapped())
 
-	vm.SetState(context.Background(), uint32(interfaces.Ready))
+	vmImpl.SetState(context.Background(), uint32(vm.Ready))
 
-	require.True(vm.IsBootstrapped())
+	require.True(vmImpl.IsBootstrapped())
 }
 
 func TestVMShutdown(t *testing.T) {
 	require := require.New(t)
 
-	vm, _ := createTestVM(t)
+	vmImpl, _ := createTestVM(t)
 
 	// Start VM (functional mode - no background tasks)
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	// Shutdown (immediate - no background tasks to wait for)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = vm.Shutdown(ctx)
+	err = vmImpl.Shutdown(ctx)
 	require.NoError(err)
-	require.True(vm.shutdown)
+	require.True(vmImpl.shutdown)
 }
 
-func TestVMAppGossip(t *testing.T) {
+func TestVMGossip(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	nodeID := ids.GenerateTestNodeID()
 	msg := []byte("test gossip")
 
-	err := vm.AppGossip(context.Background(), nodeID, msg)
+	err := vmImpl.Gossip(context.Background(), nodeID, msg)
 	require.NoError(err)
 }
 
-func TestVMAppRequest(t *testing.T) {
+func TestVMRequest(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	nodeID := ids.GenerateTestNodeID()
@@ -252,14 +248,14 @@ func TestVMAppRequest(t *testing.T) {
 	deadline := time.Now().Add(time.Minute)
 	request := []byte("test request")
 
-	err := vm.AppRequest(context.Background(), nodeID, requestID, deadline, request)
+	err := vmImpl.Request(context.Background(), nodeID, requestID, deadline, request)
 	require.NoError(err)
 }
 
-func TestVMCrossChainAppRequest(t *testing.T) {
+func TestVMCrossChainRequest(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	chainID := ids.GenerateTestID()
@@ -267,17 +263,17 @@ func TestVMCrossChainAppRequest(t *testing.T) {
 	deadline := time.Now().Add(time.Minute)
 	request := []byte("test cross-chain request")
 
-	err := vm.CrossChainAppRequest(context.Background(), chainID, requestID, deadline, request)
+	err := vmImpl.CrossChainRequest(context.Background(), chainID, requestID, deadline, request)
 	require.NoError(err)
 }
 
 func TestVMGetLiquidityManager(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	mgr := vm.GetLiquidityManager()
+	mgr := vmImpl.GetLiquidityManager()
 	require.NotNil(mgr)
 
 	// Verify pool creation works via liquidity manager
@@ -289,10 +285,10 @@ func TestVMGetLiquidityManager(t *testing.T) {
 func TestVMGetPerpetualsEngine(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	engine := vm.GetPerpetualsEngine()
+	engine := vmImpl.GetPerpetualsEngine()
 	require.NotNil(engine)
 
 	// Verify no markets initially
@@ -304,16 +300,16 @@ func TestVMGetPerpetualsEngine(t *testing.T) {
 func TestVMProcessBlock(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	// Process first block
 	blockTime := time.Now()
-	result, err := vm.ProcessBlock(context.Background(), 1, blockTime, nil)
+	result, err := vmImpl.ProcessBlock(context.Background(), 1, blockTime, nil)
 	require.NoError(err)
 	require.NotNil(result)
 	require.Equal(uint64(1), result.BlockHeight)
@@ -321,22 +317,22 @@ func TestVMProcessBlock(t *testing.T) {
 	require.Empty(result.MatchedTrades) // No orders yet
 
 	// Verify state updated
-	require.Equal(uint64(1), vm.GetBlockHeight())
-	require.Equal(blockTime, vm.GetLastBlockTime())
+	require.Equal(uint64(1), vmImpl.GetBlockHeight())
+	require.Equal(blockTime, vmImpl.GetLastBlockTime())
 }
 
 func TestVMProcessBlockWithOrders(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	// Create orderbook with crossing orders
-	ob := vm.GetOrCreateOrderbook("LUX/USDT")
+	ob := vmImpl.GetOrCreateOrderbook("LUX/USDT")
 
 	// Add buy order
 	buyOrder := &orderbook.Order{
@@ -368,7 +364,7 @@ func TestVMProcessBlockWithOrders(t *testing.T) {
 
 	// Process block - should match orders
 	blockTime := time.Now()
-	result, err := vm.ProcessBlock(context.Background(), 1, blockTime, nil)
+	result, err := vmImpl.ProcessBlock(context.Background(), 1, blockTime, nil)
 	require.NoError(err)
 	require.NotNil(result)
 
@@ -380,53 +376,53 @@ func TestVMProcessBlockWithOrders(t *testing.T) {
 func TestVMProcessBlockFundingInterval(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	// Process first block - funding check runs but no payments without positions
 	blockTime := time.Now()
-	result1, err := vm.ProcessBlock(context.Background(), 1, blockTime, nil)
+	result1, err := vmImpl.ProcessBlock(context.Background(), 1, blockTime, nil)
 	require.NoError(err)
 	require.NotNil(result1)
 	// No perpetual positions exist, so no funding payments are generated
 	// The funding check still runs, but produces empty results
 
 	// Process second block immediately - should NOT trigger funding check
-	result2, err := vm.ProcessBlock(context.Background(), 2, blockTime.Add(time.Second), nil)
+	result2, err := vmImpl.ProcessBlock(context.Background(), 2, blockTime.Add(time.Second), nil)
 	require.NoError(err)
 	require.Empty(result2.FundingPayments) // Too soon for funding interval
 
 	// Process block after 8 hours - should trigger funding check
-	result3, err := vm.ProcessBlock(context.Background(), 3, blockTime.Add(8*time.Hour), nil)
+	result3, err := vmImpl.ProcessBlock(context.Background(), 3, blockTime.Add(8*time.Hour), nil)
 	require.NoError(err)
 	// Still no payments because no perpetual positions exist
 	// But the funding interval logic is verified by the timing
 	require.NotNil(result3)
 
 	// Verify the block heights are correct
-	require.Equal(uint64(3), vm.GetBlockHeight())
+	require.Equal(uint64(3), vmImpl.GetBlockHeight())
 }
 
 func TestVMProcessBlockAfterShutdown(t *testing.T) {
 	require := require.New(t)
 
-	vm, _ := createTestVM(t)
+	vmImpl, _ := createTestVM(t)
 
 	// Bootstrap and shutdown
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	err = vm.Shutdown(ctx)
+	err = vmImpl.Shutdown(ctx)
 	cancel()
 	require.NoError(err)
 
 	// Try to process block after shutdown
-	_, err = vm.ProcessBlock(context.Background(), 1, time.Now(), nil)
+	_, err = vmImpl.ProcessBlock(context.Background(), 1, time.Now(), nil)
 	require.Error(err)
 	require.Equal(errShutdown, err)
 }
@@ -434,37 +430,37 @@ func TestVMProcessBlockAfterShutdown(t *testing.T) {
 func TestVMGetBlockHeight(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	require.Equal(uint64(0), vm.GetBlockHeight())
+	require.Equal(uint64(0), vmImpl.GetBlockHeight())
 
-	vm.SetState(context.Background(), uint32(interfaces.Ready))
+	vmImpl.SetState(context.Background(), uint32(vm.Ready))
 
 	// Process some blocks
-	vm.ProcessBlock(context.Background(), 1, time.Now(), nil)
-	require.Equal(uint64(1), vm.GetBlockHeight())
+	vmImpl.ProcessBlock(context.Background(), 1, time.Now(), nil)
+	require.Equal(uint64(1), vmImpl.GetBlockHeight())
 
-	vm.ProcessBlock(context.Background(), 2, time.Now(), nil)
-	require.Equal(uint64(2), vm.GetBlockHeight())
+	vmImpl.ProcessBlock(context.Background(), 2, time.Now(), nil)
+	require.Equal(uint64(2), vmImpl.GetBlockHeight())
 
-	vm.ProcessBlock(context.Background(), 100, time.Now(), nil)
-	require.Equal(uint64(100), vm.GetBlockHeight())
+	vmImpl.ProcessBlock(context.Background(), 100, time.Now(), nil)
+	require.Equal(uint64(100), vmImpl.GetBlockHeight())
 }
 
 // Integration test: Full trading flow
 func TestVMTradingFlow(t *testing.T) {
 	require := require.New(t)
 
-	vm, cleanup := createTestVM(t)
+	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
 	// Bootstrap VM
-	err := vm.SetState(context.Background(), uint32(interfaces.Ready))
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 
 	// Create orderbook
-	ob := vm.GetOrCreateOrderbook("LUX/USDT")
+	ob := vmImpl.GetOrCreateOrderbook("LUX/USDT")
 	require.NotNil(ob)
 
 	// Verify orderbook stats
@@ -473,12 +469,11 @@ func TestVMTradingFlow(t *testing.T) {
 	require.Equal(uint64(0), tradeCount)
 
 	// Verify health
-	health, err := vm.HealthCheck(context.Background())
+	health, err := vmImpl.HealthCheck(context.Background())
 	require.NoError(err)
-	healthMap := health.(map[string]interface{})
-	require.True(healthMap["healthy"].(bool))
-	require.Equal(1, healthMap["orderbooks"].(int))
-	require.Equal("functional", healthMap["mode"].(string))
+	require.True(health.Healthy)
+	require.Equal("1", health.Details["orderbooks"])
+	require.Equal("functional", health.Details["mode"])
 }
 
 // Test determinism: same inputs produce same outputs
@@ -492,8 +487,8 @@ func TestVMDeterminism(t *testing.T) {
 	defer cleanup2()
 
 	// Bootstrap both
-	vm1.SetState(context.Background(), uint32(interfaces.Ready))
-	vm2.SetState(context.Background(), uint32(interfaces.Ready))
+	vm1.SetState(context.Background(), uint32(vm.Ready))
+	vm2.SetState(context.Background(), uint32(vm.Ready))
 
 	// Process same blocks on both
 	blockTime := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -517,14 +512,14 @@ func BenchmarkVMInitialize(b *testing.B) {
 	cfg := config.DefaultConfig()
 
 	for i := 0; i < b.N; i++ {
-		vm := &VM{
+		vmImpl := &VM{
 			Config: cfg,
 			log:    logger,
 		}
 
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 		appSender := warp.FakeSender{}
 
 		rt := &runtime.Runtime{
@@ -532,9 +527,9 @@ func BenchmarkVMInitialize(b *testing.B) {
 			Log:     logger,
 		}
 
-		vm.Initialize(
+		vmImpl.Initialize(
 			context.Background(),
-			common.VMInit{
+			vm.Init{
 				Runtime:  rt,
 				DB:       db,
 				ToEngine: toEngine,
@@ -548,7 +543,7 @@ func BenchmarkVMInitialize(b *testing.B) {
 		)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		vm.Shutdown(ctx)
+		vmImpl.Shutdown(ctx)
 		cancel()
 	}
 }
@@ -557,14 +552,14 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 	logger := log.NewNoOpLogger()
 	cfg := config.DefaultConfig()
 
-	vm := &VM{
+	vmImpl := &VM{
 		Config: cfg,
 		log:    logger,
 	}
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan core.Message, 100)
+	toEngine := make(chan vm.Message, 100)
 	appSender := warp.FakeSender{}
 
 	rt := &runtime.Runtime{
@@ -572,9 +567,9 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 		Log:     logger,
 	}
 
-	vm.Initialize(
+	vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -588,16 +583,16 @@ func BenchmarkVMProcessBlock(b *testing.B) {
 	)
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		vm.Shutdown(ctx)
+		vmImpl.Shutdown(ctx)
 		cancel()
 	}()
 
-	vm.SetState(context.Background(), uint32(interfaces.Ready))
+	vmImpl.SetState(context.Background(), uint32(vm.Ready))
 
 	blockTime := time.Now()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		vm.ProcessBlock(context.Background(), uint64(i+1), blockTime.Add(time.Duration(i)*time.Millisecond), nil)
+		vmImpl.ProcessBlock(context.Background(), uint64(i+1), blockTime.Add(time.Duration(i)*time.Millisecond), nil)
 	}
 }

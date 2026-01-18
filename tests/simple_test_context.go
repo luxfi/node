@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/utils"
 )
@@ -94,7 +94,7 @@ func TestServiceNilVMCheck(t *testing.T) {
 
 	// Try to call GetHeight with nil VM
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
-	var response api.GetHeightResponse
+	var response apitypes.GetHeightResponse
 	// This should panic because vm is nil, so we need to recover
 	defer func() {
 		if r := recover(); r != nil {

@@ -8,16 +8,16 @@ package rpcchainvm
 
 import (
 	"github.com/luxfi/atomic"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/vm/rpc/chain"
+	enginechain "github.com/luxfi/vm/chain"
+	rpcchain "github.com/luxfi/vm/rpc/chain"
 )
 
 // VMServer is a type alias for backward compatibility.
 // The actual implementation is in github.com/luxfi/vm/rpc/chain.Server.
-type VMServer = chain.Server
+type VMServer = rpcchain.Server
 
 // NewServer creates a new VMServer for the given ChainVM.
 // This delegates to the shared implementation in github.com/luxfi/vm/rpc/chain.
-func NewServer(vm block.ChainVM, allowShutdown *atomic.Atomic[bool]) *VMServer {
-	return chain.NewServer(vm, allowShutdown)
+func NewServer(vm enginechain.ChainVM, allowShutdown *atomic.Atomic[bool]) *VMServer {
+	return rpcchain.NewServer(vm, allowShutdown)
 }

@@ -15,7 +15,7 @@ import (
 
 const pruneCommitPeriod = 1024
 
-// vm.ctx.Lock should be held
+// vm.lock should be held
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	switch forkHeight, err := vm.State.GetForkHeight(); err {
 	case nil:

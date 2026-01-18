@@ -16,12 +16,12 @@ import (
 	ethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/log"
 
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/runtime"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 
 	consensusversion "github.com/luxfi/version"
@@ -34,7 +34,7 @@ const (
 
 var (
 	// Comment out interface checks until VM is fully implemented
-	// _ block.ChainVM = (*VM)(nil)
+	// _ chain.ChainVM = (*VM)(nil)
 	// _ validators.Connector = (*VM)(nil)
 
 	errNotImplemented  = errors.New("not implemented")
@@ -48,8 +48,8 @@ type VM struct {
 	rt          *runtime.Runtime
 	db          database.Database
 	genesisData []byte
-	toEngine    chan<- core.Message
-	fxs         []*core.Fx
+	toEngine    chan<- vmcore.Message
+	fxs         []*vmcore.Fx
 	appSender   warp.Sender
 
 	// State management
@@ -153,8 +153,8 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- core.Message,
-	fxs []*core.Fx,
+	toEngine chan<- vmcore.Message,
+	fxs []*vmcore.Fx,
 	appSender warp.Sender,
 ) error {
 	vm.rt = chainRuntime
@@ -252,54 +252,54 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-// AppRequest implements the common.AppHandler interface
-func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+// Request implements the common.AppHandler interface
+func (vm *VM) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	return errNotImplemented
 }
 
-// AppRequestFailed implements the common.AppHandler interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
+// RequestFailed implements the common.AppHandler interface
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
-// AppResponse implements the common.AppHandler interface
-func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+// Response implements the common.AppHandler interface
+func (vm *VM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// AppGossip implements the common.AppHandler interface
-func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip implements the common.AppHandler interface
+func (vm *VM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
-// CrossChainAppRequest implements the common.VM interface
-func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+// CrossChainRequest implements the common.VM interface
+func (vm *VM) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
+// CrossChainRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
-// CrossChainAppResponse implements the common.VM interface
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+// CrossChainResponse implements the common.VM interface
+func (vm *VM) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
 	return nil
 }
 
 // BuildBlock implements the chain.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	// Build a new block containing challenges and proofs
 	return nil, errNotImplemented
 }
 
 // ParseBlock implements the chain.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	return nil, errNotImplemented
 }
 
 // GetBlock implements the chain.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	return nil, errNotImplemented
 }
 
@@ -355,7 +355,7 @@ func (vm *VM) StartChallenge(challenge *Challenge) error {
 	vm.challenges[challenge.ID] = challenge
 
 	// Trigger block building (send empty message to trigger)
-	msg := core.Message{Type: core.PendingTxs}
+	msg := vmcore.Message{Type: vmcore.PendingTxs}
 	select {
 	case vm.toEngine <- msg:
 	default:

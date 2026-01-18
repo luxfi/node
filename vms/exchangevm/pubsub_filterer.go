@@ -4,7 +4,7 @@
 package exchangevm
 
 import (
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/exchangevm/txs"
@@ -38,7 +38,7 @@ func (f *connector) Filter(filters []pubsub.Filter) ([]bool, interface{}) {
 			}
 		}
 	}
-	return resp, api.JSONTxID{
+	return resp, apitypes.JSONTxID{
 		TxID: f.tx.ID(),
 	}
 }

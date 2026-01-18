@@ -15,13 +15,13 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/consensus/engine/interfaces"
-	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/timer/mockable"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/vm"
+	consensusblock "github.com/luxfi/vm/chain"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 )
 
@@ -687,7 +687,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 
 	// Set consensus state to Bootstrapping to skip P-chain height validation
 	// This allows testing that child P-chain height can be parent+1 during sync
-	proVM.consensusState = uint32(interfaces.Bootstrapping)
+	proVM.consensusState = uint32(vm.Bootstrapping)
 
 	pChainHeight := uint64(100)
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
@@ -833,7 +833,7 @@ func TestBlockVerify_PostForkBlockBuiltOnOption_PChainHeightChecks(t *testing.T)
 	{
 		// block P-Chain height cannot be at higher than current P-Chain height
 		// Need to set state to Ready for this validation to be active
-		proVM.consensusState = uint32(interfaces.Ready)
+		proVM.consensusState = uint32(vm.Ready)
 		childSlb, err := block.BuildUnsigned(
 			parentBlk.ID(),
 			nextTime,

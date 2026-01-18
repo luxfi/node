@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"
@@ -40,7 +40,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/vm/types"
 
-	platformapi "github.com/luxfi/node/vms/platformvm/api"
+	platformapitypes "github.com/luxfi/node/vms/platformvm/api"
 	avajson "github.com/luxfi/node/utils/json"
 )
 
@@ -83,7 +83,7 @@ type stakerAttributes struct {
 }
 
 // GetHeight returns the height of the last accepted block
-func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeightResponse) error {
+func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *apitypes.GetHeightResponse) error {
 
 	s.vm.log.Debug("API called",
 		"service", "platform",
@@ -95,12 +95,12 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeigh
 
 	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
-	response.Height = avajson.Uint64(height)
+	response.Height = apitypes.Uint64(height)
 	return err
 }
 
 // GetProposedHeight returns the current ProposerVM height
-func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
+func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *apitypes.GetHeightResponse) error {
 
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
@@ -114,7 +114,7 @@ func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.Get
 	if err != nil {
 		return err
 	}
-	reply.Height = avajson.Uint64(lastAcceptedBlock.Height())
+	reply.Height = apitypes.Uint64(lastAcceptedBlock.Height())
 	return nil
 }
 
@@ -267,7 +267,7 @@ type Index struct {
 }
 
 // GetUTXOs returns the UTXOs controlled by the given addresses
-func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *api.GetUTXOsReply) error {
+func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, response *apitypes.GetUTXOsReply) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getUTXOs",
@@ -364,7 +364,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 
 	response.EndIndex.Address = endAddress
 	response.EndIndex.UTXO = endUTXOID.String()
-	response.NumFetched = avajson.Uint64(len(utxos))
+	response.NumFetched = apitypes.Uint64(len(utxos))
 	response.Encoding = args.Encoding
 	return nil
 }
@@ -794,7 +794,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 	targetStakers := make([]*state.Staker, 0, numNodeIDs)
 
 	// Validator's node ID as string --> Delegators to them
-	vdrToDelegators := map[ids.NodeID][]platformapi.PrimaryDelegator{}
+	vdrToDelegators := map[ids.NodeID][]platformapitypes.PrimaryDelegator{}
 
 	validators := []any{}
 
@@ -876,8 +876,8 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			}
 
 			var (
-				validationRewardOwner *platformapi.Owner
-				delegationRewardOwner *platformapi.Owner
+				validationRewardOwner *platformapitypes.Owner
+				delegationRewardOwner *platformapitypes.Owner
 			)
 			validationOwner, ok := attr.validationRewardsOwner.(*secp256k1fx.OutputOwners)
 			if ok {
@@ -894,7 +894,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				}
 			}
 
-			vdr := platformapi.PermissionlessValidator{
+			vdr := platformapitypes.PermissionlessValidator{
 				Staker:                 apiStaker,
 				Uptime:                 uptime,
 				Connected:              connected,
@@ -908,7 +908,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			validators = append(validators, vdr)
 
 		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.NetPermissionlessDelegatorCurrentPriority:
-			var rewardOwner *platformapi.Owner
+			var rewardOwner *platformapitypes.Owner
 			// If we are handling multiple nodeIDs, we don't return the
 			// delegator information.
 			if numNodeIDs == 1 {
@@ -925,7 +925,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				}
 			}
 
-			delegator := platformapi.PrimaryDelegator{
+			delegator := platformapitypes.PrimaryDelegator{
 				Staker:          apiStaker,
 				RewardOwner:     rewardOwner,
 				PotentialReward: &potentialReward,
@@ -942,7 +942,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 
 	// handle delegators' information
 	for i, vdrIntf := range validators {
-		vdr, ok := vdrIntf.(platformapi.PermissionlessValidator)
+		vdr, ok := vdrIntf.(platformapitypes.PermissionlessValidator)
 		if !ok {
 			continue
 		}
@@ -950,7 +950,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 		if !ok {
 			// If we are expected to populate the delegators field, we should
 			// always return a non-nil value.
-			delegators = []platformapi.PrimaryDelegator{}
+			delegators = []platformapitypes.PrimaryDelegator{}
 		}
 		delegatorCount := avajson.Uint64(len(delegators))
 		delegatorWeight := avajson.Uint64(0)
@@ -976,7 +976,7 @@ type GetL1ValidatorArgs struct {
 }
 
 type GetL1ValidatorReply struct {
-	platformapi.APIL1Validator
+	platformapitypes.APIL1Validator
 	ChainID ids.ID `json:"netID"`
 	// Height is the height of the last accepted block
 	Height avajson.Uint64 `json:"height"`
@@ -1014,29 +1014,29 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 	return nil
 }
 
-func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapi.APIL1Validator, error) {
+func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapitypes.APIL1Validator, error) {
 	var remainingBalanceOwner message.PChainOwner
 	if _, err := txs.Codec.Unmarshal(vdr.RemainingBalanceOwner, &remainingBalanceOwner); err != nil {
-		return platformapi.APIL1Validator{}, fmt.Errorf("failed unmarshalling remaining balance owner: %w", err)
+		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling remaining balance owner: %w", err)
 	}
 	remainingBalanceAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
 		Threshold: remainingBalanceOwner.Threshold,
 		Addrs:     remainingBalanceOwner.Addresses,
 	})
 	if err != nil {
-		return platformapi.APIL1Validator{}, fmt.Errorf("failed formatting remaining balance owner: %w", err)
+		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed formatting remaining balance owner: %w", err)
 	}
 
 	var deactivationOwner message.PChainOwner
 	if _, err := txs.Codec.Unmarshal(vdr.DeactivationOwner, &deactivationOwner); err != nil {
-		return platformapi.APIL1Validator{}, fmt.Errorf("failed unmarshalling deactivation owner: %w", err)
+		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling deactivation owner: %w", err)
 	}
 	deactivationAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
 		Threshold: deactivationOwner.Threshold,
 		Addrs:     deactivationOwner.Addresses,
 	})
 	if err != nil {
-		return platformapi.APIL1Validator{}, fmt.Errorf("failed formatting deactivation owner: %w", err)
+		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed formatting deactivation owner: %w", err)
 	}
 
 	pubKey := types.JSONByteSlice(bls.PublicKeyToCompressedBytes(
@@ -1044,11 +1044,11 @@ func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapi.AP
 	))
 	minNonce := avajson.Uint64(vdr.MinNonce)
 
-	apiVdr := platformapi.APIL1Validator{
+	apiVdr := platformapitypes.APIL1Validator{
 		NodeID:    vdr.NodeID,
 		StartTime: avajson.Uint64(vdr.StartTime),
 		Weight:    avajson.Uint64(vdr.Weight),
-		BaseL1Validator: platformapi.BaseL1Validator{
+		BaseL1Validator: platformapitypes.BaseL1Validator{
 			ValidationID:          &vdr.ValidationID,
 			PublicKey:             &pubKey,
 			RemainingBalanceOwner: remainingBalanceAPIOwner,
@@ -1406,7 +1406,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	return nil
 }
 
-func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
+func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, response *apitypes.JSONTxID) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "issueTx",
@@ -1429,7 +1429,7 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.
 	return nil
 }
 
-func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetTxReply) error {
+func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, response *apitypes.GetTxReply) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getTx",
@@ -1529,7 +1529,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 }
 
 type GetStakeArgs struct {
-	api.JSONAddresses
+	apitypes.JSONAddresses
 	ValidatorsOnly bool                `json:"validatorsOnly"`
 	Encoding       formatting.Encoding `json:"encoding"`
 }
@@ -1729,7 +1729,7 @@ type GetRewardUTXOsReply struct {
 
 // GetRewardUTXOs returns the UTXOs that were rewarded after the provided
 // transaction's staking period ended.
-func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
+func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, reply *GetRewardUTXOsReply) error {
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getRewardUTXOs",
@@ -1783,7 +1783,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
-	Height platformapi.Height `json:"height"`
+	Height platformapitypes.Height `json:"height"`
 	ChainID  ids.ID             `json:"netID"`
 }
 
@@ -1884,7 +1884,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 
 // GetAllValidatorsAtArgs are the arguments to GetAllValidatorsAt
 type GetAllValidatorsAtArgs struct {
-	Height platformapi.Height `json:"height"`
+	Height platformapitypes.Height `json:"height"`
 }
 
 // GetAllValidatorsAtReply is the response from GetAllValidatorsAt
@@ -1946,7 +1946,7 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	return nil
 }
 
-func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
+func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, response *apitypes.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getBlock",
@@ -1979,7 +1979,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 }
 
 // GetBlockByHeight returns the block at the given height.
-func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, response *api.GetBlockResponse) error {
+func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHeightArgs, response *apitypes.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getBlockByHeight",
@@ -2094,8 +2094,8 @@ func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetV
 	return nil
 }
 
-func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Owner, error) {
-	apiOwner := &platformapi.Owner{
+func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapitypes.Owner, error) {
+	apiOwner := &platformapitypes.Owner{
 		Locktime:  avajson.Uint64(owner.Locktime),
 		Threshold: avajson.Uint32(owner.Threshold),
 		Addresses: make([]string, 0, len(owner.Addrs)),
@@ -2156,8 +2156,8 @@ func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked ma
 	return stakedOuts
 }
 
-func toPlatformStaker(staker *state.Staker) platformapi.Staker {
-	return platformapi.Staker{
+func toPlatformStaker(staker *state.Staker) platformapitypes.Staker {
+	return platformapitypes.Staker{
 		TxID:      staker.TxID,
 		StartTime: avajson.Uint64(staker.StartTime.Unix()),
 		EndTime:   avajson.Uint64(staker.EndTime.Unix()),

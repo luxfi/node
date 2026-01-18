@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/math"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -329,7 +329,7 @@ func (b *txBuilder) NewAddValidatorTx(
 ) (*txs.AddValidatorTx, error) {
 	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
-		xAssetID: b.context.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
+		xAssetID: b.context.StaticFeeConfig.AddNetworkValidatorFee,
 	}
 	toStake := map[ids.ID]uint64{
 		xAssetID: vdr.Wght,
@@ -429,7 +429,7 @@ func (b *txBuilder) NewAddDelegatorTx(
 ) (*txs.AddDelegatorTx, error) {
 	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
-		xAssetID: b.context.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
+		xAssetID: b.context.StaticFeeConfig.AddNetworkDelegatorFee,
 	}
 	toStake := map[ids.ID]uint64{
 		b.context.XAssetID: vdr.Wght,
@@ -738,7 +738,7 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Chain == constants.PrimaryNetworkID {
-		toBurn[xAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkValidatorFee
+		toBurn[xAssetID] = b.context.StaticFeeConfig.AddNetworkValidatorFee
 	} else {
 		toBurn[xAssetID] = b.context.StaticFeeConfig.AddChainValidatorFee
 	}
@@ -780,7 +780,7 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	xAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Chain == constants.PrimaryNetworkID {
-		toBurn[xAssetID] = b.context.StaticFeeConfig.AddPrimaryNetworkDelegatorFee
+		toBurn[xAssetID] = b.context.StaticFeeConfig.AddNetworkDelegatorFee
 	} else {
 		toBurn[xAssetID] = b.context.StaticFeeConfig.AddChainDelegatorFee
 	}

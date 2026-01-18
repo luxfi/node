@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 )
 
 var _ Backend = (*backend)(nil)

@@ -5,28 +5,28 @@ package bvm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
 	"github.com/luxfi/threshold/protocols/cmp/config"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 )
 
 var (
-	_ block.ChainVM = (*VM)(nil)
+	_ chain.ChainVM = (*VM)(nil)
 
 	Version = &version.Semantic{
 		Major: 1,
@@ -141,7 +141,7 @@ type VM struct {
 	rt       *runtime.Runtime
 	db       database.Database
 	config   BridgeConfig
-	toEngine chan<- core.Message
+	toEngine chan<- vmcore.Message
 	log      log.Logger
 
 	// MPC components using threshold protocol
@@ -225,10 +225,10 @@ type CompletedBridge struct {
 	MPCSignature []byte
 }
 
-// Initialize implements the block.ChainVM interface
+// Initialize implements the chain.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	vmInit common.VMInit,
+	vmInit vmcore.Init,
 ) error {
 	// Convert chain runtime to Runtime.
 	vm.rt = vmInit.Runtime
@@ -245,9 +245,11 @@ func (vm *VM) Initialize(
 	vm.pendingBridges = make(map[ids.ID]*BridgeRequest)
 	vm.chainClients = make(map[string]ChainClient)
 
-	// Parse configuration
-	if _, err := Codec.Unmarshal(vmInit.Config, &vm.config); err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
+	// Parse configuration (use JSON like other VMs)
+	if len(vmInit.Config) > 0 {
+		if err := json.Unmarshal(vmInit.Config, &vm.config); err != nil {
+			return fmt.Errorf("failed to parse config: %w", err)
+		}
 	}
 
 	// Set LP-333 defaults for signer set management
@@ -256,6 +258,9 @@ func (vm *VM) Initialize(
 	}
 	if vm.config.ThresholdRatio == 0 {
 		vm.config.ThresholdRatio = 0.67 // 2/3 threshold for BFT safety
+	}
+	if vm.config.RequireValidatorBond == 0 {
+		vm.config.RequireValidatorBond = 100_000_000 * 1e9 // Default: 100M LUX bond
 	}
 
 	// Validate configuration - Bridge validators require 100M LUX BOND (slashable, not stake)
@@ -323,10 +328,12 @@ func (vm *VM) Initialize(
 		)
 	}
 
-	// Parse genesis
+	// Parse genesis - use JSON for simple genesis configuration
 	genesis := &Genesis{}
-	if _, err := Codec.Unmarshal(vmInit.Genesis, genesis); err != nil {
-		return fmt.Errorf("failed to parse genesis: %w", err)
+	if len(vmInit.Genesis) > 0 {
+		if err := json.Unmarshal(vmInit.Genesis, genesis); err != nil {
+			return fmt.Errorf("failed to parse genesis: %w", err)
+		}
 	}
 
 	// Create genesis block
@@ -344,8 +351,8 @@ func (vm *VM) Initialize(
 	return vm.putBlock(genesisBlock)
 }
 
-// BuildBlock implements the block.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+// BuildBlock implements the chain.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 
@@ -405,21 +412,23 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	return blk, nil
 }
 
-// GetBlock implements the block.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+// GetBlock implements the chain.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	// Check pending blocks first
-	if blk, exists := vm.pendingBlocks[id]; exists {
-		return blk, nil
+	// Check pending blocks first (nil-safe for early calls before initialization)
+	if vm.pendingBlocks != nil {
+		if blk, exists := vm.pendingBlocks[id]; exists {
+			return blk, nil
+		}
 	}
 
 	return vm.getBlock(id)
 }
 
-// ParseBlock implements the block.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+// ParseBlock implements the chain.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
 	blk := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(bytes, blk); err != nil {
 		return nil, err
@@ -457,8 +466,11 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements the common.VM interface
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
-	return map[string]string{"status": "healthy"}, nil
+func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+	return &chain.HealthResult{
+		Healthy: true,
+		Details: map[string]string{"status": "healthy"},
+	}, nil
 }
 
 // Shutdown implements the common.VM interface
@@ -476,7 +488,7 @@ func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler
 }
 
 // Connected implements the common.VM interface
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *chain.VersionInfo) error {
 	return nil
 }
 
@@ -485,24 +497,24 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-// AppRequest implements the common.VM interface
-func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+// Request implements the common.VM interface
+func (vm *VM) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	// Bridge VMs may use this for cross-chain communication
 	return nil
 }
 
-// AppResponse implements the common.VM interface
-func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+// Response implements the common.VM interface
+func (vm *VM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// AppRequestFailed implements the common.VM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
+// RequestFailed implements the common.VM interface
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
-// AppGossip implements the common.VM interface
-func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip implements the common.VM interface
+func (vm *VM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
@@ -511,19 +523,19 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 	return Version.String(), nil
 }
 
-// CrossChainAppRequest implements the common.VM interface
-func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+// CrossChainRequest implements the common.VM interface
+func (vm *VM) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
 	// Bridge VMs handle cross-chain requests
 	return nil
 }
 
-// CrossChainAppResponse implements the common.VM interface
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+// CrossChainResponse implements the common.VM interface
+func (vm *VM) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
+// CrossChainRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
@@ -542,15 +554,27 @@ func (vm *VM) SetState(ctx context.Context, state uint32) error {
 }
 
 // NewHTTPHandler returns HTTP handlers for the VM
-func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
-	return vm.CreateHandlers(ctx)
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	handlers, err := vm.CreateHandlers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mux := http.NewServeMux()
+	for path, handler := range handlers {
+		if path == "" {
+			path = "/"
+		}
+		mux.Handle(path, handler)
+	}
+	return mux, nil
 }
 
 // WaitForEvent blocks until an event occurs that should trigger block building
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	// For now, return nil indicating no events to wait for
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
+	// For now, return empty message indicating no events to wait for
 	// In production, this would wait for bridge requests, etc.
-	return nil, nil
+	return vmcore.Message{}, nil
 }
 
 // Helper methods
@@ -855,7 +879,7 @@ func (vm *VM) RemoveSigner(nodeID ids.NodeID, replacementNodeID *ids.NodeID) (*S
 	}
 
 	// TODO: Trigger actual reshare protocol via T-Chain (ThresholdVM)
-	// This would send a CrossChainAppRequest to initiate the reshare
+	// This would send a CrossChainRequest to initiate the reshare
 
 	result := &SignerReplacementResult{
 		Success:       true,

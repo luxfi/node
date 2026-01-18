@@ -6,10 +6,12 @@ package blocktest
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	vmcore "github.com/luxfi/vm"
+	consensuschain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
@@ -19,15 +21,15 @@ type VM struct {
 	T *testing.T
 
 	InitializeF         func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error
-	BuildBlockF         func(context.Context) (block.Block, error)
-	ParseBlockF         func(context.Context, []byte) (block.Block, error)
-	GetBlockF           func(context.Context, ids.ID) (block.Block, error)
+	BuildBlockF         func(context.Context) (consensuschain.Block, error)
+	ParseBlockF         func(context.Context, []byte) (consensuschain.Block, error)
+	GetBlockF           func(context.Context, ids.ID) (consensuschain.Block, error)
 	LastAcceptedF       func(context.Context) (ids.ID, error)
 	SetPreferenceF      func(context.Context, ids.ID) error
 	SetStateF           func(context.Context, uint32) error
 	VerifyHeightIndexF  func(context.Context) error
 	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
-	GetStatelessBlockF  func(context.Context, ids.ID) (block.Block, error)
+	GetStatelessBlockF  func(context.Context, ids.ID) (consensuschain.Block, error)
 }
 
 // ChainVM is a type alias for VM to maintain compatibility
@@ -38,7 +40,7 @@ type BatchedVM struct {
 	T *testing.T
 
 	GetAncestorsF       func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
-	BatchedParseBlockF  func(context.Context, [][]byte) ([]block.Block, error)
+	BatchedParseBlockF  func(context.Context, [][]byte) ([]consensuschain.Block, error)
 	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
 }
 
@@ -47,10 +49,10 @@ type StateSyncableVM struct {
 	T *testing.T
 
 	StateSyncEnabledF           func(context.Context) (bool, error)
-	GetOngoingSyncStateSummaryF func(context.Context) (block.StateSummary, error)
-	GetLastStateSummaryF        func(context.Context) (block.StateSummary, error)
-	ParseStateSummaryF          func(context.Context, []byte) (block.StateSummary, error)
-	GetStateSummaryF            func(context.Context, uint64) (block.StateSummary, error)
+	GetOngoingSyncStateSummaryF func(context.Context) (consensuschain.StateSummary, error)
+	GetLastStateSummaryF        func(context.Context) (consensuschain.StateSummary, error)
+	ParseStateSummaryF          func(context.Context, []byte) (consensuschain.StateSummary, error)
+	GetStateSummaryF            func(context.Context, uint64) (consensuschain.StateSummary, error)
 }
 
 // Standard method implementations - these can be overridden by setting the F fields
@@ -62,21 +64,21 @@ func (vm *VM) Initialize(ctx context.Context, chainRuntime interface{}, db inter
 	return nil
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (consensuschain.Block, error) {
 	if vm.BuildBlockF != nil {
 		return vm.BuildBlockF(ctx)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (consensuschain.Block, error) {
 	if vm.ParseBlockF != nil {
 		return vm.ParseBlockF(ctx, blockBytes)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
 	if vm.GetBlockF != nil {
 		return vm.GetBlockF(ctx, blkID)
 	}
@@ -118,7 +120,7 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 	return ids.Empty, database.ErrNotFound
 }
 
-func (vm *VM) GetStatelessBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
+func (vm *VM) GetStatelessBlock(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
 	if vm.GetStatelessBlockF != nil {
 		return vm.GetStatelessBlockF(ctx, blkID)
 	}
@@ -126,7 +128,7 @@ func (vm *VM) GetStatelessBlock(ctx context.Context, blkID ids.ID) (block.Block,
 }
 
 // Connected is called when the node connects to a peer
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *consensuschain.VersionInfo) error {
 	// No-op implementation for tests
 	return nil
 }
@@ -138,15 +140,20 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // HealthCheck returns the health status of the VM
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (*consensuschain.HealthResult, error) {
 	// Return healthy status for tests
-	return map[string]string{"status": "healthy"}, nil
+	return &consensuschain.HealthResult{
+		Healthy: true,
+		Details: map[string]string{"status": "healthy"},
+	}, nil
 }
 
 // NewHTTPHandler returns an HTTP handler for the VM
-func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// Return nil handler for tests
-	return nil, nil
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}), nil
 }
 
 // Shutdown shuts down the VM
@@ -162,9 +169,9 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 }
 
 // WaitForEvent waits for an event from the VM
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	// No-op implementation for tests
-	return nil, nil
+	return vmcore.Message{}, nil
 }
 
 // BatchedVM methods
@@ -176,7 +183,7 @@ func (vm *BatchedVM) GetAncestors(ctx context.Context, blkID ids.ID, maxBlocksNu
 	return nil, errors.New("not implemented")
 }
 
-func (vm *BatchedVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
+func (vm *BatchedVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]consensuschain.Block, error) {
 	if vm.BatchedParseBlockF != nil {
 		return vm.BatchedParseBlockF(ctx, blks)
 	}
@@ -199,40 +206,40 @@ func (vm *StateSyncableVM) StateSyncEnabled(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (vm *StateSyncableVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+func (vm *StateSyncableVM) GetOngoingSyncStateSummary(ctx context.Context) (consensuschain.StateSummary, error) {
 	if vm.GetOngoingSyncStateSummaryF != nil {
 		return vm.GetOngoingSyncStateSummaryF(ctx)
 	}
 	return nil, database.ErrNotFound
 }
 
-func (vm *StateSyncableVM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+func (vm *StateSyncableVM) GetLastStateSummary(ctx context.Context) (consensuschain.StateSummary, error) {
 	if vm.GetLastStateSummaryF != nil {
 		return vm.GetLastStateSummaryF(ctx)
 	}
 	return nil, database.ErrNotFound
 }
 
-func (vm *StateSyncableVM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+func (vm *StateSyncableVM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (consensuschain.StateSummary, error) {
 	if vm.ParseStateSummaryF != nil {
 		return vm.ParseStateSummaryF(ctx, summaryBytes)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (vm *StateSyncableVM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+func (vm *StateSyncableVM) GetStateSummary(ctx context.Context, height uint64) (consensuschain.StateSummary, error) {
 	if vm.GetStateSummaryF != nil {
 		return vm.GetStateSummaryF(ctx, height)
 	}
 	return nil, database.ErrNotFound
 }
 
-// StateSummary is a test state summary that implements block.StateSummary
+// StateSummary is a test state summary that implements consensuschain.StateSummary
 type StateSummary struct {
 	IDV     ids.ID
 	HeightV uint64
 	BytesV  []byte
-	AcceptF func(context.Context) (block.StateSyncMode, error)
+	AcceptF func(context.Context) (consensuschain.StateSyncMode, error)
 }
 
 func (s *StateSummary) ID() ids.ID {
@@ -247,9 +254,9 @@ func (s *StateSummary) Bytes() []byte {
 	return s.BytesV
 }
 
-func (s *StateSummary) Accept(ctx context.Context) (block.StateSyncMode, error) {
+func (s *StateSummary) Accept(ctx context.Context) (consensuschain.StateSyncMode, error) {
 	if s.AcceptF != nil {
 		return s.AcceptF(ctx)
 	}
-	return block.StateSyncStatic, nil
+	return consensuschain.StateSyncStatic, nil
 }

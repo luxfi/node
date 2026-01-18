@@ -20,42 +20,40 @@ import (
 	"time"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
+	"github.com/luxfi/node/service/health"
+	"github.com/luxfi/node/service/metrics"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/vm/chains/atomic"
 
 	// "github.com/luxfi/database/badgerdb" // Unused
-	"github.com/luxfi/runtime"
 	dbmanager "github.com/luxfi/database/manager"
+	"github.com/luxfi/runtime"
 
 	// "github.com/luxfi/database/meterdb" // Unused
 	// "github.com/luxfi/database/prefixdb" // Unused
-	"github.com/luxfi/consensus/engine"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/proto/pb/p2p"
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 	"github.com/luxfi/warp"
 
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
 	// "github.com/luxfi/consensus/engine/dag/state" // Unused
 	// "github.com/luxfi/consensus/engine/vertex" // Unused
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/engine/interfaces"
 
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/block"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
+	"github.com/luxfi/vm/chain"
 
-	// "github.com/luxfi/consensus/engine/chain/syncer"
+	// "github.com/luxfi/vm/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
 	// "github.com/luxfi/consensus/core/router" // Deprecated - using local ChainRouter interface instead
 	// "github.com/luxfi/consensus/networking/sender" // Unused after dead code cleanup
 	"github.com/luxfi/consensus/networking/timeout"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/crypto/bls"
@@ -68,6 +66,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/vm/fx"
 
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
@@ -79,13 +78,13 @@ import (
 	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
 	// "github.com/luxfi/node/proto/p2p" // Available if needed for protobuf parsing
-	// smcon "github.com/luxfi/consensus/engine/chain"
+	// smcon "github.com/luxfi/vm/chain"
 	// aveng "github.com/luxfi/consensus/engine/dag"
 	// avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
 	// avagetter "github.com/luxfi/consensus/engine/dag/getter"
-	// smeng "github.com/luxfi/consensus/engine/chain"
-	// smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
-	// consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
+	// smeng "github.com/luxfi/vm/chain"
+	// smbootstrap "github.com/luxfi/vm/chain/bootstrap"
+	// consensusgetter "github.com/luxfi/vm/chain/getter"
 	timetracker "github.com/luxfi/node/network/tracker"
 )
 
@@ -739,7 +738,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	)
 	m.Log.Info("║ Chain ID:", log.Stringer("chainID", chainParams.ID))
 	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
-	m.Log.Info("║ Net ID:", log.Stringer("chainID", chainParams.ChainID))
+	m.Log.Info("║ Network ID:", log.Stringer("chainID", chainParams.ChainID))
 	m.Log.Info("║ Endpoints available at:")
 	m.Log.Info("║   → /ext/bc/" + chainParams.ID.String())
 	if chainAlias != chainParams.ID.String() {
@@ -839,7 +838,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	// Get a factory for the vm we want to use on our chain
 	m.Log.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
-	vmFactory, err := m.VMManager.GetFactory(chainParams.VMID)
+	vmFactory, err := m.VMManager.GetFactory(context.Background(), chainParams.VMID)
 	if err != nil {
 		// Check if this is a VM not found error - if so, add to pending chains for hot-loading
 		if errors.Is(err, vms.ErrNotFound) {
@@ -858,37 +857,37 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	m.Log.Info("Got VM factory successfully")
 
 	// Create the chain
-	vm, err := vmFactory.New(chainLog)
+	vmImpl, err := vmFactory.New(chainLog)
 	if err != nil {
 		return nil, fmt.Errorf("error while creating vm for chain %s: %w", chainParams.ID, err)
 	}
 
-	chainFxs := make([]*engine.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*vm.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &engine.Fx{
+		chainFxs[i] = &vm.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
 	}
 
-	m.Log.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vm)))
-	var chain *chainInfo
-	switch vm := vm.(type) {
+	m.Log.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vmImpl)))
+	var createdChain *chainInfo
+	switch vmTyped := vmImpl.(type) {
 	// DAG VM support - for X-Chain and Q-Chain
 	case interface{ GetEngine() consensusdag.Engine }:
 		m.Log.Info("detected DAG VM with GetEngine()",
 			log.Stringer("chainID", chainParams.ID),
 		)
-		chain, err = m.createDAG(chainRuntime, chainParams, vm, chainFxs)
+		createdChain, err = m.createDAG(chainRuntime, chainParams, vmTyped, chainFxs)
 		if err != nil {
 			return nil, fmt.Errorf("error creating DAG chain: %w", err)
 		}
-	case block.ChainVM:
+	case chain.ChainVM:
 		beacons := m.Validators
 		if chainParams.ID == constants.PlatformChainID {
 			beacons = chainParams.CustomBeacons
@@ -934,9 +933,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Create message channel for VM-to-Engine communication
-		toEngine := make(chan block.Message, 1)
+		toEngine := make(chan vm.Message, 1)
 
-		// Convert []*engine.Fx to []interface{}
+		// Convert []*vm.Fx to []interface{}
 		fxsInterface := make([]interface{}, len(chainFxs))
 		for i, fx := range chainFxs {
 			fxsInterface[i] = fx
@@ -946,11 +945,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Inject automining config for dev mode (applies to C-Chain/coreth)
 		vmConfigBytes := m.injectAutominingConfig(chainConfig.Config)
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
-		err = vm.Initialize(
+		err = vmTyped.Initialize(
 			context.TODO(),
-			common.VMInit{
+			vm.Init{
 				Runtime:  chainRuntime,
 				DB:       vmDB,
+				Log:      chainLog,
 				Genesis:  chainParams.GenesisData,
 				Upgrade:  chainConfig.Upgrade,
 				Config:   vmConfigBytes,
@@ -970,12 +970,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Transition VM to normal operation after initialization
 		// For genesis-based networks with pre-configured validators, this is required
 		// to make the VM APIs available immediately
-		if stateVM, ok := vm.(interface {
+		if stateVM, ok := vmTyped.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
 			m.Log.Info("transitioning VM to normal operation",
 				log.Stringer("chainID", chainParams.ID))
-			if err := stateVM.SetState(context.TODO(), uint32(interfaces.Ready)); err != nil {
+			if err := stateVM.SetState(context.TODO(), uint32(vmpb.State_STATE_NORMAL_OP)); err != nil {
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
@@ -986,7 +986,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Create integrated consensus engine - the ONE right way to set up chain consensus
 		// This consolidates: engine creation, emitter wiring, VM registration
 		var blockBuilder consensuschain.BlockBuilder
-		if bb, ok := vm.(consensuschain.BlockBuilder); ok {
+		if bb, ok := vmTyped.(consensuschain.BlockBuilder); ok {
 			blockBuilder = bb
 			m.Log.Info("registered VM with consensus engine for block building",
 				log.Stringer("chainID", chainParams.ID))
@@ -1070,7 +1070,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			for {
 				// Call WaitForEvent on the VM - this blocks until there are pending txs
 				// or staker changes that should trigger block building
-				result, err := vm.WaitForEvent(ctx)
+				msg, err := vmTyped.WaitForEvent(ctx)
 				if err != nil {
 					if ctx.Err() != nil {
 						// Context cancelled, exit gracefully
@@ -1082,52 +1082,29 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					continue
 				}
 
-				// Convert the result to block.Message
-				// WaitForEvent can return:
-				// 1. engine.MessageType (which is an alias for vm.MessageType = uint32)
-				// 2. interface with Type() method
-				// 3. struct with Type field
-				var msgType block.MessageType
-				switch v := result.(type) {
-				case engine.MessageType:
-					msgType = block.MessageType(v)
-					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned MessageType",
-						log.Stringer("chainID", chainParams.ID),
-						log.Uint32("value", uint32(v)))
-				case interface{ Type() engine.MessageType }:
-					msgType = block.MessageType(v.Type())
-					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned interface",
-						log.Stringer("chainID", chainParams.ID))
-				case struct{ Type engine.MessageType }:
-					msgType = block.MessageType(v.Type)
-					m.Log.Info("[VM NOTIFICATION] WaitForEvent returned struct",
-						log.Stringer("chainID", chainParams.ID))
-				default:
-					m.Log.Warn("[VM NOTIFICATION] WaitForEvent returned unknown type, defaulting to PendingTxs",
-						log.Stringer("chainID", chainParams.ID),
-						log.String("resultType", fmt.Sprintf("%T", result)),
-						log.String("resultValue", fmt.Sprintf("%v", result)))
-					msgType = block.PendingTxs
-				}
-				toEngine <- block.Message{Type: msgType}
+				// WaitForEvent now returns vm.Message directly
+				m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned",
+					log.Stringer("chainID", chainParams.ID),
+					log.Uint32("messageType", uint32(msg.Type)))
+				toEngine <- msg
 				m.Log.Info("[VM NOTIFICATION] Sent to toEngine channel",
 					log.Stringer("chainID", chainParams.ID),
-					log.Uint32("msgType", uint32(msgType)))
+					log.Uint32("msgType", uint32(msg.Type)))
 			}
 		}()
 
 		// Forward VM notifications to consensus (single goroutine)
 		go consensusEngine.ForwardVMNotifications(toEngine)
 
-		chain = &chainInfo{
+		createdChain = &chainInfo{
 			Name:    chainRuntime.ChainID.String(),
 			Runtime: chainRuntime,
-			VM:      vm,              // Use the real VM directly
+			VM:      vmTyped,         // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			Handler: newBlockHandler(vm, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
+			Handler: newBlockHandler(vmTyped, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
 		}
 	default:
-		return nil, fmt.Errorf("unsupported VM type: %T", vm)
+		return nil, fmt.Errorf("unsupported VM type: %T", vmImpl)
 	}
 
 	vmGatherer, err := m.getOrMakeVMGatherer(chainParams.VMID)
@@ -1136,7 +1113,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	}
 	_ = vmGatherer
 
-	return chain, nil
+	return createdChain, nil
 }
 
 func (m *manager) AddRegistrant(r Registrant) {
@@ -1174,7 +1151,7 @@ func (v *dagVMAdapter) NewHTTPHandler(ctx context.Context) (http.Handler, error)
 	return nil, nil
 }
 
-func (v *dagVMAdapter) SetState(ctx context.Context, state interfaces.State) error {
+func (v *dagVMAdapter) SetState(ctx context.Context, state vm.State) error {
 	if s, ok := v.underlying.(interface {
 		SetState(context.Context, uint32) error
 	}); ok {
@@ -1203,8 +1180,8 @@ func (v *dagVMAdapter) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- engine.Message,
-	fxs []*engine.Fx,
+	toEngine chan<- vm.Message,
+	fxs []*vm.Fx,
 	appSender interface{},
 ) error {
 	return nil // DAG VMs are pre-initialized
@@ -1214,11 +1191,11 @@ func (v *dagVMAdapter) Initialize(
 func (m *manager) createDAG(
 	rt *runtime.Runtime,
 	chainParams ChainParameters,
-	vm interface{},
-	fxs []*engine.Fx,
+	vmImpl interface{},
+	fxs []*vm.Fx,
 ) (*chainInfo, error) {
 	// Type assert to get GetEngine() method from exchangevm/qvm
-	dagVM, ok := vm.(interface{ GetEngine() consensusdag.Engine })
+	dagVM, ok := vmImpl.(interface{ GetEngine() consensusdag.Engine })
 	if !ok {
 		return nil, fmt.Errorf("VM does not implement GetEngine() for DAG consensus")
 	}
@@ -1264,7 +1241,7 @@ func (m *manager) createDAG(
 	vmInitialized := false
 
 	// Try QVM Initialize signature (uses consensus/core types)
-	if initVM, ok := vm.(interface {
+	if initVM, ok := vmImpl.(interface {
 		Initialize(
 			ctx context.Context,
 			chainRuntime interface{},
@@ -1272,12 +1249,12 @@ func (m *manager) createDAG(
 			genesisBytes []byte,
 			upgradeBytes []byte,
 			configBytes []byte,
-			toEngine chan<- engine.Message,
-			fxs []*engine.Fx,
+			toEngine chan<- vm.Message,
+			fxs []*vm.Fx,
 			appSender warp.Sender,
 		) error
 	}); ok {
-		toEngine := make(chan engine.Message, 1)
+		toEngine := make(chan vm.Message, 1)
 		err := initVM.Initialize(
 			initCtx,
 			rt,
@@ -1299,7 +1276,7 @@ func (m *manager) createDAG(
 
 	// Try ExchangeVM Initialize signature (uses interface{} types for flexibility)
 	if !vmInitialized {
-		if initVM, ok := vm.(interface {
+		if initVM, ok := vmImpl.(interface {
 			Initialize(
 				ctx context.Context,
 				chainRuntime interface{},
@@ -1340,10 +1317,10 @@ func (m *manager) createDAG(
 
 	// Only transition VM to normal operation if initialization succeeded
 	if vmInitialized {
-		if stateVM, ok := vm.(interface {
+		if stateVM, ok := vmImpl.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			if err := stateVM.SetState(initCtx, uint32(interfaces.Ready)); err != nil {
+			if err := stateVM.SetState(initCtx, uint32(vmpb.State_STATE_NORMAL_OP)); err != nil {
 				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
 			}
 		}
@@ -1367,7 +1344,7 @@ func (m *manager) createDAG(
 	return &chainInfo{
 		Name:    chainParams.ID.String(),
 		Runtime: rt,
-		VM:      &dagVMAdapter{underlying: vm},
+		VM:      &dagVMAdapter{underlying: vmImpl},
 		Handler: &placeholderHandler{},
 	}, nil
 }
@@ -1581,7 +1558,7 @@ func (m *manager) Shutdown() {
 
 // LookupVM returns the ID of the VM associated with an alias
 func (m *manager) LookupVM(alias string) (ids.ID, error) {
-	return m.VMManager.Lookup(alias)
+	return m.VMManager.Lookup(context.Background(), alias)
 }
 
 // RetryPendingChains re-queues chains that were waiting for the specified VM.
@@ -1629,9 +1606,9 @@ func (m *manager) GetPendingChains(vmID ids.ID) []ChainParameters {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, rt *runtime.Runtime, vm interface{}) {
+func (m *manager) notifyRegistrants(name string, rt *runtime.Runtime, vmImpl interface{}) {
 	for _, registrant := range m.registrants {
-		if coreVM, ok := vm.(interfaces.VM); ok {
+		if coreVM, ok := vmImpl.(vm.VM); ok {
 			registrant.RegisterChain(name, rt, coreVM)
 		}
 	}
@@ -1814,7 +1791,7 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // blockHandler implements handler.Handler interface and processes incoming blocks
 // This enables block propagation between validators
 type blockHandler struct {
-	vm         block.ChainVM
+	vm         chain.ChainVM
 	logger     log.Logger
 	engine     *consensuschain.Runtime    // Consensus engine for proper block handling
 	net        network.Network            // Network for sending Qbit responses
@@ -1853,7 +1830,7 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm block.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
+func newBlockHandler(vm chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
 	return &blockHandler{
 		vm:               vm,
 		logger:           logger,
@@ -1934,7 +1911,7 @@ func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
 	// First check if the block is in consensus pending (recently proposed but not yet finalized).
 	// This is critical: when we receive votes for a block we proposed, the block may only be in
 	// pendingBlocks (not yet stored in VM).
-	var blk block.Block
+	var blk chain.Block
 	var err error
 
 	if pendingBlk, ok := b.engine.GetPendingBlock(ev.BlockID); ok {
@@ -2082,7 +2059,7 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		// First check pending blocks (for recently proposed but not yet accepted blocks)
 		// This is critical: when we propose a block and send PullQuery, other validators
 		// request context for the proposed block which may not be accepted yet.
-		var blk block.Block
+		var blk chain.Block
 		var found bool
 
 		if b.engine != nil {
@@ -2322,7 +2299,7 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 	// Try to get the block from pending blocks first, then VM storage.
 	// When we receive a PullQuery, the proposer has the block but it may not
 	// be in our VM storage yet. First check pending blocks (proposed but not accepted).
-	var blk block.Block
+	var blk chain.Block
 	var found bool
 
 	// First check pending blocks (for recently proposed but not yet accepted blocks)
@@ -2426,26 +2403,26 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 func (b *blockHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (b *blockHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+func (b *blockHandler) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (b *blockHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+func (b *blockHandler) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
 	return nil
 }
-func (b *blockHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+func (b *blockHandler) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (b *blockHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+func (b *blockHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (b *blockHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (b *blockHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (b *blockHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+func (b *blockHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (b *blockHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	// Handle AppGossip - try to process as block
+func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	// Handle Gossip - try to process as block
 	return b.Put(ctx, nodeID, 0, msg)
 }
 func (b *blockHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
@@ -2563,25 +2540,25 @@ func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, r
 func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+func (p *placeholderHandler) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+func (p *placeholderHandler) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+func (p *placeholderHandler) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+func (p *placeholderHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (p *placeholderHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+func (p *placeholderHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+func (p *placeholderHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {

@@ -29,9 +29,9 @@ var (
 	_ chainIDGetter = (*p2p.PushQuery)(nil)
 	_ chainIDGetter = (*p2p.PullQuery)(nil)
 	_ chainIDGetter = (*p2p.Chits)(nil)
-	_ chainIDGetter = (*p2p.AppRequest)(nil)
-	_ chainIDGetter = (*p2p.AppResponse)(nil)
-	_ chainIDGetter = (*p2p.AppGossip)(nil)
+	_ chainIDGetter = (*p2p.Request)(nil)
+	_ chainIDGetter = (*p2p.Response)(nil)
+	_ chainIDGetter = (*p2p.Gossip)(nil)
 	_ chainIDGetter = (*p2p.Simplex)(nil)
 
 	_ requestIDGetter = (*p2p.GetStateSummaryFrontier)(nil)
@@ -49,8 +49,8 @@ var (
 	_ requestIDGetter = (*p2p.PushQuery)(nil)
 	_ requestIDGetter = (*p2p.PullQuery)(nil)
 	_ requestIDGetter = (*p2p.Chits)(nil)
-	_ requestIDGetter = (*p2p.AppRequest)(nil)
-	_ requestIDGetter = (*p2p.AppResponse)(nil)
+	_ requestIDGetter = (*p2p.Request)(nil)
+	_ requestIDGetter = (*p2p.Response)(nil)
 
 	_ engineTypeGetter = (*p2p.GetAncestors)(nil)
 
@@ -62,7 +62,7 @@ var (
 	_ deadlineGetter = (*p2p.Get)(nil)
 	_ deadlineGetter = (*p2p.PushQuery)(nil)
 	_ deadlineGetter = (*p2p.PullQuery)(nil)
-	_ deadlineGetter = (*p2p.AppRequest)(nil)
+	_ deadlineGetter = (*p2p.Request)(nil)
 )
 
 type chainIDGetter interface {

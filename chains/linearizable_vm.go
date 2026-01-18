@@ -8,19 +8,19 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm/chain"
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/runtime"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 )
 
 var (
 	_ consensusvertex.LinearizableVM = (*initializeOnLinearizeVM)(nil)
-	// Note: linearizeOnInitializeVM doesn't need to fully implement block.ChainVM
+	// Note: linearizeOnInitializeVM doesn't need to fully implement chain.ChainVM
 	// It's a wrapper that transforms Initialize calls into Linearize calls
 
 	// ErrSkipped is returned when a linearizable VM is asked to perform
@@ -34,7 +34,7 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	consensusvertex.DAGVM
-	vmToInitialize block.ChainVM
+	vmToInitialize chain.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
 	rt               *runtime.Runtime
@@ -44,25 +44,17 @@ type initializeOnLinearizeVM struct {
 	configBytes      []byte
 	fxs              []fx.Fx
 	appSender        warp.Sender
-	toEngine         chan<- block.Message // Channel to notify consensus engine
+	toEngine         chan<- vmcore.Message // Channel to notify consensus engine
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
 }
 
-func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (block.Message, error) {
+func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	select {
 	case <-vm.waitForLinearize:
-		msg, err := vm.vmToInitialize.WaitForEvent(ctx)
-		if err != nil {
-			return block.Message{}, err
-		}
-		// Type assert the interface{} return to block.Message
-		if blockMsg, ok := msg.(block.Message); ok {
-			return blockMsg, nil
-		}
-		return block.Message{}, errors.New("unexpected message type from WaitForEvent")
+		return vm.vmToInitialize.WaitForEvent(ctx)
 	case <-ctx.Done():
-		return block.Message{}, ctx.Err()
+		return vmcore.Message{}, ctx.Err()
 	}
 }
 
@@ -81,7 +73,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	// Pass the toEngine channel to the VM so it can notify consensus about pending transactions
 	return vm.vmToInitialize.Initialize(
 		ctx,
-		common.VMInit{
+		vmcore.Init{
 			Runtime:  vm.rt,
 			DB:       vm.db,
 			Genesis:  vm.genesisBytes,
@@ -94,7 +86,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	)
 }
 
-// dbManagerWrapper wraps a database.Database to implement block.DBManager
+// dbManagerWrapper wraps a database.Database to implement chain.DBManager
 type dbManagerWrapper struct {
 	db database.Database
 }
@@ -121,10 +113,10 @@ func (d *dbManagerWrapper) Close() error {
 type linearizeOnInitializeVM struct {
 	consensusvertex.LinearizableVMWithEngine
 	stopVertexID ids.ID
-	toEngine     chan<- block.Message
+	toEngine     chan<- vmcore.Message
 }
 
-func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toEngine chan<- block.Message) *linearizeOnInitializeVM {
+func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toEngine chan<- vmcore.Message) *linearizeOnInitializeVM {
 	return &linearizeOnInitializeVM{
 		LinearizableVMWithEngine: vm,
 		toEngine:                 toEngine,
@@ -133,7 +125,7 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toE
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	vmInit common.VMInit,
+	vmInit vmcore.Init,
 ) error {
 	// When Initialize is called, we need to linearize the DAG
 	// The stopVertexID should have been set by initializeOnLinearizeVM.Linearize

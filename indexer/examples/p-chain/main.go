@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/network/primary"
 
 	platformvmblock "github.com/luxfi/node/vms/platformvm/block"
 	proposervmblock "github.com/luxfi/node/vms/proposervm/block"

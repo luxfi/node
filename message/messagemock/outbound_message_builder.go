@@ -105,64 +105,64 @@ func (mr *OutboundMsgBuilderMockRecorder) Ancestors(chainID, requestID, containe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ancestors", reflect.TypeOf((*OutboundMsgBuilder)(nil).Ancestors), chainID, requestID, containers)
 }
 
-// AppError mocks base method.
-func (m *OutboundMsgBuilder) AppError(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (message.OutboundMessage, error) {
+// Error mocks base method.
+func (m *OutboundMsgBuilder) Error(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppError", chainID, requestID, errorCode, errorMessage)
+	ret := m.ctrl.Call(m, "Error", chainID, requestID, errorCode, errorMessage)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AppError indicates an expected call of AppError.
-func (mr *OutboundMsgBuilderMockRecorder) AppError(chainID, requestID, errorCode, errorMessage any) *gomock.Call {
+// Error indicates an expected call of Error.
+func (mr *OutboundMsgBuilderMockRecorder) Error(chainID, requestID, errorCode, errorMessage any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppError", reflect.TypeOf((*OutboundMsgBuilder)(nil).AppError), chainID, requestID, errorCode, errorMessage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*OutboundMsgBuilder)(nil).Error), chainID, requestID, errorCode, errorMessage)
 }
 
-// AppGossip mocks base method.
-func (m *OutboundMsgBuilder) AppGossip(chainID ids.ID, msg []byte) (message.OutboundMessage, error) {
+// Gossip mocks base method.
+func (m *OutboundMsgBuilder) Gossip(chainID ids.ID, msg []byte) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppGossip", chainID, msg)
+	ret := m.ctrl.Call(m, "Gossip", chainID, msg)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AppGossip indicates an expected call of AppGossip.
-func (mr *OutboundMsgBuilderMockRecorder) AppGossip(chainID, msg any) *gomock.Call {
+// Gossip indicates an expected call of Gossip.
+func (mr *OutboundMsgBuilderMockRecorder) Gossip(chainID, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppGossip", reflect.TypeOf((*OutboundMsgBuilder)(nil).AppGossip), chainID, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gossip", reflect.TypeOf((*OutboundMsgBuilder)(nil).Gossip), chainID, msg)
 }
 
-// AppRequest mocks base method.
-func (m *OutboundMsgBuilder) AppRequest(chainID ids.ID, requestID uint32, deadline time.Duration, msg []byte) (message.OutboundMessage, error) {
+// Request mocks base method.
+func (m *OutboundMsgBuilder) Request(chainID ids.ID, requestID uint32, deadline time.Duration, msg []byte) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppRequest", chainID, requestID, deadline, msg)
+	ret := m.ctrl.Call(m, "Request", chainID, requestID, deadline, msg)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AppRequest indicates an expected call of AppRequest.
-func (mr *OutboundMsgBuilderMockRecorder) AppRequest(chainID, requestID, deadline, msg any) *gomock.Call {
+// Request indicates an expected call of Request.
+func (mr *OutboundMsgBuilderMockRecorder) Request(chainID, requestID, deadline, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppRequest", reflect.TypeOf((*OutboundMsgBuilder)(nil).AppRequest), chainID, requestID, deadline, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*OutboundMsgBuilder)(nil).Request), chainID, requestID, deadline, msg)
 }
 
-// AppResponse mocks base method.
-func (m *OutboundMsgBuilder) AppResponse(chainID ids.ID, requestID uint32, msg []byte) (message.OutboundMessage, error) {
+// Response mocks base method.
+func (m *OutboundMsgBuilder) Response(chainID ids.ID, requestID uint32, msg []byte) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppResponse", chainID, requestID, msg)
+	ret := m.ctrl.Call(m, "Response", chainID, requestID, msg)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AppResponse indicates an expected call of AppResponse.
-func (mr *OutboundMsgBuilderMockRecorder) AppResponse(chainID, requestID, msg any) *gomock.Call {
+// Response indicates an expected call of Response.
+func (mr *OutboundMsgBuilderMockRecorder) Response(chainID, requestID, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppResponse", reflect.TypeOf((*OutboundMsgBuilder)(nil).AppResponse), chainID, requestID, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Response", reflect.TypeOf((*OutboundMsgBuilder)(nil).Response), chainID, requestID, msg)
 }
 
 // Chits mocks base method.

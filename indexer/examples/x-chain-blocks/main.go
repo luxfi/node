@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/network/primary"
 )
 
 // This example program continuously polls for the next X-Chain block

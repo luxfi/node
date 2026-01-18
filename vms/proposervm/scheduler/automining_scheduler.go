@@ -6,8 +6,8 @@ package scheduler
 import (
 	"time"
 
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
+	vmcore "github.com/luxfi/vm"
 )
 
 // AutominingScheduler is a scheduler that continuously produces blocks at a fixed interval
@@ -37,8 +37,8 @@ type autominingCommand struct {
 }
 
 // NewAutomining creates a new scheduler with automining capabilities
-func NewAutomining(log log.Logger, toEngine chan<- core.Message) (AutominingScheduler, chan<- core.Message) {
-	vmToEngine := make(chan core.Message, cap(toEngine))
+func NewAutomining(log log.Logger, toEngine chan<- vmcore.Message) (AutominingScheduler, chan<- vmcore.Message) {
+	vmToEngine := make(chan vmcore.Message, cap(toEngine))
 	baseScheduler := &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -136,7 +136,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 
 func (s *autominingScheduler) handleBuildRequest() {
 	// Send a build block message to the engine
-	msg := core.Message{Type: core.PendingTxs}
+	msg := vmcore.Message{Type: vmcore.PendingTxs}
 	select {
 	case s.toEngine <- msg:
 		s.log.Debug("sent build block request to engine",

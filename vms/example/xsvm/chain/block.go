@@ -13,9 +13,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
+	"github.com/luxfi/runtime"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
+	smblock "github.com/luxfi/vm/chain"
 )
 
 const maxClockSkew = 10 * time.Second
@@ -33,7 +34,7 @@ var (
 
 type Block interface {
 	smblock.Block
-	smblock.WithVerifyContext
+	smblock.WithVerifyRuntime
 
 	// Timestamp returns the block's timestamp
 	Timestamp() time.Time
@@ -87,7 +88,7 @@ func (b *block) Status() uint8 {
 }
 
 func (b *block) Verify(ctx context.Context) error {
-	return b.VerifyWithContext(ctx, nil)
+	return b.VerifyWithRuntime(ctx, nil)
 }
 
 func (b *block) Accept(context.Context) error {
@@ -120,11 +121,11 @@ func (b *block) Reject(context.Context) error {
 	return nil
 }
 
-func (b *block) ShouldVerifyWithContext(context.Context) (bool, error) {
+func (b *block) ShouldVerifyWithRuntime(context.Context) (bool, error) {
 	return execute.ExpectsContext(b.Stateless)
 }
 
-func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Context) error {
+func (b *block) VerifyWithRuntime(ctx context.Context, blockContext *runtime.Runtime) error {
 	timestamp := b.Time()
 	if time.Until(timestamp) > maxClockSkew {
 		return errFutureTimestamp

@@ -14,8 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -55,11 +54,11 @@ func createTestVM(t *testing.T) *dexvm.VM {
 	cfg := config.DefaultConfig()
 	cfg.BlockInterval = time.Millisecond // 1ms blocks for HFT
 
-	vm := dexvm.NewVMForTest(cfg, logger)
+	vmImpl := dexvm.NewVMForTest(cfg, logger)
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan core.Message, 100)
+	toEngine := make(chan vm.Message, 100)
 	appSender := warp.FakeSender{} // Use warp's FakeSender
 
 	rt := &runtime.Runtime{
@@ -67,9 +66,9 @@ func createTestVM(t *testing.T) *dexvm.VM {
 		Log:     logger,
 	}
 
-	err := vm.Initialize(
+	err := vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -83,7 +82,7 @@ func createTestVM(t *testing.T) *dexvm.VM {
 	)
 	require.NoError(err)
 
-	return vm
+	return vmImpl
 }
 
 // NewTestNetwork creates a new test network with the specified number of nodes.
@@ -95,14 +94,14 @@ func NewTestNetwork(t *testing.T, nodeCount int) *TestNetwork {
 	// Create nodes
 	for i := 0; i < nodeCount; i++ {
 		nodeID := ids.GenerateTestNodeID()
-		vm := createTestVM(t)
+		vmImpl := createTestVM(t)
 
 		// Create orderbook for trading
-		_ = vm.GetOrCreateOrderbook(testSymbol)
+		_ = vmImpl.GetOrCreateOrderbook(testSymbol)
 
 		network.Nodes[i] = &TestNode{
 			ID:        nodeID,
-			VM:        vm,
+			VM:        vmImpl,
 			Blocks:    make([]*dexvm.BlockResult, 0),
 			connected: make(map[ids.NodeID]*TestNode),
 		}
@@ -216,7 +215,7 @@ func TestNetworkBasic(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 
@@ -252,7 +251,7 @@ func TestNetworkOrderMatching(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 
@@ -334,11 +333,11 @@ func TestNetworkDeterminism(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network1.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 	for _, node := range network2.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 
@@ -375,7 +374,7 @@ func TestNetworkHighThroughput(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 
@@ -415,7 +414,7 @@ func TestNetworkPartialFailure(t *testing.T) {
 
 	// Bootstrap all VMs
 	for _, node := range network.Nodes {
-		err := node.VM.SetState(ctx, uint32(core.Ready))
+		err := node.VM.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 	}
 
@@ -460,11 +459,11 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 
 	for i := 0; i < 5; i++ {
 		nodeID := ids.GenerateTestNodeID()
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 		appSender := warp.FakeSender{}
 
 		rt := &runtime.Runtime{
@@ -472,9 +471,9 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 			Log:     logger,
 		}
 
-		_ = vm.Initialize(
+		_ = vmImpl.Initialize(
 			context.Background(),
-			common.VMInit{
+			vm.Init{
 				Runtime:  rt,
 				DB:       db,
 				ToEngine: toEngine,
@@ -487,11 +486,11 @@ func BenchmarkNetworkProcessBlock(b *testing.B) {
 			},
 		)
 
-		_ = vm.SetState(ctx, uint32(core.Ready))
+	_ = vmImpl.SetState(ctx, uint32(vm.Ready))
 
 		network.Nodes[i] = &TestNode{
 			ID:        nodeID,
-			VM:        vm,
+			VM:        vmImpl,
 			Blocks:    make([]*dexvm.BlockResult, 0),
 			connected: make(map[ids.NodeID]*TestNode),
 		}

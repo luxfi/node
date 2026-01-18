@@ -11,20 +11,19 @@ import (
 	"sync"
 	"time"
 
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/runtime"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 
 	"github.com/luxfi/node/version"
 )
 
 var (
-	_ block.ChainVM = (*VM)(nil)
+	_ chain.ChainVM = (*VM)(nil)
 
 	Version = &version.Semantic{
 		Major: 1,
@@ -84,7 +83,7 @@ type VM struct {
 	mempool *Mempool
 
 	// Consensus
-	toEngine chan<- core.Message
+	toEngine chan<- vmcore.Message
 
 	// Logging
 	log log.Logger
@@ -95,7 +94,7 @@ type VM struct {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	init common.VMInit,
+	init vmcore.Init,
 ) error {
 	vm.rt = init.Runtime
 	vm.db = init.DB
@@ -236,7 +235,7 @@ func (vm *VM) Initialize(
 }
 
 // BuildBlock builds a new block
-func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 
@@ -295,7 +294,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 }
 
 // ParseBlock parses a block from bytes
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	block := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
@@ -306,13 +305,15 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, e
 }
 
 // GetBlock retrieves a block by ID
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	// Check pending blocks
-	if block, exists := vm.pendingBlocks[blkID]; exists {
-		return block, nil
+	// Check pending blocks (nil-safe for early calls before initialization)
+	if vm.pendingBlocks != nil {
+		if block, exists := vm.pendingBlocks[blkID]; exists {
+			return block, nil
+		}
 	}
 
 	// Check if it's genesis
@@ -368,18 +369,18 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 }
 
 // HealthCheck performs a health check
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
-	health := &Health{
-		DatabaseHealthy:   true,
-		UTXOCount:         vm.utxoDB.GetUTXOCount(),
-		NullifierCount:    vm.nullifierDB.GetNullifierCount(),
-		LastBlockHeight:   vm.lastAccepted.Height(),
-		PendingBlockCount: len(vm.pendingBlocks),
-		MempoolSize:       vm.mempool.Size(),
-		ProofCacheSize:    vm.proofVerifier.GetCacheSize(),
-	}
-
-	return health, nil
+func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+	return &chain.HealthResult{
+		Healthy: true,
+		Details: map[string]string{
+			"utxoCount":         fmt.Sprintf("%d", vm.utxoDB.GetUTXOCount()),
+			"nullifierCount":    fmt.Sprintf("%d", vm.nullifierDB.GetNullifierCount()),
+			"lastBlockHeight":   fmt.Sprintf("%d", vm.lastAccepted.Height()),
+			"pendingBlockCount": fmt.Sprintf("%d", len(vm.pendingBlocks)),
+			"mempoolSize":       fmt.Sprintf("%d", vm.mempool.Size()),
+			"proofCacheSize":    fmt.Sprintf("%d", vm.proofVerifier.GetCacheSize()),
+		},
+	}, nil
 }
 
 // Health represents VM health status
@@ -403,15 +404,15 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 // NewHTTPHandler returns HTTP handlers for the VM
-func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
-	return vm.CreateHandlers(ctx)
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return NewRPCHandler(vm), nil
 }
 
 // WaitForEvent blocks until an event occurs that should trigger block building
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	// For now, return nil indicating no events to wait for
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
+	// For now, return empty message indicating no events to wait for
 	// In production, this would wait for transactions in mempool, etc.
-	return nil, nil
+	return vmcore.Message{}, nil
 }
 
 // verifyTransaction verifies a transaction including ZK proofs
@@ -489,7 +490,7 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.lastAcceptedID, nil
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *chain.VersionInfo) error {
 	return nil
 }
 
@@ -497,38 +498,38 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-// AppRequest implements the common.VM interface
-func (vm *VM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+// Request implements the common.VM interface
+func (vm *VM) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
-// AppResponse implements the common.VM interface
-func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+// Response implements the common.VM interface
+func (vm *VM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// AppRequestFailed implements the common.VM interface
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
+// RequestFailed implements the common.VM interface
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 
-// AppGossip implements the common.VM interface
-func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip implements the common.VM interface
+func (vm *VM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
 
-// CrossChainAppRequest implements the common.VM interface
-func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+// CrossChainRequest implements the common.VM interface
+func (vm *VM) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
-// CrossChainAppResponse implements the common.VM interface
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+// CrossChainResponse implements the common.VM interface
+func (vm *VM) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the common.VM interface
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
+// CrossChainRequestFailed implements the common.VM interface
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *warp.Error) error {
 	return nil
 }
 

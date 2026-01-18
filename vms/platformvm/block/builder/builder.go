@@ -14,8 +14,6 @@ import (
 
 	"github.com/luxfi/log"
 
-	consensuscore "github.com/luxfi/consensus/core"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -26,12 +24,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
+	validators "github.com/luxfi/validators"
+	vmcore "github.com/luxfi/vm"
 
-	"github.com/luxfi/runtime"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/runtime"
 )
 
 // validatorStateAdapter adapts runtime.ValidatorState to validators.State
@@ -135,10 +135,10 @@ type Builder interface {
 	mempool.Mempool[*txs.Tx]
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chainblock.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 
-	// BuildBlockWithContext builds a block with context
-	BuildBlockWithContext(context.Context, *chainblock.Context) (chainblock.Block, error)
+	// BuildBlockWithRuntime builds a block with context
+	BuildBlockWithRuntime(context.Context, *runtime.Runtime) (chain.Block, error)
 
 	// Connected is called when a node connects
 	Connected(context.Context, ids.NodeID, interface{}) error
@@ -184,12 +184,12 @@ func (b *builder) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return nil
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	logger := b.txExecutorBackend.Runtime.Log.(log.Logger)
 	consecutiveErrors := 0
 	for {
 		if err := ctx.Err(); err != nil {
-			return consensuscore.Message{}, err
+			return vmcore.Message{}, err
 		}
 
 		duration, err := b.durationToSleep()
@@ -206,7 +206,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 			backoff := time.Duration(math.Min(float64(time.Second)*float64(consecutiveErrors*consecutiveErrors), float64(30*time.Second)))
 			select {
 			case <-ctx.Done():
-				return consensuscore.Message{}, ctx.Err()
+				return vmcore.Message{}, ctx.Err()
 			case <-time.After(backoff):
 				continue
 			}
@@ -215,7 +215,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 		if duration <= 0 {
 			logger.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
-			return consensuscore.Message{Type: consensuscore.PendingTxs}, nil
+			return vmcore.Message{Type: vmcore.PendingTxs}, nil
 		}
 
 		logger.Debug("Will wait until a transaction comes", log.Duration("maxWait", duration))
@@ -235,7 +235,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 		default:
 			// Error could have been due to the parent context being cancelled
 			// or another unexpected error.
-			return consensuscore.Message{}, err
+			return vmcore.Message{}, err
 		}
 	}
 }
@@ -266,19 +266,19 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 	return nextStakerChangeTime.Sub(now), nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context) (chainblock.Block, error) {
-	return b.BuildBlockWithContext(
+func (b *builder) BuildBlock(ctx context.Context) (chain.Block, error) {
+	return b.BuildBlockWithRuntime(
 		ctx,
-		&chainblock.Context{
+		&runtime.Runtime{
 			PChainHeight: 0,
 		},
 	)
 }
 
-func (b *builder) BuildBlockWithContext(
+func (b *builder) BuildBlockWithRuntime(
 	ctx context.Context,
-	blockContext *chainblock.Context,
-) (chainblock.Block, error) {
+	blockContext *runtime.Runtime,
+) (chain.Block, error) {
 	logger := b.txExecutorBackend.Runtime.Log.(log.Logger)
 	logger.Debug("starting to attempt to build a block")
 

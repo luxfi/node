@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	choices "github.com/luxfi/consensus/core/choices"
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -213,10 +213,10 @@ func (mr *MockPostForkBlockMockRecorder) buildChild(arg0 any) *gomock.Call {
 }
 
 // getInnerBlk mocks base method.
-func (m *MockPostForkBlock) getInnerBlk() chainblock.Block {
+func (m *MockPostForkBlock) getInnerBlk() chain.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInnerBlk")
-	ret0, _ := ret[0].(chainblock.Block)
+	ret0, _ := ret[0].(chain.Block)
 	return ret0
 }
 
@@ -227,10 +227,10 @@ func (mr *MockPostForkBlockMockRecorder) getInnerBlk() *gomock.Call {
 }
 
 // getStatelessBlk mocks base method.
-func (m *MockPostForkBlock) getStatelessBlk() chainblock.Block {
+func (m *MockPostForkBlock) getStatelessBlk() chain.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getStatelessBlk")
-	ret0, _ := ret[0].(chainblock.Block)
+	ret0, _ := ret[0].(chain.Block)
 	return ret0
 }
 
@@ -256,7 +256,7 @@ func (mr *MockPostForkBlockMockRecorder) pChainHeight(arg0 any) *gomock.Call {
 }
 
 // setInnerBlk mocks base method.
-func (m *MockPostForkBlock) setInnerBlk(arg0 chainblock.Block) {
+func (m *MockPostForkBlock) setInnerBlk(arg0 chain.Block) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "setInnerBlk", arg0)
 }

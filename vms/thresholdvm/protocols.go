@@ -5,11 +5,13 @@ package tvm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/threshold/pkg/party"
 	"github.com/luxfi/threshold/pkg/pool"
 	cmpconfig "github.com/luxfi/threshold/protocols/cmp/config"
@@ -222,8 +224,23 @@ func (s *lssKeyShare) Protocol() Protocol {
 }
 
 func (s *lssKeyShare) Serialize() ([]byte, error) {
-	// TODO: Implement proper serialization
-	return nil, errors.New("serialization not implemented")
+	// Serialize key share data to JSON format for storage
+	data := struct {
+		PublicKey   []byte   `json:"publicKey"`
+		PartyID     string   `json:"partyId"`
+		Threshold   int      `json:"threshold"`
+		TotalParties int     `json:"totalParties"`
+		Generation  uint64   `json:"generation"`
+		Protocol    string   `json:"protocol"`
+	}{
+		PublicKey:    s.pubKey,
+		PartyID:      string(s.partyID),
+		Threshold:    s.thresh,
+		TotalParties: s.total,
+		Generation:   s.gen,
+		Protocol:     string(ProtocolLSS),
+	}
+	return json.Marshal(data)
 }
 
 func (h *LSSHandler) Name() Protocol {
@@ -235,20 +252,31 @@ func (h *LSSHandler) SupportedCurves() []string {
 }
 
 func (h *LSSHandler) Keygen(ctx context.Context, partyID party.ID, partyIDs []party.ID, threshold int) (KeyShare, error) {
-	// TODO: Implement using actual LSS protocol runner
-	// The LSS library returns protocol.StartFunc which needs to be run through a session handler
-	// For now, return placeholder that indicates keygen needs proper integration
+	// LSS keygen requires multi-party session coordination - use VM.StartKeygen() which
+	// handles the protocol.StartFunc and session management across distributed parties.
 	return nil, errors.New("LSS keygen requires protocol session integration - use VM.StartKeygen instead")
 }
 
 func (h *LSSHandler) Sign(ctx context.Context, share KeyShare, message []byte, signers []party.ID) (Signature, error) {
-	// TODO: Implement using actual LSS protocol runner
+	// LSS signing requires multi-party session coordination - use VM.RequestSignature() which
+	// handles the protocol.StartFunc and session management across distributed parties.
 	return nil, errors.New("LSS sign requires protocol session integration - use VM.RequestSignature instead")
 }
 
 func (h *LSSHandler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
-	// TODO: Implement standard ECDSA verification
-	return false, errors.New("verification not implemented")
+	if signature == nil || len(pubKey) == 0 || len(message) == 0 {
+		return false, errors.New("invalid parameters for verification")
+	}
+
+	// Get signature bytes in [R || S] format (64 bytes)
+	sigBytes := signature.Bytes()
+	if len(sigBytes) < 64 {
+		return false, errors.New("invalid signature length")
+	}
+
+	// Verify using secp256k1 ECDSA
+	// Note: message should be 32-byte hash, if not already hashed, caller must hash first
+	return secp256k1.VerifySignature(pubKey, message, sigBytes[:64]), nil
 }
 
 func (h *LSSHandler) Reshare(ctx context.Context, share KeyShare, newPartyIDs []party.ID, newThreshold int) (KeyShare, error) {
@@ -358,13 +386,19 @@ func (h *CGGMP21Handler) Sign(ctx context.Context, share KeyShare, message []byt
 }
 
 func (h *CGGMP21Handler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
-	// Standard ECDSA verification - can use crypto/ecdsa
-	// For now, return true (actual verification should use secp256k1 library)
 	if signature == nil || len(pubKey) == 0 || len(message) == 0 {
 		return false, errors.New("invalid parameters for verification")
 	}
-	// TODO: Implement proper ECDSA verification using secp256k1
-	return true, nil
+
+	// Get signature bytes in [R || S] format (64 bytes)
+	sigBytes := signature.Bytes()
+	if len(sigBytes) < 64 {
+		return false, errors.New("invalid signature length")
+	}
+
+	// Verify using secp256k1 ECDSA
+	// Note: message should be 32-byte hash, if not already hashed, caller must hash first
+	return secp256k1.VerifySignature(pubKey, message, sigBytes[:64]), nil
 }
 
 func (h *CGGMP21Handler) Reshare(ctx context.Context, share KeyShare, newPartyIDs []party.ID, newThreshold int) (KeyShare, error) {
@@ -436,7 +470,21 @@ func (s *cmpKeyShare) Protocol() Protocol {
 }
 
 func (s *cmpKeyShare) Serialize() ([]byte, error) {
-	return nil, errors.New("CMP key share serialization not implemented")
+	// Serialize key share data to JSON format for storage
+	data := struct {
+		PublicKey    []byte `json:"publicKey"`
+		PartyID      string `json:"partyId"`
+		Threshold    int    `json:"threshold"`
+		TotalParties int    `json:"totalParties"`
+		Protocol     string `json:"protocol"`
+	}{
+		PublicKey:    s.pubKey,
+		PartyID:      string(s.partyID),
+		Threshold:    s.thresh,
+		TotalParties: s.total,
+		Protocol:     string(ProtocolCGGMP21),
+	}
+	return json.Marshal(data)
 }
 
 // cmpSignature implements the Signature interface for CMP

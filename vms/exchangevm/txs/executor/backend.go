@@ -47,18 +47,25 @@ type SharedMemory interface {
 
 // ToChainContext creates a verify.ChainContext from this backend
 func (b *Backend) ToChainContext() *verify.ChainContext {
-	return &verify.ChainContext{
-		ChainID:        b.Runtime.ChainID,
-		ChainID:          b.Runtime.ChainID,
-		ValidatorState: &validatorStateAdapter{vs: b.Runtime.ValidatorState.(runtime.ValidatorState)},
+	var (
+		chainID ids.ID
+		netID   ids.ID
+		vs      runtime.ValidatorState
+	)
+
+	if b.Runtime != nil {
+		chainID = b.Runtime.ChainID
+		if runtimeVS, ok := b.Runtime.ValidatorState.(runtime.ValidatorState); ok {
+			vs = runtimeVS
+			if resolvedNetID, err := runtimeVS.GetNetworkID(chainID); err == nil {
+				netID = resolvedNetID
+			}
+		}
 	}
-}
 
-// validatorStateAdapter adapts runtime.ValidatorState to verify.ValidatorState
-type validatorStateAdapter struct {
-	vs runtime.ValidatorState
-}
-
-func (v *validatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetNetworkID(chainID)
+	return &verify.ChainContext{
+		ChainID:        chainID,
+		NetID:          netID,
+		ValidatorState: vs,
+	}
 }

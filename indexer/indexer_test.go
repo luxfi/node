@@ -14,35 +14,21 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/engine/interfaces"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
 	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/utils"
 )
 
 // mockChainVM is a simple mock for testing that implements interfaces.VM
 type mockChainVM struct{}
 
-func (m *mockChainVM) Initialize(
-	ctx context.Context,
-	chainRuntime interface{},
-	dbMgr interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	toEngine interface{},
-	fxs []interface{},
-	appSender interface{},
-) error {
-	return nil
-}
-
-func (m *mockChainVM) SetState(ctx context.Context, state interfaces.State) error {
+func (m *mockChainVM) Initialize(ctx context.Context, init vm.Init) error {
 	return nil
 }
 
@@ -50,24 +36,20 @@ func (m *mockChainVM) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (m *mockChainVM) Version(ctx context.Context) (string, error) {
-	return "mock", nil
-}
-
-func (m *mockChainVM) HealthCheck(ctx context.Context) (interface{}, error) {
+func (m *mockChainVM) ParseBlock(ctx context.Context, b []byte) (vm.Block, error) {
 	return nil, nil
 }
 
-func (m *mockChainVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	return map[string]http.Handler{}, nil
-}
-
-func (m *mockChainVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	return map[string]http.Handler{}, nil
-}
-
-func (m *mockChainVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+func (m *mockChainVM) GetBlock(ctx context.Context, id ids.ID) (vm.Block, error) {
 	return nil, nil
+}
+
+func (m *mockChainVM) SetPreference(ctx context.Context, id ids.ID) error {
+	return nil
+}
+
+func (m *mockChainVM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	return ids.Empty, nil
 }
 
 var (

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -32,18 +32,18 @@ var (
 type Manager interface {
 	state.Versions
 
-	// Returns the ID of the most recently accepted block.
+	// Returns the ID of the most recently accepted chain.
 	LastAccepted() ids.ID
 
 	SetPreference(blkID ids.ID)
 	Preferred() ids.ID
 
-	GetBlock(blkID ids.ID) (block.Block, error)
+	GetBlock(blkID ids.ID) (chain.Block, error)
 	GetStatelessBlock(blkID ids.ID) (platformblock.Block, error)
-	NewBlock(platformblock.Block) block.Block
+	NewBlock(platformblock.Block) chain.Block
 
 	// VerifyTx verifies that the transaction can be issued based on the currently
-	// preferred state. This should *not* be used to verify transactions in a block.
+	// preferred state. This should *not* be used to verify transactions in a chain.
 	VerifyTx(tx *txs.Tx) error
 
 	// VerifyUniqueInputs verifies that the inputs are not duplicated in the
@@ -63,7 +63,7 @@ func NewManager(
 		Mempool:      mempool,
 		lastAccepted: lastAccepted,
 		state:        s,
-		rt:          txExecutorBackend.Runtime,
+		rt:           txExecutorBackend.Runtime,
 		blkIDToState: map[ids.ID]*blockState{},
 	}
 
@@ -96,7 +96,7 @@ type manager struct {
 	Log               log.Logger
 }
 
-func (m *manager) GetBlock(blkID ids.ID) (block.Block, error) {
+func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {
 	blk, err := m.backend.GetBlock(blkID)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (m *manager) GetStatelessBlock(blkID ids.ID) (platformblock.Block, error) {
 	return m.backend.GetBlock(blkID)
 }
 
-func (m *manager) NewBlock(blk platformblock.Block) block.Block {
+func (m *manager) NewBlock(blk platformblock.Block) chain.Block {
 	return &Block{
 		manager: m,
 		Block:   blk,

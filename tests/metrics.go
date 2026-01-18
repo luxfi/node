@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/service/metrics"
 )
 
 // "metric name" -> "metric value"

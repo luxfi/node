@@ -12,9 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/choices"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
@@ -229,11 +228,11 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	baseDB := memdb.New()
 	sharedMemory := atomic.NewMemory(memdb.New())
 
-	vm := &VM{}
+	vmImpl := &VM{}
 	genesisBytes := newGenesisBytesTest(t.(*testing.T))
 	// Create shared memory wrapper that matches VM's interface
 	atomicMem := sharedMemory.NewSharedMemory(rt.ChainID)
-	vm.SharedMemory = &testSharedMemory{mem: atomicMem}
+	vmImpl.SharedMemory = &testSharedMemory{mem: atomicMem}
 
 	testLock := &sync.Mutex{}
 	testLock.Lock()
@@ -244,7 +243,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// ALWAYS include secp256k1fx first (required for genesis parsing)
 	// Then add additional Fxs if provided, or default to nftfx and propertyfx
 	fxs := []interface{}{
-		&core.Fx{
+		&vm.Fx{
 			ID: secp256k1fx.ID,
 			Fx: &secp256k1fx.Fx{},
 		},
@@ -253,11 +252,11 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	if len(config.additionalFxs) == 0 {
 		// No additional Fxs specified - add default nftfx and propertyfx
 		fxs = append(fxs,
-			&core.Fx{
+			&vm.Fx{
 				ID: nftfx.ID,
 				Fx: &nftfx.Fx{},
 			},
-			&core.Fx{
+			&vm.Fx{
 				ID: propertyfx.ID,
 				Fx: &propertyfx.Fx{},
 			},
@@ -275,10 +274,10 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	configBytes, err := json.Marshal(vmConfig)
 	require.NoError(err)
 
-	toEngine := make(chan core.Message, 1)
-	require.NoError(vm.Initialize(
+	toEngine := make(chan vm.Message, 1)
+	require.NoError(vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      baseDB,
 			Genesis: genesisBytes,
@@ -296,11 +295,11 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Create transaction builder with SharedMemory
 	atomicMemForBuilder := sharedMemory.NewSharedMemory(rt.ChainID)
 	txBuilder := txstest.New(
-		vm.parser.Codec(),
+		vmImpl.parser.Codec(),
 		context.Background(),
-		&vm.Config,
-		vm.feeAssetID,
-		vm.state,
+		&vmImpl.Config,
+		vmImpl.feeAssetID,
+		vmImpl.state,
 		atomicMemForBuilder,
 	)
 
@@ -308,7 +307,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	txBuilder.SetContextIDs(rt.NetworkID, rt.ChainID)
 
 	env := &testEnv{
-		vm:           vm,
+		vm:           vmImpl,
 		consensusRuntime: rt,
 		genesisBytes: genesisBytes,
 		genesisTx:    genesisTx,
@@ -321,7 +320,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// This ensures PushGossip and PullGossip goroutines are properly terminated
 	t.Cleanup(func() {
 		// Shutdown the VM to cancel onShutdownCtx and stop gossip goroutines
-		_ = vm.Shutdown()
+		_ = vmImpl.Shutdown()
 	})
 
 	// Linearize the DAG to initialize the network
@@ -329,15 +328,15 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	if !config.notLinearized {
 		// Use the genesis transaction ID as the stop vertex
 		stopVertexID := genesisTx.ID()
-		toEngineChan := make(chan core.Message, 1)
-		require.NoError(vm.Linearize(context.Background(), stopVertexID, toEngineChan))
+		toEngineChan := make(chan vm.Message, 1)
+		require.NoError(vmImpl.Linearize(context.Background(), stopVertexID, toEngineChan))
 
 		// Mark the backend as bootstrapped so tests can issue transactions
-		vm.txBackend.Bootstrapped = true
+		vmImpl.txBackend.Bootstrapped = true
 	}
 
 	// Lock the VM so tests can unlock it when ready
-	vm.Lock.Lock()
+	vmImpl.Lock.Lock()
 
 	return env
 }

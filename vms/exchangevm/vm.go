@@ -18,15 +18,9 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/codec"
-	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/engine"
-	"github.com/luxfi/consensus/engine/common"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/runtime"
-	validators "github.com/luxfi/validators"
-	consensusversion "github.com/luxfi/version"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -45,10 +39,15 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/exchangevm/utxo"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
+	consensusversion "github.com/luxfi/version"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 	blockbuilder "github.com/luxfi/node/vms/exchangevm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
 	extensions "github.com/luxfi/node/vms/exchangevm/fxs"
@@ -88,9 +87,6 @@ type VM struct {
 	lux.AddressManager
 	ids.Aliaser
 	utxo.Spender
-
-	// Contains information of where this VM is executing
-	ctx context.Context
 
 	// Consensus context
 	consensusRuntime *runtime.Runtime
@@ -161,7 +157,7 @@ type VM struct {
 	network      *network.Network
 
 	// Channel for receiving messages from mempool
-	toEngine chan engine.Message
+	toEngine chan vmcore.Message
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -199,8 +195,9 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	init common.VMInit,
+	init vmcore.Init,
 ) error {
+	_ = ctx
 	// Try to get Runtime for chain info
 	if init.Runtime != nil {
 		// Store chain-specific info from Runtime
@@ -216,34 +213,18 @@ func (vm *VM) Initialize(
 		return errors.New("invalid database: nil")
 	}
 
-	// Convert Fx types to engine.Fx
+	// Fx types are canonical: require *vmcore.Fx.
 	fxs := init.Fx
-	coreFxs := make([]*engine.Fx, len(fxs))
+	coreFxs := make([]*vmcore.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx == nil {
 			continue
 		}
-		switch f := fx.(type) {
-		case *engine.Fx:
-			coreFxs[i] = f
-		default:
-			// For any other Fx type with ID and Fx fields, use type assertion
-			if fxWithID, ok := fx.(interface{ GetID() ids.ID }); ok {
-				if fxWithFx, ok := fx.(interface{ GetFx() interface{} }); ok {
-					coreFxs[i] = &engine.Fx{
-						ID: fxWithID.GetID(),
-						Fx: fxWithFx.GetFx(),
-					}
-					continue
-				}
-			}
-			// Fallback: direct field access via reflection for legacy types
-			fxVal := reflect.ValueOf(fx).Elem()
-			coreFxs[i] = &engine.Fx{
-				ID: fxVal.FieldByName("ID").Interface().(ids.ID),
-				Fx: fxVal.FieldByName("Fx").Interface(),
-			}
+		fxTyped, ok := fx.(*vmcore.Fx)
+		if !ok {
+			return fmt.Errorf("unexpected fx type %T", fx)
 		}
+		coreFxs[i] = fxTyped
 	}
 
 	// Check sender type
@@ -265,7 +246,7 @@ func (vm *VM) initialize(
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
-	fxs []*engine.Fx,
+	fxs []*vmcore.Fx,
 	sender warp.Sender,
 ) error {
 	// Initialize logger first
@@ -301,7 +282,6 @@ func (vm *VM) initialize(
 	vm.AddressManager = lux.NewAddressManager(vm.consensusRuntime)
 	vm.Aliaser = ids.NewAliaser()
 
-	vm.ctx = ctx
 	vm.sender = sender
 	vm.baseDB = db
 	vm.db = versiondb.New(db)
@@ -421,13 +401,14 @@ func (vm *VM) onReady() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	state := consensusinterfaces.State(stateNum)
-	switch state {
-	case consensusinterfaces.Bootstrapping:
+	// Use proto-based state values for compatibility with chain manager
+	switch vmpb.State(stateNum) {
+	case vmpb.State_STATE_BOOTSTRAPPING:
 		return vm.onBootstrapStarted()
-	case consensusinterfaces.Ready:
+	case vmpb.State_STATE_NORMAL_OP:
 		return vm.onReady()
 	default:
+		// Accept unknown states without error for forward compatibility
 		return nil
 	}
 }
@@ -461,8 +442,10 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	rpcServer := rpc.NewServer()
 	rpcServer.RegisterCodec(codec, "application/json")
 	rpcServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	rpcServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	rpcServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	if vm.metrics != nil {
+		rpcServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
+		rpcServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	}
 	// name this service "xvm"
 	if err := rpcServer.RegisterService(&Service{vm: vm}, "xvm"); err != nil {
 		return nil, err
@@ -471,8 +454,10 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	walletServer := rpc.NewServer()
 	walletServer.RegisterCodec(codec, "application/json")
 	walletServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	walletServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	walletServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	if vm.metrics != nil {
+		walletServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
+		walletServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	}
 	// name this service "wallet"
 	err := walletServer.RegisterService(&vm.walletService, "wallet")
 
@@ -522,7 +507,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- engine.Message) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- vmcore.Message) error {
 	// Use EtnaTime from config for chain state initialization
 	err := vm.state.InitializeChainState(stopVertexID, vm.Config.EtnaTime)
 	if err != nil {
@@ -534,7 +519,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	_ = toEngine
 
 	// Create a channel for mempool to engine communication
-	vm.toEngine = make(chan engine.Message, 1)
+	vm.toEngine = make(chan vmcore.Message, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
@@ -847,14 +832,14 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	if vm.toEngine == nil {
 		// Before linearization, no events to wait for
 		<-ctx.Done()
-		return engine.PendingTxs, ctx.Err()
+		return vmcore.PendingTxs, ctx.Err()
 	}
 
 	select {
 	case msgType := <-vm.toEngine:
 		return msgType, nil
 	case <-ctx.Done():
-		return engine.PendingTxs, ctx.Err()
+		return vmcore.PendingTxs, ctx.Err()
 	}
 }
 

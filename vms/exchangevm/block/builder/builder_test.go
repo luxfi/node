@@ -16,8 +16,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/codecmock"
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/consensus/protocol/chain"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
@@ -36,6 +35,7 @@ import (
 	txexecutor "github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/exchangevm/txs/mempool"
 	"github.com/luxfi/node/vms/exchangevm/txs/txsmock"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
@@ -75,9 +75,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
-						Ctx: ctx,
+						Ctx:     ctx,
 						Runtime: testRuntime(),
-						Log: logger,
+						Log:     logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -108,9 +108,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
-						Ctx: ctx,
+						Ctx:     ctx,
 						Runtime: testRuntime(),
-						Log: logger,
+						Log:     logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -151,9 +151,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
-						Ctx: ctx,
+						Ctx:     ctx,
 						Runtime: testRuntime(),
-						Log: logger,
+						Log:     logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -195,9 +195,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
-						Ctx: ctx,
+						Ctx:     ctx,
 						Runtime: testRuntime(),
-						Log: logger,
+						Log:     logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -240,9 +240,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				logger := log.NewNoOpLogger()
 				return New(
 					&txexecutor.Backend{
-						Ctx: ctx,
+						Ctx:     ctx,
 						Runtime: testRuntime(),
-						Log: logger,
+						Log:     logger,
 					},
 					manager,
 					&mockable.Clock{},
@@ -337,7 +337,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Codec: codec,
+						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),
@@ -410,7 +410,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Codec: codec,
+						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),
@@ -485,7 +485,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Codec: codec,
+						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),

@@ -23,22 +23,23 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 
-	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/timer/mockable"
 	validators "github.com/luxfi/validators"
 	validatorsmock "github.com/luxfi/validators/validatorsmock"
-	"github.com/luxfi/node/vms/proposervm/proposer"
-	"github.com/luxfi/timer/mockable"
+	consensusblock "github.com/luxfi/vm/chain"
+	"github.com/luxfi/vm/chain/blockmock"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
-// and the proposervm is activated, we call the VM's BuildBlockWithContext
-// method to build a block rather than BuildBlockWithContext. If the proposervm
-// isn't activated, we should call BuildBlock rather than BuildBlockWithContext.
+// and the proposervm is activated, we call the VM's BuildBlockWithRuntime
+// method to build a block rather than BuildBlockWithRuntime. If the proposervm
+// isn't activated, we should call BuildBlock rather than BuildBlockWithRuntime.
 func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
@@ -64,8 +65,8 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
 	innerVM := blockmock.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextVM(ctrl)
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &consensusblock.Context{
+	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithRuntimeChainVM(ctrl)
+	innerBlockBuilderVM.EXPECT().BuildBlockWithRuntime(gomock.Any(), &runtime.Runtime{
 		PChainHeight: pChainHeight,
 	}).Return(builtBlk, nil).AnyTimes()
 
@@ -102,7 +103,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		vm:       vm,
 	}
 
-	// Should call BuildBlockWithContext since proposervm is activated
+	// Should call BuildBlockWithRuntime since proposervm is activated
 	_, err = blk.buildChild(
 		context.Background(),
 		parentID,
@@ -382,9 +383,9 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 	innerParentBlock := componentblocktest.Genesis
 	innerChildBlock := componentblocktest.BuildChild(innerParentBlock)
 
-	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithRuntimeChainVM(ctrl)
 	// Expect the that context passed in has parent's P-Chain height
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &consensusblock.Context{
+	innerBlockBuilderVM.EXPECT().BuildBlockWithRuntime(gomock.Any(), &runtime.Runtime{
 		PChainHeight: parentPChainHeght,
 	}).Return(innerChildBlock, nil).AnyTimes()
 
@@ -415,7 +416,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		vm:       vm,
 	}
 
-	// Should call BuildBlockWithContext since proposervm is activated
+	// Should call BuildBlockWithRuntime since proposervm is activated
 	_, err := blk.buildChild(
 		context.Background(),
 		parentID,

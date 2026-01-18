@@ -7,16 +7,16 @@ import "google/protobuf/empty.proto";
 option go_package = "github.com/luxfi/node/proto/pb/appsender";
 
 service AppSender {
-  rpc SendAppRequest(SendAppRequestMsg) returns (google.protobuf.Empty);
-  rpc SendAppResponse(SendAppResponseMsg) returns (google.protobuf.Empty);
-  rpc SendAppError(SendAppErrorMsg) returns (google.protobuf.Empty);
-  rpc SendAppGossip(SendAppGossipMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainAppRequest(SendCrossChainAppRequestMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainAppResponse(SendCrossChainAppResponseMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainAppError(SendCrossChainAppErrorMsg) returns (google.protobuf.Empty);
+  rpc SendRequest(SendRequestMsg) returns (google.protobuf.Empty);
+  rpc SendResponse(SendResponseMsg) returns (google.protobuf.Empty);
+  rpc SendError(SendErrorMsg) returns (google.protobuf.Empty);
+  rpc SendGossip(SendGossipMsg) returns (google.protobuf.Empty);
+  rpc SendCrossChainRequest(SendCrossChainRequestMsg) returns (google.protobuf.Empty);
+  rpc SendCrossChainResponse(SendCrossChainResponseMsg) returns (google.protobuf.Empty);
+  rpc SendCrossChainError(SendCrossChainErrorMsg) returns (google.protobuf.Empty);
 }
 
-message SendAppRequestMsg {
+message SendRequestMsg {
   // The nodes to send this request to
   repeated bytes node_ids = 1;
   // The ID of this request
@@ -25,7 +25,7 @@ message SendAppRequestMsg {
   bytes request = 3;
 }
 
-message SendAppResponseMsg {
+message SendResponseMsg {
   // The node to send a response to
   bytes node_id = 1;
   // ID of this request
@@ -34,7 +34,7 @@ message SendAppResponseMsg {
   bytes response = 3;
 }
 
-message SendAppErrorMsg {
+message SendErrorMsg {
   // The node to send a response to
   bytes node_id = 1;
   // ID of this request
@@ -45,7 +45,7 @@ message SendAppErrorMsg {
   string error_message = 4;
 }
 
-message SendAppGossipMsg {
+message SendGossipMsg {
   // Who to send this message to
   repeated bytes node_ids = 1;
   uint64 validators = 2;
@@ -55,7 +55,7 @@ message SendAppGossipMsg {
   bytes msg = 5;
 }
 
-message SendCrossChainAppRequestMsg {
+message SendCrossChainRequestMsg {
   // The chain to send this request to
   bytes chain_id = 1;
   // The ID of this request
@@ -64,7 +64,7 @@ message SendCrossChainAppRequestMsg {
   bytes request = 3;
 }
 
-message SendCrossChainAppResponseMsg {
+message SendCrossChainResponseMsg {
   // The chain to send a response to
   bytes chain_id = 1;
   // ID of this request
@@ -73,7 +73,7 @@ message SendCrossChainAppResponseMsg {
   bytes response = 3;
 }
 
-message SendCrossChainAppErrorMsg {
+message SendCrossChainErrorMsg {
   // The chain to send a response to
   bytes chain_id = 1;
   // ID of this request

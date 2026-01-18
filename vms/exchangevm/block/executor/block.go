@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/consensus/protocol/chain"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

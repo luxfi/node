@@ -13,20 +13,18 @@ import (
 	"sync"
 	"time"
 
-	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxvm "github.com/luxfi/vm"
 
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 )
 
-// Ensure ChainVM implements block.ChainVM
-var _ block.ChainVM = (*ChainVM)(nil)
+// Ensure ChainVM implements chain.ChainVM
+var _ chain.ChainVM = (*ChainVM)(nil)
 
 var (
 	errInvalidBlock     = errors.New("invalid block")
@@ -38,7 +36,7 @@ var (
 	genesisBlockID = ids.ID{}
 )
 
-// ChainVM wraps the functional DEX VM to implement the block.ChainVM interface
+// ChainVM wraps the functional DEX VM to implement the chain.ChainVM interface
 // required for running as an L2 chain plugin.
 type ChainVM struct {
 	// The inner functional VM
@@ -67,7 +65,7 @@ type ChainVM struct {
 	blockInterval time.Duration
 
 	// Channel to notify consensus of new blocks
-	toEngine chan<- luxvm.Message
+	toEngine chan<- vm.Message
 
 	// Initialization state
 	initialized bool
@@ -84,18 +82,18 @@ func NewChainVM(logger log.Logger) *ChainVM {
 }
 
 // Initialize implements the VM interface
-func (vm *ChainVM) Initialize(
+func (cvm *ChainVM) Initialize(
 	ctx context.Context,
-	vmInit common.VMInit,
+	vmInit vm.Init,
 ) error {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+	cvm.lock.Lock()
+	defer cvm.lock.Unlock()
 
 	// Store the message channel
-	vm.toEngine = vmInit.ToEngine
+	cvm.toEngine = vmInit.ToEngine
 
 	// Initialize the inner VM
-	if err := vm.inner.Initialize(
+	if err := cvm.inner.Initialize(
 		ctx,
 		vmInit,
 	); err != nil {
@@ -103,11 +101,11 @@ func (vm *ChainVM) Initialize(
 	}
 
 	// Set logger for inner VM
-	vm.inner.log = vm.log
+	cvm.inner.log = cvm.log
 
 	// Create genesis block
 	genesisBlock := &Block{
-		vm:        vm,
+		vm:        cvm,
 		id:        genesisBlockID,
 		parentID:  ids.Empty,
 		height:    0,
@@ -115,15 +113,15 @@ func (vm *ChainVM) Initialize(
 		txs:       nil,
 		status:    StatusAccepted,
 	}
-	vm.blocks[genesisBlockID] = genesisBlock
-	vm.lastAcceptedID = genesisBlockID
-	vm.lastAcceptedHeight = 0
-	vm.preferredID = genesisBlockID
+	cvm.blocks[genesisBlockID] = genesisBlock
+	cvm.lastAcceptedID = genesisBlockID
+	cvm.lastAcceptedHeight = 0
+	cvm.preferredID = genesisBlockID
 
-	vm.initialized = true
+	cvm.initialized = true
 
-	if !vm.log.IsZero() {
-		vm.log.Info("DEX ChainVM initialized",
+	if !cvm.log.IsZero() {
+		cvm.log.Info("DEX ChainVM initialized",
 			"genesisID", genesisBlockID,
 		)
 	}
@@ -132,82 +130,95 @@ func (vm *ChainVM) Initialize(
 }
 
 // SetState implements the VM interface
-func (vm *ChainVM) SetState(ctx context.Context, state uint32) error {
-	return vm.inner.SetState(ctx, state)
+func (cvm *ChainVM) SetState(ctx context.Context, state uint32) error {
+	return cvm.inner.SetState(ctx, state)
 }
 
 // Shutdown implements the VM interface
-func (vm *ChainVM) Shutdown(ctx context.Context) error {
-	return vm.inner.Shutdown(ctx)
+func (cvm *ChainVM) Shutdown(ctx context.Context) error {
+	return cvm.inner.Shutdown(ctx)
 }
 
 // Version implements the VM interface
-func (vm *ChainVM) Version(ctx context.Context) (string, error) {
-	return vm.inner.Version(ctx)
+func (cvm *ChainVM) Version(ctx context.Context) (string, error) {
+	return cvm.inner.Version(ctx)
 }
 
-// NewHTTPHandler implements the block.ChainVM interface
-func (vm *ChainVM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
-	return vm.inner.CreateHandlers(ctx)
+// NewHTTPHandler implements the chain.ChainVM interface
+func (cvm *ChainVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	handlers, err := cvm.inner.CreateHandlers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mux := http.NewServeMux()
+	for path, handler := range handlers {
+		if path == "" {
+			path = "/"
+		}
+		mux.Handle(path, handler)
+	}
+	return mux, nil
 }
 
 // CreateHandlers implements the interface expected by chain manager for HTTP registration
-func (vm *ChainVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	return vm.inner.CreateHandlers(ctx)
+func (cvm *ChainVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return cvm.inner.CreateHandlers(ctx)
 }
 
 // HealthCheck implements the VM interface
-func (vm *ChainVM) HealthCheck(ctx context.Context) (interface{}, error) {
-	return vm.inner.HealthCheck(ctx)
+func (cvm *ChainVM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+	return cvm.inner.HealthCheck(ctx)
 }
 
-// Connected implements the block.ChainVM interface
-func (vm *ChainVM) Connected(ctx context.Context, nodeID ids.NodeID, v interface{}) error {
-	if ver, ok := v.(*version.Application); ok {
-		return vm.inner.Connected(ctx, nodeID, ver)
+// Connected implements the chain.ChainVM interface
+func (cvm *ChainVM) Connected(ctx context.Context, nodeID ids.NodeID, v *chain.VersionInfo) error {
+	if v == nil {
+		return nil
 	}
-	return nil
+	ver := &version.Application{
+		Name:  v.Application,
+		Major: v.Major,
+		Minor: v.Minor,
+		Patch: v.Patch,
+	}
+	return cvm.inner.Connected(ctx, nodeID, ver)
 }
 
 // Disconnected implements the VM interface
-func (vm *ChainVM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	return vm.inner.Disconnected(ctx, nodeID)
+func (cvm *ChainVM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	return cvm.inner.Disconnected(ctx, nodeID)
 }
 
-// AppGossip implements the VM interface
-func (vm *ChainVM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	return vm.inner.AppGossip(ctx, nodeID, msg)
+// Gossip implements the VM interface
+func (cvm *ChainVM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return cvm.inner.Gossip(ctx, nodeID, msg)
 }
 
-// AppRequest implements the VM interface
-func (vm *ChainVM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
-	return vm.inner.AppRequest(ctx, nodeID, requestID, deadline, request)
+// Request implements the VM interface
+func (cvm *ChainVM) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	return cvm.inner.Request(ctx, nodeID, requestID, deadline, request)
 }
 
-// AppRequestFailed implements the VM interface
-func (vm *ChainVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
-	return vm.inner.AppRequestFailed(ctx, nodeID, requestID, appErr)
+// Response implements the VM interface
+func (cvm *ChainVM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return cvm.inner.Response(ctx, nodeID, requestID, response)
 }
 
-// AppResponse implements the VM interface
-func (vm *ChainVM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return vm.inner.AppResponse(ctx, nodeID, requestID, response)
-}
-
-// BuildBlock implements the block.ChainVM interface.
+// BuildBlock implements the chain.ChainVM interface.
 // It builds a new block from pending transactions.
-func (vm *ChainVM) BuildBlock(ctx context.Context) (block.Block, error) {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+func (cvm *ChainVM) BuildBlock(ctx context.Context) (chain.Block, error) {
+	cvm.lock.Lock()
+	defer cvm.lock.Unlock()
 
-	if !vm.initialized {
+	if !cvm.initialized {
 		return nil, errVMNotInitialized
 	}
 
 	// Get parent block
-	parent, ok := vm.blocks[vm.preferredID]
+	parent, ok := cvm.blocks[cvm.preferredID]
 	if !ok {
-		return nil, fmt.Errorf("preferred block not found: %s", vm.preferredID)
+		return nil, fmt.Errorf("preferred block not found: %s", cvm.preferredID)
 	}
 
 	// Create new block
@@ -222,24 +233,24 @@ func (vm *ChainVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	var newID ids.ID
 	copy(newID[:], hash[:])
 
-	block := &Block{
-		vm:        vm,
+		block := &Block{
+			vm:        cvm,
 		id:        newID,
-		parentID:  vm.preferredID,
+		parentID:  cvm.preferredID,
 		height:    newHeight,
 		timestamp: newTimestamp,
-		txs:       vm.pendingTxs,
+		txs:       cvm.pendingTxs,
 		status:    StatusUnknown,
 	}
 
 	// Clear pending transactions
-	vm.pendingTxs = nil
+	cvm.pendingTxs = nil
 
 	// Store the block
-	vm.blocks[newID] = block
+	cvm.blocks[newID] = block
 
-	if !vm.log.IsZero() {
-		vm.log.Debug("Built block",
+	if !cvm.log.IsZero() {
+		cvm.log.Debug("Built block",
 			"id", newID,
 			"height", newHeight,
 			"txCount", len(block.txs),
@@ -249,35 +260,35 @@ func (vm *ChainVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	return block, nil
 }
 
-// ParseBlock implements the block.ChainVM interface.
+// ParseBlock implements the chain.ChainVM interface.
 // It parses a block from bytes.
-func (vm *ChainVM) ParseBlock(ctx context.Context, data []byte) (block.Block, error) {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+func (cvm *ChainVM) ParseBlock(ctx context.Context, data []byte) (chain.Block, error) {
+	cvm.lock.Lock()
+	defer cvm.lock.Unlock()
 
-	block, err := parseBlock(vm, data)
+	block, err := parseBlock(cvm, data)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check if we already have this block
-	if existingBlock, ok := vm.blocks[block.id]; ok {
+	if existingBlock, ok := cvm.blocks[block.id]; ok {
 		return existingBlock, nil
 	}
 
 	// Store the new block
-	vm.blocks[block.id] = block
+	cvm.blocks[block.id] = block
 
 	return block, nil
 }
 
-// GetBlock implements the block.ChainVM interface.
+// GetBlock implements the chain.ChainVM interface.
 // It returns a block by its ID.
-func (vm *ChainVM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
-	vm.lock.RLock()
-	defer vm.lock.RUnlock()
+func (cvm *ChainVM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+	cvm.lock.RLock()
+	defer cvm.lock.RUnlock()
 
-	block, ok := vm.blocks[blkID]
+	block, ok := cvm.blocks[blkID]
 	if !ok {
 		return nil, errBlockNotFound
 	}
@@ -285,40 +296,40 @@ func (vm *ChainVM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, err
 	return block, nil
 }
 
-// SetPreference implements the block.ChainVM interface.
+// SetPreference implements the chain.ChainVM interface.
 // It sets the preferred block for building new blocks.
-func (vm *ChainVM) SetPreference(ctx context.Context, blkID ids.ID) error {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+func (cvm *ChainVM) SetPreference(ctx context.Context, blkID ids.ID) error {
+	cvm.lock.Lock()
+	defer cvm.lock.Unlock()
 
-	if _, ok := vm.blocks[blkID]; !ok {
+	if _, ok := cvm.blocks[blkID]; !ok {
 		return fmt.Errorf("block not found: %s", blkID)
 	}
 
-	vm.preferredID = blkID
+	cvm.preferredID = blkID
 
-	if !vm.log.IsZero() {
-		vm.log.Debug("Set preference", "blockID", blkID)
+	if !cvm.log.IsZero() {
+		cvm.log.Debug("Set preference", "blockID", blkID)
 	}
 
 	return nil
 }
 
-// LastAccepted implements the block.ChainVM interface.
-// It returns the ID of the last accepted block.
-func (vm *ChainVM) LastAccepted(ctx context.Context) (ids.ID, error) {
-	vm.lock.RLock()
-	defer vm.lock.RUnlock()
+// LastAccepted implements the chain.ChainVM interface.
+// It returns the ID of the last accepted chain.
+func (cvm *ChainVM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	cvm.lock.RLock()
+	defer cvm.lock.RUnlock()
 
-	return vm.lastAcceptedID, nil
+	return cvm.lastAcceptedID, nil
 }
 
 // GetBlockIDAtHeight returns the block ID at the given height
-func (vm *ChainVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
-	vm.lock.RLock()
-	defer vm.lock.RUnlock()
+func (cvm *ChainVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	cvm.lock.RLock()
+	defer cvm.lock.RUnlock()
 
-	for id, block := range vm.blocks {
+	for id, block := range cvm.blocks {
 		if block.height == height && block.status == StatusAccepted {
 			return id, nil
 		}
@@ -328,16 +339,16 @@ func (vm *ChainVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.I
 }
 
 // SubmitTx adds a transaction to the pending pool
-func (vm *ChainVM) SubmitTx(tx []byte) error {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+func (cvm *ChainVM) SubmitTx(tx []byte) error {
+	cvm.lock.Lock()
+	defer cvm.lock.Unlock()
 
-	vm.pendingTxs = append(vm.pendingTxs, tx)
+	cvm.pendingTxs = append(cvm.pendingTxs, tx)
 
 	// Notify consensus that we have pending work
-	if vm.toEngine != nil {
+	if cvm.toEngine != nil {
 		select {
-		case vm.toEngine <- luxvm.Message{Type: luxvm.PendingTxs}:
+		case cvm.toEngine <- vm.Message{Type: vm.PendingTxs}:
 		default:
 			// Channel full, skip notification
 		}
@@ -347,34 +358,34 @@ func (vm *ChainVM) SubmitTx(tx []byte) error {
 }
 
 // GetInnerVM returns the inner functional VM for direct access
-func (vm *ChainVM) GetInnerVM() *VM {
-	return vm.inner
+func (cvm *ChainVM) GetInnerVM() *VM {
+	return cvm.inner
 }
 
 // Getter methods for DEX functionality
 
 // GetOrderbook returns an orderbook by symbol
-func (vm *ChainVM) GetOrderbook(symbol string) (*orderbook.Orderbook, error) {
-	vm.lock.RLock()
-	defer vm.lock.RUnlock()
-	return vm.inner.GetOrderbook(symbol)
+func (cvm *ChainVM) GetOrderbook(symbol string) (*orderbook.Orderbook, error) {
+	cvm.lock.RLock()
+	defer cvm.lock.RUnlock()
+	return cvm.inner.GetOrderbook(symbol)
 }
 
 // GetLiquidityManager returns the liquidity manager
-func (vm *ChainVM) GetLiquidityManager() interface{} {
-	return vm.inner.GetLiquidityManager()
+func (cvm *ChainVM) GetLiquidityManager() interface{} {
+	return cvm.inner.GetLiquidityManager()
 }
 
 // GetPerpetualsEngine returns the perpetuals engine
-func (vm *ChainVM) GetPerpetualsEngine() interface{} {
-	return vm.inner.GetPerpetualsEngine()
+func (cvm *ChainVM) GetPerpetualsEngine() interface{} {
+	return cvm.inner.GetPerpetualsEngine()
 }
 
-// WaitForEvent implements the block.ChainVM interface.
+// WaitForEvent implements the chain.ChainVM interface.
 // It blocks until an event occurs that should trigger block building.
-func (vm *ChainVM) WaitForEvent(ctx context.Context) (interface{}, error) {
-	// For now, return nil - block building is triggered via SubmitTx
+func (cvm *ChainVM) WaitForEvent(ctx context.Context) (vm.Message, error) {
+	// For now, return empty message - block building is triggered via SubmitTx
 	// and the PendingTxs message is sent to toEngine
 	<-ctx.Done()
-	return nil, ctx.Err()
+	return vm.Message{}, ctx.Err()
 }

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"plugin"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
@@ -87,40 +86,55 @@ func (r *vmRegistry) Reload(ctx context.Context) ([]ids.ID, map[ids.ID]error, er
 
 	getter, ok := r.config.VMGetter.(*vmGetter)
 	if !ok {
+		fmt.Printf("[Registry] VMGetter type assertion failed\n")
 		return newVMs, failedVMs, nil
 	}
 
 	pluginDir := getter.config.PluginDirectory
 	if pluginDir == "" {
+		fmt.Printf("[Registry] No plugin directory configured\n")
 		return newVMs, failedVMs, nil
 	}
+	fmt.Printf("[Registry] Loading plugins from: %s\n", pluginDir)
 
 	files, err := os.ReadDir(pluginDir)
 	if err != nil {
 		if os.IsNotExist(err) {
+			fmt.Printf("[Registry] Plugin directory does not exist: %s\n", pluginDir)
 			return newVMs, failedVMs, nil
 		}
 		return nil, nil, fmt.Errorf("failed to read plugin directory: %w", err)
 	}
 
+	fmt.Printf("[Registry] Found %d files in plugin directory\n", len(files))
 	for _, file := range files {
 		if file.IsDir() {
+			fmt.Printf("[Registry] Skipping directory: %s\n", file.Name())
 			continue
 		}
 
 		pluginPath := filepath.Join(pluginDir, file.Name())
+		fmt.Printf("[Registry] Checking file: %s\n", file.Name())
 		vmID, err := ids.FromString(file.Name())
 		if err != nil {
 			// Skip files that aren't valid VM IDs
+			fmt.Printf("[Registry] Invalid VM ID format: %s (err: %v)\n", file.Name(), err)
 			continue
 		}
+		fmt.Printf("[Registry] Parsed VM ID: %s\n", vmID)
 
 		// Check if already registered
-		if _, err := r.config.VMManager.GetFactory(vmID); err == nil {
+		fmt.Printf("[Registry] Checking if VM %s is already registered...\n", vmID)
+		existingFactory, getErr := r.config.VMManager.GetFactory(ctx, vmID)
+		fmt.Printf("[Registry] GetFactory returned: factory=%v, err=%v\n", existingFactory, getErr)
+		if getErr == nil {
 			// Already registered
+			fmt.Printf("[Registry] VM already registered: %s\n", vmID)
 			continue
 		}
+		fmt.Printf("[Registry] VM not registered, will load from plugin\n")
 
+		fmt.Printf("[Registry] Loading factory from plugin: %s\n", pluginPath)
 		factory, err := r.config.VMGetter.Get(pluginPath)
 		if err != nil {
 			failedVMs[vmID] = err
@@ -139,28 +153,15 @@ func (r *vmRegistry) Reload(ctx context.Context) ([]ids.ID, map[ids.ID]error, er
 }
 
 func (g *vmGetter) Get(pluginPath string) (vms.Factory, error) {
-	// Try to load as a Go plugin first
-	p, err := plugin.Open(pluginPath)
-	if err != nil {
-		// Not a Go plugin - treat as rpcchainvm executable binary
-		// This is the standard approach for EVM and other VM binaries
-		return rpcchainvm.NewFactory(
-			pluginPath,
-			g.config.ProcessTracker,
-			g.config.RuntimeTracker,
-			g.config.MetricsGatherer,
-		), nil
-	}
-
-	sym, err := p.Lookup("Factory")
-	if err != nil {
-		return nil, fmt.Errorf("plugin does not export Factory: %w", err)
-	}
-
-	factory, ok := sym.(vms.Factory)
-	if !ok {
-		return nil, ErrNotVM
-	}
-
+	fmt.Printf("[VMGetter] Creating rpcchainvm factory for: %s\n", pluginPath)
+	// VM binaries are executable files that run as gRPC plugins via rpcchainvm
+	// This is the standard approach for EVM and other VM binaries
+	factory := rpcchainvm.NewFactory(
+		pluginPath,
+		g.config.ProcessTracker,
+		g.config.RuntimeTracker,
+		g.config.MetricsGatherer,
+	)
+	fmt.Printf("[VMGetter] Factory created successfully\n")
 	return factory, nil
 }

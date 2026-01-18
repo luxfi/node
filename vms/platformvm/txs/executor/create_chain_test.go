@@ -19,8 +19,8 @@ import (
 
 func TestCreateNetworkTxAP3FeeChange(t *testing.T) {
 	// Test the fee change at Apricot Phase 3 for CreateNetworkTx
-	// Pre-AP3: CreateNetTxFee = 0
-	// Post-AP3: CreateNetTxFee = CreateNetTxFee from config (100 * defaultTxFee)
+	// Pre-AP3: CreateNetworkTxFee = 0
+	// Post-AP3: CreateNetworkTxFee = CreateNetworkTxFee from config (100 * defaultTxFee)
 	tests := []struct {
 		name        string
 		preAP3      bool

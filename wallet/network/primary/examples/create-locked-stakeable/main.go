@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/wallet/net/primary"
-	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/node/wallet/network/primary"
+	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 

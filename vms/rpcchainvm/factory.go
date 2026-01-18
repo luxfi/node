@@ -40,12 +40,12 @@ func NewFactory(
 	}
 }
 
-func (f *factory) New(log log.Logger) (interface{}, error) {
+func (f *factory) New(logger log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
 		Stderr:           os.Stderr, // capture VM subprocess stderr for debugging
 		Stdout:           os.Stdout, // capture VM subprocess stdout for debugging
 		HandshakeTimeout: runtime.DefaultHandshakeTimeout,
-		Log:              log,
+		Log:              logger,
 	}
 
 	listener, err := grpcutils.NewListener()
@@ -65,11 +65,11 @@ func (f *factory) New(log log.Logger) (interface{}, error) {
 
 	clientConn, err := grpcutils.Dial(status.Addr)
 	if err != nil {
-		log.Error("failed to dial VM gRPC service", "error", err)
+		logger.Error("failed to dial VM gRPC service", "error", err)
 		return nil, err
 	}
 
 	f.processTracker.TrackProcess(status.Pid)
 	f.runtimeTracker.TrackRuntime(stopper)
-	return NewClient(clientConn, stopper, status.Pid, f.processTracker, f.metricsGatherer, log), nil
+	return NewClient(clientConn, stopper, status.Pid, f.processTracker, f.metricsGatherer, logger), nil
 }

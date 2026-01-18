@@ -4,13 +4,17 @@
 package zvm
 
 import (
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
 var _ vms.Factory = (*Factory)(nil)
 
-// Factory ...
+// VMID is the unique identifier for ZKVM (Z-Chain)
+var VMID = ids.ID{'z', 'k', 'v', 'm'}
+
+// Factory implements vms.Factory interface for creating Z-Chain VM instances
 type Factory struct{}
 
 // New implements vms.Factory

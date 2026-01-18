@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	core "github.com/luxfi/consensus/core"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
@@ -27,7 +27,7 @@ func TestSetsAndGets(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 		additionalFxs: []interface{}{
-			&core.Fx{
+			&vm.Fx{
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {
@@ -94,7 +94,7 @@ func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 		additionalFxs: []interface{}{
-			&core.Fx{
+			&vm.Fx{
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {
@@ -131,7 +131,7 @@ func TestFundingAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 		additionalFxs: []interface{}{
-			&core.Fx{
+			&vm.Fx{
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {

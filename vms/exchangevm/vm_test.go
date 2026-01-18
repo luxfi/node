@@ -10,9 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -32,17 +31,17 @@ import (
 func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
-	vm := &VM{}
+	vmImpl := &VM{}
 	rt := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
-	toEngine := make(chan core.Message, 1)
-	err := vm.Initialize(
+	toEngine := make(chan vm.Message, 1)
+	err := vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      memdb.New(),
 			Genesis: genesisBytes,
@@ -61,15 +60,15 @@ func TestInvalidFx(t *testing.T) {
 func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
-	vm := &VM{}
+	vmImpl := &VM{}
 	rt := &runtime.Runtime{
 		ChainID: ids.GenerateTestID(),
 	}
 	// Shutdown handled by t.Cleanup in setup()
 
 	genesisBytes := newGenesisBytesTest(t)
-	toEngine := make(chan core.Message, 1)
-	fx := &core.Fx{
+	toEngine := make(chan vm.Message, 1)
+	fx := &vm.Fx{
 		ID: ids.Empty,
 		Fx: &FxTest{
 			InitializeF: func(interface{}) error {
@@ -77,9 +76,9 @@ func TestFxInitializationFailure(t *testing.T) {
 			},
 		},
 	}
-	err := vm.Initialize(
+	err := vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      memdb.New(),
 			Genesis: genesisBytes,
@@ -190,7 +189,7 @@ func TestIssueProperty(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: upgradetest.GetConfig(upgradetest.Latest),
 		additionalFxs: []interface{}{
-			&core.Fx{
+			&vm.Fx{
 				ID: propertyfx.ID,
 				Fx: &propertyfx.Fx{},
 			},

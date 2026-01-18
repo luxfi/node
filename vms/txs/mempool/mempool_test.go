@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	vmcore "github.com/luxfi/vm"
 )
 
 var _ Tx = (*dummyTx)(nil)
@@ -322,6 +322,6 @@ func TestWaitForEventWithTx(t *testing.T) {
 
 	msg, err := m.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(consensuscore.PendingTxs, msg.Type)
+	require.Equal(vmcore.PendingTxs, msg.Type)
 	require.NoError(<-errs)
 }

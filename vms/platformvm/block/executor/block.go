@@ -7,15 +7,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm/chain"
 )
 
 var (
-	_ block.Block = (*Block)(nil)
-	// _ block.OracleBlock       = (*Block)(nil) // TODO: Check if OracleBlock interface exists
-	_ block.WithVerifyContext = (*Block)(nil)
+	_ chain.Block = (*Block)(nil)
+	// _ chain.OracleBlock       = (*Block)(nil) // TODO: Check if OracleBlock interface exists
+	_ chain.WithVerifyRuntime = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.
@@ -24,23 +25,23 @@ type Block struct {
 	manager *manager
 }
 
-// ParentID implements block.Block interface by delegating to Parent()
+// ParentID implements chain.Block interface by delegating to Parent()
 func (b *Block) ParentID() ids.ID {
 	return b.Parent()
 }
 
-// Status implements block.Block interface
+// Status implements chain.Block interface
 func (b *Block) Status() uint8 {
 	// TODO: Implement proper status tracking
 	// For now, return 0 (status tracking needs to be added to blockState)
 	return 0
 }
 
-func (*Block) ShouldVerifyWithContext(context.Context) (bool, error) {
+func (*Block) ShouldVerifyWithRuntime(context.Context) (bool, error) {
 	return true, nil
 }
 
-func (b *Block) VerifyWithContext(ctx context.Context, blockContext *block.Context) error {
+func (b *Block) VerifyWithRuntime(ctx context.Context, blockContext *runtime.Runtime) error {
 	blkID := b.ID()
 	blkState, previouslyExecuted := b.manager.backend.getBlockState(blkID)
 	warpAlreadyVerified := previouslyExecuted && blkState.verifiedHeights.Contains(blockContext.PChainHeight)
@@ -77,9 +78,9 @@ func (b *Block) VerifyWithContext(ctx context.Context, blockContext *block.Conte
 }
 
 func (b *Block) Verify(ctx context.Context) error {
-	return b.VerifyWithContext(
+	return b.VerifyWithRuntime(
 		ctx,
-		&block.Context{
+		&runtime.Runtime{
 			PChainHeight: 0,
 		},
 	)
@@ -97,7 +98,7 @@ func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())
 }
 
-func (b *Block) Options(context.Context) ([2]block.Block, error) {
+func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
 		log:                     b.manager.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
@@ -105,10 +106,10 @@ func (b *Block) Options(context.Context) ([2]block.Block, error) {
 		state:                   b.manager.backend.state,
 	}
 	if err := b.Block.Visit(&options); err != nil {
-		return [2]block.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
-	return [2]block.Block{
+	return [2]chain.Block{
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil

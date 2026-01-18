@@ -7,11 +7,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/runtime"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -22,7 +21,7 @@ func Block(
 	chainRuntime *runtime.Runtime,
 	db database.KeyValueReaderWriterDeleter,
 	skipVerify bool,
-	blockContext *smblock.Context,
+	blockContext *runtime.Runtime,
 	blk *xsblock.Stateless,
 ) error {
 	if len(blk.Txs) == 0 {

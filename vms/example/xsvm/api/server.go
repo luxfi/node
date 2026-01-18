@@ -60,13 +60,11 @@ type server struct {
 
 type NetworkReply struct {
 	NetworkID uint32 `json:"networkID"`
-	ChainID     ids.ID `json:"netID"`
 	ChainID   ids.ID `json:"chainID"`
 }
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
 	reply.NetworkID = s.rt.NetworkID
-	reply.ChainID = s.rt.ChainID
 	reply.ChainID = s.rt.ChainID
 	return nil
 }

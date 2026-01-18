@@ -12,16 +12,16 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/network/primary"
 	p2psdk "github.com/luxfi/p2p"
-	compression "github.com/luxfi/compress"
+	"github.com/luxfi/sdk/info"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -97,7 +97,7 @@ func main() {
 		log.Fatalf("failed to marshal SignatureRequest: %s\n", err)
 	}
 
-	appRequest, err := messageBuilder.AppRequest(
+	appRequest, err := messageBuilder.Request(
 		constants.PlatformChainID,
 		0,
 		time.Hour,
@@ -107,7 +107,7 @@ func main() {
 		),
 	)
 	if err != nil {
-		log.Fatalf("failed to create AppRequest: %s\n", err)
+		log.Fatalf("failed to create Request: %s\n", err)
 	}
 
 	p.Send(context.Background(), appRequest)

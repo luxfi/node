@@ -4,9 +4,9 @@
 package executor
 
 import (
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
+	vmcore "github.com/luxfi/vm"
 )
 
 var _ block.Visitor = (*rejector)(nil)
@@ -16,7 +16,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
-	toEngine        chan<- core.Message
+	toEngine        chan<- vmcore.Message
 	addTxsToMempool bool
 }
 
@@ -88,7 +88,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- core.Message{Type: core.PendingTxs}:
+	case r.toEngine <- vmcore.Message{Type: vmcore.PendingTxs}:
 	default:
 	}
 

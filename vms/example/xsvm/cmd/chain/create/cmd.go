@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
-	"github.com/luxfi/node/wallet/net/primary"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 

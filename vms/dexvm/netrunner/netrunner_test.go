@@ -13,8 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database/memdb"
@@ -46,10 +45,10 @@ func TestDexVMFactory(t *testing.T) {
 	require := require.New(t)
 
 	factory := &dexvm.Factory{}
-	vm, err := factory.New(nil)
+	vmImpl, err := factory.New(nil)
 	require.NoError(err, "Factory.New should not fail")
-	require.NotNil(vm, "Factory.New should return a VM")
-	require.IsType(&dexvm.ChainVM{}, vm, "Factory.New should return a *dexvm.ChainVM")
+	require.NotNil(vmImpl, "Factory.New should return a VM")
+	require.IsType(&dexvm.ChainVM{}, vmImpl, "Factory.New should return a *dexvm.ChainVM")
 }
 
 // DEXGenesisConfig represents the genesis configuration for DEX VM.
@@ -120,11 +119,11 @@ func TestDexVMGenesisFormat(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.BlockInterval = time.Millisecond
 
-	vm := dexvm.NewVMForTest(cfg, logger)
+	vmImpl := dexvm.NewVMForTest(cfg, logger)
 
 	chainID := ids.GenerateTestID()
 	db := memdb.New()
-	toEngine := make(chan core.Message, 100)
+	toEngine := make(chan vm.Message, 100)
 	appSender := warp.FakeSender{}
 
 	rt := &runtime.Runtime{
@@ -132,9 +131,9 @@ func TestDexVMGenesisFormat(t *testing.T) {
 		Log:     logger,
 	}
 
-	err = vm.Initialize(
+	err = vmImpl.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -149,7 +148,7 @@ func TestDexVMGenesisFormat(t *testing.T) {
 	require.NoError(err, "VM should initialize with genesis config")
 
 	// Clean up
-	err = vm.Shutdown(context.Background())
+	err = vmImpl.Shutdown(context.Background())
 	require.NoError(err, "VM should shut down cleanly")
 }
 
@@ -171,10 +170,10 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 	genesisBytes := []byte(`{"blockInterval":"1ms","maxOrdersPerBlock":10000}`)
 
 	for i := 0; i < nodeCount; i++ {
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 		appSender := warp.FakeSender{}
 
 		rt := &runtime.Runtime{
@@ -182,9 +181,9 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 			Log:     logger,
 		}
 
-		err := vm.Initialize(
+		err := vmImpl.Initialize(
 			ctx,
-			common.VMInit{
+			vm.Init{
 				Runtime:  rt,
 				DB:       db,
 				ToEngine: toEngine,
@@ -198,14 +197,14 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 		)
 		require.NoError(err, "Node %d should initialize", i)
 
-		err = vm.SetState(ctx, uint32(core.Ready))
+		err = vmImpl.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err, "Node %d should enter normal operation", i)
 
-		vms[i] = vm
+		vms[i] = vmImpl
 		cleanups[i] = func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			_ = vm.Shutdown(ctx)
+			_ = vmImpl.Shutdown(ctx)
 		}
 	}
 
@@ -218,8 +217,8 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 
 	// Create a test trading pair on all nodes
 	symbol := "LUX/USDT"
-	for i, vm := range vms {
-		ob := vm.GetOrCreateOrderbook(symbol)
+	for i, vmImpl := range vms {
+		ob := vmImpl.GetOrCreateOrderbook(symbol)
 		require.NotNil(ob, "Node %d should create orderbook", i)
 	}
 
@@ -230,8 +229,8 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 		blockTime := time.Now()
 
 		var stateRoots []ids.ID
-		for i, vm := range vms {
-			result, err := vm.ProcessBlock(ctx, blockHeight, blockTime, nil)
+		for i, vmImpl := range vms {
+			result, err := vmImpl.ProcessBlock(ctx, blockHeight, blockTime, nil)
 			require.NoError(err, "Node %d should process block %d", i, blockHeight)
 			stateRoots = append(stateRoots, result.StateRoot)
 		}
@@ -244,8 +243,8 @@ func TestDexVMNetworkSimulation(t *testing.T) {
 	}
 
 	// Verify final state
-	for i, vm := range vms {
-		currentHeight := vm.GetBlockHeight()
+	for i, vmImpl := range vms {
+		currentHeight := vmImpl.GetBlockHeight()
 		require.Equal(blockHeight, currentHeight, "Node %d block height should match", i)
 	}
 }
@@ -289,18 +288,18 @@ func TestDexVMChainDeploymentScenario(t *testing.T) {
 	genesisBytes, _ := json.Marshal(genesisConfig)
 
 	for i := 0; i < 5; i++ {
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 
 		rt := &runtime.Runtime{
 			ChainID: blockchainID, // All validators use same chain ID
 			Log:     logger,
 		}
 
-		err := vm.Initialize(
+		err := vmImpl.Initialize(
 			ctx,
-			common.VMInit{
+			vm.Init{
 				Runtime:  rt,
 				DB:       db,
 				ToEngine: toEngine,
@@ -314,15 +313,15 @@ func TestDexVMChainDeploymentScenario(t *testing.T) {
 		)
 		require.NoError(err)
 
-		err = vm.SetState(ctx, uint32(core.Ready))
+		err = vmImpl.SetState(ctx, uint32(vm.Ready))
 		require.NoError(err)
 
-		validators[i] = vm
+		validators[i] = vmImpl
 	}
 
 	defer func() {
-		for _, vm := range validators {
-			_ = vm.Shutdown(ctx)
+		for _, vmImpl := range validators {
+			_ = vmImpl.Shutdown(ctx)
 		}
 	}()
 
@@ -334,8 +333,8 @@ func TestDexVMChainDeploymentScenario(t *testing.T) {
 		blockTime := time.Now()
 
 		var results []*dexvm.BlockResult
-		for _, vm := range validators {
-			result, err := vm.ProcessBlock(ctx, height, blockTime, nil)
+		for _, vmImpl := range validators {
+			result, err := vmImpl.ProcessBlock(ctx, height, blockTime, nil)
 			require.NoError(err)
 			results = append(results, result)
 		}
@@ -367,17 +366,17 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 	cfg.BlockInterval = time.Millisecond
 
 	for i := 0; i < 5; i++ {
-		vm := dexvm.NewVMForTest(cfg, logger)
+		vmImpl := dexvm.NewVMForTest(cfg, logger)
 		chainID := ids.GenerateTestID()
 		db := memdb.New()
-		toEngine := make(chan core.Message, 100)
+		toEngine := make(chan vm.Message, 100)
 
 		rt := &runtime.Runtime{
 			ChainID: chainID,
 			Log:     logger,
 		}
 
-		_ = vm.Initialize(ctx, common.VMInit{
+		_ = vmImpl.Initialize(ctx, vm.Init{
 			Runtime:  rt,
 			DB:       db,
 			ToEngine: toEngine,
@@ -388,14 +387,14 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 			Config:   nil,
 			Fx:       nil,
 		})
-		_ = vm.SetState(ctx, uint32(core.Ready))
+		_ = vmImpl.SetState(ctx, uint32(vm.Ready))
 
-		validators[i] = vm
+		validators[i] = vmImpl
 	}
 
 	defer func() {
-		for _, vm := range validators {
-			_ = vm.Shutdown(ctx)
+		for _, vmImpl := range validators {
+			_ = vmImpl.Shutdown(ctx)
 		}
 	}()
 
@@ -406,8 +405,8 @@ func BenchmarkDexVMBlockProcessing(b *testing.B) {
 		height := uint64(i + 1)
 		blockTime := time.Now()
 
-		for _, vm := range validators {
-			_, _ = vm.ProcessBlock(ctx, height, blockTime, nil)
+		for _, vmImpl := range validators {
+			_, _ = vmImpl.ProcessBlock(ctx, height, blockTime, nil)
 		}
 	}
 

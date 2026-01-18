@@ -783,6 +783,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 // testValidatorState is a simple stub for validators.State used in tests
 type testValidatorState struct {
 	chainID ids.ID // The chain/chain ID this validator state returns
+	netIDs  map[ids.ID]ids.ID
 }
 
 var _ validators.State = (*testValidatorState)(nil)
@@ -792,7 +793,12 @@ func (t *testValidatorState) GetChainID(_ ids.ID) (ids.ID, error) {
 	return t.chainID, nil
 }
 
-func (t *testValidatorState) GetNetworkID(_ ids.ID) (ids.ID, error) {
+func (t *testValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	if t.netIDs != nil {
+		if netID, ok := t.netIDs[chainID]; ok {
+			return netID, nil
+		}
+	}
 	return t.chainID, nil
 }
 
@@ -839,9 +845,15 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 
 	rt := consensustest.Runtime(t, consensustest.XChainID)
 
-	// Set up a validator state that returns a different chainID to trigger the error
+	// Set up a validator state that returns different network IDs to trigger the error
+	localNetID := ids.GenerateTestID()
+	peerNetID := ids.GenerateTestID()
 	rt.ValidatorState = &testValidatorState{
-		chainID: ids.GenerateTestID(), // Different from rt.ChainID
+		chainID: localNetID,
+		netIDs: map[ids.ID]ids.ID{
+			rt.ChainID: localNetID,
+			cChainID:   peerNetID,
+		},
 	}
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -953,7 +965,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 		State:   state,
 		Tx:      tx,
 	})
-	require.ErrorIs(t, err, verify.ErrMismatchedChainIDs)
+	require.ErrorIs(t, err, verify.ErrMismatchedNetIDs)
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {

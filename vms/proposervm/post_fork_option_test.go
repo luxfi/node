@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
-	engineBlock "github.com/luxfi/consensus/engine/chain/block"
+	engineBlock "github.com/luxfi/vm/chain"
 	proposerBlock "github.com/luxfi/node/vms/proposervm/block"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 )
@@ -551,7 +551,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 		},
 	)
 
-	coreVM.InitializeF = func(context.Context, common.VMInit) error {
+	coreVM.InitializeF = func(context.Context, vm.Init) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
@@ -589,7 +589,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Log:     log.NoLog{},

@@ -43,92 +43,92 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // Alias mocks base method.
-func (m *Manager) Alias(id ids.ID, alias string) error {
+func (m *Manager) Alias(ctx context.Context, id ids.ID, alias string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Alias", id, alias)
+	ret := m.ctrl.Call(m, "Alias", ctx, id, alias)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Alias indicates an expected call of Alias.
-func (mr *ManagerMockRecorder) Alias(id, alias any) *gomock.Call {
+func (mr *ManagerMockRecorder) Alias(ctx, id, alias any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alias", reflect.TypeOf((*Manager)(nil).Alias), id, alias)
-}
-
-// Aliases mocks base method.
-func (m *Manager) Aliases(id ids.ID) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Aliases", id)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Aliases indicates an expected call of Aliases.
-func (mr *ManagerMockRecorder) Aliases(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aliases", reflect.TypeOf((*Manager)(nil).Aliases), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alias", reflect.TypeOf((*Manager)(nil).Alias), ctx, id, alias)
 }
 
 // GetFactory mocks base method.
-func (m *Manager) GetFactory(vmID ids.ID) (vms.Factory, error) {
+func (m *Manager) GetFactory(ctx context.Context, vmID ids.ID) (vms.Factory, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFactory", vmID)
+	ret := m.ctrl.Call(m, "GetFactory", ctx, vmID)
 	ret0, _ := ret[0].(vms.Factory)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFactory indicates an expected call of GetFactory.
-func (mr *ManagerMockRecorder) GetFactory(vmID any) *gomock.Call {
+func (mr *ManagerMockRecorder) GetFactory(ctx, vmID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFactory", reflect.TypeOf((*Manager)(nil).GetFactory), vmID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFactory", reflect.TypeOf((*Manager)(nil).GetFactory), ctx, vmID)
 }
 
 // ListFactories mocks base method.
-func (m *Manager) ListFactories() ([]ids.ID, error) {
+func (m *Manager) ListFactories(ctx context.Context) ([]ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListFactories")
+	ret := m.ctrl.Call(m, "ListFactories", ctx)
 	ret0, _ := ret[0].([]ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListFactories indicates an expected call of ListFactories.
-func (mr *ManagerMockRecorder) ListFactories() *gomock.Call {
+func (mr *ManagerMockRecorder) ListFactories(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFactories", reflect.TypeOf((*Manager)(nil).ListFactories))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFactories", reflect.TypeOf((*Manager)(nil).ListFactories), ctx)
+}
+
+// Aliases mocks base method.
+func (m *Manager) Aliases(ctx context.Context, id ids.ID) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Aliases", ctx, id)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Aliases indicates an expected call of Aliases.
+func (mr *ManagerMockRecorder) Aliases(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aliases", reflect.TypeOf((*Manager)(nil).Aliases), ctx, id)
 }
 
 // Lookup mocks base method.
-func (m *Manager) Lookup(alias string) (ids.ID, error) {
+func (m *Manager) Lookup(ctx context.Context, alias string) (ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Lookup", alias)
+	ret := m.ctrl.Call(m, "Lookup", ctx, alias)
 	ret0, _ := ret[0].(ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Lookup indicates an expected call of Lookup.
-func (mr *ManagerMockRecorder) Lookup(alias any) *gomock.Call {
+func (mr *ManagerMockRecorder) Lookup(ctx, alias any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*Manager)(nil).Lookup), alias)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*Manager)(nil).Lookup), ctx, alias)
 }
 
 // PrimaryAlias mocks base method.
-func (m *Manager) PrimaryAlias(id ids.ID) (string, error) {
+func (m *Manager) PrimaryAlias(ctx context.Context, id ids.ID) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrimaryAlias", id)
+	ret := m.ctrl.Call(m, "PrimaryAlias", ctx, id)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PrimaryAlias indicates an expected call of PrimaryAlias.
-func (mr *ManagerMockRecorder) PrimaryAlias(id any) *gomock.Call {
+func (mr *ManagerMockRecorder) PrimaryAlias(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryAlias", reflect.TypeOf((*Manager)(nil).PrimaryAlias), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryAlias", reflect.TypeOf((*Manager)(nil).PrimaryAlias), ctx, id)
 }
 
 // PrimaryAliasOrDefault mocks base method.
@@ -172,16 +172,16 @@ func (mr *ManagerMockRecorder) RemoveAliases(id any) *gomock.Call {
 }
 
 // Versions mocks base method.
-func (m *Manager) Versions() (map[string]string, error) {
+func (m *Manager) Versions(ctx context.Context) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Versions")
+	ret := m.ctrl.Call(m, "Versions", ctx)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Versions indicates an expected call of Versions.
-func (mr *ManagerMockRecorder) Versions() *gomock.Call {
+func (mr *ManagerMockRecorder) Versions(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Versions", reflect.TypeOf((*Manager)(nil).Versions))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Versions", reflect.TypeOf((*Manager)(nil).Versions), ctx)
 }

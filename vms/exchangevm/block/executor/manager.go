@@ -6,10 +6,9 @@ package executor
 import (
 	"errors"
 
-	"github.com/luxfi/consensus/protocol/chain"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/metrics"
 	"github.com/luxfi/node/vms/exchangevm/state"
@@ -17,6 +16,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/txs/executor"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 var (

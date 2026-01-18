@@ -59,7 +59,17 @@ var (
 	// GChainAliases are the default aliases for the G-Chain (Graph)
 	GChainAliases = []string{"G", "graph", "graphvm", "dgraph"}
 	// KChainAliases are the default aliases for the K-Chain (KMS)
-	KChainAliases = []string{"K", "kms", "kmsvm"}
+	KChainAliases = []string{"K", "key", "keyvm"}
+
+	// Network-specific genesis messages (Latin for mainnet, descriptive for others)
+	// Mainnet: "Lux et Libertas" - Light and Liberty
+	MainnetChainGenesis = `{"version":1,"message":"Lux et Libertas"}`
+	// Testnet: "Per Aspera ad Astra" - Through hardships to the stars
+	TestnetChainGenesis = `{"version":1,"message":"Per Aspera ad Astra"}`
+	// Devnet: "In Silico Veritas" - Truth in silicon
+	DevnetChainGenesis = `{"version":1,"message":"In Silico Veritas"}`
+	// Local/Custom: "Carpe Diem" - Seize the day
+	LocalChainGenesis = `{"version":1,"message":"Carpe Diem"}`
 
 	// VMAliases are the default aliases for VMs
 	VMAliases = map[ids.ID][]string{
@@ -73,7 +83,7 @@ var (
 		constants.ThresholdVMID: {"thresholdvm", "threshold", "mpc"},
 		constants.ZKVMID:        {"zkvm", "zk"},
 		constants.GraphVMID:     {"graphvm", "graph", "dgraph"},
-		constants.KMSVMID:       {"kmsvm", "kms"},
+		constants.KeyVMID:       {"keyvm", "key"},
 		secp256k1fx.ID:          {"secp256k1fx"},
 		nftfx.ID:                {"nftfx"},
 		propertyfx.ID:           {"propertyfx"},
@@ -505,10 +515,25 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// Specify the chains - only fully implemented primary network chains
-	// NOTE: Q, A, B, T, Z, G, K chains are registered as VMs but not included
-	// in genesis chains until their BuildBlock methods are fully implemented.
-	// They currently return "not implemented" errors which prevent network startup.
+	// Helper to get genesis data or network-specific default
+	getGenesis := func(data string) []byte {
+		if data != "" {
+			return []byte(data)
+		}
+		// Return network-specific genesis message
+		switch config.NetworkID {
+		case constants.MainnetID:
+			return []byte(MainnetChainGenesis)
+		case constants.TestnetID:
+			return []byte(TestnetChainGenesis)
+		case constants.DevnetID:
+			return []byte(DevnetChainGenesis)
+		default:
+			return []byte(LocalChainGenesis)
+		}
+	}
+
+	// Specify all 11 chains
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
@@ -528,10 +553,52 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			Name:        "C-Chain",
 		},
 		{
-			GenesisData: []byte(config.DChainGenesis),
+			GenesisData: getGenesis(config.DChainGenesis),
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.DexVMID,
 			Name:        "D-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.QChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.QuantumVMID,
+			Name:        "Q-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.AChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.AIVMID,
+			Name:        "A-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.BChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.BridgeVMID,
+			Name:        "B-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.TChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.ThresholdVMID,
+			Name:        "T-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.ZChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.ZKVMID,
+			Name:        "Z-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.GChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.GraphVMID,
+			Name:        "G-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.KChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.KeyVMID,
+			Name:        "K-Chain",
 		},
 	}
 
@@ -737,11 +804,11 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "graph"),
 			}
 			chainAliases[chainID] = GChainAliases
-		case constants.KMSVMID:
+		case constants.KeyVMID:
 			apiAliases[endpoint] = []string{
 				"K",
 				"kms",
-				"kmsvm",
+				"keyvm",
 				path.Join(constants.ChainAliasPrefix, "K"),
 				path.Join(constants.ChainAliasPrefix, "kms"),
 			}

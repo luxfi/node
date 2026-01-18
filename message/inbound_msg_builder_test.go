@@ -333,12 +333,12 @@ func TestInboundMsgBuilder(t *testing.T) {
 	)
 
 	t.Run(
-		"InboundAppRequest",
+		"InboundRequest",
 		func(t *testing.T) {
 			require := require.New(t)
 
 			start := time.Now()
-			msg := InboundAppRequest(
+			msg := InboundRequest(
 				chainID,
 				requestID,
 				deadline,
@@ -347,12 +347,12 @@ func TestInboundMsgBuilder(t *testing.T) {
 			)
 			end := time.Now()
 
-			require.Equal(AppRequestOp, msg.Op())
+			require.Equal(RequestOp, msg.Op())
 			require.Equal(nodeID, msg.NodeID())
 			require.False(msg.Expiration().Before(start.Add(deadline)))
 			require.False(end.Add(deadline).Before(msg.Expiration()))
-			require.IsType(&p2p.AppRequest{}, msg.Message())
-			innerMsg := msg.Message().(*p2p.AppRequest)
+			require.IsType(&p2p.Request{}, msg.Message())
+			innerMsg := msg.Message().(*p2p.Request)
 			require.Equal(chainID[:], innerMsg.ChainId)
 			require.Equal(requestID, innerMsg.RequestId)
 			require.Equal(appBytes, innerMsg.AppBytes)
@@ -360,22 +360,22 @@ func TestInboundMsgBuilder(t *testing.T) {
 	)
 
 	t.Run(
-		"InboundAppResponse",
+		"InboundResponse",
 		func(t *testing.T) {
 			require := require.New(t)
 
-			msg := InboundAppResponse(
+			msg := InboundResponse(
 				chainID,
 				requestID,
 				appBytes,
 				nodeID,
 			)
 
-			require.Equal(AppResponseOp, msg.Op())
+			require.Equal(ResponseOp, msg.Op())
 			require.Equal(nodeID, msg.NodeID())
 			require.Equal(mockable.MaxTime, msg.Expiration())
-			require.IsType(&p2p.AppResponse{}, msg.Message())
-			innerMsg := msg.Message().(*p2p.AppResponse)
+			require.IsType(&p2p.Response{}, msg.Message())
+			innerMsg := msg.Message().(*p2p.Response)
 			require.Equal(chainID[:], innerMsg.ChainId)
 			require.Equal(requestID, innerMsg.RequestId)
 			require.Equal(appBytes, innerMsg.AppBytes)
@@ -383,7 +383,7 @@ func TestInboundMsgBuilder(t *testing.T) {
 	)
 }
 
-func TestAppError(t *testing.T) {
+func TestError(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
@@ -399,8 +399,8 @@ func TestAppError(t *testing.T) {
 	errorMessage := "hello world"
 
 	want := &p2p.Message{
-		Message: &p2p.Message_AppError{
-			AppError: &p2p.AppError{
+		Message: &p2p.Message_Error{
+			Error: &p2p.Error{
 				ChainId:      chainID[:],
 				RequestId:    requestID,
 				ErrorCode:    errorCode,
@@ -416,9 +416,9 @@ func TestAppError(t *testing.T) {
 	require.NoError(err)
 
 	require.Equal(nodeID, got.NodeID())
-	require.Equal(AppErrorOp, got.Op())
+	require.Equal(ErrorOp, got.Op())
 
-	msg, ok := got.Message().(*p2p.AppError)
+	msg, ok := got.Message().(*p2p.Error)
 	require.True(ok)
 	require.Equal(errorCode, msg.ErrorCode)
 	require.Equal(errorMessage, msg.ErrorMessage)

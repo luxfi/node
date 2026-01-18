@@ -6,13 +6,13 @@ package proposervm
 import (
 	"context"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 
-var _ chainblock.StateSummary = (*stateSummary)(nil)
+var _ chain.StateSummary = (*stateSummary)(nil)
 
-// stateSummary implements chainblock.StateSummary by layering three objects:
+// stateSummary implements chain.StateSummary by layering three objects:
 //
 //  1. [statelessSummary] carries all summary marshallable content along with
 //     data immediately retrievable from it.
@@ -27,7 +27,7 @@ type stateSummary struct {
 	summary.StateSummary
 
 	// inner summary, retrieved via Parse
-	innerSummary chainblock.StateSummary
+	innerSummary chain.StateSummary
 
 	// block associated with the summary
 	block PostForkBlock
@@ -39,11 +39,11 @@ func (s *stateSummary) Height() uint64 {
 	return s.innerSummary.Height()
 }
 
-func (s *stateSummary) Accept(ctx context.Context) (chainblock.StateSyncMode, error) {
+func (s *stateSummary) Accept(ctx context.Context) (chain.StateSyncMode, error) {
 	// set fork height first, before accepting proposerVM full block
 	// which updates height index (among other indices)
 	if err := s.vm.State.SetForkHeight(s.StateSummary.ForkHeight()); err != nil {
-		return chainblock.StateSyncSkipped, err
+		return chain.StateSyncSkipped, err
 	}
 
 	// Mark the summary as accepted on the outerVM iff it rolls forward.
@@ -54,7 +54,7 @@ func (s *stateSummary) Accept(ctx context.Context) (chainblock.StateSyncMode, er
 		// and update height index with it, so that state sync could resume
 		// after a shutdown.
 		if err := s.block.acceptOuterBlk(); err != nil {
-			return chainblock.StateSyncSkipped, err
+			return chain.StateSyncSkipped, err
 		}
 	}
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 )
 
@@ -28,11 +28,11 @@ type TestBlockServer struct {
 	CantGetFullPostForkBlock bool
 	CantCommit               bool
 
-	GetFullPostForkBlockF func(ctx context.Context, blkID ids.ID) (chainblock.Block, error)
+	GetFullPostForkBlockF func(ctx context.Context, blkID ids.ID) (chain.Block, error)
 	CommitF               func() error
 }
 
-func (tsb *TestBlockServer) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error) {
+func (tsb *TestBlockServer) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	if tsb.GetFullPostForkBlockF != nil {
 		return tsb.GetFullPostForkBlockF(ctx, blkID)
 	}

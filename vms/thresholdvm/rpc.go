@@ -946,7 +946,13 @@ func (vm *VM) rpcHealthCheck() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, &RPCError{Code: RPCErrorInternal, Message: err.Error()}
 	}
-	return health.(map[string]interface{}), nil
+	// Convert chain.HealthResult to map[string]interface{}
+	result := make(map[string]interface{})
+	result["healthy"] = health.Healthy
+	for k, v := range health.Details {
+		result[k] = v
+	}
+	return result, nil
 }
 
 // Helper functions

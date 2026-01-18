@@ -4,7 +4,7 @@
 package rpcchainvm
 
 import (
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 
 	vmpb "github.com/luxfi/node/proto/pb/vm"
@@ -14,12 +14,12 @@ var (
 	errEnumToError = map[vmpb.Error]error{
 		vmpb.Error_ERROR_CLOSED:                     database.ErrClosed,
 		vmpb.Error_ERROR_NOT_FOUND:                  database.ErrNotFound,
-		vmpb.Error_ERROR_STATE_SYNC_NOT_IMPLEMENTED: block.ErrRemoteVMNotImplemented,
+		vmpb.Error_ERROR_STATE_SYNC_NOT_IMPLEMENTED: chain.ErrRemoteVMNotImplemented,
 	}
 	errorToErrEnum = map[error]vmpb.Error{
 		database.ErrClosed:              vmpb.Error_ERROR_CLOSED,
 		database.ErrNotFound:            vmpb.Error_ERROR_NOT_FOUND,
-		block.ErrRemoteVMNotImplemented: vmpb.Error_ERROR_STATE_SYNC_NOT_IMPLEMENTED,
+		chain.ErrRemoteVMNotImplemented: vmpb.Error_ERROR_STATE_SYNC_NOT_IMPLEMENTED,
 	}
 )
 

@@ -14,9 +14,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/node/utils/json"
 )
 
 var ErrRejected = errors.New("rejected")
@@ -41,8 +40,8 @@ func NewClient(uri, chain string) *Client {
 
 // GetBlock returns the block with the given id.
 func (c *Client) GetBlock(ctx context.Context, blkID ids.ID, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedBlock{}
-	err := c.Requester.SendRequest(ctx, "exchangevm.getBlock", &api.GetBlockArgs{
+	res := &apitypes.FormattedBlock{}
+	err := c.Requester.SendRequest(ctx, "exchangevm.getBlock", &apitypes.GetBlockArgs{
 		BlockID:  blkID,
 		Encoding: formatting.HexNC,
 	}, res, options...)
@@ -54,9 +53,9 @@ func (c *Client) GetBlock(ctx context.Context, blkID ids.ID, options ...rpc.Opti
 
 // GetBlockByHeight returns the block at the given height.
 func (c *Client) GetBlockByHeight(ctx context.Context, height uint64, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedBlock{}
-	err := c.Requester.SendRequest(ctx, "exchangevm.getBlockByHeight", &api.GetBlockByHeightArgs{
-		Height:   json.Uint64(height),
+	res := &apitypes.FormattedBlock{}
+	err := c.Requester.SendRequest(ctx, "exchangevm.getBlockByHeight", &apitypes.GetBlockByHeightArgs{
+		Height:   apitypes.Uint64(height),
 		Encoding: formatting.HexNC,
 	}, res, options...)
 	if err != nil {
@@ -67,7 +66,7 @@ func (c *Client) GetBlockByHeight(ctx context.Context, height uint64, options ..
 
 // GetHeight returns the height of the last accepted block.
 func (c *Client) GetHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
-	res := &api.GetHeightResponse{}
+	res := &apitypes.GetHeightResponse{}
 	err := c.Requester.SendRequest(ctx, "exchangevm.getHeight", struct{}{}, res, options...)
 	return uint64(res.Height), err
 }
@@ -78,8 +77,8 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 	if err != nil {
 		return ids.Empty, err
 	}
-	res := &api.JSONTxID{}
-	err = c.Requester.SendRequest(ctx, "exchangevm.issueTx", &api.FormattedTx{
+	res := &apitypes.JSONTxID{}
+	err = c.Requester.SendRequest(ctx, "exchangevm.issueTx", &apitypes.FormattedTx{
 		Tx:       txStr,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -92,7 +91,7 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 // used instead to determine if the tx was accepted.
 func (c *Client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Option) (choices.Status, error) {
 	res := &GetTxStatusReply{}
-	err := c.Requester.SendRequest(ctx, "exchangevm.getTxStatus", &api.JSONTxID{
+	err := c.Requester.SendRequest(ctx, "exchangevm.getTxStatus", &apitypes.JSONTxID{
 		TxID: txID,
 	}, res, options...)
 	return res.Status, err
@@ -100,8 +99,8 @@ func (c *Client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Op
 
 // GetTx returns the byte representation of txID.
 func (c *Client) GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedTx{}
-	err := c.Requester.SendRequest(ctx, "exchangevm.getTx", &api.GetTxArgs{
+	res := &apitypes.FormattedTx{}
+	err := c.Requester.SendRequest(ctx, "exchangevm.getTx", &apitypes.GetTxArgs{
 		TxID:     txID,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -134,12 +133,12 @@ func (c *Client) GetAtomicUTXOs(
 	startUTXOID ids.ID,
 	options ...rpc.Option,
 ) ([][]byte, ids.ShortID, ids.ID, error) {
-	res := &api.GetUTXOsReply{}
-	err := c.Requester.SendRequest(ctx, "exchangevm.getUTXOs", &api.GetUTXOsArgs{
+	res := &apitypes.GetUTXOsReply{}
+	err := c.Requester.SendRequest(ctx, "exchangevm.getUTXOs", &apitypes.GetUTXOsArgs{
 		Addresses:   ids.ShortIDsToStrings(addrs),
 		SourceChain: sourceChain,
-		Limit:       json.Uint32(limit),
-		StartIndex: api.Index{
+		Limit:       apitypes.Uint32(limit),
+		StartIndex: apitypes.Index{
 			Address: startAddress.String(),
 			UTXO:    startUTXOID.String(),
 		},
@@ -207,7 +206,7 @@ func (c *Client) GetAllBalances(
 ) ([]Balance, error) {
 	res := &GetAllBalancesReply{}
 	err := c.Requester.SendRequest(ctx, "exchangevm.getAllBalances", &GetAllBalancesArgs{
-		JSONAddress:    api.JSONAddress{Address: addr.String()},
+		JSONAddress:    apitypes.JSONAddress{Address: addr.String()},
 		IncludePartial: includePartial,
 	}, res, options...)
 	return res.Balances, err

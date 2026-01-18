@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -122,21 +122,21 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 }
 
 // Return the two options for the block that follows [b]
-func (b *postForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 	innerOracleBlk, ok := b.innerBlk.(OracleBlock)
 	if !ok {
 		// [b]'s innerBlk isn't an oracle block
-		return [2]chainblock.Block{}, errNotOracle
+		return [2]chain.Block{}, errNotOracle
 	}
 
 	// The inner block's child options
 	innerOptions, err := innerOracleBlk.Options(ctx)
 	if err != nil {
-		return [2]chainblock.Block{}, err
+		return [2]chain.Block{}, err
 	}
 
 	parentID := b.ID()
-	outerOptions := [2]chainblock.Block{}
+	outerOptions := [2]chain.Block{}
 	for i, innerOption := range innerOptions {
 		// Wrap the inner block's child option
 		statelessOuterOption, err := block.BuildOption(
@@ -144,7 +144,7 @@ func (b *postForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error
 			innerOption.Bytes(),
 		)
 		if err != nil {
-			return [2]chainblock.Block{}, err
+			return [2]chain.Block{}, err
 		}
 
 		outerOptions[i] = &postForkOption{
@@ -206,7 +206,7 @@ func (b *postForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return b.PChainHeight(), nil
 }
 
-func (b *postForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
+func (b *postForkBlock) pChainEpoch(context.Context) (chain.Epoch, error) {
 	return toChainBlockEpoch(b.PChainEpoch()), nil
 }
 

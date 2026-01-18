@@ -4,11 +4,11 @@
 package chain
 
 import (
-	consensuschain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/runtime"
+	enginechain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/runtime"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
@@ -17,7 +17,7 @@ var _ Chain = (*chain)(nil)
 
 type Chain interface {
 	LastAccepted() ids.ID
-	SetChainState(state consensuschain.Engine)
+	SetChainState(state enginechain.Engine)
 	GetBlock(blkID ids.ID) (Block, error)
 
 	// Creates a fully verifiable and executable block, which can be processed
@@ -30,7 +30,7 @@ type chain struct {
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
-	chainState consensuschain.Engine
+	chainState enginechain.Engine
 
 	lastAcceptedID ids.ID
 	verifiedBlocks map[ids.ID]*block
@@ -66,7 +66,7 @@ func (c *chain) LastAccepted() ids.ID {
 	return c.lastAcceptedID
 }
 
-func (c *chain) SetChainState(state consensuschain.Engine) {
+func (c *chain) SetChainState(state enginechain.Engine) {
 	c.chainState = state
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/pubsub/bloom"
 )
 
@@ -25,7 +25,7 @@ func TestAddAddressesParseAddresses(t *testing.T) {
 	addrStr, err := address.Format(chainAlias, hrp, addrID[:])
 	require.NoError(err)
 
-	msg := &AddAddresses{JSONAddresses: api.JSONAddresses{
+	msg := &AddAddresses{JSONAddresses: apitypes.JSONAddresses{
 		Addresses: []string{
 			addrStr,
 		},

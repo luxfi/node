@@ -24,9 +24,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/protocol/chain"
-	validators "github.com/luxfi/validators"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -37,9 +35,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/gas"
@@ -47,21 +44,23 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/wallet/net/primary/common"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/vm/types"
 
+	avajson "github.com/luxfi/node/utils/json"
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	avajson "github.com/luxfi/node/utils/json"
 )
 
 var encodings = []formatting.Encoding{
@@ -81,7 +80,7 @@ func TestGetProposedHeight(t *testing.T) {
 	require := require.New(t)
 	service, _ := defaultService(t)
 
-	reply := api.GetHeightResponse{}
+	reply := apitypes.GetHeightResponse{}
 	require.NoError(service.GetProposedHeight(&http.Request{}, nil, &reply))
 
 	minHeight, err := service.vm.GetMinimumHeight(context.Background())
@@ -337,11 +336,11 @@ func TestGetTx(t *testing.T) {
 				tx := test.createTx(t, service)
 				service.vm.rt.Lock.Unlock()
 
-				arg := &api.GetTxArgs{
+				arg := &apitypes.GetTxArgs{
 					TxID:     tx.ID(),
 					Encoding: encoding,
 				}
-				var response api.GetTxReply
+				var response apitypes.GetTxReply
 				err := service.GetTx(nil, arg, &response)
 				require.ErrorIs(err, database.ErrNotFound) // We haven't issued the tx yet
 
@@ -450,7 +449,7 @@ func TestGetStake(t *testing.T) {
 		addrsStrs = append(addrsStrs, addrStr)
 
 		args := GetStakeArgs{
-			JSONAddresses: api.JSONAddresses{
+			JSONAddresses: apitypes.JSONAddresses{
 				Addresses: []string{addrStr},
 			},
 			Encoding: formatting.Hex,
@@ -489,7 +488,7 @@ func TestGetStake(t *testing.T) {
 
 	// Make sure this works for multiple addresses
 	args := GetStakeArgs{
-		JSONAddresses: api.JSONAddresses{
+		JSONAddresses: apitypes.JSONAddresses{
 			Addresses: addrsStrs,
 		},
 		Encoding: formatting.Hex,
@@ -657,7 +656,7 @@ func TestGetCurrentValidators(t *testing.T) {
 
 		found := false
 		for i := 0; i < len(response.Validators); i++ {
-			gotVdr := response.Validators[i].(pchainapi.PermissionlessValidator)
+			gotVdr := response.Validators[i].(pchainapitypes.PermissionlessValidator)
 			if gotVdr.NodeID != nodeID {
 				continue
 			}
@@ -721,7 +720,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	// Make sure the delegator is there
 	found := false
 	for i := 0; i < len(response.Validators) && !found; i++ {
-		vdr := response.Validators[i].(pchainapi.PermissionlessValidator)
+		vdr := response.Validators[i].(pchainapitypes.PermissionlessValidator)
 		if vdr.NodeID != validatorNodeID {
 			continue
 		}
@@ -737,7 +736,7 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.NoError(service.GetCurrentValidators(nil, &innerArgs, &innerResponse))
 		require.Len(innerResponse.Validators, 1)
 
-		innerVdr := innerResponse.Validators[0].(pchainapi.PermissionlessValidator)
+		innerVdr := innerResponse.Validators[0].(pchainapitypes.PermissionlessValidator)
 		require.Equal(vdr.NodeID, innerVdr.NodeID)
 
 		require.NotNil(innerVdr.Delegators)
@@ -768,7 +767,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	require.Len(response.Validators, len(genesis.Validators))
 
 	for _, vdr := range response.Validators {
-		castVdr := vdr.(pchainapi.PermissionlessValidator)
+		castVdr := vdr.(pchainapitypes.PermissionlessValidator)
 		if castVdr.NodeID != validatorNodeID {
 			continue
 		}
@@ -793,7 +792,7 @@ func TestGetValidatorsAt(t *testing.T) {
 	service.vm.rt.Lock.Unlock()
 
 	// Confirm that it returns the genesis validators given the latest height
-	args.Height = pchainapi.Height(lastAcceptedBlk.Height())
+	args.Height = pchainapitypes.Height(lastAcceptedBlk.Height())
 	require.NoError(service.GetValidatorsAt(&http.Request{}, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators))
 
@@ -849,12 +848,12 @@ func TestGetValidatorsAt(t *testing.T) {
 	require.NotEqual(newLastAccepted, lastAccepted)
 
 	// Confirm that it returns the genesis validators + the new validator given the latest height
-	args.Height = pchainapi.Height(newLastAcceptedBlk.Height())
+	args.Height = pchainapitypes.Height(newLastAcceptedBlk.Height())
 	require.NoError(service.GetValidatorsAt(&http.Request{}, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators)+1)
 
 	// Confirm that [IsProposed] works. The proposed height should be the genesis height
-	args.Height = pchainapi.Height(pchainapi.ProposedHeight)
+	args.Height = pchainapitypes.Height(pchainapitypes.ProposedHeight)
 	require.NoError(service.GetValidatorsAt(&http.Request{}, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators))
 
@@ -865,7 +864,7 @@ func TestGetValidatorsAt(t *testing.T) {
 	service.vm.clock.Set(newLastAcceptedBlk.Timestamp().Add(40 * time.Second))
 	service.vm.rt.Lock.Unlock()
 
-	// Resending the same request with [Height] set to [platformapi.ProposedHeight] should now
+	// Resending the same request with [Height] set to [platformapitypes.ProposedHeight] should now
 	// include the new validator
 	require.NoError(service.GetValidatorsAt(&http.Request{}, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators)+1)
@@ -883,7 +882,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 		{
 			name: "specific height",
 			args: GetValidatorsAtArgs{
-				Height:  pchainapi.Height(12345),
+				Height:  pchainapitypes.Height(12345),
 				ChainID: chainID,
 			},
 			json: `{"height":"12345","chainID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
@@ -891,7 +890,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 		{
 			name: "proposed height",
 			args: GetValidatorsAtArgs{
-				Height:  pchainapi.ProposedHeight,
+				Height:  pchainapitypes.ProposedHeight,
 				ChainID: chainID,
 			},
 			json: `{"height":"proposed","chainID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
@@ -988,11 +987,11 @@ func TestGetBlock(t *testing.T) {
 
 			service.vm.rt.Lock.Unlock()
 
-			args := api.GetBlockArgs{
+			args := apitypes.GetBlockArgs{
 				BlockID:  blk.ID(),
 				Encoding: test.encoding,
 			}
-			response := api.GetBlockResponse{}
+			response := apitypes.GetBlockResponse{}
 			require.NoError(service.GetBlock(nil, &args, &response))
 
 			switch test.encoding {
@@ -1218,11 +1217,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 
 			service, expected := tt.serviceAndExpectedBlockFunc(t, ctrl)
 
-			args := &api.GetBlockByHeightArgs{
+			args := &apitypes.GetBlockByHeightArgs{
 				Height:   avajson.Uint64(blockHeight),
 				Encoding: tt.encoding,
 			}
-			reply := &api.GetBlockResponse{}
+			reply := &apitypes.GetBlockResponse{}
 			err := service.GetBlockByHeight(nil, args, reply)
 			require.ErrorIs(err, tt.expectedErr)
 			if tt.expectedErr != nil {
@@ -1522,14 +1521,14 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 
 			testValidator := func(vdr any) ids.NodeID {
 				switch v := vdr.(type) {
-				case pchainapi.Staker:
+				case pchainapitypes.Staker:
 					staker, exists := stakersByTxID[v.TxID]
 					require.True(exists, "unexpected validator: %s", vdr)
 					require.Equal(staker.NodeID, v.NodeID)
 					require.Equal(avajson.Uint64(staker.Weight), v.Weight)
 					require.Equal(staker.StartTime.Unix(), int64(v.StartTime))
 					return v.NodeID
-				case pchainapi.APIL1Validator:
+				case pchainapitypes.APIL1Validator:
 					validator, exists := l1ValidatorsByVID[*v.ValidationID]
 					require.True(exists, "unexpected validator: %s", vdr)
 					require.Equal(validator.NodeID, v.NodeID)

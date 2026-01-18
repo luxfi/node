@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/luxfi/runtime"
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/vm"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +66,7 @@ func (s *mockServer) AddAliasesWithReadLock(endpoint string, aliases ...string) 
 }
 
 func (s *mockServer) Dispatch() error { return nil }
-func (s *mockServer) RegisterChain(chainName string, rt *runtime.Runtime, vm consensuscore.VM) {
+func (s *mockServer) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) {
 }
 func (s *mockServer) Shutdown() error { return nil }
 

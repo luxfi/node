@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/service/metrics"
 	"github.com/stretchr/testify/require"
 )
 

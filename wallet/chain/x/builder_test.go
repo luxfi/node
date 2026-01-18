@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/net/primary/common/utxotest"
+	"github.com/luxfi/node/wallet/network/primary/common/utxotest"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"

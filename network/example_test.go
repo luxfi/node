@@ -70,23 +70,23 @@ func (t *testExternalHandler) Disconnected(nodeID ids.NodeID) {
 	)
 }
 
-func (t *testExternalHandler) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
-	t.log.Info("AppRequest", "nodeID", nodeID, "requestID", requestID)
+func (t *testExternalHandler) Request(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
+	t.log.Info("Request", "nodeID", nodeID, "requestID", requestID)
 	return nil
 }
 
-func (t *testExternalHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
-	t.log.Info("AppRequestFailed", "nodeID", nodeID, "requestID", requestID)
+func (t *testExternalHandler) RequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.Error) error {
+	t.log.Info("RequestFailed", "nodeID", nodeID, "requestID", requestID)
 	return nil
 }
 
-func (t *testExternalHandler) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	t.log.Info("AppResponse", "nodeID", nodeID, "requestID", requestID)
+func (t *testExternalHandler) Response(_ context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	t.log.Info("Response", "nodeID", nodeID, "requestID", requestID)
 	return nil
 }
 
-func (t *testExternalHandler) AppGossip(_ context.Context, nodeID ids.NodeID, appGossipBytes []byte) error {
-	t.log.Info("AppGossip", "nodeID", nodeID)
+func (t *testExternalHandler) Gossip(_ context.Context, nodeID ids.NodeID, appGossipBytes []byte) error {
+	t.log.Info("Gossip", "nodeID", nodeID)
 	return nil
 }
 

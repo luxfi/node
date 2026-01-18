@@ -48,6 +48,12 @@ type SignedBlock interface {
 	// Proposer returns the ID of the node that proposed this block. If no node
 	// signed this block, [ids.EmptyNodeID] will be returned.
 	Proposer() ids.NodeID
+
+	// Data Availability fields (v1.1 spec)
+	DARoot() [32]byte          // Root of DA commitments
+	WitnessRoot() [32]byte     // Root of witnesses/proofs
+	MessagesOutRoot() [32]byte // Root of outgoing cross-chain messages
+	BlobCount() uint32         // Number of DA blobs in block
 }
 
 type statelessUnsignedBlock struct {
@@ -57,6 +63,12 @@ type statelessUnsignedBlock struct {
 	Epoch        Epoch  `serialize:"true"`
 	Certificate  []byte `serialize:"true"`
 	Block        []byte `serialize:"true"`
+
+	// Data Availability fields (v1.1 spec)
+	DARoot          [32]byte `serialize:"true"` // Root of DA commitments
+	WitnessRoot     [32]byte `serialize:"true"` // Root of witnesses/proofs
+	MessagesOutRoot [32]byte `serialize:"true"` // Root of outgoing cross-chain messages
+	BlobCount       uint32   `serialize:"true"` // Number of DA blobs in block
 }
 
 type statelessBlock struct {
@@ -149,4 +161,20 @@ func (b *statelessBlock) Timestamp() time.Time {
 
 func (b *statelessBlock) Proposer() ids.NodeID {
 	return b.proposer
+}
+
+func (b *statelessBlock) DARoot() [32]byte {
+	return b.StatelessBlock.DARoot
+}
+
+func (b *statelessBlock) WitnessRoot() [32]byte {
+	return b.StatelessBlock.WitnessRoot
+}
+
+func (b *statelessBlock) MessagesOutRoot() [32]byte {
+	return b.StatelessBlock.MessagesOutRoot
+}
+
+func (b *statelessBlock) BlobCount() uint32 {
+	return b.StatelessBlock.BlobCount
 }

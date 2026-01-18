@@ -19,11 +19,11 @@ type StaticConfig struct {
 	// Fee that must be burned by every chain creating transaction after AP3
 	CreateChainTxFee uint64 `json:"createChainTxFee"`
 
-	// Transaction fee for adding a primary network validator
-	AddPrimaryNetworkValidatorFee uint64 `json:"addPrimaryNetworkValidatorFee"`
+	// Transaction fee for adding a network validator
+	AddNetworkValidatorFee uint64 `json:"addNetworkValidatorFee"`
 
-	// Transaction fee for adding a primary network delegator
-	AddPrimaryNetworkDelegatorFee uint64 `json:"addPrimaryNetworkDelegatorFee"`
+	// Transaction fee for adding a network delegator
+	AddNetworkDelegatorFee uint64 `json:"addNetworkDelegatorFee"`
 
 	// Transaction fee for adding a chain validator
 	AddChainValidatorFee uint64 `json:"addChainValidatorFee"`

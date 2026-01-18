@@ -8,15 +8,14 @@ import (
 	"errors"
 
 	"github.com/luxfi/codec/wrappers"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/runtime"
-	validators "github.com/luxfi/validators"
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
 )
 
 const (
@@ -39,7 +38,7 @@ type Tx struct {
 	Database database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool
-	BlockContext *block.Context
+	BlockContext *runtime.Runtime
 
 	TxID        ids.ID
 	Sender      ids.ShortID

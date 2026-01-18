@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
@@ -22,9 +22,9 @@ func (vm *VM) StateSyncEnabled(ctx context.Context) (bool, error) {
 	return vm.ssVM.StateSyncEnabled(ctx)
 }
 
-func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
+func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (chain.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, chainblock.ErrStateSyncableVMNotImplemented
+		return nil, chain.ErrStateSyncableVMNotImplemented
 	}
 
 	innerSummary, err := vm.ssVM.GetOngoingSyncStateSummary(ctx)
@@ -35,9 +35,9 @@ func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (chainblock.StateS
 	return vm.buildStateSummary(ctx, innerSummary)
 }
 
-func (vm *VM) GetLastStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
+func (vm *VM) GetLastStateSummary(ctx context.Context) (chain.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, chainblock.ErrStateSyncableVMNotImplemented
+		return nil, chain.ErrStateSyncableVMNotImplemented
 	}
 
 	// Extract inner vm's last state summary
@@ -51,9 +51,9 @@ func (vm *VM) GetLastStateSummary(ctx context.Context) (chainblock.StateSummary,
 
 // Note: it's important that ParseStateSummary do not use any index or state
 // to allow summaries being parsed also by freshly started node with no previous state.
-func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (chainblock.StateSummary, error) {
+func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (chain.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, chainblock.ErrStateSyncableVMNotImplemented
+		return nil, chain.ErrStateSyncableVMNotImplemented
 	}
 
 	statelessSummary, err := summary.Parse(summaryBytes)
@@ -79,9 +79,9 @@ func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (chain
 	}, nil
 }
 
-func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (chainblock.StateSummary, error) {
+func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (chain.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, chainblock.ErrStateSyncableVMNotImplemented
+		return nil, chain.ErrStateSyncableVMNotImplemented
 	}
 
 	innerSummary, err := vm.ssVM.GetStateSummary(ctx, height)
@@ -93,7 +93,7 @@ func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (chainblock.St
 }
 
 // Note: building state summary requires a well formed height index.
-func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.StateSummary) (chainblock.StateSummary, error) {
+func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chain.StateSummary) (chain.StateSummary, error) {
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:

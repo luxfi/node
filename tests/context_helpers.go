@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 )
 
 // A long default timeout used to timeout failed operations but unlikely to induce

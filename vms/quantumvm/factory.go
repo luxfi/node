@@ -4,12 +4,16 @@
 package qvm
 
 import (
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/quantumvm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)
+
+// VMID is the unique identifier for QuantumVM (Q-Chain)
+var VMID = ids.ID{'q', 'u', 'a', 'n', 't', 'u', 'm', 'v', 'm'}
 
 // Factory implements vms.Factory interface for creating QVM instances
 type Factory struct {

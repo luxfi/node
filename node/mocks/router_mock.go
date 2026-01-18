@@ -59,60 +59,60 @@ func (mr *MockRouterMockRecorder) AddChain(chainID, handler any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChain", reflect.TypeOf((*MockRouter)(nil).AddChain), chainID, handler)
 }
 
-// AppGossip mocks base method.
-func (m *MockRouter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+// Gossip mocks base method.
+func (m *MockRouter) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppGossip", ctx, nodeID, msg)
+	ret := m.ctrl.Call(m, "Gossip", ctx, nodeID, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppGossip indicates an expected call of AppGossip.
-func (mr *MockRouterMockRecorder) AppGossip(ctx, nodeID, msg any) *gomock.Call {
+// Gossip indicates an expected call of Gossip.
+func (mr *MockRouterMockRecorder) Gossip(ctx, nodeID, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppGossip", reflect.TypeOf((*MockRouter)(nil).AppGossip), ctx, nodeID, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gossip", reflect.TypeOf((*MockRouter)(nil).Gossip), ctx, nodeID, msg)
 }
 
-// AppRequest mocks base method.
-func (m *MockRouter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
+// Request mocks base method.
+func (m *MockRouter) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppRequest", ctx, nodeID, requestID, deadline, appRequestBytes)
+	ret := m.ctrl.Call(m, "Request", ctx, nodeID, requestID, deadline, appRequestBytes)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppRequest indicates an expected call of AppRequest.
-func (mr *MockRouterMockRecorder) AppRequest(ctx, nodeID, requestID, deadline, appRequestBytes any) *gomock.Call {
+// Request indicates an expected call of Request.
+func (mr *MockRouterMockRecorder) Request(ctx, nodeID, requestID, deadline, appRequestBytes any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppRequest", reflect.TypeOf((*MockRouter)(nil).AppRequest), ctx, nodeID, requestID, deadline, appRequestBytes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*MockRouter)(nil).Request), ctx, nodeID, requestID, deadline, appRequestBytes)
 }
 
-// AppRequestFailed mocks base method.
-func (m *MockRouter) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
+// RequestFailed mocks base method.
+func (m *MockRouter) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *warp.Error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppRequestFailed", ctx, nodeID, requestID, appErr)
+	ret := m.ctrl.Call(m, "RequestFailed", ctx, nodeID, requestID, appErr)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppRequestFailed indicates an expected call of AppRequestFailed.
-func (mr *MockRouterMockRecorder) AppRequestFailed(ctx, nodeID, requestID, appErr any) *gomock.Call {
+// RequestFailed indicates an expected call of RequestFailed.
+func (mr *MockRouterMockRecorder) RequestFailed(ctx, nodeID, requestID, appErr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppRequestFailed", reflect.TypeOf((*MockRouter)(nil).AppRequestFailed), ctx, nodeID, requestID, appErr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestFailed", reflect.TypeOf((*MockRouter)(nil).RequestFailed), ctx, nodeID, requestID, appErr)
 }
 
-// AppResponse mocks base method.
-func (m *MockRouter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+// Response mocks base method.
+func (m *MockRouter) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppResponse", ctx, nodeID, requestID, appResponseBytes)
+	ret := m.ctrl.Call(m, "Response", ctx, nodeID, requestID, appResponseBytes)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppResponse indicates an expected call of AppResponse.
-func (mr *MockRouterMockRecorder) AppResponse(ctx, nodeID, requestID, appResponseBytes any) *gomock.Call {
+// Response indicates an expected call of Response.
+func (mr *MockRouterMockRecorder) Response(ctx, nodeID, requestID, appResponseBytes any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppResponse", reflect.TypeOf((*MockRouter)(nil).AppResponse), ctx, nodeID, requestID, appResponseBytes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Response", reflect.TypeOf((*MockRouter)(nil).Response), ctx, nodeID, requestID, appResponseBytes)
 }
 
 // Connected mocks base method.

@@ -52,10 +52,6 @@ func (t *ImportTx) NumCredentials() int {
 }
 
 func (t *ImportTx) InitRuntime(rt *runtime.Runtime) {
-	// TransferableInput doesn't have InitRuntime
-	// for _, in := range t.ImportedIns {
-	//     in.InitRuntime(ctx)
-	// }
 	t.BaseTx.InitRuntime(rt)
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/runtime"
-	consensusblockmock "github.com/luxfi/consensus/engine/chain/block/blockmock"
+	consensusblockmock "github.com/luxfi/vm/chain/blockmock"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	validatorsmock "github.com/luxfi/validators/validatorsmock"
 	"github.com/luxfi/database"
@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/timer/mockable"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
-	engineBlock "github.com/luxfi/consensus/engine/chain/block"
+	engineBlock "github.com/luxfi/vm/chain"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -644,9 +644,9 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 }
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
-// and the proposervm is activated, we only call the VM's BuildBlockWithContext
+// and the proposervm is activated, we only call the VM's BuildBlockWithRuntime
 // when a P-chain height can be correctly provided from the parent block.
-func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
+func TestPreForkBlock_BuildBlockWithRuntime(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -662,9 +662,9 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 
 	innerVM := consensusblockmock.NewMockChainVM(ctrl)
 
-	// Create BuildBlockWithContext VM mock
-	innerBlockBuilderVM := consensusblockmock.NewMockBuildBlockWithContextVM(ctrl)
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), gomock.Any()).Return(builtBlk, nil).AnyTimes()
+	// Create BuildBlockWithRuntime VM mock
+	innerBlockBuilderVM := consensusblockmock.NewMockBuildBlockWithRuntimeChainVM(ctrl)
+	innerBlockBuilderVM.EXPECT().BuildBlockWithRuntime(gomock.Any(), gomock.Any()).Return(builtBlk, nil).AnyTimes()
 
 	// Create mock validator state to avoid nil pointer dereference
 	valState := validatorsmock.NewState(ctrl)
@@ -691,12 +691,12 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 		vm:    vm,
 	}
 
-	// Should call BuildBlockWithContext since VM supports it (pre-fork, so no P-chain height)
+	// Should call BuildBlockWithRuntime since VM supports it (pre-fork, so no P-chain height)
 	gotChild, err := blk.buildChild(context.Background())
 	require.NoError(err)
 	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
 
-	// Should call BuildBlockWithContext since proposervm is not activated
+	// Should call BuildBlockWithRuntime since proposervm is not activated
 	innerBlk.EXPECT().Timestamp().Return(time.Time{})
 	vm.Upgrades.ApricotPhase4Time = mockable.MaxTime
 

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/nets"

@@ -12,7 +12,7 @@ package executor
 import (
 	reflect "reflect"
 
-	chain "github.com/luxfi/consensus/protocol/chain"
+	chain "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	gomock "github.com/luxfi/mock/gomock"

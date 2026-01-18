@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/database v1.17.39
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
-	github.com/luxfi/log v1.4.0
+github.com/luxfi/log v1.4.1
 	github.com/luxfi/math v1.2.3
 	github.com/luxfi/metric v1.4.11
 	github.com/luxfi/mock v0.1.1
@@ -225,4 +225,5 @@ require (
 
 exclude github.com/ethereum/go-ethereum v1.10.26
 
-replace github.com/luxfi/runtime => ../runtime
+
+

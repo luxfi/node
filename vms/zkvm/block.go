@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -289,11 +290,17 @@ type SetupParams struct {
 	FHEPublicParams []byte `json:"fhePublicParams,omitempty"`
 }
 
-// ParseGenesis parses genesis bytes
+// ParseGenesis parses genesis bytes (supports both JSON and Codec formats)
 func ParseGenesis(genesisBytes []byte) (*Genesis, error) {
 	var genesis Genesis
-	if _, err := Codec.Unmarshal(genesisBytes, &genesis); err != nil {
-		return nil, err
+	if len(genesisBytes) > 0 {
+		// Try JSON first (simple genesis)
+		if err := json.Unmarshal(genesisBytes, &genesis); err != nil {
+			// Fall back to Codec (complex genesis with binary data)
+			if _, err := Codec.Unmarshal(genesisBytes, &genesis); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	if genesis.Timestamp == 0 {

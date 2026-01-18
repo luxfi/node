@@ -4,7 +4,7 @@
 package vms
 
 import (
-	"github.com/luxfi/node/vms/manager"
+	"github.com/luxfi/vm/manager"
 )
 
 // Re-export types from manager package for backward compatibility.

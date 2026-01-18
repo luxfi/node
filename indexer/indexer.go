@@ -11,17 +11,17 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/luxfi/codec/wrappers"
-	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/chains"
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/vm"
 )
 
 const (
@@ -127,7 +127,7 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, rt *runtime.Runtime, vm consensuscore.VM) {
+func (i *indexer) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

@@ -7,10 +7,10 @@ import (
 	"context"
 
 	"github.com/luxfi/constants"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/wallet/chain/p/builder"
+	"github.com/luxfi/sdk/info"
 )
 
 // gasPriceMultiplier increases the gas price to support multiple transactions
@@ -57,14 +57,14 @@ func NewContextFromClients(
 		GasPrice:          gasPriceMultiplier * gasPrice,
 		// Static fee config - use defaults matching platformvm/config
 		StaticFeeConfig: fee.StaticConfig{
-			TxFee:                         constants.MilliLux,
-			CreateAssetTxFee:              10 * constants.MilliLux,
-			CreateNetworkTxFee:            constants.Lux,
-			CreateChainTxFee:              constants.Lux,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddChainValidatorFee:          constants.MilliLux,
-			AddChainDelegatorFee:          constants.MilliLux,
+			TxFee:                  constants.MilliLux,
+			CreateAssetTxFee:       10 * constants.MilliLux,
+			CreateNetworkTxFee:     constants.Lux,
+			CreateChainTxFee:       constants.Lux,
+			AddNetworkValidatorFee: 0,
+			AddNetworkDelegatorFee: 0,
+			AddChainValidatorFee:   constants.MilliLux,
+			AddChainDelegatorFee:   constants.MilliLux,
 		},
 	}, nil
 }

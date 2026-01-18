@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
+	"github.com/gorilla/rpc/v2/json"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -28,8 +27,13 @@ import (
 	"github.com/luxfi/node/vms/dexvm/mev"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 	"github.com/luxfi/node/vms/dexvm/perpetuals"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	vmcore "github.com/luxfi/vm"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/warp"
+
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 )
 
 var (
@@ -125,7 +129,7 @@ type VM struct {
 	shutdown      bool
 
 	// Channel for sending messages to consensus engine
-	toEngine chan<- consensuscore.Message
+	toEngine chan<- vmcore.Message
 }
 
 // NewVMForTest creates a new VM instance for testing purposes.
@@ -142,7 +146,7 @@ func NewVMForTest(cfg config.Config, logger log.Logger) *VM {
 // It sets up the VM with the provided context, database, and genesis data.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	vmInit common.VMInit,
+	vmInit vmcore.Init,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
@@ -238,16 +242,16 @@ func (vm *VM) SetState(ctx context.Context, stateNum uint32) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	state := consensuscore.State(stateNum)
-	switch state {
-	case consensuscore.Bootstrapping:
+	// Use proto-based state values for compatibility with chain manager
+	switch vmpb.State(stateNum) {
+	case vmpb.State_STATE_BOOTSTRAPPING:
 		if !vm.log.IsZero() {
 			vm.log.Info("DEX VM entering bootstrap state")
 		}
 		vm.bootstrapped = false
 		return nil
 
-	case consensuscore.Ready:
+	case vmpb.State_STATE_NORMAL_OP:
 		if !vm.log.IsZero() {
 			vm.log.Info("DEX VM entering ready state")
 		}
@@ -255,7 +259,8 @@ func (vm *VM) SetState(ctx context.Context, stateNum uint32) error {
 		return nil
 
 	default:
-		return fmt.Errorf("%w: %d", errUnknownState, stateNum)
+		// Accept unknown states without error for forward compatibility
+		return nil
 	}
 }
 
@@ -463,8 +468,8 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 // It creates HTTP handlers for the DEX API.
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
-	server.RegisterCodec(NewCodec(), "application/json")
-	server.RegisterCodec(NewCodec(), "application/json;charset=UTF-8")
+	server.RegisterCodec(json.NewCodec(), "application/json")
+	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
 	// Register DEX API service
 	service := api.NewService(vm)
@@ -490,18 +495,20 @@ func (vm *VM) createWebSocketHandler() http.Handler {
 }
 
 // HealthCheck implements consensuscore.VM interface.
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
-	return map[string]interface{}{
-		"healthy":      vm.isInitialized && vm.bootstrapped,
-		"bootstrapped": vm.bootstrapped,
-		"orderbooks":   len(vm.orderbooks),
-		"pools":        len(vm.liquidityMgr.GetAllPools()),
-		"perpMarkets":  len(vm.perpetualsEng.GetAllMarkets()),
-		"blockHeight":  vm.currentBlockHeight,
-		"mode":         "functional", // Indicates no background tasks
+	return &chain.HealthResult{
+		Healthy: vm.isInitialized && vm.bootstrapped,
+		Details: map[string]string{
+			"bootstrapped": fmt.Sprintf("%v", vm.bootstrapped),
+			"orderbooks":   fmt.Sprintf("%d", len(vm.orderbooks)),
+			"pools":        fmt.Sprintf("%d", len(vm.liquidityMgr.GetAllPools())),
+			"perpMarkets":  fmt.Sprintf("%d", len(vm.perpetualsEng.GetAllMarkets())),
+			"blockHeight":  fmt.Sprintf("%d", vm.currentBlockHeight),
+			"mode":         "functional",
+		},
 	}, nil
 }
 
@@ -595,16 +602,16 @@ func (vm *VM) GetLastBlockTime() time.Time {
 	return vm.lastBlockTime
 }
 
-// AppGossip implements consensuscore.VM interface.
+// Gossip implements consensuscore.VM interface.
 // It handles gossiped messages from peers.
-func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+func (vm *VM) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	// TODO: Handle gossiped orders and trades
 	return nil
 }
 
-// AppRequest implements consensuscore.VM interface.
+// Request implements consensuscore.VM interface.
 // It handles direct requests from peers.
-func (vm *VM) AppRequest(
+func (vm *VM) Request(
 	ctx context.Context,
 	nodeID ids.NodeID,
 	requestID uint32,
@@ -615,18 +622,18 @@ func (vm *VM) AppRequest(
 	return nil
 }
 
-// AppRequestFailed implements consensuscore.VM interface.
-func (vm *VM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
+// RequestFailed implements consensuscore.VM interface.
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.Error) error {
 	return nil
 }
 
-// AppResponse implements consensuscore.VM interface.
-func (vm *VM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+// Response implements consensuscore.VM interface.
+func (vm *VM) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-// CrossChainAppRequest implements consensuscore.VM interface.
-func (vm *VM) CrossChainAppRequest(
+// CrossChainRequest implements consensuscore.VM interface.
+func (vm *VM) CrossChainRequest(
 	ctx context.Context,
 	chainID ids.ID,
 	requestID uint32,
@@ -637,32 +644,12 @@ func (vm *VM) CrossChainAppRequest(
 	return nil
 }
 
-// CrossChainAppRequestFailed implements consensuscore.VM interface.
-func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.AppError) error {
+// CrossChainRequestFailed implements consensuscore.VM interface.
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.Error) error {
 	return nil
 }
 
-// CrossChainAppResponse implements consensuscore.VM interface.
-func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+// CrossChainResponse implements consensuscore.VM interface.
+func (vm *VM) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
 	return nil
 }
-
-// NewCodec creates a new JSON codec for RPC.
-func NewCodec() *Codec {
-	return &Codec{}
-}
-
-// Codec implements gorilla/rpc codec interface.
-type Codec struct{}
-
-func (c *Codec) NewRequest(*http.Request) rpc.CodecRequest {
-	return &CodecRequest{}
-}
-
-// CodecRequest implements rpc.CodecRequest
-type CodecRequest struct{}
-
-func (r *CodecRequest) Method() (string, error)                        { return "", nil }
-func (r *CodecRequest) ReadRequest(interface{}) error                  { return nil }
-func (r *CodecRequest) WriteResponse(http.ResponseWriter, interface{}) {}
-func (r *CodecRequest) WriteError(http.ResponseWriter, int, error)     {}

@@ -6,17 +6,21 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"time"
 
+	apiinfo "github.com/luxfi/api/info"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/wallet/net/primary"
-	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/node/wallet/network/primary"
+	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
+	"github.com/luxfi/sdk/info"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -44,6 +48,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to fetch node IDs: %s\n", err)
 	}
+	pop, err := parseProofOfPossession(nodePoP)
+	if err != nil {
+		log.Fatalf("failed to parse node proof of possession: %s\n", err)
+	}
 	log.Printf("fetched node ID %s in %s\n", nodeID, time.Since(nodeInfoStartTime))
 
 	validationID := netID.Append(0)
@@ -54,7 +62,7 @@ func main() {
 		Validators: []message.ChainToL1ConversionValidatorData{
 			{
 				NodeID:       nodeID.Bytes(),
-				BLSPublicKey: nodePoP.PublicKey,
+				BLSPublicKey: pop.PublicKey,
 				Weight:       weight,
 			},
 		},
@@ -90,7 +98,7 @@ func main() {
 				NodeID:                nodeID[:],
 				Weight:                weight,
 				Balance:               constants.Lux,
-				Signer:                *nodePoP,
+				Signer:                *pop,
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},
 			},
@@ -106,4 +114,25 @@ func main() {
 		conversionID,
 		time.Since(convertNetToL1StartTime),
 	)
+}
+
+func parseProofOfPossession(pop *apiinfo.ProofOfPossession) (*signer.ProofOfPossession, error) {
+	if pop == nil {
+		return nil, fmt.Errorf("missing proof of possession")
+	}
+	pkBytes, err := formatting.Decode(formatting.HexNC, pop.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	sigBytes, err := formatting.Decode(formatting.HexNC, pop.ProofOfPossession)
+	if err != nil {
+		return nil, err
+	}
+	var out signer.ProofOfPossession
+	if len(pkBytes) != len(out.PublicKey) || len(sigBytes) != len(out.ProofOfPossession) {
+		return nil, fmt.Errorf("unexpected proof of possession sizes")
+	}
+	copy(out.PublicKey[:], pkBytes)
+	copy(out.ProofOfPossession[:], sigBytes)
+	return &out, nil
 }

@@ -13,18 +13,18 @@ import (
 	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
+	compression "github.com/luxfi/compress"
 	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/network/primary"
 	p2psdk "github.com/luxfi/p2p"
-	compression "github.com/luxfi/compress"
+	"github.com/luxfi/sdk/info"
 
 	p2pmessage "github.com/luxfi/node/message"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -33,29 +33,29 @@ import (
 // testInboundHandler implements router.InboundHandler for testing
 type testInboundHandler struct{}
 
-func (h *testInboundHandler) AppGossip(_ context.Context, _ ids.NodeID, _ []byte) error { return nil }
-func (h *testInboundHandler) AppRequest(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error {
+func (h *testInboundHandler) Gossip(_ context.Context, _ ids.NodeID, _ []byte) error { return nil }
+func (h *testInboundHandler) Request(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) AppRequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *consensuscore.AppError) error {
+func (h *testInboundHandler) RequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *consensuscore.Error) error {
 	return nil
 }
-func (h *testInboundHandler) AppResponse(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error {
+func (h *testInboundHandler) Response(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) AppError(_ context.Context, _ ids.NodeID, _ uint32, _ int32, _ string) error {
+func (h *testInboundHandler) Error(_ context.Context, _ ids.NodeID, _ uint32, _ int32, _ string) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainAppRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error {
+func (h *testInboundHandler) CrossChainRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *consensuscore.AppError) error {
+func (h *testInboundHandler) CrossChainRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *consensuscore.Error) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {
+func (h *testInboundHandler) CrossChainResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainAppError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error {
+func (h *testInboundHandler) CrossChainError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error {
 	return nil
 }
 func (h *testInboundHandler) Disconnected(_ context.Context, _ ids.NodeID) error           { return nil }
@@ -217,7 +217,7 @@ func main() {
 		log.Fatalf("failed to marshal SignatureRequest: %s\n", err)
 	}
 
-	appRequest, err := messageBuilder.AppRequest(
+	appRequest, err := messageBuilder.Request(
 		constants.PlatformChainID,
 		0,
 		time.Hour,
@@ -227,7 +227,7 @@ func main() {
 		),
 	)
 	if err != nil {
-		log.Fatalf("failed to create AppRequest: %s\n", err)
+		log.Fatalf("failed to create Request: %s\n", err)
 	}
 
 	p.Send(context.Background(), appRequest)

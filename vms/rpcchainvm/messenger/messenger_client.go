@@ -6,7 +6,7 @@ package messenger
 import (
 	"context"
 
-	consensuscore "github.com/luxfi/consensus/core"
+	vmcore "github.com/luxfi/vm"
 
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
@@ -21,7 +21,7 @@ func NewClient(client messengerpb.MessengerClient) *Client {
 	return &Client{client: client}
 }
 
-func (c *Client) Notify(msg consensuscore.Message) error {
+func (c *Client) Notify(msg vmcore.Message) error {
 	_, err := c.client.Notify(context.Background(), &messengerpb.NotifyRequest{
 		Message: &messengerpb.Message{
 			Type:    messengerpb.MessageType(msg.Type),

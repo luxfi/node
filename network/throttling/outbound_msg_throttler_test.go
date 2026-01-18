@@ -229,7 +229,7 @@ func TestBypassThrottling(t *testing.T) {
 	nonVdrNodeID1 := ids.GenerateTestNodeID()
 	msg := messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
-	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
+	msg.EXPECT().Op().Return(message.GossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, config.NodeMaxAtLargeBytes)).AnyTimes()
 	acquired := throttlerIntf.Acquire(msg, nonVdrNodeID1)
 	require.True(acquired)
@@ -237,7 +237,7 @@ func TestBypassThrottling(t *testing.T) {
 	// Acquiring more should not fail
 	msg = messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
-	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
+	msg.EXPECT().Op().Return(message.GossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, 1)).AnyTimes()
 	acquired = throttlerIntf.Acquire(msg, nonVdrNodeID1)
 	require.True(acquired)
@@ -250,7 +250,7 @@ func TestBypassThrottling(t *testing.T) {
 	// Validator should only be able to take [MaxAtLargeBytes]
 	msg = messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(true).AnyTimes()
-	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
+	msg.EXPECT().Op().Return(message.GossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, config.NodeMaxAtLargeBytes+1)).AnyTimes()
 	throttlerIntf.Acquire(msg, vdr1ID)
 	require.Zero(throttler.nodeToAtLargeBytesUsed[vdr1ID])
@@ -262,7 +262,7 @@ func TestBypassThrottling(t *testing.T) {
 func testMsgWithSize(ctrl *gomock.Controller, size uint64) message.OutboundMessage {
 	msg := messagemock.NewOutboundMessage(ctrl)
 	msg.EXPECT().BypassThrottling().Return(false).AnyTimes()
-	msg.EXPECT().Op().Return(message.AppGossipOp).AnyTimes()
+	msg.EXPECT().Op().Return(message.GossipOp).AnyTimes()
 	msg.EXPECT().Bytes().Return(make([]byte, size)).AnyTimes()
 	return msg
 }

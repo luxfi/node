@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/network/primary"
 )
 
 const (

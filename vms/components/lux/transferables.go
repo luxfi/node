@@ -9,10 +9,10 @@ import (
 	"sort"
 
 	"github.com/luxfi/codec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
 
@@ -157,6 +157,12 @@ func (in *TransferableInput) Verify() error {
 		return ErrNilTransferableFxInput
 	default:
 		return verify.All(&in.UTXOID, &in.Asset, in.In)
+	}
+}
+
+func (in *TransferableInput) InitRuntime(rt *runtime.Runtime) {
+	if contextInput, ok := in.In.(interface{ InitRuntime(*runtime.Runtime) }); ok {
+		contextInput.InitRuntime(rt)
 	}
 }
 

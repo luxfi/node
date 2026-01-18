@@ -9,9 +9,9 @@ import (
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/metric"
 
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/txs"
-	"github.com/luxfi/codec/wrappers"
 )
 
 var _ Metrics = (*metricsImpl)(nil)
@@ -92,6 +92,9 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	})
 
 	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registry)
+	if err == nil && apiRequestMetric == nil {
+		err = errors.New("APIInterceptor is nil")
+	}
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(err)
 	// Metrics are self-registering when created with NewCounter etc.

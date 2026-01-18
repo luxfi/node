@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/wallet/chain/x/builder"
+	"github.com/luxfi/sdk/info"
 )
 
 func NewContextFromURI(ctx context.Context, uri string, xAssetID ids.ID, baseTxFee uint64, createAssetTxFee uint64) (*builder.Context, error) {

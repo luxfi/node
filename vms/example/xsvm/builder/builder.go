@@ -9,16 +9,15 @@ import (
 	"time"
 
 	"github.com/luxfi/concurrent/lock"
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/runtime"
+	vmcore "github.com/luxfi/vm"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -29,8 +28,8 @@ var _ Builder = (*builder)(nil)
 type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
-	WaitForEvent(ctx context.Context) (core.Message, error)
-	BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error)
+	WaitForEvent(ctx context.Context) (vmcore.Message, error)
+	BuildBlock(ctx context.Context, blockContext *runtime.Runtime) (chain.Block, error)
 }
 
 type builder struct {
@@ -71,20 +70,20 @@ func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
 	return nil
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	b.pendingTxsCond.L.Lock()
 	defer b.pendingTxsCond.L.Unlock()
 
 	for b.pendingTxs.Len() == 0 {
 		if err := b.pendingTxsCond.Wait(ctx); err != nil {
-			return core.Message{}, err
+			return vmcore.Message{}, err
 		}
 	}
 
-	return core.Message{Type: core.PendingTxs}, nil
+	return vmcore.Message{Type: vmcore.PendingTxs}, nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context, blockContext *runtime.Runtime) (chain.Block, error) {
 	preferredBlk, err := b.chain.GetBlock(b.preference)
 	if err != nil {
 		return nil, err

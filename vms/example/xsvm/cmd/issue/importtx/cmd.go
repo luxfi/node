@@ -12,12 +12,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/sdk/info"
 )
 
 func Command() *cobra.Command {
@@ -81,8 +82,18 @@ func Import(ctx context.Context, config *Config) (*status.TxIssuance, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch BLS public key from %s with: %w", uri, err)
 		}
+		if nodePOP == nil {
+			return nil, fmt.Errorf("node proof of possession missing from %s", uri)
+		}
 
-		pk := nodePOP.Key()
+		pkBytes, err := formatting.Decode(formatting.HexNC, nodePOP.PublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode BLS public key from %s: %w", uri, err)
+		}
+		pk, err := bls.PublicKeyFromCompressedBytes(pkBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse BLS public key from %s: %w", uri, err)
+		}
 		if !bls.Verify(pk, sig, unsignedMessage.Bytes()) {
 			return nil, fmt.Errorf("failed to verify BLS signature against public key from %s", uri)
 		}

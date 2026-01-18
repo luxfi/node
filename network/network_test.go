@@ -49,19 +49,19 @@ func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.Inbou
 	}
 }
 
-func (h inboundHandlerFunc) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+func (h inboundHandlerFunc) Request(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
 	return nil
 }
 
-func (h inboundHandlerFunc) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
+func (h inboundHandlerFunc) RequestFailed(context.Context, ids.NodeID, uint32, *core.Error) error {
 	return nil
 }
 
-func (h inboundHandlerFunc) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+func (h inboundHandlerFunc) Response(context.Context, ids.NodeID, uint32, []byte) error {
 	return nil
 }
 
-func (h inboundHandlerFunc) AppGossip(context.Context, ids.NodeID, []byte) error {
+func (h inboundHandlerFunc) Gossip(context.Context, ids.NodeID, []byte) error {
 	return nil
 }
 

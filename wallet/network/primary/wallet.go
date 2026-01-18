@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utxo/secp256k1fx"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"

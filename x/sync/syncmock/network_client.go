@@ -41,32 +41,32 @@ func (m *NetworkClient) EXPECT() *NetworkClientMockRecorder {
 	return m.recorder
 }
 
-// AppRequestFailed mocks base method.
-func (m *NetworkClient) AppRequestFailed(arg0 context.Context, arg1 ids.NodeID, arg2 uint32) error {
+// RequestFailed mocks base method.
+func (m *NetworkClient) RequestFailed(arg0 context.Context, arg1 ids.NodeID, arg2 uint32) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppRequestFailed", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RequestFailed", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppRequestFailed indicates an expected call of AppRequestFailed.
-func (mr *NetworkClientMockRecorder) AppRequestFailed(arg0, arg1, arg2 any) *gomock.Call {
+// RequestFailed indicates an expected call of RequestFailed.
+func (mr *NetworkClientMockRecorder) RequestFailed(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppRequestFailed", reflect.TypeOf((*NetworkClient)(nil).AppRequestFailed), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestFailed", reflect.TypeOf((*NetworkClient)(nil).RequestFailed), arg0, arg1, arg2)
 }
 
-// AppResponse mocks base method.
-func (m *NetworkClient) AppResponse(arg0 context.Context, arg1 ids.NodeID, arg2 uint32, arg3 []byte) error {
+// Response mocks base method.
+func (m *NetworkClient) Response(arg0 context.Context, arg1 ids.NodeID, arg2 uint32, arg3 []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppResponse", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "Response", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AppResponse indicates an expected call of AppResponse.
-func (mr *NetworkClientMockRecorder) AppResponse(arg0, arg1, arg2, arg3 any) *gomock.Call {
+// Response indicates an expected call of Response.
+func (mr *NetworkClientMockRecorder) Response(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppResponse", reflect.TypeOf((*NetworkClient)(nil).AppResponse), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Response", reflect.TypeOf((*NetworkClient)(nil).Response), arg0, arg1, arg2, arg3)
 }
 
 // Connected mocks base method.

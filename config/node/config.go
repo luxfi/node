@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"

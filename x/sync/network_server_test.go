@@ -39,7 +39,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetRangeProofRequest
-		expectedErr              *common.AppError
+		expectedErr              *common.Error
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID
@@ -124,7 +124,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 			handler := NewGetRangeProofHandler(smallTrieDB)
 			requestBytes, err := proto.Marshal(test.request)
 			require.NoError(err)
-			responseBytes, err := handler.AppRequest(context.Background(), test.nodeID, time.Time{}, requestBytes)
+			responseBytes, err := handler.Request(context.Background(), test.nodeID, time.Time{}, requestBytes)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
@@ -212,7 +212,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 	tests := []struct {
 		name                     string
 		request                  *pb.SyncGetChangeProofRequest
-		expectedErr              *common.AppError
+		expectedErr              *common.Error
 		expectedResponseLen      int
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID
@@ -346,7 +346,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 
 			requestBytes, err := proto.Marshal(test.request)
 			require.NoError(err)
-			proofBytes, err := handler.AppRequest(context.Background(), test.nodeID, time.Time{}, requestBytes)
+			proofBytes, err := handler.Request(context.Background(), test.nodeID, time.Time{}, requestBytes)
 			require.ErrorIs(err, test.expectedErr)
 
 			if test.expectedErr != nil {

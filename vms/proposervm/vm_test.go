@@ -15,13 +15,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine"
-	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
-	"github.com/luxfi/consensus/engine/interfaces"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validators "github.com/luxfi/validators"
-	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
@@ -33,6 +27,10 @@ import (
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/timer/mockable"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
+	"github.com/luxfi/vm"
+	consensusblock "github.com/luxfi/vm/chain"
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -48,7 +46,7 @@ type fullVM struct {
 	*componentblocktest.StateSyncableVM
 }
 
-func (vm *fullVM) Initialize(ctx context.Context, init common.VMInit) error {
+func (vm *fullVM) Initialize(ctx context.Context, init vm.Init) error {
 	if vm.ChainVM.InitializeF != nil {
 		return vm.ChainVM.InitializeF(
 			ctx,
@@ -117,7 +115,7 @@ func initTestProposerVMWithGranite(
 		StateSyncableVM: &componentblocktest.StateSyncableVM{},
 	}
 
-	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
+	coreVM.InitializeF = func(_ context.Context, _ vm.Init) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -204,7 +202,7 @@ func initTestProposerVMWithGranite(
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Genesis: initialState,
@@ -215,7 +213,7 @@ func initTestProposerVMWithGranite(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	proVM.Set(componentblocktest.GenesisTimestamp)
@@ -336,10 +334,7 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 	require.IsType(&postForkBlock{}, consensusBlock)
 	proBlock := consensusBlock.(*postForkBlock)
 
-	// innerBlk is wrapped in reverseBlockAdapter, so unwrap it
-	adapter, ok := proBlock.innerBlk.(*reverseBlockAdapter)
-	require.True(ok, "innerBlk should be wrapped in reverseBlockAdapter")
-	require.Equal(coreBlk, adapter.Block)
+	require.Equal(coreBlk, proBlock.innerBlk)
 }
 
 // both core blocks and pro blocks must be built on preferred
@@ -904,11 +899,11 @@ func TestPreFork_SetPreference(t *testing.T) {
 //		// Initialize shouldn't be called again
 //		coreVM.InitializeF = nil
 //
-//		require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+//		require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 //		require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 //
 //		// Notify the proposer VM of a new block on the inner block side
-//		events <- common.PendingTxs
+//		events <- vm.PendingTxs
 //		// The first notification will be read from the consensus engine
 //		msg, err := proVM.WaitForEvent(context.Background())
 //		require.NoError(err)
@@ -1100,7 +1095,7 @@ func TestInnerVMRollback(t *testing.T) {
 	}
 
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(_ context.Context, _ common.VMInit) error {
+		InitializeF: func(_ context.Context, _ vm.Init) error {
 			return nil
 		},
 		ParseBlockF: func(_ context.Context, b []byte) (consensusblock.Block, error) {
@@ -1147,14 +1142,14 @@ func TestInnerVMRollback(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Log:     log.NoLog{},
 		},
 	))
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
 	coreBlk := componentblocktest.BuildChild(componentblocktest.Genesis)
@@ -1223,7 +1218,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Log:     log.NoLog{},
@@ -1568,7 +1563,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
+	coreVM.InitializeF = func(_ context.Context, _ vm.Init) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -1647,7 +1642,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
 			Genesis: initialState,
@@ -1661,7 +1656,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -1744,7 +1739,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(_ context.Context, _ common.VMInit) error {
+	coreVM.InitializeF = func(_ context.Context, _ vm.Init) error {
 		return nil
 	}
 	coreVM.LastAcceptedF = componentblocktest.MakeLastAcceptedBlockF(
@@ -1823,7 +1818,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
 			Genesis: initialState,
@@ -1837,7 +1832,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 
 	require.NoError(proVM.SetPreference(context.Background(), componentblocktest.GenesisID))
 
@@ -1902,7 +1897,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 
 	// Create a VM
 	innerVM := blockmock.NewChainVM(ctrl)
-	vm := New(
+	vmImpl := New(
 		innerVM,
 		Config{
 			Upgrades:            upgradetest.GetConfig(upgradetest.Latest),
@@ -1914,7 +1909,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		},
 	)
 
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(common.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(vm.PendingTxs, nil).AnyTimes()
 
 	innerVM.EXPECT().Initialize(
 		gomock.Any(),
@@ -1941,7 +1936,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		PublicKey: pTestCert.PublicKey,
 	})
 
-	require.NoError(vm.Initialize(
+	require.NoError(vmImpl.Initialize(
 		context.Background(),
 		rt,
 		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
@@ -1952,7 +1947,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 		nil,
 	))
 	defer func() {
-		require.NoError(vm.Shutdown(context.Background()))
+		require.NoError(vmImpl.Shutdown(context.Background()))
 	}()
 
 	// Create a block near the tip (0).
@@ -1961,10 +1956,10 @@ func TestVMInnerBlkCache(t *testing.T) {
 		ids.GenerateTestID(), // parent
 		time.Time{},          // timestamp
 		1,                    // pChainHeight,
-		vm.StakingCertLeaf,   // cert
+		vmImpl.StakingCertLeaf,   // cert
 		blkNearTipInnerBytes, // inner blk bytes
-		vm.rt.ChainID,       // chain ID
-		vm.StakingLeafSigner, // key
+		vmImpl.rt.ChainID,       // chain ID
+		vmImpl.StakingLeafSigner, // key
 	)
 	require.NoError(err)
 
@@ -1974,43 +1969,43 @@ func TestVMInnerBlkCache(t *testing.T) {
 	mockInnerBlkNearTip.EXPECT().Bytes().Return(blkNearTipInnerBytes).Times(1)
 
 	innerVM.EXPECT().ParseBlock(gomock.Any(), blkNearTipInnerBytes).Return(mockInnerBlkNearTip, nil).Times(2)
-	_, err = vm.ParseBlock(context.Background(), blkNearTip.Bytes())
+	_, err = vmImpl.ParseBlock(context.Background(), blkNearTip.Bytes())
 	require.NoError(err)
 
 	// Block should now be in cache because it's a post-fork block
 	// and close to the tip.
-	gotBlk, ok := vm.innerBlkCache.Get(blkNearTip.ID())
+	gotBlk, ok := vmImpl.innerBlkCache.Get(blkNearTip.ID())
 	require.True(ok)
 	require.Equal(mockInnerBlkNearTip, gotBlk)
-	require.Zero(vm.lastAcceptedHeight)
+	require.Zero(vmImpl.lastAcceptedHeight)
 
 	// Clear the cache
-	vm.innerBlkCache.Flush()
+	vmImpl.innerBlkCache.Flush()
 
 	// Advance the tip height
-	vm.lastAcceptedHeight = innerBlkCacheSize + 1
+	vmImpl.lastAcceptedHeight = innerBlkCacheSize + 1
 
 	// Parse the block again. This time it shouldn't be cached
 	// because it's not close to the tip.
-	_, err = vm.ParseBlock(context.Background(), blkNearTip.Bytes())
+	_, err = vmImpl.ParseBlock(context.Background(), blkNearTip.Bytes())
 	require.NoError(err)
 
-	_, ok = vm.innerBlkCache.Get(blkNearTip.ID())
+	_, ok = vmImpl.innerBlkCache.Get(blkNearTip.ID())
 	require.False(ok)
 }
 */
 
-// blockWithVerifyContext is commented out because it requires gomock which is not available
+// blockWithVerifyRuntime is commented out because it requires gomock which is not available
 /*
-type blockWithVerifyContext struct {
+type blockWithVerifyRuntime struct {
 	*blockmock.MockBlock
-	*blockmock.MockWithVerifyContext
+	*blockmock.MockWithVerifyRuntime
 }
 */
 
-// Ensures that we call [VerifyWithContext] rather than [Verify] on blocks that
-// implement [block.WithVerifyContext] and that returns true for
-// [ShouldVerifyWithContext].
+// Ensures that we call [VerifyWithRuntime] rather than [Verify] on blocks that
+// implement [block.WithVerifyRuntime] and that returns true for
+// [ShouldVerifyWithRuntime].
 /*
 func TestVM_VerifyBlockWithContext(t *testing.T) {
 	require := require.New(t)
@@ -2018,9 +2013,9 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	// Create a VM
 	innerVM := blockmock.NewChainVM(ctrl)
-	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(common.PendingTxs, nil).AnyTimes()
+	innerVM.EXPECT().WaitForEvent(gomock.Any()).Return(vm.PendingTxs, nil).AnyTimes()
 
-	vm := New(
+	vmImpl := New(
 		innerVM,
 		Config{
 			Upgrades:            upgradetest.GetConfig(upgradetest.Latest),
@@ -2057,7 +2052,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	rt := consensustest.NewRuntime(t)
 	rt.NodeID = ids.NodeIDFromCert(pTestCert)
 
-	require.NoError(vm.Initialize(
+	require.NoError(vmImpl.Initialize(
 		context.Background(),
 		rt,
 		db,
@@ -2068,17 +2063,17 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		nil,
 	))
 	defer func() {
-		require.NoError(vm.Shutdown(context.Background()))
+		require.NoError(vmImpl.Shutdown(context.Background()))
 	}()
 
 	{
 		pChainHeight := uint64(0)
-		innerBlk := blockWithVerifyContext{
+		innerBlk := blockWithVerifyRuntime{
 			Block:             blockmock.NewBlock(ctrl),
-			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
+			WithVerifyRuntime: blockmock.NewWithVerifyRuntime(ctrl),
 		}
-		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(true, nil).Times(2)
-		innerBlk.WithVerifyContext.EXPECT().VerifyWithContext(context.Background(),
+		innerBlk.WithVerifyRuntime.EXPECT().ShouldVerifyWithRuntime(gomock.Any()).Return(true, nil).Times(2)
+		innerBlk.WithVerifyRuntime.EXPECT().VerifyWithRuntime(context.Background(),
 			&block.Context{
 				PChainHeight: pChainHeight,
 			},
@@ -2092,7 +2087,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		blkID := ids.GenerateTestID()
 		blk.EXPECT().ID().Return(blkID).AnyTimes()
 
-		require.NoError(vm.verifyAndRecordInnerBlk(
+		require.NoError(vmImpl.verifyAndRecordInnerBlk(
 			context.Background(),
 			&block.Context{
 				PChainHeight: pChainHeight,
@@ -2100,16 +2095,16 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 			blk,
 		))
 
-		// Call VerifyWithContext again but with a different P-Chain height
+		// Call VerifyWithRuntime again but with a different P-Chain height
 		blk.EXPECT().setInnerBlk(innerBlk).AnyTimes()
 		pChainHeight++
-		innerBlk.WithVerifyContext.EXPECT().VerifyWithContext(context.Background(),
+		innerBlk.WithVerifyRuntime.EXPECT().VerifyWithRuntime(context.Background(),
 			&block.Context{
 				PChainHeight: pChainHeight,
 			},
 		).Return(nil)
 
-		require.NoError(vm.verifyAndRecordInnerBlk(
+		require.NoError(vmImpl.verifyAndRecordInnerBlk(
 			context.Background(),
 			&block.Context{
 				PChainHeight: pChainHeight,
@@ -2120,12 +2115,12 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	{
 		// Ensure we call Verify on a block that returns
-		// false for ShouldVerifyWithContext
-		innerBlk := blockWithVerifyContext{
+		// false for ShouldVerifyWithRuntime
+		innerBlk := blockWithVerifyRuntime{
 			Block:             blockmock.NewBlock(ctrl),
-			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
+			WithVerifyRuntime: blockmock.NewWithVerifyRuntime(ctrl),
 		}
-		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(false, nil)
+		innerBlk.WithVerifyRuntime.EXPECT().ShouldVerifyWithRuntime(gomock.Any()).Return(false, nil)
 		innerBlk.Block.EXPECT().Verify(gomock.Any()).Return(nil)
 		innerBlk.Block.EXPECT().Parent().Return(ids.GenerateTestID()).AnyTimes()
 		innerBlk.Block.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
@@ -2133,7 +2128,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		blk.EXPECT().getInnerBlk().Return(innerBlk).AnyTimes()
 		blkID := ids.GenerateTestID()
 		blk.EXPECT().ID().Return(blkID).AnyTimes()
-		require.NoError(vm.verifyAndRecordInnerBlk(
+		require.NoError(vmImpl.verifyAndRecordInnerBlk(
 			context.Background(),
 			&block.Context{
 				PChainHeight: 1,
@@ -2144,9 +2139,9 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 
 	{
 		// Ensure we call Verify on a block that doesn't have a valid context
-		innerBlk := blockWithVerifyContext{
+		innerBlk := blockWithVerifyRuntime{
 			Block:             blockmock.NewBlock(ctrl),
-			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
+			WithVerifyRuntime: blockmock.NewWithVerifyRuntime(ctrl),
 		}
 		innerBlk.Block.EXPECT().Verify(gomock.Any()).Return(nil)
 		innerBlk.Block.EXPECT().Parent().Return(ids.GenerateTestID()).AnyTimes()
@@ -2155,7 +2150,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		blk.EXPECT().getInnerBlk().Return(innerBlk).AnyTimes()
 		blkID := ids.GenerateTestID()
 		blk.EXPECT().ID().Return(blkID).AnyTimes()
-		require.NoError(vm.verifyAndRecordInnerBlk(context.Background(), nil, blk))
+		require.NoError(vmImpl.verifyAndRecordInnerBlk(context.Background(), nil, blk))
 	}
 }
 */
@@ -2168,7 +2163,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	initialState := []byte("genesis state")
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(_ context.Context, _ common.VMInit) error {
+		InitializeF: func(_ context.Context, _ vm.Init) error {
 			return nil
 		},
 		LastAcceptedF: func(context.Context) (ids.ID, error) {
@@ -2226,7 +2221,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Genesis: initialState,
@@ -2237,7 +2232,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
@@ -2315,7 +2310,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Genesis: initialState,
@@ -2326,7 +2321,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2357,7 +2352,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Genesis: initialState,
@@ -2371,7 +2366,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2455,7 +2450,7 @@ func TestGetPostDurangoSlotTimeWithNoValidators(t *testing.T) {
 	require.Equal(parentTimestamp.Add(proVM.MinBlkDelay), slotTime)
 }
 
-// TestLocalParse is commented out due to missing dependencies (common.PendingTxs, consensus, logging, etc.)
+// TestLocalParse is commented out due to missing dependencies (vm.PendingTxs, consensus, logging, etc.)
 /*
 func TestLocalParse(t *testing.T) {
 	innerVM := &componentblocktest.VM{
@@ -2465,7 +2460,7 @@ func TestLocalParse(t *testing.T) {
 	}
 
 	innerVM.VM.WaitForEventF = func(_ context.Context) (core.Message, error) {
-		return common.PendingTxs, nil
+		return vm.PendingTxs, nil
 	}
 
 	chainID := ids.GenerateTestID()
@@ -2502,17 +2497,19 @@ func TestLocalParse(t *testing.T) {
 		Registerer:          metric.NewRegistry(),
 	}
 
-	vm := New(innerVM, conf)
+	vmImpl := New(innerVM, conf)
 	defer func() {
-		require.NoError(t, vm.Shutdown(context.Background()))
+		require.NoError(t, vmImpl.Shutdown(context.Background()))
 	}()
 
 	db := prefixdb.New([]byte{}, memdb.New())
 
-	_ = vm.Initialize(context.Background(), &runtime.Runtime{
-		Log:     logging.NoLog{},
-		ChainID: chainID,
-	}, db, nil, nil, nil, nil, nil)
+	rt := consensustest.Runtime(t, chainID)
+	rt.Log = logging.NoLog{}
+	_ = vmImpl.Initialize(context.Background(), vm.Init{
+		Runtime: rt,
+		DB:      db,
+	})
 
 	tests := []struct {
 		name           string
@@ -2522,19 +2519,19 @@ func TestLocalParse(t *testing.T) {
 	}{
 		{
 			name:           "local parse as post-fork",
-			f:              vm.ParseLocalBlock,
+			f:              vmImpl.ParseLocalBlock,
 			block:          improperlySignedBlock,
 			resultingBlock: &postForkBlock{},
 		},
 		{
 			name:           "parse as pre-fork",
-			f:              vm.ParseBlock,
+			f:              vmImpl.ParseBlock,
 			block:          improperlySignedBlock,
 			resultingBlock: &preForkBlock{},
 		},
 		{
 			name:           "parse as post-fork",
-			f:              vm.ParseBlock,
+			f:              vmImpl.ParseBlock,
 			block:          properlySignedBlock,
 			resultingBlock: &postForkBlock{},
 		},
@@ -2692,7 +2689,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	}
 
 	coreVM := &componentblocktest.VM{
-		InitializeF: func(_ context.Context, _ common.VMInit) error {
+		InitializeF: func(_ context.Context, _ vm.Init) error {
 			return nil
 		},
 		ParseBlockF: func(_ context.Context, blkBytes []byte) (consensusblock.Block, error) {
@@ -2770,7 +2767,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
-		common.VMInit{
+		vm.Init{
 			Runtime: rt,
 			DB:      db,
 			Log:     log.NoLog{},
@@ -2780,7 +2777,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Bootstrapping)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Bootstrapping)))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
@@ -2828,7 +2825,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), uint32(interfaces.Ready)))
+	require.NoError(proVM.SetState(context.Background(), uint32(vm.Ready)))
 
 	// If the inner VM requests building a block, the proposervm passes that
 	// message to the consensus engine. This is really the source of the issue,
@@ -2836,7 +2833,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
-	require.Equal(engine.PendingTxs, msg)
+	require.Equal(vm.PendingTxs, msg)
 
 	innerBlock3 := componentblocktest.BuildChild(innerBlock2)
 	innerVMBlks = append(innerVMBlks, innerBlock3)

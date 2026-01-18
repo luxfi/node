@@ -535,10 +535,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_request message with no compression",
-			op:   AppRequestOp,
+			op:   RequestOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppRequest{
-					AppRequest: &p2p.AppRequest{
+				Message: &p2p.Message_Request{
+					Request: &p2p.Request{
 						ChainId:   testID[:],
 						RequestId: 1,
 						Deadline:  1,
@@ -552,10 +552,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_request message with zstd compression",
-			op:   AppRequestOp,
+			op:   RequestOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppRequest{
-					AppRequest: &p2p.AppRequest{
+				Message: &p2p.Message_Request{
+					Request: &p2p.Request{
 						ChainId:   testID[:],
 						RequestId: 1,
 						Deadline:  1,
@@ -569,10 +569,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_response message with no compression",
-			op:   AppResponseOp,
+			op:   ResponseOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppResponse{
-					AppResponse: &p2p.AppResponse{
+				Message: &p2p.Message_Response{
+					Response: &p2p.Response{
 						ChainId:   testID[:],
 						RequestId: 1,
 						AppBytes:  compressibleContainers[0],
@@ -585,10 +585,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_response message with zstd compression",
-			op:   AppResponseOp,
+			op:   ResponseOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppResponse{
-					AppResponse: &p2p.AppResponse{
+				Message: &p2p.Message_Response{
+					Response: &p2p.Response{
 						ChainId:   testID[:],
 						RequestId: 1,
 						AppBytes:  compressibleContainers[0],
@@ -601,10 +601,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_gossip message with no compression",
-			op:   AppGossipOp,
+			op:   GossipOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppGossip{
-					AppGossip: &p2p.AppGossip{
+				Message: &p2p.Message_Gossip{
+					Gossip: &p2p.Gossip{
 						ChainId:  testID[:],
 						AppBytes: compressibleContainers[0],
 					},
@@ -616,10 +616,10 @@ func TestMessage(t *testing.T) {
 		},
 		{
 			desc: "app_gossip message with zstd compression",
-			op:   AppGossipOp,
+			op:   GossipOp,
 			msg: &p2p.Message{
-				Message: &p2p.Message_AppGossip{
-					AppGossip: &p2p.AppGossip{
+				Message: &p2p.Message_Gossip{
+					Gossip: &p2p.Gossip{
 						ChainId:  testID[:],
 						AppBytes: compressibleContainers[0],
 					},

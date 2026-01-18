@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	core "github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
+	vmcore "github.com/luxfi/vm"
 )
 
 type Scheduler interface {
@@ -28,18 +28,18 @@ type scheduler struct {
 	log log.Logger
 	// The VM sends a message on this channel when it wants to tell the engine
 	// that the engine should call the VM's BuildBlock method
-	fromVM <-chan core.Message
+	fromVM <-chan vmcore.Message
 	// The scheduler sends a message on this channel to notify the engine that
 	// it should call its VM's BuildBlock method
-	toEngine chan<- core.Message
+	toEngine chan<- vmcore.Message
 	// When we receive a message on this channel, it means that we must refrain
 	// from telling the engine to call its VM's BuildBlock method until the
 	// given time
 	newBuildBlockTime chan time.Time
 }
 
-func New(log log.Logger, toEngine chan<- core.Message) (Scheduler, chan<- core.Message) {
-	vmToEngine := make(chan core.Message, cap(toEngine))
+func New(log log.Logger, toEngine chan<- vmcore.Message) (Scheduler, chan<- vmcore.Message) {
+	vmToEngine := make(chan vmcore.Message, cap(toEngine))
 	return &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,

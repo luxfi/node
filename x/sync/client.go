@@ -298,7 +298,7 @@ func (c *client) GetRangeProof(
 // [parseFn] parses the raw response.
 // If the request is unsuccessful or the response can't be parsed,
 // retries the request to a different peer until [ctx] expires.
-// Returns [errAppSendFailed] if we fail to send an AppRequest/AppResponse.
+// Returns [errAppSendFailed] if we fail to send an Request/Response.
 // This should be treated as a fatal error.
 func getAndParse[T any](
 	ctx context.Context,
@@ -320,7 +320,7 @@ func getAndParse[T any](
 		}
 
 		if errors.Is(err, errAppSendFailed) {
-			// Failing to send an AppRequest is a fatal error.
+			// Failing to send an Request is a fatal error.
 			return nil, err
 		}
 
@@ -358,7 +358,7 @@ func getAndParse[T any](
 // until the node receives a response, failure notification
 // or [ctx] is canceled.
 // Returns the peer's NodeID and response.
-// Returns [errAppSendFailed] if we failed to send an AppRequest/AppResponse.
+// Returns [errAppSendFailed] if we failed to send an Request/Response.
 // This should be treated as fatal.
 // It's safe to call this method multiple times concurrently.
 func (c *client) get(ctx context.Context, request []byte) (ids.NodeID, []byte, error) {

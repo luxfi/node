@@ -228,7 +228,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	walletConfig := &config.Config{
 		TxFee:            constants.MilliLux,
 		CreateAssetTxFee: constants.MilliLux,
-		CreateNetTxFee:   constants.Lux,
+		CreateNetworkTxFee:   constants.Lux,
 		CreateChainTxFee: constants.Lux,
 	}
 	return txstest.NewWallet(

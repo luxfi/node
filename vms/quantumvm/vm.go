@@ -22,11 +22,12 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/quantumvm/config"
 	"github.com/luxfi/node/vms/quantumvm/quantum"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/node/utils/json"
+	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 )
 
@@ -67,7 +68,6 @@ type VM struct {
 	config.Config
 
 	// Core components
-	ctx context.Context
 	// consensusRuntime    *runtime.Runtime
 	log          log.Logger
 	db           database.Database
@@ -126,15 +126,14 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- consensuscore.Message,
-	fxs []*consensuscore.Fx,
+	toEngine chan<- vmcore.Message,
+	fxs []*vmcore.Fx,
 	appSender warp.Sender,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	// Set up basic context
-	vm.ctx = ctx
+	_ = ctx
 	// vm.consensusRuntime = chainRuntime
 	vm.db = db
 	// vm.blockchainID = chainRuntime.ChainID

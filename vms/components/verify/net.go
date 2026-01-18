@@ -14,24 +14,24 @@ import (
 
 var (
 	ErrSameChainID      = errors.New("same chainID")
-	ErrMismatchedChainIDs = errors.New("mismatched netIDs")
+	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
 )
 
 // ChainContext provides context for chain operations
 type ChainContext struct {
 	ChainID        ids.ID
-	ChainID          ids.ID
+	NetID          ids.ID
 	ValidatorState ValidatorState
 }
 
 // ValidatorState provides validator state lookups
 type ValidatorState interface {
-	GetChainID(chainID ids.ID) (ids.ID, error)
+	GetNetworkID(chainID ids.ID) (ids.ID, error)
 }
 
 // ConsensusValidatorState wraps the Runtime ValidatorState interface
 type ConsensusValidatorState interface {
-	GetChainID(chainID ids.ID) (ids.ID, error)
+	GetNetworkID(chainID ids.ID) (ids.ID, error)
 }
 
 // SameNet verifies that the provided [ctx] was provided to a chain in the
@@ -42,12 +42,12 @@ func SameNet(ctx context.Context, chainRuntime *ChainContext, peerChainID ids.ID
 		return ErrSameChainID
 	}
 
-	peerChainID, err := chainRuntime.ValidatorState.GetChainID(peerChainID)
+	peerNetID, err := chainRuntime.ValidatorState.GetNetworkID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}
-	if chainRuntime.ChainID != peerChainID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedChainIDs, chainRuntime.ChainID, peerChainID)
+	if chainRuntime.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainRuntime.NetID, peerNetID)
 	}
 	return nil
 }
@@ -69,10 +69,17 @@ func SameChain(ctx context.Context, consensusRuntime *runtime.Runtime, peerChain
 	}
 
 	// Verify the peer chain exists in the same network
-	_, err := vs.GetChainID(peerChainID)
+	peerNetID, err := vs.GetNetworkID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get chain of %q: %w", peerChainID, err)
 	}
-	// All chains on the same network (NetworkID 1 or 2) are in the same "chain"
+	chainNetID, err := vs.GetNetworkID(consensusRuntime.ChainID)
+	if err != nil {
+		return fmt.Errorf("failed to get chain of %q: %w", consensusRuntime.ChainID, err)
+	}
+	if chainNetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainNetID, peerNetID)
+	}
+	// All chains on the same network (NetworkID 1 or 2) are in the same "chain".
 	return nil
 }

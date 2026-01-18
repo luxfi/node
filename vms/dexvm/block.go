@@ -9,15 +9,15 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 )
 
-// Ensure Block implements block.Block
-var _ block.Block = (*Block)(nil)
+// Ensure Block implements chain.Block
+var _ chain.Block = (*Block)(nil)
 
 // Block represents a DEX VM block that wraps the functional ProcessBlock results.
-// It implements the block.Block interface required for the ChainVM.
+// It implements the chain.Block interface required for the ChainVM.
 type Block struct {
 	vm *ChainVM
 

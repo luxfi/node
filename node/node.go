@@ -26,7 +26,6 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -34,15 +33,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/admin"
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/config/node"
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/genesis/builder"
@@ -54,6 +46,12 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/server/http"
+	"github.com/luxfi/node/service/admin"
+	"github.com/luxfi/node/service/health"
+	"github.com/luxfi/node/service/info"
+	"github.com/luxfi/node/service/keystore"
+	"github.com/luxfi/node/service/metrics"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
@@ -62,23 +60,30 @@ import (
 	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/exchangevm"
 	graphvm "github.com/luxfi/node/vms/graphvm"
-	kmsvm "github.com/luxfi/node/vms/kmsvm"
+	ivm "github.com/luxfi/node/vms/identityvm"
+	keyvm "github.com/luxfi/node/vms/keyvm"
+	ovm "github.com/luxfi/node/vms/oraclevm"
 	"github.com/luxfi/node/vms/platformvm"
 	qvm "github.com/luxfi/node/vms/quantumvm"
+	rvm "github.com/luxfi/node/vms/relayvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	tvm "github.com/luxfi/node/vms/thresholdvm"
 	zvm "github.com/luxfi/node/vms/zkvm"
-	"github.com/luxfi/trace"
-	"github.com/luxfi/utils"
-	"github.com/luxfi/net/dynamicip"
-	"github.com/luxfi/filesystem"
+	"github.com/luxfi/validators/uptime"
+	"github.com/luxfi/vm/chains/atomic"
+
 	hash "github.com/luxfi/crypto/hash"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/filesystem"
 	"github.com/luxfi/filesystem/perms"
+	// geth factory not used - EVM is loaded as external plugin
+	"github.com/luxfi/net/dynamicip"
+	"github.com/luxfi/net/ips"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/resource"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
+	"github.com/luxfi/resource"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/utils"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
@@ -176,7 +181,7 @@ func New(
 			}
 		}
 	}
-	n.VMManager = vms.NewManager(n.VMFactoryLog, n.VMAliaser)
+	n.VMManager = vms.NewManager()
 
 	if err := n.initBootstrappers(); err != nil { // Configure the bootstrappers
 		return nil, fmt.Errorf("problem initializing node beacons: %w", err)
@@ -920,7 +925,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		ChainID:         constants.PrimaryNetworkID,
+		ChainID:       constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,
@@ -1175,7 +1180,7 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	}
 
 	// Notify the API server when new chains are created
-	n.chainManager.AddRegistrant(chains.NewRegistrantAdapter(n.APIServer))
+	n.chainManager.AddRegistrant(n.APIServer)
 	return nil
 }
 
@@ -1233,7 +1238,8 @@ func (n *Node) initVMs() error {
 		// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
 		// 	},
 		// }),
-		// n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}), // TODO: C-Chain EVM currently disabled
+		// NOTE: EVM is loaded as a plugin from ~/.lux/plugins/<EVMID>
+		// Do NOT register geth.Factory here - it prevents plugin loading
 	)
 	if err != nil {
 		n.Log.Error("Failed to register Platform VM", "error", err)
@@ -1317,17 +1323,44 @@ func (n *Node) initVMs() error {
 	n.Log.Info("D-Chain VM registered successfully")
 
 	// Register K-Chain VM (KMSVM) - Key Management Service
-	n.Log.Info("Registering K-Chain VM (KMS)", "vmID", constants.KMSVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.KMSVMID, kmsvm.NewDefaultFactory())
+	n.Log.Info("Registering K-Chain VM (Key)", "vmID", constants.KeyVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.KeyVMID, keyvm.NewDefaultFactory())
 	if err != nil {
 		n.Log.Error("Failed to register K-Chain VM", "error", err)
 		return err
 	}
 	n.Log.Info("K-Chain VM registered successfully")
 
+	// Register O-Chain VM (OracleVM) - Oracle/Off-chain Data
+	n.Log.Info("Registering O-Chain VM (Oracle)", "vmID", constants.OracleVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.OracleVMID, &ovm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register O-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("O-Chain VM registered successfully")
+
+	// Register R-Chain VM (RelayVM) - Cross-chain Relay/Messages
+	n.Log.Info("Registering R-Chain VM (Relay)", "vmID", constants.RelayVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.RelayVMID, &rvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register R-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("R-Chain VM registered successfully")
+
+	// Register I-Chain VM (IdentityVM) - Decentralized Identity
+	n.Log.Info("Registering I-Chain VM (Identity)", "vmID", constants.IdentityVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.IdentityVMID, &ivm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register I-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("I-Chain VM registered successfully")
+
 	// Log summary of all registered VMs
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
-	n.Log.Info("ALL VMs REGISTERED SUCCESSFULLY - 11 chains ready")
+	n.Log.Info("ALL VMs REGISTERED SUCCESSFULLY - 14 chains ready")
 	n.Log.Info("───────────────────────────────────────────────────────────────────")
 	n.Log.Info("P-Chain (Platform): Validators & staking", "vmID", constants.PlatformVMID)
 	n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
@@ -1339,7 +1372,10 @@ func (n *Node) initVMs() error {
 	n.Log.Info("Z-Chain (ZK):       Zero-knowledge proofs", "vmID", constants.ZKVMID)
 	n.Log.Info("G-Chain (Graph):    GraphQL data layer", "vmID", constants.GraphVMID)
 	n.Log.Info("D-Chain (DEX):      Decentralized exchange", "vmID", constants.DexVMID)
-	n.Log.Info("K-Chain (KMS):      Key management service", "vmID", constants.KMSVMID)
+	n.Log.Info("K-Chain (Key):      Key management service", "vmID", constants.KeyVMID)
+	n.Log.Info("O-Chain (Oracle):   Oracle/off-chain data", "vmID", constants.OracleVMID)
+	n.Log.Info("R-Chain (Relay):    Cross-chain relay", "vmID", constants.RelayVMID)
+	n.Log.Info("I-Chain (Identity): Decentralized identity", "vmID", constants.IdentityVMID)
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 
 	// initialize vm runtime manager
@@ -1417,26 +1453,25 @@ func (n *Node) initAdminAPI() error {
 		return nil
 	}
 	n.Log.Info("initializing admin API")
-	service, err := admin.NewService(
-		admin.Config{
-			Log:          n.Log,
-			DB:           n.DB,
-			ChainManager: n.chainManager,
-			HTTPServer:   n.APIServer,
-			ProfileDir:   n.Config.ProfilerConfig.Dir,
-			LogFactory:   n.LogFactory,
-			NodeConfig:   n.Config,
-			VMManager:    n.VMManager,
-			VMRegistry:   n.VMRegistry,
-			PluginDir:    n.Config.PluginDir,
-			Network:      n.Net,
-		},
-	)
+	service := admin.New(admin.Config{
+		Log:          n.Log,
+		DB:           n.DB,
+		ChainManager: n.chainManager,
+		HTTPServer:   n.APIServer,
+		ProfileDir:   n.Config.ProfilerConfig.Dir,
+		LogFactory:   n.LogFactory,
+		NodeConfig:   n.Config,
+		VMManager:    n.VMManager,
+		VMRegistry:   n.VMRegistry,
+		PluginDir:    n.Config.PluginDir,
+		Network:      n.Net,
+	})
+	handler, err := service.CreateHandler()
 	if err != nil {
 		return err
 	}
 	return n.APIServer.AddRoute(
-		service,
+		handler,
 		"admin",
 		"",
 	)

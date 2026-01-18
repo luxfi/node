@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/exchangevm/txs"
@@ -39,7 +39,7 @@ const (
 
 // JSONSpendHeader includes common fields for spend transactions
 type JSONSpendHeader struct {
-	api.UserPass
+	apitypes.UserPass
 	JSONFromAddrs
 	JSONChangeAddr
 }
@@ -56,7 +56,7 @@ type JSONChangeAddr struct {
 
 // JSONTxIDChangeAddr contains a transaction ID and a change address
 type JSONTxIDChangeAddr struct {
-	api.JSONTxID
+	apitypes.JSONTxID
 	JSONChangeAddr
 }
 
@@ -90,7 +90,7 @@ type FormattedAssetID struct {
 type Service struct{ vm *VM }
 
 // GetBlock returns the requested block.
-func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.GetBlockResponse) error {
+func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *apitypes.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlock"),
@@ -136,7 +136,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 }
 
 // GetBlockByHeight returns the block at the given height.
-func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, reply *api.GetBlockResponse) error {
+func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHeightArgs, reply *apitypes.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlockByHeight"),
@@ -190,7 +190,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 }
 
 // GetHeight returns the height of the last accepted block.
-func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
+func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHeightResponse) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getHeight"),
@@ -213,12 +213,12 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
 
-	reply.Height = avajson.Uint64(block.Height())
+	reply.Height = apitypes.Uint64(block.Height())
 	return nil
 }
 
 // IssueTx attempts to issue a transaction into consensus
-func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
+func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, reply *apitypes.JSONTxID) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "issueTx"),
@@ -248,7 +248,7 @@ type GetTxStatusReply struct {
 }
 
 type GetAddressTxsArgs struct {
-	api.JSONAddress
+	apitypes.JSONAddress
 	// Cursor used as a page index / offset
 	Cursor avajson.Uint64 `json:"cursor"`
 	// PageSize num of items per page
@@ -325,7 +325,7 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 //
 // Deprecated: GetTxStatus only returns Accepted or Unknown, GetTx should be
 // used instead to determine if the tx was accepted.
-func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
+func (s *Service) GetTxStatus(_ *http.Request, args *apitypes.JSONTxID, reply *GetTxStatusReply) error {
 	s.vm.log.Debug("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "getTxStatus"),
@@ -352,7 +352,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 }
 
 // GetTx returns the specified transaction
-func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
+func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apitypes.GetTxReply) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getTx"),
@@ -392,7 +392,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 }
 
 // GetUTXOs gets all utxos for passed in addresses
-func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
+func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *apitypes.GetUTXOsReply) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getUTXOs"),
@@ -493,7 +493,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 
 	reply.EndIndex.Address = endAddress
 	reply.EndIndex.UTXO = endUTXOID.String()
-	reply.NumFetched = avajson.Uint64(len(utxos))
+	reply.NumFetched = apitypes.Uint64(len(utxos))
 	reply.Encoding = args.Encoding
 	return nil
 }
@@ -622,7 +622,7 @@ type Balance struct {
 }
 
 type GetAllBalancesArgs struct {
-	api.JSONAddress
+	apitypes.JSONAddress
 	IncludePartial bool `json:"includePartial"`
 }
 
@@ -1019,7 +1019,7 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 }
 
 // CreateAddress creates an address for the user [args.Username]
-func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
+func (s *Service) CreateAddress(_ *http.Request, args *apitypes.UserPass, reply *apitypes.JSONAddress) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createAddress"),
@@ -1040,7 +1040,7 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 }
 
 // ListAddresses returns all of the addresses controlled by user [args.Username]
-func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *api.JSONAddresses) error {
+func (s *Service) ListAddresses(_ *http.Request, args *apitypes.UserPass, response *apitypes.JSONAddresses) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "listAddresses"),
@@ -1053,7 +1053,7 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 
 // ExportKeyArgs are arguments for ExportKey
 type ExportKeyArgs struct {
-	api.UserPass
+	apitypes.UserPass
 	Address string `json:"address"`
 }
 
@@ -1081,7 +1081,7 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 
 // ImportKeyArgs are arguments for ImportKey
 type ImportKeyArgs struct {
-	api.UserPass
+	apitypes.UserPass
 	PrivateKey *secp256k1.PrivateKey `json:"privateKey"`
 }
 
@@ -1092,7 +1092,7 @@ type ImportKeyReply struct {
 }
 
 // ImportKey adds a private key to the provided user
-func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
+func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *apitypes.JSONAddress) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "importKey"),
@@ -1720,7 +1720,7 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 // ImportArgs are arguments for passing into Import requests
 type ImportArgs struct {
 	// User that controls To
-	api.UserPass
+	apitypes.UserPass
 
 	// Chain the funds are coming from
 	SourceChain string `json:"sourceChain"`
@@ -1732,7 +1732,7 @@ type ImportArgs struct {
 // Import imports an asset to this chain from the P/C-Chain.
 // The LUX must have already been exported from the P/C-Chain.
 // Returns the ID of the newly created atomic transaction
-func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *api.JSONTxID) error {
+func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *apitypes.JSONTxID) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "import"),

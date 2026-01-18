@@ -31,10 +31,10 @@ var Default = Config{
 	MempoolPruneFrequency:         30 * time.Minute,
 	TxFee:                         constants.MilliLux,
 	CreateAssetTxFee:              constants.MilliLux,
-	CreateNetTxFee:                constants.Lux,
-	CreateChainTxFee:         constants.Lux,
-	AddPrimaryNetworkValidatorFee: 0,
-	AddPrimaryNetworkDelegatorFee: 0,
+	CreateNetworkTxFee:            constants.Lux,
+	CreateChainTxFee:              constants.Lux,
+	AddNetworkValidatorFee:        0,
+	AddNetworkDelegatorFee:        0,
 }
 
 // Config contains all of the user-configurable parameters of the PlatformVM.
@@ -51,7 +51,7 @@ type Config struct {
 	NetToL1ConversionCacheSize    int             `json:"chain-to-l1-conversion-cache-size"`
 	L1WeightsCacheSize            int             `json:"l1-weights-cache-size"`
 	L1InactiveValidatorsCacheSize int             `json:"l1-inactive-validators-cache-size"`
-	L1ChainIDNodeIDCacheSize        int             `json:"l1-chain-id-node-id-cache-size"`
+	L1ChainIDNodeIDCacheSize      int             `json:"l1-chain-id-node-id-cache-size"`
 	ChecksumsEnabled              bool            `json:"checksums-enabled"`
 	MempoolPruneFrequency         time.Duration   `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool            `json:"sybil-protection-enabled"`
@@ -61,10 +61,10 @@ type Config struct {
 	// Transaction fees
 	TxFee                         uint64 `json:"tx-fee"`
 	CreateAssetTxFee              uint64 `json:"create-asset-tx-fee"`
-	CreateNetTxFee                uint64 `json:"create-chain-tx-fee"`
-	CreateChainTxFee         uint64 `json:"create-blockchain-tx-fee"`
-	AddPrimaryNetworkValidatorFee uint64 `json:"add-primary-network-validator-fee"`
-	AddPrimaryNetworkDelegatorFee uint64 `json:"add-primary-network-delegator-fee"`
+	CreateNetworkTxFee            uint64 `json:"create-network-tx-fee"`
+	CreateChainTxFee              uint64 `json:"create-chain-tx-fee"`
+	AddNetworkValidatorFee        uint64 `json:"add-network-validator-fee"`
+	AddNetworkDelegatorFee        uint64 `json:"add-network-delegator-fee"`
 }
 
 // GetConfig returns a Config from the provided json encoded bytes. If a

@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
@@ -1166,6 +1166,9 @@ const devModeCChainGenesis = `{
     "mergeNetsplitBlock": 0,
     "shanghaiTime": 0,
     "cancunTime": 0,
+    "blobSchedule": {
+      "cancun": {"target": 3, "max": 6, "baseFeeUpdateFraction": 3338477}
+    },
     "terminalTotalDifficulty": 0,
     "chainEVMTimestamp": 0,
     "durangoTimestamp": 0,

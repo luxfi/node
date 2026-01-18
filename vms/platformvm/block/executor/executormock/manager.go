@@ -12,7 +12,7 @@ package executormock
 import (
 	reflect "reflect"
 
-	block "github.com/luxfi/consensus/engine/chain/block"
+	block "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	block0 "github.com/luxfi/node/vms/platformvm/block"

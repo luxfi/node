@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	hash "github.com/luxfi/crypto/hash"
@@ -91,8 +91,8 @@ func NewTestBlocks(numBlocks uint64) []*blocktest.Block {
 }
 
 func createInternalBlockFuncs(blks []*blocktest.Block) (
-	func(ctx context.Context, blkID ids.ID) (block.Block, error),
-	func(ctx context.Context, b []byte) (block.Block, error),
+	func(ctx context.Context, blkID ids.ID) (chain.Block, error),
+	func(ctx context.Context, b []byte) (chain.Block, error),
 ) {
 	blkMap := make(map[ids.ID]*blocktest.Block)
 	blkBytesMap := make(map[string]*blocktest.Block)
@@ -106,7 +106,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 		adapterMap[blk.ID()] = &testBlockAdapter{Block: blk}
 	}
 
-	getBlock := func(_ context.Context, id ids.ID) (block.Block, error) {
+	getBlock := func(_ context.Context, id ids.ID) (chain.Block, error) {
 		blk, ok := blkMap[id]
 		if !ok || blk.StatusV == blocktest.Unknown {
 			return nil, database.ErrNotFound
@@ -115,7 +115,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 		return adapterMap[id], nil
 	}
 
-	parseBlk := func(_ context.Context, b []byte) (block.Block, error) {
+	parseBlk := func(_ context.Context, b []byte) (chain.Block, error) {
 		blk, ok := blkBytesMap[string(b)]
 		if !ok {
 			return nil, fmt.Errorf("%w: %x", errUnexpectedBlockBytes, b)
@@ -131,13 +131,13 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 	return getBlock, parseBlk
 }
 
-func cantBuildBlock(context.Context) (block.Block, error) {
+func cantBuildBlock(context.Context) (chain.Block, error) {
 	return nil, errCantBuildBlock
 }
 
 // checkProcessingBlock checks that [blk] is of the correct type and is
 // correctly uniquified when calling GetBlock and ParseBlock.
-func checkProcessingBlock(t *testing.T, s *State, blk block.Block) {
+func checkProcessingBlock(t *testing.T, s *State, blk chain.Block) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -156,7 +156,7 @@ func checkProcessingBlock(t *testing.T, s *State, blk block.Block) {
 // checkDecidedBlock asserts that [blk] is returned with the correct status by ParseBlock
 // and GetBlock.
 // expectedStatus should be either Accepted or Rejected.
-func checkDecidedBlock(t *testing.T, s *State, blk block.Block, cached bool) {
+func checkDecidedBlock(t *testing.T, s *State, blk chain.Block, cached bool) {
 	require := require.New(t)
 
 	require.IsType(&BlockWrapper{}, blk)
@@ -284,7 +284,7 @@ func TestBuildBlock(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (block.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
 		blk1.StatusV = blocktest.Processing
 		return blk1, nil
@@ -329,7 +329,7 @@ func TestStateDecideBlock(t *testing.T) {
 
 	// Custom wrapper to make badAcceptBlk fail on Accept but not Verify
 	originalGetBlock := getBlock
-	getBlock = func(ctx context.Context, id ids.ID) (block.Block, error) {
+	getBlock = func(ctx context.Context, id ids.ID) (chain.Block, error) {
 		blk, err := originalGetBlock(ctx, id)
 		if err != nil {
 			return nil, err
@@ -344,7 +344,7 @@ func TestStateDecideBlock(t *testing.T) {
 	}
 
 	originalParseBlock := parseBlock
-	parseBlock = func(ctx context.Context, b []byte) (block.Block, error) {
+	parseBlock = func(ctx context.Context, b []byte) (chain.Block, error) {
 		blk, err := originalParseBlock(ctx, b)
 		if err != nil {
 			return nil, err
@@ -490,7 +490,7 @@ func TestGetBlockError(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	wrappedGetBlock := func(ctx context.Context, id ids.ID) (block.Block, error) {
+	wrappedGetBlock := func(ctx context.Context, id ids.ID) (chain.Block, error) {
 		blk, err := getBlock(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("wrapping error to prevent caching miss: %w", err)
@@ -613,7 +613,7 @@ func TestStateBytesToIDCache(t *testing.T) {
 	blk2 := testBlks[2]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (block.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		require.FailNow("shouldn't have been called")
 		return nil, nil
 	}
@@ -717,7 +717,7 @@ func TestSetLastAcceptedBlockWithProcessingBlocksErrors(t *testing.T) {
 	resetBlk := testBlks[4]
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
-	buildBlock := func(context.Context) (block.Block, error) {
+	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
 		genesisBlock.StatusV = blocktest.Processing
 		return blk1, nil

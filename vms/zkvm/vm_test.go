@@ -9,8 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	core "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -71,11 +70,11 @@ func TestVMInitialize(t *testing.T) {
 	require.NoError(err)
 
 	// Create VM
-	vm := &VM{}
+	vmImpl := &VM{}
 
 	// Initialize VM
-	toEngine := make(chan core.Message, 1)
-	require.NoError(vm.Initialize(ctx, common.VMInit{
+	toEngine := make(chan vm.Message, 1)
+	require.NoError(vmImpl.Initialize(ctx, vm.Init{
 		Runtime:  chainRuntime,
 		DB:       db,
 		Genesis:  genesisBytes,
@@ -84,28 +83,28 @@ func TestVMInitialize(t *testing.T) {
 	}))
 
 	// Verify initialization
-	require.NotNil(vm.utxoDB)
-	require.NotNil(vm.nullifierDB)
-	require.NotNil(vm.stateTree)
-	require.NotNil(vm.proofVerifier)
-	require.NotNil(vm.addressManager)
-	require.NotNil(vm.mempool)
+	require.NotNil(vmImpl.utxoDB)
+	require.NotNil(vmImpl.nullifierDB)
+	require.NotNil(vmImpl.stateTree)
+	require.NotNil(vmImpl.proofVerifier)
+	require.NotNil(vmImpl.addressManager)
+	require.NotNil(vmImpl.mempool)
 
 	// Test health check
-	health, err := vm.HealthCheck(ctx)
+	health, err := vmImpl.HealthCheck(ctx)
 	require.NoError(err)
 	require.NotNil(health)
 
 	// Shutdown
-	require.NoError(vm.Shutdown(ctx))
+	require.NoError(vmImpl.Shutdown(ctx))
 }
 
 func TestShieldedTransaction(t *testing.T) {
 	require := require.New(t)
 
 	// Setup VM
-	vm := setupTestVM(t)
-	defer vm.Shutdown(context.Background())
+	vmImpl := setupTestVM(t)
+	defer vmImpl.Shutdown(context.Background())
 
 	// Create a shielded transaction
 	tx := &Transaction{
@@ -141,22 +140,22 @@ func TestShieldedTransaction(t *testing.T) {
 	require.NoError(tx.ValidateBasic())
 
 	// Add to mempool
-	require.NoError(vm.mempool.AddTransaction(tx))
+	require.NoError(vmImpl.mempool.AddTransaction(tx))
 
 	// Verify in mempool
-	require.True(vm.mempool.HasTransaction(tx.ID))
-	require.Equal(1, vm.mempool.Size())
+	require.True(vmImpl.mempool.HasTransaction(tx.ID))
+	require.Equal(1, vmImpl.mempool.Size())
 }
 
 func TestPrivateAddress(t *testing.T) {
 	require := require.New(t)
 
 	// Setup VM with privacy enabled
-	vm := setupTestVMWithPrivacy(t)
-	defer vm.Shutdown(context.Background())
+	vmImpl := setupTestVMWithPrivacy(t)
+	defer vmImpl.Shutdown(context.Background())
 
 	// Generate a private address
-	addr, err := vm.addressManager.GenerateAddress()
+	addr, err := vmImpl.addressManager.GenerateAddress()
 	require.NoError(err)
 	require.NotNil(addr)
 
@@ -168,7 +167,7 @@ func TestPrivateAddress(t *testing.T) {
 	require.Len(addr.IncomingViewKey, 32)
 
 	// Test address retrieval
-	retrieved, err := vm.addressManager.GetAddress(addr.Address)
+	retrieved, err := vmImpl.addressManager.GetAddress(addr.Address)
 	require.NoError(err)
 	require.Equal(addr.Address, retrieved.Address)
 }
@@ -197,10 +196,10 @@ func setupTestVM(t *testing.T) *VM {
 	}
 	configBytes, _ := Codec.Marshal(codecVersion, config)
 
-	vm := &VM{}
-	toEngine := make(chan core.Message, 1)
+	vmImpl := &VM{}
+	toEngine := make(chan vm.Message, 1)
 
-	require.NoError(t, vm.Initialize(ctx, common.VMInit{
+	require.NoError(t, vmImpl.Initialize(ctx, vm.Init{
 		Runtime:  chainRuntime,
 		DB:       db,
 		Genesis:  genesisBytes,
@@ -208,7 +207,7 @@ func setupTestVM(t *testing.T) *VM {
 		ToEngine: toEngine,
 	}))
 
-	return vm
+	return vmImpl
 }
 
 func setupTestVMWithPrivacy(t *testing.T) *VM {
@@ -234,10 +233,10 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 	}
 	configBytes, _ := Codec.Marshal(codecVersion, config)
 
-	vm := &VM{}
-	toEngine := make(chan core.Message, 1)
+	vmImpl := &VM{}
+	toEngine := make(chan vm.Message, 1)
 
-	require.NoError(t, vm.Initialize(ctx, common.VMInit{
+	require.NoError(t, vmImpl.Initialize(ctx, vm.Init{
 		Runtime:  chainRuntime,
 		DB:       db,
 		Genesis:  genesisBytes,
@@ -245,5 +244,5 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 		ToEngine: toEngine,
 	}))
 
-	return vm
+	return vmImpl
 }

@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utils"
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
@@ -2385,7 +2385,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 		walletConfig = &config.Config{
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
-			CreateNetTxFee:        constants.Lux,
+			CreateNetworkTxFee:        constants.Lux,
 			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
@@ -2571,7 +2571,7 @@ func TestStandardExecutorConvertChainToL1Tx(t *testing.T) {
 						Config: &config.Config{
 							TxFee:                 constants.MilliLux,
 							CreateAssetTxFee:      constants.MilliLux,
-							CreateNetTxFee:        constants.Lux,
+							CreateNetworkTxFee:        constants.Lux,
 							CreateChainTxFee: constants.Lux,
 						},
 						InternalCfg: defaultConfig, // Pass the internal config with dynamic fees
@@ -2721,7 +2721,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		walletConfig = &config.Config{
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
-			CreateNetTxFee:        constants.Lux,
+			CreateNetworkTxFee:        constants.Lux,
 			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
@@ -3257,7 +3257,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		walletConfig = &config.Config{
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
-			CreateNetTxFee:        constants.Lux,
+			CreateNetworkTxFee:        constants.Lux,
 			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
@@ -3768,7 +3768,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		walletConfig = &config.Config{
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
-			CreateNetTxFee:        constants.Lux,
+			CreateNetworkTxFee:        constants.Lux,
 			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(
@@ -4070,7 +4070,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		walletConfig = &config.Config{
 			TxFee:                 constants.MilliLux,
 			CreateAssetTxFee:      constants.MilliLux,
-			CreateNetTxFee:        constants.Lux,
+			CreateNetworkTxFee:        constants.Lux,
 			CreateChainTxFee: constants.Lux,
 		}
 		wallet = txstest.NewWalletWithOptions(

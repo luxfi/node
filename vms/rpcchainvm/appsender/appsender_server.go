@@ -26,7 +26,7 @@ func NewServer(sender warp.Sender) *Server {
 	return &Server{sender: sender}
 }
 
-func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppRequestMsg) (*emptypb.Empty, error) {
+func (s *Server) SendRequest(ctx context.Context, req *appsenderpb.SendRequestMsg) (*emptypb.Empty, error) {
 	// Convert byte slices to NodeID set
 	nodeIDs := set.NewSet[ids.NodeID](len(req.NodeIds))
 	for _, nodeIDBytes := range req.NodeIds {
@@ -41,7 +41,7 @@ func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppReq
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendAppResponse(ctx context.Context, req *appsenderpb.SendAppResponseMsg) (*emptypb.Empty, error) {
+func (s *Server) SendResponse(ctx context.Context, req *appsenderpb.SendResponseMsg) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (s *Server) SendAppResponse(ctx context.Context, req *appsenderpb.SendAppRe
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendAppError(ctx context.Context, req *appsenderpb.SendAppErrorMsg) (*emptypb.Empty, error) {
+func (s *Server) SendError(ctx context.Context, req *appsenderpb.SendErrorMsg) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (s *Server) SendAppError(ctx context.Context, req *appsenderpb.SendAppError
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGossipMsg) (*emptypb.Empty, error) {
+func (s *Server) SendGossip(ctx context.Context, req *appsenderpb.SendGossipMsg) (*emptypb.Empty, error) {
 	// For RPC gossip, we don't have specific nodes, so use an empty config
 	config := warp.SendConfig{
 		NodeIDs: set.NewSet[ids.NodeID](0),
@@ -69,20 +69,20 @@ func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGoss
 	return &emptypb.Empty{}, err
 }
 
-// SendCrossChainAppRequest implements AppSenderServer
-func (s *Server) SendCrossChainAppRequest(ctx context.Context, req *appsenderpb.SendCrossChainAppRequestMsg) (*emptypb.Empty, error) {
+// SendCrossChainRequest implements AppSenderServer
+func (s *Server) SendCrossChainRequest(ctx context.Context, req *appsenderpb.SendCrossChainRequestMsg) (*emptypb.Empty, error) {
 	// Not implemented in warp.Sender
 	return &emptypb.Empty{}, nil
 }
 
-// SendCrossChainAppResponse implements AppSenderServer
-func (s *Server) SendCrossChainAppResponse(ctx context.Context, req *appsenderpb.SendCrossChainAppResponseMsg) (*emptypb.Empty, error) {
+// SendCrossChainResponse implements AppSenderServer
+func (s *Server) SendCrossChainResponse(ctx context.Context, req *appsenderpb.SendCrossChainResponseMsg) (*emptypb.Empty, error) {
 	// Not implemented in warp.Sender
 	return &emptypb.Empty{}, nil
 }
 
-// SendCrossChainAppError implements AppSenderServer
-func (s *Server) SendCrossChainAppError(ctx context.Context, req *appsenderpb.SendCrossChainAppErrorMsg) (*emptypb.Empty, error) {
+// SendCrossChainError implements AppSenderServer
+func (s *Server) SendCrossChainError(ctx context.Context, req *appsenderpb.SendCrossChainErrorMsg) (*emptypb.Empty, error) {
 	// Not implemented in warp.Sender
 	return &emptypb.Empty{}, nil
 }

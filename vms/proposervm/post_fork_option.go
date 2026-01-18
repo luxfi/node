@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -156,10 +156,10 @@ func (b *postForkOption) pChainHeight(ctx context.Context) (uint64, error) {
 	return parent.pChainHeight(ctx)
 }
 
-func (b *postForkOption) pChainEpoch(ctx context.Context) (chainblock.Epoch, error) {
+func (b *postForkOption) pChainEpoch(ctx context.Context) (chain.Epoch, error) {
 	parent, err := b.vm.getBlock(ctx, b.ParentID())
 	if err != nil {
-		return chainblock.Epoch{}, err
+		return chain.Epoch{}, err
 	}
 	return parent.pChainEpoch(ctx)
 }

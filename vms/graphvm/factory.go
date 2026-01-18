@@ -4,11 +4,15 @@
 package gvm
 
 import (
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
 var _ vms.Factory = (*Factory)(nil)
+
+// VMID is the unique identifier for GraphVM (G-Chain)
+var VMID = ids.ID{'g', 'r', 'a', 'p', 'h', 'v', 'm'}
 
 // Factory creates new instances of the Graph VM
 type Factory struct{}

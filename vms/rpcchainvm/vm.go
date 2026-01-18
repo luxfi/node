@@ -9,9 +9,9 @@ package rpcchainvm
 import (
 	"context"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	enginechain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/log"
-	"github.com/luxfi/vm/rpc/chain"
+	rpcchain "github.com/luxfi/vm/rpc/chain"
 	"github.com/luxfi/vm/rpc/grpcutils"
 )
 
@@ -20,6 +20,6 @@ import (
 // This address is used by the Runtime client to send Initialize RPC to server.
 //
 // This function delegates to the shared implementation in github.com/luxfi/vm/rpc/chain.
-func Serve(ctx context.Context, log log.Logger, vm block.ChainVM, opts ...grpcutils.ServerOption) error {
-	return chain.Serve(ctx, log, vm, opts...)
+func Serve(ctx context.Context, log log.Logger, vm enginechain.ChainVM, opts ...grpcutils.ServerOption) error {
+	return rpcchain.Serve(ctx, log, vm, opts...)
 }

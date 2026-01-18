@@ -222,9 +222,9 @@ func (n *Network) PullGossip(ctx context.Context) {
 	gossip.Every(ctx, n.log, n.txPullGossiper, n.txPullGossipFrequency)
 }
 
-func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []byte) error {
+func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msgBytes []byte) error {
 	if n.partialSyncPrimaryNetwork {
-		n.log.Debug("dropping AppGossip message",
+		n.log.Debug("dropping Gossip message",
 			log.String("reason", "primary network is not being fully synced"),
 		)
 		return nil

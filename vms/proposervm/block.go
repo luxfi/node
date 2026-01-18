@@ -9,13 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/runtime"
+	vmcore "github.com/luxfi/vm"
+	chain "github.com/luxfi/vm/chain"
 )
 
 const (
@@ -42,12 +43,12 @@ var (
 
 // OracleBlock is a block that can return multiple child options
 type OracleBlock interface {
-	chainblock.Block
-	Options(context.Context) ([2]chainblock.Block, error)
+	chain.Block
+	Options(context.Context) ([2]chain.Block, error)
 }
 
-// Convert chainblock.Epoch (consensus) to block.Epoch (proposervm stateless block)
-func toBlockEpoch(ce chainblock.Epoch) block.Epoch {
+// Convert chain.Epoch (consensus) to block.Epoch (proposervm stateless block)
+func toBlockEpoch(ce chain.Epoch) block.Epoch {
 	return block.Epoch{
 		PChainHeight: ce.PChainHeight,
 		Number:       ce.Number,
@@ -55,9 +56,9 @@ func toBlockEpoch(ce chainblock.Epoch) block.Epoch {
 	}
 }
 
-// Convert block.Epoch (proposervm stateless block) to chainblock.Epoch (consensus)
-func toChainBlockEpoch(be block.Epoch) chainblock.Epoch {
-	return chainblock.Epoch{
+// Convert block.Epoch (proposervm stateless block) to chain.Epoch (consensus)
+func toChainBlockEpoch(be block.Epoch) chain.Epoch {
+	return chain.Epoch{
 		PChainHeight: be.PChainHeight,
 		Number:       be.Number,
 		StartTime:    be.StartTime,
@@ -65,9 +66,9 @@ func toChainBlockEpoch(be block.Epoch) chainblock.Epoch {
 }
 
 type Block interface {
-	chainblock.Block
+	chain.Block
 
-	getInnerBlk() chainblock.Block
+	getInnerBlk() chain.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -83,7 +84,7 @@ type Block interface {
 	buildChild(context.Context) (Block, error)
 
 	pChainHeight(context.Context) (uint64, error)
-	pChainEpoch(context.Context) (chainblock.Epoch, error)
+	pChainEpoch(context.Context) (chain.Epoch, error)
 	selectChildPChainHeight(context.Context) (uint64, error)
 }
 
@@ -91,13 +92,13 @@ type PostForkBlock interface {
 	Block
 
 	getStatelessBlk() block.Block
-	setInnerBlk(chainblock.Block)
+	setInnerBlk(chain.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk chainblock.Block
+	innerBlk chain.Block
 }
 
 // Return the inner block's height
@@ -120,7 +121,7 @@ func (p *postForkCommonComponents) Verify(
 	ctx context.Context,
 	parentTimestamp time.Time,
 	parentPChainHeight uint64,
-	parentEpoch chainblock.Epoch,
+	parentEpoch chain.Epoch,
 	child *postForkBlock,
 ) error {
 	if err := verifyIsNotOracleBlock(ctx, p.innerBlk); err != nil {
@@ -153,7 +154,7 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	// FIX 1: Consolidate all P-chain dependent validations into single block
-	if p.vm.consensusState == uint32(interfaces.Ready) {
+	if p.vm.consensusState == uint32(vmcore.Ready) {
 		// All P-chain dependent validations here - only when synced
 		// 1. Epoch validation
 		if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
@@ -213,7 +214,7 @@ func (p *postForkCommonComponents) Verify(
 
 	return p.vm.verifyAndRecordInnerBlk(
 		ctx,
-		&chainblock.Context{
+		&runtime.Runtime{
 			PChainHeight: contextPChainHeight,
 		},
 		child,
@@ -226,7 +227,7 @@ func (p *postForkCommonComponents) buildChild(
 	parentID ids.ID,
 	parentTimestamp time.Time,
 	parentPChainHeight uint64,
-	parentEpoch chainblock.Epoch,
+	parentEpoch chain.Epoch,
 ) (Block, error) {
 	// Child's timestamp is the later of now and this block's timestamp
 	newTimestamp := p.vm.Time().Truncate(time.Second)
@@ -280,9 +281,9 @@ func (p *postForkCommonComponents) buildChild(
 		contextPChainHeight = parentPChainHeight
 	}
 
-	var innerBlock chainblock.Block
+	var innerBlock chain.Block
 	if p.vm.blockBuilderVM != nil {
-		builtBlock, err := p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &chainblock.Context{
+		builtBlock, err := p.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{
 			PChainHeight: contextPChainHeight,
 		})
 		if err != nil {
@@ -294,7 +295,7 @@ func (p *postForkCommonComponents) buildChild(
 		if err != nil {
 			return nil, err
 		}
-		innerBlock = &reverseBlockAdapter{Block: engineBlock}
+		innerBlock = engineBlock
 	}
 
 	// Build the child
@@ -349,15 +350,15 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() chainblock.Block {
+func (p *postForkCommonComponents) getInnerBlk() chain.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk chainblock.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk chain.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b chainblock.Block) error {
+func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
 	oracle, ok := b.(OracleBlock)
 	if !ok {
 		return fmt.Errorf(
@@ -369,7 +370,7 @@ func verifyIsOracleBlock(ctx context.Context, b chainblock.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b chainblock.Block) error {
+func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
 	oracle, ok := b.(OracleBlock)
 	if !ok {
 		return nil

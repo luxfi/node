@@ -127,7 +127,7 @@ Avoid conflicts with consensus packages:
 ```go
 import (
     platformblock "github.com/luxfi/node/vms/platformvm/block"
-    consensusblock "github.com/luxfi/consensus/engine/chain/block"
+    consensusblock "github.com/luxfi/consensus/engine/chain"
 )
 ```
 

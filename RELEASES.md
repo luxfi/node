@@ -712,7 +712,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Add fee.State to P-chain state by @StephenButtolph in https://github.com/luxfi/node/pull/3248
 - Fix comparison comment in consensusflake algorithms by @yacovm in https://github.com/luxfi/node/pull/3256
 - Add network upgrade config by @aaronbuchwald in https://github.com/luxfi/node/pull/3207
-- [vms/platformvm] Add `VerifyWithContext` to `Block`s by @dhrubabasu in https://github.com/luxfi/node/pull/3236
+- [vms/platformvm] Add `VerifyWithRuntime` to `Block`s by @dhrubabasu in https://github.com/luxfi/node/pull/3236
 - [ci] Switch to v2 of docker compose plugin by @marun in https://github.com/luxfi/node/pull/3259
 - Minimize signature verification when bootstrapping by @yacovm in https://github.com/luxfi/node/pull/3255
 - [vms/platformvm] Add tracking of a Net manager by @dhrubabasu in https://github.com/luxfi/node/pull/3126
@@ -3309,7 +3309,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Documentation
 
-- Improved documentation on the `block.WithVerifyContext` interface
+- Improved documentation on the `block.WithVerifyRuntime` interface
 - Fixed `--public-ip` and `--public-ip-resolution-service` CLI flag descriptions
 - Updated `README.md` to explicitly reference `SECURITY.md`
 
@@ -3326,7 +3326,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Removed the `hashicorp/go-plugin` dependency to improve plugin flexibility
 - Replaced specialized `bag` implementations with generic `bag` implementations
 - Added `mempool` package to the `avm`
-- Added `chain.State#IsProcessing` to simplify integration with `block.WithVerifyContext`
+- Added `chain.State#IsProcessing` to simplify integration with `block.WithVerifyRuntime`
 - Added `StateSyncMinVersion` to `sync.ClientConfig`
 - Added validity checks for `InitialStakeDuration` in a custom network genesis
 - Removed unnecessary reflect call when marshalling an empty slice
@@ -3519,8 +3519,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added a `TxID` field to `validators.Validator`
 - Improved and documented error handling within the `validators.Set` interface
 - Added `BLS` public keys to the result of `GetValidatorSet`
-- Added `BuildBlockWithContext` as an optional VM method to build blocks at a specific P-chain height
-- Added `VerifyWithContext` as an optional block method to verify blocks at a specific P-chain height
+- Added `BuildBlockWithRuntime` as an optional VM method to build blocks at a specific P-chain height
+- Added `VerifyWithRuntime` as an optional block method to verify blocks at a specific P-chain height
 
 ### Uptime Tracking
 

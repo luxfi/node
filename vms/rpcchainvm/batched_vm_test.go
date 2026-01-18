@@ -18,9 +18,9 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/vm/chain/blocktest"
 
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm"
+	"github.com/luxfi/vm/chain"
 )
 
 var (
@@ -35,11 +35,11 @@ var (
 	time2 = time.Unix(2, 0)
 )
 
-func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
+func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) chain.ChainVM {
 	// test key is "batchedParseBlockCachingTestKey"
 
 	// create mock
-	vm := &blocktest.VM{
+	vmImpl := &blocktest.VM{
 		T: t,
 	}
 
@@ -56,19 +56,19 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 		blk2.HeightV = 2
 		blk2.TimestampV = time2
 
-		vm.InitializeF = func(context.Context, common.VMInit) error {
+		vmImpl.InitializeF = func(context.Context, vm.Init) error {
 			return nil
 		}
-		vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+		vmImpl.LastAcceptedF = func(context.Context) (ids.ID, error) {
 			return blocktest.GenesisID, nil
 		}
-		vm.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
+		vmImpl.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 			if blkID == blocktest.GenesisID {
 				return blocktest.Genesis, nil
 			}
 			return nil, database.ErrNotFound
 		}
-		vm.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) {
+		vmImpl.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 			if bytes.Equal(b, blkBytes1) {
 				return blk1, nil
 			}
@@ -79,7 +79,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 		}
 	}
 
-	return vm
+	return vmImpl
 }
 
 func TestBatchedParseBlockCaching(t *testing.T) {
@@ -87,8 +87,8 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	testKey := batchedParseBlockCachingTestKey
 
 	// Create and start the plugin
-	vm := buildClientHelper(require, testKey)
-	defer vm.Runtime().Stop(context.Background())
+	vmImpl := buildClientHelper(require, testKey)
+	defer vmImpl.Runtime().Stop(context.Background())
 
 	chainRuntime := &runtime.Runtime{
 		NetworkID: 1,
@@ -97,20 +97,20 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 		Log:       log.NewWriter(io.Discard),
 	}
 
-	require.NoError(vm.Initialize(context.Background(), common.VMInit{
+	require.NoError(vmImpl.Initialize(context.Background(), vm.Init{
 		Runtime: chainRuntime,
 		DB:      memdb.New(),
 	}))
 
 	// Call should parse the first block
-	blk, err := vm.ParseBlock(context.Background(), blkBytes1)
+	blk, err := vmImpl.ParseBlock(context.Background(), blkBytes1)
 	require.NoError(err)
 	require.Equal(blkID1, blk.ID())
 
 	// Skip type assertion - ChainVM interface satisfied
 
 	// Call should cache the first block and parse the second block
-	blks, err := vm.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})
+	blks, err := vmImpl.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})
 	require.NoError(err)
 	require.Len(blks, 2)
 	require.Equal(blkID1, blks[0].ID())
@@ -119,7 +119,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	// Skip type assertions
 
 	// Call should be fully cached and not result in a grpc call
-	blks, err = vm.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})
+	blks, err = vmImpl.BatchedParseBlock(context.Background(), [][]byte{blkBytes1, blkBytes2})
 	require.NoError(err)
 	require.Len(blks, 2)
 	require.Equal(blkID1, blks[0].ID())

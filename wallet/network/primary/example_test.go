@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/wallet/net/primary/examples/keyutil"
+	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/secp256k1fx"
 )

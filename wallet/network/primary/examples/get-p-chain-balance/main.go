@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/net/primary"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/network/primary"
+	"github.com/luxfi/node/wallet/network/primary/common"
 )
 
 func main() {

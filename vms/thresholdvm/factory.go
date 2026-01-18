@@ -18,7 +18,7 @@ var VMID = ids.ID{'t', 'h', 'r', 'e', 's', 'h', 'o', 'l', 'd', 'v', 'm', 0, 0, 0
 type Factory struct{}
 
 // New returns a new instance of the ThresholdVM
-func (f *Factory) New(logger log.Logger) (interface{}, error) {
+func (f *Factory) New(log.Logger) (interface{}, error) {
 	return &VM{
 		protocolRegistry: NewProtocolRegistry(nil), // Will be initialized properly in Initialize
 	}, nil

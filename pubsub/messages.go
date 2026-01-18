@@ -5,7 +5,7 @@ package pubsub
 
 import (
 	"github.com/luxfi/address"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/utils/json"
 )
 
@@ -28,7 +28,7 @@ type NewSet struct{}
 //
 // Deprecated: The pubsub server is deprecated.
 type AddAddresses struct {
-	api.JSONAddresses
+	apitypes.JSONAddresses
 
 	// addressIds array of addresses, kept as a [][]byte for use in the bloom filter
 	addressIds [][]byte

@@ -19,12 +19,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/runtime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
-	consensusversion "github.com/luxfi/version"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -43,14 +38,18 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
+	consensusversion "github.com/luxfi/version"
+	vmcore "github.com/luxfi/vm"
 	extwarp "github.com/luxfi/warp"
+	vmpb "github.com/luxfi/node/proto/pb/vm"
 
 	chainengine "github.com/luxfi/consensus/engine/chain"
-	chain "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/common"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -58,11 +57,12 @@ import (
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
+	chain "github.com/luxfi/vm/chain"
 )
 
 var (
 	_ chain.ChainVM                      = (*VM)(nil)
-	_ chain.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ chain.BuildBlockWithRuntimeChainVM = (*VM)(nil)
 	_ chainengine.BlockBuilder           = (*VM)(nil) // For consensus engine integration
 	_ secp256k1fx.VM                     = (*VM)(nil)
 	_ validators.State                   = (*VM)(nil)
@@ -132,7 +132,7 @@ type VM struct {
 
 	// toEngine is the channel to send messages to the consensus engine
 	// This is used to notify the engine when there are pending transactions
-	toEngine chan<- chain.Message
+	toEngine chan<- vmcore.Message
 }
 
 // GetChainID returns the chain ID for a given network ID
@@ -154,7 +154,7 @@ func (vm *VM) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	init common.VMInit,
+	init vmcore.Init,
 ) error {
 	// Extract chain runtime
 	chainRuntime := init.Runtime
@@ -780,14 +780,15 @@ func (vm *VM) onReady() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	state := interfaces.State(stateNum)
-	switch state {
-	case interfaces.Bootstrapping:
+	// Use proto-based state values for compatibility with chain manager
+	switch vmpb.State(stateNum) {
+	case vmpb.State_STATE_BOOTSTRAPPING:
 		return vm.onBootstrapStarted()
-	case interfaces.Ready:
+	case vmpb.State_STATE_NORMAL_OP:
 		return vm.onReady()
 	default:
-		return fmt.Errorf("unknown state: %v", state)
+		// Accept unknown states without error for forward compatibility
+		return nil
 	}
 }
 
@@ -877,15 +878,9 @@ func (vm *VM) forwardNotifications() {
 			continue
 		}
 
-		// Convert consensuscore.Message to chain.Message
-		// Both use uint32 for the message type (PendingTxs = 0)
-		engineMsg := chain.Message{
-			Type: chain.MessageType(msg.Type),
-		}
-
 		// Send to the consensus engine (non-blocking to avoid deadlocks)
 		select {
-		case vm.toEngine <- engineMsg:
+		case vm.toEngine <- msg:
 			vm.log.Debug("forwarded pending txs notification to consensus engine",
 				log.Uint32("type", uint32(msg.Type)))
 		case <-vm.onShutdownCtx.Done():
@@ -969,19 +964,20 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, nil
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *chain.VersionInfo) error {
 	// Uptime tracking Connect is no longer available on Calculator interface
 	// if err := vm.uptimeManager.Connect(nodeID); err != nil {
 	//	return err
 	// }
 
-	// Type assert nodeVersion to *consensusversion.Application
+	// Convert chain.VersionInfo to consensusversion.Application
 	var versionApp *consensusversion.Application
 	if nodeVersion != nil {
-		var ok bool
-		versionApp, ok = nodeVersion.(*consensusversion.Application)
-		if !ok {
-			return fmt.Errorf("invalid node version type: %T", nodeVersion)
+		versionApp = &consensusversion.Application{
+			Name:  nodeVersion.Application,
+			Major: nodeVersion.Major,
+			Minor: nodeVersion.Minor,
+			Patch: nodeVersion.Patch,
 		}
 	}
 	return vm.Network.Connected(ctx, nodeID, versionApp)
@@ -1028,22 +1024,34 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
 
 // NewHTTPHandler returns a new HTTP handler that can handle API calls
 // This is required by the chain.ChainVM interface
-func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
-	return nil, nil
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	handlers, err := vm.CreateHandlers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mux := http.NewServeMux()
+	for path, handler := range handlers {
+		if path == "" {
+			path = "/"
+		}
+		mux.Handle(path, handler)
+	}
+	return mux, nil
 }
 
 // WaitForEvent blocks until either the given context is cancelled, or a message is returned
 // This is required by the chain.ChainVM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	// Delegate to the Builder which waits for mempool transactions or staker changes
 	if vm.Builder == nil {
 		// Before initialization, block until context is cancelled
 		<-ctx.Done()
-		return nil, ctx.Err()
+		return vmcore.Message{}, ctx.Err()
 	}
 	msg, err := vm.Builder.WaitForEvent(ctx)
 	if err != nil {
-		return nil, err
+		return vmcore.Message{}, err
 	}
 	vm.log.Debug("WaitForEvent returning", log.String("msgType", msg.Type.String()))
 	return msg, nil

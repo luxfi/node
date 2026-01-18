@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/network/primary/common"
 )
 
 func mustNewProofOfPossession(t *testing.T, sk *bls.SecretKey) *signer.ProofOfPossession {

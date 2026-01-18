@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/log"
+	"github.com/luxfi/vm/chain"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
 )
 
-var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
+var TestServerPluginMap = map[string]func(*testing.T, bool) chain.ChainVM{
 	stateSyncEnabledTestKey:                        stateSyncEnabledTestPlugin,
 	getOngoingSyncStateSummaryTestKey:              getOngoingSyncStateSummaryTestPlugin,
 	getLastStateSummaryTestKey:                     getLastStateSummaryTestPlugin,

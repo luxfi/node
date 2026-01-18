@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/consensus/engine"
+	"github.com/luxfi/concurrent/lock"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/linked"
+	"github.com/luxfi/container/setmap"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/container/linked"
-	"github.com/luxfi/concurrent/lock"
-	"github.com/luxfi/container/setmap"
+	"github.com/luxfi/vm"
 )
 
 const (
@@ -71,7 +71,7 @@ type Mempool[T Tx] interface {
 	Len() int
 
 	// WaitForEvent waits until there is at least one tx in the mempool.
-	WaitForEvent(ctx context.Context) (engine.Message, error)
+	WaitForEvent(ctx context.Context) (vm.Message, error)
 }
 
 type mempool[T Tx] struct {
@@ -228,14 +228,14 @@ func (m *mempool[_]) Len() int {
 	return m.unissuedTxs.Len()
 }
 
-func (m *mempool[_]) WaitForEvent(ctx context.Context) (engine.Message, error) {
+func (m *mempool[_]) WaitForEvent(ctx context.Context) (vm.Message, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	for m.unissuedTxs.Len() == 0 {
 		if err := m.cond.Wait(ctx); err != nil {
-			return engine.Message{}, err
+			return vm.Message{}, err
 		}
 	}
-	return engine.Message{Type: engine.PendingTxs}, nil
+	return vm.Message{Type: vm.PendingTxs}, nil
 }

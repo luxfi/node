@@ -6,8 +6,8 @@ package stakeable
 import (
 	"errors"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/runtime"
 )
 
 var (
@@ -57,4 +57,10 @@ func (s *LockIn) Verify() error {
 		return errNestedStakeableLocks
 	}
 	return s.TransferableIn.Verify()
+}
+
+func (s *LockIn) InitRuntime(rt *runtime.Runtime) {
+	if contextInput, ok := s.TransferableIn.(interface{ InitRuntime(*runtime.Runtime) }); ok {
+		contextInput.InitRuntime(rt)
+	}
 }

@@ -11,10 +11,11 @@ import (
 
 	"github.com/luxfi/log"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
+	"github.com/luxfi/runtime"
+	chain "github.com/luxfi/vm/chain"
 )
 
 var (
@@ -24,7 +25,7 @@ var (
 )
 
 type preForkBlock struct {
-	chainblock.Block
+	chain.Block
 	vm *VM
 }
 
@@ -79,18 +80,18 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 	oracleBlk, ok := b.Block.(OracleBlock)
 	if !ok {
-		return [2]chainblock.Block{}, errNotOracle
+		return [2]chain.Block{}, errNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
 	if err != nil {
-		return [2]chainblock.Block{}, err
+		return [2]chain.Block{}, err
 	}
 	// A pre-fork block's child options are always pre-fork blocks
-	return [2]chainblock.Block{
+	return [2]chain.Block{
 		&preForkBlock{
 			Block: options[0],
 			vm:    b.vm,
@@ -102,7 +103,7 @@ func (b *preForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error)
 	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() chainblock.Block {
+func (b *preForkBlock) getInnerBlk() chain.Block {
 	return b.Block
 }
 
@@ -216,10 +217,10 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
 	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		// The chain hasn't forked yet
-		// FIX 5: BuildBlockWithContext - proper context passing
-		var innerBlock chainblock.Block
+		// FIX 5: BuildBlockWithRuntime - proper context passing
+		var innerBlock chain.Block
 		if b.vm.blockBuilderVM != nil {
-			builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithContext(ctx, &chainblock.Context{})
+			builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{})
 			if err != nil {
 				return nil, err
 			}
@@ -229,7 +230,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 			if err != nil {
 				return nil, err
 			}
-			innerBlock = &reverseBlockAdapter{Block: engineBlock}
+			innerBlock = engineBlock
 		}
 
 		b.vm.logger.Info("built block",
@@ -264,21 +265,21 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	var innerBlock chainblock.Block
+	var innerBlock chain.Block
 	if b.vm.blockBuilderVM != nil {
-		// VM supports BuildBlockWithContext
-		builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithContext(ctx, &chainblock.Context{})
+		// VM supports BuildBlockWithRuntime
+		builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{})
 		if err != nil {
 			return nil, err
 		}
 		innerBlock = builtBlock
 	} else {
-		// VM doesn't support BuildBlockWithContext, use BuildBlock
+		// VM doesn't support BuildBlockWithRuntime, use BuildBlock
 		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
 		if err != nil {
 			return nil, err
 		}
-		innerBlock = &reverseBlockAdapter{Block: engineBlock}
+		innerBlock = engineBlock
 	}
 
 	// Calculate the epoch for the child block based on Granite activation
@@ -321,8 +322,8 @@ func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (*preForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
-	return chainblock.Epoch{}, nil
+func (*preForkBlock) pChainEpoch(context.Context) (chain.Epoch, error) {
+	return chain.Epoch{}, nil
 }
 
 func (b *preForkBlock) selectChildPChainHeight(ctx context.Context) (uint64, error) {

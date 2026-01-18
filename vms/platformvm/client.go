@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
@@ -66,14 +66,14 @@ func (c *Client) formatAddresses(addrs []ids.ShortID) ([]string, error) {
 
 // GetHeight returns the current block height.
 func (c *Client) GetHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
-	res := &api.GetHeightResponse{}
+	res := &apitypes.GetHeightResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getHeight", struct{}{}, res, options...)
 	return uint64(res.Height), err
 }
 
 // GetProposedHeight returns the current height of this node's proposer VM.
 func (c *Client) GetProposedHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
-	res := &api.GetHeightResponse{}
+	res := &apitypes.GetHeightResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getProposedHeight", struct{}{}, res, options...)
 	return uint64(res.Height), err
 }
@@ -119,24 +119,24 @@ func (c *Client) GetAtomicUTXOs(
 	}
 
 	// Build start index - only include address/UTXO if they're non-empty
-	var startIndex api.Index
+	var startIndex apitypes.Index
 	if startAddress != ids.ShortEmpty || startUTXOID != ids.Empty {
 		hrp := constants.GetHRP(c.networkID)
 		startAddrStr, err := address.Format("P", hrp, startAddress[:])
 		if err != nil {
 			return nil, ids.ShortID{}, ids.Empty, err
 		}
-		startIndex = api.Index{
+		startIndex = apitypes.Index{
 			Address: startAddrStr,
 			UTXO:    startUTXOID.String(),
 		}
 	}
 
-	res := &api.GetUTXOsReply{}
-	err = c.Requester.SendRequest(ctx, "platform.getUTXOs", &api.GetUTXOsArgs{
+	res := &apitypes.GetUTXOsReply{}
+	err = c.Requester.SendRequest(ctx, "platform.getUTXOs", &apitypes.GetUTXOsArgs{
 		Addresses:   formattedAddrs,
 		SourceChain: sourceChain,
-		Limit:       json.Uint32(limit),
+		Limit:       apitypes.Uint32(limit),
 		StartIndex:  startIndex,
 		Encoding:    formatting.Hex,
 	}, res, options...)
@@ -300,29 +300,30 @@ func (c *Client) GetL1Validator(
 	if err != nil {
 		return L1Validator{}, 0, err
 	}
+	base := res.APIL1Validator.BaseL1Validator
 	var pk *bls.PublicKey
-	if res.PublicKey != nil {
-		pk, err = bls.PublicKeyFromCompressedBytes(*res.PublicKey)
+	if base.PublicKey != nil {
+		pk, err = bls.PublicKeyFromCompressedBytes(*base.PublicKey)
 		if err != nil {
 			return L1Validator{}, 0, err
 		}
 	}
-	remainingBalanceOwnerAddrs, err := address.ParseToIDs(res.RemainingBalanceOwner.Addresses)
+	remainingBalanceOwnerAddrs, err := address.ParseToIDs(base.RemainingBalanceOwner.Addresses)
 	if err != nil {
 		return L1Validator{}, 0, err
 	}
-	deactivationOwnerAddrs, err := address.ParseToIDs(res.DeactivationOwner.Addresses)
+	deactivationOwnerAddrs, err := address.ParseToIDs(base.DeactivationOwner.Addresses)
 	if err != nil {
 		return L1Validator{}, 0, err
 	}
 
 	var minNonce uint64
-	if res.MinNonce != nil {
-		minNonce = uint64(*res.MinNonce)
+	if base.MinNonce != nil {
+		minNonce = uint64(*base.MinNonce)
 	}
 	var balance uint64
-	if res.Balance != nil {
-		balance = uint64(*res.Balance)
+	if base.Balance != nil {
+		balance = uint64(*base.Balance)
 	}
 
 	return L1Validator{
@@ -330,13 +331,13 @@ func (c *Client) GetL1Validator(
 		NodeID:    res.NodeID,
 		PublicKey: pk,
 		RemainingBalanceOwner: &secp256k1fx.OutputOwners{
-			Locktime:  uint64(res.RemainingBalanceOwner.Locktime),
-			Threshold: uint32(res.RemainingBalanceOwner.Threshold),
+			Locktime:  uint64(base.RemainingBalanceOwner.Locktime),
+			Threshold: uint32(base.RemainingBalanceOwner.Threshold),
 			Addrs:     remainingBalanceOwnerAddrs,
 		},
 		DeactivationOwner: &secp256k1fx.OutputOwners{
-			Locktime:  uint64(res.DeactivationOwner.Locktime),
-			Threshold: uint32(res.DeactivationOwner.Threshold),
+			Locktime:  uint64(base.DeactivationOwner.Locktime),
+			Threshold: uint32(base.DeactivationOwner.Threshold),
 			Addrs:     deactivationOwnerAddrs,
 		},
 		StartTime: uint64(res.StartTime),
@@ -410,8 +411,8 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 		return ids.Empty, err
 	}
 
-	res := &api.JSONTxID{}
-	err = c.Requester.SendRequest(ctx, "platform.issueTx", &api.FormattedTx{
+	res := &apitypes.JSONTxID{}
+	err = c.Requester.SendRequest(ctx, "platform.issueTx", &apitypes.FormattedTx{
 		Tx:       txStr,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -420,8 +421,8 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 
 // GetTx returns the byte representation of txID.
 func (c *Client) GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedTx{}
-	err := c.Requester.SendRequest(ctx, "platform.getTx", &api.GetTxArgs{
+	res := &apitypes.FormattedTx{}
+	err := c.Requester.SendRequest(ctx, "platform.getTx", &apitypes.GetTxArgs{
 		TxID:     txID,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -458,7 +459,7 @@ func (c *Client) GetStake(
 ) (map[ids.ID]uint64, [][]byte, error) {
 	res := &GetStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getStake", &GetStakeArgs{
-		JSONAddresses: api.JSONAddresses{
+		JSONAddresses: apitypes.JSONAddresses{
 			Addresses: ids.ShortIDsToStrings(addrs),
 		},
 		ValidatorsOnly: validatorsOnly,
@@ -512,7 +513,7 @@ func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc
 // GetRewardUTXOs returns the reward UTXOs for a transaction.
 //
 // Deprecated: GetRewardUTXOs should be fetched from a dedicated indexer.
-func (c *Client) GetRewardUTXOs(ctx context.Context, args *api.GetTxArgs, options ...rpc.Option) ([][]byte, error) {
+func (c *Client) GetRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs, options ...rpc.Option) ([][]byte, error) {
 	res := &GetRewardUTXOsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getRewardUTXOs", args, res, options...)
 	if err != nil {
@@ -555,8 +556,8 @@ func (c *Client) GetValidatorsAt(
 
 // GetBlock returns blockID.
 func (c *Client) GetBlock(ctx context.Context, blockID ids.ID, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedBlock{}
-	if err := c.Requester.SendRequest(ctx, "platform.getBlock", &api.GetBlockArgs{
+	res := &apitypes.FormattedBlock{}
+	if err := c.Requester.SendRequest(ctx, "platform.getBlock", &apitypes.GetBlockArgs{
 		BlockID:  blockID,
 		Encoding: formatting.Hex,
 	}, res, options...); err != nil {
@@ -567,9 +568,9 @@ func (c *Client) GetBlock(ctx context.Context, blockID ids.ID, options ...rpc.Op
 
 // GetBlockByHeight returns the block at the given height.
 func (c *Client) GetBlockByHeight(ctx context.Context, height uint64, options ...rpc.Option) ([]byte, error) {
-	res := &api.FormattedBlock{}
-	err := c.Requester.SendRequest(ctx, "platform.getBlockByHeight", &api.GetBlockByHeightArgs{
-		Height:   json.Uint64(height),
+	res := &apitypes.FormattedBlock{}
+	err := c.Requester.SendRequest(ctx, "platform.getBlockByHeight", &apitypes.GetBlockByHeightArgs{
+		Height:   apitypes.Uint64(height),
 		Encoding: formatting.HexNC,
 	}, res, options...)
 	if err != nil {

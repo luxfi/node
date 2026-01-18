@@ -6,7 +6,7 @@ package indexer
 import (
 	"context"
 
-	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 )
@@ -18,5 +18,5 @@ type BlockServer interface {
 
 	// Note: this is a contention heavy call that should be avoided
 	// for frequent/repeated indexer ops
-	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error)
+	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error)
 }
