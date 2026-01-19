@@ -33,6 +33,7 @@ import (
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
+	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
@@ -959,6 +960,26 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		return getOrCreateDevModeGenesis(stakingCfg, dataDir)
 	}
 
+	// HIGHEST PRIORITY: Raw genesis bytes - use directly without rebuilding
+	// This is critical for snapshot resume to avoid hash mismatch
+	if v.IsSet(GenesisRawBytesKey) {
+		genesisB64 := v.GetString(GenesisRawBytesKey)
+		genesisBytes, err := base64.StdEncoding.DecodeString(genesisB64)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
+		}
+		// Extract xAssetID from the X-chain genesis within the platform genesis
+		xAssetID, err := extractXAssetID(genesisBytes)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("failed to extract xAssetID from raw genesis bytes: %w", err)
+		}
+		log.Info("loaded raw genesis bytes directly",
+			"size", len(genesisBytes),
+			"xAssetID", xAssetID,
+		)
+		return genesisBytes, xAssetID, nil
+	}
+
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
@@ -984,7 +1005,39 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
 		genesisFileName := getExpandedArg(v, GenesisFileKey)
-		return builder.FromFile(networkID, genesisFileName, stakingCfg, allowCustomGenesis)
+		// Check if we have cached genesis bytes to avoid rebuilding
+		cacheFile := filepath.Join(dataDir, "genesis.bytes")
+		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
+			xAssetID, err := extractXAssetID(cachedBytes)
+			if err != nil {
+				log.Warn("failed to extract xAssetID from cached genesis, rebuilding",
+					"error", err,
+				)
+			} else {
+				log.Info("loaded cached genesis bytes for hash stability",
+					"cacheFile", cacheFile,
+					"size", len(cachedBytes),
+				)
+				return cachedBytes, xAssetID, nil
+			}
+		}
+		// No cache or invalid cache - build from file and cache the result
+		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg, allowCustomGenesis)
+		if err != nil {
+			return nil, ids.Empty, err
+		}
+		// Cache the built bytes for future restarts
+		if err := saveCachedGenesisBytes(cacheFile, genesisBytes); err != nil {
+			log.Warn("failed to cache genesis bytes (hash stability may be affected on restart)",
+				"error", err,
+			)
+		} else {
+			log.Info("cached genesis bytes for hash stability",
+				"cacheFile", cacheFile,
+				"size", len(genesisBytes),
+			)
+		}
+		return genesisBytes, xAssetID, nil
 	}
 
 	// finally if file is not specified/readable go for the predefined config
@@ -1986,6 +2039,37 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// 	}
 
 	return nodeConfig, nil
+}
+
+// loadCachedGenesisBytes loads cached platform genesis bytes from a file.
+// Returns the bytes if found, or an error if not found/unreadable.
+func loadCachedGenesisBytes(cacheFile string) ([]byte, error) {
+	return os.ReadFile(cacheFile)
+}
+
+// saveCachedGenesisBytes saves platform genesis bytes to a cache file.
+func saveCachedGenesisBytes(cacheFile string, genesisBytes []byte) error {
+	return os.WriteFile(cacheFile, genesisBytes, 0o600)
+}
+
+// extractXAssetID extracts the LUX asset ID from raw platform genesis bytes.
+// This is needed when loading raw genesis bytes directly (for snapshot resume)
+// to avoid rebuilding genesis which causes hash mismatch.
+func extractXAssetID(genesisBytes []byte) (ids.ID, error) {
+	// Get the X-chain creation TX from the platform genesis
+	xChainTx, err := builder.VMGenesis(genesisBytes, constants.XVMID)
+	if err != nil {
+		return ids.Empty, fmt.Errorf("couldn't find X-chain genesis in platform genesis: %w", err)
+	}
+
+	// Extract the XVM genesis bytes from the create chain TX
+	createChainTx, ok := xChainTx.Unsigned.(*pchaintxs.CreateChainTx)
+	if !ok {
+		return ids.Empty, fmt.Errorf("X-chain genesis TX is not a CreateChainTx")
+	}
+
+	// Use the builder.XAssetID function to extract the asset ID from XVM genesis
+	return builder.XAssetID(createChainTx.GenesisData)
 }
 
 func providedFlags(v *viper.Viper) map[string]interface{} {

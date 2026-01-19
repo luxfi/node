@@ -16,6 +16,7 @@ const (
 	VersionJSONKey                           = "version-json"
 	GenesisFileKey                           = "genesis-file"
 	GenesisFileContentKey                    = "genesis-file-content"
+	GenesisRawBytesKey                       = "genesis-raw-bytes"
 	GenesisDBKey                             = "genesis-db"
 	GenesisDBTypeKey                         = "genesis-db-type"
 	GenesisBlockLimitKey                     = "genesis-block-limit"
