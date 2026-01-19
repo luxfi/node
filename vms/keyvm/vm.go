@@ -10,16 +10,19 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/rpc/v2"
 	grjson "github.com/gorilla/rpc/v2/json"
+	"golang.org/x/crypto/hkdf"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/mlkem"
@@ -67,6 +70,14 @@ var (
 	errMLDSANotEnabled    = errors.New("ML-DSA not enabled")
 	errValidatorNotFound  = errors.New("validator not found")
 )
+
+// secureZeroBytes overwrites a byte slice with zeros to clear sensitive data from memory.
+// This helps prevent key material from remaining in memory after use.
+func secureZeroBytes(b []byte) {
+	for i := range b {
+		b[i] = 0
+	}
+}
 
 // KeyMetadata stores information about a distributed key.
 type KeyMetadata struct {
@@ -397,7 +408,7 @@ func (vm *VM) ListKeys(ctx context.Context) ([]*KeyMetadata, error) {
 	return keys, nil
 }
 
-// DeleteKey deletes a key and its shares.
+// DeleteKey deletes a key and its shares with secure zeroing of sensitive material.
 func (vm *VM) DeleteKey(ctx context.Context, keyID ids.ID) error {
 	vm.keysLock.Lock()
 	defer vm.keysLock.Unlock()
@@ -407,12 +418,25 @@ func (vm *VM) DeleteKey(ctx context.Context, keyID ids.ID) error {
 		return errKeyNotFound
 	}
 
+	// Secure zero key shares before deletion
+	if shares, ok := vm.shares[keyID]; ok {
+		for _, share := range shares {
+			secureZeroBytes(share.ShareData)
+		}
+	}
+
+	// Zero public key in metadata
+	if meta != nil && len(meta.PublicKey) > 0 {
+		secureZeroBytes(meta.PublicKey)
+	}
+
 	// Remove from maps
 	delete(vm.keys, keyID)
 	delete(vm.keysByName, meta.Name)
 	delete(vm.shares, keyID)
 
-	// Remove from caches
+	// Remove from caches (cache.Evict handles the eviction,
+	// but we've already zeroed what we can access)
 	vm.mlkemCache.Evict(keyID)
 	vm.mlkemPubCache.Evict(keyID)
 
@@ -453,15 +477,12 @@ func (vm *VM) Encrypt(ctx context.Context, keyID ids.ID, plaintext []byte) ([]by
 	}
 
 	// Use AES-GCM for authenticated encryption
-	// Derive a 32-byte key from the shared secret (use first 32 bytes or hash if needed)
+	// Derive a 32-byte key from the shared secret using HKDF (RFC 5869)
+	// This provides proper key derivation with domain separation
 	var key [32]byte
-	if len(sharedSecret) >= 32 {
-		copy(key[:], sharedSecret[:32])
-	} else {
-		// If shared secret is shorter, repeat it
-		for i := range key {
-			key[i] = sharedSecret[i%len(sharedSecret)]
-		}
+	kdf := hkdf.New(sha256.New, sharedSecret, nil, []byte("keyvm-mlkem-encryption-v1"))
+	if _, err := io.ReadFull(kdf, key[:]); err != nil {
+		return nil, nil, fmt.Errorf("failed to derive encryption key: %w", err)
 	}
 
 	block, err := aes.NewCipher(key[:])
@@ -630,7 +651,7 @@ func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	return vmcore.Message{}, nil
 }
 
-// Shutdown shuts down the VM.
+// Shutdown shuts down the VM with secure cleanup of sensitive key material.
 func (vm *VM) Shutdown(ctx context.Context) error {
 	vm.shutdownLock.Lock()
 	vm.shuttingDown = true
@@ -642,6 +663,28 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	if vm.cancel != nil {
 		vm.cancel()
 	}
+
+	// Secure zero all key material before shutdown
+	vm.keysLock.Lock()
+	for _, shares := range vm.shares {
+		for _, share := range shares {
+			secureZeroBytes(share.ShareData)
+		}
+	}
+	for _, meta := range vm.keys {
+		if meta != nil && len(meta.PublicKey) > 0 {
+			secureZeroBytes(meta.PublicKey)
+		}
+	}
+	// Clear maps
+	vm.shares = make(map[ids.ID][]*KeyShare)
+	vm.keys = make(map[ids.ID]*KeyMetadata)
+	vm.keysByName = make(map[string]ids.ID)
+	vm.keysLock.Unlock()
+
+	// Flush caches (this removes cached ML-KEM keys from memory)
+	vm.mlkemCache.Flush()
+	vm.mlkemPubCache.Flush()
 
 	// Close database
 	if vm.versiondb != nil {

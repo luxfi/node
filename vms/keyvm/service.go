@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/luxfi/ids"
@@ -312,25 +313,68 @@ func (s *Service) Health(r *http.Request, args *HealthArgs, reply *HealthReply) 
 	reply.Latency = make(map[string]int64)
 
 	// Check validator connectivity with TCP dial
+	// Only check validators that are in the configured allowlist
 	timeout := s.vm.Config.ValidatorTimeout
 	if timeout == 0 {
 		timeout = 5 * time.Second
 	}
 
+	// Limit concurrent health checks to prevent resource exhaustion
+	const maxConcurrent = 10
+	semaphore := make(chan struct{}, maxConcurrent)
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	for _, v := range s.vm.Config.Validators {
-		start := time.Now()
-		conn, err := net.DialTimeout("tcp", v, timeout)
+		// Validate address format (host:port)
+		host, port, err := net.SplitHostPort(v)
 		if err != nil {
+			// Invalid format - skip this validator
+			mu.Lock()
 			reply.Validators[v] = false
-			reply.Latency[v] = -1 // Unreachable
+			reply.Latency[v] = -2 // Invalid format
+			mu.Unlock()
 			continue
 		}
-		latency := time.Since(start).Milliseconds()
-		conn.Close()
-		reply.Validators[v] = true
-		reply.Latency[v] = latency
+
+		// Basic validation: ensure host and port are not empty
+		if host == "" || port == "" {
+			mu.Lock()
+			reply.Validators[v] = false
+			reply.Latency[v] = -2
+			mu.Unlock()
+			continue
+		}
+
+		wg.Add(1)
+		go func(validator string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			start := time.Now()
+			conn, err := net.DialTimeout("tcp", validator, timeout)
+			if err != nil {
+				mu.Lock()
+				reply.Validators[validator] = false
+				reply.Latency[validator] = -1 // Unreachable
+				mu.Unlock()
+				return
+			}
+			latency := time.Since(start).Milliseconds()
+			conn.Close()
+
+			mu.Lock()
+			reply.Validators[validator] = true
+			reply.Latency[validator] = latency
+			mu.Unlock()
+		}(v)
 	}
 
+	wg.Wait()
 	return nil
 }
 

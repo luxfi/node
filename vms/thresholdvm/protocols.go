@@ -263,20 +263,45 @@ func (h *LSSHandler) Sign(ctx context.Context, share KeyShare, message []byte, s
 	return nil, errors.New("LSS sign requires protocol session integration - use VM.RequestSignature instead")
 }
 
-func (h *LSSHandler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
-	if signature == nil || len(pubKey) == 0 || len(message) == 0 {
-		return false, errors.New("invalid parameters for verification")
+// verifySecp256k1ECDSA performs secp256k1 ECDSA signature verification with proper validation.
+// pubKey must be 33 bytes (compressed) or 65 bytes (uncompressed).
+// message must be exactly 32 bytes (pre-hashed digest).
+// signature must be exactly 64 bytes in [R || S] format.
+func verifySecp256k1ECDSA(pubKey []byte, message []byte, signature Signature) (bool, error) {
+	// Validate public key format (compressed: 33 bytes, uncompressed: 65 bytes)
+	if len(pubKey) != 33 && len(pubKey) != 65 {
+		return false, fmt.Errorf("invalid public key length: expected 33 or 65, got %d", len(pubKey))
 	}
 
-	// Get signature bytes in [R || S] format (64 bytes)
+	// Validate compressed public key prefix (0x02 or 0x03 for compressed, 0x04 for uncompressed)
+	if len(pubKey) == 33 && pubKey[0] != 0x02 && pubKey[0] != 0x03 {
+		return false, errors.New("invalid compressed public key prefix")
+	}
+	if len(pubKey) == 65 && pubKey[0] != 0x04 {
+		return false, errors.New("invalid uncompressed public key prefix")
+	}
+
+	// ECDSA requires 32-byte hash for message
+	if len(message) != 32 {
+		return false, fmt.Errorf("message must be 32-byte hash, got %d bytes", len(message))
+	}
+
+	// Validate signature
+	if signature == nil {
+		return false, errors.New("signature is nil")
+	}
+
 	sigBytes := signature.Bytes()
-	if len(sigBytes) < 64 {
-		return false, errors.New("invalid signature length")
+	if len(sigBytes) != 64 {
+		return false, fmt.Errorf("signature must be exactly 64 bytes, got %d", len(sigBytes))
 	}
 
 	// Verify using secp256k1 ECDSA
-	// Note: message should be 32-byte hash, if not already hashed, caller must hash first
-	return secp256k1.VerifySignature(pubKey, message, sigBytes[:64]), nil
+	return secp256k1.VerifySignature(pubKey, message, sigBytes), nil
+}
+
+func (h *LSSHandler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
+	return verifySecp256k1ECDSA(pubKey, message, signature)
 }
 
 func (h *LSSHandler) Reshare(ctx context.Context, share KeyShare, newPartyIDs []party.ID, newThreshold int) (KeyShare, error) {
@@ -386,19 +411,7 @@ func (h *CGGMP21Handler) Sign(ctx context.Context, share KeyShare, message []byt
 }
 
 func (h *CGGMP21Handler) Verify(pubKey []byte, message []byte, signature Signature) (bool, error) {
-	if signature == nil || len(pubKey) == 0 || len(message) == 0 {
-		return false, errors.New("invalid parameters for verification")
-	}
-
-	// Get signature bytes in [R || S] format (64 bytes)
-	sigBytes := signature.Bytes()
-	if len(sigBytes) < 64 {
-		return false, errors.New("invalid signature length")
-	}
-
-	// Verify using secp256k1 ECDSA
-	// Note: message should be 32-byte hash, if not already hashed, caller must hash first
-	return secp256k1.VerifySignature(pubKey, message, sigBytes[:64]), nil
+	return verifySecp256k1ECDSA(pubKey, message, signature)
 }
 
 func (h *CGGMP21Handler) Reshare(ctx context.Context, share KeyShare, newPartyIDs []party.ID, newThreshold int) (KeyShare, error) {

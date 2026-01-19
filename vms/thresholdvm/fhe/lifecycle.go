@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
@@ -700,6 +701,11 @@ func (lm *LifecycleManager) completeDKGLocked() (*deferredCallback, error) {
 		"epoch", lm.currentDKG.Epoch,
 		"public_key_len", len(publicKey))
 
+	// Persist state after DKG completion (critical for crash recovery)
+	if err := lm.persistStateLocked(); err != nil {
+		lm.logger.Error("Failed to persist DKG completion state", "error", err)
+	}
+
 	// Return callback info - caller will invoke after releasing lock
 	return &deferredCallback{
 		dkgComplete:  true,
@@ -709,13 +715,42 @@ func (lm *LifecycleManager) completeDKGLocked() (*deferredCallback, error) {
 }
 
 // aggregatePublicKey combines commitments into the threshold public key.
-// Uses XOR-based combination of Feldman VSS commitment coefficients.
-// In production, this would use polynomial interpolation on the commitment points.
-// The first 32 bytes of each commitment are the constant term (public key share).
+// Uses BLS12-381 elliptic curve point addition for Feldman VSS commitment coefficients.
+// The first 48 bytes of each commitment are the compressed BLS public key share (G1 point).
+// Falls back to deterministic XOR combination for non-BLS commitments or testing.
 func (lm *LifecycleManager) aggregatePublicKey() []byte {
-	// Aggregate public key shares from commitments using XOR combination.
-	// This produces a deterministic aggregate from all participant contributions.
-	// A full implementation would use elliptic curve point addition on BLS12-381.
+	if len(lm.currentDKG.Commitments) == 0 {
+		// Return 32-byte zero slice for empty commitments (maintains API compatibility)
+		return make([]byte, 32)
+	}
+
+	// Try BLS aggregation first for proper cryptographic security
+	var pubKeys []*bls.PublicKey
+	for nodeID, commitment := range lm.currentDKG.Commitments {
+		if len(commitment) >= bls.PublicKeyLen {
+			// Parse BLS public key from commitment (first 48 bytes is compressed G1 point)
+			pubKey, err := bls.PublicKeyFromCompressedBytes(commitment[:bls.PublicKeyLen])
+			if err == nil {
+				pubKeys = append(pubKeys, pubKey)
+			} else {
+				lm.logger.Debug("Commitment not in BLS format, using fallback",
+					"nodeID", nodeID)
+			}
+		}
+	}
+
+	// If we have valid BLS keys, use proper curve arithmetic
+	if len(pubKeys) > 0 {
+		aggregatedPubKey, err := bls.AggregatePublicKeys(pubKeys)
+		if err == nil {
+			return bls.PublicKeyToCompressedBytes(aggregatedPubKey)
+		}
+		lm.logger.Warn("BLS aggregation failed, using fallback", "error", err)
+	}
+
+	// Fallback: deterministic XOR combination for non-BLS commitments or testing
+	// This provides a unique, reproducible aggregate but is NOT cryptographically secure
+	// Production deployments MUST use proper BLS-formatted commitments
 	result := make([]byte, 32)
 	for _, commitment := range lm.currentDKG.Commitments {
 		if len(commitment) >= 32 {
@@ -742,6 +777,11 @@ func (lm *LifecycleManager) AbortDKG(reason string) error {
 
 	lm.logger.Warn("DKG ceremony aborted", "reason", reason)
 
+	// Persist aborted state for crash recovery
+	if err := lm.persistStateLocked(); err != nil {
+		lm.logger.Error("Failed to persist DKG abort state", "error", err)
+	}
+
 	return nil
 }
 
@@ -760,6 +800,11 @@ func (lm *LifecycleManager) startTransitionLocked() error {
 	lm.logger.Info("Starting epoch transition",
 		"from", currentEpoch,
 		"to", newEpoch)
+
+	// Persist transition state immediately for crash recovery
+	if err := lm.persistStateLocked(); err != nil {
+		lm.logger.Error("Failed to persist transition start state", "error", err)
+	}
 
 	// Get current committee for new DKG
 	members, err := lm.registry.GetCommittee()
@@ -830,6 +875,11 @@ func (lm *LifecycleManager) finalizeTransitionLocked() (*deferredCallback, error
 		"to", newEpoch,
 		"committee_size", len(members),
 		"threshold", lm.currentDKG.Threshold)
+
+	// Persist final state before clearing (critical for crash recovery)
+	if err := lm.persistStateLocked(); err != nil {
+		lm.logger.Error("Failed to persist transition completion state", "error", err)
+	}
 
 	// Clear transition state
 	lm.currentTransition = nil
@@ -990,10 +1040,11 @@ func (lm *LifecycleManager) loadState() error {
 	return nil
 }
 
-// persistState saves lifecycle state
-func (lm *LifecycleManager) persistState() error {
-	lm.mu.RLock()
-	defer lm.mu.RUnlock()
+// persistStateLocked saves lifecycle state (caller must hold mutex)
+func (lm *LifecycleManager) persistStateLocked() error {
+	if lm.registry == nil || lm.registry.db == nil {
+		return nil
+	}
 
 	// Persist DKG state if active
 	if lm.currentDKG != nil {
@@ -1020,6 +1071,13 @@ func (lm *LifecycleManager) persistState() error {
 	}
 
 	return nil
+}
+
+// persistState saves lifecycle state (acquires lock)
+func (lm *LifecycleManager) persistState() error {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	return lm.persistStateLocked()
 }
 
 // EpochKeyInfo returns the public key info for an epoch
