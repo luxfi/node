@@ -184,9 +184,11 @@ func (b *Block) Verify(ctx context.Context) error {
 			return fmt.Errorf("would exceed daily bridge limit for chain %s", req.DestChain)
 		}
 
-		// Verify MPC signatures if present
+		// Verify MPC signatures if present using CMP threshold ECDSA
 		if len(req.MPCSignatures) > 0 {
-			// TODO: Implement MPC signature verification using threshold protocol
+			if err := b.verifyRequestMPCSignatures(req); err != nil {
+				return fmt.Errorf("MPC signature verification failed for request %s: %w", req.ID, err)
+			}
 		}
 	}
 
@@ -252,6 +254,65 @@ func deserializeSignature(group curve.Curve, data []byte) (*ecdsa.Signature, err
 	}
 
 	return &sig, nil
+}
+
+// verifyRequestMPCSignatures verifies MPC threshold signatures on a bridge request
+// using the CMP ECDSA protocol. The aggregated signature is verified against the
+// group public key derived from Lagrange interpolation of public shares.
+func (b *Block) verifyRequestMPCSignatures(req *BridgeRequest) error {
+	if b.vm.mpcConfig == nil {
+		return errors.New("MPC config not initialized")
+	}
+
+	// Get the group public key using Lagrange interpolation
+	groupPublicKey := b.vm.mpcConfig.PublicPoint()
+	if groupPublicKey == nil {
+		return errors.New("failed to compute group public key")
+	}
+
+	// Compute message hash for verification (request ID serves as unique identifier)
+	messageHash := computeRequestHash(req)
+
+	// For threshold ECDSA, we verify the single aggregated signature
+	// produced by t+1 parties against the combined group public key
+	if len(req.MPCSignatures) == 0 {
+		return errors.New("no MPC signatures present")
+	}
+
+	// The aggregated threshold signature (produced by CMP sign protocol)
+	// is stored as the first entry in MPCSignatures
+	aggregatedSigBytes := req.MPCSignatures[0]
+
+	// Deserialize the ECDSA signature
+	sig, err := deserializeSignature(b.vm.mpcConfig.Group, aggregatedSigBytes)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize aggregated signature: %w", err)
+	}
+
+	// Verify the signature against the group public key
+	if !sig.Verify(groupPublicKey, messageHash) {
+		return errors.New("aggregated MPC signature verification failed")
+	}
+
+	return nil
+}
+
+// computeRequestHash computes a deterministic hash of a bridge request for signing
+func computeRequestHash(req *BridgeRequest) []byte {
+	h := sha256.New()
+	h.Write(req.ID[:])
+	h.Write([]byte(req.SourceChain))
+	h.Write([]byte(req.DestChain))
+	h.Write(req.Asset[:])
+
+	amountBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(amountBytes, req.Amount)
+	h.Write(amountBytes)
+
+	h.Write(req.Recipient)
+	h.Write(req.SourceTxID[:])
+
+	return h.Sum(nil)
 }
 
 // Height returns the block height

@@ -226,4 +226,14 @@ type Config struct {
 	// Path to write process context to (including PID, API URI, and
 	// staking address).
 	ProcessContextFilePath string `json:"processContextFilePath"`
+
+	// Low Memory Configuration
+	LowMemoryEnabled    bool   `json:"lowMemoryEnabled"`
+	DBCacheSize         uint64 `json:"dbCacheSize"`
+	DBMemtableSize      uint64 `json:"dbMemtableSize"`
+	StateCacheSize      uint64 `json:"stateCacheSize"`
+	BlockCacheSize      uint64 `json:"blockCacheSize"`
+	DisableBloomFilters bool   `json:"disableBloomFilters"`
+	LazyChainLoading    bool   `json:"lazyChainLoading"`
+	SingleValidatorMode bool   `json:"singleValidatorMode"`
 }

@@ -36,7 +36,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/proto/pb/p2p"
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	// vmpb "github.com/luxfi/node/proto/pb/vm" // Removed - using vm.Ready instead
 	"github.com/luxfi/warp"
 
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
@@ -942,8 +942,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Initialize the VM if it supports the Initialize interface
-		// Inject automining config for dev mode (applies to C-Chain/coreth)
-		vmConfigBytes := m.injectAutominingConfig(chainConfig.Config)
+		// Inject automining config for dev mode (applies to C-Chain/coreth only)
+		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		err = vmTyped.Initialize(
 			context.TODO(),
@@ -975,7 +975,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("transitioning VM to normal operation",
 				log.Stringer("chainID", chainParams.ID))
-			if err := stateVM.SetState(context.TODO(), uint32(vmpb.State_STATE_NORMAL_OP)); err != nil {
+			// Use vm.Ready (4) instead of vmpb.State_STATE_NORMAL_OP (3)
+			// to match what coreth's SetState expects
+			if err := stateVM.SetState(context.TODO(), uint32(vm.Ready)); err != nil {
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
@@ -1214,8 +1216,8 @@ func (m *manager) createDAG(
 		chainConfig = ChainConfig{}
 	}
 
-	// Inject automining config for dev mode (applies to C-Chain/coreth)
-	chainConfig.Config = m.injectAutominingConfig(chainConfig.Config)
+	// Inject automining config for dev mode (applies to C-Chain/coreth only)
+	chainConfig.Config = m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 
 	// Get chain alias for database directory naming
 	chainAlias := chainParams.ID.String()
@@ -1320,7 +1322,8 @@ func (m *manager) createDAG(
 		if stateVM, ok := vmImpl.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			if err := stateVM.SetState(initCtx, uint32(vmpb.State_STATE_NORMAL_OP)); err != nil {
+			// Use vm.Ready (4) instead of vmpb.State_STATE_NORMAL_OP (3)
+			if err := stateVM.SetState(initCtx, uint32(vm.Ready)); err != nil {
 				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
 			}
 		}
@@ -1636,8 +1639,16 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 // injectAutominingConfig modifies the config bytes to include enable-automining flag
 // when dev mode automining is enabled. This is used for C-Chain (coreth) to enable
 // anvil-like block production behavior.
-func (m *manager) injectAutominingConfig(configBytes []byte) []byte {
+// Only applies to VMs that use JSON config format (EVMID). VMs using binary codec
+// config (ThresholdVM, ZKVM, etc.) are not modified.
+func (m *manager) injectAutominingConfig(vmID ids.ID, configBytes []byte) []byte {
 	if !m.EnableAutomining {
+		return configBytes
+	}
+
+	// Only inject automining config for EVM-based chains (C-Chain)
+	// Other VMs like ThresholdVM, ZKVM use binary codec config format
+	if vmID != constants.EVMID {
 		return configBytes
 	}
 

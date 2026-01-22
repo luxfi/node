@@ -136,6 +136,30 @@ type SignerReplacementResult struct {
 	Message           string `json:"message"`
 }
 
+// CrossChainMPCRequest represents a cross-chain request to ThresholdVM for MPC operations
+type CrossChainMPCRequest struct {
+	Type          MPCRequestType `json:"type"`
+	SessionID     string         `json:"sessionId"`
+	Epoch         uint64         `json:"epoch"`
+	OldPartyIDs   []party.ID     `json:"oldPartyIds"`
+	NewPartyIDs   []party.ID     `json:"newPartyIds"`
+	Threshold     int            `json:"threshold"`
+	SourceChainID []byte         `json:"sourceChainId"`
+	Timestamp     int64          `json:"timestamp"`
+}
+
+// MPCRequestType defines the type of MPC cross-chain request
+type MPCRequestType uint8
+
+const (
+	// MPCRequestReshare triggers a key reshare protocol
+	MPCRequestReshare MPCRequestType = iota
+	// MPCRequestSign triggers a threshold signing operation
+	MPCRequestSign
+	// MPCRequestRefresh triggers a proactive key refresh
+	MPCRequestRefresh
+)
+
 // VM implements the Bridge VM for cross-chain interoperability
 type VM struct {
 	rt       *runtime.Runtime
@@ -878,8 +902,16 @@ func (vm *VM) RemoveSigner(nodeID ids.NodeID, replacementNodeID *ids.NodeID) (*S
 		)
 	}
 
-	// TODO: Trigger actual reshare protocol via T-Chain (ThresholdVM)
-	// This would send a CrossChainRequest to initiate the reshare
+	// Trigger actual reshare protocol via T-Chain (ThresholdVM) using warp messaging
+	if err := vm.triggerReshareProtocol(reshareSession, nodeID, replacement); err != nil {
+		if vm.log != nil && !vm.log.IsZero() {
+			vm.log.Warn("failed to trigger reshare protocol",
+				log.String("reshareSession", reshareSession),
+				log.String("error", err.Error()),
+			)
+		}
+		// Continue anyway - reshare can be retried
+	}
 
 	result := &SignerReplacementResult{
 		Success:       true,
@@ -910,6 +942,116 @@ func (vm *VM) HasSigner(nodeID ids.NodeID) bool {
 		}
 	}
 	return false
+}
+
+// triggerReshareProtocol sends a cross-chain request to ThresholdVM to initiate
+// the MPC key reshare protocol. This is triggered when a signer is replaced.
+func (vm *VM) triggerReshareProtocol(sessionID string, removedNodeID ids.NodeID, newNodeID ids.NodeID) error {
+	// Check if runtime is available (may not be in unit tests)
+	if vm.rt == nil {
+		if vm.log != nil && !vm.log.IsZero() {
+			vm.log.Debug("skipping reshare protocol trigger - runtime not initialized")
+		}
+		return nil
+	}
+
+	// Check required warp infrastructure
+	if vm.rt.WarpSigner == nil || vm.rt.Sender == nil {
+		if vm.log != nil && !vm.log.IsZero() {
+			vm.log.Debug("skipping reshare protocol trigger - warp infrastructure not available")
+		}
+		return nil
+	}
+
+	// Build the list of old party IDs (current signers excluding the removed one)
+	oldPartyIDs := make([]party.ID, 0, len(vm.signerSet.Signers))
+	for _, signer := range vm.signerSet.Signers {
+		if signer.NodeID != removedNodeID && signer.NodeID != newNodeID {
+			oldPartyIDs = append(oldPartyIDs, signer.PartyID)
+		}
+	}
+
+	// Build the list of new party IDs (current signers after replacement)
+	newPartyIDs := make([]party.ID, 0, len(vm.signerSet.Signers))
+	for _, signer := range vm.signerSet.Signers {
+		newPartyIDs = append(newPartyIDs, signer.PartyID)
+	}
+
+	// Create the cross-chain MPC request
+	mpcRequest := &CrossChainMPCRequest{
+		Type:          MPCRequestReshare,
+		SessionID:     sessionID,
+		Epoch:         vm.signerSet.CurrentEpoch,
+		OldPartyIDs:   oldPartyIDs,
+		NewPartyIDs:   newPartyIDs,
+		Threshold:     vm.signerSet.ThresholdT,
+		SourceChainID: vm.rt.ChainID[:],
+		Timestamp:     time.Now().Unix(),
+	}
+
+	// Serialize the request
+	requestBytes, err := json.Marshal(mpcRequest)
+	if err != nil {
+		return fmt.Errorf("failed to marshal MPC request: %w", err)
+	}
+
+	// Create warp unsigned message with the reshare request payload
+	unsignedMsg, err := warp.NewUnsignedMessage(
+		vm.rt.NetworkID,
+		vm.rt.ChainID,
+		requestBytes,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create unsigned warp message: %w", err)
+	}
+
+	// Sign the message using the node's BLS key
+	sigBytes, err := vm.rt.WarpSigner.Sign(unsignedMsg)
+	if err != nil {
+		return fmt.Errorf("failed to sign warp message: %w", err)
+	}
+
+	// Create a BitSetSignature with this node as the sole signer
+	// The signature will be aggregated by receiving nodes in ThresholdVM
+	var sigArray [96]byte // BLS signature length
+	copy(sigArray[:], sigBytes)
+
+	// Create signers bitset with only this node (index 0)
+	signers := warp.NewBitSet()
+	signers.Add(0)
+
+	signature := warp.NewBitSetSignature(signers, sigArray)
+
+	// Create the signed warp message
+	signedMsg, err := warp.NewMessage(unsignedMsg, signature)
+	if err != nil {
+		return fmt.Errorf("failed to create signed warp message: %w", err)
+	}
+
+	// Broadcast the reshare request to all signers via gossip
+	// The ThresholdVM nodes will receive this and participate in the reshare protocol
+	msgBytes := signedMsg.Bytes()
+
+	config := warp.SendConfig{
+		Validators: len(vm.signerSet.Signers), // Send to all validators in signer set
+		Peers:      0,
+	}
+
+	if err := vm.rt.Sender.SendGossip(context.Background(), config, msgBytes); err != nil {
+		return fmt.Errorf("failed to broadcast reshare request: %w", err)
+	}
+
+	if vm.log != nil && !vm.log.IsZero() {
+		vm.log.Info("reshare protocol triggered",
+			log.String("sessionID", sessionID),
+			log.Uint64("epoch", vm.signerSet.CurrentEpoch),
+			log.Int("oldParties", len(oldPartyIDs)),
+			log.Int("newParties", len(newPartyIDs)),
+			log.Int("threshold", vm.signerSet.ThresholdT),
+		)
+	}
+
+	return nil
 }
 
 // SlashSignerInput is the input for slashing a bridge signer

@@ -10,14 +10,28 @@ import (
 	"syscall"
 
 	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/warp/socket"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/codec/wrappers"
 )
 
-var _ consensuscore.Acceptor = (*EventSockets)(nil)
+var (
+	_ consensuscore.Acceptor    = (*EventSockets)(nil)
+	_ nodeconsensus.Acceptor    = (*eventSocketAcceptor)(nil)
+)
+
+// eventSocketAcceptor adapts an eventSocket to the nodeconsensus.Acceptor interface
+type eventSocketAcceptor struct {
+	socket *eventSocket
+}
+
+func (a *eventSocketAcceptor) Accept(_ *runtime.Runtime, containerID ids.ID, container []byte) error {
+	return a.socket.Accept(context.Background(), containerID, container)
+}
 
 // EventSockets is a set of named eventSockets
 type EventSockets struct {
@@ -29,9 +43,9 @@ type EventSockets struct {
 func newEventSockets(
 	ctx ipcContext,
 	chainID ids.ID,
-	blockAcceptorGroup interface{},
-	txAcceptorGroup interface{},
-	vertexAcceptorGroup interface{},
+	blockAcceptorGroup nodeconsensus.AcceptorGroup,
+	txAcceptorGroup nodeconsensus.AcceptorGroup,
+	vertexAcceptorGroup nodeconsensus.AcceptorGroup,
 ) (*EventSockets, error) {
 	consensusIPC, err := newEventIPCSocket(
 		ctx,
@@ -117,8 +131,8 @@ func newEventIPCSocket(
 	ctx ipcContext,
 	chainID ids.ID,
 	name string,
-	linearAcceptorGroup interface{},
-	luxAcceptorGroup interface{},
+	linearAcceptorGroup nodeconsensus.AcceptorGroup,
+	luxAcceptorGroup nodeconsensus.AcceptorGroup,
 ) (*eventSocket, error) {
 	var (
 		url     = ipcURL(ctx, chainID, name)
@@ -134,27 +148,37 @@ func newEventIPCSocket(
 		log:    ctx.log,
 		url:    url,
 		socket: socket.NewSocket(url, ctx.log),
-		unregisterFn: func() error {
-			// TODO: AcceptorGroup interface removed from consensus package
-			// Need to implement proper registration mechanism or remove this feature
-			ctx.log.Warn("acceptor deregistration not implemented")
-			return nil
-		},
 	}
 
-	if err := eis.socket.Listen(); err != nil {
-		if err := eis.socket.Close(); err != nil {
-			return nil, err
-		}
+	// Create the adapter that implements nodeconsensus.Acceptor
+	acceptor := &eventSocketAcceptor{socket: eis}
+
+	// Register with both acceptor groups
+	if err := linearAcceptorGroup.RegisterAcceptor(chainID, ipcName, acceptor, false); err != nil {
+		return nil, err
+	}
+	if err := luxAcceptorGroup.RegisterAcceptor(chainID, ipcName, acceptor, false); err != nil {
+		// Rollback the first registration on failure
+		_ = linearAcceptorGroup.DeregisterAcceptor(chainID, ipcName)
 		return nil, err
 	}
 
-	// TODO: AcceptorGroup interface removed from consensus package
-	// Need to implement proper registration mechanism or remove this feature
-	ctx.log.Warn("acceptor registration not implemented",
-		log.Stringer("chainID", chainID),
-		log.String("name", ipcName),
-	)
+	// Set up the deregistration function for cleanup
+	eis.unregisterFn = func() error {
+		return utils.Err(
+			linearAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+			luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+		)
+	}
+
+	if err := eis.socket.Listen(); err != nil {
+		// Clean up registrations on listen failure
+		_ = eis.unregisterFn()
+		if closeErr := eis.socket.Close(); closeErr != nil {
+			return nil, closeErr
+		}
+		return nil, err
+	}
 
 	return eis, nil
 }

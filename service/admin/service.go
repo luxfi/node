@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	apiadmin "github.com/luxfi/api/admin"
@@ -22,6 +23,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	server "github.com/luxfi/node/server/http"
+	"github.com/luxfi/node/service/backup"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -58,20 +60,39 @@ type Config struct {
 	VMManager    vms.Manager
 	PluginDir    string
 	Network      ChainTracker
+	// DataDir is the node's data directory, used for backup metadata.
+	DataDir string
 }
 
 // Service implements api/admin.Service.
 type Service struct {
 	Config
-	lock     sync.RWMutex
-	profiler profiler.Profiler
+	lock          sync.RWMutex
+	profiler      profiler.Profiler
+	backupService *backup.Service
 }
 
 func New(config Config) *Service {
-	return &Service{
+	svc := &Service{
 		Config:   config,
 		profiler: profiler.New(config.ProfileDir),
 	}
+
+	// Initialize backup service if data directory is configured
+	if config.DataDir != "" && config.DB != nil {
+		backupSvc, err := backup.New(backup.Config{
+			DB:          config.DB,
+			MetadataDir: filepath.Join(config.DataDir, "backup"),
+			Log:         config.Log,
+		})
+		if err != nil {
+			config.Log.Warn("failed to initialize backup service", "error", err)
+		} else {
+			svc.backupService = backupSvc
+		}
+	}
+
+	return svc
 }
 
 func (a *Service) StartCPUProfiler(ctx context.Context) (*apiadmin.EmptyReply, error) {
@@ -390,6 +411,86 @@ func (a *Service) getLoggerNames(loggerName string) []string {
 func (a *Service) getLogLevels(loggerNames []string) (map[string]apiadmin.LogAndDisplayLevels, error) {
 	loggerLevels := make(map[string]apiadmin.LogAndDisplayLevels)
 	return loggerLevels, nil
+}
+
+// Snapshot creates a backup of the database to the specified path.
+// Args:
+//   - Path: file path to write the backup (supports .zst extension for compression)
+//   - Since: version for incremental backup (0 for full backup)
+//
+// Returns the version number for use in future incremental backups.
+func (a *Service) Snapshot(ctx context.Context, args *apiadmin.SnapshotArgs) (*apiadmin.SnapshotReply, error) {
+	_ = ctx
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "snapshot"),
+		log.String("path", args.Path),
+		log.Uint64("since", args.Since),
+	)
+
+	if a.backupService == nil {
+		return nil, errors.New("backup service not initialized")
+	}
+
+	if args.Path == "" {
+		return nil, errors.New("backup path is required")
+	}
+
+	// Determine if compression is requested based on file extension
+	compress := strings.HasSuffix(args.Path, ".zst") || strings.HasSuffix(args.Path, ".zstd")
+
+	version, err := a.backupService.BackupToFile(args.Path, args.Since, compress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiadmin.SnapshotReply{Version: version}, nil
+}
+
+// Load restores the database from a backup file.
+// Args:
+//   - Path: file path to read the backup from (detects .zst extension for decompression)
+//
+// Warning: This will overwrite the current database state.
+func (a *Service) Load(ctx context.Context, args *apiadmin.LoadArgs) (*apiadmin.EmptyReply, error) {
+	_ = ctx
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "load"),
+		log.String("path", args.Path),
+	)
+
+	if a.backupService == nil {
+		return nil, errors.New("backup service not initialized")
+	}
+
+	if args.Path == "" {
+		return nil, errors.New("backup path is required")
+	}
+
+	// Determine if decompression is needed based on file extension
+	compressed := strings.HasSuffix(args.Path, ".zst") || strings.HasSuffix(args.Path, ".zstd")
+
+	if err := a.backupService.RestoreFromFile(args.Path, compressed); err != nil {
+		return nil, err
+	}
+
+	return &apiadmin.EmptyReply{}, nil
+}
+
+// GetBackupMetadata returns information about the last backup.
+func (a *Service) GetBackupMetadata(ctx context.Context) (*backup.Metadata, error) {
+	_ = ctx
+	a.Log.Debug("API called",
+		log.String("service", "admin"),
+		log.String("method", "getBackupMetadata"),
+	)
+
+	if a.backupService == nil {
+		return nil, errors.New("backup service not initialized")
+	}
+
+	return a.backupService.GetMetadata(), nil
 }
 
 var _ apiadmin.Service = (*Service)(nil)

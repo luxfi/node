@@ -120,6 +120,10 @@ type VM struct {
 	sequences     map[ids.ID]uint64     // channel -> next sequence
 	pendingBlocks map[ids.ID]*Block
 
+	// Session-ready: Receipt Root Commitments
+	sessionReceipts map[[32]byte][]*SignedReceipt // sessionID -> receipts
+	receiptCommits  map[[32]byte]*ReceiptCommit   // sessionID -> commit
+
 	// Consensus
 	lastAccepted   *Block
 	lastAcceptedID ids.ID
@@ -149,6 +153,8 @@ func (vm *VM) Initialize(
 	vm.pendingMsgs = make(map[ids.ID][]*Message)
 	vm.sequences = make(map[ids.ID]uint64)
 	vm.pendingBlocks = make(map[ids.ID]*Block)
+	vm.sessionReceipts = make(map[[32]byte][]*SignedReceipt)
+	vm.receiptCommits = make(map[[32]byte]*ReceiptCommit)
 
 	// Parse genesis
 	genesis, err := ParseGenesis(vmInit.Genesis)
@@ -631,4 +637,420 @@ func ParseGenesis(genesisBytes []byte) (*Genesis, error) {
 func sha256Hash(data []byte) []byte {
 	h := sha256.Sum256(data)
 	return h[:]
+}
+
+// =============================================================================
+// Session-Ready: Receipt Root Commitments
+// =============================================================================
+// RelayVM collects per-node signed receipts and commits them as Merkle roots
+// at block boundaries for audit trail and dispute resolution.
+
+// SignedReceipt represents a node's signed acknowledgment of message receipt
+type SignedReceipt struct {
+	// MessageID is the ID of the message being receipted
+	MessageID ids.ID `json:"messageId"`
+
+	// SessionID links the receipt to a session (if applicable)
+	SessionID [32]byte `json:"sessionId"`
+
+	// NodeID of the node signing this receipt
+	NodeID ids.NodeID `json:"nodeId"`
+
+	// Timestamp when the receipt was created
+	Timestamp uint64 `json:"timestamp"`
+
+	// ContentHash is hash of the message content received
+	ContentHash [32]byte `json:"contentHash"`
+
+	// Signature from the node's key over the receipt payload
+	Signature []byte `json:"signature"`
+}
+
+// ReceiptCommit represents a Merkle root commitment over a set of receipts
+type ReceiptCommit struct {
+	// CommitID is the unique identifier for this commit
+	CommitID [32]byte `json:"commitId"`
+
+	// SessionID that this commit belongs to (if scoped to session)
+	SessionID [32]byte `json:"sessionId,omitempty"`
+
+	// Root is the Merkle root over all receipts in this commit
+	Root [32]byte `json:"root"`
+
+	// ReceiptCount is the number of receipts in this commit
+	ReceiptCount uint32 `json:"receiptCount"`
+
+	// BlockHeight at which this commit was created
+	BlockHeight uint64 `json:"blockHeight"`
+
+	// Window defines the receipt timestamp range
+	Window struct {
+		Start uint64 `json:"start"`
+		End   uint64 `json:"end"`
+	} `json:"window"`
+
+	// CommittedAt is when this commit was created
+	CommittedAt time.Time `json:"committedAt"`
+}
+
+// ComputeReceiptID computes a deterministic ID for a signed receipt
+func ComputeReceiptID(messageID ids.ID, nodeID ids.NodeID, timestamp uint64) [32]byte {
+	h := sha256.New()
+	h.Write([]byte("LUX:SignedReceipt:v1"))
+	h.Write(messageID[:])
+	h.Write(nodeID[:])
+
+	timestampBytes := make([]byte, 8)
+	timestampBytes[0] = byte(timestamp >> 56)
+	timestampBytes[1] = byte(timestamp >> 48)
+	timestampBytes[2] = byte(timestamp >> 40)
+	timestampBytes[3] = byte(timestamp >> 32)
+	timestampBytes[4] = byte(timestamp >> 24)
+	timestampBytes[5] = byte(timestamp >> 16)
+	timestampBytes[6] = byte(timestamp >> 8)
+	timestampBytes[7] = byte(timestamp)
+	h.Write(timestampBytes)
+
+	var result [32]byte
+	copy(result[:], h.Sum(nil))
+	return result
+}
+
+// Session-ready state - add to VM struct lazily initialized
+func (vm *VM) getSessionReceiptsMap() map[[32]byte][]*SignedReceipt {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+	if vm.sessionReceipts == nil {
+		vm.sessionReceipts = make(map[[32]byte][]*SignedReceipt)
+	}
+	return vm.sessionReceipts
+}
+
+func (vm *VM) getReceiptCommitsMap() map[[32]byte]*ReceiptCommit {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+	if vm.receiptCommits == nil {
+		vm.receiptCommits = make(map[[32]byte]*ReceiptCommit)
+	}
+	return vm.receiptCommits
+}
+
+// SubmitSignedReceipt records a signed receipt from a node
+func (vm *VM) SubmitSignedReceipt(receipt *SignedReceipt) error {
+	if receipt == nil {
+		return errors.New("nil receipt")
+	}
+
+	// Validate the receipt has required fields
+	if receipt.MessageID == ids.Empty {
+		return errors.New("receipt missing message ID")
+	}
+	if receipt.NodeID == ids.EmptyNodeID {
+		return errors.New("receipt missing node ID")
+	}
+	if len(receipt.Signature) == 0 {
+		return errors.New("receipt missing signature")
+	}
+
+	// TODO: Verify signature against node's public key
+	// For now, accept receipts (signature verification would go here)
+
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Initialize maps if needed
+	if vm.sessionReceipts == nil {
+		vm.sessionReceipts = make(map[[32]byte][]*SignedReceipt)
+	}
+
+	// Store receipt by session
+	sessionID := receipt.SessionID
+	vm.sessionReceipts[sessionID] = append(vm.sessionReceipts[sessionID], receipt)
+
+	vm.log.Debug("received signed receipt",
+		log.Stringer("messageID", receipt.MessageID),
+		log.Stringer("nodeID", receipt.NodeID),
+	)
+
+	return nil
+}
+
+// CommitSessionReceipts creates a Merkle root commitment for all receipts in a session
+func (vm *VM) CommitSessionReceipts(sessionID [32]byte) (*ReceiptCommit, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	// Initialize maps if needed
+	if vm.sessionReceipts == nil {
+		vm.sessionReceipts = make(map[[32]byte][]*SignedReceipt)
+	}
+	if vm.receiptCommits == nil {
+		vm.receiptCommits = make(map[[32]byte]*ReceiptCommit)
+	}
+
+	receipts, ok := vm.sessionReceipts[sessionID]
+	if !ok || len(receipts) == 0 {
+		return nil, errors.New("no receipts found for session")
+	}
+
+	// Compute Merkle root over receipts
+	root := vm.computeReceiptsMerkleRoot(receipts)
+
+	// Determine time window
+	var minTime, maxTime uint64 = ^uint64(0), 0
+	for _, r := range receipts {
+		if r.Timestamp < minTime {
+			minTime = r.Timestamp
+		}
+		if r.Timestamp > maxTime {
+			maxTime = r.Timestamp
+		}
+	}
+
+	// Generate commit ID
+	h := sha256.New()
+	h.Write([]byte("LUX:ReceiptCommit:v1"))
+	h.Write(sessionID[:])
+	h.Write(root[:])
+	var commitID [32]byte
+	copy(commitID[:], h.Sum(nil))
+
+	commit := &ReceiptCommit{
+		CommitID:     commitID,
+		SessionID:    sessionID,
+		Root:         root,
+		ReceiptCount: uint32(len(receipts)),
+		BlockHeight:  vm.lastAccepted.BlockHeight,
+		CommittedAt:  time.Now(),
+	}
+	commit.Window.Start = minTime
+	commit.Window.End = maxTime
+
+	vm.receiptCommits[sessionID] = commit
+
+	vm.log.Info("committed session receipts",
+		log.Int("receiptCount", len(receipts)),
+		log.Uint64("blockHeight", commit.BlockHeight),
+	)
+
+	return commit, nil
+}
+
+// computeReceiptsMerkleRoot computes a Merkle root over a set of receipts
+func (vm *VM) computeReceiptsMerkleRoot(receipts []*SignedReceipt) [32]byte {
+	if len(receipts) == 0 {
+		return [32]byte{}
+	}
+
+	// Hash each receipt into a leaf
+	leaves := make([][32]byte, len(receipts))
+	for i, r := range receipts {
+		h := sha256.New()
+		h.Write(r.MessageID[:])
+		h.Write(r.NodeID[:])
+		h.Write(r.ContentHash[:])
+		h.Write(r.Signature)
+
+		timestampBytes := make([]byte, 8)
+		timestampBytes[0] = byte(r.Timestamp >> 56)
+		timestampBytes[1] = byte(r.Timestamp >> 48)
+		timestampBytes[2] = byte(r.Timestamp >> 40)
+		timestampBytes[3] = byte(r.Timestamp >> 32)
+		timestampBytes[4] = byte(r.Timestamp >> 24)
+		timestampBytes[5] = byte(r.Timestamp >> 16)
+		timestampBytes[6] = byte(r.Timestamp >> 8)
+		timestampBytes[7] = byte(r.Timestamp)
+		h.Write(timestampBytes)
+
+		copy(leaves[i][:], h.Sum(nil))
+	}
+
+	// Build Merkle tree
+	return buildMerkleRoot(leaves)
+}
+
+// buildMerkleRoot constructs a Merkle root from leaf hashes
+func buildMerkleRoot(leaves [][32]byte) [32]byte {
+	if len(leaves) == 0 {
+		return [32]byte{}
+	}
+	if len(leaves) == 1 {
+		return leaves[0]
+	}
+
+	// Pad to power of 2
+	for len(leaves)&(len(leaves)-1) != 0 {
+		leaves = append(leaves, leaves[len(leaves)-1])
+	}
+
+	// Build tree bottom-up
+	for len(leaves) > 1 {
+		var nextLevel [][32]byte
+		for i := 0; i < len(leaves); i += 2 {
+			h := sha256.New()
+			h.Write(leaves[i][:])
+			h.Write(leaves[i+1][:])
+			var parent [32]byte
+			copy(parent[:], h.Sum(nil))
+			nextLevel = append(nextLevel, parent)
+		}
+		leaves = nextLevel
+	}
+
+	return leaves[0]
+}
+
+// GetReceiptCommit retrieves a receipt commit for a session
+func (vm *VM) GetReceiptCommit(sessionID [32]byte) (*ReceiptCommit, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	if vm.receiptCommits == nil {
+		return nil, errors.New("no receipt commits")
+	}
+
+	commit, ok := vm.receiptCommits[sessionID]
+	if !ok {
+		return nil, errors.New("receipt commit not found for session")
+	}
+
+	return commit, nil
+}
+
+// GenerateReceiptInclusionProof generates a Merkle proof for a receipt in a session
+func (vm *VM) GenerateReceiptInclusionProof(sessionID [32]byte, receiptIndex int) ([][]byte, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	if vm.sessionReceipts == nil {
+		return nil, errors.New("no session receipts")
+	}
+
+	receipts, ok := vm.sessionReceipts[sessionID]
+	if !ok {
+		return nil, errors.New("session not found")
+	}
+
+	if receiptIndex < 0 || receiptIndex >= len(receipts) {
+		return nil, errors.New("receipt index out of range")
+	}
+
+	// Hash each receipt into a leaf
+	leaves := make([][32]byte, len(receipts))
+	for i, r := range receipts {
+		h := sha256.New()
+		h.Write(r.MessageID[:])
+		h.Write(r.NodeID[:])
+		h.Write(r.ContentHash[:])
+		h.Write(r.Signature)
+
+		timestampBytes := make([]byte, 8)
+		timestampBytes[0] = byte(r.Timestamp >> 56)
+		timestampBytes[1] = byte(r.Timestamp >> 48)
+		timestampBytes[2] = byte(r.Timestamp >> 40)
+		timestampBytes[3] = byte(r.Timestamp >> 32)
+		timestampBytes[4] = byte(r.Timestamp >> 24)
+		timestampBytes[5] = byte(r.Timestamp >> 16)
+		timestampBytes[6] = byte(r.Timestamp >> 8)
+		timestampBytes[7] = byte(r.Timestamp)
+		h.Write(timestampBytes)
+
+		copy(leaves[i][:], h.Sum(nil))
+	}
+
+	// Pad to power of 2
+	originalLen := len(leaves)
+	for len(leaves)&(len(leaves)-1) != 0 {
+		leaves = append(leaves, leaves[len(leaves)-1])
+	}
+
+	// Build proof
+	proof := buildMerkleProof(leaves, receiptIndex, originalLen)
+
+	return proof, nil
+}
+
+// buildMerkleProof generates an inclusion proof for a leaf at given index
+func buildMerkleProof(leaves [][32]byte, index int, originalLen int) [][]byte {
+	if len(leaves) <= 1 {
+		return nil
+	}
+
+	var proof [][]byte
+	currentIndex := index
+
+	for len(leaves) > 1 {
+		// Get sibling
+		var siblingIndex int
+		if currentIndex%2 == 0 {
+			siblingIndex = currentIndex + 1
+		} else {
+			siblingIndex = currentIndex - 1
+		}
+
+		if siblingIndex < len(leaves) {
+			proof = append(proof, leaves[siblingIndex][:])
+		}
+
+		// Move to parent level
+		var nextLevel [][32]byte
+		for i := 0; i < len(leaves); i += 2 {
+			h := sha256.New()
+			h.Write(leaves[i][:])
+			if i+1 < len(leaves) {
+				h.Write(leaves[i+1][:])
+			} else {
+				h.Write(leaves[i][:])
+			}
+			var parent [32]byte
+			copy(parent[:], h.Sum(nil))
+			nextLevel = append(nextLevel, parent)
+		}
+
+		leaves = nextLevel
+		currentIndex = currentIndex / 2
+	}
+
+	return proof
+}
+
+// VerifyReceiptInclusionProof verifies a Merkle inclusion proof for a receipt
+func VerifyReceiptInclusionProof(receipt *SignedReceipt, proof [][]byte, root [32]byte, index int) bool {
+	// Compute leaf hash
+	h := sha256.New()
+	h.Write(receipt.MessageID[:])
+	h.Write(receipt.NodeID[:])
+	h.Write(receipt.ContentHash[:])
+	h.Write(receipt.Signature)
+
+	timestampBytes := make([]byte, 8)
+	timestampBytes[0] = byte(receipt.Timestamp >> 56)
+	timestampBytes[1] = byte(receipt.Timestamp >> 48)
+	timestampBytes[2] = byte(receipt.Timestamp >> 40)
+	timestampBytes[3] = byte(receipt.Timestamp >> 32)
+	timestampBytes[4] = byte(receipt.Timestamp >> 24)
+	timestampBytes[5] = byte(receipt.Timestamp >> 16)
+	timestampBytes[6] = byte(receipt.Timestamp >> 8)
+	timestampBytes[7] = byte(receipt.Timestamp)
+	h.Write(timestampBytes)
+
+	var computed [32]byte
+	copy(computed[:], h.Sum(nil))
+
+	// Walk up the tree using the proof
+	currentIndex := index
+	for _, sibling := range proof {
+		h := sha256.New()
+		if currentIndex%2 == 0 {
+			h.Write(computed[:])
+			h.Write(sibling)
+		} else {
+			h.Write(sibling)
+			h.Write(computed[:])
+		}
+		copy(computed[:], h.Sum(nil))
+		currentIndex = currentIndex / 2
+	}
+
+	return computed == root
 }

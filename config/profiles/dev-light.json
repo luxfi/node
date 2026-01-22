@@ -1,0 +1,46 @@
+{
+  "_comment": "Low memory profile for local development. Target: <50MB per node",
+  "_targets": {
+    "memory_per_node": "50MB"
+  },
+
+  "dev": true,
+  "low-memory": true,
+  "single-validator-mode": true,
+  "lazy-chain-loading": true,
+
+  "db-cache-size": 4194304,
+  "db-memtable-size": 4194304,
+  "state-cache-size": 8388608,
+  "block-cache-size": 4194304,
+  "disable-bloom-filters": true,
+
+  "sybil-protection-enabled": false,
+  "sybil-protection-disabled-weight": 100,
+  "skip-bootstrap": true,
+  "enable-automining": true,
+  "poa-single-node-mode": true,
+  "network-health-min-conn-peers": 0,
+  "consensus-sample-size": 1,
+  "consensus-quorum-size": 1,
+
+  "network-peer-read-buffer-size": 2048,
+  "network-peer-write-buffer-size": 2048,
+
+  "throttler-inbound-at-large-alloc-size": 1048576,
+  "throttler-inbound-validator-alloc-size": 1048576,
+  "throttler-inbound-node-max-at-large-bytes": 524288,
+  "throttler-inbound-bandwidth-max-burst-size": 524288,
+
+  "throttler-outbound-at-large-alloc-size": 1048576,
+  "throttler-outbound-validator-alloc-size": 1048576,
+  "throttler-outbound-node-max-at-large-bytes": 524288,
+
+  "consensus-app-concurrency": 1,
+
+  "log-level": "info",
+  "log-rotater-max-size": 2,
+  "log-rotater-max-files": 2,
+
+  "fd-limit": 512
+}

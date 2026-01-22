@@ -1609,3 +1609,485 @@ func publicKeyToAddress(pubKey []byte) []byte {
 }
 
 // computeRecoveryID is no longer needed - we use sig.V() from the Signature interface
+
+// =============================================================================
+// Session-Ready: Attestation Domains
+// =============================================================================
+// QuantumVM threshold attests to:
+// - Oracle observation commitments (oracle/write, oracle/read)
+// - Session completion (session/complete)
+// - Epoch beacon signatures (epoch/beacon)
+// Domain separators prevent cross-protocol replay attacks.
+
+// AttestationDomain defines the domain for a threshold attestation
+type AttestationDomain string
+
+const (
+	// DomainOracleWrite attests to external write request commitments
+	DomainOracleWrite AttestationDomain = "oracle/write"
+	// DomainOracleRead attests to external read request commitments
+	DomainOracleRead AttestationDomain = "oracle/read"
+	// DomainSessionComplete attests to session completion (output hash + oracle obs + receipts root)
+	DomainSessionComplete AttestationDomain = "session/complete"
+	// DomainEpochBeacon attests to epoch beacon signatures for randomness
+	DomainEpochBeacon AttestationDomain = "epoch/beacon"
+)
+
+// domainSeparators maps domains to their cryptographic separators
+var domainSeparators = map[AttestationDomain][]byte{
+	DomainOracleWrite:     []byte("LUX:QuantumAttest:oracle/write:v1"),
+	DomainOracleRead:      []byte("LUX:QuantumAttest:oracle/read:v1"),
+	DomainSessionComplete: []byte("LUX:QuantumAttest:session/complete:v1"),
+	DomainEpochBeacon:     []byte("LUX:QuantumAttest:epoch/beacon:v1"),
+}
+
+// QuantumAttestation represents a threshold attestation over a commitment
+type QuantumAttestation struct {
+	// Domain specifies what is being attested (oracle/write, session/complete, etc.)
+	Domain AttestationDomain `json:"domain"`
+
+	// AttestationID is a unique identifier for this attestation
+	AttestationID [32]byte `json:"attestationId"`
+
+	// SubjectID is the ID of what is being attested (request_id, session_id, epoch number)
+	SubjectID [32]byte `json:"subjectId"`
+
+	// CommitmentRoot is the Merkle root being attested
+	CommitmentRoot [32]byte `json:"commitmentRoot"`
+
+	// Epoch in which this attestation was created
+	Epoch uint64 `json:"epoch"`
+
+	// Timestamp when attestation was created
+	Timestamp time.Time `json:"timestamp"`
+
+	// KeyID of the threshold key used for signing
+	KeyID string `json:"keyId"`
+
+	// Threshold used for this attestation
+	Threshold int `json:"threshold"`
+
+	// SignerCount is the number of parties that signed
+	SignerCount int `json:"signerCount"`
+
+	// Signature is the threshold signature over the attestation payload
+	Signature *ecdsaSignature `json:"signature"`
+
+	// SigningParties are the party IDs that participated
+	SigningParties []party.ID `json:"signingParties"`
+}
+
+// OracleCommitAttestation contains details for oracle commit attestations
+type OracleCommitAttestation struct {
+	RequestID   [32]byte `json:"requestId"`
+	Kind        uint8    `json:"kind"` // 0 = write, 1 = read
+	Root        [32]byte `json:"root"`
+	RecordCount uint32   `json:"recordCount"`
+}
+
+// SessionCompleteAttestation contains details for session completion attestations
+type SessionCompleteAttestation struct {
+	SessionID    [32]byte `json:"sessionId"`
+	OutputHash   [32]byte `json:"outputHash"`
+	OracleRoot   [32]byte `json:"oracleRoot"`
+	ReceiptsRoot [32]byte `json:"receiptsRoot"`
+	StepCount    uint32   `json:"stepCount"`
+}
+
+// EpochBeaconAttestation contains details for epoch beacon attestations
+type EpochBeaconAttestation struct {
+	Epoch       uint64   `json:"epoch"`
+	Randomness  [32]byte `json:"randomness"`
+	PreviousRef [32]byte `json:"previousRef"`
+}
+
+// ComputeAttestationPayload computes the payload to be signed for an attestation
+func ComputeAttestationPayload(domain AttestationDomain, subjectID, commitmentRoot [32]byte, epoch uint64) [32]byte {
+	h := sha256.New()
+
+	// Domain separator
+	separator, ok := domainSeparators[domain]
+	if !ok {
+		separator = []byte("LUX:QuantumAttest:unknown:v1")
+	}
+	h.Write(separator)
+
+	// Subject ID (request_id, session_id, etc.)
+	h.Write(subjectID[:])
+
+	// Commitment root being attested
+	h.Write(commitmentRoot[:])
+
+	// Epoch for temporal binding
+	epochBytes := make([]byte, 8)
+	epochBytes[0] = byte(epoch >> 56)
+	epochBytes[1] = byte(epoch >> 48)
+	epochBytes[2] = byte(epoch >> 40)
+	epochBytes[3] = byte(epoch >> 32)
+	epochBytes[4] = byte(epoch >> 24)
+	epochBytes[5] = byte(epoch >> 16)
+	epochBytes[6] = byte(epoch >> 8)
+	epochBytes[7] = byte(epoch)
+	h.Write(epochBytes)
+
+	var result [32]byte
+	copy(result[:], h.Sum(nil))
+	return result
+}
+
+// AttestOracleCommit creates a threshold attestation for an oracle commitment
+func (vm *VM) AttestOracleCommit(
+	requestingChain string,
+	requestID [32]byte,
+	kind uint8, // 0 = write, 1 = read
+	commitRoot [32]byte,
+	epoch uint64,
+) (*QuantumAttestation, error) {
+	// Determine domain based on kind
+	var domain AttestationDomain
+	if kind == 0 {
+		domain = DomainOracleWrite
+	} else {
+		domain = DomainOracleRead
+	}
+
+	// Compute the payload to sign
+	payload := ComputeAttestationPayload(domain, requestID, commitRoot, epoch)
+
+	// Request threshold signature
+	session, err := vm.RequestSignature(requestingChain, "", payload[:], "raw")
+	if err != nil {
+		return nil, fmt.Errorf("failed to request attestation signature: %w", err)
+	}
+
+	// Wait for signature completion (with timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), vm.config.SessionTimeout)
+	defer cancel()
+
+	var completedSession *SigningSession
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("attestation signing timed out")
+		case <-time.After(100 * time.Millisecond):
+			s, err := vm.GetSignature(session.SessionID)
+			if err != nil {
+				continue
+			}
+			if s.Status == "completed" {
+				completedSession = s
+				goto done
+			}
+			if s.Status == "failed" {
+				return nil, fmt.Errorf("attestation signing failed: %s", s.Error)
+			}
+		}
+	}
+done:
+
+	// Generate attestation ID
+	attestID := sha256.Sum256(append(payload[:], []byte(completedSession.SessionID)...))
+
+	attestation := &QuantumAttestation{
+		Domain:         domain,
+		AttestationID:  attestID,
+		SubjectID:      requestID,
+		CommitmentRoot: commitRoot,
+		Epoch:          epoch,
+		Timestamp:      time.Now(),
+		KeyID:          completedSession.KeyID,
+		Threshold:      vm.config.Threshold,
+		SignerCount:    len(completedSession.SignerParties),
+		Signature:      completedSession.Signature,
+		SigningParties: completedSession.SignerParties,
+	}
+
+	vm.log.Info("created oracle commit attestation",
+		log.String("domain", string(domain)),
+		log.String("requestID", hex.EncodeToString(requestID[:])),
+		log.Uint64("epoch", epoch),
+	)
+
+	return attestation, nil
+}
+
+// AttestSessionComplete creates a threshold attestation for session completion
+func (vm *VM) AttestSessionComplete(
+	requestingChain string,
+	sessionID [32]byte,
+	outputHash [32]byte,
+	oracleRoot [32]byte,
+	receiptsRoot [32]byte,
+	epoch uint64,
+) (*QuantumAttestation, error) {
+	// Compute combined commitment root
+	h := sha256.New()
+	h.Write(outputHash[:])
+	h.Write(oracleRoot[:])
+	h.Write(receiptsRoot[:])
+	var commitRoot [32]byte
+	copy(commitRoot[:], h.Sum(nil))
+
+	// Compute the payload to sign
+	payload := ComputeAttestationPayload(DomainSessionComplete, sessionID, commitRoot, epoch)
+
+	// Request threshold signature
+	session, err := vm.RequestSignature(requestingChain, "", payload[:], "raw")
+	if err != nil {
+		return nil, fmt.Errorf("failed to request session attestation: %w", err)
+	}
+
+	// Wait for signature completion
+	ctx, cancel := context.WithTimeout(context.Background(), vm.config.SessionTimeout)
+	defer cancel()
+
+	var completedSession *SigningSession
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("session attestation signing timed out")
+		case <-time.After(100 * time.Millisecond):
+			s, err := vm.GetSignature(session.SessionID)
+			if err != nil {
+				continue
+			}
+			if s.Status == "completed" {
+				completedSession = s
+				goto done
+			}
+			if s.Status == "failed" {
+				return nil, fmt.Errorf("session attestation signing failed: %s", s.Error)
+			}
+		}
+	}
+done:
+
+	attestID := sha256.Sum256(append(payload[:], []byte(completedSession.SessionID)...))
+
+	attestation := &QuantumAttestation{
+		Domain:         DomainSessionComplete,
+		AttestationID:  attestID,
+		SubjectID:      sessionID,
+		CommitmentRoot: commitRoot,
+		Epoch:          epoch,
+		Timestamp:      time.Now(),
+		KeyID:          completedSession.KeyID,
+		Threshold:      vm.config.Threshold,
+		SignerCount:    len(completedSession.SignerParties),
+		Signature:      completedSession.Signature,
+		SigningParties: completedSession.SignerParties,
+	}
+
+	vm.log.Info("created session complete attestation",
+		log.String("sessionID", hex.EncodeToString(sessionID[:])),
+		log.Uint64("epoch", epoch),
+	)
+
+	return attestation, nil
+}
+
+// AttestEpochBeacon creates a threshold attestation for epoch beacon randomness
+func (vm *VM) AttestEpochBeacon(
+	requestingChain string,
+	epoch uint64,
+	previousRef [32]byte,
+) (*QuantumAttestation, error) {
+	// Compute epoch subject ID
+	var subjectID [32]byte
+	epochBytes := make([]byte, 8)
+	epochBytes[0] = byte(epoch >> 56)
+	epochBytes[1] = byte(epoch >> 48)
+	epochBytes[2] = byte(epoch >> 40)
+	epochBytes[3] = byte(epoch >> 32)
+	epochBytes[4] = byte(epoch >> 24)
+	epochBytes[5] = byte(epoch >> 16)
+	epochBytes[6] = byte(epoch >> 8)
+	epochBytes[7] = byte(epoch)
+	h := sha256.New()
+	h.Write([]byte("LUX:EpochBeacon:"))
+	h.Write(epochBytes)
+	copy(subjectID[:], h.Sum(nil))
+
+	// The commitment root for beacon is hash of previous ref (chain the beacons)
+	var commitRoot [32]byte
+	h2 := sha256.New()
+	h2.Write(previousRef[:])
+	h2.Write(epochBytes)
+	copy(commitRoot[:], h2.Sum(nil))
+
+	// Compute the payload to sign
+	payload := ComputeAttestationPayload(DomainEpochBeacon, subjectID, commitRoot, epoch)
+
+	// Request threshold signature
+	session, err := vm.RequestSignature(requestingChain, "", payload[:], "raw")
+	if err != nil {
+		return nil, fmt.Errorf("failed to request beacon attestation: %w", err)
+	}
+
+	// Wait for signature completion
+	ctx, cancel := context.WithTimeout(context.Background(), vm.config.SessionTimeout)
+	defer cancel()
+
+	var completedSession *SigningSession
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("beacon attestation signing timed out")
+		case <-time.After(100 * time.Millisecond):
+			s, err := vm.GetSignature(session.SessionID)
+			if err != nil {
+				continue
+			}
+			if s.Status == "completed" {
+				completedSession = s
+				goto done
+			}
+			if s.Status == "failed" {
+				return nil, fmt.Errorf("beacon attestation signing failed: %s", s.Error)
+			}
+		}
+	}
+done:
+
+	attestID := sha256.Sum256(append(payload[:], []byte(completedSession.SessionID)...))
+
+	attestation := &QuantumAttestation{
+		Domain:         DomainEpochBeacon,
+		AttestationID:  attestID,
+		SubjectID:      subjectID,
+		CommitmentRoot: commitRoot,
+		Epoch:          epoch,
+		Timestamp:      time.Now(),
+		KeyID:          completedSession.KeyID,
+		Threshold:      vm.config.Threshold,
+		SignerCount:    len(completedSession.SignerParties),
+		Signature:      completedSession.Signature,
+		SigningParties: completedSession.SignerParties,
+	}
+
+	vm.log.Info("created epoch beacon attestation",
+		log.Uint64("epoch", epoch),
+	)
+
+	return attestation, nil
+}
+
+// VerifyAttestation verifies a QuantumAttestation is valid
+func (vm *VM) VerifyAttestation(attestation *QuantumAttestation) error {
+	if attestation == nil {
+		return errors.New("nil attestation")
+	}
+
+	// Verify domain is valid
+	if _, ok := domainSeparators[attestation.Domain]; !ok {
+		return fmt.Errorf("invalid attestation domain: %s", attestation.Domain)
+	}
+
+	// Verify threshold requirements
+	if attestation.SignerCount < attestation.Threshold+1 {
+		return fmt.Errorf("insufficient signers: %d < %d required", attestation.SignerCount, attestation.Threshold+1)
+	}
+
+	// Recompute payload
+	payload := ComputeAttestationPayload(
+		attestation.Domain,
+		attestation.SubjectID,
+		attestation.CommitmentRoot,
+		attestation.Epoch,
+	)
+
+	// Get the public key for verification
+	pubKey, err := vm.GetPublicKey(attestation.KeyID)
+	if err != nil {
+		return fmt.Errorf("failed to get public key: %w", err)
+	}
+
+	// Verify signature
+	if attestation.Signature == nil {
+		return errors.New("missing signature")
+	}
+
+	// Reconstruct signature bytes for verification
+	sigBytes := make([]byte, 65)
+	copy(sigBytes[0:32], attestation.Signature.R)
+	copy(sigBytes[32:64], attestation.Signature.S)
+	sigBytes[64] = attestation.Signature.V
+
+	// Use secp256k1 to verify
+	recoveredPub, err := secp256k1.RecoverPubkey(payload[:], sigBytes)
+	if err != nil {
+		return fmt.Errorf("signature recovery failed: %w", err)
+	}
+
+	// Compare recovered public key with stored key
+	// The threshold signature should recover to the group public key
+	if !bytesEqual(recoveredPub, pubKey) && !bytesEqualCompressed(recoveredPub, pubKey) {
+		return ErrInvalidSignature
+	}
+
+	return nil
+}
+
+// bytesEqual compares two byte slices
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// bytesEqualCompressed handles comparing compressed vs uncompressed pubkeys
+func bytesEqualCompressed(uncompressed, compressed []byte) bool {
+	if len(compressed) != 33 || len(uncompressed) < 64 {
+		return false
+	}
+	// Compress the uncompressed key and compare
+	x, y := secp256k1.DecompressPubkey(compressed)
+	if x == nil || y == nil {
+		return false
+	}
+	// Build uncompressed from compressed
+	xBytes := x.Bytes()
+	yBytes := y.Bytes()
+	rebuilt := make([]byte, 65)
+	rebuilt[0] = 0x04
+	copy(rebuilt[33-len(xBytes):33], xBytes)
+	copy(rebuilt[65-len(yBytes):65], yBytes)
+	// Compare against provided uncompressed (might be 64 or 65 bytes)
+	if len(uncompressed) == 64 {
+		return bytesEqual(rebuilt[1:], uncompressed)
+	}
+	return bytesEqual(rebuilt, uncompressed)
+}
+
+// DetectEquivocation checks if two attestations represent equivocation (slashable)
+// Two attestations are equivocating if they have the same domain, subject, and epoch
+// but different commitment roots
+func DetectEquivocation(a, b *QuantumAttestation) bool {
+	if a == nil || b == nil {
+		return false
+	}
+
+	// Must be same domain
+	if a.Domain != b.Domain {
+		return false
+	}
+
+	// Must be same subject
+	if a.SubjectID != b.SubjectID {
+		return false
+	}
+
+	// Must be same epoch
+	if a.Epoch != b.Epoch {
+		return false
+	}
+
+	// Equivocation if commitment roots differ
+	return a.CommitmentRoot != b.CommitmentRoot
+}

@@ -377,3 +377,281 @@ func TestPQKeychain_RingtailSupport(t *testing.T) {
 	// - Ring signature verification
 	// - Key ring management
 }
+
+// TestPQKeychain_BLS tests BLS key support
+func TestPQKeychain_BLS(t *testing.T) {
+	require := require.New(t)
+
+	kc := NewPQKeychain(KeyTypeBLS)
+
+	// Generate a BLS key
+	addr, err := kc.GenerateKey()
+	require.NoError(err)
+	require.NotEqual(ids.ShortEmpty, addr)
+
+	// Get the signer
+	signer, exists := kc.Get(addr)
+	require.True(exists)
+	require.NotNil(signer)
+
+	// Test signing
+	msg := []byte("test message for BLS signature")
+	sig, err := signer.Sign(msg)
+	require.NoError(err)
+	require.NotEmpty(sig)
+
+	// BLS signature is 96 bytes (G2 point)
+	require.Equal(96, len(sig), "BLS signature should be 96 bytes")
+
+	// Get the PQ signer for advanced operations
+	pqSigner, exists := kc.GetPQSigner(addr)
+	require.True(exists)
+	require.Equal(KeyTypeBLS, pqSigner.KeyType())
+
+	// Test public key retrieval
+	pubKey := pqSigner.PublicKey()
+	require.NotEmpty(pubKey)
+	require.Equal(48, len(pubKey), "BLS public key should be 48 bytes")
+
+	// Test BLS public key method
+	blsPubKey := pqSigner.BLSPublicKey()
+	require.NotNil(blsPubKey)
+}
+
+// TestPQKeychain_MLKEM tests ML-KEM key encapsulation support
+func TestPQKeychain_MLKEM(t *testing.T) {
+	require := require.New(t)
+
+	// Test all ML-KEM security levels
+	testCases := []struct {
+		keyType KeyType
+		name    string
+	}{
+		{KeyTypeMLKEM512, "ML-KEM-512"},
+		{KeyTypeMLKEM768, "ML-KEM-768"},
+		{KeyTypeMLKEM1024, "ML-KEM-1024"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			kc := NewPQKeychain(tc.keyType)
+
+			// Generate ML-KEM key pair
+			addr, err := kc.GenerateKey()
+			require.NoError(err)
+			require.NotEqual(ids.ShortEmpty, addr)
+
+			// Get the PQ signer
+			pqSigner, exists := kc.GetPQSigner(addr)
+			require.True(exists)
+			require.Equal(tc.keyType, pqSigner.KeyType())
+
+			// Test public key retrieval
+			pubKey := pqSigner.PublicKey()
+			require.NotEmpty(pubKey)
+		})
+	}
+}
+
+// TestPQKeychain_Ringtail tests ring signature functionality
+func TestPQKeychain_Ringtail(t *testing.T) {
+	require := require.New(t)
+
+	kc := NewPQKeychain(KeyTypeRingtail)
+
+	// Generate a Ringtail key (defaults to LSAG)
+	addr, err := kc.GenerateKey()
+	require.NoError(err)
+	require.NotEqual(ids.ShortEmpty, addr)
+
+	// Get the PQ signer
+	pqSigner, exists := kc.GetPQSigner(addr)
+	require.True(exists)
+	require.Equal(KeyTypeRingtail, pqSigner.KeyType())
+
+	// Get public key for the ring
+	signerPubKey := pqSigner.PublicKey()
+	require.NotEmpty(signerPubKey)
+
+	// Generate additional public keys for the ring
+	decoySigner1, err := kc.GenerateKey()
+	require.NoError(err)
+	decoy1, _ := kc.GetPQSigner(decoySigner1)
+
+	decoySigner2, err := kc.GenerateKey()
+	require.NoError(err)
+	decoy2, _ := kc.GetPQSigner(decoySigner2)
+
+	// Create the ring
+	ringPubKeys := [][]byte{
+		decoy1.PublicKey(),
+		signerPubKey,
+		decoy2.PublicKey(),
+	}
+	signerIndex := 1 // Our signer is at index 1
+
+	// Create ring signature
+	message := []byte("private transaction data")
+	ringSig, err := pqSigner.SignRing(message, ringPubKeys, signerIndex)
+	require.NoError(err)
+	require.NotNil(ringSig)
+
+	// Verify the signature
+	valid := ringSig.Verify(message, ringPubKeys)
+	require.True(valid, "Ring signature should verify")
+
+	// Test key image (for linkability)
+	keyImage := pqSigner.KeyImage()
+	require.NotEmpty(keyImage)
+
+	// Verify wrong message fails
+	wrongMsg := []byte("wrong message")
+	valid = ringSig.Verify(wrongMsg, ringPubKeys)
+	require.False(valid, "Ring signature should not verify with wrong message")
+}
+
+// TestPQKeychain_RingtailLattice tests post-quantum lattice ring signatures
+func TestPQKeychain_RingtailLattice(t *testing.T) {
+	require := require.New(t)
+
+	kc := NewPQKeychain(KeyTypeSecp256k1) // Use any type, we'll use GenerateRingtailKey
+
+	// Generate a lattice-based ring signature key
+	// LatticeLSAG = 1 in the ring.Scheme enum
+	addr, err := kc.GenerateRingtailKey(1) // 1 = LatticeLSAG scheme (ML-DSA based)
+	require.NoError(err)
+	require.NotEqual(ids.ShortEmpty, addr)
+
+	pqSigner, exists := kc.GetPQSigner(addr)
+	require.True(exists)
+	require.Equal(KeyTypeRingtail, pqSigner.KeyType())
+
+	// Verify the scheme is LatticeLSAG (value 1)
+	require.Equal(1, int(pqSigner.RingScheme()))
+}
+
+// TestPQKeychain_HybridBLSMLDSA tests hybrid BLS + ML-DSA signatures
+func TestPQKeychain_HybridBLSMLDSA(t *testing.T) {
+	require := require.New(t)
+
+	kc := NewPQKeychain(KeyTypeHybridBLSMLDSA44)
+
+	// Generate hybrid key
+	addr, err := kc.GenerateKey()
+	require.NoError(err)
+	require.NotEqual(ids.ShortEmpty, addr)
+
+	// Get the signer
+	signer, exists := kc.Get(addr)
+	require.True(exists)
+	require.NotNil(signer)
+
+	// Test signing
+	msg := []byte("test message for hybrid BLS+ML-DSA signature")
+	sig, err := signer.Sign(msg)
+	require.NoError(err)
+	require.NotEmpty(sig)
+
+	// Hybrid signature should have both components
+	// Format: [2 bytes BLS len][BLS sig][2 bytes PQ len][PQ sig]
+	require.Greater(len(sig), 96+2420) // BLS (96) + ML-DSA-44 (2420) + overhead
+
+	// Parse the hybrid signature
+	blsLen := int(sig[0])<<8 | int(sig[1])
+	require.Equal(96, blsLen, "BLS signature should be 96 bytes")
+
+	pqOffset := 2 + blsLen
+	pqLen := int(sig[pqOffset])<<8 | int(sig[pqOffset+1])
+	require.Equal(2420, pqLen, "ML-DSA-44 signature should be 2420 bytes")
+
+	// Get the PQ signer for advanced operations
+	pqSigner, exists := kc.GetPQSigner(addr)
+	require.True(exists)
+	require.Equal(KeyTypeHybridBLSMLDSA44, pqSigner.KeyType())
+
+	// Test BLS public key retrieval for hybrid
+	blsPubKey := pqSigner.BLSPublicKey()
+	require.NotNil(blsPubKey)
+}
+
+// TestPQKeychain_AllKeyTypes tests that all key types can be generated
+func TestPQKeychain_AllKeyTypes(t *testing.T) {
+	require := require.New(t)
+
+	keyTypes := []KeyType{
+		KeyTypeSecp256k1,
+		KeyTypeBLS,
+		KeyTypeMLDSA44,
+		KeyTypeMLDSA65,
+		KeyTypeMLDSA87,
+		KeyTypeSLHDSA128,
+		KeyTypeSLHDSA192,
+		KeyTypeSLHDSA256,
+		KeyTypeMLKEM512,
+		KeyTypeMLKEM768,
+		KeyTypeMLKEM1024,
+		KeyTypeRingtail,
+		KeyTypeHybridSecp256k1MLDSA44,
+		KeyTypeHybridSecp256k1SLHDSA128,
+		KeyTypeHybridBLSMLDSA44,
+	}
+
+	for _, keyType := range keyTypes {
+		t.Run(keyTypeName(keyType), func(t *testing.T) {
+			kc := NewPQKeychain(keyType)
+			addr, err := kc.GenerateKey()
+			require.NoError(err, "Should be able to generate key type %v", keyType)
+			require.NotEqual(ids.ShortEmpty, addr)
+		})
+	}
+}
+
+func keyTypeName(kt KeyType) string {
+	names := map[KeyType]string{
+		KeyTypeSecp256k1:              "Secp256k1",
+		KeyTypeBLS:                    "BLS",
+		KeyTypeMLDSA44:                "MLDSA44",
+		KeyTypeMLDSA65:                "MLDSA65",
+		KeyTypeMLDSA87:                "MLDSA87",
+		KeyTypeSLHDSA128:              "SLHDSA128",
+		KeyTypeSLHDSA192:              "SLHDSA192",
+		KeyTypeSLHDSA256:              "SLHDSA256",
+		KeyTypeMLKEM512:               "MLKEM512",
+		KeyTypeMLKEM768:               "MLKEM768",
+		KeyTypeMLKEM1024:              "MLKEM1024",
+		KeyTypeRingtail:               "Ringtail",
+		KeyTypeHybridSecp256k1MLDSA44: "HybridSecp256k1MLDSA44",
+		KeyTypeHybridSecp256k1SLHDSA128: "HybridSecp256k1SLHDSA128",
+		KeyTypeHybridBLSMLDSA44:       "HybridBLSMLDSA44",
+	}
+	if name, ok := names[kt]; ok {
+		return name
+	}
+	return "Unknown"
+}
+
+// BenchmarkPQKeychain_BLS_Sign benchmarks BLS signing
+func BenchmarkPQKeychain_BLS_Sign(b *testing.B) {
+	kc := NewPQKeychain(KeyTypeBLS)
+	addr, _ := kc.GenerateKey()
+	signer, _ := kc.Get(addr)
+	msg := []byte("benchmark message")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = signer.Sign(msg)
+	}
+}
+
+// BenchmarkPQKeychain_HybridBLSMLDSA_Sign benchmarks hybrid BLS+ML-DSA signing
+func BenchmarkPQKeychain_HybridBLSMLDSA_Sign(b *testing.B) {
+	kc := NewPQKeychain(KeyTypeHybridBLSMLDSA44)
+	addr, _ := kc.GenerateKey()
+	signer, _ := kc.Get(addr)
+	msg := []byte("benchmark message")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = signer.Sign(msg)
+	}
+}

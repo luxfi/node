@@ -225,5 +225,7 @@ require (
 
 exclude github.com/ethereum/go-ethereum v1.10.26
 
+replace github.com/luxfi/genesis => /Users/z/work/lux/genesis
+
 
 

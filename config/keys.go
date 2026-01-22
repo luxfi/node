@@ -243,4 +243,17 @@ const (
 
 	// Force flags
 	ForceIgnoreChecksumKey = "force-ignore-checksum"
+
+	// Low Memory / Dev Light Mode Keys
+	LowMemoryKey              = "low-memory"
+	MemoryProfileKey          = "memory-profile"
+	DevLightKey               = "dev-light"
+	ConfigProfileKey          = "config-profile"
+	DBCacheSizeKey            = "db-cache-size"
+	DBMemtableSizeKey         = "db-memtable-size"
+	StateCacheSizeKey         = "state-cache-size"
+	BlockCacheSizeKey         = "block-cache-size"
+	DisableBloomFiltersKey    = "disable-bloom-filters"
+	LazyChainLoadingKey       = "lazy-chain-loading"
+	SingleValidatorModeKey    = "single-validator-mode"
 )

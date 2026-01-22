@@ -1325,6 +1325,12 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 		if err != nil {
 			return node.DatabaseConfig{}, err
 		}
+	} else {
+		// Build BadgerDB config from low memory settings if enabled
+		configBytes, err = buildDatabaseConfigBytes(v)
+		if err != nil {
+			return node.DatabaseConfig{}, fmt.Errorf("failed to build database config: %w", err)
+		}
 	}
 
 	return node.DatabaseConfig{
@@ -1336,6 +1342,47 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 		),
 		Config: configBytes,
 	}, nil
+}
+
+// buildDatabaseConfigBytes creates BadgerDB config JSON from viper settings.
+// When low-memory or dev-light mode is enabled, it generates a config with
+// reduced memory footprint suitable for local development.
+func buildDatabaseConfigBytes(v *viper.Viper) ([]byte, error) {
+	lowMemConfig := GetLowMemoryConfig(v)
+
+	// Only generate config if low memory mode is enabled or specific DB settings are set
+	if !lowMemConfig.Enabled && !v.IsSet(DBCacheSizeKey) && !v.IsSet(DBMemtableSizeKey) {
+		return nil, nil
+	}
+
+	// BadgerDB config structure matching database/badgerdb/db.go Config struct
+	// Field names must match exactly (camelCase JSON tags)
+	type badgerConfig struct {
+		SyncWrites         bool    `json:"syncWrites"`
+		NumCompactors      int     `json:"numCompactors"`
+		NumMemtables       int     `json:"numMemtables"`
+		MemTableSize       int64   `json:"memTableSize"`
+		BlockCacheSize     int64   `json:"blockCacheSize"`
+		IndexCacheSize     int64   `json:"indexCacheSize"`
+		BloomFalsePositive float64 `json:"bloomFalsePositive"`
+	}
+
+	cfg := badgerConfig{
+		SyncWrites:         false,
+		NumCompactors:      2,                                   // Reduced from 4
+		NumMemtables:       2,                                   // Reduced from 5
+		MemTableSize:       int64(lowMemConfig.DBMemtableSize),  // 8 MB vs 64 MB default
+		BlockCacheSize:     int64(lowMemConfig.DBCacheSize),     // 8 MB vs 256 MB default
+		IndexCacheSize:     int64(lowMemConfig.DBCacheSize / 2), // 4 MB vs 100 MB default
+		BloomFalsePositive: 0.1,                                 // 10% vs 1% (saves memory)
+	}
+
+	// If bloom filters are disabled, set very high false positive rate
+	if lowMemConfig.DisableBloomFilters {
+		cfg.BloomFalsePositive = 1.0 // Effectively disables bloom filters
+	}
+
+	return json.Marshal(cfg)
 }
 
 func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) (map[ids.ID][]string, error) {
@@ -1703,6 +1750,22 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		err        error
 	)
 
+	// Handle --config-profile flag first (lowest priority)
+	if profileName := v.GetString(ConfigProfileKey); profileName != "" {
+		profile, err := LoadConfigProfile(profileName)
+		if err != nil {
+			return node.Config{}, fmt.Errorf("failed to load config profile: %w", err)
+		}
+		ApplyConfigProfile(v, profile)
+	}
+
+	// Handle --dev-light flag (equivalent to --dev --low-memory)
+	if v.GetBool(DevLightKey) {
+		if err := ApplyDevLightMode(v); err != nil {
+			return node.Config{}, fmt.Errorf("failed to apply dev-light mode: %w", err)
+		}
+	}
+
 	// Handle --dev flag first
 	if v.GetBool(DevModeKey) {
 		// Development mode sets various flags for single-node operation
@@ -2032,6 +2095,17 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ProcessContextFilePath = getExpandedArg(v, ProcessContextFileKey)
 
 	nodeConfig.ProvidedFlags = providedFlags(v)
+
+	// Low Memory Configuration
+	lowMemConfig := GetLowMemoryConfig(v)
+	nodeConfig.LowMemoryEnabled = lowMemConfig.Enabled
+	nodeConfig.DBCacheSize = lowMemConfig.DBCacheSize
+	nodeConfig.DBMemtableSize = lowMemConfig.DBMemtableSize
+	nodeConfig.StateCacheSize = lowMemConfig.StateCacheSize
+	nodeConfig.BlockCacheSize = lowMemConfig.BlockCacheSize
+	nodeConfig.DisableBloomFilters = lowMemConfig.DisableBloomFilters
+	nodeConfig.LazyChainLoading = lowMemConfig.LazyChainLoading
+	nodeConfig.SingleValidatorMode = lowMemConfig.SingleValidatorMode
 
 	// Initialize logger if not already set
 	// 	if nodeConfig.Log == nil {

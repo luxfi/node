@@ -10,10 +10,10 @@ import (
 	"errors"
 	"fmt"
 
-	// "github.com/luxfi/crypto/bls"      // TODO: Implement BLS support
-	// "github.com/luxfi/crypto/mlkem"    // TODO: Implement ML-KEM support
-	// "github.com/luxfi/crypto/ringtail" // TODO: Implement ringtail support
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/mldsa"
+	"github.com/luxfi/crypto/mlkem"
+	"github.com/luxfi/crypto/ring"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/crypto/slhdsa"
 	"github.com/luxfi/ids"
@@ -63,14 +63,26 @@ type PQSigner struct {
 	// Classical keys
 	secp256k1Key *secp256k1.PrivateKey
 
-	// Post-quantum keys
+	// BLS keys (for consensus)
+	blsKey *bls.SecretKey
+
+	// Post-quantum signature keys
 	mldsaKey  interface{} // Can be *mldsa.PrivateKey44/65/87
 	slhdsaKey interface{} // Can be *slhdsa.PrivateKey128/192/256
-	// ringtailKey *ringtail.PrivateKey // TODO: implement when available
+
+	// Post-quantum key encapsulation (ML-KEM)
+	mlkemKey     *mlkem.PrivateKey
+	mlkemPubKey  *mlkem.PublicKey
+	mlkemMode    mlkem.Mode
+
+	// Ring signatures (privacy-preserving)
+	ringSigner ring.Signer
+	ringScheme ring.Scheme
 
 	// For hybrid modes, we store both
 	hybridClassical *secp256k1.PrivateKey
 	hybridPQ        interface{}
+	hybridBLS       *bls.SecretKey
 }
 
 // SignHash signs a hash with the appropriate algorithm
@@ -81,6 +93,16 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 			return nil, ErrInvalidKeyType
 		}
 		return s.secp256k1Key.SignHash(hash)
+
+	case KeyTypeBLS:
+		if s.blsKey == nil {
+			return nil, ErrInvalidKeyType
+		}
+		sig, err := s.blsKey.Sign(hash)
+		if err != nil {
+			return nil, err
+		}
+		return bls.SignatureToBytes(sig), nil
 
 	case KeyTypeMLDSA44, KeyTypeMLDSA65, KeyTypeMLDSA87:
 		if key, ok := s.mldsaKey.(*mldsa.PrivateKey); ok {
@@ -102,14 +124,11 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 		}
 		return nil, ErrInvalidKeyType
 
-	// TODO: implement ringtail when available
-	// case KeyTypeRingtail:
-	//	if s.ringtailKey == nil {
-	//		return nil, ErrInvalidKeyType
-	//	}
-	//	// Ringtail requires ring members for signing
-	//	// For now, we'll use a simple signature
-	//	return s.ringtailKey.Sign(hash), nil
+	case KeyTypeRingtail:
+		// Ring signatures require a ring of public keys
+		// For SignHash without a ring, we return an error
+		// Use SignRing for ring signature operations
+		return nil, errors.New("ringtail requires ring members - use SignRing method")
 
 	case KeyTypeHybridSecp256k1MLDSA44:
 		// Hybrid mode: concatenate both signatures
@@ -137,6 +156,33 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 		}
 		return nil, ErrInvalidKeyType
 
+	case KeyTypeHybridBLSMLDSA44:
+		// Hybrid BLS + ML-DSA mode
+		if s.hybridBLS == nil || s.hybridPQ == nil {
+			return nil, ErrInvalidKeyType
+		}
+
+		blsSig, err := s.hybridBLS.Sign(hash)
+		if err != nil {
+			return nil, err
+		}
+		blsSigBytes := bls.SignatureToBytes(blsSig)
+
+		if key, ok := s.hybridPQ.(*mldsa.PrivateKey); ok {
+			pqSig, err := key.Sign(rand.Reader, hash, crypto.Hash(0))
+			if err != nil {
+				return nil, err
+			}
+			// Concatenate signatures with length prefixes
+			result := make([]byte, 0, 2+len(blsSigBytes)+2+len(pqSig))
+			result = append(result, byte(len(blsSigBytes)>>8), byte(len(blsSigBytes)))
+			result = append(result, blsSigBytes...)
+			result = append(result, byte(len(pqSig)>>8), byte(len(pqSig)))
+			result = append(result, pqSig...)
+			return result, nil
+		}
+		return nil, ErrInvalidKeyType
+
 	default:
 		return nil, ErrInvalidKeyType
 	}
@@ -153,6 +199,21 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		hash := sha256.New()
 		hash.Write(msg)
 		return s.secp256k1Key.SignHash(hash.Sum(nil))
+
+	case KeyTypeBLS:
+		// BLS signs message directly
+		if s.blsKey == nil {
+			return nil, ErrInvalidKeyType
+		}
+		sig, err := s.blsKey.Sign(msg)
+		if err != nil {
+			return nil, err
+		}
+		return bls.SignatureToBytes(sig), nil
+
+	case KeyTypeRingtail:
+		// Ring signatures require a ring of public keys
+		return nil, errors.New("ringtail requires ring members - use SignRing method")
 
 	case KeyTypeHybridSecp256k1MLDSA44, KeyTypeHybridSecp256k1SLHDSA128:
 		// For hybrid, we need to hash for the classical part
@@ -191,6 +252,33 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		result = append(result, pqSig...)
 		return result, nil
 
+	case KeyTypeHybridBLSMLDSA44:
+		// Hybrid BLS + ML-DSA mode
+		if s.hybridBLS == nil || s.hybridPQ == nil {
+			return nil, ErrInvalidKeyType
+		}
+
+		blsSig, err := s.hybridBLS.Sign(msg)
+		if err != nil {
+			return nil, err
+		}
+		blsSigBytes := bls.SignatureToBytes(blsSig)
+
+		if key, ok := s.hybridPQ.(*mldsa.PrivateKey); ok {
+			pqSig, err := key.Sign(rand.Reader, msg, crypto.Hash(0))
+			if err != nil {
+				return nil, err
+			}
+			// Concatenate signatures with length prefixes
+			result := make([]byte, 0, 2+len(blsSigBytes)+2+len(pqSig))
+			result = append(result, byte(len(blsSigBytes)>>8), byte(len(blsSigBytes)))
+			result = append(result, blsSigBytes...)
+			result = append(result, byte(len(pqSig)>>8), byte(len(pqSig)))
+			result = append(result, pqSig...)
+			return result, nil
+		}
+		return nil, ErrInvalidKeyType
+
 	default:
 		// PQ algorithms sign the message directly
 		return s.SignHash(msg)
@@ -200,6 +288,105 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 // Address returns the address associated with this signer
 func (s *PQSigner) Address() ids.ShortID {
 	return s.address
+}
+
+// SignRing creates a ring signature for the given message using the provided ring of public keys.
+// The signer's public key must be included in the ring at signerIndex.
+func (s *PQSigner) SignRing(message []byte, ringPubKeys [][]byte, signerIndex int) (ring.RingSignature, error) {
+	if s.keyType != KeyTypeRingtail {
+		return nil, errors.New("SignRing only supported for Ringtail key type")
+	}
+	if s.ringSigner == nil {
+		return nil, ErrInvalidKeyType
+	}
+
+	return s.ringSigner.Sign(message, ringPubKeys, signerIndex)
+}
+
+// KeyImage returns the key image for linkability (ring signatures only).
+// Returns nil for non-ring signature key types.
+func (s *PQSigner) KeyImage() []byte {
+	if s.ringSigner != nil {
+		return s.ringSigner.KeyImage()
+	}
+	return nil
+}
+
+// RingScheme returns the ring signature scheme used (for Ringtail keys).
+func (s *PQSigner) RingScheme() ring.Scheme {
+	return s.ringScheme
+}
+
+// PublicKey returns the public key bytes for this signer.
+func (s *PQSigner) PublicKey() []byte {
+	switch s.keyType {
+	case KeyTypeSecp256k1:
+		if s.secp256k1Key != nil {
+			return s.secp256k1Key.PublicKey().CompressedBytes()
+		}
+	case KeyTypeBLS:
+		if s.blsKey != nil {
+			return bls.PublicKeyToCompressedBytes(s.blsKey.PublicKey())
+		}
+	case KeyTypeMLDSA44, KeyTypeMLDSA65, KeyTypeMLDSA87:
+		if key, ok := s.mldsaKey.(*mldsa.PrivateKey); ok {
+			return key.PublicKey.Bytes()
+		}
+	case KeyTypeSLHDSA128, KeyTypeSLHDSA192, KeyTypeSLHDSA256:
+		if key, ok := s.slhdsaKey.(*slhdsa.PrivateKey); ok {
+			return key.PublicKey.Bytes()
+		}
+	case KeyTypeMLKEM512, KeyTypeMLKEM768, KeyTypeMLKEM1024:
+		if s.mlkemPubKey != nil {
+			return s.mlkemPubKey.Bytes()
+		}
+	case KeyTypeRingtail:
+		if s.ringSigner != nil {
+			return s.ringSigner.PublicKey()
+		}
+	}
+	return nil
+}
+
+// Encapsulate generates a shared secret and ciphertext for the given public key.
+// Only valid for ML-KEM key types.
+func (s *PQSigner) Encapsulate(recipientPubKey *mlkem.PublicKey) (ciphertext, sharedSecret []byte, err error) {
+	if s.keyType != KeyTypeMLKEM512 && s.keyType != KeyTypeMLKEM768 && s.keyType != KeyTypeMLKEM1024 {
+		return nil, nil, errors.New("Encapsulate only supported for ML-KEM key types")
+	}
+	return recipientPubKey.Encapsulate()
+}
+
+// Decapsulate recovers the shared secret from a ciphertext.
+// Only valid for ML-KEM key types.
+func (s *PQSigner) Decapsulate(ciphertext []byte) (sharedSecret []byte, err error) {
+	if s.keyType != KeyTypeMLKEM512 && s.keyType != KeyTypeMLKEM768 && s.keyType != KeyTypeMLKEM1024 {
+		return nil, errors.New("Decapsulate only supported for ML-KEM key types")
+	}
+	if s.mlkemKey == nil {
+		return nil, ErrInvalidKeyType
+	}
+	return s.mlkemKey.Decapsulate(ciphertext)
+}
+
+// BLSPublicKey returns the BLS public key (for BLS or hybrid BLS key types).
+func (s *PQSigner) BLSPublicKey() *bls.PublicKey {
+	switch s.keyType {
+	case KeyTypeBLS:
+		if s.blsKey != nil {
+			return s.blsKey.PublicKey()
+		}
+	case KeyTypeHybridBLSMLDSA44:
+		if s.hybridBLS != nil {
+			return s.hybridBLS.PublicKey()
+		}
+	}
+	return nil
+}
+
+// KeyType returns the key type of this signer.
+func (s *PQSigner) KeyType() KeyType {
+	return s.keyType
 }
 
 // PQKeychain implements Keychain with post-quantum support
@@ -270,23 +457,82 @@ func (kc *PQKeychain) AddSLHDSA(key *slhdsa.PrivateKey, keyType KeyType) ids.Sho
 	return addrBytes
 }
 
-// TODO: implement when ringtail is available
-// AddRingtail adds a ringtail key to the keychain
-// func (kc *PQKeychain) AddRingtail(key *ringtail.PrivateKey) ids.ShortID {
-//	pubKey := key.PublicKey()
-//	addrBytes := ids.ShortID{}
-//	copy(addrBytes[:], pubKey.Bytes()[:20])
-//
-//	signer := &PQSigner{
-//		keyType:     KeyTypeRingtail,
-//		address:     addrBytes,
-//		ringtailKey: key,
-//	}
-//
-//	kc.keysByAddress[addrBytes] = signer
-//	kc.addressSet.Add(addrBytes)
-//	return addrBytes
-// }
+// AddBLS adds a BLS key to the keychain
+func (kc *PQKeychain) AddBLS(key *bls.SecretKey) ids.ShortID {
+	pubKey := key.PublicKey()
+	pubKeyBytes := bls.PublicKeyToCompressedBytes(pubKey)
+
+	// Generate address from public key bytes (first 20 bytes of hash)
+	hash := sha256.Sum256(pubKeyBytes)
+	addrBytes := ids.ShortID{}
+	copy(addrBytes[:], hash[:20])
+
+	signer := &PQSigner{
+		keyType: KeyTypeBLS,
+		address: addrBytes,
+		blsKey:  key,
+	}
+
+	kc.keysByAddress[addrBytes] = signer
+	kc.addressSet.Add(addrBytes)
+	return addrBytes
+}
+
+// AddMLKEM adds an ML-KEM key pair to the keychain for key encapsulation
+func (kc *PQKeychain) AddMLKEM(pubKey *mlkem.PublicKey, privKey *mlkem.PrivateKey, mode mlkem.Mode) ids.ShortID {
+	pubKeyBytes := pubKey.Bytes()
+
+	// Generate address from public key bytes
+	hash := sha256.Sum256(pubKeyBytes)
+	addrBytes := ids.ShortID{}
+	copy(addrBytes[:], hash[:20])
+
+	var keyType KeyType
+	switch mode {
+	case mlkem.MLKEM512:
+		keyType = KeyTypeMLKEM512
+	case mlkem.MLKEM768:
+		keyType = KeyTypeMLKEM768
+	case mlkem.MLKEM1024:
+		keyType = KeyTypeMLKEM1024
+	default:
+		keyType = KeyTypeMLKEM768 // Default to MLKEM768
+	}
+
+	signer := &PQSigner{
+		keyType:     keyType,
+		address:     addrBytes,
+		mlkemKey:    privKey,
+		mlkemPubKey: pubKey,
+		mlkemMode:   mode,
+	}
+
+	kc.keysByAddress[addrBytes] = signer
+	kc.addressSet.Add(addrBytes)
+	return addrBytes
+}
+
+// AddRingtail adds a ring signature key to the keychain
+// scheme specifies which ring signature scheme to use (LSAG or LatticeLSAG)
+func (kc *PQKeychain) AddRingtail(signer ring.Signer, scheme ring.Scheme) ids.ShortID {
+	pubKeyBytes := signer.PublicKey()
+
+	// Generate address from public key bytes
+	hash := sha256.Sum256(pubKeyBytes)
+	addrBytes := ids.ShortID{}
+	copy(addrBytes[:], hash[:20])
+
+	pqSigner := &PQSigner{
+		keyType:    KeyTypeRingtail,
+		address:    addrBytes,
+		ringSigner: signer,
+		ringScheme: scheme,
+	}
+
+	kc.keysByAddress[addrBytes] = pqSigner
+	kc.addressSet.Add(addrBytes)
+	return addrBytes
+}
 
 // AddHybrid adds a hybrid classical+PQ key pair
 func (kc *PQKeychain) AddHybrid(classical *secp256k1.PrivateKey, pq interface{}) ids.ShortID {
@@ -315,6 +561,28 @@ func (kc *PQKeychain) AddHybrid(classical *secp256k1.PrivateKey, pq interface{})
 	kc.keysByAddress[shortAddr] = signer
 	kc.addressSet.Add(shortAddr)
 	return shortAddr
+}
+
+// AddHybridBLS adds a hybrid BLS + ML-DSA key pair
+// This combines BLS for aggregatable consensus signatures with ML-DSA for post-quantum security
+func (kc *PQKeychain) AddHybridBLS(blsKey *bls.SecretKey, pqKey *mldsa.PrivateKey) ids.ShortID {
+	// Generate address from BLS public key
+	pubKey := blsKey.PublicKey()
+	pubKeyBytes := bls.PublicKeyToCompressedBytes(pubKey)
+	hash := sha256.Sum256(pubKeyBytes)
+	addrBytes := ids.ShortID{}
+	copy(addrBytes[:], hash[:20])
+
+	signer := &PQSigner{
+		keyType:   KeyTypeHybridBLSMLDSA44,
+		address:   addrBytes,
+		hybridBLS: blsKey,
+		hybridPQ:  pqKey,
+	}
+
+	kc.keysByAddress[addrBytes] = signer
+	kc.addressSet.Add(addrBytes)
+	return addrBytes
 }
 
 // GenerateKey generates a new key of the default type
@@ -369,13 +637,42 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA256), nil
 
-	// TODO: implement when ringtail is available
-	// case KeyTypeRingtail:
-	//	key, err := ringtail.GenerateKey(rand.Reader)
-	//	if err != nil {
-	//		return ids.ShortEmpty, err
-	//	}
-	//	return kc.AddRingtail(key), nil
+	case KeyTypeBLS:
+		key, err := bls.NewSecretKey()
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddBLS(key), nil
+
+	case KeyTypeMLKEM512:
+		pubKey, privKey, err := mlkem.GenerateKey(mlkem.MLKEM512)
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddMLKEM(pubKey, privKey, mlkem.MLKEM512), nil
+
+	case KeyTypeMLKEM768:
+		pubKey, privKey, err := mlkem.GenerateKey(mlkem.MLKEM768)
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddMLKEM(pubKey, privKey, mlkem.MLKEM768), nil
+
+	case KeyTypeMLKEM1024:
+		pubKey, privKey, err := mlkem.GenerateKey(mlkem.MLKEM1024)
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddMLKEM(pubKey, privKey, mlkem.MLKEM1024), nil
+
+	case KeyTypeRingtail:
+		// Default to LSAG (secp256k1-based) ring signatures
+		// Use GenerateRingtailKey with specific scheme if needed
+		signer, err := ring.NewSigner(ring.LSAG)
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddRingtail(signer, ring.LSAG), nil
 
 	case KeyTypeHybridSecp256k1MLDSA44:
 		classical, err := secp256k1.NewPrivateKey()
@@ -399,9 +696,30 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 		}
 		return kc.AddHybrid(classical, pq), nil
 
+	case KeyTypeHybridBLSMLDSA44:
+		blsKey, err := bls.NewSecretKey()
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		pqKey, err := mldsa.GenerateKey(rand.Reader, mldsa.MLDSA44)
+		if err != nil {
+			return ids.ShortEmpty, err
+		}
+		return kc.AddHybridBLS(blsKey, pqKey), nil
+
 	default:
 		return ids.ShortEmpty, fmt.Errorf("unsupported key type: %v", kc.defaultType)
 	}
+}
+
+// GenerateRingtailKey generates a new ring signature key with a specific scheme.
+// scheme can be ring.LSAG (secp256k1-based) or ring.LatticeLSAG (post-quantum).
+func (kc *PQKeychain) GenerateRingtailKey(scheme ring.Scheme) (ids.ShortID, error) {
+	signer, err := ring.NewSigner(scheme)
+	if err != nil {
+		return ids.ShortEmpty, err
+	}
+	return kc.AddRingtail(signer, scheme), nil
 }
 
 // Addresses returns all addresses in the keychain

@@ -15,6 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/config"
+	"github.com/luxfi/node/vms/dexvm/network"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
 	"github.com/luxfi/warp"
 	"github.com/stretchr/testify/require"
@@ -85,12 +86,14 @@ func TestVMSetState(t *testing.T) {
 	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	// Set to bootstrapping
-	err := vmImpl.SetState(context.Background(), uint32(vm.Bootstrapping))
+	// Set to bootstrapping using proto value (2 = STATE_BOOTSTRAPPING)
+	err := vmImpl.SetState(context.Background(), 2)
 	require.NoError(err)
 	require.False(vmImpl.bootstrapped)
 
-	// Set to normal operation (functional mode - no background tasks)
+	// Set to normal operation using vm.Ready (4)
+	// Note: vm.Bootstrapping=3 conflicts with proto STATE_NORMAL_OP=3
+	// so we use vm.Ready=4 for ready state in tests
 	err = vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 	require.True(vmImpl.bootstrapped)
@@ -243,12 +246,26 @@ func TestVMRequest(t *testing.T) {
 	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
+	// Bootstrap VM and create an orderbook
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
+	require.NoError(err)
+	vmImpl.GetOrCreateOrderbook("LUX/USDT")
+
 	nodeID := ids.GenerateTestNodeID()
 	requestID := uint32(1)
 	deadline := time.Now().Add(time.Minute)
-	request := []byte("test request")
 
-	err := vmImpl.Request(context.Background(), nodeID, requestID, deadline, request)
+	// Create a valid network message requesting existing orderbook
+	msg := &network.Message{
+		Type:      network.MsgOrderbookSync,
+		RequestID: requestID,
+		ChainID:   ids.GenerateTestID(),
+		Timestamp: time.Now().Unix(),
+		Payload:   []byte("LUX/USDT"),
+	}
+	request := msg.Encode()
+
+	err = vmImpl.Request(context.Background(), nodeID, requestID, deadline, request)
 	require.NoError(err)
 }
 
@@ -258,12 +275,29 @@ func TestVMCrossChainRequest(t *testing.T) {
 	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
+	// Bootstrap VM
+	err := vmImpl.SetState(context.Background(), uint32(vm.Ready))
+	require.NoError(err)
+
+	// Add the chain to trusted chains
 	chainID := ids.GenerateTestID()
+	vmImpl.Config.TrustedChains = append(vmImpl.Config.TrustedChains, chainID)
+
 	requestID := uint32(1)
 	deadline := time.Now().Add(time.Minute)
-	request := []byte("test cross-chain request")
 
-	err := vmImpl.CrossChainRequest(context.Background(), chainID, requestID, deadline, request)
+	// Create a pool sync message instead (simpler to test)
+	msg := &network.Message{
+		Type:      network.MsgPoolSync,
+		RequestID: requestID,
+		ChainID:   chainID,
+		Timestamp: time.Now().Unix(),
+		Payload:   []byte{},
+	}
+	request := msg.Encode()
+
+	// Pool sync should work even with empty payload
+	err = vmImpl.CrossChainRequest(context.Background(), chainID, requestID, deadline, request)
 	require.NoError(err)
 }
 

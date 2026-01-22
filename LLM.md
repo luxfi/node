@@ -211,6 +211,26 @@ lux network start --snapshot-name <name>
 ### 5. EIP-3860 Historic Blocks
 For importing pre-merge blocks, Shanghai must be active based on `ShanghaiTime`, not merge status.
 
+### 6. Genesis Hash Mismatch on Restart
+**Problem**: "db contains invalid genesis hash" error when restarting nodes.
+
+**Cause**: Genesis bytes are rebuilt from JSON config on each start. Due to non-deterministic JSON serialization (map iteration order), the rebuilt bytes differ from the original, causing hash mismatch.
+
+**Solution**: Genesis bytes are now cached to `genesis.bytes` file in the node's data directory. On subsequent restarts, the cached bytes are used directly. This happens automatically when using `--genesis-file`.
+
+### 7. VM Config Format Mismatch
+**Problem**: "failed to parse config: unknown codec version" for T-Chain (ThresholdVM) or Z-Chain (ZKVM) in dev mode.
+
+**Cause**: Two issues:
+1. Genesis builder passes JSON config (`{"version":1,"message":"..."}`) to VMs that expect binary codec format
+2. Dev mode's automining config injection converts all chain configs to JSON, breaking binary-codec VMs
+
+**Solution**:
+- `genesis/builder/builder.go`: T-Chain and Z-Chain use `[]byte(config.TChainGenesis)` (empty bytes for defaults) instead of `getGenesis()` which returns JSON
+- `chains/manager.go`: `injectAutominingConfig` only injects for `EVMID`, skipping binary-codec VMs
+
+**Alternative**: Use `--genesis-raw-bytes` flag to pass base64-encoded pre-built genesis bytes directly.
+
 ## File Locations
 
 | Item | Path |
@@ -258,4 +278,4 @@ When CGO disabled, these use CPU fallbacks:
 
 ---
 
-*Last Updated*: 2025-01-13
+*Last Updated*: 2026-01-19

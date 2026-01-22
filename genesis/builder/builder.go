@@ -577,13 +577,15 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			Name:        "B-Chain",
 		},
 		{
-			GenesisData: getGenesis(config.TChainGenesis),
+			// ThresholdVM expects empty bytes for default config, not JSON
+			GenesisData: []byte(config.TChainGenesis),
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.ThresholdVMID,
 			Name:        "T-Chain",
 		},
 		{
-			GenesisData: getGenesis(config.ZChainGenesis),
+			// ZKVM expects empty bytes for default config, not JSON
+			GenesisData: []byte(config.ZChainGenesis),
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.ZKVMID,
 			Name:        "Z-Chain",

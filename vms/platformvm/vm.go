@@ -47,7 +47,6 @@ import (
 	consensusversion "github.com/luxfi/version"
 	vmcore "github.com/luxfi/vm"
 	extwarp "github.com/luxfi/warp"
-	vmpb "github.com/luxfi/node/proto/pb/vm"
 
 	chainengine "github.com/luxfi/consensus/engine/chain"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -224,6 +223,10 @@ func (vm *VM) Initialize(
 
 	// Set Runtime
 	vm.rt = init.Runtime
+
+	// Set nodeID from runtime - this is critical for validator checks
+	vm.nodeID = init.Runtime.NodeID
+	vm.log.Info("platformvm initialized with node ID", "nodeID", vm.nodeID)
 
 	// Initialize utxo.XAssetID from the context
 	utxo.XAssetID = init.Runtime.XAssetID
@@ -780,11 +783,12 @@ func (vm *VM) onReady() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	// Use proto-based state values for compatibility with chain manager
-	switch vmpb.State(stateNum) {
-	case vmpb.State_STATE_BOOTSTRAPPING:
+	// Handle both proto-based states (2=Bootstrapping, 3=NormalOp)
+	// and vm.State values (3=Bootstrapping, 4=Ready)
+	switch stateNum {
+	case 2: // vmpb.State_STATE_BOOTSTRAPPING
 		return vm.onBootstrapStarted()
-	case vmpb.State_STATE_NORMAL_OP:
+	case 3, 4: // vmpb.State_STATE_NORMAL_OP (3) or vm.Ready (4)
 		return vm.onReady()
 	default:
 		// Accept unknown states without error for forward compatibility

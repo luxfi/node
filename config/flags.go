@@ -75,6 +75,19 @@ func addProcessFlags(fs *pflag.FlagSet) {
 func addNodeFlags(fs *pflag.FlagSet) {
 	// Development mode
 	fs.Bool(DevModeKey, false, "Enables development mode with single-node consensus, no sybil protection, and other dev-friendly settings")
+	fs.Bool(DevLightKey, false, "Enables dev mode with low memory settings (--dev + --low-memory). Target: <200MB idle, <500MB under load")
+	fs.Bool(LowMemoryKey, false, "Enables low memory configuration for resource-constrained environments")
+	fs.String(MemoryProfileKey, "", "Memory profile: 'low' (<50MB), 'standard' (<100MB, default), 'max' (~512MB)")
+	fs.String(ConfigProfileKey, "", "Load a predefined configuration profile (e.g., 'dev-light', 'production')")
+
+	// Low memory database tuning
+	fs.Uint64(DBCacheSizeKey, 0, "Database cache size in bytes (0 = use defaults based on mode)")
+	fs.Uint64(DBMemtableSizeKey, 0, "Database memtable size in bytes (0 = use defaults based on mode)")
+	fs.Uint64(StateCacheSizeKey, 0, "State cache size in bytes (0 = use defaults based on mode)")
+	fs.Uint64(BlockCacheSizeKey, 0, "Block cache size in bytes (0 = use defaults based on mode)")
+	fs.Bool(DisableBloomFiltersKey, false, "Disable bloom filters for small datasets (saves memory)")
+	fs.Bool(LazyChainLoadingKey, false, "Load chain data on first request instead of at startup")
+	fs.Bool(SingleValidatorModeKey, false, "Run with a single validator (minimal memory for local dev)")
 
 	// Home directory
 	fs.String(DataDirKey, defaultDataDir, "Sets the base data directory where default sub-directories will be placed unless otherwise specified.")

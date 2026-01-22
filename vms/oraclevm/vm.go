@@ -119,6 +119,96 @@ type AggregatedValue struct {
 	QuorumCert   []byte    `json:"quorumCert,omitempty"`
 }
 
+// =============================================================================
+// Session-Ready Types (External Write/Read abstraction)
+// =============================================================================
+
+// RequestKind indicates whether this is a write or read request
+type RequestKind uint8
+
+const (
+	RequestKindWrite RequestKind = iota
+	RequestKindRead
+)
+
+// OracleRequest represents a deterministic request from PlatformVM
+// request_id = H(service_id || session_id || step || retry_index || txid)
+type OracleRequest struct {
+	RequestID      [32]byte      `json:"requestId"`      // Deterministic: H(service_id || session_id || step || retry || txid)
+	ServiceID      ids.ID        `json:"serviceId"`
+	SessionID      ids.ID        `json:"sessionId"`
+	Step           uint32        `json:"step"`
+	Retry          uint32        `json:"retry"`
+	TxID           ids.ID        `json:"txId"`           // Originating PlatformVM tx
+	Kind           RequestKind   `json:"kind"`           // WRITE or READ
+	Target         []byte        `json:"target"`         // Opaque target spec (url template id, chain id, etc.)
+	PayloadHash    [32]byte      `json:"payloadHash"`    // For WRITE: hash of payload to send
+	SchemaHash     [32]byte      `json:"schemaHash"`     // For READ: expected response schema
+	DeadlineHeight uint64        `json:"deadlineHeight"` // Block height deadline
+	Executors      []ids.NodeID  `json:"executors"`      // Assigned executor committee
+	CreatedAt      time.Time     `json:"createdAt"`
+	Status         RequestStatus `json:"status"`
+}
+
+// RequestStatus tracks the lifecycle of an oracle request
+type RequestStatus uint8
+
+const (
+	RequestStatusPending RequestStatus = iota
+	RequestStatusExecuting
+	RequestStatusCommitted
+	RequestStatusExpired
+	RequestStatusFailed
+)
+
+// OracleRecord represents a single execution record from an executor
+type OracleRecord struct {
+	RequestID   [32]byte   `json:"requestId"`
+	Executor    ids.NodeID `json:"executor"`
+	Timestamp   uint64     `json:"timestamp"`
+	Endpoint    string     `json:"endpoint"`     // Or compact endpoint ID
+	BodyHash    [32]byte   `json:"bodyHash"`     // Hash of request/response body
+	ResultCode  uint32     `json:"resultCode"`   // HTTP status or custom code
+	ExternalRef []byte     `json:"externalRef"`  // External system reference (txid, etc.)
+	Signature   []byte     `json:"signature"`    // Executor's signature over record
+}
+
+// OracleCommit represents a Merkle root commitment for a request
+type OracleCommit struct {
+	RequestID  [32]byte  `json:"requestId"`
+	Kind       RequestKind `json:"kind"`
+	Root       [32]byte  `json:"root"`         // MerkleRoot(records)
+	RecordCount uint32   `json:"recordCount"`
+	Window     struct {
+		Start uint64 `json:"start"`
+		End   uint64 `json:"end"`
+	} `json:"window"`
+	CommittedAt time.Time `json:"committedAt"`
+}
+
+// ComputeRequestID computes the deterministic request ID
+func ComputeRequestID(serviceID, sessionID, txID ids.ID, step, retry uint32) [32]byte {
+	h := sha256.New()
+	h.Write([]byte("LUX:OracleRequest:v1"))
+	h.Write(serviceID[:])
+	h.Write(sessionID[:])
+	var buf [4]byte
+	buf[0] = byte(step >> 24)
+	buf[1] = byte(step >> 16)
+	buf[2] = byte(step >> 8)
+	buf[3] = byte(step)
+	h.Write(buf[:])
+	buf[0] = byte(retry >> 24)
+	buf[1] = byte(retry >> 16)
+	buf[2] = byte(retry >> 8)
+	buf[3] = byte(retry)
+	h.Write(buf[:])
+	h.Write(txID[:])
+	var result [32]byte
+	copy(result[:], h.Sum(nil))
+	return result
+}
+
 // VM implements the Oracle Virtual Machine
 type VM struct {
 	rt     *runtime.Runtime
@@ -136,6 +226,11 @@ type VM struct {
 
 	// Aggregated values by epoch
 	values map[ids.ID]map[uint64]*AggregatedValue
+
+	// Session-ready: Oracle Requests (External Write/Read)
+	requests      map[[32]byte]*OracleRequest     // request_id -> request
+	requestRecords map[[32]byte][]*OracleRecord   // request_id -> records from executors
+	commits       map[[32]byte]*OracleCommit      // request_id -> Merkle commitment
 
 	// Block management
 	lastAcceptedID ids.ID
@@ -194,6 +289,11 @@ func (vm *VM) Initialize(ctx context.Context, init vmcore.Init) error {
 	vm.pendingObs = make(map[ids.ID][]*Observation)
 	vm.values = make(map[ids.ID]map[uint64]*AggregatedValue)
 	vm.pendingBlocks = make(map[ids.ID]*Block)
+
+	// Initialize session-ready state
+	vm.requests = make(map[[32]byte]*OracleRequest)
+	vm.requestRecords = make(map[[32]byte][]*OracleRecord)
+	vm.commits = make(map[[32]byte]*OracleCommit)
 
 	// Parse configuration
 	if len(init.Config) > 0 {
@@ -584,4 +684,320 @@ func (blk *Block) Bytes() []byte {
 		blk.bytes, _ = json.Marshal(blk)
 	}
 	return blk.bytes
+}
+
+// =============================================================================
+// Session-Ready Methods (External Write/Read)
+// =============================================================================
+
+// RegisterRequest registers a new oracle request from PlatformVM
+// The request_id must be deterministic and verifiable
+func (vm *VM) RegisterRequest(req *OracleRequest) error {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	if !vm.running {
+		return ErrNotInitialized
+	}
+
+	// Verify request_id is deterministic
+	expectedID := ComputeRequestID(req.ServiceID, req.SessionID, req.TxID, req.Step, req.Retry)
+	if expectedID != req.RequestID {
+		return fmt.Errorf("invalid request_id: expected %x, got %x", expectedID, req.RequestID)
+	}
+
+	// Check for duplicate
+	if _, exists := vm.requests[req.RequestID]; exists {
+		return fmt.Errorf("request %x already exists", req.RequestID)
+	}
+
+	req.CreatedAt = time.Now()
+	req.Status = RequestStatusPending
+	vm.requests[req.RequestID] = req
+	vm.requestRecords[req.RequestID] = make([]*OracleRecord, 0)
+
+	if !vm.log.IsZero() {
+		vm.log.Info("Registered oracle request",
+			log.String("requestId", fmt.Sprintf("%x", req.RequestID[:8])),
+			log.String("serviceId", req.ServiceID.String()),
+			log.String("sessionId", req.SessionID.String()),
+			log.Int("step", int(req.Step)),
+			log.Int("kind", int(req.Kind)),
+		)
+	}
+
+	return nil
+}
+
+// SubmitRecord submits an execution record from an assigned executor
+// Only assigned executors can submit records for a request
+func (vm *VM) SubmitRecord(record *OracleRecord) error {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	if !vm.running {
+		return ErrNotInitialized
+	}
+
+	// Verify request exists
+	req, exists := vm.requests[record.RequestID]
+	if !exists {
+		return fmt.Errorf("request %x not found", record.RequestID)
+	}
+
+	// Verify executor is authorized
+	authorized := false
+	for _, ex := range req.Executors {
+		if ex == record.Executor {
+			authorized = true
+			break
+		}
+	}
+	if !authorized {
+		return fmt.Errorf("executor %s not authorized for request %x", record.Executor, record.RequestID)
+	}
+
+	// Check deadline
+	if vm.lastAccepted != nil && vm.lastAccepted.Height_ > req.DeadlineHeight {
+		req.Status = RequestStatusExpired
+		return fmt.Errorf("request %x has expired", record.RequestID)
+	}
+
+	// Update status
+	if req.Status == RequestStatusPending {
+		req.Status = RequestStatusExecuting
+	}
+
+	// Add record
+	vm.requestRecords[record.RequestID] = append(vm.requestRecords[record.RequestID], record)
+
+	if !vm.log.IsZero() {
+		vm.log.Debug("Received oracle record",
+			log.String("requestId", fmt.Sprintf("%x", record.RequestID[:8])),
+			log.String("executor", record.Executor.String()),
+			log.Int("totalRecords", len(vm.requestRecords[record.RequestID])),
+		)
+	}
+
+	return nil
+}
+
+// CommitRecords creates a Merkle root commitment for a request's records
+func (vm *VM) CommitRecords(requestID [32]byte) (*OracleCommit, error) {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	if !vm.running {
+		return nil, ErrNotInitialized
+	}
+
+	req, exists := vm.requests[requestID]
+	if !exists {
+		return nil, fmt.Errorf("request %x not found", requestID)
+	}
+
+	records := vm.requestRecords[requestID]
+	if len(records) == 0 {
+		return nil, fmt.Errorf("no records for request %x", requestID)
+	}
+
+	// Build Merkle tree from records
+	root := vm.computeRecordsMerkleRoot(records)
+
+	// Find timestamp window
+	var minTime, maxTime uint64
+	for _, r := range records {
+		if minTime == 0 || r.Timestamp < minTime {
+			minTime = r.Timestamp
+		}
+		if r.Timestamp > maxTime {
+			maxTime = r.Timestamp
+		}
+	}
+
+	commit := &OracleCommit{
+		RequestID:   requestID,
+		Kind:        req.Kind,
+		Root:        root,
+		RecordCount: uint32(len(records)),
+		CommittedAt: time.Now(),
+	}
+	commit.Window.Start = minTime
+	commit.Window.End = maxTime
+
+	vm.commits[requestID] = commit
+	req.Status = RequestStatusCommitted
+
+	if !vm.log.IsZero() {
+		vm.log.Info("Committed oracle records",
+			log.String("requestId", fmt.Sprintf("%x", requestID[:8])),
+			log.String("root", fmt.Sprintf("%x", root[:8])),
+			log.Int("recordCount", len(records)),
+		)
+	}
+
+	return commit, nil
+}
+
+// computeRecordsMerkleRoot computes the Merkle root for a set of records
+func (vm *VM) computeRecordsMerkleRoot(records []*OracleRecord) [32]byte {
+	if len(records) == 0 {
+		return [32]byte{}
+	}
+
+	// Hash each record to get leaves
+	leaves := make([][32]byte, len(records))
+	for i, r := range records {
+		h := sha256.New()
+		h.Write(r.RequestID[:])
+		h.Write(r.Executor[:])
+		var ts [8]byte
+		ts[0] = byte(r.Timestamp >> 56)
+		ts[1] = byte(r.Timestamp >> 48)
+		ts[2] = byte(r.Timestamp >> 40)
+		ts[3] = byte(r.Timestamp >> 32)
+		ts[4] = byte(r.Timestamp >> 24)
+		ts[5] = byte(r.Timestamp >> 16)
+		ts[6] = byte(r.Timestamp >> 8)
+		ts[7] = byte(r.Timestamp)
+		h.Write(ts[:])
+		h.Write([]byte(r.Endpoint))
+		h.Write(r.BodyHash[:])
+		var rc [4]byte
+		rc[0] = byte(r.ResultCode >> 24)
+		rc[1] = byte(r.ResultCode >> 16)
+		rc[2] = byte(r.ResultCode >> 8)
+		rc[3] = byte(r.ResultCode)
+		h.Write(rc[:])
+		h.Write(r.ExternalRef)
+		copy(leaves[i][:], h.Sum(nil))
+	}
+
+	// Build Merkle tree
+	for len(leaves) > 1 {
+		var next [][32]byte
+		for i := 0; i < len(leaves); i += 2 {
+			h := sha256.New()
+			h.Write(leaves[i][:])
+			if i+1 < len(leaves) {
+				h.Write(leaves[i+1][:])
+			} else {
+				h.Write(leaves[i][:]) // Duplicate last if odd
+			}
+			var combined [32]byte
+			copy(combined[:], h.Sum(nil))
+			next = append(next, combined)
+		}
+		leaves = next
+	}
+
+	return leaves[0]
+}
+
+// GetRequest returns a request by ID
+func (vm *VM) GetRequest(requestID [32]byte) (*OracleRequest, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	if !vm.running {
+		return nil, ErrNotInitialized
+	}
+
+	req, exists := vm.requests[requestID]
+	if !exists {
+		return nil, fmt.Errorf("request %x not found", requestID)
+	}
+
+	return req, nil
+}
+
+// GetCommit returns a commit by request ID
+func (vm *VM) GetCommit(requestID [32]byte) (*OracleCommit, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	if !vm.running {
+		return nil, ErrNotInitialized
+	}
+
+	commit, exists := vm.commits[requestID]
+	if !exists {
+		return nil, fmt.Errorf("commit for request %x not found", requestID)
+	}
+
+	return commit, nil
+}
+
+// GenerateInclusionProof generates a Merkle inclusion proof for a record
+func (vm *VM) GenerateInclusionProof(requestID [32]byte, recordIndex int) ([][]byte, error) {
+	vm.mu.RLock()
+	defer vm.mu.RUnlock()
+
+	if !vm.running {
+		return nil, ErrNotInitialized
+	}
+
+	records := vm.requestRecords[requestID]
+	if records == nil || recordIndex >= len(records) {
+		return nil, fmt.Errorf("invalid record index %d for request %x", recordIndex, requestID)
+	}
+
+	// Compute all leaf hashes
+	leaves := make([][32]byte, len(records))
+	for i, r := range records {
+		h := sha256.New()
+		h.Write(r.RequestID[:])
+		h.Write(r.Executor[:])
+		var ts [8]byte
+		ts[0] = byte(r.Timestamp >> 56)
+		ts[1] = byte(r.Timestamp >> 48)
+		ts[2] = byte(r.Timestamp >> 40)
+		ts[3] = byte(r.Timestamp >> 32)
+		ts[4] = byte(r.Timestamp >> 24)
+		ts[5] = byte(r.Timestamp >> 16)
+		ts[6] = byte(r.Timestamp >> 8)
+		ts[7] = byte(r.Timestamp)
+		h.Write(ts[:])
+		h.Write([]byte(r.Endpoint))
+		h.Write(r.BodyHash[:])
+		var rc [4]byte
+		rc[0] = byte(r.ResultCode >> 24)
+		rc[1] = byte(r.ResultCode >> 16)
+		rc[2] = byte(r.ResultCode >> 8)
+		rc[3] = byte(r.ResultCode)
+		h.Write(rc[:])
+		h.Write(r.ExternalRef)
+		copy(leaves[i][:], h.Sum(nil))
+	}
+
+	// Build proof
+	var proof [][]byte
+	idx := recordIndex
+	for len(leaves) > 1 {
+		siblingIdx := idx ^ 1 // XOR to get sibling
+		if siblingIdx < len(leaves) {
+			proof = append(proof, leaves[siblingIdx][:])
+		} else {
+			proof = append(proof, leaves[idx][:]) // Duplicate if odd
+		}
+
+		// Build next level
+		var next [][32]byte
+		for i := 0; i < len(leaves); i += 2 {
+			h := sha256.New()
+			h.Write(leaves[i][:])
+			if i+1 < len(leaves) {
+				h.Write(leaves[i+1][:])
+			} else {
+				h.Write(leaves[i][:])
+			}
+			var combined [32]byte
+			copy(combined[:], h.Sum(nil))
+			next = append(next, combined)
+		}
+		leaves = next
+		idx = idx / 2
+	}
+
+	return proof, nil
 }

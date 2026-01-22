@@ -54,17 +54,17 @@ func New(config nodeconfig.Config) (App, error) {
 	// }
 
 	// Create a logger and log factory
+	// Use info level by default to avoid excessive logging (debug level causes massive log spam)
 	infoLevel, _ := log.ToLevel("info")
-	debugLevel, _ := log.ToLevel("debug")
 	logFactory := log.NewFactoryWithConfig(log.Config{
 		RotatingWriterConfig: log.RotatingWriterConfig{
-			MaxSize:   100, // 100MB per log file
-			MaxFiles:  10,
-			MaxAge:    30,                         // 30 days
-			Directory: config.DatabaseConfig.Path, // Use db path for logs
+			MaxSize:   8,  // 8MB per log file (reasonable for standard profile)
+			MaxFiles:  5,  // Keep 5 rotated files
+			MaxAge:    7,  // 7 days retention
+			Directory: config.DatabaseConfig.Path,
 		},
 		DisplayLevel: infoLevel,
-		LogLevel:     debugLevel,
+		LogLevel:     infoLevel, // Use info level, not debug (prevents log spam)
 	})
 	logger, err := logFactory.Make("main")
 	if err != nil {

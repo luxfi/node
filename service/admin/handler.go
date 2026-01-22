@@ -199,3 +199,25 @@ func (r *rpcService) GetTrackedChains(req *http.Request, _ *struct{}, reply *api
 	}
 	return nil
 }
+
+func (r *rpcService) Snapshot(req *http.Request, args *apiadmin.SnapshotArgs, reply *apiadmin.SnapshotReply) error {
+	resp, err := r.svc.Snapshot(req.Context(), args)
+	if err != nil {
+		return err
+	}
+	if resp != nil {
+		*reply = *resp
+	}
+	return nil
+}
+
+func (r *rpcService) Load(req *http.Request, args *apiadmin.LoadArgs, reply *apiadmin.EmptyReply) error {
+	resp, err := r.svc.Load(req.Context(), args)
+	if err != nil {
+		return err
+	}
+	if resp != nil {
+		*reply = *resp
+	}
+	return nil
+}
