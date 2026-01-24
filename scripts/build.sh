@@ -66,8 +66,8 @@ upx_compress=false
 
 case "${profile}" in
   minimal)
-    echo "Profile: minimal (ZAP, all VMs, stripped)"
-    tags="allvms"
+    echo "Profile: minimal (ZAP, all VMs, NAT, stripped)"
+    tags="allvms,nattraversal"
     strip_flags="-s -w"
     ;;
   core)
@@ -85,8 +85,8 @@ case "${profile}" in
     # No strip flags, keep debug symbols
     ;;
   tiny)
-    echo "Profile: tiny (all VMs + UPX compressed)"
-    tags="allvms"
+    echo "Profile: tiny (all VMs, NAT + UPX compressed)"
+    tags="allvms,nattraversal"
     strip_flags="-s -w"
     upx_compress=true
     ;;
