@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/database v1.17.39
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
-github.com/luxfi/log v1.4.1
+	github.com/luxfi/log v1.4.1
 	github.com/luxfi/math v1.2.3
 	github.com/luxfi/metric v1.4.11
 	github.com/luxfi/mock v0.1.1
@@ -121,7 +121,7 @@ require (
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.9.0
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
@@ -135,11 +135,11 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.0.1
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
+	github.com/luxfi/api v1.0.1
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/compress v0.0.4
 	github.com/luxfi/constants v1.4.3
 	github.com/luxfi/container v0.0.4
-	github.com/luxfi/fhe v1.7.6-0.20260106060801-28e308e4c2f8
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.5.22
 	github.com/luxfi/geth v1.16.73
@@ -152,6 +152,8 @@ require (
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.0
+	github.com/luxfi/runtime v1.0.0
+	github.com/luxfi/sdk v1.16.45
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/threshold v1.5.1
 	github.com/luxfi/timer v1.0.1
@@ -159,7 +161,8 @@ require (
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.3
 	github.com/luxfi/utxo v0.2.3
-	github.com/luxfi/vm v1.0.20
+	github.com/luxfi/validators v1.0.0
+	github.com/luxfi/vm v1.0.22
 	github.com/luxfi/warp v1.18.5
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
@@ -171,7 +174,7 @@ require (
 	github.com/luxfi/concurrent v0.0.3
 	github.com/luxfi/protocol v0.0.2 // indirect
 	github.com/luxfi/upgrade v1.0.0 // indirect
-	github.com/luxfi/version v1.0.1 // indirect
+	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
@@ -224,8 +227,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/genesis => /Users/z/work/lux/genesis
-
-
-
