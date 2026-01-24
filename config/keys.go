@@ -256,4 +256,8 @@ const (
 	DisableBloomFiltersKey    = "disable-bloom-filters"
 	LazyChainLoadingKey       = "lazy-chain-loading"
 	SingleValidatorModeKey    = "single-validator-mode"
+
+	// VM Transport Keys
+	VMTransportKey        = "vm-transport"
+	VMTransportTimeoutKey = "vm-transport-timeout"
 )

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/vm/chain"
 )
 
-func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(context.Context) (chain.HealthResult, error) {
 	localPrimaryValidator, err := vm.state.GetCurrentValidator(
 		constants.PrimaryNetworkID,
 		vm.nodeID,
@@ -24,7 +24,7 @@ func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
 	case database.ErrNotFound:
 		vm.metrics.SetTimeUntilUnstake(0)
 	default:
-		return nil, fmt.Errorf("couldn't get current local validator: %w", err)
+		return chain.HealthResult{}, fmt.Errorf("couldn't get current local validator: %w", err)
 	}
 
 	for chainID := range vm.TrackedChains {
@@ -38,8 +38,8 @@ func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
 		case database.ErrNotFound:
 			vm.metrics.SetTimeUntilNetUnstake(chainID, 0)
 		default:
-			return nil, fmt.Errorf("couldn't get current chain validator of %q: %w", chainID, err)
+			return chain.HealthResult{}, fmt.Errorf("couldn't get current chain validator of %q: %w", chainID, err)
 		}
 	}
-	return &chain.HealthResult{Healthy: true, Details: nil}, nil
+	return chain.HealthResult{Healthy: true, Details: nil}, nil
 }

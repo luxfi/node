@@ -369,8 +369,8 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 }
 
 // HealthCheck performs a health check
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
-	return &chain.HealthResult{
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
+	return chain.HealthResult{
 		Healthy: true,
 		Details: map[string]string{
 			"utxoCount":         fmt.Sprintf("%d", vm.utxoDB.GetUTXOCount()),

@@ -715,7 +715,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // HealthCheck returns VM health status.
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.shutdownLock.RLock()
 	shuttingDown := vm.shuttingDown
 	vm.shutdownLock.RUnlock()
@@ -724,7 +724,7 @@ func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
 	keyCount := len(vm.keys)
 	vm.keysLock.RUnlock()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: !shuttingDown,
 		Details: map[string]string{
 			"version":      Version,

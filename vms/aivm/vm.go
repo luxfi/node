@@ -486,8 +486,8 @@ func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 }
 
 // HealthCheck implements chain.ChainVM interface
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
-	return &chain.HealthResult{
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
+	return chain.HealthResult{
 		Healthy: vm.running,
 		Details: map[string]string{"status": "operational"},
 	}, nil

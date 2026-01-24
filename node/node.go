@@ -55,20 +55,9 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/aivm"
-	bvm "github.com/luxfi/node/vms/bridgevm"
-	dexvm "github.com/luxfi/node/vms/dexvm"
 	"github.com/luxfi/node/vms/exchangevm"
-	graphvm "github.com/luxfi/node/vms/graphvm"
-	ivm "github.com/luxfi/node/vms/identityvm"
-	keyvm "github.com/luxfi/node/vms/keyvm"
-	ovm "github.com/luxfi/node/vms/oraclevm"
 	"github.com/luxfi/node/vms/platformvm"
-	qvm "github.com/luxfi/node/vms/quantumvm"
-	rvm "github.com/luxfi/node/vms/relayvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	tvm "github.com/luxfi/node/vms/thresholdvm"
-	zvm "github.com/luxfi/node/vms/zkvm"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/vm/chains/atomic"
 
@@ -1259,123 +1248,20 @@ func (n *Node) initVMs() error {
 	// NOTE: C-Chain VM (EVM) is loaded as a plugin, not compiled into the node binary.
 	// Place the EVM plugin at ~/.lux/plugins/<EVMID> to enable C-Chain.
 
-	// Register Q-Chain VM (Quantum VM)
-	n.Log.Info("Registering Q-Chain VM", "vmID", constants.QuantumVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.QuantumVMID, &qvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register Q-Chain VM", "error", err)
+	// Register optional VMs (build with -tags=allvms for full VM support)
+	if err := n.registerOptionalVMs(); err != nil {
 		return err
 	}
-	n.Log.Info("Q-Chain VM registered successfully")
 
-	// Register AI-Chain VM (AI Virtual Machine) - A-Chain
-	n.Log.Info("Registering A-Chain VM (AI)", "vmID", constants.AIVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register A-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("A-Chain VM registered successfully")
-
-	// Register B-Chain VM (Bridge VM) - Cross-chain bridge operations
-	n.Log.Info("Registering B-Chain VM (Bridge)", "vmID", constants.BridgeVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register B-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("B-Chain VM registered successfully")
-
-	// Register T-Chain VM (Threshold VM) - Threshold signatures and distributed key generation
-	n.Log.Info("Registering T-Chain VM (Threshold)", "vmID", constants.ThresholdVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.ThresholdVMID, &tvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register T-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("T-Chain VM registered successfully")
-
-	// Register Z-Chain VM (ZKVM) - Zero-Knowledge proofs and privacy
-	n.Log.Info("Registering Z-Chain VM (ZK)", "vmID", constants.ZKVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register Z-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("Z-Chain VM registered successfully")
-
-	// Register G-Chain VM (GraphVM) - GraphQL/DGraph unified data layer
-	n.Log.Info("Registering G-Chain VM (Graph)", "vmID", constants.GraphVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.GraphVMID, &graphvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register G-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("G-Chain VM registered successfully")
-
-	// Register D-Chain VM (DexVM) - Decentralized Exchange
-	n.Log.Info("Registering D-Chain VM (DEX)", "vmID", constants.DexVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.DexVMID, &dexvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register D-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("D-Chain VM registered successfully")
-
-	// Register K-Chain VM (KMSVM) - Key Management Service
-	n.Log.Info("Registering K-Chain VM (Key)", "vmID", constants.KeyVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.KeyVMID, keyvm.NewDefaultFactory())
-	if err != nil {
-		n.Log.Error("Failed to register K-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("K-Chain VM registered successfully")
-
-	// Register O-Chain VM (OracleVM) - Oracle/Off-chain Data
-	n.Log.Info("Registering O-Chain VM (Oracle)", "vmID", constants.OracleVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.OracleVMID, &ovm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register O-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("O-Chain VM registered successfully")
-
-	// Register R-Chain VM (RelayVM) - Cross-chain Relay/Messages
-	n.Log.Info("Registering R-Chain VM (Relay)", "vmID", constants.RelayVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.RelayVMID, &rvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register R-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("R-Chain VM registered successfully")
-
-	// Register I-Chain VM (IdentityVM) - Decentralized Identity
-	n.Log.Info("Registering I-Chain VM (Identity)", "vmID", constants.IdentityVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.IdentityVMID, &ivm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register I-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("I-Chain VM registered successfully")
-
-	// Log summary of all registered VMs
+	// Log summary of registered VMs
+	coreVMCount := 3 // P-Chain, X-Chain, C-Chain (plugin)
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
-	n.Log.Info("ALL VMs REGISTERED SUCCESSFULLY - 14 chains ready")
+	n.Log.Info("VMs REGISTERED", "core", coreVMCount, "optional", optionalVMCount)
 	n.Log.Info("───────────────────────────────────────────────────────────────────")
 	n.Log.Info("P-Chain (Platform): Validators & staking", "vmID", constants.PlatformVMID)
 	n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
-	n.Log.Info("C-Chain (Contract): EVM smart contracts", "vmID", constants.EVMID)
-	n.Log.Info("Q-Chain (Quantum):  Post-quantum security", "vmID", constants.QuantumVMID)
-	n.Log.Info("A-Chain (AI):       AI/ML inference", "vmID", constants.AIVMID)
-	n.Log.Info("B-Chain (Bridge):   Cross-chain bridge", "vmID", constants.BridgeVMID)
-	n.Log.Info("T-Chain (Threshold): Threshold signatures", "vmID", constants.ThresholdVMID)
-	n.Log.Info("Z-Chain (ZK):       Zero-knowledge proofs", "vmID", constants.ZKVMID)
-	n.Log.Info("G-Chain (Graph):    GraphQL data layer", "vmID", constants.GraphVMID)
-	n.Log.Info("D-Chain (DEX):      Decentralized exchange", "vmID", constants.DexVMID)
-	n.Log.Info("K-Chain (Key):      Key management service", "vmID", constants.KeyVMID)
-	n.Log.Info("O-Chain (Oracle):   Oracle/off-chain data", "vmID", constants.OracleVMID)
-	n.Log.Info("R-Chain (Relay):    Cross-chain relay", "vmID", constants.RelayVMID)
-	n.Log.Info("I-Chain (Identity): Decentralized identity", "vmID", constants.IdentityVMID)
+	n.Log.Info("C-Chain (Contract): EVM smart contracts (plugin)", "vmID", constants.EVMID)
+	logOptionalVMs(n)
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 
 	// initialize vm runtime manager
@@ -1465,6 +1351,7 @@ func (n *Node) initAdminAPI() error {
 		VMRegistry:   n.VMRegistry,
 		PluginDir:    n.Config.PluginDir,
 		Network:      n.Net,
+		DataDir:      n.Config.DatabaseConfig.Path,
 	})
 	handler, err := service.CreateHandler()
 	if err != nil {

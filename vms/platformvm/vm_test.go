@@ -203,7 +203,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 
 	rt.Lock.Lock()
 	defer rt.Lock.Unlock()
-	appSender := &TestAppSender{}
+	appSender := &TestSender{}
 
 	dynamicConfigBytes := []byte(`{"network":{"max-validator-set-staleness":0}}`)
 	require.NoError(vmImpl.Initialize(
@@ -1173,7 +1173,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	firstRT.Lock.Lock()
 
 	firstChainDB := prefixdb.New([]byte{2}, baseDB)
-	appSender := &TestAppSender{}
+	appSender := &TestSender{}
 
 	require.NoError(firstVM.Initialize(
 		context.Background(),
@@ -1258,7 +1258,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}()
 
 	secondDB := prefixdb.New([]byte{}, db)
-	secondAppSender := &TestAppSender{}
+	secondAppSender := &TestSender{}
 	require.NoError(secondVM.Initialize(
 		context.Background(),
 		vm.Init{
@@ -1320,7 +1320,7 @@ func TestUnverifiedParent(t *testing.T) {
 			Config:   nil,
 			ToEngine: nil,
 			Fx:       nil,
-			Sender:   &TestAppSender{},
+			Sender:   &TestSender{},
 		},
 	))
 
@@ -1479,7 +1479,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 			Config:   nil,
 			ToEngine: nil,
 			Fx:       nil,
-			Sender:   &TestAppSender{},
+			Sender:   &TestSender{},
 		},
 	))
 
@@ -1535,7 +1535,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 			Config:   nil,
 			ToEngine: nil,
 			Fx:       nil,
-			Sender:   &TestAppSender{},
+			Sender:   &TestSender{},
 		},
 	))
 
@@ -1633,7 +1633,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 			Config:   nil,
 			ToEngine: nil,
 			Fx:       nil,
-			Sender:   &TestAppSender{},
+			Sender:   &TestSender{},
 		},
 	))
 

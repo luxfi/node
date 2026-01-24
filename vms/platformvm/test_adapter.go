@@ -12,27 +12,27 @@ import (
 	"github.com/luxfi/warp"
 )
 
-// TestAppSender is a test implementation of warp.Sender (p2p.Sender) for platformvm tests
-type TestAppSender struct{}
+// TestSender is a test implementation of warp.Sender (p2p.Sender) for platformvm tests
+type TestSender struct{}
 
-var _ warp.Sender = (*TestAppSender)(nil)
+var _ warp.Sender = (*TestSender)(nil)
 
 // SendRequest sends a request to the specified nodes (no-op for tests)
-func (t *TestAppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+func (t *TestSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
 	return nil
 }
 
 // SendResponse sends a response to a previous request (no-op for tests)
-func (t *TestAppSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+func (t *TestSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
 // SendError sends an error response to a previous request (no-op for tests)
-func (t *TestAppSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+func (t *TestSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
 // SendGossip sends a gossip message (no-op for tests)
-func (t *TestAppSender) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
+func (t *TestSender) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
 	return nil
 }

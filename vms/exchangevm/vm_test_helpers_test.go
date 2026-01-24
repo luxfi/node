@@ -237,8 +237,8 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	testLock := &sync.Mutex{}
 	testLock.Lock()
 
-	// Create a mock AppSender
-	appSender := &noOpAppSender{}
+	// Create a mock Sender
+	appSender := &noOpSender{}
 
 	// ALWAYS include secp256k1fx first (required for genesis parsing)
 	// Then add additional Fxs if provided, or default to nftfx and propertyfx
@@ -412,23 +412,23 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 	return tx
 }
 
-// noOpAppSender is a minimal implementation of warp.Sender for tests
-type noOpAppSender struct{}
+// noOpSender is a minimal implementation of warp.Sender for tests
+type noOpSender struct{}
 
-var _ warp.Sender = (*noOpAppSender)(nil)
+var _ warp.Sender = (*noOpSender)(nil)
 
-func (n *noOpAppSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+func (n *noOpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
+func (n *noOpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+func (n *noOpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	return nil
 }
 
-func (n *noOpAppSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+func (n *noOpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
 }

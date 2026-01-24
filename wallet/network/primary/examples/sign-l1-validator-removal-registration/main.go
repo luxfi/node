@@ -37,7 +37,7 @@ func (h *testInboundHandler) Gossip(_ context.Context, _ ids.NodeID, _ []byte) e
 func (h *testInboundHandler) Request(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) RequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *consensuscore.Error) error {
+func (h *testInboundHandler) RequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *consensuscore.AppError) error {
 	return nil
 }
 func (h *testInboundHandler) Response(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error {
@@ -49,7 +49,7 @@ func (h *testInboundHandler) Error(_ context.Context, _ ids.NodeID, _ uint32, _ 
 func (h *testInboundHandler) CrossChainRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error {
 	return nil
 }
-func (h *testInboundHandler) CrossChainRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *consensuscore.Error) error {
+func (h *testInboundHandler) CrossChainRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *consensuscore.AppError) error {
 	return nil
 }
 func (h *testInboundHandler) CrossChainResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {

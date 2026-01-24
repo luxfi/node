@@ -7,8 +7,8 @@ package platformvm
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/version"
 )
 
 // SingleValidatorFactory creates a mock Platform VM for single validator mode

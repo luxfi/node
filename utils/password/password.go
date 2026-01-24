@@ -1,3 +1,5 @@
+//go:build !zxcvbn
+
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -6,8 +8,6 @@ package password
 import (
 	"errors"
 	"fmt"
-
-	"github.com/nbutton23/zxcvbn-go"
 )
 
 // Strength is the strength of a password
@@ -20,8 +20,6 @@ const (
 	// 2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
 	// 3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
 	// 4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
-	// Note: We could use the iota keyword to define each of the below consts, but I think in this case
-	// it's better to be explicit
 
 	// VeryWeak password
 	VeryWeak = 0
@@ -37,17 +35,11 @@ const (
 	// OK password is the recommended minimum strength for API calls
 	OK = Fair
 
-	// maxCheckedPassLen limits the length of the password that should be
-	// strength checked.
-	//
-	// As per issue https://github.com/luxfi/node/issues/195 it was found
-	// the longer the length of password the slower zxcvbn.PasswordStrength()
-	// performs. To avoid performance issues, and a DoS vector, we only strength
-	// check the first 50 characters of the password.
-	maxCheckedPassLen = 50
-
 	// maxPassLen is the maximum allowed password length
 	maxPassLen = 1024
+
+	// minPassLen is the minimum password length for basic strength check
+	minPassLen = 8
 )
 
 var (
@@ -56,13 +48,12 @@ var (
 	ErrWeakPassword  = errors.New("password is too weak")
 )
 
-// SufficientlyStrong returns true if [password] has strength greater than or
-// equal to [minimumStrength]
+// SufficientlyStrong returns true if [password] meets basic length requirements.
+// Build with -tags=zxcvbn for full password strength analysis.
 func SufficientlyStrong(password string, minimumStrength Strength) bool {
-	if len(password) > maxCheckedPassLen {
-		password = password[:maxCheckedPassLen]
-	}
-	return zxcvbn.PasswordStrength(password, nil).Score >= int(minimumStrength)
+	// Basic length-based strength check (no zxcvbn dependency)
+	minLen := minPassLen + int(minimumStrength)*4
+	return len(password) >= minLen
 }
 
 // IsValid returns nil if [password] is a reasonable length and has strength

@@ -1,7 +1,9 @@
+//go:build grpc
+
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package appsender
+package sender
 
 import (
 	"context"
@@ -10,14 +12,14 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
+	senderpb "github.com/luxfi/node/proto/pb/sender"
 	"github.com/luxfi/warp"
 )
 
-var _ appsenderpb.AppSenderServer = (*Server)(nil)
+var _ senderpb.SenderServer = (*Server)(nil)
 
 type Server struct {
-	appsenderpb.UnsafeAppSenderServer
+	senderpb.UnsafeSenderServer
 	sender warp.Sender
 }
 
@@ -26,7 +28,7 @@ func NewServer(sender warp.Sender) *Server {
 	return &Server{sender: sender}
 }
 
-func (s *Server) SendRequest(ctx context.Context, req *appsenderpb.SendRequestMsg) (*emptypb.Empty, error) {
+func (s *Server) SendRequest(ctx context.Context, req *senderpb.SendRequestMsg) (*emptypb.Empty, error) {
 	// Convert byte slices to NodeID set
 	nodeIDs := set.NewSet[ids.NodeID](len(req.NodeIds))
 	for _, nodeIDBytes := range req.NodeIds {
@@ -41,7 +43,7 @@ func (s *Server) SendRequest(ctx context.Context, req *appsenderpb.SendRequestMs
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendResponse(ctx context.Context, req *appsenderpb.SendResponseMsg) (*emptypb.Empty, error) {
+func (s *Server) SendResponse(ctx context.Context, req *senderpb.SendResponseMsg) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func (s *Server) SendResponse(ctx context.Context, req *appsenderpb.SendResponse
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendError(ctx context.Context, req *appsenderpb.SendErrorMsg) (*emptypb.Empty, error) {
+func (s *Server) SendError(ctx context.Context, req *senderpb.SendErrorMsg) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
@@ -60,29 +62,11 @@ func (s *Server) SendError(ctx context.Context, req *appsenderpb.SendErrorMsg) (
 	return &emptypb.Empty{}, err
 }
 
-func (s *Server) SendGossip(ctx context.Context, req *appsenderpb.SendGossipMsg) (*emptypb.Empty, error) {
+func (s *Server) SendGossip(ctx context.Context, req *senderpb.SendGossipMsg) (*emptypb.Empty, error) {
 	// For RPC gossip, we don't have specific nodes, so use an empty config
 	config := warp.SendConfig{
 		NodeIDs: set.NewSet[ids.NodeID](0),
 	}
 	err := s.sender.SendGossip(ctx, config, req.Msg)
 	return &emptypb.Empty{}, err
-}
-
-// SendCrossChainRequest implements AppSenderServer
-func (s *Server) SendCrossChainRequest(ctx context.Context, req *appsenderpb.SendCrossChainRequestMsg) (*emptypb.Empty, error) {
-	// Not implemented in warp.Sender
-	return &emptypb.Empty{}, nil
-}
-
-// SendCrossChainResponse implements AppSenderServer
-func (s *Server) SendCrossChainResponse(ctx context.Context, req *appsenderpb.SendCrossChainResponseMsg) (*emptypb.Empty, error) {
-	// Not implemented in warp.Sender
-	return &emptypb.Empty{}, nil
-}
-
-// SendCrossChainError implements AppSenderServer
-func (s *Server) SendCrossChainError(ctx context.Context, req *appsenderpb.SendCrossChainErrorMsg) (*emptypb.Empty, error) {
-	// Not implemented in warp.Sender
-	return &emptypb.Empty{}, nil
 }

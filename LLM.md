@@ -177,10 +177,58 @@ Located in `vms/thresholdvm/fhe/`:
 | InputVerifier | `0x0200000000000000000000000000000000000082` |
 | Gateway | `0x0200000000000000000000000000000000000083` |
 
+### ZAP Transport (Zero-Copy App Proto)
+ZAP is the default high-performance binary wire protocol for VM<->Node communication.
+gRPC support is available via build tag for testing/compatibility.
+
+**Build Tags:**
+```bash
+go build                  # ZAP only (default, production)
+go build -tags=grpc       # gRPC support (for testing/compatibility)
+```
+
+**Key Packages:**
+- `github.com/luxfi/api/zap` - Core wire protocol and message types
+- `github.com/luxfi/vm/rpc/sender` - p2p.Sender over ZAP/gRPC
+- `vms/rpcchainvm/sender/` - Node-side sender implementation
+- `vms/platformvm/warp/zwarp/` - ZAP-based warp signing client/server
+
+**Wire Protocol Format:**
+```
+[4 bytes: length][1 byte: message type][payload...]
+```
+
+**Performance Benefits:**
+- Zero-copy serialization (buffer pooling via sync.Pool)
+- ~5-10x faster serialization than protobuf
+- ~2-3x lower latency (no HTTP/2 overhead)
+- ~30-50% CPU reduction on hot paths
+
+**Sender Usage:**
+```go
+// ZAP transport (default)
+s := sender.ZAP(zapConn)
+
+// gRPC transport (requires -tags=grpc build)
+s := sender.GRPC(senderpb.NewSenderClient(grpcConn))
+```
+
+**Warp over ZAP:**
+The `zwarp` package implements warp signing via ZAP:
+```go
+// Client implements warp.Signer over ZAP
+client := zwarp.NewClient(zapConn)
+sig, err := client.Sign(unsignedMsg)
+
+// BatchSign for HFT optimization
+sigs, errs := client.BatchSign(messages)
+```
+
 ## Common Gotchas
 
-### 1. AppSender Interface
-Node's rpcchainvm must implement `consensuscore.AppSender`, not just `warp.Sender`.
+### 1. P2P Sender Interface
+Node's rpcchainvm implements `p2p.Sender` (from `github.com/luxfi/p2p`) for cross-chain messaging.
+The `sender` package is a gRPC implementation of `p2p.Sender`.
 
 ### 2. Chain Tracking
 Nodes don't automatically track chains. Use:

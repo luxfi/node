@@ -107,7 +107,7 @@ type environment struct {
 	blkManager blockexecutor.Manager
 	mempool    txmempool.Mempool[*txs.Tx]
 	network    *network.Network
-	sender     *coremock.MockAppSender
+	sender     *coremock.MockSender
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Internal
@@ -197,7 +197,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	}
 
 	registerer := metric.NewRegistry()
-	res.sender = &coremock.MockAppSender{
+	res.sender = &coremock.MockSender{
 		SendGossipF: func(context.Context, p2p.SendConfig, []byte) error {
 			return nil
 		},

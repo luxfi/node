@@ -622,11 +622,11 @@ func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	return vmcore.Message{}, nil
 }
 
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
-	return &chain.HealthResult{
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
+	return chain.HealthResult{
 		Healthy: vm.running,
 		Details: map[string]string{
-			"feeds": fmt.Sprintf("%d", len(vm.feeds)),
+			"feeds":  fmt.Sprintf("%d", len(vm.feeds)),
 			"method": vm.config.AggregationMethod,
 		},
 	}, nil

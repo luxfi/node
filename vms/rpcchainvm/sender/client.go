@@ -1,27 +1,35 @@
+//go:build grpc
+
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package appsender
+package sender
 
 import (
 	"context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
+	senderpb "github.com/luxfi/node/proto/pb/sender"
 	"github.com/luxfi/p2p"
 )
 
 var _ p2p.Sender = (*Client)(nil)
 
-// NewClient returns a p2p.Sender backed by gRPC
-func NewClient(client appsenderpb.AppSenderClient) p2p.Sender {
+// Client implements p2p.Sender over gRPC
+type Client struct {
+	client senderpb.SenderClient
+}
+
+// GRPC returns a p2p.Sender using gRPC transport.
+func GRPC(client senderpb.SenderClient) p2p.Sender {
 	return &Client{client: client}
 }
 
-// Client implements p2p.Sender over gRPC
-type Client struct {
-	client appsenderpb.AppSenderClient
+// NewClient is an alias for GRPC for backwards compatibility.
+// Deprecated: Use GRPC() instead.
+func NewClient(client senderpb.SenderClient) p2p.Sender {
+	return GRPC(client)
 }
 
 func (c *Client) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
@@ -29,7 +37,7 @@ func (c *Client) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], r
 	for nodeID := range nodeIDs {
 		nodeIDBytes = append(nodeIDBytes, nodeID[:])
 	}
-	_, err := c.client.SendRequest(ctx, &appsenderpb.SendRequestMsg{
+	_, err := c.client.SendRequest(ctx, &senderpb.SendRequestMsg{
 		NodeIds:   nodeIDBytes,
 		RequestId: requestID,
 		Request:   request,
@@ -38,7 +46,7 @@ func (c *Client) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], r
 }
 
 func (c *Client) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	_, err := c.client.SendResponse(ctx, &appsenderpb.SendResponseMsg{
+	_, err := c.client.SendResponse(ctx, &senderpb.SendResponseMsg{
 		NodeId:    nodeID[:],
 		RequestId: requestID,
 		Response:  response,
@@ -47,7 +55,7 @@ func (c *Client) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 }
 
 func (c *Client) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	_, err := c.client.SendError(ctx, &appsenderpb.SendErrorMsg{
+	_, err := c.client.SendError(ctx, &senderpb.SendErrorMsg{
 		NodeId:       nodeID[:],
 		RequestId:    requestID,
 		ErrorCode:    errorCode,
@@ -57,7 +65,7 @@ func (c *Client) SendError(ctx context.Context, nodeID ids.NodeID, requestID uin
 }
 
 func (c *Client) SendGossip(ctx context.Context, config p2p.SendConfig, msg []byte) error {
-	_, err := c.client.SendGossip(ctx, &appsenderpb.SendGossipMsg{
+	_, err := c.client.SendGossip(ctx, &senderpb.SendGossipMsg{
 		Msg: msg,
 	})
 	return err

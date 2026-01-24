@@ -876,7 +876,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 //			_ []byte,
 //			_ []byte,
 //			_ []*core.Fx,
-//			_ core.AppSender,
+//			_ core.Sender,
 //		) error {
 //			return nil
 //		}

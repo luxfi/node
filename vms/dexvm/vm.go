@@ -26,7 +26,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/api"
 	"github.com/luxfi/node/vms/dexvm/config"
 	"github.com/luxfi/node/vms/dexvm/liquidity"
@@ -37,6 +36,7 @@ import (
 	"github.com/luxfi/node/vms/dexvm/txs"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/version"
 	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/warp"
@@ -1611,11 +1611,11 @@ func (c *wsClient) sendJSON(msg WSMessage) {
 }
 
 // HealthCheck implements consensuscore.VM interface.
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: vm.isInitialized && vm.bootstrapped,
 		Details: map[string]string{
 			"bootstrapped": fmt.Sprintf("%v", vm.bootstrapped),
@@ -1975,7 +1975,7 @@ func (vm *VM) handlePoolSyncRequest(
 }
 
 // RequestFailed implements consensuscore.VM interface.
-func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.Error) error {
+func (vm *VM) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.AppError) error {
 	if !vm.log.IsZero() {
 		vm.log.Warn("Request failed", "nodeID", nodeID, "requestID", requestID, "error", appErr)
 	}
@@ -2176,7 +2176,7 @@ func (vm *VM) handleWarpMessage(
 }
 
 // CrossChainRequestFailed implements consensuscore.VM interface.
-func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.Error) error {
+func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *consensuscore.AppError) error {
 	if !vm.log.IsZero() {
 		vm.log.Warn("Cross-chain request failed", "chainID", chainID, "requestID", requestID, "error", appErr)
 	}

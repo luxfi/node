@@ -140,9 +140,9 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // HealthCheck returns the health status of the VM
-func (vm *VM) HealthCheck(ctx context.Context) (*consensuschain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (consensuschain.HealthResult, error) {
 	// Return healthy status for tests
-	return &consensuschain.HealthResult{
+	return consensuschain.HealthResult{
 		Healthy: true,
 		Details: map[string]string{"status": "healthy"},
 	}, nil

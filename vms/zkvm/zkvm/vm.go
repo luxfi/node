@@ -222,7 +222,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 // HealthCheck implements the health.Checker interface
-func (vm *VM) HealthCheck(context.Context) (any, error) {
+func (vm *VM) HealthCheck(context.Context) (chain.HealthResult, error) {
 	vm.challengeMu.RLock()
 	challengeCount := len(vm.challenges)
 	vm.challengeMu.RUnlock()
@@ -231,14 +231,17 @@ func (vm *VM) HealthCheck(context.Context) (any, error) {
 	proofCount := len(vm.proofRegistry)
 	vm.proofMu.RUnlock()
 
-	return map[string]interface{}{
-		"version":       vmVersion,
-		"challenges":    challengeCount,
-		"zkProofs":      proofCount,
-		"fraudProofs":   len(vm.fraudProofs),
-		"verifierKeys":  len(vm.verifierKeys),
-		"shieldedNotes": len(vm.shieldedPool.Notes),
-		"state":         "active", // State string representation
+	return chain.HealthResult{
+		Healthy: true,
+		Details: map[string]string{
+			"version":       vmVersion,
+			"challenges":    fmt.Sprintf("%d", challengeCount),
+			"zkProofs":      fmt.Sprintf("%d", proofCount),
+			"fraudProofs":   fmt.Sprintf("%d", len(vm.fraudProofs)),
+			"verifierKeys":  fmt.Sprintf("%d", len(vm.verifierKeys)),
+			"shieldedNotes": fmt.Sprintf("%d", len(vm.shieldedPool.Notes)),
+			"state":         "active",
+		},
 	}, nil
 }
 

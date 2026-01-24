@@ -17,9 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/dexvm/orderbook"
-
 	"github.com/luxfi/vm"
 )
 
@@ -167,7 +165,7 @@ func (cvm *ChainVM) CreateHandlers(ctx context.Context) (map[string]http.Handler
 }
 
 // HealthCheck implements the VM interface
-func (cvm *ChainVM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (cvm *ChainVM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	return cvm.inner.HealthCheck(ctx)
 }
 
@@ -176,13 +174,8 @@ func (cvm *ChainVM) Connected(ctx context.Context, nodeID ids.NodeID, v *chain.V
 	if v == nil {
 		return nil
 	}
-	ver := &version.Application{
-		Name:  v.Application,
-		Major: v.Major,
-		Minor: v.Minor,
-		Patch: v.Patch,
-	}
-	return cvm.inner.Connected(ctx, nodeID, ver)
+	// chain.VersionInfo is an alias for version.Application, so we can pass it directly
+	return cvm.inner.Connected(ctx, nodeID, v)
 }
 
 // Disconnected implements the VM interface

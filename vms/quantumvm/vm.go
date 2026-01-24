@@ -28,6 +28,7 @@ import (
 	"github.com/luxfi/node/vms/quantumvm/quantum"
 	"github.com/luxfi/timer/mockable"
 	vmcore "github.com/luxfi/vm"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/warp"
 )
 
@@ -521,19 +522,19 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // HealthCheck returns the health status of the VM
-func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
-	health := map[string]interface{}{
-		"healthy":         !vm.isShuttingDown(),
-		"version":         Version,
-		"quantumEnabled":  vm.Config.QuantumStampEnabled,
-		"ringtailEnabled": vm.Config.RingtailEnabled,
-		"pendingTxs":      vm.txPool.PendingCount(),
-	}
-
-	return health, nil
+	return chain.HealthResult{
+		Healthy: !vm.isShuttingDown(),
+		Details: map[string]string{
+			"version":         Version,
+			"quantumEnabled":  fmt.Sprintf("%v", vm.Config.QuantumStampEnabled),
+			"ringtailEnabled": fmt.Sprintf("%v", vm.Config.RingtailEnabled),
+			"pendingTxs":      fmt.Sprintf("%d", vm.txPool.PendingCount()),
+		},
+	}, nil
 }
 
 // CreateHandlers returns HTTP handlers for the VM

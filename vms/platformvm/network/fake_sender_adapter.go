@@ -3,5 +3,5 @@
 
 package network
 
-// This file is no longer needed as core.FakeSender and coremock.MockAppSender
-// now implement the correct AppSender interface with set.Set[ids.NodeID] parameters
+// This file is no longer needed as core.FakeSender and coremock.MockSender
+// now implement the correct p2p.Sender interface with set.Set[ids.NodeID] parameters

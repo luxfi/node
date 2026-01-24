@@ -490,8 +490,8 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements the common.VM interface
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
-	return &chain.HealthResult{
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
+	return chain.HealthResult{
 		Healthy: true,
 		Details: map[string]string{"status": "healthy"},
 	}, nil

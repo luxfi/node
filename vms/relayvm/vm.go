@@ -280,11 +280,11 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements chain.ChainVM
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: true,
 		Details: map[string]string{
 			"channels":        fmt.Sprintf("%d", len(vm.channels)),

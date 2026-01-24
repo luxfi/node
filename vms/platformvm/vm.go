@@ -44,7 +44,6 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
-	consensusversion "github.com/luxfi/version"
 	vmcore "github.com/luxfi/vm"
 	extwarp "github.com/luxfi/warp"
 
@@ -306,9 +305,9 @@ func (vm *VM) Initialize(
 	)
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
-	// Create wrapper for AppSender to adapt chain.AppSender to network expected interface
-	// Create wrapper for AppSender to adapt chain.AppSender to network expected interface
-	// adaptedAppSender := &appSenderAdapter{appSender}
+	// Create wrapper for Sender to adapt chain.Sender to network expected interface
+	// Create wrapper for Sender to adapt chain.Sender to network expected interface
+	// adaptedSender := &appSenderAdapter{appSender}
 
 	// Type assert WarpSigner (may be nil for Platform chain)
 	var warpSigner warp.Signer
@@ -974,17 +973,8 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *cha
 	//	return err
 	// }
 
-	// Convert chain.VersionInfo to consensusversion.Application
-	var versionApp *consensusversion.Application
-	if nodeVersion != nil {
-		versionApp = &consensusversion.Application{
-			Name:  nodeVersion.Application,
-			Major: nodeVersion.Major,
-			Minor: nodeVersion.Minor,
-			Patch: nodeVersion.Patch,
-		}
-	}
-	return vm.Network.Connected(ctx, nodeID, versionApp)
+	// chain.VersionInfo is an alias for version.Application, so we can pass it directly
+	return vm.Network.Connected(ctx, nodeID, nodeVersion)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {

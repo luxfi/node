@@ -1306,7 +1306,7 @@ func (m *manager) createDAG(
 				chainConfig.Config,
 				toEngine,
 				fxsInterface,
-				&noopWarpSender{}, // Implements AppSender interface
+				&noopWarpSender{}, // Implements p2p.Sender interface
 			)
 			if err != nil {
 				m.Log.Warn("ExchangeVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))

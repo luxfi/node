@@ -36,6 +36,11 @@ func TestMarshal(t *testing.T) {
 			exporter: HTTP,
 			expected: `"http"`,
 		},
+		{
+			name:     "zap",
+			exporter: ZAP,
+			expected: `"zap"`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -104,6 +109,11 @@ func TestUnmarshal(t *testing.T) {
 			name:     "http",
 			json:     `"http"`,
 			expected: HTTP,
+		},
+		{
+			name:     "zap",
+			json:     `"zap"`,
+			expected: ZAP,
 		},
 	}
 

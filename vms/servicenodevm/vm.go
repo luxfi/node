@@ -231,13 +231,13 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements chain.ChainVM
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
 	activeCount := vm.registry.GetActiveNodeCount()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: activeCount >= vm.config.MinActiveNodes,
 		Details: map[string]string{
 			"activeNodes": fmt.Sprintf("%d", activeCount),

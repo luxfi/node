@@ -1,19 +1,17 @@
 syntax = "proto3";
 
-package appsender;
+package sender;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/luxfi/node/proto/pb/appsender";
+option go_package = "github.com/luxfi/node/proto/pb/sender";
 
-service AppSender {
+// Sender provides p2p messaging capabilities
+service Sender {
   rpc SendRequest(SendRequestMsg) returns (google.protobuf.Empty);
   rpc SendResponse(SendResponseMsg) returns (google.protobuf.Empty);
   rpc SendError(SendErrorMsg) returns (google.protobuf.Empty);
   rpc SendGossip(SendGossipMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainRequest(SendCrossChainRequestMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainResponse(SendCrossChainResponseMsg) returns (google.protobuf.Empty);
-  rpc SendCrossChainError(SendCrossChainErrorMsg) returns (google.protobuf.Empty);
 }
 
 message SendRequestMsg {
@@ -53,33 +51,4 @@ message SendGossipMsg {
   uint64 peers = 4;
   // The message body
   bytes msg = 5;
-}
-
-message SendCrossChainRequestMsg {
-  // The chain to send this request to
-  bytes chain_id = 1;
-  // The ID of this request
-  uint32 request_id = 2;
-  // The request body
-  bytes request = 3;
-}
-
-message SendCrossChainResponseMsg {
-  // The chain to send a response to
-  bytes chain_id = 1;
-  // ID of this request
-  uint32 request_id = 2;
-  // The response body
-  bytes response = 3;
-}
-
-message SendCrossChainErrorMsg {
-  // The chain to send a response to
-  bytes chain_id = 1;
-  // ID of this request
-  uint32 request_id = 2;
-  // Application-defined error code
-  sint32 error_code = 3;
-  // Application-defined error message
-  string error_message = 4;
 }

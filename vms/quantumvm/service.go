@@ -209,13 +209,8 @@ func (s *Service) GetHealth(r *http.Request, args *GetHealthArgs, reply *GetHeal
 		return err
 	}
 
-	healthMap, ok := health.(map[string]interface{})
-	if !ok {
-		return errors.New("invalid health response")
-	}
-
-	reply.Healthy = healthMap["healthy"].(bool)
-	reply.Version = healthMap["version"].(string)
+	reply.Healthy = health.Healthy
+	reply.Version = health.Details["version"]
 	reply.QuantumEnabled = s.vm.Config.QuantumStampEnabled
 	reply.RingtailEnabled = s.vm.Config.RingtailEnabled
 	reply.PendingTxCount = s.vm.txPool.PendingCount()

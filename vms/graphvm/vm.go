@@ -231,7 +231,7 @@ func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 }
 
 // HealthCheck implements the health.Checker interface
-func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(context.Context) (chain.HealthResult, error) {
 	vm.schemaMu.RLock()
 	schemaCount := len(vm.schemas)
 	vm.schemaMu.RUnlock()
@@ -241,7 +241,7 @@ func (vm *VM) HealthCheck(context.Context) (*chain.HealthResult, error) {
 	subCount := len(vm.subscriptions)
 	vm.queryMu.RUnlock()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: true,
 		Details: map[string]string{
 			"version":       Version.String(),

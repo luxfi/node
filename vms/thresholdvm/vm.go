@@ -1344,11 +1344,11 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // HealthCheck implements the common.VM interface
-func (vm *VM) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (vm *VM) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
-	return &chain.HealthResult{
+	return chain.HealthResult{
 		Healthy: vm.mpcReady,
 		Details: map[string]string{
 			"status":         "healthy",

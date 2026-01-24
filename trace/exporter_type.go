@@ -13,6 +13,7 @@ const (
 	Disabled ExporterType = iota
 	GRPC
 	HTTP
+	ZAP // ZAP-based OTLP transport (default, no gRPC dependency)
 )
 
 var (
@@ -28,6 +29,8 @@ func ExporterTypeFromString(exporterTypeStr string) (ExporterType, error) {
 		return GRPC, nil
 	case "http":
 		return HTTP, nil
+	case "zap":
+		return ZAP, nil
 	default:
 		return 0, fmt.Errorf("%w: %q", errUnknownExporterType, exporterTypeStr)
 	}
@@ -78,6 +81,8 @@ func (t ExporterType) toString() (string, bool) {
 		return "grpc", true
 	case HTTP:
 		return "http", true
+	case ZAP:
+		return "zap", true
 	default:
 		return "unknown", false
 	}
