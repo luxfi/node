@@ -51,8 +51,14 @@ var (
 // SufficientlyStrong returns true if [password] meets basic length requirements.
 // Build with -tags=zxcvbn for full password strength analysis.
 func SufficientlyStrong(password string, minimumStrength Strength) bool {
-	// Basic length-based strength check (no zxcvbn dependency)
-	minLen := minPassLen + int(minimumStrength)*4
+	// VeryWeak (0) accepts any password - this is the minimum bar
+	if minimumStrength == VeryWeak {
+		return true
+	}
+	// Higher strength levels require longer passwords
+	// Weak(1)=12, Fair(2)=20, Strong(3)=28, VeryStrong(4)=36
+	// This is more conservative than zxcvbn but provides basic protection
+	minLen := 4 + int(minimumStrength)*8
 	return len(password) >= minLen
 }
 

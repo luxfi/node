@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/p2p"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
@@ -75,7 +75,7 @@ func (t *testExternalHandler) Request(_ context.Context, nodeID ids.NodeID, requ
 	return nil
 }
 
-func (t *testExternalHandler) RequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *consensuscore.Error) error {
+func (t *testExternalHandler) RequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *p2p.Error) error {
 	t.log.Info("RequestFailed", "nodeID", nodeID, "requestID", requestID)
 	return nil
 }

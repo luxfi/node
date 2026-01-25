@@ -14,16 +14,25 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/server/http"
 	nodeconsensus "github.com/luxfi/node/consensus"
-	"github.com/luxfi/vm"
+	"github.com/luxfi/node/server/http"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
+	"github.com/luxfi/vm"
 )
+
+// testRuntime creates a minimal runtime.Runtime for testing
+func testRuntimeWithID(chainID ids.ID) *runtime.Runtime {
+	return &runtime.Runtime{
+		NetworkID: 1,
+		ChainID:   chainID,
+		NodeID:    ids.GenerateTestNodeID(),
+	}
+}
 
 // mockChainVM is a simple mock for testing that implements interfaces.VM
 type mockChainVM struct{}
@@ -182,7 +191,7 @@ func TestIndexer(t *testing.T) {
 	// Assert state is right
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	chain1RT := consensustest.Runtime(t, testChainID)
+	chain1RT := testRuntimeWithID(testChainID)
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -297,7 +306,7 @@ func TestIndexer(t *testing.T) {
 	// Register a second chain (block-based, not DAG)
 	// Note: DAG/vertex/tx indices are not supported in the new consensus package
 	chain2ChainID := ids.GenerateTestID()
-	chain2RT := consensustest.Runtime(t, chain2ChainID)
+	chain2RT := testRuntimeWithID(chain2ChainID)
 	isIncomplete, err = idxr.isIncomplete(chain2RT.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -431,7 +440,7 @@ func TestIncompleteIndex(t *testing.T) {
 
 	// Register a chain
 	testChainID := ids.GenerateTestID()
-	chain1RT := consensustest.Runtime(t, testChainID)
+	chain1RT := testRuntimeWithID(testChainID)
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -517,7 +526,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 
 	// Create chain1RT for a chain on a custom network (not mainnet/testnet)
 	testChainID := ids.GenerateTestID()
-	chain1RT := consensustest.Runtime(t, testChainID)
+	chain1RT := testRuntimeWithID(testChainID)
 	// Set NetworkID to a custom network (not 1=mainnet or 2=testnet)
 	chain1RT.NetworkID = 99 // Custom network
 

@@ -8,14 +8,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
 )
+
+// testRuntime creates a minimal runtime.Runtime for testing
+func testRuntime(chainID ids.ID) *runtime.Runtime {
+	return &runtime.Runtime{
+		NetworkID: 1,
+		ChainID:   chainID,
+		NodeID:    ids.GenerateTestNodeID(),
+	}
+}
 
 func TestIndex(t *testing.T) {
 	// Setup
@@ -24,7 +33,7 @@ func TestIndex(t *testing.T) {
 	baseDB := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	rt := consensustest.Runtime(t, testChainID)
+	rt := testRuntime(testChainID)
 
 	idx, err := newIndex(baseDB, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
@@ -111,7 +120,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	rt := consensustest.Runtime(t, testChainID)
+	rt := testRuntime(testChainID)
 	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 
@@ -150,7 +159,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	rt := consensustest.Runtime(t, testChainID)
+	rt := testRuntime(testChainID)
 	idx, err := newIndex(db, log.NoLog{}, &mockable.Clock{})
 	require.NoError(err)
 

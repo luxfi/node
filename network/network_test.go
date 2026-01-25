@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/p2p"
 	"github.com/luxfi/consensus/networking/tracker"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -53,7 +53,7 @@ func (h inboundHandlerFunc) Request(context.Context, ids.NodeID, uint32, time.Ti
 	return nil
 }
 
-func (h inboundHandlerFunc) RequestFailed(context.Context, ids.NodeID, uint32, *core.Error) error {
+func (h inboundHandlerFunc) RequestFailed(context.Context, ids.NodeID, uint32, *p2p.Error) error {
 	return nil
 }
 
