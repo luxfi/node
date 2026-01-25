@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/version"
 	"github.com/luxfi/node/vms/dexvm/config"
 	"github.com/luxfi/node/vms/dexvm/network"
 	"github.com/luxfi/node/vms/dexvm/orderbook"

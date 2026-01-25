@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -30,7 +29,6 @@ import (
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
-	"github.com/luxfi/warp"
 )
 
 // Test keys for use in tests
@@ -410,25 +408,4 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 		tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}),
 	)
 	return tx
-}
-
-// noOpSender is a minimal implementation of warp.Sender for tests
-type noOpSender struct{}
-
-var _ warp.Sender = (*noOpSender)(nil)
-
-func (n *noOpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
-	return nil
-}
-
-func (n *noOpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
-	return nil
-}
-
-func (n *noOpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return nil
-}
-
-func (n *noOpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
-	return nil
 }
