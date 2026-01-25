@@ -75,7 +75,7 @@ func (m *ContextEnabledVMMock) Connected(ctx context.Context, nodeID ids.NodeID,
 func (m *ContextEnabledVMMock) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return m.chainVM.Disconnected(ctx, nodeID)
 }
-func (m *ContextEnabledVMMock) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (m *ContextEnabledVMMock) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	return m.chainVM.HealthCheck(ctx)
 }
 func (m *ContextEnabledVMMock) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {

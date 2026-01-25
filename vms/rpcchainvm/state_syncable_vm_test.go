@@ -114,7 +114,7 @@ func (m *StateSyncEnabledMock) Connected(ctx context.Context, nodeID ids.NodeID,
 func (m *StateSyncEnabledMock) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return m.chainVM.Disconnected(ctx, nodeID)
 }
-func (m *StateSyncEnabledMock) HealthCheck(ctx context.Context) (*chain.HealthResult, error) {
+func (m *StateSyncEnabledMock) HealthCheck(ctx context.Context) (chain.HealthResult, error) {
 	return m.chainVM.HealthCheck(ctx)
 }
 func (m *StateSyncEnabledMock) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
