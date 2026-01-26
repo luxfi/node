@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	// "github.com/luxfi/log" // Unused
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/timer"

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"connectrpc.com/grpcreflect"
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -20,7 +19,6 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
@@ -179,20 +177,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, server.RegisterService(jsonRPCAPI, constants.XSVMName)
 }
 
-func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
-	mux := http.NewServeMux()
-
-	reflectionPattern, reflectionHandler := grpcreflect.NewHandlerV1(
-		grpcreflect.NewStaticReflector(xsvmconnect.PingName),
-	)
-	mux.Handle(reflectionPattern, reflectionHandler)
-
-	pingService := &api.PingService{Log: vm.rt.Log.(log.Logger)}
-	pingPath, pingHandler := xsvmconnect.NewPingHandler(pingService)
-	mux.Handle(pingPath, pingHandler)
-
-	return mux, nil
-}
+// NewHTTPHandler is defined in vm_http_grpc.go (with grpc build tag)
+// and vm_http_zap.go (default, without grpc reflection)
 
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil

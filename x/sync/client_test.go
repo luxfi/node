@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/p2p"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 )
 
 var _ p2p.Handler = (*flakyHandler)(nil)

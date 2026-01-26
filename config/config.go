@@ -44,7 +44,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 	compression "github.com/luxfi/compress"
 	"github.com/luxfi/net/ips"
 	"github.com/luxfi/filesystem/perms"

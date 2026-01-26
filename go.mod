@@ -13,7 +13,6 @@ exclude github.com/luxfi/geth v1.16.1
 
 require (
 	connectrpc.com/connect v1.19.1
-	connectrpc.com/grpcreflect v1.3.0
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/StephenButtolph/canoto v0.17.3
 	github.com/btcsuite/btcd/btcutil v1.1.6
@@ -56,7 +55,6 @@ require (
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0
 	go.opentelemetry.io/otel/sdk v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
@@ -129,6 +127,7 @@ require (
 )
 
 require (
+	connectrpc.com/grpcreflect v1.3.0
 	github.com/cloudflare/circl v1.6.2
 	github.com/consensys/gnark-crypto v0.19.2
 	github.com/golang-jwt/jwt/v4 v4.5.2
@@ -149,7 +148,6 @@ require (
 	github.com/luxfi/net v0.0.2
 	github.com/luxfi/p2p v1.18.9
 	github.com/luxfi/password v0.0.1
-	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.0
 	github.com/luxfi/runtime v1.0.1
@@ -157,7 +155,6 @@ require (
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/threshold v1.5.1
 	github.com/luxfi/timer v1.0.2
-	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
 	github.com/luxfi/utxo v0.2.4
@@ -166,6 +163,7 @@ require (
 	github.com/luxfi/warp v1.18.5
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0
 	go.uber.org/zap v1.27.1
 )
 
@@ -206,7 +204,6 @@ require (
 	github.com/luxfi/address v1.0.1
 	github.com/luxfi/cache v1.2.1 // indirect
 	github.com/luxfi/codec v1.1.4
-	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/math/big v0.1.0 // indirect
@@ -214,7 +211,6 @@ require (
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect
-	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect

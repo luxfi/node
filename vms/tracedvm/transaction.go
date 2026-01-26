@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )

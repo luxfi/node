@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/node/trace"
 )
 
 // router implements Router interface for routing messages to chain handlers
