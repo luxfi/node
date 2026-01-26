@@ -1,3 +1,4 @@
+//go:build grpc
 
 //go:build grpc
 
