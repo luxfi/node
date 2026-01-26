@@ -28,9 +28,9 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.59
+	github.com/luxfi/consensus v1.22.63
 	github.com/luxfi/crypto v1.17.40
-	github.com/luxfi/database v1.17.39
+	github.com/luxfi/database v1.17.40
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
@@ -137,37 +137,39 @@ require (
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
 	github.com/luxfi/api v1.0.1
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/compress v0.0.4
-	github.com/luxfi/constants v1.4.3
+	github.com/luxfi/compress v0.0.5
+	github.com/luxfi/constants v1.4.4
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.5.22
+	github.com/luxfi/genesis v1.6.1
 	github.com/luxfi/geth v1.16.73
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.1
-	github.com/luxfi/net v0.0.1
-	github.com/luxfi/p2p v1.18.8
+	github.com/luxfi/net v0.0.2
+	github.com/luxfi/p2p v1.18.9
 	github.com/luxfi/password v0.0.1
 	github.com/luxfi/qzmq v0.1.4
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.0
-	github.com/luxfi/runtime v1.0.0
+	github.com/luxfi/runtime v1.0.1
 	github.com/luxfi/sdk v1.16.45
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/threshold v1.5.1
-	github.com/luxfi/timer v1.0.1
+	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/trace v0.1.4
 	github.com/luxfi/units v1.0.0
-	github.com/luxfi/utils v1.1.3
-	github.com/luxfi/utxo v0.2.3
+	github.com/luxfi/utils v1.1.4
+	github.com/luxfi/utxo v0.2.4
 	github.com/luxfi/validators v1.0.0
-	github.com/luxfi/vm v1.0.24
+	github.com/luxfi/vm v1.0.27
 	github.com/luxfi/warp v1.18.5
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
 	go.uber.org/zap v1.27.1
 )
+
+require github.com/luxfi/staking v1.1.0 // indirect
 
 require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -203,7 +205,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.0.1
 	github.com/luxfi/cache v1.2.1 // indirect
-	github.com/luxfi/codec v1.1.3
+	github.com/luxfi/codec v1.1.4
 	github.com/luxfi/czmq/v4 v4.2.2 // indirect
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
