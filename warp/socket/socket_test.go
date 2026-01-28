@@ -7,6 +7,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,7 @@ func TestSocketSendAndReceive(t *testing.T) {
 	)
 
 	// Create socket and client; wait for client to connect
-	socket := NewSocket(socketName, nil)
+	socket := NewSocket(socketName, log.New())
 	socket.accept, connCh = newTestAcceptFn(t)
 	require.NoError(socket.Listen())
 
