@@ -203,7 +203,6 @@ jobs:
               --log-dir=/tmp/luxd-test/logs \
               --log-level=${LOG_LEVEL:-info} \
               --dev \
-              --genesis-file=genesis/genesis_mainnet.json \
               --skip-bootstrap \
               $EXTRA_FLAGS &
             
@@ -321,7 +320,6 @@ jobs:
             --db-dir=/tmp/test-db \
             --log-dir=/tmp/test-logs \
             --dev \
-            --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
           NODE_PID=$!
@@ -469,7 +467,6 @@ jobs:
             --db-dir=/tmp/perf-db \
             --log-dir=/tmp/perf-logs \
             --dev \
-            --genesis-file=genesis/genesis_mainnet.json \
             --skip-bootstrap &
           
           NODE_PID=$!
