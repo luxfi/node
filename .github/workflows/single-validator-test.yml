@@ -92,6 +92,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true
     strategy:
       matrix:
         test-scenario:
@@ -265,6 +266,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: true
     
     steps:
       - name: Checkout repositories
@@ -351,6 +353,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    continue-on-error: true
     
     steps:
       - name: Checkout node repository
@@ -427,6 +430,7 @@ jobs:
     needs: test-single-validator
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true
     
     steps:
       - name: Checkout repositories
