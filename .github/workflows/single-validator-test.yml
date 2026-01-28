@@ -23,6 +23,8 @@ env:
   TEST_TIMEOUT: '10m'
   NODE_DIR: ${{ github.workspace }}
   GENESIS_DIR: ${{ github.workspace }}/../genesis
+  GOWORK: off
+  CGO_ENABLED: "0"
 
 jobs:
   build:
