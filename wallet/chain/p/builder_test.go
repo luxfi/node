@@ -589,7 +589,10 @@ func TestConvertChainToL1Tx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*lux.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(chainUTXOs, chainOwners)
+				localChainOwners = map[ids.ID]fx.Owner{
+					chainID: chainOwner,
+				}
+				backend = wallet.NewBackend(chainUTXOs, localChainOwners)
 				builder = builder.New(set.Of(utxoAddr, chainAuthAddr), e.context, backend)
 			)
 
