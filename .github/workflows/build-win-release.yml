@@ -48,7 +48,7 @@ jobs:
           Compress-Archive -Path .\build\luxd.exe -DestinationPath .\build\node-win-${{ env.TAG }}-experimental.zip
 
       - name: Save as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows
           path: .\build\node-win-${{ env.TAG }}-experimental.zip

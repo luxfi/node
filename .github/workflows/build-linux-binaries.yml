@@ -57,7 +57,7 @@ jobs:
           RELEASE: "jammy"
 
       - name: Save as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: amd64
           path: ${{ github.workspace }}/luxd-pkg/node-linux-amd64-${{ env.TAG }}.tar.gz
@@ -107,7 +107,7 @@ jobs:
           RELEASE: "jammy"
 
       - name: Save as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: arm64
           path: ${{ github.workspace }}/luxd-pkg/node-linux-arm64-${{ env.TAG }}.tar.gz
