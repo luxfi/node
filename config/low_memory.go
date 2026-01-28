@@ -7,7 +7,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -194,7 +193,7 @@ func LoadConfigProfile(name string) (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	filename := filepath.Join("profiles", name+".json")
+	filename := "profiles/" + name + ".json"
 	data, err := profilesFS.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load profile %q: %w", name, err)

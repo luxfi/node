@@ -75,7 +75,15 @@ func (c *Cache[_, _]) Flush() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.elements.Clear()
+	if c.onEvict != nil {
+		for c.elements.Len() > 0 {
+			key, val, _ := c.elements.Oldest()
+			c.elements.Delete(key)
+			c.onEvict(key, val)
+		}
+	} else {
+		c.elements.Clear()
+	}
 }
 
 func (c *Cache[_, _]) Len() int {
