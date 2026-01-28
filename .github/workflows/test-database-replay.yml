@@ -7,6 +7,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  GOWORK: off
+  CGO_ENABLED: "0"
+  GOPRIVATE: github.com/luxfi/*
+  GONOSUMDB: github.com/luxfi/*
+
 jobs:
   test-badgerdb-replay:
     runs-on: ubuntu-latest
@@ -17,14 +23,15 @@ jobs:
         submodules: recursive
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.25.5'
+        go-version-file: go.mod
+        check-latest: true
 
     - name: Build luxd with database support
       run: |
-        echo "Building luxd with PebbleDB and BadgerDB support..."
-        make build
+        echo "Building luxd (CGO_ENABLED=0)..."
+        go build -trimpath -o ./build/luxd ./main
         ./build/luxd --version
 
     - name: Generate test staking keys
@@ -47,14 +54,13 @@ jobs:
             --log-level=info \
             --sybil-protection-enabled=false \
             --api-admin-enabled=true || true
-          
+
           # Check if database was created
           if [ "$db_type" != "memdb" ]; then
             ls -la /tmp/test-$db_type/db/ || true
           fi
-          
+
           # Clean up
-          pkill -f luxd || true
           rm -rf /tmp/test-$db_type
         done
 
@@ -63,7 +69,7 @@ jobs:
         # This would test the genesis-db flag with a sample database
         # In a real CI environment, you'd have a test database available
         echo "Testing genesis-db flag..."
-        
+
         # Create a mock test to verify the flag is accepted
         timeout 5s ./build/luxd \
           --network-id=96369 \
@@ -84,16 +90,17 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.25.5'
+        go-version-file: go.mod
+        check-latest: true
 
     - name: Test database factory
       run: |
         # Run unit tests for the database factory
-        go test -v -tags "pebbledb badgerdb" ./db/...
+        go test -v ./internal/database/...
 
     - name: Test database implementations
       run: |
         # Test each database implementation
-        go test -v -tags "pebbledb badgerdb" ./db/...
+        go test -v ./internal/database/...
