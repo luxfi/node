@@ -26,6 +26,7 @@ func (s *testSource) Seed(uint64) {
 func (s *testSource) Uint64() uint64 {
 	if len(s.nums) == 0 {
 		s.onInvalid()
+		return 0
 	}
 	num := s.nums[0]
 	s.nums = s.nums[1:]
@@ -48,6 +49,7 @@ func (s *testSTDSource) Int63() int64 {
 func (s *testSTDSource) Uint64() uint64 {
 	if len(s.nums) == 0 {
 		s.onInvalid()
+		return 0
 	}
 	num := s.nums[0]
 	s.nums = s.nums[1:]

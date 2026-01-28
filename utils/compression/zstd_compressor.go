@@ -65,5 +65,10 @@ func (z *zstdCompressor) Decompress(msg []byte) ([]byte, error) {
 	if int64(len(decompressed)) > z.maxSize {
 		return nil, fmt.Errorf("%w: (%d) > (%d)", ErrDecompressedMsgTooLarge, len(decompressed), z.maxSize)
 	}
+	// Normalize nil to empty slice so compress/decompress roundtrip is
+	// consistent for empty input.
+	if decompressed == nil {
+		decompressed = []byte{}
+	}
 	return decompressed, nil
 }

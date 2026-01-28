@@ -48,24 +48,34 @@ func FuzzTransactionParsing(f *testing.F) {
 		}
 
 		// If parsing succeeded, test that methods don't panic
-		_ = tx.ID()
-		_ = tx.Bytes()
 		unsigned := tx.Unsigned
 		if unsigned != nil {
 			_ = unsigned.Visit(&visitor{})
 		}
 
+		// Initialize the transaction to populate bytes and ID
+		if err := tx.Initialize(codec); err != nil {
+			// Some parsed transactions may fail to re-marshal
+			return
+		}
+
 		// Try to serialize back
-		bytes := tx.Bytes()
-		if len(bytes) == 0 {
-			t.Error("Parsed transaction has empty bytes")
+		txBytes := tx.Bytes()
+		if len(txBytes) == 0 {
+			t.Error("Initialized transaction has empty bytes")
+			return
 		}
 
 		// Parse again and verify consistency
 		var tx2 Tx
-		_, err = codec.Unmarshal(bytes, &tx2)
+		_, err = codec.Unmarshal(txBytes, &tx2)
 		if err != nil {
 			t.Errorf("Failed to re-parse serialized transaction: %v", err)
+			return
+		}
+
+		if err := tx2.Initialize(codec); err != nil {
+			t.Errorf("Failed to initialize re-parsed transaction: %v", err)
 			return
 		}
 

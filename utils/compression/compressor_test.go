@@ -172,6 +172,7 @@ func fuzzHelper(f *testing.F, compressionType Type) {
 		if len(data) > int(maxMessageSize) {
 			_, err := compressor.Compress(data)
 			require.ErrorIs(err, ErrMsgTooLarge)
+			return
 		}
 
 		compressed, err := compressor.Compress(data)
