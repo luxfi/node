@@ -300,38 +300,6 @@ func TestCreateChainTx(t *testing.T) {
 	}
 }
 
-func TestCreateChainTx(t *testing.T) {
-	for _, e := range testEnvironment {
-		t.Run(e.name, func(t *testing.T) {
-			var (
-				require    = require.New(t)
-				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*lux.UTXO{
-					constants.PlatformChainID: utxos,
-				})
-				backend = wallet.NewBackend(chainUTXOs, chainOwners)
-				builder = builder.New(set.Of(utxoAddr, chainAuthAddr), e.context, backend)
-			)
-
-			utx, err := builder.NewCreateChainTx(
-				chainOwner,
-				common.WithMemo(e.memo),
-			)
-			require.NoError(err)
-			require.Equal(chainOwner, utx.Owner)
-			require.Equal(types.JSONByteSlice(e.memo), utx.Memo)
-			requireFeeIsCorrect(
-				require,
-				e.feeCalculator,
-				utx,
-				&utx.BaseTx.BaseTx,
-				nil,
-				nil,
-				nil,
-			)
-		})
-	}
-}
-
 func TestTransferChainOwnershipTx(t *testing.T) {
 	for _, e := range testEnvironment {
 		t.Run(e.name, func(t *testing.T) {
