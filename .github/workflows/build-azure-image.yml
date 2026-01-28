@@ -131,7 +131,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download Manifest
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: azure-image-manifest
 
