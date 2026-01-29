@@ -68,6 +68,13 @@ func (c *Cache[K, _]) Evict(key K) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	if c.onEvict != nil {
+		if val, ok := c.elements.Get(key); ok {
+			c.elements.Delete(key)
+			c.onEvict(key, val)
+			return
+		}
+	}
 	c.elements.Delete(key)
 }
 

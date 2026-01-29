@@ -1048,7 +1048,6 @@ func (s *Database) writeBlockAt(offset uint64, bh blockEntryHeader, block BlockD
 
 		if _, err := dataFile.WriteAt(combinedBuf, int64(localOffset)); err != nil {
 			if errors.Is(err, os.ErrClosed) {
-				// ensure the file is evicted, otherwise we'll retry forever
 				s.fileCache.Evict(fileIndex)
 				continue
 			}
