@@ -19,7 +19,7 @@ jobs:
   # Build AWS AMI
   aws:
     name: AWS AMI
-    if: contains(inputs.clouds || 'aws,gcp,azure', 'aws')
+    if: ${{ github.event_name == 'release' || contains(inputs.clouds, 'aws') }}
     uses: ./.github/workflows/build-aws-ami.yml
     with:
       tag: ${{ inputs.tag || github.event.release.tag_name }}
@@ -28,7 +28,7 @@ jobs:
   # Build GCP Image
   gcp:
     name: GCP Image
-    if: contains(inputs.clouds || 'aws,gcp,azure', 'gcp')
+    if: ${{ github.event_name == 'release' || contains(inputs.clouds, 'gcp') }}
     uses: ./.github/workflows/build-gcp-image.yml
     with:
       tag: ${{ inputs.tag || github.event.release.tag_name }}
@@ -37,7 +37,7 @@ jobs:
   # Build Azure Image
   azure:
     name: Azure Image
-    if: contains(inputs.clouds || 'aws,gcp,azure', 'azure')
+    if: ${{ github.event_name == 'release' || contains(inputs.clouds, 'azure') }}
     uses: ./.github/workflows/build-azure-image.yml
     with:
       tag: ${{ inputs.tag || github.event.release.tag_name }}
