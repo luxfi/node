@@ -237,6 +237,7 @@ func New(config DatabaseConfig, log luxlog.Logger) (*Database, error) {
 
 	if err := s.openAndInitializeIndex(); err != nil {
 		s.log.Error("Failed to initialize database: failed to initialize index", zap.Error(err))
+		s.closeFiles()
 		return nil, err
 	}
 
