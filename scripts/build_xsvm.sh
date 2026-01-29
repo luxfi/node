@@ -10,7 +10,8 @@ fi
 source ./scripts/constants.sh
 
 echo "Building xsvm plugin..."
-go build -o ./build/xsvm ./vms/example/xsvm/cmd/xsvm/
+# xsvm requires grpc build tag for the CLI entrypoint
+go build -tags=grpc -o ./build/xsvm ./vms/example/xsvm/cmd/xsvm/
 
 # Symlink to both global and local plugin directories to simplify
 # usage for testing. The local directory should be preferred but the

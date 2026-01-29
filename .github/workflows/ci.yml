@@ -167,15 +167,15 @@ jobs:
         with:
           name: upgrade-tmpnet-data
   Lint:
-    runs-on: ubuntu-latest
+    # Run on self-hosted runner - golangci-lint needs to compile packages
+    # that depend on lux/accel CGO library
+    runs-on: custom-arm64-jammy
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
       - name: Run static analysis tests
         shell: bash
         run: scripts/lint.sh
-        env:
-          CGO_ENABLED: '0'
       - name: Run shellcheck
         shell: bash
         run: scripts/shellcheck.sh
