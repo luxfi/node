@@ -1,6 +1,17 @@
 name: Build Azure Image
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Git tag to build'
+        required: true
+        type: string
+      location:
+        description: 'Azure location'
+        required: false
+        default: 'eastus'
+        type: string
   workflow_dispatch:
     inputs:
       tag:

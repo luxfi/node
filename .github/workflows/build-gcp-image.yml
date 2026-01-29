@@ -1,6 +1,17 @@
 name: Build GCP Image
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Git tag to build'
+        required: true
+        type: string
+      zone:
+        description: 'GCP zone'
+        required: false
+        default: 'us-central1-a'
+        type: string
   workflow_dispatch:
     inputs:
       tag:

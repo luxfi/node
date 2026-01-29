@@ -1,6 +1,17 @@
 name: Build AWS AMI
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Git tag to build'
+        required: true
+        type: string
+      regions:
+        description: 'AWS regions (comma-separated)'
+        required: false
+        default: 'us-east-1,us-west-2,eu-west-1'
+        type: string
   workflow_dispatch:
     inputs:
       tag:
