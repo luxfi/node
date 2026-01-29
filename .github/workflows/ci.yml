@@ -187,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: bufbuild/buf-setup-action@v1.47.0
+      - uses: bufbuild/buf-setup-action@v1.47.2
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-lint-action@v1
@@ -195,29 +195,28 @@ jobs:
           input: "proto"
   check_generated_protobuf:
     name: Up-to-date protobuf
-    runs-on: ubuntu-latest
+    # Run on self-hosted runner - protoc-gen-go needs to compile packages
+    runs-on: custom-arm64-jammy
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - uses: bufbuild/buf-setup-action@v1.47.0
+      - uses: bufbuild/buf-setup-action@v1.47.2
         with:
           github_token: ${{ github.token }}
       - shell: bash
         run: scripts/protobuf_codegen.sh
-        env:
-          CGO_ENABLED: '0'
       - shell: bash
         run: .github/workflows/check-clean-branch.sh
   check_mockgen:
     name: Up-to-date mocks
-    runs-on: ubuntu-latest
+    # Run on self-hosted runner with accel library installed
+    # mockgen reflect mode requires compiling packages with accel
+    runs-on: custom-arm64-jammy
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
       - shell: bash
         run: scripts/mock.gen.sh
-        env:
-          CGO_ENABLED: '0'
       - shell: bash
         run: .github/workflows/check-clean-branch.sh
   go_mod_tidy:
