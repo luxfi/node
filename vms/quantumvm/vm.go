@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/rpc/v2"
 	consensuscore "github.com/luxfi/consensus/core"
@@ -468,9 +469,31 @@ func (vm *VM) parseGenesis(genesisBytes []byte) error {
 
 // parseBlock parses a block from bytes
 func (vm *VM) parseBlock(blockBytes []byte) (*Block, error) {
-	// TODO: Implement block parsing
+	// Block format: id(32) + timestamp(8) + height(8) + parentID(32) + txCount(4) + txs...
+	minSize := 32 + 8 + 8 + 32 + 4
+	if len(blockBytes) < minSize {
+		return nil, fmt.Errorf("block bytes too short: got %d, need at least %d", len(blockBytes), minSize)
+	}
+
+	var id ids.ID
+	copy(id[:], blockBytes[:32])
+
+	timestamp := binary.BigEndian.Uint64(blockBytes[32:40])
+	height := binary.BigEndian.Uint64(blockBytes[40:48])
+
+	var parentID ids.ID
+	copy(parentID[:], blockBytes[48:80])
+
+	txCount := binary.BigEndian.Uint32(blockBytes[80:84])
+	_ = txCount // Transaction parsing would go here
+
 	return &Block{
-		vm: vm,
+		id:        id,
+		timestamp: time.Unix(int64(timestamp), 0),
+		height:    height,
+		parentID:  parentID,
+		vm:        vm,
+		bytes:     blockBytes,
 	}, nil
 }
 
@@ -494,14 +517,28 @@ func (vm *VM) isShuttingDown() bool {
 
 // getHeight returns current blockchain height
 func (vm *VM) getHeight() uint64 {
-	// TODO: Implement actual height tracking
-	return 0
+	heightBytes, err := vm.state.Get([]byte("height"))
+	if err != nil {
+		return 0
+	}
+	if len(heightBytes) != 8 {
+		return 0
+	}
+	return binary.BigEndian.Uint64(heightBytes)
 }
 
 // getLastAcceptedID returns the last accepted block ID
 func (vm *VM) getLastAcceptedID() ids.ID {
-	// TODO: Implement actual last accepted tracking
-	return ids.Empty
+	lastAcceptedBytes, err := vm.state.Get([]byte("lastAccepted"))
+	if err != nil {
+		return ids.Empty
+	}
+	if len(lastAcceptedBytes) != 32 {
+		return ids.Empty
+	}
+	var id ids.ID
+	copy(id[:], lastAcceptedBytes)
+	return id
 }
 
 // Version returns the version of the VM

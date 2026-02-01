@@ -1,3 +1,5 @@
+//go:build grpc
+
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -5,16 +7,69 @@ package trace
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
+
+// Type aliases for otel compatibility
+type (
+	KeyValue        = attribute.KeyValue
+	SpanStartOption = oteltrace.SpanStartOption
+	SpanEndOption   = oteltrace.SpanEndOption
+	Span            = oteltrace.Span
+	StatusCode      = codes.Code
+)
+
+// Re-export otel status codes
+const (
+	StatusUnset = codes.Unset
+	StatusOK    = codes.Ok
+	StatusError = codes.Error
+)
+
+// EventOption is a type alias for span event options
+type EventOption = oteltrace.EventOption
+
+// Helper functions wrapping otel attribute constructors
+
+// String creates a string attribute
+func String(key, value string) KeyValue {
+	return attribute.String(key, value)
+}
+
+// Int creates an int attribute
+func Int(key string, value int) KeyValue {
+	return attribute.Int(key, value)
+}
+
+// Int64 creates an int64 attribute
+func Int64(key string, value int64) KeyValue {
+	return attribute.Int64(key, value)
+}
+
+// Bool creates a bool attribute
+func Bool(key string, value bool) KeyValue {
+	return attribute.Bool(key, value)
+}
+
+// Stringer creates a string attribute from a fmt.Stringer
+func Stringer(key string, value fmt.Stringer) KeyValue {
+	return attribute.Stringer(key, value)
+}
+
+// WithAttributes returns a SpanStartOption with the given attributes
+func WithAttributes(kv ...KeyValue) SpanStartOption {
+	return oteltrace.WithAttributes(kv...)
+}
 
 const (
 	tracerExportTimeout = 10 * time.Second
@@ -36,12 +91,12 @@ type Config struct {
 }
 
 type Tracer interface {
-	trace.Tracer
+	oteltrace.Tracer
 	io.Closer
 }
 
 type tracer struct {
-	trace.Tracer
+	oteltrace.Tracer
 
 	tp *sdktrace.TracerProvider
 }

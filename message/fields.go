@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 )
 
 var (
@@ -32,7 +32,7 @@ var (
 	_ chainIDGetter = (*p2p.Request)(nil)
 	_ chainIDGetter = (*p2p.Response)(nil)
 	_ chainIDGetter = (*p2p.Gossip)(nil)
-	_ chainIDGetter = (*p2p.Simplex)(nil)
+	_ chainIDGetter = (*p2p.BFT)(nil)
 
 	_ requestIDGetter = (*p2p.GetStateSummaryFrontier)(nil)
 	_ requestIDGetter = (*p2p.StateSummaryFrontier)(nil)

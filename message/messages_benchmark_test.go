@@ -11,10 +11,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 	compression "github.com/luxfi/compress"
 )
 
@@ -57,7 +56,7 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 			},
 		},
 	}
-	msgLen := proto.Size(&msg)
+	msgLen := p2p.Size(&msg)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
 
@@ -71,7 +70,7 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 		if useBuilder {
 			_, err = codec.createOutbound(&msg, compression.TypeNone, false)
 		} else {
-			_, err = proto.Marshal(&msg)
+			_, err = p2p.Marshal(&msg)
 		}
 		require.NoError(err)
 	}
@@ -114,7 +113,7 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 		},
 	}
 
-	rawMsg, err := proto.Marshal(&msg)
+	rawMsg, err := p2p.Marshal(&msg)
 	require.NoError(err)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
@@ -128,7 +127,7 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 			require.NoError(err)
 		} else {
 			var msg p2p.Message
-			require.NoError(proto.Unmarshal(rawMsg, &msg))
+			require.NoError(p2p.Unmarshal(rawMsg, &msg))
 		}
 	}
 }

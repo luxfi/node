@@ -13,17 +13,14 @@ import (
 	"slices"
 	"sync"
 
-	"go.opentelemetry.io/otel/attribute"
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/container/maybe"
 )
 
 const (
@@ -580,8 +577,8 @@ func (db *merkleDB) Get(key []byte) ([]byte, error) {
 }
 
 func (db *merkleDB) GetValues(ctx context.Context, keys [][]byte) ([][]byte, []error) {
-	_, span := db.debugTracer.Start(ctx, "MerkleDB.GetValues", oteltrace.WithAttributes(
-		attribute.Int("keyCount", len(keys)),
+	_, span := db.debugTracer.Start(ctx, "MerkleDB.GetValues", trace.WithAttributes(
+		trace.Int("keyCount", len(keys)),
 	))
 	defer span.End()
 
@@ -996,9 +993,9 @@ func (db *merkleDB) commitView(ctx context.Context, trieToCommit *view) error {
 	}
 
 	changes := trieToCommit.changes
-	_, span := db.infoTracer.Start(ctx, "MerkleDB.commitView", oteltrace.WithAttributes(
-		attribute.Int("nodesChanged", len(changes.nodes)),
-		attribute.Int("valuesChanged", len(changes.keyChanges)),
+	_, span := db.infoTracer.Start(ctx, "MerkleDB.commitView", trace.WithAttributes(
+		trace.Int("nodesChanged", len(changes.nodes)),
+		trace.Int("valuesChanged", len(changes.keyChanges)),
 	))
 	defer span.End()
 

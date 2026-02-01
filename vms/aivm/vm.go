@@ -481,8 +481,10 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 
 // WaitForEvent implements chain.ChainVM interface
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	// Return empty message - AIVM doesn't proactively build blocks
-	return vmcore.Message{}, nil
+	// Block until context is cancelled - AIVM doesn't proactively build blocks
+	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
+	<-ctx.Done()
+	return vmcore.Message{}, ctx.Err()
 }
 
 // HealthCheck implements chain.ChainVM interface

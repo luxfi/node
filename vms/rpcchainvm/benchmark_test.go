@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/vm"
 )
 
 // Block sizes to test

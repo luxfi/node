@@ -6,11 +6,7 @@ package server
 import (
 	"net/http"
 
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/luxfi/node/trace"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ http.Handler = (*tracedHandler)(nil)
@@ -31,13 +27,13 @@ func TraceHandler(h http.Handler, name string, tracer trace.Tracer) http.Handler
 
 func (h *tracedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	ctx, span := h.tracer.Start(ctx, h.serveHTTPTag, oteltrace.WithAttributes(
-		attribute.String("method", r.Method),
-		attribute.String("url", r.URL.Redacted()),
-		attribute.String("proto", r.Proto),
-		attribute.String("host", r.Host),
-		attribute.String("remoteAddr", r.RemoteAddr),
-		attribute.String("requestURI", r.RequestURI),
+	ctx, span := h.tracer.Start(ctx, h.serveHTTPTag, trace.WithAttributes(
+		trace.String("method", r.Method),
+		trace.String("url", r.URL.Redacted()),
+		trace.String("proto", r.Proto),
+		trace.String("host", r.Host),
+		trace.String("remoteAddr", r.RemoteAddr),
+		trace.String("requestURI", r.RequestURI),
 	))
 	defer span.End()
 

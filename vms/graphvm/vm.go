@@ -225,9 +225,11 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 // WaitForEvent blocks until an event occurs that should trigger block building
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	// For now, return empty message indicating no events to wait for
+	// Block until context is cancelled
 	// In production, this would wait for queries/schema updates in queue
-	return vmcore.Message{}, nil
+	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
+	<-ctx.Done()
+	return vmcore.Message{}, ctx.Err()
 }
 
 // HealthCheck implements the health.Checker interface
@@ -359,7 +361,7 @@ func (vm *VM) parseGenesis(genesisBytes []byte) error {
 	return nil
 }
 
-// ExecuteQuery executes a GraphQL query
+// ExecuteQuery executes a GraphQL query against registered schemas and data sources
 func (vm *VM) ExecuteQuery(query *Query) error {
 	vm.queryMu.Lock()
 	defer vm.queryMu.Unlock()
@@ -369,12 +371,168 @@ func (vm *VM) ExecuteQuery(query *Query) error {
 
 	vm.queries[query.ID] = query
 
-	// TODO: Implement actual GraphQL query execution
+	// Parse and execute the GraphQL query
+	result, err := vm.executeGraphQLQuery(query.QueryText, query.Variables, query.ChainScope)
+	if err != nil {
+		query.Status = QueryFailed
+		query.Result = []byte(fmt.Sprintf(`{"errors":[{"message":%q}]}`, err.Error()))
+		return err
+	}
+
 	query.Status = QueryCompleted
 	query.CompletedAt = time.Now().Unix()
-	query.Result = []byte(`{"data": {}}`)
+	query.Result = result
 
 	return nil
+}
+
+// executeGraphQLQuery is the core GraphQL execution engine
+func (vm *VM) executeGraphQLQuery(queryText string, variables []byte, chainScope []ids.ID) ([]byte, error) {
+	// Parse query to extract operation type and fields
+	op, fields, err := parseGraphQLQuery(queryText)
+	if err != nil {
+		return nil, fmt.Errorf("query parse error: %w", err)
+	}
+
+	// Only queries are supported for now (no mutations/subscriptions)
+	if op != "query" && op != "" {
+		return nil, fmt.Errorf("unsupported operation type: %s", op)
+	}
+
+	// Build response data by resolving each top-level field
+	data := make(map[string]interface{})
+	for _, field := range fields {
+		value, err := vm.resolveField(field, chainScope)
+		if err != nil {
+			// GraphQL returns partial results with errors
+			data[field] = nil
+			continue
+		}
+		data[field] = value
+	}
+
+	// Encode response as JSON
+	response := map[string]interface{}{
+		"data": data,
+	}
+	return json.Marshal(response)
+}
+
+// parseGraphQLQuery is a minimal GraphQL query parser
+// Supports basic queries like: query { field1 field2 }
+func parseGraphQLQuery(queryText string) (operation string, fields []string, err error) {
+	// Trim whitespace and normalize
+	queryText = strings.TrimSpace(queryText)
+	if queryText == "" {
+		return "", nil, errors.New("empty query")
+	}
+
+	// Check for operation type prefix
+	operation = "query" // default
+	if strings.HasPrefix(queryText, "query") {
+		queryText = strings.TrimPrefix(queryText, "query")
+		queryText = strings.TrimSpace(queryText)
+	} else if strings.HasPrefix(queryText, "mutation") {
+		return "mutation", nil, errors.New("mutations not supported")
+	} else if strings.HasPrefix(queryText, "subscription") {
+		return "subscription", nil, errors.New("subscriptions not supported")
+	}
+
+	// Skip optional operation name
+	if idx := strings.Index(queryText, "{"); idx > 0 {
+		queryText = queryText[idx:]
+	}
+
+	// Extract fields from within braces
+	if !strings.HasPrefix(queryText, "{") || !strings.HasSuffix(queryText, "}") {
+		return "", nil, errors.New("invalid query format: expected { fields }")
+	}
+
+	// Remove braces and extract field names
+	fieldStr := strings.TrimPrefix(queryText, "{")
+	fieldStr = strings.TrimSuffix(fieldStr, "}")
+	fieldStr = strings.TrimSpace(fieldStr)
+
+	// Split by whitespace or newlines to get field names
+	// Note: This is simplified and doesn't handle nested fields
+	fieldNames := strings.Fields(fieldStr)
+	for _, f := range fieldNames {
+		// Clean up field names (remove any sub-selections for now)
+		if idx := strings.Index(f, "{"); idx > 0 {
+			f = f[:idx]
+		}
+		if f != "" && f != "{" && f != "}" {
+			fields = append(fields, f)
+		}
+	}
+
+	return operation, fields, nil
+}
+
+// resolveField resolves a single GraphQL field against the available data sources
+func (vm *VM) resolveField(fieldName string, chainScope []ids.ID) (interface{}, error) {
+	vm.schemaMu.RLock()
+	defer vm.schemaMu.RUnlock()
+
+	// Built-in introspection fields
+	switch fieldName {
+	case "__schema":
+		return vm.introspectSchema(), nil
+	case "__typename":
+		return "Query", nil
+	case "schemas":
+		// Return all registered schemas
+		schemas := make([]map[string]string, 0, len(vm.schemas))
+		for _, s := range vm.schemas {
+			schemas = append(schemas, map[string]string{
+				"id":      s.ID,
+				"name":    s.Name,
+				"version": s.Version,
+			})
+		}
+		return schemas, nil
+	case "chainSources":
+		// Return connected chain sources
+		sources := make([]map[string]interface{}, 0, len(vm.chainSources))
+		for _, cs := range vm.chainSources {
+			sources = append(sources, map[string]interface{}{
+				"chainId":     cs.ChainID.String(),
+				"chainName":   cs.ChainName,
+				"connected":   cs.Connected,
+				"blockHeight": cs.BlockHeight,
+			})
+		}
+		return sources, nil
+	case "indexes":
+		// Return data indexes
+		indexes := make([]map[string]interface{}, 0, len(vm.dataIndexes))
+		for _, idx := range vm.dataIndexes {
+			indexes = append(indexes, map[string]interface{}{
+				"id":        idx.ID,
+				"indexType": idx.IndexType,
+				"status":    idx.Status,
+				"fields":    idx.Fields,
+			})
+		}
+		return indexes, nil
+	}
+
+	return nil, fmt.Errorf("unknown field: %s", fieldName)
+}
+
+// introspectSchema returns GraphQL schema introspection data
+func (vm *VM) introspectSchema() map[string]interface{} {
+	return map[string]interface{}{
+		"queryType": map[string]string{
+			"name": "Query",
+		},
+		"types": []map[string]string{
+			{"name": "Query"},
+			{"name": "Schema"},
+			{"name": "ChainSource"},
+			{"name": "Index"},
+		},
+	}
 }
 
 // RegisterSchema registers a new GraphQL schema

@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
 )
 

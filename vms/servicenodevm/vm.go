@@ -350,7 +350,10 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 
 // WaitForEvent implements chain.ChainVM
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	return vmcore.Message{}, nil
+	// Block until context is cancelled - this VM doesn't proactively build blocks
+	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
+	<-ctx.Done()
+	return vmcore.Message{}, ctx.Err()
 }
 
 // ========== Service Node Operations ==========

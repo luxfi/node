@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	pb "github.com/luxfi/node/proto/pb/sync"
+	syncpb "github.com/luxfi/node/proto/sync"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/container/maybe"
 )
@@ -64,13 +64,13 @@ type ProofNode struct {
 
 // ToProto converts the ProofNode into the protobuf version of a proof node
 // Assumes [node.Key.Key.length] <= math.MaxUint64.
-func (node *ProofNode) ToProto() *pb.ProofNode {
-	pbNode := &pb.ProofNode{
-		Key: &pb.Key{
+func (node *ProofNode) ToProto() *syncpb.ProofNode {
+	pbNode := &syncpb.ProofNode{
+		Key: &syncpb.Key{
 			Length: uint64(node.Key.length),
 			Value:  node.Key.Bytes(),
 		},
-		ValueOrHash: &pb.MaybeBytes{
+		ValueOrHash: &syncpb.MaybeBytes{
 			Value:     node.ValueOrHash.Value(),
 			IsNothing: node.ValueOrHash.IsNothing(),
 		},
@@ -84,7 +84,7 @@ func (node *ProofNode) ToProto() *pb.ProofNode {
 	return pbNode
 }
 
-func (node *ProofNode) UnmarshalProto(pbNode *pb.ProofNode) error {
+func (node *ProofNode) UnmarshalProto(pbNode *syncpb.ProofNode) error {
 	switch {
 	case pbNode == nil:
 		return ErrNilProofNode
@@ -190,18 +190,18 @@ func (proof *Proof) Verify(
 	return nil
 }
 
-func (proof *Proof) ToProto() *pb.Proof {
-	value := &pb.MaybeBytes{
+func (proof *Proof) ToProto() *syncpb.Proof {
+	value := &syncpb.MaybeBytes{
 		Value:     proof.Value.Value(),
 		IsNothing: proof.Value.IsNothing(),
 	}
 
-	pbProof := &pb.Proof{
+	pbProof := &syncpb.Proof{
 		Key:   proof.Key.Bytes(),
 		Value: value,
 	}
 
-	pbProof.Proof = make([]*pb.ProofNode, len(proof.Path))
+	pbProof.Proof = make([]*syncpb.ProofNode, len(proof.Path))
 	for i, node := range proof.Path {
 		pbProof.Proof[i] = node.ToProto()
 	}
@@ -209,7 +209,7 @@ func (proof *Proof) ToProto() *pb.Proof {
 	return pbProof
 }
 
-func (proof *Proof) UnmarshalProto(pbProof *pb.Proof) error {
+func (proof *Proof) UnmarshalProto(pbProof *syncpb.Proof) error {
 	switch {
 	case pbProof == nil:
 		return ErrNilProof
@@ -237,33 +237,33 @@ func (proof *Proof) UnmarshalProto(pbProof *pb.Proof) error {
 
 type RangeProof ChangeProof
 
-func (proof *RangeProof) ToProto() *pb.RangeProof {
-	startProof := make([]*pb.ProofNode, len(proof.StartProof))
+func (proof *RangeProof) ToProto() *syncpb.RangeProof {
+	startProof := make([]*syncpb.ProofNode, len(proof.StartProof))
 	for i, node := range proof.StartProof {
 		startProof[i] = node.ToProto()
 	}
 
-	endProof := make([]*pb.ProofNode, len(proof.EndProof))
+	endProof := make([]*syncpb.ProofNode, len(proof.EndProof))
 	for i, node := range proof.EndProof {
 		endProof[i] = node.ToProto()
 	}
 
-	keyValues := make([]*pb.KeyValue, len(proof.KeyChanges))
+	keyValues := make([]*syncpb.KeyValue, len(proof.KeyChanges))
 	for i, kv := range proof.KeyChanges {
-		keyValues[i] = &pb.KeyValue{
+		keyValues[i] = &syncpb.KeyValue{
 			Key:   kv.Key,
 			Value: kv.Value.Value(),
 		}
 	}
 
-	return &pb.RangeProof{
+	return &syncpb.RangeProof{
 		StartProof: startProof,
 		EndProof:   endProof,
 		KeyValues:  keyValues,
 	}
 }
 
-func (proof *RangeProof) UnmarshalProto(pbProof *pb.RangeProof) error {
+func (proof *RangeProof) UnmarshalProto(pbProof *syncpb.RangeProof) error {
 	if pbProof == nil {
 		return ErrNilRangeProof
 	}
@@ -444,36 +444,36 @@ type ChangeProof struct {
 	KeyChanges []KeyChange
 }
 
-func (proof *ChangeProof) ToProto() *pb.ChangeProof {
-	startProof := make([]*pb.ProofNode, len(proof.StartProof))
+func (proof *ChangeProof) ToProto() *syncpb.ChangeProof {
+	startProof := make([]*syncpb.ProofNode, len(proof.StartProof))
 	for i, node := range proof.StartProof {
 		startProof[i] = node.ToProto()
 	}
 
-	endProof := make([]*pb.ProofNode, len(proof.EndProof))
+	endProof := make([]*syncpb.ProofNode, len(proof.EndProof))
 	for i, node := range proof.EndProof {
 		endProof[i] = node.ToProto()
 	}
 
-	keyChanges := make([]*pb.KeyChange, len(proof.KeyChanges))
+	keyChanges := make([]*syncpb.KeyChange, len(proof.KeyChanges))
 	for i, kv := range proof.KeyChanges {
-		keyChanges[i] = &pb.KeyChange{
+		keyChanges[i] = &syncpb.KeyChange{
 			Key: kv.Key,
-			Value: &pb.MaybeBytes{
+			Value: &syncpb.MaybeBytes{
 				Value:     kv.Value.Value(),
 				IsNothing: kv.Value.IsNothing(),
 			},
 		}
 	}
 
-	return &pb.ChangeProof{
+	return &syncpb.ChangeProof{
 		StartProof: startProof,
 		EndProof:   endProof,
 		KeyChanges: keyChanges,
 	}
 }
 
-func (proof *ChangeProof) UnmarshalProto(pbProof *pb.ChangeProof) error {
+func (proof *ChangeProof) UnmarshalProto(pbProof *syncpb.ChangeProof) error {
 	if pbProof == nil {
 		return ErrNilChangeProof
 	}

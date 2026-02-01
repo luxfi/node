@@ -51,6 +51,13 @@ func (b *Block) Accept(context.Context) error {
 		return err
 	}
 
+	// Update height
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, b.height)
+	if err := b.vm.state.Put([]byte("height"), heightBytes); err != nil {
+		return err
+	}
+
 	// Process transactions
 	for _, tx := range b.transactions {
 		if err := b.vm.txPool.RemoveTransaction(tx.ID()); err != nil {

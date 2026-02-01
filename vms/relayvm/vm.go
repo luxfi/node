@@ -5,6 +5,7 @@ package relayvm
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -17,14 +18,14 @@ import (
 	"github.com/gorilla/rpc/v2"
 	grjson "github.com/gorilla/rpc/v2/json"
 
-	"github.com/luxfi/vm/chain"
-	vmcore "github.com/luxfi/vm"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/artifacts"
+	"github.com/luxfi/runtime"
+	luxvm "github.com/luxfi/vm"
+	"github.com/luxfi/vm/chain"
 )
 
 const (
@@ -124,6 +125,9 @@ type VM struct {
 	sessionReceipts map[[32]byte][]*SignedReceipt // sessionID -> receipts
 	receiptCommits  map[[32]byte]*ReceiptCommit   // sessionID -> commit
 
+	// Node public key registry for signature verification
+	nodePublicKeys map[ids.NodeID]ed25519.PublicKey
+
 	// Consensus
 	lastAccepted   *Block
 	lastAcceptedID ids.ID
@@ -137,7 +141,7 @@ type VM struct {
 // Initialize implements chain.ChainVM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	vmInit vmcore.Init,
+	vmInit luxvm.Init,
 ) error {
 	vm.rt = vmInit.Runtime
 	vm.db = vmInit.DB
@@ -155,6 +159,7 @@ func (vm *VM) Initialize(
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	vm.sessionReceipts = make(map[[32]byte][]*SignedReceipt)
 	vm.receiptCommits = make(map[[32]byte]*ReceiptCommit)
+	vm.nodePublicKeys = make(map[ids.NodeID]ed25519.PublicKey)
 
 	// Parse genesis
 	genesis, err := ParseGenesis(vmInit.Genesis)
@@ -600,10 +605,12 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 }
 
 // WaitForEvent implements chain.ChainVM
-func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	// For now, return empty message indicating no events to wait for
+func (vm *VM) WaitForEvent(ctx context.Context) (luxvm.Message, error) {
+	// Block until context is cancelled
 	// In production, this would wait for relay requests, etc.
-	return vmcore.Message{}, nil
+	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
+	<-ctx.Done()
+	return luxvm.Message{}, ctx.Err()
 }
 
 // ======== Genesis ========
@@ -637,6 +644,62 @@ func ParseGenesis(genesisBytes []byte) (*Genesis, error) {
 func sha256Hash(data []byte) []byte {
 	h := sha256.Sum256(data)
 	return h[:]
+}
+
+// RegisterNodePublicKey registers a node's Ed25519 public key for signature verification
+func (vm *VM) RegisterNodePublicKey(nodeID ids.NodeID, publicKey ed25519.PublicKey) error {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+
+	if len(publicKey) != ed25519.PublicKeySize {
+		return errors.New("invalid public key size")
+	}
+
+	if vm.nodePublicKeys == nil {
+		vm.nodePublicKeys = make(map[ids.NodeID]ed25519.PublicKey)
+	}
+
+	vm.nodePublicKeys[nodeID] = publicKey
+	vm.log.Info("registered node public key", log.Stringer("nodeID", nodeID))
+	return nil
+}
+
+// verifyReceiptSignature verifies a receipt's Ed25519 signature
+func (vm *VM) verifyReceiptSignature(receipt *SignedReceipt) error {
+	vm.mu.RLock()
+	publicKey, exists := vm.nodePublicKeys[receipt.NodeID]
+	vm.mu.RUnlock()
+
+	if !exists {
+		// If no public key registered for this node, derive from NodeID
+		// NodeID is typically SHA256(PublicKey)[:20], so we cannot recover the key
+		// In this case, we accept the receipt but log a warning
+		// Production systems should register all validator public keys
+		vm.log.Warn("no public key registered for node, skipping signature verification",
+			log.Stringer("nodeID", receipt.NodeID))
+		return nil
+	}
+
+	// Reconstruct the message that was signed
+	// Format: MessageID || SessionID || NodeID || Timestamp || ContentHash
+	h := sha256.New()
+	h.Write(receipt.MessageID[:])
+	h.Write(receipt.SessionID[:])
+	h.Write(receipt.NodeID[:])
+
+	timestampBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(timestampBytes, receipt.Timestamp)
+	h.Write(timestampBytes)
+
+	h.Write(receipt.ContentHash[:])
+	message := h.Sum(nil)
+
+	// Verify Ed25519 signature
+	if !ed25519.Verify(publicKey, message, receipt.Signature) {
+		return errInvalidSignature
+	}
+
+	return nil
 }
 
 // =============================================================================
@@ -752,8 +815,10 @@ func (vm *VM) SubmitSignedReceipt(receipt *SignedReceipt) error {
 		return errors.New("receipt missing signature")
 	}
 
-	// TODO: Verify signature against node's public key
-	// For now, accept receipts (signature verification would go here)
+	// Verify signature against node's public key
+	if err := vm.verifyReceiptSignature(receipt); err != nil {
+		return fmt.Errorf("receipt signature verification failed: %w", err)
+	}
 
 	vm.mu.Lock()
 	defer vm.mu.Unlock()

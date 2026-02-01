@@ -29,7 +29,7 @@ import (
 	validators "github.com/luxfi/validators"
 	vmcore "github.com/luxfi/vm"
 	vmchain "github.com/luxfi/vm/chain"
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/vm"
 
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"

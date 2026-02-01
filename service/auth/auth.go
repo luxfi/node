@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/password"
+	"github.com/luxfi/node/utils/password"
 )
 
 const (

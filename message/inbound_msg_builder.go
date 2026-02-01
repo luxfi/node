@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/timer/mockable"
 )
 
@@ -330,14 +330,14 @@ func InboundGossip(
 	}
 }
 
-// NewInboundSimplexMessage creates a new InboundMessage for simplex messages.
-func InboundSimplexMessage(
+// NewInboundBFTMessage creates a new InboundMessage for bft messages.
+func InboundBFTMessage(
 	nodeID ids.NodeID,
-	msg *p2p.Simplex,
+	msg *p2p.BFT,
 ) InboundMessage {
 	return &inboundMessage{
 		nodeID:     nodeID,
-		op:         SimplexOp,
+		op:         BFTOp,
 		message:    msg,
 		expiration: mockable.MaxTime,
 	}

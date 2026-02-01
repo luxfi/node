@@ -25,7 +25,9 @@ type TransportConfig struct {
 	Timeout time.Duration
 }
 
-// DefaultTransportConfig returns the default transport configuration (ZAP)
+// DefaultTransportConfig returns the default transport configuration
+// Uses ZAP by default for high-performance zero-copy communication.
+// gRPC can be used with -tags=grpc build flag for compatibility testing.
 func DefaultTransportConfig() TransportConfig {
 	return TransportConfig{
 		Transport: TransportZAP,

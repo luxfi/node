@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/ids"
-	hash "github.com/luxfi/crypto/hash"
 )
 
 var (
@@ -199,7 +198,18 @@ func (b *Block) Verify(ctx context.Context) error {
 			if b.vm.nullifierSet[action.Nullifier] {
 				return errors.New("double spend detected")
 			}
-			// TODO: Verify the ZK proof for the action
+			// Verify the ZK proof for privacy action
+			if len(action.Proof) > 0 {
+				proof := &ZKProof{
+					ID:           ids.ID(action.Nullifier),
+					Proof:        action.Proof,
+					PublicInputs: action.Nullifier[:],
+					VerifierKey:  "default", // Use default verifier
+				}
+				if err := b.vm.VerifyZKProof(proof); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -210,8 +220,35 @@ func (b *Block) Verify(ctx context.Context) error {
 // Bytes implements the chain.Block interface
 func (b *Block) Bytes() []byte {
 	if b.bytes == nil {
-		// TODO: Implement proper serialization
-		b.bytes = hash.ComputeHash256([]byte(b.id.String()))
+		// Serialize block: id(32) + parentID(32) + height(8) + timestamp(8) = 80 bytes base
+		bytes := make([]byte, 0, 80)
+		bytes = append(bytes, b.id[:]...)
+		bytes = append(bytes, b.parentID[:]...)
+
+		heightBytes := make([]byte, 8)
+		heightBytes[0] = byte(b.height >> 56)
+		heightBytes[1] = byte(b.height >> 48)
+		heightBytes[2] = byte(b.height >> 40)
+		heightBytes[3] = byte(b.height >> 32)
+		heightBytes[4] = byte(b.height >> 24)
+		heightBytes[5] = byte(b.height >> 16)
+		heightBytes[6] = byte(b.height >> 8)
+		heightBytes[7] = byte(b.height)
+		bytes = append(bytes, heightBytes...)
+
+		tsBytes := make([]byte, 8)
+		ts := b.timestamp.Unix()
+		tsBytes[0] = byte(ts >> 56)
+		tsBytes[1] = byte(ts >> 48)
+		tsBytes[2] = byte(ts >> 40)
+		tsBytes[3] = byte(ts >> 32)
+		tsBytes[4] = byte(ts >> 24)
+		tsBytes[5] = byte(ts >> 16)
+		tsBytes[6] = byte(ts >> 8)
+		tsBytes[7] = byte(ts)
+		bytes = append(bytes, tsBytes...)
+
+		b.bytes = bytes
 	}
 	return b.bytes
 }

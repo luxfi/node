@@ -1,3 +1,5 @@
+//go:build grpc
+
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -18,7 +20,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/proto/pb/platformvm"
+	"github.com/luxfi/node/proto/platformvm"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"

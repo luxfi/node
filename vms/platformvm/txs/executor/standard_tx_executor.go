@@ -5,6 +5,7 @@ package executor
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -315,10 +317,9 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	// network chains are not guaranteed to be up-to-date.
 	var allUTXOBytes [][]byte
 	if e.backend.Bootstrapped.Get() && !e.backend.Config.PartialSyncPrimaryNetwork {
-		// TODO: Restore SameNet check once ChainContext types are aligned
-		// if err := verify.SameNet(context.TODO(), e.backend.Runtime, tx.SourceChain); err != nil {
-		// 	return err
-		// }
+		if err := verify.SameChain(context.TODO(), e.backend.Runtime, tx.SourceChain); err != nil {
+			return err
+		}
 
 		if e.backend.Runtime.SharedMemory != nil {
 			if sm, ok := e.backend.Runtime.SharedMemory.(atomic.SharedMemory); ok {
@@ -405,10 +406,9 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 	copy(outs[len(tx.Outs):], tx.ExportedOutputs)
 
 	if e.backend.Bootstrapped.Get() {
-		// TODO: Fix ChainContext type mismatch
-		// if err := verify.SameNet(context.TODO(), e.backend.Runtime, tx.DestinationChain); err != nil {
-		// 	return err
-		// }
+		if err := verify.SameChain(context.TODO(), e.backend.Runtime, tx.DestinationChain); err != nil {
+			return err
+		}
 	}
 
 	// Verify the flowcheck

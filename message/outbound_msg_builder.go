@@ -10,7 +10,7 @@ import (
 	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/net/ips"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 )
 
 var _ OutboundMsgBuilder = (*outMsgBuilder)(nil)
@@ -182,8 +182,8 @@ type OutboundMsgBuilder interface {
 		msg []byte,
 	) (OutboundMessage, error)
 
-	SimplexMessage(
-		msg *p2p.Simplex,
+	BFTMessage(
+		msg *p2p.BFT,
 	) (OutboundMessage, error)
 }
 
@@ -741,12 +741,10 @@ func (b *outMsgBuilder) Gossip(chainID ids.ID, msg []byte) (OutboundMessage, err
 	)
 }
 
-func (b *outMsgBuilder) SimplexMessage(msg *p2p.Simplex) (OutboundMessage, error) {
+func (b *outMsgBuilder) BFTMessage(msg *p2p.BFT) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
-			Message: &p2p.Message_Simplex{
-				Simplex: msg,
-			},
+			Message: newMessageBFT(msg),
 		},
 		b.compressionType,
 		false,

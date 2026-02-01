@@ -324,6 +324,62 @@ When CGO disabled, these use CPU fallbacks:
 - `vms/thresholdvm/fhe/gpu_fhe_nocgo.go`
 - `vms/zkvm/accel/accel_mlx.go`
 
+### 8. ZAP CreateHandlers for VM HTTP Endpoints
+**Problem**: C-chain and D-chain RPC endpoints returning 404 despite VMs running.
+
+**Cause**: The `zap.Client` in `vms/rpcchainvm/zap/client.go` did not implement the `CreateHandlers` interface. The node checks for this interface to register HTTP handlers (like `/rpc`, `/ws`) with the HTTP server.
+
+**Solution**: Added `CreateHandlers` method to `zap.Client` that:
+1. Sends `MsgCreateHandlers` via ZAP wire protocol to the VM
+2. Receives `CreateHandlersResponse` with list of handlers (prefix + server address)
+3. Creates `httputil.NewSingleHostReverseProxy` for each handler
+4. Returns `map[string]http.Handler` for registration
+
+**File Modified**: `vms/rpcchainvm/zap/client.go`
+
+**Verification**:
+```bash
+curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+  http://localhost:9640/ext/bc/C/rpc
+# Returns: {"jsonrpc":"2.0","id":1,"result":"0x17870"}
+```
+
+## Benchmark Results (Single Node)
+
+Testing conducted on a single Lux validator node (testnet mode, macOS):
+
+| Metric | Result |
+|--------|--------|
+| Sustained TPS | 1,091 TPS (60s benchmark) |
+| Peak TPS | 1,094 TPS (5 workers) |
+| Query Performance | 840 queries/sec |
+| Query Latency | 17.67ms avg |
+| Optimal Concurrency | 5 workers |
+| Total Transactions | 65,497 txs/min |
+
+**Concurrency Scaling:**
+| Workers | TPS |
+|---------|-----|
+| 1 | 438 |
+| 5 | 1,094 (optimal) |
+| 10 | 684 |
+| 20 | 521 |
+
+**Key Findings:**
+- Single node achieves ~1,100 TPS sustained with optimal concurrency
+- Higher concurrency (>5 workers) decreases TPS due to nonce contention
+- Query latency is consistent at ~18ms
+- Testnet mode uses K=20 Snow consensus (vs K=1 dev mode)
+
+**Benchmark Command:**
+```bash
+cd ~/work/lux/benchmarks
+LUX_ENDPOINT="http://localhost:9640/ext/bc/C/rpc" \
+LUX_PRIVATE_KEY="<funded_key>" \
+./bin/bench tps --chains=lux --duration=60s --concurrency=5
+```
+
 ---
 
-*Last Updated*: 2026-01-19
+*Last Updated*: 2026-01-30

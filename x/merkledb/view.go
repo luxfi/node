@@ -11,14 +11,11 @@ import (
 	"slices"
 	"sync"
 
-	"go.opentelemetry.io/otel/attribute"
-
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/container/maybe"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -543,8 +540,8 @@ func (v *view) commitToDB(ctx context.Context) error {
 		return fmt.Errorf("view.db.infoTracer is nil in commitToDB")
 	}
 
-	ctx, span := v.db.infoTracer.Start(ctx, "MerkleDB.view.commitToDB", oteltrace.WithAttributes(
-		attribute.Int("changeCount", len(v.changes.keyChanges)),
+	ctx, span := v.db.infoTracer.Start(ctx, "MerkleDB.view.commitToDB", trace.WithAttributes(
+		trace.Int("changeCount", len(v.changes.keyChanges)),
 	))
 	defer span.End()
 
@@ -603,8 +600,8 @@ func (v *view) GetMerkleRoot(ctx context.Context) (ids.ID, error) {
 }
 
 func (v *view) GetValues(ctx context.Context, keys [][]byte) ([][]byte, []error) {
-	_, span := v.db.debugTracer.Start(ctx, "MerkleDB.view.GetValues", oteltrace.WithAttributes(
-		attribute.Int("keyCount", len(keys)),
+	_, span := v.db.debugTracer.Start(ctx, "MerkleDB.view.GetValues", trace.WithAttributes(
+		trace.Int("keyCount", len(keys)),
 	))
 	defer span.End()
 

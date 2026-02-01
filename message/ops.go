@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 )
 
 // Op is an opcode
@@ -60,8 +60,8 @@ const (
 	DisconnectedOp
 	NotifyOp
 	GossipRequestOp
-	// Simplex
-	SimplexOp
+	// BFT
+	BFTOp
 )
 
 var (
@@ -79,7 +79,7 @@ var (
 		GossipOp,
 		GetStateSummaryFrontierOp,
 		GetAcceptedStateSummaryOp,
-		SimplexOp,
+		BFTOp,
 	)
 	// FailedToResponseOps maps response failure messages to their successful
 	// counterparts.
@@ -175,9 +175,9 @@ func (op Op) String() string {
 		return "notify"
 	case GossipRequestOp:
 		return "gossip_request"
-	// Simplex
-	case SimplexOp:
-		return "simplex"
+	// BFT
+	case BFTOp:
+		return "bft"
 	default:
 		return "unknown"
 	}
@@ -238,9 +238,9 @@ func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 		return msg.Error, nil
 	case *p2p.Message_Gossip:
 		return msg.Gossip, nil
-	// Simplex
-	case *p2p.Message_Simplex:
-		return msg.Simplex, nil
+	// BFT
+	case *p2p.Message_BFT:
+		return extractBFT(msg), nil
 	default:
 		return nil, fmt.Errorf("%w: %T", errUnknownMessageType, msg)
 	}
@@ -395,8 +395,8 @@ func ToOp(m *p2p.Message) (Op, error) {
 		return ErrorOp, nil
 	case *p2p.Message_Gossip:
 		return GossipOp, nil
-	case *p2p.Message_Simplex:
-		return SimplexOp, nil
+	case *p2p.Message_BFT:
+		return BFTOp, nil
 	default:
 		return 0, fmt.Errorf("%w: %T", errUnknownMessageType, msg)
 	}

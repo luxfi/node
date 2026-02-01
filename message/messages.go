@@ -11,10 +11,9 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/timer/mockable"
 	compression "github.com/luxfi/compress"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -176,7 +175,7 @@ func (mb *msgBuilder) marshal(
 	uncompressedMsg *p2p.Message,
 	compressionType compression.Type,
 ) ([]byte, int, Op, error) {
-	uncompressedMsgBytes, err := proto.Marshal(uncompressedMsg)
+	uncompressedMsgBytes, err := p2p.Marshal(uncompressedMsg)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -213,7 +212,7 @@ func (mb *msgBuilder) marshal(
 		return nil, 0, 0, errUnknownCompressionType
 	}
 
-	compressedMsgBytes, err := proto.Marshal(&compressedMsg)
+	compressedMsgBytes, err := p2p.Marshal(&compressedMsg)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -233,7 +232,7 @@ func (mb *msgBuilder) marshal(
 
 func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 	m := new(p2p.Message)
-	if err := proto.Unmarshal(b, m); err != nil {
+	if err := p2p.Unmarshal(b, m); err != nil {
 		return nil, 0, 0, err
 	}
 
@@ -261,7 +260,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 	}
 	bytesSavedCompression := len(decompressed) - len(compressedBytes)
 
-	if err := proto.Unmarshal(decompressed, m); err != nil {
+	if err := p2p.Unmarshal(decompressed, m); err != nil {
 		return nil, 0, 0, err
 	}
 	decompressTook := time.Since(startTime)

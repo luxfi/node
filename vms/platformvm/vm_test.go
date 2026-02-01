@@ -62,7 +62,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 	// "github.com/luxfi/metric" // unused
 
-	// p2ppb "github.com/luxfi/node/proto/pb/p2p" // unused
+	// p2ppb "github.com/luxfi/node/proto/p2p" // unused
 	// smcon "github.com/luxfi/vm/chain" // unused
 	// smeng "github.com/luxfi/vm/chain" // unused
 	// smblock "github.com/luxfi/vm/chain" // unused

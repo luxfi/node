@@ -17,7 +17,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	p2p "github.com/luxfi/node/proto/pb/p2p"
+	p2p "github.com/luxfi/node/proto/p2p"
 	ips "github.com/luxfi/net/ips"
 )
 

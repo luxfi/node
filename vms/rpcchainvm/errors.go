@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/vm"
 )
 
 var (

@@ -35,8 +35,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/proto/pb/p2p"
-	// vmpb "github.com/luxfi/node/proto/pb/vm" // Removed - using vm.Ready instead
+	"github.com/luxfi/node/proto/p2p"
+	// vmpb "github.com/luxfi/node/proto/vm" // Removed - using vm.Ready instead
 	"github.com/luxfi/warp"
 
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
@@ -647,9 +647,16 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	m.notifyRegistrants(chain.Name, chain.Runtime, chain.VM)
 
 	// Register HTTP handlers for this chain if the VM supports it
+	m.Log.Info("checking if VM implements CreateHandlers",
+		log.Stringer("chainID", chainParams.ID),
+		log.String("vmType", fmt.Sprintf("%T", chain.VM)),
+	)
 	if vm, ok := chain.VM.(interface {
 		CreateHandlers(context.Context) (map[string]http.Handler, error)
 	}); ok {
+		m.Log.Info("VM implements CreateHandlers, calling it",
+			log.Stringer("chainID", chainParams.ID),
+		)
 		handlers, err := vm.CreateHandlers(context.TODO())
 		if err != nil {
 			m.Log.Error("failed to create HTTP handlers",

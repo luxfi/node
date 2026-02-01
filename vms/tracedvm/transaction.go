@@ -6,13 +6,9 @@ package tracedvm
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ dag.Transaction = (*tracedTransaction)(nil)
@@ -40,8 +36,8 @@ func (t *tracedTransaction) Bytes() []byte {
 }
 
 func (t *tracedTransaction) Verify(ctx context.Context) error {
-	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Verify", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.Transaction.ID()),
+	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Verify", trace.WithAttributes(
+		trace.Stringer("txID", t.Transaction.ID()),
 	))
 	defer span.End()
 
@@ -49,8 +45,8 @@ func (t *tracedTransaction) Verify(ctx context.Context) error {
 }
 
 func (t *tracedTransaction) Accept(ctx context.Context) error {
-	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Accept", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.Transaction.ID()),
+	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Accept", trace.WithAttributes(
+		trace.Stringer("txID", t.Transaction.ID()),
 	))
 	defer span.End()
 
@@ -58,8 +54,8 @@ func (t *tracedTransaction) Accept(ctx context.Context) error {
 }
 
 func (t *tracedTransaction) Reject(ctx context.Context) error {
-	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Reject", oteltrace.WithAttributes(
-		attribute.Stringer("txID", t.Transaction.ID()),
+	ctx, span := t.tracer.Start(ctx, "tracedTransaction.Reject", trace.WithAttributes(
+		trace.Stringer("txID", t.Transaction.ID()),
 	))
 	defer span.End()
 

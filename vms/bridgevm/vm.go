@@ -596,9 +596,11 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 // WaitForEvent blocks until an event occurs that should trigger block building
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	// For now, return empty message indicating no events to wait for
+	// Block until context is cancelled
 	// In production, this would wait for bridge requests, etc.
-	return vmcore.Message{}, nil
+	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
+	<-ctx.Done()
+	return vmcore.Message{}, ctx.Err()
 }
 
 // Helper methods

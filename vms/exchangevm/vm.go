@@ -47,7 +47,7 @@ import (
 	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/proto/vm"
 	blockbuilder "github.com/luxfi/node/vms/exchangevm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
 	extensions "github.com/luxfi/node/vms/exchangevm/fxs"
