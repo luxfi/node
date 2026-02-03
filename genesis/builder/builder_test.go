@@ -79,6 +79,7 @@ func TestGetBootstrappers(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
+		{"Devnet", constants.DevnetID},
 		{"CustomID", constants.CustomID},
 	}
 
