@@ -91,10 +91,10 @@ func TestGetBootstrappers(t *testing.T) {
 			// Bootstrappers may not be configured for all networks
 			// This is acceptable - they can be provided via config
 
-			// Verify each bootstrapper has valid ID and IP
+			// Verify each bootstrapper has valid ID and endpoint
 			for _, b := range bootstrappers {
 				require.NotEqual(t, b.ID.String(), "")
-				require.True(t, b.IP.IsValid())
+				require.True(t, b.Endpoint.Port > 0, "endpoint port must be non-zero")
 			}
 		})
 	}

@@ -617,17 +617,18 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 	bootstrapIPs := strings.Split(v.GetString(BootstrapIPsKey), ",")
 	config.Bootstrappers = make([]builder.Bootstrapper, 0, len(bootstrapIPs))
 	for _, bootstrapIP := range bootstrapIPs {
-		ip := strings.TrimSpace(bootstrapIP)
-		if ip == "" {
+		endpointStr := strings.TrimSpace(bootstrapIP)
+		if endpointStr == "" {
 			continue
 		}
-		addr, err := ips.ParseAddrPort(ip)
+		// ParseEndpoint supports both IP:port and hostname:port
+		endpoint, err := ips.ParseEndpoint(endpointStr)
 		if err != nil {
-			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap ip %s: %w", ip, err)
+			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap endpoint %s: %w", endpointStr, err)
 		}
 		config.Bootstrappers = append(config.Bootstrappers, builder.Bootstrapper{
 			// ID is populated below
-			IP: addr,
+			Endpoint: endpoint,
 		})
 	}
 

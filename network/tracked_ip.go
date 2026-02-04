@@ -5,37 +5,40 @@ package network
 
 import (
 	"math/rand"
-	"net/netip"
 	"sync"
 	"time"
+
+	"github.com/luxfi/net/ips"
 )
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// trackedIP tracks an endpoint that we are trying to connect to.
+// The endpoint can be either an IP address or a hostname.
 type trackedIP struct {
 	delayLock sync.RWMutex
 	delay     time.Duration
 
-	ip netip.AddrPort
+	endpoint ips.Endpoint
 
 	stopTrackingOnce sync.Once
 	onStopTracking   chan struct{}
 }
 
-func newTrackedIP(ip netip.AddrPort) *trackedIP {
+func newTrackedIP(endpoint ips.Endpoint) *trackedIP {
 	return &trackedIP{
-		ip:             ip,
+		endpoint:       endpoint,
 		onStopTracking: make(chan struct{}),
 	}
 }
 
-func (ip *trackedIP) trackNewIP(newIP netip.AddrPort) *trackedIP {
+func (ip *trackedIP) trackNewEndpoint(newEndpoint ips.Endpoint) *trackedIP {
 	ip.stopTracking()
 	return &trackedIP{
 		delay:          ip.getDelay(),
-		ip:             newIP,
+		endpoint:       newEndpoint,
 		onStopTracking: make(chan struct{}),
 	}
 }

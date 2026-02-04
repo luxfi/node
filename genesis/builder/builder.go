@@ -11,26 +11,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/netip"
 	"path"
 	"time"
 
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/net/ips"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	xchaintxs "github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/utxo/nftfx"
-	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 
@@ -93,23 +93,33 @@ var (
 	errOverridesStandardNetworkConfig = errors.New("overrides standard network genesis config")
 )
 
-// Bootstrapper represents a network bootstrap node with parsed types
+// Bootstrapper represents a network bootstrap node with parsed types.
+// Supports both IP addresses and hostnames for the endpoint.
 type Bootstrapper struct {
-	ID ids.NodeID
-	IP netip.AddrPort
+	ID       ids.NodeID
+	Endpoint ips.Endpoint
 }
 
-// ParseBootstrapper converts a genesis config bootstrapper to a parsed Bootstrapper
+// IP returns the IP address if this is an IP-based endpoint.
+// For hostname endpoints, this returns an invalid AddrPort.
+// Deprecated: Use Endpoint directly for new code.
+func (b Bootstrapper) IP() ips.Endpoint {
+	return b.Endpoint
+}
+
+// ParseBootstrapper converts a genesis config bootstrapper to a parsed Bootstrapper.
+// The IP field can be either an IP:port (e.g., "1.2.3.4:9631") or a hostname:port
+// (e.g., "luxd-0.luxd-headless.lux-mainnet.svc.cluster.local:9631").
 func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 	nodeID, err := ids.NodeIDFromString(b.ID)
 	if err != nil {
 		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper ID %q: %w", b.ID, err)
 	}
-	ip, err := netip.ParseAddrPort(b.IP)
+	endpoint, err := ips.ParseEndpoint(b.IP)
 	if err != nil {
-		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper IP %q: %w", b.IP, err)
+		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper endpoint %q: %w", b.IP, err)
 	}
-	return Bootstrapper{ID: nodeID, IP: ip}, nil
+	return Bootstrapper{ID: nodeID, Endpoint: endpoint}, nil
 }
 
 // parseProofOfPossession converts a genesis config ProofOfPossession (with hex strings)
@@ -515,25 +525,8 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// Helper to get genesis data or network-specific default
-	getGenesis := func(data string) []byte {
-		if data != "" {
-			return []byte(data)
-		}
-		// Return network-specific genesis message
-		switch config.NetworkID {
-		case constants.MainnetID:
-			return []byte(MainnetChainGenesis)
-		case constants.TestnetID:
-			return []byte(TestnetChainGenesis)
-		case constants.DevnetID:
-			return []byte(DevnetChainGenesis)
-		default:
-			return []byte(LocalChainGenesis)
-		}
-	}
-
-	// Specify all 11 chains
+	// Specify core chains only (P, X, C)
+	// Additional chains (D, Q, A, B, T, Z, G, K) require their VMs to be built
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
@@ -551,56 +544,6 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.DChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.DexVMID,
-			Name:        "D-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.QChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.QuantumVMID,
-			Name:        "Q-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.AChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.AIVMID,
-			Name:        "A-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.BChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.BridgeVMID,
-			Name:        "B-Chain",
-		},
-		{
-			// ThresholdVM expects empty bytes for default config, not JSON
-			GenesisData: []byte(config.TChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.ThresholdVMID,
-			Name:        "T-Chain",
-		},
-		{
-			// ZKVM expects empty bytes for default config, not JSON
-			GenesisData: []byte(config.ZChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.ZKVMID,
-			Name:        "Z-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.GChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.GraphVMID,
-			Name:        "G-Chain",
-		},
-		{
-			GenesisData: getGenesis(config.KChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.KeyVMID,
-			Name:        "K-Chain",
 		},
 	}
 

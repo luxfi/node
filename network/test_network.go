@@ -214,11 +214,14 @@ func NewTestNetwork(
 		registry,
 		log,
 		newNoopListener(),
-		dialer.NewDialer(
+		dialer.NewEndpointDialer(
 			constants.NetworkType,
-			dialer.Config{
-				ThrottleRps:       constants.DefaultOutboundConnectionThrottlingRps,
-				ConnectionTimeout: constants.DefaultOutboundConnectionTimeout,
+			dialer.EndpointDialerConfig{
+				Config: dialer.Config{
+					ThrottleRps:       constants.DefaultOutboundConnectionThrottlingRps,
+					ConnectionTimeout: constants.DefaultOutboundConnectionTimeout,
+				},
+				DNSConfig: dialer.DefaultDNSCacheConfig(),
 			},
 			log,
 		),

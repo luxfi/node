@@ -662,7 +662,10 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		networkRegistry,
 		n.Log,
 		listener,
-		dialer.NewDialer(constants.NetworkType, n.Config.NetworkConfig.DialerConfig, n.Log),
+		dialer.NewEndpointDialer(constants.NetworkType, dialer.EndpointDialerConfig{
+			Config:    n.Config.NetworkConfig.DialerConfig,
+			DNSConfig: dialer.DefaultDNSCacheConfig(),
+		}, n.Log),
 		externalHandler,
 	)
 
@@ -743,13 +746,27 @@ func (n *Node) Dispatch() error {
 
 	// Add state sync nodes to the peer network
 	for i, peerIP := range n.Config.StateSyncIPs {
-		n.Net.ManuallyTrack(n.Config.StateSyncIDs[i], peerIP)
+		n.Net.ManuallyTrack(n.Config.StateSyncIDs[i], ips.NewIPEndpoint(peerIP))
 	}
 
 	// Add bootstrap nodes to the peer network
-	for _, bootstrapper := range n.Config.Bootstrappers {
-		n.Net.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
+	fmt.Println("================================================================================")
+	fmt.Printf("[BOOTSTRAP] Adding %d bootstrap nodes to peer network\n", len(n.Config.Bootstrappers))
+	fmt.Println("================================================================================")
+	n.Log.Info("Adding bootstrap nodes to peer network",
+		"count", len(n.Config.Bootstrappers),
+	)
+	for i, bootstrapper := range n.Config.Bootstrappers {
+		fmt.Printf("[BOOTSTRAP] %d: nodeID=%s endpoint=%s\n", i, bootstrapper.ID.String(), bootstrapper.Endpoint.String())
+		n.Log.Info("ManuallyTrack bootstrap node",
+			"index", i,
+			"nodeID", bootstrapper.ID.String(),
+			"endpoint", bootstrapper.Endpoint.String(),
+		)
+		n.Net.ManuallyTrack(bootstrapper.ID, bootstrapper.Endpoint)
 	}
+	fmt.Println("[BOOTSTRAP] Finished adding bootstrap nodes, starting Dispatch")
+	n.Log.Info("Finished adding bootstrap nodes, starting Dispatch")
 
 	// Start P2P connections
 	retErr := n.Net.Dispatch()
@@ -1072,19 +1089,27 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	}
 	cChainID := createEVMTx.ID()
 
-	createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
-	if err != nil {
-		return err
-	}
-	dChainID := createDexVMTx.ID()
-
 	// If any of these chains die, the node shuts down
+	// D-Chain is only critical in allvms builds (when optionalVMCount > 0)
 	criticalChains := set.Of(
 		constants.PlatformChainID,
 		xChainID,
 		cChainID,
-		dChainID,
 	)
+
+	// D-Chain is only required in allvms builds
+	var dChainID ids.ID
+	if optionalVMCount > 0 {
+		createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
+		if err != nil {
+			return err
+		}
+		dChainID = createDexVMTx.ID()
+		criticalChains.Add(dChainID)
+		n.Log.Info("D-Chain marked as critical (allvms build)", "chainID", dChainID)
+	} else {
+		n.Log.Info("D-Chain not marked as critical (minimal build)")
+	}
 
 	_, err = metric.MakeAndRegister(
 		n.MetricsGatherer,

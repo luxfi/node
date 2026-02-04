@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/container/maybe"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/proto/sync"
 )
 
 func Test_Proof_Empty(t *testing.T) {

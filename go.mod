@@ -118,7 +118,7 @@ require (
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.9.0
+	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
@@ -147,7 +147,6 @@ require (
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.2
 	github.com/luxfi/p2p v1.19.2-zap
-	github.com/luxfi/password v0.0.1
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.0
 	github.com/luxfi/runtime v1.0.1

@@ -5,6 +5,7 @@ package dialer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -16,15 +17,35 @@ import (
 	"github.com/luxfi/node/network/throttling"
 )
 
+var (
+	// ErrRNSNotConfigured is returned when dialing an RNS endpoint without an RNS transport.
+	ErrRNSNotConfigured = errors.New("RNS transport not configured")
+	// ErrRNSDialFailed is returned when the RNS transport fails to establish a link.
+	ErrRNSDialFailed = errors.New("RNS dial failed")
+)
+
 var _ EndpointDialer = (*endpointDialer)(nil)
 
-// EndpointDialer attempts to create a connection with either an IP:port or hostname:port.
+// EndpointDialer attempts to create a connection with IP:port, hostname:port, or RNS destination.
 type EndpointDialer interface {
-	// DialEndpoint dials an endpoint that can be either IP or hostname based.
+	// DialEndpoint dials an endpoint (IP, hostname, or RNS).
 	DialEndpoint(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error)
 
 	// Dial is the legacy IP-only dial method for backward compatibility.
 	Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error)
+}
+
+// RNSTransport provides connectivity over Reticulum Network Stack.
+// Implementations wrap RNS Links as net.Conn interfaces.
+type RNSTransport interface {
+	// Dial establishes a link to an RNS destination and returns it as net.Conn.
+	Dial(ctx context.Context, destination [ips.RNSDestinationLen]byte) (net.Conn, error)
+
+	// Available returns true if RNS transport is ready to use.
+	Available() bool
+
+	// Close shuts down the RNS transport.
+	Close() error
 }
 
 // DNSCacheConfig configures the DNS resolution cache.
@@ -61,15 +82,19 @@ type endpointDialer struct {
 	// DNS resolution cache
 	dnsMu    sync.RWMutex
 	dnsCache map[string]*dnsEntry
+
+	// RNS transport (optional, for mesh/LoRa/offline-first connectivity)
+	rns RNSTransport
 }
 
-// EndpointDialerConfig extends Config with DNS settings.
+// EndpointDialerConfig extends Config with DNS and RNS settings.
 type EndpointDialerConfig struct {
 	Config
-	DNSConfig DNSCacheConfig `json:"dnsConfig"`
+	DNSConfig    DNSCacheConfig `json:"dnsConfig"`
+	RNSTransport RNSTransport   `json:"-"` // Optional RNS transport (not serialized)
 }
 
-// NewEndpointDialer creates a dialer that supports both IP and hostname endpoints.
+// NewEndpointDialer creates a dialer that supports IP, hostname, and RNS endpoints.
 func NewEndpointDialer(network string, config EndpointDialerConfig, logger log.Logger) EndpointDialer {
 	var throttler throttling.DialThrottler
 	if config.ThrottleRps <= 0 {
@@ -83,12 +108,15 @@ func NewEndpointDialer(network string, config EndpointDialerConfig, logger log.L
 		dnsConfig = DefaultDNSCacheConfig()
 	}
 
+	rnsAvailable := config.RNSTransport != nil && config.RNSTransport.Available()
+
 	logger.Debug(
 		"creating endpoint dialer",
 		log.Uint32("throttleRPS", config.ThrottleRps),
 		log.Duration("dialTimeout", config.ConnectionTimeout),
 		log.Duration("dnsTTL", dnsConfig.TTL),
 		log.Int("dnsMaxEntries", dnsConfig.MaxEntries),
+		log.Bool("rnsAvailable", rnsAvailable),
 	)
 
 	return &endpointDialer{
@@ -98,15 +126,49 @@ func NewEndpointDialer(network string, config EndpointDialerConfig, logger log.L
 		throttler: throttler,
 		dnsConfig: dnsConfig,
 		dnsCache:  make(map[string]*dnsEntry),
+		rns:       config.RNSTransport,
 	}
 }
 
-// DialEndpoint dials an endpoint, handling both IP and hostname targets.
+// DialEndpoint dials an endpoint, handling IP, hostname, and RNS targets seamlessly.
 func (d *endpointDialer) DialEndpoint(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
 	if err := d.throttler.Acquire(ctx); err != nil {
 		return nil, err
 	}
 
+	// Handle RNS endpoints via Reticulum transport
+	if endpoint.IsRNS() {
+		return d.dialRNS(ctx, endpoint)
+	}
+
+	// Handle IP and hostname endpoints via TCP
+	return d.dialTCP(ctx, endpoint)
+}
+
+// dialRNS establishes a connection over Reticulum Network Stack.
+func (d *endpointDialer) dialRNS(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
+	if d.rns == nil || !d.rns.Available() {
+		return nil, fmt.Errorf("%w: cannot dial %s", ErrRNSNotConfigured, endpoint)
+	}
+
+	d.log.Debug("dialing RNS endpoint",
+		log.String("destination", endpoint.DestinationHex()),
+	)
+
+	conn, err := d.rns.Dial(ctx, endpoint.Destination)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s: %v", ErrRNSDialFailed, endpoint, err)
+	}
+
+	d.log.Debug("RNS link established",
+		log.String("destination", endpoint.DestinationHex()),
+	)
+
+	return conn, nil
+}
+
+// dialTCP establishes a connection over TCP (IP or hostname).
+func (d *endpointDialer) dialTCP(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
 	var target string
 	if endpoint.IsIP() {
 		target = endpoint.AddrPort.String()
@@ -126,7 +188,7 @@ func (d *endpointDialer) DialEndpoint(ctx context.Context, endpoint ips.Endpoint
 		}
 	}
 
-	d.log.Debug("dialing endpoint",
+	d.log.Debug("dialing TCP endpoint",
 		log.String("original", endpoint.String()),
 		log.String("target", target),
 	)
@@ -219,4 +281,26 @@ func (d *endpointDialer) ClearDNSCache() {
 	d.dnsMu.Lock()
 	d.dnsCache = make(map[string]*dnsEntry)
 	d.dnsMu.Unlock()
+}
+
+// SetRNSTransport sets the RNS transport for mesh connectivity.
+// This can be called after initialization to enable RNS support.
+func (d *endpointDialer) SetRNSTransport(transport RNSTransport) {
+	d.rns = transport
+	if transport != nil && transport.Available() {
+		d.log.Info("RNS transport enabled")
+	}
+}
+
+// RNSAvailable returns true if RNS transport is configured and ready.
+func (d *endpointDialer) RNSAvailable() bool {
+	return d.rns != nil && d.rns.Available()
+}
+
+// Close releases resources held by the dialer.
+func (d *endpointDialer) Close() error {
+	if d.rns != nil {
+		return d.rns.Close()
+	}
+	return nil
 }

@@ -330,7 +330,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []peer.InboundHandler) 
 			if i != j {
 				// Each node tracks all other nodes
 				t.Logf("Network %s tracking peer %s at %s", net.config.MyNodeID, otherConfig.MyNodeID, otherConfig.MyIPPort.Get())
-				net.ManuallyTrack(otherConfig.MyNodeID, otherConfig.MyIPPort.Get())
+				net.ManuallyTrack(otherConfig.MyNodeID, ips.NewIPEndpoint(otherConfig.MyIPPort.Get()))
 			}
 		}
 		// Wait until this node is connected to all other nodes
@@ -402,7 +402,7 @@ func TestIngressConnCount(t *testing.T) {
 	// - Node 2: only makes outgoing → ingress = 0
 	node1IP := networks[1].config.MyIPPort.Get()
 	t.Logf("Network %s tracking peer %s at %s", nodeIDs[2], nodeIDs[1], node1IP)
-	networks[2].ManuallyTrack(nodeIDs[1], node1IP)
+	networks[2].ManuallyTrack(nodeIDs[1], ips.NewIPEndpoint(node1IP))
 	// Wait for connection
 	require.Eventually(func() bool {
 		return len(networks[2].PeerInfo([]ids.NodeID{nodeIDs[1]})) > 0
@@ -631,7 +631,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	for i, net := range networks {
 		if i != 0 {
 			config := configs[0]
-			net.ManuallyTrack(config.MyNodeID, config.MyIPPort.Get())
+			net.ManuallyTrack(config.MyNodeID, ips.NewIPEndpoint(config.MyIPPort.Get()))
 		}
 
 		eg.Go(net.Dispatch)
@@ -778,15 +778,15 @@ func TestDialContext(t *testing.T) {
 		dialedIP, dialedListener           = dialer.NewListener()
 
 		neverDialedTrackedIP = &trackedIP{
-			ip: neverDialedIP,
+			endpoint: ips.NewIPEndpoint(neverDialedIP),
 		}
 		dialedTrackedIP = &trackedIP{
-			ip: dialedIP,
+			endpoint: ips.NewIPEndpoint(dialedIP),
 		}
 	)
 
-	network.ManuallyTrack(neverDialedNodeID, neverDialedIP)
-	network.ManuallyTrack(dialedNodeID, dialedIP)
+	network.ManuallyTrack(neverDialedNodeID, ips.NewIPEndpoint(neverDialedIP))
+	network.ManuallyTrack(dialedNodeID, ips.NewIPEndpoint(dialedIP))
 
 	// Sanity check that when a non-cancelled context is given,
 	// we actually dial the peer.
@@ -872,7 +872,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	for i, net := range networks {
 		if i != 0 {
 			config := configs[0]
-			net.ManuallyTrack(config.MyNodeID, config.MyIPPort.Get())
+			net.ManuallyTrack(config.MyNodeID, ips.NewIPEndpoint(config.MyIPPort.Get()))
 		}
 
 		eg.Go(net.Dispatch)
@@ -931,7 +931,7 @@ func TestGetAllPeers(t *testing.T) {
 	)
 
 	// Connect the non-validator peer to the validator network
-	nonValidatorNetwork.ManuallyTrack(networks[0].config.MyNodeID, networks[0].config.MyIPPort.Get())
+	nonValidatorNetwork.ManuallyTrack(networks[0].config.MyNodeID, ips.NewIPEndpoint(networks[0].config.MyIPPort.Get()))
 	eg.Go(nonValidatorNetwork.Dispatch)
 
 	{

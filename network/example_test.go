@@ -150,7 +150,7 @@ func ExampleNewTestNetwork() {
 		return
 	}
 	for _, bootstrapper := range bootstrappers {
-		network.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
+		network.ManuallyTrack(bootstrapper.ID, bootstrapper.Endpoint)
 	}
 
 	// Typically network.StartClose() should be called based on receiving a

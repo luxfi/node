@@ -9,14 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
+	"github.com/luxfi/net/ips"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,7 +98,7 @@ func TestTwoNodePeerConnection(t *testing.T) {
 
 	// Network 1 tracks network 2
 	t.Logf("Network 1 manually tracking network 2 at %s", configs[1].MyIPPort.Get())
-	network1.ManuallyTrack(nodeIDs[1], configs[1].MyIPPort.Get())
+	network1.ManuallyTrack(nodeIDs[1], ips.NewIPEndpoint(configs[1].MyIPPort.Get()))
 
 	// Check if wants connection
 	require.True(network1.ipTracker.WantsConnection(nodeIDs[1]), "Network 1 should want connection to network 2")

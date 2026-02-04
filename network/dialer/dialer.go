@@ -61,15 +61,32 @@ func NewDialer(network string, dialerConfig Config, logger log.Logger) Dialer {
 }
 
 func (d *dialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error) {
+	d.log.Warn("[DIALER] >>> Dial ENTRY <<<",
+		log.Stringer("ip", ip),
+		log.String("network", d.network),
+	)
 	if err := d.throttler.Acquire(ctx); err != nil {
+		d.log.Warn("[DIALER] throttler.Acquire FAILED",
+			log.Stringer("ip", ip),
+			"error", err,
+		)
 		return nil, err
 	}
-	d.log.Debug("dialing",
+	d.log.Warn("[DIALER] throttler passed, calling net.Dial",
 		log.Stringer("ip", ip),
 	)
 	conn, err := d.dialer.DialContext(ctx, d.network, ip.String())
 	if err != nil {
+		d.log.Warn("[DIALER] DialContext FAILED",
+			log.Stringer("ip", ip),
+			"error", err,
+		)
 		return nil, fmt.Errorf("error while dialing %s: %w", ip, err)
 	}
+	d.log.Warn("[DIALER] DialContext SUCCESS - TCP connection established",
+		log.Stringer("ip", ip),
+		log.String("localAddr", conn.LocalAddr().String()),
+		log.String("remoteAddr", conn.RemoteAddr().String()),
+	)
 	return conn, nil
 }
