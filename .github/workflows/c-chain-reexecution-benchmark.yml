@@ -57,7 +57,7 @@ jobs:
             loki_password: ${{ secrets.LOKI_PASSWORD || '' }}
             runtime: "" # Set runtime input to empty string to disable log collection
         - name: Download Previous Benchmark Result
-          uses: actions/cache@v4
+          uses: actions/cache@v5
           with:
             path: ./cache
             key: ${{ runner.os }}-reexecute-cchain-range-benchmark.json
