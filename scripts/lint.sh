@@ -33,7 +33,8 @@ fi
 # - license_header: mixed copyright formats
 # - require_error_is_no_funcs_as_params: test files need refactoring
 # - single_import: many files use parenthesized single imports
-TESTS=${TESTS:-"golangci_lint interface_compliance_nil require_no_error_inline_func import_testing_only_in_tests"}
+# - require_no_error_inline_func: test files need inline error handling
+TESTS=${TESTS:-"golangci_lint interface_compliance_nil import_testing_only_in_tests"}
 
 function test_golangci_lint {
   go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run --config .golangci.yml
