@@ -300,7 +300,13 @@ func TestLP204_Secp256r1Precompile(t *testing.T) {
 
 				pubKeyBytes := elliptic.Marshal(elliptic.P256(), privKey.PublicKey.X, privKey.PublicKey.Y)
 
-				return privKey, hash[:], append(r.Bytes(), s.Bytes()...), pubKeyBytes
+				// Pad r and s to 32 bytes each to ensure correct parsing
+				rBytes := make([]byte, 32)
+				sBytes := make([]byte, 32)
+				r.FillBytes(rBytes)
+				s.FillBytes(sBytes)
+
+				return privKey, hash[:], append(rBytes, sBytes...), pubKeyBytes
 			},
 			expectedValid: true,
 			expectedGas:   6900, // LP-204 specifies 6900 gas
