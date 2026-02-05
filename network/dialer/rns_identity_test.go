@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -166,10 +167,12 @@ func TestRNSIdentity_SaveLoad(t *testing.T) {
 	err = original.Save(path)
 	require.NoError(t, err)
 
-	// Verify file permissions (unix only)
-	info, err := os.Stat(path)
-	require.NoError(t, err)
-	require.Equal(t, os.FileMode(0600), info.Mode().Perm())
+	// Verify file permissions (unix only - Windows doesn't have Unix-style permissions)
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(path)
+		require.NoError(t, err)
+		require.Equal(t, os.FileMode(0600), info.Mode().Perm())
+	}
 
 	// Load identity
 	loaded, err := LoadRNSIdentity(path)
