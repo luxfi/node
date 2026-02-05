@@ -20,7 +20,8 @@ fuzzDir=${2:-.}
 
 # Add 1 second buffer to avoid context deadline exceeded errors at exact timeout boundary
 # Go's fuzzer can report failures when interrupted at exact deadline
-actualFuzzTime=$((fuzzTime > 2 ? fuzzTime - 1 : fuzzTime))
+# Apply buffer for any fuzz time > 1 second (covers the 2-second case used in CI)
+actualFuzzTime=$((fuzzTime > 1 ? fuzzTime - 1 : fuzzTime))
 
 files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDir")
 failed=false
