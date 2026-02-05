@@ -113,8 +113,8 @@ jobs:
 
       - name: Organize release files
         run: |
+          # shellcheck disable=SC2034
           mkdir -p ./release
-          TAG="v${{ needs.validate-version.outputs.version }}"
 
           # Copy Ubuntu AMD64 packages (.deb)
           if [ -d "./artifacts/jammy" ]; then
@@ -138,7 +138,8 @@ jobs:
           fi
 
           # Copy Windows binaries (if any)
-          find ./artifacts -name "*.exe" -o -name "*win*.zip" | while read file; do
+          # shellcheck disable=SC2162
+          find ./artifacts -name "*.exe" -o -name "*win*.zip" | while read -r file; do
             cp "$file" ./release/ 2>/dev/null || true
           done
 
@@ -148,7 +149,8 @@ jobs:
       - name: Generate checksums
         run: |
           cd ./release
-          sha256sum * > SHA256SUMS
+          # shellcheck disable=SC2035
+          sha256sum -- * > SHA256SUMS
           echo "🔐 Checksums:"
           cat SHA256SUMS
 
@@ -201,15 +203,19 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "## 🎉 Release v${{ needs.validate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | File | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|------|------|" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🎉 Release v${{ needs.validate-version.outputs.version }}"
+            echo ""
+            echo "### 📦 Artifacts"
+            echo ""
+            echo "| Platform | File | Size |"
+            echo "|----------|------|------|"
+          } >> "$GITHUB_STEP_SUMMARY"
 
           cd ./release
-          for file in $(ls -1 | grep -v SHA256SUMS); do
+          for file in *; do
+            [ "$file" = "SHA256SUMS" ] && continue
+            [ ! -f "$file" ] && continue
             SIZE=$(du -h "$file" | cut -f1)
             PLATFORM="Unknown"
 
@@ -220,12 +226,14 @@ jobs:
               *win*.zip|*.exe) PLATFORM="Windows AMD64" ;;
             esac
 
-            echo "| ${PLATFORM} | \`${file}\` | ${SIZE} |" >> $GITHUB_STEP_SUMMARY
+            echo "| ${PLATFORM} | \`${file}\` | ${SIZE} |" >> "$GITHUB_STEP_SUMMARY"
           done
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔐 Verification" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat SHA256SUMS >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "### 🔐 Verification"
+            echo ""
+            echo "\`\`\`"
+            cat SHA256SUMS
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
