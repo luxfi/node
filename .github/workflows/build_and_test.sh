@@ -16,4 +16,4 @@ if [[ -z $(git status -s) ]]; then
     # exit 1
 fi
 "$LUX_PATH"/scripts/build_test.sh
-"$LUX_PATH"/scripts/build_fuzz.sh
+"$LUX_PATH"/scripts/build_fuzz.sh 2
