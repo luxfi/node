@@ -64,6 +64,8 @@ type Server interface {
 	RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM)
 	// Shutdown this server
 	Shutdown() error
+	// SetRootInfoProvider sets the provider for root endpoint information
+	SetRootInfoProvider(provider RootInfoProvider)
 }
 
 type HTTPConfig struct {
@@ -237,6 +239,11 @@ func (s *server) Shutdown() error {
 	// If shutdown times out, make sure the server is still shutdown.
 	_ = s.srv.Close()
 	return err
+}
+
+// SetRootInfoProvider sets the provider for root endpoint information
+func (s *server) SetRootInfoProvider(provider RootInfoProvider) {
+	s.router.SetRootInfoProvider(provider)
 }
 
 type readPathAdder struct {

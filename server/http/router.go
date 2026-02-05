@@ -4,8 +4,10 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 
@@ -23,6 +25,30 @@ var (
 	errAlreadyReserved = errors.New("route is either already aliased or already maps to a handle")
 )
 
+// RootInfo contains information returned at the root endpoint
+type RootInfo struct {
+	NodeID    string `json:"nodeId,omitempty"`
+	NetworkID uint32 `json:"networkId,omitempty"`
+	Version   string `json:"version,omitempty"`
+	Ready     bool   `json:"ready"`
+	Chains    struct {
+		C string `json:"c"`
+		P string `json:"p"`
+		X string `json:"x"`
+	} `json:"chains"`
+	Endpoints struct {
+		RPC       string `json:"rpc"`
+		Websocket string `json:"ws"`
+		Info      string `json:"info"`
+		Health    string `json:"health"`
+	} `json:"endpoints"`
+}
+
+// RootInfoProvider provides node information for the root endpoint
+type RootInfoProvider interface {
+	GetRootInfo() RootInfo
+}
+
 type router struct {
 	lock   sync.RWMutex
 	router *mux.Router
@@ -35,6 +61,9 @@ type router struct {
 	headerRoutes map[string]http.Handler
 	// legacy url-based routing
 	routes map[string]map[string]http.Handler // Maps routes to a handler
+
+	// rootInfoProvider provides node information for GET /
+	rootInfoProvider RootInfoProvider
 }
 
 func newRouter() *router {
@@ -50,6 +79,12 @@ func newRouter() *router {
 func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
+
+	// Handle root "/" specially for EVM compatibility
+	if request.URL.Path == "/" {
+		r.handleRoot(writer, request)
+		return
+	}
 
 	route, ok := request.Header[HTTPHeaderRoute]
 	if !ok {
@@ -73,6 +108,88 @@ func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	handler.ServeHTTP(writer, request)
+}
+
+// handleRoot handles requests to "/" - GET returns node info, POST proxies to C-chain RPC
+func (r *router) handleRoot(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		r.handleRootGET(w, req)
+	case http.MethodPost:
+		r.handleRootPOST(w, req)
+	case http.MethodOptions:
+		// CORS preflight
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "Method not allowed. Use GET for node info or POST for EVM JSON-RPC.", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleRootGET returns node information as JSON
+func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var info RootInfo
+	if r.rootInfoProvider != nil {
+		info = r.rootInfoProvider.GetRootInfo()
+	} else {
+		// Default info when provider not set
+		info = RootInfo{
+			Ready: true,
+			Chains: struct {
+				C string `json:"c"`
+				P string `json:"p"`
+				X string `json:"x"`
+			}{
+				C: "/ext/bc/C/rpc",
+				P: "/ext/bc/P",
+				X: "/ext/bc/X",
+			},
+			Endpoints: struct {
+				RPC       string `json:"rpc"`
+				Websocket string `json:"ws"`
+				Info      string `json:"info"`
+				Health    string `json:"health"`
+			}{
+				RPC:       "/ext/bc/C/rpc",
+				Websocket: "/ext/bc/C/ws",
+				Info:      "/ext/info",
+				Health:    "/ext/health",
+			},
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(info); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
+
+// handleRootPOST proxies JSON-RPC requests to the C-chain
+func (r *router) handleRootPOST(w http.ResponseWriter, req *http.Request) {
+	// Look up the C-chain RPC handler
+	handler, err := r.GetHandler("/ext/bc/C", "/rpc")
+	if err != nil {
+		// Try alternate path formats
+		handler, err = r.GetHandler("/ext/bc/C/rpc", "")
+		if err != nil {
+			// Return proper JSON-RPC error
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"C-chain not available"}}`))
+			return
+		}
+	}
+
+	// Forward the request to the C-chain handler
+	handler.ServeHTTP(w, req)
+}
+
+// SetRootInfoProvider sets the provider for root endpoint information
+func (r *router) SetRootInfoProvider(provider RootInfoProvider) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.rootInfoProvider = provider
 }
 
 func (r *router) GetHandler(base, endpoint string) (http.Handler, error) {

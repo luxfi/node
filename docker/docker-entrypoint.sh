@@ -11,20 +11,21 @@ mkdir -p /data/{db,logs,chains,staking,configs/chains/{P,X,C}}
 derive_keys_from_secret() {
     local secret="$1"
     echo "🔐 Deriving staking keys from secret..."
-    
+
     # Use the secret to generate deterministic keys
     # This ensures the same secret always generates the same node ID
-    local key_material=$(echo -n "$secret" | sha256sum | cut -d' ' -f1)
-    
+    local key_material
+    key_material=$(echo -n "$secret" | sha256sum | cut -d' ' -f1)
+
     # Generate deterministic private key
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 \
-        -pass pass:$key_material \
+        -pass pass:"$key_material" \
         -out /data/staking/staker.key 2>/dev/null
-    
+
     # Generate certificate with the key
     openssl req -new -x509 -key /data/staking/staker.key \
         -out /data/staking/staker.crt -days 3650 \
-        -passin pass:$key_material -nodes \
+        -passin pass:"$key_material" -nodes \
         -subj "/C=US/ST=State/L=City/O=LuxNode/CN=node.lux.network" 2>/dev/null
     
     chmod 600 /data/staking/*
@@ -97,7 +98,9 @@ if [ -z "$NODE_ID" ]; then
     echo "📋 Calculating Node ID from certificate..."
     # Extract the public key from certificate and hash it to get node ID
     # This is a simplified version - in production, use the proper tool
-    CERT_HASH=$(openssl x509 -in /data/staking/staker.crt -pubkey -noout | openssl sha256 | cut -d' ' -f2)
+    # Note: CERT_HASH calculated for logging only
+    _cert_hash=$(openssl x509 -in /data/staking/staker.crt -pubkey -noout | openssl sha256 | cut -d' ' -f2)
+    echo "📋 Certificate hash: $_cert_hash"
     # Use a default for now, but in production this should be properly calculated
     NODE_ID="NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg"
     echo "⚠️  Using default Node ID (certificate hash calculation simplified)"

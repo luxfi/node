@@ -25,7 +25,7 @@ LUXD="$SCRIPT_DIR/../build/luxd"
 
 if [[ ! -x "$LUXD" ]]; then
     echo "Error: luxd not found at $LUXD"
-    echo "Build with: cd $(dirname $SCRIPT_DIR) && go build -o build/luxd ./main"
+    echo "Build with: cd $(dirname "$SCRIPT_DIR") && go build -o build/luxd ./main"
     exit 1
 fi
 
@@ -66,12 +66,12 @@ nohup "$LUXD" --dev \
 
 echo $! > "$PID_FILE"
 
-echo "Started luxd with PID $(cat $PID_FILE)"
+echo "Started luxd with PID $(cat "$PID_FILE")"
 echo ""
 
 # Wait for RPC to be ready
 echo -n "Waiting for RPC..."
-for i in {1..30}; do
+for _ in {1..30}; do
     if curl -s "http://127.0.0.1:$HTTP_PORT/ext/info" >/dev/null 2>&1; then
         echo " ready!"
         break
@@ -89,5 +89,5 @@ echo "  P-Chain RPC:  http://127.0.0.1:$HTTP_PORT/ext/bc/P"
 echo "  Info API:     http://127.0.0.1:$HTTP_PORT/ext/info"
 echo ""
 echo "  Logs:         tail -f $LOG_FILE"
-echo "  Stop:         kill $(cat $PID_FILE)"
+echo "  Stop:         kill $(cat "$PID_FILE")"
 echo "  Clean:        rm -rf $DATA_DIR"

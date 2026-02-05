@@ -5,8 +5,7 @@ on:
     tags:
       - "*"
     branches:
-      - master
-      - dev
+      - main
     paths:
       - "proto/**"
 

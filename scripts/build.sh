@@ -121,6 +121,7 @@ if [ "$upx_compress" = true ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
       upx_flags="$upx_flags --force-macos"
     fi
+    # shellcheck disable=SC2086
     upx $upx_flags "${node_path}"
   else
     echo "Warning: UPX not found, skipping compression"
@@ -131,4 +132,5 @@ fi
 # Show binary size
 echo ""
 echo "Binary: ${node_path}"
+# shellcheck disable=SC2012
 ls -lh "${node_path}" | awk '{print "Size:   " $5}'
