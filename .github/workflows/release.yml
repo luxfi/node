@@ -161,16 +161,20 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
           if [ -n "$PREV_TAG" ]; then
-            echo "## What's Changed" > CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            git log --pretty=format:"- %s (%h)" ${PREV_TAG}..HEAD >> CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ needs.validate-version.outputs.version }}" >> CHANGELOG.md
+            {
+              echo "## What's Changed"
+              echo ""
+              git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD"
+              echo ""
+              echo ""
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ needs.validate-version.outputs.version }}"
+            } > CHANGELOG.md
           else
-            echo "## Initial Release" > CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            echo "First release of Lux Node v${{ needs.validate-version.outputs.version }}" >> CHANGELOG.md
+            {
+              echo "## Initial Release"
+              echo ""
+              echo "First release of Lux Node v${{ needs.validate-version.outputs.version }}"
+            } > CHANGELOG.md
           fi
 
           echo "📝 Changelog:"
