@@ -22,6 +22,11 @@ files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDi
 failed=false
 for file in ${files}
 do
+    # Skip files that have build constraints requiring grpc (these won't build without -tags grpc)
+    if head -5 "$file" | grep -q "//go:build.*grpc"; then
+        echo "Skipping $file (requires grpc build tag)"
+        continue
+    fi
     # Use sed instead of grep -P for macOS compatibility
     funcs=$(sed -n 's/^func \(Fuzz[a-zA-Z0-9_]*\).*/\1/p' "$file")
     for func in ${funcs}
