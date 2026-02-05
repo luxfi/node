@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.1
-	github.com/luxfi/net v0.0.3
+	github.com/luxfi/net v0.0.4
 	github.com/luxfi/p2p v1.19.2-zap
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.0

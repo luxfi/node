@@ -224,6 +224,104 @@ sig, err := client.Sign(unsignedMsg)
 sigs, errs := client.BatchSign(messages)
 ```
 
+## RNS Transport (Reticulum Network Stack)
+
+The node supports RNS as an alternative transport layer alongside TCP/IP, enabling mesh networking, LoRa connectivity, and offline-first validator operation.
+
+**Specification**: [LP-9701](../lps/LPs/lp-9701-reticulum-network-stack.md)
+
+### Endpoint Types
+
+The `net/endpoints` package supports three addressing modes:
+
+```go
+// IP address
+endpoint := endpoints.NewIPEndpoint(netip.MustParseAddrPort("203.0.113.50:9631"))
+
+// Hostname (DNS resolved)
+endpoint, _ := endpoints.NewHostnameEndpoint("validator.example.com", 9631)
+
+// RNS destination (mesh/LoRa)
+endpoint, _ := endpoints.NewRNSEndpointFromHex("rns://a5f72c3d4e5f60718293a4b5c6d7e8f9")
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `net/endpoints/endpoint.go` | Unified endpoint abstraction (IP, hostname, RNS) |
+| `network/dialer/rns_transport.go` | RNS transport implementation |
+| `network/dialer/rns_identity.go` | Classical identity (Ed25519 + X25519) |
+| `network/dialer/rns_identity_pq.go` | Hybrid PQ identity (+ ML-DSA + ML-KEM) |
+| `network/dialer/rns_link.go` | Encrypted link protocol with PQ support |
+| `network/dialer/rns_announce.go` | Destination discovery and announcements |
+
+### Configuration
+
+```yaml
+# ~/.lux/config.yaml
+rns:
+  enabled: true
+  configPath: ~/.lux/reticulum
+  announceInterval: 5m
+  interfaces:
+    - AutoInterface
+    - TCPClientInterface
+  linkTimeout: 30s
+  postQuantum: true        # Enable hybrid PQ mode
+  requirePostQuantum: false # Allow classical-only peers
+```
+
+## Post-Quantum Cryptography (Hybrid Mode)
+
+RNS transport supports hybrid post-quantum cryptography combining classical algorithms with NIST-standardized post-quantum primitives (TLS 1.3-like approach).
+
+### Cryptographic Suite
+
+| Purpose | Classical | Post-Quantum | Security |
+|---------|-----------|--------------|----------|
+| Identity Signing | Ed25519 | ML-DSA-65 | NIST Level 3 |
+| Key Exchange | X25519 | ML-KEM-768 | NIST Level 3 |
+| Session Encryption | AES-256-GCM | - | 256-bit |
+| Key Derivation | HKDF-SHA256 | - | - |
+
+### Forward Secrecy
+
+- **Ephemeral Keys**: Fresh X25519 + ML-KEM keypairs generated per session
+- **Key Destruction**: Ephemeral private keys zeroed after handshake
+- **Hybrid Derivation**: `combined_secret = X25519_shared || ML_KEM_shared`
+- **Defense-in-Depth**: Secure if either algorithm remains unbroken
+
+### Wire Format Sizes
+
+| Component | Classical | Hybrid | Delta |
+|-----------|-----------|--------|-------|
+| Public Identity | 64 bytes | ~3.2 KB | +3.1 KB |
+| Signature | 64 bytes | ~2.5 KB | +2.4 KB |
+| Key Exchange | 64 bytes | ~1.2 KB | +1.1 KB |
+| Handshake Total | ~256 bytes | ~7.5 KB | +7.2 KB |
+
+### Backward Compatibility
+
+- **Capability Exchange**: Handshake advertises PQ support
+- **Graceful Fallback**: Falls back to classical if peer lacks PQ
+- **Mixed Networks**: PQ and classical validators coexist
+- **Policy Enforcement**: `requirePostQuantum: true` rejects classical peers
+
+### Testing PQ Forward Secrecy
+
+```bash
+# Run hybrid PQ tests
+go test -v -run "TestHybrid" ./node/network/dialer/... -count=1
+
+# Key tests:
+# - TestHybridIdentity_SignVerify (ML-DSA-65 signatures)
+# - TestHybridIdentity_Encapsulate_Decapsulate (ML-KEM-768)
+# - TestHybridRNSLink_Handshake (full hybrid handshake)
+# - TestHybridRNSLink_ForwardSecrecy (ephemeral key destruction)
+# - TestHybridToClassical_Fallback (backward compatibility)
+```
+
 ## Common Gotchas
 
 ### 1. P2P Sender Interface
@@ -382,4 +480,4 @@ LUX_PRIVATE_KEY="<funded_key>" \
 
 ---
 
-*Last Updated*: 2026-01-30
+*Last Updated*: 2026-02-04
