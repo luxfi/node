@@ -18,6 +18,10 @@ source "$LUX_PATH"/scripts/constants.sh
 fuzzTime=${1:-1}
 fuzzDir=${2:-.}
 
+# Add 1 second buffer to avoid context deadline exceeded errors at exact timeout boundary
+# Go's fuzzer can report failures when interrupted at exact deadline
+actualFuzzTime=$((fuzzTime > 2 ? fuzzTime - 1 : fuzzTime))
+
 files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDir")
 failed=false
 for file in ${files}
@@ -34,7 +38,7 @@ do
         echo "Fuzzing $func in $file"
         parentDir=$(dirname "$file")
         # If any of the fuzz tests fail, return exit code 1
-        if ! go test -tags test "$parentDir" -run="$func" -fuzz="$func" -fuzztime="${fuzzTime}"s; then
+        if ! go test -tags test "$parentDir" -run="$func" -fuzz="$func" -fuzztime="${actualFuzzTime}"s; then
             failed=true
         fi
     done
