@@ -163,6 +163,8 @@ func (vm *VM) Initialize(
 			ChainID:   constants.PlatformChainID,
 		}
 	}
+	// TODO: use chainRuntime for chain-specific configuration
+	_ = chainRuntime
 
 	// DBManager is handled via init.DB usually, but PlatformVM seems to have complex logic around finding existing chains via dbManagerIntf?
 	// The original code used dbManagerIntf (param 2) to check for existing DBs.

@@ -8,11 +8,8 @@ if ! [[ "$0" =~ scripts/mock.gen.sh ]]; then
 fi
 
 # https://github.com/uber-go/mock
-go install -v go.uber.org/mock/mockgen@v0.4.0
-
-source ./scripts/constants.sh
-
-outputted_files=()
+# Using v0.6.0 which has better module handling and Go 1.25 compatibility
+go install -v go.uber.org/mock/mockgen@v0.6.0
 
 source ./scripts/constants.sh
 

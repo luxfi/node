@@ -403,7 +403,7 @@ func (a *CosmosAdapter) verifyCommit(header *CosmosHeader, commit *TendermintCom
 }
 
 // verifyTendermintSignature verifies a Tendermint vote signature
-func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHeader, round int32, vote *TendermintVote) error {
+func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHeader, round int32, _ *TendermintVote) error {
 	// Build vote message
 	// In production, would use canonical encoding
 	msg := make([]byte, 0, 128)
@@ -413,6 +413,8 @@ func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHea
 	msg = append(msg, header.Hash[:]...)
 
 	// Verify signature based on key type
+	// TODO: implement actual signature verification using msg
+	_ = msg
 	switch validator.PubKeyType {
 	case "ed25519":
 		// Ed25519 verification would go here

@@ -155,7 +155,7 @@ func (s *FHEDecryptionService) Start(ctx context.Context) error {
 		return errors.New("service already running")
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	_, cancel := context.WithCancel(ctx)
 	s.cancel = cancel
 	s.running = true
 

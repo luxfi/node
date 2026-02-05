@@ -913,9 +913,7 @@ func (pv *ProofVerifier) verifySTARKProof(tx *Transaction) error {
 
 	// Deserialize public inputs as field elements
 	publicInputs := make([][]byte, len(tx.Proof.PublicInputs))
-	for i, input := range tx.Proof.PublicInputs {
-		publicInputs[i] = input
-	}
+	copy(publicInputs, tx.Proof.PublicInputs)
 
 	// Perform STARK verification
 	if err := verifySTARKWithFRI(starkProof, publicInputs); err != nil {

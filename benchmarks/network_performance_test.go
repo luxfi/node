@@ -17,6 +17,12 @@ import (
 	"github.com/luxfi/ids"
 )
 
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+// Context key constants
+const gpuModeKey contextKey = "gpu_mode"
+
 // NetworkPerformanceConfig defines configuration for network benchmarks
 type NetworkPerformanceConfig struct {
 	NodeCount       int    // Number of nodes in the network
@@ -386,7 +392,7 @@ func simulateConsensus(chainType string, enableGPU bool) error {
 
 	// Add context value for GPU optimization tracking
 	if enableGPU {
-		ctx = context.WithValue(ctx, "gpu_mode", true)
+		ctx = context.WithValue(ctx, gpuModeKey, true)
 	}
 
 	if enableGPU {
