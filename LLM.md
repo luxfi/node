@@ -8,7 +8,7 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 
 **Key Context:**
 - Fork of Avalanche with Lux-specific enhancements
-- Network ID: 96369 (Lux Mainnet), 96368 (Testnet)
+- Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
 - Go Version: 1.23.9+
 - Database: BadgerDB (primary), PebbleDB support
 
@@ -442,6 +442,48 @@ curl -s -X POST -H "Content-Type: application/json" \
   http://localhost:9640/ext/bc/C/rpc
 # Returns: {"jsonrpc":"2.0","id":1,"result":"0x17870"}
 ```
+
+### 9. Root "/" Endpoint Handler
+**Feature**: The node's root endpoint ("/") provides EVM compatibility and node information.
+
+**Behavior**:
+- **GET /**: Returns JSON node information (nodeId, networkId, version, chains, endpoints)
+- **POST /**: Proxies JSON-RPC requests directly to C-chain `/ext/bc/C/rpc`
+- **OPTIONS /**: Returns CORS preflight headers
+
+**Files Modified**: `server/http/router.go`, `server/http/server.go`
+
+**Types**:
+```go
+type RootInfo struct {
+    NodeID    string `json:"nodeId,omitempty"`
+    NetworkID uint32 `json:"networkId,omitempty"`
+    Version   string `json:"version,omitempty"`
+    Ready     bool   `json:"ready"`
+    Chains    struct { C, P, X string } `json:"chains"`
+    Endpoints struct { RPC, Websocket, Info, Health string } `json:"endpoints"`
+}
+
+type RootInfoProvider interface {
+    GetRootInfo() RootInfo
+}
+```
+
+**Usage**:
+```bash
+# Get node info
+curl http://localhost:9650/
+
+# Send EVM JSON-RPC directly to root (proxied to C-chain)
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+  http://localhost:9650/
+```
+
+**Implementation Notes**:
+- The Server interface exposes `SetRootInfoProvider(provider)` to configure node info
+- When no provider is set, returns default endpoint paths
+- POST errors return proper JSON-RPC error format if C-chain unavailable
 
 ## Benchmark Results (Single Node)
 

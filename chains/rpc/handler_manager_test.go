@@ -10,10 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/server/http"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/vm"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,6 +71,7 @@ func (s *mockServer) Dispatch() error { return nil }
 func (s *mockServer) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) {
 }
 func (s *mockServer) Shutdown() error { return nil }
+func (s *mockServer) SetRootInfoProvider(_ server.RootInfoProvider) {}
 
 func TestHandlerManager_RegisterChainHandlers(t *testing.T) {
 	tests := []struct {
