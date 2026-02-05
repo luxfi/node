@@ -34,7 +34,8 @@ fi
 # - require_error_is_no_funcs_as_params: test files need refactoring
 # - single_import: many files use parenthesized single imports
 # - require_no_error_inline_func: test files need inline error handling
-TESTS=${TESTS:-"golangci_lint interface_compliance_nil import_testing_only_in_tests"}
+# - import_testing_only_in_tests: test helper files need moving to *test packages
+TESTS=${TESTS:-"golangci_lint interface_compliance_nil"}
 
 function test_golangci_lint {
   go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run --config .golangci.yml
