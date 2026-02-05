@@ -8,8 +8,9 @@ if ! [[ "$0" =~ scripts/mock.gen.sh ]]; then
 fi
 
 # https://github.com/uber-go/mock
-# Using v0.6.0 which has better module handling and Go 1.25 compatibility
-go install -v go.uber.org/mock/mockgen@v0.6.0
+# Using go run to execute mockgen within the module context
+# This allows mockgen to resolve local imports correctly
+MOCKGEN="go run go.uber.org/mock/mockgen@v0.6.0"
 
 source ./scripts/constants.sh
 
@@ -23,7 +24,7 @@ do
   package_name="$(basename "$(dirname "$output_path")")"
   echo "Generating ${output_path}..."
   outputted_files+=("${output_path}")
-  mockgen -package="${package_name}" -destination="${output_path}" "${src_import_path}" "${interface_name}"
+  $MOCKGEN -package="${package_name}" -destination="${output_path}" "${src_import_path}" "${interface_name}"
 
 done < "$input"
 
@@ -36,7 +37,7 @@ do
   outputted_files+=("${output_path}")
   echo "Generating ${output_path}..."
 
-  mockgen \
+  $MOCKGEN \
     -source="${source_path}" \
     -destination="${output_path}" \
     -package="${package_name}" \
