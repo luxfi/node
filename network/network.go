@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nets"
@@ -105,7 +105,7 @@ type Network interface {
 
 	// Attempt to connect to this endpoint. The network will never stop attempting to
 	// connect to this ID. The endpoint can be either an IP:port or hostname:port.
-	ManuallyTrack(nodeID ids.NodeID, endpoint ips.Endpoint)
+	ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint)
 
 	// PeerInfo returns information about peers. If [nodeIDs] is empty, returns
 	// info about all peers that have finished the handshake. Otherwise, returns
@@ -725,7 +725,7 @@ func (n *network) Connected(nodeID ids.NodeID) {
 	n.peersLock.Unlock()
 
 	peerIP := peer.IP()
-	newIP := ips.NewClaimedIPPort(
+	newIP := endpoints.NewClaimedIPPort(
 		peer.Cert(),
 		peerIP.AddrPort,
 		peerIP.Timestamp,
@@ -757,7 +757,7 @@ func (n *network) AllowConnection(nodeID ids.NodeID) bool {
 	return areWeAPrimaryNetworkAValidator || n.ipTracker.WantsConnection(nodeID)
 }
 
-func (n *network) Track(claimedIPPorts []*ips.ClaimedIPPort) error {
+func (n *network) Track(claimedIPPorts []*endpoints.ClaimedIPPort) error {
 	_, areWeAPrimaryNetworkAValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
 	for _, ip := range claimedIPPorts {
 		if err := n.track(ip, areWeAPrimaryNetworkAValidator); err != nil {
@@ -812,7 +812,7 @@ func (n *network) Peers(
 	requestAllPeers bool,
 	knownPeers *bloom.ReadFilter,
 	salt []byte,
-) []*ips.ClaimedIPPort {
+) []*endpoints.ClaimedIPPort {
 	_, areWeAPrimaryNetworkValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
 
 	// Only return IPs for nets that we are tracking.
@@ -872,7 +872,7 @@ func (n *network) Dispatch() error {
 			// call this function inside the go-routine, rather than the main
 			// accept loop.
 			remoteAddr := conn.RemoteAddr().String()
-			ip, err := ips.ParseAddrPort(remoteAddr)
+			ip, err := endpoints.ParseAddrPort(remoteAddr)
 			if err != nil {
 				n.peerConfig.Log.Error("failed to parse remote address",
 					"peerIP", remoteAddr,
@@ -921,7 +921,7 @@ func (n *network) Dispatch() error {
 	return errs.Err
 }
 
-func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint ips.Endpoint) {
+func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) {
 	n.peerConfig.Log.Warn("[MANUALLY_TRACK] >>> ENTRY <<<",
 		zap.Stringer("nodeID", nodeID),
 		zap.String("endpoint", endpoint.String()),
@@ -966,7 +966,7 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint ips.Endpoint) {
 	}
 }
 
-func (n *network) track(ip *ips.ClaimedIPPort, trackAllNets bool) error {
+func (n *network) track(ip *endpoints.ClaimedIPPort, trackAllNets bool) error {
 	// To avoid signature verification when the IP isn't needed, we
 	// optimistically filter out IPs. This can result in us not tracking an IP
 	// that we otherwise would have. This case can only happen if the node
@@ -1010,9 +1010,9 @@ func (n *network) track(ip *ips.ClaimedIPPort, trackAllNets bool) error {
 	tracked, isTracked := n.trackedIPs[ip.NodeID]
 	if isTracked {
 		// Stop tracking the old IP and start tracking the new one.
-		tracked = tracked.trackNewEndpoint(ips.NewIPEndpoint(ip.AddrPort))
+		tracked = tracked.trackNewEndpoint(endpoints.NewIPEndpoint(ip.AddrPort))
 	} else {
-		tracked = newTrackedIP(ips.NewIPEndpoint(ip.AddrPort))
+		tracked = newTrackedIP(endpoints.NewIPEndpoint(ip.AddrPort))
 	}
 	n.trackedIPs[ip.NodeID] = tracked
 	n.dial(ip.NodeID, tracked)
@@ -1218,7 +1218,7 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 
 	// The peer that is disconnecting from us finished the handshake
 	if ip, wantsConnection := n.ipTracker.GetIP(nodeID); wantsConnection {
-		tracked := newTrackedIP(ips.NewIPEndpoint(ip.AddrPort))
+		tracked := newTrackedIP(endpoints.NewIPEndpoint(ip.AddrPort))
 		n.trackedIPs[nodeID] = tracked
 		n.dial(nodeID, tracked)
 	}
@@ -1399,7 +1399,7 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 			// nodeID leaves the validator set. This is why we continue the loop
 			// rather than returning even though we will never initiate an
 			// outbound connection with this IP.
-			if !n.config.AllowPrivateIPs && ip.endpoint.IsIP() && !ips.IsPublic(ip.endpoint.AddrPort.Addr()) {
+			if !n.config.AllowPrivateIPs && ip.endpoint.IsIP() && !endpoints.IsPublic(ip.endpoint.AddrPort.Addr()) {
 				n.peerConfig.Log.Warn("[DIAL] SKIPPING PRIVATE IP",
 					zap.Stringer("nodeID", nodeID),
 					zap.String("peerEndpoint", ip.endpoint.String()),

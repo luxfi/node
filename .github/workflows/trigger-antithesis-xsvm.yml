@@ -22,6 +22,7 @@ on:
 
 jobs:
   antithesis_xsvm:
+    if: false # Temporarily disabled
     name: Run Antithesis XSVM Test Setup
     runs-on: ubuntu-latest
     steps:

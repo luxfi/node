@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
@@ -97,13 +97,13 @@ var (
 // Supports both IP addresses and hostnames for the endpoint.
 type Bootstrapper struct {
 	ID       ids.NodeID
-	Endpoint ips.Endpoint
+	Endpoint endpoints.Endpoint
 }
 
 // IP returns the IP address if this is an IP-based endpoint.
 // For hostname endpoints, this returns an invalid AddrPort.
 // Deprecated: Use Endpoint directly for new code.
-func (b Bootstrapper) IP() ips.Endpoint {
+func (b Bootstrapper) IP() endpoints.Endpoint {
 	return b.Endpoint
 }
 
@@ -115,7 +115,7 @@ func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 	if err != nil {
 		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper ID %q: %w", b.ID, err)
 	}
-	endpoint, err := ips.ParseEndpoint(b.IP)
+	endpoint, err := endpoints.ParseEndpoint(b.IP)
 	if err != nil {
 		return Bootstrapper{}, fmt.Errorf("invalid bootstrapper endpoint %q: %w", b.IP, err)
 	}

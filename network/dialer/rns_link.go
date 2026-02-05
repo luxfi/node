@@ -19,7 +19,7 @@ import (
 
 	"github.com/luxfi/crypto/kem"
 	"github.com/luxfi/crypto/mldsa"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
 )
@@ -80,7 +80,7 @@ type RNSLink struct {
 	localHybridIdentity *HybridIdentity
 
 	// Peer information
-	peerDestination [ips.RNSDestinationLen]byte
+	peerDestination [endpoints.RNSDestinationLen]byte
 	peerSigningKey  [32]byte
 	peerExchangeKey [32]byte
 
@@ -146,7 +146,7 @@ func (l *RNSLink) PeerIdentity() *HybridPublicIdentity {
 // Handshake performs the link establishment handshake.
 // If initiator is true, we initiate the handshake (client side).
 // Automatically negotiates hybrid mode if both peers support it.
-func (l *RNSLink) Handshake(initiator bool, peerDestination [ips.RNSDestinationLen]byte) error {
+func (l *RNSLink) Handshake(initiator bool, peerDestination [endpoints.RNSDestinationLen]byte) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -330,7 +330,7 @@ func (l *RNSLink) buildLinkRequest() []byte {
 
 func (l *RNSLink) buildClassicalLinkRequest() []byte {
 	// Format: type(1) + dest(16) + signing_pub(32) + exchange_eph_pub(32) + signature(64)
-	msg := make([]byte, 1+ips.RNSDestinationLen+32+32+64)
+	msg := make([]byte, 1+endpoints.RNSDestinationLen+32+32+64)
 	msg[0] = handshakeLinkRequest
 
 	dest := l.localIdentity.Hash()
@@ -356,7 +356,7 @@ func (l *RNSLink) buildHybridLinkRequest() []byte {
 	mlkemPub := l.localEphemeralMLKEMPub.Bytes()
 
 	// Build classical portion first (81 bytes)
-	classicalLen := 1 + ips.RNSDestinationLen + 32 + 32
+	classicalLen := 1 + endpoints.RNSDestinationLen + 32 + 32
 	msg := make([]byte, classicalLen)
 
 	offset := 0
@@ -364,8 +364,8 @@ func (l *RNSLink) buildHybridLinkRequest() []byte {
 	offset++
 
 	dest := l.localHybridIdentity.Hash()
-	copy(msg[offset:offset+ips.RNSDestinationLen], dest[:])
-	offset += ips.RNSDestinationLen
+	copy(msg[offset:offset+endpoints.RNSDestinationLen], dest[:])
+	offset += endpoints.RNSDestinationLen
 
 	copy(msg[offset:offset+32], l.localHybridIdentity.SigningPublicKey())
 	offset += 32
@@ -395,7 +395,7 @@ func (l *RNSLink) buildHybridLinkRequest() []byte {
 
 // parseLinkRequest parses a link request and extracts peer info.
 func (l *RNSLink) parseLinkRequest(msg []byte) error {
-	if len(msg) < 1+ips.RNSDestinationLen+32+32+64 {
+	if len(msg) < 1+endpoints.RNSDestinationLen+32+32+64 {
 		return ErrLinkHandshakeFailed
 	}
 	if msg[0] != handshakeLinkRequest {
@@ -404,7 +404,7 @@ func (l *RNSLink) parseLinkRequest(msg []byte) error {
 
 	// Check if this is a hybrid request
 	// Hybrid format: classical(145) + mldsa_pub(1952) + mlkem_pub(1184) + mldsa_sig(~3309)
-	minHybridLen := 1 + ips.RNSDestinationLen + 32 + 32 + ed25519SignatureSize + mldsaPublicKeySz + mlkemPublicKeySz + mldsaSignatureSize
+	minHybridLen := 1 + endpoints.RNSDestinationLen + 32 + 32 + ed25519SignatureSize + mldsaPublicKeySz + mlkemPublicKeySz + mldsaSignatureSize
 	if len(msg) >= minHybridLen && l.localHybridIdentity != nil {
 		return l.parseHybridLinkRequest(msg)
 	}
@@ -437,8 +437,8 @@ func (l *RNSLink) parseHybridLinkRequest(msg []byte) error {
 	// mldsa_pub(1952) + mlkem_eph_pub(1184) + mldsa_sig(~3309)
 	offset := 1
 
-	copy(l.peerDestination[:], msg[offset:offset+ips.RNSDestinationLen])
-	offset += ips.RNSDestinationLen
+	copy(l.peerDestination[:], msg[offset:offset+endpoints.RNSDestinationLen])
+	offset += endpoints.RNSDestinationLen
 
 	copy(l.peerSigningKey[:], msg[offset:offset+32])
 	offset += 32
@@ -503,7 +503,7 @@ func (l *RNSLink) buildLinkAccept() []byte {
 }
 
 func (l *RNSLink) buildClassicalLinkAccept() []byte {
-	msg := make([]byte, 1+ips.RNSDestinationLen+32+32+64)
+	msg := make([]byte, 1+endpoints.RNSDestinationLen+32+32+64)
 	msg[0] = handshakeLinkAccept
 
 	dest := l.localIdentity.Hash()
@@ -525,7 +525,7 @@ func (l *RNSLink) buildHybridLinkAccept() []byte {
 	mlkemPub := l.localEphemeralMLKEMPub.Bytes()
 
 	// Build classical portion first
-	classicalLen := 1 + ips.RNSDestinationLen + 32 + 32
+	classicalLen := 1 + endpoints.RNSDestinationLen + 32 + 32
 	msg := make([]byte, classicalLen)
 
 	offset := 0
@@ -533,8 +533,8 @@ func (l *RNSLink) buildHybridLinkAccept() []byte {
 	offset++
 
 	dest := l.localHybridIdentity.Hash()
-	copy(msg[offset:offset+ips.RNSDestinationLen], dest[:])
-	offset += ips.RNSDestinationLen
+	copy(msg[offset:offset+endpoints.RNSDestinationLen], dest[:])
+	offset += endpoints.RNSDestinationLen
 
 	copy(msg[offset:offset+32], l.localHybridIdentity.SigningPublicKey())
 	offset += 32
@@ -562,7 +562,7 @@ func (l *RNSLink) buildHybridLinkAccept() []byte {
 
 // parseLinkAccept parses a link accept message.
 func (l *RNSLink) parseLinkAccept(msg []byte) error {
-	if len(msg) < 1+ips.RNSDestinationLen+32+32+64 {
+	if len(msg) < 1+endpoints.RNSDestinationLen+32+32+64 {
 		return ErrLinkHandshakeFailed
 	}
 	if msg[0] != handshakeLinkAccept {
@@ -571,7 +571,7 @@ func (l *RNSLink) parseLinkAccept(msg []byte) error {
 
 	// Check if this is a hybrid accept
 	// Hybrid format: classical(145) + mldsa_pub(1952) + mlkem_pub(1184) + mldsa_sig(~3309)
-	minHybridLen := 1 + ips.RNSDestinationLen + 32 + 32 + ed25519SignatureSize + mldsaPublicKeySz + mlkemPublicKeySz + mldsaSignatureSize
+	minHybridLen := 1 + endpoints.RNSDestinationLen + 32 + 32 + ed25519SignatureSize + mldsaPublicKeySz + mlkemPublicKeySz + mldsaSignatureSize
 	if len(msg) >= minHybridLen && l.localHybridIdentity != nil {
 		return l.parseHybridLinkAccept(msg)
 	}
@@ -602,7 +602,7 @@ func (l *RNSLink) parseHybridLinkAccept(msg []byte) error {
 	offset := 1
 
 	// Skip destination
-	offset += ips.RNSDestinationLen
+	offset += endpoints.RNSDestinationLen
 
 	copy(l.peerSigningKey[:], msg[offset:offset+32])
 	offset += 32
@@ -696,7 +696,7 @@ func (l *RNSLink) deriveKeys(initiator bool) error {
 
 	// Use HKDF to derive keys
 	// Salt is hash of both destinations (sorted for determinism)
-	var localDest [ips.RNSDestinationLen]byte
+	var localDest [endpoints.RNSDestinationLen]byte
 	if l.localHybridIdentity != nil {
 		localDest = l.localHybridIdentity.Hash()
 	} else {
@@ -1025,7 +1025,7 @@ func (l *RNSLink) Close() error {
 
 // LocalAddr returns the local address.
 func (l *RNSLink) LocalAddr() net.Addr {
-	var dest [ips.RNSDestinationLen]byte
+	var dest [endpoints.RNSDestinationLen]byte
 	if l.localHybridIdentity != nil {
 		dest = l.localHybridIdentity.Hash()
 	} else if l.localIdentity != nil {
@@ -1062,7 +1062,7 @@ func (l *RNSLink) IsEstablished() bool {
 }
 
 // PeerDestination returns the peer's destination hash.
-func (l *RNSLink) PeerDestination() [ips.RNSDestinationLen]byte {
+func (l *RNSLink) PeerDestination() [endpoints.RNSDestinationLen]byte {
 	return l.peerDestination
 }
 

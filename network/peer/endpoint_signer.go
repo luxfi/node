@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/utils"
 )
@@ -26,7 +26,7 @@ var (
 // UnsignedEndpoint is used for a validator to claim an endpoint (IP or hostname).
 // The [Timestamp] ensures peers track the most updated endpoint claim.
 type UnsignedEndpoint struct {
-	Endpoint  ips.Endpoint
+	Endpoint  endpoints.Endpoint
 	Timestamp uint64
 }
 
@@ -126,7 +126,7 @@ func (e *SignedEndpoint) ToSignedIP() *SignedIP {
 // EndpointSigner periodically signs the node's endpoint claim.
 // Supports both IP and hostname endpoints.
 type EndpointSigner struct {
-	endpoint  *utils.Atomic[ips.Endpoint]
+	endpoint  *utils.Atomic[endpoints.Endpoint]
 	tlsSigner crypto.Signer
 	blsSigner bls.Signer
 
@@ -137,7 +137,7 @@ type EndpointSigner struct {
 // NewEndpointSigner returns an EndpointSigner that can sign endpoint claims.
 // If the endpoint is IP-based, it also maintains a legacy IPSigner for compatibility.
 func NewEndpointSigner(
-	endpoint *utils.Atomic[ips.Endpoint],
+	endpoint *utils.Atomic[endpoints.Endpoint],
 	tlsSigner crypto.Signer,
 	blsSigner bls.Signer,
 ) *EndpointSigner {
@@ -181,6 +181,6 @@ func (s *EndpointSigner) SupportsHostname() bool {
 }
 
 // IPEndpointFromAddrPort creates an IP endpoint from netip.AddrPort for convenience.
-func IPEndpointFromAddrPort(addr netip.AddrPort) ips.Endpoint {
-	return ips.NewIPEndpoint(addr)
+func IPEndpointFromAddrPort(addr netip.AddrPort) endpoints.Endpoint {
+	return endpoints.NewIPEndpoint(addr)
 }

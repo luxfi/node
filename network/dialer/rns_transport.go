@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 var (
@@ -146,7 +146,7 @@ func (t *rnsTransport) Start() error {
 }
 
 // Dial establishes a link to an RNS destination.
-func (t *rnsTransport) Dial(ctx context.Context, destination [ips.RNSDestinationLen]byte) (net.Conn, error) {
+func (t *rnsTransport) Dial(ctx context.Context, destination [endpoints.RNSDestinationLen]byte) (net.Conn, error) {
 	if !t.available {
 		return nil, ErrRNSNotConfigured
 	}
@@ -183,7 +183,7 @@ func (t *rnsTransport) Dial(ctx context.Context, destination [ips.RNSDestination
 }
 
 // dialLink creates a new RNS link to the destination.
-func (t *rnsTransport) dialLink(ctx context.Context, destination [ips.RNSDestinationLen]byte) (*rnsConn, error) {
+func (t *rnsTransport) dialLink(ctx context.Context, destination [endpoints.RNSDestinationLen]byte) (*rnsConn, error) {
 	// Look up destination in announce table
 	announce := t.announcer.Lookup(destination)
 	var transportAddr netip.AddrPort
@@ -320,9 +320,9 @@ func (t *rnsTransport) GetDestinationTable() *DestTable {
 }
 
 // Destination returns our local RNS destination.
-func (t *rnsTransport) Destination() [ips.RNSDestinationLen]byte {
+func (t *rnsTransport) Destination() [endpoints.RNSDestinationLen]byte {
 	if t.identity == nil {
-		return [ips.RNSDestinationLen]byte{}
+		return [endpoints.RNSDestinationLen]byte{}
 	}
 	return t.identity.Destination()
 }
@@ -334,7 +334,7 @@ func (t *rnsTransport) Identity() *RNSIdentity {
 
 // rnsConn wraps an RNS Link as a net.Conn.
 type rnsConn struct {
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 	link        *RNSLink
 
 	mu     sync.Mutex
@@ -437,7 +437,7 @@ func (c *rnsConn) SetWriteDeadline(t time.Time) error {
 
 // rnsAddr implements net.Addr for RNS destinations.
 type rnsAddr struct {
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 	local       bool
 }
 
@@ -453,9 +453,9 @@ func (a *rnsAddr) String() string {
 }
 
 // destinationHex returns the destination as a hex string.
-func destinationHex(dest [ips.RNSDestinationLen]byte) string {
+func destinationHex(dest [endpoints.RNSDestinationLen]byte) string {
 	const hexChars = "0123456789abcdef"
-	buf := make([]byte, ips.RNSDestinationLen*2)
+	buf := make([]byte, endpoints.RNSDestinationLen*2)
 	for i, b := range dest {
 		buf[i*2] = hexChars[b>>4]
 		buf[i*2+1] = hexChars[b&0x0f]

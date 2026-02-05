@@ -254,7 +254,7 @@ func TestServiceExportImport(t *testing.T) {
 
 func TestServiceDeleteUser(t *testing.T) {
 	testUser := "testUser"
-	password := "passwTest@fake01ord"
+	password := "passwTest@fake01ordX" // 20+ chars for Fair strength
 	tests := []struct {
 		desc        string
 		setup       func(ks *keystore) error

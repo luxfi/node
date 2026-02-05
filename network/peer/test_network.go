@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 var TestNetwork Network = testNetwork{}
@@ -20,7 +20,7 @@ func (testNetwork) AllowConnection(ids.NodeID) bool {
 	return true
 }
 
-func (testNetwork) Track([]*ips.ClaimedIPPort) error {
+func (testNetwork) Track([]*endpoints.ClaimedIPPort) error {
 	return nil
 }
 
@@ -36,6 +36,6 @@ func (testNetwork) Peers(
 	bool,
 	*bloom.ReadFilter,
 	[]byte,
-) []*ips.ClaimedIPPort {
+) []*endpoints.ClaimedIPPort {
 	return nil
 }

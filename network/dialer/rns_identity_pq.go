@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/crypto/kem"
 	"github.com/luxfi/crypto/mldsa"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // Hybrid identity constants
@@ -66,7 +66,7 @@ type HybridIdentity struct {
 	hybridKEMPublic  kem.PublicKey
 
 	// Cached destination hash
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 }
 
 // HybridPublicIdentity represents the public portion of a hybrid identity.
@@ -81,7 +81,7 @@ type HybridPublicIdentity struct {
 	hybridKEMPublic kem.PublicKey
 
 	// Cached destination hash
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 }
 
 // NewHybridIdentity generates a new random hybrid identity.
@@ -164,7 +164,7 @@ func (id *HybridIdentity) computeDestination() {
 	h.Write(id.edPublicKey)
 	h.Write(id.mldsaPublicKey.Bytes())
 	digest := h.Sum(nil)
-	copy(id.destination[:], digest[:ips.RNSDestinationLen])
+	copy(id.destination[:], digest[:endpoints.RNSDestinationLen])
 }
 
 // IsHybrid returns true, indicating this is a hybrid identity.
@@ -173,12 +173,12 @@ func (id *HybridIdentity) IsHybrid() bool {
 }
 
 // Destination returns the 128-bit destination hash.
-func (id *HybridIdentity) Destination() [ips.RNSDestinationLen]byte {
+func (id *HybridIdentity) Destination() [endpoints.RNSDestinationLen]byte {
 	return id.destination
 }
 
 // Hash returns the identity hash (alias for Destination).
-func (id *HybridIdentity) Hash() [ips.RNSDestinationLen]byte {
+func (id *HybridIdentity) Hash() [endpoints.RNSDestinationLen]byte {
 	return id.destination
 }
 
@@ -472,11 +472,11 @@ func (pub *HybridPublicIdentity) computeDestination() {
 	h.Write(pub.edPublicKey[:])
 	h.Write(pub.mldsaPublicKey.Bytes())
 	digest := h.Sum(nil)
-	copy(pub.destination[:], digest[:ips.RNSDestinationLen])
+	copy(pub.destination[:], digest[:endpoints.RNSDestinationLen])
 }
 
 // Destination returns the 128-bit destination hash.
-func (pub *HybridPublicIdentity) Destination() [ips.RNSDestinationLen]byte {
+func (pub *HybridPublicIdentity) Destination() [endpoints.RNSDestinationLen]byte {
 	return pub.destination
 }
 

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +25,7 @@ func TestRNSTransportDisabled(t *testing.T) {
 	transport := NewRNSTransport(config, log.NewNoOpLogger())
 	require.False(transport.Available())
 
-	dest := [ips.RNSDestinationLen]byte{0x01, 0x02, 0x03}
+	dest := [endpoints.RNSDestinationLen]byte{0x01, 0x02, 0x03}
 	_, err := transport.Dial(context.Background(), dest)
 	require.ErrorIs(err, ErrRNSNotConfigured)
 }
@@ -50,7 +50,7 @@ func TestRNSTransportEnabled(t *testing.T) {
 	// Verify identity was created
 	require.NotNil(transport.identity)
 	dest := transport.Destination()
-	require.NotEqual([ips.RNSDestinationLen]byte{}, dest)
+	require.NotEqual([endpoints.RNSDestinationLen]byte{}, dest)
 
 	// Verify identity was persisted
 	_, err = os.Stat(config.IdentityPath)
@@ -76,7 +76,7 @@ func TestRNSTransportDialUnknownDestination(t *testing.T) {
 	defer transport.Close()
 
 	// Dialing an unknown destination without gateway should fail
-	dest := [ips.RNSDestinationLen]byte{
+	dest := [endpoints.RNSDestinationLen]byte{
 		0xa5, 0xf7, 0x2c, 0x3d, 0x4e, 0x5f, 0x60, 0x71,
 		0x82, 0x93, 0xa4, 0xb5, 0xc6, 0xd7, 0xe8, 0xf9,
 	}
@@ -196,8 +196,8 @@ func TestRNSAnnouncer(t *testing.T) {
 	defer announcer.Stop()
 
 	// Register handler
-	receivedCh := make(chan [ips.RNSDestinationLen]byte, 1)
-	announcer.RegisterHandler(func(dest [ips.RNSDestinationLen]byte, entry *AnnounceEntry) {
+	receivedCh := make(chan [endpoints.RNSDestinationLen]byte, 1)
+	announcer.RegisterHandler(func(dest [endpoints.RNSDestinationLen]byte, entry *AnnounceEntry) {
 		select {
 		case receivedCh <- dest:
 		default:
@@ -224,7 +224,7 @@ func TestRNSAnnouncer(t *testing.T) {
 	require.Equal(entry.Destination, found.Destination)
 
 	// Lookup unknown should fail
-	unknownDest := [ips.RNSDestinationLen]byte{0xff, 0xff, 0xff, 0xff}
+	unknownDest := [endpoints.RNSDestinationLen]byte{0xff, 0xff, 0xff, 0xff}
 	_, err = announcer.LookupEntry(unknownDest)
 	require.ErrorIs(err, ErrDestinationUnknown)
 }
@@ -234,7 +234,7 @@ func TestRNSConnClosed(t *testing.T) {
 
 	// Create a minimal rnsConn for testing close behavior
 	conn := &rnsConn{
-		destination: [ips.RNSDestinationLen]byte{0x01},
+		destination: [endpoints.RNSDestinationLen]byte{0x01},
 		link:        nil, // No link, tests guard conditions
 	}
 
@@ -259,7 +259,7 @@ func TestRNSAddr(t *testing.T) {
 	require.Equal("rns://local", local.String())
 
 	// Remote address
-	dest := [ips.RNSDestinationLen]byte{
+	dest := [endpoints.RNSDestinationLen]byte{
 		0xde, 0xad, 0xbe, 0xef, 0x00, 0x11, 0x22, 0x33,
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 	}
@@ -270,19 +270,19 @@ func TestRNSAddr(t *testing.T) {
 
 func TestDestinationHex(t *testing.T) {
 	tests := []struct {
-		dest [ips.RNSDestinationLen]byte
+		dest [endpoints.RNSDestinationLen]byte
 		want string
 	}{
 		{
-			[ips.RNSDestinationLen]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			[endpoints.RNSDestinationLen]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			"00000000000000000000000000000000",
 		},
 		{
-			[ips.RNSDestinationLen]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+			[endpoints.RNSDestinationLen]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 			"ffffffffffffffffffffffffffffffff",
 		},
 		{
-			[ips.RNSDestinationLen]byte{0xa5, 0xf7, 0x2c, 0x3d, 0x4e, 0x5f, 0x60, 0x71, 0x82, 0x93, 0xa4, 0xb5, 0xc6, 0xd7, 0xe8, 0xf9},
+			[endpoints.RNSDestinationLen]byte{0xa5, 0xf7, 0x2c, 0x3d, 0x4e, 0x5f, 0x60, 0x71, 0x82, 0x93, 0xa4, 0xb5, 0xc6, 0xd7, 0xe8, 0xf9},
 			"a5f72c3d4e5f60718293a4b5c6d7e8f9",
 		},
 	}
@@ -338,8 +338,8 @@ func TestEndpointDialerWithoutRNS(t *testing.T) {
 	require.False(dialer.RNSAvailable())
 
 	// RNS dial should fail
-	dest := [ips.RNSDestinationLen]byte{0x01, 0x02, 0x03}
-	endpoint := ips.NewRNSEndpoint(dest)
+	dest := [endpoints.RNSDestinationLen]byte{0x01, 0x02, 0x03}
+	endpoint := endpoints.NewRNSEndpoint(dest)
 
 	_, err := dialer.DialEndpoint(context.Background(), endpoint)
 	require.ErrorIs(err, ErrRNSNotConfigured)

@@ -112,7 +112,8 @@ func TestChangePassword(t *testing.T) {
 
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword).(*auth)
 
-	password2 := "fejhkefjhefjhefhje" // #nosec G101
+	// Password must be at least 20 chars for Fair strength
+	password2 := "fejhkefjhefjhefhjeXX" // #nosec G101
 	var err error
 
 	err = auth.ChangePassword("", password2)
@@ -127,7 +128,8 @@ func TestChangePassword(t *testing.T) {
 	require.NoError(auth.ChangePassword(testPassword, password2))
 	require.True(auth.password.Check(password2))
 
-	password3 := "ufwhwohwfohawfhwdwd" // #nosec G101
+	// Password must be at least 20 chars for Fair strength
+	password3 := "ufwhwohwfohawfhwdwdX" // #nosec G101
 
 	err = auth.ChangePassword(testPassword, password3)
 	require.ErrorIs(err, errWrongPassword)

@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/utils/bloom"
 )
 
@@ -85,7 +85,7 @@ type trackedNode struct {
 	// including potentially the primary network.
 	trackedNets set.Set[ids.ID]
 	// ip is the most recently known IP of this node.
-	ip *ips.ClaimedIPPort
+	ip *endpoints.ClaimedIPPort
 }
 
 func (n *trackedNode) wantsConnection() bool {
@@ -102,7 +102,7 @@ type connectedNode struct {
 	trackedNets set.Set[ids.ID]
 	// ip this node claimed when connecting. The IP is not necessarily the same
 	// IP as in the tracked map.
-	ip *ips.ClaimedIPPort
+	ip *endpoints.ClaimedIPPort
 }
 
 type gossipableNet struct {
@@ -122,10 +122,10 @@ type gossipableNet struct {
 	// - The node reported that they are syncing this net
 	// - The IP the node connected with is its latest IP
 	gossipableIndices map[ids.NodeID]int
-	gossipableIPs     []*ips.ClaimedIPPort
+	gossipableIPs     []*endpoints.ClaimedIPPort
 }
 
-func (s *gossipableNet) setGossipableIP(ip *ips.ClaimedIPPort) {
+func (s *gossipableNet) setGossipableIP(ip *endpoints.ClaimedIPPort) {
 	if index, ok := s.gossipableIndices[ip.NodeID]; ok {
 		s.gossipableIPs[index] = ip
 		return
@@ -165,9 +165,9 @@ func (s *gossipableNet) getGossipableIPs(
 	exceptIPs *bloom.ReadFilter,
 	salt []byte,
 	maxNumIPs int,
-	ips []*ips.ClaimedIPPort,
+	ips []*endpoints.ClaimedIPPort,
 	nodeIDs set.Set[ids.NodeID],
-) ([]*ips.ClaimedIPPort, set.Set[ids.NodeID]) {
+) ([]*endpoints.ClaimedIPPort, set.Set[ids.NodeID]) {
 	uniform := sampler.NewUniform()
 	uniform.Initialize(uint64(len(s.gossipableIPs)))
 
@@ -271,7 +271,7 @@ func (i *ipTracker) WantsConnection(nodeID ids.NodeID) bool {
 //  1. The provided IP is from a node whose connection is desired.
 //  2. This IP is newer than the most recent IP we know of for the node.
 func (i *ipTracker) ShouldVerifyIP(
-	ip *ips.ClaimedIPPort,
+	ip *endpoints.ClaimedIPPort,
 	trackAllNets bool,
 ) bool {
 	i.lock.RLock()
@@ -299,7 +299,7 @@ func (i *ipTracker) ShouldVerifyIP(
 //
 // If this IP is replacing a gossipable IP, this IP will also be marked as
 // gossipable.
-func (i *ipTracker) AddIP(ip *ips.ClaimedIPPort) bool {
+func (i *ipTracker) AddIP(ip *endpoints.ClaimedIPPort) bool {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -319,7 +319,7 @@ func (i *ipTracker) AddIP(ip *ips.ClaimedIPPort) bool {
 //  1. There is currently an IP for the provided nodeID.
 //  2. The provided IP is from a node whose connection is desired on a tracked
 //     net.
-func (i *ipTracker) GetIP(nodeID ids.NodeID) (*ips.ClaimedIPPort, bool) {
+func (i *ipTracker) GetIP(nodeID ids.NodeID) (*endpoints.ClaimedIPPort, bool) {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 
@@ -332,7 +332,7 @@ func (i *ipTracker) GetIP(nodeID ids.NodeID) (*ips.ClaimedIPPort, bool) {
 
 // Connected is called when a connection is established. The peer should have
 // provided [ip] during the handshake.
-func (i *ipTracker) Connected(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
+func (i *ipTracker) Connected(ip *endpoints.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -347,7 +347,7 @@ func (i *ipTracker) Connected(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]
 	}
 }
 
-func (i *ipTracker) addIP(ip *ips.ClaimedIPPort) (int, *trackedNode) {
+func (i *ipTracker) addIP(ip *endpoints.ClaimedIPPort) (int, *trackedNode) {
 	node, ok := i.tracked[ip.NodeID]
 	if !ok {
 		return untrackedTimestamp, nil
@@ -372,7 +372,7 @@ func (i *ipTracker) addIP(ip *ips.ClaimedIPPort) (int, *trackedNode) {
 	return newerTimestamp, node
 }
 
-func (i *ipTracker) setGossipableIP(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
+func (i *ipTracker) setGossipableIP(ip *endpoints.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
 	for netID := range trackedNets {
 		if net, ok := i.net[netID]; ok && net.gossipableIDs.Contains(ip.NodeID) {
 			net.setGossipableIP(ip)
@@ -523,7 +523,7 @@ func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light ui
 	}
 }
 
-func (i *ipTracker) updateMostRecentTrackedIP(node *trackedNode, ip *ips.ClaimedIPPort) {
+func (i *ipTracker) updateMostRecentTrackedIP(node *trackedNode, ip *endpoints.ClaimedIPPort) {
 	node.ip = ip
 
 	oldCount := i.bloomAdditions[ip.NodeID]
@@ -627,9 +627,9 @@ func getGossipableIPs[T any](
 	exceptIPs *bloom.ReadFilter,
 	salt []byte,
 	maxNumIPs int,
-) []*ips.ClaimedIPPort {
+) []*endpoints.ClaimedIPPort {
 	var (
-		ips     = make([]*ips.ClaimedIPPort, 0, maxNumIPs)
+		ips     = make([]*endpoints.ClaimedIPPort, 0, maxNumIPs)
 		nodeIDs = set.NewSet[ids.NodeID](maxNumIPs)
 	)
 

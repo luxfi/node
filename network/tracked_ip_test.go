@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 var (
-	ip      *ips.ClaimedIPPort
-	otherIP *ips.ClaimedIPPort
+	ip      *endpoints.ClaimedIPPort
+	otherIP *endpoints.ClaimedIPPort
 
 	defaultLoopbackAddrPort = netip.AddrPortFrom(
 		netip.AddrFrom4([4]byte{127, 0, 0, 1}),
@@ -34,7 +34,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		ip = ips.NewClaimedIPPort(
+		ip = endpoints.NewClaimedIPPort(
 			stakingCert,
 			defaultLoopbackAddrPort,
 			1,   // timestamp
@@ -51,7 +51,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		otherIP = ips.NewClaimedIPPort(
+		otherIP = endpoints.NewClaimedIPPort(
 			stakingCert,
 			defaultLoopbackAddrPort,
 			1,   // timestamp

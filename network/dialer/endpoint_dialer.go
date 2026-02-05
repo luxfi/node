@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/network/throttling"
 )
 
@@ -29,7 +29,7 @@ var _ EndpointDialer = (*endpointDialer)(nil)
 // EndpointDialer attempts to create a connection with IP:port, hostname:port, or RNS destination.
 type EndpointDialer interface {
 	// DialEndpoint dials an endpoint (IP, hostname, or RNS).
-	DialEndpoint(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error)
+	DialEndpoint(ctx context.Context, endpoint endpoints.Endpoint) (net.Conn, error)
 
 	// Dial is the legacy IP-only dial method for backward compatibility.
 	Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error)
@@ -39,7 +39,7 @@ type EndpointDialer interface {
 // Implementations wrap RNS Links as net.Conn interfaces.
 type RNSTransport interface {
 	// Dial establishes a link to an RNS destination and returns it as net.Conn.
-	Dial(ctx context.Context, destination [ips.RNSDestinationLen]byte) (net.Conn, error)
+	Dial(ctx context.Context, destination [endpoints.RNSDestinationLen]byte) (net.Conn, error)
 
 	// Available returns true if RNS transport is ready to use.
 	Available() bool
@@ -131,7 +131,7 @@ func NewEndpointDialer(network string, config EndpointDialerConfig, logger log.L
 }
 
 // DialEndpoint dials an endpoint, handling IP, hostname, and RNS targets seamlessly.
-func (d *endpointDialer) DialEndpoint(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
+func (d *endpointDialer) DialEndpoint(ctx context.Context, endpoint endpoints.Endpoint) (net.Conn, error) {
 	if err := d.throttler.Acquire(ctx); err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (d *endpointDialer) DialEndpoint(ctx context.Context, endpoint ips.Endpoint
 }
 
 // dialRNS establishes a connection over Reticulum Network Stack.
-func (d *endpointDialer) dialRNS(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
+func (d *endpointDialer) dialRNS(ctx context.Context, endpoint endpoints.Endpoint) (net.Conn, error) {
 	if d.rns == nil || !d.rns.Available() {
 		return nil, fmt.Errorf("%w: cannot dial %s", ErrRNSNotConfigured, endpoint)
 	}
@@ -168,7 +168,7 @@ func (d *endpointDialer) dialRNS(ctx context.Context, endpoint ips.Endpoint) (ne
 }
 
 // dialTCP establishes a connection over TCP (IP or hostname).
-func (d *endpointDialer) dialTCP(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
+func (d *endpointDialer) dialTCP(ctx context.Context, endpoint endpoints.Endpoint) (net.Conn, error) {
 	var target string
 	if endpoint.IsIP() {
 		target = endpoint.AddrPort.String()
@@ -202,7 +202,7 @@ func (d *endpointDialer) dialTCP(ctx context.Context, endpoint ips.Endpoint) (ne
 
 // Dial implements the legacy IP-only Dialer interface.
 func (d *endpointDialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error) {
-	return d.DialEndpoint(ctx, ips.NewIPEndpoint(ip))
+	return d.DialEndpoint(ctx, endpoints.NewIPEndpoint(ip))
 }
 
 // resolveHostname resolves a hostname to an IP, using cache when possible.

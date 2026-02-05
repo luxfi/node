@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
 	compression "github.com/luxfi/compress"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // FuzzPeerMessageHandling tests peer message handling with random data
@@ -103,7 +103,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 				false,
 			)
 		case 3: // PeerList
-			claimedIPs := []*ips.ClaimedIPPort{
+			claimedIPs := []*endpoints.ClaimedIPPort{
 				{
 					Cert: &staking.Certificate{
 						Raw: []byte{},

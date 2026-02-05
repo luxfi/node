@@ -66,7 +66,7 @@ import (
 	"github.com/luxfi/filesystem/perms"
 	// geth factory not used - EVM is loaded as external plugin
 	"github.com/luxfi/net/dynamicip"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
@@ -453,7 +453,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	listener = throttling.NewThrottledListener(listener, n.Config.NetworkConfig.ThrottlerConfig.MaxInboundConnsPerSec)
 
 	// Record the bound address to enable inclusion in process context file.
-	n.stakingAddress, err = ips.ParseAddrPort(listener.Addr().String())
+	n.stakingAddress, err = endpoints.ParseAddrPort(listener.Addr().String())
 	if err != nil {
 		return err
 	}
@@ -466,7 +466,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	switch {
 	case n.Config.PublicIP != "":
 		// Use the specified public IP.
-		publicAddr, err = ips.ParseAddr(n.Config.PublicIP)
+		publicAddr, err = endpoints.ParseAddr(n.Config.PublicIP)
 		if err != nil {
 			return fmt.Errorf("invalid public IP address %q: %w", n.Config.PublicIP, err)
 		}
@@ -506,7 +506,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		n.ipUpdater = dynamicip.NewNoUpdater()
 	}
 
-	if !ips.IsPublic(publicAddr) {
+	if !endpoints.IsPublic(publicAddr) {
 		n.Log.Warn("P2P IP is private, you will not be publicly discoverable",
 			"ip", publicAddr,
 		)
@@ -746,7 +746,7 @@ func (n *Node) Dispatch() error {
 
 	// Add state sync nodes to the peer network
 	for i, peerIP := range n.Config.StateSyncIPs {
-		n.Net.ManuallyTrack(n.Config.StateSyncIDs[i], ips.NewIPEndpoint(peerIP))
+		n.Net.ManuallyTrack(n.Config.StateSyncIDs[i], endpoints.NewIPEndpoint(peerIP))
 	}
 
 	// Add bootstrap nodes to the peer network
@@ -975,7 +975,7 @@ func (n *Node) initAPIServer() error {
 	// considered public.
 	hostIsPublic := n.Config.HTTPHost == ""
 	if !hostIsPublic {
-		ip, err := ips.Lookup(n.Config.HTTPHost)
+		ip, err := endpoints.Lookup(n.Config.HTTPHost)
 		if err != nil {
 			n.Log.Error("failed to lookup HTTP host",
 				"host", n.Config.HTTPHost,
@@ -983,7 +983,7 @@ func (n *Node) initAPIServer() error {
 			)
 			return err
 		}
-		hostIsPublic = ips.IsPublic(ip)
+		hostIsPublic = endpoints.IsPublic(ip)
 
 		n.Log.Debug("finished HTTP host lookup",
 			"host", n.Config.HTTPHost,
@@ -999,7 +999,7 @@ func (n *Node) initAPIServer() error {
 	}
 
 	addrStr := listener.Addr().String()
-	addrPort, err := ips.ParseAddrPort(addrStr)
+	addrPort, err := endpoints.ParseAddrPort(addrStr)
 	if err != nil {
 		return err
 	}

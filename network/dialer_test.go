@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/network/dialer"
 )
 
@@ -96,7 +96,7 @@ func (d *testDialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, err
 
 // DialEndpoint implements dialer.EndpointDialer for testing.
 // For hostname endpoints, it uses the resolve map to look up the IP.
-func (d *testDialer) DialEndpoint(ctx context.Context, endpoint ips.Endpoint) (net.Conn, error) {
+func (d *testDialer) DialEndpoint(ctx context.Context, endpoint endpoints.Endpoint) (net.Conn, error) {
 	if endpoint.IsIP() {
 		return d.Dial(ctx, endpoint.AddrPort)
 	}

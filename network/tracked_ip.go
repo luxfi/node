@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 func init() {
@@ -21,20 +21,20 @@ type trackedIP struct {
 	delayLock sync.RWMutex
 	delay     time.Duration
 
-	endpoint ips.Endpoint
+	endpoint endpoints.Endpoint
 
 	stopTrackingOnce sync.Once
 	onStopTracking   chan struct{}
 }
 
-func newTrackedIP(endpoint ips.Endpoint) *trackedIP {
+func newTrackedIP(endpoint endpoints.Endpoint) *trackedIP {
 	return &trackedIP{
 		endpoint:       endpoint,
 		onStopTracking: make(chan struct{}),
 	}
 }
 
-func (ip *trackedIP) trackNewEndpoint(newEndpoint ips.Endpoint) *trackedIP {
+func (ip *trackedIP) trackNewEndpoint(newEndpoint endpoints.Endpoint) *trackedIP {
 	ip.stopTracking()
 	return &trackedIP{
 		delay:          ip.getDelay(),

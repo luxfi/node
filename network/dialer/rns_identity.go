@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/crypto/curve25519"
 
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // RNS Identity Constants
@@ -59,7 +59,7 @@ type RNSIdentity struct {
 	xPublicKey  [x25519KeySize]byte
 
 	// Destination hash: truncated SHA-256 of (edPublicKey || xPublicKey)
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 }
 
 // NewRNSIdentity generates a new random RNS identity.
@@ -109,18 +109,18 @@ func (id *RNSIdentity) computeDestination() {
 	h.Write(id.edPublicKey)
 	h.Write(id.xPublicKey[:])
 	digest := h.Sum(nil)
-	copy(id.destination[:], digest[:ips.RNSDestinationLen])
+	copy(id.destination[:], digest[:endpoints.RNSDestinationLen])
 }
 
 // Destination returns the 128-bit destination hash.
 // This uniquely identifies the identity on the Reticulum network.
-func (id *RNSIdentity) Destination() [ips.RNSDestinationLen]byte {
+func (id *RNSIdentity) Destination() [endpoints.RNSDestinationLen]byte {
 	return id.destination
 }
 
 // Hash returns the identity hash (alias for Destination).
 // Used by the RNS link protocol.
-func (id *RNSIdentity) Hash() [ips.RNSDestinationLen]byte {
+func (id *RNSIdentity) Hash() [endpoints.RNSDestinationLen]byte {
 	return id.destination
 }
 
@@ -333,7 +333,7 @@ func LoadOrGenerateIdentity(path string) (*RNSIdentity, error) {
 type PublicIdentity struct {
 	edPublicKey [ed25519PublicKeySize]byte
 	xPublicKey  [x25519KeySize]byte
-	destination [ips.RNSDestinationLen]byte
+	destination [endpoints.RNSDestinationLen]byte
 }
 
 // NewPublicIdentity creates a public identity from Ed25519 and X25519 public keys.
@@ -354,13 +354,13 @@ func NewPublicIdentity(edPublicKey, xPublicKey []byte) (*PublicIdentity, error) 
 	h.Write(pi.edPublicKey[:])
 	h.Write(pi.xPublicKey[:])
 	digest := h.Sum(nil)
-	copy(pi.destination[:], digest[:ips.RNSDestinationLen])
+	copy(pi.destination[:], digest[:endpoints.RNSDestinationLen])
 
 	return pi, nil
 }
 
 // Destination returns the 128-bit destination hash.
-func (pi *PublicIdentity) Destination() [ips.RNSDestinationLen]byte {
+func (pi *PublicIdentity) Destination() [endpoints.RNSDestinationLen]byte {
 	return pi.destination
 }
 
@@ -410,8 +410,8 @@ func isZero(b []byte) bool {
 
 // DestinationFromPublicKeys computes the destination hash from public keys.
 // This is useful for computing destinations without creating full identity objects.
-func DestinationFromPublicKeys(edPublicKey, xPublicKey []byte) ([ips.RNSDestinationLen]byte, error) {
-	var dest [ips.RNSDestinationLen]byte
+func DestinationFromPublicKeys(edPublicKey, xPublicKey []byte) ([endpoints.RNSDestinationLen]byte, error) {
+	var dest [endpoints.RNSDestinationLen]byte
 
 	if len(edPublicKey) != ed25519PublicKeySize {
 		return dest, fmt.Errorf("%w: Ed25519 public key must be %d bytes", ErrInvalidIdentity, ed25519PublicKeySize)
@@ -424,7 +424,7 @@ func DestinationFromPublicKeys(edPublicKey, xPublicKey []byte) ([ips.RNSDestinat
 	h.Write(edPublicKey)
 	h.Write(xPublicKey)
 	digest := h.Sum(nil)
-	copy(dest[:], digest[:ips.RNSDestinationLen])
+	copy(dest[:], digest[:endpoints.RNSDestinationLen])
 
 	return dest, nil
 }

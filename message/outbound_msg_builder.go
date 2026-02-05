@@ -9,7 +9,7 @@ import (
 
 	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/proto/p2p"
 )
 
@@ -45,7 +45,7 @@ type OutboundMsgBuilder interface {
 	) (OutboundMessage, error)
 
 	PeerList(
-		peers []*ips.ClaimedIPPort,
+		peers []*endpoints.ClaimedIPPort,
 		bypassThrottling bool,
 	) (OutboundMessage, error)
 
@@ -316,7 +316,7 @@ func (b *outMsgBuilder) GetPeerList(
 	)
 }
 
-func (b *outMsgBuilder) PeerList(peers []*ips.ClaimedIPPort, bypassThrottling bool) (OutboundMessage, error) {
+func (b *outMsgBuilder) PeerList(peers []*endpoints.ClaimedIPPort, bypassThrottling bool) (OutboundMessage, error) {
 	claimIPPorts := make([]*p2p.ClaimedIpPort, len(peers))
 	for i, p := range peers {
 		claimIPPorts[i] = &p2p.ClaimedIpPort{

@@ -16,7 +16,7 @@ import (
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"github.com/huin/goupnp/dcps/internetgateway2"
 
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 const (
@@ -121,7 +121,7 @@ func (r *upnpRouter) ExternalIP() (netip.Addr, error) {
 	if err != nil {
 		return netip.Addr{}, err
 	}
-	return ips.ParseAddr(str)
+	return endpoints.ParseAddr(str)
 }
 
 func (r *upnpRouter) MapPort(

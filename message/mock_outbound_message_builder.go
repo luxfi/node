@@ -18,7 +18,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	p2p "github.com/luxfi/node/proto/p2p"
-	ips "github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // MockOutboundMsgBuilder is a mock of OutboundMsgBuilder interface.
@@ -300,7 +300,7 @@ func (mr *MockOutboundMsgBuilderMockRecorder) Handshake(arg0, arg1, arg2, arg3, 
 }
 
 // PeerList mocks base method.
-func (m *MockOutboundMsgBuilder) PeerList(arg0 []*ips.ClaimedIPPort, arg1 bool) (OutboundMessage, error) {
+func (m *MockOutboundMsgBuilder) PeerList(arg0 []*endpoints.ClaimedIPPort, arg1 bool) (OutboundMessage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PeerList", arg0, arg1)
 	ret0, _ := ret[0].(OutboundMessage)

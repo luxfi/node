@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // Network defines the interface that is used by a peer to help establish a well
@@ -22,7 +22,7 @@ type Network interface {
 
 	// Track allows the peer to notify the network of potential new peers to
 	// connect to.
-	Track(ips []*ips.ClaimedIPPort) error
+	Track(ips []*endpoints.ClaimedIPPort) error
 
 	// Disconnected is called when the peer finishes shutting down. It is not
 	// guaranteed that [Connected] was called for the provided peer. However, it
@@ -40,5 +40,5 @@ type Network interface {
 		requestAllPeers bool,
 		knownPeers *bloom.ReadFilter,
 		peerSalt []byte,
-	) []*ips.ClaimedIPPort
+	) []*endpoints.ClaimedIPPort
 }

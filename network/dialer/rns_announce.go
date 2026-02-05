@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // Wire format constants for RNS announcements.
 // Format: [16 dest][32 ed25519][32 x25519][2 applen][appdata][64 sig][1 hops][8 timestamp]
 const (
-	AnnounceDestLen      = ips.RNSDestinationLen // 16 bytes
+	AnnounceDestLen      = endpoints.RNSDestinationLen // 16 bytes
 	AnnounceEd25519Len   = 32
 	AnnounceX25519Len    = 32
 	AnnounceAppDataLenSz = 2
@@ -628,8 +628,8 @@ func (a *Announcer) Stop() {
 type RNSAnnouncer struct {
 	*Announcer
 	mu          sync.RWMutex
-	table       map[[ips.RNSDestinationLen]byte]*AnnounceEntry
-	handlers    []func(dest [ips.RNSDestinationLen]byte, entry *AnnounceEntry)
+	table       map[[endpoints.RNSDestinationLen]byte]*AnnounceEntry
+	handlers    []func(dest [endpoints.RNSDestinationLen]byte, entry *AnnounceEntry)
 	gatewayAddr string
 	listener    net.Listener
 }
@@ -666,7 +666,7 @@ func NewRNSAnnouncer(identity *RNSIdentity, config RNSAnnouncerConfig, loggers .
 
 	return &RNSAnnouncer{
 		Announcer:   a,
-		table:       make(map[[ips.RNSDestinationLen]byte]*AnnounceEntry),
+		table:       make(map[[endpoints.RNSDestinationLen]byte]*AnnounceEntry),
 		gatewayAddr: config.GatewayAddr,
 	}
 }
@@ -725,7 +725,7 @@ func (a *RNSAnnouncer) ProcessAnnouncement(packet []byte, transportAddr netip.Ad
 
 	a.mu.Lock()
 	a.table[ann.Destination] = entry
-	handlers := make([]func(dest [ips.RNSDestinationLen]byte, entry *AnnounceEntry), len(a.handlers))
+	handlers := make([]func(dest [endpoints.RNSDestinationLen]byte, entry *AnnounceEntry), len(a.handlers))
 	copy(handlers, a.handlers)
 	a.mu.Unlock()
 
@@ -740,7 +740,7 @@ func (a *RNSAnnouncer) ProcessAnnouncement(packet []byte, transportAddr netip.Ad
 // RegisterHandler adds a handler (legacy interface for rns_transport.go).
 func (a *RNSAnnouncer) RegisterHandler(handler interface{}) {
 	switch h := handler.(type) {
-	case func(dest [ips.RNSDestinationLen]byte, entry *AnnounceEntry):
+	case func(dest [endpoints.RNSDestinationLen]byte, entry *AnnounceEntry):
 		a.mu.Lock()
 		a.handlers = append(a.handlers, h)
 		a.mu.Unlock()
@@ -751,12 +751,12 @@ func (a *RNSAnnouncer) RegisterHandler(handler interface{}) {
 
 // Lookup returns the underlying Announce for a destination (for rns_transport.go).
 // Returns nil if destination is unknown.
-func (a *RNSAnnouncer) Lookup(dest [ips.RNSDestinationLen]byte) *Announce {
+func (a *RNSAnnouncer) Lookup(dest [endpoints.RNSDestinationLen]byte) *Announce {
 	return a.destTable.Get(dest)
 }
 
 // LookupEntry returns the entry for a destination with error handling.
-func (a *RNSAnnouncer) LookupEntry(dest [ips.RNSDestinationLen]byte) (*AnnounceEntry, error) {
+func (a *RNSAnnouncer) LookupEntry(dest [endpoints.RNSDestinationLen]byte) (*AnnounceEntry, error) {
 	a.mu.RLock()
 	entry, ok := a.table[dest]
 	a.mu.RUnlock()
@@ -789,11 +789,11 @@ func (a *RNSAnnouncer) AddEntry(entry *AnnounceEntry) {
 }
 
 // GetTable returns a copy of the destination table (for rns_transport.go).
-func (a *RNSAnnouncer) GetTable() map[[ips.RNSDestinationLen]byte]*AnnounceEntry {
+func (a *RNSAnnouncer) GetTable() map[[endpoints.RNSDestinationLen]byte]*AnnounceEntry {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	result := make(map[[ips.RNSDestinationLen]byte]*AnnounceEntry, len(a.table))
+	result := make(map[[endpoints.RNSDestinationLen]byte]*AnnounceEntry, len(a.table))
 	for k, v := range a.table {
 		entryCopy := *v
 		result[k] = &entryCopy
@@ -810,7 +810,7 @@ func (a *RNSAnnouncer) Size() int {
 
 // AnnounceEntry contains information about a known destination.
 type AnnounceEntry struct {
-	Destination   [ips.RNSDestinationLen]byte
+	Destination   [endpoints.RNSDestinationLen]byte
 	SigningKey    ed25519.PublicKey
 	ExchangeKey   [32]byte
 	TransportAddr netip.AddrPort

@@ -17,7 +17,7 @@ import (
 	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/p2p"
-	ips "github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -301,7 +301,7 @@ func (mr *OutboundMsgBuilderMockRecorder) Handshake(networkID, myTime, ip, clien
 }
 
 // PeerList mocks base method.
-func (m *OutboundMsgBuilder) PeerList(peers []*ips.ClaimedIPPort, bypassThrottling bool) (message.OutboundMessage, error) {
+func (m *OutboundMsgBuilder) PeerList(peers []*endpoints.ClaimedIPPort, bypassThrottling bool) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PeerList", peers, bypassThrottling)
 	ret0, _ := ret[0].(message.OutboundMessage)

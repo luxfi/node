@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 func TestNewRNSIdentity(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNewRNSIdentity(t *testing.T) {
 
 	// Destination should be non-zero
 	dest := id.Destination()
-	require.Len(t, dest, ips.RNSDestinationLen)
+	require.Len(t, dest, endpoints.RNSDestinationLen)
 	require.False(t, isZero(dest[:]))
 }
 
@@ -306,7 +306,7 @@ func TestRNSIdentity_Close(t *testing.T) {
 
 func TestRNSIdentity_UniqueDestinations(t *testing.T) {
 	// Generate multiple identities and verify unique destinations
-	destinations := make(map[[ips.RNSDestinationLen]byte]bool)
+	destinations := make(map[[endpoints.RNSDestinationLen]byte]bool)
 
 	for i := 0; i < 100; i++ {
 		id, err := NewRNSIdentity()

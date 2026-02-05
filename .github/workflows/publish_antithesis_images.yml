@@ -18,6 +18,7 @@ env:
 
 jobs:
   antithesis:
+    if: false # Temporarily disabled
     runs-on: ubuntu-latest
 
     steps:

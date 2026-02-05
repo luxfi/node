@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
@@ -27,8 +27,8 @@ func newTestIPTracker(t *testing.T) *ipTracker {
 	return tracker
 }
 
-func newerTestIP(ip *ips.ClaimedIPPort) *ips.ClaimedIPPort {
-	return ips.NewClaimedIPPort(
+func newerTestIP(ip *endpoints.ClaimedIPPort) *endpoints.ClaimedIPPort {
+	return endpoints.NewClaimedIPPort(
 		ip.Cert,
 		ip.AddrPort,
 		ip.Timestamp+1,
@@ -230,7 +230,7 @@ func TestIPTracker_ManuallyGossip(t *testing.T) {
 					gossipableIndices: map[ids.NodeID]int{
 						ip.NodeID: 0,
 					},
-					gossipableIPs: []*ips.ClaimedIPPort{
+					gossipableIPs: []*endpoints.ClaimedIPPort{
 						ip,
 					},
 				}
@@ -333,7 +333,7 @@ func TestIPTracker_ShouldVerifyIP(t *testing.T) {
 	tests := []struct {
 		name                       string
 		tracker                    func(t *testing.T) *ipTracker
-		ip                         *ips.ClaimedIPPort
+		ip                         *endpoints.ClaimedIPPort
 		expectedTrackAllNets       bool
 		expectedTrackRequestedNets bool
 	}{
@@ -420,7 +420,7 @@ func TestIPTracker_AddIP(t *testing.T) {
 	tests := []struct {
 		name                      string
 		initialState              func(t *testing.T) *ipTracker
-		ip                        *ips.ClaimedIPPort
+		ip                        *endpoints.ClaimedIPPort
 		expectedChange            func(*ipTracker)
 		expectedUpdatedAndDesired bool
 	}{
@@ -590,7 +590,7 @@ func TestIPTracker_Connected(t *testing.T) {
 	tests := []struct {
 		name           string
 		initialState   func(t *testing.T) *ipTracker
-		ip             *ips.ClaimedIPPort
+		ip             *endpoints.ClaimedIPPort
 		expectedChange func(*ipTracker)
 	}{
 		{
@@ -623,7 +623,7 @@ func TestIPTracker_Connected(t *testing.T) {
 
 				net := tracker.net[constants.PrimaryNetworkID]
 				net.gossipableIndices[ip.NodeID] = 0
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					ip,
 				}
 			},
@@ -663,7 +663,7 @@ func TestIPTracker_Connected(t *testing.T) {
 
 				net := tracker.net[constants.PrimaryNetworkID]
 				net.gossipableIndices[newerIP.NodeID] = 0
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					newerIP,
 				}
 			},
@@ -704,7 +704,7 @@ func TestIPTracker_Connected(t *testing.T) {
 
 				net := tracker.net[constants.PrimaryNetworkID]
 				net.gossipableIndices[newerIP.NodeID] = 0
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					newerIP,
 				}
 			},
@@ -745,7 +745,7 @@ func TestIPTracker_Connected(t *testing.T) {
 
 				net := tracker.net[constants.PrimaryNetworkID]
 				net.gossipableIndices[ip.NodeID] = 0
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					ip,
 				}
 			},
@@ -832,7 +832,7 @@ func TestIPTracker_Disconnected(t *testing.T) {
 				net.gossipableIndices = map[ids.NodeID]int{
 					otherIP.NodeID: 0,
 				}
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					otherIP,
 				}
 			},
@@ -922,7 +922,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 					gossipableIndices: map[ids.NodeID]int{
 						ip.NodeID: 0,
 					},
-					gossipableIPs: []*ips.ClaimedIPPort{
+					gossipableIPs: []*endpoints.ClaimedIPPort{
 						ip,
 					},
 				}
@@ -949,7 +949,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 					gossipableIndices: map[ids.NodeID]int{
 						ip.NodeID: 0,
 					},
-					gossipableIPs: []*ips.ClaimedIPPort{
+					gossipableIPs: []*endpoints.ClaimedIPPort{
 						newerIP,
 					},
 				}
@@ -1005,7 +1005,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 					gossipableIndices: map[ids.NodeID]int{
 						ip.NodeID: 0,
 					},
-					gossipableIPs: []*ips.ClaimedIPPort{
+					gossipableIPs: []*endpoints.ClaimedIPPort{
 						ip,
 					},
 				}
@@ -1163,7 +1163,7 @@ func TestIPTracker_OnValidatorRemoved(t *testing.T) {
 				net.gossipableIndices = map[ids.NodeID]int{
 					otherIP.NodeID: 0,
 				}
-				net.gossipableIPs = []*ips.ClaimedIPPort{
+				net.gossipableIPs = []*endpoints.ClaimedIPPort{
 					otherIP,
 				}
 			},
@@ -1284,7 +1284,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 		nodeID    ids.NodeID
 		filter    *bloom.ReadFilter
 		salt      []byte
-		expected  []*ips.ClaimedIPPort
+		expected  []*endpoints.ClaimedIPPort
 	}{
 		{
 			name:      "fetch both nets IPs",
@@ -1293,7 +1293,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{ip, otherIP},
+			expected:  []*endpoints.ClaimedIPPort{ip, otherIP},
 		},
 		{
 			name:      "filter nodeID",
@@ -1302,7 +1302,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ip.NodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{otherIP},
+			expected:  []*endpoints.ClaimedIPPort{otherIP},
 		},
 		{
 			name:      "filter duplicate nodeIDs",
@@ -1311,7 +1311,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{otherIP},
+			expected:  []*endpoints.ClaimedIPPort{otherIP},
 		},
 		{
 			name:      "filter known IPs",
@@ -1328,7 +1328,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 				return readFilter
 			}(),
 			salt:     nil,
-			expected: []*ips.ClaimedIPPort{otherIP},
+			expected: []*endpoints.ClaimedIPPort{otherIP},
 		},
 		{
 			name:      "filter everything",
@@ -1346,7 +1346,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{ip},
+			expected:  []*endpoints.ClaimedIPPort{ip},
 		},
 		{
 			name:      "only fetch net IPs",
@@ -1355,7 +1355,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{otherIP},
+			expected:  []*endpoints.ClaimedIPPort{otherIP},
 		},
 		{
 			name:      "filter net",
@@ -1364,7 +1364,7 @@ func TestIPTracker_GetGossipableIPs(t *testing.T) {
 			nodeID:    ids.EmptyNodeID,
 			filter:    bloom.EmptyFilter,
 			salt:      nil,
-			expected:  []*ips.ClaimedIPPort{ip},
+			expected:  []*endpoints.ClaimedIPPort{ip},
 		},
 		{
 			name:      "skip unknown net",

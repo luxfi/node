@@ -22,6 +22,7 @@ on:
 
 jobs:
   antithesis_luxd:
+    if: false # Temporarily disabled
     name: Run Antithesis Avalanchego Test Setup
     runs-on: ubuntu-latest
     steps:

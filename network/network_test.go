@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/utils"
 	"github.com/luxfi/node/utils/bloom"
 	compression "github.com/luxfi/compress"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/warp"
 )
 
@@ -330,7 +330,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []peer.InboundHandler) 
 			if i != j {
 				// Each node tracks all other nodes
 				t.Logf("Network %s tracking peer %s at %s", net.config.MyNodeID, otherConfig.MyNodeID, otherConfig.MyIPPort.Get())
-				net.ManuallyTrack(otherConfig.MyNodeID, ips.NewIPEndpoint(otherConfig.MyIPPort.Get()))
+				net.ManuallyTrack(otherConfig.MyNodeID, endpoints.NewIPEndpoint(otherConfig.MyIPPort.Get()))
 			}
 		}
 		// Wait until this node is connected to all other nodes
@@ -402,7 +402,7 @@ func TestIngressConnCount(t *testing.T) {
 	// - Node 2: only makes outgoing → ingress = 0
 	node1IP := networks[1].config.MyIPPort.Get()
 	t.Logf("Network %s tracking peer %s at %s", nodeIDs[2], nodeIDs[1], node1IP)
-	networks[2].ManuallyTrack(nodeIDs[1], ips.NewIPEndpoint(node1IP))
+	networks[2].ManuallyTrack(nodeIDs[1], endpoints.NewIPEndpoint(node1IP))
 	// Wait for connection
 	require.Eventually(func() bool {
 		return len(networks[2].PeerInfo([]ids.NodeID{nodeIDs[1]})) > 0
@@ -563,8 +563,8 @@ func TestTrackVerifiesSignatures(t *testing.T) {
 	stakingCert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
 	require.NoError(err)
 
-	err = network.Track([]*ips.ClaimedIPPort{
-		ips.NewClaimedIPPort(
+	err = network.Track([]*endpoints.ClaimedIPPort{
+		endpoints.NewClaimedIPPort(
 			stakingCert,
 			netip.AddrPortFrom(
 				netip.AddrFrom4([4]byte{123, 132, 123, 123}),
@@ -631,7 +631,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	for i, net := range networks {
 		if i != 0 {
 			config := configs[0]
-			net.ManuallyTrack(config.MyNodeID, ips.NewIPEndpoint(config.MyIPPort.Get()))
+			net.ManuallyTrack(config.MyNodeID, endpoints.NewIPEndpoint(config.MyIPPort.Get()))
 		}
 
 		eg.Go(net.Dispatch)
@@ -721,8 +721,8 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			stakingCert, err := staking.ParseCertificate(config.TLSConfig.Certificates[0].Leaf.Raw)
 			require.NoError(err)
 
-			require.NoError(net.Track([]*ips.ClaimedIPPort{
-				ips.NewClaimedIPPort(
+			require.NoError(net.Track([]*endpoints.ClaimedIPPort{
+				endpoints.NewClaimedIPPort(
 					stakingCert,
 					ip.AddrPort,
 					ip.Timestamp,
@@ -778,15 +778,15 @@ func TestDialContext(t *testing.T) {
 		dialedIP, dialedListener           = dialer.NewListener()
 
 		neverDialedTrackedIP = &trackedIP{
-			endpoint: ips.NewIPEndpoint(neverDialedIP),
+			endpoint: endpoints.NewIPEndpoint(neverDialedIP),
 		}
 		dialedTrackedIP = &trackedIP{
-			endpoint: ips.NewIPEndpoint(dialedIP),
+			endpoint: endpoints.NewIPEndpoint(dialedIP),
 		}
 	)
 
-	network.ManuallyTrack(neverDialedNodeID, ips.NewIPEndpoint(neverDialedIP))
-	network.ManuallyTrack(dialedNodeID, ips.NewIPEndpoint(dialedIP))
+	network.ManuallyTrack(neverDialedNodeID, endpoints.NewIPEndpoint(neverDialedIP))
+	network.ManuallyTrack(dialedNodeID, endpoints.NewIPEndpoint(dialedIP))
 
 	// Sanity check that when a non-cancelled context is given,
 	// we actually dial the peer.
@@ -872,7 +872,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	for i, net := range networks {
 		if i != 0 {
 			config := configs[0]
-			net.ManuallyTrack(config.MyNodeID, ips.NewIPEndpoint(config.MyIPPort.Get()))
+			net.ManuallyTrack(config.MyNodeID, endpoints.NewIPEndpoint(config.MyIPPort.Get()))
 		}
 
 		eg.Go(net.Dispatch)
@@ -931,13 +931,13 @@ func TestGetAllPeers(t *testing.T) {
 	)
 
 	// Connect the non-validator peer to the validator network
-	nonValidatorNetwork.ManuallyTrack(networks[0].config.MyNodeID, ips.NewIPEndpoint(networks[0].config.MyIPPort.Get()))
+	nonValidatorNetwork.ManuallyTrack(networks[0].config.MyNodeID, endpoints.NewIPEndpoint(networks[0].config.MyIPPort.Get()))
 	eg.Go(nonValidatorNetwork.Dispatch)
 
 	{
 		// The non-validator peer should be able to get all the peers in the network
 		// Wait for IP gossip to propagate
-		var peersListFromNonVdr []*ips.ClaimedIPPort
+		var peersListFromNonVdr []*endpoints.ClaimedIPPort
 		require.Eventually(func() bool {
 			peersListFromNonVdr = networks[0].Peers(nonVdrNodeIDs[0], nil, true, bloom.EmptyFilter, []byte{})
 			return len(peersListFromNonVdr) >= len(nodeIDs)-1
@@ -955,7 +955,7 @@ func TestGetAllPeers(t *testing.T) {
 	{
 		// A validator peer should be able to get all the peers in the network
 		// Wait for IP gossip to propagate
-		var peersListFromVdr []*ips.ClaimedIPPort
+		var peersListFromVdr []*endpoints.ClaimedIPPort
 		require.Eventually(func() bool {
 			peersListFromVdr = networks[0].Peers(nodeIDs[1], nil, true, bloom.EmptyFilter, []byte{})
 			return len(peersListFromVdr) >= len(nodeIDs)-2

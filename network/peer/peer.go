@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/codec/wrappers"
 )
@@ -280,7 +280,7 @@ func (p *peer) AwaitReady(ctx context.Context) error {
 func (p *peer) Info() Info {
 	primaryUptime := p.ObservedUptime()
 
-	ip, _ := ips.ParseAddrPort(p.conn.RemoteAddr().String())
+	ip, _ := endpoints.ParseAddrPort(p.conn.RemoteAddr().String())
 	return Info{
 		IP:             ip,
 		PublicIP:       p.ip.AddrPort,
@@ -983,7 +983,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		}
 	}
 
-	addr, ok := ips.AddrFromSlice(msg.IpAddr)
+	addr, ok := endpoints.AddrFromSlice(msg.IpAddr)
 	if !ok {
 		p.Log.Debug(malformedMessageLog,
 			log.Stringer("nodeID", p.id),
@@ -1157,7 +1157,7 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 		close(p.onFinishHandshake)
 	}
 
-	discoveredIPs := make([]*ips.ClaimedIPPort, len(msg.ClaimedIpPorts)) // the peers this peer told us about
+	discoveredIPs := make([]*endpoints.ClaimedIPPort, len(msg.ClaimedIpPorts)) // the peers this peer told us about
 	for i, claimedIPPort := range msg.ClaimedIpPorts {
 		tlsCert, err := staking.ParseCertificate(claimedIPPort.X509Certificate)
 		if err != nil {
@@ -1171,7 +1171,7 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 			return
 		}
 
-		addr, ok := ips.AddrFromSlice(claimedIPPort.IpAddr)
+		addr, ok := endpoints.AddrFromSlice(claimedIPPort.IpAddr)
 		if !ok {
 			p.Log.Debug(malformedMessageLog,
 				log.Stringer("nodeID", p.id),
@@ -1195,7 +1195,7 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 			return
 		}
 
-		discoveredIPs[i] = ips.NewClaimedIPPort(
+		discoveredIPs[i] = endpoints.NewClaimedIPPort(
 			tlsCert,
 			netip.AddrPortFrom(
 				addr,

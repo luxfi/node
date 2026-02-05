@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 )
 
 // TestIPTracker_MaxTrackedIPsLimit verifies that the IP tracker enforces
@@ -37,7 +37,7 @@ func TestIPTracker_MaxTrackedIPsLimit(t *testing.T) {
 		tracker.ManuallyTrack(nodeID)
 
 		// Give each node an IP so eviction can work properly
-		ip := &ips.ClaimedIPPort{
+		ip := &endpoints.ClaimedIPPort{
 			Timestamp: uint64(1000 + i),
 			NodeID:    nodeID,
 		}
@@ -72,7 +72,7 @@ func TestIPTracker_BloomFilterSizeLimit(t *testing.T) {
 		tracker.ManuallyTrack(nodeID)
 
 		// Add IP for each node
-		ip := &ips.ClaimedIPPort{
+		ip := &endpoints.ClaimedIPPort{
 			Cert:      nil,
 			Timestamp: uint64(time.Now().Unix()),
 			NodeID:    nodeID,
@@ -112,7 +112,7 @@ func TestIPTracker_EvictsOldestFirst(t *testing.T) {
 	oldestNodeID := ids.GenerateTestNodeID()
 	tracker.ManuallyTrack(oldestNodeID)
 
-	oldestIP := &ips.ClaimedIPPort{
+	oldestIP := &endpoints.ClaimedIPPort{
 		Cert:      nil,
 		Timestamp: 1000, // Old timestamp
 		NodeID:    oldestNodeID,
@@ -126,7 +126,7 @@ func TestIPTracker_EvictsOldestFirst(t *testing.T) {
 		nodeID := ids.GenerateTestNodeID()
 		tracker.ManuallyTrack(nodeID)
 
-		ip := &ips.ClaimedIPPort{
+		ip := &endpoints.ClaimedIPPort{
 			Cert:      nil,
 			Timestamp: uint64(2000 + i), // Newer timestamps
 			NodeID:    nodeID,

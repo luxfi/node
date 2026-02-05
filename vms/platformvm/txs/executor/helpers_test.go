@@ -67,6 +67,49 @@ type mutableSharedMemory struct {
 	atomic.SharedMemory
 }
 
+// testValidatorState implements validators.State for tests.
+// All chains return the same primary network ID (ids.Empty).
+type testValidatorState struct{}
+
+func (s *testValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
+}
+
+func (s *testValidatorState) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
+}
+
+func (s *testValidatorState) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (s *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (s *testValidatorState) GetChainID(netID ids.ID) (ids.ID, error) {
+	return netID, nil
+}
+
+func (s *testValidatorState) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	// All chains belong to the primary network
+	return ids.Empty, nil
+}
+
+func (s *testValidatorState) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	return map[ids.ID]map[uint64]*validators.WarpSet{}, nil
+}
+
+func (s *testValidatorState) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: map[ids.NodeID]*validators.WarpValidator{},
+	}, nil
+}
+
+// Verify testValidatorState implements validators.State
+var _ validators.State = (*testValidatorState)(nil)
+
 type environment struct {
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Internal
@@ -105,12 +148,13 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 
 	logger := log.NoLog{}
 	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
-		XChainID:  ids.GenerateTestID(), // Set a test X-Chain ID
-		CChainID:  ids.GenerateTestID(), // Set a test C-Chain ID
-		XAssetID:  xAssetID,
-		Log:       logger,
+		NetworkID:      constants.UnitTestID,
+		ChainID:        constants.PlatformChainID,
+		XChainID:       ids.GenerateTestID(), // Set a test X-Chain ID
+		CChainID:       ids.GenerateTestID(), // Set a test C-Chain ID
+		XAssetID:       xAssetID,
+		Log:            logger,
+		ValidatorState: &testValidatorState{},
 	}
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{

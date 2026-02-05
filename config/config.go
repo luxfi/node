@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/timer"
 	"github.com/luxfi/node/trace"
 	compression "github.com/luxfi/compress"
-	"github.com/luxfi/net/ips"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/filesystem/storage"
@@ -559,7 +559,7 @@ func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
 		if ip == "" {
 			continue
 		}
-		addr, err := ips.ParseAddrPort(ip)
+		addr, err := endpoints.ParseAddrPort(ip)
 		if err != nil {
 			return node.StateSyncConfig{}, fmt.Errorf("couldn't parse state sync ip %s: %w", ip, err)
 		}
@@ -622,7 +622,7 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 			continue
 		}
 		// ParseEndpoint supports both IP:port and hostname:port
-		endpoint, err := ips.ParseEndpoint(endpointStr)
+		endpoint, err := endpoints.ParseEndpoint(endpointStr)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap endpoint %s: %w", endpointStr, err)
 		}
