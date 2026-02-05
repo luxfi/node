@@ -1278,21 +1278,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	require.Equal(genesisID, lastAccepted)
 }
 
-// Test that after bootstrapping a node to an oracle block, the preference of
-// the child block is correctly initialized by the engine.
-// TODO: This test needs to be completely rewritten to use updated consensus APIs
-// Currently disabled due to major API changes in consensus package
-func TestBootstrapPartiallyAccepted(t *testing.T) {
-	t.Skip("Test disabled: requires complete rewrite for new consensus APIs")
-	// Original test code removed due to deprecated APIs:
-	// - router.ChainRouter no longer exists
-	// - timeout.Manager.Dispatch()/Stop() methods removed
-	// - sendertest.External has changed
-	// - bootstrap.Config API completely changed
-	// - handler.New API changed
-	// This test needs a complete rewrite using the new consensus package APIs
-}
-
 func TestUnverifiedParent(t *testing.T) {
 	require := require.New(t)
 

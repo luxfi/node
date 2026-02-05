@@ -29,24 +29,25 @@ func TestNewMetrics(t *testing.T) {
 	metrics.inflight.Dec()
 }
 
-func TestMetricsRegistrationFailure(t *testing.T) {
-	// Skip: The external github.com/luxfi/metric package does not return errors
-	// on duplicate registration with AsCollector. The test was based on incorrect
-	// assumptions about the metric package behavior.
-	t.Skip("metric.Registry.Register() does not fail on duplicate AsCollector registration")
-
-	// Test that duplicate registration fails
-	reg := metric.NewRegistry()
+// TestMetricsMultipleRegistrations verifies that metrics can be created
+// on separate registries without conflict.
+func TestMetricsMultipleRegistrations(t *testing.T) {
+	reg1 := metric.NewRegistry()
+	reg2 := metric.NewRegistry()
 
 	// First registration should succeed
-	metrics1, err := newMetrics(reg)
+	metrics1, err := newMetrics(reg1)
 	require.NoError(t, err)
 	require.NotNil(t, metrics1)
 
-	// Second registration should fail due to duplicate metrics
-	metrics2, err := newMetrics(reg)
-	require.Error(t, err, "second registration should fail due to duplicate metrics")
-	require.Nil(t, metrics2)
+	// Second registration on different registry should also succeed
+	metrics2, err := newMetrics(reg2)
+	require.NoError(t, err)
+	require.NotNil(t, metrics2)
+
+	// Both should be usable
+	metrics1.requests.WithLabelValues("GET", "/test").Inc()
+	metrics2.requests.WithLabelValues("POST", "/test").Inc()
 }
 
 func TestMetricsOperations(t *testing.T) {

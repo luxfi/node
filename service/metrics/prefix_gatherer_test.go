@@ -10,62 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPrefixGatherer_Gather(t *testing.T) {
-	// Skip: metric.Registry.Gather() returns empty slice for AsCollector-wrapped
-	// metrics. This is a limitation of the external github.com/luxfi/metric package.
-	// Registration works correctly, but Gather doesn't collect from AsCollector wrappers.
-	t.Skip("metric.Registry.Gather() does not work with AsCollector-wrapped metrics")
-
-	require := require.New(t)
-
-	gatherer := NewPrefixGatherer()
-	require.NotNil(gatherer)
-
-	registerA := metric.NewRegistry()
-	require.NoError(gatherer.Register("a", registerA))
-	{
-		counterA := metric.NewCounter(counterOpts)
-		collector := metric.AsCollector(counterA)
-		require.NotNil(collector)
-		require.NoError(registerA.Register(collector))
-	}
-
-	registerB := metric.NewRegistry()
-	require.NoError(gatherer.Register("b", registerB))
-	{
-		counterB := metric.NewCounter(counterOpts)
-		counterB.Inc()
-		collector := metric.AsCollector(counterB)
-		require.NotNil(collector)
-		require.NoError(registerB.Register(collector))
-	}
-
-	metrics, err := gatherer.Gather()
-	require.NoError(err)
-
-	require.Equal(
-		[]*metric.MetricFamily{
-			{
-				Name: "a_counter",
-				Help: counterOpts.Help,
-				Type: metric.MetricTypeCounter,
-				Metrics: []metric.Metric{
-					{Value: metric.MetricValue{Value: 0}},
-				},
-			},
-			{
-				Name: "b_counter",
-				Help: counterOpts.Help,
-				Type: metric.MetricTypeCounter,
-				Metrics: []metric.Metric{
-					{Value: metric.MetricValue{Value: 1}},
-				},
-			},
-		},
-		metrics,
-	)
-}
-
 func TestPrefixGatherer_Register(t *testing.T) {
 	firstPrefix := "first"
 	firstPrefixedGatherer := &prefixedGatherer{
