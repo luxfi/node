@@ -29,7 +29,7 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 # Install build dependencies (ca-certificates needed for go mod download)
 # libc6-dev-arm64-cross needed for cross-compiling to ARM64
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libc6-dev make git ca-certificates \
+    gcc libc6-dev make git ca-certificates wget \
     gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu \
     libc6-dev-arm64-cross libc6-dev-amd64-cross \
     && rm -rf /var/lib/apt/lists/*
@@ -74,6 +74,16 @@ RUN . ./build_env.sh && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
+# Create plugins directory and download EVM plugin
+ARG EVM_VERSION=v0.8.35
+ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+RUN mkdir -p /luxd/build/plugins && \
+    ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    if [ "$ARCH" = "arm64" ]; then PLUGIN_ARCH="darwin-arm64"; else PLUGIN_ARCH="linux-amd64"; fi && \
+    wget -q "https://github.com/luxfi/evm/releases/download/${EVM_VERSION}/evm-plugin-${PLUGIN_ARCH}" \
+        -O /luxd/build/plugins/${EVM_VM_ID} && \
+    chmod +x /luxd/build/plugins/${EVM_VM_ID}
+
 # Create this directory in the builder to avoid requiring anything to be executed in the
 # potentially emulated execution container.
 RUN mkdir -p /luxd/build
@@ -89,5 +99,8 @@ WORKDIR /luxd/build
 
 # Copy the executables into the container
 COPY --from=builder /build/build/ .
+
+# Create plugins directory (required by luxd even if empty)
+RUN mkdir -p /luxd/build/plugins
 
 CMD [ "./luxd" ]
