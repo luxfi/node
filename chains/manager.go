@@ -1032,16 +1032,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		// Use LocalParams for small validator sets (e.g., 5 validators)
-		// This sets K=5, Beta=4 which allows consensus to finalize with available validators
-		localParams := consensusconfig.LocalParams()
+		// Use SingleValidatorParams for faster block finalization
+		// This sets K=1, Beta=1 which allows a single vote to finalize blocks
+		// TODO: Restore LocalParams once vote aggregation is fixed
+		localParams := consensusconfig.SingleValidatorParams()
 		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{
-			ChainID:   chainParams.ID,
-			NetworkID: networkID,
-			Logger:    m.Log,
-			Gossiper:  &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID},
-			VM:        blockBuilder,
-			Params:    &localParams,
+			ChainID:    chainParams.ID,
+			NetworkID:  networkID,
+			NodeID:     m.NodeID,
+			Validators: m.Validators, // CRITICAL: Pass validator sampler for k-peer polling
+			Logger:     m.Log,
+			Gossiper:   &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID},
+			VM:         blockBuilder,
+			Params:     &localParams,
 		})
 
 		// Start the consensus engine

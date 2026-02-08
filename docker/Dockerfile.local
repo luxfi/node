@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 RUN apk add --no-cache git make gcc musl-dev linux-headers bash
 
@@ -12,28 +12,23 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build luxd
-RUN ./scripts/build.sh
-
-# Copy the binary with the correct name
-RUN cp ./build/node ./build/luxd
+# Build luxd with pure Go (no CGO)
+RUN CGO_ENABLED=0 ./scripts/build.sh -- -tags purego
 
 # Runtime stage
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates curl bash
 
-# Copy the binary
-COPY --from=builder /build/build/luxd /usr/local/bin/luxd
+# Create directories expected by k8s StatefulSet
+RUN mkdir -p /luxd/build/plugins /var/lib/lux /data
+
+# Copy the binary to expected location
+COPY --from=builder /build/build/luxd /luxd/build/luxd
 
 # Create lux user
-RUN adduser -D -h /var/lib/lux lux
-
-# Create directories
-RUN mkdir -p /var/lib/lux && chown -R lux:lux /var/lib/lux
-
-USER lux
+RUN adduser -D -h /var/lib/lux lux && chown -R lux:lux /var/lib/lux /luxd /data
 
 EXPOSE 9650 9651
 
-ENTRYPOINT ["/usr/local/bin/luxd"]
+ENTRYPOINT ["/luxd/build/luxd"]

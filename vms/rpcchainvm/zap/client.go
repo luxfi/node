@@ -106,6 +106,11 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return ErrInvalidResponse
 	}
 
+	// Check if this is an error response from the server
+	if respType&zapwire.MsgResponseFlag != 0 {
+		return fmt.Errorf("zap initialize: vm error: %s", string(respData))
+	}
+
 	resp := &zapwire.InitializeResponse{}
 	if err := resp.Decode(zapwire.NewReader(respData)); err != nil {
 		return fmt.Errorf("zap decode initialize response: %w", err)

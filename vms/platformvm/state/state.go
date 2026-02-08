@@ -2141,14 +2141,14 @@ func (s *state) initValidatorSets() error {
 		"currentStakersChains", len(s.currentStakers.validators),
 	)
 
+	// Always populate validators - don't skip even if already populated.
+	// The validators manager may have entries without BLS keys if pre-populated
+	// by the network layer. We need to ensure validators have proper BLS keys
+	// for Warp messaging and consensus.
 	if s.validators.NumNets() != 0 {
-		// The validators manager may already be populated by the network layer
-		// with genesis validators (for the samplePeers fix). In this case, we
-		// skip re-adding them here and just verify the state is consistent.
-		log.Warn("initValidatorSets: validator set already populated by network layer, skipping population",
+		log.Info("initValidatorSets: validator manager not empty, will update with BLS keys",
 			"numNets", s.validators.NumNets(),
 		)
-		return nil
 	}
 
 	// Load active LP-77 validators
