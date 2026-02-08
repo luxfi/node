@@ -10,6 +10,7 @@ import (
 	"net"
 
 	zapwire "github.com/luxfi/api/zap"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/log"
 	"github.com/luxfi/vm"
 )
@@ -89,6 +90,8 @@ func (s *Server) handle(ctx context.Context, msgType zapwire.MessageType, payloa
 		return s.handleBatchedParseBlock(ctx, payload)
 	case zapwire.MsgGetAncestors:
 		return s.handleGetAncestors(ctx, payload)
+	case zapwire.MsgWaitForEvent:
+		return s.handleWaitForEvent(ctx)
 	default:
 		return 0, nil, fmt.Errorf("unknown message type: %d", msgType)
 	}
@@ -359,6 +362,33 @@ func (s *Server) handleGetAncestors(ctx context.Context, payload []byte) (zapwir
 	resp.Encode(buf)
 
 	return zapwire.MsgGetAncestors, buf.Bytes(), nil
+}
+
+func (s *Server) handleWaitForEvent(ctx context.Context) (zapwire.MessageType, []byte, error) {
+	// Type-assert VM to check if it supports WaitForEvent
+	type waitForEventer interface {
+		WaitForEvent(ctx context.Context) (block.Message, error)
+	}
+
+	wfe, ok := s.vm.(waitForEventer)
+	if !ok {
+		return 0, nil, fmt.Errorf("VM does not implement WaitForEvent")
+	}
+
+	msg, err := wfe.WaitForEvent(ctx)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	resp := &zapwire.WaitForEventResponse{
+		Message: uint8(msg.Type),
+	}
+
+	buf := zapwire.GetBuffer()
+	defer zapwire.PutBuffer(buf)
+	resp.Encode(buf)
+
+	return zapwire.MsgWaitForEvent, buf.Bytes(), nil
 }
 
 func errorToZAP(err error) zapwire.Error {
