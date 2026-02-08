@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luxfi/database/badgerdb"
+	"github.com/luxfi/database/zapdb"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/service/metrics"
 	"github.com/stretchr/testify/require"
@@ -30,7 +30,7 @@ func TestDatabaseWithMetricsCreation(t *testing.T) {
 	require.NotNil(gatherer, "Gatherer should not be nil")
 
 	db, err := New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		false,
 		nil,

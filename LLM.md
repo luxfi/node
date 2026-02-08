@@ -485,6 +485,40 @@ curl -X POST -H "Content-Type: application/json" \
 - When no provider is set, returns default endpoint paths
 - POST errors return proper JSON-RPC error format if C-chain unavailable
 
+### 10. BLS Key Not Loaded into Validators Manager
+**Problem**: Health check shows "validator doesn't have a BLS key" despite BLS keys being correctly configured in genesis.
+
+**Cause**: The `initValidatorSets()` function in `/vms/platformvm/state/state.go` was skipping validator population when `NumNets() != 0`. This happened because:
+1. Network layer might pre-populate validators (without BLS keys) before state initialization
+2. When `initValidatorSets()` runs, it sees validators exist and skips adding them with proper BLS keys
+3. The health check queries `n.vdrs.GetValidator()` which returns validator with nil PublicKey
+
+**Solution**: Modified `initValidatorSets()` to always add validators (not skip when `NumNets() != 0`). The `AddStaker` method replaces existing entries, so validators get updated with proper BLS keys.
+
+**File Modified**: `vms/platformvm/state/state.go` (line ~2144)
+
+**Before**:
+```go
+if s.validators.NumNets() != 0 {
+    // skip re-adding them here
+    return nil
+}
+```
+
+**After**:
+```go
+if s.validators.NumNets() != 0 {
+    log.Info("initValidatorSets: validator manager not empty, will update with BLS keys")
+}
+// Continue to add validators with proper BLS keys
+```
+
+**Verification**:
+```bash
+curl -s http://localhost:9650/ext/health | jq '.checks.bls'
+# Should show: "message": "node has the correct BLS key"
+```
+
 ## Benchmark Results (Single Node)
 
 Testing conducted on a single Lux validator node (testnet mode, macOS):

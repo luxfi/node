@@ -107,7 +107,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
-	fs.String(GenesisDBTypeKey, "badgerdb", "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}")
+	fs.String(GenesisDBTypeKey, "zapdb", "Database type to use for genesis database. Must be one of {pebbledb, zapdb}")
 	fs.Uint64(GenesisBlockLimitKey, 0, "Limit number of blocks to replay during genesis (0 = all blocks)")
 	fs.Bool(AllowCustomGenesisKey, true, "Allow custom genesis for mainnet/testnet (default: true for development, set false for production)")
 
@@ -146,7 +146,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
 	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
 	// Database
-	fs.String(DBTypeKey, "badgerdb", "Default database type to use for all chains. Must be one of {badgerdb, pebbledb, memdb}")
+	fs.String(DBTypeKey, "zapdb", "Default database type to use for all chains. Must be one of {zapdb, pebbledb, memdb}")
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))

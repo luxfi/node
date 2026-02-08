@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luxfi/database/badgerdb"
+	"github.com/luxfi/database/zapdb"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/service/metrics"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ func TestDatabaseFactoryCreation(t *testing.T) {
 	logger := log.NoLog{}
 
 	db, err := New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		false,
 		nil,
@@ -72,7 +72,7 @@ func TestDatabaseFactoryReadOnly(t *testing.T) {
 
 	// Create a database first (read-write)
 	db, err := New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		false,
 		nil,
@@ -91,7 +91,7 @@ func TestDatabaseFactoryReadOnly(t *testing.T) {
 	gathererReadOnly := metrics.NewMultiGatherer()
 
 	dbReadOnly, err := New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		true, // readOnly
 		nil,
@@ -130,7 +130,7 @@ func TestDatabaseFactoryNodePattern(t *testing.T) {
 
 	// Create database using the exact pattern from node.initDatabase()
 	db, err := New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		false,
 		nil,

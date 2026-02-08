@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/vm"
 	"github.com/luxfi/vm/chains/atomic"
 
-	// "github.com/luxfi/database/badgerdb" // Unused
+	// "github.com/luxfi/database/zapdb" // Unused
 	dbmanager "github.com/luxfi/database/manager"
 	"github.com/luxfi/runtime"
 
@@ -440,7 +440,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		return nil, err
 	}
 
-	// Initialize chain database manager using single global BadgerDB with prefix isolation
+	// Initialize chain database manager using single global ZapDB with prefix isolation
 	// All chains share one database - G-Chain (dgraph) can index the entire database for GraphQL queries
 	chainDBManager := NewChainDBManager(ChainDBManagerConfig{
 		DB:  config.DB,
@@ -1237,7 +1237,7 @@ func (m *manager) createDAG(
 	}
 
 	// Get VM database from chain database manager
-	// In isolated mode, each chain gets its own BadgerDB
+	// In isolated mode, each chain gets its own ZapDB
 	// In legacy mode, uses prefixdb on shared database
 	vmDB, err := m.chainDBManager.GetVMDatabase(chainParams.ID, chainAlias)
 	if err != nil {

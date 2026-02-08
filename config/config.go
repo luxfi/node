@@ -991,7 +991,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 
 		// Auto-detect database type based on path if not specified
 		if genesisDBType == "" {
-			genesisDBType = "badgerdb" // Default is always badgerdb
+			genesisDBType = "zapdb" // Default is always zapdb
 		}
 
 		return builder.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
@@ -1327,7 +1327,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 			return node.DatabaseConfig{}, err
 		}
 	} else {
-		// Build BadgerDB config from low memory settings if enabled
+		// Build ZapDB config from low memory settings if enabled
 		configBytes, err = buildDatabaseConfigBytes(v)
 		if err != nil {
 			return node.DatabaseConfig{}, fmt.Errorf("failed to build database config: %w", err)
@@ -1345,7 +1345,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 	}, nil
 }
 
-// buildDatabaseConfigBytes creates BadgerDB config JSON from viper settings.
+// buildDatabaseConfigBytes creates ZapDB config JSON from viper settings.
 // When low-memory or dev-light mode is enabled, it generates a config with
 // reduced memory footprint suitable for local development.
 func buildDatabaseConfigBytes(v *viper.Viper) ([]byte, error) {
@@ -1356,7 +1356,7 @@ func buildDatabaseConfigBytes(v *viper.Viper) ([]byte, error) {
 		return nil, nil
 	}
 
-	// BadgerDB config structure matching database/badgerdb/db.go Config struct
+	// ZapDB config structure matching database/zapdb/db.go Config struct
 	// Field names must match exactly (camelCase JSON tags)
 	type badgerConfig struct {
 		SyncWrites         bool    `json:"syncWrites"`

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luxfi/database/badgerdb"
+	"github.com/luxfi/database/zapdb"
 	"github.com/luxfi/log"
 	databasefactory "github.com/luxfi/node/internal/database/factory"
 	"github.com/luxfi/node/service/metrics"
@@ -30,7 +30,7 @@ func TestNodeDatabaseCreation(t *testing.T) {
 	logger := log.NoLog{}
 
 	db, err := databasefactory.New(
-		badgerdb.Name,
+		zapdb.Name,
 		dbPath,
 		false,
 		nil,

@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // Package backup provides database backup and restore functionality.
-// It supports incremental backups using BadgerDB's native backup mechanism
+// It supports incremental backups using ZapDB's native backup mechanism
 // with optional zstd compression.
 package backup
 

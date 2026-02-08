@@ -117,11 +117,11 @@ func allFlags() []FlagSpec {
 		{
 			Key:         "genesis-db-type",
 			Type:        TypeString,
-			Default:     "badgerdb",
-			Description: "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}",
+			Default:     "zapdb",
+			Description: "Database type to use for genesis database. Must be one of {pebbledb, zapdb}",
 			Category:    CategoryGenesis,
 			Constraints: &Constraints{
-				Enum: []string{"pebbledb", "badgerdb"},
+				Enum: []string{"pebbledb", "zapdb"},
 			},
 		},
 		{
@@ -293,11 +293,11 @@ func allFlags() []FlagSpec {
 		{
 			Key:         "db-type",
 			Type:        TypeString,
-			Default:     "badgerdb",
-			Description: "Default database type to use for all chains. Must be one of {badgerdb, pebbledb, memdb}",
+			Default:     "zapdb",
+			Description: "Default database type to use for all chains. Must be one of {zapdb, pebbledb, memdb}",
 			Category:    CategoryDatabase,
 			Constraints: &Constraints{
-				Enum: []string{"badgerdb", "pebbledb", "memdb"},
+				Enum: []string{"zapdb", "pebbledb", "memdb"},
 			},
 		},
 		{

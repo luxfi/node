@@ -10,17 +10,17 @@ import (
 	"testing"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/badgerdb"
+	"github.com/luxfi/database/zapdb"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 )
 
-// newTestDB creates a badgerdb for testing (supports backup/restore).
+// newTestDB creates a zapdb for testing (supports backup/restore).
 func newTestDB(t *testing.T) database.Database {
 	t.Helper()
 	tmpDir := t.TempDir()
-	db, err := badgerdb.New(tmpDir, nil, "", metric.NewRegistry())
+	db, err := zapdb.New(tmpDir, nil, "", metric.NewRegistry())
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
 	return db

@@ -51,9 +51,9 @@ func main() {
 		Long: `Backup and restore utilities for Lux node database.
 
 Supports:
-- Full and incremental backups using BadgerDB native backup
+- Full and incremental backups using ZapDB native backup
 - Zstd compression (enabled by default for .zst extension)
-- Works with both BadgerDB and PebbleDB`,
+- Works with both ZapDB and PebbleDB`,
 	}
 
 	// backup command
@@ -76,7 +76,7 @@ Examples:
 	backupCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (required)")
 	backupCmd.Flags().Uint64VarP(&sinceVer, "since", "s", 0, "Version for incremental backup (0 for full)")
 	backupCmd.Flags().StringVarP(&dataDir, "data-dir", "d", "", "Node data directory (required)")
-	backupCmd.Flags().StringVar(&dbType, "db-type", "badgerdb", "Database type (badgerdb or pebbledb)")
+	backupCmd.Flags().StringVar(&dbType, "db-type", "zapdb", "Database type (zapdb or pebbledb)")
 	backupCmd.Flags().BoolVar(&noCompress, "no-compress", false, "Disable zstd compression")
 	backupCmd.MarkFlagRequired("output")
 	backupCmd.MarkFlagRequired("data-dir")
@@ -99,7 +99,7 @@ Examples:
 	}
 	restoreCmd.Flags().StringVarP(&inputPath, "input", "i", "", "Input backup file path (required)")
 	restoreCmd.Flags().StringVarP(&dataDir, "data-dir", "d", "", "Node data directory (required)")
-	restoreCmd.Flags().StringVar(&dbType, "db-type", "badgerdb", "Database type (badgerdb or pebbledb)")
+	restoreCmd.Flags().StringVar(&dbType, "db-type", "zapdb", "Database type (zapdb or pebbledb)")
 	restoreCmd.Flags().BoolVarP(&forceRestore, "force", "f", false, "Skip confirmation prompt")
 	restoreCmd.MarkFlagRequired("input")
 	restoreCmd.MarkFlagRequired("data-dir")

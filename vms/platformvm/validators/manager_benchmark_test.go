@@ -14,7 +14,7 @@ import (
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/database/badgerdb"
+	"github.com/luxfi/database/zapdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/timer/mockable"
 
@@ -40,7 +40,7 @@ import (
 func BenchmarkGetValidatorSet(b *testing.B) {
 	require := require.New(b)
 
-	db, err := badgerdb.New(
+	db, err := zapdb.New(
 		b.TempDir(),
 		nil, // configBytes - use default
 		"",  // namespace

@@ -13,15 +13,15 @@ import (
 	"github.com/luxfi/log"
 )
 
-// ChainDBManager manages chain database access using a single global BadgerDB.
-// All chains share one BadgerDB instance with prefix-based isolation:
+// ChainDBManager manages chain database access using a single global ZapDB.
+// All chains share one ZapDB instance with prefix-based isolation:
 // 1. Single database - easier to manage, backup, and query across chains
 // 2. Prefix isolation - each chain's data is prefixed by its chainID
 // 3. G-Chain compatible - dgraph can index the entire database for GraphQL queries
 type ChainDBManager struct {
 	mu sync.RWMutex
 
-	// Global shared database (BadgerDB)
+	// Global shared database (ZapDB)
 	db database.Database
 
 	// Cached prefixed databases per chain
@@ -32,13 +32,13 @@ type ChainDBManager struct {
 
 // ChainDBManagerConfig holds configuration for the chain database manager
 type ChainDBManagerConfig struct {
-	// DB is the global shared database (BadgerDB)
+	// DB is the global shared database (ZapDB)
 	DB database.Database
 
 	Log log.Logger
 }
 
-// NewChainDBManager creates a new chain database manager using a single global BadgerDB
+// NewChainDBManager creates a new chain database manager using a single global ZapDB
 func NewChainDBManager(config ChainDBManagerConfig) *ChainDBManager {
 	return &ChainDBManager{
 		db:       config.DB,
@@ -48,7 +48,7 @@ func NewChainDBManager(config ChainDBManagerConfig) *ChainDBManager {
 }
 
 // GetDatabase returns a prefixed database for the given chain.
-// Uses prefix-based isolation on the single global BadgerDB.
+// Uses prefix-based isolation on the single global ZapDB.
 func (m *ChainDBManager) GetDatabase(chainID ids.ID, chainAlias string) (database.Database, error) {
 	if m.db == nil {
 		return nil, fmt.Errorf("global database not initialized")

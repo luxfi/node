@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-// BadgerDB flags for C-Chain
-type BadgerDBConfig struct {
+// ZapDB flags for C-Chain
+type ZapDBConfig struct {
 	Enable          bool
 	DataDir         string
 	EnableAncient   bool
@@ -19,15 +19,15 @@ type BadgerDBConfig struct {
 	FreezeThreshold uint64
 }
 
-// AddBadgerDBFlags adds BadgerDB-related flags to the flag set
-func AddBadgerDBFlags(fs *flag.FlagSet) *BadgerDBConfig {
-	config := &BadgerDBConfig{}
+// AddZapDBFlags adds ZapDB-related flags to the flag set
+func AddZapDBFlags(fs *flag.FlagSet) *ZapDBConfig {
+	config := &ZapDBConfig{}
 
 	fs.BoolVar(&config.Enable, "cchain-badger", false,
-		"Enable BadgerDB for C-Chain instead of default database")
+		"Enable ZapDB for C-Chain instead of default database")
 
 	fs.StringVar(&config.DataDir, "cchain-badger-dir", "",
-		"BadgerDB data directory (default: <datadir>/cchain-badger)")
+		"ZapDB data directory (default: <datadir>/cchain-badger)")
 
 	fs.BoolVar(&config.EnableAncient, "cchain-ancient", false,
 		"Enable ancient store for historical blockchain data")
@@ -47,8 +47,8 @@ func AddBadgerDBFlags(fs *flag.FlagSet) *BadgerDBConfig {
 	return config
 }
 
-// Validate validates the BadgerDB configuration
-func (c *BadgerDBConfig) Validate(dataDir string) error {
+// Validate validates the ZapDB configuration
+func (c *ZapDBConfig) Validate(dataDir string) error {
 	// Set defaults
 	if c.Enable && c.DataDir == "" {
 		c.DataDir = filepath.Join(dataDir, "cchain-badger")

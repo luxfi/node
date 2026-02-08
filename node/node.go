@@ -805,7 +805,7 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	// All databases use the same folder structure now (badgerdb is default)
+	// All databases use the same folder structure now (zapdb is default)
 	dbFolderName := "db"
 	// dbFolderName is appended to the database path given in the config
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
