@@ -29,7 +29,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.67
 	github.com/luxfi/crypto v1.17.40
-	github.com/luxfi/database v1.17.40
+	github.com/luxfi/database v1.17.42
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
@@ -166,7 +166,10 @@ require (
 	go.uber.org/zap v1.27.1
 )
 
-require github.com/luxfi/staking v1.1.0 // indirect
+require (
+	github.com/luxfi/staking v1.1.0 // indirect
+	github.com/luxfi/zapdb/v4 v4.9.1 // indirect
+)
 
 require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -185,7 +188,6 @@ require (
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
-	github.com/dgraph-io/badger/v4 v4.9.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/dot v1.10.0 // indirect
