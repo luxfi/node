@@ -1032,9 +1032,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		// Use SingleValidatorParams for faster block finalization
-		// This sets K=1, Beta=1 which allows a single vote to finalize blocks
-		// TODO: Restore LocalParams once vote aggregation is fixed
+		// Use SingleValidatorParams for block finalization in import/sync mode.
+		// This sets K=1, Beta=1 for immediate finalization during historical block import.
+		// Production mode should switch to LocalParams (K=5, Alpha=0.69) once the
+		// network is fully synchronized and validators are producing new blocks.
 		localParams := consensusconfig.SingleValidatorParams()
 		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
