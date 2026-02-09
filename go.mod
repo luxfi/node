@@ -29,7 +29,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.67
 	github.com/luxfi/crypto v1.17.40
-	github.com/luxfi/database v1.17.42
+	github.com/luxfi/database v1.17.43
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
@@ -168,7 +168,7 @@ require (
 
 require (
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/zapdb/v4 v4.9.1 // indirect
+	github.com/luxfi/zapdb/v4 v4.9.2 // indirect
 )
 
 require (
