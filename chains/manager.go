@@ -1097,6 +1097,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					m.Log.Warn("WaitForEvent error, retrying",
 						log.Stringer("chainID", chainParams.ID),
 						log.Err(err))
+					time.Sleep(time.Second)
 					continue
 				}
 
