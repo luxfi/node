@@ -133,7 +133,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.0.1
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
-	github.com/luxfi/api v1.0.2
+	github.com/luxfi/api v1.0.3
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.4.4
