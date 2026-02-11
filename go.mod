@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.67
-	github.com/luxfi/crypto v1.17.40
+	github.com/luxfi/crypto v1.17.42
 	github.com/luxfi/database v1.17.43
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
@@ -77,7 +77,6 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/VictoriaMetrics/fastcache v1.13.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -134,14 +133,14 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.0.1
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
-	github.com/luxfi/api v1.0.1
+	github.com/luxfi/api v1.0.2
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.4.4
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.6.1
-	github.com/luxfi/geth v1.16.73
+	github.com/luxfi/geth v1.16.76
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.1
@@ -158,7 +157,7 @@ require (
 	github.com/luxfi/utils v1.1.4
 	github.com/luxfi/utxo v0.2.4
 	github.com/luxfi/validators v1.0.0
-	github.com/luxfi/vm v1.0.33
+	github.com/luxfi/vm v1.0.37
 	github.com/luxfi/warp v1.18.5
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
