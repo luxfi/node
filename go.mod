@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
-	github.com/luxfi/math v1.2.3
+	github.com/luxfi/math v1.2.4
 	github.com/luxfi/metric v1.5.0
 	github.com/luxfi/mock v0.1.1
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -152,7 +152,7 @@ require (
 	github.com/luxfi/runtime v1.0.1
 	github.com/luxfi/sdk v1.16.45
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
-	github.com/luxfi/threshold v1.5.1
+	github.com/luxfi/threshold v1.5.5
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
@@ -174,7 +174,7 @@ require (
 require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/protocol v0.0.2 // indirect
+	github.com/luxfi/protocol v0.0.3 // indirect
 	github.com/luxfi/upgrade v1.0.0 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -208,7 +208,7 @@ require (
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/math/big v0.1.0 // indirect
-	github.com/luxfi/precompile v0.4.5 // indirect
+	github.com/luxfi/precompile v0.4.7 // indirect
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect

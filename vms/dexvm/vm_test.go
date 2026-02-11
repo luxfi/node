@@ -86,14 +86,10 @@ func TestVMSetState(t *testing.T) {
 	vmImpl, cleanup := createTestVM(t)
 	defer cleanup()
 
-	// Set to bootstrapping using proto value (2 = STATE_BOOTSTRAPPING)
-	err := vmImpl.SetState(context.Background(), 2)
+	err := vmImpl.SetState(context.Background(), uint32(vm.Bootstrapping))
 	require.NoError(err)
 	require.False(vmImpl.bootstrapped)
 
-	// Set to normal operation using vm.Ready (4)
-	// Note: vm.Bootstrapping=3 conflicts with proto STATE_NORMAL_OP=3
-	// so we use vm.Ready=4 for ready state in tests
 	err = vmImpl.SetState(context.Background(), uint32(vm.Ready))
 	require.NoError(err)
 	require.True(vmImpl.bootstrapped)

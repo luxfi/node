@@ -20,7 +20,10 @@ import (
 
 func NewCmd(path string, args ...string) *exec.Cmd {
 	cmd := exec.Command(path, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGTERM}
+	// NOTE: Pdeathsig removed — Go's M-thread recycling can prematurely
+	// deliver SIGTERM to the child when the spawning OS thread is parked.
+	// Subprocess lifecycle is managed explicitly via stopper.Stop().
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	return cmd
 }
 

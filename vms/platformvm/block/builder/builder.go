@@ -215,6 +215,15 @@ func (b *builder) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 		if duration <= 0 {
 			logger.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
+			// Sleep briefly to prevent tight loop when block building can't
+			// immediately process the staker change (e.g., consensus hasn't
+			// reached quorum yet). Without this, WaitForEvent returns
+			// immediately 70+/sec, flooding logs and crashing pods.
+			select {
+			case <-ctx.Done():
+				return vmcore.Message{}, ctx.Err()
+			case <-time.After(500 * time.Millisecond):
+			}
 			return vmcore.Message{Type: vmcore.PendingTxs}, nil
 		}
 

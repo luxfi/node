@@ -486,35 +486,20 @@ func (vm *VM) SetState(ctx context.Context, stateNum uint32) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
-	// Handle both proto-based states (2=Bootstrapping, 3=NormalOp)
-	// and vm.State values (3=Bootstrapping, 4=Ready)
-	// Proto: STATE_BOOTSTRAPPING=2, STATE_NORMAL_OP=3
-	// vm.State: Bootstrapping=3, Ready=4
-	switch stateNum {
-	case 2: // vmpb.State_STATE_BOOTSTRAPPING
+	switch vmcore.State(stateNum) {
+	case vmcore.Bootstrapping:
 		if !vm.log.IsZero() {
-			vm.log.Info("DEX VM entering bootstrap state (proto)")
+			vm.log.Info("DEX VM entering bootstrap state")
 		}
 		vm.bootstrapped = false
 		return nil
-
-	case 3: // vmpb.State_STATE_NORMAL_OP or vm.Bootstrapping
-		// Treat as ready state for proto compatibility (NormalOp)
-		if !vm.log.IsZero() {
-			vm.log.Info("DEX VM entering ready state (proto)")
-		}
-		vm.bootstrapped = true
-		return nil
-
-	case 4: // vm.Ready
+	case vmcore.Ready:
 		if !vm.log.IsZero() {
 			vm.log.Info("DEX VM entering ready state")
 		}
 		vm.bootstrapped = true
 		return nil
-
 	default:
-		// Accept unknown states without error for forward compatibility
 		return nil
 	}
 }

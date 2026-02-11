@@ -784,15 +784,12 @@ func (vm *VM) onReady() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	// Handle both proto-based states (2=Bootstrapping, 3=NormalOp)
-	// and vm.State values (3=Bootstrapping, 4=Ready)
-	switch stateNum {
-	case 2: // vmpb.State_STATE_BOOTSTRAPPING
+	switch vmcore.State(stateNum) {
+	case vmcore.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case 3, 4: // vmpb.State_STATE_NORMAL_OP (3) or vm.Ready (4)
+	case vmcore.Ready:
 		return vm.onReady()
 	default:
-		// Accept unknown states without error for forward compatibility
 		return nil
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	zapwire "github.com/luxfi/api/zap"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms"
@@ -90,9 +91,11 @@ func (f *factory) newZAP(logger log.Logger) (interface{}, error) {
 		return nil, fmt.Errorf("failed to create ZAP listener: %w", err)
 	}
 
-	// Tell subprocess to use ZAP transport
+	// Tell subprocess to use ZAP transport.
+	// IMPORTANT: Start with os.Environ() so the subprocess inherits PATH, HOME, etc.
+	// Setting cmd.Env to a non-nil value prevents exec.Cmd from inheriting the parent env.
 	cmd := subprocess.NewCmd(f.path)
-	cmd.Env = append(cmd.Env, "LUX_VM_TRANSPORT=zap")
+	cmd.Env = append(os.Environ(), "LUX_VM_TRANSPORT=zap")
 
 	status, stopper, err := subprocess.Bootstrap(
 		context.TODO(),
@@ -104,11 +107,14 @@ func (f *factory) newZAP(logger log.Logger) (interface{}, error) {
 		return nil, err
 	}
 
-	// Connect via ZAP
+	// Connect via ZAP with no read timeout (WaitForEvent blocks indefinitely)
+	zapCfg := zapwire.DefaultConfig()
+	zapCfg.ReadTimeout = 0
+
 	ctx, cancel := context.WithTimeout(context.Background(), runtime.DefaultHandshakeTimeout)
 	defer cancel()
 
-	zapConn, err := rpcchainvmzap.Dial(ctx, status.Addr, nil)
+	zapConn, err := rpcchainvmzap.Dial(ctx, status.Addr, zapCfg)
 	if err != nil {
 		stopper.Stop(context.Background())
 		logger.Error("failed to dial VM ZAP service", "error", err)

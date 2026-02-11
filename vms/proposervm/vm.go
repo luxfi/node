@@ -29,7 +29,6 @@ import (
 	validators "github.com/luxfi/validators"
 	vmcore "github.com/luxfi/vm"
 	vmchain "github.com/luxfi/vm/chain"
-	vmpb "github.com/luxfi/node/proto/vm"
 
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -253,8 +252,7 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	// Use proto-based state value for comparison
-	if oldState != uint32(vmpb.State_STATE_STATE_SYNCING) {
+	if oldState != uint32(vmcore.Syncing) {
 		return nil
 	}
 
@@ -318,9 +316,13 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
-	blk, err := vm.getPostForkBlock(ctx, preferred)
+	blk, err := vm.getBlock(ctx, preferred)
 	if err != nil {
-		return vm.ChainVM.SetPreference(ctx, preferred)
+		vm.logger.Error("preferred block not found",
+			log.Stringer("blkID", preferred),
+			log.Err(err),
+		)
+		return fmt.Errorf("preferred block %s not found: %w", preferred, err)
 	}
 
 	// Check for context cancellation before delegating to inner VM
@@ -328,6 +330,10 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
+	// For post-fork blocks, getInnerBlk() returns the inner (unwrapped) block
+	// with a different ID than the proposer wrapper.
+	// For pre-fork blocks, getInnerBlk() returns the block itself (same ID).
+	// Always use the inner block ID to avoid passing wrapper IDs to the inner VM.
 	innerBlkID := blk.getInnerBlk().ID()
 	if err := vm.ChainVM.SetPreference(ctx, innerBlkID); err != nil {
 		return err
@@ -389,7 +395,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != uint32(vmpb.State_STATE_NORMAL_OP) {
+	if vm.consensusState != uint32(vmcore.Ready) {
 		return time.Time{}, false, nil
 	}
 

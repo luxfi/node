@@ -64,7 +64,6 @@ import (
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/filesystem"
 	"github.com/luxfi/filesystem/perms"
-	// geth factory not used - EVM is loaded as external plugin
 	"github.com/luxfi/net/dynamicip"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/utils/profiler"
@@ -1252,8 +1251,7 @@ func (n *Node) initVMs() error {
 		// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
 		// 	},
 		// }),
-		// NOTE: EVM is loaded as a plugin from ~/.lux/plugins/<EVMID>
-		// Do NOT register geth.Factory here - it prevents plugin loading
+		// C-Chain (EVM) loaded as plugin via ZAP transport from plugin-dir
 	)
 	if err != nil {
 		n.Log.Error("Failed to register Platform VM", "error", err)
@@ -1270,8 +1268,8 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("X-Chain VM registered successfully")
 
-	// NOTE: C-Chain VM (EVM) is loaded as a plugin, not compiled into the node binary.
-	// Place the EVM plugin at ~/.lux/plugins/<EVMID> to enable C-Chain.
+	// C-Chain VM (EVM) is loaded as a plugin via ZAP transport.
+	// Plugin binary placed at <plugin-dir>/<EVMID> by init container.
 
 	// Register optional VMs (build with -tags=allvms for full VM support)
 	if err := n.registerOptionalVMs(); err != nil {
@@ -1279,13 +1277,13 @@ func (n *Node) initVMs() error {
 	}
 
 	// Log summary of registered VMs
-	coreVMCount := 3 // P-Chain, X-Chain, C-Chain (plugin)
+	coreVMCount := 3 // P-Chain, X-Chain, C-Chain (plugin via ZAP)
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 	n.Log.Info("VMs REGISTERED", "core", coreVMCount, "optional", optionalVMCount)
 	n.Log.Info("───────────────────────────────────────────────────────────────────")
 	n.Log.Info("P-Chain (Platform): Validators & staking", "vmID", constants.PlatformVMID)
 	n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
-	n.Log.Info("C-Chain (Contract): EVM smart contracts (plugin)", "vmID", constants.EVMID)
+	n.Log.Info("C-Chain (Contract): EVM smart contracts (ZAP plugin)", "vmID", constants.EVMID)
 	logOptionalVMs(n)
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 

@@ -47,7 +47,6 @@ import (
 	vmcore "github.com/luxfi/vm"
 	"github.com/luxfi/warp"
 
-	vmpb "github.com/luxfi/node/proto/vm"
 	blockbuilder "github.com/luxfi/node/vms/exchangevm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
 	extensions "github.com/luxfi/node/vms/exchangevm/fxs"
@@ -401,14 +400,12 @@ func (vm *VM) onReady() error {
 }
 
 func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
-	// Use proto-based state values for compatibility with chain manager
-	switch vmpb.State(stateNum) {
-	case vmpb.State_STATE_BOOTSTRAPPING:
+	switch vmcore.State(stateNum) {
+	case vmcore.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case vmpb.State_STATE_NORMAL_OP:
+	case vmcore.Ready:
 		return vm.onReady()
 	default:
-		// Accept unknown states without error for forward compatibility
 		return nil
 	}
 }

@@ -1122,8 +1122,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	// Use proto value 2 (STATE_BOOTSTRAPPING) to enter bootstrapping mode
-	require.NoError(vmImpl.SetState(context.Background(), 2))
+	require.NoError(vmImpl.SetState(context.Background(), uint32(vm.Bootstrapping)))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
@@ -1134,8 +1133,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	// validatorIDs := vmImpl.Config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 	// require.NoError(vmImpl.uptimeManager.StopTracking(validatorIDs))
 
-	// Use proto value 3 (STATE_NORMAL_OP) to enter ready mode
-	require.NoError(vmImpl.SetState(context.Background(), 3))
+	require.NoError(vmImpl.SetState(context.Background(), uint32(vm.Ready)))
 
 	_, txStatus, err := vmImpl.state.GetTx(tx.ID())
 	require.NoError(err)
