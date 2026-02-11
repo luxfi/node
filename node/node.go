@@ -1096,18 +1096,17 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 		cChainID,
 	)
 
-	// D-Chain is only required in allvms builds
+	// D-Chain is optional — only mark critical if present in genesis
 	var dChainID ids.ID
 	if optionalVMCount > 0 {
 		createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
-		if err != nil {
-			return err
+		if err == nil {
+			dChainID = createDexVMTx.ID()
+			criticalChains.Add(dChainID)
+			n.Log.Info("D-Chain marked as critical", "chainID", dChainID)
+		} else {
+			n.Log.Info("D-Chain not in genesis, skipping")
 		}
-		dChainID = createDexVMTx.ID()
-		criticalChains.Add(dChainID)
-		n.Log.Info("D-Chain marked as critical (allvms build)", "chainID", dChainID)
-	} else {
-		n.Log.Info("D-Chain not marked as critical (minimal build)")
 	}
 
 	_, err = metric.MakeAndRegister(
