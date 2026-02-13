@@ -321,13 +321,6 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	coreVM.SetPreferenceF = func(context.Context, ids.ID) error {
 		return nil
 	}
-	require.NoError(proVM.SetPreference(context.Background(), preForkChild.ID()))
-
-	secondCoreBlk := componentblocktest.BuildChild(coreBlk)
-	secondCoreBlk.TimestampV = postActivationTime
-	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
-		return secondCoreBlk, nil
-	}
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (engineBlock.Block, error) {
 		switch id {
 		case componentblocktest.GenesisID:
@@ -339,7 +332,13 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 			return nil, nil
 		}
 	}
+	require.NoError(proVM.SetPreference(context.Background(), preForkChild.ID()))
 
+	secondCoreBlk := componentblocktest.BuildChild(coreBlk)
+	secondCoreBlk.TimestampV = postActivationTime
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
+		return secondCoreBlk, nil
+	}
 	lastPreForkBlk, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 	require.IsType(&preForkBlock{}, lastPreForkBlk)

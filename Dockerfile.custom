@@ -1,0 +1,60 @@
+# Custom build with local EVM plugin
+ARG GO_VERSION=1.25.5
+
+# ============= Go Installation Stage ================
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG GO_VERSION
+ARG BUILDPLATFORM
+
+RUN BUILDARCH=$(echo ${BUILDPLATFORM} | cut -d / -f2) && \
+    wget -q "https://go.dev/dl/go${GO_VERSION}.linux-${BUILDARCH}.tar.gz" && \
+    tar -C /usr/local -xzf "go${GO_VERSION}.linux-${BUILDARCH}.tar.gz" && \
+    rm "go${GO_VERSION}.linux-${BUILDARCH}.tar.gz"
+
+# ============= Compilation Stage ================
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
+
+COPY --from=go-installer /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libc6-dev make git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY . .
+
+RUN [ -d ./build ] && rm -rf ./build/* || true
+
+ENV CGO_ENABLED=0
+RUN export GOARCH=amd64 && ./scripts/build.sh
+
+# Copy local EVM plugin instead of downloading
+ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+RUN mkdir -p /luxd/build/plugins
+COPY evm-plugin-linux-amd64 /luxd/build/plugins/${EVM_VM_ID}
+RUN chmod +x /luxd/build/plugins/${EVM_VM_ID}
+
+RUN mkdir -p /luxd/build
+
+# ============= Runtime Stage ================
+FROM debian:12-slim AS execution
+
+COPY --from=builder /luxd/build /luxd/build
+WORKDIR /luxd/build
+
+COPY --from=builder /build/build/ .
+
+RUN mkdir -p /luxd/build/plugins
+
+CMD [ "./luxd" ]

@@ -128,7 +128,6 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	require.NoError(err)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
 		case coreBlk1.ID():
@@ -137,6 +136,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.VM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -146,7 +146,6 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	require.NoError(err)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
 		case coreBlk2.ID():
@@ -155,6 +154,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 
 	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.VM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -390,7 +390,6 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	require.IsType(&preForkBlock{}, builtBlk1)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch {
 		case blkID == coreBlk1.ID():
@@ -399,6 +398,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
@@ -410,7 +410,6 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	require.IsType(&preForkBlock{}, builtBlk2)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
@@ -419,6 +418,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
@@ -557,7 +557,6 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	require.NoError(err)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
 		case coreBlk1.ID():
@@ -566,6 +565,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.VM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -575,7 +575,6 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	require.NoError(err)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
@@ -584,6 +583,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 
 	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.VM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -864,7 +864,6 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require.IsType(&preForkBlock{}, builtBlk1)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch {
 		case blkID == coreBlk1.ID():
@@ -873,6 +872,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
@@ -884,7 +884,6 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require.IsType(&preForkBlock{}, builtBlk2)
 
 	// prepare build of next block
-	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	coreVM.VM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch {
 		case blkID == coreBlk2.ID():
@@ -893,6 +892,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
+	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
