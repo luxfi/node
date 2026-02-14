@@ -213,9 +213,6 @@ func New(
 		return nil, err
 	}
 
-	// Create luxfi/metric instance from metric registry
-	// networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)  // TODO: unused
-
 	n.msgCreator, err = message.NewCreator(
 		networkRegisterer,
 		n.Config.NetworkConfig.CompressionType,
@@ -584,9 +581,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	consensusRouter := n.chainRouter
 	if !n.Config.SybilProtectionEnabled {
-		// Sybil protection is disabled so we don't have a txID that added us as
-		// a validator. Because each validator needs a txID associated with it,
-		// we hack one together by just padding our nodeID with zeroes.
+		// Without sybil protection there's no on-chain txID that registered us
+		// as a validator, so we derive a synthetic one from our NodeID.
 		dummyTxID := ids.Empty
 		copy(dummyTxID[:], n.ID.Bytes())
 
@@ -926,7 +922,7 @@ func (n *Node) initIndexer() error {
 		VertexAcceptorGroup:  n.VertexAcceptorGroup,
 		APIServer:            n.APIServer,
 		ShutdownF: func() {
-			n.Shutdown(0) // TODO put exit code here
+			n.Shutdown(0)
 		},
 	})
 	if err != nil {
@@ -1144,9 +1140,6 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	// Create timeout manager with a default timeout
 	n.timeoutManager = timeout.NewManager(30 * time.Second)
 
-	// The chain router is already initialized as a stub
-	// No further initialization needed for the stub implementation
-
 	netsManager, err := chains.NewNets(n.ID, n.Config.NetConfigs)
 	if err != nil {
 		return fmt.Errorf("failed to initialize chains: %w", err)
@@ -1185,7 +1178,6 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 			MeterVMEnabled:            n.Config.MeterVMEnabled,
 			Metrics:                   n.MetricsGatherer,
 			MeterDBMetrics:            n.MeterDBMetricsGatherer,
-			// NetConfigs:                           n.Config.NetConfigs,  // TODO: NetConfigs not available
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
 			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
@@ -1258,14 +1250,6 @@ func (n *Node) initVMs() error {
 				UseCurrentHeight:          n.Config.UseCurrentHeight,
 			},
 		}),
-		// TODO: AVM not available
-		// n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
-		// 	Config: avmconfig.Config{
-		// 		Upgrades:         n.Config.UpgradeConfig,
-		// 		TxFee:            n.Config.TxFee,
-		// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
-		// 	},
-		// }),
 		// C-Chain (EVM) loaded as plugin via ZAP transport from plugin-dir
 	)
 	if err != nil {
@@ -1534,10 +1518,13 @@ func (n *Node) initHealthAPI() error {
 	}
 
 	diskSpaceCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		// For now, return a large available disk space value since the tracker doesn't support this
-		// TODO: Implement proper disk space tracking
-		availableDiskBytes := uint64(1000000000000) // 1TB
-
+		availableDiskBytes, err := diskFreeBytes(n.Config.DatabaseConfig.Path)
+		if err != nil {
+			return map[string]interface{}{
+				"availableDiskBytes": uint64(0),
+				"error":             err.Error(),
+			}, nil
+		}
 		return map[string]interface{}{
 			"availableDiskBytes": availableDiskBytes,
 		}, nil
@@ -1755,7 +1742,6 @@ func (n *Node) shutdown() {
 	if n.resourceManager != nil {
 		n.resourceManager.Shutdown()
 	}
-	// Timeout manager doesn't have a Stop method in the stub implementation
 	if n.chainManager != nil {
 		n.chainManager.Shutdown()
 	}

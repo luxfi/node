@@ -936,8 +936,7 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) 
 		)
 		n.peersLock.Lock()
 		tracked := newTrackedIP(endpoint)
-		// Use a placeholder key so we can track the endpoint.
-		// After TLS handshake, the real NodeID replaces this.
+		// Keyed by EmptyNodeID until the TLS handshake reveals the real NodeID.
 		n.trackedIPs[nodeID] = tracked
 		n.peersLock.Unlock()
 		n.dial(nodeID, tracked)

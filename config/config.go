@@ -67,8 +67,10 @@ const (
 
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
-	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
-	deprecatedKeys = map[string]string{}
+	deprecatedKeys = map[string]string{
+		BootstrapIPsKey: "use --bootstrap-nodes instead",
+		BootstrapIDsKey: "use --bootstrap-nodes instead",
+	}
 
 	errConflictingLPOpinion                   = errors.New("supporting and objecting to the same LP")
 	errConflictingImplicitLPOpinion           = errors.New("objecting to enabled LP")
