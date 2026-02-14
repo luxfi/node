@@ -80,3 +80,4 @@ genesis/.!*
 genesis-gen
 lux
 luxd
+evm-plugin-*
