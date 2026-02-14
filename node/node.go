@@ -66,11 +66,11 @@ import (
 	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/net/dynamicip"
 	"github.com/luxfi/net/endpoints"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/resource"
-	"github.com/luxfi/node/trace"
 	"github.com/luxfi/utils"
 
 	databasefactory "github.com/luxfi/database/factory"
@@ -1147,37 +1147,37 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
-			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
-			StakingTLSSigner:          n.StakingTLSSigner,
-			StakingTLSCert:            n.StakingTLSCert,
-			StakingBLSKey:             n.Config.StakingSigningKey,
-			Log:                       n.Log,
-			LogFactory:                n.LogFactory,
-			VMManager:                 n.VMManager,
-			BlockAcceptorGroup:        n.BlockAcceptorGroup,
-			TxAcceptorGroup:           n.TxAcceptorGroup,
-			VertexAcceptorGroup:       n.VertexAcceptorGroup,
-			DB:                        n.DB,
-			MsgCreator:                n.msgCreator,
-			Router:                    n.chainRouter,
-			Net:                       n.Net,
-			Validators:                n.vdrs,
-			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-			NodeID:                    n.ID,
-			NetworkID:                 n.Config.NetworkID,
-			Server:                    n.APIServer,
-			AtomicMemory:              n.sharedMemory,
-			XAssetID:                  xAssetID,
-			XChainID:                  xChainID,
-			CChainID:                  cChainID,
-			DChainID:                  dChainID,
-			CriticalChains:            criticalChains,
-			TimeoutManager:            n.timeoutManager,
-			Health:                    n.health,
-			ShutdownNodeFunc:          n.Shutdown,
-			MeterVMEnabled:            n.Config.MeterVMEnabled,
-			Metrics:                   n.MetricsGatherer,
-			MeterDBMetrics:            n.MeterDBMetricsGatherer,
+			SybilProtectionEnabled:                  n.Config.SybilProtectionEnabled,
+			StakingTLSSigner:                        n.StakingTLSSigner,
+			StakingTLSCert:                          n.StakingTLSCert,
+			StakingBLSKey:                           n.Config.StakingSigningKey,
+			Log:                                     n.Log,
+			LogFactory:                              n.LogFactory,
+			VMManager:                               n.VMManager,
+			BlockAcceptorGroup:                      n.BlockAcceptorGroup,
+			TxAcceptorGroup:                         n.TxAcceptorGroup,
+			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
+			DB:                                      n.DB,
+			MsgCreator:                              n.msgCreator,
+			Router:                                  n.chainRouter,
+			Net:                                     n.Net,
+			Validators:                              n.vdrs,
+			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
+			NodeID:                                  n.ID,
+			NetworkID:                               n.Config.NetworkID,
+			Server:                                  n.APIServer,
+			AtomicMemory:                            n.sharedMemory,
+			XAssetID:                                xAssetID,
+			XChainID:                                xChainID,
+			CChainID:                                cChainID,
+			DChainID:                                dChainID,
+			CriticalChains:                          criticalChains,
+			TimeoutManager:                          n.timeoutManager,
+			Health:                                  n.health,
+			ShutdownNodeFunc:                        n.Shutdown,
+			MeterVMEnabled:                          n.Config.MeterVMEnabled,
+			Metrics:                                 n.MetricsGatherer,
+			MeterDBMetrics:                          n.MeterDBMetricsGatherer,
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
 			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
@@ -1522,7 +1522,7 @@ func (n *Node) initHealthAPI() error {
 		if err != nil {
 			return map[string]interface{}{
 				"availableDiskBytes": uint64(0),
-				"error":             err.Error(),
+				"error":              err.Error(),
 			}, nil
 		}
 		return map[string]interface{}{
