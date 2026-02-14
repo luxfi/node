@@ -756,12 +756,22 @@ func (n *Node) Dispatch() error {
 		"count", len(n.Config.Bootstrappers),
 	)
 	for i, bootstrapper := range n.Config.Bootstrappers {
-		fmt.Printf("[BOOTSTRAP] %d: nodeID=%s endpoint=%s\n", i, bootstrapper.ID.String(), bootstrapper.Endpoint.String())
-		n.Log.Info("ManuallyTrack bootstrap node",
-			"index", i,
-			"nodeID", bootstrapper.ID.String(),
-			"endpoint", bootstrapper.Endpoint.String(),
-		)
+		if bootstrapper.ID == ids.EmptyNodeID {
+			// Endpoint-only bootstrap node (--bootstrap-nodes flag).
+			// NodeID will be discovered from the peer's staking certificate
+			// during the TLS handshake. ManuallyTrack with empty ID triggers
+			// endpoint-discovery mode.
+			n.Log.Info("Bootstrap node (endpoint-only, ID from cert)",
+				"index", i,
+				"endpoint", bootstrapper.Endpoint.String(),
+			)
+		} else {
+			n.Log.Info("Bootstrap node",
+				"index", i,
+				"nodeID", bootstrapper.ID.String(),
+				"endpoint", bootstrapper.Endpoint.String(),
+			)
+		}
 		n.Net.ManuallyTrack(bootstrapper.ID, bootstrapper.Endpoint)
 	}
 	fmt.Println("[BOOTSTRAP] Finished adding bootstrap nodes, starting Dispatch")
@@ -875,6 +885,12 @@ func (n *Node) initDatabase() error {
 func (n *Node) initBootstrappers() error {
 	n.bootstrappers = nodevalidators.NewManager()
 	for _, bootstrapper := range n.Config.Bootstrappers {
+		// Skip endpoint-only bootstrappers — their NodeID is discovered
+		// from the peer's staking certificate during the TLS handshake
+		// and added to the bootstrapper set dynamically.
+		if bootstrapper.ID == ids.EmptyNodeID {
+			continue
+		}
 		// Note: The beacon connection manager will treat all beaconIDs as
 		//       equal.
 		// Invariant: We never use the TxID or BLS keys populated here.

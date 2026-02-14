@@ -319,8 +319,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(StateSyncIDsKey, "", "Comma separated list of state sync peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z")
 
 	// Bootstrapping
-	fs.String(BootstrapIPsKey, "", "Comma separated list of bootstrap peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
-	fs.String(BootstrapIDsKey, "", "Comma separated list of bootstrap peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z")
+	fs.String(BootstrapNodesKey, "", "Comma separated list of bootstrap node endpoints. NodeID is discovered from the peer's staking certificate during TLS handshake. Example: 0.mainnet.luxno.de:9631,1.mainnet.luxno.de:9631")
+	fs.String(BootstrapIPsKey, "", "[Deprecated: use --bootstrap-nodes] Comma separated list of bootstrap peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
+	fs.String(BootstrapIDsKey, "", "[Deprecated: use --bootstrap-nodes] Comma separated list of bootstrap peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z")
 	fs.Bool(SkipBootstrapKey, false, "If true, skip the bootstrapping phase and start processing immediately")
 	fs.Bool(EnableAutominingKey, false, "If true, enable automining in POA mode")
 	fs.Duration(BootstrapBeaconConnectionTimeoutKey, time.Minute, "Timeout before emitting a warn log when connecting to bootstrapping beacons")

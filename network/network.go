@@ -922,12 +922,28 @@ func (n *network) Dispatch() error {
 }
 
 func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) {
-	n.peerConfig.Log.Warn("[MANUALLY_TRACK] >>> ENTRY <<<",
+	n.peerConfig.Log.Info("ManuallyTrack",
 		zap.Stringer("nodeID", nodeID),
 		zap.String("endpoint", endpoint.String()),
-		zap.Bool("isIP", endpoint.IsIP()),
-		zap.Bool("isHostname", endpoint.IsHostname()),
 	)
+
+	// Endpoint-only bootstrap: NodeID is zero, meaning it will be discovered
+	// from the peer's staking certificate during the TLS handshake.
+	// We dial the endpoint directly and let the upgrader extract the NodeID.
+	if nodeID == ids.EmptyNodeID {
+		n.peerConfig.Log.Info("ManuallyTrack endpoint-only (NodeID from cert)",
+			zap.String("endpoint", endpoint.String()),
+		)
+		n.peersLock.Lock()
+		tracked := newTrackedIP(endpoint)
+		// Use a placeholder key so we can track the endpoint.
+		// After TLS handshake, the real NodeID replaces this.
+		n.trackedIPs[nodeID] = tracked
+		n.peersLock.Unlock()
+		n.dial(nodeID, tracked)
+		return
+	}
+
 	n.ipTracker.ManuallyTrack(nodeID)
 
 	n.peersLock.Lock()
@@ -935,34 +951,14 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) 
 
 	_, connected := n.connectedPeers.GetByID(nodeID)
 	if connected {
-		n.peerConfig.Log.Warn("[MANUALLY_TRACK] already connected - skipping",
-			zap.Stringer("nodeID", nodeID),
-		)
-		// If I'm currently connected to [nodeID] then they will have told me
-		// how to connect to them in the future, and I don't need to attempt to
-		// connect to them now.
 		return
 	}
 
 	_, isTracked := n.trackedIPs[nodeID]
 	if !isTracked {
-		n.peerConfig.Log.Warn("[MANUALLY_TRACK] NOT TRACKED - creating trackedIP and calling dial()",
-			zap.Stringer("nodeID", nodeID),
-			zap.String("endpoint", endpoint.String()),
-		)
 		tracked := newTrackedIP(endpoint)
 		n.trackedIPs[nodeID] = tracked
-		n.peerConfig.Log.Warn("[MANUALLY_TRACK] calling dial() NOW",
-			zap.Stringer("nodeID", nodeID),
-		)
 		n.dial(nodeID, tracked)
-		n.peerConfig.Log.Warn("[MANUALLY_TRACK] dial() returned (goroutine spawned)",
-			zap.Stringer("nodeID", nodeID),
-		)
-	} else {
-		n.peerConfig.Log.Warn("[MANUALLY_TRACK] already tracked - skipping dial",
-			zap.Stringer("nodeID", nodeID),
-		)
 	}
 }
 

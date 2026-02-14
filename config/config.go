@@ -596,9 +596,36 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		EnableAutomining:                        v.GetBool(EnableAutominingKey),
 	}
 
-	// length equality.
+	nodesSet := v.IsSet(BootstrapNodesKey)
 	ipsSet := v.IsSet(BootstrapIPsKey)
 	idsSet := v.IsSet(BootstrapIDsKey)
+
+	// --bootstrap-nodes takes precedence: just endpoints, NodeID discovered
+	// from the peer's staking certificate during TLS handshake.
+	if nodesSet {
+		if ipsSet || idsSet {
+			return node.BootstrapConfig{}, fmt.Errorf("%q cannot be combined with deprecated %q/%q flags", BootstrapNodesKey, BootstrapIPsKey, BootstrapIDsKey)
+		}
+		nodes := strings.Split(v.GetString(BootstrapNodesKey), ",")
+		config.Bootstrappers = make([]builder.Bootstrapper, 0, len(nodes))
+		for _, n := range nodes {
+			endpointStr := strings.TrimSpace(n)
+			if endpointStr == "" {
+				continue
+			}
+			endpoint, err := endpoints.ParseEndpoint(endpointStr)
+			if err != nil {
+				return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap node endpoint %s: %w", endpointStr, err)
+			}
+			// ID left as zero value — discovered from peer cert during handshake
+			config.Bootstrappers = append(config.Bootstrappers, builder.Bootstrapper{
+				Endpoint: endpoint,
+			})
+		}
+		return config, nil
+	}
+
+	// Legacy: --bootstrap-ips + --bootstrap-ids (deprecated)
 	if ipsSet && !idsSet {
 		return node.BootstrapConfig{}, fmt.Errorf("set %q but didn't set %q", BootstrapIPsKey, BootstrapIDsKey)
 	}
@@ -621,13 +648,11 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		if endpointStr == "" {
 			continue
 		}
-		// ParseEndpoint supports both IP:port and hostname:port
 		endpoint, err := endpoints.ParseEndpoint(endpointStr)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap endpoint %s: %w", endpointStr, err)
 		}
 		config.Bootstrappers = append(config.Bootstrappers, builder.Bootstrapper{
-			// ID is populated below
 			Endpoint: endpoint,
 		})
 	}

@@ -82,6 +82,7 @@ const (
 	HTTPIdleTimeoutKey                                 = "http-idle-timeout"
 	StateSyncIPsKey                                    = "state-sync-ips"
 	StateSyncIDsKey                                    = "state-sync-ids"
+	BootstrapNodesKey                                  = "bootstrap-nodes"
 	BootstrapIPsKey                                    = "bootstrap-ips"
 	BootstrapIDsKey                                    = "bootstrap-ids"
 	SkipBootstrapKey                                   = "skip-bootstrap"
