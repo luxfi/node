@@ -321,12 +321,17 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	coreVM.SetPreferenceF = func(context.Context, ids.ID) error {
 		return nil
 	}
+	secondCoreBlk := componentblocktest.BuildChild(coreBlk)
+	secondCoreBlk.TimestampV = postActivationTime
+
 	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (engineBlock.Block, error) {
 		switch id {
 		case componentblocktest.GenesisID:
 			return componentblocktest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
+		case secondCoreBlk.ID():
+			return secondCoreBlk, nil
 		default:
 			require.FailNow("attempt to get unknown block")
 			return nil, nil
@@ -334,8 +339,6 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 	}
 	require.NoError(proVM.SetPreference(context.Background(), preForkChild.ID()))
 
-	secondCoreBlk := componentblocktest.BuildChild(coreBlk)
-	secondCoreBlk.TimestampV = postActivationTime
 	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return secondCoreBlk, nil
 	}
