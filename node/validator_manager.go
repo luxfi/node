@@ -35,6 +35,10 @@ type ValidatorManager struct {
 	weight     uint64
 	mu         sync.RWMutex
 
+	// Tracked subnet IDs - validators are added to these on connect
+	// when sybil protection is disabled
+	trackedSubnets []ids.ID
+
 	// Beacon tracking for bootstrap
 	beacons                     validators.Manager
 	requiredConns               int64
@@ -52,6 +56,7 @@ type ValidatorManagerConfig struct {
 	Log                     log.Logger
 	Validators              validators.Manager
 	Beacons                 validators.Manager
+	TrackedSubnets          []ids.ID
 	SybilProtectionDisabled bool
 	SybilProtectionWeight   uint64
 	RequiredBeaconConns     int64
@@ -66,6 +71,7 @@ func NewValidatorManager(cfg ValidatorManagerConfig) *ValidatorManager {
 		vdrs:                    cfg.Validators,
 		validators:              make(map[ids.ID]map[ids.NodeID]uint64),
 		weight:                  cfg.SybilProtectionWeight,
+		trackedSubnets:          cfg.TrackedSubnets,
 		beacons:                 cfg.Beacons,
 		requiredConns:           cfg.RequiredBeaconConns,
 		onSufficientlyConnected: cfg.OnSufficientlyConnected,
@@ -82,6 +88,7 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 		dummyTxID := ids.Empty
 		copy(dummyTxID[:], nodeID.Bytes())
 
+		// Add to primary network
 		err := v.vdrs.AddStaker(
 			constants.PrimaryNetworkID,
 			nodeID,
@@ -100,6 +107,26 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 				log.Stringer("netID", netID),
 				log.Uint64("weight", v.weight),
 			)
+		}
+
+		// Also add to ALL tracked subnet validator sets so subnet consensus
+		// engines can find validators for their chains. Without this, subnet
+		// chains can't gossip blocks because the validator set is empty.
+		for _, subnetID := range v.trackedSubnets {
+			subnetTxID := ids.Empty
+			copy(subnetTxID[:], nodeID.Bytes())
+			if err := v.vdrs.AddStaker(subnetID, nodeID, nil, subnetTxID, v.weight); err != nil {
+				v.log.Debug("failed to add subnet validator on connect",
+					log.Stringer("nodeID", nodeID),
+					log.Stringer("subnetID", subnetID),
+					log.Reflect("error", err),
+				)
+			} else {
+				v.log.Info("added subnet validator on connect (sybil protection disabled)",
+					log.Stringer("nodeID", nodeID),
+					log.Stringer("subnetID", subnetID),
+				)
+			}
 		}
 
 		// Also track locally for our records
@@ -132,7 +159,7 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 	// Remove from validator manager when sybil protection is disabled
 	if v.sybilProtectionDisabled {
-		// Remove from the actual validator manager
+		// Remove from primary network
 		err := v.vdrs.RemoveWeight(constants.PrimaryNetworkID, nodeID, v.weight)
 		if err != nil {
 			v.log.Debug("failed to remove validator weight on disconnect (may not exist)",
@@ -144,6 +171,16 @@ func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 				log.Stringer("nodeID", nodeID),
 				log.Stringer("netID", constants.PrimaryNetworkID),
 			)
+		}
+
+		// Also remove from all tracked subnet validator sets
+		for _, subnetID := range v.trackedSubnets {
+			if err := v.vdrs.RemoveWeight(subnetID, nodeID, v.weight); err != nil {
+				v.log.Debug("failed to remove subnet validator on disconnect",
+					log.Stringer("nodeID", nodeID),
+					log.Stringer("subnetID", subnetID),
+				)
+			}
 		}
 
 		// Also remove from local tracking

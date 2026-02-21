@@ -497,6 +497,12 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
+	// Register blockchain→subnet mapping with the network layer so gossip
+	// can resolve which validator set to use for this blockchain's blocks.
+	if chainParams.ChainID != constants.PrimaryNetworkID && m.Net != nil {
+		m.Net.RegisterBlockchainSubnet(chainParams.ID, chainParams.ChainID)
+	}
+
 	if sb, _ := m.Nets.GetOrCreate(chainParams.ChainID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			log.String("reason", "chain already staged"),
@@ -2723,7 +2729,9 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData 
 	}
 
 	// Gossip to all validators (-1 = all validators)
-	sentTo := g.net.Gossip(putMsg, nil, networkID, -1, 0, 0)
+	// Use chainID (blockchain ID) for network routing so peer filtering
+	// can resolve blockchain→subnet mapping correctly.
+	sentTo := g.net.Gossip(putMsg, nil, chainID, -1, 0, 0)
 	return sentTo.Len()
 }
 
@@ -2740,14 +2748,14 @@ func (g *networkGossiper) SendPullQuery(chainID ids.ID, networkID ids.ID, blockI
 	}
 
 	if len(validators) == 0 {
-		return g.net.Gossip(pullMsg, nil, networkID, -1, 0, 0).Len()
+		return g.net.Gossip(pullMsg, nil, chainID, -1, 0, 0).Len()
 	}
 
 	validatorSet := set.NewSet[ids.NodeID](len(validators))
 	for _, v := range validators {
 		validatorSet.Add(v)
 	}
-	return g.net.Send(pullMsg, validatorSet, networkID, 0).Len()
+	return g.net.Send(pullMsg, validatorSet, chainID, 0).Len()
 }
 
 // SendPushQuery sends a PushQuery (block bytes + vote request) to validators.
@@ -2775,14 +2783,14 @@ func (g *networkGossiper) SendPushQuery(chainID ids.ID, networkID ids.ID, blockD
 	)
 
 	if len(validators) == 0 {
-		return g.net.Gossip(pushMsg, nil, networkID, -1, 0, 0).Len()
+		return g.net.Gossip(pushMsg, nil, chainID, -1, 0, 0).Len()
 	}
 
 	validatorSet := set.NewSet[ids.NodeID](len(validators))
 	for _, v := range validators {
 		validatorSet.Add(v)
 	}
-	return g.net.Send(pushMsg, validatorSet, networkID, 0).Len()
+	return g.net.Send(pushMsg, validatorSet, chainID, 0).Len()
 }
 
 // SendQbit sends a preference response (Qbit) back to the node that requested our preference.

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -122,6 +123,12 @@ type Network interface {
 
 	// TrackedChains returns the set of chains this node is tracking.
 	TrackedChains() set.Set[ids.ID]
+
+	// RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
+	// subnet ID. This is used by the gossip layer to resolve which validator
+	// set sequences blocks for a given blockchain, and to check whether peers
+	// track the subnet that owns the blockchain.
+	RegisterBlockchainSubnet(blockchainID, subnetID ids.ID)
 }
 
 type UptimeResult struct {
@@ -203,6 +210,13 @@ type network struct {
 	// It is expected that the implementation of this interface can handle
 	// concurrent calls to [Connected], [Disconnected], and [HandleInbound].
 	router ExternalHandler
+
+	// blockchainToSubnet maps blockchain IDs to their subnet IDs.
+	// This is needed for subnet gossip: when gossiping a block for a subnet
+	// blockchain, we need to know which subnet's validator set to use for
+	// peer sampling, and which subnet ID to check in peers' trackedChains.
+	// Protected by peersLock.
+	blockchainToSubnet map[ids.ID]ids.ID
 }
 
 // NewNetwork returns a new Network implementation with the provided parameters.
@@ -471,6 +485,8 @@ func NewNetwork(
 		connectingPeers: peer.NewSet(),
 		connectedPeers:  peer.NewSet(),
 		router:          router,
+
+		blockchainToSubnet: make(map[ids.ID]ids.ID),
 	}
 	n.peerConfig.Network = n
 	return n, nil
@@ -484,6 +500,7 @@ func NewNetwork(
 // For example:
 //   - C-Chain is sequenced by PrimaryNetworkID validators
 //   - A self-sequenced L2 uses its own chainID as sequencerID
+//   - Subnet blockchains map to their subnet ID for validator lookups
 func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	// Primary network is a special routing concept; membership is still primary.
 	if chainID == constants.PrimaryNetworkID {
@@ -491,10 +508,19 @@ func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	}
 	if n.config.SequencerIDForChain != nil {
 		if sid := n.config.SequencerIDForChain(chainID); sid != ids.Empty {
+			fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s resolved via callback → %s\n", chainID, sid)
 			return sid
 		}
 	}
+	// Check if this is a blockchain ID that maps to a subnet ID.
+	// This is needed for subnet gossip: validators are registered under
+	// subnet IDs, not blockchain IDs.
+	if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
+		fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s resolved via blockchainToSubnet → subnetID=%s\n", chainID, subnetID)
+		return subnetID
+	}
 	// Safe default: self-sequenced or unknown mapping.
+	fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s UNRESOLVED (falling back to self)\n", chainID)
 	return chainID
 }
 
@@ -507,8 +533,14 @@ func (n *network) Send(
 	// Create a default allowance policy that allows all connections
 	var allower nets.Allower = &noOpAllower{}
 
+	fmt.Fprintf(os.Stderr, "[NET-SEND] op=%s chainID=%s requestedNodeIDs=%d\n", msg.Op(), chainID, nodeIDs.Len())
+	for nodeID := range nodeIDs {
+		fmt.Fprintf(os.Stderr, "[NET-SEND]   targetNodeID=%s\n", nodeID)
+	}
+
 	// Use provided nodeIDs directly
 	namedPeers := n.getPeers(nodeIDs, chainID, allower)
+	fmt.Fprintf(os.Stderr, "[NET-SEND] namedPeers=%d (lost %d)\n", len(namedPeers), nodeIDs.Len()-len(namedPeers))
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
 		nodeIDs.Len()-len(namedPeers),
@@ -541,15 +573,18 @@ func (n *network) Send(
 		for _, peer := range peers {
 			if peer.Send(n.onCloseCtx, msg) {
 				sentTo.Add(peer.ID())
+				fmt.Fprintf(os.Stderr, "[NET-SEND] SUCCESS sent to peer=%s op=%s\n", peer.ID(), msg.Op())
 
 				// record metrics for success
 				n.sendFailRateCalculator.Observe(0, now)
 			} else {
+				fmt.Fprintf(os.Stderr, "[NET-SEND] FAILED to send to peer=%s op=%s\n", peer.ID(), msg.Op())
 				// record metrics for failure
 				n.sendFailRateCalculator.Observe(1, now)
 			}
 		}
 	}
+	fmt.Fprintf(os.Stderr, "[NET-SEND] TOTAL sentTo=%d\n", sentTo.Len())
 	return sentTo
 }
 
@@ -1035,10 +1070,12 @@ func (n *network) getPeers(
 	// Resolve sequencerID for validator lookups
 	// chainID = execution domain (routing), sequencerID = validator membership
 	sid := n.sequencerID(chainID)
+	fmt.Fprintf(os.Stderr, "[GET-PEERS] chainID=%s sequencerID=%s connectedPeers=%d\n", chainID, sid, n.connectedPeers.Len())
 
 	for nodeID := range nodeIDs {
 		peer, ok := n.connectedPeers.GetByID(nodeID)
 		if !ok {
+			fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s NOT CONNECTED\n", nodeID)
 			continue
 		}
 
@@ -1046,9 +1083,11 @@ func (n *network) getPeers(
 		_, areTheyAValidator := n.config.Validators.GetValidator(sid, nodeID)
 		// check if the peer is allowed to connect to the net
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
+			fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s connected but NOT ALLOWED (isValidator=%v)\n", nodeID, areTheyAValidator)
 			continue
 		}
 
+		fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s FOUND (isValidator=%v)\n", nodeID, areTheyAValidator)
 		peers = append(peers, peer)
 	}
 
@@ -1102,6 +1141,15 @@ func (n *network) samplePeers(
 			// so we skip the chain tracking check for Primary Network.
 			isPrimaryNetwork := chainID == constants.PrimaryNetworkID
 			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
+
+			// For subnet blockchains, also check if the peer tracks the subnet ID.
+			// Peers advertise subnet IDs (not blockchain IDs) in their tracked chains,
+			// but gossip uses blockchain IDs as the chainID parameter.
+			if !containsChainID {
+				if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
+					containsChainID = trackedChains.Contains(subnetID)
+				}
+			}
 
 			// Only return peers that are tracking [chainID]
 			if !containsChainID {
@@ -1715,6 +1763,21 @@ func (n *network) TrackedChains() set.Set[ids.ID] {
 	result := set.NewSet[ids.ID](n.config.TrackedChains.Len())
 	result.Union(n.config.TrackedChains)
 	return result
+}
+
+// RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
+// subnet ID. This allows the gossip layer to correctly resolve which validator
+// set to use when gossiping blocks for subnet chains, and to check whether
+// peers are tracking the subnet that owns the blockchain.
+func (n *network) RegisterBlockchainSubnet(blockchainID, subnetID ids.ID) {
+	n.peersLock.Lock()
+	defer n.peersLock.Unlock()
+
+	n.blockchainToSubnet[blockchainID] = subnetID
+	n.peerConfig.Log.Info("registered blockchain-to-subnet mapping",
+		"blockchainID", blockchainID,
+		"subnetID", subnetID,
+	)
 }
 
 func (n *network) runTimers() {

@@ -608,11 +608,18 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		close(n.onSufficientlyConnected)
 	}
 
+	// Get tracked subnet IDs for validator manager
+	var trackedSubnetIDs []ids.ID
+	if n.Config.TrackedChains != nil {
+		trackedSubnetIDs = n.Config.TrackedChains.List()
+	}
+
 	consensusRouter = NewValidatorManager(ValidatorManagerConfig{
 		Router:                  consensusRouter,
 		Log:                     n.Log,
 		Validators:              n.vdrs,
 		Beacons:                 n.bootstrappers,
+		TrackedSubnets:          trackedSubnetIDs,
 		SybilProtectionDisabled: !n.Config.SybilProtectionEnabled,
 		SybilProtectionWeight:   n.Config.SybilProtectionDisabledWeight,
 		RequiredBeaconConns:     requiredConns,
@@ -637,11 +644,15 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
 	n.Config.NetworkConfig.GenesisBytes = n.Config.GenesisBytes
 	// Map native chains (P/C/X/etc.) to the primary network validator set.
+	// For subnet chains, return ids.Empty to let blockchainToSubnet map resolve
+	// the correct subnet ID. Returning chainID here would short-circuit the
+	// lookup and cause subnet messages to be sequenced under the wrong ID,
+	// preventing block propagation to other nodes.
 	n.Config.NetworkConfig.SequencerIDForChain = func(chainID ids.ID) ids.ID {
 		if ids.IsNativeChain(chainID) {
 			return constants.PrimaryNetworkID
 		}
-		return chainID
+		return ids.Empty
 	}
 
 	// Wrap the router to implement network.ExternalHandler
