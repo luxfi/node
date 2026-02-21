@@ -93,6 +93,11 @@ RUN mkdir -p /luxd/build
 # BUILDPLATFORM have different arches.
 FROM debian:12-slim AS execution
 
+# Install runtime dependencies (curl for RPC operations, ca-certificates for TLS)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Maintain compatibility with previous images
 COPY --from=builder /luxd/build /luxd/build
 WORKDIR /luxd/build

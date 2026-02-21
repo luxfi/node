@@ -167,6 +167,7 @@ require (
 
 require (
 	github.com/luxfi/staking v1.1.0 // indirect
+	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb/v4 v4.9.2 // indirect
 )
 
