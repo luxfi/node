@@ -81,3 +81,8 @@ genesis-gen
 lux
 luxd
 evm-plugin-*
+
+LLM.md
+QWEN.md
+.AGENTS.md
+GEMINI.md
