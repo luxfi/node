@@ -619,10 +619,52 @@ func (vm *VM) initBlockchains() error {
 				return err
 			}
 		}
-	} else if vm.SybilProtectionEnabled {
-		// Only create chains for explicitly tracked chains
+	} else if vm.SybilProtectionEnabled && len(vm.TrackedChains) > 0 {
+		// TrackedChains may contain either subnet IDs or blockchain IDs.
+		// Try each as a subnet ID first; if no chains found, scan all
+		// subnets for blockchains matching the tracked ID.
+		resolved := make(map[ids.ID]bool) // subnet IDs to create
+		unresolved := make(map[ids.ID]bool)
+
 		for chainID := range vm.TrackedChains {
-			if err := vm.createNet(chainID); err != nil {
+			chains, err := vm.state.GetChains(chainID)
+			if err != nil {
+				return err
+			}
+			if len(chains) > 0 {
+				// It's a subnet ID
+				resolved[chainID] = true
+			} else {
+				// May be a blockchain ID - need reverse lookup
+				unresolved[chainID] = true
+			}
+		}
+
+		// Resolve blockchain IDs by scanning all subnets
+		if len(unresolved) > 0 {
+			netIDs, err := vm.state.GetChainIDs()
+			if err != nil {
+				return err
+			}
+			for _, netID := range netIDs {
+				chains, err := vm.state.GetChains(netID)
+				if err != nil {
+					return err
+				}
+				for _, chain := range chains {
+					if unresolved[chain.ID()] {
+						resolved[netID] = true
+						delete(unresolved, chain.ID())
+					}
+				}
+				if len(unresolved) == 0 {
+					break
+				}
+			}
+		}
+
+		for netID := range resolved {
+			if err := vm.createNet(netID); err != nil {
 				return err
 			}
 		}

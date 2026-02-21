@@ -934,12 +934,12 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) 
 		n.peerConfig.Log.Info("ManuallyTrack endpoint-only (NodeID from cert)",
 			zap.String("endpoint", endpoint.String()),
 		)
-		n.peersLock.Lock()
 		tracked := newTrackedIP(endpoint)
-		// Keyed by EmptyNodeID until the TLS handshake reveals the real NodeID.
-		n.trackedIPs[nodeID] = tracked
-		n.peersLock.Unlock()
-		n.dial(nodeID, tracked)
+		// Dial directly without using trackedIPs map to avoid key collision
+		// (all endpoint-only nodes share EmptyNodeID). The dial goroutine
+		// connects, performs TLS handshake, discovers the real NodeID, and
+		// the connection upgrade process handles the rest.
+		go n.dialEndpointOnly(tracked)
 		return
 	}
 
@@ -1088,39 +1088,8 @@ func (n *network) samplePeers(
 	}
 	numValidatorsToSample := min(requestedValidators, numValidatorsInManager)
 
-	// Debug logging for validator sampling - using WARN to ensure visibility
-	if numValidatorsInManager == 0 {
-		log.Warn("[VALIDATOR DEBUG] samplePeers: NO validators found in manager!",
-			"chainID", chainID,
-			"configValidators", config.Validators,
-			"requestedValidators", requestedValidators,
-			"numValidatorsInManager", numValidatorsInManager,
-			"validatorManagerPtr", fmt.Sprintf("%p", n.config.Validators),
-			"numNets", n.config.Validators.NumNets(),
-		)
-	} else {
-		log.Debug("samplePeers: validator counts",
-			"chainID", chainID,
-			"configValidators", config.Validators,
-			"requestedValidators", requestedValidators,
-			"numValidatorsInManager", numValidatorsInManager,
-			"numValidatorsToSample", numValidatorsToSample,
-		)
-	}
-
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
-
-	// Debug: Log peer info before sampling
-	log.Debug("[VALIDATOR DEBUG] samplePeers: about to sample",
-		"chainID", chainID,
-		"numConnectedPeers", n.connectedPeers.Len(),
-		"numValidatorsToSample", numValidatorsToSample,
-		"configValidators", config.Validators,
-		"requestedValidators", requestedValidators,
-		"configNonValidators", config.NonValidators,
-		"configPeers", config.Peers,
-	)
 
 	return n.connectedPeers.Sample(
 		numValidatorsToSample+config.NonValidators+config.Peers,
@@ -1133,15 +1102,6 @@ func (n *network) samplePeers(
 			// so we skip the chain tracking check for Primary Network.
 			isPrimaryNetwork := chainID == constants.PrimaryNetworkID
 			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
-
-			// Debug: Log each peer's tracked chains
-			log.Debug("[VALIDATOR DEBUG] samplePeers filter: checking peer",
-				"peerID", p.ID(),
-				"chainID", chainID,
-				"isPrimaryNetwork", isPrimaryNetwork,
-				"trackedChains", trackedChains.List(),
-				"containsChainID", containsChainID,
-			)
 
 			// Only return peers that are tracking [chainID]
 			if !containsChainID {
@@ -1232,6 +1192,74 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 // exit.
 //
 // If [nodeID] is marked as connecting or connected then this goroutine will
+// dialEndpointOnly dials a bootstrap endpoint where the NodeID is unknown.
+// It connects, performs TLS handshake, and the upgrade process discovers the
+// real NodeID from the peer's staking certificate. Unlike dial(), this skips
+// the WantsConnection check since there's no NodeID to check against.
+func (n *network) dialEndpointOnly(ip *trackedIP) {
+	n.peerConfig.Log.Info("dialEndpointOnly: starting",
+		zap.String("endpoint", ip.endpoint.String()),
+	)
+	n.metrics.numTracked.Inc()
+	defer n.metrics.numTracked.Dec()
+
+	for {
+		select {
+		case <-n.onCloseCtx.Done():
+			return
+		default:
+		}
+
+		delay := ip.getDelay()
+		if delay > 0 {
+			timer := time.NewTimer(delay)
+			select {
+			case <-n.onCloseCtx.Done():
+				timer.Stop()
+				return
+			case <-timer.C:
+			}
+		}
+
+		conn, err := n.dialer.DialEndpoint(n.onCloseCtx, ip.endpoint)
+		if err != nil {
+			n.peerConfig.Log.Warn("dialEndpointOnly: TCP dial failed",
+				zap.String("endpoint", ip.endpoint.String()),
+				zap.Error(err),
+			)
+			ip.increaseDelay(
+				n.config.InitialReconnectDelay,
+				n.config.MaxReconnectDelay,
+			)
+			continue
+		}
+
+		n.peerConfig.Log.Info("dialEndpointOnly: TCP connected, upgrading",
+			zap.String("endpoint", ip.endpoint.String()),
+		)
+
+		err = n.upgrade(conn, n.clientUpgrader, false)
+		if err != nil {
+			n.peerConfig.Log.Warn("dialEndpointOnly: TLS upgrade failed",
+				zap.String("endpoint", ip.endpoint.String()),
+				zap.Error(err),
+			)
+			ip.increaseDelay(
+				n.config.InitialReconnectDelay,
+				n.config.MaxReconnectDelay,
+			)
+			continue
+		}
+		n.peerConfig.Log.Info("dialEndpointOnly: connected successfully",
+			zap.String("endpoint", ip.endpoint.String()),
+		)
+		return
+	}
+}
+
+// dial attempts to create a connection with the peer at [ip].
+//
+// The dial will be cancelled when [ip.onStopTracking] is closed or this network
 // exit.
 //
 // If [nodeID] is no longer marked as desired then this goroutine will exit and

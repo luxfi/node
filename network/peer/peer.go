@@ -559,7 +559,6 @@ func (p *peer) writeMessages() {
 		)
 		return
 	}
-
 	p.writeMessage(writer, msg)
 
 	for {
@@ -578,7 +577,6 @@ func (p *peer) writeMessages() {
 			)
 			return
 		}
-
 		msg, ok = p.messageQueue.Pop()
 		if !ok {
 			// This peer is closing
@@ -625,7 +623,6 @@ func (p *peer) writeMessage(writer io.Writer, msg message.OutboundMessage) {
 		)
 		return
 	}
-
 	now := p.Clock.Time()
 	p.storeLastSent(now)
 	p.Metrics.Sent(msg)
