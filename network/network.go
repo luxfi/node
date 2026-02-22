@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -506,9 +505,16 @@ func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	if chainID == constants.PrimaryNetworkID {
 		return constants.PrimaryNetworkID
 	}
+	// Native chains (P, C, X, Q, A, B, T, Z, G, K, D) are all sequenced
+	// by the primary network. This check MUST come before the callback check
+	// because PrimaryNetworkID == ids.Empty, and the callback returns
+	// PrimaryNetworkID for native chains, which would be incorrectly
+	// filtered out by the `sid != ids.Empty` guard below.
+	if ids.IsNativeChain(chainID) {
+		return constants.PrimaryNetworkID
+	}
 	if n.config.SequencerIDForChain != nil {
 		if sid := n.config.SequencerIDForChain(chainID); sid != ids.Empty {
-			fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s resolved via callback → %s\n", chainID, sid)
 			return sid
 		}
 	}
@@ -516,11 +522,9 @@ func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	// This is needed for subnet gossip: validators are registered under
 	// subnet IDs, not blockchain IDs.
 	if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
-		fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s resolved via blockchainToSubnet → subnetID=%s\n", chainID, subnetID)
 		return subnetID
 	}
 	// Safe default: self-sequenced or unknown mapping.
-	fmt.Fprintf(os.Stderr, "[SEQUENCER-ID] chainID=%s UNRESOLVED (falling back to self)\n", chainID)
 	return chainID
 }
 
@@ -533,14 +537,8 @@ func (n *network) Send(
 	// Create a default allowance policy that allows all connections
 	var allower nets.Allower = &noOpAllower{}
 
-	fmt.Fprintf(os.Stderr, "[NET-SEND] op=%s chainID=%s requestedNodeIDs=%d\n", msg.Op(), chainID, nodeIDs.Len())
-	for nodeID := range nodeIDs {
-		fmt.Fprintf(os.Stderr, "[NET-SEND]   targetNodeID=%s\n", nodeID)
-	}
-
 	// Use provided nodeIDs directly
 	namedPeers := n.getPeers(nodeIDs, chainID, allower)
-	fmt.Fprintf(os.Stderr, "[NET-SEND] namedPeers=%d (lost %d)\n", len(namedPeers), nodeIDs.Len()-len(namedPeers))
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
 		nodeIDs.Len()-len(namedPeers),
@@ -573,18 +571,15 @@ func (n *network) Send(
 		for _, peer := range peers {
 			if peer.Send(n.onCloseCtx, msg) {
 				sentTo.Add(peer.ID())
-				fmt.Fprintf(os.Stderr, "[NET-SEND] SUCCESS sent to peer=%s op=%s\n", peer.ID(), msg.Op())
 
 				// record metrics for success
 				n.sendFailRateCalculator.Observe(0, now)
 			} else {
-				fmt.Fprintf(os.Stderr, "[NET-SEND] FAILED to send to peer=%s op=%s\n", peer.ID(), msg.Op())
 				// record metrics for failure
 				n.sendFailRateCalculator.Observe(1, now)
 			}
 		}
 	}
-	fmt.Fprintf(os.Stderr, "[NET-SEND] TOTAL sentTo=%d\n", sentTo.Len())
 	return sentTo
 }
 
@@ -1070,12 +1065,10 @@ func (n *network) getPeers(
 	// Resolve sequencerID for validator lookups
 	// chainID = execution domain (routing), sequencerID = validator membership
 	sid := n.sequencerID(chainID)
-	fmt.Fprintf(os.Stderr, "[GET-PEERS] chainID=%s sequencerID=%s connectedPeers=%d\n", chainID, sid, n.connectedPeers.Len())
 
 	for nodeID := range nodeIDs {
 		peer, ok := n.connectedPeers.GetByID(nodeID)
 		if !ok {
-			fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s NOT CONNECTED\n", nodeID)
 			continue
 		}
 
@@ -1083,11 +1076,9 @@ func (n *network) getPeers(
 		_, areTheyAValidator := n.config.Validators.GetValidator(sid, nodeID)
 		// check if the peer is allowed to connect to the net
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
-			fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s connected but NOT ALLOWED (isValidator=%v)\n", nodeID, areTheyAValidator)
 			continue
 		}
 
-		fmt.Fprintf(os.Stderr, "[GET-PEERS]   nodeID=%s FOUND (isValidator=%v)\n", nodeID, areTheyAValidator)
 		peers = append(peers, peer)
 	}
 
@@ -1135,11 +1126,12 @@ func (n *network) samplePeers(
 		func(p peer.Peer) bool {
 			trackedChains := p.TrackedChains()
 
-			// CRITICAL FIX: For Primary Network, trackedChains contains actual chain IDs
-			// (P-chain, X-chain, C-chain), NOT the abstract PrimaryNetworkID (ids.Empty).
-			// All connected peers implicitly track the Primary Network if they're connected,
-			// so we skip the chain tracking check for Primary Network.
-			isPrimaryNetwork := chainID == constants.PrimaryNetworkID
+			// Native chains (P, C, X, Q, A, B, T, Z, G, K, D) are all part of
+			// the primary network. Peers advertise PrimaryNetworkID in their
+			// trackedChains set, not individual native chain IDs. So when
+			// gossip uses a native chainID (e.g., PChainID), we must treat
+			// it like primary network to avoid filtering out all peers.
+			isPrimaryNetwork := chainID == constants.PrimaryNetworkID || ids.IsNativeChain(chainID)
 			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
 
 			// For subnet blockchains, also check if the peer tracks the subnet ID.

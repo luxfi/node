@@ -82,6 +82,7 @@ func main() {
 
 	// Fetch ALL validator node IDs from P-chain
 	var nodeIDs []ids.NodeID
+	var minPrimaryEnd uint64
 	if !*skipValidators {
 		pClient := platformvm.NewClient(nc.URI)
 		validators, err := pClient.GetCurrentValidators(ctx, ids.Empty, nil)
@@ -91,9 +92,12 @@ func main() {
 		} else {
 			for _, v := range validators {
 				nodeIDs = append(nodeIDs, v.NodeID)
-				log.Printf("Validator: %s", v.NodeID)
+				log.Printf("Validator: %s (end: %d)", v.NodeID, v.EndTime)
+				if minPrimaryEnd == 0 || v.EndTime < minPrimaryEnd {
+					minPrimaryEnd = v.EndTime
+				}
 			}
-			log.Printf("Found %d validators", len(nodeIDs))
+			log.Printf("Found %d validators (min primary end: %d)", len(nodeIDs), minPrimaryEnd)
 		}
 	}
 
@@ -234,7 +238,16 @@ func main() {
 				log.Printf("WARNING: validator wallet sync failed: %v", err)
 			} else {
 				startTime := time.Now().Add(60 * time.Second)
-				endTime := startTime.Add(365 * 24 * time.Hour) // 1 year
+				// Use primary validator end time minus 1 hour buffer, or 300 days
+				endTime := startTime.Add(300 * 24 * time.Hour)
+				if minPrimaryEnd > 0 {
+					primaryEnd := time.Unix(int64(minPrimaryEnd), 0)
+					safeEnd := primaryEnd.Add(-1 * time.Hour) // 1 hour buffer
+					if safeEnd.Before(endTime) {
+						endTime = safeEnd
+					}
+					log.Printf("Subnet validator: start=%s end=%s (primary ends %s)", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), primaryEnd.Format(time.RFC3339))
+				}
 
 				for _, nodeID := range nodeIDs {
 					log.Printf("Adding validator %s to subnet %s...", nodeID, subnetID)
