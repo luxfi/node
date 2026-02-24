@@ -494,6 +494,7 @@ func (p *peer) readMessages() {
 			continue
 		}
 
+
 		now := p.Clock.Time()
 		p.storeLastReceived(now)
 		p.Metrics.Received(msg, msgLen)

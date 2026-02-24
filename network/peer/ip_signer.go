@@ -7,10 +7,18 @@ import (
 	"crypto"
 	"net/netip"
 	"sync"
+	"time"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
+)
+
+const (
+	// ipResignInterval controls how often we re-sign our IP to keep the
+	// signature fresh. Must be less than the reasonableClockSkewWindow in
+	// ip.go (10 minutes) to ensure peers always accept our signature.
+	ipResignInterval = 5 * time.Minute
 )
 
 // IPSigner will return a signedIP for the current value of our dynamic IP.
@@ -40,8 +48,9 @@ func NewIPSigner(
 }
 
 // GetSignedIP returns the signedIP of the current value of the provided
-// dynamicIP. If the dynamicIP hasn't changed since the prior call to
-// GetSignedIP, then the same [SignedIP] will be returned.
+// dynamicIP. If the dynamicIP hasn't changed and the signature is still fresh,
+// then the same [SignedIP] will be returned. The signature is refreshed
+// periodically to ensure it stays within the verification window.
 //
 // It's safe for multiple goroutines to concurrently call GetSignedIP.
 func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
@@ -51,11 +60,12 @@ func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
 	signedIP := s.signedIP
 	s.signedIPLock.RUnlock()
 	ip := s.ip.Get()
-	if signedIP != nil && signedIP.AddrPort == ip {
+	if signedIP != nil && signedIP.AddrPort == ip && s.isFresh(signedIP) {
 		return signedIP, nil
 	}
 
-	// If our current IP hasn't been signed yet - then we should sign it.
+	// If our current IP hasn't been signed yet or the signature is stale,
+	// we should (re-)sign it.
 	s.signedIPLock.Lock()
 	defer s.signedIPLock.Unlock()
 
@@ -63,7 +73,7 @@ func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
 	// same time, we should verify that we are the first thread to attempt to
 	// update it.
 	signedIP = s.signedIP
-	if signedIP != nil && signedIP.AddrPort == ip {
+	if signedIP != nil && signedIP.AddrPort == ip && s.isFresh(signedIP) {
 		return signedIP, nil
 	}
 
@@ -79,6 +89,13 @@ func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
 
 	s.signedIP = signedIP
 	return s.signedIP, nil
+}
+
+// isFresh returns true if the signed IP's timestamp is recent enough that
+// peers will accept it within the reasonableClockSkewWindow.
+func (s *IPSigner) isFresh(ip *SignedIP) bool {
+	now := s.clock.Unix()
+	return now-ip.Timestamp < uint64(ipResignInterval.Seconds())
 }
 
 // PublicKey returns the BLS public key for this IPSigner
