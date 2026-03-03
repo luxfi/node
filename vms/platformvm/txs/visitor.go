@@ -32,4 +32,7 @@ type Visitor interface {
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error
 	DisableL1ValidatorTx(*DisableL1ValidatorTx) error
+
+	// Granite Transactions:
+	SlashValidatorTx(*SlashValidatorTx) error
 }

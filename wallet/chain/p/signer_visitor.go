@@ -361,6 +361,15 @@ func (s *signerVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error
 	return sign(s.tx, false, txSigners)
 }
 
+// SlashValidatorTx signs a SlashValidatorTx
+func (s *signerVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
 // IncreaseL1ValidatorBalanceTx signs an IncreaseL1ValidatorBalanceTx
 func (s *signerVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
 	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)

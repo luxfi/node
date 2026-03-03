@@ -145,6 +145,10 @@ func (*staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error 
 	return ErrUnsupportedTx
 }
 
+func (*staticVisitor) SlashValidatorTx(*txs.SlashValidatorTx) error {
+	return ErrUnsupportedTx
+}
+
 func (v *staticVisitor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	v.fee = v.config.AddChainValidatorFee
 	return nil

@@ -243,6 +243,18 @@ var (
 		gas.DBRead:  1, // read staker
 		gas.DBWrite: 6, // write remaining balance utxo + weight diff + deactivated weight diff + public key diff + delete staker + write staker
 	}
+	IntrinsicSlashValidatorTxComplexities = gas.Dimensions{
+		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
+			ids.NodeIDLen + // nodeID
+			wrappers.LongLen + // evidence height
+			wrappers.ByteLen + // evidence type
+			wrappers.IntLen + // messageA length prefix
+			wrappers.IntLen + // messageB length prefix
+			2*bls.SignatureLen + // two BLS signatures
+			wrappers.IntLen, // slashPercentage
+		gas.DBRead:  1, // read validator
+		gas.DBWrite: 2, // delete + re-insert validator (or just delete if below minimum)
+	}
 
 	errUnsupportedOutput = errors.New("unsupported output type")
 	errUnsupportedInput  = errors.New("unsupported input type")
@@ -818,6 +830,23 @@ func (c *complexityVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) e
 		&baseTxComplexity,
 		&authComplexity,
 	)
+	return err
+}
+
+func (c *complexityVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	// Add bandwidth for the variable-length evidence messages
+	evidenceBandwidth := uint64(len(tx.Evidence.MessageA) + len(tx.Evidence.MessageB))
+	c.output, err = IntrinsicSlashValidatorTxComplexities.Add(
+		&baseTxComplexity,
+	)
+	if err != nil {
+		return err
+	}
+	c.output[gas.Bandwidth], err = math.Add(c.output[gas.Bandwidth], evidenceBandwidth)
 	return err
 }
 

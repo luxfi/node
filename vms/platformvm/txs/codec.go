@@ -51,6 +51,7 @@ func init() {
 		errs.Add(
 			RegisterDurangoTypes(c),
 			RegisterEtnaTypes(c),
+			RegisterGraniteTypes(c),
 		)
 	}
 
@@ -131,4 +132,10 @@ func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),
 		targetCodec.RegisterType(&DisableL1ValidatorTx{}),
 	)
+}
+
+// RegisterGraniteTypes registers the type information for transactions that
+// are valid during the Granite series of upgrades.
+func RegisterGraniteTypes(targetCodec linearcodec.Codec) error {
+	return targetCodec.RegisterType(&SlashValidatorTx{})
 }

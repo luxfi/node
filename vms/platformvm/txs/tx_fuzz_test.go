@@ -528,3 +528,4 @@ func (v *visitor) RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error           
 func (v *visitor) SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error             { return nil }
 func (v *visitor) DisableL1ValidatorTx(*DisableL1ValidatorTx) error                 { return nil }
 func (v *visitor) IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error { return nil }
+func (v *visitor) SlashValidatorTx(*SlashValidatorTx) error                         { return nil }

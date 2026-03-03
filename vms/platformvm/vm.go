@@ -93,6 +93,7 @@ type VM struct {
 	nodeClock      mockable.Clock
 
 	uptimeManager uptime.Calculator
+	tracker       *uptimeTracker
 
 	// The runtime wiring of this vm
 	rt *runtime.Runtime
@@ -789,21 +790,12 @@ func (vm *VM) onReady() error {
 		return err
 	}
 
-	// 	if !vm.uptimeManager.StartedTracking() {
-	// 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	// 		if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// Validator logging is not needed for minimal implementation
-	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
-	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
-
-	// for chainID := range vm.TrackedChains {
-	// 	vl := validators.NewLogger(vm.log, chainID, vm.rt.NodeID)
-	// 	vm.Validators.RegisterSetCallbackListener(chainID, vl)
-	// }
+	// Create and register the real uptime tracker for the primary network.
+	vm.tracker = newUptimeTracker(vm.state, constants.PrimaryNetworkID, vm.nodeClock.Time)
+	if err := vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.tracker); err != nil {
+		return err
+	}
+	vm.log.Info("uptime tracker registered for primary network")
 
 	// Commit state BEFORE starting background goroutines to avoid race conditions
 	// between state readers (forwardNotifications) and state writers (Commit)
@@ -844,16 +836,14 @@ func (vm *VM) Shutdown(context.Context) error {
 
 	vm.onShutdownCtxCancel()
 
-	// 	if vm.uptimeManager.StartedTracking() {
-	// 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	// 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
-	// 			return err
-	// 		}
-	//
-	// 		if err := vm.state.Commit(); err != nil {
-	// 			return err
-	// 		}
-	// 	}
+	if vm.tracker != nil {
+		if err := vm.tracker.Shutdown(); err != nil {
+			return err
+		}
+		if err := vm.state.Commit(); err != nil {
+			return err
+		}
+	}
 
 	var errs []error
 	if vm.state != nil {
@@ -1009,20 +999,18 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *chain.VersionInfo) error {
-	// Uptime tracking Connect is no longer available on Calculator interface
-	// if err := vm.uptimeManager.Connect(nodeID); err != nil {
-	//	return err
-	// }
-
-	// chain.VersionInfo is an alias for version.Application, so we can pass it directly
+	if vm.tracker != nil {
+		vm.tracker.Connect(nodeID)
+	}
 	return vm.Network.Connected(ctx, nodeID, nodeVersion)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	// Uptime tracking is handled by NoOpCalculator for now
-	// if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
-	//	return err
-	// }
+	if vm.tracker != nil {
+		if err := vm.tracker.Disconnect(nodeID); err != nil {
+			return err
+		}
+	}
 	if err := vm.state.Commit(); err != nil {
 		return err
 	}

@@ -147,6 +147,10 @@ func (*proposalTxExecutor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error
 	return ErrWrongTxType
 }
 
+func (*proposalTxExecutor) SlashValidatorTx(*txs.SlashValidatorTx) error {
+	return ErrWrongTxType
+}
+
 func (e *proposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	// AddValidatorTx is a proposal transaction until the Banff fork
 	// activation. Following the activation, AddValidatorTxs must be issued into

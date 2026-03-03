@@ -172,6 +172,10 @@ func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) erro
 	return b.baseTx(&tx.BaseTx)
 }
 
+func (b *backendVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
 func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	return b.b.removeUTXOs(
 		b.ctx,

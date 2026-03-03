@@ -107,6 +107,10 @@ func (v *MempoolTxVerifier) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) e
 	return v.standardTx(tx)
 }
 
+func (v *MempoolTxVerifier) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	baseState, err := v.standardBaseState()
 	if err != nil {

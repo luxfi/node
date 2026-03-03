@@ -179,6 +179,13 @@ func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return nil
 }
 
+func (m *txMetrics) SlashValidatorTx(*txs.SlashValidatorTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "slash_validator",
+	}).Inc()
+	return nil
+}
+
 func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "add_net_validator",
