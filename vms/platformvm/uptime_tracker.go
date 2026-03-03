@@ -125,6 +125,9 @@ func (t *uptimeTracker) CalculateUptime(nodeID ids.NodeID, netID ids.ID) (time.D
 
 // CalculateUptimePercent returns the uptime as a fraction in [0, 1].
 func (t *uptimeTracker) CalculateUptimePercent(nodeID ids.NodeID, netID ids.ID) (float64, error) {
+	if netID != t.netID {
+		return 0, nil
+	}
 	upDuration, totalDuration, err := t.CalculateUptime(nodeID, netID)
 	if err != nil {
 		return 0, err
