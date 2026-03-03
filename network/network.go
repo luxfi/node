@@ -188,7 +188,14 @@ type network struct {
 	// connect to. An entry is added to this set when we first start attempting
 	// to connect to the peer. An entry is deleted from this set once we have
 	// finished the handshake.
-	trackedIPs      map[ids.NodeID]*trackedIP
+	trackedIPs map[ids.NodeID]*trackedIP
+	// manualEndpoints stores the explicitly configured endpoints for bootstrap
+	// peers (set via ManuallyTrack). These take precedence over IPs learned
+	// from PeerList gossip when reconnecting after a disconnect. This ensures
+	// that port-forwarded bootstrap IPs (e.g. 127.0.0.1:19641) are preserved
+	// and used for reconnection instead of the cluster-internal IPs advertised
+	// by the remote node.
+	manualEndpoints map[ids.NodeID]endpoints.Endpoint
 	connectingPeers peer.Set
 	connectedPeers  peer.Set
 	closing         bool
@@ -480,6 +487,7 @@ func NewNetwork(
 		)),
 
 		trackedIPs:      make(map[ids.NodeID]*trackedIP),
+		manualEndpoints: make(map[ids.NodeID]endpoints.Endpoint),
 		ipTracker:       ipTracker,
 		connectingPeers: peer.NewSet(),
 		connectedPeers:  peer.NewSet(),
@@ -791,7 +799,14 @@ func (n *network) Track(claimedIPPorts []*endpoints.ClaimedIPPort) error {
 	_, areWeAPrimaryNetworkAValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
 	for _, ip := range claimedIPPorts {
 		if err := n.track(ip, areWeAPrimaryNetworkAValidator); err != nil {
-			return err
+			// Skip invalid entries (e.g. stale timestamps) rather than
+			// failing the whole batch. Only invalid TLS signatures are truly
+			// malformed; stale timestamps just mean the remote's IP is old.
+			n.peerConfig.Log.Debug("skipping claimed IP in Track",
+				"nodeID", ip.NodeID.String(),
+				"addr", ip.AddrPort.String(),
+				"error", err.Error(),
+			)
 		}
 	}
 	return nil
@@ -977,6 +992,11 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, endpoint endpoints.Endpoint) 
 
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
+
+	// Store the manual endpoint so reconnection after disconnect uses the
+	// configured address (e.g., port-forwarded 127.0.0.1:19641) rather than
+	// the cluster-internal IP advertised by the remote node via PeerList gossip.
+	n.manualEndpoints[nodeID] = endpoint
 
 	_, connected := n.connectedPeers.GetByID(nodeID)
 	if connected {
@@ -1211,8 +1231,15 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 
 	n.connectedPeers.Remove(nodeID)
 
-	// The peer that is disconnecting from us finished the handshake
-	if ip, wantsConnection := n.ipTracker.GetIP(nodeID); wantsConnection {
+	// The peer that is disconnecting from us finished the handshake.
+	// If this peer has a manually configured endpoint (e.g. a port-forward
+	// address like 127.0.0.1:19641 for bootstrap peers), prefer that over
+	// the cluster-internal IP the peer advertised in its Version/PeerList.
+	if manualEndpoint, hasManual := n.manualEndpoints[nodeID]; hasManual {
+		tracked := newTrackedIP(manualEndpoint)
+		n.trackedIPs[nodeID] = tracked
+		n.dial(nodeID, tracked)
+	} else if ip, wantsConnection := n.ipTracker.GetIP(nodeID); wantsConnection {
 		tracked := newTrackedIP(endpoints.NewIPEndpoint(ip.AddrPort))
 		n.trackedIPs[nodeID] = tracked
 		n.dial(nodeID, tracked)

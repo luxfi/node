@@ -1211,7 +1211,6 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 			log.String("field", "claimedIP"),
 			log.Reflect("error", err),
 		)
-		p.StartClose()
 	}
 }
 

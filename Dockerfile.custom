@@ -1,5 +1,5 @@
 # Custom build with local EVM plugin
-ARG GO_VERSION=1.25.5
+ARG GO_VERSION=1.26
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer

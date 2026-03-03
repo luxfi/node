@@ -2015,7 +2015,8 @@ func isMissingContextError(err error) bool {
 		strings.Contains(errStr, "missing parent") ||
 		strings.Contains(errStr, "parent not found") ||
 		strings.Contains(errStr, "unknown parent") ||
-		strings.Contains(errStr, "missing context")
+		strings.Contains(errStr, "missing context") ||
+		strings.Contains(errStr, "not found") // parent block not in local state
 }
 
 // requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
@@ -2268,7 +2269,7 @@ func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	// process the block. This is how Snowman consensus works - the proposer
 	// needs vote responses to reach quorum.
 
-	b.logger.Debug("received",
+	b.logger.Debug("received PushQuery",
 		log.Stringer("from", nodeID),
 		log.Uint32("requestID", requestID),
 		log.Int("containerLen", len(container)))
@@ -2729,9 +2730,9 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData 
 	}
 
 	// Gossip to all validators (-1 = all validators)
-	// Use chainID (blockchain ID) for network routing so peer filtering
-	// can resolve blockchain→subnet mapping correctly.
-	sentTo := g.net.Gossip(putMsg, nil, chainID, -1, 0, 0)
+	// Must use g.networkID (subnet ID) not chainID (blockchain ID) —
+	// net.Gossip filters validators by subnet ID in the validator manager.
+	sentTo := g.net.Gossip(putMsg, nil, g.networkID, -1, 0, 0)
 	return sentTo.Len()
 }
 
