@@ -26,6 +26,7 @@ var (
 	errEmptySignature       = errors.New("evidence contains empty signature")
 	errEmptyMessage         = errors.New("evidence contains empty message")
 	errSlashPercentTooLarge = errors.New("slash percentage exceeds 100%")
+	errNilRuntime           = errors.New("runtime is nil")
 )
 
 // EvidenceType classifies the equivocation.
@@ -86,6 +87,10 @@ func (tx *SlashValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 
 	if err := tx.Evidence.Verify(); err != nil {
 		return fmt.Errorf("invalid slash evidence: %w", err)
+	}
+
+	if rt == nil {
+		return errNilRuntime
 	}
 
 	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {

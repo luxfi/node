@@ -75,8 +75,13 @@ func (e *standardTxExecutor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
 		return err
 	}
 
-	// Calculate slash amount
-	slashAmount := staker.Weight * uint64(tx.SlashPercentage) / uint64(reward.PercentDenominator)
+	// Calculate slash amount using overflow-safe arithmetic.
+	// Instead of weight * pct / denom (which overflows for large weights),
+	// split into: (weight / denom) * pct + (weight % denom) * pct / denom
+	weight := staker.Weight
+	pct := uint64(tx.SlashPercentage)
+	denom := uint64(reward.PercentDenominator)
+	slashAmount := (weight/denom)*pct + (weight%denom)*pct/denom
 	if slashAmount == 0 {
 		slashAmount = 1 // Slash at least 1 unit
 	}
