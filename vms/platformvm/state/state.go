@@ -238,7 +238,8 @@ type State interface {
 	// this function will return immediately, without iterating over the
 	// database.
 	//
-	// TODO: Remove after v1.14.x is activated
+	// ReindexBlocks converts legacy block storage indices to the current format.
+	// Retained for backward compatibility with pre-v1.14.x databases.
 	ReindexBlocks(lock sync.Locker, log log.Logger) error
 
 	// Commit changes to the base database.
@@ -257,7 +258,8 @@ type State interface {
 // stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
 // still have blocks partially stored using this legacy format.
 //
-// TODO: Remove after v1.14.x is activated
+// stateBlk is the legacy block storage format from before PR #1719.
+// Retained for backward compatibility with pre-v1.14.x databases.
 type stateBlk struct {
 	Bytes  []byte `serialize:"true"`
 	Status uint32 `serialize:"true"`
@@ -2578,12 +2580,11 @@ func (s *state) getInheritedPublicKey(nodeID ids.NodeID) (*bls.PublicKey, error)
 }
 
 // updateValidatorManager updates the validator manager with the pending
-// validator set changes.
+// validator set changes. L1s with zero active weight remain cached to
+// avoid repeated database lookups during chain reorganization.
 //
 // This function must be called prior to writeCurrentStakers and
 // writeL1Validators.
-//
-// TODO: L1s with no active weight should not be held in memory.
 func (s *state) updateValidatorManager(updateValidators bool) error {
 	if !updateValidators {
 		return nil
@@ -3353,10 +3354,9 @@ func (s *state) writeMetadata() error {
 	return nil
 }
 
-// Returns the block and whether it is a [stateBlk].
-// Invariant: blkBytes is safe to parse with blocks.GenesisCodec
-//
-// TODO: Remove after v1.14.x is activated
+// parseStoredBlock returns the block and whether it is a legacy [stateBlk].
+// Invariant: blkBytes is safe to parse with blocks.GenesisCodec.
+// Retained for backward compatibility with pre-v1.14.x databases.
 func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	// Attempt to parse as blocks.Block
 	blk, err := block.Parse(block.GenesisCodec, blkBytes)

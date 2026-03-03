@@ -177,13 +177,10 @@ func main() {
 			RegisterL1ValidatorMessage: registerL1Validator.Bytes(),
 		},
 	}
-	// TODO: Fix proto marshal issue with L1ValidatorRegistrationJustification
-	// justificationBytes, err := proto.Marshal(&justification)
-	// if err != nil {
-	// 	log.Fatalf("failed to create justification: %s\n", err)
-	// }
-	justificationBytes := []byte{} // placeholder
-	_ = justification
+	justificationBytes, err := proto.Marshal(&justification)
+	if err != nil {
+		log.Fatalf("failed to create justification: %s\n", err)
+	}
 
 	// Create inbound handler for messages
 	inboundHandler := &testInboundHandler{}

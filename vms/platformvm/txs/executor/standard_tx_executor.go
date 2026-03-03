@@ -31,8 +31,8 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-// TODO: Before Etna, ensure that the maximum number of expiries to track is
-// limited to a reasonable number by this window.
+// RegisterL1ValidatorTxExpiryWindow bounds the maximum number of tracked
+// expiries. The window is 1 day, which limits expiry set size.
 const (
 	second                            = 1
 	minute                            = 60 * second

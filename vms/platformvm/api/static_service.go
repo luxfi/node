@@ -50,7 +50,8 @@ type UTXO struct {
 	Message  string      `json:"message"`
 }
 
-// TODO can we define this on *UTXO?
+// Compare is defined on UTXO (not *UTXO) because it is used as a
+// Sortable[T] value type in slices.SortFunc.
 func (utxo UTXO) Compare(other UTXO) int {
 	if locktimeCmp := cmp.Compare(utxo.Locktime, other.Locktime); locktimeCmp != 0 {
 		return locktimeCmp

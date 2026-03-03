@@ -115,7 +115,7 @@ func (s *DBServer) VerifyChangeProof(
 		endKey = maybe.Some(req.EndKey.Value)
 	}
 
-	// TODO there's probably a better way to do this.
+	// Error is serialized as a string across the gRPC boundary.
 	var errString string
 	if err := s.db.VerifyChangeProof(ctx, &proof, startKey, endKey, rootID); err != nil {
 		errString = err.Error()

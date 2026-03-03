@@ -16,7 +16,8 @@ import (
 // gasPriceMultiplier increases the gas price to support multiple transactions
 // to be issued.
 //
-// TODO: Handle this better. Either here or in the mempool.
+// gasPriceMultiplier increases the gas price to allow multiple transactions
+// to be issued without waiting for prior ones to leave the mempool.
 const gasPriceMultiplier = 2
 
 func NewContextFromURI(ctx context.Context, uri string) (*builder.Context, error) {

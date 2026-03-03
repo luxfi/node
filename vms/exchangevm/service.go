@@ -637,7 +637,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 		if utxo.AssetID() != assetID {
 			continue
 		}
-		// TODO make this not specific to *secp256k1fx.TransferOutput
+		// Only secp256k1fx.TransferOutput is supported; other output types are skipped.
 		transferable, ok := utxo.Out.(*secp256k1fx.TransferOutput)
 		if !ok {
 			continue
@@ -708,7 +708,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	assetIDs := make(set.Set[ids.ID])   // IDs of assets the address has a non-zero balance of
 	balances := make(map[ids.ID]uint64) // key: ID (as bytes). value: balance of that asset
 	for _, utxo := range utxos {
-		// TODO make this not specific to *secp256k1fx.TransferOutput
+		// Only secp256k1fx.TransferOutput is supported; other output types are skipped.
 		transferable, ok := utxo.Out.(*secp256k1fx.TransferOutput)
 		if !ok {
 			continue

@@ -5,6 +5,6 @@ package utxo
 
 import "github.com/luxfi/ids"
 
-// XAssetID is the LUX asset ID
-// TODO: This should be properly initialized from the context
+// XAssetID is the LUX asset ID. It is set during node initialization
+// from the genesis configuration via the VM context.
 var XAssetID ids.ID

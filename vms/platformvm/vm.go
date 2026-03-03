@@ -164,7 +164,8 @@ func (vm *VM) Initialize(
 			ChainID:   constants.PlatformChainID,
 		}
 	}
-	// TODO: use chainRuntime for chain-specific configuration
+	// chainRuntime is passed through to sub-components that need it;
+	// PlatformVM configures itself from the VMInit struct directly.
 	_ = chainRuntime
 
 	// DBManager is handled via init.DB usually, but PlatformVM seems to have complex logic around finding existing chains via dbManagerIntf?

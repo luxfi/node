@@ -6,6 +6,7 @@ package chainadapter
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -403,7 +404,7 @@ func (a *CosmosAdapter) verifyCommit(header *CosmosHeader, commit *TendermintCom
 }
 
 // verifyTendermintSignature verifies a Tendermint vote signature
-func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHeader, round int32, _ *TendermintVote) error {
+func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHeader, round int32, vote *TendermintVote) error {
 	// Build vote message
 	// In production, would use canonical encoding
 	msg := make([]byte, 0, 128)
@@ -413,15 +414,18 @@ func verifyTendermintSignature(validator *TendermintValidator, header *CosmosHea
 	msg = append(msg, header.Hash[:]...)
 
 	// Verify signature based on key type
-	// TODO: implement actual signature verification using msg
-	_ = msg
 	switch validator.PubKeyType {
 	case "ed25519":
-		// Ed25519 verification would go here
-		return nil // Simplified
+		if len(validator.PubKey) != ed25519.PublicKeySize {
+			return fmt.Errorf("invalid ed25519 public key length: %d", len(validator.PubKey))
+		}
+		if !ed25519.Verify(validator.PubKey, msg, vote.Signature) {
+			return errors.New("invalid ed25519 signature")
+		}
+		return nil
 	case "secp256k1":
-		// Secp256k1 verification would go here
-		return nil // Simplified
+		// Secp256k1 verification is not yet supported for Cosmos adapter
+		return errors.New("secp256k1 signature verification not supported")
 	default:
 		return errors.New("unknown public key type")
 	}

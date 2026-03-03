@@ -393,8 +393,8 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	// Block building is only supported if the consensus state is Ready
 	// and the vm is not state syncing.
 	//
-	// TODO: Correctly handle dynamic state sync here. When the innerVM is
-	// dynamically state syncing, we should return here as well.
+	// When the innerVM is dynamically state syncing, consensusState will
+	// not be Ready, so we correctly return early in that case as well.
 	if vm.consensusState != uint32(vmcore.Ready) {
 		return time.Time{}, false, nil
 	}

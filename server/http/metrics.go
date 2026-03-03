@@ -5,6 +5,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/luxfi/metric"
 )
@@ -44,10 +45,10 @@ func (m *serverMetrics) wrapHandler(chainName string, handler http.Handler) http
 		m.inflight.Inc()
 		defer m.inflight.Dec()
 
-		timer := m.duration.WithLabelValues(r.Method, chainName)
-		defer func(start float64) {
-			timer.Observe(float64(start))
-		}(float64(0)) // TODO: implement proper timing
+		start := time.Now()
+		defer func() {
+			m.duration.WithLabelValues(r.Method, chainName).Observe(time.Since(start).Seconds())
+		}()
 
 		handler.ServeHTTP(w, r)
 	})

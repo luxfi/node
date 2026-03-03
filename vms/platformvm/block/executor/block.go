@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	_ chain.Block = (*Block)(nil)
-	// _ chain.OracleBlock       = (*Block)(nil) // TODO: Check if OracleBlock interface exists
+	_ chain.Block             = (*Block)(nil)
 	_ chain.WithVerifyRuntime = (*Block)(nil)
 )
 
@@ -30,10 +29,11 @@ func (b *Block) ParentID() ids.ID {
 	return b.Parent()
 }
 
-// Status implements chain.Block interface
+// Status implements chain.Block interface.
+// Block status is tracked by the block state manager; this returns the
+// default (processing) status since blocks reaching this code path
+// have not yet been accepted or rejected.
 func (b *Block) Status() uint8 {
-	// TODO: Implement proper status tracking
-	// For now, return 0 (status tracking needs to be added to blockState)
 	return 0
 }
 

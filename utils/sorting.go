@@ -11,7 +11,8 @@ import (
 	"github.com/luxfi/crypto/hash"
 )
 
-// TODO can we handle sorting where the Compare function relies on a codec?
+// Sorting with codec-dependent Compare functions is not supported; callers
+// must ensure the codec is initialized before constructing comparators.
 
 type Sortable[T any] interface {
 	Compare(T) int

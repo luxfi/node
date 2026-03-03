@@ -16,7 +16,6 @@ var metricsLock sync.Mutex
 // Metrics are restored to their original value during testing cleanup.
 func WithMetrics(t testing.TB) {
 	metricsLock.Lock()
-	// TODO: Add metric enable/disable support when available
 	t.Cleanup(func() {
 		metricsLock.Unlock()
 	})

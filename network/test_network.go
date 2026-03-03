@@ -91,9 +91,7 @@ func NewTestNetworkConfig(
 		return nil, err
 	}
 
-	// TODO actually monitor usage
-	// TestNetwork doesn't use disk so we don't need to track it, but we should
-	// still have guardrails around cpu/memory usage.
+	// TestNetwork doesn't use disk so resource tracking is not needed.
 	return &Config{
 		HealthConfig: HealthConfig{
 			Enabled:                      true,

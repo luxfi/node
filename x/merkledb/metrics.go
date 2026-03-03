@@ -94,7 +94,7 @@ type metricsImpl struct {
 }
 
 func newMetrics(prefix string, reg metric.Registerer) (merkleDBMetrics, error) {
-	// TODO: Should we instead return an error if reg is nil?
+	// A nil registerer means metrics are disabled; return a no-op implementation.
 	if reg == nil {
 		return &mockMetrics{}, nil
 	}

@@ -35,12 +35,9 @@ import (
 	smblock "github.com/luxfi/vm/chain"
 )
 
-// TODO: Update xsvm to match current consensus ChainVM interface
-// The consensus interface has evolved to use interface{} parameters
-// var (
-// 	_ smblock.ChainVM                      = (*VM)(nil)
-// 	_ smblock.BuildBlockWithRuntimeChainVM = (*VM)(nil)
-// )
+// xsvm.VM does not yet satisfy the current consensus ChainVM interface
+// due to Initialize parameter changes. Interface compliance assertions
+// are omitted until the migration is complete.
 
 type VM struct {
 	*p2p.Network

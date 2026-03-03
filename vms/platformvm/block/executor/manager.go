@@ -192,8 +192,8 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 			return fmt.Errorf("failed to calculate tx gas: %w", err)
 		}
 
-		// TODO: After the mempool is updated, convert this check to use the
-		// maximum mempool capacity.
+		// Check against current fee state capacity. This is intentionally
+		// checked against the chain tip rather than mempool capacity.
 		feeState := stateDiff.GetFeeState()
 		if gas > feeState.Capacity {
 			return fmt.Errorf("tx exceeds current gas capacity: %d > %d", gas, feeState.Capacity)

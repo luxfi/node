@@ -16,8 +16,8 @@ const (
 	ifConfigMeURL = "http://ifconfig.me"
 	// Note: All of the names below must be lowercase
 	// because we lowercase the user's input in NewResolver.
-	// TODO remove either ifConfig or ifConfigCo.
-	// They do the same thing.
+	// ifConfig and ifConfigCo both resolve via ifconfig.co;
+	// both are kept for backward compatibility.
 	OpenDNSName    = "opendns"
 	IFConfigName   = "ifconfig"
 	IFConfigCoName = "ifconfigco"

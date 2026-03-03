@@ -65,8 +65,8 @@ func Parse(bytes []byte) (Message, error) {
 	} else {
 		// This message wasn't encoded with proto.
 		// It must have been encoded with node's codec.
-		// TODO remove else statement remove once all nodes support proto encoding.
-		// i.e. when all nodes are on v1.11.0 or later.
+		// Legacy codec fallback for nodes older than v1.11.0 that do not
+		// support proto encoding.
 		version, err := c.Unmarshal(bytes, &msg)
 		if err != nil {
 			return nil, err

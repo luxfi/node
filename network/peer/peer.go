@@ -290,7 +290,8 @@ func (p *peer) Info() Info {
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
 		TrackedChains:  p.trackedChains,
-		// TODO: Add support for SupportedLPs and ObjectedLPs
+		SupportedLPs:   p.supportedLPs,
+		ObjectedLPs:    p.objectedLPs,
 	}
 }
 

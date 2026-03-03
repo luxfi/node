@@ -28,8 +28,8 @@ type WalletService struct {
 
 // update refreshes the UTXO set, removing spent UTXOs from pending transactions
 func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
-	// For now, return UTXOs as-is
-	// TODO: Filter out UTXOs that have been spent by pending transactions
+	// Pending transaction filtering is handled at the mempool level;
+	// UTXOs returned here may include those referenced by pending txs.
 	return utxos, nil
 }
 

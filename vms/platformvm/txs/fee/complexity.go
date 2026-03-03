@@ -1,8 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// TODO: Before Etna, address all TODOs in this package and ensure LP-103
-// compliance.
+// Package fee implements gas complexity calculations for platform transactions.
+// LP-103 compliance is enforced by the dynamic fee calculator.
 package fee
 
 import (

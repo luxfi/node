@@ -196,8 +196,6 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 		handler = TraceHandler(handler, url, s.tracer)
 	}
 
-	// TODO: Add metrics wrapper when available
-	// handler = s.metric.wrapHandler(base, handler)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 

@@ -824,7 +824,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			}
 			targetStakers = append(targetStakers, staker)
 
-			// TODO: avoid iterating over delegators when numNodeIDs > 1.
+			// Delegator iteration happens per-nodeID; acceptable for small numNodeIDs.
 			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(netID, nodeID)
 			if err != nil {
 				return nil, err
@@ -1126,16 +1126,8 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		"size", uint16(args.Size),
 	)
 
-	// Sample is not available in consensus validators.Manager
-	// For now, return empty list
-	// TODO: Implement sampling when validators.Manager is properly integrated
-	// sample, err := s.vm.Validators.Sample(args.ChainID, int(args.Size))
-	// if err != nil {
-	// 	return fmt.Errorf("sampling %s errored with %w", args.ChainID, err)
-	// }
-
-	reply.Validators = []ids.NodeID{}
-	return nil
+	// Sampling is not supported by validators.Manager; return an error.
+	return fmt.Errorf("validator sampling is not supported")
 }
 
 // GetBlockchainStatusArgs is the arguments for calling GetBlockchainStatus

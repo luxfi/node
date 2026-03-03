@@ -134,7 +134,6 @@ type Manager[T any] struct {
 	metrics          SyncMetrics
 }
 
-// TODO remove non-config values out of this struct
 type ManagerConfig[T any] struct {
 	DB                    DB
 	RangeProofClient      *p2p.Client
@@ -366,7 +365,6 @@ func (m *Manager[T]) requestChangeProof(ctx context.Context, work *workItem) {
 		defer m.finishWorkItem()
 
 		if err := m.handleChangeProofResponse(ctx, targetRootID, work, request, responseBytes, err); err != nil {
-			// TODO log responses
 			m.config.Log.Debug("dropping response", zap.Error(err), zap.Stringer("request", request))
 			m.retryWork(work)
 			return
@@ -424,7 +422,6 @@ func (m *Manager[T]) requestRangeProof(ctx context.Context, work *workItem) {
 		defer m.finishWorkItem()
 
 		if err := m.handleRangeProofResponse(ctx, targetRootID, work, request, responseBytes, appErr); err != nil {
-			// TODO log responses
 			m.config.Log.Debug("dropping response", zap.Error(err), zap.Stringer("request", request))
 			m.retryWork(work)
 			return
@@ -477,10 +474,9 @@ func (m *Manager[T]) shouldHandleResponse(
 
 	m.metrics.RequestSucceeded()
 
-	// TODO can we remove this?
+	// Guard against applying proofs after the manager has been closed.
 	select {
 	case <-m.doneChan:
-		// If we're closed, don't apply the proof.
 		return ErrAlreadyClosed
 	default:
 	}

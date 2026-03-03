@@ -117,7 +117,6 @@ func (g *GetChangeProofHandler) Request(ctx context.Context, _ ids.NodeID, _ tim
 			if !errors.Is(err, merkledb.ErrInsufficientHistory) {
 				// We should only fail to get a change proof if we have insufficient history.
 				// Other errors are unexpected.
-				// TODO define custom errors
 				return nil, &warp.Error{
 					Code:    p2p.ErrUnexpected.Code,
 					Message: fmt.Sprintf("failed to get change proof: %s", err),
@@ -245,8 +244,9 @@ func (g *GetRangeProofHandler) Request(ctx context.Context, _ ids.NodeID, _ time
 // the proof is smaller than [req.BytesLimit].
 // When a sufficiently small proof is generated, returns it.
 // If no sufficiently small proof can be generated, returns [ErrMinProofSizeIsTooLarge].
-// TODO improve range proof generation so we don't need to iteratively
-// reduce the key limit.
+// getRangeProof generates a range proof, iteratively reducing the key limit
+// until the serialized proof fits within the byte limit. Returns
+// ErrMinProofSizeIsTooLarge if no sufficiently small proof can be generated.
 func getRangeProof(
 	ctx context.Context,
 	db DB,

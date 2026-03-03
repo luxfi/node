@@ -68,10 +68,9 @@ func (c *DBClient) GetChangeProof(
 		return nil, err
 	}
 
-	// TODO handle merkledb.ErrInvalidMaxLength
-	// TODO disambiguate between the root not being present due to
-	// the end root not being present and the start root not being
-	// present before the end root. i.e. ErrNoEndRoot vs ErrInsufficientHistory.
+	// When the root is not present, the server returns RootNotPresent without
+	// distinguishing ErrNoEndRoot from ErrInsufficientHistory. Both map to
+	// ErrInsufficientHistory on the client side.
 	if resp.GetRootNotPresent() {
 		return nil, merkledb.ErrInsufficientHistory
 	}
@@ -106,7 +105,7 @@ func (c *DBClient) VerifyChangeProof(
 		return err
 	}
 
-	// TODO there's probably a better way to do this.
+	// Error is deserialized from the string returned by the gRPC server.
 	if len(resp.Error) == 0 {
 		return nil
 	}

@@ -21,8 +21,8 @@ func Command() *cobra.Command {
 }
 
 func runFunc(*cobra.Command, []string) error {
-	// TODO: Update xsvm.VM to implement current consensus ChainVM interface
-	// The consensus interface now expects interface{} parameters for Initialize
+	// xsvm.VM does not yet implement the current consensus ChainVM interface.
+	// The plugin is a no-op until the interface alignment is complete.
 	_ = rpcchainvm.Serve
 	_ = &xsvm.VM{}
 	return nil

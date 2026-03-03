@@ -18,8 +18,8 @@ type RuntimeInitializable interface {
 
 // UnsignedTx is an unsigned transaction
 type UnsignedTx interface {
-	// TODO: Remove this initialization pattern from both the platformvm and the
-	// avm.
+	// RuntimeInitializable is required for both platformvm and exchangevm
+	// transaction types to share initialization logic.
 	RuntimeInitializable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)

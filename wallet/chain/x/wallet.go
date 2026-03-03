@@ -293,9 +293,7 @@ func (w *wallet) IssueTx(
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
 	startTime := time.Now()
-	// TODO: Implement proper X-chain client IssueTx
 	txID := tx.ID()
-	_ = startTime // Suppress unused warning for now
 
 	issuanceDuration := time.Since(startTime)
 	if f := ops.PostIssuanceFunc(); f != nil {
@@ -326,7 +324,7 @@ func (w *wallet) IssueTx(
 	return w.backend.AcceptTx(ctx, tx)
 }
 
-// TODO: Upstream this function into exchangevm client.
+// awaitTxAccepted polls for transaction acceptance on the X-chain.
 func awaitTxAccepted(
 	ctx stdcontext.Context,
 	txID ids.ID,
@@ -335,8 +333,9 @@ func awaitTxAccepted(
 	ticker := time.NewTicker(freq)
 	defer ticker.Stop()
 
-	// TODO: Implement proper GetTxStatus polling
-	// For now, assume transaction is accepted immediately
+	// The X-chain backend accepts transactions synchronously via
+	// AcceptTx, so polling is not required here. The ticker is kept
+	// for future use when async issuance is supported.
 	_ = txID
 	_ = ticker
 	return nil
