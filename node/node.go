@@ -862,7 +862,17 @@ func (n *Node) initDatabase() error {
 	}
 
 	if genesisHash != expectedGenesisHash {
-		return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s", genesisHash, expectedGenesisHash)
+		if n.Config.AllowGenesisUpdate {
+			n.Log.Warn("genesis hash changed, updating stored hash (--allow-genesis-update)",
+				"oldHash", genesisHash,
+				"newHash", expectedGenesisHash,
+			)
+			if err := n.DB.Put(genesisHashKey, rawExpectedGenesisHash); err != nil {
+				return fmt.Errorf("failed to update genesis hash: %w", err)
+			}
+		} else {
+			return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s (use --allow-genesis-update to migrate)", genesisHash, expectedGenesisHash)
+		}
 	}
 
 	n.Log.Info("initializing database",
