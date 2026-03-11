@@ -525,8 +525,24 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// Specify core chains only (P, X, C)
-	// Additional chains (D, Q, A, B, T, Z, G, K) require their VMs to be built
+	// Helper to get chain genesis data or network-specific default
+	getGenesis := func(data string) []byte {
+		if data != "" {
+			return []byte(data)
+		}
+		switch config.NetworkID {
+		case constants.MainnetID:
+			return []byte(MainnetChainGenesis)
+		case constants.TestnetID:
+			return []byte(TestnetChainGenesis)
+		case constants.DevnetID:
+			return []byte(DevnetChainGenesis)
+		default:
+			return []byte(LocalChainGenesis)
+		}
+	}
+
+	// Specify all primary network chains
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
@@ -544,6 +560,12 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
+		},
+		{
+			GenesisData: getGenesis(config.DChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.DexVMID,
+			Name:        "D-Chain",
 		},
 	}
 
