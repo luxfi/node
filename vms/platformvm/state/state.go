@@ -2313,6 +2313,13 @@ func (s *state) sync(genesis []byte) error {
 			err,
 		)
 	}
+
+	// Migrate: add any genesis chains missing from state (e.g., D-Chain added after initial genesis)
+	if wasInitialized {
+		if err := s.migrateNewGenesisChains(genesis); err != nil {
+			return fmt.Errorf("failed to migrate new genesis chains: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -2347,6 +2354,62 @@ func (s *state) init(genesisBytes []byte) error {
 	}
 
 	return s.Commit()
+}
+
+// migrateNewGenesisChains adds any chains from genesis that are missing from
+// state. This handles the case where new primary network chains (e.g., D-Chain)
+// are added to genesis after the database was already initialized.
+func (s *state) migrateNewGenesisChains(genesisBytes []byte) error {
+	parsedGenesis, err := genesis.Parse(genesisBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse genesis for chain migration: %w", err)
+	}
+
+	// Get existing chains for the primary network
+	existingChains, err := s.GetChains(constants.PrimaryNetworkID)
+	if err != nil {
+		return err
+	}
+
+	// Build set of existing chain tx IDs
+	existingIDs := make(map[ids.ID]bool, len(existingChains))
+	for _, chain := range existingChains {
+		existingIDs[chain.ID()] = true
+	}
+
+	added := 0
+	for _, chain := range parsedGenesis.Chains {
+		if existingIDs[chain.ID()] {
+			continue
+		}
+		unsignedChain, ok := chain.Unsigned.(*txs.CreateChainTx)
+		if !ok {
+			continue
+		}
+		log.Info("migrating new genesis chain into state",
+			"name", unsignedChain.BlockchainName,
+			"chainID", chain.ID(),
+			"vmID", unsignedChain.VMID,
+		)
+		s.AddChain(chain)
+		s.AddTx(chain, status.Committed)
+		added++
+	}
+
+	if added > 0 {
+		if err := s.write(false, 0); err != nil {
+			return fmt.Errorf("failed to write migrated chains: %w", err)
+		}
+		if _, err := s.baseDB.CommitBatch(); err != nil {
+			return fmt.Errorf("failed to commit migrated chains: %w", err)
+		}
+		if err := s.Commit(); err != nil {
+			return fmt.Errorf("failed to commit migrated chains to disk: %w", err)
+		}
+		log.Info("migrated new genesis chains into state", "count", added)
+	}
+
+	return nil
 }
 
 func (s *state) AddStatelessBlock(block block.Block) {
