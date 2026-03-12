@@ -168,7 +168,7 @@ require (
 require (
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
-	github.com/luxfi/zapdb/v4 v4.9.2 // indirect
+	github.com/luxfi/zapdb/v4 v4.9.3 // indirect
 )
 
 require (
@@ -226,5 +226,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/dgraph-io/badger/v4 => github.com/luxfi/badger/v4 v4.9.1-zap
