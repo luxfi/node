@@ -55,7 +55,7 @@ jobs:
           RELEASE: "jammy"
 
       - name: Save as Github artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: jammy-amd64
           path: /tmp/luxd/luxd-${{ env.TAG }}-amd64.deb
@@ -100,7 +100,7 @@ jobs:
           RELEASE: "focal"
 
       - name: Save as Github artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: focal-amd64
           path: /tmp/luxd/luxd-${{ env.TAG }}-amd64.deb
