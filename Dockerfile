@@ -62,16 +62,28 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
     echo "export CC=gcc" > ./build_env.sh \
     ; fi
 
-# Build node. The build environment is configured with build_env.sh from the step
-# enabling cross-compilation.
+# Fetch pre-built lux-accel (GPU crypto library)
+ARG ACCEL_VERSION=v0.1.0
+RUN ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    if [ "$ARCH" = "amd64" ]; then ACCEL_ARCH="linux-x86_64"; else ACCEL_ARCH="linux-arm64"; fi && \
+    mkdir -p /usr/local/include /usr/local/lib && \
+    wget -q "https://github.com/luxcpp/accel/releases/download/${ACCEL_VERSION}/lux-accel-${ACCEL_ARCH}.tar.gz" \
+        -O /tmp/accel.tar.gz && \
+    tar -xzf /tmp/accel.tar.gz -C /usr/local && \
+    rm /tmp/accel.tar.gz && \
+    ldconfig 2>/dev/null || true
+
+# Build node with GPU crypto acceleration.
+# CGO_ENABLED=1 links libluxaccel for NTT, TFHE, BLS batch verify, etc.
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
+    export CGO_LDFLAGS="-lluxaccel" && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Create plugins directory and download EVM plugin
@@ -106,6 +118,11 @@ FROM debian:12-slim AS execution
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy GPU crypto library
+COPY --from=builder /usr/local/lib/libluxaccel* /usr/local/lib/
+COPY --from=builder /usr/local/lib/liblux_accel* /usr/local/lib/
+RUN ldconfig 2>/dev/null || true
 
 # Maintain compatibility with previous images
 COPY --from=builder /luxd/build /luxd/build
