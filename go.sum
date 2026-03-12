@@ -1,5 +1,3 @@
-capnproto.org/go/capnp/v3 v3.1.0-alpha.2 h1:93ISpqHf2/3WQlfrBP0tT8Dg/RQc3uq6DV36vN0ePWk=
-capnproto.org/go/capnp/v3 v3.1.0-alpha.2/go.mod h1:2vT5D2dtG8sJGEoEKU17e+j7shdaYp1Myl8X03B3hmc=
 connectrpc.com/connect v1.19.1 h1:R5M57z05+90EfEvCY1b7hBxDVOUl45PrtXtAV2fOC14=
 connectrpc.com/connect v1.19.1/go.mod h1:tN20fjdGlewnSFeZxLKb0xwIZ6ozc3OQs2hTXy4du9w=
 connectrpc.com/grpcreflect v1.3.0 h1:Y4V+ACf8/vOb1XOc251Qun7jMB75gCUNw6llvB9csXc=
@@ -67,8 +65,6 @@ github.com/cockroachdb/redact v1.1.6 h1:zXJBwDZ84xJNlHl1rMyCojqyIxv+7YUpQiJLQ7n4
 github.com/cockroachdb/redact v1.1.6/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
 github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb h1:3bCgBvB8PbJVMX1ouCcSIxvsqKPYM7gs72o0zC76n9g=
 github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb/go.mod h1:7nc4anLGjupUW/PeY5qiNYsdNXj7zopG+eqsS7To5IQ=
-github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 h1:d5EKgQfRQvO97jnISfR89AiCCCJMwMFoSxUiU0OGCRU=
-github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381/go.mod h1:OU76gHeRo8xrzGJU3F3I1CqX1ekM8dfJw0+wPeMwnp0=
 github.com/consensys/gnark-crypto v0.19.2 h1:qrEAIXq3T4egxqiliFFoNrepkIWVEeIYwt3UL0fvS80=
 github.com/consensys/gnark-crypto v0.19.2/go.mod h1:rT23F0XSZqE0mUA0+pRtnL56IbPxs6gp4CeRsBk4XS0=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
@@ -248,8 +244,6 @@ github.com/luxfi/address v1.0.1 h1:Sc4keyuVzBIvHr7uVeYZf2/WY9YDGUgDi/iiWenj49g=
 github.com/luxfi/address v1.0.1/go.mod h1:5j3Eh66v9zvv1GbNdZwt+23krV8JlSDaRzmWZU8ZRM0=
 github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1 h1:BSaJK8THXg8eZx07y8ogJ2e3OaHkwcKsF+3cLGKTNCI=
 github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1/go.mod h1:4+FVvnCo1QqM3NaVUte0da4zgH2IblVLmUxKQi0BwE0=
-github.com/luxfi/api v1.0.3 h1:5AfLa2rQMaBFAlPFTbUar4G4a0zFJe1laE6AXDTZz78=
-github.com/luxfi/api v1.0.3/go.mod h1:a+SIsQW3gGdximHZEpmU/DaGPkm/Ypb6uyxOTmfXtyM=
 github.com/luxfi/api v1.0.4 h1:5altGkSSk3zIsGzK/NPhRQe/It5QMHrAPgBVg2TMkK4=
 github.com/luxfi/api v1.0.4/go.mod h1:Znr2A+SDJBCZ7ofxeq0MswHI0gk0cJsIYJLcu3tT8JY=
 github.com/luxfi/atomic v1.0.0 h1:xUV60MuzRvXngaQ1sM0yVC2v4TRoLlUGkkH7M9PS4yw=
@@ -348,8 +342,8 @@ github.com/luxfi/validators v1.0.0 h1:zE1HJM1lfvC+v1Lalg+MUgkKBGFWnwTfOOmXraiNnp
 github.com/luxfi/validators v1.0.0/go.mod h1:QGppjtI/gqprbplWc10J+4OIK8UYWpv+53mfH2aKhy4=
 github.com/luxfi/version v1.0.1 h1:T/1KYWEMmsrNQk7pN7PFPAwh/7XbeX7cFAKLBqI37Sk=
 github.com/luxfi/version v1.0.1/go.mod h1:Y5fPkQ2DB0XRBCxgSPXp4ISzL1/jptKnmFknShRJCyg=
-github.com/luxfi/vm v1.0.38 h1:wAZeHbmmTW37D57QzkF96kXOFLRJ9o2fv4qZq2QB5+Y=
-github.com/luxfi/vm v1.0.38/go.mod h1:agP1h8ArU+XnkItga0pS3xGSYhaqgsx1AzyaFAszo2I=
+github.com/luxfi/vm v1.0.39 h1:ezFfYWSZUvOsP4Pia0jPLk3TgMekMCL56Xm1Q7xffyg=
+github.com/luxfi/vm v1.0.39/go.mod h1:FlNv/++TwEKzBLKZlZ7zZb2O5ZuFSG6d/MjaroJGDfY=
 github.com/luxfi/warp v1.18.5 h1:yXFCT+lnvzJHs8nVvfUCQ9wNvhtgbDGaXJkJeiwgKf4=
 github.com/luxfi/warp v1.18.5/go.mod h1:SFyC529HDvbP/TWRAdYQSyJUliMa5JKFRtBrTLEElp4=
 github.com/luxfi/zapdb/v4 v4.9.2 h1:QZnuFesQM9SMxOmB+U4WGmd7AGa8DXGIqAEbveO5jXA=
@@ -397,8 +391,6 @@ github.com/onsi/gomega v1.17.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAl
 github.com/onsi/gomega v1.19.0/go.mod h1:LY+I3pBVzYsTBU1AnDwOSxaYi9WoWiqgwooUqq9yPro=
 github.com/onsi/gomega v1.38.3 h1:eTX+W6dobAYfFeGC2PV6RwXRu/MyT+cQguijutvkpSM=
 github.com/onsi/gomega v1.38.3/go.mod h1:ZCU1pkQcXDO5Sl9/VVEGlDyp+zm0m1cmeG5TOzLgdh4=
-github.com/pebbe/zmq4 v1.4.0 h1:gO5P92Ayl8GXpPZdYcD62Cwbq0slSBVVQRIXwGSJ6eQ=
-github.com/pebbe/zmq4 v1.4.0/go.mod h1:nqnPueOapVhE2wItZ0uOErngczsJdLOGkebMxaO8r48=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pingcap/errors v0.11.5-0.20210425183316-da1aaba5fb63 h1:+FZIDR/D97YOPik4N4lPDaUcLDF/EQPogxtlHB2ZZRM=

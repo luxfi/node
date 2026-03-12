@@ -157,7 +157,7 @@ require (
 	github.com/luxfi/utils v1.1.4
 	github.com/luxfi/utxo v0.2.4
 	github.com/luxfi/validators v1.0.0
-	github.com/luxfi/vm v1.0.38
+	github.com/luxfi/vm v1.0.39
 	github.com/luxfi/warp v1.18.5
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spaolacci/murmur3 v1.1.0
@@ -166,12 +166,9 @@ require (
 )
 
 require (
-	capnproto.org/go/capnp/v3 v3.1.0-alpha.2 // indirect
-	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb/v4 v4.9.2 // indirect
-	github.com/pebbe/zmq4 v1.4.0 // indirect
 )
 
 require (
