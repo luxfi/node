@@ -38,7 +38,7 @@ jobs:
         shell: bash
 
       - name: Build the node binary
-        run: ./scripts/build.sh
+        run: CGO_ENABLED=0 ./scripts/build.sh
         shell: bash
 
       - name: Create zip

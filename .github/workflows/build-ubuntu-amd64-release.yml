@@ -29,7 +29,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build
+        run: CGO_ENABLED=0 ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
@@ -74,7 +74,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build
+        run: CGO_ENABLED=0 ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"

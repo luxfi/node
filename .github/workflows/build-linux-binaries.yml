@@ -31,7 +31,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries
-        run: ./scripts/run_task.sh build -- -tags pebbledb
+        run: CGO_ENABLED=0 ./scripts/run_task.sh build -- -tags pebbledb
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
@@ -81,7 +81,7 @@ jobs:
       - run: go version
 
       - name: Build the luxd binaries (cross-compile for arm64)
-        run: GOOS=linux GOARCH=arm64 ./scripts/build.sh -- -tags pebbledb
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/build.sh -- -tags pebbledb
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
