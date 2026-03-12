@@ -84,6 +84,15 @@ RUN mkdir -p /luxd/build/plugins && \
         -O /luxd/build/plugins/${EVM_VM_ID} && \
     chmod +x /luxd/build/plugins/${EVM_VM_ID}
 
+# Build lpm (Lux Plugin Manager)
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/go/pkg/mod \
+    GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    git clone --depth 1 https://github.com/luxfi/lpm.git /tmp/lpm && \
+    cd /tmp/lpm && \
+    CGO_ENABLED=0 go build -ldflags="-s -w" -o /luxd/build/lpm ./main && \
+    rm -rf /tmp/lpm
+
 # Create this directory in the builder to avoid requiring anything to be executed in the
 # potentially emulated execution container.
 RUN mkdir -p /luxd/build
@@ -93,9 +102,9 @@ RUN mkdir -p /luxd/build
 # BUILDPLATFORM have different arches.
 FROM debian:12-slim AS execution
 
-# Install runtime dependencies (curl for RPC operations, ca-certificates for TLS)
+# Install runtime dependencies (curl for RPC, git for lpm source installs, ca-certificates for TLS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
+    curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
 # Maintain compatibility with previous images
@@ -105,7 +114,10 @@ WORKDIR /luxd/build
 # Copy the executables into the container
 COPY --from=builder /build/build/ .
 
-# Create plugins directory (required by luxd even if empty)
-RUN mkdir -p /luxd/build/plugins
+# Create plugins directory and lpm state directory
+RUN mkdir -p /luxd/build/plugins /root/.lpm /root/.lux/plugins
+
+# Add lpm to PATH
+ENV PATH="/luxd/build:${PATH}"
 
 CMD [ "./luxd" ]
