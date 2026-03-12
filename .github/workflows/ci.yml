@@ -22,6 +22,10 @@ concurrency:
 jobs:
   Unit:
     runs-on: ${{ matrix.os }}
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
     strategy:
       fail-fast: false
       matrix:
@@ -29,6 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: Set timeout on Windows
         shell: bash
         if: matrix.os == 'windows-2022'
@@ -41,9 +48,16 @@ jobs:
           CGO_ENABLED: '0'
   Fuzz:
     runs-on: lux-build
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: fuzz_test
         shell: bash
         run: ./scripts/build_fuzz.sh 10 # Run each fuzz test 10 seconds
@@ -54,9 +68,16 @@ jobs:
   # These will be re-enabled once tmpnet is properly configured
   Lint:
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: Run static analysis tests
         shell: bash
         run: scripts/lint.sh
@@ -121,9 +142,16 @@ jobs:
   go_mod_tidy:
     name: Up-to-date go.mod and go.sum
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - shell: bash
         run: go mod tidy
       - shell: bash

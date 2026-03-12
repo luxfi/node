@@ -24,6 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: build_test
         shell: bash
         run: .github/workflows/build_and_test.sh

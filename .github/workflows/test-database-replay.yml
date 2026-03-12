@@ -28,6 +28,9 @@ jobs:
         go-version-file: go.mod
         check-latest: true
 
+    - name: Configure Git for private modules
+      run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
+
     - name: Build luxd with database support
       run: |
         echo "Building luxd (CGO_ENABLED=0)..."
@@ -94,6 +97,9 @@ jobs:
       with:
         go-version-file: go.mod
         check-latest: true
+
+    - name: Configure Git for private modules
+      run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
 
     - name: Test database factory
       run: |
