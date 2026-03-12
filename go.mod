@@ -228,5 +228,3 @@ require (
 exclude github.com/ethereum/go-ethereum v1.10.26
 
 replace github.com/dgraph-io/badger/v4 => github.com/luxfi/badger/v4 v4.9.1-zap
-
-replace github.com/luxfi/api => ../api
