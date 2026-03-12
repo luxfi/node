@@ -1,6 +1,6 @@
 # The version is supplied as a build argument rather than hard-coded
 # to minimize the cost of version changes.
-ARG GO_VERSION=1.26.0
+ARG GO_VERSION=1.26.1
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer

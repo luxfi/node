@@ -104,41 +104,56 @@ jobs:
       - name: Lint protobuf
         shell: bash
         run: buf lint proto
-  # NOTE: Protobuf check disabled - generated files need regeneration
-  # check_generated_protobuf:
-  #   name: Up-to-date protobuf
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: ./.github/actions/setup-go-for-project
-  #     - uses: bufbuild/buf-setup-action@v1.47.2
-  #       with:
-  #         github_token: ${{ github.token }}
-  #     - name: Install protoc-gen-go tools
-  #       shell: bash
-  #       run: |
-  #         go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.1
-  #         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-  #         go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-  #     - shell: bash
-  #       run: scripts/protobuf_codegen.sh
-  #       env:
-  #         CGO_ENABLED: '0'
-  #     - shell: bash
-  #       run: .github/workflows/check-clean-branch.sh
-  # NOTE: Mock generation check disabled - needs mock file cleanup
-  # check_mockgen:
-  #   name: Up-to-date mocks
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: ./.github/actions/setup-go-for-project
-  #     - shell: bash
-  #       run: scripts/mock.gen.sh
-  #       env:
-  #         CGO_ENABLED: '0'
-  #     - shell: bash
-  #       run: .github/workflows/check-clean-branch.sh
+  check_generated_protobuf:
+    name: Up-to-date protobuf
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
+      - name: Install buf
+        shell: bash
+        run: |
+          BUF_VERSION="1.47.2"
+          curl -sSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o /usr/local/bin/buf
+          chmod +x /usr/local/bin/buf
+      - name: Install protoc-gen-go tools
+        shell: bash
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.1
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+      - shell: bash
+        run: scripts/protobuf_codegen.sh
+        env:
+          CGO_ENABLED: '0'
+      - shell: bash
+        run: .github/workflows/check-clean-branch.sh
+  check_mockgen:
+    name: Up-to-date mocks
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
+      - shell: bash
+        run: scripts/mock.gen.sh
+        env:
+          CGO_ENABLED: '0'
+      - shell: bash
+        run: .github/workflows/check-clean-branch.sh
   go_mod_tidy:
     name: Up-to-date go.mod and go.sum
     runs-on: ubuntu-latest
@@ -156,14 +171,18 @@ jobs:
         run: go mod tidy
       - shell: bash
         run: .github/workflows/check-clean-branch.sh
-  # NOTE: Image build test disabled - needs docker multi-arch setup
-  # test_build_image:
-  #   name: Image build
-  #   ...
-  # NOTE: Antithesis tests disabled - require tests/antithesis/ infrastructure
-  # test_build_antithesis_luxd_images:
-  #   name: Build Antithesis luxd images
-  #   ...
-  # test_build_antithesis_xsvm_images:
-  #   name: Build Antithesis xsvm images
-  #   ...
+  test_build_image:
+    name: Image build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image (test only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

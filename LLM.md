@@ -9,8 +9,8 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 **Key Context:**
 - Fork of Avalanche with Lux-specific enhancements
 - Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
-- Go Version: 1.23.9+
-- Database: BadgerDB (primary), PebbleDB support
+- Go Version: 1.26.1+
+- Database: ZapDB (primary, default)
 
 ## Essential Commands
 
