@@ -40,7 +40,7 @@ jobs:
           TIMEOUT: ${{ env.TIMEOUT }}
           CGO_ENABLED: '0'
   Fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: lux-build
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
