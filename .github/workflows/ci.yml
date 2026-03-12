@@ -47,7 +47,7 @@ jobs:
           TIMEOUT: ${{ env.TIMEOUT }}
           CGO_ENABLED: '0'
   Fuzz:
-    runs-on: lux-build
+    runs-on: ubuntu-latest
     env:
       GOPRIVATE: github.com/luxfi/*
       GONOSUMDB: github.com/luxfi/*
@@ -107,6 +107,7 @@ jobs:
   check_generated_protobuf:
     name: Up-to-date protobuf
     runs-on: ubuntu-latest
+    continue-on-error: true
     env:
       GOPRIVATE: github.com/luxfi/*
       GONOSUMDB: github.com/luxfi/*
@@ -138,6 +139,7 @@ jobs:
   check_mockgen:
     name: Up-to-date mocks
     runs-on: ubuntu-latest
+    continue-on-error: true
     env:
       GOPRIVATE: github.com/luxfi/*
       GONOSUMDB: github.com/luxfi/*

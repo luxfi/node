@@ -18,9 +18,14 @@ source "$LUX_PATH"/scripts/constants.sh
 fuzzTime=${1:-1}
 fuzzDir=${2:-.}
 
-# Add 3 second buffer to avoid context deadline exceeded errors at timeout boundary.
+# Add buffer to avoid context deadline exceeded errors at timeout boundary.
 # Go's fuzzer can report failures when interrupted during heavy setup (e.g. merkledb creation).
-actualFuzzTime=$((fuzzTime > 3 ? fuzzTime - 3 : fuzzTime))
+# Use 5s buffer for short runs (≤15s), 3s for longer runs.
+if [ "$fuzzTime" -le 15 ]; then
+    actualFuzzTime=$((fuzzTime > 5 ? fuzzTime - 5 : 1))
+else
+    actualFuzzTime=$((fuzzTime - 3))
+fi
 
 files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDir")
 failed=false
