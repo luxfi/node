@@ -14,7 +14,7 @@ env:
   GONOSUMDB: github.com/luxfi/*
 
 jobs:
-  test-badgerdb-replay:
+  test-zapdb-replay:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -73,9 +73,9 @@ jobs:
         # Create a mock test to verify the flag is accepted
         timeout 5s ./build/luxd \
           --network-id=96369 \
-          --db-type=badgerdb \
+          --db-type=zapdb \
           --genesis-db=/tmp/mock-genesis-db \
-          --genesis-db-type=badgerdb \
+          --genesis-db-type=zapdb \
           --data-dir=/tmp/test-replay \
           --http-port=9630 \
           --staking-port=9631 \
