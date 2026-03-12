@@ -60,7 +60,7 @@ jobs:
         run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: fuzz_test
         shell: bash
-        run: ./scripts/build_fuzz.sh 10 # Run each fuzz test 10 seconds
+        run: ./scripts/build_fuzz.sh 20 # Run each fuzz test 20 seconds
         env:
           CGO_ENABLED: '0'
   # NOTE: E2E tests disabled - require tmpnet infrastructure
