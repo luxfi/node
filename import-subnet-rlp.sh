@@ -36,7 +36,7 @@ import_rlp() {
         # Import via kubectl exec on the first pod
         local ns="lux-$network"
         kubectl --context do-sfo3-lux-k8s exec -n "$ns" luxd-0 -- \
-            wget -q -O /tmp/import.rlp "$rlp_url" 2>/dev/null || true
+            wget -q -O /tmp/import.rlp "$rpc_url" 2>/dev/null || true
         echo "NOTE: For subnet chain import, you may need to use admin.importChain RPC"
         echo "      or copy the RLP file to the node and import manually."
     }
