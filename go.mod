@@ -133,7 +133,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.0.6
 	github.com/luxfi/ai v0.0.0-20251225021023-3f15131f2bd1
-	github.com/luxfi/api v1.0.3
+	github.com/luxfi/api v1.0.4
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.4.4
@@ -166,9 +166,12 @@ require (
 )
 
 require (
+	capnproto.org/go/capnp/v3 v3.1.0-alpha.2 // indirect
+	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb/v4 v4.9.2 // indirect
+	github.com/pebbe/zmq4 v1.4.0 // indirect
 )
 
 require (
