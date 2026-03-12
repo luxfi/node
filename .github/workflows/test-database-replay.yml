@@ -43,7 +43,7 @@ jobs:
     - name: Test database types
       run: |
         # Test that each database type can be initialized
-        for db_type in leveldb pebbledb badgerdb memdb; do
+        for db_type in zapdb badgerdb memdb; do
           echo "Testing $db_type..."
           timeout 10s ./build/luxd \
             --network-id=96369 \
@@ -75,7 +75,7 @@ jobs:
           --network-id=96369 \
           --db-type=badgerdb \
           --genesis-db=/tmp/mock-genesis-db \
-          --genesis-db-type=pebbledb \
+          --genesis-db-type=badgerdb \
           --data-dir=/tmp/test-replay \
           --http-port=9630 \
           --staking-port=9631 \

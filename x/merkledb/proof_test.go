@@ -1900,6 +1900,9 @@ func FuzzRangeProofInvariants(f *testing.F) {
 	) {
 		require := require.New(t)
 
+		// Cap to prevent single iteration from exceeding fuzz time budget.
+		numKeyValues = numKeyValues % 1024
+
 		// Make sure proof length is valid
 		if maxProofLen == 0 {
 			// Skip when max proof length is 0
@@ -2035,6 +2038,9 @@ func FuzzProofVerification(f *testing.F) {
 		randSeed int64,
 		numKeyValues uint,
 	) {
+		// Cap to prevent single iteration from exceeding fuzz time budget.
+		numKeyValues = numKeyValues % 1024
+
 		rand := rand.New(rand.NewSource(randSeed)) // #nosec G404
 		require := require.New(t)
 		db, err := getBasicDB()

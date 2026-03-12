@@ -73,12 +73,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: bufbuild/buf-setup-action@v1.47.2
-        with:
-          github_token: ${{ github.token }}
-      - uses: bufbuild/buf-lint-action@v1
-        with:
-          input: "proto"
+      - name: Install buf
+        shell: bash
+        run: |
+          BUF_VERSION="1.47.2"
+          curl -sSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o /usr/local/bin/buf
+          chmod +x /usr/local/bin/buf
+          buf --version
+      - name: Lint protobuf
+        shell: bash
+        run: buf lint proto
   # NOTE: Protobuf check disabled - generated files need regeneration
   # check_generated_protobuf:
   #   name: Up-to-date protobuf
