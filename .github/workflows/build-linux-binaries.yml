@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-x86_64-binaries-tarball:
-    runs-on: lux-build
+    runs-on: lux-build-linux-amd64
     permissions:
       id-token: write
       contents: read
