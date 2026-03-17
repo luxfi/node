@@ -87,7 +87,7 @@ RUN . ./build_env.sh && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Build EVM plugin from source (includes custom precompile registry)
-ARG EVM_VERSION=v0.8.39
+ARG EVM_VERSION=v0.8.40
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 ENV GONOSUMCHECK=github.com/luxfi/*
 ENV GONOSUMDB=github.com/luxfi/*
