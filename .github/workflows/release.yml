@@ -199,8 +199,9 @@ jobs:
             echo "📢 Creating release ${TAG} (latest)"
           fi
 
-          # Create release and upload all files
-          eval "gh release create \"${TAG}\" ./release/* ${FLAGS}"
+          # Create release and upload all files (--clobber overwrites if re-run)
+          eval "gh release create \"${TAG}\" ./release/* ${FLAGS}" || \
+            eval "gh release upload \"${TAG}\" ./release/* --clobber"
 
           echo "✅ Release ${TAG} created successfully"
           echo "🔗 https://github.com/${{ github.repository }}/releases/tag/${TAG}"
