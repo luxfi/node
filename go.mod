@@ -210,7 +210,7 @@ require (
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2 // indirect
 	github.com/luxfi/math/big v0.1.0 // indirect
-	github.com/luxfi/precompile v0.4.9 // indirect
+	github.com/luxfi/precompile v0.4.10 // indirect
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect
