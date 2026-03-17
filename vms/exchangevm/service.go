@@ -68,6 +68,7 @@ func publicKeyToAddress(pk *secp256k1.PublicKey) (ids.ShortID, error) {
 }
 
 var (
+	errServiceNotReady    = errors.New("xvm service not ready: VM not initialized")
 	errTxNotCreateAsset   = errors.New("transaction doesn't create an asset")
 	errNoMinters          = errors.New("no minters provided")
 	errNoHoldersOrMinters = errors.New("no minters or initialHolders provided")
@@ -89,8 +90,21 @@ type FormattedAssetID struct {
 // Service defines the base service for the asset vm
 type Service struct{ vm *VM }
 
+// ready returns an error if the VM is not fully initialized.
+// Protects against nil pointer dereference panics when HTTP handlers
+// are invoked before the VM is ready (e.g. during bootstrap).
+func (s *Service) ready() error {
+	if s == nil || s.vm == nil {
+		return errServiceNotReady
+	}
+	return nil
+}
+
 // GetBlock returns the requested block.
 func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *apitypes.GetBlockResponse) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlock"),
@@ -137,6 +151,9 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *
 
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHeightArgs, reply *apitypes.GetBlockResponse) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlockByHeight"),
@@ -191,6 +208,9 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 
 // GetHeight returns the height of the last accepted block.
 func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHeightResponse) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getHeight"),
@@ -219,6 +239,9 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHei
 
 // IssueTx attempts to issue a transaction into consensus
 func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, reply *apitypes.JSONTxID) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "issueTx"),
@@ -265,6 +288,9 @@ type GetAddressTxsReply struct {
 
 // GetAddressTxs returns list of transactions for a given address
 func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	cursor := uint64(args.Cursor)
 	pageSize := uint64(args.PageSize)
 	s.vm.log.Warn("deprecated API called",
@@ -326,6 +352,9 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 // Deprecated: GetTxStatus only returns Accepted or Unknown, GetTx should be
 // used instead to determine if the tx was accepted.
 func (s *Service) GetTxStatus(_ *http.Request, args *apitypes.JSONTxID, reply *GetTxStatusReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "getTxStatus"),
@@ -353,6 +382,9 @@ func (s *Service) GetTxStatus(_ *http.Request, args *apitypes.JSONTxID, reply *G
 
 // GetTx returns the specified transaction
 func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apitypes.GetTxReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getTx"),
@@ -393,6 +425,9 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apityp
 
 // GetUTXOs gets all utxos for passed in addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *apitypes.GetUTXOsReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getUTXOs"),
@@ -513,6 +548,9 @@ type GetAssetDescriptionReply struct {
 
 // GetAssetDescription creates an empty account with the name passed in
 func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescriptionArgs, reply *GetAssetDescriptionReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getAssetDescription"),
@@ -563,6 +601,9 @@ type GetBalanceReply struct {
 // Otherwise, returned balance includes assets held only partially by the
 // address, and includes balances with locktime in the future.
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBalance"),
@@ -640,6 +681,9 @@ type GetAllBalancesReply struct {
 // Otherwise, returned balance/UTXOs includes assets held only partially by the
 // address, and includes balances with locktime in the future.
 func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Debug("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "getAllBalances"),
@@ -728,6 +772,9 @@ type AssetIDChangeAddr struct {
 
 // CreateAsset returns ID of the newly created asset
 func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createAsset"),
@@ -753,6 +800,9 @@ func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *Ass
 }
 
 func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	if len(args.InitialHolders) == 0 && len(args.MinterSets) == 0 {
 		return nil, ids.ShortEmpty, errNoHoldersOrMinters
 	}
@@ -864,6 +914,9 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 
 // CreateFixedCapAsset returns ID of the newly created asset
 func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createFixedCapAsset"),
@@ -877,6 +930,9 @@ func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, re
 
 // CreateVariableCapAsset returns ID of the newly created asset
 func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createVariableCapAsset"),
@@ -898,6 +954,9 @@ type CreateNFTAssetArgs struct {
 
 // CreateNFTAsset returns ID of the newly created asset
 func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createNFTAsset"),
@@ -922,6 +981,9 @@ func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, repl
 }
 
 func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	if len(args.MinterSets) == 0 {
 		return nil, ids.ShortEmpty, errNoMinters
 	}
@@ -1020,6 +1082,9 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 
 // CreateAddress creates an address for the user [args.Username]
 func (s *Service) CreateAddress(_ *http.Request, args *apitypes.UserPass, reply *apitypes.JSONAddress) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "createAddress"),
@@ -1041,6 +1106,9 @@ func (s *Service) CreateAddress(_ *http.Request, args *apitypes.UserPass, reply 
 
 // ListAddresses returns all of the addresses controlled by user [args.Username]
 func (s *Service) ListAddresses(_ *http.Request, args *apitypes.UserPass, response *apitypes.JSONAddresses) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "listAddresses"),
@@ -1065,6 +1133,9 @@ type ExportKeyReply struct {
 
 // ExportKey returns a private key from the provided user
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "exportKey"),
@@ -1093,6 +1164,9 @@ type ImportKeyReply struct {
 
 // ImportKey adds a private key to the provided user
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *apitypes.JSONAddress) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "importKey"),
@@ -1153,6 +1227,9 @@ type SendMultipleArgs struct {
 
 // Send returns the ID of the newly created transaction
 func (s *Service) Send(r *http.Request, args *SendArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	return s.SendMultiple(r, &SendMultipleArgs{
 		JSONSpendHeader: args.JSONSpendHeader,
 		Outputs:         []SendOutput{args.SendOutput},
@@ -1162,6 +1239,9 @@ func (s *Service) Send(r *http.Request, args *SendArgs, reply *JSONTxIDChangeAdd
 
 // SendMultiple sends a transaction with multiple outputs.
 func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "sendMultiple"),
@@ -1184,6 +1264,9 @@ func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *J
 }
 
 func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	// Validate the memo field
 	memoBytes := []byte(args.Memo)
 	if l := len(memoBytes); l > lux.MaxMemoSize {
@@ -1328,6 +1411,9 @@ type MintArgs struct {
 
 // Mint issues a transaction that mints more of the asset
 func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "mint"),
@@ -1350,6 +1436,9 @@ func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *JSONTxIDChangeAdd
 }
 
 func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "mint"),
@@ -1465,6 +1554,9 @@ type SendNFTArgs struct {
 
 // SendNFT sends an NFT
 func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "sendNFT"),
@@ -1487,6 +1579,9 @@ func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *JSONTxIDCha
 }
 
 func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	// Parse the asset ID
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
 	if err != nil {
@@ -1592,6 +1687,9 @@ type MintNFTArgs struct {
 
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
 func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "mintNFT"),
@@ -1614,6 +1712,9 @@ func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *JSONTxIDCha
 }
 
 func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
@@ -1733,6 +1834,9 @@ type ImportArgs struct {
 // The LUX must have already been exported from the P/C-Chain.
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *apitypes.JSONTxID) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "import"),
@@ -1754,6 +1858,9 @@ func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *apitypes.JSON
 }
 
 func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
+	if err := s.ready(); err != nil {
+		return nil, err
+	}
 	chainID, err := s.vm.bcLookup.Lookup(args.SourceChain)
 	if err != nil {
 		return nil, fmt.Errorf("problem parsing chainID %q: %w", args.SourceChain, err)
@@ -1872,6 +1979,9 @@ type ExportArgs struct {
 // After this tx is accepted, the LUX must be imported to the P/C-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *JSONTxIDChangeAddr) error {
+	if err := s.ready(); err != nil {
+		return err
+	}
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "export"),
@@ -1894,6 +2004,9 @@ func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *JSONTxIDChang
 }
 
 func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
+	if err := s.ready(); err != nil {
+		return nil, ids.ShortEmpty, err
+	}
 	// Parse the asset ID
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
 	if err != nil {
