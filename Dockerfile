@@ -96,7 +96,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
     git clone --depth 1 --branch ${EVM_VERSION} https://github.com/luxfi/evm.git /tmp/evm && \
     cd /tmp/evm && \
-    go get github.com/luxfi/accel@v1.0.6 && go mod tidy && \
+    sed -i 's|github.com/luxfi/accel v1.0.5|github.com/luxfi/accel v1.0.6|' go.mod && \
+    go mod download github.com/luxfi/accel@v1.0.6 && \
     . /build/build_env.sh && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
