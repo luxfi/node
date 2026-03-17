@@ -93,7 +93,6 @@ ENV GONOSUMCHECK=github.com/luxfi/*
 ENV GONOSUMDB=github.com/luxfi/*
 ENV GONOPROXY=github.com/luxfi/*
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/root/go/pkg/mod \
     mkdir -p /luxd/build/plugins && \
     git clone --depth 1 --branch ${EVM_VERSION} https://github.com/luxfi/evm.git /tmp/evm && \
     cd /tmp/evm && \
