@@ -86,15 +86,23 @@ RUN . ./build_env.sh && \
     export CGO_LDFLAGS="-lluxaccel" && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
-# Create plugins directory and download EVM plugin
-ARG EVM_VERSION=v0.8.35
+# Build EVM plugin from source (includes custom precompile registry)
+ARG EVM_VERSION=v0.8.38
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
-RUN mkdir -p /luxd/build/plugins && \
-    ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
-    if [ "$ARCH" = "arm64" ]; then PLUGIN_ARCH="darwin-arm64"; else PLUGIN_ARCH="linux-amd64"; fi && \
-    wget -q "https://github.com/luxfi/evm/releases/download/${EVM_VERSION}/evm-plugin-${PLUGIN_ARCH}" \
-        -O /luxd/build/plugins/${EVM_VM_ID} && \
-    chmod +x /luxd/build/plugins/${EVM_VM_ID}
+ENV GONOSUMCHECK=github.com/luxfi/*
+ENV GONOSUMDB=github.com/luxfi/*
+ENV GONOPROXY=github.com/luxfi/*
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/go/pkg/mod \
+    mkdir -p /luxd/build/plugins && \
+    git clone --depth 1 --branch ${EVM_VERSION} https://github.com/luxfi/evm.git /tmp/evm && \
+    cd /tmp/evm && \
+    . /build/build_env.sh && \
+    GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod \
+    go build -ldflags="-s -w" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
+    chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
+    rm -rf /tmp/evm
 
 # Build lpm (Lux Plugin Manager)
 RUN --mount=type=cache,target=/root/.cache/go-build \
