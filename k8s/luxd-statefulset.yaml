@@ -119,14 +119,9 @@ spec:
       resources:
         requests:
           storage: 100Gi
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: luxd-staking-keys
-  namespace: lux-network
-type: Opaque
-data:
-  # Base64 encoded staking keys - replace with actual values
-  staker.key: LS0tLS1CRUdJTi...
-  staker.crt: LS0tLS1CRUdJTi...
+# NOTE: The luxd-staking-keys Secret must be created out-of-band via KMS,
+# never committed to git. See: https://kms.hanzo.ai
+# Example:
+#   kubectl -n lux-network create secret generic luxd-staking-keys \
+#     --from-file=staker.key=/path/to/staker.key \
+#     --from-file=staker.crt=/path/to/staker.crt

@@ -51,6 +51,13 @@ build/
 
 keys/staker.*
 
+# Never commit K8s Secret manifests
+**/kind-Secret*.yaml
+**/*secret*.yaml
+**/*Secret*.yaml
+**/staker.key
+**/staker.crt
+
 !*.go
 !*.proto
 
