@@ -440,6 +440,20 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				})
 			}
 		}
+
+		// Also create P-Chain UTXO for initialAmount (spendable, no locktime)
+		if a.InitialAmount > 0 {
+			bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+			if err != nil {
+				return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for P-chain initialAmount: %w", err)
+			}
+			platformAllocations = append(platformAllocations, genesis.Allocation{
+				Locktime: 0, // immediately spendable
+				Amount:   a.InitialAmount,
+				Address:  bech32Addr,
+				Message:  a.ETHAddr.Bytes(),
+			})
+		}
 	}
 
 	// Build validators
