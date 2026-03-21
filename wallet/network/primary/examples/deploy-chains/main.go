@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/constants"
+	lux "github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/network/primary"
@@ -138,7 +140,63 @@ func main() {
 	log.Printf("Wallet P-chain balance: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
 
 	if pBalance < 1_000_000_000 { // Need at least 1 LUX for tx fees
-		log.Printf("WARNING: Wallet balance is low. Trying anyway with direct UTXO fetch...")
+		log.Printf("P-chain balance low (%d nLUX). Checking X-chain...", pBalance)
+		xBalanceMap, _ := fundWallet.X().Builder().GetFTBalance()
+		xBalance := xBalanceMap[luxAssetID]
+		log.Printf("X-chain balance: %d nLUX (%.2f LUX)", xBalance, float64(xBalance)/1e9)
+
+		if xBalance > 0 {
+			exportAmount := xBalance
+			if exportAmount > 10_000_000_000 {
+				exportAmount = 10_000_000_000 // Cap at 10 LUX
+			}
+			log.Printf("Exporting %d nLUX from X→P...", exportAmount)
+
+			xChainID := fundWallet.X().Builder().Context().BlockchainID
+			exportTx, err := fundWallet.X().IssueExportTx(
+				constants.PlatformChainID,
+				[]*lux.TransferableOutput{{
+					Asset: lux.Asset{ID: luxAssetID},
+					Out: &secp256k1fx.TransferOutput{
+						Amt: exportAmount,
+						OutputOwners: secp256k1fx.OutputOwners{
+							Threshold: 1,
+							Addrs:     []ids.ShortID{addr},
+						},
+					},
+				}},
+			)
+			if err != nil {
+				log.Printf("X→P export failed: %v", err)
+			} else {
+				log.Printf("X→P export tx: %s", exportTx.ID())
+				time.Sleep(3 * time.Second)
+
+				importTx, err := fundWallet.P().IssueImportTx(
+					xChainID,
+					&secp256k1fx.OutputOwners{
+						Threshold: 1,
+						Addrs:     []ids.ShortID{addr},
+					},
+				)
+				if err != nil {
+					log.Printf("P-chain import failed: %v", err)
+				} else {
+					log.Printf("P-chain import tx: %s", importTx.ID())
+					time.Sleep(3 * time.Second)
+
+					// Re-sync wallet
+					fundWallet, _ = primary.MakeWallet(ctx, &primary.WalletConfig{
+						URI:         nc.URI,
+						LUXKeychain: kc,
+						EthKeychain: kc,
+					})
+					pBalanceMap, _ = fundWallet.P().Builder().GetBalance()
+					pBalance = pBalanceMap[luxAssetID]
+					log.Printf("P-Chain balance after import: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
+				}
+			}
+		}
 	}
 
 	// Deploy each chain
