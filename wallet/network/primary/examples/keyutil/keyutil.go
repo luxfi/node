@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/go-bip32"
 	"github.com/luxfi/go-bip39"
 )
 
@@ -134,13 +135,38 @@ func keyFromMnemonic(mnemonic string) (*secp256k1.PrivateKey, error) {
 	// Generate seed from mnemonic (no passphrase)
 	seed := bip39.NewSeed(mnemonic, "")
 
-	// Use first 32 bytes of seed as private key
-	// Note: For full BIP44 derivation, use the CLI's key package
-	if len(seed) < 32 {
-		return nil, fmt.Errorf("seed too short")
+	// BIP44 derivation: m/44'/60'/0'/0/0
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create master key: %w", err)
 	}
 
-	return secp256k1.ToPrivateKey(seed[:32])
+	purpose, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive purpose: %w", err)
+	}
+
+	coinType, err := purpose.NewChildKey(bip32.FirstHardenedChild + 60)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive coin type: %w", err)
+	}
+
+	account, err := coinType.NewChildKey(bip32.FirstHardenedChild + 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive account: %w", err)
+	}
+
+	change, err := account.NewChildKey(0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive change: %w", err)
+	}
+
+	childKey, err := change.NewChildKey(0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive address index: %w", err)
+	}
+
+	return secp256k1.ToPrivateKey(childKey.Key)
 }
 
 // parseKeyData tries to parse key data as hex or mnemonic
