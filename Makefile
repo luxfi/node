@@ -6,6 +6,11 @@
 CGO_ENABLED ?= 1
 FIPS_STRICT ?= 0
 
+# Go 1.26 experimental features:
+#   runtimesecret - zeroes stack/register state after secret.Do() for forward secrecy
+GOEXPERIMENT ?= runtimesecret
+export GOEXPERIMENT
+
 # FIPS 140-3 always enabled (required for blockchain/financial systems)
 export GOFIPS140 := latest
 ifeq ($(FIPS_STRICT),1)

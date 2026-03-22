@@ -43,6 +43,7 @@ RUN [ -d ./build ] && rm -rf ./build/* || true
 
 # Build node. The build environment is configured with build_env.sh from the step
 # enabling cross-compilation.
+ENV GOEXPERIMENT=runtimesecret
 ARG RACE_FLAG=""
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \

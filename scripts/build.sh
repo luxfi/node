@@ -108,7 +108,10 @@ if [ -n "$tags" ]; then
   tags_arg="-tags=$tags"
 fi
 
-echo "Building Lux Node v${version_major}.${version_minor}.${version_patch} with [$(go version)]..."
+# Enable Go 1.26 experimental features if not already set
+export GOEXPERIMENT="${GOEXPERIMENT:-runtimesecret}"
+
+echo "Building Lux Node v${version_major}.${version_minor}.${version_patch} with [$(go version)] GOEXPERIMENT=${GOEXPERIMENT}..."
 go build -trimpath ${race} ${tags_arg} "$@" -o "${node_path}" \
    -ldflags "$ldflags" \
    "${REPO_ROOT}"/main
