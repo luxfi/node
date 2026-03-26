@@ -6,6 +6,7 @@ package config
 import (
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -778,6 +779,20 @@ func getStakingTLSCert(v *viper.Viper) (tls.Certificate, error) {
 		return tls.Certificate{}, errStakingKeyContentUnset
 	case v.IsSet(StakingTLSKeyContentKey) && v.IsSet(StakingCertContentKey):
 		return getStakingTLSCertFromFlag(v)
+	case v.IsSet(StakingKMSEndpointKey):
+		keys, err := staking.FetchFromKMS(staking.KMSConfig{
+			Endpoint:   v.GetString(StakingKMSEndpointKey),
+			SecretPath: v.GetString(StakingKMSSecretPathKey),
+			AuthToken:  v.GetString(StakingKMSTokenKey),
+		})
+		if err != nil {
+			return tls.Certificate{}, fmt.Errorf("fetching staking keys from KMS: %w", err)
+		}
+		cert, err := staking.LoadTLSCertFromBytes([]byte(keys.TLSKey), []byte(keys.TLSCert))
+		if err != nil {
+			return tls.Certificate{}, fmt.Errorf("loading TLS cert from KMS: %w", err)
+		}
+		return *cert, nil
 	default:
 		cert, err := getStakingTLSCertFromFile(v)
 		if err != nil {
@@ -811,6 +826,28 @@ func getStakingSigner(v *viper.Viper) (bls.Signer, error) {
 			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
 		}
 		return key, nil
+	}
+
+	if v.IsSet(StakingKMSEndpointKey) {
+		keys, err := staking.FetchFromKMS(staking.KMSConfig{
+			Endpoint:   v.GetString(StakingKMSEndpointKey),
+			SecretPath: v.GetString(StakingKMSSecretPathKey),
+			AuthToken:  v.GetString(StakingKMSTokenKey),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("fetching signer key from KMS: %w", err)
+		}
+		if keys.SignerKey != "" {
+			signerKeyContent, err := hex.DecodeString(keys.SignerKey)
+			if err != nil {
+				return nil, fmt.Errorf("decoding hex signer key from KMS: %w", err)
+			}
+			key, err := localsigner.FromBytes(signerKeyContent)
+			if err != nil {
+				return nil, fmt.Errorf("parsing signer key from KMS: %w", err)
+			}
+			return key, nil
+		}
 	}
 
 	signingKeyPath := getExpandedArg(v, StakingSignerKeyPathKey)
