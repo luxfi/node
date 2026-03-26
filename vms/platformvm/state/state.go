@@ -2342,17 +2342,17 @@ func (s *state) init(genesisBytes []byte) error {
 		return err
 	}
 
-	// Commit the genesis state to the underlying database
-	// This is necessary because baseDB is a versiondb which keeps changes
-	// in memory until CommitBatch() is called
-	if _, err := s.baseDB.CommitBatch(); err != nil {
-		return fmt.Errorf("failed to commit genesis state: %w", err)
-	}
-
 	if err := markInitialized(s.singletonDB); err != nil {
 		return err
 	}
 
+	// Commit everything in a single batch. Previously this was a two-step
+	// commit (baseDB.CommitBatch then s.Commit) which caused the second
+	// commit's s.write() to see empty in-memory state — the first commit
+	// flushed the genesis validators to the underlying DB and cleared the
+	// versiondb diff layer, so s.write() would overwrite them with zeros.
+	// Single commit ensures syncGenesis data + markInitialized are written
+	// atomically without an intermediate clear.
 	return s.Commit()
 }
 
