@@ -56,9 +56,9 @@ func main() {
 	}
 
 	nets := map[string]networkConfig{
-		"mainnet": {URI: "http://134.199.143.51:9630", Suffix: "mainnet"},
-		"testnet": {URI: "http://146.190.1.172:9640", Suffix: "testnet"},
-		"devnet":  {URI: "http://209.38.7.201:9650", Suffix: "devnet"},
+		"mainnet": {URI: "https://api.lux.network/mainnet", Suffix: "mainnet"},
+		"testnet": {URI: "https://api.lux.network/testnet", Suffix: "testnet"},
+		"devnet":  {URI: "https://api.lux.network/devnet", Suffix: "devnet"},
 	}
 
 	nc, ok := nets[*network]

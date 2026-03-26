@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/luxfi/crypto/secp256k1"
@@ -161,9 +162,19 @@ func keyFromMnemonic(mnemonic string) (*secp256k1.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to derive change: %w", err)
 	}
 
-	childKey, err := change.NewChildKey(0)
+	// Support LUX_KEY_INDEX for deriving non-default addresses (m/44'/60'/0'/0/{index})
+	addrIndex := uint32(0)
+	if idxStr := os.Getenv("LUX_KEY_INDEX"); idxStr != "" {
+		idx, err := strconv.ParseUint(idxStr, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid LUX_KEY_INDEX %q: %w", idxStr, err)
+		}
+		addrIndex = uint32(idx)
+	}
+
+	childKey, err := change.NewChildKey(addrIndex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derive address index: %w", err)
+		return nil, fmt.Errorf("failed to derive address index %d: %w", addrIndex, err)
 	}
 
 	return secp256k1.ToPrivateKey(childKey.Key)
