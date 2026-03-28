@@ -611,6 +611,11 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			log.Err(err),
 		)
 
+		// Non-critical chain failed (e.g. D-Chain with missing VM plugin).
+		// Mark it as bootstrapped so it doesn't block the node's health check.
+		// The chain-specific health check below still reports the failure.
+		sb.Bootstrapped(chainParams.ID)
+
 		// Register the health check for this chain regardless of if it was
 		// created or not. This attempts to notify the node operator that their
 		// node may not be properly validating the net they expect to be

@@ -556,7 +556,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 	}
 
-	// Specify all primary network chains
+	// Specify primary network chains (X, C always; D only if genesis provided)
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
@@ -575,12 +575,16 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},
-		{
+	}
+
+	// D-Chain (primary network DEX) is optional — skip if no genesis provided
+	if config.DChainGenesis != "" {
+		chains = append(chains, genesis.Chain{
 			GenesisData: getGenesis(config.DChainGenesis),
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        constants.DexVMID,
 			Name:        "D-Chain",
-		},
+		})
 	}
 
 	pChainGenesis, err := genesis.New(

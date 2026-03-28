@@ -1129,14 +1129,21 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 		cChainID,
 	)
 
-	// D-Chain is optional — only mark critical if present in genesis
+	// D-Chain (primary network DEX) is opt-in — only critical if the VM plugin
+	// is actually available. This allows nodes to run without the DEX VM while
+	// still fully validating P/X/C chains.
 	var dChainID ids.ID
 	if optionalVMCount > 0 {
 		createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
 		if err == nil {
 			dChainID = createDexVMTx.ID()
-			criticalChains.Add(dChainID)
-			n.Log.Info("D-Chain marked as critical", "chainID", dChainID)
+			// Only mark as critical if the VM plugin is installed
+			if _, vmErr := n.VMManager.GetFactory(context.Background(), constants.DexVMID); vmErr == nil {
+				criticalChains.Add(dChainID)
+				n.Log.Info("D-Chain VM available, marked as critical", "chainID", dChainID)
+			} else {
+				n.Log.Info("D-Chain in genesis but VM not available — skipping (non-critical)", "chainID", dChainID)
+			}
 		} else {
 			n.Log.Info("D-Chain not in genesis, skipping")
 		}
