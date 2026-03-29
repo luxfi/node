@@ -429,7 +429,7 @@ strings.Contains(errStr, "not found") // parent block not in local state
 
 **Effect**: Now when a block arrives whose parent is unknown, the handler sends `GetAncestors` to the peer, receives the full ancestor chain, and processes blocks in order, advancing the P-chain height.
 
-**Note**: The network layer (`network.go:sequencerID`) already correctly maps native chain IDs (P, C, X, etc.) to `PrimaryNetworkID` for validator set lookups — no separate gossip subnet fix needed.
+**Note**: The network layer (`network.go:sequencerID`) already correctly maps native chain IDs (P, C, X, etc.) to `PrimaryNetworkID` for validator set lookups — no separate gossip fix needed.
 
 ### Known CGO Stubs
 When CGO disabled, these use CPU fallbacks:

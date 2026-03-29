@@ -97,7 +97,7 @@ func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all blockchains
 		constants.PrimaryNetworkID != tx.ChainID && // All nodes must validate the primary network
 		!c.TrackAllChains && // Not tracking all chains automatically
-		!c.TrackedChains.Contains(tx.ChainID) && // Check if subnet ID is tracked
+		!c.TrackedChains.Contains(tx.ChainID) && // Check if chain ID is tracked
 		!c.TrackedChains.Contains(blockchainID) { // Check if blockchain ID is tracked
 		return
 	}

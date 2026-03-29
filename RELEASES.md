@@ -2731,7 +2731,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
   - `lux_readiness_checks_failing{tag="TAG"}`
 - Removed P-chain VM percent connected metrics
   - `lux_P_vm_percent_connected`
-  - `lux_P_vm_percent_connected_chain{chainID="SUBNETID"}`
+  - `lux_P_vm_percent_connected_chain{chainID="CHAINID"}`
 - Added percent connected metrics by chain
   - `lux_{ChainID}_percent_connected`
 - Removed `lux_network_send_queue_portion_full` metric

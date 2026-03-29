@@ -608,7 +608,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		close(n.onSufficientlyConnected)
 	}
 
-	// Get tracked subnet IDs for validator manager
+	// Get tracked chain IDs for validator manager
 	var trackedSubnetIDs []ids.ID
 	if n.Config.TrackedChains != nil {
 		trackedSubnetIDs = n.Config.TrackedChains.List()
@@ -644,9 +644,9 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
 	n.Config.NetworkConfig.GenesisBytes = n.Config.GenesisBytes
 	// Map native chains (P/C/X/etc.) to the primary network validator set.
-	// For subnet chains, return ids.Empty to let blockchainToSubnet map resolve
-	// the correct subnet ID. Returning chainID here would short-circuit the
-	// lookup and cause subnet messages to be sequenced under the wrong ID,
+	// For L2 chains, return ids.Empty to let blockchainToSubnet map resolve
+	// the correct chain ID. Returning chainID here would short-circuit the
+	// lookup and cause chain messages to be sequenced under the wrong ID,
 	// preventing block propagation to other nodes.
 	n.Config.NetworkConfig.SequencerIDForChain = func(chainID ids.ID) ids.ID {
 		if ids.IsNativeChain(chainID) {

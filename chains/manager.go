@@ -497,7 +497,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
-	// Register blockchain→subnet mapping with the network layer so gossip
+	// Register blockchain→chain mapping with the network layer so gossip
 	// can resolve which validator set to use for this blockchain's blocks.
 	if chainParams.ChainID != constants.PrimaryNetworkID && m.Net != nil {
 		m.Net.RegisterBlockchainSubnet(chainParams.ID, chainParams.ChainID)
@@ -2735,8 +2735,8 @@ func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData 
 	}
 
 	// Gossip to all validators (-1 = all validators)
-	// Must use g.networkID (subnet ID) not chainID (blockchain ID) —
-	// net.Gossip filters validators by subnet ID in the validator manager.
+	// Must use g.networkID (chain ID) not chainID (blockchain ID) —
+	// net.Gossip filters validators by chain ID in the validator manager.
 	sentTo := g.net.Gossip(putMsg, nil, g.networkID, -1, 0, 0)
 	return sentTo.Len()
 }

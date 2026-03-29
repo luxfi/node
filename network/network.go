@@ -124,9 +124,9 @@ type Network interface {
 	TrackedChains() set.Set[ids.ID]
 
 	// RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
-	// subnet ID. This is used by the gossip layer to resolve which validator
+	// chain ID. This is used by the gossip layer to resolve which validator
 	// set sequences blocks for a given blockchain, and to check whether peers
-	// track the subnet that owns the blockchain.
+	// track the chain that owns the blockchain.
 	RegisterBlockchainSubnet(blockchainID, subnetID ids.ID)
 }
 
@@ -217,10 +217,10 @@ type network struct {
 	// concurrent calls to [Connected], [Disconnected], and [HandleInbound].
 	router ExternalHandler
 
-	// blockchainToSubnet maps blockchain IDs to their subnet IDs.
-	// This is needed for subnet gossip: when gossiping a block for a subnet
-	// blockchain, we need to know which subnet's validator set to use for
-	// peer sampling, and which subnet ID to check in peers' trackedChains.
+	// blockchainToSubnet maps blockchain IDs to their chain IDs.
+	// This is needed for chain gossip: when gossiping a block for an L2
+	// blockchain, we need to know which chain's validator set to use for
+	// peer sampling, and which chain ID to check in peers' trackedChains.
 	// Protected by peersLock.
 	blockchainToSubnet map[ids.ID]ids.ID
 }
@@ -333,16 +333,17 @@ func NewNetwork(
 				zap.Int("count", len(parsedGenesis.Validators)),
 			)
 			for _, validatorTx := range parsedGenesis.Validators {
-				// Extract validator details from the transaction
+				// Extract validator details from the transaction.
+				// Genesis may encode validators as AddValidatorTx (pre-permissionless)
+				// or AddPermissionlessValidatorTx (post-Etna). Handle both.
 				switch tx := validatorTx.Unsigned.(type) {
 				case *txs.AddPermissionlessValidatorTx:
 					nodeID := tx.Validator.NodeID
 					weight := tx.Validator.Wght
 					if weight == 0 {
-						weight = 1 // Default weight for validators without explicit weight
+						weight = 1
 					}
 
-					// Get BLS public key from signer
 					var blsKey []byte
 					if tx.Signer != nil {
 						if pubKey := tx.Signer.Key(); pubKey != nil {
@@ -363,6 +364,25 @@ func NewNetwork(
 						zap.Stringer("nodeID", nodeID),
 						zap.Uint64("weight", weight),
 						zap.Int("blsKeyLen", len(blsKey)),
+					)
+				case *txs.AddValidatorTx:
+					nodeID := tx.Validator.NodeID
+					weight := tx.Validator.Wght
+					if weight == 0 {
+						weight = 1
+					}
+
+					genesisStakers = append(genesisStakers, struct {
+						NodeID ids.NodeID
+						Weight uint64
+						BLSKey []byte
+					}{
+						NodeID: nodeID,
+						Weight: weight,
+					})
+					log.Debug("parsed genesis validator (AddValidatorTx) from P-chain genesis",
+						zap.Stringer("nodeID", nodeID),
+						zap.Uint64("weight", weight),
 					)
 				default:
 					log.Warn("unknown validator tx type in genesis",
@@ -507,7 +527,7 @@ func NewNetwork(
 // For example:
 //   - C-Chain is sequenced by PrimaryNetworkID validators
 //   - A self-sequenced L2 uses its own chainID as sequencerID
-//   - Subnet blockchains map to their subnet ID for validator lookups
+//   - L2 blockchains map to their chain ID for validator lookups
 func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	// Primary network is a special routing concept; membership is still primary.
 	if chainID == constants.PrimaryNetworkID {
@@ -526,9 +546,9 @@ func (n *network) sequencerID(chainID ids.ID) ids.ID {
 			return sid
 		}
 	}
-	// Check if this is a blockchain ID that maps to a subnet ID.
-	// This is needed for subnet gossip: validators are registered under
-	// subnet IDs, not blockchain IDs.
+	// Check if this is a blockchain ID that maps to a chain ID.
+	// This is needed for chain gossip: validators are registered under
+	// chain IDs, not blockchain IDs.
 	if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
 		return subnetID
 	}
@@ -1154,8 +1174,8 @@ func (n *network) samplePeers(
 			isPrimaryNetwork := chainID == constants.PrimaryNetworkID || ids.IsNativeChain(chainID)
 			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
 
-			// For subnet blockchains, also check if the peer tracks the subnet ID.
-			// Peers advertise subnet IDs (not blockchain IDs) in their tracked chains,
+			// For L2 blockchains, also check if the peer tracks the chain ID.
+			// Peers advertise chain IDs (not blockchain IDs) in their tracked chains,
 			// but gossip uses blockchain IDs as the chainID parameter.
 			if !containsChainID {
 				if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
@@ -1785,15 +1805,15 @@ func (n *network) TrackedChains() set.Set[ids.ID] {
 }
 
 // RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
-// subnet ID. This allows the gossip layer to correctly resolve which validator
-// set to use when gossiping blocks for subnet chains, and to check whether
-// peers are tracking the subnet that owns the blockchain.
+// chain ID. This allows the gossip layer to correctly resolve which validator
+// set to use when gossiping blocks for L2 chains, and to check whether
+// peers are tracking the chain that owns the blockchain.
 func (n *network) RegisterBlockchainSubnet(blockchainID, subnetID ids.ID) {
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 
 	n.blockchainToSubnet[blockchainID] = subnetID
-	n.peerConfig.Log.Info("registered blockchain-to-subnet mapping",
+	n.peerConfig.Log.Info("registered blockchain-to-chain mapping",
 		"blockchainID", blockchainID,
 		"subnetID", subnetID,
 	)

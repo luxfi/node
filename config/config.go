@@ -1942,8 +1942,8 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// Chain tracking
 	// Always populate TrackedChains from --track-chains flag/env, regardless of
 	// TrackAllChains. TrackedChains is used in peer handshake (MyChains) to tell
-	// peers which subnets we're interested in. Without it, peers won't gossip
-	// subnet blocks to us even if we're tracking all chains locally.
+	// peers which chains we're interested in. Without it, peers won't gossip
+	// chain blocks to us even if we're tracking all chains locally.
 	nodeConfig.TrackedChains, err = getTrackedChains(v)
 	if err != nil {
 		return node.Config{}, err

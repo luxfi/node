@@ -227,24 +227,24 @@ func main() {
 		}
 		pWallet := wallet.P()
 
-		// Create subnet (network)
-		log.Println("Creating subnet...")
+		// Create chain (network)
+		log.Println("Creating chain...")
 		owner := &secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{addr},
 		}
 		createNetTx, err := pWallet.IssueCreateNetworkTx(owner)
 		if err != nil {
-			log.Fatalf("create subnet failed: %v", err)
+			log.Fatalf("create chain failed: %v", err)
 		}
 		subnetID := createNetTx.ID()
-		log.Printf("Subnet: %s", subnetID)
+		log.Printf("Chain: %s", subnetID)
 
 		// Wait for tx acceptance (mainnet needs longer)
-		log.Println("Waiting 10s for subnet tx acceptance...")
+		log.Println("Waiting 10s for chain tx acceptance...")
 		time.Sleep(10 * time.Second)
 
-		// Re-sync wallet with subnet tx (retry up to 5 times)
+		// Re-sync wallet with chain tx (retry up to 5 times)
 		var wallet2 primary.Wallet
 		for attempt := 0; attempt < 5; attempt++ {
 			wallet2, err = primary.MakeWallet(ctx, &primary.WalletConfig{
@@ -282,7 +282,7 @@ func main() {
 		blockchainID := createChainTx.ID()
 		log.Printf("Blockchain: %s", blockchainID)
 
-		// Add ALL validators to the subnet
+		// Add ALL validators to the chain
 		if !*skipValidators && len(nodeIDs) > 0 {
 			time.Sleep(2 * time.Second)
 
@@ -304,11 +304,11 @@ func main() {
 					if safeEnd.Before(endTime) {
 						endTime = safeEnd
 					}
-					log.Printf("Subnet validator: start=%s end=%s (primary ends %s)", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), primaryEnd.Format(time.RFC3339))
+					log.Printf("Chain validator: start=%s end=%s (primary ends %s)", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), primaryEnd.Format(time.RFC3339))
 				}
 
 				for _, nodeID := range nodeIDs {
-					log.Printf("Adding validator %s to subnet %s...", nodeID, subnetID)
+					log.Printf("Adding validator %s to chain %s...", nodeID, subnetID)
 					_, err := wallet3.P().IssueAddChainValidatorTx(&txs.ChainValidator{
 						Validator: txs.Validator{
 							NodeID: nodeID,
@@ -329,7 +329,7 @@ func main() {
 		}
 
 		fmt.Printf("\n--- %s %s ---\n", chainName, nc.Suffix)
-		fmt.Printf("Subnet ID:     %s\n", subnetID)
+		fmt.Printf("Chain ID:      %s\n", subnetID)
 		fmt.Printf("Blockchain ID: %s\n", blockchainID)
 		fmt.Printf("VM ID:         %s\n", evmVMID)
 		fmt.Printf("EVM Chain ID:  %v\n", evmChainID)
@@ -338,7 +338,7 @@ func main() {
 
 	log.Println("Done!")
 	log.Println("Next steps:")
-	log.Println("  1. Update Helm values with new subnet/blockchain IDs")
+	log.Println("  1. Update Helm values with new chain/blockchain IDs")
 	log.Println("  2. Restart nodes to track new chains")
 	log.Println("  3. Import RLP blocks if available")
 }
