@@ -589,7 +589,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		err := n.vdrs.AddStaker(
 			constants.PrimaryNetworkID,
 			n.ID,
-			bls.PublicKeyToCompressedBytes(n.Config.StakingSigningKey.PublicKey()),
+			bls.PublicKeyToUncompressedBytes(n.Config.StakingSigningKey.PublicKey()),
 			dummyTxID,
 			n.Config.SybilProtectionDisabledWeight,
 		)
