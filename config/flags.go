@@ -290,7 +290,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Bool(StakingEphemeralSignerEnabledKey, false, "If true, the node uses an ephemeral staking signer key")
 	fs.String(StakingSignerKeyPathKey, defaultStakingSignerKeyPath, fmt.Sprintf("Path to the signer private key for staking. Ignored if %s is specified", StakingSignerKeyContentKey))
 	fs.String(StakingSignerKeyContentKey, "", "Specifies base64 encoded signer private key for staking")
-	fs.String(StakingKMSEndpointKey, "", "KMS endpoint for staking key retrieval (e.g., https://kms.dev.satschel.com)")
+	fs.String(StakingKMSEndpointKey, "", "KMS endpoint for staking key retrieval (e.g., https://kms.dev.lux.network)")
 	fs.String(StakingKMSSecretPathKey, "", "KMS secret path for staking keys (e.g., /staking/liquid-devnet/node-0)")
 	fs.String(StakingKMSTokenKey, "", "KMS auth token for staking key retrieval")
 	fs.Bool(SybilProtectionEnabledKey, true, "Enables sybil protection. If enabled, Network TLS is required")

@@ -14,7 +14,7 @@ import (
 
 // KMSConfig for staking key retrieval
 type KMSConfig struct {
-	Endpoint   string // KMS API endpoint (e.g., https://kms.dev.satschel.com)
+	Endpoint   string // KMS API endpoint (e.g., https://kms.dev.lux.network)
 	SecretPath string // Path to the staking secret (e.g., /staking/liquid-devnet/node-0)
 	AuthToken  string // Bearer token for KMS auth
 }
