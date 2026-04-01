@@ -140,8 +140,8 @@ else
 {
   "allocations": [
     {
-      "luxAddr": "P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u",
-      "ethAddr": "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC",
+      "luxAddr": "P-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
+      "ethAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
       "initialAmount": 1000000000000000000,
       "unlockSchedule": []
     }
@@ -149,16 +149,16 @@ else
   "startTime": 1640995200,
   "initialStakeDuration": 31536000,
   "initialStakeDurationOffset": 5400,
-  "initialStakedFunds": ["P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u"],
+  "initialStakedFunds": ["P-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv"],
   "initialStakers": [
     {
       "nodeID": "$NODE_ID",
-      "rewardAddress": "P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u",
+      "rewardAddress": "P-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
       "delegationFee": 20000
     }
   ],
   "networkID": $NETWORK_ID,
-  "message": "Lux Network Genesis"
+  "message": "Lux et Libertas"
 }
 EOF
 
@@ -167,8 +167,8 @@ EOF
 {
   "allocations": [
     {
-      "luxAddr": "X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u",
-      "ethAddr": "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC",
+      "luxAddr": "X-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
+      "ethAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
       "initialAmount": 1000000000000000000,
       "unlockSchedule": []
     }
@@ -179,7 +179,7 @@ EOF
   "initialStakedFunds": [],
   "initialStakers": [],
   "networkID": $NETWORK_ID,
-  "message": "X-Chain Genesis"
+  "message": "Lux et Libertas"
 }
 EOF
 
@@ -219,7 +219,7 @@ EOF
     }
   },
   "alloc": {
-    "8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
+    "9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
       "balance": "0x1B1AE4D6E2EF500000"
     }
   },

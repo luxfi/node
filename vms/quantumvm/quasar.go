@@ -82,7 +82,7 @@ func NewQuasar(cfg QuasarConfig) (*Quasar, error) {
 		cfg.Threshold = (cfg.TotalNodes * 2 / 3) + 1 // 2/3+1 BFT threshold
 	}
 	if cfg.TotalNodes < 1 {
-		cfg.TotalNodes = 5 // Default 5-node network
+		cfg.TotalNodes = 3 // Default 3-node network
 	}
 
 	// Initialize Quasar core with BLS + Ringtail

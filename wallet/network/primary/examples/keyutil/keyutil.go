@@ -54,9 +54,11 @@ func MustLoadKey() *secp256k1.PrivateKey {
 
 // LoadKey attempts to load a private key using the priority order above.
 func LoadKey() (*secp256k1.PrivateKey, error) {
-	// 1. Try LUX_MNEMONIC environment variable
-	if mnemonic := os.Getenv("LUX_MNEMONIC"); mnemonic != "" {
-		return keyFromMnemonic(mnemonic)
+	// 1. Try mnemonic: MNEMONIC > LUX_MNEMONIC > LIGHT_MNEMONIC
+	for _, env := range []string{"MNEMONIC", "LUX_MNEMONIC", "LIGHT_MNEMONIC"} {
+		if mnemonic := os.Getenv(env); mnemonic != "" {
+			return keyFromMnemonic(mnemonic)
+		}
 	}
 
 	// 2. Try LUX_PRIVATE_KEY environment variable

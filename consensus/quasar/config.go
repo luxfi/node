@@ -256,7 +256,7 @@ func (c Config) Validate() error {
 func DefaultConfig() Config {
 	return Config{
 		Core:      DefaultCoreParams(),
-		Threshold: DefaultThresholdParams(5), // default 5 validators
+		Threshold: DefaultThresholdParams(3), // default 3 validators
 		Quorum:    DefaultQuorumParams(),
 		Runtime:   DefaultRuntimeConfig(),
 	}

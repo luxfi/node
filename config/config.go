@@ -1264,10 +1264,11 @@ func buildDevModeGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([
 }
 
 // devModeCChainGenesis is the default C-Chain genesis for dev mode.
-// Chain ID 1337, funds Lux Treasury (0x9011) and Anvil/Hardhat accounts.
+// Network ID 1337, EVM Chain ID 31337.
+// Funds Lux Treasury (0x9011), light mnemonic accounts (BIP44 m/44'/9000'/0'/0/{0-4}), and Anvil/Hardhat accounts.
 const devModeCChainGenesis = `{
   "config": {
-    "chainId": 1337,
+    "chainId": 31337,
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip155Block": 0,
@@ -1315,6 +1316,21 @@ const devModeCChainGenesis = `{
   },
   "alloc": {
     "9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "5369615110ca435bdf798f31c20ba6163d7b0a54": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "2e701063ccdffa2b1872c596222d8067d124d3ef": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "9030463eb1aaa563c8247468416cc0bf06347502": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "f77b06331152fd0e536de0af65688a6559c6f914": {
+      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "944fd51713652b9922690b7d06498fbf8742beac": {
       "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
     },
     "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266": {

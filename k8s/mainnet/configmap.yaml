@@ -108,8 +108,8 @@ data:
       --public-ip=$PUBLIC_IP \
       --bootstrap-ips=$BOOTSTRAP_IPS \
       --bootstrap-ids=$BOOTSTRAP_IDS \
-      --consensus-sample-size=5 \
-      --consensus-quorum-size=4 \
+      --consensus-sample-size=3 \
+      --consensus-quorum-size=2 \
       --network-allow-private-ips=true \
       --network-require-validator-to-connect=false \
       --sybil-protection-enabled=false

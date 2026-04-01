@@ -207,7 +207,7 @@ func (vm *VM) Initialize(
 	quasarCfg := QuasarBridgeConfig{
 		ValidatorID: vm.blockchainID.String(),
 		Threshold:   0, // Will be set to 2/3+1 based on total nodes
-		TotalNodes:  5, // Default 5-node network, can be updated
+		TotalNodes:  3, // Default 3-node network, can be updated
 		Logger:      vm.log,
 	}
 	quasarBridge, err := NewQuasarBridge(quasarCfg, vm.quantumSigner)
