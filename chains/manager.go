@@ -1380,6 +1380,21 @@ func (m *manager) createDAG(
 		}
 	}
 
+	// Linearize the DAG chain (required for X-Chain post-Cortina)
+	// This transitions the chain from DAG mode to linear block mode.
+	if vmInitialized {
+		if linearVM, ok := vmImpl.(interface {
+			Linearize(context.Context, ids.ID, chan<- vm.Message) error
+		}); ok {
+			toEngine := make(chan vm.Message, 1)
+			if err := linearVM.Linearize(initCtx, ids.Empty, toEngine); err != nil {
+				m.Log.Warn("failed to linearize DAG chain", log.Stringer("chainID", chainParams.ID), log.Err(err))
+			} else {
+				m.Log.Info("DAG chain linearized successfully", log.Stringer("chainID", chainParams.ID))
+			}
+		}
+	}
+
 	// Only transition VM to normal operation if initialization succeeded
 	if vmInitialized {
 		if stateVM, ok := vmImpl.(interface {
