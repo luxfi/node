@@ -1349,6 +1349,37 @@ func (m *manager) createDAG(
 		}
 	}
 
+	// Try vmcore.Init struct-based Initialize (used by exchangevm)
+	if !vmInitialized {
+		if initVM, ok := vmImpl.(interface {
+			Initialize(context.Context, vm.Init) error
+		}); ok {
+			toEngine := make(chan vm.Message, 1)
+			// Convert []*vm.Fx to []any for vm.Init.Fx field
+			fxAny := make([]any, len(fxs))
+			for i, fx := range fxs {
+				fxAny[i] = fx
+			}
+			err := initVM.Initialize(initCtx, vm.Init{
+				Runtime:  rt,
+				DB:       vmDB,
+				Genesis:  chainParams.GenesisData,
+				Upgrade:  chainConfig.Upgrade,
+				Config:   chainConfig.Config,
+				ToEngine: toEngine,
+				Fx:       fxAny,
+			})
+			if err != nil {
+				m.Log.Warn("vmcore.Init-style initialization failed",
+					log.Stringer("chainID", chainParams.ID), log.Err(err))
+			} else {
+				m.Log.Info("ExchangeVM initialized via vmcore.Init",
+					log.Stringer("chainID", chainParams.ID))
+				vmInitialized = true
+			}
+		}
+	}
+
 	// Only transition VM to normal operation if initialization succeeded
 	if vmInitialized {
 		if stateVM, ok := vmImpl.(interface {
