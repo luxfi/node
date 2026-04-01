@@ -73,17 +73,16 @@ RUN ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     rm /tmp/accel.tar.gz && \
     ldconfig 2>/dev/null || true
 
-# Build node with GPU crypto acceleration.
-# CGO_ENABLED=1 links libluxaccel for NTT, TFHE, BLS batch verify, etc.
+# Build node. CGO_ENABLED=0 for portable builds (GPU accel uses pure Go fallbacks).
+# Set CGO_ENABLED=1 + install libluxaccel from luxcpp for GPU acceleration.
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
-    export CGO_LDFLAGS="-lluxaccel" && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Build EVM plugin from source (includes custom precompile registry)
@@ -126,9 +125,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy GPU crypto library
-COPY --from=builder /usr/local/lib/libluxaccel* /usr/local/lib/
-COPY --from=builder /usr/local/lib/liblux_accel* /usr/local/lib/
+# GPU crypto library (optional — only present when built with CGO_ENABLED=1 + luxcpp).
+# Pure Go fallbacks are used when the library is absent.
 RUN ldconfig 2>/dev/null || true
 
 # Maintain compatibility with previous images
