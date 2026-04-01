@@ -1053,8 +1053,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		// Use LocalParams for 5-node networks: K=5, Alpha=0.69 (69% threshold),
-		// AlphaPreference=4, AlphaConfidence=4. This requires 4 of 5 validators
+		// Use LocalParams for 3-node networks: K=3, Alpha=0.67 (2/3 threshold),
+		// AlphaPreference=2, AlphaConfidence=2. This requires 2 of 3 validators
 		// to agree for consensus, providing proper Byzantine fault tolerance.
 		localParams := consensusconfig.LocalParams()
 		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{

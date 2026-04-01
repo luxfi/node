@@ -103,14 +103,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
     rm -rf /tmp/evm
 
-# Build lpm (Lux Plugin Manager)
+# lpm (Lux Plugin Manager) — optional, skip if build fails
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     git clone --depth 1 https://github.com/luxfi/lpm.git /tmp/lpm && \
     cd /tmp/lpm && \
     CGO_ENABLED=0 go build -ldflags="-s -w" -o /luxd/build/lpm ./main && \
-    rm -rf /tmp/lpm
+    rm -rf /tmp/lpm || echo "WARN: lpm build skipped (non-critical)"
 
 # Create this directory in the builder to avoid requiring anything to be executed in the
 # potentially emulated execution container.
