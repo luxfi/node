@@ -18,6 +18,8 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/codec"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/address"
 	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
@@ -503,6 +505,36 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  *********************************** DAG VM ***********************************
  ******************************************************************************
  */
+
+// ParseAddress resolves chain aliases (like "X") via BCLookup before parsing.
+// This overrides the embedded AddressManager which can't resolve aliases.
+func (vm *VM) ParseAddress(addrStr string) (ids.ID, ids.ShortID, error) {
+	chainAlias, hrp, addrBytes, err := address.Parse(addrStr)
+	if err != nil {
+		return ids.Empty, ids.ShortID{}, err
+	}
+
+	// Try BCLookup first (resolves "X" → actual blockchain ID)
+	var chainID ids.ID
+	if vm.consensusRuntime != nil && vm.consensusRuntime.BCLookup != nil {
+		chainID, err = vm.consensusRuntime.BCLookup.Lookup(chainAlias)
+	}
+	if err != nil || chainID == ids.Empty {
+		// Fallback: try parsing as raw ID
+		chainID, err = ids.FromString(chainAlias)
+		if err != nil {
+			return ids.Empty, ids.ShortID{}, fmt.Errorf("unknown chain alias %q: %w", chainAlias, err)
+		}
+	}
+
+	expectedHRP := constants.GetHRP(vm.consensusRuntime.NetworkID)
+	if hrp != expectedHRP {
+		return ids.Empty, ids.ShortID{}, fmt.Errorf("expected hrp %q but got %q", expectedHRP, hrp)
+	}
+
+	addr, err := ids.ToShortID(addrBytes)
+	return chainID, addr, err
+}
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- vmcore.Message) error {
 	// Use EtnaTime from config for chain state initialization
