@@ -565,7 +565,7 @@ Testing conducted on a single Lux validator node (testnet mode, macOS):
 ```bash
 cd ~/work/lux/benchmarks
 LUX_ENDPOINT="http://localhost:9640/ext/bc/C/rpc" \
-LUX_PRIVATE_KEY="<funded_key>" \
+PRIVATE_KEY="<funded_key>" \
 ./bin/bench tps --chains=lux --duration=60s --concurrency=5
 ```
 
