@@ -1239,6 +1239,17 @@ func (m *manager) createDAG(
 		log.String("vmID", chainParams.VMID.String()),
 	)
 
+	// Register chain aliases early so the VM's address parser can resolve them.
+	// The "X" prefix in addresses like "X-dev1..." must resolve to the actual blockchain ID.
+	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
+		m.Log.Warn("failed to alias chain with itself", log.Err(err))
+	}
+	if strings.EqualFold(chainParams.Name, "X-Chain") {
+		_ = m.Alias(chainParams.ID, "X")
+	} else if strings.EqualFold(chainParams.Name, "Q-Chain") {
+		_ = m.Alias(chainParams.ID, "Q")
+	}
+
 	// Get chain configuration
 	chainConfig, err := m.getChainConfig(chainParams.ID)
 	if err != nil {
