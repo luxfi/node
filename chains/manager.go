@@ -1375,10 +1375,42 @@ func (m *manager) createDAG(
 		log.String("status", "using native DAG consensus"),
 	)
 
+	// Register HTTP handlers for DAG VMs (exchangevm, qvm, etc.)
+	adapter := &dagVMAdapter{underlying: vmImpl}
+	handlers, err := adapter.CreateHandlers(context.TODO())
+	if err != nil {
+		m.Log.Warn("failed to create HTTP handlers for DAG chain",
+			log.Stringer("chainID", chainParams.ID),
+			log.Err(err),
+		)
+	} else if len(handlers) > 0 {
+		chainIDStr := chainParams.ID.String()
+		for endpoint, handler := range handlers {
+			m.Server.AddRoute(handler, "bc/"+chainIDStr, endpoint)
+			// Register name alias (e.g., "x-chain")
+			if chainParams.Name != "" {
+				m.Server.AddRoute(handler, "bc/"+strings.ToLower(chainParams.Name), endpoint)
+			}
+			// Register standard single-letter alias
+			for alias, name := range map[string]string{
+				"X": "X-Chain", "Q": "Q-Chain",
+			} {
+				if strings.EqualFold(chainParams.Name, name) {
+					m.Server.AddRoute(handler, "bc/"+alias, endpoint)
+					m.Log.Info("Registered DAG chain HTTP handler",
+						log.String("alias", alias),
+						log.Stringer("chainID", chainParams.ID),
+						log.String("endpoint", endpoint),
+					)
+				}
+			}
+		}
+	}
+
 	return &chainInfo{
 		Name:    chainParams.ID.String(),
 		Runtime: rt,
-		VM:      &dagVMAdapter{underlying: vmImpl},
+		VM:      adapter,
 		Handler: &placeholderHandler{},
 	}, nil
 }
