@@ -705,15 +705,19 @@ func (m *manager) createChain(chainParams ChainParameters) {
 						log.String("endpoint", endpoint),
 					)
 
-					// For C-Chain, also register under the "C" alias (uppercase)
-					if strings.EqualFold(chainParams.Name, "C-Chain") {
-						cBase := "bc/C"
-						m.Server.AddRoute(handler, cBase, endpoint)
-						m.Log.Info("Registered HTTP handler with C alias",
-							log.Stringer("chainID", chainParams.ID),
-							log.String("base", cBase),
-							log.String("endpoint", endpoint),
-						)
+					// Register standard chain aliases (uppercase single-letter)
+					for alias, name := range map[string]string{
+						"C": "C-Chain", "X": "X-Chain", "D": "D-Chain",
+						"P": "P-Chain", "Q": "Q-Chain", "T": "T-Chain",
+					} {
+						if strings.EqualFold(chainParams.Name, name) {
+							m.Server.AddRoute(handler, "bc/"+alias, endpoint)
+							m.Log.Info("Registered HTTP handler with chain alias",
+								log.String("alias", alias),
+								log.Stringer("chainID", chainParams.ID),
+								log.String("endpoint", endpoint),
+							)
+						}
 					}
 				}
 
