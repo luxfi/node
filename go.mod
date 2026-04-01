@@ -155,7 +155,7 @@ require (
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
-	github.com/luxfi/utxo v0.2.4
+	github.com/luxfi/utxo v0.2.5
 	github.com/luxfi/validators v1.0.0
 	github.com/luxfi/vm v1.0.39
 	github.com/luxfi/warp v1.18.5
