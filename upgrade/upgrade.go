@@ -26,18 +26,14 @@ var (
 		ApricotPhasePre6Time:         InitiallyActiveTime,
 		ApricotPhase6Time:            InitiallyActiveTime,
 		ApricotPhasePost6Time:        InitiallyActiveTime,
-		BanffTime:                    time.Date(2022, time.October, 18, 16, 0, 0, 0, time.UTC),
-		CortinaTime:                  time.Date(2023, time.April, 25, 15, 0, 0, 0, time.UTC),
-		// The mainnet stop vertex is well known. It can be verified on any
-		// fully synced node by looking at the parentID of the genesis block.
-		//
-		// Ref: https://chains.lux.network/x-chain/block/0
-		CortinaXChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
-		DurangoTime:               time.Date(2025, time.March, 6, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2025, time.April, 8, 15, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.December, 16, 17, 0, 0, 0, time.UTC),
-		GraniteTime:               UnscheduledActivationTime,
-		GraniteEpochDuration:      5 * time.Minute,
+		BanffTime:                    InitiallyActiveTime,
+		CortinaTime:                  InitiallyActiveTime,
+		CortinaXChainStopVertexID:    ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
+		DurangoTime:                  InitiallyActiveTime, // Shanghai EVM opcodes (PUSH0)
+		EtnaTime:                     InitiallyActiveTime, // Cancun EVM opcodes (MCOPY, TSTORE, TLOAD)
+		FortunaTime:                  InitiallyActiveTime,
+		GraniteTime:                  InitiallyActiveTime,
+		GraniteEpochDuration:         5 * time.Minute,
 	}
 	Testnet = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
@@ -49,18 +45,14 @@ var (
 		ApricotPhasePre6Time:         InitiallyActiveTime,
 		ApricotPhase6Time:            InitiallyActiveTime,
 		ApricotPhasePost6Time:        InitiallyActiveTime,
-		BanffTime:                    time.Date(2022, time.October, 3, 14, 0, 0, 0, time.UTC),
-		CortinaTime:                  time.Date(2023, time.April, 6, 15, 0, 0, 0, time.UTC),
-		// The testnet stop vertex is well known. It can be verified on any fully
-		// synced node by looking at the parentID of the genesis block.
-		//
-		// Ref: https://chains-test.lux.network/x-chain/block/0
-		CortinaXChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
-		DurangoTime:               time.Date(2025, time.February, 13, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.November, 25, 16, 0, 0, 0, time.UTC),
-		GraniteTime:               UnscheduledActivationTime,
-		GraniteEpochDuration:      30 * time.Second, // Faster epochs for testnet
+		BanffTime:                    InitiallyActiveTime,
+		CortinaTime:                  InitiallyActiveTime,
+		CortinaXChainStopVertexID:    ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
+		DurangoTime:                  InitiallyActiveTime,
+		EtnaTime:                     InitiallyActiveTime,
+		FortunaTime:                  InitiallyActiveTime,
+		GraniteTime:                  InitiallyActiveTime,
+		GraniteEpochDuration:         30 * time.Second,
 	}
 	Default = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
