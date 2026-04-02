@@ -85,12 +85,11 @@ ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
 ENV CGO_ENABLED=0
-ENV GOFLAGS="-mod=mod"
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
-    ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
+    GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Build EVM plugin from source (includes custom precompile registry)
 ARG EVM_VERSION=v0.8.40
