@@ -36,6 +36,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
+# Skip checksum verification for luxfi packages (tags may be rewritten)
+ENV GONOSUMCHECK=github.com/luxfi/*
+ENV GONOSUMDB=github.com/luxfi/*
+ENV GOPROXY=direct
+ENV GOFLAGS="-mod=mod"
+
 # Copy and download lux dependencies using go mod
 COPY go.mod .
 COPY go.sum .
