@@ -1053,10 +1053,25 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		// Use LocalParams for 3-node networks: K=3, Alpha=0.67 (2/3 threshold),
-		// AlphaPreference=2, AlphaConfidence=2. This requires 2 of 3 validators
-		// to agree for consensus, providing proper Byzantine fault tolerance.
-		localParams := consensusconfig.LocalParams()
+		// Choose consensus parameters based on mode:
+		// - Single-node (--dev, sybil protection disabled): K=1, self-voting
+		// - Multi-node (normal): K=3, 2/3 threshold
+		var consensusParams consensusconfig.Parameters
+		if !m.SybilProtectionEnabled {
+			consensusParams = consensusconfig.Parameters{
+				K:                     1,
+				Alpha:                 1.0,
+				AlphaPreference:       1,
+				AlphaConfidence:       1,
+				Beta:                  1,
+				ConcurrentPolls:       1,
+				OptimalProcessing:     1,
+				MaxOutstandingItems:   256,
+				MaxItemProcessingTime: 30 * time.Second,
+			}
+		} else {
+			consensusParams = consensusconfig.LocalParams()
+		}
 		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
 			NetworkID:  networkID,
@@ -1065,7 +1080,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Logger:     m.Log,
 			Gossiper:   &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID},
 			VM:         blockBuilder,
-			Params:     &localParams,
+			Params:     &consensusParams,
 		})
 
 		// Start the consensus engine
