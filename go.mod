@@ -149,13 +149,13 @@ require (
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.2
 	github.com/luxfi/runtime v1.0.1
-	github.com/luxfi/sdk v1.16.49
+	github.com/luxfi/sdk v1.16.50
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/threshold v1.5.5
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
-	github.com/luxfi/utxo v0.2.5
+	github.com/luxfi/utxo v0.2.6
 	github.com/luxfi/validators v1.0.0
 	github.com/luxfi/vm v1.0.39
 	github.com/luxfi/warp v1.18.5
