@@ -39,7 +39,9 @@ WORKDIR /build
 # Skip checksum verification for luxfi packages (tags may be rewritten)
 ENV GONOSUMCHECK=github.com/luxfi/*
 ENV GONOSUMDB=github.com/luxfi/*
-ENV GOPROXY=direct
+# Use Go proxy for most deps (gonum.org is flaky via direct), direct only for luxfi
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GONOPROXY=github.com/luxfi/*
 ENV GOFLAGS="-mod=mod"
 
 # Copy and download lux dependencies using go mod
