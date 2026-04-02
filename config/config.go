@@ -1291,7 +1291,7 @@ const devModeCChainGenesis = `{
     "terminalTotalDifficulty": 0,
     "chainEVMTimestamp": 0,
     "durangoTimestamp": 0,
-    "etnaTimestamp": 253399622400,
+    "etnaTimestamp": 0,
     "feeConfig": {
       "gasLimit": 30000000,
       "targetBlockRate": 1,
