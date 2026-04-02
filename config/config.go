@@ -1306,12 +1306,6 @@ const devModeCChainGenesis = `{
       "blockTimestamp": 0,
       "quorumNumerator": 67,
       "requirePrimaryNetworkSigners": false
-    },
-    "dexConfig": {
-      "blockTimestamp": 0,
-      "maxPools": 10000,
-      "enableFlashLoans": true,
-      "enableHooks": true
     }
   },
   "alloc": {
