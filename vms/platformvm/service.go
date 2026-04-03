@@ -1494,7 +1494,13 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 	preferredID := s.vm.manager.Preferred()
 	onAccept, ok := s.vm.manager.GetState(preferredID)
 	if !ok {
-		return fmt.Errorf("could not retrieve state for block %s", preferredID)
+		// Preferred state may not be cached after recent block acceptance.
+		// Fall back to last accepted state.
+		lastAccepted := s.vm.manager.LastAccepted()
+		onAccept, ok = s.vm.manager.GetState(lastAccepted)
+		if !ok {
+			return fmt.Errorf("could not retrieve state for block %s", preferredID)
+		}
 	}
 
 	_, _, err = onAccept.GetTx(args.TxID)
