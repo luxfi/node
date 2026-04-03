@@ -286,6 +286,8 @@ github.com/luxfi/formatting v1.0.1 h1:ZnE1rAdEUds9yAegdVdGDOBGN6hLMPOv6E03Fp8IEY
 github.com/luxfi/formatting v1.0.1/go.mod h1:mYzNf5DJOiqSSKUPzNj5dKy4tstFbN3pZlkI5716eKc=
 github.com/luxfi/genesis v1.6.2 h1:wMYoswFylcLBiNqKcXMYFkOmovY/CF/5KBYxtpIYmSY=
 github.com/luxfi/genesis v1.6.2/go.mod h1:RXMF1kTwh1tWqpu07svpWz86xcGxDk2j6fIxdds9/N0=
+github.com/luxfi/genesis v1.6.6 h1:s9AdfANRT1iIcOYF8+Yfb+6qtqpOw5bN2ZX3DkzKG2s=
+github.com/luxfi/genesis v1.6.6/go.mod h1:k26ZZvzES8e9cep9oWUDggBX+6oa5bnIQ7MmQP7dm4A=
 github.com/luxfi/geth v1.16.76 h1:CRh9BTuMUs3wYFg1X31F3Ld8nhDMZkJNkypMqrqVkvg=
 github.com/luxfi/geth v1.16.76/go.mod h1:/vA9J5jW9lF1iJ7VvEUDBWF8ZRXXz/9rmukQB/WAJhE=
 github.com/luxfi/go-bip32 v1.0.2 h1:7vFbb+Wr4Z499q2tuCLdd7wWjtn8sH+HWBlx76mhH9Y=
