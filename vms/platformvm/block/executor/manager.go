@@ -153,9 +153,19 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		return fmt.Errorf("failed verifying warp messages: %w", err)
 	}
 
-	stateDiff, err := state.NewDiff(m.preferred, m)
+	// Use preferred block for state diff. If preferred state isn't available
+	// (race between block acceptance and preference update), fall back to
+	// the last accepted block which always has committed state.
+	preferredID := m.preferred
+	stateDiff, err := state.NewDiff(preferredID, m)
 	if err != nil {
-		return fmt.Errorf("failed creating state diff: %w", err)
+		lastAccepted := m.state.GetLastAccepted()
+		if lastAccepted != preferredID {
+			stateDiff, err = state.NewDiff(lastAccepted, m)
+		}
+		if err != nil {
+			return fmt.Errorf("failed creating state diff: %w", err)
+		}
 	}
 
 	nextBlkTime, _, err := state.NextBlockTime(

@@ -300,7 +300,12 @@ func (b *builder) BuildBlockWithRuntime(
 	nextHeight := preferred.Height() + 1
 	preferredState, ok := b.blkManager.GetState(preferredID)
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", state.ErrMissingParentState, preferredID)
+		// Fallback: preferred state may not be cached if accepted recently.
+		// Use last accepted state which is always committed.
+		preferredState, ok = b.blkManager.GetState(b.blkManager.LastAccepted())
+		if !ok {
+			return nil, fmt.Errorf("%w: %s", state.ErrMissingParentState, preferredID)
+		}
 	}
 
 	timestamp, timeWasCapped, err := state.NextBlockTime(
