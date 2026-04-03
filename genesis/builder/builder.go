@@ -587,6 +587,46 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
+	// Non-EVM native chains use their own genesis or empty default.
+	getVMGenesis := func(data string) []byte {
+		if data != "" {
+			return []byte(data)
+		}
+		return []byte("{}")
+	}
+
+	// Q-Chain (Quantum / PQ consensus) — always included
+	chains = append(chains, genesis.Chain{
+		GenesisData: getVMGenesis(config.QChainGenesis),
+		ChainID:     constants.PrimaryNetworkID,
+		VMID:        constants.QuantumVMID,
+		Name:        "Q-Chain",
+	})
+
+	// B-Chain (Bridge / cross-chain) — always included
+	chains = append(chains, genesis.Chain{
+		GenesisData: getVMGenesis(config.BChainGenesis),
+		ChainID:     constants.PrimaryNetworkID,
+		VMID:        constants.BridgeVMID,
+		Name:        "B-Chain",
+	})
+
+	// T-Chain (Threshold / FHE) — always included
+	chains = append(chains, genesis.Chain{
+		GenesisData: getVMGenesis(config.TChainGenesis),
+		ChainID:     constants.PrimaryNetworkID,
+		VMID:        constants.ThresholdVMID,
+		Name:        "T-Chain",
+	})
+
+	// Z-Chain (ZK / zero knowledge) — always included
+	chains = append(chains, genesis.Chain{
+		GenesisData: getVMGenesis(config.ZChainGenesis),
+		ChainID:     constants.PrimaryNetworkID,
+		VMID:        constants.ZKVMID,
+		Name:        "Z-Chain",
+	})
+
 	pChainGenesis, err := genesis.New(
 		xAssetID,
 		config.NetworkID,
