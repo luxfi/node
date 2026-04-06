@@ -1,5 +1,3 @@
-//go:build allvms
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -22,7 +20,7 @@ import (
 	zvm "github.com/luxfi/node/vms/zkvm"
 )
 
-// registerOptionalVMs registers all optional chain VMs (allvms build)
+// registerOptionalVMs registers all chain VMs beyond P/X/C
 func (n *Node) registerOptionalVMs() error {
 	// Register Q-Chain VM (QuantumVM) - Post-quantum cryptography
 	n.Log.Info("Registering Q-Chain VM (Quantum)", "vmID", constants.QuantumVMID)
@@ -101,7 +99,7 @@ func (n *Node) registerOptionalVMs() error {
 		return err
 	}
 
-	n.Log.Info("All optional VMs registered (allvms build)")
+	n.Log.Info("All VMs registered")
 	return nil
 }
 

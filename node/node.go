@@ -1122,7 +1122,7 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	cChainID := createEVMTx.ID()
 
 	// If any of these chains die, the node shuts down
-	// D-Chain is only critical in allvms builds (when optionalVMCount > 0)
+	// D-Chain and other VMs are critical alongside P/X/C
 	criticalChains := set.Of(
 		constants.PlatformChainID,
 		xChainID,
@@ -1298,7 +1298,7 @@ func (n *Node) initVMs() error {
 	// C-Chain VM (EVM) is loaded as a plugin via ZAP transport.
 	// Plugin binary placed at <plugin-dir>/<EVMID> by init container.
 
-	// Register optional VMs (build with -tags=allvms for full VM support)
+	// Register all VMs (Q, A, B, T, Z, G, D, K, O, R, I chains)
 	if err := n.registerOptionalVMs(); err != nil {
 		return err
 	}
