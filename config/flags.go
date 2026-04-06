@@ -74,7 +74,7 @@ func addProcessFlags(fs *pflag.FlagSet) {
 
 func addNodeFlags(fs *pflag.FlagSet) {
 	// Development mode
-	fs.Bool(DevModeKey, false, "Enables development mode with single-node consensus, no sybil protection, and other dev-friendly settings")
+	fs.Bool(DevModeKey, false, "Enables automine mode: single-node consensus for local testing. Use --network-id for public devnet/testnet/mainnet.")
 	fs.Bool(DevLightKey, false, "Enables dev mode with low memory settings (--dev + --low-memory). Target: <200MB idle, <500MB under load")
 	fs.Bool(LowMemoryKey, false, "Enables low memory configuration for resource-constrained environments")
 	fs.String(MemoryProfileKey, "", "Memory profile: 'low' (<50MB), 'standard' (<100MB, default), 'max' (~512MB)")

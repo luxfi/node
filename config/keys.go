@@ -230,7 +230,7 @@ const (
 	ProcessContextFileKey                              = "process-context-file"
 
 	// Development and LP Keys
-	DevModeKey   = "dev"
+	DevModeKey   = "automine"
 	LPSupportKey = "lp-support"
 	LPObjectKey  = "lp-object"
 

@@ -93,13 +93,13 @@ var (
 	errCannotReadDirectory                    = errors.New("cannot read directory")
 	errUnmarshalling                          = errors.New("unmarshalling failed")
 	errFileDoesNotExist                       = errors.New("file does not exist")
-	errDevNetworkGenesisMismatch              = errors.New("genesis mismatch: dev-network.json exists but produces different genesis hash; delete datadir or use original network config")
+	errDevNetworkGenesisMismatch              = errors.New("genesis mismatch: automine-network.json exists but produces different genesis hash; delete datadir or use original network config")
 )
 
-// DevNetworkConfig captures immutable network state for dev mode persistence.
-// Once written to dev-network.json, this ensures the same genesis is produced
+// AutomineNetworkConfig captures immutable network state for automine mode persistence.
+// Once written to automine-network.json, this ensures the same genesis is produced
 // on every restart, making C-Chain/EVM state persistence work correctly.
-type DevNetworkConfig struct {
+type AutomineNetworkConfig struct {
 	// Version for forward compatibility
 	Version int `json:"version"`
 
@@ -126,12 +126,12 @@ type DevNetworkConfig struct {
 
 const (
 	devNetworkConfigVersion  = 1
-	devNetworkConfigFilename = "dev-network.json"
+	devNetworkConfigFilename = "automine-network.json"
 )
 
-// loadDevNetworkConfig attempts to load dev-network.json from the data directory.
+// loadAutomineNetworkConfig attempts to load automine-network.json from the data directory.
 // Returns nil if the file doesn't exist (first boot scenario).
-func loadDevNetworkConfig(dataDir string) (*DevNetworkConfig, error) {
+func loadAutomineNetworkConfig(dataDir string) (*AutomineNetworkConfig, error) {
 	path := filepath.Join(dataDir, devNetworkConfigFilename)
 
 	data, err := os.ReadFile(path)
@@ -142,7 +142,7 @@ func loadDevNetworkConfig(dataDir string) (*DevNetworkConfig, error) {
 		return nil, fmt.Errorf("failed to read dev network config: %w", err)
 	}
 
-	var cfg DevNetworkConfig
+	var cfg AutomineNetworkConfig
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse dev network config: %w", err)
 	}
@@ -154,9 +154,9 @@ func loadDevNetworkConfig(dataDir string) (*DevNetworkConfig, error) {
 	return &cfg, nil
 }
 
-// saveDevNetworkConfig atomically writes the dev network config to disk.
+// saveAutomineNetworkConfig atomically writes the dev network config to disk.
 // Uses write-to-temp-then-rename pattern for crash safety.
-func saveDevNetworkConfig(dataDir string, cfg *DevNetworkConfig) error {
+func saveAutomineNetworkConfig(dataDir string, cfg *AutomineNetworkConfig) error {
 	path := filepath.Join(dataDir, devNetworkConfigFilename)
 	tempPath := path + ".tmp"
 
@@ -1020,9 +1020,9 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// Get allow-custom-genesis flag (defaults to true for development)
 	allowCustomGenesis := v.GetBool(AllowCustomGenesisKey)
 
-	// Handle dev mode genesis - dynamically generate genesis with the node's own credentials
+	// Handle automine mode genesis - dynamically generate genesis with the node's own credentials
 	if v.GetBool(DevModeKey) && !v.IsSet(GenesisFileKey) && !v.IsSet(GenesisFileContentKey) && !v.IsSet(GenesisDBKey) {
-		return getOrCreateDevModeGenesis(stakingCfg, dataDir)
+		return getOrCreateAutomineGenesis(stakingCfg, dataDir)
 	}
 
 	// HIGHEST PRIORITY: Raw genesis bytes - use directly without rebuilding
@@ -1110,21 +1110,21 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	return builder.FromConfig(config)
 }
 
-// getOrCreateDevModeGenesis handles dev mode genesis with persistence.
-// On first boot: generates genesis, saves to dev-network.json, returns genesis.
-// On restart: loads from dev-network.json to ensure genesis hash stability.
+// getOrCreateAutomineGenesis handles automine mode genesis with persistence.
+// On first boot: generates genesis, saves to automine-network.json, returns genesis.
+// On restart: loads from automine-network.json to ensure genesis hash stability.
 // Returns: (genesisBytes, xAssetID, error) - xAssetID is the LUX token asset ID
-func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
+func getOrCreateAutomineGenesis(stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
 	// Try to load existing dev network config
-	devCfg, err := loadDevNetworkConfig(dataDir)
+	devCfg, err := loadAutomineNetworkConfig(dataDir)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to load dev network config: %w", err)
 	}
 
 	if devCfg != nil {
 		// Existing config found - check if credentials match
-		// In dev mode with ephemeral certs, credentials will change on restart.
-		// We log a warning but continue with the stored genesis since dev mode
+		// In automine mode with ephemeral certs, credentials will change on restart.
+		// We log a warning but continue with the stored genesis since automine mode
 		// is single-node and doesn't require credential consistency.
 		expectedNodeID := stakingCfg.NodeID
 		expectedBLSPK := fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey)
@@ -1132,18 +1132,18 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 
 		credentialsMismatch := false
 		if devCfg.NodeID != expectedNodeID {
-			log.Warn("dev-network.json nodeID mismatch (using stored genesis anyway for dev mode)",
+			log.Warn("automine-network.json nodeID mismatch (using stored genesis anyway for automine mode)",
 				"stored", devCfg.NodeID,
 				"current", expectedNodeID,
 			)
 			credentialsMismatch = true
 		}
 		if devCfg.BLSPublicKey != expectedBLSPK {
-			log.Warn("dev-network.json BLS public key mismatch (using stored genesis anyway for dev mode)")
+			log.Warn("automine-network.json BLS public key mismatch (using stored genesis anyway for automine mode)")
 			credentialsMismatch = true
 		}
 		if devCfg.BLSPopProof != expectedBLSPoP {
-			log.Warn("dev-network.json BLS PoP mismatch (using stored genesis anyway for dev mode)")
+			log.Warn("automine-network.json BLS PoP mismatch (using stored genesis anyway for automine mode)")
 			credentialsMismatch = true
 		}
 		if credentialsMismatch {
@@ -1153,7 +1153,7 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 		// Verify the stored genesis hash matches what we'll compute from the bytes
 		storedHash, err := ids.FromString(devCfg.GenesisHash)
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("invalid genesis hash in dev-network.json: %w", err)
+			return nil, ids.Empty, fmt.Errorf("invalid genesis hash in automine-network.json: %w", err)
 		}
 
 		// Compute actual hash from stored bytes to verify integrity
@@ -1170,7 +1170,7 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 		// Parse stored X-Chain asset ID
 		xAssetID, err := ids.FromString(devCfg.XAssetID)
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("invalid xAssetId in dev-network.json: %w", err)
+			return nil, ids.Empty, fmt.Errorf("invalid xAssetId in automine-network.json: %w", err)
 		}
 
 		log.Info("loaded dev network config",
@@ -1186,8 +1186,8 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 	// First boot - generate new genesis with current timestamp
 	startTime := uint64(time.Now().Unix())
 
-	// buildDevModeGenesis returns (genesisBytes, xAssetID) - the LUX token asset ID
-	genesisBytes, xAssetID, err := buildDevModeGenesis(stakingCfg, startTime)
+	// buildAutomineGenesis returns (genesisBytes, xAssetID) - the LUX token asset ID
+	genesisBytes, xAssetID, err := buildAutomineGenesis(stakingCfg, startTime)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
@@ -1200,7 +1200,7 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 	}
 
 	// Save for future restarts
-	newDevCfg := &DevNetworkConfig{
+	newDevCfg := &AutomineNetworkConfig{
 		Version:       devNetworkConfigVersion,
 		StartTime:     startTime,
 		NodeID:        stakingCfg.NodeID,
@@ -1209,10 +1209,10 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 		GenesisBytes:  genesisBytes,
 		GenesisHash:   genesisHash.String(),
 		XAssetID:      xAssetID.String(),
-		CChainGenesis: devModeCChainGenesis,
+		CChainGenesis: automineCChainGenesis,
 	}
 
-	if err := saveDevNetworkConfig(dataDir, newDevCfg); err != nil {
+	if err := saveAutomineNetworkConfig(dataDir, newDevCfg); err != nil {
 		// Log warning but don't fail - genesis is still valid
 		log.Warn("failed to save dev network config (persistence may not work on restart)",
 			"error", err,
@@ -1229,13 +1229,13 @@ func getOrCreateDevModeGenesis(stakingCfg *builder.StakingConfig, dataDir string
 	return genesisBytes, xAssetID, nil
 }
 
-// buildDevModeGenesis creates a genesis configuration for single-node development mode.
+// buildAutomineGenesis creates a genesis configuration for single-node development mode.
 // It uses the node's own credentials as the sole validator.
-func buildDevModeGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([]byte, ids.ID, error) {
+func buildAutomineGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([]byte, ids.ID, error) {
 	// Parse node ID from staking config
 	nodeID, err := ids.NodeIDFromString(stakingCfg.NodeID)
 	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("failed to parse node ID for dev mode: %w", err)
+		return nil, ids.Empty, fmt.Errorf("failed to parse node ID for automine mode: %w", err)
 	}
 
 	// Lux Treasury address: 0x9011E888251AB053B7bD1cdB598Db4f9DEd94714
@@ -1250,23 +1250,23 @@ func buildDevModeGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([
 		copy(rewardAddress[:], nodeID[:20])
 	}
 
-	// Create dev mode config with embedded C-Chain genesis
+	// Create automine mode config with embedded C-Chain genesis
 	devCfg := builder.DevModeConfig{
 		NodeID:        nodeID,
 		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
 		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
 		RewardAddress: rewardAddress,
-		CChainGenesis: devModeCChainGenesis,
+		CChainGenesis: automineCChainGenesis,
 		StartTime:     startTime, // Use provided start time for determinism
 	}
 
 	return builder.ForDevMode(devCfg, stakingCfg)
 }
 
-// devModeCChainGenesis is the default C-Chain genesis for dev mode.
+// automineCChainGenesis is the default C-Chain genesis for automine mode.
 // Network ID 1337, EVM Chain ID 31337.
 // Funds Lux Treasury (0x9011), light mnemonic accounts (BIP44 m/44'/9000'/0'/0/{0-4}), and Anvil/Hardhat accounts.
-const devModeCChainGenesis = `{
+const automineCChainGenesis = `{
   "config": {
     "chainId": 31337,
     "homesteadBlock": 0,
@@ -1713,7 +1713,7 @@ func getDefaultNetConfig(v *viper.Viper) nets.Config {
 		POAMinBlockTime:             v.GetDuration(POAMinBlockTimeKey),
 	}
 
-	// If dev mode or POA mode is enabled, adjust consensus parameters
+	// If automine mode or POA mode is enabled, adjust consensus parameters
 	if config.POAEnabled {
 		config.ConsensusParameters = nets.GetPOAConsensusParameters()
 		if config.POAMinBlockTime == 0 {
@@ -1855,12 +1855,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		v.Set(NetworkHealthMinPeersKey, 0)
 		// Enable automining for anvil-like behavior (auto-produce blocks on transactions)
 		v.Set(EnableAutominingKey, true)
-		// Use custom network (ID 1337) by default for dev mode unless explicitly set
+		// Use custom network (ID 1337) by default for automine mode unless explicitly set
 		// This gives a standard dev chain ID like Hardhat/Anvil (1337)
 		if !v.IsSet(NetworkNameKey) {
 			v.Set(NetworkNameKey, "custom") // maps to network ID 1337
 		}
-		// Use ephemeral staking credentials for dev mode unless explicitly set
+		// Use ephemeral staking credentials for automine mode unless explicitly set
 		// This avoids needing to match genesis validators with local staking keys
 		if !v.IsSet(StakingEphemeralCertEnabledKey) && !v.IsSet(StakingTLSKeyContentKey) && !v.IsSet(StakingTLSKeyPathKey) {
 			v.Set(StakingEphemeralCertEnabledKey, true)
@@ -1868,7 +1868,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		if !v.IsSet(StakingEphemeralSignerEnabledKey) && !v.IsSet(StakingSignerKeyContentKey) && !v.IsSet(StakingSignerKeyPathKey) {
 			v.Set(StakingEphemeralSignerEnabledKey, true)
 		}
-		// Use port 8545 for dev mode (standard Ethereum RPC port, like Anvil/Hardhat)
+		// Use port 8545 for automine mode (standard Ethereum RPC port, like Anvil/Hardhat)
 		// This avoids conflicts with mainnet (9630), testnet (9640), devnet (9650) ports
 		if !v.IsSet(HTTPPortKey) {
 			v.Set(HTTPPortKey, 8545)
