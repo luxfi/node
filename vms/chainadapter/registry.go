@@ -264,7 +264,7 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			Name:                  "Avalanche",
 			NetworkID:             43114, // C-Chain
 			RequiredConfirmations: 1,
-			FinalityMode:          "instant", // Snowman consensus
+			FinalityMode:          "instant", // Quasar consensus
 			BlockTime:             2 * time.Second,
 			TrustThreshold:        0.67,
 			MaxClockDrift:         30 * time.Second,

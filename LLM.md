@@ -559,7 +559,7 @@ Testing conducted on a single Lux validator node (testnet mode, macOS):
 - Single node achieves ~1,100 TPS sustained with optimal concurrency
 - Higher concurrency (>5 workers) decreases TPS due to nonce contention
 - Query latency is consistent at ~18ms
-- Testnet mode uses K=20 Snow consensus (vs K=1 dev mode)
+- Testnet mode uses K=20 Lux consensus (vs K=1 dev mode)
 
 **Benchmark Command:**
 ```bash

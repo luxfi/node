@@ -920,7 +920,7 @@ func (a *AvalancheAdapter) VerifyBlockHeader(ctx context.Context, header *BlockH
 	if header.ChainID != ChainAvalanche {
 		return ErrChainNotSupported
 	}
-	// Verify Snowman consensus acceptance
+	// Verify Quasar consensus acceptance
 	return nil
 }
 
