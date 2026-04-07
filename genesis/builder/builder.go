@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/xvm"
+	exchangevm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/platformvm/genesis"
