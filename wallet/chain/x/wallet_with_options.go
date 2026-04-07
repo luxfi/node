@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/exchangevm/txs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
 	"github.com/luxfi/node/wallet/network/primary/common"

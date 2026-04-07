@@ -4,8 +4,8 @@
 package x
 
 import (
-	"github.com/luxfi/node/vms/exchangevm/block"
-	"github.com/luxfi/node/vms/exchangevm/fxs"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"

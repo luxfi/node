@@ -5,7 +5,7 @@ package chains
 
 import (
 	nodeconsensus "github.com/luxfi/node/consensus"
-	// xvm "github.com/luxfi/node/vms/exchangevm" // Unused
+	// xvm "github.com/luxfi/node/vms/xvm" // Unused
 	"context"
 	"crypto"
 	"encoding/binary"

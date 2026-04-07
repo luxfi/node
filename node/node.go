@@ -55,7 +55,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/exchangevm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/validators/uptime"
