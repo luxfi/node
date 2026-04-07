@@ -886,7 +886,7 @@ func (a *TezosAdapter) Close() error {
 	return nil
 }
 
-// ======== Avalanche Adapter (Snowman) ========
+// ======== Lux Adapter (Quasar) ========
 
 type AvalancheAdapter struct {
 	mu              sync.RWMutex

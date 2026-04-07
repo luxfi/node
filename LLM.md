@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working with the Lux node codebase
 Lux blockchain node implementation - a high-performance, multi-chain blockchain platform written in Go. Features multiple consensus engines (Chain, DAG, PQ), EVM compatibility, and a multi-chain architecture with specialized capabilities.
 
 **Key Context:**
-- Fork of Avalanche with Lux-specific enhancements
+- Original Lux Network node — NOT a fork
 - Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
 - Go Version: 1.26.1+
 - Database: ZapDB (primary, default)

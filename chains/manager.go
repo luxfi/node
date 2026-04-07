@@ -2379,7 +2379,7 @@ func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uin
 func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
 	// PushQuery sends block data AND expects a Qbit response.
 	// CRITICAL: We must ALWAYS respond with Chits, even if we can't fully
-	// process the block. This is how Snowman consensus works - the proposer
+	// process the block. This is how Quasar consensus works - the proposer
 	// needs vote responses to reach quorum.
 
 	b.logger.Debug("received PushQuery",
