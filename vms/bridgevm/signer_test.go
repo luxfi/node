@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	// MinBridgeBond is the minimum bond required for bridge validators (100M LUX)
-	MinBridgeBond = 100_000_000 * 1e9
+	// MinBridgeBond is the minimum bond required for bridge validators (1M LUX)
+	MinBridgeBond = 1_000_000 * 1e9
 )
 
 // TestSignerSetOptInRegistration tests LP-333 opt-in registration
@@ -339,7 +339,7 @@ func TestSlashSignerPartial(t *testing.T) {
 	require := require.New(t)
 
 	nodeID := ids.GenerateTestNodeID()
-	initialBond := uint64(150_000_000 * 1e9) // 150M LUX bond
+	initialBond := uint64(1_500_000 * 1e9) // 1.5M LUX bond
 
 	vm := &VM{
 		config: BridgeConfig{
@@ -374,22 +374,22 @@ func TestSlashSignerPartial(t *testing.T) {
 	require.NoError(err)
 	require.True(result.Success)
 	require.Equal(nodeID.String(), result.NodeID)
-	require.Equal(initialBond/10, result.SlashedAmount)             // 15M LUX slashed
-	require.Equal(initialBond-initialBond/10, result.RemainingBond) // 135M remaining
+	require.Equal(initialBond/10, result.SlashedAmount)             // 150K LUX slashed
+	require.Equal(initialBond-initialBond/10, result.RemainingBond) // 1.35M remaining
 	require.Equal(1, result.TotalSlashCount)
-	require.False(result.RemovedFromSet) // Still above 100M minimum
+	require.False(result.RemovedFromSet) // Still above 1M minimum
 
 	// Verify signer state
 	require.True(vm.signerSet.Signers[0].Slashed)
 	require.Equal(1, vm.signerSet.Signers[0].SlashCount)
 }
 
-// TestSlashSignerRemoval tests that slashing below 100M bond removes signer
+// TestSlashSignerRemoval tests that slashing below 1M bond removes signer
 func TestSlashSignerRemoval(t *testing.T) {
 	require := require.New(t)
 
 	nodeID := ids.GenerateTestNodeID()
-	initialBond := uint64(110_000_000 * 1e9) // 110M LUX bond
+	initialBond := uint64(1_100_000 * 1e9) // 1.1M LUX bond (just above minimum)
 
 	vm := &VM{
 		config: BridgeConfig{
@@ -412,7 +412,7 @@ func TestSlashSignerRemoval(t *testing.T) {
 		},
 	}
 
-	// Slash 20% - will drop below 100M minimum
+	// Slash 20% — 1.1M * 0.8 = 880K remaining, below 1M minimum
 	input := &SlashSignerInput{
 		NodeID:       nodeID,
 		Reason:       "double signing",
@@ -423,7 +423,7 @@ func TestSlashSignerRemoval(t *testing.T) {
 	result, err := vm.SlashSigner(input)
 	require.NoError(err)
 	require.True(result.Success)
-	require.True(result.RemovedFromSet)                 // Removed because bond < 100M
+	require.True(result.RemovedFromSet)                 // Removed because bond < 1M
 	require.Equal(uint64(1), vm.signerSet.CurrentEpoch) // Epoch incremented
 
 	// Signer should be removed
