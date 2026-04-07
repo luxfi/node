@@ -164,7 +164,7 @@ func TestSlashSignerPartial(t *testing.T) {
 	require := require.New(t)
 
 	nodeID := ids.GenerateTestNodeID()
-	initialBond := uint64(150_000_000 * 1e9)
+	initialBond := uint64(1_500_000 * 1e9) // 1.5M LUX
 
 	vm := &VM{
 		config: Config{MaxSigners: 100, ThresholdRatio: 0.67},
@@ -189,7 +189,7 @@ func TestSlashSignerRemoval(t *testing.T) {
 	require := require.New(t)
 
 	nodeID := ids.GenerateTestNodeID()
-	initialBond := uint64(110_000_000 * 1e9)
+	initialBond := uint64(1_100_000 * 1e9) // 1.1M LUX, 20% slash → 880K < 1M minimum
 
 	vm := &VM{
 		config: Config{MaxSigners: 100, ThresholdRatio: 0.67},
