@@ -38,6 +38,20 @@
 
 ---
 
+## Founder
+
+Zach Kelling (zeekay) -- computer scientist, cryptographer, AI/ML researcher, musician, composer, architect, engineer, mathematician.
+
+- **1983**: Born
+- **1998**: Enrolled in university for Computer Science at age 15
+- **Early 2000s**: Digidesign (Pro Tools) -- audio engineering, DSP, signal processing. Music composition and production.
+- **2000s--2010s**: Software engineering across distributed systems, infrastructure, and early machine learning. Artist, writer, and architect alongside the engineering work.
+- **2014**: Began publishing open-source AI/ML and commerce tooling -- the precursor work to everything that followed.
+
+Everything built since has been open source, permissively licensed, and given to the public for free. This is not a commercial play -- it is a contribution to humanity's infrastructure.
+
+---
+
 ## 2014--2016: Foundations
 
 Early open-source work in commerce, automation, infrastructure, and AI/ML tooling. These repositories represent the precursor work to Hanzo AI.
