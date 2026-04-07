@@ -74,11 +74,12 @@ type BlockResult struct {
 }
 
 // VM implements the DEX Virtual Machine using a pure functional architecture.
+// Native decentralized exchange — Hyperliquid-class on-chain CLOB.
 // All state transitions happen deterministically within block processing:
-//   - Central Limit Order Book (CLOB) trading
-//   - Automated Market Maker (AMM) liquidity pools
+//   - Central Limit Order Book (CLOB) — native, not EVM-based
+//   - Perpetual futures with auto-deleveraging
 //   - Cross-chain atomic swaps via Warp messaging
-//   - 1ms block times for ultra-low latency HFT support
+//   - 1ms block times for ultra-low latency trading
 //
 // DESIGN: No background goroutines. All operations are block-driven and deterministic.
 // This ensures:

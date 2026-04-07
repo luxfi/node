@@ -1,6 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+// Package gvm implements the Graph VM (G-Chain) — a shared GraphQL database
+// across all Lux chains. Any chain's state is queryable through a unified
+// GraphQL endpoint with auto-indexing and cross-chain query resolution.
 package gvm
 
 import (
