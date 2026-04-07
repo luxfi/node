@@ -56,7 +56,7 @@ type BridgeConfig struct {
 	// Security settings
 	MaxBridgeAmount      uint64 `json:"maxBridgeAmount"`      // Maximum amount per bridge transaction
 	DailyBridgeLimit     uint64 `json:"dailyBridgeLimit"`     // Daily limit for bridge operations
-	RequireValidatorBond uint64 `json:"requireValidatorBond"` // 100M LUX bond required (slashable, NOT staked)
+	RequireValidatorBond uint64 `json:"requireValidatorBond"` // 1M LUX bond required (slashable, NOT staked)
 
 	// LP-333: Opt-in Signer Set Management
 	MaxSigners     int     `json:"maxSigners"`     // Maximum signers before set is frozen (default: 100)
@@ -78,7 +78,7 @@ type SignerSet struct {
 type SignerInfo struct {
 	NodeID     ids.NodeID `json:"nodeId"`
 	PartyID    party.ID   `json:"partyId"`
-	BondAmount uint64     `json:"bondAmount"` // 100M LUX bond (slashable, NOT staked)
+	BondAmount uint64     `json:"bondAmount"` // 1M LUX bond (slashable, NOT staked)
 	MPCPubKey  []byte     `json:"mpcPubKey"`
 	Active     bool       `json:"active"`
 	JoinedAt   time.Time  `json:"joinedAt"`
@@ -90,7 +90,7 @@ type SignerInfo struct {
 // RegisterValidatorInput is the input for registering as a bridge signer
 type RegisterValidatorInput struct {
 	NodeID     string `json:"nodeId"`
-	BondAmount string `json:"bondAmount,omitempty"` // 100M LUX bond (slashable)
+	BondAmount string `json:"bondAmount,omitempty"` // 1M LUX bond (slashable)
 	MPCPubKey  string `json:"mpcPubKey,omitempty"`
 }
 
@@ -284,12 +284,12 @@ func (vm *VM) Initialize(
 		vm.config.ThresholdRatio = 0.67 // 2/3 threshold for BFT safety
 	}
 	if vm.config.RequireValidatorBond == 0 {
-		vm.config.RequireValidatorBond = 100_000_000 * 1e9 // Default: 100M LUX bond
+		vm.config.RequireValidatorBond = 1_000_000 * 1e9 // Default: 1M LUX bond
 	}
 
-	// Validate configuration - Bridge validators require 100M LUX BOND (slashable, not stake)
-	if vm.config.RequireValidatorBond < 100_000_000*1e9 { // 100M LUX bond
-		return errors.New("B-chain requires 100M LUX bond (slashable)")
+	// Validate configuration - Bridge validators require 1M LUX BOND (slashable, not stake)
+	if vm.config.RequireValidatorBond < 1_000_000*1e9 { // 1M LUX bond
+		return errors.New("B-chain requires 1M LUX bond (slashable)")
 	}
 
 	// Initialize LP-333 signer set (opt-in model)
@@ -702,7 +702,7 @@ func (vm *VM) RegisterValidator(input *RegisterValidatorInput) (*RegisterValidat
 		}
 	}
 
-	// Parse bond amount (100M LUX required, slashable)
+	// Parse bond amount (1M LUX required, slashable)
 	var bondAmount uint64
 	if input.BondAmount != "" {
 		if _, err := fmt.Sscanf(input.BondAmount, "%d", &bondAmount); err != nil {
@@ -716,7 +716,7 @@ func (vm *VM) RegisterValidator(input *RegisterValidatorInput) (*RegisterValidat
 		signerInfo := &SignerInfo{
 			NodeID:     nodeID,
 			PartyID:    party.ID(nodeID.String()),
-			BondAmount: bondAmount, // 100M LUX bond (slashable)
+			BondAmount: bondAmount, // 1M LUX bond (slashable)
 			Active:     true,
 			JoinedAt:   time.Now(),
 			SlotIndex:  len(vm.signerSet.Signers),
@@ -871,7 +871,7 @@ func (vm *VM) RemoveSigner(nodeID ids.NodeID, replacementNodeID *ids.NodeID) (*S
 		newSigner := &SignerInfo{
 			NodeID:     replacement,
 			PartyID:    party.ID(replacement.String()),
-			BondAmount: 0, // Will be verified during reshare (100M LUX required)
+			BondAmount: 0, // Will be verified during reshare (1M LUX required)
 			Active:     true,
 			JoinedAt:   time.Now(),
 			SlotIndex:  removedSigner.SlotIndex,
@@ -1135,8 +1135,8 @@ func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
 		Message:         fmt.Sprintf("slashed %d%% of bond (%d LUX)", input.SlashPercent, slashAmount/1e9),
 	}
 
-	// If bond drops below minimum (100M LUX), remove from signer set
-	minBond := uint64(100_000_000 * 1e9) // 100M LUX
+	// If bond drops below minimum (1M LUX), remove from signer set
+	minBond := uint64(1_000_000 * 1e9) // 1M LUX
 	if remainingBond < minBond {
 		// Remove signer
 		vm.signerSet.Signers = append(vm.signerSet.Signers[:signerIndex], vm.signerSet.Signers[signerIndex+1:]...)
@@ -1151,7 +1151,7 @@ func (vm *VM) SlashSigner(input *SlashSignerInput) (*SlashSignerResult, error) {
 		vm.signerSet.CurrentEpoch++
 
 		result.RemovedFromSet = true
-		result.Message = fmt.Sprintf("slashed %d%% of bond, signer removed (bond below 100M LUX minimum)", input.SlashPercent)
+		result.Message = fmt.Sprintf("slashed %d%% of bond, signer removed (bond below 1M LUX minimum)", input.SlashPercent)
 
 		if vm.log != nil && !vm.log.IsZero() {
 			vm.log.Warn("bridge signer removed due to insufficient bond after slashing",
