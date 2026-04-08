@@ -1768,14 +1768,14 @@ func (s *state) load() error {
 func (s *state) loadMetadata() error {
 	timestamp, err := database.GetTimestamp(s.singletonDB, TimestampKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("loadMetadata: TimestampKey: %w", err)
 	}
 	s.persistedTimestamp = timestamp
 	s.SetTimestamp(timestamp)
 
 	feeState, err := getFeeState(s.singletonDB)
 	if err != nil {
-		return err
+		return fmt.Errorf("loadMetadata: feeState: %w", err)
 	}
 	s.persistedFeeState = feeState
 	s.SetFeeState(feeState)
@@ -1783,7 +1783,7 @@ func (s *state) loadMetadata() error {
 	l1ValidatorExcess, err := database.GetUInt64(s.singletonDB, L1ValidatorExcessKey)
 	if err != nil {
 		if err != database.ErrNotFound {
-			return err
+			return fmt.Errorf("loadMetadata: L1ValidatorExcess: %w", err)
 		}
 		l1ValidatorExcess = 0
 	}
@@ -1793,7 +1793,7 @@ func (s *state) loadMetadata() error {
 	accruedFees, err := database.GetUInt64(s.singletonDB, AccruedFeesKey)
 	if err != nil {
 		if err != database.ErrNotFound {
-			return err
+			return fmt.Errorf("loadMetadata: AccruedFees: %w", err)
 		}
 		accruedFees = 0
 	}
@@ -1802,7 +1802,7 @@ func (s *state) loadMetadata() error {
 
 	currentSupply, err := database.GetUInt64(s.singletonDB, CurrentSupplyKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("loadMetadata: CurrentSupply: %w", err)
 	}
 	s.persistedCurrentSupply = currentSupply
 	s.SetCurrentSupply(constants.PrimaryNetworkID, currentSupply)
@@ -2301,15 +2301,24 @@ func (s *state) sync(genesis []byte) error {
 	// If the database wasn't previously initialized, create the platform chain
 	// anew using the provided genesis state.
 	if !wasInitialized {
+		s.rt.Log.Info("P-Chain state: initializing from genesis (fresh database)")
 		if err := s.init(genesis); err != nil {
 			return fmt.Errorf(
 				"failed to initialize the database: %w",
 				err,
 			)
 		}
+		s.rt.Log.Info("P-Chain state: genesis init completed, loading state")
+	} else {
+		s.rt.Log.Info("P-Chain state: database already initialized, loading existing state")
 	}
 
 	if err := s.load(); err != nil {
+		// Log which sub-loader failed for diagnostics
+		s.rt.Log.Error("P-Chain state load failed",
+			"loadMetadata", s.loadMetadata(),
+			"loadExpiry", s.loadExpiry(),
+		)
 		return fmt.Errorf(
 			"failed to load the database state: %w",
 			err,
