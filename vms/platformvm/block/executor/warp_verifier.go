@@ -48,7 +48,8 @@ func VerifyWarpMessages(
 
 		msg, err := warp.ParseMessage(rawMsg)
 		if err != nil {
-			return fmt.Errorf("tx %d: %w", txIdx, err)
+			// Return raw error to match sequential path behavior.
+			return err
 		}
 
 		// Only BitSetSignature uses BLS that can be batched.
