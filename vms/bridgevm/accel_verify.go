@@ -28,11 +28,6 @@ func batchVerifyBlockSignatures(
 	}
 
 	// Collect entries that have a known public key
-	type sigEntry struct {
-		nodeID   ids.NodeID
-		sigBytes []byte
-		partyID  party.ID
-	}
 	var entries []sigEntry
 	for nodeID, sigBytes := range signatures {
 		pid := party.ID(nodeID.String())
@@ -71,14 +66,17 @@ func batchVerifyBlockSignatures(
 	return validCount
 }
 
+// sigEntry holds a signature entry for batch verification.
+type sigEntry struct {
+	nodeID   ids.NodeID
+	sigBytes []byte
+	partyID  party.ID
+}
+
 // batchVerifyECDSABlockGPU runs GPU-accelerated ECDSA batch verification for block signatures.
 func batchVerifyECDSABlockGPU(
 	blockHash ids.ID,
-	entries []struct {
-		nodeID   ids.NodeID
-		sigBytes []byte
-		partyID  party.ID
-	},
+	entries []sigEntry,
 	mpcCfg *config.Config,
 	logger log.Logger,
 ) (int, error) {
