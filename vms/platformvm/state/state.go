@@ -2317,16 +2317,25 @@ func (s *state) sync(genesis []byte) error {
 		if wasInitialized {
 			// Database claims to be initialized but state is corrupt/incomplete.
 			// This happens when a previous init() partially committed before crashing.
-			// Recovery: wipe the initialized marker and re-init from genesis.
-			s.rt.Log.Warn("P-Chain state corrupt — reinitializing from genesis",
+			// Recovery: wipe the entire DB and re-init from genesis.
+			s.rt.Log.Warn("P-Chain state corrupt — wiping database and reinitializing from genesis",
 				log.Reflect("error", err),
 			)
+
+			// Reset persisted state to force writeMetadata to actually write
+			s.persistedCurrentSupply = 0
+			s.persistedTimestamp = time.Time{}
+			s.persistedFeeState = gas.State{}
+			s.persistedLastAccepted = ids.Empty
+
+			// Clear the initialized marker
 			if clearErr := s.singletonDB.Delete(InitializedKey); clearErr != nil {
-				return fmt.Errorf("failed to clear initialized marker: %w", clearErr)
+				s.rt.Log.Warn("failed to clear initialized marker", log.Reflect("error", clearErr))
 			}
-			if _, commitErr := s.baseDB.CommitBatch(); commitErr != nil {
-				return fmt.Errorf("failed to commit cleared marker: %w", commitErr)
-			}
+
+			// Abort and start fresh
+			s.baseDB.Abort()
+
 			// Re-init from genesis
 			if initErr := s.init(genesis); initErr != nil {
 				return fmt.Errorf("failed to reinitialize from genesis: %w", initErr)
