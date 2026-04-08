@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/threshold/pkg/ecdsa"
 	"github.com/luxfi/threshold/pkg/math/curve"
-	"github.com/luxfi/threshold/pkg/party"
 )
 
 // Block represents a block in the Bridge chain
@@ -161,21 +160,18 @@ func (b *Block) Verify(ctx context.Context) error {
 		return errFutureBlock
 	}
 
-	// Verify each bridge request
+	// Verify each bridge request: confirmations, amounts, daily limits
 	for _, req := range b.BridgeRequests {
-		// Verify request has enough confirmations
 		if req.Confirmations < b.vm.config.MinConfirmations {
 			return fmt.Errorf("insufficient confirmations for request %s: %d < %d",
 				req.ID, req.Confirmations, b.vm.config.MinConfirmations)
 		}
 
-		// Verify amount doesn't exceed limits
 		if req.Amount > b.vm.config.MaxBridgeAmount {
 			return fmt.Errorf("bridge amount exceeds maximum: %d > %d",
 				req.Amount, b.vm.config.MaxBridgeAmount)
 		}
 
-		// Verify daily limit
 		b.vm.bridgeRegistry.mu.RLock()
 		dailyVolume := b.vm.bridgeRegistry.DailyVolume[req.DestChain]
 		b.vm.bridgeRegistry.mu.RUnlock()
@@ -183,46 +179,32 @@ func (b *Block) Verify(ctx context.Context) error {
 		if dailyVolume+req.Amount > b.vm.config.DailyBridgeLimit {
 			return fmt.Errorf("would exceed daily bridge limit for chain %s", req.DestChain)
 		}
+	}
 
-		// Verify MPC signatures if present using CMP threshold ECDSA
-		if len(req.MPCSignatures) > 0 {
-			if err := b.verifyRequestMPCSignatures(req); err != nil {
-				return fmt.Errorf("MPC signature verification failed for request %s: %w", req.ID, err)
+	// Batch verify MPC request signatures (GPU-accelerated when available)
+	if b.vm.mpcConfig != nil {
+		sigErrors := batchVerifyRequestSignaturesGPU(b.BridgeRequests, b.vm.mpcConfig, b.vm.log)
+		for i, err := range sigErrors {
+			if err != nil {
+				return fmt.Errorf("MPC signature verification failed for request %s: %w",
+					b.BridgeRequests[i].ID, err)
+			}
+		}
+	} else {
+		// No MPC config: verify individually (original path)
+		for _, req := range b.BridgeRequests {
+			if len(req.MPCSignatures) > 0 {
+				if err := b.verifyRequestMPCSignatures(req); err != nil {
+					return fmt.Errorf("MPC signature verification failed for request %s: %w", req.ID, err)
+				}
 			}
 		}
 	}
 
-	// Verify MPC block signatures using threshold ECDSA
-	validSignatures := 0
+	// Verify MPC block signatures using threshold ECDSA.
+	// Uses GPU-accelerated batch verification when available and multiple sigs exist.
 	blockHash := b.ID()
-
-	for nodeID, sigBytes := range b.MPCSignatures {
-		// Check if we have this party's public key in our config
-		if b.vm.mpcConfig == nil {
-			continue
-		}
-
-		// Look up the public info for this party
-		partyID := party.ID(nodeID.String())
-		pubInfo, exists := b.vm.mpcConfig.Public[partyID]
-		if !exists {
-			continue
-		}
-
-		// Deserialize the ECDSA signature
-		// The signature bytes should be marshaled R point || S scalar
-		sig, err := deserializeSignature(b.vm.mpcConfig.Group, sigBytes)
-		if err != nil {
-			continue
-		}
-
-		// Verify the signature against the public key share
-		// Note: For threshold signatures, we verify the aggregated signature
-		// against the combined public key, not individual shares
-		if sig.Verify(pubInfo.ECDSA, blockHash[:]) {
-			validSignatures++
-		}
-	}
+	validSignatures := batchVerifyBlockSignatures(blockHash, b.MPCSignatures, b.vm.mpcConfig, b.vm.log)
 
 	// For threshold signature, we only need 1 valid aggregated signature
 	// (the signature itself is produced by t+1 parties collaboratively)

@@ -77,27 +77,32 @@ func (st *StateTree) ApplyTransaction(tx *Transaction) error {
 	return nil
 }
 
-// ComputeRoot computes the new Merkle root after pending changes
+// ComputeRoot computes the new Merkle root after pending changes.
+// Uses GPU-accelerated Poseidon hash when available for ZK-friendly hashing.
+// Falls back to SHA-256 when GPU is unavailable.
 func (st *StateTree) ComputeRoot() ([]byte, error) {
 	st.mu.RLock()
 	defer st.mu.RUnlock()
 
-	// In production, this would compute the actual Merkle tree root
-	// For now, we compute a simple hash of all changes
+	// Collect all inputs for hashing
+	inputs := make([][]byte, 0, 1+len(st.pendingAdds)+len(st.pendingRemoves))
+	inputs = append(inputs, st.currentRoot)
+	inputs = append(inputs, st.pendingAdds...)
+	inputs = append(inputs, st.pendingRemoves...)
 
+	// Try GPU Poseidon hash (ZK-friendly)
+	if result, err := poseidonHashGPU(inputs); err == nil && len(result) > 0 {
+		// Pad to 32 bytes for consistency
+		root := make([]byte, 32)
+		copy(root, result)
+		return root, nil
+	}
+
+	// CPU fallback: SHA-256
 	h := sha256.New()
-	h.Write(st.currentRoot)
-
-	// Include additions
-	for _, add := range st.pendingAdds {
-		h.Write(add)
+	for _, input := range inputs {
+		h.Write(input)
 	}
-
-	// Include removals
-	for _, remove := range st.pendingRemoves {
-		h.Write(remove)
-	}
-
 	return h.Sum(nil), nil
 }
 

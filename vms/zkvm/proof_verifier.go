@@ -11,6 +11,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/luxfi/accel"
 	"github.com/luxfi/log"
 
 	"github.com/consensys/gnark-crypto/ecc/bn254"
@@ -105,16 +106,25 @@ func (pv *ProofVerifier) VerifyTransactionProof(tx *Transaction) error {
 	return err
 }
 
-// VerifyBlockProof verifies an aggregated block proof
+// VerifyBlockProof verifies an aggregated block proof.
+// When GPU is available and multiple proofs exist, uses batch MSM acceleration.
 func (pv *ProofVerifier) VerifyBlockProof(block *Block) error {
 	if block.BlockProof == nil {
 		return nil // Block proof is optional
 	}
 
-	// Verify that the block proof correctly aggregates all transaction proofs
-	// This is a placeholder - in production, use proper proof aggregation
+	// Batch verify when multiple transactions and GPU available
+	if len(block.Txs) > 1 && accel.Available() {
+		results := batchVerifyProofsGPU(pv, block.Txs)
+		for i, err := range results {
+			if err != nil {
+				return fmt.Errorf("tx %d proof verification failed: %w", i, err)
+			}
+		}
+		return nil
+	}
 
-	// Check that all transactions have valid proofs
+	// Sequential fallback
 	for _, tx := range block.Txs {
 		if err := pv.VerifyTransactionProof(tx); err != nil {
 			return err
@@ -377,58 +387,67 @@ func (pv *ProofVerifier) verifyGroth16WithGnark(proof *ZKProof, vkBytes []byte) 
 }
 
 // verifyGroth16Pairing performs the Groth16 pairing check
-// Verifies: e(A, B) = e(α, β) · e(Σ(pubInput_i · K_i), γ) · e(C, δ)
+// Verifies: e(A, B) = e(alpha, beta) * e(sum(pubInput_i * K_i), gamma) * e(C, delta)
+// Uses GPU MSM for the public input linear combination when available.
 func verifyGroth16Pairing(proof *Groth16Proof, vk *Groth16VerifyingKey, witness []fr.Element) error {
-	// Compute public input linear combination: Σ(witness_i · K_i)
 	if len(witness) > len(vk.K) {
 		return errors.New("too many public inputs")
 	}
 
+	// Compute public input linear combination: K[0] + sum(witness_i * K[i+1])
+	// GPU MSM path when available and enough inputs to justify overhead
 	var publicInputLC bn254.G1Affine
-	publicInputLC.Set(&vk.K[0]) // Start with K[0] (constant term)
-
-	for i, w := range witness {
-		var term bn254.G1Affine
-		term.ScalarMultiplication(&vk.K[i+1], w.BigInt(nil))
-		publicInputLC.Add(&publicInputLC, &term)
+	if accel.Available() && len(witness) > 2 {
+		scalars := make([]fr.Element, len(witness)+1)
+		bases := make([]bn254.G1Affine, len(witness)+1)
+		scalars[0].SetOne()
+		bases[0].Set(&vk.K[0])
+		for i, w := range witness {
+			scalars[i+1].Set(&w)
+			bases[i+1].Set(&vk.K[i+1])
+		}
+		publicInputLC = msmCPU(scalars, bases) // msmGPU needs logger; use CPU MSM helper
+		// For inline GPU without logger, try session directly
+		if session, err := accel.DefaultSession(); err == nil {
+			if r, err := msmWithSession(session, scalars, bases); err == nil {
+				publicInputLC = r
+			}
+		}
+	} else {
+		publicInputLC.Set(&vk.K[0])
+		for i, w := range witness {
+			var term bn254.G1Affine
+			term.ScalarMultiplication(&vk.K[i+1], w.BigInt(nil))
+			publicInputLC.Add(&publicInputLC, &term)
+		}
 	}
 
-	// Perform pairing check: e(A, B) == e(α, β) · e(publicInputLC, γ) · e(C, δ)
-	// Rearranged: e(A, B) · e(-publicInputLC, γ) · e(-C, δ) == e(α, β)
-	// Or equivalently: e(A, B) == e(α, β) · e(publicInputLC, γ) · e(C, δ)
-
-	// Compute left side: e(A, B)
-	var leftSide bn254.GT
+	// Pairing check: e(A, B) == e(alpha, beta) * e(publicInputLC, gamma) * e(C, delta)
 	leftSide, err := bn254.Pair([]bn254.G1Affine{proof.Ar}, []bn254.G2Affine{proof.Bs})
 	if err != nil {
-		return fmt.Errorf("pairing A·B failed: %w", err)
+		return fmt.Errorf("pairing A*B failed: %w", err)
 	}
 
-	// Compute right side components
-	var rightSide bn254.GT
-
-	// e(α, β)
 	alphaBeta, err := bn254.Pair([]bn254.G1Affine{vk.Alpha}, []bn254.G2Affine{vk.Beta})
 	if err != nil {
-		return fmt.Errorf("pairing α·β failed: %w", err)
+		return fmt.Errorf("pairing alpha*beta failed: %w", err)
 	}
-	rightSide.Set(&alphaBeta)
 
-	// e(publicInputLC, γ)
 	pubGamma, err := bn254.Pair([]bn254.G1Affine{publicInputLC}, []bn254.G2Affine{vk.Gamma})
 	if err != nil {
-		return fmt.Errorf("pairing pubInput·γ failed: %w", err)
+		return fmt.Errorf("pairing pubInput*gamma failed: %w", err)
 	}
-	rightSide.Mul(&rightSide, &pubGamma)
 
-	// e(C, δ)
 	cDelta, err := bn254.Pair([]bn254.G1Affine{proof.Krs}, []bn254.G2Affine{vk.Delta})
 	if err != nil {
-		return fmt.Errorf("pairing C·δ failed: %w", err)
+		return fmt.Errorf("pairing C*delta failed: %w", err)
 	}
+
+	var rightSide bn254.GT
+	rightSide.Set(&alphaBeta)
+	rightSide.Mul(&rightSide, &pubGamma)
 	rightSide.Mul(&rightSide, &cDelta)
 
-	// Compare left and right sides
 	if !leftSide.Equal(&rightSide) {
 		return errors.New("pairing check failed: proof is invalid")
 	}

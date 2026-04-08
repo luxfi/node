@@ -125,6 +125,11 @@ func (b *Block) Verify(ctx context.Context) error {
 		}
 	}
 
+	// GPU batch pre-verification of secp256k1 signatures.
+	// This warms the recovery cache and validates all sigs in parallel on GPU
+	// when available. Errors are non-fatal; sequential verification handles them.
+	_ = batchVerifyBlockSignatures(txs)
+
 	// Verify that the parent exists.
 	parentID := b.Parent()
 	parent, err := b.manager.GetStatelessBlock(parentID)
