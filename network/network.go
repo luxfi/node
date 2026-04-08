@@ -516,6 +516,16 @@ func NewNetwork(
 		blockchainToSubnet: make(map[ids.ID]ids.ID),
 	}
 	n.peerConfig.Network = n
+
+	// Log network initialization details for debugging identity issues.
+	ephemeralCert := config.TLSConfig != nil && config.TLSConfig.Certificates != nil
+	log.Info("network initialized",
+		zap.Stringer("nodeID", config.MyNodeID),
+		zap.Uint32("networkID", config.NetworkID),
+		zap.String("listenerAddr", listener.Addr().String()),
+		zap.Bool("proxyEnabled", config.ProxyEnabled),
+		zap.Bool("hasTLSCerts", ephemeralCert),
+	)
 	return n, nil
 }
 
@@ -916,11 +926,25 @@ func (n *network) Peers(
 // Dispatch starts accepting connections from other nodes attempting to connect
 // to this node.
 func (n *network) Dispatch() error {
+	n.peerConfig.Log.Info("Dispatch starting accept loop",
+		zap.Stringer("nodeID", n.config.MyNodeID),
+		zap.String("listenerAddr", n.listener.Addr().String()),
+	)
+
 	go n.runTimers() // Periodically perform operations
 	go n.inboundConnUpgradeThrottler.Dispatch()
+
+	var acceptCount uint64
 	for n.onCloseCtx.Err() == nil { // Continuously accept new connections
 		conn, err := n.listener.Accept() // Returns error when n.Close() is called
 		if err != nil {
+			// Distinguish normal close from unexpected accept errors.
+			if n.onCloseCtx.Err() != nil {
+				n.peerConfig.Log.Info("accept loop ending: context cancelled",
+					zap.Uint64("totalAccepted", acceptCount),
+				)
+				break
+			}
 			n.peerConfig.Log.Debug("error during server accept", "error", err)
 			// Sleep for a small amount of time to try to wait for the
 			// error to go away.
@@ -928,6 +952,7 @@ func (n *network) Dispatch() error {
 			n.metrics.acceptFailed.Inc()
 			continue
 		}
+		acceptCount++
 
 		// Note: listener.Accept is rate limited outside of this package, so a
 		// peer can not just arbitrarily spin up goroutines here.
@@ -971,6 +996,19 @@ func (n *network) Dispatch() error {
 			}
 		}()
 	}
+
+	// Log why the accept loop exited.
+	if ctxErr := n.onCloseCtx.Err(); ctxErr != nil {
+		n.peerConfig.Log.Info("Dispatch: accept loop exited due to context cancellation",
+			zap.Uint64("totalAccepted", acceptCount),
+			zap.Error(ctxErr),
+		)
+	} else {
+		n.peerConfig.Log.Warn("Dispatch: accept loop exited unexpectedly without context cancellation",
+			zap.Uint64("totalAccepted", acceptCount),
+		)
+	}
+
 	n.inboundConnUpgradeThrottler.Stop()
 	n.StartClose()
 
@@ -979,10 +1017,24 @@ func (n *network) Dispatch() error {
 	connected := n.connectedPeers.Sample(n.connectedPeers.Len(), peer.NoPrecondition)
 	n.peersLock.RUnlock()
 
+	n.peerConfig.Log.Info("Dispatch: draining peer connections",
+		zap.Int("connecting", len(connecting)),
+		zap.Int("connected", len(connected)),
+	)
+
 	errs := wrappers.Errs{}
 	for _, peer := range append(connecting, connected...) {
 		errs.Add(peer.AwaitClosed(context.TODO()))
 	}
+
+	if errs.Err != nil {
+		n.peerConfig.Log.Warn("Dispatch: peer drain completed with errors",
+			zap.Error(errs.Err),
+		)
+	} else {
+		n.peerConfig.Log.Info("Dispatch: all peers drained cleanly")
+	}
+
 	return errs.Err
 }
 
