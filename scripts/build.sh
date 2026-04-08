@@ -67,7 +67,7 @@ upx_compress=false
 case "${profile}" in
   minimal)
     echo "Profile: minimal (ZAP, all VMs, NAT, stripped)"
-    tags="allvms,nattraversal"
+    tags="nattraversal"
     strip_flags="-s -w"
     ;;
   core)
@@ -77,7 +77,7 @@ case "${profile}" in
     ;;
   full)
     echo "Profile: full (gRPC+ZAP, all VMs, all features, stripped)"
-    tags="grpc,allvms,nattraversal,zxcvbn,metrics"
+    tags="grpc,nattraversal,zxcvbn,metrics"
     strip_flags="-s -w"
     ;;
   dev)
@@ -86,7 +86,7 @@ case "${profile}" in
     ;;
   tiny)
     echo "Profile: tiny (all VMs, NAT + UPX compressed)"
-    tags="allvms,nattraversal"
+    tags="nattraversal"
     strip_flags="-s -w"
     upx_compress=true
     ;;
