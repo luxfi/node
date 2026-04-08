@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luxfi/accel"
 	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -253,12 +254,137 @@ func (qs *QuantumSigner) computeSignatureID(sig *QuantumSignature) ids.ID {
 	return id
 }
 
-// ParallelVerify verifies multiple signatures in parallel
+// ParallelVerify verifies multiple signatures in parallel.
+// When GPU is available and batch size exceeds threshold, uses
+// accel DilithiumVerifyBatch for hardware-accelerated verification.
 func (qs *QuantumSigner) ParallelVerify(messages [][]byte, signatures []*QuantumSignature) error {
+	return qs.ParallelVerifyWithThreshold(messages, signatures, accel.DilithiumBatchThreshold)
+}
+
+// ParallelVerifyWithThreshold verifies signatures using GPU batch path when
+// accel.Available() and len >= threshold, otherwise falls back to CPU goroutines.
+func (qs *QuantumSigner) ParallelVerifyWithThreshold(messages [][]byte, signatures []*QuantumSignature, gpuThreshold int) error {
 	if len(messages) != len(signatures) {
 		return errors.New("message and signature count mismatch")
 	}
+	if len(messages) == 0 {
+		return nil
+	}
 
+	// GPU batch path
+	if accel.Available() && len(messages) >= gpuThreshold {
+		if err := qs.gpuBatchVerify(messages, signatures); err == nil {
+			return nil
+		}
+		// GPU failed (OOM, unsupported, etc.) -- fall through to CPU
+		qs.log.Debug("GPU batch verify unavailable, falling back to CPU", "count", len(messages))
+	}
+
+	// CPU parallel path
+	return qs.cpuParallelVerify(messages, signatures)
+}
+
+// gpuBatchVerify runs DilithiumVerifyBatch on GPU via accel session.
+func (qs *QuantumSigner) gpuBatchVerify(messages [][]byte, signatures []*QuantumSignature) error {
+	n := len(messages)
+
+	sess, err := accel.NewSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	latticeOps := sess.Lattice()
+
+	// Determine fixed sizes for this ML-DSA mode
+	sigSize := mldsa.GetSignatureSize(qs.mldsaMode)
+	pkSize := mldsa.GetPublicKeySize(qs.mldsaMode)
+
+	// Find max message length (messages include appended quantum stamp)
+	maxMsgLen := 0
+	for i := 0; i < n; i++ {
+		fullLen := len(messages[i]) + len(signatures[i].QuantumStamp)
+		if fullLen > maxMsgLen {
+			maxMsgLen = fullLen
+		}
+	}
+
+	// Pack into flat byte arrays for tensor creation
+	msgBuf := make([]uint8, n*maxMsgLen)
+	sigBuf := make([]uint8, n*sigSize)
+	pkBuf := make([]uint8, n*pkSize)
+
+	for i := 0; i < n; i++ {
+		sig := signatures[i]
+		if sig == nil || len(sig.Signature) == 0 {
+			return fmt.Errorf("signature %d: nil or empty", i)
+		}
+
+		// Reconstruct signed data: message || stamp
+		fullMsg := make([]byte, len(messages[i])+len(sig.QuantumStamp))
+		copy(fullMsg, messages[i])
+		copy(fullMsg[len(messages[i]):], sig.QuantumStamp)
+		copy(msgBuf[i*maxMsgLen:], fullMsg)
+
+		// Copy signature bytes (pad if shorter)
+		copy(sigBuf[i*sigSize:], sig.Signature)
+
+		// Copy public key bytes
+		copy(pkBuf[i*pkSize:], sig.PublicKey)
+	}
+
+	// Create tensors
+	msgTensor, err := accel.NewTensorWithData[uint8](sess, []int{n, maxMsgLen}, msgBuf)
+	if err != nil {
+		return fmt.Errorf("create msg tensor: %w", err)
+	}
+	defer msgTensor.Close()
+
+	sigTensor, err := accel.NewTensorWithData[uint8](sess, []int{n, sigSize}, sigBuf)
+	if err != nil {
+		return fmt.Errorf("create sig tensor: %w", err)
+	}
+	defer sigTensor.Close()
+
+	pkTensor, err := accel.NewTensorWithData[uint8](sess, []int{n, pkSize}, pkBuf)
+	if err != nil {
+		return fmt.Errorf("create pk tensor: %w", err)
+	}
+	defer pkTensor.Close()
+
+	resultTensor, err := accel.NewTensor[uint8](sess, []int{n})
+	if err != nil {
+		return fmt.Errorf("create result tensor: %w", err)
+	}
+	defer resultTensor.Close()
+
+	// Run batch verification on GPU
+	if err := latticeOps.DilithiumVerifyBatch(
+		msgTensor.Untyped(),
+		sigTensor.Untyped(),
+		pkTensor.Untyped(),
+		resultTensor.Untyped(),
+	); err != nil {
+		return fmt.Errorf("DilithiumVerifyBatch: %w", err)
+	}
+
+	// Read results back
+	results, err := resultTensor.ToSlice()
+	if err != nil {
+		return fmt.Errorf("read results: %w", err)
+	}
+
+	for i, r := range results {
+		if r == 0 {
+			return fmt.Errorf("signature %d verification failed", i)
+		}
+	}
+
+	return nil
+}
+
+// cpuParallelVerify is the original goroutine-per-signature fallback.
+func (qs *QuantumSigner) cpuParallelVerify(messages [][]byte, signatures []*QuantumSignature) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(messages))
 

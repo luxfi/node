@@ -45,6 +45,9 @@ type Config struct {
 
 	// Minimum confirmations for quantum stamps
 	MinQuantumConfirmations uint32
+
+	// Minimum batch size before GPU acceleration kicks in
+	GPUBatchThreshold int
 }
 
 // DefaultConfig returns a Config with default values
@@ -63,6 +66,7 @@ func DefaultConfig() Config {
 		QuantumSigCacheSize:     10000,
 		RingtailEnabled:         true,
 		MinQuantumConfirmations: 1,
+		GPUBatchThreshold:       8,
 	}
 }
 
@@ -84,6 +88,9 @@ func (c *Config) Validate() error {
 	}
 	if c.RingtailKeySize < 512 {
 		c.RingtailKeySize = 1024
+	}
+	if c.GPUBatchThreshold <= 0 {
+		c.GPUBatchThreshold = 8
 	}
 	return nil
 }

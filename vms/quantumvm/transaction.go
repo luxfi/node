@@ -200,37 +200,70 @@ type TransactionWorker struct {
 	quantumSigner *quantum.QuantumSigner
 }
 
-// ProcessBatch processes a batch of transactions
+// ProcessBatch processes a batch of transactions.
+// Uses GPU batch ML-DSA verification when available and batch is large enough.
 func (w *TransactionWorker) ProcessBatch(txs []Transaction) ([]Transaction, error) {
-	validTxs := make([]Transaction, 0, len(txs))
-
+	// Phase 1: basic validation (no crypto)
+	var verified []Transaction
 	for _, tx := range txs {
-		// Verify transaction
 		if err := tx.Verify(); err != nil {
 			w.vm.log.Debug("transaction verification failed", "txID", tx.ID(), "error", err)
 			continue
 		}
+		if w.vm.Config.QuantumStampEnabled && tx.GetQuantumSignature() == nil {
+			w.vm.log.Debug("missing quantum signature", "txID", tx.ID())
+			continue
+		}
+		verified = append(verified, tx)
+	}
 
-		// Verify quantum signature if enabled
-		if w.vm.Config.QuantumStampEnabled {
-			sig := tx.GetQuantumSignature()
-			if sig == nil {
-				w.vm.log.Debug("missing quantum signature", "txID", tx.ID())
-				continue
-			}
+	if len(verified) == 0 {
+		return nil, nil
+	}
 
-			if err := w.quantumSigner.Verify(tx.Bytes(), sig); err != nil {
-				w.vm.log.Debug("quantum signature verification failed", "txID", tx.ID(), "error", err)
-				continue
-			}
+	// Phase 2: quantum signature verification (GPU batch when possible)
+	sigValid := make([]bool, len(verified))
+	if w.vm.Config.QuantumStampEnabled {
+		msgs := make([][]byte, len(verified))
+		sigs := make([]*quantum.QuantumSignature, len(verified))
+		for i, tx := range verified {
+			msgs[i] = tx.Bytes()
+			sigs[i] = tx.GetQuantumSignature()
 		}
 
-		// Execute transaction
+		// ParallelVerifyWithThreshold picks GPU or CPU automatically
+		err := w.quantumSigner.ParallelVerifyWithThreshold(msgs, sigs, w.vm.Config.GPUBatchThreshold)
+		if err == nil {
+			// All passed
+			for i := range sigValid {
+				sigValid[i] = true
+			}
+		} else {
+			// Batch failed -- verify individually to find which ones are bad
+			for i := range verified {
+				if verr := w.quantumSigner.Verify(msgs[i], sigs[i]); verr == nil {
+					sigValid[i] = true
+				} else {
+					w.vm.log.Debug("quantum signature verification failed", "txID", verified[i].ID(), "error", verr)
+				}
+			}
+		}
+	} else {
+		for i := range sigValid {
+			sigValid[i] = true
+		}
+	}
+
+	// Phase 3: execute valid transactions
+	validTxs := make([]Transaction, 0, len(verified))
+	for i, tx := range verified {
+		if !sigValid[i] {
+			continue
+		}
 		if err := tx.Execute(); err != nil {
 			w.vm.log.Debug("transaction execution failed", "txID", tx.ID(), "error", err)
 			continue
 		}
-
 		validTxs = append(validTxs, tx)
 	}
 

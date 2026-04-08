@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/luxfi/accel"
+	accellattice "github.com/luxfi/accel/ops/lattice"
 	"github.com/luxfi/consensus/protocol/quasar"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -425,6 +427,46 @@ func (q *Quasar) AddValidator(validatorID string, weight uint64) error {
 	)
 
 	return nil
+}
+
+// NTTForwardRingtail transforms Ringtail polynomial coefficients to NTT domain
+// using GPU acceleration when available. This enables O(n log n) polynomial
+// multiplication in the Ring-LWE scheme used by Ringtail threshold signatures.
+func (q *Quasar) NTTForwardRingtail(coefficients []uint64) ([]uint64, error) {
+	params := accellattice.NTTParams{
+		N:       256,     // Ring dimension for Ringtail (X^256 + 1)
+		Modulus: 8380417, // Dilithium prime q
+		Root:    1753,    // Primitive 256th root of unity mod q
+	}
+	return accellattice.NTTForward(params, coefficients)
+}
+
+// NTTInverseRingtail transforms NTT-domain values back to coefficient form
+// using GPU acceleration when available.
+func (q *Quasar) NTTInverseRingtail(evaluations []uint64) ([]uint64, error) {
+	params := accellattice.NTTParams{
+		N:       256,
+		Modulus: 8380417,
+		Root:    1753,
+	}
+	return accellattice.NTTInverse(params, evaluations)
+}
+
+// BatchNTTForwardRingtail transforms multiple polynomials in parallel on GPU.
+// Used when processing multiple Ringtail signature shares simultaneously.
+func (q *Quasar) BatchNTTForwardRingtail(polys [][]uint64) ([][]uint64, error) {
+	params := accellattice.NTTParams{
+		N:       256,
+		Modulus: 8380417,
+		Root:    1753,
+	}
+	return accellattice.BatchNTTForward(params, polys)
+}
+
+// GPUAccelAvailable reports whether GPU acceleration is available for
+// lattice operations (NTT, batch ML-DSA verify).
+func (q *Quasar) GPUAccelAvailable() bool {
+	return accel.Available()
 }
 
 // Cleanup removes finalized blocks older than the given height

@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/luxfi/accel"
 	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/crypto/slhdsa"
 	"github.com/luxfi/geth/common"
@@ -534,6 +535,156 @@ func (qs *QuantumStamper) verifySLHDSA(stamp *QuantumStamp, data []byte) bool {
 	}
 
 	return pubKey.Verify(data, stamp.SLHDSASignature, nil)
+}
+
+// VerifyStampBatch verifies a batch of quantum stamps using GPU acceleration
+// when available, falling back to sequential CPU verification.
+func (qs *QuantumStamper) VerifyStampBatch(stamps []*QuantumStamp, blocks []*types.Block) []bool {
+	if len(stamps) != len(blocks) || len(stamps) == 0 {
+		return nil
+	}
+
+	results := make([]bool, len(stamps))
+
+	// Try GPU batch path for ML-DSA stamps
+	if accel.Available() && len(stamps) >= accel.DilithiumBatchThreshold && qs.mldsaSigner != nil {
+		if qs.gpuBatchVerifyStamps(stamps, blocks, results) {
+			return results
+		}
+		// GPU failed, fall through to CPU
+	}
+
+	// CPU sequential fallback
+	for i := range stamps {
+		results[i] = qs.verifyStampSync(stamps[i], blocks[i])
+	}
+	return results
+}
+
+// gpuBatchVerifyStamps runs ML-DSA batch verification on GPU.
+// Returns true if GPU path succeeded (results populated), false to fall back.
+func (qs *QuantumStamper) gpuBatchVerifyStamps(stamps []*QuantumStamp, blocks []*types.Block, results []bool) bool {
+	n := len(stamps)
+
+	// Pre-validate block correspondence before GPU work
+	signDataSlice := make([][]byte, 0, n)
+	sigSlice := make([][]byte, 0, n)
+	pkSlice := make([][]byte, 0, n)
+	indices := make([]int, 0, n) // original indices of ML-DSA stamps
+
+	for i, stamp := range stamps {
+		block := blocks[i]
+		// Skip non-ML-DSA modes
+		if stamp.Mode == StampModeSLHDSA {
+			continue
+		}
+		// Verify block correspondence first (cheap check)
+		if stamp.CChainHeight != block.NumberU64() || stamp.CChainHash != block.Hash() {
+			results[i] = false
+			continue
+		}
+		if stamp.StateRoot != block.Root() || stamp.GasUsed != block.GasUsed() {
+			results[i] = false
+			continue
+		}
+		if len(stamp.MLDSASignature) == 0 || len(stamp.PublicKeyML) == 0 {
+			results[i] = false
+			continue
+		}
+
+		signDataSlice = append(signDataSlice, qs.prepareSignatureData(stamp))
+		sigSlice = append(sigSlice, stamp.MLDSASignature)
+		pkSlice = append(pkSlice, stamp.PublicKeyML)
+		indices = append(indices, i)
+	}
+
+	if len(signDataSlice) < accel.DilithiumBatchThreshold {
+		return false
+	}
+
+	sess, err := accel.NewSession()
+	if err != nil {
+		return false
+	}
+	defer sess.Close()
+
+	latticeOps := sess.Lattice()
+
+	// Determine fixed sizes
+	sigSize := mldsa.GetSignatureSize(mldsa.MLDSA65)
+	pkSize := mldsa.GetPublicKeySize(mldsa.MLDSA65)
+
+	maxMsgLen := 0
+	for _, d := range signDataSlice {
+		if len(d) > maxMsgLen {
+			maxMsgLen = len(d)
+		}
+	}
+
+	batchN := len(signDataSlice)
+	msgBuf := make([]uint8, batchN*maxMsgLen)
+	sigBuf := make([]uint8, batchN*sigSize)
+	pkBuf := make([]uint8, batchN*pkSize)
+
+	for i := 0; i < batchN; i++ {
+		copy(msgBuf[i*maxMsgLen:], signDataSlice[i])
+		copy(sigBuf[i*sigSize:], sigSlice[i])
+		copy(pkBuf[i*pkSize:], pkSlice[i])
+	}
+
+	msgT, err := accel.NewTensorWithData[uint8](sess, []int{batchN, maxMsgLen}, msgBuf)
+	if err != nil {
+		return false
+	}
+	defer msgT.Close()
+
+	sigT, err := accel.NewTensorWithData[uint8](sess, []int{batchN, sigSize}, sigBuf)
+	if err != nil {
+		return false
+	}
+	defer sigT.Close()
+
+	pkT, err := accel.NewTensorWithData[uint8](sess, []int{batchN, pkSize}, pkBuf)
+	if err != nil {
+		return false
+	}
+	defer pkT.Close()
+
+	resT, err := accel.NewTensor[uint8](sess, []int{batchN})
+	if err != nil {
+		return false
+	}
+	defer resT.Close()
+
+	if err := latticeOps.DilithiumVerifyBatch(msgT.Untyped(), sigT.Untyped(), pkT.Untyped(), resT.Untyped()); err != nil {
+		return false
+	}
+
+	gpuResults, err := resT.ToSlice()
+	if err != nil {
+		return false
+	}
+
+	for i, idx := range indices {
+		results[idx] = gpuResults[i] == 1
+		if results[idx] {
+			qs.stampsVerified.Add(1)
+		} else {
+			qs.stampsFailed.Add(1)
+		}
+	}
+
+	// Handle hybrid mode: also verify SLH-DSA for hybrid stamps (CPU only)
+	for _, idx := range indices {
+		if stamps[idx].Mode == StampModeHybrid && results[idx] {
+			if !qs.verifySLHDSA(stamps[idx], signDataSlice[0]) {
+				results[idx] = false
+				qs.stampsFailed.Add(1)
+			}
+		}
+	}
+
+	return true
 }
 
 // GetStampForBlock retrieves a stamp for a specific block
