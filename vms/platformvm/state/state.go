@@ -2314,15 +2314,34 @@ func (s *state) sync(genesis []byte) error {
 	}
 
 	if err := s.load(); err != nil {
-		// Log which sub-loader failed for diagnostics
-		s.rt.Log.Error("P-Chain state load failed",
-			"loadMetadata", s.loadMetadata(),
-			"loadExpiry", s.loadExpiry(),
-		)
-		return fmt.Errorf(
-			"failed to load the database state: %w",
-			err,
-		)
+		if wasInitialized {
+			// Database claims to be initialized but state is corrupt/incomplete.
+			// This happens when a previous init() partially committed before crashing.
+			// Recovery: wipe the initialized marker and re-init from genesis.
+			s.rt.Log.Warn("P-Chain state corrupt — reinitializing from genesis",
+				log.Reflect("error", err),
+			)
+			if clearErr := s.singletonDB.Delete(InitializedKey); clearErr != nil {
+				return fmt.Errorf("failed to clear initialized marker: %w", clearErr)
+			}
+			if _, commitErr := s.baseDB.CommitBatch(); commitErr != nil {
+				return fmt.Errorf("failed to commit cleared marker: %w", commitErr)
+			}
+			// Re-init from genesis
+			if initErr := s.init(genesis); initErr != nil {
+				return fmt.Errorf("failed to reinitialize from genesis: %w", initErr)
+			}
+			// Retry load
+			if retryErr := s.load(); retryErr != nil {
+				return fmt.Errorf("failed to load after reinitialize: %w", retryErr)
+			}
+			s.rt.Log.Info("P-Chain state: recovered from corrupt state via reinitialize")
+		} else {
+			return fmt.Errorf(
+				"failed to load the database state: %w",
+				err,
+			)
+		}
 	}
 
 	// Migrate: add any genesis chains missing from state (e.g., D-Chain added after initial genesis)
