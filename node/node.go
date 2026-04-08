@@ -1288,7 +1288,7 @@ func (n *Node) initVMs() error {
 
 	// Register X-Chain VM (Exchange VM)
 	n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{})
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register X-Chain VM", "error", err)
 		return err
