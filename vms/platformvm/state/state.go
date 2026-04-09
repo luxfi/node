@@ -2385,14 +2385,20 @@ func (s *state) init(genesisBytes []byte) error {
 		return err
 	}
 
-	// Commit everything in a single batch. Previously this was a two-step
-	// commit (baseDB.CommitBatch then s.Commit) which caused the second
-	// commit's s.write() to see empty in-memory state — the first commit
-	// flushed the genesis validators to the underlying DB and cleared the
-	// versiondb diff layer, so s.write() would overwrite them with zeros.
-	// Single commit ensures syncGenesis data + markInitialized are written
-	// atomically without an intermediate clear.
-	return s.Commit()
+	// Write all genesis state + markInitialized atomically.
+	// We do NOT use s.Commit() here because Commit() defers s.Abort() which
+	// clears the versiondb diff layer. After init(), load() reads from the
+	// versiondb and needs to see the committed data. Instead we write+commit
+	// without aborting, so the diff layer retains the written values for
+	// the subsequent load() call.
+	if err := s.write(true, 0); err != nil {
+		return fmt.Errorf("init: write failed: %w", err)
+	}
+	batch, err := s.baseDB.CommitBatch()
+	if err != nil {
+		return fmt.Errorf("init: commit batch failed: %w", err)
+	}
+	return batch.Write()
 }
 
 // migrateNewGenesisChains adds any chains from genesis that are missing from
