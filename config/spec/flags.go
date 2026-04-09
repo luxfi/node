@@ -1100,6 +1100,13 @@ func allFlags() []FlagSpec {
 			Category:    CategoryStaking,
 		},
 		{
+			Key:         "critical-chains",
+			Type:        TypeString,
+			Default:     "P,Q",
+			Description: "Comma-separated list of chain aliases (P, Q, C, X, D, etc.) whose failure to initialize shuts down the node. P-Chain is always critical regardless of this flag.",
+			Category:    CategoryChain,
+		},
+		{
 			Key:         "uptime-requirement",
 			Type:        TypeFloat64,
 			Default:     0.8,
