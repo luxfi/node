@@ -1383,30 +1383,6 @@ func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
 	return trackedChainIDs, nil
 }
 
-// parseCriticalChains reads the --critical-chains flag and returns the
-// uppercase alias list.  "P" is always included.
-func parseCriticalChains(v *viper.Viper) []string {
-	raw := v.GetString(CriticalChainsKey)
-	seen := make(map[string]struct{})
-	var out []string
-	for _, s := range strings.Split(raw, ",") {
-		alias := strings.ToUpper(strings.TrimSpace(s))
-		if alias == "" {
-			continue
-		}
-		if _, dup := seen[alias]; dup {
-			continue
-		}
-		seen[alias] = struct{}{}
-		out = append(out, alias)
-	}
-	// P-Chain is always critical.
-	if _, ok := seen["P"]; !ok {
-		out = append([]string{"P"}, out...)
-	}
-	return out
-}
-
 func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, error) {
 	var (
 		configBytes []byte
@@ -1987,8 +1963,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		nodeConfig.TrackAllChains = true
 	}
 
-	// Critical chains — which primary network chains crash the node on init failure
-	nodeConfig.CriticalChainAliases = parseCriticalChains(v)
 
 	// HTTP APIs
 	nodeConfig.HTTPConfig, err = getHTTPConfig(v)

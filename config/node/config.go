@@ -178,9 +178,7 @@ type Config struct {
 	// handle App messages per chain.
 	ConsensusAppConcurrency int `json:"consensusAppConcurrency"`
 
-	// CriticalChainAliases lists chain aliases (e.g. "P", "Q", "C", "X") that
 	// must initialize successfully or the node shuts down.  Default: ["P","Q"].
-	CriticalChainAliases []string `json:"criticalChainAliases"`
 
 	TrackedChains  set.Set[ids.ID] `json:"trackedChains"`
 	TrackAllChains bool            `json:"trackAllChains"`
