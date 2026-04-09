@@ -2314,38 +2314,15 @@ func (s *state) sync(genesis []byte) error {
 	}
 
 	if err := s.load(); err != nil {
+		// Database is corrupt. Return the error so the node exits.
+		// On restart with a fresh PVC, init() will run cleanly.
+		// The init() fix (no Abort after genesis write) prevents this from recurring.
 		if wasInitialized {
-			// Database claims to be initialized but state is corrupt/incomplete.
-			// This happens when a previous init() partially committed before crashing.
-			// Recovery: wipe the entire DB and re-init from genesis.
-			s.rt.Log.Warn("P-Chain state corrupt — wiping database and reinitializing from genesis",
+			s.rt.Log.Error("P-Chain state corrupt after init — database must be wiped",
 				log.Reflect("error", err),
 			)
-
-			// Reset persisted state to force writeMetadata to actually write
-			s.persistedCurrentSupply = 0
-			s.persistedTimestamp = time.Time{}
-			s.persistedFeeState = gas.State{}
-			s.persistedLastAccepted = ids.Empty
-
-			// Clear the initialized marker
-			if clearErr := s.singletonDB.Delete(InitializedKey); clearErr != nil {
-				s.rt.Log.Warn("failed to clear initialized marker", log.Reflect("error", clearErr))
-			}
-
-			// Abort and start fresh
-			s.baseDB.Abort()
-
-			// Re-init from genesis
-			if initErr := s.init(genesis); initErr != nil {
-				return fmt.Errorf("failed to reinitialize from genesis: %w", initErr)
-			}
-			// Retry load
-			if retryErr := s.load(); retryErr != nil {
-				return fmt.Errorf("failed to load after reinitialize: %w", retryErr)
-			}
-			s.rt.Log.Info("P-Chain state: recovered from corrupt state via reinitialize")
-		} else {
+		}
+		{
 			return fmt.Errorf(
 				"failed to load the database state: %w",
 				err,
