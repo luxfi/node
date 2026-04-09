@@ -159,6 +159,7 @@ const (
 	ConsensusMaxProcessingKey                          = "consensus-max-processing"
 	ConsensusMaxTimeProcessingKey                      = "consensus-max-time-processing"
 	PartialSyncPrimaryNetworkKey                       = "partial-sync-primary-network"
+	CriticalChainsKey                                  = "critical-chains"
 	TrackChainsKey                                     = "track-chains"
 	TrackAllChainsKey                                  = "track-all-chains"
 	AdminAPIEnabledKey                                 = "api-admin-enabled"

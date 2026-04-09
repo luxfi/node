@@ -1121,29 +1121,50 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	}
 	cChainID := createEVMTx.ID()
 
-	// If any of these chains die, the node shuts down
-	// D-Chain and other VMs are critical alongside P/X/C
-	criticalChains := set.Of(
-		constants.PlatformChainID,
-		xChainID,
-		cChainID,
-	)
+	// P-Chain is always critical regardless of configuration.
+	criticalChains := set.Of(constants.PlatformChainID)
 
-	// D-Chain (primary network DEX) is opt-in — only critical if the VM plugin
-	// is actually available. This allows nodes to run without the DEX VM while
-	// still fully validating P/X/C chains.
+	// Map single-letter aliases to their VM IDs so the --critical-chains flag
+	// can resolve "C" → EVMID → chain ID from genesis.  P-Chain is handled
+	// above (it has a well-known chain ID, not derived from genesis).
+	aliasToVMID := map[string]ids.ID{
+		"X": constants.XVMID,
+		"C": constants.EVMID,
+		"Q": constants.QuantumVMID,
+		"D": constants.DexVMID,
+		"A": constants.AIVMID,
+		"B": constants.BridgeVMID,
+		"T": constants.ThresholdVMID,
+		"Z": constants.ZKVMID,
+		"G": constants.GraphVMID,
+		"K": constants.KeyVMID,
+	}
+
+	for _, alias := range n.Config.CriticalChainAliases {
+		if alias == "P" {
+			continue // already added
+		}
+		vmID, ok := aliasToVMID[alias]
+		if !ok {
+			n.Log.Warn("unknown chain alias in --critical-chains, ignoring", "alias", alias)
+			continue
+		}
+		tx, err := builder.VMGenesis(n.Config.GenesisBytes, vmID)
+		if err != nil {
+			n.Log.Info("chain not in genesis, cannot mark critical", "alias", alias, "vmID", vmID)
+			continue
+		}
+		chainID := tx.ID()
+		criticalChains.Add(chainID)
+		n.Log.Info("chain marked as critical", "alias", alias, "chainID", chainID)
+	}
+
+	// Resolve D-Chain ID for the ManagerConfig even if D is not critical.
 	var dChainID ids.ID
 	if optionalVMCount > 0 {
 		createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
 		if err == nil {
 			dChainID = createDexVMTx.ID()
-			// Only mark as critical if the VM plugin is installed
-			if _, vmErr := n.VMManager.GetFactory(context.Background(), constants.DexVMID); vmErr == nil {
-				criticalChains.Add(dChainID)
-				n.Log.Info("D-Chain VM available, marked as critical", "chainID", dChainID)
-			} else {
-				n.Log.Info("D-Chain in genesis but VM not available — skipping (non-critical)", "chainID", dChainID)
-			}
 		} else {
 			n.Log.Info("D-Chain not in genesis, skipping")
 		}

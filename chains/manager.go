@@ -603,7 +603,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		}
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
-		m.Log.Error("error creating chain",
+		m.Log.Warn("non-critical chain failed to initialize",
 			log.Stringer("chainID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.String("chainAlias", chainAlias),
