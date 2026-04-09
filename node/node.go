@@ -1124,6 +1124,13 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	// P-Chain is always critical regardless of configuration.
 	criticalChains := set.Of(constants.PlatformChainID)
 
+	// Q-Chain (Quantum) is critical by default — quantum finality requires it.
+	if createQVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.QuantumVMID); err == nil {
+		qChainID := createQVMTx.ID()
+		criticalChains.Add(qChainID)
+		n.Log.Info("Q-Chain critical for quantum finality", "chainID", qChainID)
+	}
+
 	// Map single-letter aliases to their VM IDs so the --critical-chains flag
 	// can resolve "C" → EVMID → chain ID from genesis.  P-Chain is handled
 	// above (it has a well-known chain ID, not derived from genesis).
