@@ -35,6 +35,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
+	genesisconfigs "github.com/luxfi/genesis/configs"
 )
 
 var (
@@ -330,6 +331,13 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 
 // GetConfig returns the genesis config for the given network ID
 func GetConfig(networkID uint32) *genesiscfg.Config {
+	// Use embedded genesis configs (//go:embed) first.
+	// The genesis/pkg/genesis.GetConfig() checks filesystem paths which
+	// don't exist in Docker containers, returning an empty config.
+	if cfg, err := genesisconfigs.GetConfig(networkID); err == nil && len(cfg.Allocations) > 0 {
+		return cfg
+	}
+	// Fallback to filesystem-based config (local dev)
 	return genesiscfg.GetConfig(networkID)
 }
 
