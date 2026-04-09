@@ -1662,6 +1662,11 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 	s.SetLastAccepted(genesisBlkID)
 	s.SetTimestamp(time.Unix(int64(genesis.Timestamp), 0))
 	s.SetCurrentSupply(constants.PrimaryNetworkID, genesis.InitialSupply)
+	s.rt.Log.Info("syncGenesis: initial supply set",
+		"initialSupply", genesis.InitialSupply,
+		"currentSupply", s.currentSupply,
+		"persistedCurrentSupply", s.persistedCurrentSupply,
+	)
 	s.AddStatelessBlock(genesisBlk)
 
 	// Initialize fee state with default values for genesis
@@ -2368,14 +2373,27 @@ func (s *state) init(genesisBytes []byte) error {
 	// versiondb and needs to see the committed data. Instead we write+commit
 	// without aborting, so the diff layer retains the written values for
 	// the subsequent load() call.
+	s.rt.Log.Info("init: before write",
+		"currentSupply", s.currentSupply,
+		"persistedCurrentSupply", s.persistedCurrentSupply,
+		"willWrite", s.persistedCurrentSupply != s.currentSupply,
+	)
 	if err := s.write(true, 0); err != nil {
 		return fmt.Errorf("init: write failed: %w", err)
 	}
+	s.rt.Log.Info("init: after write",
+		"currentSupply", s.currentSupply,
+		"persistedCurrentSupply", s.persistedCurrentSupply,
+	)
 	batch, err := s.baseDB.CommitBatch()
 	if err != nil {
 		return fmt.Errorf("init: commit batch failed: %w", err)
 	}
-	return batch.Write()
+	if err := batch.Write(); err != nil {
+		return fmt.Errorf("init: batch write failed: %w", err)
+	}
+	s.rt.Log.Info("init: committed to disk successfully")
+	return nil
 }
 
 // migrateNewGenesisChains adds any chains from genesis that are missing from
