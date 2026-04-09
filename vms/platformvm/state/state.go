@@ -2399,6 +2399,10 @@ func (s *state) init(genesisBytes []byte) error {
 	if err := batch.Write(); err != nil {
 		return fmt.Errorf("init: batch write failed: %w", err)
 	}
+	// Force sync to disk — ensures genesis state survives container restart.
+	if err := s.baseDB.Sync(); err != nil {
+		s.rt.Log.Warn("init: db sync failed", log.Reflect("error", err))
+	}
 	s.rt.Log.Info("init: committed to disk successfully")
 	return nil
 }
