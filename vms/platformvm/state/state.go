@@ -1680,6 +1680,13 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 	s.feeState = initialFeeState
 	s.persistedFeeState = initialFeeState
 
+	// Write CurrentSupply directly (same pattern as feeState above).
+	// writeMetadata won't write it if persistedCurrentSupply == currentSupply,
+	// which can happen on re-init after a crash.
+	if err := database.PutUInt64(s.singletonDB, CurrentSupplyKey, genesis.InitialSupply); err != nil {
+		return fmt.Errorf("failed to write initial current supply: %w", err)
+	}
+
 	// Persist UTXOs that exist at genesis
 	for _, utxo := range genesis.UTXOs {
 		luxUTXO := utxo.UTXO
