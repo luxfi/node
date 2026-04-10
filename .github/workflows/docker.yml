@@ -16,6 +16,7 @@ jobs:
     with:
       image: ghcr.io/luxfi/node
       platforms: linux/amd64
+      runner-amd64: ubuntu-latest
     secrets: inherit
 
   notify-universe:
