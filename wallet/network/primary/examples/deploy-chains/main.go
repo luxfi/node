@@ -237,21 +237,21 @@ func main() {
 		if err != nil {
 			log.Fatalf("create chain failed: %v", err)
 		}
-		subnetID := createNetTx.ID()
-		log.Printf("Chain: %s", subnetID)
+		networkID := createNetTx.ID()
+		log.Printf("Network: %s", networkID)
 
 		// Wait for tx acceptance (mainnet needs longer)
-		log.Println("Waiting 10s for chain tx acceptance...")
+		log.Println("Waiting 10s for network tx acceptance...")
 		time.Sleep(10 * time.Second)
 
-		// Re-sync wallet with chain tx (retry up to 5 times)
+		// Re-sync wallet with network tx (retry up to 5 times)
 		var wallet2 primary.Wallet
 		for attempt := 0; attempt < 5; attempt++ {
 			wallet2, err = primary.MakeWallet(ctx, &primary.WalletConfig{
 				URI:              nc.URI,
 				LUXKeychain:      kc,
 				EthKeychain:      kc,
-				PChainTxsToFetch: set.Of(subnetID),
+				PChainTxsToFetch: set.Of(networkID),
 			})
 			if err == nil {
 				break
@@ -270,7 +270,7 @@ func main() {
 		}
 		log.Printf("Creating blockchain %s (P-chain name: %s)...", chainName, deployName)
 		createChainTx, err := wallet2.P().IssueCreateChainTx(
-			subnetID,
+			networkID,
 			genesisBytes,
 			evmVMID,
 			nil,
@@ -282,7 +282,7 @@ func main() {
 		blockchainID := createChainTx.ID()
 		log.Printf("Blockchain: %s", blockchainID)
 
-		// Add ALL validators to the chain
+		// Add ALL validators to the chain network
 		if !*skipValidators && len(nodeIDs) > 0 {
 			time.Sleep(2 * time.Second)
 
@@ -290,7 +290,7 @@ func main() {
 				URI:              nc.URI,
 				LUXKeychain:      kc,
 				EthKeychain:      kc,
-				PChainTxsToFetch: set.Of(subnetID),
+				PChainTxsToFetch: set.Of(networkID),
 			})
 			if err != nil {
 				log.Printf("WARNING: validator wallet sync failed: %v", err)
@@ -304,11 +304,11 @@ func main() {
 					if safeEnd.Before(endTime) {
 						endTime = safeEnd
 					}
-					log.Printf("Chain validator: start=%s end=%s (primary ends %s)", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), primaryEnd.Format(time.RFC3339))
+					log.Printf("Network validator: start=%s end=%s (primary ends %s)", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), primaryEnd.Format(time.RFC3339))
 				}
 
 				for _, nodeID := range nodeIDs {
-					log.Printf("Adding validator %s to chain %s...", nodeID, subnetID)
+					log.Printf("Adding validator %s to network %s...", nodeID, networkID)
 					_, err := wallet3.P().IssueAddChainValidatorTx(&txs.ChainValidator{
 						Validator: txs.Validator{
 							NodeID: nodeID,
@@ -316,7 +316,7 @@ func main() {
 							End:    uint64(endTime.Unix()),
 							Wght:   20,
 						},
-						Chain: subnetID,
+						Chain: networkID,
 					})
 					if err != nil {
 						log.Printf("WARNING: add validator %s failed: %v", nodeID, err)
@@ -329,7 +329,7 @@ func main() {
 		}
 
 		fmt.Printf("\n--- %s %s ---\n", chainName, nc.Suffix)
-		fmt.Printf("Chain ID:      %s\n", subnetID)
+		fmt.Printf("Network ID:    %s\n", networkID)
 		fmt.Printf("Blockchain ID: %s\n", blockchainID)
 		fmt.Printf("VM ID:         %s\n", evmVMID)
 		fmt.Printf("EVM Chain ID:  %v\n", evmChainID)

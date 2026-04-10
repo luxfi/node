@@ -37,7 +37,7 @@ type ValidatorManager struct {
 
 	// Tracked chain IDs - validators are added to these on connect
 	// when sybil protection is disabled
-	trackedSubnets []ids.ID
+	trackedNetworks []ids.ID
 
 	// Beacon tracking for bootstrap
 	beacons                     validators.Manager
@@ -56,7 +56,7 @@ type ValidatorManagerConfig struct {
 	Log                     log.Logger
 	Validators              validators.Manager
 	Beacons                 validators.Manager
-	TrackedSubnets          []ids.ID
+	TrackedNetworks         []ids.ID
 	SybilProtectionDisabled bool
 	SybilProtectionWeight   uint64
 	RequiredBeaconConns     int64
@@ -71,7 +71,7 @@ func NewValidatorManager(cfg ValidatorManagerConfig) *ValidatorManager {
 		vdrs:                    cfg.Validators,
 		validators:              make(map[ids.ID]map[ids.NodeID]uint64),
 		weight:                  cfg.SybilProtectionWeight,
-		trackedSubnets:          cfg.TrackedSubnets,
+		trackedNetworks:         cfg.TrackedNetworks,
 		beacons:                 cfg.Beacons,
 		requiredConns:           cfg.RequiredBeaconConns,
 		onSufficientlyConnected: cfg.OnSufficientlyConnected,
@@ -112,19 +112,19 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 		// Also add to ALL tracked chain validator sets so chain consensus
 		// engines can find validators for their chains. Without this, L2
 		// chains can't gossip blocks because the validator set is empty.
-		for _, subnetID := range v.trackedSubnets {
-			subnetTxID := ids.Empty
-			copy(subnetTxID[:], nodeID.Bytes())
-			if err := v.vdrs.AddStaker(subnetID, nodeID, nil, subnetTxID, v.weight); err != nil {
+		for _, networkID := range v.trackedNetworks {
+			networkTxID := ids.Empty
+			copy(networkTxID[:], nodeID.Bytes())
+			if err := v.vdrs.AddStaker(networkID, nodeID, nil, networkTxID, v.weight); err != nil {
 				v.log.Debug("failed to add chain validator on connect",
 					log.Stringer("nodeID", nodeID),
-					log.Stringer("subnetID", subnetID),
+					log.Stringer("networkID", networkID),
 					log.Reflect("error", err),
 				)
 			} else {
 				v.log.Info("added chain validator on connect (sybil protection disabled)",
 					log.Stringer("nodeID", nodeID),
-					log.Stringer("subnetID", subnetID),
+					log.Stringer("networkID", networkID),
 				)
 			}
 		}
@@ -174,11 +174,11 @@ func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 		}
 
 		// Also remove from all tracked chain validator sets
-		for _, subnetID := range v.trackedSubnets {
-			if err := v.vdrs.RemoveWeight(subnetID, nodeID, v.weight); err != nil {
+		for _, networkID := range v.trackedNetworks {
+			if err := v.vdrs.RemoveWeight(networkID, nodeID, v.weight); err != nil {
 				v.log.Debug("failed to remove chain validator on disconnect",
 					log.Stringer("nodeID", nodeID),
-					log.Stringer("subnetID", subnetID),
+					log.Stringer("networkID", networkID),
 				)
 			}
 		}

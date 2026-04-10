@@ -500,7 +500,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	// Register blockchain→chain mapping with the network layer so gossip
 	// can resolve which validator set to use for this blockchain's blocks.
 	if chainParams.ChainID != constants.PrimaryNetworkID && m.Net != nil {
-		m.Net.RegisterBlockchainSubnet(chainParams.ID, chainParams.ChainID)
+		m.Net.RegisterBlockchainNetwork(chainParams.ID, chainParams.ChainID)
 	}
 
 	if sb, _ := m.Nets.GetOrCreate(chainParams.ChainID); !sb.AddChain(chainParams.ID) {

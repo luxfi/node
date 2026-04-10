@@ -123,11 +123,11 @@ type Network interface {
 	// TrackedChains returns the set of chains this node is tracking.
 	TrackedChains() set.Set[ids.ID]
 
-	// RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
-	// chain ID. This is used by the gossip layer to resolve which validator
-	// set sequences blocks for a given blockchain, and to check whether peers
-	// track the chain that owns the blockchain.
-	RegisterBlockchainSubnet(blockchainID, subnetID ids.ID)
+	// RegisterBlockchainNetwork registers a mapping from a blockchain ID to its
+	// chain network ID. This is used by the gossip layer to resolve which
+	// validator set sequences blocks for a given blockchain, and to check
+	// whether peers track the chain network that owns the blockchain.
+	RegisterBlockchainNetwork(blockchainID, networkID ids.ID)
 }
 
 type UptimeResult struct {
@@ -217,12 +217,12 @@ type network struct {
 	// concurrent calls to [Connected], [Disconnected], and [HandleInbound].
 	router ExternalHandler
 
-	// blockchainToSubnet maps blockchain IDs to their chain IDs.
+	// blockchainToNetwork maps blockchain IDs to their chain network IDs.
 	// This is needed for chain gossip: when gossiping a block for an L2
-	// blockchain, we need to know which chain's validator set to use for
-	// peer sampling, and which chain ID to check in peers' trackedChains.
-	// Protected by peersLock.
-	blockchainToSubnet map[ids.ID]ids.ID
+	// blockchain, we need to know which chain network's validator set to
+	// use for peer sampling, and which network ID to check in peers'
+	// trackedChains. Protected by peersLock.
+	blockchainToNetwork map[ids.ID]ids.ID
 }
 
 // NewNetwork returns a new Network implementation with the provided parameters.
@@ -513,7 +513,7 @@ func NewNetwork(
 		connectedPeers:  peer.NewSet(),
 		router:          router,
 
-		blockchainToSubnet: make(map[ids.ID]ids.ID),
+		blockchainToNetwork: make(map[ids.ID]ids.ID),
 	}
 	n.peerConfig.Network = n
 
@@ -559,8 +559,8 @@ func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	// Check if this is a blockchain ID that maps to a chain ID.
 	// This is needed for chain gossip: validators are registered under
 	// chain IDs, not blockchain IDs.
-	if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
-		return subnetID
+	if netID, ok := n.blockchainToNetwork[chainID]; ok {
+		return netID
 	}
 	// Safe default: self-sequenced or unknown mapping.
 	return chainID
@@ -1230,8 +1230,8 @@ func (n *network) samplePeers(
 			// Peers advertise chain IDs (not blockchain IDs) in their tracked chains,
 			// but gossip uses blockchain IDs as the chainID parameter.
 			if !containsChainID {
-				if subnetID, ok := n.blockchainToSubnet[chainID]; ok {
-					containsChainID = trackedChains.Contains(subnetID)
+				if netID, ok := n.blockchainToNetwork[chainID]; ok {
+					containsChainID = trackedChains.Contains(netID)
 				}
 			}
 
@@ -1856,18 +1856,18 @@ func (n *network) TrackedChains() set.Set[ids.ID] {
 	return result
 }
 
-// RegisterBlockchainSubnet registers a mapping from a blockchain ID to its
-// chain ID. This allows the gossip layer to correctly resolve which validator
-// set to use when gossiping blocks for L2 chains, and to check whether
-// peers are tracking the chain that owns the blockchain.
-func (n *network) RegisterBlockchainSubnet(blockchainID, subnetID ids.ID) {
+// RegisterBlockchainNetwork registers a mapping from a blockchain ID to its
+// chain network ID. This allows the gossip layer to correctly resolve which
+// validator set to use when gossiping blocks for L2 chains, and to check
+// whether peers are tracking the chain network that owns the blockchain.
+func (n *network) RegisterBlockchainNetwork(blockchainID, networkID ids.ID) {
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 
-	n.blockchainToSubnet[blockchainID] = subnetID
-	n.peerConfig.Log.Info("registered blockchain-to-chain mapping",
+	n.blockchainToNetwork[blockchainID] = networkID
+	n.peerConfig.Log.Info("registered blockchain-to-network mapping",
 		"blockchainID", blockchainID,
-		"subnetID", subnetID,
+		"networkID", networkID,
 	)
 }
 
