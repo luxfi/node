@@ -151,8 +151,8 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	}
 
 	switch preimage := justification.GetPreimage().(type) {
-	case *platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData:
-		return s.verifyValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertChainToL1TxData)
+	case *platformvm.L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData:
+		return s.verifyValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertNetworkToL1TxData)
 	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 		return s.verifyValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	default:
@@ -189,7 +189,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 }
 
 // verifyValidatorNotCurrentlyRegistered verifies that the validationID
-// could only correspond to a validator from a ConvertChainToL1Tx and that it
+// could only correspond to a validator from a ConvertNetworkToL1Tx and that it
 // is not currently a validator.
 func (s signatureRequestVerifier) verifyValidatorNotCurrentlyRegistered(
 	validationID ids.ID,

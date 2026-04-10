@@ -540,7 +540,7 @@ func TestAddPermissionlessDelegatorTx(t *testing.T) {
 	}
 }
 
-func TestConvertChainToL1Tx(t *testing.T) {
+func TestConvertNetworkToL1Tx(t *testing.T) {
 	sk0, err := localsigner.New()
 	require.NoError(t, err)
 	pop0, err := signer.NewProofOfPossession(sk0)
@@ -553,7 +553,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 	var (
 		chainID    = ids.GenerateTestID()
 		address    = utils.RandomBytes(32)
-		validators = []*txs.ConvertChainToL1Validator{
+		validators = []*txs.ConvertNetworkToL1Validator{
 			{
 				NodeID:  utils.RandomBytes(ids.NodeIDLen),
 				Weight:  rand.Uint64(), //#nosec G404
@@ -596,7 +596,7 @@ func TestConvertChainToL1Tx(t *testing.T) {
 				builder = builder.New(set.Of(utxoAddr, chainAuthAddr), e.context, backend)
 			)
 
-			utx, err := builder.NewConvertChainToL1Tx(
+			utx, err := builder.NewConvertNetworkToL1Tx(
 				chainID,
 				chainID,
 				address,

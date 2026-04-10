@@ -148,8 +148,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.BaseTx{},
 		},
 		{
-			name: "ConvertChainToL1Tx",
-			tx:   &txs.ConvertChainToL1Tx{},
+			name: "ConvertNetworkToL1Tx",
+			tx:   &txs.ConvertNetworkToL1Tx{},
 		},
 		{
 			name:        "RegisterL1ValidatorTx with unparsable message",

@@ -87,7 +87,7 @@ func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
 }
 
 // Etna Transactions:
-func (v *MempoolTxVerifier) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
+func (v *MempoolTxVerifier) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
 	return v.standardTx(tx)
 }
 

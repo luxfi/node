@@ -136,18 +136,18 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueConvertChainToL1Tx creates, signs, and issues a transaction that
+	// IssueConvertNetworkToL1Tx creates, signs, and issues a transaction that
 	// converts the chain to a Permissionless L1.
 	//
 	// - [netID] specifies the network to be converted
 	// - [managerChainID] specifies which chain the manager is deployed on
 	// - [address] specifies the address of the manager
 	// - [validators] specifies the initial L1 validators of the L1
-	IssueConvertChainToL1Tx(
+	IssueConvertNetworkToL1Tx(
 		netID ids.ID,
 		managerChainID ids.ID,
 		address []byte,
-		validators []*txs.ConvertChainToL1Validator,
+		validators []*txs.ConvertNetworkToL1Validator,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
@@ -438,14 +438,14 @@ func (w *wallet) IssueTransferChainOwnershipTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueConvertChainToL1Tx(
+func (w *wallet) IssueConvertNetworkToL1Tx(
 	netID ids.ID,
 	managerChainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertChainToL1Validator,
+	validators []*txs.ConvertNetworkToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewConvertChainToL1Tx(netID, managerChainID, address, validators, options...)
+	utx, err := w.builder.NewConvertNetworkToL1Tx(netID, managerChainID, address, validators, options...)
 	if err != nil {
 		return nil, err
 	}

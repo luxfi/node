@@ -688,7 +688,7 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 	return nil
 }
 
-func (e *standardTxExecutor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
+func (e *standardTxExecutor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
 	var (
 		currentTimestamp = e.state.GetTimestamp()
 		upgrades         = e.backend.Config.UpgradeConfig

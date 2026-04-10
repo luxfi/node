@@ -126,7 +126,7 @@ func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 // were valid during the Etna series of upgrades.
 func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&ConvertChainToL1Tx{}),
+		targetCodec.RegisterType(&ConvertNetworkToL1Tx{}),
 		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
 		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),

@@ -73,8 +73,8 @@ func main() {
 	}
 
 	justification := platformvm.L1ValidatorRegistrationJustification{
-		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData{
-			ConvertChainToL1TxData: &platformvm.ChainIDIndex{
+		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData{
+			ConvertNetworkToL1TxData: &platformvm.ChainIDIndex{
 				ChainId: netID[:],
 				Index:   validationIndex,
 			},

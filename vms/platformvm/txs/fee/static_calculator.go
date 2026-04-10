@@ -125,7 +125,7 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (*staticVisitor) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
+func (*staticVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return ErrUnsupportedTx
 }
 

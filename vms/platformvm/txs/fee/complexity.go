@@ -69,7 +69,7 @@ const (
 
 	intrinsicSECP256k1FxSignatureCompute = 200 // secp256k1 signature verification time is around 200us
 
-	intrinsicConvertChainToL1ValidatorBandwidth = wrappers.IntLen + // nodeID length
+	intrinsicConvertNetworkToL1ValidatorBandwidth = wrappers.IntLen + // nodeID length
 		wrappers.LongLen + // weight
 		wrappers.LongLen + // balance
 		wrappers.IntLen + // remaining balance owner threshold
@@ -91,7 +91,7 @@ const (
 
 	intrinsicInputDBWrite                     = 1
 	intrinsicOutputDBWrite                    = 1
-	intrinsicConvertChainToL1ValidatorDBWrite = 4 // weight diff + pub key diff + chainID/nodeID + validationID
+	intrinsicConvertNetworkToL1ValidatorDBWrite = 4 // weight diff + pub key diff + chainID/nodeID + validationID
 )
 
 var (
@@ -202,7 +202,7 @@ var (
 			wrappers.IntLen + // length of memo
 			wrappers.IntLen, // number of credentials
 	}
-	IntrinsicConvertChainToL1TxComplexities = gas.Dimensions{
+	IntrinsicConvertNetworkToL1TxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			ids.IDLen + // subchainID
 			ids.IDLen + // chainID
@@ -381,9 +381,9 @@ func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 	return complexity, err
 }
 
-// ConvertChainToL1ValidatorComplexity returns the complexity the validators
+// ConvertNetworkToL1ValidatorComplexity returns the complexity the validators
 // add to a transaction.
-func ConvertChainToL1ValidatorComplexity(l1Validators ...*txs.ConvertChainToL1Validator) (gas.Dimensions, error) {
+func ConvertNetworkToL1ValidatorComplexity(l1Validators ...*txs.ConvertNetworkToL1Validator) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, l1Validator := range l1Validators {
 		l1ValidatorComplexity, err := convertNetToL1ValidatorComplexity(l1Validator)
@@ -399,10 +399,10 @@ func ConvertChainToL1ValidatorComplexity(l1Validators ...*txs.ConvertChainToL1Va
 	return complexity, nil
 }
 
-func convertNetToL1ValidatorComplexity(l1Validator *txs.ConvertChainToL1Validator) (gas.Dimensions, error) {
+func convertNetToL1ValidatorComplexity(l1Validator *txs.ConvertNetworkToL1Validator) (gas.Dimensions, error) {
 	complexity := gas.Dimensions{
-		gas.Bandwidth: intrinsicConvertChainToL1ValidatorBandwidth,
-		gas.DBWrite:   intrinsicConvertChainToL1ValidatorDBWrite,
+		gas.Bandwidth: intrinsicConvertNetworkToL1ValidatorBandwidth,
+		gas.DBWrite:   intrinsicConvertNetworkToL1ValidatorDBWrite,
 	}
 
 	signerComplexity, err := SignerComplexity(&l1Validator.Signer)
@@ -750,12 +750,12 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 	return err
 }
 
-func (c *complexityVisitor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error {
+func (c *complexityVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
 		return err
 	}
-	validatorComplexity, err := ConvertChainToL1ValidatorComplexity(tx.Validators...)
+	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators...)
 	if err != nil {
 		return err
 	}
@@ -763,7 +763,7 @@ func (c *complexityVisitor) ConvertChainToL1Tx(tx *txs.ConvertChainToL1Tx) error
 	if err != nil {
 		return err
 	}
-	c.output, err = IntrinsicConvertChainToL1TxComplexities.Add(
+	c.output, err = IntrinsicConvertNetworkToL1TxComplexities.Add(
 		&baseTxComplexity,
 		&validatorComplexity,
 		&authComplexity,

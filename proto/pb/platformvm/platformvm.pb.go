@@ -29,7 +29,7 @@ type L1ValidatorRegistrationJustification struct {
 
 	// Types that are assignable to Preimage:
 	//
-	//	*L1ValidatorRegistrationJustification_ConvertChainToL1TxData
+	//	*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData
 	//	*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage
 	Preimage isL1ValidatorRegistrationJustification_Preimage `protobuf_oneof:"preimage"`
 }
@@ -71,9 +71,9 @@ func (m *L1ValidatorRegistrationJustification) GetPreimage() isL1ValidatorRegist
 	return nil
 }
 
-func (x *L1ValidatorRegistrationJustification) GetConvertChainToL1TxData() *ChainIDIndex {
-	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData); ok {
-		return x.ConvertChainToL1TxData
+func (x *L1ValidatorRegistrationJustification) GetConvertNetworkToL1TxData() *ChainIDIndex {
+	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData); ok {
+		return x.ConvertNetworkToL1TxData
 	}
 	return nil
 }
@@ -89,10 +89,10 @@ type isL1ValidatorRegistrationJustification_Preimage interface {
 	isL1ValidatorRegistrationJustification_Preimage()
 }
 
-type L1ValidatorRegistrationJustification_ConvertChainToL1TxData struct {
+type L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData struct {
 	// This should be set to obtain an attestation that a validator specified in
 	// a ConvertNetToL1Tx has been removed from the validator set.
-	ConvertChainToL1TxData *ChainIDIndex `protobuf:"bytes,1,opt,name=convert_chain_to_l1_tx_data,json=convertChainToL1TxData,proto3,oneof"`
+	ConvertNetworkToL1TxData *ChainIDIndex `protobuf:"bytes,1,opt,name=convert_network_to_l1_tx_data,json=convertNetworkToL1TxData,proto3,oneof"`
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
@@ -104,7 +104,7 @@ type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
 	RegisterL1ValidatorMessage []byte `protobuf:"bytes,2,opt,name=register_l1_validator_message,json=registerL1ValidatorMessage,proto3,oneof"`
 }
 
-func (*L1ValidatorRegistrationJustification_ConvertChainToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
+func (*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
 }
 
 func (*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage) isL1ValidatorRegistrationJustification_Preimage() {
@@ -210,7 +210,7 @@ var file_platformvm_platformvm_proto_goTypes = []any{
 	(*ChainIDIndex)(nil),                         // 1: platformvm.ChainIDIndex
 }
 var file_platformvm_platformvm_proto_depIdxs = []int32{
-	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_chain_to_l1_tx_data:type_name -> platformvm.ChainIDIndex
+	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_network_to_l1_tx_data:type_name -> platformvm.ChainIDIndex
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -224,7 +224,7 @@ func file_platformvm_platformvm_proto_init() {
 		return
 	}
 	file_platformvm_platformvm_proto_msgTypes[0].OneofWrappers = []any{
-		(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData)(nil),
+		(*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData)(nil),
 		(*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage)(nil),
 	}
 	type x struct{}

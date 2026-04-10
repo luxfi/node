@@ -9,7 +9,7 @@ import "github.com/luxfi/node/proto/zap/platformvm"
 
 type (
 	L1ValidatorRegistrationJustification                            = platformvm.L1ValidatorRegistrationJustification
-	L1ValidatorRegistrationJustification_ConvertChainToL1TxData     = platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData
+	L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData     = platformvm.L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData
 	L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage = platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage
 	L1ValidatorWeightJustification                                  = platformvm.L1ValidatorWeightJustification
 	L1ValidatorWeightJustification_L1ValidatorWeightMessage         = platformvm.L1ValidatorWeightJustification_L1ValidatorWeightMessage

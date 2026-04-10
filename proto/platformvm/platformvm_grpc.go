@@ -12,7 +12,7 @@ import (
 
 type (
 	L1ValidatorRegistrationJustification                            = platformvm.L1ValidatorRegistrationJustification
-	L1ValidatorRegistrationJustification_ConvertChainToL1TxData     = platformvm.L1ValidatorRegistrationJustification_ConvertChainToL1TxData
+	L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData     = platformvm.L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData
 	L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage = platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage
 	ChainIDIndex                                                    = platformvm.ChainIDIndex
 )

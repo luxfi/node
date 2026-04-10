@@ -144,7 +144,7 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (m *txMetrics) ConvertChainToL1Tx(*txs.ConvertChainToL1Tx) error {
+func (m *txMetrics) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "convert_net_to_l1",
 	}).Inc()

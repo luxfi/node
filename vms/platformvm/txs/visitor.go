@@ -27,7 +27,7 @@ type Visitor interface {
 	BaseTx(*BaseTx) error
 
 	// Etna Transactions:
-	ConvertChainToL1Tx(*ConvertChainToL1Tx) error
+	ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error

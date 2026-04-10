@@ -13,24 +13,24 @@ type isL1ValidatorRegistrationJustification_Preimage interface {
 	isL1ValidatorRegistrationJustification_Preimage()
 }
 
-type L1ValidatorRegistrationJustification_ConvertChainToL1TxData struct {
-	ConvertChainToL1TxData []byte
+type L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData struct {
+	ConvertNetworkToL1TxData []byte
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
 	RegisterL1ValidatorMessage []byte
 }
 
-func (*L1ValidatorRegistrationJustification_ConvertChainToL1TxData) isL1ValidatorRegistrationJustification_Preimage()    {}
+func (*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData) isL1ValidatorRegistrationJustification_Preimage()    {}
 func (*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage) isL1ValidatorRegistrationJustification_Preimage() {}
 
 func (m *L1ValidatorRegistrationJustification) GetPreimage() isL1ValidatorRegistrationJustification_Preimage {
 	return m.preimage
 }
 
-func (m *L1ValidatorRegistrationJustification) GetConvertChainToL1TxData() []byte {
-	if x, ok := m.preimage.(*L1ValidatorRegistrationJustification_ConvertChainToL1TxData); ok {
-		return x.ConvertChainToL1TxData
+func (m *L1ValidatorRegistrationJustification) GetConvertNetworkToL1TxData() []byte {
+	if x, ok := m.preimage.(*L1ValidatorRegistrationJustification_ConvertNetworkToL1TxData); ok {
+		return x.ConvertNetworkToL1TxData
 	}
 	return nil
 }

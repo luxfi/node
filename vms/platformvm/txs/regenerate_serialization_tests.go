@@ -57,7 +57,7 @@ func updateTestFile(testName, actualBytes string) {
 		"TestAddPermissionlessPrimaryDelegatorSerialization": "add_permissionless_delegator_tx_test.go",
 		"TestAddPermissionlessNetDelegatorSerialization":     "add_permissionless_delegator_tx_test.go",
 		"TestBaseTxSerialization":                            "base_tx_test.go",
-		"TestConvertChainToL1TxSerialization":                "convert_net_to_l1_tx_test.go",
+		"TestConvertNetworkToL1TxSerialization":                "convert_net_to_l1_tx_test.go",
 		"TestDisableL1ValidatorTxSerialization":              "disable_l1_validator_tx_test.go",
 		"TestIncreaseL1ValidatorBalanceTxSerialization":      "increase_l1_validator_balance_tx_test.go",
 		"TestRegisterL1ValidatorTxSerialization":             "register_l1_validator_tx_test.go",
