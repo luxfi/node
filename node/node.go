@@ -198,6 +198,14 @@ func New(
 		return nil, fmt.Errorf("problem initializing database: %w", err)
 	}
 
+	// Start streaming replication if REPLICATE_S3_ENDPOINT is set.
+	// Unwraps through meterdb/versiondb to reach the underlying zapdb.
+	if rep, ok := database.UnwrapTo[database.Replicatable](n.DB); ok {
+		if err := rep.StartReplicator(context.Background()); err != nil {
+			n.Log.Warn("failed to start database replication", "error", err)
+		}
+	}
+
 	n.initSharedMemory() // Initialize shared memory
 
 	// message.Creator is shared between networking, chainManager and the engine.
@@ -305,6 +313,9 @@ type Node struct {
 
 	// Storage for this node
 	DB database.Database
+
+	// stopReplicator stops streaming DB replication (set by initDatabase if configured)
+	stopReplicator func()
 
 	router     nat.Router
 	portMapper *nat.Mapper
