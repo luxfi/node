@@ -85,6 +85,12 @@ func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// /healthz — platform-standard health probe (K8s liveness/readiness)
+	if request.URL.Path == "/healthz" {
+		r.handleHealthz(writer, request)
+		return
+	}
+
 	route, ok := request.Header[HTTPHeaderRoute]
 	if !ok {
 		// If there is no routing header, fall-back to the legacy path-based
@@ -189,6 +195,19 @@ func (r *router) SetRootInfoProvider(provider RootInfoProvider) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	r.rootInfoProvider = provider
+}
+
+// handleHealthz returns a minimal health response for K8s probes.
+// This delegates to the full /ext/health handler when available,
+// falling back to a static 200 response during early startup.
+func (r *router) handleHealthz(w http.ResponseWriter, req *http.Request) {
+	if handler, err := r.GetHandler("/ext/health", "/health"); err == nil {
+		handler.ServeHTTP(w, req)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }
 
 func (r *router) GetHandler(base, endpoint string) (http.Handler, error) {
