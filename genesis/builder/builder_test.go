@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -144,8 +145,45 @@ func TestGetConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := GetConfig(tt.networkID)
 			require.NotNil(t, cfg)
-			// Config should have a valid NetworkID
 			require.Greater(t, cfg.NetworkID, uint32(0))
+		})
+	}
+}
+
+func TestGetConfigAllocations(t *testing.T) {
+	tests := []struct {
+		name         string
+		networkID    uint32
+		minAllocs    int
+		minStakers   int
+	}{
+		{"Mainnet", constants.MainnetID, 50, 1},
+		{"Testnet", constants.TestnetID, 50, 1},
+		{"Devnet", constants.DevnetID, 50, 1},
+		{"Local", constants.LocalID, 50, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := GetConfig(tt.networkID)
+			require.NotNil(t, cfg)
+			require.GreaterOrEqual(t, len(cfg.Allocations), tt.minAllocs,
+				"network %d must have at least %d allocations", tt.networkID, tt.minAllocs)
+			require.GreaterOrEqual(t, len(cfg.InitialStakers), tt.minStakers,
+				"network %d must have at least %d stakers", tt.networkID, tt.minStakers)
+		})
+	}
+}
+
+func TestFromConfigNonZeroSupply(t *testing.T) {
+	for _, networkID := range []uint32{constants.MainnetID, constants.TestnetID, constants.DevnetID, constants.LocalID} {
+		t.Run(fmt.Sprintf("network_%d", networkID), func(t *testing.T) {
+			cfg := GetConfig(networkID)
+			require.NotNil(t, cfg)
+
+			genesisBytes, _, err := FromConfig(cfg)
+			require.NoError(t, err)
+			require.NotEmpty(t, genesisBytes)
 		})
 	}
 }
