@@ -272,6 +272,26 @@ func New(
 		}
 		utils.Sort(owner.Addrs)
 
+		// When stakers have explicit weight but no staked allocations,
+		// synthesize a stake output so that AddValidatorTx/AddPermissionlessValidatorTx
+		// passes SyntacticVerify (which requires StakeOuts sum == Wght).
+		if len(stake) == 0 && weight > 0 {
+			stakeAddr := owner.Addrs[0]
+			stake = []*lux.TransferableOutput{
+				{
+					Asset: lux.Asset{ID: xAssetID},
+					Out: &secp256k1fx.TransferOutput{
+						Amt: weight,
+						OutputOwners: secp256k1fx.OutputOwners{
+							Locktime:  0,
+							Threshold: 1,
+							Addrs:     []ids.ShortID{stakeAddr},
+						},
+					},
+				},
+			}
+		}
+
 		delegationFee := vdr.ExactDelegationFee
 
 		var (

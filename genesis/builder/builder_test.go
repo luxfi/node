@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/txs"
+
+	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 )
 
 func TestGetStakingConfig(t *testing.T) {
@@ -228,5 +234,177 @@ func TestDefaultFeeConfigs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require.NotNil(t, tt.config)
 		})
+	}
+}
+
+func TestFromConfigExplicitStakers(t *testing.T) {
+	require := require.New(t)
+
+	// Build 5 stakers with explicit Weight and NodeID (no BLS keys)
+	nodeIDs := []string{
+		"NodeID-7D3wajA7bNpfyHpfEtkjUF1KcuhFEfPbZ",
+		"NodeID-A6d3tQtteyaBCiffij3ohxxgq17DdvChs",
+		"NodeID-Kv37z2BuRsGPhYNeCyktfgeYHK5QbZMUu",
+		"NodeID-HvrW5UP1SdR8ujEHzCdUurhvUj1Liydxo",
+		"NodeID-LBhpNZ7Sf9gpT1gJv2MKKS4Yd2SibTVeK",
+	}
+
+	var secpAddr ids.ShortID
+	stakerHash := hash.ComputeHash160([]byte("test-staker-v1"))
+	copy(secpAddr[:], stakerHash)
+
+	startTime := uint64(time.Now().Unix())
+	const hundredYears = 100 * 365 * 24 * 60 * 60
+	const oneBillionLUX = 1_000_000_000_000_000_000
+	const oneMillionLUX = 1_000_000_000_000_000
+
+	stakers := make([]genesiscfg.Staker, len(nodeIDs))
+	for i, nidStr := range nodeIDs {
+		nodeID, err := ids.NodeIDFromString(nidStr)
+		require.NoError(err)
+		stakers[i] = genesiscfg.Staker{
+			NodeID:        nodeID,
+			RewardAddress: secpAddr,
+			DelegationFee: 1000000,
+			Weight:        oneBillionLUX / uint64(len(nodeIDs)),
+			StartTime:     startTime,
+			EndTime:       startTime + hundredYears,
+		}
+	}
+
+	var ethShortID ids.ShortID
+
+	cfg := &genesiscfg.Config{
+		NetworkID: constants.CustomID,
+		Allocations: []genesiscfg.Allocation{
+			{
+				ETHAddr:       secpAddr,
+				LUXAddr:       secpAddr,
+				InitialAmount: 0,
+				UnlockSchedule: []genesiscfg.LockedAmount{
+					{Amount: oneBillionLUX, Locktime: 0},
+				},
+			},
+			{
+				ETHAddr:       ethShortID,
+				LUXAddr:       ethShortID,
+				InitialAmount: oneMillionLUX,
+			},
+		},
+		StartTime:                  startTime,
+		InitialStakeDuration:       hundredYears,
+		InitialStakeDurationOffset: 0,
+		InitialStakedFunds:         []ids.ShortID{secpAddr},
+		InitialStakers:             stakers,
+		CChainGenesis:              `{"config":{"chainId":31337},"alloc":{}}`,
+		Message:                    "Test Genesis",
+	}
+
+	genesisBytes, _, err := FromConfig(cfg)
+	require.NoError(err)
+	require.NotEmpty(genesisBytes)
+
+	// Parse genesis and verify validators
+	parsed, err := genesis.Parse(genesisBytes)
+	require.NoError(err)
+	require.Len(parsed.Validators, 5, "expected 5 validators in genesis")
+
+	for i, vdrTx := range parsed.Validators {
+		switch ut := vdrTx.Unsigned.(type) {
+		case *txs.AddValidatorTx:
+			require.Equal(stakers[i].Weight, ut.Wght,
+				"validator %d weight mismatch", i)
+			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
+				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+		case *txs.AddPermissionlessValidatorTx:
+			require.Equal(stakers[i].Weight, ut.Wght,
+				"validator %d weight mismatch", i)
+			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
+				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+		default:
+			t.Fatalf("unexpected validator tx type: %T", ut)
+		}
+	}
+}
+
+// TestFromConfigExplicitStakersNoStakedFunds reproduces the bug: when
+// InitialStakedFunds is empty but stakers have explicit Weight, the validators
+// end up with empty StakeOuts and the P-Chain rejects them.
+func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
+	require := require.New(t)
+
+	nodeIDs := []string{
+		"NodeID-7D3wajA7bNpfyHpfEtkjUF1KcuhFEfPbZ",
+		"NodeID-A6d3tQtteyaBCiffij3ohxxgq17DdvChs",
+		"NodeID-Kv37z2BuRsGPhYNeCyktfgeYHK5QbZMUu",
+		"NodeID-HvrW5UP1SdR8ujEHzCdUurhvUj1Liydxo",
+		"NodeID-LBhpNZ7Sf9gpT1gJv2MKKS4Yd2SibTVeK",
+	}
+
+	var deployerAddr ids.ShortID
+	deployerHash := hash.ComputeHash160([]byte("test-deployer"))
+	copy(deployerAddr[:], deployerHash)
+
+	startTime := uint64(time.Now().Unix())
+	const hundredYears = 100 * 365 * 24 * 60 * 60
+	const oneBillionLUX = 1_000_000_000_000_000_000
+	const oneMillionLUX = 1_000_000_000_000_000
+
+	stakers := make([]genesiscfg.Staker, len(nodeIDs))
+	for i, nidStr := range nodeIDs {
+		nodeID, err := ids.NodeIDFromString(nidStr)
+		require.NoError(err)
+		stakers[i] = genesiscfg.Staker{
+			NodeID:        nodeID,
+			RewardAddress: deployerAddr,
+			DelegationFee: 1000000,
+			Weight:        oneBillionLUX / uint64(len(nodeIDs)),
+			StartTime:     startTime,
+			EndTime:       startTime + hundredYears,
+		}
+	}
+
+	// No InitialStakedFunds -- stakers have explicit Weight only
+	cfg := &genesiscfg.Config{
+		NetworkID: constants.CustomID,
+		Allocations: []genesiscfg.Allocation{
+			{
+				ETHAddr:       deployerAddr,
+				LUXAddr:       deployerAddr,
+				InitialAmount: oneMillionLUX,
+			},
+		},
+		StartTime:                  startTime,
+		InitialStakeDuration:       hundredYears,
+		InitialStakeDurationOffset: 0,
+		InitialStakedFunds:         nil, // No staked funds
+		InitialStakers:             stakers,
+		CChainGenesis:              `{"config":{"chainId":31337},"alloc":{}}`,
+		Message:                    "Test Genesis No Staked Funds",
+	}
+
+	genesisBytes, _, err := FromConfig(cfg)
+	require.NoError(err)
+	require.NotEmpty(genesisBytes)
+
+	parsed, err := genesis.Parse(genesisBytes)
+	require.NoError(err)
+	require.Len(parsed.Validators, 5, "expected 5 validators in genesis")
+
+	for i, vdrTx := range parsed.Validators {
+		switch ut := vdrTx.Unsigned.(type) {
+		case *txs.AddValidatorTx:
+			require.Greater(ut.Wght, uint64(0), "validator %d weight must be non-zero", i)
+			require.Greater(len(ut.StakeOuts), 0, "validator %d must have stake outputs", i)
+			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
+				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+		case *txs.AddPermissionlessValidatorTx:
+			require.Greater(ut.Wght, uint64(0), "validator %d weight must be non-zero", i)
+			require.Greater(len(ut.StakeOuts), 0, "validator %d must have stake outputs", i)
+			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
+				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+		default:
+			t.Fatalf("unexpected validator tx type: %T", ut)
+		}
 	}
 }
