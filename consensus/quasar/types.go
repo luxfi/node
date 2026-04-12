@@ -4,6 +4,8 @@
 package quasar
 
 import (
+	"errors"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
@@ -72,19 +74,37 @@ func (s *RingtailSignature) Bytes() []byte         { return s.sig }
 func (s *RingtailSignature) Type() SignatureType   { return SignatureTypeRingtail }
 func (s *RingtailSignature) Signers() []ids.NodeID { return s.signers }
 
-// RingtailCoordinator manages the threshold signing protocol
+// RingtailCoordinator manages the threshold signing protocol.
+//
+// In production, Sign/Verify require real lattice key material.
+// The coordinator is fail-closed: operations return errors unless
+// properly initialized with key material, or explicitly created
+// via NewTestRingtailCoordinator for tests.
 type RingtailCoordinator struct {
 	log         log.Logger
 	config      RingtailConfig
 	initialized bool
+	testing     bool // only true via NewTestRingtailCoordinator
 	validators  []ids.NodeID
 }
 
-// NewRingtailCoordinator creates a new Ringtail coordinator
+// NewRingtailCoordinator creates a new Ringtail coordinator.
+// Sign and Verify will fail until real lattice key material is loaded.
 func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
 	return &RingtailCoordinator{
 		log:    log,
 		config: config,
+	}, nil
+}
+
+// NewTestRingtailCoordinator creates a Ringtail coordinator for testing.
+// The test coordinator uses deterministic stub signatures that are NOT
+// cryptographically secure — never use in production.
+func NewTestRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
+	return &RingtailCoordinator{
+		log:     log,
+		config:  config,
+		testing: true,
 	}, nil
 }
 
@@ -99,13 +119,25 @@ func (rc *RingtailCoordinator) IsInitialized() bool {
 }
 
 func (rc *RingtailCoordinator) Sign(msg []byte) (Signature, error) {
-	// Create threshold signature with RT prefix for verification
-	sig := append([]byte("RT"), msg[:min(32, len(msg))]...)
-	return NewRingtailSignature(sig, rc.validators), nil
+	if !rc.initialized {
+		return nil, errors.New("ringtail: threshold signing not initialized — requires real lattice key material")
+	}
+	if rc.testing {
+		// Test-only stub: deterministic RT-prefixed signature
+		sig := append([]byte("RT"), msg[:min(32, len(msg))]...)
+		return NewRingtailSignature(sig, rc.validators), nil
+	}
+	return nil, errors.New("ringtail: threshold signing not initialized — requires real lattice key material")
 }
 
 func (rc *RingtailCoordinator) Verify(msg []byte, sig Signature) bool {
-	return sig != nil && len(sig.Bytes()) > 0
+	if !rc.initialized {
+		return false
+	}
+	if rc.testing {
+		return sig != nil && len(sig.Bytes()) > 0
+	}
+	return false
 }
 
 func (rc *RingtailCoordinator) Stats() RingtailStats {

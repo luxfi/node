@@ -148,7 +148,7 @@ func createTestEvent(height uint64, validators []ValidatorState) FinalityEvent {
 	}
 }
 
-// setupQuasarWithRingtail creates a Quasar with Ringtail coordinator.
+// setupQuasarWithRingtail creates a Quasar with a test Ringtail coordinator.
 // Returns nil for Quasar if Ringtail initialization fails (e.g., lattice lib constraint).
 func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChainProvider, []ids.NodeID, error) {
 	t.Helper()
@@ -164,6 +164,21 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 	// Connect providers
 	q.ConnectPChain(pchain)
 	q.ConnectQuantumFallback(&mockQuantumSigner{})
+
+	// Create a test Ringtail coordinator (stub signatures, not production)
+	threshold := (numParties * 2 / 3) + 1
+	if threshold < 2 {
+		threshold = 2
+	}
+	rc, err := NewTestRingtailCoordinator(log.NewNoOpLogger(), RingtailConfig{
+		NumParties: numParties,
+		Threshold:  threshold,
+	})
+	if err != nil {
+		pchain.Close()
+		return nil, nil, nil, err
+	}
+	q.ConnectRingtail(rc)
 
 	// Extract node IDs and initialize Ringtail
 	nodeIDs := make([]ids.NodeID, len(validatorStates))

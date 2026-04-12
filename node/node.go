@@ -77,6 +77,7 @@ import (
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 
 	gpuconfig "github.com/luxfi/node/config"
+	"github.com/luxfi/node/consensus/quasar"
 )
 
 const (
@@ -295,6 +296,12 @@ func New(
 	if err := n.initChains(n.Config.GenesisBytes); err != nil {
 		return nil, fmt.Errorf("couldn't initialize chains: %w", err)
 	}
+
+	// Initialize Quasar hybrid finality engine if Q-Chain is in genesis
+	if err := n.initQuasar(); err != nil {
+		n.Log.Warn("quasar init skipped", "error", err)
+	}
+
 	return n, nil
 }
 
@@ -406,6 +413,9 @@ type Node struct {
 
 	// Manages shutdown of a VM process
 	runtimeManager runtime.Manager
+
+	// Quasar hybrid finality engine — binds P-Chain BLS + Q-Chain Ringtail
+	Quasar *quasar.Quasar
 
 	resourceManager resource.Manager
 
@@ -1771,6 +1781,9 @@ func (n *Node) shutdown() {
 		time.Sleep(n.Config.ShutdownWait)
 	}
 
+	if n.Quasar != nil {
+		n.Quasar.Stop()
+	}
 	if n.resourceManager != nil {
 		n.resourceManager.Shutdown()
 	}

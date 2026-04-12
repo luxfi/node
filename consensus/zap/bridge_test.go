@@ -220,7 +220,7 @@ func TestBridgeInitialize(t *testing.T) {
 	require.ErrorIs(t, err, ErrNotInitialized)
 
 	// Test with valid coordinator
-	coordinator, err := quasar.NewRingtailCoordinator(logger, quasar.RingtailConfig{
+	coordinator, err := quasar.NewTestRingtailCoordinator(logger, quasar.RingtailConfig{
 		NumParties: 4,
 		Threshold:  3,
 		PartyIndex: 0,
@@ -266,7 +266,7 @@ func TestBridgeConsensusFlow(t *testing.T) {
 	})
 
 	// Initialize with coordinator
-	coordinator, err := quasar.NewRingtailCoordinator(logger, quasar.RingtailConfig{
+	coordinator, err := quasar.NewTestRingtailCoordinator(logger, quasar.RingtailConfig{
 		NumParties: 4,
 		Threshold:  3,
 		PartyIndex: 0,
@@ -318,7 +318,7 @@ func TestBridgeDoubleVote(t *testing.T) {
 	logger := log.Noop()
 	bridge := NewBridge(logger, DefaultBridgeConfig())
 
-	coordinator, _ := quasar.NewRingtailCoordinator(logger, quasar.RingtailConfig{
+	coordinator, _ := quasar.NewTestRingtailCoordinator(logger, quasar.RingtailConfig{
 		NumParties: 2,
 		Threshold:  1,
 	})
@@ -349,7 +349,7 @@ func TestBridgeStats(t *testing.T) {
 	logger := log.Noop()
 	bridge := NewBridge(logger, DefaultBridgeConfig())
 
-	coordinator, _ := quasar.NewRingtailCoordinator(logger, quasar.RingtailConfig{
+	coordinator, _ := quasar.NewTestRingtailCoordinator(logger, quasar.RingtailConfig{
 		NumParties: 4,
 		Threshold:  3,
 	})

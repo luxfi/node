@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luxfi/vm/chain"
+	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -23,7 +24,8 @@ import (
 )
 
 var (
-	_ chain.ChainVM = (*VM)(nil)
+	_ chain.ChainVM              = (*VM)(nil)
+	_ consensuschain.BlockBuilder = (*VM)(nil)
 
 	Version = &version.Semantic{
 		Major: 1,
@@ -167,6 +169,9 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to initialize proof verifier: %w", err)
 	}
 	vm.proofVerifier = proofVerifier
+	if !proofVerifier.VerifyingKeysLoaded() {
+		vm.log.Warn("Z-Chain running without real ZK verifying keys — proof verification disabled")
+	}
 
 	// Initialize FHE processor if enabled
 	if vm.config.EnableFHE {

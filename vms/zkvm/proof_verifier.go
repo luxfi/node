@@ -19,7 +19,9 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-// ProofVerifier verifies zero-knowledge proofs
+// ProofVerifier verifies zero-knowledge proofs.
+// When verifying keys are all zeros (dummy), proof verification is disabled
+// and VerifyProof returns an error. This is fail-closed by design.
 type ProofVerifier struct {
 	config ZConfig
 	log    log.Logger
@@ -29,6 +31,7 @@ type ProofVerifier struct {
 
 	// Verifying keys
 	verifyingKeys map[string][]byte // circuit type -> verifying key
+	dummyKeys     bool              // true if all verifying keys are zero-filled
 
 	// Statistics
 	verifyCount uint64
@@ -61,14 +64,19 @@ func NewProofVerifier(config ZConfig, log log.Logger) (*ProofVerifier, error) {
 	return pv, nil
 }
 
-// VerifyTransactionProof verifies a transaction's zero-knowledge proof
+// VerifyTransactionProof verifies a transaction's zero-knowledge proof.
+// Returns an error if verifying keys are dummy (all zeros).
 func (pv *ProofVerifier) VerifyTransactionProof(tx *Transaction) error {
 	if tx.Proof == nil {
 		return errors.New("transaction missing proof")
 	}
 
-	// Check cache first
-	proofHash := pv.hashProof(tx.Proof)
+	if pv.dummyKeys {
+		return errors.New("zkvm: proof verification disabled — no real verifying keys loaded")
+	}
+
+	// Check cache first — include tx ID to bind proof to specific transaction
+	proofHash := pv.hashProof(tx)
 
 	pv.mu.Lock()
 	pv.verifyCount++
@@ -275,11 +283,10 @@ func (pv *ProofVerifier) verifyPublicInputs(tx *Transaction) error {
 	return nil
 }
 
-// loadVerifyingKeys loads verifying keys for different circuit types
+// loadVerifyingKeys loads verifying keys for different circuit types.
+// After loading, checks whether keys are all zeros (dummy). If so,
+// sets dummyKeys=true which causes VerifyProof to reject all proofs.
 func (pv *ProofVerifier) loadVerifyingKeys() error {
-	// In production, load from files or embedded data
-	// For now, create dummy keys
-
 	// Transfer circuit verifying key
 	pv.verifyingKeys[string(TransactionTypeTransfer)] = make([]byte, 1024)
 
@@ -289,6 +296,20 @@ func (pv *ProofVerifier) loadVerifyingKeys() error {
 	// Unshield circuit verifying key
 	pv.verifyingKeys[string(TransactionTypeUnshield)] = make([]byte, 1024)
 
+	// Detect dummy (all-zero) verifying keys
+	pv.dummyKeys = true
+	for _, vk := range pv.verifyingKeys {
+		for _, b := range vk {
+			if b != 0 {
+				pv.dummyKeys = false
+				break
+			}
+		}
+		if !pv.dummyKeys {
+			break
+		}
+	}
+
 	pv.log.Info("Loaded verifying keys",
 		log.Int("count", len(pv.verifyingKeys)),
 		log.String("proofSystem", pv.config.ProofSystem),
@@ -297,13 +318,21 @@ func (pv *ProofVerifier) loadVerifyingKeys() error {
 	return nil
 }
 
-// hashProof computes a hash of a proof for caching
-func (pv *ProofVerifier) hashProof(proof *ZKProof) []byte {
-	h := sha256.New()
-	h.Write([]byte(proof.ProofType))
-	h.Write(proof.ProofData)
+// VerifyingKeysLoaded returns true if real (non-dummy) verifying keys are loaded.
+func (pv *ProofVerifier) VerifyingKeysLoaded() bool {
+	return !pv.dummyKeys
+}
 
-	for _, input := range proof.PublicInputs {
+// hashProof computes a hash of a proof for caching.
+// Includes the transaction ID to bind the proof to a specific transaction,
+// preventing a valid proof from being replayed for a different tx.
+func (pv *ProofVerifier) hashProof(tx *Transaction) []byte {
+	h := sha256.New()
+	h.Write(tx.ID[:])
+	h.Write([]byte(tx.Proof.ProofType))
+	h.Write(tx.Proof.ProofData)
+
+	for _, input := range tx.Proof.PublicInputs {
 		h.Write(input)
 	}
 

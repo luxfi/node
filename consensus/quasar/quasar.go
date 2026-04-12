@@ -138,9 +138,10 @@ type Quasar struct {
 	finalized map[ids.ID]*QuantumFinality
 
 	// Configuration
-	threshold int    // Ringtail threshold (t in t-of-n)
-	quorumNum uint64 // BLS quorum numerator
-	quorumDen uint64 // BLS quorum denominator
+	threshold    int    // Ringtail threshold (t in t-of-n)
+	quorumNum    uint64 // BLS quorum numerator
+	quorumDen    uint64 // BLS quorum denominator
+	maxFinalized int    // max finalized entries before pruning
 
 	// Channels
 	finalityCh chan *QuantumFinality
@@ -156,14 +157,15 @@ func NewQuasar(log log.Logger, threshold int, quorumNum, quorumDen uint64) (*Qua
 	}
 
 	return &Quasar{
-		log:        log,
-		core:       core,
-		threshold:  threshold,
-		quorumNum:  quorumNum,
-		quorumDen:  quorumDen,
-		finalized:  make(map[ids.ID]*QuantumFinality),
-		finalityCh: make(chan *QuantumFinality, 100),
-		stopCh:     make(chan struct{}),
+		log:          log,
+		core:         core,
+		threshold:    threshold,
+		quorumNum:    quorumNum,
+		quorumDen:    quorumDen,
+		finalized:    make(map[ids.ID]*QuantumFinality),
+		maxFinalized: 10000,
+		finalityCh:   make(chan *QuantumFinality, 100),
+		stopCh:       make(chan struct{}),
 	}, nil
 }
 
@@ -266,7 +268,10 @@ func (q *Quasar) Stop() {
 	q.log.Info("quasar: stopped")
 }
 
-// run is the main finality loop
+// run is the main finality loop.
+// Bounded by ctx.Done() and q.stopCh — exits when either fires.
+// The goroutine is started in Start() and guaranteed to terminate
+// when Stop() closes stopCh or the parent context is cancelled.
 func (q *Quasar) run(ctx context.Context, sub <-chan FinalityEvent) {
 	for {
 		select {
@@ -381,6 +386,16 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	q.finalized[event.BlockID] = finality
 	q.pHeight = event.Height
 
+	// Prune old finality entries to bound memory
+	if q.maxFinalized > 0 && len(q.finalized) > q.maxFinalized {
+		cutoff := q.qHeight - uint64(q.maxFinalized)
+		for id, f := range q.finalized {
+			if f.QChainHeight < cutoff {
+				delete(q.finalized, id)
+			}
+		}
+	}
+
 	// Emit
 	select {
 	case q.finalityCh <- finality:
@@ -493,10 +508,18 @@ func (q *Quasar) totalWeight(validators []ValidatorState) uint64 {
 	return total
 }
 
-// checkQuorum verifies quorum is met
+// checkQuorum verifies quorum is met using cross-multiplication to avoid
+// integer division truncation.
+//
+//	signerWeight / totalWeight >= quorumNum / quorumDen
+//	is equivalent to:
+//	signerWeight * quorumDen >= totalWeight * quorumNum
+//
+// Overflow bound: safe for totalWeight < 2^62 with quorumNum <= 3.
+// Production values: totalWeight is sum of validator weights (well under 2^60),
+// quorumNum=2, quorumDen=3.
 func (q *Quasar) checkQuorum(signerWeight, totalWeight uint64) bool {
-	required := totalWeight * q.quorumNum / q.quorumDen
-	return signerWeight >= required
+	return signerWeight*q.quorumDen >= totalWeight*q.quorumNum
 }
 
 // GetFinality returns finality for a block

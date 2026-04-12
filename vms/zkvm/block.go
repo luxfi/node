@@ -15,8 +15,11 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core/choices"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 )
+
+var _ block.Block = (*Block)(nil)
 
 // Block represents a block in the ZK UTXO chain
 type Block struct {
@@ -130,7 +133,7 @@ func (b *Block) Verify(ctx context.Context) error {
 
 	// Verify against parent
 	if b.BlockHeight > 0 {
-		parent, err := b.vm.GetBlock(nil, b.ParentID_)
+		parent, err := b.vm.GetBlock(ctx, b.ParentID_)
 		if err != nil {
 			return err
 		}
