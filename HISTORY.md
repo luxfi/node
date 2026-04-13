@@ -95,7 +95,7 @@ These repositories were forked from established open-source projects. The earlie
 | Repository | Upstream | Upstream First Commit | Notes |
 |------------|----------|----------------------|-------|
 | `lux/coreth` / `lux/geth` | go-ethereum | 2013-12-26 | EVM fork, Lux-specific work begins ~2022 |
-| `lux/libp2p` | libp2p/go-libp2p | 2014-08-28 | P2P networking library |
+| `lux/libp2p` | libp2p/go-libp2p | 2014-08-28 | P2P networking library (archived -- replaced by ZAP) |
 | `lux/czmq` | (ZeroMQ C bindings) | 2014-09-05 | Messaging infrastructure |
 
 ### Commit Activity
@@ -132,7 +132,7 @@ Hanzo AI is accepted into Techstars 2017. Focus on AI-powered commerce, analytic
 | `lux/hid` | 2017-02-17 | Hardware device interface |
 | `lux/onnx` | 2017-09-06 | Open Neural Network Exchange |
 | `lux/safe` | 2017-09-27 | Multisig wallet (fork of Gnosis Safe) |
-| `lux/explorer` | 2018-01-16 | Block explorer (fork of Blockscout) |
+| `lux/explorer` | 2018-01-16 | Block explorer (replaced by luxfi/explorer) |
 | `lux/zmq` | 2018-04-13 | ZeroMQ Go bindings |
 
 ### Zoo Precursor
@@ -602,10 +602,10 @@ The following repositories contain upstream history from established open-source
 | `hanzo/dbx` | PocketBase dbx | 2015 | Database abstraction |
 | `hanzo/tasks` | Temporal | 2016 | Distributed task engine |
 | `lux/coreth` / `lux/geth` | go-ethereum | 2013 | EVM implementation |
-| `lux/libp2p` | go-libp2p | 2014 | P2P networking |
+| `lux/libp2p` | go-libp2p | 2014 | P2P networking (archived -- replaced by ZAP) |
 | `lux/zapdb` | Badger (Dgraph) | 2017 | Embedded KV store |
 | `lux/safe` | Gnosis Safe | 2017 | Multisig contracts |
-| `lux/explorer` | Blockscout | 2018 | Block explorer |
+| `lux/explorer` | Blockscout | 2018 | Block explorer (replaced by luxfi/explorer) |
 | `lux/lattice` | Lattigo (EPFL) | 2019 | Lattice cryptography |
 
 All other repositories are original work.

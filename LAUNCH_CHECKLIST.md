@@ -256,7 +256,7 @@ Target: production network with real value.
 
 ### 3.5 Explorer Deployment
 
-- [ ] Deploy Blockscout in `lux-explorer` namespace (already has manifests for 5 chains)
+- [ ] Deploy explorer (luxfi/explorer) in `lux-explorer` namespace (already has manifests for 5 chains)
 - [ ] Configure for C-chain (chainId 96369)
 - [ ] Configure indexers for all active chains
 - [ ] Configure Cloudflare DNS: `explore.lux.network`
