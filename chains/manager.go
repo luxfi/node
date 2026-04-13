@@ -668,7 +668,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		m.Log.Info("VM implements CreateHandlers, calling it",
 			log.Stringer("chainID", chainParams.ID),
 		)
-		handlers, err := vm.CreateHandlers(context.TODO())
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		handlers, err := vm.CreateHandlers(ctx)
 		if err != nil {
 			m.Log.Error("failed to create HTTP handlers",
 				log.Stringer("chainID", chainParams.ID),
@@ -733,7 +735,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 	// Register chain with the router for message routing
 	if m.ManagerConfig.Router != nil {
-		m.ManagerConfig.Router.AddChain(context.TODO(), chainParams.ID, chain.Handler)
+		routeCtx, routeCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer routeCancel()
+		m.ManagerConfig.Router.AddChain(routeCtx, chainParams.ID, chain.Handler)
 	}
 
 	// Register bootstrapped health checks after P chain has been added to
@@ -745,7 +749,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	if chainParams.ID == constants.PlatformChainID {
 		if err := m.registerBootstrappedHealthChecks(); err != nil {
 			if chain.Engine != nil {
-				chain.Engine.StopWithError(context.TODO(), err)
+				stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer stopCancel()
+				chain.Engine.StopWithError(stopCtx, err)
 			}
 		}
 	}
@@ -771,7 +777,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Tell the chain to start processing messages.
 	// If the X, P, or C Chain panics, do not attempt to recover
 	if chain.Engine != nil {
-		chain.Engine.Start(context.TODO(), !m.CriticalChains.Contains(chainParams.ID))
+		startCtx, startCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer startCancel()
+		chain.Engine.Start(startCtx, !m.CriticalChains.Contains(chainParams.ID))
 
 		// Start a goroutine to monitor bootstrap completion and notify the chain
 		// This is required because the health check (m.Nets.Bootstrapping()) reports
@@ -975,8 +983,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Inject automining config for dev mode (applies to C-Chain/coreth only)
 		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
+		initCtx, initCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer initCancel()
 		err = vmTyped.Initialize(
-			context.TODO(),
+			initCtx,
 			vm.Init{
 				Runtime:  chainRuntime,
 				DB:       vmDB,
@@ -1005,7 +1015,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("transitioning VM to normal operation",
 				log.Stringer("chainID", chainParams.ID))
-			if err := stateVM.SetState(context.TODO(), uint32(vm.Ready)); err != nil {
+			stateCtx, stateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer stateCancel()
+			if err := stateVM.SetState(stateCtx, uint32(vm.Ready)); err != nil {
 				m.Log.Error("failed to transition VM to normal operation",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
@@ -1084,7 +1096,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		})
 
 		// Start the consensus engine
-		if err := consensusEngine.Start(context.TODO(), true); err != nil {
+		engineStartCtx, engineStartCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer engineStartCancel()
+		if err := consensusEngine.Start(engineStartCtx, true); err != nil {
 			m.Log.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
@@ -1093,7 +1107,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
 			log.Stringer("chainID", chainParams.ID))
 		if blockBuilder != nil {
-			lastAcceptedID, height, err := consensuschain.SyncStateFromVM(context.TODO(), blockBuilder, consensusEngine.Transitive)
+			syncCtx, syncCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer syncCancel()
+			lastAcceptedID, height, err := consensuschain.SyncStateFromVM(syncCtx, blockBuilder, consensusEngine.Transitive)
 			if err != nil {
 				m.Log.Warn("failed to sync consensus state from VM",
 					log.Stringer("chainID", chainParams.ID),
@@ -1291,9 +1307,8 @@ func (m *manager) createDAG(
 		return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
 	}
 
-	// Create a proper context for VM initialization with cancellation support
-	// This replaces context.TODO() which the user flagged as confusing and error-prone
-	initCtx, cancelInit := context.WithCancel(context.Background())
+	// Create a context for VM initialization with timeout
+	initCtx, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelInit() // Ensure cleanup on function exit
 
 	// Initialize VM if it supports Initialize
@@ -1449,7 +1464,9 @@ func (m *manager) createDAG(
 
 	// Register HTTP handlers for DAG VMs (exchangevm, qvm, etc.)
 	adapter := &dagVMAdapter{underlying: vmImpl}
-	handlers, err := adapter.CreateHandlers(context.TODO())
+	dagHandlerCtx, dagHandlerCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer dagHandlerCancel()
+	handlers, err := adapter.CreateHandlers(dagHandlerCtx)
 	if err != nil {
 		m.Log.Warn("failed to create HTTP handlers for DAG chain",
 			log.Stringer("chainID", chainParams.ID),

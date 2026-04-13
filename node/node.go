@@ -289,7 +289,9 @@ func New(
 		return nil, fmt.Errorf("couldn't initialize indexer: %w", err)
 	}
 
-	n.health.Start(context.TODO(), n.Config.HealthCheckFreq)
+	healthCtx, healthCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer healthCancel()
+	n.health.Start(healthCtx, n.Config.HealthCheckFreq)
 	n.initProfiler()
 
 	// Start the Platform chain
@@ -1269,7 +1271,7 @@ func (n *Node) initVMs() error {
 
 	// Register the VMs that Lux supports
 	err := errors.Join(
-		n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
+		n.VMManager.RegisterFactory(context.Background(), constants.PlatformVMID, &platformvm.Factory{
 			Internal: platformconfig.Internal{
 				Chains:                    n.chainManager,
 				Validators:                vdrs,
@@ -1302,7 +1304,7 @@ func (n *Node) initVMs() error {
 
 	// Register X-Chain VM (Exchange VM)
 	n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{})
+	err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{})
 	if err != nil {
 		n.Log.Error("Failed to register X-Chain VM", "error", err)
 		return err
@@ -1350,7 +1352,9 @@ func (n *Node) initVMs() error {
 	})
 
 	// register any vms that need to be installed as plugins from disk
-	_, failedVMs, err := n.VMRegistry.Reload(context.TODO())
+	reloadCtx, reloadCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer reloadCancel()
+	_, failedVMs, err := n.VMRegistry.Reload(reloadCtx)
 	for failedVM, err := range failedVMs {
 		n.Log.Error("failed to register VM",
 			"vmID", failedVM,
@@ -1811,7 +1815,9 @@ func (n *Node) shutdown() {
 
 	// Ensure all runtimes are shutdown
 	n.Log.Info("cleaning up plugin runtimes")
-	n.runtimeManager.Stop(context.TODO())
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	n.runtimeManager.Stop(shutdownCtx)
 
 	if n.DB != nil {
 		if err := n.DB.Delete(ungracefulShutdown); err != nil {
