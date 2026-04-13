@@ -428,7 +428,7 @@ func AllChainConfigs() map[ChainID]*ChainConfig {
 			EVMChainID: 1135, NativeSymbol: "ETH", NativeDecimals: 18, IsEVM: true,
 			RequiredConfirmations: 1, FinalityMode: "optimistic",
 			BlockTime: 2 * time.Second, TrustThreshold: 0.67,
-			ExplorerURL: "https://blockscout.lisk.com",
+			ExplorerURL: "https://liskscan.com",
 		},
 		ChainBob: {
 			ChainID: ChainBob, Name: "BOB", NetworkID: 60808,
@@ -770,7 +770,7 @@ func AllChainConfigs() map[ChainID]*ChainConfig {
 			EVMChainID: 61, NativeSymbol: "ETC", NativeDecimals: 18, IsEVM: true,
 			RequiredConfirmations: 40000, FinalityMode: "probabilistic",
 			BlockTime: 13 * time.Second, TrustThreshold: 0.51,
-			ExplorerURL: "https://blockscout.com/etc/mainnet",
+			ExplorerURL: "https://etcexplorer.com",
 		},
 		ChainFlux: {
 			ChainID: ChainFlux, Name: "Flux", NetworkID: 19167,

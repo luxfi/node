@@ -95,7 +95,6 @@ These repositories were forked from established open-source projects. The earlie
 | Repository | Upstream | Upstream First Commit | Notes |
 |------------|----------|----------------------|-------|
 | `lux/coreth` / `lux/geth` | go-ethereum | 2013-12-26 | EVM fork, Lux-specific work begins ~2022 |
-| `lux/libp2p` | libp2p/go-libp2p | 2014-08-28 | P2P networking library (archived -- replaced by ZAP) |
 | `lux/czmq` | (ZeroMQ C bindings) | 2014-09-05 | Messaging infrastructure |
 
 ### Commit Activity
@@ -602,10 +601,9 @@ The following repositories contain upstream history from established open-source
 | `hanzo/dbx` | PocketBase dbx | 2015 | Database abstraction |
 | `hanzo/tasks` | Temporal | 2016 | Distributed task engine |
 | `lux/coreth` / `lux/geth` | go-ethereum | 2013 | EVM implementation |
-| `lux/libp2p` | go-libp2p | 2014 | P2P networking (archived -- replaced by ZAP) |
 | `lux/zapdb` | Badger (Dgraph) | 2017 | Embedded KV store |
 | `lux/safe` | Gnosis Safe | 2017 | Multisig contracts |
-| `lux/explorer` | Blockscout | 2018 | Block explorer (replaced by luxfi/explorer) |
+| `lux/explorer` | custom | 2018 | Block explorer |
 | `lux/lattice` | Lattigo (EPFL) | 2019 | Lattice cryptography |
 
 All other repositories are original work.
