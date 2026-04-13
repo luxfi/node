@@ -1,0 +1,115 @@
+# Headless service for StatefulSet DNS
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-headless
+  namespace: lux-mainnet
+spec:
+  selector:
+    app: luxd
+    network: mainnet
+  ports:
+  - name: http
+    port: 9630
+  - name: staking
+    port: 9631
+  clusterIP: None
+---
+# Individual LoadBalancer services per pod for stable external IPs
+# This is CRITICAL for P2P - each node needs its own public IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-0
+  namespace: lux-mainnet
+  annotations:
+    kubernetes.digitalocean.com/load-balancer-id: ""
+spec:
+  type: LoadBalancer
+  selector:
+    app: luxd
+    network: mainnet
+    statefulset.kubernetes.io/pod-name: luxd-0
+  ports:
+  - name: http
+    port: 9630
+    targetPort: 9630
+  - name: staking
+    port: 9631
+    targetPort: 9631
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-1
+  namespace: lux-mainnet
+spec:
+  type: LoadBalancer
+  selector:
+    app: luxd
+    network: mainnet
+    statefulset.kubernetes.io/pod-name: luxd-1
+  ports:
+  - name: http
+    port: 9630
+    targetPort: 9630
+  - name: staking
+    port: 9631
+    targetPort: 9631
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-2
+  namespace: lux-mainnet
+spec:
+  type: LoadBalancer
+  selector:
+    app: luxd
+    network: mainnet
+    statefulset.kubernetes.io/pod-name: luxd-2
+  ports:
+  - name: http
+    port: 9630
+    targetPort: 9630
+  - name: staking
+    port: 9631
+    targetPort: 9631
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-3
+  namespace: lux-mainnet
+spec:
+  type: LoadBalancer
+  selector:
+    app: luxd
+    network: mainnet
+    statefulset.kubernetes.io/pod-name: luxd-3
+  ports:
+  - name: http
+    port: 9630
+    targetPort: 9630
+  - name: staking
+    port: 9631
+    targetPort: 9631
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: luxd-4
+  namespace: lux-mainnet
+spec:
+  type: LoadBalancer
+  selector:
+    app: luxd
+    network: mainnet
+    statefulset.kubernetes.io/pod-name: luxd-4
+  ports:
+  - name: http
+    port: 9630
+    targetPort: 9630
+  - name: staking
+    port: 9631
+    targetPort: 9631

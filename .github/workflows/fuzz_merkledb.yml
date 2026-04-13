@@ -1,0 +1,31 @@
+name: Scheduled Fuzz Testing
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run every 6 hours
+    - cron: "0 0,6,12,18 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  MerkleDB:
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: ./.github/actions/setup-go-for-project
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
+      - name: Run merkledb fuzz tests
+        shell: bash
+        run: ./scripts/build_fuzz.sh 900 ./x/merkledb # Run each merkledb fuzz tests 15 minutes
+        env:
+          CGO_ENABLED: '0'

@@ -1,0 +1,284 @@
+---
+title: Installation
+description: Complete guide to installing the Lux node on various platforms
+---
+
+# Installation
+
+The Lux node is the core blockchain software that powers the Lux network. This guide covers installation methods for different platforms and environments.
+
+## System Requirements
+
+### Minimum Requirements
+
+- **CPU**: 2+ cores (AMD64 or ARM64)
+- **RAM**: 4 GB minimum
+- **Storage**: 200 GB available space (SSD recommended)
+- **Network**: Reliable broadband connection (25 Mbps+)
+- **OS**: Linux, macOS, or Windows
+
+### Recommended Requirements
+
+- **CPU**: 8+ cores (AMD64 or ARM64)
+- **RAM**: 16 GB
+- **Storage**: 1 TB NVMe SSD
+- **Network**: 100+ Mbps symmetric connection
+- **OS**: Ubuntu 20.04+, macOS 12+, or Windows Server 2019+
+
+## Installation Methods
+
+### Method 1: Build from Source
+
+Building from source gives you the latest features and full control over compilation options.
+
+#### Prerequisites
+
+Install Go 1.25.4 or later:
+
+```bash
+# macOS
+brew install go
+
+# Ubuntu/Debian
+wget https://go.dev/dl/go1.25.4.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+
+# Verify installation
+go version
+```
+
+#### Clone and Build
+
+```bash
+# Clone the repository
+git clone https://github.com/luxfi/node
+cd node
+
+# Build the node binary
+make build
+
+# The binary will be at ./build/node
+./build/node --version
+```
+
+### Method 2: Pre-built Binaries
+
+Download pre-built binaries for your platform:
+
+```bash
+# Linux (AMD64)
+wget https://github.com/luxfi/node/releases/latest/download/node-linux-amd64.tar.gz
+tar -xzf node-linux-amd64.tar.gz
+
+# macOS (Intel)
+curl -LO https://github.com/luxfi/node/releases/latest/download/node-darwin-amd64.tar.gz
+tar -xzf node-darwin-amd64.tar.gz
+
+# macOS (Apple Silicon)
+curl -LO https://github.com/luxfi/node/releases/latest/download/node-darwin-arm64.tar.gz
+tar -xzf node-darwin-arm64.tar.gz
+```
+
+### Method 3: Docker
+
+Run the Lux node in a Docker container:
+
+```bash
+# Pull the official image
+docker pull luxfi/node:latest
+
+# Run the node
+docker run -d \
+  --name luxd \
+  -p 9630:9630 \
+  -p 9631:9631 \
+  -v $HOME/.luxd:/root/.luxd \
+  luxfi/node:latest
+```
+
+### Method 4: Package Managers
+
+#### Homebrew (macOS)
+
+```bash
+brew tap luxfi/tap
+brew install luxd
+```
+
+#### APT (Ubuntu/Debian)
+
+```bash
+curl -fsSL https://packages.luxfi.com/apt/gpg | sudo apt-key add -
+echo "deb https://packages.luxfi.com/apt stable main" | sudo tee /etc/apt/sources.list.d/lux.list
+sudo apt update
+sudo apt install luxd
+```
+
+## Directory Structure
+
+After installation, the node uses the following directory structure:
+
+```
+~/.luxd/                    # Default data directory
+├── db/                     # Database files
+│   ├── P/                 # Platform chain database
+│   ├── X/                 # UTXO chain database
+│   ├── C/                 # Contract chain database
+│   └── Q/                 # Quantum chain database
+├── logs/                   # Log files
+├── staking/               # Staking certificates and keys
+│   ├── staker.crt        # TLS certificate
+│   ├── staker.key        # TLS private key
+│   └── signer.key        # BLS signing key
+├── configs/               # Configuration files
+│   ├── chains/           # Per-chain configs
+│   ├── vms/              # VM-specific configs
+│   └── chains/          # Chain configs
+└── plugins/               # VM plugins directory
+```
+
+## Post-Installation Setup
+
+### 1. Generate Staking Keys
+
+For mainnet validation, generate staking keys:
+
+```bash
+# Generate TLS certificate
+luxd --generate-staking-cert
+
+# This creates:
+# - ~/.luxd/staking/staker.crt
+# - ~/.luxd/staking/staker.key
+# - ~/.luxd/staking/signer.key
+```
+
+### 2. Configure Firewall
+
+Open required ports:
+
+```bash
+# Ubuntu/Debian with ufw
+sudo ufw allow 9630/tcp  # HTTP API
+sudo ufw allow 9631/tcp  # P2P staking port
+
+# CentOS/RHEL with firewalld
+sudo firewall-cmd --add-port=9630/tcp --permanent
+sudo firewall-cmd --add-port=9631/tcp --permanent
+sudo firewall-cmd --reload
+```
+
+### 3. Set Up as System Service
+
+Create a systemd service (Linux):
+
+```ini
+# /etc/systemd/system/luxd.service
+[Unit]
+Description=Lux Node
+After=network.target
+
+[Service]
+Type=simple
+User=lux
+ExecStart=/usr/local/bin/luxd
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable luxd
+sudo systemctl start luxd
+sudo systemctl status luxd
+```
+
+## Verify Installation
+
+Check that your node is running correctly:
+
+```bash
+# Check node health
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "health.health"
+}' -H 'content-type:application/json;' http://localhost:9630/ext/health
+
+# Get node info
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.getNodeVersion"
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+
+# Check bootstrap status
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.isBootstrapped",
+    "params": {
+        "chain": "P"
+    }
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+## Troubleshooting
+
+### Port Already in Use
+
+If you get a "port already in use" error:
+
+```bash
+# Find the process using the port
+lsof -i :9630
+lsof -i :9631
+
+# Kill the process or use different ports
+luxd --http-port=9632 --staking-port=9633
+```
+
+### Database Corruption
+
+If the database is corrupted:
+
+```bash
+# Stop the node
+systemctl stop luxd
+
+# Backup current database
+mv ~/.luxd/db ~/.luxd/db.backup
+
+# Start fresh (will re-sync from network)
+systemctl start luxd
+```
+
+### Insufficient File Descriptors
+
+Increase the file descriptor limit:
+
+```bash
+# Check current limit
+ulimit -n
+
+# Increase limit (temporary)
+ulimit -n 65536
+
+# Increase limit (permanent)
+echo "* soft nofile 65536" | sudo tee -a /etc/security/limits.conf
+echo "* hard nofile 65536" | sudo tee -a /etc/security/limits.conf
+```
+
+## Next Steps
+
+- [Running Your Node](/docs/getting-started/running) - Start and configure your node
+- [Configuration Guide](/docs/configuration) - Detailed configuration options
+- [Becoming a Validator](/docs/getting-started/validator) - Join as a network validator
+- [API Reference](/docs/api) - Interact with your node via APIs

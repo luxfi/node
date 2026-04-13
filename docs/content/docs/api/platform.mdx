@@ -1,0 +1,725 @@
+---
+title: Platform Chain API
+description: Complete API reference for the Platform Chain (P-Chain)
+---
+
+# Platform Chain API
+
+The Platform Chain (P-Chain) is responsible for staking, validators, and chain management. This API provides methods to interact with the P-Chain.
+
+## Endpoint
+
+```
+http://localhost:9630/ext/bc/P
+```
+
+## Format
+
+The P-Chain API uses JSON-RPC 2.0 format:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.<method>",
+    "params": {...},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+## Methods
+
+### platform.getHeight
+
+Get the current P-Chain height.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getHeight",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "height": "365432"
+    },
+    "id": 1
+}
+```
+
+---
+
+### platform.getBalance
+
+Get the balance of an address (deprecated, use getUTXOs).
+
+**Parameters:**
+- `addresses`: `[]string` - List of addresses
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getBalance",
+    "params": {
+        "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "balance": "3000000000000",
+        "unlocked": "2000000000000",
+        "lockedStakeable": "1000000000000",
+        "lockedNotStakeable": "0",
+        "utxoIDs": [...]
+    },
+    "id": 1
+}
+```
+
+---
+
+### platform.getUTXOs
+
+Get UTXOs for addresses.
+
+**Parameters:**
+- `addresses`: `[]string` - Addresses to get UTXOs for
+- `limit`: `uint32` - (optional) Max number of UTXOs to return (max: 1024)
+- `startIndex`: `{}` - (optional) Starting index for pagination
+- `sourceChain`: `string` - (optional) Filter by source chain
+- `encoding`: `string` - (optional) Encoding format (hex, json)
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getUTXOs",
+    "params": {
+        "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"],
+        "limit": 100
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getCurrentValidators
+
+Get current validators set.
+
+**Parameters:**
+- `chainID`: `string` - (optional) Chain ID (omit for primary network)
+- `nodeIDs`: `[]string` - (optional) Filter by specific node IDs
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getCurrentValidators",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "validators": [
+            {
+                "txID": "2NNkpYTGfTFKST7iEVNGw7tFJdVBnwJmQr8sX5JbJCWD6cMFoe",
+                "startTime": "1704067200",
+                "endTime": "1735689600",
+                "stakeAmount": "2000000000000",
+                "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
+                "rewardOwner": {
+                    "threshold": 1,
+                    "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
+                },
+                "validationRewardOwner": {
+                    "threshold": 1,
+                    "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
+                },
+                "delegationRewardOwner": {
+                    "threshold": 1,
+                    "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
+                },
+                "potentialReward": "79180821917",
+                "delegationFee": "10.0000",
+                "uptime": "100.0000",
+                "connected": true,
+                "delegators": []
+            }
+        ]
+    },
+    "id": 1
+}
+```
+
+---
+
+### platform.getPendingValidators
+
+Get validators waiting to become active.
+
+**Parameters:**
+- `chainID`: `string` - (optional) Chain ID
+- `nodeIDs`: `[]string` - (optional) Filter by node IDs
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getPendingValidators",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getValidatorsAt
+
+Get validators at a specific P-Chain height.
+
+**Parameters:**
+- `height`: `uint64` - P-Chain height
+- `chainID`: `string` - (optional) Chain ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getValidatorsAt",
+    "params": {
+        "height": 365000
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getAllValidatorsAt
+
+Get all validators at a specific P-Chain height.
+
+**Parameters:**
+- `height`: `uint64` - P-Chain height
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getAllValidatorsAt",
+    "params": {
+        "height": 365000
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getStake
+
+Get staked amounts for addresses.
+
+**Parameters:**
+- `addresses`: `[]string` - Addresses to check
+- `validatorsOnly`: `bool` - (optional) Only check validator stakes
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getStake",
+    "params": {
+        "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getMinStake
+
+Get minimum staking amounts.
+
+**Parameters:**
+- `chainID`: `string` - (optional) Chain ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getMinStake",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "minValidatorStake": "2000000000000",
+        "minDelegatorStake": "25000000000"
+    },
+    "id": 1
+}
+```
+
+---
+
+### platform.getTotalStake
+
+Get total staked on the network.
+
+**Parameters:**
+- `chainID`: `string` - (optional) Chain ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getTotalStake",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getRewardUTXOs
+
+Get reward UTXOs for addresses.
+
+**Parameters:**
+- `txID`: `string` - Transaction ID that created rewards
+- `encoding`: `string` - (optional) Encoding format
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getRewardUTXOs",
+    "params": {
+        "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getTimestamp
+
+Get current P-Chain timestamp.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getTimestamp",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getBlockchains
+
+Get all blockchains deployed on the network.
+
+**Parameters:** None
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getBlockchains",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "blockchains": [
+            {
+                "id": "2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX",
+                "name": "X-Chain",
+                "chainID": "11111111111111111111111111111111LpoYY",
+                "vmID": "jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq"
+            },
+            {
+                "id": "2S4rNkYfzCTzWMKiBnfRUrqW755wS1EdjB9YWkov8SBHMUZmE5",
+                "name": "C-Chain",
+                "chainID": "11111111111111111111111111111111LpoYY",
+                "vmID": "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6"
+            }
+        ]
+    },
+    "id": 1
+}
+```
+
+---
+
+### platform.getBlock
+
+Get a block by ID.
+
+**Parameters:**
+- `blockID`: `string` - Block ID
+- `encoding`: `string` - (optional) Encoding format
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getBlock",
+    "params": {
+        "blockID": "vXSY7FK7NR65Y8BrJDKQH4a6vBdJuqAMvVzWj3Zxcap5J4ZE3"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getTx
+
+Get a transaction by ID.
+
+**Parameters:**
+- `txID`: `string` - Transaction ID
+- `encoding`: `string` - (optional) Encoding format
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getTx",
+    "params": {
+        "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getTxStatus
+
+Get transaction status.
+
+**Parameters:**
+- `txID`: `string` - Transaction ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getTxStatus",
+    "params": {
+        "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+**Example Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "status": "Committed"
+    },
+    "id": 1
+}
+```
+
+Status values:
+- `Unknown`: Not found
+- `Processing`: In mempool
+- `Dropped`: Removed from mempool
+- `Committed`: Accepted
+
+---
+
+### platform.getCurrentSupply
+
+Get current LUX supply.
+
+**Parameters:**
+- `chainID`: `string` - (optional) Chain ID
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getCurrentSupply",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.getChains
+
+Get all chains.
+
+**Parameters:**
+- `ids`: `[]string` - (optional) Filter by chain IDs
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getChains",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+## Transaction Building
+
+### platform.addValidator
+
+Add a new validator.
+
+**Parameters:**
+- `nodeID`: `string` - Node ID to add as validator
+- `startTime`: `uint64` - Unix timestamp when validation starts
+- `endTime`: `uint64` - Unix timestamp when validation ends
+- `stakeAmount`: `uint64` - Amount to stake in nLUX
+- `rewardAddress`: `string` - Address to send rewards
+- `delegationFeeRate`: `float32` - Fee rate for delegators (2-100)
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+**Example Request:**
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.addValidator",
+    "params": {
+        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
+        "startTime": 1704067200,
+        "endTime": 1735689600,
+        "stakeAmount": 2000000000000,
+        "rewardAddress": "P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc",
+        "delegationFeeRate": 10,
+        "username": "myuser",
+        "password": "mypassword"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+---
+
+### platform.addDelegator
+
+Delegate to a validator.
+
+**Parameters:**
+- `nodeID`: `string` - Node ID to delegate to
+- `startTime`: `uint64` - Start time
+- `endTime`: `uint64` - End time
+- `stakeAmount`: `uint64` - Amount to delegate
+- `rewardAddress`: `string` - Reward address
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+### platform.addChainValidator
+
+Add a chain validator.
+
+**Parameters:**
+- `nodeID`: `string` - Node ID
+- `chainID`: `string` - Chain ID
+- `startTime`: `uint64` - Start time
+- `endTime`: `uint64` - End time
+- `weight`: `uint64` - Validator weight
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+### platform.createChain
+
+Create a new chain.
+
+**Parameters:**
+- `controlKeys`: `[]string` - Control addresses
+- `threshold`: `uint32` - Signature threshold
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+### platform.createBlockchain
+
+Create a blockchain in a chain.
+
+**Parameters:**
+- `chainID`: `string` - Chain ID
+- `vmID`: `string` - VM ID
+- `name`: `string` - Blockchain name
+- `genesisData`: `string` - Genesis configuration
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+### platform.importLUX
+
+Import LUX from another chain.
+
+**Parameters:**
+- `sourceChain`: `string` - Source chain (X or C)
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+### platform.exportLUX
+
+Export LUX to another chain.
+
+**Parameters:**
+- `amount`: `uint64` - Amount to export
+- `to`: `string` - Destination address
+- `username`: `string` - Keystore username
+- `password`: `string` - Keystore password
+
+---
+
+## Advanced Methods
+
+### platform.sampleValidators
+
+Sample validator set for consensus.
+
+**Parameters:**
+- `size`: `uint64` - Sample size
+- `chainID`: `string` - (optional) Chain ID
+
+---
+
+### platform.getProposedHeight
+
+Get proposed height from ProposerVM.
+
+**Parameters:** None
+
+---
+
+### platform.issueTx
+
+Issue a raw transaction.
+
+**Parameters:**
+- `tx`: `string` - Encoded transaction
+- `encoding`: `string` - Encoding format
+
+---
+
+## Error Codes
+
+| Code | Message | Description |
+|------|---------|-------------|
+| -32000 | Database error | Database operation failed |
+| -32001 | Not found | Resource not found |
+| -32002 | Invalid parameters | Invalid method parameters |
+| -32003 | Insufficient funds | Not enough balance |
+| -32004 | Invalid node ID | Node ID format invalid |
+| -32005 | Validation error | Transaction validation failed |
+| -32006 | Already exists | Resource already exists |
+| -32007 | Conflict | Operation conflicts with current state |
+
+## Rate Limiting
+
+The P-Chain API has the following rate limits:
+- 100 requests per second per IP
+- 1000 requests per minute per IP
+- Large queries may be throttled
+
+## Examples
+
+### Check Validator Status
+
+```bash
+#!/bin/bash
+NODE_ID="NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
+
+# Get validator info
+curl -s -X POST --data "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"platform.getCurrentValidators\",
+    \"params\": {
+        \"nodeIDs\": [\"$NODE_ID\"]
+    },
+    \"id\": 1
+}" -H 'content-type:application/json;' http://localhost:9630/ext/bc/P | jq '.result.validators[0]'
+```
+
+### Monitor Staking Rewards
+
+```bash
+#!/bin/bash
+ADDRESS="P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"
+
+# Get stake info
+STAKE=$(curl -s -X POST --data "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"platform.getStake\",
+    \"params\": {
+        \"addresses\": [\"$ADDRESS\"]
+    },
+    \"id\": 1
+}" -H 'content-type:application/json;' http://localhost:9630/ext/bc/P)
+
+echo "Current stake: $(echo $STAKE | jq -r '.result.staked')"
+echo "Stakeable: $(echo $STAKE | jq -r '.result.stakeable')"
+```
+
+## Next Steps
+
+- [Info API](/docs/api/info) - Node information endpoints
+- [Health API](/docs/api/health) - Health monitoring endpoints
+- [Admin API](/docs/api/admin) - Administrative endpoints
+- [X-Chain API](/docs/api/xchain) - UTXO asset chain API

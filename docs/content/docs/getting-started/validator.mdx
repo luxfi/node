@@ -1,0 +1,484 @@
+---
+title: Becoming a Validator
+description: How to become a validator on the Lux network
+---
+
+# Becoming a Validator
+
+Validators secure the Lux network by participating in consensus and validating transactions. This guide explains how to become a validator on the Lux network.
+
+## Prerequisites
+
+Before becoming a validator, ensure you have:
+
+1. **A running Lux node** - Fully synchronized with the network
+2. **Minimum stake** - 2,000 LUX for mainnet validation
+3. **Hardware requirements met** - See [Installation Guide](/docs/getting-started/installation)
+4. **Stable internet connection** - High uptime is critical
+5. **Public IP address** - Required for other nodes to connect
+
+## Understanding Validation
+
+### Validator Responsibilities
+
+Validators must:
+- Keep their node online and synchronized
+- Participate in consensus for assigned chains
+- Validate and vote on blocks
+- Maintain minimum uptime (80% for rewards)
+
+### Rewards
+
+Validators earn rewards for:
+- Validating the Primary Network (P, X, C, Q chains)
+- Validating custom chains (additional rewards)
+- Maintaining high uptime (>80%)
+
+Reward calculation:
+```
+Reward = (Stake Amount × Reward Rate × Uptime Percentage) / 365 days
+```
+
+### Delegation
+
+If you don't have enough LUX to validate, you can:
+- Delegate to existing validators
+- Earn a portion of validation rewards
+- Minimum delegation: 25 LUX
+
+## Step 1: Prepare Your Node
+
+### Verify Node Sync Status
+
+Ensure your node is fully synchronized:
+
+```bash
+# Check P-Chain sync status
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "platform.getHeight"
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+
+# Check bootstrap status for all chains
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.isBootstrapped",
+    "params": {"chain": "P"}
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+### Configure Public IP
+
+Set your public IP for other nodes to connect:
+
+```bash
+# Start node with public IP
+./build/node --public-ip=<your-public-ip>
+
+# Or use dynamic IP detection
+./build/node --dynamic-public-ip=opendns
+```
+
+### Get Your Node ID
+
+Retrieve your node's unique identifier:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id": 1,
+    "method": "info.getNodeID"
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+```
+
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
+    "nodePOP": {
+      "publicKey": "0x89abc...",
+      "proofOfPossession": "0xdef..."
+    }
+  },
+  "id": 1
+}
+```
+
+## Step 2: Prepare Staking Keys
+
+### Generate BLS Keys
+
+Your node needs BLS keys for signing:
+
+```bash
+# Keys are auto-generated on first run
+ls ~/.luxd/staking/
+# staker.crt  - TLS certificate
+# staker.key  - TLS private key
+# signer.key  - BLS signing key
+```
+
+### Backup Keys (CRITICAL)
+
+**⚠️ IMPORTANT: Back up these keys securely!**
+
+```bash
+# Create encrypted backup
+tar -czf staking-backup.tar.gz ~/.luxd/staking/
+gpg -c staking-backup.tar.gz
+
+# Store backup in multiple secure locations
+```
+
+Loss of these keys means:
+- Loss of staking rewards
+- Inability to unstake funds
+- Potential slashing penalties
+
+## Step 3: Fund Your Wallet
+
+### Create P-Chain Address
+
+Generate an address to receive funds:
+
+```bash
+# Create keystore user
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "keystore.createUser",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/keystore
+
+# Create P-Chain address
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.createAddress",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+### Transfer LUX to P-Chain
+
+Transfer LUX from X-Chain or C-Chain to P-Chain:
+
+```bash
+# Export from X-Chain to P-Chain
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "xvm.exportLUX",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword",
+        "to": "P-lux1xxxxx...",
+        "amount": 2000000000000
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/X
+
+# Import to P-Chain
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.importLUX",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword",
+        "sourceChain": "X"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+## Step 4: Add as Validator
+
+### Submit Validator Transaction
+
+Add your node as a validator:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.addValidator",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword",
+        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
+        "startTime": 1704067200,
+        "endTime": 1735689600,
+        "stakeAmount": 2000000000000,
+        "rewardAddress": "P-lux1xxxxx...",
+        "delegationFeeRate": 10
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+Parameters:
+- `nodeID`: Your node's ID from Step 1
+- `startTime`: Unix timestamp when validation starts
+- `endTime`: Unix timestamp when validation ends (max 1 year)
+- `stakeAmount`: Amount in nLUX (2000 LUX = 2000000000000 nLUX)
+- `rewardAddress`: Where to send rewards
+- `delegationFeeRate`: Fee percentage for delegators (2-100)
+
+### Verify Validator Status
+
+Check your validator status:
+
+```bash
+# Get pending validators
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getPendingValidators",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+
+# Get current validators
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getCurrentValidators",
+    "params": {},
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+## Step 5: Monitor Your Validator
+
+### Check Uptime
+
+Monitor your validator's uptime:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getValidator",
+    "params": {
+        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+### Monitor Performance Metrics
+
+Key metrics to track:
+
+```bash
+# Node health
+curl http://localhost:9630/ext/health
+
+# Prometheus metrics
+curl http://localhost:9630/ext/metrics | grep -E "uptime|stake|validator"
+```
+
+Important metrics:
+- `validator_uptime`: Current uptime percentage
+- `validator_stake`: Total staked amount
+- `validator_weight`: Voting weight in consensus
+- `p2p_peers`: Number of connected peers
+
+### Set Up Alerts
+
+Configure monitoring alerts for:
+- Node offline events
+- Low disk space (less than 10GB)
+- High CPU usage (greater than 90%)
+- Low memory (less than 500MB available)
+- Network disconnections
+
+Example alert script:
+
+```bash
+#!/bin/bash
+# monitor.sh - Basic validator monitoring
+
+NODE_URL="http://localhost:9630"
+WEBHOOK_URL="your-webhook-url"
+
+# Check if node is responsive
+if ! curl -s "$NODE_URL/ext/health" > /dev/null; then
+  curl -X POST "$WEBHOOK_URL" -d '{"text":"ALERT: Node is not responding!"}'
+fi
+
+# Check uptime
+UPTIME=$(curl -s -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.getValidator",
+    "params":{"nodeID":"NodeID-xxx"},
+    "id":1
+}' "$NODE_URL/ext/bc/P" | jq -r '.result.uptime')
+
+if [ "$UPTIME" -lt "80" ]; then
+  curl -X POST "$WEBHOOK_URL" -d "{\"text\":\"WARNING: Uptime is $UPTIME%\"}"
+fi
+```
+
+## Delegation Management
+
+### Accept Delegations
+
+As a validator, you can accept delegations:
+
+```bash
+# Set delegation parameters when adding validator
+"delegationFeeRate": 10,  # 10% fee on delegator rewards
+"minDelegationAmount": 25000000000  # Minimum 25 LUX
+```
+
+### View Delegations
+
+Check delegations to your node:
+
+```bash
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.getCurrentDelegators",
+    "params": {
+        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+## Chain Validation
+
+### Join a Chain
+
+Validate additional chains for extra rewards:
+
+```bash
+# Add chain validator
+curl -X POST --data '{
+    "jsonrpc": "2.0",
+    "method": "platform.addChainValidator",
+    "params": {
+        "username": "myuser",
+        "password": "mypassword",
+        "nodeID": "NodeID-xxx",
+        "chainID": "chain-xxx",
+        "startTime": 1704067200,
+        "endTime": 1735689600,
+        "weight": 1000
+    },
+    "id": 1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+### Chain Requirements
+
+Each chain may have:
+- Additional hardware requirements
+- Custom VM installations
+- Specific uptime requirements
+- Different reward structures
+
+## Security Best Practices
+
+### Key Management
+
+1. **Never share private keys**
+2. **Use hardware security modules (HSM) for production**
+3. **Implement key rotation policies**
+4. **Store backups in multiple locations**
+5. **Use encrypted storage**
+
+### Node Security
+
+1. **Enable firewall** - Only allow required ports
+2. **Use SSH keys** - Disable password authentication
+3. **Regular updates** - Keep OS and node software updated
+4. **Monitor logs** - Watch for suspicious activity
+5. **DDoS protection** - Use cloud-based protection services
+
+### Operational Security
+
+1. **Redundant internet** - Multiple ISP connections
+2. **UPS backup** - Prevent power outage downtime
+3. **Monitoring** - 24/7 alerting system
+4. **Incident response** - Have a recovery plan
+5. **Regular audits** - Security and performance reviews
+
+## Troubleshooting
+
+### Node Not Selected as Validator
+
+Possible reasons:
+- Insufficient stake amount
+- Invalid time parameters
+- Node not fully synchronized
+- Network connectivity issues
+
+### Low Uptime
+
+Common causes:
+- Network interruptions
+- Node crashes
+- Insufficient resources
+- Time synchronization issues
+
+Solutions:
+```bash
+# Sync system time
+sudo ntpdate -s time.nist.gov
+
+# Increase file descriptors
+ulimit -n 65536
+
+# Check disk space
+df -h
+
+# Monitor memory
+free -h
+```
+
+### Rewards Not Received
+
+Check:
+1. Uptime is above 80%
+2. Validation period has ended
+3. Reward address is correct
+4. No slashing events occurred
+
+## FAQ
+
+### How long can I validate?
+
+- Minimum: 2 weeks
+- Maximum: 1 year
+- Can re-stake after period ends
+
+### Can I change my stake amount?
+
+No, stake is locked for the entire validation period.
+
+### What happens if my node goes offline?
+
+- Uptime percentage decreases
+- Below 80 percent uptime = no rewards
+- No slashing on mainnet (currently)
+
+### Can I run multiple validators?
+
+Yes, but each needs:
+- Separate node instance
+- Unique Node ID
+- Minimum stake per validator
+
+## Next Steps
+
+- [Monitoring Guide](/docs/operations/monitoring) - Set up comprehensive monitoring
+- [Security Guide](/docs/operations/security) - Harden your validator
+- [Chain Creation](/docs/architecture/chains) - Create custom blockchains
+- [API Reference](/docs/api/platform) - Platform chain API details

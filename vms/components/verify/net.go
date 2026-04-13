@@ -1,0 +1,85 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package verify
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/ids"
+)
+
+var (
+	ErrSameChainID      = errors.New("same chainID")
+	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
+)
+
+// ChainContext provides context for chain operations
+type ChainContext struct {
+	ChainID        ids.ID
+	NetID          ids.ID
+	ValidatorState ValidatorState
+}
+
+// ValidatorState provides validator state lookups
+type ValidatorState interface {
+	GetNetworkID(chainID ids.ID) (ids.ID, error)
+}
+
+// ConsensusValidatorState wraps the Runtime ValidatorState interface
+type ConsensusValidatorState interface {
+	GetNetworkID(chainID ids.ID) (ids.ID, error)
+}
+
+// SameNet verifies that the provided [ctx] was provided to a chain in the
+// same chain as [peerChainID], but not the same chain. If this verification
+// fails, a non-nil error will be returned.
+func SameNet(ctx context.Context, chainRuntime *ChainContext, peerChainID ids.ID) error {
+	if peerChainID == chainRuntime.ChainID {
+		return ErrSameChainID
+	}
+
+	peerNetID, err := chainRuntime.ValidatorState.GetNetworkID(peerChainID)
+	if err != nil {
+		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
+	}
+	if chainRuntime.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainRuntime.NetID, peerNetID)
+	}
+	return nil
+}
+
+// SameChain verifies that the peerChainID is in the same network as the chain
+// represented by consensusRuntime, but not the same chain. This is a convenience
+// wrapper for coreth compatibility that accepts *runtime.Runtime directly.
+// With the simplified NetworkID model (1=mainnet, 2=testnet), chains on the
+// same network are always in the same "chain".
+func SameChain(ctx context.Context, consensusRuntime *runtime.Runtime, peerChainID ids.ID) error {
+	if peerChainID == consensusRuntime.ChainID {
+		return ErrSameChainID
+	}
+
+	// Get the validator state from Runtime
+	vs, ok := consensusRuntime.ValidatorState.(runtime.ValidatorState)
+	if !ok {
+		return fmt.Errorf("validator state does not implement required interface")
+	}
+
+	// Verify the peer chain exists in the same network
+	peerNetID, err := vs.GetNetworkID(peerChainID)
+	if err != nil {
+		return fmt.Errorf("failed to get chain of %q: %w", peerChainID, err)
+	}
+	chainNetID, err := vs.GetNetworkID(consensusRuntime.ChainID)
+	if err != nil {
+		return fmt.Errorf("failed to get chain of %q: %w", consensusRuntime.ChainID, err)
+	}
+	if chainNetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainNetID, peerNetID)
+	}
+	// All chains on the same network (NetworkID 1 or 2) are in the same "chain".
+	return nil
+}

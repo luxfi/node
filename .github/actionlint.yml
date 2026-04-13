@@ -1,0 +1,7 @@
+self-hosted-runner:
+  labels:
+    - custom-arm64-focal
+    - custom-arm64-jammy
+    - lux-build
+    - lux-build-arm64
+    - ubuntu-24.04-arm
