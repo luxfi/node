@@ -5,6 +5,9 @@ metadata:
 spec:
   serviceName: luxd-headless
   replicas: 5
+  updateStrategy:
+    type: OnDelete    # operator drains one pod at a time, never rolls simultaneously
+  podManagementPolicy: Parallel  # validators can start in any order; bootstrap-ips handles ordering
   selector:
     matchLabels:
       app: luxd
@@ -13,11 +16,22 @@ spec:
       labels:
         app: luxd
     spec:
+      serviceAccountName: luxd
+      automountServiceAccountToken: false  # locked down; no API server access
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
         runAsNonRoot: true
       terminationGracePeriodSeconds: 120
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: luxd
+              topologyKey: kubernetes.io/hostname    # spread across nodes
       containers:
       - name: luxd
         image: ghcr.io/luxfi/node:latest
@@ -30,21 +44,21 @@ spec:
           name: staking
           protocol: TCP
         env:
-        - name: LUX_HTTP_HOST
+        - name: LUXD_HTTP_HOST
           value: "0.0.0.0"
-        - name: LUX_HTTP_PORT
+        - name: LUXD_HTTP_PORT
           value: "9630"
-        - name: LUX_STAKING_PORT
+        - name: LUXD_STAKING_PORT
           value: "9631"
-        - name: LUX_LOG_LEVEL
+        - name: LUXD_LOG_LEVEL
           value: "info"
-        - name: LUX_DB_DIR
+        - name: LUXD_DB_DIR
           value: "/data/db"
-        - name: LUX_LOG_DIR
+        - name: LUXD_LOG_DIR
           value: "/data/logs"
-        - name: LUX_STAKING_TLS_KEY_FILE
+        - name: LUXD_STAKING_TLS_KEY_FILE
           value: "/keys/staking/staker.key"
-        - name: LUX_STAKING_TLS_CERT_FILE
+        - name: LUXD_STAKING_TLS_CERT_FILE
           value: "/keys/staking/staker.crt"
         # Network-specific env vars are patched per overlay
         envFrom:

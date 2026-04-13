@@ -3,5 +3,18 @@ kind: ConfigMap
 metadata:
   name: luxd-config
 data:
-  # Network ID is patched per overlay
-  LUX_NETWORK_ID: "96369"
+  # Network ID patched per overlay (localnet=local, devnet=3, testnet=2, mainnet=1).
+  LUXD_NETWORK_ID: "96369"
+
+  # Peer discovery: ordinal 0 has no bootstrap; all others bootstrap from ordinal 0
+  # via headless DNS. The operator or init logic is expected to inject
+  # LUXD_BOOTSTRAP_IPS / LUXD_BOOTSTRAP_IDS at pod-start time based on
+  # the deployed replica count. For localnet/dev, a single entry suffices.
+  # Overlays patch LUXD_BOOTSTRAP_IPS / LUXD_BOOTSTRAP_IDS appropriately.
+  LUXD_BOOTSTRAP_IPS: ""
+  LUXD_BOOTSTRAP_IDS: ""
+
+  # Defaults. Overlays patch production values.
+  LUXD_HTTP_ALLOWED_HOSTS: "*.lux.network,*.svc.cluster.local,localhost"
+  LUXD_API_ADMIN_ENABLED: "false"         # NEVER enable on non-local
+  LUXD_SYBIL_PROTECTION_ENABLED: "true"   # NEVER disable on public networks

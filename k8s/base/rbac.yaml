@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: luxd
+automountServiceAccountToken: false
+---
+# No Role/RoleBinding — luxd needs no K8s API access at runtime.
+# The operator (LuxNetwork CRD) manages lifecycle out-of-band with its own SA.

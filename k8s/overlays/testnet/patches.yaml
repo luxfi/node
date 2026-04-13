@@ -32,4 +32,4 @@ kind: ConfigMap
 metadata:
   name: luxd-config
 data:
-  LUX_NETWORK_ID: "2"
+  LUXD_NETWORK_ID: "2"
