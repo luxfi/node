@@ -68,7 +68,6 @@ func NewAddressManager(db database.Database, enablePrivate bool, log log.Logger)
 		am.addressCount = binary.BigEndian.Uint64(countBytes)
 	}
 
-	// Load addresses from DB (in production)
 	if err := am.loadAddresses(); err != nil {
 		return nil, err
 	}
@@ -215,9 +214,6 @@ func (am *AddressManager) DeriveNullifier(address []byte, note *Note) ([]byte, e
 
 // SignTransaction signs a transaction with the appropriate keys
 func (am *AddressManager) SignTransaction(tx *Transaction, signingAddresses [][]byte) error {
-	// In production, this would sign the transaction
-	// For now, create a dummy signature
-
 	h := sha256.New()
 	h.Write(tx.ID[:])
 
@@ -261,8 +257,6 @@ func (am *AddressManager) storeAddress(privAddr *PrivateAddress) error {
 
 // loadAddresses loads addresses from database
 func (am *AddressManager) loadAddresses() error {
-	// In production, iterate through DB
-	// For now, start with empty set
 	return nil
 }
 

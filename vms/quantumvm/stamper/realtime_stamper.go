@@ -528,7 +528,7 @@ func (rts *RealtimeQuantumStamper) GetStampInfo(blockHash common.Hash) (map[stri
 
 // Helper functions for stamp encoding/decoding
 func encodeStamp(stamp *QuantumStamp) ([]byte, error) {
-	// Simple encoding - in production use proper serialization
+	// Simplified encoding
 	data := make([]byte, 0, 1024)
 
 	// Add fields...
@@ -538,7 +538,7 @@ func encodeStamp(stamp *QuantumStamp) ([]byte, error) {
 }
 
 func decodeStamp(data []byte) (*QuantumStamp, error) {
-	// Simple decoding - in production use proper deserialization
+	// Simplified decoding
 	stamp := &QuantumStamp{}
 
 	// Decode fields...

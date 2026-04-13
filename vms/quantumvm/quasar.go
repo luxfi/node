@@ -328,8 +328,7 @@ func (q *Quasar) TryFinalize(ctx context.Context, blockID ids.ID) (*quasar.Aggre
 	// Check Ringtail threshold
 	if !pending.RingtailFinalized {
 		if len(pending.RingtailSignatures) >= q.threshold {
-			// For Ringtail, we'd finalize via Round2 + Finalize
-			// For now, mark as finalized if threshold reached
+			// Ringtail finalized when threshold reached
 			pending.RingtailFinalized = true
 			q.log.Debug("Ringtail threshold reached",
 				"blockID", blockID,

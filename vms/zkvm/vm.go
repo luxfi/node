@@ -415,8 +415,6 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 // WaitForEvent blocks until an event occurs that should trigger block building
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
-	// Block until context is cancelled
-	// In production, this would wait for transactions in mempool, etc.
 	// CRITICAL: Must block here to avoid notification flood loop in chains/manager.go
 	<-ctx.Done()
 	return vmcore.Message{}, ctx.Err()
@@ -542,8 +540,6 @@ func (vm *VM) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, reque
 
 // GetBlockIDAtHeight implements the chain.HeightIndexedChainVM interface
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
-	// For now, return not implemented
-	// In production, maintain a height index
 	return ids.Empty, errors.New("height index not implemented")
 }
 

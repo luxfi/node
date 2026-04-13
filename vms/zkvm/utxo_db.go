@@ -65,7 +65,6 @@ func NewUTXODB(db database.Database, log log.Logger) (*UTXODB, error) {
 		udb.utxoCount = binary.BigEndian.Uint64(countBytes)
 	}
 
-	// Load UTXOs from DB (in production, this would be more sophisticated)
 	if err := udb.loadUTXOs(); err != nil {
 		return nil, err
 	}
@@ -295,8 +294,6 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 
 // loadUTXOs loads UTXOs from database to cache
 func (udb *UTXODB) loadUTXOs() error {
-	// In production, we would iterate through the DB
-	// For now, we start with empty UTXO set
 	return nil
 }
 

@@ -292,7 +292,6 @@ func (st *StateTree) setNodeHash(path []byte, hash []byte) error {
 
 // computeRoot computes the root hash after applying pending changes
 func (st *StateTree) computeRootFromLeaves(leaves map[string][]byte) ([]byte, error) {
-	// This is a simplified version - in production, use incremental updates
 	// Build tree bottom-up from all leaves
 
 	if len(leaves) == 0 {

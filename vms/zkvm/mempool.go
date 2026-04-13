@@ -78,9 +78,8 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 		}
 	}
 
-	// Calculate fee per byte
-	// For now, use a fixed size estimate
-	txSize := uint64(256) // Approximate transaction size
+	// Fixed size estimate for fee calculation
+	txSize := uint64(256)
 	feePerByte := tx.Fee / txSize
 
 	// Create mempool entry

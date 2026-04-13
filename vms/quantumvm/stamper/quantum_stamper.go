@@ -738,8 +738,7 @@ func generateNonce() []byte {
 // ExportStamps exports all stamps for persistence
 func (qs *QuantumStamper) ExportStamps() map[common.Hash]*QuantumStamp {
 	stamps := make(map[common.Hash]*QuantumStamp)
-	// Note: This requires cache iteration which isn't directly supported
-	// In production, maintain a separate map or database
+	// Cache iteration not supported; returns empty map
 	return stamps
 }
 

@@ -127,8 +127,8 @@ func NewProcessor(config Config, logger log.Logger) (*Processor, error) {
 	return p, nil
 }
 
-// GenerateKeys generates a new FHE key pair
-// In production, the secret key is immediately split into threshold shares
+// GenerateKeys generates a new FHE key pair.
+// The secret key should be split into threshold shares after generation.
 func (p *Processor) GenerateKeys() error {
 	kgen := rlwe.NewKeyGenerator(p.params.Parameters)
 
@@ -196,7 +196,6 @@ func (p *Processor) GenerateThresholdShares(partyPoints []multiparty.ShamirPubli
 	}
 
 	// Clear the secret key after distribution (security)
-	// In production, this happens after shares are confirmed received
 	// p.secretKey = nil
 
 	return shares, nil
@@ -256,10 +255,10 @@ func (p *Processor) EncryptBool(value bool) (*Ciphertext, error) {
 	return p.Encrypt(v, EBool)
 }
 
-// Decrypt decrypts a ciphertext (for testing only - use threshold in production)
+// Decrypt decrypts a ciphertext (for testing only - use threshold decryption otherwise)
 func (p *Processor) Decrypt(ct *Ciphertext) (interface{}, error) {
 	if p.decryptor == nil {
-		return nil, errors.New("decryptor not initialized (use threshold decryption in production)")
+		return nil, errors.New("decryptor not initialized (use threshold decryption)")
 	}
 
 	// Decrypt

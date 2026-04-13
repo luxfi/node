@@ -96,7 +96,6 @@ func (d *dbManagerWrapper) Current() database.Database {
 }
 
 func (d *dbManagerWrapper) Database(id ids.ID) database.Database {
-	// For now, just return the current database
 	return d.db
 }
 

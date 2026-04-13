@@ -123,16 +123,12 @@ func handleGetTransaction(vm *VM) http.HandlerFunc {
 			return
 		}
 
-		// Would check confirmed transactions in production
 		http.Error(w, "Transaction not found", http.StatusNotFound)
 	}
 }
 
 func handleCreateShieldedTransaction(vm *VM) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// In production, this would create a shielded transaction
-		// with proper ZK proof generation
-
 		resp := map[string]interface{}{
 			"error": "Not implemented",
 		}

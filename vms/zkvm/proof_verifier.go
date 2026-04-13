@@ -258,8 +258,7 @@ func (pv *ProofVerifier) verifyPublicInputs(tx *Transaction) error {
 			return errors.New("missing public input for nullifier")
 		}
 
-		// In production, properly encode and compare
-		// For now, basic length check
+		// Length check only
 		if len(tx.Proof.PublicInputs[i]) != len(nullifier) {
 			return errors.New("public input mismatch for nullifier")
 		}
@@ -706,7 +705,7 @@ func (pv *ProofVerifier) verifyPLONKWithGnark(proof *ZKProof, vkBytes []byte) er
 // verifyPLONKPairing performs the PLONK pairing check
 // Verifies: e([W_z]_1 + u·[W_{zw}]_1, [x]_2) = e([W_z]_1·z + u·[W_{zw}]_1·(zω) + [F]_1 - [E]_1, [1]_2)
 func verifyPLONKPairing(proof *PLONKProof, vk *PLONKVerifyingKey, publicInputs []fr.Element) error {
-	// Compute Fiat-Shamir challenge (simplified - use proper transcript in production)
+	// Compute Fiat-Shamir challenge (simplified transcript)
 	transcript := sha256.New()
 	transcript.Write(proof.LCommit.Marshal())
 	transcript.Write(proof.RCommit.Marshal())
@@ -1126,8 +1125,7 @@ func deserializeSTARKProof(data []byte) (*STARKProof, error) {
 			proof.QueryResponses[i].Index = binary.BigEndian.Uint64(data[offset : offset+8])
 			offset += 8
 
-			// Values and Merkle path would be parsed here
-			// Simplified for now - actual implementation would parse complete query response
+			// Values and Merkle path parsing omitted
 		}
 	}
 

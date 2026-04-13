@@ -30,13 +30,10 @@ type chainHandlerAdapter struct {
 }
 
 func (c *chainHandlerAdapter) HandleInbound(ctx context.Context, msg handler.Message) error {
-	// This would need proper message conversion
-	// For now, we just return nil as this is a stub
 	return nil
 }
 
 func (c *chainHandlerAdapter) HandleOutbound(ctx context.Context, msg handler.Message) error {
-	// This would need proper message conversion
 	return nil
 }
 

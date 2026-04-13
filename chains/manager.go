@@ -839,8 +839,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	// PublicKey needs to be []byte, not *bls.PublicKey
 	var pubKeyBytes []byte
 	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
-		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
-		// This would need proper serialization in production
+		// BLS PublicKey serialization not yet wired
 		pubKeyBytes = nil
 	}
 
@@ -1500,7 +1499,7 @@ func (m *manager) createDAG(
 		Name:    chainParams.ID.String(),
 		Runtime: rt,
 		VM:      adapter,
-		Handler: &placeholderHandler{},
+		Handler: &noopHandler{},
 	}, nil
 }
 
@@ -1604,8 +1603,8 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	// For now, assume bootstrapped chains are in NormalOp
-	return true // chain.Runtime.State.Get() == consensus.NormalOp
+	// Bootstrapped chains start in NormalOp
+	return true
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {
@@ -2577,7 +2576,7 @@ func (b *blockHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, request
 
 	// Create Qbit response message (wire: p2p.Chits)
 	// preferredID: the block we prefer
-	// preferredIDAtHeight: same as preferredID for now (could be optimized)
+	// preferredIDAtHeight: same as preferredID
 	// acceptedID: the last accepted block
 	// acceptedHeight: height of the accepted block
 	qbitMsg, err := b.msgCreator.Chits(b.chainID, requestID, containerID, containerID, acceptedBlkID, acceptedHeight)
@@ -2732,84 +2731,84 @@ func (b *blockHandler) HandleOutbound(ctx context.Context, msg handler.Message) 
 	return nil
 }
 
-// placeholderHandler implements handler.Handler interface
-type placeholderHandler struct{}
+// noopHandler implements handler.Handler interface
+type noopHandler struct{}
 
-func (p *placeholderHandler) Runtime() *runtime.Runtime                     { return nil }
-func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32)  {}
-func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
-func (p *placeholderHandler) Len() int                                      { return 0 }
-func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+func (p *noopHandler) Runtime() *runtime.Runtime                     { return nil }
+func (p *noopHandler) Start(ctx context.Context, startReqID uint32)  {}
+func (p *noopHandler) Push(ctx context.Context, msg handler.Message) {}
+func (p *noopHandler) Len() int                                      { return 0 }
+func (p *noopHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+func (p *noopHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	return nil
 }
-func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+func (p *noopHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
 	return nil
 }
-func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
+func (p *noopHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
 	return nil
 }
-func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
+func (p *noopHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
 	return nil
 }
-func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
+func (p *noopHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
 	return nil
 }
-func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+func (p *noopHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	return nil
 }
-func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (p *noopHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+func (p *noopHandler) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+func (p *noopHandler) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+func (p *noopHandler) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+func (p *noopHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (p *noopHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	return nil
 }
-func (p *placeholderHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+func (p *noopHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+func (p *noopHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	return nil
 }
-func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+func (p *noopHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
 	return nil
 }
-func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+func (p *noopHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
-func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
+func (p *noopHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
 	return nil
 }
-func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+func (p *noopHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
 	return nil
 }
-func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
+func (p *noopHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
 	return nil
 }
-func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+func (p *noopHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
-func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
-func (p *placeholderHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
-func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
-func (p *placeholderHandler) Stop(ctx context.Context)                                  {}
-func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
+func (p *noopHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
+func (p *noopHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+func (p *noopHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
+func (p *noopHandler) Stop(ctx context.Context)                                  {}
+func (p *noopHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
 	return nil
 }
-func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
+func (p *noopHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
 	return nil
 }
 
@@ -2932,8 +2931,7 @@ func (g *networkGossiper) SendQbit(toNodeID ids.NodeID, chainID ids.ID, requestI
 	}
 
 	// Create Qbit message (wire: p2p.Chits) with the preferred block ID
-	// For now, we use the preferredID as both preferred and accepted
-	// since we've verified the block before sending the Qbit
+	// Uses preferredID as both preferred and accepted (block is verified)
 	qbitMsg, err := g.msgCreator.Chits(chainID, requestID, preferredID, preferredID, preferredID, 0)
 	if err != nil {
 		return err

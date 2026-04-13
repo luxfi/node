@@ -156,8 +156,7 @@ func (r *ChainHandlerRegistrar) ValidateEndpoint(
 		log.Stringer("chainID", chainID),
 		log.String("url", fullURL))
 
-	// Could extend this to actually make an HTTP request to validate
-	// For now, just check if the endpoint was registered
+	// Validates endpoint registration
 	for _, registered := range info.Endpoints {
 		if registered == endpoint {
 			return nil

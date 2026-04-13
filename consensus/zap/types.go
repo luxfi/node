@@ -187,8 +187,7 @@ type PQKeypair struct {
 
 // Sign signs a message using the keypair (stub - real impl in pqcrypto)
 func (k *PQKeypair) Sign(message []byte) (*PQSignature, error) {
-	// In production, this would use actual ML-DSA-65 signing
-	// For now, create a placeholder signature
+	// Stub: returns SHA-256 hash as fixed-size signature for testing
 	hash := sha256.Sum256(append(message, k.PrivateKey...))
 	return &PQSignature{
 		Type:      k.Type,
@@ -199,7 +198,7 @@ func (k *PQKeypair) Sign(message []byte) (*PQSignature, error) {
 
 // Verify verifies a signature (stub - real impl in pqcrypto)
 func (k *PQKeypair) Verify(message []byte, sig *PQSignature) bool {
-	// In production, this would use actual ML-DSA-65 verification
+	// Stub: accepts any non-empty signature
 	return sig != nil && len(sig.Signature) > 0
 }
 

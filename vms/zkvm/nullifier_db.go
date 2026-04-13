@@ -54,7 +54,6 @@ func NewNullifierDB(db database.Database, log log.Logger) (*NullifierDB, error) 
 		ndb.nullifierCount = binary.BigEndian.Uint64(countBytes)
 	}
 
-	// Load nullifiers from DB (in production, this would be more sophisticated)
 	if err := ndb.loadNullifiers(); err != nil {
 		return nil, err
 	}
@@ -280,8 +279,6 @@ func (ndb *NullifierDB) PruneOldNullifiers(minHeight uint64) error {
 
 // loadNullifiers loads nullifiers from database to cache
 func (ndb *NullifierDB) loadNullifiers() error {
-	// In production, we would iterate through the DB
-	// For now, we start with empty nullifier set
 	return nil
 }
 

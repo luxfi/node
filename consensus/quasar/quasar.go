@@ -491,7 +491,7 @@ func (q *Quasar) collectRingtail(message string) (Signature, error) {
 // createQuantumStampFallback creates a single-signer quantum stamp (fallback mode)
 func (q *Quasar) createQuantumStampFallback(msg []byte) ([]byte, error) {
 	if q.quantumFallback == nil {
-		// Return placeholder if no fallback configured
+		// No fallback configured, return sentinel
 		return []byte("PQ-FALLBACK"), nil
 	}
 	return q.quantumFallback.SignMessage(msg)

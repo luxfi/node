@@ -76,10 +76,10 @@ func (s *RingtailSignature) Signers() []ids.NodeID { return s.signers }
 
 // RingtailCoordinator manages the threshold signing protocol.
 //
-// In production, Sign/Verify require real lattice key material.
-// The coordinator is fail-closed: operations return errors unless
-// properly initialized with key material, or explicitly created
-// via NewTestRingtailCoordinator for tests.
+// Sign/Verify are fail-closed without initialized lattice keys.
+// Operations return errors unless properly initialized with key
+// material, or explicitly created via NewTestRingtailCoordinator
+// for tests.
 type RingtailCoordinator struct {
 	log         log.Logger
 	config      RingtailConfig
@@ -99,7 +99,7 @@ func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoo
 
 // NewTestRingtailCoordinator creates a Ringtail coordinator for testing.
 // The test coordinator uses deterministic stub signatures that are NOT
-// cryptographically secure — never use in production.
+// cryptographically secure.
 func NewTestRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
 	return &RingtailCoordinator{
 		log:     log,

@@ -604,8 +604,7 @@ func (c *Coprocessor) HandleCrossChainRequest(req *TaskRequest) *TaskResponse {
 		}
 	}
 
-	// For synchronous operations, wait for result
-	// In production, this would be async with Warp callback
+	// Synchronous wait; async Warp callback not yet wired
 	timeout := time.After(30 * time.Second)
 	ticker := time.NewTicker(10 * time.Millisecond)
 	defer ticker.Stop()

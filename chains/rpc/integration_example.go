@@ -89,7 +89,7 @@ func IntegrationExample(
 	}
 
 	// Step 6: Schedule async health monitoring (optional)
-	if !isDevMode { // Only in production
+	if !isDevMode {
 		go monitorHandlerHealth(ctx, registrar, chainID, logger)
 	}
 

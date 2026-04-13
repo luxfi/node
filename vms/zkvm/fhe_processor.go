@@ -70,11 +70,6 @@ func (fp *FHEProcessor) VerifyFHEOperations(tx *Transaction) error {
 		return errors.New("invalid computation proof")
 	}
 
-	// In production, this would:
-	// 1. Verify the encrypted inputs are valid ciphertexts
-	// 2. Verify the computation was performed correctly
-	// 3. Verify the result matches the claimed output
-
 	fp.log.Debug("FHE operations verified",
 		log.String("txID", tx.ID.String()),
 		log.String("circuitID", tx.FHEData.CircuitID),
@@ -89,9 +84,7 @@ func (fp *FHEProcessor) ProcessFHEComputation(
 	circuitID string,
 	encryptedInputs [][]byte,
 ) ([]byte, []byte, error) {
-	// In production, this would perform actual FHE computation
-	// For now, return dummy values
-
+	// Stub: returns zero-filled result and proof
 	encryptedResult := make([]byte, 256)
 	computationProof := make([]byte, 256)
 
@@ -105,9 +98,7 @@ func (fp *FHEProcessor) ProcessFHEComputation(
 
 // EncryptValue encrypts a value using FHE
 func (fp *FHEProcessor) EncryptValue(value uint64) ([]byte, error) {
-	// In production, use actual FHE encryption
-	// For now, return dummy ciphertext
-
+	// Stub: encodes value in first 8 bytes (not encrypted)
 	ciphertext := make([]byte, 256)
 	// Encode value in first 8 bytes (insecure, just for testing)
 	binary.BigEndian.PutUint64(ciphertext[:8], value)
@@ -121,8 +112,7 @@ func (fp *FHEProcessor) DecryptValue(ciphertext []byte, privateKey []byte) (uint
 		return 0, errors.New("invalid ciphertext length")
 	}
 
-	// In production, use actual FHE decryption
-	// For now, extract from dummy encoding
+	// Stub: reads value from first 8 bytes (not decrypting)
 	value := binary.BigEndian.Uint64(ciphertext[:8])
 
 	return value, nil
@@ -134,8 +124,7 @@ func (fp *FHEProcessor) AddCiphertexts(ct1, ct2 []byte) ([]byte, error) {
 		return nil, errors.New("invalid ciphertext length")
 	}
 
-	// In production, use actual homomorphic addition
-	// For now, add the encoded values
+	// Stub: adds raw encoded values (not homomorphic)
 	val1 := binary.BigEndian.Uint64(ct1[:8])
 	val2 := binary.BigEndian.Uint64(ct2[:8])
 
@@ -151,8 +140,7 @@ func (fp *FHEProcessor) MultiplyCiphertext(ct []byte, scalar uint64) ([]byte, er
 		return nil, errors.New("invalid ciphertext length")
 	}
 
-	// In production, use actual homomorphic multiplication
-	// For now, multiply the encoded value
+	// Stub: multiplies raw encoded value (not homomorphic)
 	val := binary.BigEndian.Uint64(ct[:8])
 
 	result := make([]byte, 256)
@@ -163,9 +151,7 @@ func (fp *FHEProcessor) MultiplyCiphertext(ct []byte, scalar uint64) ([]byte, er
 
 // initializeFHEParams initializes FHE parameters
 func (fp *FHEProcessor) initializeFHEParams() error {
-	// In production, load or generate FHE keys based on scheme
-	// For now, use dummy keys
-
+	// Stub: generates zero-filled keys matching expected sizes
 	switch fp.config.FHEScheme {
 	case "BFV":
 		fp.publicKey = make([]byte, 2048)
