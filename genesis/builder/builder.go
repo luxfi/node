@@ -548,27 +548,15 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	}
 
 	// Specify primary network chains
-	chains := []genesis.Chain{
-		{
-			GenesisData: xvmGenesisBytes,
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.XVMID,
-			FxIDs: []ids.ID{
-				secp256k1fx.ID,
-				nftfx.ID,
-				propertyfx.ID,
-			},
-			Name: "X-Chain",
-		},
-		{
-			GenesisData: []byte(config.CChainGenesis),
-			ChainID:     constants.PrimaryNetworkID,
-			VMID:        constants.EVMID,
-			Name:        "C-Chain",
-		},
-	}
-
-	// Non-EVM native chains use their own genesis or empty default.
+	// PRIMARY NETWORK = P + Q + Z (minimum quantum-safe validator set)
+	//
+	// P-Chain is implicit (platformvm is the genesis itself).
+	// Q-Chain provides Quasar PQ consensus (BLS + Corona + ML-DSA).
+	// Z-Chain provides universal receipt registry and ZK verification.
+	//
+	// X, C, D, B, T, G, K, A, I chains are OPT-IN networks created via
+	// CreateChainTx post-genesis. Validators stake separately to validate
+	// each and earn its tx fees.
 	getVMGenesis := func(data string) []byte {
 		if data != "" {
 			return []byte(data)
@@ -576,7 +564,49 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		return []byte("{}")
 	}
 
-	// D-Chain (DEX) — optional, only if genesis provided
+	chains := []genesis.Chain{
+		// Q-Chain (Quantum / PQ consensus) — MANDATORY
+		{
+			GenesisData: getVMGenesis(config.QChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.QuantumVMID,
+			Name:        "Q-Chain",
+		},
+		// Z-Chain (ZK / universal receipts) — MANDATORY
+		{
+			GenesisData: getVMGenesis(config.ZChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.ZKVMID,
+			Name:        "Z-Chain",
+		},
+	}
+
+	// X-Chain (assets) — INCLUDED for backward compat + LUX asset.
+	// Staking and fees use X-Chain LUX UTXOs. Can't be removed without
+	// migrating to a native P-Chain fee token.
+	chains = append(chains, genesis.Chain{
+		GenesisData: xvmGenesisBytes,
+		ChainID:     constants.PrimaryNetworkID,
+		VMID:        constants.XVMID,
+		FxIDs: []ids.ID{
+			secp256k1fx.ID,
+			nftfx.ID,
+			propertyfx.ID,
+		},
+		Name: "X-Chain",
+	})
+
+	// C-Chain (EVM) — OPT-IN. Only created if CChainGenesis provided.
+	if config.CChainGenesis != "" {
+		chains = append(chains, genesis.Chain{
+			GenesisData: []byte(config.CChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.EVMID,
+			Name:        "C-Chain",
+		})
+	}
+
+	// D-Chain (DEX) — OPT-IN
 	if config.DChainGenesis != "" {
 		chains = append(chains, genesis.Chain{
 			GenesisData: getVMGenesis(config.DChainGenesis),
@@ -586,41 +616,28 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// Q-Chain (Quantum / PQ consensus) — always included
-	chains = append(chains, genesis.Chain{
-		GenesisData: getVMGenesis(config.QChainGenesis),
-		ChainID:     constants.PrimaryNetworkID,
-		VMID:        constants.QuantumVMID,
-		Name:        "Q-Chain",
-	})
+	// B-Chain (Bridge) — OPT-IN
+	if config.BChainGenesis != "" {
+		chains = append(chains, genesis.Chain{
+			GenesisData: getVMGenesis(config.BChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.BridgeVMID,
+			Name:        "B-Chain",
+		})
+	}
 
-	// B-Chain (Bridge / cross-chain) — always included
-	chains = append(chains, genesis.Chain{
-		GenesisData: getVMGenesis(config.BChainGenesis),
-		ChainID:     constants.PrimaryNetworkID,
-		VMID:        constants.BridgeVMID,
-		Name:        "B-Chain",
-	})
+	// T-Chain (Threshold / FHE / MPC) — OPT-IN
+	if config.TChainGenesis != "" {
+		chains = append(chains, genesis.Chain{
+			GenesisData: getVMGenesis(config.TChainGenesis),
+			ChainID:     constants.PrimaryNetworkID,
+			VMID:        constants.ThresholdVMID,
+			Name:        "T-Chain",
+		})
+	}
 
-	// T-Chain (Threshold / FHE) — always included
-	chains = append(chains, genesis.Chain{
-		GenesisData: getVMGenesis(config.TChainGenesis),
-		ChainID:     constants.PrimaryNetworkID,
-		VMID:        constants.ThresholdVMID,
-		Name:        "T-Chain",
-	})
-
-	// Z-Chain (ZK / zero knowledge) — always included
-	chains = append(chains, genesis.Chain{
-		GenesisData: getVMGenesis(config.ZChainGenesis),
-		ChainID:     constants.PrimaryNetworkID,
-		VMID:        constants.ZKVMID,
-		Name:        "Z-Chain",
-	})
-
-	// Additional chains are loaded as plugins or created via subnet transactions.
-	// A/D/G/I/K/O/R/S chains are registered as VMs but only instantiated
-	// when explicitly deployed as subnets on the primary network.
+	// G/K/A/I chains are loaded as plugins and instantiated via
+	// CreateChainTx post-genesis on their own subnets.
 
 	pChainGenesis, err := genesis.New(
 		xAssetID,
