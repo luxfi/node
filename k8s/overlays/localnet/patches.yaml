@@ -1,0 +1,46 @@
+# Localnet: single node, sybil off, minimal resources
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: luxd
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: luxd
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        env:
+        - name: LUX_SYBIL_PROTECTION_ENABLED
+          value: "false"
+        - name: LUX_STAKING_ENABLED
+          value: "false"
+        - name: LUX_CONSENSUS_SAMPLE_SIZE
+          value: "1"
+        - name: LUX_CONSENSUS_QUORUM_SIZE
+          value: "1"
+      # No staking keys needed for local
+      volumes:
+      - name: staking-keys
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: luxd-config
+data:
+  LUX_NETWORK_ID: "local"

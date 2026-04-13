@@ -2,45 +2,60 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: luxd
-  namespace: lux-mainnet
 spec:
   serviceName: luxd-headless
   replicas: 5
   selector:
     matchLabels:
       app: luxd
-      network: mainnet
   template:
     metadata:
       labels:
         app: luxd
-        network: mainnet
     spec:
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
         runAsNonRoot: true
+      terminationGracePeriodSeconds: 120
       containers:
       - name: luxd
-        image: registry.digitalocean.com/hanzo/bootnode:luxd-latest
+        image: ghcr.io/luxfi/node:latest
         imagePullPolicy: Always
-        command: ["/startup.sh"]
         ports:
         - containerPort: 9630
           name: http
+          protocol: TCP
         - containerPort: 9631
           name: staking
+          protocol: TCP
+        env:
+        - name: LUX_HTTP_HOST
+          value: "0.0.0.0"
+        - name: LUX_HTTP_PORT
+          value: "9630"
+        - name: LUX_STAKING_PORT
+          value: "9631"
+        - name: LUX_LOG_LEVEL
+          value: "info"
+        - name: LUX_DB_DIR
+          value: "/data/db"
+        - name: LUX_LOG_DIR
+          value: "/data/logs"
+        - name: LUX_STAKING_TLS_KEY_FILE
+          value: "/keys/staking/staker.key"
+        - name: LUX_STAKING_TLS_CERT_FILE
+          value: "/keys/staking/staker.crt"
+        # Network-specific env vars are patched per overlay
+        envFrom:
+        - configMapRef:
+            name: luxd-config
         volumeMounts:
         - name: data
           mountPath: /data
-        - name: staking
-          mountPath: /data/staking
+        - name: staking-keys
+          mountPath: /keys/staking
           readOnly: true
-        - name: genesis
-          mountPath: /genesis
-        - name: startup
-          mountPath: /startup.sh
-          subPath: startup.sh
         resources:
           requests:
             memory: "4Gi"
@@ -55,32 +70,33 @@ spec:
           initialDelaySeconds: 120
           periodSeconds: 30
           failureThreshold: 5
+          timeoutSeconds: 10
         readinessProbe:
           httpGet:
-            path: /ext/info
+            path: /ext/health
             port: 9630
-          initialDelaySeconds: 60
+          initialDelaySeconds: 30
           periodSeconds: 10
-      imagePullSecrets:
-      - name: registry-hanzo
+          failureThreshold: 3
+          timeoutSeconds: 5
+        startupProbe:
+          httpGet:
+            path: /ext/health
+            port: 9630
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 30
+          timeoutSeconds: 5
       volumes:
-      - name: staking
+      - name: staking-keys
         secret:
           secretName: luxd-staking-keys
           defaultMode: 0400
-      - name: genesis
-        configMap:
-          name: luxd-genesis
-      - name: startup
-        configMap:
-          name: luxd-startup
-          defaultMode: 0755
   volumeClaimTemplates:
   - metadata:
       name: data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: do-block-storage
       resources:
         requests:
           storage: 100Gi

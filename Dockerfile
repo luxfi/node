@@ -93,12 +93,10 @@ RUN . ./build_env.sh && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
     GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
+# ============= EVM Plugin Stage ================
 # Build EVM plugin from source (includes custom precompile registry)
 ARG EVM_VERSION=v0.8.40
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
-ENV GONOSUMCHECK=github.com/luxfi/*
-ENV GONOSUMDB=github.com/luxfi/*
-ENV GONOPROXY=github.com/luxfi/*
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
     git clone --depth 1 --branch ${EVM_VERSION} https://github.com/luxfi/evm.git /tmp/evm && \
@@ -110,7 +108,80 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
     rm -rf /tmp/evm
 
-# lpm (Lux Plugin Manager) — optional, skip if build fails
+# ============= Chain VM Plugin Stage ================
+# Build all 11 chain VM plugins from github.com/luxfi/chains
+#
+# VM ID table (CB58-encoded ids.ID byte arrays from each factory.go):
+#   aivm         -> juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA
+#   bridgevm     -> kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY
+#   dexvm        -> mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr
+#   graphvm      -> nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt
+#   identityvm   -> oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM
+#   keyvm        -> pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M
+#   oraclevm     -> r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS
+#   quantumvm    -> ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug
+#   relayvm      -> sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz
+#   thresholdvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
+#   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
+
+ARG CHAINS_REF=main
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains
+
+# Each VM is an independent Go module under /tmp/chains/<vm>/.
+# Build each plugin binary and place it at /luxd/build/plugins/<cb58-vm-id>.
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    . /build/build_env.sh && \
+    export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    set -e && \
+    cd /tmp/chains/aivm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA \
+      ./cmd/plugin && \
+    cd /tmp/chains/bridgevm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY \
+      ./cmd/plugin && \
+    cd /tmp/chains/dexvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
+      ./cmd/plugin && \
+    cd /tmp/chains/graphvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt \
+      ./cmd/plugin && \
+    cd /tmp/chains/identityvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM \
+      ./cmd/plugin && \
+    cd /tmp/chains/keyvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M \
+      ./cmd/plugin && \
+    cd /tmp/chains/oraclevm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
+      ./cmd/plugin && \
+    cd /tmp/chains/quantumvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
+      ./cmd/plugin && \
+    cd /tmp/chains/relayvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
+      ./cmd/plugin && \
+    cd /tmp/chains/thresholdvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+      ./cmd/plugin && \
+    cd /tmp/chains/zkvm && \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+      -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
+      ./cmd/plugin && \
+    chmod +x /luxd/build/plugins/* && \
+    rm -rf /tmp/chains
+
+# lpm (Lux Plugin Manager) -- optional, skip if build fails
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
@@ -123,7 +194,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # potentially emulated execution container.
 RUN mkdir -p /luxd/build
 
-# ============= Cleanup Stage ================
+# ============= Runtime Stage ================
 # Commands executed in this stage may be emulated (i.e. very slow) if TARGETPLATFORM and
 # BUILDPLATFORM have different arches.
 FROM debian:12-slim AS execution
@@ -133,7 +204,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-# GPU crypto library (optional — only present when built with CGO_ENABLED=1 + luxcpp).
+# GPU crypto library (optional -- only present when built with CGO_ENABLED=1 + luxcpp).
 # Pure Go fallbacks are used when the library is absent.
 RUN ldconfig 2>/dev/null || true
 
@@ -149,5 +220,7 @@ RUN mkdir -p /luxd/build/plugins /root/.lpm /root/.lux/plugins
 
 # Add lpm to PATH
 ENV PATH="/luxd/build:${PATH}"
+
+EXPOSE 9630 9631
 
 CMD [ "./luxd" ]

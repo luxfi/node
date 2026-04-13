@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: luxd-config
+data:
+  # Network ID is patched per overlay
+  LUX_NETWORK_ID: "96369"

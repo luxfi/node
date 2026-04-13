@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: lux-mainnet
-  labels:
-    network: mainnet
-    app.kubernetes.io/name: luxd
