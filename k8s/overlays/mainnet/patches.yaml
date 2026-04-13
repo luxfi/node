@@ -1,0 +1,35 @@
+# Mainnet: 5 nodes, sybil on, maximum resources, SSD storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: luxd
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: luxd
+        image: ghcr.io/luxfi/node:main
+        resources:
+          requests:
+            memory: "16Gi"
+            cpu: "8"
+          limits:
+            memory: "32Gi"
+            cpu: "16"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: do-block-storage-xfs
+      resources:
+        requests:
+          storage: 500Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: luxd-config
+data:
+  LUX_NETWORK_ID: "1"
