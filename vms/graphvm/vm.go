@@ -4,7 +4,7 @@
 // Package gvm implements the Graph VM (G-Chain) — a shared GraphQL database
 // across all Lux chains. Any chain's state is queryable through a unified
 // GraphQL endpoint with auto-indexing and cross-chain query resolution.
-package gvm
+package graphvm
 
 import (
 	"context"
