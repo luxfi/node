@@ -1,0 +1,514 @@
+---
+title: Node Configuration
+description: Complete configuration reference for Lux node
+---
+
+# Node Configuration
+
+This guide covers all configuration options for the Lux node. Configuration can be provided via command-line flags, configuration files, or environment variables.
+
+## Configuration Methods
+
+### Priority Order
+
+Configuration is applied in the following priority order (highest to lowest):
+1. Command-line flags
+2. Environment variables
+3. Configuration file
+4. Default values
+
+### Command-Line Flags
+
+```bash
+./build/node --flag-name=value
+```
+
+### Configuration File
+
+JSON format:
+```json
+{
+  "network-id": "mainnet",
+  "http-port": 9630,
+  "staking-port": 9631
+}
+```
+
+YAML format:
+```yaml
+network-id: mainnet
+http-port: 9630
+staking-port: 9631
+```
+
+TOML format:
+```toml
+network-id = "mainnet"
+http-port = 9630
+staking-port = 9631
+```
+
+Load configuration:
+```bash
+./build/node --config-file=config.json
+```
+
+### Environment Variables
+
+Prefix configuration keys with `LUXD_`:
+```bash
+export LUXD_NETWORK_ID=mainnet
+export LUXD_HTTP_PORT=9630
+export LUXD_STAKING_PORT=9631
+./build/node
+```
+
+## Core Configuration
+
+### Network Settings
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--network-id` | `mainnet` | Network identifier (mainnet, testnet, local, or custom ID) |
+| `--dev` | `false` | Enable development mode (single validator, test tokens) |
+
+### Port Configuration
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--http-port` | `9630` | Port for HTTP API server |
+| `--staking-port` | `9631` | Port for P2P staking connections |
+| `--http-host` | `127.0.0.1` | HTTP server binding address |
+| `--http-allowed-origins` | `""` | Allowed origins for CORS (comma-separated) |
+| `--http-allowed-hosts` | `""` | Allowed hostnames (comma-separated) |
+
+### Directory Paths
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--data-dir` | `~/.luxd` | Base data directory |
+| `--db-dir` | `<data-dir>/db` | Database directory |
+| `--log-dir` | `<data-dir>/logs` | Log files directory |
+| `--plugin-dir` | `<data-dir>/plugins` | VM plugins directory |
+| `--chain-data-dir` | `<data-dir>/chainData` | Chain-specific data |
+| `--config-dir` | `<data-dir>/configs` | Configuration files |
+
+## Database Configuration
+
+### Database Backend
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--db-type` | `badgerdb` | Database type (badgerdb, pebbledb, leveldb) |
+| `--merkledb-cache-size` | `2048` | MerkleDB cache size in MB |
+| `--db-read-only` | `false` | Open database in read-only mode |
+| `--db-max-open-files` | `1024` | Maximum open database files |
+
+### Database Performance
+
+```json
+{
+  "db-config": {
+    "cache-size": 2048,
+    "bloom-filter-size": 512,
+    "max-batch-size": 256,
+    "write-buffer-size": 128,
+    "compaction-l0-trigger": 8,
+    "compaction-l0-slowdown": 16
+  }
+}
+```
+
+## Staking Configuration
+
+### Staking Identity
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--staking-enabled` | `true` | Enable staking functionality |
+| `--staking-tls-cert-file` | `<data-dir>/staking/staker.crt` | TLS certificate path |
+| `--staking-tls-key-file` | `<data-dir>/staking/staker.key` | TLS private key path |
+| `--staking-signer-key-file` | `<data-dir>/staking/signer.key` | BLS signer key path |
+| `--staking-ephemeral-cert-enabled` | `false` | Use ephemeral certificates |
+| `--staking-ephemeral-signer-enabled` | `false` | Use ephemeral signer keys |
+
+### Staking Network
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--staking-disabled-weight` | `100` | Weight for non-staking nodes |
+| `--min-stake-duration` | `336h` | Minimum staking duration (2 weeks) |
+| `--max-stake-duration` | `8760h` | Maximum staking duration (365 days) |
+
+## Network Configuration
+
+### Peer Discovery
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--bootstrap-ips` | `""` | Bootstrap node IPs (comma-separated) |
+| `--bootstrap-ids` | `""` | Bootstrap node IDs (comma-separated) |
+| `--bootstrap-beacon-connection-timeout` | `1m` | Bootstrap connection timeout |
+
+### Public IP
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--public-ip` | `""` | Public IP address |
+| `--dynamic-public-ip` | `""` | Dynamic IP service (opendns, ifconfig, or URL) |
+| `--public-ip-resolution-frequency` | `5m` | IP resolution frequency |
+
+### Network Limits
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--network-peer-list-size` | `64` | Target number of peers |
+| `--network-peer-list-gossip-size` | `100` | Peers to gossip per request |
+| `--network-max-reconnect-delay` | `1h` | Maximum reconnection delay |
+| `--network-initial-timeout` | `5s` | Initial connection timeout |
+| `--network-require-validator-to-connect` | `false` | Only connect to validators |
+
+### Throttling
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--throttler-inbound-at-large-alloc-size` | `6291456` | Inbound throttle allocation |
+| `--throttler-inbound-validator-alloc-size` | `33554432` | Validator throttle allocation |
+| `--throttler-inbound-node-max-at-large-bytes` | `2097152` | Max bytes per node |
+| `--throttler-outbound-at-large-alloc-size` | `6291456` | Outbound throttle allocation |
+
+## API Configuration
+
+### API Endpoints
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--api-admin-enabled` | `false` | Enable admin API |
+| `--api-auth-required` | `false` | Require API authentication |
+| `--api-auth-password` | `""` | API authentication password |
+| `--api-health-enabled` | `true` | Enable health API |
+| `--api-info-enabled` | `true` | Enable info API |
+| `--api-keystore-enabled` | `false` | Enable keystore API |
+| `--api-metrics-enabled` | `true` | Enable metrics API |
+
+### API Limits
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--api-max-duration` | `0s` | Maximum API call duration (0=unlimited) |
+| `--api-gas-cap` | `50000000` | Maximum gas for eth_call |
+| `--api-tx-fee-cap` | `100` | Maximum tx fee in LUX |
+
+## Consensus Configuration
+
+### Consensus Parameters
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--consensus-gossip-concurrent` | `4` | Concurrent gossip routines |
+| `--consensus-poll-interval` | `100ms` | Consensus poll interval |
+| `--consensus-shutdown-timeout` | `30s` | Graceful shutdown timeout |
+| `--consensus-gossip-validator-size` | `20` | Validators per gossip |
+| `--consensus-gossip-non-validator-size` | `10` | Non-validators per gossip |
+
+### Chain-Specific Consensus
+
+```json
+{
+  "chain-consensus-parameters": {
+    "P": {
+      "alpha": 15,
+      "beta": 20,
+      "concurrent-repolls": 4
+    },
+    "X": {
+      "batch-size": 30,
+      "parent-size": 10
+    },
+    "C": {
+      "block-period": "500ms",
+      "view-change-timeout": "10s"
+    }
+  }
+}
+```
+
+## Chain Configuration
+
+### Platform Chain
+
+Create `~/.luxd/configs/chains/P/config.json`:
+```json
+{
+  "block-cache-size": 4194304,
+  "tx-cache-size": 524288,
+  "transformed-net-cache-size": 4194304,
+  "reward-utxos-cache-size": 2048,
+  "chains-cache-size": 2048,
+  "blocks-cache-size": 2048,
+  "state-sync-enabled": false
+}
+```
+
+### C-Chain (EVM)
+
+Create `~/.luxd/configs/chains/C/config.json`:
+```json
+{
+  "eth-apis": [
+    "eth",
+    "eth-filter",
+    "net",
+    "web3",
+    "internal-eth",
+    "internal-blockchain",
+    "internal-transaction",
+    "debug-tracer"
+  ],
+  "pruning-enabled": true,
+  "state-sync-enabled": true,
+  "block-cache-size": 512,
+  "trie-cache-size": 512,
+  "snapshot-cache-size": 256,
+  "preimages-enabled": false,
+  "offline-pruning-enabled": false,
+  "offline-pruning-bloom-filter-size": 512,
+  "offline-pruning-data-directory": "",
+  "api-max-duration": "0s",
+  "ws-cpu-refill-rate": 0,
+  "ws-cpu-max-stored": 0,
+  "api-max-blocks-per-request": 0,
+  "allow-unfinalized-queries": false,
+  "allow-unprotected-txs": false,
+  "keystore-directory": "",
+  "keystore-external-signer": "",
+  "keystore-insecure-unlock-allowed": false,
+  "remote-tx-gossip-only-enabled": false,
+  "tx-regossip-frequency": "60s",
+  "tx-regossip-max-size": 15,
+  "log-level": "info",
+  "offline-pruning-enabled": false,
+  "max-outbound-active-requests": 16,
+  "max-outbound-active-cross-chain-requests": 64,
+  "state-sync-enabled": false,
+  "state-sync-skip-resume": false,
+  "continuous-profiler-dir": "",
+  "continuous-profiler-frequency": "15m",
+  "continuous-profiler-max-files": 5,
+  "rpc-gas-cap": 50000000,
+  "rpc-tx-fee-cap": 100,
+  "warp-api-enabled": false
+}
+```
+
+### Q-Chain (Quantum)
+
+Create `~/.luxd/configs/chains/Q/config.json`:
+```json
+{
+  "quantum-verification-enabled": true,
+  "ringtail-signatures-enabled": true,
+  "post-quantum-algorithm": "ml-dsa-65",
+  "quantum-signature-cache-size": 10000,
+  "ring-signature-size": 16,
+  "ringtail-key-size": 1024,
+  "quantum-stamp-enabled": true,
+  "quantum-stamp-window": "30s",
+  "parallel-batch-size": 10,
+  "min-quantum-confirmations": 1
+}
+```
+
+## Logging Configuration
+
+### Log Levels
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--log-level` | `info` | Global log level (trace, debug, info, warn, error, fatal, off) |
+| `--log-display-level` | `info` | Display log level |
+| `--log-format` | `auto` | Log format (auto, plain, colors, json) |
+| `--log-dir` | `<data-dir>/logs` | Log file directory |
+| `--log-rotation-max-size` | `8` | Max log file size in MB |
+| `--log-rotation-max-files` | `7` | Max number of old log files |
+| `--log-rotation-max-age` | `0` | Max age of log files in days |
+
+### Per-Component Logging
+
+```json
+{
+  "log-levels": {
+    "main": "info",
+    "consensus": "debug",
+    "network": "warn",
+    "vm": "info",
+    "api": "debug"
+  }
+}
+```
+
+## Performance Tuning
+
+### Resource Limits
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--fd-limit` | `32768` | File descriptor limit |
+| `--max-non-staker-pending-msgs` | `256` | Max pending messages |
+| `--stake-max-consumption-rate` | `120000` | Max consumption rate |
+| `--stake-min-consumption-rate` | `100000` | Min consumption rate |
+| `--stake-minting-period` | `365d` | Minting period |
+| `--stake-supply-cap` | `720000000000000` | Supply cap |
+
+### CPU/Memory
+
+```json
+{
+  "performance": {
+    "parallelism": 4,
+    "max-goroutines": 8192,
+    "max-memory": "8GB",
+    "gc-frequency": "30s"
+  }
+}
+```
+
+## Security Configuration
+
+### TLS/SSL
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--http-tls-enabled` | `false` | Enable HTTPS |
+| `--http-tls-cert-file` | `""` | TLS certificate file |
+| `--http-tls-key-file` | `""` | TLS private key file |
+
+### Firewall
+
+```json
+{
+  "security": {
+    "ip-whitelist": ["192.168.1.0/24"],
+    "ip-blacklist": [],
+    "rate-limit": 100,
+    "rate-limit-window": "1s"
+  }
+}
+```
+
+## Development Configuration
+
+### Development Mode
+
+```bash
+./build/node --dev
+```
+
+Enables:
+- Single validator network
+- Pre-funded test accounts
+- Shorter staking periods
+- Disabled sybil protection
+
+### Test Networks
+
+```json
+{
+  "network-id": 12345,
+  "min-stake-duration": "1m",
+  "max-stake-duration": "1h",
+  "min-validator-stake": 1,
+  "min-delegator-stake": 1,
+  "consensus-parameters": {
+    "poll-interval": "10ms",
+    "alpha": 1,
+    "beta": 1
+  }
+}
+```
+
+## Configuration Examples
+
+### Validator Node
+
+```json
+{
+  "network-id": "mainnet",
+  "public-ip": "1.2.3.4",
+  "http-host": "0.0.0.0",
+  "staking-enabled": true,
+  "api-admin-enabled": false,
+  "api-keystore-enabled": false,
+  "db-type": "pebbledb",
+  "merkledb-cache-size": 4096,
+  "log-level": "info"
+}
+```
+
+### API Node
+
+```json
+{
+  "network-id": "mainnet",
+  "http-host": "0.0.0.0",
+  "staking-enabled": false,
+  "api-admin-enabled": false,
+  "api-health-enabled": true,
+  "api-info-enabled": true,
+  "api-metrics-enabled": true,
+  "pruning-enabled": false,
+  "state-sync-enabled": true
+}
+```
+
+### Development Node
+
+```json
+{
+  "network-id": "local",
+  "dev": true,
+  "http-host": "127.0.0.1",
+  "log-level": "debug",
+  "api-admin-enabled": true,
+  "api-keystore-enabled": true,
+  "consensus-parameters": {
+    "poll-interval": "10ms"
+  }
+}
+```
+
+## Environment-Specific Configs
+
+### Mainnet
+
+```bash
+./build/node \
+  --network-id=mainnet \
+  --public-ip=<your-ip> \
+  --http-host=0.0.0.0
+```
+
+### Testnet
+
+```bash
+./build/node \
+  --network-id=testnet \
+  --bootstrap-ips=<testnet-bootstrap-ips> \
+  --bootstrap-ids=<testnet-bootstrap-ids>
+```
+
+### Local Network
+
+```bash
+./build/node \
+  --network-id=local \
+  --dev \
+  --log-level=debug
+```
+
+## Next Steps
+
+- [Network Configuration](/docs/networking) - P2P networking setup
+- [Chain Configuration](/docs/configuration/chain-config) - Per-chain settings
+- [Monitoring Configuration](/docs/operations/monitoring) - Metrics and logging
+- [Security Configuration](/docs/operations/security) - Hardening your node

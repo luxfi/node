@@ -1,0 +1,244 @@
+name: Release
+
+# Trigger on semantic version tags only (v1.x.x)
+# Explicitly reject v2.x.x and higher per Go module versioning requirements
+on:
+  push:
+    tags:
+      - 'v[0-1].*.*'
+
+permissions:
+  contents: write  # Required to create releases and upload assets
+  id-token: write  # Required for AWS OIDC authentication
+
+jobs:
+  # Validate semantic version is < v2.0.0
+  validate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - name: Extract version from tag
+        id: extract
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate version < v2.0.0
+        id: check
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+
+          # Reject v2.x.x and higher (Go modules require /v2 import path)
+          if [ "$MAJOR" -ge 2 ]; then
+            echo "❌ ERROR: Version v${VERSION} is >= v2.0.0"
+            echo "Go modules require /v2 suffix in import paths for v2+"
+            echo "Only v1.x.x versions are allowed"
+            exit 1
+          fi
+
+          # Check if prerelease (contains - or + per semver)
+          if echo "$VERSION" | grep -qE '[-+]'; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Pre-release version: v${VERSION}"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "✓ Release version: v${VERSION}"
+          fi
+
+  # Build all platforms in parallel
+  build-ubuntu-amd64:
+    needs: validate-version
+    uses: ./.github/workflows/build-ubuntu-amd64-release.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.validate-version.outputs.version }}
+
+  build-ubuntu-arm64:
+    needs: validate-version
+    uses: ./.github/workflows/build-ubuntu-arm64-release.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.validate-version.outputs.version }}
+
+  # Build linux binary tarballs for CLI compatibility
+  build-linux-binaries:
+    needs: validate-version
+    uses: ./.github/workflows/build-linux-binaries.yml
+    secrets: inherit
+    with:
+      tag: v${{ needs.validate-version.outputs.version }}
+
+  build-macos:
+    needs: validate-version
+    uses: ./.github/workflows/build-macos-release.yml
+    secrets: inherit
+    with:
+      tag: v${{ needs.validate-version.outputs.version }}
+
+  build-windows:
+    needs: validate-version
+    uses: ./.github/workflows/build-win-release.yml
+    secrets: inherit
+
+  # Create GitHub Release with all artifacts
+  create-release:
+    needs:
+      - validate-version
+      - build-ubuntu-amd64
+      - build-ubuntu-arm64
+      - build-linux-binaries
+      - build-macos
+      - build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for changelog generation
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: ./artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "📦 Downloaded artifacts:"
+          find ./artifacts -type f -ls
+
+      - name: Organize release files
+        run: |
+          # shellcheck disable=SC2034
+          mkdir -p ./release
+
+          # Copy Ubuntu AMD64 packages (.deb)
+          if [ -d "./artifacts/jammy" ]; then
+            cp ./artifacts/jammy/*.deb ./release/ 2>/dev/null || true
+          fi
+          if [ -d "./artifacts/focal" ]; then
+            cp ./artifacts/focal/*.deb ./release/ 2>/dev/null || true
+          fi
+
+          # Copy Linux binary tarballs (CLI-compatible naming)
+          if [ -d "./artifacts/amd64" ]; then
+            cp ./artifacts/amd64/node-linux-amd64-*.tar.gz ./release/ 2>/dev/null || true
+          fi
+          if [ -d "./artifacts/arm64" ]; then
+            cp ./artifacts/arm64/node-linux-arm64-*.tar.gz ./release/ 2>/dev/null || true
+          fi
+
+          # Copy macOS zip (CLI-compatible naming: node-macos-{version}.zip)
+          if [ -d "./artifacts/build" ]; then
+            cp ./artifacts/build/node-macos-*.zip ./release/ 2>/dev/null || true
+          fi
+
+          # Copy Windows binaries (if any)
+          # shellcheck disable=SC2162
+          find ./artifacts -name "*.exe" -o -name "*win*.zip" | while read -r file; do
+            cp "$file" ./release/ 2>/dev/null || true
+          done
+
+          echo "📁 Release files:"
+          ls -lh ./release/
+
+      - name: Generate checksums
+        run: |
+          cd ./release
+          # shellcheck disable=SC2035
+          sha256sum -- * > SHA256SUMS
+          echo "🔐 Checksums:"
+          cat SHA256SUMS
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag for changelog
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            {
+              echo "## What's Changed"
+              echo ""
+              git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD"
+              echo ""
+              echo ""
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ needs.validate-version.outputs.version }}"
+            } > CHANGELOG.md
+          else
+            {
+              echo "## Initial Release"
+              echo ""
+              echo "First release of Lux Node v${{ needs.validate-version.outputs.version }}"
+            } > CHANGELOG.md
+          fi
+
+          echo "📝 Changelog:"
+          cat CHANGELOG.md
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ needs.validate-version.outputs.version }}"
+          PRERELEASE="${{ needs.validate-version.outputs.is_prerelease }}"
+
+          # Build release flags
+          FLAGS="--title \"Lux Node ${TAG}\""
+          FLAGS="$FLAGS --notes-file CHANGELOG.md"
+
+          if [ "$PRERELEASE" = "true" ]; then
+            FLAGS="$FLAGS --prerelease"
+            echo "📢 Creating pre-release ${TAG}"
+          else
+            FLAGS="$FLAGS --latest"
+            echo "📢 Creating release ${TAG} (latest)"
+          fi
+
+          # Create release and upload all files (--clobber overwrites if re-run)
+          eval "gh release create \"${TAG}\" ./release/* ${FLAGS}" || \
+            eval "gh release upload \"${TAG}\" ./release/* --clobber"
+
+          echo "✅ Release ${TAG} created successfully"
+          echo "🔗 https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+
+      - name: Release summary
+        run: |
+          {
+            echo "## 🎉 Release v${{ needs.validate-version.outputs.version }}"
+            echo ""
+            echo "### 📦 Artifacts"
+            echo ""
+            echo "| Platform | File | Size |"
+            echo "|----------|------|------|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          cd ./release
+          for file in *; do
+            [ "$file" = "SHA256SUMS" ] && continue
+            [ ! -f "$file" ] && continue
+            SIZE=$(du -h "$file" | cut -f1)
+            PLATFORM="Unknown"
+
+            case "$file" in
+              *amd64.deb) PLATFORM="Linux AMD64 (Debian)" ;;
+              *arm64.deb) PLATFORM="Linux ARM64 (Debian)" ;;
+              *macos*.zip) PLATFORM="macOS Universal" ;;
+              *win*.zip|*.exe) PLATFORM="Windows AMD64" ;;
+            esac
+
+            echo "| ${PLATFORM} | \`${file}\` | ${SIZE} |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          {
+            echo ""
+            echo "### 🔐 Verification"
+            echo ""
+            echo "\`\`\`"
+            cat SHA256SUMS
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"

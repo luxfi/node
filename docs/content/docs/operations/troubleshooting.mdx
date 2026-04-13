@@ -1,0 +1,568 @@
+---
+title: Troubleshooting Guide
+description: Solutions for common Lux node issues
+---
+
+# Troubleshooting Guide
+
+This guide provides solutions for common issues encountered when running a Lux node, including diagnostic steps and resolution procedures.
+
+## Quick Diagnostics
+
+### Health Check Script
+
+```bash
+#!/bin/bash
+# diagnose.sh - Quick diagnostic script
+
+echo "=== Lux Node Diagnostics ==="
+echo
+
+# Check if node is running
+if pgrep -x "luxd" > /dev/null; then
+    echo "✅ Node process is running"
+else
+    echo "❌ Node process is NOT running"
+fi
+
+# Check API responsiveness
+if curl -s http://localhost:9630/ext/health > /dev/null 2>&1; then
+    echo "✅ API is responsive"
+else
+    echo "❌ API is NOT responsive"
+fi
+
+# Check disk space
+DISK_USAGE=$(df -h ~/.luxd | awk 'NR==2 {print $5}' | sed 's/%//')
+if [ "$DISK_USAGE" -lt 90 ]; then
+    echo "✅ Disk usage: ${DISK_USAGE}%"
+else
+    echo "❌ Disk usage critical: ${DISK_USAGE}%"
+fi
+
+# Check memory
+MEM_AVAILABLE=$(free -m | awk 'NR==2 {print $7}')
+if [ "$MEM_AVAILABLE" -gt 1000 ]; then
+    echo "✅ Available memory: ${MEM_AVAILABLE}MB"
+else
+    echo "⚠️  Low memory: ${MEM_AVAILABLE}MB"
+fi
+
+# Check peer connections
+PEERS=$(curl -s -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"info.peers",
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/info 2>/dev/null | jq -r '.result.numPeers')
+
+if [ -n "$PEERS" ] && [ "$PEERS" -gt 0 ]; then
+    echo "✅ Connected peers: $PEERS"
+else
+    echo "❌ No peer connections"
+fi
+
+# Check logs for errors
+RECENT_ERRORS=$(tail -n 1000 ~/.luxd/logs/main.log | grep -c ERROR)
+if [ "$RECENT_ERRORS" -eq 0 ]; then
+    echo "✅ No recent errors in logs"
+else
+    echo "⚠️  Recent errors in logs: $RECENT_ERRORS"
+fi
+```
+
+## Common Issues and Solutions
+
+### Node Won't Start
+
+#### Issue: Binary not found
+```bash
+bash: ./luxd: No such file or directory
+```
+
+**Solution:**
+```bash
+# Check binary location
+ls -la ./build/node
+
+# Use correct path
+./build/node
+
+# Or add to PATH
+export PATH=$PATH:/path/to/lux/build
+```
+
+#### Issue: Port already in use
+```
+Error: listen tcp :9630: bind: address already in use
+```
+
+**Solution:**
+```bash
+# Find process using port
+lsof -i :9630
+lsof -i :9631
+
+# Kill the process
+kill -9 <PID>
+
+# Or use different ports
+./build/node --http-port=9632 --staking-port=9633
+```
+
+#### Issue: Permission denied
+```
+Error: open ~/.luxd/staking/staker.key: permission denied
+```
+
+**Solution:**
+```bash
+# Fix permissions
+chmod 600 ~/.luxd/staking/staker.key
+chmod 600 ~/.luxd/staking/staker.crt
+chmod 700 ~/.luxd/staking
+
+# Check ownership
+chown -R $(whoami) ~/.luxd
+```
+
+### Database Issues
+
+#### Issue: Database corruption
+```
+Error: database corruption detected
+```
+
+**Solution:**
+```bash
+# Stop node
+systemctl stop luxd
+
+# Backup corrupted database
+mv ~/.luxd/db ~/.luxd/db.corrupted
+
+# Start fresh (will resync)
+systemctl start luxd
+
+# Or try repair (BadgerDB)
+./build/node --db-repair
+```
+
+#### Issue: Database locked
+```
+Error: database is locked by another process
+```
+
+**Solution:**
+```bash
+# Check for running processes
+ps aux | grep luxd
+
+# Remove lock file if no process
+rm ~/.luxd/db/LOCK
+
+# For BadgerDB
+rm ~/.luxd/db/badgerdb/LOCK
+```
+
+### Network Connectivity Issues
+
+#### Issue: No peers connecting
+```
+WARN: no peers connected after 5 minutes
+```
+
+**Solution:**
+```bash
+# Check firewall
+sudo ufw status
+sudo ufw allow 9631/tcp
+
+# Test connectivity to bootstrap nodes
+nc -zv bootstrap.lux.network 9631
+
+# Use explicit bootstrap nodes
+./build/node \
+  --bootstrap-ips=<ip1>:9631,<ip2>:9631 \
+  --bootstrap-ids=<node-id1>,<node-id2>
+
+# Check public IP
+curl ifconfig.me
+./build/node --public-ip=<your-public-ip>
+```
+
+#### Issue: NAT traversal failure
+```
+Error: failed to determine public IP
+```
+
+**Solution:**
+```bash
+# Use dynamic IP service
+./build/node --dynamic-public-ip=opendns
+
+# Or manually specify
+./build/node --public-ip=<your-public-ip>
+
+# Configure port forwarding
+# Router: Forward external 9631 → internal 9631
+
+# Use UPnP if available
+./build/node --nat=upnp
+```
+
+### Consensus Issues
+
+#### Issue: Not participating in consensus
+```
+WARN: node not included in validator set
+```
+
+**Solution:**
+```bash
+# Check validator status
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.getCurrentValidators",
+    "params":{"nodeIDs":["<your-node-id>"]},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+
+# Verify staking transaction
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.getTx",
+    "params":{"txID":"<staking-tx-id>"},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+#### Issue: Low uptime percentage
+```
+validator uptime: 75% (below threshold)
+```
+
+**Solution:**
+```bash
+# Check system time sync
+timedatectl status
+sudo ntpdate -s time.nist.gov
+
+# Monitor node stability
+journalctl -u luxd -f
+
+# Check for OOM kills
+dmesg | grep -i "killed process"
+
+# Increase memory if needed
+# Add swap space
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+### Performance Issues
+
+#### Issue: High CPU usage
+```
+luxd process using 100% CPU
+```
+
+**Solution:**
+```bash
+# Check for sync progress
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.getHeight",
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+
+# Reduce consensus participation
+./build/node --consensus-gossip-concurrent=2
+
+# Profile CPU usage
+go tool pprof http://localhost:9630/debug/pprof/profile?seconds=30
+
+# Limit CPU usage
+cpulimit -p $(pgrep luxd) -l 80
+```
+
+#### Issue: High memory usage
+```
+luxd using 8GB+ memory
+```
+
+**Solution:**
+```bash
+# Reduce cache sizes
+cat > ~/.luxd/configs/node-config.json << EOF
+{
+  "db-cache-size": 512,
+  "merkledb-cache-size": 512,
+  "state-cache-size": 256
+}
+EOF
+
+# Enable database pruning
+./build/node --pruning-enabled
+
+# Check for memory leaks
+curl http://localhost:9630/debug/pprof/heap > heap.prof
+go tool pprof heap.prof
+```
+
+### API Issues
+
+#### Issue: API not responding
+```
+curl: (7) Failed to connect to localhost port 9630
+```
+
+**Solution:**
+```bash
+# Check if API is enabled
+grep "api" ~/.luxd/configs/node-config.json
+
+# Enable APIs
+./build/node \
+  --api-admin-enabled=false \
+  --api-info-enabled=true \
+  --api-health-enabled=true \
+  --api-metrics-enabled=true
+
+# Check binding address
+./build/node --http-host=0.0.0.0
+
+# Check for rate limiting
+curl -I http://localhost:9630/ext/info
+```
+
+### Staking Issues
+
+#### Issue: Invalid BLS key
+```
+Error: invalid proof of possession
+```
+
+**Solution:**
+```bash
+# Regenerate BLS keys
+./build/node --staking-ephemeral-signer-enabled
+
+# Or generate new keys
+openssl ecparam -name secp256k1 -genkey -noout -out ~/.luxd/staking/signer.key
+
+# Verify key format
+openssl ec -in ~/.luxd/staking/signer.key -text -noout
+```
+
+#### Issue: Staking transaction failed
+```
+Error: insufficient funds for staking
+```
+
+**Solution:**
+```bash
+# Check balance
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.getBalance",
+    "params":{"addresses":["P-lux1..."]},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+
+# Import funds from X-Chain
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"platform.importLUX",
+    "params":{
+        "username":"user",
+        "password":"pass",
+        "sourceChain":"X"
+    },
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+```
+
+## Log Analysis
+
+### Important Log Files
+
+```bash
+# Main node log
+~/.luxd/logs/main.log
+
+# Chain-specific logs
+~/.luxd/logs/P.log  # Platform chain
+~/.luxd/logs/X.log  # UTXO chain
+~/.luxd/logs/C.log  # Contract chain
+~/.luxd/logs/Q.log  # Quantum chain
+```
+
+### Common Log Patterns
+
+```bash
+# Find errors
+grep -E "ERROR|FATAL" ~/.luxd/logs/*.log
+
+# Check bootstrap progress
+grep "bootstrap" ~/.luxd/logs/main.log
+
+# Monitor peer connections
+grep -E "connected|disconnected" ~/.luxd/logs/main.log
+
+# Track consensus
+grep -E "accepted|rejected" ~/.luxd/logs/P.log
+
+# Database operations
+grep -E "database|badger|pebble" ~/.luxd/logs/main.log
+```
+
+### Log Levels
+
+Increase log verbosity for debugging:
+
+```bash
+# Maximum verbosity
+./build/node --log-level=trace
+
+# Component-specific
+./build/node \
+  --log-level=info \
+  --log-level-consensus=debug \
+  --log-level-network=trace
+```
+
+## Recovery Procedures
+
+### Complete Node Reset
+
+```bash
+#!/bin/bash
+# reset_node.sh - Complete node reset
+
+echo "⚠️  This will delete all node data!"
+read -p "Continue? (y/n) " -n 1 -r
+echo
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Stop node
+    systemctl stop luxd
+
+    # Backup keys (CRITICAL!)
+    cp -r ~/.luxd/staking ~/luxd-staking-backup-$(date +%s)
+
+    # Remove all data
+    rm -rf ~/.luxd/db
+    rm -rf ~/.luxd/logs
+    rm -f ~/.luxd/*.json
+
+    # Restore keys
+    mkdir -p ~/.luxd/staking
+    cp ~/luxd-staking-backup-*/staker.* ~/.luxd/staking/
+
+    # Start fresh
+    systemctl start luxd
+
+    echo "✅ Node reset complete"
+fi
+```
+
+### Database Recovery
+
+```bash
+#!/bin/bash
+# db_recovery.sh - Database recovery
+
+# Try repair first
+./build/node --db-repair
+
+if [ $? -ne 0 ]; then
+    echo "Repair failed, trying recovery mode..."
+
+    # Export readable data
+    ./build/node --db-export=/tmp/db-export
+
+    # Create new database
+    rm -rf ~/.luxd/db
+
+    # Import data
+    ./build/node --db-import=/tmp/db-export
+fi
+```
+
+## Getting Help
+
+### Diagnostic Information
+
+When seeking help, provide:
+
+```bash
+# System info
+uname -a
+lscpu | head -20
+free -h
+df -h
+
+# Node version
+./build/node --version
+
+# Config
+cat ~/.luxd/configs/node-config.json
+
+# Recent logs (sanitized)
+tail -n 100 ~/.luxd/logs/main.log | grep -v "private"
+
+# Network status
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"info.getNodeID",
+    "id":1
+}' http://localhost:9630/ext/info
+```
+
+### Support Channels
+
+1. **Documentation**: https://docs.lux.network
+2. **Discord**: https://discord.gg/lux
+3. **GitHub Issues**: https://github.com/luxfi/node/issues
+4. **Forum**: https://forum.lux.network
+
+### Emergency Procedures
+
+For critical issues:
+
+1. **Secure your keys**: Backup staking keys immediately
+2. **Stop the node**: Prevent further damage
+3. **Document the issue**: Save logs and error messages
+4. **Contact support**: Use emergency channels if validator at risk
+
+## Preventive Maintenance
+
+### Regular Health Checks
+
+```bash
+# Daily health check cron
+0 */6 * * * /path/to/health_check.sh
+
+# Weekly backup
+0 2 * * 0 /path/to/backup.sh
+
+# Monthly updates check
+0 0 1 * * /path/to/check_updates.sh
+```
+
+### Monitoring Setup
+
+Implement monitoring to catch issues early:
+- Set up Prometheus + Grafana
+- Configure alerting rules
+- Monitor system resources
+- Track validator performance
+
+## Next Steps
+
+- [Monitoring Setup](/docs/operations/monitoring) - Comprehensive monitoring
+- [Security Guide](/docs/operations/security) - Security best practices
+- [Performance Tuning](/docs/operations/performance) - Optimization guide
+- [Backup Strategies](/docs/operations/backup) - Data protection

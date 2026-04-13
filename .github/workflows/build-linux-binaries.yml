@@ -1,0 +1,118 @@
+name: build-linux-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to include in artifact name'
+        required: true
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to include in artifact name'
+        required: true
+        type: string
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build-x86_64-binaries-tarball:
+    runs-on: lux-build-linux-amd64
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go-for-project
+
+      - run: go version
+
+      - name: Build the luxd binaries
+        run: CGO_ENABLED=0 ./scripts/run_task.sh build
+
+      - name: Try to get tag from git
+        if: "${{ github.event.inputs.tag == '' }}"
+        id: get_tag_from_git
+        run: |
+          echo "TAG=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Try to get tag from workflow dispatch
+        if: "${{ github.event.inputs.tag != '' }}"
+        id: get_tag_from_workflow
+        run: |
+          echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Create tgz package structure and upload to S3
+        run: ./.github/workflows/build-tgz-pkg.sh
+        env:
+          PKG_ROOT: /tmp/luxd
+          TAG: ${{ env.TAG }}
+          BUCKET: ${{ secrets.BUCKET }}
+          ARCH: "amd64"
+          RELEASE: "jammy"
+
+      - name: Save as Github artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: amd64
+          path: ${{ github.workspace }}/luxd-pkg/node-linux-amd64-${{ env.TAG }}.tar.gz
+
+      - name: Cleanup
+        run: |
+          rm -rf ./build
+          rm -rf ${{ github.workspace }}/luxd-pkg
+
+  build-arm64-binaries-tarball:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-go-for-project
+
+      - run: go version
+
+      - name: Build the luxd binaries (native arm64)
+        run: CGO_ENABLED=0 ./scripts/build.sh
+
+      - name: Try to get tag from git
+        if: "${{ github.event.inputs.tag == '' }}"
+        id: get_tag_from_git
+        run: |
+          echo "TAG=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Try to get tag from workflow dispatch
+        if: "${{ github.event.inputs.tag != '' }}"
+        id: get_tag_from_workflow
+        run: |
+          echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Create tgz package structure and upload to S3
+        run: ./.github/workflows/build-tgz-pkg.sh
+        env:
+          PKG_ROOT: /tmp/luxd
+          TAG: ${{ env.TAG }}
+          BUCKET: ${{ secrets.BUCKET }}
+          ARCH: "arm64"
+          RELEASE: "jammy"
+
+      - name: Save as Github artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: arm64
+          path: ${{ github.workspace }}/luxd-pkg/node-linux-arm64-${{ env.TAG }}.tar.gz
+
+      - name: Cleanup
+        run: |
+          rm -rf ./build
+          rm -rf ${{ github.workspace }}/luxd-pkg
