@@ -17,13 +17,13 @@ spec:
             memory: "2Gi"
             cpu: "1"
         env:
-        - name: LUX_SYBIL_PROTECTION_ENABLED
+        - name: LUXD_SYBIL_PROTECTION_ENABLED
           value: "false"
-        - name: LUX_STAKING_ENABLED
+        - name: LUXD_STAKING_ENABLED
           value: "false"
-        - name: LUX_CONSENSUS_SAMPLE_SIZE
+        - name: LUXD_CONSENSUS_SAMPLE_SIZE
           value: "1"
-        - name: LUX_CONSENSUS_QUORUM_SIZE
+        - name: LUXD_CONSENSUS_QUORUM_SIZE
           value: "1"
       # No staking keys needed for local
       volumes:
@@ -43,4 +43,4 @@ kind: ConfigMap
 metadata:
   name: luxd-config
 data:
-  LUX_NETWORK_ID: "local"
+  LUXD_NETWORK_ID: "local"
