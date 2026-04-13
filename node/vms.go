@@ -6,19 +6,19 @@ package node
 import (
 	"context"
 
+	"github.com/luxfi/chains/aivm"
+	"github.com/luxfi/chains/bridgevm"
+	"github.com/luxfi/chains/dexvm"
+	"github.com/luxfi/chains/graphvm"
+	"github.com/luxfi/chains/identityvm"
+	"github.com/luxfi/chains/keyvm"
+	"github.com/luxfi/chains/oraclevm"
+	"github.com/luxfi/chains/quantumvm"
+	"github.com/luxfi/chains/relayvm"
+	"github.com/luxfi/chains/thresholdvm"
+	"github.com/luxfi/chains/zkvm"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/aivm"
-	"github.com/luxfi/node/vms/bridgevm"
-	"github.com/luxfi/node/vms/dexvm"
-	"github.com/luxfi/node/vms/graphvm"
-	"github.com/luxfi/node/vms/identityvm"
-	"github.com/luxfi/node/vms/keyvm"
-	"github.com/luxfi/node/vms/oraclevm"
-	"github.com/luxfi/node/vms/quantumvm"
-	"github.com/luxfi/node/vms/relayvm"
-	"github.com/luxfi/node/vms/thresholdvm"
-	"github.com/luxfi/node/vms/zkvm"
 )
 
 type vmEntry struct {
