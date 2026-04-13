@@ -155,7 +155,7 @@ require (
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
-	github.com/luxfi/utxo v0.2.6
+	github.com/luxfi/utxo v0.2.7
 	github.com/luxfi/validators v1.0.0
 	github.com/luxfi/vm v1.0.40
 	github.com/luxfi/warp v1.18.5
@@ -172,6 +172,17 @@ require (
 	github.com/hashicorp/go-bexpr v0.1.16 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.4.0 // indirect
+	github.com/luxfi/chains/aivm v0.1.0 // indirect
+	github.com/luxfi/chains/bridgevm v0.1.0 // indirect
+	github.com/luxfi/chains/dexvm v0.1.0 // indirect
+	github.com/luxfi/chains/graphvm v0.1.0 // indirect
+	github.com/luxfi/chains/identityvm v0.1.0 // indirect
+	github.com/luxfi/chains/keyvm v0.1.0 // indirect
+	github.com/luxfi/chains/oraclevm v0.1.0 // indirect
+	github.com/luxfi/chains/quantumvm v0.1.0 // indirect
+	github.com/luxfi/chains/relayvm v0.1.0 // indirect
+	github.com/luxfi/chains/thresholdvm v0.1.0 // indirect
+	github.com/luxfi/chains/zkvm v0.1.0 // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb v1.8.0 // indirect
