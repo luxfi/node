@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/utils"
 
 	hash "github.com/luxfi/crypto/hash"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/signer"

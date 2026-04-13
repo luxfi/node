@@ -5,7 +5,7 @@ package fxs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"

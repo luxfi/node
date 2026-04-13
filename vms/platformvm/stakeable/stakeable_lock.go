@@ -6,7 +6,7 @@ package stakeable
 import (
 	"errors"
 
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/runtime"
 )
 

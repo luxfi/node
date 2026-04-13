@@ -16,7 +16,7 @@ import (
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	gomock "github.com/luxfi/mock/gomock"
-	lux "github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 )

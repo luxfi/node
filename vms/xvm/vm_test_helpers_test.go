@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/txstest"
 	"github.com/luxfi/utxo/nftfx"

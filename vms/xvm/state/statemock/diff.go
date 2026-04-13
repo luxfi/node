@@ -14,7 +14,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"

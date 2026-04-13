@@ -26,7 +26,7 @@ import (
 	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/state"
