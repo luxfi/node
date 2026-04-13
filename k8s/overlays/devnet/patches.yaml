@@ -11,7 +11,7 @@ spec:
       - name: luxd
         image: ghcr.io/luxfi/node:dev
         env:
-        - name: LUX_SYBIL_PROTECTION_ENABLED
+        - name: LUXD_SYBIL_PROTECTION_ENABLED
           value: "false"
         resources:
           requests:
@@ -35,4 +35,4 @@ kind: ConfigMap
 metadata:
   name: luxd-config
 data:
-  LUX_NETWORK_ID: "3"
+  LUXD_NETWORK_ID: "3"

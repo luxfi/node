@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: luxd
+spec:
+  # Never allow more than 1 validator down during voluntary disruptions.
+  # Works for 5 and 100 validator scales (5 → 4 min available; 100 → 99 min available).
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: luxd

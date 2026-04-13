@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: luxd
+spec:
+  podSelector:
+    matchLabels:
+      app: luxd
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # P2P staking port — from any peer (validators are globally routable)
+  - ports:
+    - port: 9631
+      protocol: TCP
+  # HTTP API — only from inside the cluster (LuxGateway forwards here)
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - port: 9630
+      protocol: TCP
+  # Metrics — only from monitoring namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - port: 9090
+      protocol: TCP
+  egress:
+  # DNS
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+  # P2P outbound to peers (any external host, port 9631)
+  - ports:
+    - port: 9631
+      protocol: TCP
+  # Intra-namespace peer-to-peer (headless service DNS)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: luxd
