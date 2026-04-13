@@ -1,0 +1,38 @@
+FROM alpine:3.18
+
+# Install required packages
+RUN apk add --no-cache ca-certificates curl bash
+
+# Create lux user
+RUN adduser -D -h /home/lux lux
+
+# Create directories (matching the expected paths in startup script)
+RUN mkdir -p /luxd/build/plugins /data/plugins /home/lux/.lux/configs
+
+# Set permissions
+RUN chown -R lux:lux /luxd /data /home/lux
+
+# Copy the pre-built node binary to the expected location
+COPY build/luxd-linux-amd64 /luxd/build/luxd
+RUN chmod +x /luxd/build/luxd
+
+# Copy newly built EVM plugin with matching ZAP protocol version
+COPY build/evm-linux-amd64 /luxd/build/plugins/mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+RUN chmod +x /luxd/build/plugins/mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+
+# Also add to PATH
+RUN ln -s /luxd/build/luxd /usr/local/bin/luxd
+
+# Set user
+USER lux
+WORKDIR /home/lux
+
+# Expose ports
+# P2P
+EXPOSE 9651
+# HTTP API
+EXPOSE 9650
+# Staking
+EXPOSE 9652
+
+ENTRYPOINT ["/luxd/build/luxd"]

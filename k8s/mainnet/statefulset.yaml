@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: luxd
+  namespace: lux-mainnet
+spec:
+  serviceName: luxd-headless
+  replicas: 5
+  selector:
+    matchLabels:
+      app: luxd
+      network: mainnet
+  template:
+    metadata:
+      labels:
+        app: luxd
+        network: mainnet
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      containers:
+      - name: luxd
+        image: registry.digitalocean.com/hanzo/bootnode:luxd-latest
+        imagePullPolicy: Always
+        command: ["/startup.sh"]
+        ports:
+        - containerPort: 9630
+          name: http
+        - containerPort: 9631
+          name: staking
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: staking
+          mountPath: /data/staking
+          readOnly: true
+        - name: genesis
+          mountPath: /genesis
+        - name: startup
+          mountPath: /startup.sh
+          subPath: startup.sh
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+        livenessProbe:
+          httpGet:
+            path: /ext/health
+            port: 9630
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /ext/info
+            port: 9630
+          initialDelaySeconds: 60
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: registry-hanzo
+      volumes:
+      - name: staking
+        secret:
+          secretName: luxd-staking-keys
+          defaultMode: 0400
+      - name: genesis
+        configMap:
+          name: luxd-genesis
+      - name: startup
+        configMap:
+          name: luxd-startup
+          defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: do-block-storage
+      resources:
+        requests:
+          storage: 100Gi

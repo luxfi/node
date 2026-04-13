@@ -1,0 +1,43 @@
+# https://goreleaser.com/ci/actions/
+# TODO: replace other build github actions
+name: Build on supported platforms
+
+on:
+  push:
+
+permissions:
+  contents: write
+
+env:
+  GOWORK: off
+  CGO_ENABLED: "0"
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Run GoReleaser (release)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: v1.13.1
+          # TODO: automate github release page announce and artifact uploads
+          # https://goreleaser.com/cmd/goreleaser_release/
+          args: release --rm-dist --skip-announce --skip-publish
+        # to automate release announcement
+        # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret
+        # env:
+        # GITHUB_TOKEN: ...
+      - name: Run GoReleaser (snapshot)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: v1.13.1
+          args: release --rm-dist --snapshot --skip-announce --skip-publish

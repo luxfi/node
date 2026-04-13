@@ -1,0 +1,147 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package executor
+
+import (
+	"go.uber.org/mock/gomock"
+
+	"testing"
+	"time"
+
+	"github.com/luxfi/metric"
+	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/state"
+	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/mempool"
+	"github.com/luxfi/utxo/secp256k1fx"
+)
+
+func TestRejectBlock(t *testing.T) {
+	type test struct {
+		name         string
+		newBlockFunc func() (block.Block, error)
+		rejectFunc   func(*rejector, block.Block) error
+	}
+
+	tests := []test{
+		{
+			name: "proposal block",
+			newBlockFunc: func() (block.Block, error) {
+				return block.NewBanffProposalBlock(
+					time.Now(),
+					ids.GenerateTestID(),
+					1,
+					&txs.Tx{
+						Unsigned: &txs.AddDelegatorTx{
+							// Without the line below, this function will error.
+							DelegationRewardsOwner: &secp256k1fx.OutputOwners{},
+						},
+						Creds: []verify.Verifiable{},
+					},
+					[]*txs.Tx{},
+				)
+			},
+			rejectFunc: func(r *rejector, b block.Block) error {
+				return r.BanffProposalBlock(b.(*block.BanffProposalBlock))
+			},
+		},
+		{
+			name: "atomic block",
+			newBlockFunc: func() (block.Block, error) {
+				return block.NewApricotAtomicBlock(
+					ids.GenerateTestID(),
+					1,
+					&txs.Tx{
+						Unsigned: &txs.AddDelegatorTx{
+							// Without the line below, this function will error.
+							DelegationRewardsOwner: &secp256k1fx.OutputOwners{},
+						},
+						Creds: []verify.Verifiable{},
+					},
+				)
+			},
+			rejectFunc: func(r *rejector, b block.Block) error {
+				return r.ApricotAtomicBlock(b.(*block.ApricotAtomicBlock))
+			},
+		},
+		{
+			name: "standard block",
+			newBlockFunc: func() (block.Block, error) {
+				return block.NewBanffStandardBlock(
+					time.Now(),
+					ids.GenerateTestID(),
+					1,
+					[]*txs.Tx{
+						{
+							Unsigned: &txs.AddDelegatorTx{
+								// Without the line below, this function will error.
+								DelegationRewardsOwner: &secp256k1fx.OutputOwners{},
+							},
+							Creds: []verify.Verifiable{},
+						},
+					},
+				)
+			},
+			rejectFunc: func(r *rejector, b block.Block) error {
+				return r.BanffStandardBlock(b.(*block.BanffStandardBlock))
+			},
+		},
+		{
+			name: "commit",
+			newBlockFunc: func() (block.Block, error) {
+				return block.NewBanffCommitBlock(time.Now(), ids.GenerateTestID() /*parent*/, 1 /*height*/)
+			},
+			rejectFunc: func(r *rejector, blk block.Block) error {
+				return r.BanffCommitBlock(blk.(*block.BanffCommitBlock))
+			},
+		},
+		{
+			name: "abort",
+			newBlockFunc: func() (block.Block, error) {
+				return block.NewBanffAbortBlock(time.Now(), ids.GenerateTestID() /*parent*/, 1 /*height*/)
+			},
+			rejectFunc: func(r *rejector, blk block.Block) error {
+				return r.BanffAbortBlock(blk.(*block.BanffAbortBlock))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			ctrl := gomock.NewController(t)
+
+			blk, err := tt.newBlockFunc()
+			require.NoError(err)
+
+			mempool, err := mempool.New("", metric.NewRegistry())
+			require.NoError(err)
+			state := state.NewMockState(ctrl)
+			blkIDToState := map[ids.ID]*blockState{
+				blk.Parent(): nil,
+				blk.ID():     nil,
+			}
+			rt := consensustest.Runtime(t, constants.PlatformChainID)
+			rejector := &rejector{
+				backend: &backend{
+					rt: rt,
+					blkIDToState: blkIDToState,
+					Mempool:      mempool,
+					state:        state,
+				},
+				addTxsToMempool: true,
+			}
+
+			require.NoError(tt.rejectFunc(rejector, blk))
+			// Make sure block and its parent are removed from the state map.
+			require.NotContains(rejector.blkIDToState, blk.ID())
+		})
+	}
+}

@@ -1,0 +1,325 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package wallet
+
+import (
+	"time"
+
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/wallet/chain/p/builder"
+	"github.com/luxfi/node/wallet/network/primary/common"
+	"github.com/luxfi/utxo/secp256k1fx"
+
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
+	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
+)
+
+var _ Wallet = (*withOptions)(nil)
+
+func WithOptions(
+	wallet Wallet,
+	options ...common.Option,
+) Wallet {
+	return &withOptions{
+		wallet:  wallet,
+		options: options,
+	}
+}
+
+type withOptions struct {
+	wallet  Wallet
+	options []common.Option
+}
+
+func (w *withOptions) Builder() builder.Builder {
+	return builder.WithOptions(
+		w.wallet.Builder(),
+		w.options...,
+	)
+}
+
+func (w *withOptions) Signer() walletsigner.Signer {
+	return w.wallet.Signer()
+}
+
+func (w *withOptions) IssueBaseTx(
+	outputs []*lux.TransferableOutput,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueBaseTx(
+		outputs,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueAddValidatorTx(
+	vdr *txs.Validator,
+	rewardsOwner *secp256k1fx.OutputOwners,
+	shares uint32,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddValidatorTx(
+		vdr,
+		rewardsOwner,
+		shares,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+// Removed in regenesis
+func (w *withOptions) IssueAddChainValidatorTx(
+	vdr *txs.ChainValidator,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddChainValidatorTx(
+		vdr,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+// Removed in regenesis
+func (w *withOptions) IssueRemoveChainValidatorTx(
+	nodeID ids.NodeID,
+	netID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueRemoveChainValidatorTx(
+		nodeID,
+		netID,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueAddDelegatorTx(
+	vdr *txs.Validator,
+	rewardsOwner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddDelegatorTx(
+		vdr,
+		rewardsOwner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueCreateChainTx(
+	netID ids.ID,
+	genesis []byte,
+	vmID ids.ID,
+	fxIDs []ids.ID,
+	chainName string,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueCreateChainTx(
+		netID,
+		genesis,
+		vmID,
+		fxIDs,
+		chainName,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueCreateNetworkTx(
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueCreateNetworkTx(
+		owner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+// Removed in regenesis
+func (w *withOptions) IssueTransferChainOwnershipTx(
+	chainID ids.ID,
+	owner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueTransferChainOwnershipTx(
+		chainID,
+		owner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueConvertNetworkToL1Tx(
+	netID ids.ID,
+	managerChainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertNetworkToL1Validator,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueConvertNetworkToL1Tx(
+		netID,
+		managerChainID,
+		address,
+		validators,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [bls.SignatureLen]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueRegisterL1ValidatorTx(
+		balance,
+		proofOfPossession,
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueSetL1ValidatorWeightTx(
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueIncreaseL1ValidatorBalanceTx(
+		validationID,
+		balance,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueDisableL1ValidatorTx(
+		validationID,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueImportTx(
+	sourceChainID ids.ID,
+	to *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueImportTx(
+		sourceChainID,
+		to,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueExportTx(
+	chainID ids.ID,
+	outputs []*lux.TransferableOutput,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueExportTx(
+		chainID,
+		outputs,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+// Removed in regenesis
+func (w *withOptions) IssueTransformChainTx(
+	chainID ids.ID,
+	assetID ids.ID,
+	initialSupply uint64,
+	maxSupply uint64,
+	minConsumptionRate uint64,
+	maxConsumptionRate uint64,
+	minValidatorStake uint64,
+	maxValidatorStake uint64,
+	minStakeDuration time.Duration,
+	maxStakeDuration time.Duration,
+	minDelegationFee uint32,
+	minDelegatorStake uint64,
+	maxValidatorWeightFactor byte,
+	uptimeRequirement uint32,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueTransformChainTx(
+		chainID,
+		assetID,
+		initialSupply,
+		maxSupply,
+		minConsumptionRate,
+		maxConsumptionRate,
+		minValidatorStake,
+		maxValidatorStake,
+		minStakeDuration,
+		maxStakeDuration,
+		minDelegationFee,
+		minDelegatorStake,
+		maxValidatorWeightFactor,
+		uptimeRequirement,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueAddPermissionlessValidatorTx(
+	vdr *txs.ChainValidator,
+	signer vmsigner.Signer,
+	assetID ids.ID,
+	validationRewardsOwner *secp256k1fx.OutputOwners,
+	delegationRewardsOwner *secp256k1fx.OutputOwners,
+	shares uint32,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddPermissionlessValidatorTx(
+		vdr,
+		signer,
+		assetID,
+		validationRewardsOwner,
+		delegationRewardsOwner,
+		shares,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueAddPermissionlessDelegatorTx(
+	vdr *txs.ChainValidator,
+	assetID ids.ID,
+	rewardsOwner *secp256k1fx.OutputOwners,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueAddPermissionlessDelegatorTx(
+		vdr,
+		assetID,
+		rewardsOwner,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueUnsignedTx(
+	utx txs.UnsignedTx,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueUnsignedTx(
+		utx,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *withOptions) IssueTx(
+	tx *txs.Tx,
+	options ...common.Option,
+) error {
+	return w.wallet.IssueTx(
+		tx,
+		common.UnionOptions(w.options, options)...,
+	)
+}

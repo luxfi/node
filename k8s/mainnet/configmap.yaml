@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: luxd-startup
+  namespace: lux-mainnet
+data:
+  startup.sh: |
+    #!/bin/sh
+    set -e
+
+    mkdir -p /data/plugins
+
+    # Node IDs (from staking keys) - UPDATE THESE after extracting from pods
+    NODE0_ID="NodeID-EHivaNhTcH66EFpR6XzqaywjPphNRSziR"
+    NODE1_ID="NodeID-E9eEF7yRWV72pUnzZSkqzmBUnM6xDPE73"
+    NODE2_ID="NodeID-6xtg1sSUmxr7Fgbgq6w6yKPdByaB1JJDE"
+    NODE3_ID="NodeID-TYAvdDZnyBV4ydpajDnjwtLtyV1fLknk"
+    NODE4_ID="NodeID-JnRuDpsMAKYyTadbGBHjkCjet2YzRBRMQ"
+
+    # K8s DNS hostnames for internal pod-to-pod communication
+    # Format: <pod-name>.<headless-service>.<namespace>.svc.cluster.local
+    NS="lux-mainnet"
+    SVC="luxd-headless"
+    NODE0_HOST="luxd-0.${SVC}.${NS}.svc.cluster.local"
+    NODE1_HOST="luxd-1.${SVC}.${NS}.svc.cluster.local"
+    NODE2_HOST="luxd-2.${SVC}.${NS}.svc.cluster.local"
+    NODE3_HOST="luxd-3.${SVC}.${NS}.svc.cluster.local"
+    NODE4_HOST="luxd-4.${SVC}.${NS}.svc.cluster.local"
+
+    # External LoadBalancer IPs (for public-ip advertisement)
+    NODE0_IP="134.199.142.217"
+    NODE1_IP="24.199.76.196"
+    NODE2_IP="134.199.142.225"
+    NODE3_IP="24.144.70.169"
+    NODE4_IP="143.244.211.104"
+
+    # Set bootstrap config based on pod name - exclude self from bootstrap
+    # Using K8s DNS hostnames for bootstrap (internal cluster communication)
+    case "$HOSTNAME" in
+      luxd-0)
+        PUBLIC_IP="$NODE0_IP"
+        BOOTSTRAP_IPS="${NODE1_HOST}:9631,${NODE2_HOST}:9631,${NODE3_HOST}:9631,${NODE4_HOST}:9631"
+        BOOTSTRAP_IDS="$NODE1_ID,$NODE2_ID,$NODE3_ID,$NODE4_ID"
+        ;;
+      luxd-1)
+        PUBLIC_IP="$NODE1_IP"
+        BOOTSTRAP_IPS="${NODE0_HOST}:9631,${NODE2_HOST}:9631,${NODE3_HOST}:9631,${NODE4_HOST}:9631"
+        BOOTSTRAP_IDS="$NODE0_ID,$NODE2_ID,$NODE3_ID,$NODE4_ID"
+        ;;
+      luxd-2)
+        PUBLIC_IP="$NODE2_IP"
+        BOOTSTRAP_IPS="${NODE0_HOST}:9631,${NODE1_HOST}:9631,${NODE3_HOST}:9631,${NODE4_HOST}:9631"
+        BOOTSTRAP_IDS="$NODE0_ID,$NODE1_ID,$NODE3_ID,$NODE4_ID"
+        ;;
+      luxd-3)
+        PUBLIC_IP="$NODE3_IP"
+        BOOTSTRAP_IPS="${NODE0_HOST}:9631,${NODE1_HOST}:9631,${NODE2_HOST}:9631,${NODE4_HOST}:9631"
+        BOOTSTRAP_IDS="$NODE0_ID,$NODE1_ID,$NODE2_ID,$NODE4_ID"
+        ;;
+      luxd-4)
+        PUBLIC_IP="$NODE4_IP"
+        BOOTSTRAP_IPS="${NODE0_HOST}:9631,${NODE1_HOST}:9631,${NODE2_HOST}:9631,${NODE3_HOST}:9631"
+        BOOTSTRAP_IDS="$NODE0_ID,$NODE1_ID,$NODE2_ID,$NODE3_ID"
+        ;;
+      *)
+        echo "ERROR: Unknown hostname $HOSTNAME"
+        PUBLIC_IP=""
+        BOOTSTRAP_IPS=""
+        BOOTSTRAP_IDS=""
+        ;;
+    esac
+
+    echo "================================================================================"
+    echo "Starting luxd for $HOSTNAME (mainnet - network-id=96369)"
+    echo "================================================================================"
+    echo "  public-ip: $PUBLIC_IP"
+    echo "  bootstrap-ips (hostnames): $BOOTSTRAP_IPS"
+    echo "  bootstrap-ids: $BOOTSTRAP_IDS"
+    echo "================================================================================"
+
+    # Test DNS resolution before starting
+    echo "Testing DNS resolution..."
+    for host in $NODE0_HOST $NODE1_HOST $NODE2_HOST $NODE3_HOST $NODE4_HOST; do
+      if getent hosts "$host" >/dev/null 2>&1; then
+        echo "  $host: OK"
+      else
+        echo "  $host: FAILED (pod may not be running yet)"
+      fi
+    done
+
+    exec /luxd/build/luxd \
+      --network-id=96369 \
+      --http-host=0.0.0.0 \
+      --http-port=9630 \
+      --http-allowed-hosts=* \
+      --staking-port=9631 \
+      --data-dir=/data \
+      --genesis-file=/genesis/genesis.json \
+      --db-type=badgerdb \
+      --index-enabled=true \
+      --api-admin-enabled=true \
+      --api-metrics-enabled=true \
+      --log-level=info \
+      --plugin-dir=/data/plugins \
+      --staking-tls-cert-file=/data/staking/staker.crt \
+      --staking-tls-key-file=/data/staking/staker.key \
+      --staking-signer-key-file=/data/staking/signer.key \
+      --public-ip=$PUBLIC_IP \
+      --bootstrap-ips=$BOOTSTRAP_IPS \
+      --bootstrap-ids=$BOOTSTRAP_IDS \
+      --consensus-sample-size=3 \
+      --consensus-quorum-size=2 \
+      --network-allow-private-ips=true \
+      --network-require-validator-to-connect=false \
+      --sybil-protection-enabled=false

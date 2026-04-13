@@ -1,0 +1,591 @@
+---
+title: Admin API
+description: Administrative control and management endpoints
+---
+
+# Admin API
+
+The Admin API provides administrative control over your Lux node. These endpoints should be used with caution and are typically disabled in production environments.
+
+## Security Warning
+
+⚠️ **IMPORTANT**: The Admin API provides powerful operations that can affect node operation. It should only be enabled in secure, controlled environments.
+
+## Enabling Admin API
+
+The Admin API is disabled by default. Enable it with:
+
+```bash
+./build/node --api-admin-enabled=true
+```
+
+Or in configuration:
+
+```json
+{
+  "api-admin-enabled": true,
+  "api-admin-allowed-hosts": ["127.0.0.1"]
+}
+```
+
+## Endpoint
+
+```
+http://localhost:9630/ext/admin
+```
+
+## Methods
+
+### admin.alias
+
+Create an alias for a blockchain ID.
+
+**Parameters:**
+- `alias`: `string` - The alias to create
+- `chain`: `string` - The blockchain ID
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.alias",
+    "params":{
+        "alias":"mychain",
+        "chain":"2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX"
+    },
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+### admin.aliasChain
+
+Alias a blockchain ID (deprecated, use admin.alias).
+
+**Parameters:**
+- `alias`: `string` - The alias
+- `chain`: `string` - The chain ID
+
+---
+
+### admin.getChainAliases
+
+Get all aliases for a blockchain.
+
+**Parameters:**
+- `chain`: `string` - The blockchain ID
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.getChainAliases",
+    "params":{
+        "chain":"2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX"
+    },
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+**Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "aliases": ["X", "exchange"]
+    },
+    "id": 1
+}
+```
+
+---
+
+### admin.getLogLevel
+
+Get the current log level.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.getLogLevel",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+**Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "logLevel": "info"
+    },
+    "id": 1
+}
+```
+
+---
+
+### admin.setLogLevel
+
+Set the log level dynamically.
+
+**Parameters:**
+- `logLevel`: `string` - Log level (trace, debug, info, warn, error, fatal, off)
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.setLogLevel",
+    "params":{
+        "logLevel":"debug"
+    },
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+### admin.getLogDisplayLevel
+
+Get the log display level.
+
+**Parameters:** None
+
+---
+
+### admin.setLogDisplayLevel
+
+Set the log display level.
+
+**Parameters:**
+- `displayLevel`: `string` - Display level
+
+---
+
+### admin.loadVMs
+
+Load virtual machines from the plugin directory.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.loadVMs",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+**Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "newVMs": {
+            "vmID1": ["vm-alias-1"],
+            "vmID2": ["vm-alias-2"]
+        },
+        "failedVMs": {}
+    },
+    "id": 1
+}
+```
+
+---
+
+### admin.startCPUProfiler
+
+Start CPU profiling.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.startCPUProfiler",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+### admin.stopCPUProfiler
+
+Stop CPU profiling and save the profile.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.stopCPUProfiler",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+### admin.memoryProfile
+
+Capture a memory profile.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.memoryProfile",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+### admin.lockProfile
+
+Capture a mutex contention profile.
+
+**Parameters:** None
+
+---
+
+### admin.getConfig
+
+Get the node configuration.
+
+**Parameters:** None
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.getConfig",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+**Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "networkID": "mainnet",
+        "dbDir": "/home/user/.luxd/db",
+        "logLevel": "info",
+        "httpPort": 9630,
+        "stakingPort": 9631
+    },
+    "id": 1
+}
+```
+
+---
+
+### admin.shutdown
+
+Gracefully shut down the node.
+
+**Parameters:** None
+
+⚠️ **WARNING**: This will stop the node completely.
+
+**Example:**
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.shutdown",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+---
+
+## Database Management
+
+### admin.db.commit
+
+Force a database commit.
+
+**Parameters:** None
+
+```bash
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.db.commit",
+    "params":{},
+    "id":1
+}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+```
+
+## Profiling and Debugging
+
+### CPU Profiling Workflow
+
+```bash
+# Start profiling
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.startCPUProfiler",
+    "params":{},
+    "id":1
+}' http://localhost:9630/ext/admin
+
+# Let it run for 30 seconds
+sleep 30
+
+# Stop and save profile
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.stopCPUProfiler",
+    "params":{},
+    "id":2
+}' http://localhost:9630/ext/admin
+
+# Analyze profile
+go tool pprof cpu.prof
+```
+
+### Memory Profiling
+
+```bash
+# Capture memory profile
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.memoryProfile",
+    "params":{},
+    "id":1
+}' http://localhost:9630/ext/admin
+
+# Analyze
+go tool pprof mem.prof
+```
+
+### Goroutine Analysis
+
+```bash
+# Get goroutine dump
+curl http://localhost:9630/debug/pprof/goroutine > goroutine.txt
+
+# Or use pprof
+go tool pprof http://localhost:9630/debug/pprof/goroutine
+```
+
+## Log Management
+
+### Dynamic Log Level Control
+
+```bash
+#!/bin/bash
+# set_log_level.sh
+
+set_log_level() {
+    local LEVEL=$1
+    curl -s -X POST --data "{
+        \"jsonrpc\":\"2.0\",
+        \"method\":\"admin.setLogLevel\",
+        \"params\":{\"logLevel\":\"$LEVEL\"},
+        \"id\":1
+    }" http://localhost:9630/ext/admin
+}
+
+# Increase verbosity for debugging
+set_log_level "debug"
+
+# Run diagnostics
+sleep 60
+
+# Return to normal
+set_log_level "info"
+```
+
+### Component-Specific Logging
+
+```json
+{
+  "log-level": "info",
+  "log-levels": {
+    "consensus": "debug",
+    "network": "warn",
+    "api": "trace"
+  }
+}
+```
+
+## Security Considerations
+
+### Access Control
+
+1. **Network Binding**
+   ```bash
+   # Only allow localhost
+   ./build/node \
+     --api-admin-enabled=true \
+     --http-host=127.0.0.1
+   ```
+
+2. **Authentication**
+   ```bash
+   # Require password
+   ./build/node \
+     --api-admin-enabled=true \
+     --api-auth-required=true \
+     --api-auth-password="secure-password"
+   ```
+
+3. **Firewall Rules**
+   ```bash
+   # Block external access
+   iptables -A INPUT -p tcp --dport 9630 -s 127.0.0.1 -j ACCEPT
+   iptables -A INPUT -p tcp --dport 9630 -j DROP
+   ```
+
+### Audit Logging
+
+Enable audit logging for admin operations:
+
+```json
+{
+  "api-admin-enabled": true,
+  "api-audit-enabled": true,
+  "api-audit-file": "/var/log/luxd/audit.log"
+}
+```
+
+## Automation Scripts
+
+### Health and Restart Script
+
+```bash
+#!/bin/bash
+# auto_restart.sh
+
+check_health() {
+    curl -s http://localhost:9630/ext/health | jq -r '.healthy'
+}
+
+restart_node() {
+    echo "Restarting node..."
+
+    # Graceful shutdown
+    curl -X POST --data '{
+        "jsonrpc":"2.0",
+        "method":"admin.shutdown",
+        "params":{},
+        "id":1
+    }' http://localhost:9630/ext/admin
+
+    sleep 10
+
+    # Start node
+    systemctl start luxd
+}
+
+# Monitor and restart if unhealthy
+if [ "$(check_health)" != "true" ]; then
+    restart_node
+fi
+```
+
+### Configuration Update
+
+```bash
+#!/bin/bash
+# update_config.sh
+
+# Get current config
+CURRENT=$(curl -s -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.getConfig",
+    "params":{},
+    "id":1
+}' http://localhost:9630/ext/admin)
+
+echo "Current configuration:"
+echo $CURRENT | jq .
+
+# Update log level
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "method":"admin.setLogLevel",
+    "params":{"logLevel":"debug"},
+    "id":2
+}' http://localhost:9630/ext/admin
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Admin API Disabled**
+   ```json
+   {
+     "error": {
+       "code": -32601,
+       "message": "admin API is not enabled"
+     }
+   }
+   ```
+   **Solution**: Enable with `--api-admin-enabled=true`
+
+2. **Authentication Required**
+   ```json
+   {
+     "error": {
+       "code": -32600,
+       "message": "authentication required"
+     }
+   }
+   ```
+   **Solution**: Provide auth header or disable auth requirement
+
+3. **Operation Failed**
+   ```json
+   {
+     "error": {
+       "code": -32000,
+       "message": "operation failed: reason"
+     }
+   }
+   ```
+   **Solution**: Check logs for detailed error
+
+## Best Practices
+
+1. **Production Environment**
+   - Keep Admin API disabled
+   - Use configuration files instead
+   - Implement proper access controls
+
+2. **Development Environment**
+   - Enable Admin API for debugging
+   - Use profiling tools regularly
+   - Automate common tasks
+
+3. **Security**
+   - Never expose Admin API publicly
+   - Use strong authentication
+   - Audit all admin operations
+   - Rotate credentials regularly
+
+## Next Steps
+
+- [Security Guide](/docs/operations/security) - Secure your node
+- [Monitoring](/docs/operations/monitoring) - Set up monitoring
+- [Configuration](/docs/configuration) - Configuration options
+- [Troubleshooting](/docs/operations/troubleshooting) - Debug issues
