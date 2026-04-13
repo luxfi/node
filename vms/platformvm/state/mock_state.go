@@ -20,7 +20,7 @@ import (
 	ids "github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	gas "github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"

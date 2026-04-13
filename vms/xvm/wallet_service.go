@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math"
 	apitypes "github.com/luxfi/api/types"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/utxo/secp256k1fx"

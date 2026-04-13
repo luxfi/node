@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"

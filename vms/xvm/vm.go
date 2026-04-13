@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"

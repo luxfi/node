@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/p2p/gossip"
 	"github.com/luxfi/utxo/secp256k1fx"

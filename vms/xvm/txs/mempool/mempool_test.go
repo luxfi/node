@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/node/vms/xvm/txs"
 
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 )
 
 func newMempool() (*Mempool, error) {

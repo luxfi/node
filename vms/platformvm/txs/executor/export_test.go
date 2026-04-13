@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/utxo/secp256k1fx"

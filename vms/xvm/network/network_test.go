@@ -17,7 +17,7 @@ import (
 	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"

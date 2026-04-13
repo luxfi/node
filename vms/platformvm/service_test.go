@@ -40,7 +40,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"

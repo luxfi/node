@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 )
 
 func (s *state) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
