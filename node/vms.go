@@ -9,17 +9,16 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/aivm"
-	bvm "github.com/luxfi/node/vms/bridgevm"
+	"github.com/luxfi/node/vms/bridgevm"
 	"github.com/luxfi/node/vms/dexvm"
+	"github.com/luxfi/node/vms/graphvm"
 	"github.com/luxfi/node/vms/identityvm"
 	"github.com/luxfi/node/vms/keyvm"
 	"github.com/luxfi/node/vms/oraclevm"
-	qvm "github.com/luxfi/node/vms/quantumvm"
+	"github.com/luxfi/node/vms/quantumvm"
 	"github.com/luxfi/node/vms/relayvm"
-	"github.com/luxfi/node/vms/servicenodevm"
-	"github.com/luxfi/node/vms/teleportvm"
-	tvm "github.com/luxfi/node/vms/thresholdvm"
-	zvm "github.com/luxfi/node/vms/zkvm"
+	"github.com/luxfi/node/vms/thresholdvm"
+	"github.com/luxfi/node/vms/zkvm"
 )
 
 type vmEntry struct {
@@ -28,20 +27,22 @@ type vmEntry struct {
 	factory vms.Factory
 }
 
+// registerOptionalVMs registers the 11 optional VMs (A/B/D/G/I/K/O/Q/R/T/Z).
+// Primary network (P/X/C) is registered separately.
+// Session (S-Chain) is a standalone plugin at github.com/luxfi/session/plugin.
 func (n *Node) registerOptionalVMs() error {
 	entries := []vmEntry{
-		{"QuantumVM (Q-Chain)", qvm.VMID, &qvm.Factory{}},
 		{"AIVM (A-Chain)", aivm.VMID, &aivm.Factory{}},
-		{"BridgeVM (B-Chain)", bvm.VMID, &bvm.Factory{}},
+		{"BridgeVM (B-Chain)", bridgevm.VMID, &bridgevm.Factory{}},
 		{"DEXVM (D-Chain)", dexvm.VMID, &dexvm.Factory{}},
+		{"GraphVM (G-Chain)", graphvm.VMID, &graphvm.Factory{}},
 		{"IdentityVM (I-Chain)", identityvm.VMID, &identityvm.Factory{}},
 		{"KeyVM (K-Chain)", keyvm.VMID, &keyvm.Factory{}},
 		{"OracleVM (O-Chain)", oraclevm.VMID, &oraclevm.Factory{}},
+		{"QuantumVM (Q-Chain)", quantumvm.VMID, &quantumvm.Factory{}},
 		{"RelayVM (R-Chain)", relayvm.VMID, &relayvm.Factory{}},
-		{"ServiceNodeVM (S-Chain)", servicenodevm.VMID, &servicenodevm.Factory{}},
-		{"TeleportVM (T-Chain)", teleportvm.VMID, &teleportvm.Factory{}},
-		{"ThresholdVM", tvm.VMID, &tvm.Factory{}},
-		{"ZKVM (Z-Chain)", zvm.VMID, &zvm.Factory{}},
+		{"ThresholdVM (T-Chain)", thresholdvm.VMID, &thresholdvm.Factory{}},
+		{"ZKVM (Z-Chain)", zkvm.VMID, &zkvm.Factory{}},
 	}
 
 	registered := 0

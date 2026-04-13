@@ -9,7 +9,7 @@
 //
 // No block escapes the event horizon without quantum finality.
 
-package qvm
+package quantumvm
 
 import (
 	"context"

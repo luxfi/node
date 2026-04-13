@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // Package tvm implements the Threshold VM (T-Chain) - MPC as a service for all Lux chains
-package tvm
+package thresholdvm
 
 import (
 	"context"
