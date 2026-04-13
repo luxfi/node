@@ -30,6 +30,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -88,6 +89,7 @@ var (
 		secp256k1fx.ID:          {"secp256k1fx"},
 		nftfx.ID:                {"nftfx"},
 		propertyfx.ID:           {"propertyfx"},
+		mldsafx.ID:              {"mldsafx"},
 	}
 
 	errNoTxs                          = errors.New("genesis creates no transactions")
@@ -592,6 +594,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			secp256k1fx.ID,
 			nftfx.ID,
 			propertyfx.ID,
+			mldsafx.ID,
 		},
 		Name: "X-Chain",
 	})

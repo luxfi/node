@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
+	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -153,6 +154,7 @@ func newGenesisCodec() (codec.Manager, error) {
 	parser, err := txs.NewParser(
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
+			&mldsafx.Fx{},
 		},
 	)
 	if err != nil {
