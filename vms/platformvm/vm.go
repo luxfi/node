@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"

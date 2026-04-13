@@ -6,7 +6,7 @@ package xvm
 import (
 	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/pubsub"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 

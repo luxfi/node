@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	apitypes "github.com/luxfi/api/types"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"

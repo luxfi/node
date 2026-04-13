@@ -12,7 +12,7 @@ import (
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/vm/chains/atomic"
-	"github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/state"
