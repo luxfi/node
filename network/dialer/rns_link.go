@@ -81,8 +81,7 @@ type RNSLink struct {
 
 	// Peer information
 	peerDestination [endpoints.RNSDestinationLen]byte
-	peerSigningKey  [32]byte
-	peerExchangeKey [32]byte
+	peerSigningKey [32]byte
 
 	// Hybrid peer information (nil if peer is classical-only)
 	peerHybridIdentity *HybridPublicIdentity

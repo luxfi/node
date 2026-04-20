@@ -20,12 +20,10 @@ import (
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	consensusset "github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
@@ -231,20 +229,9 @@ type nodeIDConnector struct {
 	nodeID ids.NodeID
 }
 
-func newNodeIDConnector(nodeID ids.NodeID) *nodeIDConnector {
-	return &nodeIDConnector{nodeID: nodeID}
-}
-
 func (f *nodeIDConnector) IsAllowed(nodeID ids.NodeID, _ bool) bool {
 	return nodeID == f.nodeID
 }
-
-// noOpResourceManager is a no-op resource manager for testing
-type noOpResourceManager struct{}
-
-func (n *noOpResourceManager) CPUUsage() float64  { return 0 }
-func (n *noOpResourceManager) DiskUsage() float64 { return 0 }
-func (n *noOpResourceManager) Shutdown()          {}
 
 // noOpConsensusResourceTracker implements consensus ResourceTracker for testing
 type noOpConsensusResourceTracker struct{}
@@ -276,93 +263,3 @@ func (n *noOpConsensusDiskTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Ti
 }
 func (n *noOpConsensusDiskTracker) TotalUsage() float64 { return 0 }
 
-// noOpTargeter is a no-op targeter for testing
-type noOpTargeter struct {
-	target uint64
-}
-
-func (n *noOpTargeter) TargetUsage() uint64 { return n.target }
-
-// noOpResourceTracker is a no-op resource tracker for testing that implements consensus ResourceTracker
-type noOpResourceTracker struct{}
-
-func (n *noOpResourceTracker) StartProcessing(nodeID ids.NodeID, time time.Time) {}
-func (n *noOpResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time)  {}
-func (n *noOpResourceTracker) CPUTracker() tracker.Tracker                       { return &noOpCPUTracker{} }
-func (n *noOpResourceTracker) DiskTracker() tracker.Tracker                      { return &noOpDiskTracker{} }
-
-// noOpCPUTracker is a no-op CPU tracker
-type noOpCPUTracker struct{}
-
-func (n *noOpCPUTracker) Usage(nodeID ids.NodeID, now time.Time) float64 { return 0 }
-func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value float64) time.Duration {
-	return time.Duration(0)
-}
-func (n *noOpCPUTracker) TotalUsage() float64 { return 0 }
-
-// noOpDiskTracker is a no-op disk tracker
-type noOpDiskTracker struct{}
-
-func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, now time.Time) float64 { return 0 }
-func (n *noOpDiskTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value float64) time.Duration {
-	return time.Duration(0)
-}
-func (n *noOpDiskTracker) TotalUsage() float64 { return 0 }
-
-// noOpValidatorsManager is a no-op validators manager for testing
-type noOpValidatorsManager struct{}
-
-func (n *noOpValidatorsManager) GetValidators(netID ids.ID) (validators.Set, error) {
-	return &noOpValidatorSet{}, nil
-}
-func (n *noOpValidatorsManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
-	return nil, false
-}
-func (n *noOpValidatorsManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64  { return 0 }
-func (n *noOpValidatorsManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 { return 0 }
-func (n *noOpValidatorsManager) TotalLight(netID ids.ID) (uint64, error)          { return 0, nil }
-func (n *noOpValidatorsManager) TotalWeight(netID ids.ID) (uint64, error)         { return 0, nil }
-func (n *noOpValidatorsManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
-	return nil
-}
-func (n *noOpValidatorsManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
-	return nil
-}
-func (n *noOpValidatorsManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
-	return nil
-}
-func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
-	return nil
-}
-func (n *noOpValidatorsManager) GetValidatorIDs(netID ids.ID) []ids.NodeID { return nil }
-func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int            { return 0 }
-func (n *noOpValidatorsManager) NumNets() int                              { return 0 }
-func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
-	return 0, nil
-}
-func (n *noOpValidatorsManager) Sample(netID ids.ID, size int) ([]ids.NodeID, error) { return nil, nil }
-func (n *noOpValidatorsManager) Count(netID ids.ID) int                              { return 0 }
-func (n *noOpValidatorsManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
-}
-func (n *noOpValidatorsManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
-}
-
-// noOpValidatorSet is a no-op validator set for testing
-type noOpValidatorSet struct{}
-
-func (n *noOpValidatorSet) Has(ids.NodeID) bool                   { return false }
-func (n *noOpValidatorSet) Len() int                              { return 0 }
-func (n *noOpValidatorSet) List() []validators.Validator          { return nil }
-func (n *noOpValidatorSet) Light() uint64                         { return 0 }
-func (n *noOpValidatorSet) Sample(size int) ([]ids.NodeID, error) { return nil, nil }
-
-// noOpMetricsFactory is a no-op metrics factory for testing
-type noOpMetricsFactory struct{}
-
-func (n *noOpMetricsFactory) New(string) metric.Metrics {
-	return metric.NewNoOp()
-}
-
-func (n *noOpMetricsFactory) NewWithRegistry(string, metric.Registry) metric.Metrics {
-	return metric.NewNoOp()
-}

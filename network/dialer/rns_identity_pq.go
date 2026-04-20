@@ -31,8 +31,6 @@ const (
 	mldsaPublicKeySize  = mldsa.MLDSA65PublicKeySize  // ~1952 bytes
 	mldsaSignatureSize  = mldsa.MLDSA65SignatureSize  // ~3309 bytes
 
-	// Hybrid signature size: Ed25519 (64) + ML-DSA-65 (~3309)
-	hybridSignatureSize = ed25519SignatureSize + mldsaSignatureSize
 )
 
 var (

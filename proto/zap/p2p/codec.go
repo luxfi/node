@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"sync"
 )
 
 // Message tags for ZAP encoding
@@ -44,12 +43,6 @@ var (
 	ErrInvalidMessage = errors.New("invalid wire message")
 	ErrUnknownTag     = errors.New("unknown message tag")
 
-	bufPool = sync.Pool{
-		New: func() interface{} {
-			b := make([]byte, 64*1024)
-			return &b
-		},
-	}
 )
 
 // Buffer for zero-copy encoding

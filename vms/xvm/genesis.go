@@ -14,8 +14,13 @@ import (
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
+	"github.com/luxfi/utxo/bls12381fx"
+	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
+	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/secp256r1fx"
+	"github.com/luxfi/utxo/slhdsafx"
 )
 
 // Genesis represents the genesis state of the XVM
@@ -155,6 +160,11 @@ func newGenesisCodec() (codec.Manager, error) {
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
 			&mldsafx.Fx{},
+			&slhdsafx.Fx{},
+			&ed25519fx.Fx{},
+			&secp256r1fx.Fx{},
+			&schnorrfx.Fx{},
+			&bls12381fx.Fx{},
 		},
 	)
 	if err != nil {

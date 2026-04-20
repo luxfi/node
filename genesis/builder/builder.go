@@ -30,10 +30,15 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/utxo/bls12381fx"
+	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
+	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/secp256r1fx"
+	"github.com/luxfi/utxo/slhdsafx"
 
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	genesisconfigs "github.com/luxfi/genesis/configs"
@@ -90,6 +95,11 @@ var (
 		nftfx.ID:                {"nftfx"},
 		propertyfx.ID:           {"propertyfx"},
 		mldsafx.ID:              {"mldsafx"},
+		slhdsafx.ID:             {"slhdsafx"},
+		ed25519fx.ID:            {"ed25519fx"},
+		secp256r1fx.ID:          {"secp256r1fx"},
+		schnorrfx.ID:            {"schnorrfx"},
+		bls12381fx.ID:           {"bls12381fx"},
 	}
 
 	errNoTxs                          = errors.New("genesis creates no transactions")
@@ -595,6 +605,11 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			nftfx.ID,
 			propertyfx.ID,
 			mldsafx.ID,
+			slhdsafx.ID,
+			ed25519fx.ID,
+			secp256r1fx.ID,
+			schnorrfx.ID,
+			bls12381fx.ID,
 		},
 		Name: "X-Chain",
 	})

@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/rs/cors"
@@ -89,9 +88,6 @@ type server struct {
 	// Maps endpoints to handlers
 	router *router
 
-	// Mutex for thread-safe operations
-	lock sync.RWMutex
-
 	srv *http.Server
 
 	// Listener used to serve traffic
@@ -154,25 +150,6 @@ func (s *server) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) 
 		log.String("chainName", chainName),
 		log.Stringer("chainID", rt.ChainID),
 	)
-}
-
-func (s *server) addChainRoute(chainName string, handler http.Handler, rt *runtime.Runtime, base, endpoint string) error {
-	url := fmt.Sprintf("%s/%s", baseURL, base)
-	s.log.Info("adding route",
-		log.UserString("url", url),
-		log.UserString("endpoint", endpoint),
-	)
-	handler = s.wrapMiddleware(chainName, handler, rt)
-	return s.router.AddRouter(url, endpoint, handler)
-}
-
-func (s *server) wrapMiddleware(chainName string, handler http.Handler, rt *runtime.Runtime) http.Handler {
-	if s.tracingEnabled {
-		handler = TraceHandler(handler, chainName, s.tracer)
-	}
-	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
-	handler = rejectMiddleware(handler, rt)
-	return s.metrics.wrapHandler(chainName, handler)
 }
 
 func (s *server) AddRoute(handler http.Handler, base, endpoint string) error {

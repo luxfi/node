@@ -63,7 +63,6 @@ var (
 	errIncompatibleFx            = errors.New("incompatible feature extension")
 	errUnknownFx                 = errors.New("unknown feature extension")
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
-	errUnknownState              = errors.New("unknown state")
 )
 
 // BCLookup provides blockchain alias lookup

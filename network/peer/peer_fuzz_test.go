@@ -375,7 +375,3 @@ type testRouter struct{}
 
 func (r *testRouter) HandleInbound(context.Context, message.InboundMessage) {}
 
-// newTestResourceTracker returns a new test resource tracker
-func newTestResourceTracker() *testResourceTracker {
-	return &testResourceTracker{}
-}

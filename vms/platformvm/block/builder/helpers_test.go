@@ -116,9 +116,8 @@ type environment struct {
 	rt             *runtime.Runtime
 	msm            *mutableSharedMemory
 	fx             fx.Fx
-	state          state.State
-	uptimes        uptime.Calculator
-	utxosVerifier  utxo.Verifier
+	state         state.State
+	utxosVerifier utxo.Verifier
 	backend        txexecutor.Backend
 }
 

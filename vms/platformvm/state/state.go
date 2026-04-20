@@ -53,7 +53,6 @@ const (
 var (
 	_ State = (*state)(nil)
 
-	errValidatorSetAlreadyPopulated   = errors.New("validator set already populated")
 	errIsNotNet                       = errors.New("is not a chain")
 	errMissingPrimaryNetworkValidator = errors.New("missing primary network validator")
 

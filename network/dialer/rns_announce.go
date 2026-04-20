@@ -631,7 +631,6 @@ type RNSAnnouncer struct {
 	table       map[[endpoints.RNSDestinationLen]byte]*AnnounceEntry
 	handlers    []func(dest [endpoints.RNSDestinationLen]byte, entry *AnnounceEntry)
 	gatewayAddr string
-	listener    net.Listener
 }
 
 // RNSAnnouncerConfig configures the RNS announcer.

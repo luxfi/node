@@ -86,26 +86,6 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	)
 }
 
-// dbManagerWrapper wraps a database.Database to implement chain.DBManager
-type dbManagerWrapper struct {
-	db database.Database
-}
-
-func (d *dbManagerWrapper) Current() database.Database {
-	return d.db
-}
-
-func (d *dbManagerWrapper) Database(id ids.ID) database.Database {
-	return d.db
-}
-
-func (d *dbManagerWrapper) Close() error {
-	if d.db != nil {
-		return d.db.Close()
-	}
-	return nil
-}
-
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a
 // call to Linearize. This enables the proposervm to provide its toEngine
 // channel to the VM that is being linearized.

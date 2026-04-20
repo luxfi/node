@@ -21,8 +21,7 @@ var (
 
 	errNoEvidence           = errors.New("no equivocation evidence provided")
 	errInvalidEvidenceType  = errors.New("invalid evidence type")
-	errSameContent          = errors.New("evidence messages are identical")
-	errHeightMismatch       = errors.New("evidence heights do not match")
+	errSameContent    = errors.New("evidence messages are identical")
 	errEmptySignature       = errors.New("evidence contains empty signature")
 	errEmptyMessage         = errors.New("evidence contains empty message")
 	errSlashPercentTooLarge = errors.New("slash percentage exceeds 100%")

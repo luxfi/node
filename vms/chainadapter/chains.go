@@ -5,8 +5,6 @@ package chainadapter
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
@@ -22,7 +20,6 @@ type PolkadotAdapter struct {
 	headers         map[uint64]*PolkadotHeader
 	authorities     []*PolkadotAuthority
 	latestFinalized uint64
-	currentSetID    uint64
 	initialized     bool
 }
 
@@ -371,7 +368,6 @@ type EVML2Adapter struct {
 	chainName       string
 	config          *ChainConfig
 	headers         map[uint64]*EVMHeader
-	l1Finalized     uint64 // L1 block where this L2 state is finalized
 	latestConfirmed uint64
 	initialized     bool
 }
@@ -542,9 +538,8 @@ type CardanoAdapter struct {
 	config          *ChainConfig
 	blocks          map[uint64]*CardanoBlock
 	stakePool       map[[28]byte]*CardanoPool // Pool ID -> Pool
-	latestSlot      uint64
-	currentEpoch    uint64
-	initialized     bool
+	latestSlot  uint64
+	initialized bool
 }
 
 type CardanoBlock struct {
@@ -636,7 +631,6 @@ type NEARAdapter struct {
 	blocks          map[uint64]*NEARBlock
 	validators      map[string]*NEARValidator
 	latestFinalized uint64
-	currentEpoch    uint64
 	initialized     bool
 }
 
@@ -729,7 +723,6 @@ type AptosAdapter struct {
 	blocks          map[uint64]*AptosBlock
 	validators      []*AptosValidator
 	latestCommitted uint64
-	currentEpoch    uint64
 	initialized     bool
 }
 
@@ -815,8 +808,7 @@ type SuiAdapter struct {
 	checkpoints     map[uint64]*SuiCheckpoint
 	validators      []*SuiValidator
 	latestCheckpoint uint64
-	currentEpoch    uint64
-	initialized     bool
+	initialized      bool
 }
 
 type SuiCheckpoint struct {
@@ -1063,17 +1055,3 @@ func (a *TRONAdapter) Close() error {
 
 // ======== Helper Functions ========
 
-// computeEVMBlockHash computes an EVM block hash
-func computeEVMBlockHash(header *EVMHeader) [32]byte {
-	h := sha256.New()
-	binary.Write(h, binary.BigEndian, header.BlockNumber)
-	h.Write(header.ParentHash[:])
-	h.Write(header.StateRoot[:])
-	h.Write(header.TxRoot[:])
-	h.Write(header.ReceiptRoot[:])
-	binary.Write(h, binary.BigEndian, header.Timestamp)
-
-	var result [32]byte
-	copy(result[:], h.Sum(nil))
-	return result
-}

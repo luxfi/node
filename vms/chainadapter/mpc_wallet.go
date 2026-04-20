@@ -134,8 +134,7 @@ type MultiChainMPCWallet struct {
 	mu sync.RWMutex
 
 	// Master key information
-	masterPublicKey []byte
-	threshold       int
+	threshold int
 	totalShares     int
 
 	// Per-chain key sets

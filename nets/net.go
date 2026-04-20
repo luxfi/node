@@ -49,16 +49,6 @@ type Net interface {
 	Allower
 }
 
-type net struct {
-	lock             sync.RWMutex
-	bootstrapping    set.Set[ids.ID]
-	bootstrapped     set.Set[ids.ID]
-	once             sync.Once
-	bootstrappedSema chan struct{}
-	config           Config
-	myNodeID         ids.NodeID
-}
-
 func New(myNodeID ids.NodeID, config Config) Net {
 	return &chain{
 		bootstrapping:    make(set.Set[ids.ID]),

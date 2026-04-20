@@ -5,11 +5,6 @@ package metrics
 
 import "github.com/luxfi/metric"
 
-var counterOpts = metric.CounterOpts{
-	Name: "counter",
-	Help: "help",
-}
-
 type testGatherer struct {
 	mfs []*metric.MetricFamily
 	err error

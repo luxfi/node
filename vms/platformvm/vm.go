@@ -4,7 +4,6 @@
 package platformvm
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -19,7 +18,7 @@ import (
 
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
-	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
+
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -89,8 +88,7 @@ type VM struct {
 	metrics platformvmmetrics.Metrics
 
 	// Used to get time. Useful for faking time during tests.
-	consensusClock consensusclock.Clock
-	nodeClock      mockable.Clock
+	nodeClock mockable.Clock
 
 	uptimeManager uptime.Calculator
 	tracker       *uptimeTracker
@@ -105,10 +103,6 @@ type VM struct {
 	lock     sync.RWMutex
 	xAssetID ids.ID
 	chainID  ids.ID
-	// bcLookup     consensus.AliasLookup
-	// sharedMemory consensus.SharedMemory
-	chainDataDir string
-
 	state state.State
 
 	fx            fx.Fx
@@ -447,150 +441,6 @@ func (vm *VM) pruneMempool() error {
 		}
 	}
 
-	return nil
-}
-
-// checkExistingChains looks for existing blockchain data and registers them
-func (vm *VM) checkExistingChains() error {
-	// Scan chainData directory for existing chains
-	// We need the parent chainData directory, not the P-Chain specific one
-	chainDataDir := filepath.Dir(vm.chainDataDir)
-	vm.log.Info("checking for existing chains in chainData directory",
-		"chainDataDir", chainDataDir,
-	)
-
-	entries, err := os.ReadDir(chainDataDir)
-	if err != nil {
-		vm.log.Info("chainData directory read error",
-			"error", err,
-		)
-		// Directory might not exist yet, that's ok
-		return nil
-	}
-
-	vm.log.Info("found chainData entries",
-		"count", len(entries),
-	)
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		vm.log.Info("checking chainData entry",
-			"name", entry.Name(),
-		)
-
-		// Try to parse as chain ID
-		chainID, err := ids.FromString(entry.Name())
-		if err != nil {
-			vm.log.Debug("failed to parse chain ID",
-				"name", entry.Name(),
-				"error", err,
-			)
-			continue
-		}
-
-		// Check if this chain has a config.json indicating it's an EVM chain
-		configPath := filepath.Join(chainDataDir, entry.Name(), "config.json")
-		configData, err := os.ReadFile(configPath)
-		if err != nil {
-			continue
-		}
-
-		// Determine VM type based on directory contents
-		var vmID ids.ID
-		var netID ids.ID = constants.PrimaryNetworkID // Default to primary network
-
-		// Check for EVM chain (C-Chain)
-		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
-			vmID = constants.EVMID
-			vm.log.Info("detected EVM chain from config",
-				"chainID", chainID.String(),
-			)
-		} else {
-			// Check for other VM types by looking at other files
-			// For now, we'll skip non-EVM chains
-			vm.log.Debug("skipping non-EVM chain",
-				"chainID", chainID.String(),
-			)
-			continue
-		}
-
-		// Check if we need to determine net ID from somewhere
-		// For now, assume primary network for orphaned chains
-
-		// Check if this chain is already known
-		chains, err := vm.state.GetChains(netID)
-		if err != nil {
-			vm.log.Warn("failed to get chains for chain",
-				"netID", netID.String(),
-				"error", err,
-			)
-			continue
-		}
-
-		chainExists := false
-		for _, chain := range chains {
-			if chain.ID() == chainID {
-				chainExists = true
-				break
-			}
-		}
-
-		if !chainExists {
-			// This is an orphaned chain, queue it for creation
-			vm.log.Info("found orphaned chain, queuing for creation",
-				"chainID", chainID.String(),
-				"vmID", vmID.String(),
-				"netID", netID.String(),
-				"path", filepath.Join(chainDataDir, entry.Name()),
-			)
-
-			// For existing chains, we need to provide a minimal but valid genesis
-			// The EVM will match this against the existing chain data
-			// Extract chainId from config if possible
-			// 			var chainIDNum uint64 = 96369 // default
-			// 			if bytes.Contains(configData, []byte(`"chainId": 96369`)) || bytes.Contains(configData, []byte(`"chainId":96369`)) {
-			// 				chainIDNum = 96369
-			// 			}
-
-			// 			minimalGenesis := fmt.Sprintf(`{
-			// 				"config": {
-			// 					"chainId": %d,
-			// 					"homesteadBlock": 0,
-			// 					"eip150Block": 0,
-			// 					"eip155Block": 0,
-			// 					"eip158Block": 0,
-			// 					"byzantiumBlock": 0,
-			// 					"constantinopleBlock": 0,
-			// 					"petersburgBlock": 0,
-			// 					"istanbulBlock": 0,
-			// 					"muirGlacierBlock": 0,
-			// 					"evmTimestamp": 0,
-			// 					"feeConfig": {
-			// 						"gasLimit": 8000000,
-			// 						"targetBlockRate": 2,
-			// 						"minBaseFee": 25000000000,
-			// 						"targetGas": 15000000,
-			// 						"baseFeeChangeDenominator": 36,
-			// 						"minBlockGasCost": 0,
-			// 						"maxBlockGasCost": 1000000,
-			// 						"blockGasCostStep": 200000
-			// 					}
-			// 				},
-			// 				"gasLimit": "0x7a1200",
-			// 				"difficulty": "0x0",
-			// 				"alloc": {}
-			// 			}`, chainIDNum)
-
-			// 			vm.Internal.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
-		} else {
-			vm.log.Debug("chain already registered",
-				"chainID", chainID.String(),
-			)
-		}
-	}
 	return nil
 }
 

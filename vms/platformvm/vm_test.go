@@ -33,7 +33,6 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/vm/chains/atomic"
 	// "github.com/luxfi/node/message" // unused
@@ -117,8 +116,6 @@ var (
 		ExcessConversionConstant: 100,
 	}
 
-	// chain that exists at genesis in defaultVM
-	testNet1 *txs.Tx
 )
 
 // mockValidatorState implements runtime.ValidatorState for testing
@@ -696,29 +693,6 @@ func TestAddNetValidatorReject(t *testing.T) {
 }
 
 // Test case where primary network validator rewarded
-// noOpBenchlist is a mock implementation of benchlist.Manager for testing
-type noOpBenchlist struct{}
-
-func (n *noOpBenchlist) IsBenched(nodeID ids.NodeID, chainID ids.ID) bool {
-	return false
-}
-
-func (n *noOpBenchlist) GetBenched(chainID ids.ID) []ids.NodeID {
-	return nil
-}
-
-func (n *noOpBenchlist) RegisterChain(chainID ids.ID, vdrs validators.Manager) error {
-	return nil
-}
-
-func (n *noOpBenchlist) Benchable(chainID ids.ID, nodeID ids.NodeID) benchlist.Benchable {
-	return n
-}
-
-func (n *noOpBenchlist) Benched(chainID ids.ID, nodeID ids.NodeID) {}
-
-func (n *noOpBenchlist) Unbenched(chainID ids.ID, nodeID ids.NodeID) {}
-
 func TestRewardValidatorAccept(t *testing.T) {
 	require := require.New(t)
 	vmImpl, _, _ := defaultVM(t, upgradetest.Latest)

@@ -15,10 +15,8 @@ import (
 )
 
 var (
-	blobPrefix       = []byte("blob:")
-	commitmentPrefix = []byte("commit:")
-	certPrefix       = []byte("cert:")
-	samplePrefix     = []byte("sample:")
+	blobPrefix = []byte("blob:")
+	certPrefix = []byte("cert:")
 
 	// ErrBlobNotFound indicates blob was not found
 	ErrBlobNotFound = errors.New("blob not found")

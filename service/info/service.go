@@ -45,13 +45,6 @@ var (
 		AddNetworkValidatorFee: apitypes.Uint64(constants.MilliLux),
 		AddNetworkDelegatorFee: apitypes.Uint64(constants.MilliLux),
 	}
-	fujiGetTxFeeResponse = apiinfo.GetTxFeeResponse{
-		CreateNetworkTxFee:     apitypes.Uint64(100 * constants.MilliLux),
-		TransformChainTxFee:    apitypes.Uint64(1 * constants.Lux),
-		CreateChainTxFee:       apitypes.Uint64(100 * constants.MilliLux),
-		AddNetworkValidatorFee: apitypes.Uint64(constants.MilliLux),
-		AddNetworkDelegatorFee: apitypes.Uint64(constants.MilliLux),
-	}
 	defaultGetTxFeeResponse = apiinfo.GetTxFeeResponse{
 		CreateNetworkTxFee:     apitypes.Uint64(100 * constants.MilliLux),
 		TransformChainTxFee:    apitypes.Uint64(100 * constants.MilliLux),

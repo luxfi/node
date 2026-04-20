@@ -323,9 +323,6 @@ type Node struct {
 	// Storage for this node
 	DB database.Database
 
-	// stopReplicator stops streaming DB replication (set by initDatabase if configured)
-	stopReplicator func()
-
 	router     nat.Router
 	portMapper *nat.Mapper
 	ipUpdater  dynamicip.Updater

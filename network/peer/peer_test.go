@@ -44,16 +44,6 @@ type rawTestPeer struct {
 	inboundMsgChan <-chan message.InboundMessage
 }
 
-// noOpResourceManager implements resource.Manager for testing
-type noOpResourceManager struct{}
-
-func (n *noOpResourceManager) CPUUsage() float64          { return 0 }
-func (n *noOpResourceManager) DiskUsage() float64         { return 0 }
-func (n *noOpResourceManager) AvailableDiskBytes() uint64 { return 1 << 62 }
-func (n *noOpResourceManager) TrackProcess(pid int)       {}
-func (n *noOpResourceManager) UntrackProcess(pid int)     {}
-func (n *noOpResourceManager) Shutdown()                  {}
-
 // noOpTracker implements tracker.Tracker for testing
 type noOpTracker struct{}
 

@@ -7,10 +7,15 @@ import (
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/utxo/bls12381fx"
+	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
+	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/secp256r1fx"
+	"github.com/luxfi/utxo/slhdsafx"
 )
 
 var (
@@ -18,6 +23,11 @@ var (
 	_ Fx                = (*nftfx.Fx)(nil)
 	_ Fx                = (*propertyfx.Fx)(nil)
 	_ Fx                = (*mldsafx.Fx)(nil)
+	_ Fx                = (*slhdsafx.Fx)(nil)
+	_ Fx                = (*ed25519fx.Fx)(nil)
+	_ Fx                = (*secp256r1fx.Fx)(nil)
+	_ Fx                = (*schnorrfx.Fx)(nil)
+	_ Fx                = (*bls12381fx.Fx)(nil)
 	_ verify.Verifiable = (*FxCredential)(nil)
 )
 

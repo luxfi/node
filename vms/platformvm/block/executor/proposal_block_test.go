@@ -17,7 +17,6 @@ import (
 	"github.com/luxfi/ids"
 
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -38,12 +37,6 @@ import (
 
 	walletcommon "github.com/luxfi/node/wallet/network/primary/common"
 )
-
-func mustNewProofOfPossession(t *testing.T, sk *bls.SecretKey) *signer.ProofOfPossession {
-	pop, err := signer.NewProofOfPossession(sk)
-	require.NoError(t, err)
-	return pop
-}
 
 func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
