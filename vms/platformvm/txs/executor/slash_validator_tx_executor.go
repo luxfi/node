@@ -19,8 +19,7 @@ var (
 	errValidatorNotFound          = errors.New("validator not found in current staker set")
 	errValidatorNoBLSKey          = errors.New("validator has no BLS public key registered")
 	errInvalidEvidenceSignature   = errors.New("evidence signature does not verify against validator BLS key")
-	errSlashPercentMismatch       = errors.New("slash percentage does not match expected value for evidence type")
-	errWeightBelowMinimum         = errors.New("slashed weight would fall below minimum validator stake")
+	errSlashPercentMismatch = errors.New("slash percentage does not match expected value for evidence type")
 )
 
 // Default slash percentages per evidence type.

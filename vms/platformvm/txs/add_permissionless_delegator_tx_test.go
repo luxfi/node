@@ -28,16 +28,6 @@ import (
 
 var errCustom = errors.New("custom error")
 
-// testRuntime creates a test runtime with the given parameters.
-func testRuntime(networkID uint32, chainID, xAssetID ids.ID) *runtime.Runtime {
-	return &runtime.Runtime{
-		NetworkID: networkID,
-
-		ChainID:  chainID,
-		XAssetID: xAssetID,
-	}
-}
-
 func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
 

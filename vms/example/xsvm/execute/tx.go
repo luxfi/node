@@ -183,29 +183,3 @@ func (t *Tx) Import(i *tx.Import) error {
 	)
 }
 
-// warpValidatorStateAdapter adapts runtime.ValidatorState to warp.ValidatorState
-type warpValidatorStateAdapter struct {
-	ctx context.Context
-	vs  runtime.ValidatorState
-}
-
-func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*warp.ValidatorData, error) {
-	validatorSet, err := w.vs.GetValidatorSet(ctx, height, netID)
-	if err != nil {
-		return nil, err
-	}
-	// Convert from GetValidatorOutput map to ValidatorData map
-	result := make(map[ids.NodeID]*warp.ValidatorData, len(validatorSet))
-	for nodeID, validator := range validatorSet {
-		result[nodeID] = &warp.ValidatorData{
-			NodeID:    nodeID,
-			PublicKey: validator.PublicKey,
-			Weight:    validator.Weight,
-		}
-	}
-	return result, nil
-}
-
-func (w *warpValidatorStateAdapter) GetNetworkID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return w.vs.GetNetworkID(chainID)
-}

@@ -6,12 +6,9 @@
 package nat
 
 import (
-	"errors"
 	"net/netip"
 	"time"
 )
-
-var errInvalidLifetime = errors.New("invalid mapping duration range")
 
 // getPMPRouter returns nil in minimal build (no NAT-PMP support).
 // Build with -tags=nattraversal for NAT-PMP support.

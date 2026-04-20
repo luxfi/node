@@ -53,8 +53,7 @@ type AppChain struct {
 	computeEngine *ConfidentialComputeEngine
 
 	// Sync tracking
-	lastSyncTime  time.Time
-	pendingSync   []*Operation
+	lastSyncTime   time.Time
 	syncInProgress bool
 }
 

@@ -172,17 +172,6 @@ func newDefaultResourceTracker() tracker.ResourceTracker {
 
 // noOpConsensusResourceTracker is defined in test_network.go to avoid duplication
 
-// noOpTracker implements tracker.CPUTracker and tracker.Tracker for testing
-type noOpTracker struct{}
-
-func (n *noOpTracker) Usage(nodeID ids.NodeID, t time.Time) float64 {
-	return 0
-}
-
-func (n *noOpTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
-	return time.Hour
-}
-
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
 	var (
 		dialer    = newTestDialer()

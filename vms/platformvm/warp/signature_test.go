@@ -19,10 +19,7 @@ import (
 	"github.com/luxfi/math/set"
 )
 
-var (
-	sourceChainID = ids.GenerateTestID()
-	netID         = ids.GenerateTestID()
-)
+var sourceChainID = ids.GenerateTestID()
 
 func getTestValidators() map[ids.NodeID]*validators.GetValidatorOutput {
 	return map[ids.NodeID]*validators.GetValidatorOutput{

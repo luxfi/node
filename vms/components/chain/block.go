@@ -5,7 +5,6 @@ package chain
 
 import (
 	"context"
-	"errors"
 
 	"github.com/luxfi/runtime"
 	consensuschain "github.com/luxfi/vm/chain"
@@ -14,8 +13,6 @@ import (
 var (
 	_ consensuschain.Block             = (*BlockWrapper)(nil)
 	_ consensuschain.WithVerifyRuntime = (*BlockWrapper)(nil)
-
-	errExpectedBlockWithVerifyRuntime = errors.New("expected consensus chain WithVerifyRuntime")
 )
 
 // BlockWrapper wraps a linear Block while adding a smart caching layer to improve

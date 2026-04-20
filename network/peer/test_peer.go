@@ -153,41 +153,6 @@ func StartTestPeer(
 	return peer, peer.AwaitReady(ctx)
 }
 
-// testResourceTracker is a minimal implementation for testing
-type testResourceTracker struct{}
-
-func (t *testResourceTracker) CPUTracker() tracker.Tracker {
-	return &testCPUTracker{}
-}
-
-func (t *testResourceTracker) DiskTracker() tracker.Tracker {
-	return &testDiskTracker{}
-}
-
-func (t *testResourceTracker) StartProcessing(ids.NodeID, time.Time) {}
-func (t *testResourceTracker) StopProcessing(ids.NodeID, time.Time)  {}
-
-// testCPUTracker is a minimal CPU tracker implementation
-type testCPUTracker struct{}
-
-func (t *testCPUTracker) Usage(ids.NodeID, time.Time) float64                         { return 0 }
-func (t *testCPUTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
-func (t *testCPUTracker) TotalUsage() float64                                         { return 0 }
-
-// testTracker is a minimal tracker implementation
-type testTracker struct{}
-
-func (t *testTracker) UtilizationTarget() float64                                  { return 0.8 }
-func (t *testTracker) CurrentUsage() uint64                                        { return 0 }
-func (t *testTracker) TotalUsage() float64                                         { return 0 }
-func (t *testTracker) Usage(ids.NodeID, time.Time) float64                         { return 0 }
-func (t *testTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
-
-// testDiskTracker is a minimal disk tracker implementation
-type testDiskTracker struct{ testTracker }
-
-func (t *testDiskTracker) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
-
 // testValidatorManager is a minimal validator manager implementation for testing
 type testValidatorManager struct{}
 

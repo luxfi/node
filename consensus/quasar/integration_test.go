@@ -106,15 +106,6 @@ func (m *mockQuantumSigner) SignMessage(msg []byte) ([]byte, error) {
 // Helper functions
 // ----------------------------------------------------------------------------
 
-// generateIntegrationValidators creates n validators with random IDs
-func generateIntegrationValidators(n int) []ids.NodeID {
-	validators := make([]ids.NodeID, n)
-	for i := range validators {
-		validators[i] = ids.GenerateTestNodeID()
-	}
-	return validators
-}
-
 // generateValidatorStates creates n ValidatorState entries
 func generateValidatorStates(n int) []ValidatorState {
 	states := make([]ValidatorState, n)

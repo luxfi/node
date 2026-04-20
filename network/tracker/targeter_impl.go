@@ -4,7 +4,6 @@
 package tracker
 
 import (
-	"sync"
 	"sync/atomic"
 )
 
@@ -42,7 +41,6 @@ type TargeterConfig struct {
 
 type targeterImpl struct {
 	targetUsage uint64
-	mu          sync.RWMutex
 }
 
 func (t *targeterImpl) TargetUsage() uint64 {

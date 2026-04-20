@@ -269,7 +269,6 @@ func DefaultConfig() Config {
 // ConfigBuilder enables fluent Config construction with validation.
 type ConfigBuilder struct {
 	config Config
-	errs   []error
 }
 
 // NewConfigBuilder creates a builder starting from defaults.

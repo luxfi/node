@@ -38,8 +38,6 @@ const (
 	// maxPassLen is the maximum allowed password length
 	maxPassLen = 1024
 
-	// minPassLen is the minimum password length for basic strength check
-	minPassLen = 8
 )
 
 var (
