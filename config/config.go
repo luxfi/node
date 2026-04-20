@@ -93,7 +93,6 @@ var (
 	errCannotReadDirectory                    = errors.New("cannot read directory")
 	errUnmarshalling                          = errors.New("unmarshalling failed")
 	errFileDoesNotExist                       = errors.New("file does not exist")
-	errDevNetworkGenesisMismatch              = errors.New("genesis mismatch: automine-network.json exists but produces different genesis hash; delete datadir or use original network config")
 )
 
 // AutomineNetworkConfig captures immutable network state for automine mode persistence.
@@ -217,32 +216,6 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (log.Config, error) {
-	loggingConfig := log.Config{}
-	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
-	var err error
-	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
-	if err != nil {
-		return loggingConfig, err
-	}
-	logDisplayLevel := v.GetString(LogLevelKey)
-	if v.IsSet(LogDisplayLevelKey) {
-		logDisplayLevel = v.GetString(LogDisplayLevelKey)
-	}
-	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
-	if err != nil {
-		return loggingConfig, err
-	}
-	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
-	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
-	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
-	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
-	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
-	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
-
-	return loggingConfig, err
-}
-
 func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 	var (
 		httpsKey  []byte
@@ -307,25 +280,6 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 		ShutdownTimeout:    v.GetDuration(HTTPShutdownTimeoutKey),
 		ShutdownWait:       v.GetDuration(HTTPShutdownWaitKey),
 	}, nil
-}
-
-func getRouterHealthConfig(v *viper.Viper, halflife time.Duration) (RouterHealthConfig, error) {
-	config := RouterHealthConfig{
-		MaxDropRate:            v.GetFloat64(RouterHealthMaxDropRateKey),
-		MaxOutstandingRequests: int(v.GetUint(RouterHealthMaxOutstandingRequestsKey)),
-		MaxOutstandingDuration: v.GetDuration(NetworkHealthMaxOutstandingDurationKey),
-		MaxRunTimeRequests:     v.GetDuration(NetworkMaximumTimeoutKey),
-		MaxDropRateHalflife:    halflife,
-	}
-	switch {
-	case config.MaxDropRate < 0 || config.MaxDropRate > 1:
-		return RouterHealthConfig{}, fmt.Errorf("%q must be in [0,1]", RouterHealthMaxDropRateKey)
-	case config.MaxOutstandingDuration <= 0:
-		return RouterHealthConfig{}, fmt.Errorf("%q must be positive", NetworkHealthMaxOutstandingDurationKey)
-	case config.MaxRunTimeRequests <= 0:
-		return RouterHealthConfig{}, fmt.Errorf("%q must be positive", NetworkMaximumTimeoutKey)
-	}
-	return config, nil
 }
 
 func getAdaptiveTimeoutConfig(v *viper.Viper) (timer.AdaptiveTimeoutConfig, error) {
@@ -531,24 +485,6 @@ func getNetworkConfig(
 		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxClockDifferenceKey)
 	}
 	return config, nil
-}
-
-func getBenchlistConfig(v *viper.Viper, consensusParameters consensusconfig.Parameters) (benchlist.Config, error) {
-	// AlphaConfidence is used here to ensure that benching can't cause a
-	// liveness failure. If AlphaPreference were used, the benchlist may grow to
-	// a point that committing would be extremely unlikely to happen.
-	_ = consensusParameters.AlphaConfidence
-	_ = consensusParameters.K
-	// Validate configuration but return empty benchlist.Config as it's deprecated
-	duration := v.GetDuration(BenchlistDurationKey)
-	minFailingDuration := v.GetDuration(BenchlistMinFailingDurationKey)
-	switch {
-	case duration < 0:
-		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistDurationKey)
-	case minFailingDuration < 0:
-		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistMinFailingDurationKey)
-	}
-	return benchlist.Config{}, nil
 }
 
 func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
@@ -1725,26 +1661,6 @@ func getDefaultNetConfig(v *viper.Viper) nets.Config {
 	return config
 }
 
-func getCPUTargeterConfig(v *viper.Viper) (TrackerTargeterConfig, error) {
-	vdrAlloc := v.GetFloat64(CPUVdrAllocKey)
-	maxNonVdrUsage := v.GetFloat64(CPUMaxNonVdrUsageKey)
-	maxNonVdrNodeUsage := v.GetFloat64(CPUMaxNonVdrNodeUsageKey)
-	switch {
-	case vdrAlloc < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUVdrAllocKey, vdrAlloc)
-	case maxNonVdrUsage < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrUsageKey, maxNonVdrUsage)
-	case maxNonVdrNodeUsage < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
-	default:
-		return TrackerTargeterConfig{
-			VdrAlloc:           vdrAlloc,
-			MaxNonVdrUsage:     maxNonVdrUsage,
-			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
-		}, nil
-	}
-}
-
 func getDiskSpaceConfig(v *viper.Viper) (requiredAvailableDiskSpace uint64, warningThresholdAvailableDiskSpace uint64, err error) {
 	requiredAvailableDiskSpace = v.GetUint64(SystemTrackerRequiredAvailableDiskSpaceKey)
 	warningThresholdAvailableDiskSpace = v.GetUint64(SystemTrackerWarningThresholdAvailableDiskSpaceKey)
@@ -1753,26 +1669,6 @@ func getDiskSpaceConfig(v *viper.Viper) (requiredAvailableDiskSpace uint64, warn
 		return 0, 0, fmt.Errorf("%q (%d) < %q (%d)", SystemTrackerWarningThresholdAvailableDiskSpaceKey, warningThresholdAvailableDiskSpace, SystemTrackerRequiredAvailableDiskSpaceKey, requiredAvailableDiskSpace)
 	default:
 		return requiredAvailableDiskSpace, warningThresholdAvailableDiskSpace, nil
-	}
-}
-
-func getDiskTargeterConfig(v *viper.Viper) (TrackerTargeterConfig, error) {
-	vdrAlloc := v.GetFloat64(DiskVdrAllocKey)
-	maxNonVdrUsage := v.GetFloat64(DiskMaxNonVdrUsageKey)
-	maxNonVdrNodeUsage := v.GetFloat64(DiskMaxNonVdrNodeUsageKey)
-	switch {
-	case vdrAlloc < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskVdrAllocKey, vdrAlloc)
-	case maxNonVdrUsage < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrUsageKey, maxNonVdrUsage)
-	case maxNonVdrNodeUsage < 0:
-		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
-	default:
-		return TrackerTargeterConfig{
-			VdrAlloc:           vdrAlloc,
-			MaxNonVdrUsage:     maxNonVdrUsage,
-			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
-		}, nil
 	}
 }
 

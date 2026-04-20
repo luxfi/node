@@ -64,8 +64,7 @@ var (
 	errUnknownBlock      = errors.New("unknown block")
 	errUnverifiedBlock   = errors.New("unverified block")
 	errMarshallingFailed = errors.New("marshalling failed")
-	errTooHigh           = errors.New("too high")
-	errUnexpectedCall    = errors.New("unexpected call")
+	errTooHigh = errors.New("too high")
 )
 
 func init() {

@@ -4,7 +4,6 @@
 package executor
 
 import (
-	"context"
 	"errors"
 	"math"
 	"math/rand"
@@ -2098,11 +2097,6 @@ type transformNetTxVerifyEnv struct {
 	unsignedTx     *txs.TransformChainTx
 	tx             *txs.Tx
 	state          *state.MockDiff
-}
-
-// testContext creates a context.Context for testing
-func testContext() context.Context {
-	return context.Background()
 }
 
 // Returns mock implementations that can be used in tests

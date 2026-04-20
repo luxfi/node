@@ -27,8 +27,6 @@ import (
 //
 // All execute on GPU in parallel using separate compute streams within one session.
 type GPUVerifyPipeline struct {
-	mu sync.RWMutex
-
 	// Stats (atomic for lock-free reads)
 	gpuVerifies uint64
 	cpuVerifies uint64

@@ -4,9 +4,6 @@
 package server
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/luxfi/metric"
 )
 
@@ -36,21 +33,3 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	return m, nil
 }
 
-func (m *serverMetrics) wrapHandler(chainName string, handler http.Handler) http.Handler {
-	// Instrument handler with metrics
-	// Note: We wrap with basic instrumentation. For more advanced currying,
-	// access the underlying metric types directly.
-	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m.requests.WithLabelValues(r.Method, chainName).Inc()
-		m.inflight.Inc()
-		defer m.inflight.Dec()
-
-		start := time.Now()
-		defer func() {
-			m.duration.WithLabelValues(r.Method, chainName).Observe(time.Since(start).Seconds())
-		}()
-
-		handler.ServeHTTP(w, r)
-	})
-	return handler
-}

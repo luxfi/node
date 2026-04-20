@@ -25,10 +25,7 @@ import (
 	componentblocktest "github.com/luxfi/vm/chain/blocktest"
 )
 
-var (
-	errDuplicateVerify          = errors.New("duplicate verify")
-	errUnexpectedBlockRejection = errors.New("unexpected block rejection")
-)
+var errDuplicateVerify = errors.New("duplicate verify")
 
 // ErrNotOracle is returned when trying to get options from a non-oracle block
 

@@ -123,19 +123,6 @@ func (v *testValidator) toValidatorState() quasar.ValidatorState {
 	}
 }
 
-// signRT creates a mock Ringtail signature (in production, use actual ML-DSA).
-func (v *testValidator) signRT(msg []byte) []byte {
-	// For testing, create a deterministic signature based on key and message
-	// In production, this would be an actual ML-DSA signature
-	sig := make([]byte, mldsa65SigLen)
-	h := make([]byte, 32)
-	copy(h, msg)
-	for i := 0; i < len(sig); i++ {
-		sig[i] = h[i%32] ^ v.rtPrivKey[i%len(v.rtPrivKey)]
-	}
-	return sig
-}
-
 // testValidatorSet creates a set of test validators.
 func testValidatorSet(n int) ([]*testValidator, error) {
 	validators := make([]*testValidator, n)

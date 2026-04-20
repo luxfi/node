@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
@@ -28,14 +27,9 @@ type chainRouter struct {
 	timeoutManager timer.AdaptiveTimeoutManager
 	nodeID         ids.NodeID
 	healthConfig   HealthConfig
-	reg            metric.Registerer
-	namespace      string
-	criticalChains set.Set[ids.ID]
 	lastMsgTime    time.Time
 	connectedPeers set.Set[ids.NodeID]
 	requests       map[uint32]*requestInfo
-	requestID      uint32
-	onFatal        func(int)
 }
 
 type requestInfo struct {

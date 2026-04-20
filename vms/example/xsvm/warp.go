@@ -6,7 +6,6 @@ package xsvm
 import (
 	"context"
 
-	"github.com/luxfi/node/vms/platformvm/warp"
 	luxWarp "github.com/luxfi/warp"
 )
 
@@ -19,20 +18,3 @@ func (xsvmVerifier) Verify(context.Context, *luxWarp.UnsignedMessage, []byte) er
 	return nil
 }
 
-// xsvmWarpSignerAdapter adapts internal warp.Signer to luxWarp.Signer (external warp)
-type xsvmWarpSignerAdapter struct {
-	signer interface {
-		Sign(*warp.UnsignedMessage) ([]byte, error)
-	}
-}
-
-// Sign implements luxWarp.Signer interface
-func (a *xsvmWarpSignerAdapter) Sign(msg *luxWarp.UnsignedMessage) ([]byte, error) {
-	// Convert external warp message (luxWarp) to internal warp message (platformvm/warp)
-	// msg.SourceChainID is already ids.ID type
-	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
-	if err != nil {
-		return nil, err
-	}
-	return a.signer.Sign(internalMsg)
-}

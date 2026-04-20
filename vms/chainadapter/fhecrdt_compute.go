@@ -273,10 +273,7 @@ type ConfidentialComputeEngine struct {
 	teeAvailable  bool
 
 	// Active compute sessions
-	sessions      map[ids.ID]*ComputeSession
-
-	// Committee for threshold attestation
-	committee     *ComputeCommittee
+	sessions map[ids.ID]*ComputeSession
 
 	// Result cache
 	results       map[ids.ID]*ComputeResult

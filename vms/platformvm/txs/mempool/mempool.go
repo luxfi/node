@@ -16,7 +16,6 @@ import (
 var (
 	ErrCantIssueAdvanceTimeTx     = errors.New("can not issue an advance time tx")
 	ErrCantIssueRewardValidatorTx = errors.New("can not issue a reward validator tx")
-	errMempoolFull                = errors.New("mempool is full")
 )
 
 type Mempool struct {
