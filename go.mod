@@ -27,13 +27,13 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.84
-	github.com/luxfi/crypto v1.17.56
-	github.com/luxfi/database v1.18.1
+	github.com/luxfi/consensus v1.22.85
+	github.com/luxfi/crypto v1.18.1
+	github.com/luxfi/database v1.18.2
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
-	github.com/luxfi/math v1.2.4
+	github.com/luxfi/math v1.4.0
 	github.com/luxfi/metric v1.5.1
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.2.0
@@ -67,8 +67,8 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.43.0
 	gonum.org/v1/gonum v0.17.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
-	google.golang.org/grpc v1.79.1
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
+	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -117,7 +117,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 )
 
 require (
@@ -126,26 +126,16 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.0.7
-	github.com/luxfi/api v1.0.4
+	github.com/luxfi/accel v1.0.9
+	github.com/luxfi/api v1.0.5
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains/aivm v0.1.0
-	github.com/luxfi/chains/bridgevm v0.1.0
-	github.com/luxfi/chains/dexvm v0.1.0
-	github.com/luxfi/chains/graphvm v0.1.0
-	github.com/luxfi/chains/identityvm v0.1.0
-	github.com/luxfi/chains/keyvm v0.1.0
-	github.com/luxfi/chains/oraclevm v0.1.0
-	github.com/luxfi/chains/quantumvm v0.1.0
-	github.com/luxfi/chains/relayvm v0.1.0
-	github.com/luxfi/chains/thresholdvm v0.1.0
-	github.com/luxfi/chains/zkvm v0.1.0
+	github.com/luxfi/chains v1.2.1
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.4.7
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.8.2
-	github.com/luxfi/geth v1.16.77
+	github.com/luxfi/geth v1.16.86-0.20260413014255-3e903c3d2e06
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.0.0
 	github.com/luxfi/math/safe v0.0.1
@@ -159,7 +149,7 @@ require (
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
-	github.com/luxfi/utxo v0.2.9
+	github.com/luxfi/utxo v0.3.0
 	github.com/luxfi/validators v1.0.0
 	github.com/luxfi/vm v1.0.40
 	github.com/luxfi/warp v1.18.5
@@ -175,10 +165,11 @@ require (
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/hashicorp/go-bexpr v0.1.16 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.4.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
+	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
+	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/threshold v1.5.5 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
@@ -225,7 +216,6 @@ require (
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2
 	github.com/luxfi/math/big v0.1.0 // indirect
-	github.com/luxfi/precompile v0.5.6 // indirect
 	github.com/luxfi/ringtail v0.2.0 // indirect
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect

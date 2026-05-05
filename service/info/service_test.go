@@ -4,6 +4,7 @@
 package info
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	apiinfo "github.com/luxfi/api/info"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/vmsmock"
 )
 
@@ -36,6 +38,62 @@ func initGetVMsTest(t *testing.T) *getVMsTest {
 		},
 		mockVMManager: mockVMManager,
 	}
+}
+
+// TestGetNodeVersionConsensusRoundtrip verifies the consensus subobject is
+// surfaced via info.getNodeVersion when wired through Parameters and is
+// omitted entirely (omitempty) when left unset.
+func TestGetNodeVersionConsensusRoundtrip(t *testing.T) {
+	require := require.New(t)
+
+	consensus := &apiinfo.ConsensusInfo{
+		Mode:       "triple",
+		BLS:        true,
+		Ringtail:   true,
+		MLDSA:      true,
+		PlatformVM: true,
+	}
+
+	app := &version.Application{Name: "lux", Major: 1, Minor: 0, Patch: 0}
+
+	info := &Info{
+		Parameters: Parameters{
+			Version:   app,
+			Consensus: consensus,
+		},
+		log: log.NewNoOpLogger(),
+	}
+
+	req := httptest.NewRequest("POST", "/ext/info", nil)
+	reply := apiinfo.GetNodeVersionReply{}
+	require.NoError(info.GetNodeVersion(req, nil, &reply))
+	require.NotNil(reply.Consensus)
+	require.Equal(*consensus, *reply.Consensus)
+
+	// Mutating the reply value must not bleed back into Parameters — confirms
+	// the handler returns a copy, not a shared pointer.
+	reply.Consensus.Mode = "classical"
+	require.Equal("triple", info.Consensus.Mode)
+
+	// JSON omitempty: when Consensus is unset, it must not appear in the
+	// serialised reply at all (legacy clients ignore it; new clients can
+	// detect "not advertised" vs "classical" mode).
+	bare := &Info{
+		Parameters: Parameters{Version: app},
+		log:        log.NewNoOpLogger(),
+	}
+	bareReply := apiinfo.GetNodeVersionReply{}
+	require.NoError(bare.GetNodeVersion(req, nil, &bareReply))
+	require.Nil(bareReply.Consensus)
+
+	encoded, err := json.Marshal(bareReply)
+	require.NoError(err)
+	require.NotContains(string(encoded), "consensus")
+
+	encoded, err = json.Marshal(reply)
+	require.NoError(err)
+	require.Contains(string(encoded), `"consensus"`)
+	require.Contains(string(encoded), `"mode":"classical"`)
 }
 
 // Tests GetVMs in the happy-case

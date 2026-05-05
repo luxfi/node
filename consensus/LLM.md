@@ -13,23 +13,24 @@ Note: "Vote (wire format: Chits)" should be used where clarification is needed.
 
 ### acceptor.go
 
-Provides `Acceptor` interface for block acceptance callbacks:
+Node-side `Acceptor` interface for block acceptance callbacks:
 - `Accept()` called before container committed as accepted
-- `AcceptorGroup` manages multiple acceptors per chain
+- `AcceptorGroup` manages chain-ID-keyed acceptors (used by indexer + warp)
 - Thread-safe with RWMutex
 
-### engine/chain/vote.go
-
-Vote message types for consensus:
-- `VoteMessage` - Vote for specific block (wire format: Chits)
-- `UnsolicitedVoteRequestID` - Constant for fast-follow votes
+The canonical consensus `Acceptor` lives in `luxfi/consensus/core`. This
+package's variant differs in that it takes a `*runtime.Runtime` (node-side
+runtime context) rather than a `context.Context`, and supports multi-chain
+registration via `AcceptorGroup`.
 
 ### quasar/
 
-Hybrid quantum-safe finality engine:
-- `Quasar` - Main consensus coordinator
-- `RingtailCoordinator` - Post-quantum threshold signatures
-- `RingtailSignature`, `BLSSignature`, `QuasarSignature` - Signature types
+Node-side wiring around `github.com/luxfi/consensus/protocol/quasar`:
+- `Quasar` - Wraps the canonical engine with P-Chain provider + finality channel
+- `RingtailCoordinator` - Stub for threshold signing (real keys loaded later)
+- `RingtailSignature`, `BLSSignature`, `QuasarSignature` - Node-side signature wrappers
+
+Imports `github.com/luxfi/consensus/protocol/quasar` for the actual protocol.
 
 ## Architecture Notes
 
