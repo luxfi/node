@@ -76,6 +76,13 @@ type Parameters struct {
 
 	TxFee            uint64
 	CreateAssetTxFee uint64
+
+	// Consensus is the consensus configuration snapshot for this node. The
+	// node binary populates it at boot from the live engine state so the
+	// info.getNodeVersion handler can return it without round-tripping
+	// into the chain manager. Nil means "do not advertise" (pre-wired
+	// callers, tests).
+	Consensus *apiinfo.ConsensusInfo
 }
 
 func NewService(
@@ -152,6 +159,10 @@ func (i *Info) GetNodeVersion(_ *http.Request, _ *struct{}, reply *apiinfo.GetNo
 	reply.RPCProtocolVersion = apitypes.Uint32(version.RPCChainVMProtocol)
 	reply.GitCommit = version.GitCommit
 	reply.VMVersions = map[string]string{}
+	if i.Consensus != nil {
+		c := *i.Consensus
+		reply.Consensus = &c
+	}
 	return nil
 }
 

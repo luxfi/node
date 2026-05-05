@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/chains/keyvm"
 	"github.com/luxfi/chains/oraclevm"
 	"github.com/luxfi/chains/quantumvm"
+	quantumvmconfig "github.com/luxfi/chains/quantumvm/config"
 	"github.com/luxfi/chains/relayvm"
 	"github.com/luxfi/chains/thresholdvm"
 	"github.com/luxfi/chains/zkvm"
@@ -39,7 +40,7 @@ func (n *Node) registerOptionalVMs() error {
 		{"IdentityVM (I-Chain)", identityvm.VMID, &identityvm.Factory{}},
 		{"KeyVM (K-Chain)", keyvm.VMID, &keyvm.Factory{}},
 		{"OracleVM (O-Chain)", oraclevm.VMID, &oraclevm.Factory{}},
-		{"QuantumVM (Q-Chain)", quantumvm.VMID, &quantumvm.Factory{}},
+		{"QuantumVM (Q-Chain)", quantumvm.VMID, &quantumvm.Factory{Config: quantumvmconfig.DefaultConfig()}},
 		{"RelayVM (R-Chain)", relayvm.VMID, &relayvm.Factory{}},
 		{"ThresholdVM (T-Chain)", thresholdvm.VMID, &thresholdvm.Factory{}},
 		{"ZKVM (Z-Chain)", zkvm.VMID, &zkvm.Factory{}},

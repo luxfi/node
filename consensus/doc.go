@@ -2,33 +2,25 @@
 // See the file LICENSE for licensing terms.
 
 /*
-Package consensus provides consensus infrastructure for the Lux node.
+Package consensus provides node-side consensus integration for the Lux node.
 
-# Terminology
-
-This package uses "Vote" as the semantic name for validator responses to
-block proposals. On the network wire, votes are transmitted using the
-"Chits" message format for backwards compatibility.
-
-Vote (wire format: Chits): A validator's agreement or preference for a
-specific block. The VoteMessage type wraps this semantic concept while
-the underlying protocol uses Chits.
+The canonical consensus protocol implementation lives in the
+github.com/luxfi/consensus module. This package only contains the node-side
+glue (Acceptor callbacks, Quasar wiring) needed to wire the consensus engine
+into the node's chain manager and indexer.
 
 # Components
 
-The package contains several components:
-
 Acceptor: Callback interface invoked before blocks are committed as
 accepted. Multiple acceptors can be registered per chain via AcceptorGroup.
+This is the node-side hook that adapts consensus acceptance to chain-ID-keyed
+runtime contexts (indexer, warp, IPC).
 
-Engine: Chain and DAG consensus engine interfaces located in the engine
-subpackage. The chain/vote.go file defines vote message types.
+Quasar: Node-side wiring around github.com/luxfi/consensus/protocol/quasar.
+The quasar subpackage adapts P-Chain validator state, BLS signers, and the
+Corona threshold coordinator into the canonical consensus engine.
 
-Quasar: Hybrid quantum-safe finality engine combining BLS aggregate
-signatures (classical) with Corona threshold signatures (post-quantum).
-Located in the quasar subpackage.
-
-# Quasar Consensus
+# Quasar Integration
 
 The Quasar engine achieves hybrid finality by running two signature paths
 in parallel:
@@ -38,6 +30,6 @@ in parallel:
 
 Blocks achieve quantum finality only when both paths complete successfully.
 
-See the quasar subpackage for detailed implementation.
+See github.com/luxfi/consensus for the canonical protocol implementation.
 */
 package consensus
