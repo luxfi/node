@@ -146,7 +146,7 @@ type Keychain interface {
 - ✅ `github.com/luxfi/keychain`
 - ✅ `github.com/luxfi/ledger`
 - ✅ `github.com/luxfi/lattice` (FHE)
-- ❌ `github.com/ava-labs/*`
+- ❌ `github.com/luxfi/*` legacy upstream forks
 - ❌ `github.com/ethereum/go-ethereum`
 
 ### Import Aliasing
@@ -403,6 +403,15 @@ For importing pre-merge blocks, Shanghai must be active based on `ShanghaiTime`,
 - `chains/manager.go`: `injectAutominingConfig` only injects for `EVMID`, skipping binary-codec VMs
 
 **Alternative**: Use `--genesis-raw-bytes` flag to pass base64-encoded pre-built genesis bytes directly.
+
+### 8. `vms/components/lux` vs `luxfi/utxo` (parallel UTXO types)
+The `github.com/luxfi/node/vms/components/lux` package contains a parallel
+`lux.UTXO`/`lux.TransferableInput` type tree alongside `github.com/luxfi/utxo`.
+External consumers (e.g. `~/work/liquidity/network-bootstrap/fund.go`) need
+to import the `vms/components/lux` variant to interop with PlatformVM/AVM
+tx builders — `luxfi/utxo` types alone are not accepted by the X→P export
+path. This is a known anomaly pending #58 follow-up consolidation; do NOT
+collapse the two packages without that migration.
 
 ## File Locations
 
