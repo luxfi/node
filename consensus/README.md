@@ -1,50 +1,34 @@
-# Consensus Package
+# Consensus Package (Node-Side Integration)
 
-This package provides consensus infrastructure for the Lux node.
+This package provides node-side glue around the canonical consensus engine
+in [`github.com/luxfi/consensus`](https://github.com/luxfi/consensus). It does
+NOT implement the consensus protocol — it only wires the engine into the
+node's chain manager, indexer, and IPC layers.
 
 ## Overview
 
 The consensus package contains:
 
-- **Acceptor**: Callback mechanism for accepted blocks/vertices
-- **Quasar**: Hybrid quantum-safe finality engine (BLS + Corona)
-- **Engine**: Chain and DAG consensus engine interfaces
-
-## Vote Terminology
-
-This package uses "Vote" as the semantic name for validator responses to block proposals.
-
-**Vote (wire format: Chits)**: A validator's agreement or preference for a specific block. On the network wire, votes are transmitted using the "Chits" message format for backwards compatibility with existing protocols.
-
-```go
-// VoteMessage represents a vote for a specific block.
-// This is a semantic wrapper - the wire format remains Chits.
-type VoteMessage struct {
-    BlockID   ids.ID
-    RequestID uint32
-}
-```
-
-The `UnsolicitedVoteRequestID` constant (value 0) indicates a vote sent without a prior request, used in fast-follow scenarios.
+- **Acceptor**: Callback mechanism invoked when consensus accepts a block /
+  vertex. Adapts chain-ID-keyed runtime contexts to the node's indexer and
+  warp IPC.
+- **Quasar**: Node-side wiring around `consensus/protocol/quasar` (BLS +
+  Corona hybrid finality). Adapts P-Chain validator state, BLS signing
+  keys, and the Corona threshold coordinator.
 
 ## Package Structure
 
 ```
 consensus/
-  acceptor.go     # Acceptor interface and group management
-  engine/
-    chain/
-      vote.go     # Vote message types (wire format: Chits)
-  quasar/
-    quasar.go     # Hybrid BLS + Corona finality
-    types.go      # Signature types and interfaces
-    config.go     # Configuration
-    gpu_ntt.go    # GPU acceleration for NTT operations
+  acceptor.go     # Acceptor interface + chain-ID-keyed AcceptorGroup
+  quasar/         # Node-side wrapper around luxfi/consensus/protocol/quasar
+  zap/            # ZAP agentic-consensus / DID bridge (self-contained)
 ```
 
 ## Acceptor
 
-The `Acceptor` interface is called before containers are committed as accepted:
+The `Acceptor` interface is called before containers are committed as
+accepted:
 
 ```go
 type Acceptor interface {
@@ -54,13 +38,17 @@ type Acceptor interface {
 
 Multiple acceptors can be registered per chain via `AcceptorGroup`.
 
-## Quasar Consensus
+## Quasar Integration
 
-Quasar provides hybrid quantum-safe finality by combining:
+The `quasar/` subpackage wraps `github.com/luxfi/consensus/protocol/quasar`
+and provides node-specific wiring:
 
-1. **BLS Aggregate Signatures** - Fast classical signatures (96 bytes)
-2. **Corona Threshold Signatures** - Post-quantum threshold signatures (t-of-n)
+1. **P-Chain provider** — feeds live validator state from PlatformVM's
+   validator manager into the engine.
+2. **Quantum fallback signer** — adapts the node's BLS signing key.
+3. **Corona coordinator stub** — placeholder until real threshold key
+   material is loaded.
 
-Both signature paths run in parallel, and blocks achieve finality only when both complete with sufficient weight.
-
-See `quasar/README.md` for detailed documentation.
+The actual hybrid finality protocol (BLS + Corona + ML-DSA threshold
+signing) lives in `luxfi/consensus`. See that repository for protocol
+details, parameter tuning, and benchmarks.
