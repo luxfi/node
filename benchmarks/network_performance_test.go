@@ -381,7 +381,7 @@ func simulateNetworkOperation(ctx context.Context, config *NetworkPerformanceCon
 
 // simulateConsensus simulates the consensus process for different chain types
 // Optimized for Luxd's Wave FPC consensus which provides better parallelism
-// Wave FPC achieves quantum finality in <1s with 2-round total finality vs traditional Avalanche ~2s
+// Wave FPC achieves quantum finality in <1s with 2-round total finality
 // Additional optimizations: Enhanced parallel execution and reduced coordination overhead
 // Note: X-chain/DAG should explicitly integrate Wave FPC for maximum parallelism benefits
 // Context optimization: Added timeout/cancellation support for better resource management
