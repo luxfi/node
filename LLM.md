@@ -62,7 +62,7 @@ lux network start
 ### Multi-Chain Design
 
 Primary network (P/X/C) uses Quasar consensus via `luxfi/consensus`.
-All new native chains use Quasar (BLS + Ringtail + ML-DSA). No snow/snowball.
+All new native chains use Quasar (BLS + Ringtail + ML-DSA).
 
 | Chain | Purpose | VM | Consensus |
 |-------|---------|-----|-----------|
