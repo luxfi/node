@@ -284,8 +284,8 @@ func createAndAcceptNet(t *testing.T, vm *VM, wallet wallet.Wallet) *txs.Tx {
 	)
 	require.NoError(err)
 
-	// Note: In avalanchego, this calls vmImpl.Network.IssueTxFromRPC which is currently
-	// commented out in both codebases, so we directly add to Builder instead
+	// Note: In luxd, this would call vmImpl.Network.IssueTxFromRPC which is currently
+	// commented out, so we directly add to Builder instead
 	require.NoError(vm.Builder.Add(netTx))
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
