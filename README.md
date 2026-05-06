@@ -14,7 +14,7 @@ a blockchains platform with high throughput, and blazing fast transactions.
 ## Features
 
 - **High Performance**: Optimized for throughput with sub-second finality
-- **Multiple Consensus**: Support for Flare/Focus/Horizon/Quasar consensus protocols
+- **Quasar Consensus**: Quasar (BLS + Pulsar + ML-DSA) with Nova (linear chains) and Nebula (DAG chains) modes; sub-protocols include Photon, Wave, Focus, Flare, Horizon, Ray, Field
 - **EVM Compatible**: Full Ethereum Virtual Machine support on C-Chain  
 - **Multi-Chain Architecture**: Platform (P), Exchange (X), and Contract (C) chains
 - **Custom Nets**: Create custom blockchain networks with configurable VMs

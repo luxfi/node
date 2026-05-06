@@ -135,7 +135,7 @@ Production implementations live in `lux/crypto/` and `lux/lattice/`. Formal veri
 | Report | Scope |
 |--------|-------|
 | `audits/2025-12-30-architecture-review.md` | Full architecture review |
-| `audits/2025-12-30-consensus-audit.md` | Consensus layer (Snow, Quasar, DAG) |
+| `audits/2025-12-30-consensus-audit.md` | Consensus layer (Quasar, including Nova linear and Nebula DAG modes) |
 | `audits/2025-12-30-contracts-audit.md` | Smart contract security |
 | `audits/2025-12-30-crypto-audit.md` | Cryptography stack (BLS, PQ, MPC) |
 | `audits/2025-12-30-database-audit.md` | Storage layer |
