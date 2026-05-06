@@ -449,7 +449,7 @@ func marshalPing(b *Buffer, m *Ping) {
 	b.WriteUint32(m.Uptime)
 	b.WriteUint32(uint32(len(m.SubnetUptimes)))
 	for _, s := range m.SubnetUptimes {
-		b.WriteBytes(s.SubnetId)
+		b.WriteBytes(s.ChainId)
 		b.WriteUint32(s.Uptime)
 	}
 }
@@ -458,7 +458,7 @@ func marshalPong(b *Buffer, m *Pong) {
 	b.WriteUint32(m.Uptime)
 	b.WriteUint32(uint32(len(m.SubnetUptimes)))
 	for _, s := range m.SubnetUptimes {
-		b.WriteBytes(s.SubnetId)
+		b.WriteBytes(s.ChainId)
 		b.WriteUint32(s.Uptime)
 	}
 }
@@ -684,7 +684,7 @@ func unmarshalPing(r *Reader) (*Ping, error) {
 	m.SubnetUptimes = make([]*SubnetUptime, count)
 	for i := uint32(0); i < count; i++ {
 		s := &SubnetUptime{}
-		s.SubnetId, err = r.ReadBytes()
+		s.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
@@ -711,7 +711,7 @@ func unmarshalPong(r *Reader) (*Pong, error) {
 	m.SubnetUptimes = make([]*SubnetUptime, count)
 	for i := uint32(0); i < count; i++ {
 		s := &SubnetUptime{}
-		s.SubnetId, err = r.ReadBytes()
+		s.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}

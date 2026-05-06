@@ -46,20 +46,21 @@ type Message struct {
 
 // Ping message
 type Ping struct {
-	Uptime           uint32
-	ChainSubnetPairs []*ChainSubnetPair
+	Uptime    uint32
+	ChainIds  []*ChainPingEntry
 }
 
-// ChainSubnetPair for ping
-type ChainSubnetPair struct {
-	ChainId  []byte
-	SubnetId []byte
+// ChainPingEntry is the per-chain payload in Ping/Pong.
+// In Lux's L1/L2 model each chain is its own validator set, so the legacy
+// (chain, subnet) pair collapses to a single chain identifier.
+type ChainPingEntry struct {
+	ChainId []byte
 }
 
 // Pong message
 type Pong struct {
-	Uptime           uint32
-	ChainSubnetPairs []*ChainSubnetPair
+	Uptime    uint32
+	ChainIds  []*ChainPingEntry
 }
 
 // Handshake message

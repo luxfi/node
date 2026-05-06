@@ -663,11 +663,11 @@ type ICPBlock struct {
 	ParentHash   [32]byte `json:"parentHash"`
 	StateRoot    [32]byte `json:"stateRoot"`
 	Timestamp    uint64   `json:"timestamp"`
-	SubnetID     [32]byte `json:"subnetId"`
+	ChainID     [32]byte `json:"chainId"`
 }
 
 type ICPSubnet struct {
-	SubnetID     [32]byte   `json:"subnetId"`
+	ChainID     [32]byte   `json:"chainId"`
 	PublicKey    []byte     `json:"publicKey"` // Threshold BLS
 	Nodes        [][32]byte `json:"nodes"`
 }
