@@ -395,19 +395,19 @@ func Unmarshal(data []byte) (*Message, error) {
 // Marshal helpers
 func marshalPing(b *Buffer, m *Ping) {
 	b.WriteUint32(m.Uptime)
-	b.WriteUint32(uint32(len(m.ChainSubnetPairs)))
-	for _, p := range m.ChainSubnetPairs {
+	b.WriteUint32(uint32(len(m.ChainIds)))
+	for _, p := range m.ChainIds {
 		b.WriteBytes(p.ChainId)
-		b.WriteBytes(p.SubnetId)
+		b.WriteBytes(p.ChainId)
 	}
 }
 
 func marshalPong(b *Buffer, m *Pong) {
 	b.WriteUint32(m.Uptime)
-	b.WriteUint32(uint32(len(m.ChainSubnetPairs)))
-	for _, p := range m.ChainSubnetPairs {
+	b.WriteUint32(uint32(len(m.ChainIds)))
+	for _, p := range m.ChainIds {
 		b.WriteBytes(p.ChainId)
-		b.WriteBytes(p.SubnetId)
+		b.WriteBytes(p.ChainId)
 	}
 }
 
@@ -604,18 +604,18 @@ func unmarshalPing(r *Reader) (*Ping, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.ChainSubnetPairs = make([]*ChainSubnetPair, count)
+	m.ChainIds = make([]*ChainPingEntry, count)
 	for i := uint32(0); i < count; i++ {
-		p := &ChainSubnetPair{}
+		p := &ChainPingEntry{}
 		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
-		p.SubnetId, err = r.ReadBytes()
+		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
-		m.ChainSubnetPairs[i] = p
+		m.ChainIds[i] = p
 	}
 	return m, nil
 }
@@ -631,18 +631,18 @@ func unmarshalPong(r *Reader) (*Pong, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.ChainSubnetPairs = make([]*ChainSubnetPair, count)
+	m.ChainIds = make([]*ChainPingEntry, count)
 	for i := uint32(0); i < count; i++ {
-		p := &ChainSubnetPair{}
+		p := &ChainPingEntry{}
 		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
-		p.SubnetId, err = r.ReadBytes()
+		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
-		m.ChainSubnetPairs[i] = p
+		m.ChainIds[i] = p
 	}
 	return m, nil
 }

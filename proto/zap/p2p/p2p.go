@@ -133,11 +133,11 @@ func (m *Ping) String() string                    { return fmt.Sprintf("Ping{Upt
 
 // SubnetUptime for ping/pong
 type SubnetUptime struct {
-	SubnetId []byte
+	ChainId []byte
 	Uptime   uint32
 }
 
-func (m *SubnetUptime) GetSubnetId() []byte { return m.SubnetId }
+func (m *SubnetUptime) GetChainId() []byte { return m.ChainId }
 func (m *SubnetUptime) GetUptime() uint32   { return m.Uptime }
 
 // Pong message
