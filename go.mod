@@ -7,7 +7,7 @@ module github.com/luxfi/node
 //
 // - If updating between minor versions (e.g. 1.23.x -> 1.24.x):
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
-go 1.26.1
+go 1.26.2
 
 exclude github.com/luxfi/geth v1.16.1
 
@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.22.85
-	github.com/luxfi/crypto v1.18.1
+	github.com/luxfi/crypto v1.18.3
 	github.com/luxfi/database v1.18.2
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
@@ -59,7 +59,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.42.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.50.0
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/mod v0.34.0
 	golang.org/x/net v0.52.0
@@ -115,8 +115,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.42.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 )
 
@@ -127,7 +127,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.0.9
-	github.com/luxfi/api v1.0.5
+	github.com/luxfi/api v1.0.10
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.1
 	github.com/luxfi/compress v0.0.5
@@ -174,6 +174,7 @@ require (
 	github.com/luxfi/threshold v1.5.5 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb v1.8.0 // indirect
+	github.com/luxfi/zwing v0.5.2 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.100 // indirect
