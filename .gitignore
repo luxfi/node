@@ -85,8 +85,8 @@ QWEN.md
 
 genesis/.!*
 genesis-gen
-lux
-luxd
+/lux
+/luxd
 evm-plugin-*
 
 LLM.md
