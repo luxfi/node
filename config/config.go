@@ -1989,7 +1989,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// Get data directory for dev network config persistence
 	dataDir := getExpandedArg(v, DataDirKey)
 
-	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
+	nodeConfig.GenesisBytes, nodeConfig.XAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}

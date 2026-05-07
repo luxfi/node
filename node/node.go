@@ -264,7 +264,7 @@ func New(
 	if err := n.addDefaultVMAliases(); err != nil {
 		return nil, fmt.Errorf("couldn't initialize API aliases: %w", err)
 	}
-	if err := n.initChainManager(n.Config.LuxAssetID); err != nil { // Set up the chain manager
+	if err := n.initChainManager(n.Config.XAssetID); err != nil { // Set up the chain manager
 		return nil, fmt.Errorf("couldn't initialize chain manager: %w", err)
 	}
 	if err := n.initVMs(); err != nil { // Initialize the VM registry.
