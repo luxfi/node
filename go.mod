@@ -27,7 +27,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.23.1
+	github.com/luxfi/consensus v1.23.2
 	github.com/luxfi/crypto v1.18.3
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.9
@@ -159,6 +159,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/hpke v0.4.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.6 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
@@ -166,21 +167,25 @@ require (
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/gtank/merlin v0.1.1 // indirect
+	github.com/gtank/ristretto255 v0.2.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.4.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
 	github.com/luxfi/config v1.1.2 // indirect
 	github.com/luxfi/evm v0.8.49 // indirect
 	github.com/luxfi/keys v1.0.8 // indirect
+	github.com/luxfi/lens v0.1.3 // indirect
 	github.com/luxfi/netrunner v1.18.1 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pulsar v0.1.5 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/threshold v1.5.5 // indirect
+	github.com/luxfi/threshold v1.6.7 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb v1.8.0 // indirect
 	github.com/luxfi/zwing v0.5.2 // indirect
+	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.100 // indirect
