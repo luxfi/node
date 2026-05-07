@@ -179,7 +179,7 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	LuxAssetID    ids.ID                           `json:"xAssetID"`
+	XAssetID    ids.ID                           `json:"xAssetID"`
 	NetworkID     json.Uint32                      `json:"networkID"`
 	UTXOs         []UTXO                           `json:"utxos"`
 	Validators    []GenesisPermissionlessValidator `json:"validators"`
@@ -223,7 +223,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				TxID:        ids.Empty,
 				OutputIndex: uint32(i),
 			},
-			Asset: lux.Asset{ID: args.LuxAssetID},
+			Asset: lux.Asset{ID: args.XAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: uint64(apiUTXO.Amount),
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -262,7 +262,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			}
 
 			utxo := &lux.TransferableOutput{
-				Asset: lux.Asset{ID: args.LuxAssetID},
+				Asset: lux.Asset{ID: args.XAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: uint64(apiUTXO.Amount),
 					OutputOwners: secp256k1fx.OutputOwners{
