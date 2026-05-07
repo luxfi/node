@@ -70,11 +70,17 @@ import (
 	"github.com/luxfi/vm/fx"
 
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
+	"github.com/luxfi/utxo/bls12381fx"
+	"github.com/luxfi/utxo/ed25519fx"
+	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"
 
 	"github.com/luxfi/utxo/propertyfx"
 	// "github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/secp256r1fx"
+	"github.com/luxfi/utxo/slhdsafx"
 	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
 	// "github.com/luxfi/node/proto/p2p" // Available if needed for protobuf parsing
@@ -128,10 +134,26 @@ var (
 	errNotBootstrapped         = errors.New("chains not bootstrapped")
 	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
 
+	// fxs lists every Feature eXtension factory the node knows how to load
+	// when a chain genesis references it. Must stay in sync with the X-Chain
+	// FxIDs[] block in genesis/builder/builder.go: any fx ID present there
+	// MUST be registered here, otherwise chain init fails with "fx ... not
+	// found" at startup. Keep the order and grouping mirroring genesis to
+	// make drift obvious in review.
 	fxs = map[ids.ID]fx.Factory{
+		// Legacy / classical
 		secp256k1fx.ID: &secp256k1fx.Factory{},
 		nftfx.ID:       &nftfx.Factory{},
 		propertyfx.ID:  &propertyfx.Factory{},
+		// Post-quantum (FIPS 203/204/205 family)
+		mldsafx.ID:  &mldsafx.Factory{},
+		slhdsafx.ID: &slhdsafx.Factory{},
+		// EdDSA / Schnorr / NIST P-256
+		ed25519fx.ID:   &ed25519fx.Factory{},
+		secp256r1fx.ID: &secp256r1fx.Factory{},
+		schnorrfx.ID:   &schnorrfx.Factory{},
+		// Pairing-friendly curve
+		bls12381fx.ID: &bls12381fx.Factory{},
 	}
 
 	_ Manager = (*manager)(nil)
