@@ -142,7 +142,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes       []byte `json:"-"`
-	LuxAssetID         ids.ID `json:"xAssetID"`
+	XAssetID         ids.ID `json:"xAssetID"`
 	AllowGenesisUpdate bool   `json:"allowGenesisUpdate,omitempty"`
 
 	// ID of the network this node should connect to

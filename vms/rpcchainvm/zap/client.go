@@ -85,7 +85,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		PublicKey:       publicKey,
 		XChainID:        xChainID,
 		CChainID:        cChainID,
-		LuxAssetID:      luxAssetID,
+		XAssetID:      luxAssetID,
 		ChainDataDir:    chainDataDir,
 		GenesisBytes:    init.Genesis,
 		UpgradeBytes:    init.Upgrade,
