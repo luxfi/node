@@ -63,14 +63,12 @@ func NewMultiNetworkNode() *MultiNetworkNode {
 				ChainID:     "2ebCneCbwthjQ1rYT41nhd7M76Hc6YmosMAQrTFhBq8qeqh6tt",
 				Active:      true,
 			},
-			constants.QChainMainnetID: { // 36963 - Q-Chain
-				NetworkID:   constants.QChainMainnetID,
-				NetworkName: "Hanzo Network (Q-Chain)",
-				RPCPort:     3690,
-				Validators:  5,
-				ChainID:     "2TtHFqEAAJ6b33dromYMqfgavGPF3iCpdG3hwNMiart2aB5QHi",
-				Active:      true,
-			},
+			// Q-Chain is part of the primary network (mainnet ID 1)
+			// and no longer has a separate network ID — see the
+			// MainnetID entry above. The Q-Chain blockchain ID lives
+			// in luxfi/constants.QChainID; consumers can read it from
+			// the primary-network entry's chain registry rather than
+			// from a duplicate top-level map entry here.
 		},
 	}
 }
