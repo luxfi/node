@@ -919,8 +919,12 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 		return upgrade.GetConfig(networkID), nil
 	}
 
+	// Reject upgrade overrides on the well-known networks where the
+	// upgrade schedule is hard-coded by luxfi/upgrade. Any other ID
+	// (DevnetID, UnitTestID, or genuinely custom user-defined network
+	// IDs) is permitted to supply its own upgrade schedule.
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.CustomID:
+	case constants.MainnetID, constants.TestnetID, constants.LocalID:
 		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
 			constants.NetworkName(networkID),
 		)
@@ -1818,7 +1822,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// } else if v.GetBool(TestnetKey) {
 	// 	nodeConfig.NetworkID = constants.TestnetChainID
 	// } else if v.GetBool(CustomnetKey) {
-	// 	nodeConfig.NetworkID = constants.CustomID
+	// 	nodeConfig.NetworkID = constants.LocalID
 	// } else {
 	networkName := v.GetString(NetworkNameKey)
 	nodeConfig.NetworkID, err = constants.NetworkID(networkName)
@@ -2007,6 +2011,25 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ChainConfigs, err = getChainConfigs(v)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("couldn't read chain configs: %w", err)
+	}
+
+	// Bridge --import-chain-data into the C-Chain config so the EVM plugin sees it.
+	// Merges with any existing C-chain config rather than replacing.
+	if importPath := v.GetString(ImportChainDataKey); importPath != "" {
+		cChain := nodeConfig.ChainConfigs["C"]
+		merged := map[string]interface{}{}
+		if len(cChain.Config) > 0 {
+			if err := json.Unmarshal(cChain.Config, &merged); err != nil {
+				return node.Config{}, fmt.Errorf("couldn't parse existing C-chain config for import bridge: %w", err)
+			}
+		}
+		merged["import-chain-data"] = importPath
+		mergedBytes, err := json.Marshal(merged)
+		if err != nil {
+			return node.Config{}, fmt.Errorf("couldn't marshal C-chain config with import path: %w", err)
+		}
+		cChain.Config = mergedBytes
+		nodeConfig.ChainConfigs["C"] = cChain
 	}
 
 	// Profiler

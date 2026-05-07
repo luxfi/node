@@ -731,7 +731,7 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 
 // FromDatabase returns genesis data for database replay mode
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	config := genesiscfg.GetConfig(constants.CustomID)
+	config := genesiscfg.GetConfig(constants.LocalID)
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE"
 	return FromConfig(config)
@@ -974,7 +974,7 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 
 	// Build the genesis config
 	config := &genesiscfg.Config{
-		NetworkID:                  constants.CustomID,
+		NetworkID:                  constants.LocalID,
 		Allocations:                []genesiscfg.Allocation{allocation},
 		StartTime:                  startTime,
 		InitialStakeDuration:       hundredYears,

@@ -26,7 +26,7 @@ func TestGetStakingConfig(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"CustomID", constants.CustomID},
+		{"CustomID", constants.LocalID},
 		{"Custom", 12345},
 	}
 
@@ -56,7 +56,7 @@ func TestGetTxFeeConfig(t *testing.T) {
 	}{
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
-		{"CustomID", constants.CustomID},
+		{"CustomID", constants.LocalID},
 		{"Custom", 12345},
 	}
 
@@ -87,7 +87,7 @@ func TestGetBootstrappers(t *testing.T) {
 		{"Mainnet", constants.MainnetID},
 		{"Testnet", constants.TestnetID},
 		{"Devnet", constants.DevnetID},
-		{"CustomID", constants.CustomID},
+		{"CustomID", constants.LocalID},
 	}
 
 	for _, tt := range tests {
@@ -116,7 +116,7 @@ func TestSampleBootstrappers(t *testing.T) {
 		{"Mainnet_5", constants.MainnetID, 5},
 		{"Mainnet_10", constants.MainnetID, 10},
 		{"Testnet_3", constants.TestnetID, 3},
-		{"Custom_0", constants.CustomID, 0},
+		{"Custom_0", constants.LocalID, 0},
 	}
 
 	for _, tt := range tests {
@@ -144,7 +144,7 @@ func TestGetConfig(t *testing.T) {
 		{"Testnet", constants.TestnetID},
 		{"MainnetChainID", constants.MainnetChainID},
 		{"TestnetChainID", constants.TestnetChainID},
-		{"CustomID", constants.CustomID},
+		{"CustomID", constants.LocalID},
 	}
 
 	for _, tt := range tests {
@@ -275,7 +275,7 @@ func TestFromConfigExplicitStakers(t *testing.T) {
 	var ethShortID ids.ShortID
 
 	cfg := &genesiscfg.Config{
-		NetworkID: constants.CustomID,
+		NetworkID: constants.LocalID,
 		Allocations: []genesiscfg.Allocation{
 			{
 				ETHAddr:       secpAddr,
@@ -366,7 +366,7 @@ func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 
 	// No InitialStakedFunds -- stakers have explicit Weight only
 	cfg := &genesiscfg.Config{
-		NetworkID: constants.CustomID,
+		NetworkID: constants.LocalID,
 		Allocations: []genesiscfg.Allocation{
 			{
 				ETHAddr:       deployerAddr,

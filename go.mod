@@ -27,9 +27,9 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.22.85
+	github.com/luxfi/consensus v1.23.1
 	github.com/luxfi/crypto v1.18.3
-	github.com/luxfi/database v1.18.2
+	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.9
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
@@ -131,13 +131,13 @@ require (
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.1
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.4.7
+	github.com/luxfi/constants v1.5.2
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.8.2
-	github.com/luxfi/geth v1.16.86-0.20260413014255-3e903c3d2e06
+	github.com/luxfi/genesis v1.9.2
+	github.com/luxfi/geth v1.16.87
 	github.com/luxfi/go-bip39 v1.1.2
-	github.com/luxfi/lattice/v7 v7.0.0
+	github.com/luxfi/lattice/v7 v7.1.0
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.4
 	github.com/luxfi/p2p v1.19.2
@@ -162,13 +162,19 @@ require (
 	filippo.io/hpke v0.4.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.6 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.4.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
+	github.com/luxfi/config v1.1.2 // indirect
+	github.com/luxfi/evm v0.8.49 // indirect
+	github.com/luxfi/keys v1.0.8 // indirect
+	github.com/luxfi/netrunner v1.18.1 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
+	github.com/luxfi/pulsar v0.1.5 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/threshold v1.5.5 // indirect
@@ -222,7 +228,7 @@ require (
 	github.com/luxfi/tls v1.0.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/montanaflynn/stats v0.8.2 // indirect
+	github.com/montanaflynn/stats v0.9.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
