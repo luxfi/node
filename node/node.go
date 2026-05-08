@@ -1135,11 +1135,18 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	}
 	xChainID := createXVMTx.ID()
 
-	createEVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.EVMID)
-	if err != nil {
-		return err
+	// Primary-network EVM (the historic "C-Chain") is OPT-IN. Networks
+	// that don't bake an EVM into platform genesis (because they register
+	// their own EVM as a dedicated chain via `platform.createChainTx`)
+	// leave cChainID = ids.Empty. The chain manager and aliasing logic
+	// already handle the empty ID case (see chains/manager.go).
+	var cChainID ids.ID
+	if createEVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.EVMID); err == nil {
+		cChainID = createEVMTx.ID()
+	} else {
+		n.Log.Info("C-Chain (primary-network EVM) not in genesis — skipping",
+			"reason", "platform genesis has no constants.EVMID chain")
 	}
-	cChainID := createEVMTx.ID()
 
 	// P-Chain is always critical regardless of configuration.
 	criticalChains := set.Of(constants.PlatformChainID)
