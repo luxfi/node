@@ -1139,7 +1139,15 @@ func getOrCreateAutomineGenesis(stakingCfg *builder.StakingConfig, dataDir strin
 		return nil, ids.Empty, fmt.Errorf("failed to convert genesis hash to ID: %w", err)
 	}
 
-	// Save for future restarts
+	// Save for future restarts. The CChainGenesis field is metadata only —
+	// the actual genesis bytes are embedded in genesisBytes — but mirror
+	// the resolved value (env override or default) so audits read true.
+	savedCChain := automineCChainGenesis
+	if path := os.Getenv("LUX_AUTOMINE_CCHAIN_GENESIS_PATH"); path != "" {
+		if body, ferr := os.ReadFile(path); ferr == nil {
+			savedCChain = string(body)
+		}
+	}
 	newDevCfg := &AutomineNetworkConfig{
 		Version:       devNetworkConfigVersion,
 		StartTime:     startTime,
@@ -1149,7 +1157,7 @@ func getOrCreateAutomineGenesis(stakingCfg *builder.StakingConfig, dataDir strin
 		GenesisBytes:  genesisBytes,
 		GenesisHash:   genesisHash.String(),
 		XAssetID:      xAssetID.String(),
-		CChainGenesis: automineCChainGenesis,
+		CChainGenesis: savedCChain,
 	}
 
 	if err := saveAutomineNetworkConfig(dataDir, newDevCfg); err != nil {
@@ -1171,11 +1179,35 @@ func getOrCreateAutomineGenesis(stakingCfg *builder.StakingConfig, dataDir strin
 
 // buildAutomineGenesis creates a genesis configuration for single-node development mode.
 // It uses the node's own credentials as the sole validator.
+//
+// C-Chain genesis resolution order:
+//  1. LUX_AUTOMINE_CCHAIN_GENESIS_PATH env — operator-supplied genesis JSON
+//     file (downstream networks like Liquidity that need a non-default chainId
+//     point this at their own genesis). Path is read at boot and embedded
+//     verbatim into the primary-network genesis bytes.
+//  2. automineCChainGenesis constant below (chainId 31337, lqd default).
+//
+// The override is intentional code, not a kludge: lqd's automine flow embeds
+// C-Chain genesis bytes into the primary-network genesis at boot, and the
+// chain-config-dir scan only resolves AFTER the EVM plugin has already
+// loaded its embedded genesis. Without an override, every fork has to patch
+// the constant, defeating the point of a shared lqd binary.
 func buildAutomineGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([]byte, ids.ID, error) {
 	// Parse node ID from staking config
 	nodeID, err := ids.NodeIDFromString(stakingCfg.NodeID)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to parse node ID for automine mode: %w", err)
+	}
+
+	// Resolve C-Chain genesis: env override > built-in default.
+	cChainGenesis := automineCChainGenesis
+	if path := os.Getenv("LUX_AUTOMINE_CCHAIN_GENESIS_PATH"); path != "" {
+		body, ferr := os.ReadFile(path)
+		if ferr != nil {
+			return nil, ids.Empty, fmt.Errorf("read LUX_AUTOMINE_CCHAIN_GENESIS_PATH=%q: %w", path, ferr)
+		}
+		cChainGenesis = string(body)
+		log.Info("automine: using operator-supplied C-Chain genesis", "path", path, "size", len(body))
 	}
 
 	// Lux Treasury address: 0x9011E888251AB053B7bD1cdB598Db4f9DEd94714
@@ -1190,13 +1222,14 @@ func buildAutomineGenesis(stakingCfg *builder.StakingConfig, startTime uint64) (
 		copy(rewardAddress[:], nodeID[:20])
 	}
 
-	// Create automine mode config with embedded C-Chain genesis
+	// Create automine mode config with embedded C-Chain genesis (resolved
+	// above — operator override or built-in default).
 	devCfg := builder.DevModeConfig{
 		NodeID:        nodeID,
 		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
 		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
 		RewardAddress: rewardAddress,
-		CChainGenesis: automineCChainGenesis,
+		CChainGenesis: cChainGenesis,
 		StartTime:     startTime, // Use provided start time for determinism
 	}
 
