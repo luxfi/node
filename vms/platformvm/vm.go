@@ -452,11 +452,16 @@ func (vm *VM) initBlockchains() error {
 		return err
 	}
 
-	// Check if C-Chain needs to be created with migrated data
-	// This handles the case where we have migrated blockchain data but no CreateChainTx
-	if err := vm.createCChainIfNeeded(); err != nil {
-		vm.log.Error("Failed to create C-Chain with migrated data", "error", err)
-		// Don't fail initialization, just log the error
+	// Migrated-C-Chain recovery path: only attempt when LUX_MIGRATE_CCHAIN=1
+	// is set explicitly. This is for the one-time historical mainnet
+	// migration where post-merge geth state was imported under a fixed
+	// blockchainID. Without the env knob, the function early-returns on
+	// the missing data dir anyway — but checking the flag first avoids
+	// touching the filesystem in the common case.
+	if os.Getenv("LUX_MIGRATE_CCHAIN") == "1" {
+		if err := vm.createCChainIfNeeded(); err != nil {
+			vm.log.Error("Failed to create C-Chain with migrated data", "error", err)
+		}
 	}
 
 	// When TrackAllChains is enabled OR SybilProtection is disabled,
