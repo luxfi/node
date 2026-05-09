@@ -102,13 +102,16 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return fmt.Errorf("zap initialize: %w", err)
 	}
 
-	if respType&^zapwire.MsgResponseFlag != zapwire.MsgInitialize {
+	// Strip both MsgResponseFlag (always set on responses) and MsgErrorFlag
+	// (set on error responses, though the transport's readLoop already
+	// converts those into a non-nil err above) before comparing to the
+	// request message type. Conflating MsgResponseFlag with "error" — as
+	// earlier code did — corrupted every successful Initialize because the
+	// binary InitializeResponse payload was rendered as an error string,
+	// hiding the response and crashing chain creation with an unreadable
+	// "vm error: <random-looking bytes>" message.
+	if respType&^(zapwire.MsgResponseFlag|zapwire.MsgErrorFlag) != zapwire.MsgInitialize {
 		return ErrInvalidResponse
-	}
-
-	// Check if this is an error response from the server
-	if respType&zapwire.MsgResponseFlag != 0 {
-		return fmt.Errorf("zap initialize: vm error: %s", string(respData))
 	}
 
 	resp := &zapwire.InitializeResponse{}
