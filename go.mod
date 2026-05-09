@@ -133,7 +133,7 @@ require (
 	github.com/luxfi/constants v1.5.2
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.9.6-0.20260509001827-2b16f454b64b
+	github.com/luxfi/genesis v1.9.6-0.20260509232736-fe4781cd9614
 	github.com/luxfi/geth v1.16.87
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.1.0
