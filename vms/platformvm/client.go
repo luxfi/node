@@ -213,9 +213,45 @@ type ClientNet struct {
 	Threshold   uint32
 }
 
-// GetNets returns information about the specified chains
+// ClientChain is the canonical client-side view of a chain registered
+// on the platform. Replaces ClientNet with field naming that matches
+// the user-facing concept ("chain") rather than the internal "net" /
+// "subnet" jargon. Same shape — drop-in replacement.
+type ClientChain = ClientNet
+
+// GetChains returns information about the specified chains. Empty
+// `ids` returns every chain on the platform (including the primary
+// network). This is the canonical RPC; new code should use it. The
+// older GetNets is kept indefinitely for wire-protocol compatibility
+// but logs every call as deprecated server-side.
+func (c *Client) GetChains(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientChain, error) {
+	res := &GetChainsResponse{}
+	err := c.Requester.SendRequest(ctx, "platform.getChains", &GetChainsArgs{
+		IDs: ids,
+	}, res, options...)
+	if err != nil {
+		return nil, err
+	}
+	chains := make([]ClientChain, len(res.Chains))
+	for i, apiChain := range res.Chains {
+		controlKeys, err := address.ParseToIDs(apiChain.ControlKeys)
+		if err != nil {
+			return nil, err
+		}
+		chains[i] = ClientChain{
+			ID:          apiChain.ID,
+			ControlKeys: controlKeys,
+			Threshold:   uint32(apiChain.Threshold),
+		}
+	}
+	return chains, nil
+}
+
+// GetNets returns information about the specified chains.
 //
-// Deprecated: Nets should be fetched from a dedicated indexer.
+// Deprecated: use GetChains. Same wire shape, same behavior, name
+// matches the user-facing concept. This stays available indefinitely
+// for callers still on the old name.
 func (c *Client) GetNets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientNet, error) {
 	res := &GetNetsResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getNets", &GetNetsArgs{
