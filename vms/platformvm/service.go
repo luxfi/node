@@ -600,6 +600,63 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 	return nil
 }
 
+// APIChain is the canonical wire-shape for a chain registered on the
+// platform via CreateNetworkTx. Replaces APINet — same fields, named
+// after the user-facing concept ("chain") rather than the internal
+// "net" / "subnet" jargon. The wire encoding is byte-identical so a
+// deserializer that targets APIChain reads APINet responses and vice
+// versa; no proxies need to translate.
+type APIChain struct {
+	ID          ids.ID         `json:"id"`
+	ControlKeys []string       `json:"controlKeys"`
+	Threshold   avajson.Uint32 `json:"threshold"`
+}
+
+// GetChainsArgs are the arguments to GetChains. IDs is the optional
+// allowlist filter — empty list returns every chain (including the
+// primary network). Same shape as GetNetsArgs.
+type GetChainsArgs struct {
+	IDs []ids.ID `json:"ids"`
+}
+
+// GetChainsResponse is the response from GetChains. Same shape as
+// GetNetsResponse — `Chains` instead of `Nets`. Field names are
+// canonical going forward; downstream parsers should target this
+// struct.
+type GetChainsResponse struct {
+	Chains []APIChain `json:"chains"`
+}
+
+// GetChains is the canonical RPC for listing chains registered on the
+// platform. Behaviorally identical to GetNets (which it supersedes):
+// returns every chain when IDs is empty, otherwise filters to the
+// listed IDs, including the primary network sentinel
+// (constants.PrimaryNetworkID) regardless of filter — callers
+// deciding whether a chain is the primary network should compare the
+// returned ID rather than relying on omission.
+//
+// Use this in new code; GetNets stays available indefinitely for
+// wire-protocol compatibility but logs every call as deprecated.
+func (s *Service) GetChains(r *http.Request, args *GetChainsArgs, response *GetChainsResponse) error {
+	s.vm.log.Debug("API called",
+		"service", "platform",
+		"method", "getChains",
+	)
+	// Delegate to the existing implementation by translating shapes —
+	// avoids re-implementing the state walk and keeps the two methods
+	// in lock-step. APIChain is structurally identical to APINet (same
+	// JSON tags), so the cast is safe and free at runtime.
+	netsResp := &GetNetsResponse{}
+	if err := s.GetNets(r, &GetNetsArgs{IDs: args.IDs}, netsResp); err != nil {
+		return err
+	}
+	response.Chains = make([]APIChain, len(netsResp.Nets))
+	for i, n := range netsResp.Nets {
+		response.Chains[i] = APIChain(n)
+	}
+	return nil
+}
+
 // GetStakingAssetIDArgs are the arguments to GetStakingAssetID
 type GetStakingAssetIDArgs struct {
 	ChainID ids.ID `json:"netID"`
