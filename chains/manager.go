@@ -638,6 +638,35 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		}
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
+
+		// Plugin-not-loaded is a deliberate skip, not a failure.
+		//
+		// Each validator opts into chains by loading their VM plugin
+		// (Liquid loads /dex/fhe; doesn't load Lux's upstream
+		// EVM plugin for C-Chain because Liquid runs its own EVM as a
+		// chain on the primary's P-chain). When the chain manager hits a
+		// chain whose VM isn't registered, that's the validator's "no I
+		// don't validate this one" signal — log info, mark the slot
+		// bootstrapped, and return WITHOUT registering a failing health
+		// check. The chain stays in pending state for hot-load if the
+		// plugin shows up later (e.g. via lpm install).
+		//
+		// The old behavior (always register a failing health check) made
+		// /ext/health return 503 for any opted-out chain, which made
+		// kubelet liveness probes kill the validator pod. That made
+		// chain participation effectively all-or-nothing per validator.
+		// Now: validators participate per-plugin, opt-in.
+		if errors.Is(err, vms.ErrNotFound) {
+			m.Log.Info("chain VM plugin not loaded — opting out of this chain",
+				log.Stringer("chainID", chainParams.ChainID),
+				log.Stringer("chainID", chainParams.ID),
+				log.String("chainAlias", chainAlias),
+				log.Stringer("vmID", chainParams.VMID),
+			)
+			sb.Bootstrapped(chainParams.ID)
+			return
+		}
+
 		m.Log.Warn("non-critical chain failed to initialize",
 			log.Stringer("chainID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
@@ -646,15 +675,13 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			log.Err(err),
 		)
 
-		// Non-critical chain failed (e.g. D-Chain with missing VM plugin).
-		// Mark it as bootstrapped so it doesn't block the node's health check.
-		// The chain-specific health check below still reports the failure.
+		// Non-critical chain failed for a real reason (not missing
+		// plugin). Mark it as bootstrapped so it doesn't block the
+		// node-level health check, but DO register a per-chain failing
+		// health check so operators see something is wrong with a chain
+		// they did opt into.
 		sb.Bootstrapped(chainParams.ID)
 
-		// Register the health check for this chain regardless of if it was
-		// created or not. This attempts to notify the node operator that their
-		// node may not be properly validating the net they expect to be
-		// validating.
 		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.ChainID, err)
 		err := m.Health.RegisterHealthCheck(
 			chainAlias,

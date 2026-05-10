@@ -1882,19 +1882,25 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	// Chain tracking
-	// Always populate TrackedChains from --track-chains flag/env, regardless of
-	// TrackAllChains. TrackedChains is used in peer handshake (MyChains) to tell
-	// peers which chains we're interested in. Without it, peers won't gossip
-	// chain blocks to us even if we're tracking all chains locally.
+	// Chain tracking — explicit per-chain opt-in. Each validator
+	// declares which chains it wants to validate via --track-chains
+	// (or the operator-emitted equivalent). TrackedChains is also used
+	// in the peer handshake (MyChains) so peers gossip blocks for the
+	// chains we asked for.
+	//
+	// TrackAllChains stays as an opt-in escape hatch only — it is NOT
+	// auto-enabled when TrackedChains is empty. The previous default
+	// (`if TrackedChains == nil { TrackAllChains = true }`) was a
+	// footgun: any node started without an explicit --track-chains
+	// list silently tried to spin up every chain in P-chain state,
+	// including ones whose VM plugin wasn't loaded — fataling at the
+	// chain manager. Empty TrackedChains now means "track only P/X
+	// (built-in primary chains)".
 	nodeConfig.TrackedChains, err = getTrackedChains(v)
 	if err != nil {
 		return node.Config{}, err
 	}
 	nodeConfig.TrackAllChains = v.GetBool(TrackAllChainsKey)
-	if nodeConfig.TrackedChains == nil {
-		nodeConfig.TrackAllChains = true
-	}
 
 
 	// HTTP APIs
