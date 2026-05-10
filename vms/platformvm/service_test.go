@@ -1290,6 +1290,51 @@ func TestServiceGetNets(t *testing.T) {
 	}, response.Nets)
 }
 
+// TestServiceGetChains pins the new canonical RPC. Same data as
+// GetNets, different field names (Chains/APIChain). The two methods
+// MUST stay in lock-step because some clients call one, some call the
+// other, and a divergence (e.g. one filtering primary network, the
+// other not) silently breaks downstream `match-by-control-key`
+// idempotence in the bootstrap binary.
+//
+// Three things to pin: shape (every APIChain field round-trips), the
+// "no IDs ⇒ everything including primary network" contract, and the
+// fact that GetChains delegates to GetNets so a bug in one surfaces
+// in both rather than diverging in subtle ways.
+func TestServiceGetChains(t *testing.T) {
+	require := require.New(t)
+	service, _ := defaultService(t)
+
+	testNet1ID := testNet1.ID()
+
+	var response GetChainsResponse
+	require.NoError(service.GetChains(nil, &GetChainsArgs{}, &response))
+	require.Equal([]APIChain{
+		{
+			ID: testNet1ID,
+			ControlKeys: []string{
+				"P-testing1d6kkj0qh4wcmus3tk59npwt3rluc6en72ngurd",
+				"P-testing17fpqs358de5lgu7a5ftpw2t8axf0pm33983krk",
+				"P-testing1lnk637g0edwnqc2tn8tel39652fswa3xk4r65e",
+			},
+			Threshold: 2,
+		},
+		{
+			ID:          constants.PrimaryNetworkID,
+			ControlKeys: []string{},
+			Threshold:   0,
+		},
+	}, response.Chains)
+
+	// Filtered query — the contract is "primary network ALWAYS shows
+	// up", so passing only testNet1 still returns it plus the primary
+	// network sentinel. Callers deciding "is this the primary
+	// network?" must compare IDs, not rely on the filter behavior.
+	require.NoError(service.GetChains(nil, &GetChainsArgs{IDs: []ids.ID{testNet1ID}}, &response))
+	require.Len(response.Chains, 1)
+	require.Equal(testNet1ID, response.Chains[0].ID)
+}
+
 func TestGetFeeConfig(t *testing.T) {
 	require := require.New(t)
 
