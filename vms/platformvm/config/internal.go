@@ -92,10 +92,18 @@ type Internal struct {
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
-// the chain that validates the blockchain
+// the chain that validates the blockchain.
+//
+// Required primary-network infrastructure: P-Chain (created out of band by the
+// chain manager at startup) + X-Chain (UTXO export/import, can't be turned
+// off without losing cross-chain transfer). Every other chain — C-Chain
+// (EVM), D-Chain (DEX), B-Chain (Bridge), T-Chain (Threshold), and any
+// subnet-spawned blockchain — is opt-in via --track-chains. This keeps
+// validator topology orthogonal: a node tracks exactly what its operator
+// asks for, nothing more.
 func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
-	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all blockchains
-		constants.PrimaryNetworkID != tx.ChainID && // All nodes must validate the primary network
+	isXChain := tx.VMID == constants.XVMID
+	if c.SybilProtectionEnabled && !isXChain && // X-Chain is always built; everything else opt-in
 		!c.TrackAllChains && // Not tracking all chains automatically
 		!c.TrackedChains.Contains(tx.ChainID) && // Check if chain ID is tracked
 		!c.TrackedChains.Contains(blockchainID) { // Check if blockchain ID is tracked
