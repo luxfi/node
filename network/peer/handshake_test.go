@@ -44,7 +44,7 @@ func runHandshake(
 	require := require.New(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          scheme,
 		ForbidClassicalKEM: true,
@@ -107,7 +107,7 @@ func TestHandshake_StrictPQ_RefusesClassicalKEM(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
@@ -139,7 +139,7 @@ func TestHandshake_StrictPQ_RefusesECDSAIdentity(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
@@ -165,7 +165,7 @@ func TestHandshake_PreservesNodeIdentitySignature(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
@@ -201,13 +201,13 @@ func TestHandshake_RefusesProfileMismatch(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	initCfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
 	}
 	respCfg := *initCfg
-	respCfg.Profile = ProfileLuxFIPS
+	respCfg.Profile = ProfileFIPS
 
 	init, _, err := InitiateHandshake(initCfg, initiator)
 	require.NoError(err)
@@ -227,7 +227,7 @@ func TestHandshake_RefusesChainMismatch(t *testing.T) {
 	require.NoError(err)
 
 	initCfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
@@ -250,7 +250,7 @@ func TestHandshake_RefusesResponderKEMDowngrade(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM1024,
 		ForbidClassicalKEM: true,
@@ -290,7 +290,7 @@ func TestHandshake_NodeIDZeroRefused(t *testing.T) {
 	initiator, responder, chainID := newTestIdentities(t)
 
 	cfg := &HandshakeConfig{
-		Profile:            ProfileLuxStrictPQ,
+		Profile:            ProfileStrictPQ,
 		ChainID:            chainID,
 		KEMScheme:          kem.KeyExchangeMLKEM768,
 		ForbidClassicalKEM: true,
