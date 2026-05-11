@@ -129,28 +129,26 @@ func TestKEMSession_DistinctTranscriptsDifferentKeys(t *testing.T) {
 }
 
 // TestKEMSession_RefusesClassicalKEM asserts strict-PQ peers refuse to
-// accept any classical KEM marker. This is the wire-level enforcement of
-// HIP-0077 "no classical primitives in strict-PQ mode".
+// accept the classical KEM marker. This is the wire-level enforcement of
+// HIP-0077 "no classical primitives in strict-PQ mode". The canonical
+// config.KeyExchangeID enum exposes a single classical marker
+// (X25519Unsafe at 0x90); the P-256 / P-384 markers that used to live
+// in this package have been collapsed onto X25519Unsafe in the
+// canonical numbering (Bug 3 fix).
 func TestKEMSession_RefusesClassicalKEM(t *testing.T) {
 	require := require.New(t)
 
-	cases := []KeyExchangeID{
-		KeyExchangeX25519Unsafe,
-		KeyExchangeP256Unsafe,
-		KeyExchangeP384Unsafe,
-	}
-	for _, scheme := range cases {
-		t.Run(scheme.String(), func(t *testing.T) {
-			_, _, err := GenerateKEMKeypair(scheme, rand.Reader)
-			require.ErrorIs(err, ErrClassicalKEMForbidden)
+	scheme := KeyExchangeX25519Unsafe
+	t.Run(scheme.String(), func(t *testing.T) {
+		_, _, err := GenerateKEMKeypair(scheme, rand.Reader)
+		require.ErrorIs(err, ErrClassicalKEMForbidden)
 
-			_, _, err = InitiateKEMSession(scheme, nil, []byte("x"))
-			require.ErrorIs(err, ErrClassicalKEMForbidden)
+		_, _, err = InitiateKEMSession(scheme, nil, []byte("x"))
+		require.ErrorIs(err, ErrClassicalKEMForbidden)
 
-			_, err = RespondKEMSession(scheme, nil, nil, []byte("x"))
-			require.ErrorIs(err, ErrClassicalKEMForbidden)
-		})
-	}
+		_, err = RespondKEMSession(scheme, nil, nil, []byte("x"))
+		require.ErrorIs(err, ErrClassicalKEMForbidden)
+	})
 }
 
 // TestKEMSession_RefusesEmptyTranscript asserts the binding requirement:
@@ -188,17 +186,23 @@ func TestKEMSession_RefusesBadSizes(t *testing.T) {
 }
 
 // TestKEMSession_RefusesUnsupportedScheme asserts KeyExchangeNone and any
-// unknown byte fail with ErrUnsupportedScheme at construction time.
+// unknown byte fail with ErrUnsupportedScheme at construction time. ML-KEM
+// at NIST Cat 1 is no longer named in the canonical enum (below the
+// strict-PQ floor); an arbitrary unknown byte stands in for it here.
 func TestKEMSession_RefusesUnsupportedScheme(t *testing.T) {
 	require := require.New(t)
 
 	_, _, err := GenerateKEMKeypair(KeyExchangeNone, rand.Reader)
 	require.ErrorIs(err, ErrUnsupportedScheme)
 
-	_, _, err = GenerateKEMKeypair(KeyExchangeMLKEM512, rand.Reader)
+	// Arbitrary unallocated byte stands in for "scheme not in the canonical
+	// numbering" — the runtime cannot tell the difference between a retired
+	// ML-KEM-512 byte and a never-allocated value.
+	unknown := KeyExchangeID(0x7F)
+	_, _, err = GenerateKEMKeypair(unknown, rand.Reader)
 	require.ErrorIs(err, ErrUnsupportedScheme)
 
-	_, _, err = InitiateKEMSession(KeyExchangeMLKEM512, make([]byte, 800), []byte("x"))
+	_, _, err = InitiateKEMSession(unknown, make([]byte, 800), []byte("x"))
 	require.ErrorIs(err, ErrUnsupportedScheme)
 }
 
@@ -252,25 +256,29 @@ func TestDeriveDKGAEADKey_OnlyMLKEM1024(t *testing.T) {
 
 // TestKeyExchangeID_Predicates spot-checks the small predicate helpers so
 // a future numbering change cannot silently flip a wire byte from PQ to
-// classical without breaking a test.
+// classical without breaking a test. SharedSecretBits and NISTCategory
+// are free functions in this package (KeyExchangeID is a type alias of
+// config.KeyExchangeID so methods can only live in the config package).
 func TestKeyExchangeID_Predicates(t *testing.T) {
 	require := require.New(t)
 
 	require.True(KeyExchangeMLKEM768.IsPostQuantum())
 	require.True(KeyExchangeMLKEM1024.IsPostQuantum())
-	require.False(KeyExchangeMLKEM512.IsPostQuantum(), "Cat 1 below strict-PQ floor")
 	require.False(KeyExchangeNone.IsPostQuantum())
 	require.False(KeyExchangeX25519Unsafe.IsPostQuantum())
 
 	require.True(KeyExchangeX25519Unsafe.IsForbiddenInPQMode())
-	require.True(KeyExchangeP256Unsafe.IsForbiddenInPQMode())
-	require.True(KeyExchangeP384Unsafe.IsForbiddenInPQMode())
 	require.False(KeyExchangeMLKEM768.IsForbiddenInPQMode())
 
-	require.EqualValues(256, KeyExchangeMLKEM768.SharedSecretBits())
-	require.EqualValues(256, KeyExchangeMLKEM1024.SharedSecretBits())
-	require.EqualValues(0, KeyExchangeNone.SharedSecretBits())
+	require.EqualValues(256, SharedSecretBits(KeyExchangeMLKEM768))
+	require.EqualValues(256, SharedSecretBits(KeyExchangeMLKEM1024))
+	require.EqualValues(0, SharedSecretBits(KeyExchangeNone))
 
-	require.EqualValues(3, KeyExchangeMLKEM768.NISTCategory())
-	require.EqualValues(5, KeyExchangeMLKEM1024.NISTCategory())
+	require.EqualValues(3, NISTCategory(KeyExchangeMLKEM768))
+	require.EqualValues(5, NISTCategory(KeyExchangeMLKEM1024))
+
+	// Canonical wire bytes — pins the Bug 3 fix at 0x01/0x02.
+	require.EqualValues(0x01, uint8(KeyExchangeMLKEM768))
+	require.EqualValues(0x02, uint8(KeyExchangeMLKEM1024))
+	require.EqualValues(0x90, uint8(KeyExchangeX25519Unsafe))
 }
