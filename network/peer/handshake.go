@@ -95,12 +95,12 @@ type ProfileID uint8
 const (
 	// ProfileNone — no profile committed; rejected by every strict peer.
 	ProfileNone ProfileID = 0x00
-	// ProfileLuxStrictPQ — Lux primary network, NIST-aligned PQ.
-	ProfileLuxStrictPQ ProfileID = 0x01
-	// ProfileLuxPermissive — testnet / devnet.
-	ProfileLuxPermissive ProfileID = 0x02
-	// ProfileLuxFIPS — FIPS-204 + FIPS-202 only.
-	ProfileLuxFIPS ProfileID = 0x03
+	// ProfileStrictPQ — canonical strict-PQ profile, NIST-aligned.
+	ProfileStrictPQ ProfileID = 0x01
+	// ProfilePermissive — testnet / devnet.
+	ProfilePermissive ProfileID = 0x02
+	// ProfileFIPS — FIPS-204 + FIPS-202 only.
+	ProfileFIPS ProfileID = 0x03
 )
 
 // String returns the canonical lowercase profile name.
@@ -108,12 +108,12 @@ func (p ProfileID) String() string {
 	switch p {
 	case ProfileNone:
 		return "none"
-	case ProfileLuxStrictPQ:
-		return "lux-strict-pq"
-	case ProfileLuxPermissive:
-		return "lux-permissive"
-	case ProfileLuxFIPS:
-		return "lux-fips"
+	case ProfileStrictPQ:
+		return "strict-pq"
+	case ProfilePermissive:
+		return "permissive"
+	case ProfileFIPS:
+		return "fips"
 	default:
 		return fmt.Sprintf("profile(0x%02x)", uint8(p))
 	}
@@ -121,7 +121,7 @@ func (p ProfileID) String() string {
 
 // IsStrict reports whether this profile mandates ForbidClassicalKEM.
 func (p ProfileID) IsStrict() bool {
-	return p == ProfileLuxStrictPQ || p == ProfileLuxFIPS
+	return p == ProfileStrictPQ || p == ProfileFIPS
 }
 
 // HandshakeRole is initiator or responder; used only to scope ML-DSA-65

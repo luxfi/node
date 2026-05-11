@@ -17,7 +17,7 @@ import (
 // underlying registry shape.
 func TestMetrics_NilReceiver_Noop(t *testing.T) {
 	var m *Metrics
-	m.SetActiveProfile(consensusconfig.LuxStrictPQ())
+	m.SetActiveProfile(consensusconfig.StrictPQ())
 	m.SetActiveProfile(nil)
 	m.ObserveMempoolClassicalCredential("P")
 	m.SetZchainProofLagEpochs(1)
@@ -32,7 +32,7 @@ func TestMetrics_ConstructionUnderNoopRegistry_DoesNotPanic(t *testing.T) {
 	reg := metric.NewRegistry()
 	metricsInstance := metric.NewWithRegistry("lux_security", reg)
 	m := NewMetrics(metricsInstance)
-	m.SetActiveProfile(consensusconfig.LuxStrictPQ())
+	m.SetActiveProfile(consensusconfig.StrictPQ())
 	m.ObserveMempoolClassicalCredential("P")
 	m.SetZchainProofLagEpochs(3)
 	// Gather is expected to be empty under the noop registry; we

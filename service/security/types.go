@@ -37,7 +37,7 @@ type ProfileReply struct {
 	ProfileID uint32 `json:"profile_id"`
 
 	// ProfileName is the canonical SCREAMING_SNAKE_CASE name (e.g.
-	// "LUX_STRICT_PQ"). Audit tooling matches on this name.
+	// "STRICT_PQ"). Audit tooling matches on this name.
 	ProfileName string `json:"profile_name"`
 
 	// ProfileHash is the 48-byte SHA3-384 commitment to the profile
@@ -207,8 +207,8 @@ func contractAuthName(profile *consensusconfig.ChainSecurityProfile) string {
 		return ""
 	}
 	base := renderName(profile.ContractAuthID.String())
-	if profile.ProfileID == uint32(consensusconfig.ProfileLuxStrictPQ) ||
-		profile.ProfileID == uint32(consensusconfig.ProfileLuxFIPS) {
+	if profile.ProfileID == uint32(consensusconfig.ProfileStrictPQ) ||
+		profile.ProfileID == uint32(consensusconfig.ProfileFIPS) {
 		// Strict-PQ + FIPS implicitly admit Z-Chain validity proofs
 		// as a contract-auth primitive in addition to the raw
 		// lattice scheme pinned on the profile.
@@ -265,9 +265,9 @@ func isLuxCanonical(profile *consensusconfig.ChainSecurityProfile) bool {
 		return false
 	}
 	switch profile.ProfileID {
-	case uint32(consensusconfig.ProfileLuxStrictPQ),
-		uint32(consensusconfig.ProfileLuxPermissive),
-		uint32(consensusconfig.ProfileLuxFIPS):
+	case uint32(consensusconfig.ProfileStrictPQ),
+		uint32(consensusconfig.ProfilePermissive),
+		uint32(consensusconfig.ProfileFIPS):
 		return true
 	default:
 		return false
@@ -292,8 +292,8 @@ func isNISTFriendly(profile *consensusconfig.ChainSecurityProfile) bool {
 		return false
 	}
 	switch profile.ProfileID {
-	case uint32(consensusconfig.ProfileLuxStrictPQ),
-		uint32(consensusconfig.ProfileLuxFIPS):
+	case uint32(consensusconfig.ProfileStrictPQ),
+		uint32(consensusconfig.ProfileFIPS):
 		return true
 	default:
 		return false

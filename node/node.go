@@ -1036,8 +1036,8 @@ func (n *Node) applySecurityProfile(pin *genesiscfg.SecurityProfile) error {
 	}
 	blsFallback := "allowed"
 	if profile.ForbidPairings ||
-		profile.ProfileID == uint32(consensusconfig.ProfileLuxStrictPQ) ||
-		profile.ProfileID == uint32(consensusconfig.ProfileLuxFIPS) {
+		profile.ProfileID == uint32(consensusconfig.ProfileStrictPQ) ||
+		profile.ProfileID == uint32(consensusconfig.ProfileFIPS) {
 		blsFallback = "forbidden"
 	}
 	postQuantum := profile.ProofPolicyID.IsPostQuantum()

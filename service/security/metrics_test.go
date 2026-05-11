@@ -25,7 +25,7 @@ func TestMetrics_SecurityProfileGauge_Reflects_ActiveProfile(t *testing.T) {
 	metricsInstance := metric.NewWithRegistry("lux_security", reg)
 	m := NewMetrics(metricsInstance)
 
-	strictPQ := consensusconfig.LuxStrictPQ()
+	strictPQ := consensusconfig.StrictPQ()
 	m.SetActiveProfile(strictPQ)
 
 	// Gather and assert the gauge family for each expected metric
@@ -38,14 +38,14 @@ func TestMetrics_SecurityProfileGauge_Reflects_ActiveProfile(t *testing.T) {
 
 	expect := map[string]float64{
 		"lux_security_profile_post_quantum_end_to_end:profile_id=" +
-			strconv.Itoa(int(consensusconfig.ProfileLuxStrictPQ)) +
-			",profile_name=LUX_STRICT_PQ": 1,
+			strconv.Itoa(int(consensusconfig.ProfileStrictPQ)) +
+			",profile_name=STRICT_PQ": 1,
 		"lux_security_profile_nist_friendly:profile_id=" +
-			strconv.Itoa(int(consensusconfig.ProfileLuxStrictPQ)): 1,
+			strconv.Itoa(int(consensusconfig.ProfileStrictPQ)): 1,
 		"lux_security_profile_lux_canonical:profile_id=" +
-			strconv.Itoa(int(consensusconfig.ProfileLuxStrictPQ)): 1,
+			strconv.Itoa(int(consensusconfig.ProfileStrictPQ)): 1,
 		"lux_security_profile_unsafe_mode_enabled:profile_id=" +
-			strconv.Itoa(int(consensusconfig.ProfileLuxStrictPQ)): 0,
+			strconv.Itoa(int(consensusconfig.ProfileStrictPQ)): 0,
 	}
 	for key, want := range expect {
 		got, ok := values[key]

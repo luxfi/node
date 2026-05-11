@@ -14,19 +14,19 @@ import (
 	"github.com/luxfi/log"
 )
 
-// TestApplySecurityProfile_LuxStrictPQ proves the locked-profile pin
+// TestApplySecurityProfile_StrictPQ proves the locked-profile pin
 // resolves end-to-end inside the node bootstrap path and the resulting
 // *ChainSecurityProfile is reachable via SecurityProfile(). Closes the
 // node-side half of red-team F102.
-func TestApplySecurityProfile_LuxStrictPQ(t *testing.T) {
-	canonical := consensusconfig.LuxStrictPQ()
+func TestApplySecurityProfile_StrictPQ(t *testing.T) {
+	canonical := consensusconfig.StrictPQ()
 	live, err := canonical.ComputeHash()
 	if err != nil {
 		t.Fatalf("ComputeHash: %v", err)
 	}
 
 	pin := &genesiscfg.SecurityProfile{
-		ProfileID:      uint8(consensusconfig.ProfileLuxStrictPQ),
+		ProfileID:      uint8(consensusconfig.ProfileStrictPQ),
 		ProfileHashHex: hex.EncodeToString(live[:]),
 	}
 	n := &Node{Log: log.NoLog{}}
@@ -38,18 +38,18 @@ func TestApplySecurityProfile_LuxStrictPQ(t *testing.T) {
 	if got == nil {
 		t.Fatal("SecurityProfile() returned nil after a successful pin resolution")
 	}
-	if got.ProfileID != uint32(consensusconfig.ProfileLuxStrictPQ) {
+	if got.ProfileID != uint32(consensusconfig.ProfileStrictPQ) {
 		t.Errorf("SecurityProfile().ProfileID = %d; want %d",
-			got.ProfileID, consensusconfig.ProfileLuxStrictPQ)
+			got.ProfileID, consensusconfig.ProfileStrictPQ)
 	}
 	if got.ProfileHash != live {
 		t.Errorf("SecurityProfile().ProfileHash mismatch")
 	}
 	if !got.ProofPolicyID.IsPostQuantum() {
-		t.Errorf("LuxStrictPQ profile should be post-quantum")
+		t.Errorf("StrictPQ profile should be post-quantum")
 	}
 	if got.HashSuiteID != consensusconfig.HashSuiteSHA3NIST {
-		t.Errorf("LuxStrictPQ profile should pin SHA3NIST, got %s",
+		t.Errorf("StrictPQ profile should pin SHA3NIST, got %s",
 			got.HashSuiteID.String())
 	}
 }
@@ -74,7 +74,7 @@ func TestApplySecurityProfile_NilPin(t *testing.T) {
 // pinning the same ProfileID.
 func TestApplySecurityProfile_HashMismatchRejected(t *testing.T) {
 	pin := &genesiscfg.SecurityProfile{
-		ProfileID:      uint8(consensusconfig.ProfileLuxStrictPQ),
+		ProfileID:      uint8(consensusconfig.ProfileStrictPQ),
 		ProfileHashHex: strings.Repeat("00", 48),
 	}
 	n := &Node{Log: log.NoLog{}}
@@ -108,28 +108,28 @@ func TestApplySecurityProfile_UnknownProfileIDRejected(t *testing.T) {
 	}
 }
 
-// TestApplySecurityProfile_LuxFIPS proves the FIPS profile resolves
+// TestApplySecurityProfile_FIPS proves the FIPS profile resolves
 // alongside StrictPQ — both share the strict-PQ posture but FIPS
 // pins SHA3NIST exclusively (no BLAKE3-legacy).
-func TestApplySecurityProfile_LuxFIPS(t *testing.T) {
-	canonical := consensusconfig.LuxFIPS()
+func TestApplySecurityProfile_FIPS(t *testing.T) {
+	canonical := consensusconfig.FIPS()
 	live, err := canonical.ComputeHash()
 	if err != nil {
-		t.Fatalf("LuxFIPS ComputeHash: %v", err)
+		t.Fatalf("FIPS ComputeHash: %v", err)
 	}
 	pin := &genesiscfg.SecurityProfile{
-		ProfileID:      uint8(consensusconfig.ProfileLuxFIPS),
+		ProfileID:      uint8(consensusconfig.ProfileFIPS),
 		ProfileHashHex: hex.EncodeToString(live[:]),
 	}
 	n := &Node{Log: log.NoLog{}}
 	if err := n.applySecurityProfile(pin); err != nil {
-		t.Fatalf("applySecurityProfile(LuxFIPS) returned: %v", err)
+		t.Fatalf("applySecurityProfile(FIPS) returned: %v", err)
 	}
 	got := n.SecurityProfile()
-	if got.ProfileID != uint32(consensusconfig.ProfileLuxFIPS) {
-		t.Errorf("ProfileID = %d; want %d", got.ProfileID, consensusconfig.ProfileLuxFIPS)
+	if got.ProfileID != uint32(consensusconfig.ProfileFIPS) {
+		t.Errorf("ProfileID = %d; want %d", got.ProfileID, consensusconfig.ProfileFIPS)
 	}
 	if got.HashSuiteID != consensusconfig.HashSuiteSHA3NIST {
-		t.Errorf("LuxFIPS HashSuiteID = %s; want sha3-nist", got.HashSuiteID.String())
+		t.Errorf("FIPS HashSuiteID = %s; want sha3-nist", got.HashSuiteID.String())
 	}
 }

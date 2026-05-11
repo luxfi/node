@@ -42,10 +42,10 @@ import (
 func TestVMInitialize_WiresSecurityProfileIntoMempool(t *testing.T) {
 	require := require.New(t)
 
-	// LuxStrictPQ pins RequireTypedTxAuth=true; the mempool gate refuses
+	// StrictPQ pins RequireTypedTxAuth=true; the mempool gate refuses
 	// any unwrapped classical secp256k1.Credential without an
 	// allow-listed originator.
-	strictPQ := consensusconfig.LuxStrictPQ() // *ChainSecurityProfile
+	strictPQ := consensusconfig.StrictPQ() // *ChainSecurityProfile
 
 	vmImpl := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
