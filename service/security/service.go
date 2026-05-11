@@ -26,14 +26,19 @@ var ErrNoProfile = errors.New(
 	"security: node booted without a chain-wide SecurityProfile pin " +
 		"(genesis carries no SecurityProfile{} block); RPC unavailable")
 
-// Service is the JSON-RPC handler set registered under the lux
-// namespace at /ext/lux. Methods are read-only; the underlying profile
-// pointer is set once at construction and never mutated.
+// Service is the JSON-RPC handler set registered under the security
+// namespace at /ext/security. Methods are read-only; the underlying
+// profile pointer is set once at construction and never mutated.
 //
 // Exposed methods:
 //
-//	lux_securityProfile  → ProfileReply
-//	lux_blockSecurity    → BlockSecurityReply
+//	securityProfile  → ProfileReply
+//	blockSecurity    → BlockSecurityReply
+//
+// On the wire, gorilla/rpc dispatches these as security_securityProfile
+// and security_blockSecurity (namespace_method). Callers using the REST
+// sidecars hit /ext/security/profile and /ext/security/block/{n}
+// directly. One namespace, two transports, one shape.
 //
 // The "block" method returns the chain-wide envelope; per-block
 // auth-scheme details remain in the VM's own block JSON (the VMs do
@@ -44,33 +49,39 @@ type Service struct {
 	profile *consensusconfig.ChainSecurityProfile
 }
 
-// NewHandler constructs an http.Handler for the lux JSON-RPC namespace.
-// Profile may be nil — see ErrNoProfile.
+// NewHandler constructs an http.Handler for the security JSON-RPC
+// namespace. Profile may be nil — see ErrNoProfile.
 //
 // The returned handler is suitable for APIServer.AddRoute(handler,
-// "lux", "") so it lands at /ext/lux on the node's HTTP listener.
+// "security", "") so it lands at /ext/security on the node's HTTP
+// listener. REST sidecars are mounted at /profile and /block/{n} on
+// the same handler so the full external surface is:
+//
+//	POST /ext/security                  (JSON-RPC, methods above)
+//	GET  /ext/security/profile          (REST sidecar)
+//	GET  /ext/security/block/{n}        (REST sidecar)
 func NewHandler(logger log.Logger, profile *consensusconfig.ChainSecurityProfile) (http.Handler, error) {
 	server := rpc.NewServer()
 	codec := avajson.NewCodec()
 	server.RegisterCodec(codec, "application/json")
 	server.RegisterCodec(codec, "application/json;charset=UTF-8")
 	svc := &Service{log: logger, profile: profile}
-	if err := server.RegisterService(svc, "lux"); err != nil {
-		return nil, fmt.Errorf("security: RegisterService(\"lux\"): %w", err)
+	if err := server.RegisterService(svc, "security"); err != nil {
+		return nil, fmt.Errorf("security: RegisterService(\"security\"): %w", err)
 	}
-	// RestHandler dispatches the /v1/block/{n}/security REST sidecar
-	// over the same Service receiver. JSON-RPC handles the
-	// /ext/lux POST surface; the REST handler delegates to the same
-	// underlying methods so the two endpoints stay byte-identical
-	// in semantics (one and only one way to compute the shape).
+	// REST sidecars share the Service receiver so the two transports
+	// stay byte-identical in semantics (one and only one way to
+	// compute the shape). Paths relative to /ext/security:
+	//   /profile        → restProfile
+	//   /block/{n}      → restBlockSecurity
 	mux := http.NewServeMux()
 	mux.Handle("/", server)
-	mux.HandleFunc("/v1/security/profile", svc.restProfile)
-	mux.HandleFunc("/v1/security/block/", svc.restBlockSecurity)
+	mux.HandleFunc("/profile", svc.restProfile)
+	mux.HandleFunc("/block/", svc.restBlockSecurity)
 	return mux, nil
 }
 
-// SecurityProfile is the lux_securityProfile JSON-RPC handler.
+// SecurityProfile is the securityProfile JSON-RPC handler.
 //
 // Returns ErrNoProfile when the node booted without a pin. A populated
 // reply names every field in ProfileReply; the entire shape is
@@ -78,7 +89,7 @@ func NewHandler(logger log.Logger, profile *consensusconfig.ChainSecurityProfile
 // can cache by hash and refresh only on hash change.
 func (s *Service) SecurityProfile(_ *http.Request, _ *struct{}, reply *ProfileReply) error {
 	s.log.Debug("API called",
-		log.String("service", "lux"),
+		log.String("service", "security"),
 		log.String("method", "securityProfile"),
 	)
 	if s.profile == nil {
@@ -89,7 +100,7 @@ func (s *Service) SecurityProfile(_ *http.Request, _ *struct{}, reply *ProfileRe
 }
 
 // BlockSecurityArgs is the JSON-RPC argument struct for
-// lux_blockSecurity. The block-number argument is forward-compatible
+// blockSecurity. The block-number argument is forward-compatible
 // even though today the reply is chain-wide-constant; explorers wire
 // the parameter so the API can evolve without bumping the namespace.
 type BlockSecurityArgs struct {
@@ -102,7 +113,7 @@ type BlockSecurityArgs struct {
 	Chain string `json:"chain,omitempty"`
 }
 
-// BlockSecurity is the lux_blockSecurity JSON-RPC handler. Returns the
+// BlockSecurity is the blockSecurity JSON-RPC handler. Returns the
 // chain-wide security envelope for the named block.
 //
 // Today the reply is constant for a given chain (the chain-wide
@@ -112,7 +123,7 @@ type BlockSecurityArgs struct {
 // cert envelope directly for the exact backend used.
 func (s *Service) BlockSecurity(_ *http.Request, _ *BlockSecurityArgs, reply *BlockSecurityReply) error {
 	s.log.Debug("API called",
-		log.String("service", "lux"),
+		log.String("service", "security"),
 		log.String("method", "blockSecurity"),
 	)
 	if s.profile == nil {
@@ -122,10 +133,10 @@ func (s *Service) BlockSecurity(_ *http.Request, _ *BlockSecurityArgs, reply *Bl
 	return nil
 }
 
-// restProfile is the GET /v1/security/profile sidecar. Same body as
-// lux_securityProfile; useful for explorers that don't speak
-// JSON-RPC. Refuses every non-GET method so callers can't smuggle
-// state through the read-only endpoint.
+// restProfile is the GET /profile sidecar (full path /ext/security/profile).
+// Same body as the securityProfile JSON-RPC method; useful for
+// explorers that don't speak JSON-RPC. Refuses every non-GET method so
+// callers can't smuggle state through the read-only endpoint.
 func (s *Service) restProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -139,10 +150,10 @@ func (s *Service) restProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, reply)
 }
 
-// restBlockSecurity is the GET /v1/security/block/{n} sidecar. The
-// path suffix is taken as the block number; chain alias defaults to
-// the platform chain (callers can re-route per-chain at the
-// chain-manager layer if needed).
+// restBlockSecurity is the GET /block/{n} sidecar (full path
+// /ext/security/block/{n}). The path suffix is taken as the block
+// number; chain alias defaults to the platform chain (callers can
+// re-route per-chain at the chain-manager layer if needed).
 func (s *Service) restBlockSecurity(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
