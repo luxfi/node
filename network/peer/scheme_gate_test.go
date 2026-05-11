@@ -26,7 +26,7 @@ func TestSchemeGate_NewSchemeGate_RejectsNilProfile(t *testing.T) {
 func TestSchemeGate_StrictPQ_AcceptsMatchedScheme(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), false, 0)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), false, 0)
 	require.NoError(err)
 
 	id := ids.NodeID{0xaa, 0xbb}
@@ -46,7 +46,7 @@ func TestSchemeGate_StrictPQ_AcceptsMatchedScheme(t *testing.T) {
 func TestSchemeGate_StrictPQ_PostActivation_RejectsClassical(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), true, 50)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), true, 50)
 	require.NoError(err)
 
 	id := ids.NodeID{0x11, 0x22}
@@ -64,7 +64,7 @@ func TestSchemeGate_StrictPQ_PostActivation_RejectsClassical(t *testing.T) {
 func TestSchemeGate_StrictPQ_PreActivation_AcceptsBothSchemes(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), false, 100)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), false, 100)
 	require.NoError(err)
 
 	id := ids.NodeID{0x33, 0x44}
@@ -92,7 +92,7 @@ func TestSchemeGate_StrictPQ_PreActivation_AcceptsBothSchemes(t *testing.T) {
 func TestSchemeGate_StrictPQ_PreActivation_RejectsClassicalAfterCutover(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), false, 100)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), false, 100)
 	require.NoError(err)
 
 	id := ids.NodeID{0x55}
@@ -116,13 +116,13 @@ func TestSchemeGate_Permissive_AcceptsClassicalUnderUnsafeFlag(t *testing.T) {
 	id := ids.NodeID{0x77}
 
 	// With the flag: classical accepted post-activation on permissive.
-	gOn, err := NewSchemeGate(consensusconfig.LuxPermissive(), true, 0)
+	gOn, err := NewSchemeGate(consensusconfig.Permissive(), true, 0)
 	require.NoError(err)
 	_, err = gOn.Classify(id, ids.NodeIDSchemeSecp256k1, 1000, "handshake")
 	require.NoError(err)
 
 	// Without the flag: classical refused even on permissive.
-	gOff, err := NewSchemeGate(consensusconfig.LuxPermissive(), false, 0)
+	gOff, err := NewSchemeGate(consensusconfig.Permissive(), false, 0)
 	require.NoError(err)
 	_, err = gOff.Classify(id, ids.NodeIDSchemeSecp256k1, 1000, "handshake")
 	require.ErrorIs(err, ErrSchemeGateMismatch)
@@ -134,7 +134,7 @@ func TestSchemeGate_Permissive_AcceptsClassicalUnderUnsafeFlag(t *testing.T) {
 func TestSchemeGate_RejectsUnknownSchemeByte(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), true, 1000)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), true, 1000)
 	require.NoError(err)
 
 	id := ids.NodeID{0x99}
@@ -154,7 +154,7 @@ func TestSchemeGate_RejectsUnknownSchemeByte(t *testing.T) {
 func TestSchemeGate_PinsProfileScheme(t *testing.T) {
 	require := require.New(t)
 
-	p := consensusconfig.LuxStrictPQ()
+	p := consensusconfig.StrictPQ()
 	g, err := NewSchemeGate(p, false, 0)
 	require.NoError(err)
 
@@ -179,7 +179,7 @@ func TestSchemeGate_PinsProfileScheme(t *testing.T) {
 func TestSchemeGate_SiteTagIncludedInError(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewSchemeGate(consensusconfig.LuxStrictPQ(), false, 0)
+	g, err := NewSchemeGate(consensusconfig.StrictPQ(), false, 0)
 	require.NoError(err)
 
 	_, err = g.Classify(ids.NodeID{0x01}, ids.NodeIDSchemeSecp256k1, 1, "proposer")
