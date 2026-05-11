@@ -26,7 +26,7 @@ import (
 // Closes the spec contract for the public RPC surface that auditors
 // and dApps consult.
 func TestRPC_securityProfile_StrictPQ(t *testing.T) {
-	profile := consensusconfig.LuxStrictPQ()
+	profile := consensusconfig.StrictPQ()
 	svc := &Service{log: log.Noop(), profile: profile}
 
 	var reply ProfileReply
@@ -34,25 +34,25 @@ func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 		t.Fatalf("SecurityProfile: %v", err)
 	}
 
-	if reply.ProfileID != uint32(consensusconfig.ProfileLuxStrictPQ) {
+	if reply.ProfileID != uint32(consensusconfig.ProfileStrictPQ) {
 		t.Errorf("ProfileID = %d; want %d",
-			reply.ProfileID, consensusconfig.ProfileLuxStrictPQ)
+			reply.ProfileID, consensusconfig.ProfileStrictPQ)
 	}
-	if reply.ProfileName != "LUX_STRICT_PQ" {
-		t.Errorf("ProfileName = %q; want LUX_STRICT_PQ", reply.ProfileName)
+	if reply.ProfileName != "STRICT_PQ" {
+		t.Errorf("ProfileName = %q; want STRICT_PQ", reply.ProfileName)
 	}
 	wantHash := "0x" + hex.EncodeToString(profile.ProfileHash[:])
 	if reply.ProfileHash != wantHash {
 		t.Errorf("ProfileHash = %q; want %q", reply.ProfileHash, wantHash)
 	}
 	if !reply.PostQuantumEndToEnd {
-		t.Error("PostQuantumEndToEnd = false on LuxStrictPQ; want true")
+		t.Error("PostQuantumEndToEnd = false on StrictPQ; want true")
 	}
 	if !reply.NISTFriendly {
-		t.Error("NISTFriendly = false on LuxStrictPQ; want true")
+		t.Error("NISTFriendly = false on StrictPQ; want true")
 	}
 	if !reply.LuxCanonical {
-		t.Error("LuxCanonical = false on LuxStrictPQ; want true")
+		t.Error("LuxCanonical = false on StrictPQ; want true")
 	}
 	if reply.HashSuite != "SHA3_NIST" {
 		t.Errorf("HashSuite = %q; want SHA3_NIST", reply.HashSuite)
@@ -96,7 +96,7 @@ func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 	}
 	for name, v := range allTrue {
 		if !v {
-			t.Errorf("%s = false on LuxStrictPQ; want true", name)
+			t.Errorf("%s = false on StrictPQ; want true", name)
 		}
 	}
 }
@@ -179,20 +179,20 @@ func TestRPC_securityProfile_NoProfile_Refused(t *testing.T) {
 // carries the chain-wide profile envelope and the canonical proof
 // backend name.
 func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
-	svc := &Service{log: log.Noop(), profile: consensusconfig.LuxStrictPQ()}
+	svc := &Service{log: log.Noop(), profile: consensusconfig.StrictPQ()}
 	var reply BlockSecurityReply
 	if err := svc.BlockSecurity(nil, &BlockSecurityArgs{}, &reply); err != nil {
 		t.Fatalf("BlockSecurity: %v", err)
 	}
-	if reply.SecurityProfileName != "LUX_STRICT_PQ" {
-		t.Errorf("SecurityProfileName = %q; want LUX_STRICT_PQ",
+	if reply.SecurityProfileName != "STRICT_PQ" {
+		t.Errorf("SecurityProfileName = %q; want STRICT_PQ",
 			reply.SecurityProfileName)
 	}
 	if !reply.PulsarMSignatureValid {
-		t.Error("PulsarMSignatureValid = false; want true on LuxStrictPQ")
+		t.Error("PulsarMSignatureValid = false; want true on StrictPQ")
 	}
 	if !reply.PostQuantumEndToEnd {
-		t.Error("PostQuantumEndToEnd = false; want true on LuxStrictPQ")
+		t.Error("PostQuantumEndToEnd = false; want true on StrictPQ")
 	}
 	if reply.ProofBackendID == 0 {
 		t.Error("ProofBackendID = 0; want a populated backend byte")
@@ -207,7 +207,7 @@ func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 // JSON shape as the JSON-RPC handler. One shape, two transports — no
 // per-transport drift.
 func TestREST_securityProfile_GET(t *testing.T) {
-	profile := consensusconfig.LuxStrictPQ()
+	profile := consensusconfig.StrictPQ()
 	handler, err := NewHandler(log.Noop(), profile)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
@@ -230,8 +230,8 @@ func TestREST_securityProfile_GET(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if body.ProfileName != "LUX_STRICT_PQ" {
-		t.Errorf("REST ProfileName = %q; want LUX_STRICT_PQ", body.ProfileName)
+	if body.ProfileName != "STRICT_PQ" {
+		t.Errorf("REST ProfileName = %q; want STRICT_PQ", body.ProfileName)
 	}
 	if body.ContractAuth != "ML_DSA_65|ZCHAIN_AUTH_PROOF" {
 		t.Errorf("REST ContractAuth = %q; want ML_DSA_65|ZCHAIN_AUTH_PROOF",
@@ -242,7 +242,7 @@ func TestREST_securityProfile_GET(t *testing.T) {
 // TestREST_securityProfile_MethodNotAllowed proves the REST sidecar
 // refuses non-GET methods (the endpoint is read-only).
 func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
-	profile := consensusconfig.LuxStrictPQ()
+	profile := consensusconfig.StrictPQ()
 	handler, err := NewHandler(log.Noop(), profile)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
@@ -266,7 +266,7 @@ func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
 // JSON shape as the JSON-RPC handler. One shape, two transports — no
 // per-transport drift.
 func TestREST_blockSecurity_GET(t *testing.T) {
-	profile := consensusconfig.LuxStrictPQ()
+	profile := consensusconfig.StrictPQ()
 	handler, err := NewHandler(log.Noop(), profile)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
@@ -286,15 +286,15 @@ func TestREST_blockSecurity_GET(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if body.SecurityProfileName != "LUX_STRICT_PQ" {
-		t.Errorf("REST SecurityProfileName = %q; want LUX_STRICT_PQ",
+	if body.SecurityProfileName != "STRICT_PQ" {
+		t.Errorf("REST SecurityProfileName = %q; want STRICT_PQ",
 			body.SecurityProfileName)
 	}
 	if !body.PulsarMSignatureValid {
-		t.Error("PulsarMSignatureValid = false; want true on LuxStrictPQ")
+		t.Error("PulsarMSignatureValid = false; want true on StrictPQ")
 	}
 	if !body.PostQuantumEndToEnd {
-		t.Error("PostQuantumEndToEnd = false; want true on LuxStrictPQ")
+		t.Error("PostQuantumEndToEnd = false; want true on StrictPQ")
 	}
 }
 

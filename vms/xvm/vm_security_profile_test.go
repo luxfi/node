@@ -43,7 +43,7 @@ import (
 func TestXVMInitialize_WiresSecurityProfileIntoMempool(t *testing.T) {
 	require := require.New(t)
 
-	strictPQ := consensusconfig.LuxStrictPQ()
+	strictPQ := consensusconfig.StrictPQ()
 	vmImpl := &VM{
 		securityProfile:         strictPQ,
 		classicalCompatRegistry: nil,

@@ -20,12 +20,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// canonicalStrictPQProfile returns the live canonical LuxStrictPQ
-// profile with ProfileHash populated — the same form node.go builds
-// during initSecurityProfile.
+// canonicalStrictPQProfile returns the live canonical StrictPQ profile
+// with ProfileHash populated — the same form node.go builds during
+// initSecurityProfile.
 func canonicalStrictPQProfile(t *testing.T) *consensusconfig.ChainSecurityProfile {
 	t.Helper()
-	p, err := consensusconfig.ProfileByID(consensusconfig.ProfileLuxStrictPQ)
+	p, err := consensusconfig.ProfileByID(consensusconfig.ProfileStrictPQ)
 	require.NoError(t, err)
 	require.NoError(t, p.Validate())
 	h, err := p.ComputeHash()
@@ -58,8 +58,8 @@ func TestInjectSecurityProfileConfig_StampsCChainOnly(t *testing.T) {
 
 	pin, ok := got["lux-security-profile"].(map[string]interface{})
 	require.True(ok, "C-Chain config must carry lux-security-profile object")
-	require.EqualValues(uint32(consensusconfig.ProfileLuxStrictPQ), uint32(pin["profileID"].(float64)),
-		"profileID must round-trip the canonical LuxStrictPQ byte")
+	require.EqualValues(uint32(consensusconfig.ProfileStrictPQ), uint32(pin["profileID"].(float64)),
+		"profileID must round-trip the canonical StrictPQ byte")
 	require.Equal(hex.EncodeToString(profile.ProfileHash[:]), pin["profileHashHex"],
 		"profileHashHex must round-trip the canonical 48-byte hash")
 
@@ -115,7 +115,7 @@ func TestInjectSecurityProfileConfig_MergesExistingConfig(t *testing.T) {
 }
 
 // TestInjectSecurityProfileConfig_RoundTripsAcrossPluginBoundary
-// asserts the wire form coreth expects (LuxSecurityProfilePin with
+// asserts the wire form coreth expects (security-profile pin with
 // profileID + profileHashHex) matches the form the chain manager
 // emits, so the rpcchainvm plugin can decode the pin via standard
 // JSON unmarshalling. Closes the wire-compat axis of F118.
@@ -144,7 +144,7 @@ func TestInjectSecurityProfileConfig_RoundTripsAcrossPluginBoundary(t *testing.T
 	var cfg localCorethConfig
 	require.NoError(json.Unmarshal(out, &cfg))
 	require.NotNil(cfg.SecurityProfile, "coreth-side config struct must decode the pin")
-	require.Equal(uint8(consensusconfig.ProfileLuxStrictPQ), cfg.SecurityProfile.ProfileID)
+	require.Equal(uint8(consensusconfig.ProfileStrictPQ), cfg.SecurityProfile.ProfileID)
 	require.Equal(hex.EncodeToString(profile.ProfileHash[:]), cfg.SecurityProfile.ProfileHashHex)
 
 	// Decoded hex must be exactly 48 bytes (SHA3-384 width).
