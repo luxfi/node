@@ -1428,7 +1428,13 @@ func (n *Node) initVMs() error {
 
 	// Register X-Chain VM (Exchange VM)
 	n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
-	err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{})
+	// F102 close-out: thread the chain-wide profile into the X-chain
+	// mempool builder. Nil profile is a no-op gate (legacy networks);
+	// strict-PQ networks refuse classical credentials at gossip time.
+	err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{
+		SecurityProfile:         n.securityProfile,
+		ClassicalCompatRegistry: nil,
+	})
 	if err != nil {
 		n.Log.Error("Failed to register X-Chain VM", "error", err)
 		return err
