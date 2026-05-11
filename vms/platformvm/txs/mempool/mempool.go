@@ -5,11 +5,14 @@ package mempool
 
 import (
 	"errors"
+	"sync"
 	"time"
 
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/txs/auth"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )
 
@@ -20,6 +23,14 @@ var (
 
 type Mempool struct {
 	txmempool.Mempool[*txs.Tx]
+
+	// authMu guards the auth-policy fields. The policy is optional —
+	// callers that haven't migrated their construction path get the
+	// classical-compat default (admit everything). Once a chain pins a
+	// non-nil profile via SetAuthPolicy, Add enforces it.
+	authMu     sync.RWMutex
+	authPolicy *config.ChainSecurityProfile
+	authRegistry auth.ClassicalCompatRegistry
 }
 
 func New(namespace string, registerer metric.Registerer) (*Mempool, error) {
@@ -33,15 +44,51 @@ func New(namespace string, registerer metric.Registerer) (*Mempool, error) {
 	return &Mempool{Mempool: pool}, nil
 }
 
+// SetAuthPolicy installs the chain's credential-admission policy. The
+// profile pins whether classical secp256k1 credentials are admissible;
+// the registry names the allow-list of legacy operators that may still
+// post classical credentials under strict-PQ. Passing (nil, nil)
+// disables the gate (the classical-compat path); the strict-PQ chain
+// builder MUST install a non-nil profile.
+//
+// Safe to call once at chain construction; concurrent Add calls observe
+// the new policy on their next entry.
+func (m *Mempool) SetAuthPolicy(profile *config.ChainSecurityProfile, registry auth.ClassicalCompatRegistry) {
+	m.authMu.Lock()
+	m.authPolicy = profile
+	m.authRegistry = registry
+	m.authMu.Unlock()
+}
+
+// authPolicySnapshot returns the current (profile, registry) pair under
+// a read lock. The result is a snapshot — concurrent SetAuthPolicy
+// callers do not mutate it.
+func (m *Mempool) authPolicySnapshot() (*config.ChainSecurityProfile, auth.ClassicalCompatRegistry) {
+	m.authMu.RLock()
+	defer m.authMu.RUnlock()
+	return m.authPolicy, m.authRegistry
+}
+
 func (m *Mempool) Add(tx *txs.Tx) error {
 	switch tx.Unsigned.(type) {
 	case *txs.AdvanceTimeTx:
 		return ErrCantIssueAdvanceTimeTx
 	case *txs.RewardValidatorTx:
 		return ErrCantIssueRewardValidatorTx
-	default:
-		return m.Mempool.Add(tx)
 	}
+
+	if profile, registry := m.authPolicySnapshot(); profile != nil {
+		// Originator is left zero here because P-chain txs do not bind
+		// a single canonical "from" address — the input owners can name
+		// many keys. Strict-PQ refusal of a classical Credential does
+		// not depend on the originator (the registry path is the
+		// allow-list); the chain builder MUST install a registry only
+		// if the chain has a meaningful concept of legacy originator.
+		if err := auth.EnforceCredentialPolicy(tx.Creds, profile, registry, ids.ShortEmpty); err != nil {
+			return err
+		}
+	}
+	return m.Mempool.Add(tx)
 }
 
 func (m *Mempool) HasTxs() bool {
