@@ -335,6 +335,32 @@ RNS transport supports hybrid post-quantum cryptography combining classical algo
 - **Mixed Networks**: PQ and classical validators coexist
 - **Policy Enforcement**: `requirePostQuantum: true` rejects classical peers
 
+### SchemeGate — cross-axis NodeIDScheme enforcement
+
+`network/peer/scheme_gate.go` (v1.26.10) is the single primitive that
+turns a wire NodeID into a `(scheme, NodeID)` pair and runs the
+cross-axis check against the chain's `ChainSecurityProfile`.
+
+- `SchemeGate{Profile, ClassicalCompatUnsafe, ActivationHeight}` is the
+  chain-scoped policy object. One gate per chain, pinned at bootstrap.
+- `Classify(nodeID, scheme, height, site) (TypedNodeID, error)` is the
+  single entry point. Callers pass a site tag (`"handshake"`,
+  `"proposer"`, `"validator"`, `"mempool-sender"`) that appears in the
+  refused-by error.
+- Migration path: `ActivationHeight` is the block at which a strict-PQ
+  chain stops accepting the classical `secp256k1` (0x90) scheme. Before
+  `ActivationHeight` the gate accepts BOTH the pinned PQ scheme and the
+  named classical scheme (transition window); from `ActivationHeight`
+  onward, strict-PQ chains refuse classical regardless of the operator
+  `LUX_CLASSICAL_COMPAT_UNSAFE` flag.
+- Typed errors: `ErrSchemeGateConfig`, `ErrSchemeGateMismatch`,
+  `ErrSchemeGateUnknownScheme`.
+
+Wire form: `TypedNodeID = (NodeIDScheme byte, 20-byte NodeID)`. The
+20-byte storage/map-key form stays byte-identical; the scheme byte
+travels on the wire so a receiver knows which verifier to dispatch
+without trusting the chain profile alone.
+
 ### Testing PQ Forward Secrecy
 
 ```bash
