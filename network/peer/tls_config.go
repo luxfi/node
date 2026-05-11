@@ -28,6 +28,26 @@ var (
 //
 // It is safe, and typically expected, for [keyLogWriter] to be [nil].
 // [keyLogWriter] should only be enabled for debugging.
+//
+// F103 KEM semantics — TLS curve preference:
+//
+// CurvePreferences pins the IANA-registered hybrid X25519MLKEM768
+// (curve ID 0x11ec) as the only acceptable curve. This is STRICTLY
+// STRONGER than pure ML-KEM-768: an attacker must break both X25519
+// AND ML-KEM-768 to derive the session key. The chain-wide
+// ChainSecurityProfile pins KeyExchangeMLKEM768 — the post-quantum
+// component required on the wire — and the hybrid satisfies that
+// requirement (it CONTAINS ML-KEM-768). ForbidClassicalKEM in the
+// profile refuses a pure-classical curve (e.g. X25519 alone) at the
+// application layer; it does NOT refuse a hybrid that includes
+// ML-KEM-768. See consensus/config.KeyExchangeID for the full
+// rationale.
+//
+// Decision recorded by F103: keep the hybrid as the only TLS-layer
+// KEM. Adding a separate "pure vs hybrid" enum byte to the profile
+// would multiply downstream verifier obligations without strengthening
+// the posture; the audit signed off on the single-byte KeyExchangeID
+// surface and the hybrid is mathematically stronger than pure.
 func TLSConfig(cert tls.Certificate, keyLogWriter io.Writer) *tls.Config {
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
