@@ -2,28 +2,30 @@
 // See the file LICENSE for licensing terms.
 
 // Package security exposes the chain-wide ChainSecurityProfile to operators,
-// dApps, and auditors through the lux JSON-RPC namespace and a thin
-// HTTP-REST sidecar for block-explorer integration.
+// dApps, and auditors through the security JSON-RPC namespace at
+// /ext/security and two REST sidecars at /ext/security/profile and
+// /ext/security/block/{n}.
 //
 // The handlers in this package are read-only: every shape is derived from
 // the immutable *consensusconfig.ChainSecurityProfile resolved at node
 // bootstrap (Node.initSecurityProfile, F102). There is no per-request
 // re-resolution and no profile mutation surface.
 //
-// One service, one namespace ("lux"), one fixed JSON shape. The wire
-// vocabulary uses SCREAMING_SNAKE_CASE canonical names (renderName) so
-// audit pipelines can grep on stable identifiers; the underlying scheme
-// IDs come from consensus/config.
+// One service, one namespace ("security"), one fixed JSON shape. The
+// wire vocabulary uses SCREAMING_SNAKE_CASE canonical names
+// (renderName) so audit pipelines can grep on stable identifiers; the
+// underlying scheme IDs come from consensus/config.
 package security
 
 import (
 	consensusconfig "github.com/luxfi/consensus/config"
 )
 
-// ProfileReply is the JSON body returned by lux_securityProfile.
+// ProfileReply is the JSON body returned by the securityProfile RPC
+// (POST /ext/security) and the REST sidecar (GET /ext/security/profile).
 //
 // Stable shape: every field has a fixed JSON tag, no embedded structs.
-// Adding a new field requires bumping the major version of the lux
+// Adding a new field requires bumping the major version of the security
 // namespace; renaming an existing field is forbidden.
 //
 // The field order in the struct literal MUST match the field order in
@@ -96,11 +98,12 @@ type ProfileReply struct {
 	ForbidFallbacks         bool `json:"forbid_fallbacks"`
 }
 
-// BlockSecurityReply is the JSON body returned by lux_blockSecurity and
-// the REST endpoint /v1/block/{n}/security. It enriches a block lookup
-// with the chain-wide security envelope so explorers can show "this
-// block was finalised under profile X with backend Y" without
-// reimplementing profile lookup.
+// BlockSecurityReply is the JSON body returned by the blockSecurity
+// RPC (POST /ext/security) and the REST endpoint
+// /ext/security/block/{n}. It enriches a block lookup with the
+// chain-wide security envelope so explorers can show "this block was
+// finalised under profile X with backend Y" without reimplementing
+// profile lookup.
 //
 // pulsar_m_signature_valid is true iff the chain-wide FinalitySchemeID
 // is a Pulsar-M scheme — the per-block signature is verified by the

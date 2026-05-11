@@ -287,7 +287,7 @@ func New(
 	if err := n.initInfoAPI(); err != nil { // Start the Info API
 		return nil, fmt.Errorf("couldn't initialize info API: %w", err)
 	}
-	if err := n.initSecurityAPI(); err != nil { // Start the lux_securityProfile API
+	if err := n.initSecurityAPI(); err != nil { // Start the securityProfile API
 		return nil, fmt.Errorf("couldn't initialize security API: %w", err)
 	}
 	if err := n.initKeystoreAPI(); err != nil { // Start the Keystore API
@@ -1641,14 +1641,15 @@ func (n *Node) initInfoAPI() error {
 }
 
 // initSecurityAPI exposes the chain-wide ChainSecurityProfile as a
-// read-only API surface. Two routes are registered:
+// read-only API surface. Three endpoints share one handler:
 //
-//   - JSON-RPC: POST /ext/lux with methods lux_securityProfile and
-//     lux_blockSecurity
-//   - REST:     GET  /ext/lux/v1/security/profile,
-//                    /ext/lux/v1/security/block/{n}
+//   - JSON-RPC: POST /ext/security with methods securityProfile and
+//     blockSecurity (dispatched on the wire as security_securityProfile
+//     / security_blockSecurity per gorilla/rpc namespace convention)
+//   - REST:     GET  /ext/security/profile
+//   - REST:     GET  /ext/security/block/{n}
 //
-// Both routes share the same Service receiver; the shape returned is
+// All three share the same Service receiver; the shape returned is
 // the SCREAMING_SNAKE canonical profile JSON consumed by audit tooling,
 // wallet posture banners, and block explorers.
 //
@@ -1656,7 +1657,7 @@ func (n *Node) initInfoAPI() error {
 // node-wide metrics gatherer here so /ext/metrics carries the profile
 // posture immediately after boot.
 //
-// Closes F102 follow-ups (lux_securityProfile RPC + profile metrics).
+// Closes F102 follow-ups (securityProfile RPC + profile metrics).
 func (n *Node) initSecurityAPI() error {
 	n.Log.Info("initializing security API")
 
@@ -1679,7 +1680,7 @@ func (n *Node) initSecurityAPI() error {
 	}
 	return n.APIServer.AddRoute(
 		handler,
-		"lux",
+		"security",
 		"",
 	)
 }
