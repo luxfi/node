@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
 	chain "github.com/luxfi/vm/chain"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/container/linked"
@@ -39,6 +40,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/network"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/vms/txs/auth"
 	"github.com/luxfi/node/vms/xvm/utxo"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/runtime"
@@ -158,6 +160,13 @@ type VM struct {
 
 	// Channel for receiving messages from mempool
 	toEngine chan vmcore.Message
+
+	// F102 close-out: chain-wide credential-admission policy resolved
+	// from genesis at node bootstrap. The mempool builder installs this
+	// via SetAuthPolicy so strict-PQ chains refuse classical secp256k1
+	// credentials at gossip time.
+	securityProfile         *consensusconfig.ChainSecurityProfile
+	classicalCompatRegistry auth.ClassicalCompatRegistry
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -552,6 +561,12 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
+
+	// F102 close-out: install the chain-wide credential-admission
+	// policy. Nil profile is a no-op gate (legacy/classical-compat
+	// networks); strict-PQ chains receive a non-nil profile from
+	// the node bootstrap via xvm.Factory.
+	mempool.SetAuthPolicy(vm.securityProfile, vm.classicalCompatRegistry)
 
 	vm.chainManager = blockexecutor.NewManager(
 		mempool,
