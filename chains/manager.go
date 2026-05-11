@@ -385,6 +385,17 @@ type ManagerConfig struct {
 	ChainDataDir string
 
 	Nets *Nets
+
+	// SecurityProfile is the chain-wide ChainSecurityProfile resolved
+	// from the genesis pin during node bootstrap (F102). The chain
+	// manager forwards a ProfileID + ProfileHash pin to every VM
+	// Initialize call via the VM config bytes so the rpcchainvm plugin
+	// (coreth C-Chain) inherits the chain-wide posture without
+	// re-resolving genesis. Closes red-team finding F118.
+	//
+	// Nil under classical-compat or pre-locked-profile chains; the
+	// stamping pass is a no-op in that case.
+	SecurityProfile *consensusconfig.ChainSecurityProfile
 }
 
 type manager struct {
@@ -1041,8 +1052,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Initialize the VM if it supports the Initialize interface
-		// Inject automining config for dev mode (applies to C-Chain/coreth only)
+		// Inject automining config for dev mode (applies to C-Chain/coreth only),
+		// then stamp the chain-wide SecurityProfile pin into the C-Chain
+		// JSON config (F118) so the rpcchainvm plugin can resolve the
+		// profile on its side of the boundary.
 		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
+		vmConfigBytes = m.injectSecurityProfileConfig(chainParams.VMID, vmConfigBytes)
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		initCtx, initCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer initCancel()
@@ -1873,6 +1888,56 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 	}
 
 	return ChainConfig{}, nil
+}
+
+// injectSecurityProfileConfig stamps the chain-wide ChainSecurityProfile
+// pin into the C-Chain JSON config bytes so the coreth plugin VM can
+// resolve the profile on its side of the rpcchainvm boundary. Closes
+// red-team finding F118.
+//
+// The pin form is intentionally minimal — ProfileID byte + ProfileHash
+// hex — so this manager package does not need to round-trip the full
+// ChainSecurityProfile struct. The plugin VM calls
+// consensusconfig.ProfileByID + ComputeHash and refuses the chain if the
+// pinned hash does not match the live canonical content. Forked binaries
+// that swap canonical profile content fail the hash compare; legitimate
+// upgrades land via a new ProfileID and ProfileHash pair.
+//
+// Only applies to C-Chain (EVMID); other VMs are passed through.
+func (m *manager) injectSecurityProfileConfig(vmID ids.ID, configBytes []byte) []byte {
+	if m.SecurityProfile == nil {
+		return configBytes
+	}
+	if vmID != constants.EVMID {
+		return configBytes
+	}
+
+	// Parse existing config or create empty object.
+	var cfg map[string]interface{}
+	if len(configBytes) > 0 {
+		if err := json.Unmarshal(configBytes, &cfg); err != nil {
+			m.Log.Warn("failed to parse C-Chain config for security profile injection, creating new config",
+				log.Err(err))
+			cfg = make(map[string]interface{})
+		}
+	} else {
+		cfg = make(map[string]interface{})
+	}
+
+	cfg["lux-security-profile"] = map[string]interface{}{
+		"profileID":      m.SecurityProfile.ProfileID & 0xff,
+		"profileHashHex": fmt.Sprintf("%x", m.SecurityProfile.ProfileHash[:]),
+	}
+
+	out, err := json.Marshal(cfg)
+	if err != nil {
+		m.Log.Warn("failed to marshal C-Chain config after security profile injection", log.Err(err))
+		return configBytes
+	}
+	m.Log.Info("injected chain security profile pin into C-Chain plugin config",
+		log.Uint32("profileID", m.SecurityProfile.ProfileID),
+		log.String("profileName", m.SecurityProfile.ProfileName))
+	return out
 }
 
 // injectAutominingConfig modifies the config bytes to include enable-automining flag

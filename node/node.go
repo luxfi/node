@@ -1357,6 +1357,10 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 			Nets:                                    netsManager,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
+			// F118: forward the chain-wide ChainSecurityProfile to the
+			// chain manager so it can stamp the profile pin into every
+			// C-Chain (coreth) plugin Initialize payload.
+			SecurityProfile: n.securityProfile,
 		},
 	)
 	if err != nil {
