@@ -280,6 +280,8 @@ github.com/luxfi/concurrent v0.0.3 h1:eJyv1fhaC0jMLMw6+QS774cUmp7GK+ouMgvLCqnC7c
 github.com/luxfi/concurrent v0.0.3/go.mod h1:Aj/FR5NpM0cB2P4Nt3+tz9+dV6V+LUW4HuMgSjwq5hw=
 github.com/luxfi/consensus v1.23.2 h1:Edr/AhBbJH9RXwplCn65jYYb73bxRqbzKF6orpYYyfc=
 github.com/luxfi/consensus v1.23.2/go.mod h1:16Q5zhPY09mhjEMOetd6QMzf0ZFqGSt6K5Fy7V/BTE8=
+github.com/luxfi/consensus v1.23.4 h1:Ict30yQjErJgzbrx9yozqeDr/voXmEkjBszDXtCxyg0=
+github.com/luxfi/consensus v1.23.4/go.mod h1:EJdwx2ol2lXiDXSY9dEI6r0BkW3N9GmCR50NS2t3FSU=
 github.com/luxfi/constants v1.5.2 h1:fwQepO6viKAwf8ACnP9YV0TVUxndZuZM7U/aKcqe9EM=
 github.com/luxfi/constants v1.5.2/go.mod h1:hOszZ2NDQ8gMZKncfcZ67PXkb5OIbnwAzXC3oFbQwW0=
 github.com/luxfi/container v0.0.4 h1:BXhF82WyfqVP5mjlNcr7tP0Fcnvl0Ap1rkiu+rq5XuM=
@@ -304,6 +306,8 @@ github.com/luxfi/go-verkle v0.2.3-luxfi h1:YohihsJkDxWbtmjWNhwh10NTFektY4aDE5SWD
 github.com/luxfi/go-verkle v0.2.3-luxfi/go.mod h1:fnxo4/EUuPCvRNoxaWVdnaZ2Zg4GGsJNyX+hPktiNq4=
 github.com/luxfi/ids v1.2.9 h1:+yjdhXW99drnd2Zlp1u/p8k3G23W3/1btJQ4ogHawUI=
 github.com/luxfi/ids v1.2.9/go.mod h1:khJOEdOPxd22yn0jcVrnbX1ADa0GHn5Y74gvCzN5BYc=
+github.com/luxfi/ids v1.2.10 h1:f1WILZE199ayMuqnEyB2WP1qfMZkmozOQXSVYtB3e5k=
+github.com/luxfi/ids v1.2.10/go.mod h1:QBIwy3OHvrtskbUqKh1+OYRa6PsyR7f7oNX33sOfK7w=
 github.com/luxfi/keychain v1.0.2 h1:uQgmjs37/VBIALEiYrrszTpxvtqr07/YvS9TnmxGafs=
 github.com/luxfi/keychain v1.0.2/go.mod h1:q/4ULgZBlstKkwzOzG/0T6y73BDPgnkrcibbJyTvmbU=
 github.com/luxfi/lattice/v7 v7.1.0 h1:mr3HvN6olNTS2LT/xAW/JBhTqfvpsGmsopDMeR7BSJs=
