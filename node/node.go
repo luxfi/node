@@ -1408,6 +1408,14 @@ func (n *Node) initVMs() error {
 				RewardConfig:              n.Config.RewardConfig,
 				UpgradeConfig:             n.Config.UpgradeConfig,
 				UseCurrentHeight:          n.Config.UseCurrentHeight,
+				// F102 close-out: thread the chain-wide profile into the
+				// P-chain mempool builder. Nil for legacy networks; the
+				// chain builder MUST set this for strict-PQ chains.
+				SecurityProfile: n.securityProfile,
+				// Registry is intentionally nil under strict-PQ (refuse
+				// every classical credential). A classical-compat fork
+				// would inject its named allow-list here.
+				ClassicalCompatRegistry: nil,
 			},
 		}),
 		// C-Chain (EVM) loaded as plugin via ZAP transport from plugin-dir
