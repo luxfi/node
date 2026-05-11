@@ -6,6 +6,7 @@ package config
 import (
 	"time"
 
+	consensusconfig "github.com/luxfi/consensus/config"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
@@ -17,6 +18,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/node/vms/txs/auth"
 )
 
 // Internal contains all of the parameters for the PlatformVM that are
@@ -89,6 +91,21 @@ type Internal struct {
 	// on recently created chains (without this, users need to wait for
 	// [recentlyAcceptedWindowTTL] to pass for activation to occur).
 	UseCurrentHeight bool
+
+	// SecurityProfile pins the chain-wide credential-admission policy
+	// resolved at node bootstrap from the genesis SecurityProfile block
+	// (F102). The platformvm threads this into its mempool builder via
+	// SetAuthPolicy so strict-PQ chains refuse classical secp256k1
+	// credentials at gossip time. Nil for legacy (classical-compat)
+	// networks that pre-date the locked-profile pin.
+	SecurityProfile *consensusconfig.ChainSecurityProfile
+
+	// ClassicalCompatRegistry names the allow-list of legacy operators
+	// that may still post classical secp256k1 credentials under a
+	// classical-compat fork profile. Nil for strict-PQ (the empty
+	// registry refuses everything classical) and for legacy networks
+	// (the mempool gate is bypassed entirely).
+	ClassicalCompatRegistry auth.ClassicalCompatRegistry
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
