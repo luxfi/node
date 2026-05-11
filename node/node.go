@@ -54,6 +54,7 @@ import (
 	"github.com/luxfi/node/service/info"
 	"github.com/luxfi/node/service/keystore"
 	"github.com/luxfi/node/service/metrics"
+	luxsecurity "github.com/luxfi/node/service/security"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
@@ -285,6 +286,9 @@ func New(
 	}
 	if err := n.initInfoAPI(); err != nil { // Start the Info API
 		return nil, fmt.Errorf("couldn't initialize info API: %w", err)
+	}
+	if err := n.initSecurityAPI(); err != nil { // Start the lux_securityProfile API
+		return nil, fmt.Errorf("couldn't initialize security API: %w", err)
 	}
 	if err := n.initKeystoreAPI(); err != nil { // Start the Keystore API
 		return nil, fmt.Errorf("couldn't initialize keystore API: %w", err)
@@ -1628,6 +1632,50 @@ func (n *Node) initInfoAPI() error {
 	return n.APIServer.AddRoute(
 		service,
 		"info",
+		"",
+	)
+}
+
+// initSecurityAPI exposes the chain-wide ChainSecurityProfile as a
+// read-only API surface. Two routes are registered:
+//
+//   - JSON-RPC: POST /ext/lux with methods lux_securityProfile and
+//     lux_blockSecurity
+//   - REST:     GET  /ext/lux/v1/security/profile,
+//                    /ext/lux/v1/security/block/{n}
+//
+// Both routes share the same Service receiver; the shape returned is
+// the SCREAMING_SNAKE canonical profile JSON consumed by audit tooling,
+// wallet posture banners, and block explorers.
+//
+// Prometheus gauges for the active profile are stamped onto the
+// node-wide metrics gatherer here so /ext/metrics carries the profile
+// posture immediately after boot.
+//
+// Closes F102 follow-ups (lux_securityProfile RPC + profile metrics).
+func (n *Node) initSecurityAPI() error {
+	n.Log.Info("initializing security API")
+
+	// Register profile metrics under the "security" namespace on the
+	// node-wide gatherer so /ext/metrics carries them alongside the
+	// existing process / api / chain metric families.
+	securityMetricsReg, err := metric.MakeAndRegister(
+		n.MetricsGatherer,
+		"security",
+	)
+	if err != nil {
+		return fmt.Errorf("security: register metrics namespace: %w", err)
+	}
+	securityMetrics := luxsecurity.NewMetrics(metric.NewWithRegistry("security", securityMetricsReg))
+	securityMetrics.SetActiveProfile(n.securityProfile)
+
+	handler, err := luxsecurity.NewHandler(n.Log, n.securityProfile)
+	if err != nil {
+		return err
+	}
+	return n.APIServer.AddRoute(
+		handler,
+		"lux",
 		"",
 	)
 }
