@@ -294,6 +294,13 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
 
+	// Install the chain-wide credential-admission policy (F102 close-out).
+	// SecurityProfile is nil for legacy/classical-compat networks; the
+	// mempool gate is a no-op in that case. For strict-PQ networks the
+	// gate refuses any tx whose credentials carry an unwrapped classical
+	// secp256k1 entry not named in the registry allow-list.
+	mempool.SetAuthPolicy(vm.SecurityProfile, vm.ClassicalCompatRegistry)
+
 	vm.manager = blockexecutor.NewManager(
 		mempool,
 		vm.metrics,
