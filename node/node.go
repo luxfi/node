@@ -25,11 +25,13 @@ import (
 
 	"github.com/luxfi/metric"
 
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
+	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -176,6 +178,14 @@ func New(
 		return nil, fmt.Errorf("problem initializing node beacons: %w", err)
 	}
 
+	// Load the chain-wide ChainSecurityProfile from the genesis pin
+	// BEFORE any networking / chain manager / VM init runs — those
+	// consumers should see the resolved profile (or its absence) via
+	// n.SecurityProfile() at construction time. Closes F102.
+	if err := n.initSecurityProfile(); err != nil {
+		return nil, fmt.Errorf("problem loading security profile: %w", err)
+	}
+
 	// Set up tracer
 	n.tracer, err = trace.New(n.Config.TraceConfig)
 	if err != nil {
@@ -319,6 +329,17 @@ type Node struct {
 
 	StakingTLSSigner crypto.Signer
 	StakingTLSCert   *staking.Certificate
+
+	// securityProfile is the chain-wide ChainSecurityProfile this node
+	// is operating under, loaded from the genesis SecurityProfile pin
+	// at boot via initSecurityProfile. nil when the genesis file
+	// carries no pin (legacy networks); non-nil after a successful
+	// pin resolution. Downstream consumers (signer registration, peer
+	// handshake, mempool, validator registry, bridge oracle) take this
+	// as a dependency via SecurityProfile().
+	//
+	// Closes red-team finding F102.
+	securityProfile *consensusconfig.ChainSecurityProfile
 
 	// Storage for this node
 	DB database.Database
@@ -935,6 +956,97 @@ func (n *Node) initBootstrappers() error {
 			return err
 		}
 	}
+	return nil
+}
+
+// SecurityProfile returns the chain-wide ChainSecurityProfile this node
+// is operating under, or nil when the genesis carries no pin. The
+// returned pointer is the post-Validate+ComputeHash result already
+// stamped with ProfileHash; callers MUST NOT mutate it.
+//
+// Downstream consumers (signer factory, peer handshake gate, mempool
+// admittance, validator registry, bridge oracle co-signer) take this
+// as a dependency at construction time. The single load happens at
+// node bootstrap (initSecurityProfile); there is no per-request
+// re-resolution.
+//
+// Closes red-team finding F102 at the consumer API boundary.
+func (n *Node) SecurityProfile() *consensusconfig.ChainSecurityProfile {
+	return n.securityProfile
+}
+
+// initSecurityProfile loads the chain-wide ChainSecurityProfile from
+// the genesis pin. Called once during New(). Refuses to start the node
+// if a pin is present but its content hash does not match the live
+// canonical profile from consensus/config — a forked binary that
+// swapped in a different canonical content would otherwise pass the
+// ProfileID check silently.
+//
+// When the genesis file carries no pin (legacy networks pre-locked-
+// profile), this is a logged warning, not a fatal error: the node
+// boots in classical-compat mode and downstream consumers see a nil
+// SecurityProfile().
+//
+// Closes red-team finding F102 at the node bootstrap layer.
+func (n *Node) initSecurityProfile() error {
+	cfg := genesiscfg.GetConfig(n.Config.NetworkID)
+	if cfg == nil {
+		n.Log.Warn("genesis config not found — node boots in classical-compat mode")
+		return nil
+	}
+	return n.applySecurityProfile(cfg.SecurityProfile)
+}
+
+// applySecurityProfile is the test-and-prod common path: take the
+// genesiscfg.SecurityProfile pin from a genesis config struct, resolve
+// it through consensus/config.ProfileByID + ComputeHash verification,
+// stamp the result onto n.securityProfile, and emit the startup banner.
+// Split out so unit tests can exercise the resolve+banner path without
+// touching the filesystem-based genesiscfg.GetConfig.
+//
+// The startup banner format is fixed (callers grep on these strings):
+//
+//	SECURITY PROFILE: <name>
+//	PROFILE HASH:     <hex>
+//	POST-QUANTUM:     <true|false>
+//	NIST-FRIENDLY:    <true|false>
+//	CLASSICAL SNARKS: <forbidden|allowed>
+//	BLS FALLBACK:     <forbidden|allowed>
+func (n *Node) applySecurityProfile(pin *genesiscfg.SecurityProfile) error {
+	if pin == nil {
+		n.Log.Warn("genesis carries no SecurityProfile pin — node boots in classical-compat mode")
+		return nil
+	}
+
+	profile, err := pin.Resolve()
+	if err != nil {
+		return fmt.Errorf("genesis SecurityProfile failed to resolve: %w", err)
+	}
+	n.securityProfile = profile
+
+	// Startup banner. Format mirrors the one in the F102 task spec so
+	// audit tooling and grep scripts can rely on it.
+	classicalSNARKs := "allowed"
+	if profile.ForbidClassicalSNARKs {
+		classicalSNARKs = "forbidden"
+	}
+	blsFallback := "allowed"
+	if profile.ForbidPairings ||
+		profile.ProfileID == uint32(consensusconfig.ProfileLuxStrictPQ) ||
+		profile.ProfileID == uint32(consensusconfig.ProfileLuxFIPS) {
+		blsFallback = "forbidden"
+	}
+	postQuantum := profile.ProofPolicyID.IsPostQuantum()
+	nistFriendly := profile.HashSuiteID == consensusconfig.HashSuiteSHA3NIST
+	hashHex := fmt.Sprintf("%x", profile.ProfileHash[:])
+
+	n.Log.Info("SECURITY PROFILE: " + profile.ProfileName)
+	n.Log.Info("PROFILE HASH:     " + hashHex)
+	n.Log.Info(fmt.Sprintf("POST-QUANTUM:     %v", postQuantum))
+	n.Log.Info(fmt.Sprintf("NIST-FRIENDLY:    %v", nistFriendly))
+	n.Log.Info("CLASSICAL SNARKS: " + classicalSNARKs)
+	n.Log.Info("BLS FALLBACK:     " + blsFallback)
+
 	return nil
 }
 
