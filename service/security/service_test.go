@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/log"
 )
 
-// TestRPC_lux_securityProfile_StrictPQ proves the lux_securityProfile
+// TestRPC_securityProfile_StrictPQ proves the securityProfile
 // RPC returns the canonical strict-PQ shape: every Forbid bit true,
 // every E2E axis post-quantum, hash suite SHA3_NIST, contract auth
 // names the ML_DSA_65|ZCHAIN_AUTH_PROOF union, and the post-quantum
@@ -25,7 +25,7 @@ import (
 //
 // Closes the spec contract for the public RPC surface that auditors
 // and dApps consult.
-func TestRPC_lux_securityProfile_StrictPQ(t *testing.T) {
+func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 	profile := consensusconfig.LuxStrictPQ()
 	svc := &Service{log: log.Noop(), profile: profile}
 
@@ -101,7 +101,7 @@ func TestRPC_lux_securityProfile_StrictPQ(t *testing.T) {
 	}
 }
 
-// TestRPC_lux_securityProfile_Unsafe proves the unsafe-fork profile
+// TestRPC_securityProfile_Unsafe proves the unsafe-fork profile
 // surfaces every false flag the spec demands: post_quantum_end_to_end,
 // nist_friendly stays true (the hash suite is still SHA3-NIST), but
 // lux_canonical is false and every forbid_ecdsa* / forbid_bls* /
@@ -110,7 +110,7 @@ func TestRPC_lux_securityProfile_StrictPQ(t *testing.T) {
 // This is the load-bearing audit gate: a wallet that pins
 // post_quantum_end_to_end=true MUST refuse to sign against a chain
 // whose RPC reports this shape.
-func TestRPC_lux_securityProfile_Unsafe(t *testing.T) {
+func TestRPC_securityProfile_Unsafe(t *testing.T) {
 	profile := &consensusconfig.ForkClassicalCompatUnsafeProfile
 	// ComputeHash to mirror what initSecurityProfile does at boot.
 	hash, err := profile.ComputeHash()
@@ -163,10 +163,10 @@ func TestRPC_lux_securityProfile_Unsafe(t *testing.T) {
 	}
 }
 
-// TestRPC_lux_securityProfile_NoProfile_Refused proves the RPC
+// TestRPC_securityProfile_NoProfile_Refused proves the RPC
 // refuses to answer when the node booted without a profile pin. A
 // caller MUST see ErrNoProfile, not a half-populated reply.
-func TestRPC_lux_securityProfile_NoProfile_Refused(t *testing.T) {
+func TestRPC_securityProfile_NoProfile_Refused(t *testing.T) {
 	svc := &Service{log: log.Noop(), profile: nil}
 	var reply ProfileReply
 	err := svc.SecurityProfile(nil, nil, &reply)
@@ -175,10 +175,10 @@ func TestRPC_lux_securityProfile_NoProfile_Refused(t *testing.T) {
 	}
 }
 
-// TestRPC_lux_blockSecurity_StrictPQ proves the block-level reply
+// TestRPC_blockSecurity_StrictPQ proves the block-level reply
 // carries the chain-wide profile envelope and the canonical proof
 // backend name.
-func TestRPC_lux_blockSecurity_StrictPQ(t *testing.T) {
+func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 	svc := &Service{log: log.Noop(), profile: consensusconfig.LuxStrictPQ()}
 	var reply BlockSecurityReply
 	if err := svc.BlockSecurity(nil, &BlockSecurityArgs{}, &reply); err != nil {
@@ -202,9 +202,10 @@ func TestRPC_lux_blockSecurity_StrictPQ(t *testing.T) {
 	}
 }
 
-// TestREST_securityProfile_GET proves the /v1/security/profile sidecar
-// returns the same JSON shape as the JSON-RPC handler. One shape,
-// two transports — no per-transport drift.
+// TestREST_securityProfile_GET proves the /profile sidecar (full path
+// /ext/security/profile when mounted on APIServer) returns the same
+// JSON shape as the JSON-RPC handler. One shape, two transports — no
+// per-transport drift.
 func TestREST_securityProfile_GET(t *testing.T) {
 	profile := consensusconfig.LuxStrictPQ()
 	handler, err := NewHandler(log.Noop(), profile)
@@ -214,7 +215,7 @@ func TestREST_securityProfile_GET(t *testing.T) {
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/v1/security/profile")
+	resp, err := http.Get(srv.URL + "/profile")
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -249,7 +250,7 @@ func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
-	resp, err := http.Post(srv.URL+"/v1/security/profile",
+	resp, err := http.Post(srv.URL+"/profile",
 		"application/json", bytes.NewReader([]byte("{}")))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
@@ -257,6 +258,43 @@ func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d; want 405", resp.StatusCode)
+	}
+}
+
+// TestREST_blockSecurity_GET proves the /block/{n} sidecar (full path
+// /ext/security/block/{n} when mounted on APIServer) returns the same
+// JSON shape as the JSON-RPC handler. One shape, two transports — no
+// per-transport drift.
+func TestREST_blockSecurity_GET(t *testing.T) {
+	profile := consensusconfig.LuxStrictPQ()
+	handler, err := NewHandler(log.Noop(), profile)
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/block/12345")
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d; want 200", resp.StatusCode)
+	}
+	var body BlockSecurityReply
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.SecurityProfileName != "LUX_STRICT_PQ" {
+		t.Errorf("REST SecurityProfileName = %q; want LUX_STRICT_PQ",
+			body.SecurityProfileName)
+	}
+	if !body.PulsarMSignatureValid {
+		t.Error("PulsarMSignatureValid = false; want true on LuxStrictPQ")
+	}
+	if !body.PostQuantumEndToEnd {
+		t.Error("PostQuantumEndToEnd = false; want true on LuxStrictPQ")
 	}
 }
 
