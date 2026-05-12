@@ -39,7 +39,7 @@ Imports `github.com/luxfi/consensus/protocol/quasar` for the actual protocol.
 ```
 Block arrives
     |
-    +-- BLS PATH (fast) --------+-- RINGTAIL PATH (quantum-safe) --+
+    +-- BLS PATH (fast) --------+-- CORONA PATH (quantum-safe) --+
     |   All validators sign     |   Round 1: commitments           |
     |   with BLS keys           |   Round 2: partial signatures    |
     |   Aggregate (96 bytes)    |   Combine threshold signature    |
@@ -47,7 +47,7 @@ Block arrives
     +---------------------------+----------------------------------+
                                 |
                          HYBRID PROOF
-                    (BLS + Ringtail combined)
+                    (BLS + Corona combined)
                                 |
                         QUANTUM FINALITY
 ```
@@ -58,7 +58,7 @@ Block arrives
 2. Validators vote (wire: Chits message)
 3. Votes collected and aggregated
 4. Quorum check (2/3+ weight)
-5. Finality achieved when both BLS and Ringtail complete
+5. Finality achieved when both BLS and Corona complete
 
 ## Test Coverage
 

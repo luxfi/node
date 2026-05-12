@@ -1,7 +1,7 @@
 # Lux Mainnet Launch Checklist
 
 Node: luxfi/node v1.24.11
-Consensus: Quasar (BLS+Ringtail, slashing, stake-weighted sampling)
+Consensus: Quasar (BLS+Corona, slashing, stake-weighted sampling)
 EVM: GPU ecrecover, 18 precompiles
 Genesis: networkID=1, startTime=2025-12-12T21:06:51Z (mainnet), networkID=2, startTime=2026-02-10T16:00:00Z (testnet)
 Precompile constraint: all activations MUST be after 2025-12-25
@@ -66,8 +66,8 @@ Target: validate all consensus, EVM, and staking behavior with K=11 validators.
 
 - [ ] Submit transactions, verify Quasar finalization with K=11
 - [ ] Verify BLS aggregate signatures in block headers
-- [ ] Verify Ringtail optimistic fast path activates when all 11 validators are online
-- [ ] Measure finality latency (target: sub-second with Ringtail)
+- [ ] Verify Corona optimistic fast path activates when all 11 validators are online
+- [ ] Measure finality latency (target: sub-second with Corona)
 - [ ] Verify stake-weighted sampling: validators with more stake get polled proportionally
 
 ### 1.4 EVM Execution
@@ -133,7 +133,7 @@ Target: validate all consensus, EVM, and staking behavior with K=11 validators.
 
 - [ ] Run Lean proofs for Quasar consensus safety and liveness
 - [ ] Run TLA+ model checker for consensus state machine
-- [ ] Run Tamarin prover for BLS+Ringtail security properties
+- [ ] Run Tamarin prover for BLS+Corona security properties
 - [ ] Run Halmos for EVM precompile correctness (symbolic execution)
 - [ ] All proofs pass with zero counterexamples
 

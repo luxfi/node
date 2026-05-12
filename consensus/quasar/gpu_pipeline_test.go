@@ -32,9 +32,9 @@ func makeBLSWork(n int) *BLSWork {
 	return w
 }
 
-// makeRingtailWork creates RingtailWork with n entries.
-func makeRingtailWork(n int) *RingtailWork {
-	w := &RingtailWork{
+// makeCoronaWork creates CoronaWork with n entries.
+func makeCoronaWork(n int) *CoronaWork {
+	w := &CoronaWork{
 		Messages:   make([][]byte, n),
 		Signatures: make([][]byte, n),
 		PubKeys:    make([][]byte, n),
@@ -80,7 +80,7 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 
 	work := &BlockVerifyWork{
 		BLS:      makeBLSWork(5),
-		Corona: makeRingtailWork(3),
+		Corona: makeCoronaWork(3),
 		ZK:       makeZKWork(2),
 		MLDSA:    makeMLDSAWork(10),
 	}
@@ -96,8 +96,8 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 	}
 
 	// Corona results
-	require.Len(t, result.RingtailValid, 3, "should have 3 Corona results")
-	for i, v := range result.RingtailValid {
+	require.Len(t, result.CoronaValid, 3, "should have 3 Corona results")
+	for i, v := range result.CoronaValid {
 		require.True(t, v, "Corona[%d] should be valid", i)
 	}
 
@@ -113,7 +113,7 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 	// Timing: all durations should be non-negative
 	require.GreaterOrEqual(t, result.TotalTime.Nanoseconds(), int64(0))
 	require.GreaterOrEqual(t, result.BLSTime.Nanoseconds(), int64(0))
-	require.GreaterOrEqual(t, result.RingtailTime.Nanoseconds(), int64(0))
+	require.GreaterOrEqual(t, result.CoronaTime.Nanoseconds(), int64(0))
 	require.GreaterOrEqual(t, result.ZKTime.Nanoseconds(), int64(0))
 	require.GreaterOrEqual(t, result.MLDSATime.Nanoseconds(), int64(0))
 
@@ -197,7 +197,7 @@ func TestGPUPipeline_EmptyBatches(t *testing.T) {
 		{
 			name: "Corona only",
 			work: &BlockVerifyWork{
-				Corona: makeRingtailWork(1),
+				Corona: makeCoronaWork(1),
 			},
 		},
 	}
@@ -233,13 +233,13 @@ func TestGPUPipeline_ValidationErrors(t *testing.T) {
 		{
 			name: "Corona size mismatch",
 			work: &BlockVerifyWork{
-				Corona: &RingtailWork{
+				Corona: &CoronaWork{
 					Messages:   [][]byte{{1}, {2}},
 					Signatures: [][]byte{{1}}, // 1 != 2
 					PubKeys:    [][]byte{{1}, {2}},
 				},
 			},
-			wantErr: ErrRingtailSizeMismatch,
+			wantErr: ErrCoronaSizeMismatch,
 		},
 		{
 			name: "ZK size mismatch",
@@ -277,7 +277,7 @@ func BenchmarkGPUPipeline(b *testing.B) {
 
 	work := &BlockVerifyWork{
 		BLS:      makeBLSWork(100),
-		Corona: makeRingtailWork(50),
+		Corona: makeCoronaWork(50),
 		ZK:       makeZKWork(10),
 		MLDSA:    makeMLDSAWork(200),
 	}

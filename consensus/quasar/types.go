@@ -15,7 +15,7 @@ type SignatureType uint8
 
 const (
 	SignatureTypeBLS SignatureType = iota
-	SignatureTypeRingtail
+	SignatureTypeCorona
 	SignatureTypeQuasar // Hybrid BLS + Corona
 	SignatureTypeMLDSA
 )
@@ -45,92 +45,92 @@ type ThresholdSigner interface {
 	Threshold() int
 }
 
-// RingtailConfig holds configuration for Corona threshold signatures
-type RingtailConfig struct {
+// CoronaConfig holds configuration for Corona threshold signatures
+type CoronaConfig struct {
 	NumParties int
 	Threshold  int
 	PartyIndex int
 }
 
-// RingtailStats contains statistics about the Corona coordinator
-type RingtailStats struct {
+// CoronaStats contains statistics about the Corona coordinator
+type CoronaStats struct {
 	NumParties  int
 	Threshold   int
 	Initialized bool
 }
 
-// RingtailSignature represents a threshold Corona signature
-type RingtailSignature struct {
+// CoronaSignature represents a threshold Corona signature
+type CoronaSignature struct {
 	sig     []byte
 	signers []ids.NodeID
 }
 
-// NewRingtailSignature creates a new Corona signature
-func NewRingtailSignature(sig []byte, signers []ids.NodeID) *RingtailSignature {
-	return &RingtailSignature{sig: sig, signers: signers}
+// NewCoronaSignature creates a new Corona signature
+func NewCoronaSignature(sig []byte, signers []ids.NodeID) *CoronaSignature {
+	return &CoronaSignature{sig: sig, signers: signers}
 }
 
-func (s *RingtailSignature) Bytes() []byte         { return s.sig }
-func (s *RingtailSignature) Type() SignatureType   { return SignatureTypeRingtail }
-func (s *RingtailSignature) Signers() []ids.NodeID { return s.signers }
+func (s *CoronaSignature) Bytes() []byte         { return s.sig }
+func (s *CoronaSignature) Type() SignatureType   { return SignatureTypeCorona }
+func (s *CoronaSignature) Signers() []ids.NodeID { return s.signers }
 
-// RingtailCoordinator manages the threshold signing protocol.
+// CoronaCoordinator manages the threshold signing protocol.
 //
 // Sign/Verify are fail-closed without initialized lattice keys.
 // Operations return errors unless properly initialized with key
-// material, or explicitly created via NewTestRingtailCoordinator
+// material, or explicitly created via NewTestCoronaCoordinator
 // for tests.
-type RingtailCoordinator struct {
+type CoronaCoordinator struct {
 	log         log.Logger
-	config      RingtailConfig
+	config      CoronaConfig
 	initialized bool
-	testing     bool // only true via NewTestRingtailCoordinator
+	testing     bool // only true via NewTestCoronaCoordinator
 	validators  []ids.NodeID
 }
 
-// NewRingtailCoordinator creates a new Corona coordinator.
+// NewCoronaCoordinator creates a new Corona coordinator.
 // Sign and Verify will fail until real lattice key material is loaded.
-func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
-	return &RingtailCoordinator{
+func NewCoronaCoordinator(log log.Logger, config CoronaConfig) (*CoronaCoordinator, error) {
+	return &CoronaCoordinator{
 		log:    log,
 		config: config,
 	}, nil
 }
 
-// NewTestRingtailCoordinator creates a Corona coordinator for testing.
+// NewTestCoronaCoordinator creates a Corona coordinator for testing.
 // The test coordinator uses deterministic stub signatures that are NOT
 // cryptographically secure.
-func NewTestRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
-	return &RingtailCoordinator{
+func NewTestCoronaCoordinator(log log.Logger, config CoronaConfig) (*CoronaCoordinator, error) {
+	return &CoronaCoordinator{
 		log:     log,
 		config:  config,
 		testing: true,
 	}, nil
 }
 
-func (rc *RingtailCoordinator) Initialize(validators []ids.NodeID) error {
+func (rc *CoronaCoordinator) Initialize(validators []ids.NodeID) error {
 	rc.validators = validators
 	rc.initialized = true
 	return nil
 }
 
-func (rc *RingtailCoordinator) IsInitialized() bool {
+func (rc *CoronaCoordinator) IsInitialized() bool {
 	return rc.initialized
 }
 
-func (rc *RingtailCoordinator) Sign(msg []byte) (Signature, error) {
+func (rc *CoronaCoordinator) Sign(msg []byte) (Signature, error) {
 	if !rc.initialized {
 		return nil, errors.New("corona: threshold signing not initialized — requires real lattice key material")
 	}
 	if rc.testing {
 		// Test-only stub: deterministic RT-prefixed signature
 		sig := append([]byte("RT"), msg[:min(32, len(msg))]...)
-		return NewRingtailSignature(sig, rc.validators), nil
+		return NewCoronaSignature(sig, rc.validators), nil
 	}
 	return nil, errors.New("corona: threshold signing not initialized — requires real lattice key material")
 }
 
-func (rc *RingtailCoordinator) Verify(msg []byte, sig Signature) bool {
+func (rc *CoronaCoordinator) Verify(msg []byte, sig Signature) bool {
 	if !rc.initialized {
 		return false
 	}
@@ -140,8 +140,8 @@ func (rc *RingtailCoordinator) Verify(msg []byte, sig Signature) bool {
 	return false
 }
 
-func (rc *RingtailCoordinator) Stats() RingtailStats {
-	return RingtailStats{
+func (rc *CoronaCoordinator) Stats() CoronaStats {
+	return CoronaStats{
 		NumParties:  rc.config.NumParties,
 		Threshold:   rc.config.Threshold,
 		Initialized: rc.initialized,
@@ -149,12 +149,12 @@ func (rc *RingtailCoordinator) Stats() RingtailStats {
 }
 
 // Threshold returns the threshold required for signing
-func (rc *RingtailCoordinator) Threshold() int {
+func (rc *CoronaCoordinator) Threshold() int {
 	return rc.config.Threshold
 }
 
 // NumParties returns the number of parties in the threshold scheme
-func (rc *RingtailCoordinator) NumParties() int {
+func (rc *CoronaCoordinator) NumParties() int {
 	return rc.config.NumParties
 }
 
@@ -182,10 +182,10 @@ func (s *BLSSignature) Signers() []ids.NodeID { return s.signers }
 // QuasarSignature combines BLS and Corona signatures for P/Q security
 type QuasarSignature struct {
 	bls      *BLSSignature
-	corona *RingtailSignature
+	corona *CoronaSignature
 }
 
-func NewQuasarSignature(bls *BLSSignature, corona *RingtailSignature) *QuasarSignature {
+func NewQuasarSignature(bls *BLSSignature, corona *CoronaSignature) *QuasarSignature {
 	return &QuasarSignature{bls: bls, corona: corona}
 }
 
@@ -212,7 +212,7 @@ func (s *QuasarSignature) Signers() []ids.NodeID {
 }
 
 func (s *QuasarSignature) BLS() *BLSSignature           { return s.bls }
-func (s *QuasarSignature) Corona() *RingtailSignature { return s.corona }
+func (s *QuasarSignature) Corona() *CoronaSignature { return s.corona }
 
 // QuasarSigner combines classical and post-quantum signers
 type QuasarSigner interface {

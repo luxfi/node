@@ -23,7 +23,7 @@ func init() {
 		// Warp 1.0: Classical BLS signatures
 		lc.RegisterType(&BitSetSignature{}),
 		// Warp 1.5: Quantum-safe signatures
-		lc.RegisterType(&RingtailSignature{}),    // Recommended: RT-only (LWE-based threshold)
+		lc.RegisterType(&CoronaSignature{}),    // Recommended: RT-only (LWE-based threshold)
 		lc.RegisterType(&EncryptedWarpPayload{}), // ML-KEM + AES-256-GCM encryption
 		lc.RegisterType(&HybridBLSRTSignature{}), // Deprecated: BLS+RT hybrid
 		// Teleport: Cross-chain bridging protocol

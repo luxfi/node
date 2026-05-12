@@ -13,8 +13,8 @@ The consensus package contains:
   vertex. Adapts chain-ID-keyed runtime contexts to the node's indexer and
   warp IPC.
 - **Quasar**: Node-side wiring around `consensus/protocol/quasar` (BLS +
-  Ringtail hybrid finality). Adapts P-Chain validator state, BLS signing
-  keys, and the Ringtail threshold coordinator.
+  Corona hybrid finality). Adapts P-Chain validator state, BLS signing
+  keys, and the Corona threshold coordinator.
 
 ## Package Structure
 
@@ -46,9 +46,9 @@ and provides node-specific wiring:
 1. **P-Chain provider** — feeds live validator state from PlatformVM's
    validator manager into the engine.
 2. **Quantum fallback signer** — adapts the node's BLS signing key.
-3. **Ringtail coordinator stub** — placeholder until real threshold key
+3. **Corona coordinator stub** — placeholder until real threshold key
    material is loaded.
 
-The actual hybrid finality protocol (BLS + Ringtail + ML-DSA threshold
+The actual hybrid finality protocol (BLS + Corona + ML-DSA threshold
 signing) lives in `luxfi/consensus`. See that repository for protocol
 details, parameter tuning, and benchmarks.

@@ -31,7 +31,7 @@ import (
 //       ├─────────────────────────────────────────┐
 //       │                                         │
 //       ▼                                         ▼
-//   BLS PATH (fast)                    RINGTAIL PATH (quantum-safe)
+//   BLS PATH (fast)                    CORONA PATH (quantum-safe)
 //   ────────────────                   ─────────────────────────────
 //   All validators sign                Round 1: All validators
 //   with BLS keys                      generate commitments
@@ -64,12 +64,12 @@ var (
 	ErrQuasarNotStarted     = errors.New("quasar not started")
 	ErrPChainNotConnected   = errors.New("P-Chain not connected")
 	ErrQChainNotConnected   = errors.New("Q-Chain not connected")
-	ErrRingtailNotConnected = errors.New("Corona coordinator not connected")
+	ErrCoronaNotConnected = errors.New("Corona coordinator not connected")
 	ErrInsufficientWeight   = errors.New("insufficient validator weight")
 	ErrInsufficientSigners  = errors.New("insufficient Corona signers")
 	ErrFinalityFailed       = errors.New("hybrid finality verification failed")
 	ErrBLSFailed            = errors.New("BLS aggregation failed")
-	ErrRingtailFailed       = errors.New("Corona threshold signing failed")
+	ErrCoronaFailed       = errors.New("Corona threshold signing failed")
 )
 
 // PChainProvider provides P-Chain state and finality events
@@ -90,7 +90,7 @@ type ValidatorState struct {
 	NodeID      ids.NodeID
 	Weight      uint64
 	BLSPubKey   []byte // BLS public key for aggregate signatures
-	RingtailKey []byte // Corona public key share for threshold sigs
+	CoronaKey []byte // Corona public key share for threshold sigs
 	Active      bool
 }
 
@@ -108,13 +108,13 @@ type QuantumFinality struct {
 	PChainHeight    uint64
 	QChainHeight    uint64
 	BLSProof        []byte       // Aggregated BLS signature (96 bytes)
-	RingtailProof   []byte       // Serialized Corona threshold signature
+	CoronaProof   []byte       // Serialized Corona threshold signature
 	SignerBitset    []byte       // Which validators signed BLS
-	RingtailSigners []ids.NodeID // Which validators participated in Corona
+	CoronaSigners []ids.NodeID // Which validators participated in Corona
 	TotalWeight     uint64
 	SignerWeight    uint64
 	BLSLatency      time.Duration
-	RingtailLatency time.Duration
+	CoronaLatency time.Duration
 	Timestamp       time.Time
 }
 
@@ -130,7 +130,7 @@ type Quasar struct {
 	quantumFallback QuantumSignerFallback
 
 	// Corona threshold coordinator
-	corona *RingtailCoordinator
+	corona *CoronaCoordinator
 
 	// State
 	pHeight   uint64
@@ -191,8 +191,8 @@ func (q *Quasar) ConnectQuantumFallback(f QuantumSignerFallback) {
 	q.log.Info("quasar: quantum fallback connected")
 }
 
-// ConnectRingtail connects the Corona threshold coordinator
-func (q *Quasar) ConnectRingtail(rc *RingtailCoordinator) {
+// ConnectCorona connects the Corona threshold coordinator
+func (q *Quasar) ConnectCorona(rc *CoronaCoordinator) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -200,8 +200,8 @@ func (q *Quasar) ConnectRingtail(rc *RingtailCoordinator) {
 	q.log.Info("quasar: Corona coordinator connected")
 }
 
-// InitializeRingtail initializes the Corona coordinator with validators
-func (q *Quasar) InitializeRingtail(validators []ids.NodeID) error {
+// InitializeCorona initializes the Corona coordinator with validators
+func (q *Quasar) InitializeCorona(validators []ids.NodeID) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -213,7 +213,7 @@ func (q *Quasar) InitializeRingtail(validators []ids.NodeID) error {
 			threshold = 2
 		}
 
-		rc, err := NewRingtailCoordinator(q.log, RingtailConfig{
+		rc, err := NewCoronaCoordinator(q.log, CoronaConfig{
 			NumParties: numParties,
 			Threshold:  threshold,
 		})
@@ -310,9 +310,9 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	// Run BLS and Corona IN PARALLEL
 	var blsProof, signerBitset []byte
 	var signerWeight uint64
-	var ringtailSig Signature
-	var blsLatency, ringtailLatency time.Duration
-	var blsErr, ringtailErr error
+	var coronaSig Signature
+	var blsLatency, coronaLatency time.Duration
+	var blsErr, coronaErr error
 	var wg sync.WaitGroup
 
 	// BLS path
@@ -333,13 +333,13 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 		if q.corona == nil || !q.corona.IsInitialized() {
 			// STRICT: No fallback allowed for validators.
 			// RT signatures are REQUIRED for quantum-safe consensus.
-			ringtailErr = ErrRingtailNotConnected
+			coronaErr = ErrCoronaNotConnected
 			return
 		}
 		// Full threshold signing
 		start := time.Now()
-		ringtailSig, ringtailErr = q.collectRingtail(msgStr)
-		ringtailLatency = time.Since(start)
+		coronaSig, coronaErr = q.collectCorona(msgStr)
+		coronaLatency = time.Since(start)
 	}()
 
 	wg.Wait()
@@ -350,8 +350,8 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	}
 
 	// Check Corona result
-	if ringtailErr != nil {
-		return fmt.Errorf("Corona threshold: %w", ringtailErr)
+	if coronaErr != nil {
+		return fmt.Errorf("Corona threshold: %w", coronaErr)
 	}
 
 	// Check quorum
@@ -363,23 +363,23 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 	// Record finality
 	q.qHeight++
 	var coronaSigners []ids.NodeID
-	var ringtailProof []byte
-	if ringtailSig != nil {
-		coronaSigners = ringtailSig.Signers()
-		ringtailProof = ringtailSig.Bytes()
+	var coronaProof []byte
+	if coronaSig != nil {
+		coronaSigners = coronaSig.Signers()
+		coronaProof = coronaSig.Bytes()
 	}
 	finality := &QuantumFinality{
 		BlockID:         event.BlockID,
 		PChainHeight:    event.Height,
 		QChainHeight:    q.qHeight,
 		BLSProof:        blsProof,
-		RingtailProof:   ringtailProof,
+		CoronaProof:   coronaProof,
 		SignerBitset:    signerBitset,
-		RingtailSigners: coronaSigners,
+		CoronaSigners: coronaSigners,
 		TotalWeight:     totalWeight,
 		SignerWeight:    signerWeight,
 		BLSLatency:      blsLatency,
-		RingtailLatency: ringtailLatency,
+		CoronaLatency: coronaLatency,
 		Timestamp:       time.Now(),
 	}
 
@@ -408,7 +408,7 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 		"qHeight", q.qHeight,
 		"weight", fmt.Sprintf("%d/%d", signerWeight, totalWeight),
 		"blsLatency", blsLatency,
-		"ringtailLatency", ringtailLatency,
+		"coronaLatency", coronaLatency,
 		"coronaSigners", len(coronaSigners),
 	)
 
@@ -463,10 +463,10 @@ func (q *Quasar) collectBLS(event FinalityEvent, msg []byte) ([]byte, []byte, ui
 	return agg.BLSAggregated, signerBitset, signerWeight, nil
 }
 
-// collectRingtail runs the 2-round Corona threshold protocol in parallel
-func (q *Quasar) collectRingtail(message string) (Signature, error) {
+// collectCorona runs the 2-round Corona threshold protocol in parallel
+func (q *Quasar) collectCorona(message string) (Signature, error) {
 	if q.corona == nil {
-		return nil, ErrRingtailNotConnected
+		return nil, ErrCoronaNotConnected
 	}
 
 	// Use the high-level Sign API which handles all rounds internally
@@ -477,7 +477,7 @@ func (q *Quasar) collectRingtail(message string) (Signature, error) {
 
 	// Verify the signature
 	if !q.corona.Verify([]byte(message), sig) {
-		return nil, ErrRingtailFailed
+		return nil, ErrCoronaFailed
 	}
 
 	q.log.Debug("corona signature complete",
@@ -538,8 +538,8 @@ func (q *Quasar) Verify(finality *QuantumFinality) error {
 	if len(finality.BLSProof) == 0 {
 		return fmt.Errorf("%w: BLS proof missing", ErrBLSFailed)
 	}
-	if len(finality.RingtailProof) == 0 {
-		return fmt.Errorf("%w: RT proof missing - required for Q-Chain validators", ErrRingtailFailed)
+	if len(finality.CoronaProof) == 0 {
+		return fmt.Errorf("%w: RT proof missing - required for Q-Chain validators", ErrCoronaFailed)
 	}
 
 	if !q.checkQuorum(finality.SignerWeight, finality.TotalWeight) {
@@ -563,17 +563,17 @@ func (q *Quasar) Verify(finality *QuantumFinality) error {
 
 	// Verify Corona threshold signature
 	// RT signatures MUST have the "RT" prefix marker followed by threshold data
-	if len(finality.RingtailProof) < 3 {
-		return fmt.Errorf("%w: RT proof too short", ErrRingtailFailed)
+	if len(finality.CoronaProof) < 3 {
+		return fmt.Errorf("%w: RT proof too short", ErrCoronaFailed)
 	}
-	if finality.RingtailProof[0] != 'R' || finality.RingtailProof[1] != 'T' {
-		return fmt.Errorf("%w: invalid RT proof marker", ErrRingtailFailed)
+	if finality.CoronaProof[0] != 'R' || finality.CoronaProof[1] != 'T' {
+		return fmt.Errorf("%w: invalid RT proof marker", ErrCoronaFailed)
 	}
 
 	// Verify threshold signers meet minimum requirement
-	if len(finality.RingtailSigners) < q.threshold {
+	if len(finality.CoronaSigners) < q.threshold {
 		return fmt.Errorf("%w: need %d signers, have %d",
-			ErrInsufficientSigners, q.threshold, len(finality.RingtailSigners))
+			ErrInsufficientSigners, q.threshold, len(finality.CoronaSigners))
 	}
 
 	return nil
@@ -584,9 +584,9 @@ func (q *Quasar) Stats() QuasarStats {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
-	var ringtailStats RingtailStats
+	var coronaStats CoronaStats
 	if q.corona != nil {
-		ringtailStats = q.corona.Stats()
+		coronaStats = q.corona.Stats()
 	}
 
 	return QuasarStats{
@@ -597,9 +597,9 @@ func (q *Quasar) Stats() QuasarStats {
 		QuorumNum:         q.quorumNum,
 		QuorumDen:         q.quorumDen,
 		Running:           q.running,
-		RingtailParties:   ringtailStats.NumParties,
-		RingtailThreshold: ringtailStats.Threshold,
-		RingtailReady:     ringtailStats.Initialized,
+		CoronaParties:   coronaStats.NumParties,
+		CoronaThreshold: coronaStats.Threshold,
+		CoronaReady:     coronaStats.Initialized,
 	}
 }
 
@@ -612,9 +612,9 @@ type QuasarStats struct {
 	QuorumNum         uint64
 	QuorumDen         uint64
 	Running           bool
-	RingtailParties   int
-	RingtailThreshold int
-	RingtailReady     bool
+	CoronaParties   int
+	CoronaThreshold int
+	CoronaReady     bool
 }
 
 // GetCore returns the underlying quasar core for testing
@@ -622,8 +622,8 @@ func (q *Quasar) GetCore() *quasar.Quasar {
 	return q.core
 }
 
-// GetRingtail returns the Corona coordinator
-func (q *Quasar) GetRingtail() *RingtailCoordinator {
+// GetCorona returns the Corona coordinator
+func (q *Quasar) GetCorona() *CoronaCoordinator {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 	return q.corona

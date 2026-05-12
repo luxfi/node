@@ -45,7 +45,7 @@ var (
 //
 // Warp 1.5 supports three signature types:
 // - BitSetSignature: Classical BLS (legacy)
-// - RingtailSignature: Quantum-safe (recommended)
+// - CoronaSignature: Quantum-safe (recommended)
 // - HybridBLSRTSignature: BLS+RT hybrid (deprecated)
 type TeleportMessage struct {
 	// Version is the Teleport protocol version
@@ -286,8 +286,8 @@ type SignatureType uint8
 const (
 	// SigTypeBLS uses classical BLS signatures (Warp 1.0 compatibility)
 	SigTypeBLS SignatureType = iota
-	// SigTypeRingtail uses quantum-safe Corona signatures (recommended)
-	SigTypeRingtail
+	// SigTypeCorona uses quantum-safe Corona signatures (recommended)
+	SigTypeCorona
 	// SigTypeHybrid uses BLS+Corona hybrid (deprecated)
 	SigTypeHybrid
 )
@@ -295,12 +295,12 @@ const (
 // RecommendedSignatureType returns the recommended signature type for Warp 1.5
 // This is Corona (quantum-safe) by default
 func RecommendedSignatureType() SignatureType {
-	return SigTypeRingtail
+	return SigTypeCorona
 }
 
 // IsQuantumSafe returns whether the signature type provides post-quantum security
 func (s SignatureType) IsQuantumSafe() bool {
-	return s == SigTypeRingtail || s == SigTypeHybrid
+	return s == SigTypeCorona || s == SigTypeHybrid
 }
 
 // String returns the name of the signature type
@@ -308,7 +308,7 @@ func (s SignatureType) String() string {
 	switch s {
 	case SigTypeBLS:
 		return "BLS"
-	case SigTypeRingtail:
+	case SigTypeCorona:
 		return "Corona"
 	case SigTypeHybrid:
 		return "Hybrid"

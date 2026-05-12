@@ -94,7 +94,7 @@ func TestThresholdParamsValidateEdge(t *testing.T) {
 
 // --- Quasar lifecycle ---
 
-func TestQuasarGetCoreGetRingtail(t *testing.T) {
+func TestQuasarGetCoreGetCorona(t *testing.T) {
 	q, err := NewQuasar(log.Noop(), 2, 2, 3)
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +103,7 @@ func TestQuasarGetCoreGetRingtail(t *testing.T) {
 	if q.GetCore() == nil {
 		t.Error("GetCore should not return nil")
 	}
-	if q.GetRingtail() != nil {
+	if q.GetCorona() != nil {
 		t.Error("Corona should be nil before initialization")
 	}
 }
@@ -235,25 +235,25 @@ func TestBLSSignature(t *testing.T) {
 	}
 }
 
-// --- RingtailCoordinator ---
+// --- CoronaCoordinator ---
 
-func TestRingtailCoordinatorSignNotInitialized(t *testing.T) {
-	rc, _ := NewRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 3, Threshold: 2})
+func TestCoronaCoordinatorSignNotInitialized(t *testing.T) {
+	rc, _ := NewCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 3, Threshold: 2})
 	_, err := rc.Sign([]byte("msg"))
 	if err == nil {
 		t.Error("should fail when not initialized")
 	}
 }
 
-func TestRingtailCoordinatorVerifyNotInitialized(t *testing.T) {
-	rc, _ := NewRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 3, Threshold: 2})
+func TestCoronaCoordinatorVerifyNotInitialized(t *testing.T) {
+	rc, _ := NewCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 3, Threshold: 2})
 	if rc.Verify([]byte("msg"), nil) {
 		t.Error("should return false when not initialized")
 	}
 }
 
-func TestRingtailCoordinatorTestMode(t *testing.T) {
-	rc, _ := NewTestRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 3, Threshold: 2})
+func TestCoronaCoordinatorTestMode(t *testing.T) {
+	rc, _ := NewTestCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 3, Threshold: 2})
 	validators := []ids.NodeID{ids.GenerateTestNodeID()}
 	rc.Initialize(validators)
 
@@ -269,8 +269,8 @@ func TestRingtailCoordinatorTestMode(t *testing.T) {
 	}
 }
 
-func TestRingtailCoordinatorNotTestMode(t *testing.T) {
-	rc, _ := NewRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 3, Threshold: 2})
+func TestCoronaCoordinatorNotTestMode(t *testing.T) {
+	rc, _ := NewCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 3, Threshold: 2})
 	rc.Initialize([]ids.NodeID{ids.GenerateTestNodeID()})
 
 	_, err := rc.Sign([]byte("msg"))
@@ -278,14 +278,14 @@ func TestRingtailCoordinatorNotTestMode(t *testing.T) {
 		t.Error("should fail when not in testing mode")
 	}
 
-	sig := NewRingtailSignature([]byte("fake"), nil)
+	sig := NewCoronaSignature([]byte("fake"), nil)
 	if rc.Verify([]byte("msg"), sig) {
 		t.Error("should return false when not in testing mode")
 	}
 }
 
-func TestRingtailCoordinatorStats(t *testing.T) {
-	rc, _ := NewRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 3, Threshold: 2})
+func TestCoronaCoordinatorStats(t *testing.T) {
+	rc, _ := NewCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 3, Threshold: 2})
 	s := rc.Stats()
 	if s.NumParties != 3 {
 		t.Errorf("expected 3 parties, got %d", s.NumParties)
@@ -295,8 +295,8 @@ func TestRingtailCoordinatorStats(t *testing.T) {
 	}
 }
 
-func TestRingtailCoordinatorThresholdNumParties(t *testing.T) {
-	rc, _ := NewRingtailCoordinator(log.Noop(), RingtailConfig{NumParties: 5, Threshold: 3})
+func TestCoronaCoordinatorThresholdNumParties(t *testing.T) {
+	rc, _ := NewCoronaCoordinator(log.Noop(), CoronaConfig{NumParties: 5, Threshold: 3})
 	if rc.Threshold() != 3 {
 		t.Errorf("expected threshold 3, got %d", rc.Threshold())
 	}
