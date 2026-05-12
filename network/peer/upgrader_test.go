@@ -95,7 +95,7 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 					require.FailNow(t, "should not have invoked")
 				},
 			}
-			upgrader := peer.NewTLSServerUpgrader(config, failOnIncrementCounter)
+			upgrader := peer.NewTLSServerUpgrader(config, failOnIncrementCounter, nil)
 
 			clientConfig := tls.Config{
 				ClientAuth:         tls.RequireAnyClientCert,

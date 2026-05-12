@@ -73,6 +73,7 @@ func StartTestPeer(
 	clientUpgrader := NewTLSClientUpgrader(
 		tlsConfg,
 		metric.NewCounter(metric.CounterOpts{}),
+		nil, // no SchemeGate in tests; the cross-axis check is opt-in.
 	)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)
