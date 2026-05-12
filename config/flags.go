@@ -46,6 +46,12 @@ var (
 	defaultStakingTLSKeyPath    = filepath.Join(defaultStakingPath, "staker.key")
 	defaultStakingCertPath      = filepath.Join(defaultStakingPath, "staker.crt")
 	defaultStakingSignerKeyPath = filepath.Join(defaultStakingPath, "signer.key")
+	// Strict-PQ default paths — mirror liquidityio/cli `liquid key gen`
+	// layout so the operator init container + lqd see the same files.
+	defaultStakingMLDSAKeyPath    = filepath.Join(defaultStakingPath, "mldsa.key")
+	defaultStakingMLDSAPubKeyPath = filepath.Join(defaultStakingPath, "mldsa.pub")
+	defaultHandshakeMLKEMKeyPath    = filepath.Join(defaultStakingPath, "mlkem.key")
+	defaultHandshakeMLKEMPubKeyPath = filepath.Join(defaultStakingPath, "mlkem.pub")
 	defaultConfigDir            = filepath.Join(defaultUnexpandedDataDir, "configs")
 	defaultChainConfigDir       = filepath.Join(defaultConfigDir, "chains")
 	defaultVMConfigDir          = filepath.Join(defaultConfigDir, "vms")
@@ -290,6 +296,20 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Bool(StakingEphemeralSignerEnabledKey, false, "If true, the node uses an ephemeral staking signer key")
 	fs.String(StakingSignerKeyPathKey, defaultStakingSignerKeyPath, fmt.Sprintf("Path to the signer private key for staking. Ignored if %s is specified", StakingSignerKeyContentKey))
 	fs.String(StakingSignerKeyContentKey, "", "Specifies base64 encoded signer private key for staking")
+	// Strict-PQ identity (FIPS 204 ML-DSA-65 + FIPS 203 ML-KEM-768).
+	// When the ML-DSA pubkey is provided, NodeID derivation pivots from
+	// the classical TLS-cert path to the wire-discriminated strict-PQ
+	// scheme (ids.NodeIDSchemeMLDSA65.DeriveMLDSA). Both pairs default
+	// to the layout liquidityio/cli `liquid key gen` writes — wire the
+	// init container and lqd reads the files with zero extra config.
+	fs.String(StakingMLDSAKeyPathKey, defaultStakingMLDSAKeyPath, fmt.Sprintf("Path to the ML-DSA-65 staking private key (FIPS 204 PEM). Ignored if %s is specified", StakingMLDSAKeyContentKey))
+	fs.String(StakingMLDSAKeyContentKey, "", "Base64-encoded ML-DSA-65 staking private key (FIPS 204 PEM)")
+	fs.String(StakingMLDSAPubKeyPathKey, defaultStakingMLDSAPubKeyPath, fmt.Sprintf("Path to the ML-DSA-65 staking public key (FIPS 204 PEM). Ignored if %s is specified", StakingMLDSAPubKeyContentKey))
+	fs.String(StakingMLDSAPubKeyContentKey, "", "Base64-encoded ML-DSA-65 staking public key (FIPS 204 PEM)")
+	fs.String(HandshakeMLKEMKeyPathKey, defaultHandshakeMLKEMKeyPath, fmt.Sprintf("Path to the ML-KEM-768 handshake private key (FIPS 203 PEM). Ignored if %s is specified", HandshakeMLKEMKeyContentKey))
+	fs.String(HandshakeMLKEMKeyContentKey, "", "Base64-encoded ML-KEM-768 handshake private key (FIPS 203 PEM)")
+	fs.String(HandshakeMLKEMPubKeyPathKey, defaultHandshakeMLKEMPubKeyPath, fmt.Sprintf("Path to the ML-KEM-768 handshake public key (FIPS 203 PEM). Ignored if %s is specified", HandshakeMLKEMPubKeyContentKey))
+	fs.String(HandshakeMLKEMPubKeyContentKey, "", "Base64-encoded ML-KEM-768 handshake public key (FIPS 203 PEM)")
 	fs.String(StakingKMSEndpointKey, "", "KMS endpoint for staking key retrieval (e.g., https://kms.dev.lux.network)")
 	fs.String(StakingKMSSecretPathKey, "", "KMS secret path for staking keys (e.g., /staking/liquid-devnet/node-0)")
 	fs.String(StakingKMSTokenKey, "", "KMS auth token for staking key retrieval")
