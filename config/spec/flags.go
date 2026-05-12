@@ -1078,6 +1078,80 @@ func allFlags() []FlagSpec {
 			Category:    CategoryStaking,
 			Sensitive:   true,
 		},
+		// Strict-PQ staking identity (FIPS 204 ML-DSA-65). When supplied,
+		// the node uses the ML-DSA-65 public key as the NodeID source via
+		// ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, pubKey) — replacing
+		// the classical TLS-cert NodeID derivation. The classical TLS
+		// staker.crt/key + signer.key flags above stay defined so a
+		// classical-compat chain (LUX_CLASSICAL_COMPAT_UNSAFE) can still
+		// boot, but a strict-PQ profile rejects any classical material at
+		// the validator-set boundary.
+		{
+			Key:         "staking-mldsa-key-file",
+			Type:        TypeString,
+			Default:     "$LUXD_DATA_DIR/staking/mldsa.key",
+			Description: "Path to the ML-DSA-65 staking private key (FIPS 204 PEM). Ignored if staking-mldsa-key-file-content is specified",
+			Category:    CategoryStaking,
+			Sensitive:   true,
+		},
+		{
+			Key:         "staking-mldsa-key-file-content",
+			Type:        TypeString,
+			Default:     "",
+			Description: "Base64-encoded ML-DSA-65 staking private key (FIPS 204 PEM)",
+			Category:    CategoryStaking,
+			Sensitive:   true,
+		},
+		{
+			Key:         "staking-mldsa-pub-key-file",
+			Type:        TypeString,
+			Default:     "$LUXD_DATA_DIR/staking/mldsa.pub",
+			Description: "Path to the ML-DSA-65 staking public key (FIPS 204 PEM). Ignored if staking-mldsa-pub-key-file-content is specified",
+			Category:    CategoryStaking,
+		},
+		{
+			Key:         "staking-mldsa-pub-key-file-content",
+			Type:        TypeString,
+			Default:     "",
+			Description: "Base64-encoded ML-DSA-65 staking public key (FIPS 204 PEM)",
+			Category:    CategoryStaking,
+		},
+		// Strict-PQ handshake KEM (FIPS 203 ML-KEM-768). Peer-facing public
+		// key is published in the validator-set entry so peers can
+		// encapsulate to it for session-key establishment — the PQ replacement
+		// for classical TLS key agreement on the libp2p handshake. The
+		// private key stays on the validator pod; the public key is the only
+		// material that crosses the wire.
+		{
+			Key:         "handshake-mlkem-key-file",
+			Type:        TypeString,
+			Default:     "$LUXD_DATA_DIR/staking/mlkem.key",
+			Description: "Path to the ML-KEM-768 handshake private key (FIPS 203 PEM). Ignored if handshake-mlkem-key-file-content is specified",
+			Category:    CategoryStaking,
+			Sensitive:   true,
+		},
+		{
+			Key:         "handshake-mlkem-key-file-content",
+			Type:        TypeString,
+			Default:     "",
+			Description: "Base64-encoded ML-KEM-768 handshake private key (FIPS 203 PEM)",
+			Category:    CategoryStaking,
+			Sensitive:   true,
+		},
+		{
+			Key:         "handshake-mlkem-pub-key-file",
+			Type:        TypeString,
+			Default:     "$LUXD_DATA_DIR/staking/mlkem.pub",
+			Description: "Path to the ML-KEM-768 handshake public key (FIPS 203 PEM). Ignored if handshake-mlkem-pub-key-file-content is specified",
+			Category:    CategoryStaking,
+		},
+		{
+			Key:         "handshake-mlkem-pub-key-file-content",
+			Type:        TypeString,
+			Default:     "",
+			Description: "Base64-encoded ML-KEM-768 handshake public key (FIPS 203 PEM)",
+			Category:    CategoryStaking,
+		},
 		{
 			Key:         "sybil-protection-enabled",
 			Type:        TypeBool,

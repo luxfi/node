@@ -5,6 +5,7 @@ package node
 
 import (
 	"crypto/tls"
+	"errors"
 	"net/netip"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/luxfi/node/network"
 	// "github.com/luxfi/consensus/core/router" // Unused
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/mldsa"
+	mlkemcrypto "github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/upgrade"
@@ -83,6 +86,30 @@ type StakingConfig struct {
 	StakingKeyPath    string `json:"stakingKeyPath"`
 	StakingCertPath   string `json:"stakingCertPath"`
 	StakingSignerPath string `json:"stakingSignerPath"`
+
+	// Strict-PQ identity material. Set by config.GetNodeConfig when the
+	// --staking-mldsa-*-file / --handshake-mlkem-*-file flags resolve.
+	// All four fields are nil/empty under a classical-compat chain;
+	// strict-PQ profile rejects a missing StakingMLDSAPub at boot.
+	//
+	// NodeID derivation pivots on StakingMLDSAPub: when non-empty,
+	// ids.NodeIDSchemeMLDSA65.DeriveMLDSA(stakingChainID, StakingMLDSAPub)
+	// replaces ids.NodeIDFromCert(StakingTLSCert) — the TLS cert becomes
+	// transport-only, no longer the identity anchor.
+	//
+	// HandshakeMLKEMPub is the peer-facing KEM public key that lqd
+	// publishes in its validator-set entry so peers can encapsulate to it
+	// for session-key establishment with no classical fallback. The
+	// HandshakeMLKEMPriv stays local to the pod.
+	StakingMLDSA       *mldsa.PrivateKey         `json:"-"`
+	StakingMLDSAPub    []byte                    `json:"-"`
+	HandshakeMLKEMPriv *mlkemcrypto.PrivateKey   `json:"-"`
+	HandshakeMLKEMPub  []byte                    `json:"-"`
+	// File paths kept for log-line context, mirroring StakingKeyPath etc.
+	StakingMLDSAKeyPath  string `json:"stakingMLDSAKeyPath,omitempty"`
+	StakingMLDSAPubPath  string `json:"stakingMLDSAPubPath,omitempty"`
+	HandshakeMLKEMKeyPath string `json:"handshakeMLKEMKeyPath,omitempty"`
+	HandshakeMLKEMPubPath string `json:"handshakeMLKEMPubPath,omitempty"`
 }
 
 type StateSyncConfig struct {
@@ -240,3 +267,70 @@ type Config struct {
 	LazyChainLoading    bool   `json:"lazyChainLoading"`
 	SingleValidatorMode bool   `json:"singleValidatorMode"`
 }
+
+// IsStrictPQ reports whether the staking config has strict-PQ
+// identity material loaded. Strict-PQ requires an ML-DSA-65 public
+// key (signing identity) — the ML-KEM-768 KEM is a complementary
+// handshake primitive that the validator-set entry publishes for
+// peers but is NOT what defines the validator's identity. The
+// 0-byte slice case is "classical-compat": NodeID derives from the
+// TLS staking cert in StakingTLSCert.
+func (c *StakingConfig) IsStrictPQ() bool {
+	return len(c.StakingMLDSAPub) > 0
+}
+
+// DeriveNodeID returns the canonical 20-byte NodeID for this
+// staking identity under chainID:
+//
+//   - Strict-PQ (StakingMLDSAPub set):
+//     NodeID = SHAKE256-384("LUX_NODE_ID_V1" || chainID || 0x42 || pubKey)[:20]
+//     via ids.NodeIDSchemeMLDSA65.DeriveMLDSA. chainID-bound so the
+//     same key on a different chain produces a different NodeID,
+//     blocking cross-chain replay of validator registrations.
+//   - Classical-compat (no ML-DSA pub):
+//     NodeID = ids.NodeIDFromCert(StakingTLSCert.Leaf) — the
+//     legacy upstream derivation. A strict-PQ chain MUST refuse
+//     this branch at the validator-set boundary; the choice lives
+//     in the consensus profile, not here.
+//
+// This is the single seam every "what's my NodeID" call site should
+// route through. Direct calls to ids.NodeIDFromCert in new code are
+// a bug — they bypass the strict-PQ pivot.
+func (c *StakingConfig) DeriveNodeID(chainID ids.ID) (ids.NodeID, error) {
+	if c.IsStrictPQ() {
+		id, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, c.StakingMLDSAPub)
+		return id, err
+	}
+	if c.StakingTLSCert.Leaf == nil {
+		return ids.EmptyNodeID, errStakingTLSCertLeafNil
+	}
+	return ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       c.StakingTLSCert.Leaf.Raw,
+		PublicKey: c.StakingTLSCert.Leaf.PublicKey,
+	}), nil
+}
+
+// DeriveTypedNodeID returns the wire-canonical TypedNodeID — scheme
+// byte (0x42 for strict-PQ ML-DSA-65, 0x90 for classical secp256k1)
+// followed by the 20-byte NodeID. The scheme byte travels with the
+// NodeID on every handshake / validator-set serialization so a
+// receiver MUST know which verifier to dispatch before consulting
+// the chain profile. Profile is a downgrade-detection gate; scheme
+// byte is a primitive-mismatch gate.
+func (c *StakingConfig) DeriveTypedNodeID(chainID ids.ID) (ids.TypedNodeID, error) {
+	if c.IsStrictPQ() {
+		t, _, err := ids.TypedNodeIDFromMLDSA(
+			ids.NodeIDSchemeMLDSA65, chainID, c.StakingMLDSAPub)
+		return t, err
+	}
+	if c.StakingTLSCert.Leaf == nil {
+		return ids.TypedNodeID{}, errStakingTLSCertLeafNil
+	}
+	return ids.TypedNodeIDFromCert(&ids.Certificate{
+		Raw:       c.StakingTLSCert.Leaf.Raw,
+		PublicKey: c.StakingTLSCert.Leaf.PublicKey,
+	}), nil
+}
+
+var errStakingTLSCertLeafNil = errors.New(
+	"node: StakingConfig.StakingTLSCert.Leaf is nil — neither ML-DSA-65 nor a parsed TLS cert is available")
