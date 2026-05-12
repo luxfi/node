@@ -149,7 +149,7 @@ require (
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.4
 	github.com/luxfi/utxo v0.3.0
-	github.com/luxfi/validators v1.0.0
+	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.0.40
 	github.com/luxfi/warp v1.18.5
 	github.com/luxfi/zwing v0.5.2
