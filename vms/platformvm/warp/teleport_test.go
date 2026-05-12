@@ -307,7 +307,7 @@ func TestSignatureType(t *testing.T) {
 
 	// Test string representation
 	require.Equal("BLS", SigTypeBLS.String())
-	require.Equal("Ringtail", SigTypeRingtail.String())
+	require.Equal("Corona", SigTypeRingtail.String())
 	require.Equal("Hybrid", SigTypeHybrid.String())
 }
 

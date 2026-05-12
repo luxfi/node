@@ -49,7 +49,7 @@ func TestGetNodeVersionConsensusRoundtrip(t *testing.T) {
 	consensus := &apiinfo.ConsensusInfo{
 		Mode:       "triple",
 		BLS:        true,
-		Ringtail:   true,
+		Corona:   true,
 		MLDSA:      true,
 		PlatformVM: true,
 	}

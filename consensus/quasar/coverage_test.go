@@ -104,7 +104,7 @@ func TestQuasarGetCoreGetRingtail(t *testing.T) {
 		t.Error("GetCore should not return nil")
 	}
 	if q.GetRingtail() != nil {
-		t.Error("Ringtail should be nil before initialization")
+		t.Error("Corona should be nil before initialization")
 	}
 }
 

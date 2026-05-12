@@ -15,11 +15,11 @@ var (
 	_ HybridSigner = (*HybridProofOfPossession)(nil)
 
 	ErrMissingBLSKey  = errors.New("missing BLS public key")
-	ErrMissingRTKey   = errors.New("missing Ringtail public key for Q-Chain validator")
+	ErrMissingRTKey   = errors.New("missing Corona public key for Q-Chain validator")
 	ErrHybridRequired = errors.New("both BLS and RT keys required for Q-Chain validators")
 )
 
-// HybridSigner extends Signer with post-quantum Ringtail key support.
+// HybridSigner extends Signer with post-quantum Corona key support.
 // This is the key material binding interface for Q-Chain validators.
 //
 // NodeID X corresponds to:
@@ -33,12 +33,12 @@ type HybridSigner interface {
 	Signer
 	RTSigner
 
-	// HasRT returns true if this signer has a Ringtail key.
+	// HasRT returns true if this signer has a Corona key.
 	// For Q-Chain validators, this MUST return true.
 	HasRT() bool
 }
 
-// HybridProofOfPossession combines BLS and Ringtail proofs of possession.
+// HybridProofOfPossession combines BLS and Corona proofs of possession.
 // This is REQUIRED for all Q-Chain validators to bind both classical
 // and post-quantum keys to their validator identity.
 //
@@ -99,7 +99,7 @@ func (h *HybridProofOfPossession) Key() *bls.PublicKey {
 	return h.BLS.Key()
 }
 
-// RTKey returns the Ringtail public key (implements RTSigner).
+// RTKey returns the Corona public key (implements RTSigner).
 func (h *HybridProofOfPossession) RTKey() []byte {
 	if h.RT == nil {
 		return nil

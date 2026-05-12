@@ -10,28 +10,28 @@ import (
 	"github.com/luxfi/formatting"
 )
 
-// RTKeyLen is the length of Ringtail public keys (ML-DSA-65 public key)
+// RTKeyLen is the length of Corona public keys (ML-DSA-65 public key)
 const RTKeyLen = 1952
 
-// RTSigLen is the length of Ringtail signatures (ML-DSA-65 signature)
+// RTSigLen is the length of Corona signatures (ML-DSA-65 signature)
 const RTSigLen = 3309
 
 var (
 	_ RTSigner = (*RTProofOfPossession)(nil)
 
-	ErrInvalidRTProofOfPossession = errors.New("invalid Ringtail proof of possession")
-	ErrRTKeyRequired              = errors.New("Ringtail public key required for Q-Chain validators")
-	ErrInvalidRTKeyLength         = errors.New("invalid Ringtail public key length")
-	ErrInvalidRTSigLength         = errors.New("invalid Ringtail signature length")
+	ErrInvalidRTProofOfPossession = errors.New("invalid Corona proof of possession")
+	ErrRTKeyRequired              = errors.New("Corona public key required for Q-Chain validators")
+	ErrInvalidRTKeyLength         = errors.New("invalid Corona public key length")
+	ErrInvalidRTSigLength         = errors.New("invalid Corona signature length")
 )
 
-// RTSigner interface for Ringtail proof of possession
+// RTSigner interface for Corona proof of possession
 type RTSigner interface {
 	Verify() error
 	RTKey() []byte
 }
 
-// RTProofOfPossession proves ownership of a Ringtail (ML-DSA) keypair.
+// RTProofOfPossession proves ownership of a Corona (ML-DSA) keypair.
 // This is REQUIRED for all Q-Chain validators.
 //
 // Key material binding: NodeID X corresponds to:
@@ -83,7 +83,7 @@ func (p *RTProofOfPossession) Verify() error {
 	return nil
 }
 
-// RTKey returns the Ringtail public key.
+// RTKey returns the Corona public key.
 func (p *RTProofOfPossession) RTKey() []byte {
 	return p.PublicKey
 }

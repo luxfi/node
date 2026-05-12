@@ -438,7 +438,7 @@ type Node struct {
 	// Manages shutdown of a VM process
 	runtimeManager runtime.Manager
 
-	// Quasar hybrid finality engine — binds P-Chain BLS + Q-Chain Ringtail
+	// Quasar hybrid finality engine — binds P-Chain BLS + Q-Chain Corona
 	Quasar *quasar.Quasar
 
 	resourceManager resource.Manager

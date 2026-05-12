@@ -80,7 +80,7 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 
 	work := &BlockVerifyWork{
 		BLS:      makeBLSWork(5),
-		Ringtail: makeRingtailWork(3),
+		Corona: makeRingtailWork(3),
 		ZK:       makeZKWork(2),
 		MLDSA:    makeMLDSAWork(10),
 	}
@@ -95,10 +95,10 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 		require.True(t, v, "BLS[%d] should be valid", i)
 	}
 
-	// Ringtail results
-	require.Len(t, result.RingtailValid, 3, "should have 3 Ringtail results")
+	// Corona results
+	require.Len(t, result.RingtailValid, 3, "should have 3 Corona results")
 	for i, v := range result.RingtailValid {
-		require.True(t, v, "Ringtail[%d] should be valid", i)
+		require.True(t, v, "Corona[%d] should be valid", i)
 	}
 
 	// ZK result
@@ -195,9 +195,9 @@ func TestGPUPipeline_EmptyBatches(t *testing.T) {
 			},
 		},
 		{
-			name: "Ringtail only",
+			name: "Corona only",
 			work: &BlockVerifyWork{
-				Ringtail: makeRingtailWork(1),
+				Corona: makeRingtailWork(1),
 			},
 		},
 	}
@@ -231,9 +231,9 @@ func TestGPUPipeline_ValidationErrors(t *testing.T) {
 			wantErr: ErrBLSSizeMismatch,
 		},
 		{
-			name: "Ringtail size mismatch",
+			name: "Corona size mismatch",
 			work: &BlockVerifyWork{
-				Ringtail: &RingtailWork{
+				Corona: &RingtailWork{
 					Messages:   [][]byte{{1}, {2}},
 					Signatures: [][]byte{{1}}, // 1 != 2
 					PubKeys:    [][]byte{{1}, {2}},
@@ -277,7 +277,7 @@ func BenchmarkGPUPipeline(b *testing.B) {
 
 	work := &BlockVerifyWork{
 		BLS:      makeBLSWork(100),
-		Ringtail: makeRingtailWork(50),
+		Corona: makeRingtailWork(50),
 		ZK:       makeZKWork(10),
 		MLDSA:    makeMLDSAWork(200),
 	}

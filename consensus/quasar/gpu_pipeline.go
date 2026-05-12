@@ -16,12 +16,12 @@ import (
 // GPUVerifyPipeline fuses multiple cryptographic verification operations into
 // a single GPU session, sharing GPU memory across all verification types.
 //
-// Instead of sequential: BLS verify -> Ringtail verify -> ZK verify -> ML-DSA verify
+// Instead of sequential: BLS verify -> Corona verify -> ZK verify -> ML-DSA verify
 // GPU pipeline: one session, parallel streams, shared memory allocation
 //
 // This is the ML-DSA rollup pattern:
 //   - BLS aggregate signature (classical fast path)
-//   - Ringtail threshold signature (PQ safe path)
+//   - Corona threshold signature (PQ safe path)
 //   - ZK rollup batch proof (state transition validity)
 //   - N x ML-DSA signatures (per-tx PQ signatures)
 //
@@ -46,7 +46,7 @@ type BLSWork struct {
 	PubKeys    [][]byte // [N, 48] G1 points
 }
 
-// RingtailWork holds a batch of Ringtail threshold signatures to verify.
+// RingtailWork holds a batch of Corona threshold signatures to verify.
 type RingtailWork struct {
 	Messages   [][]byte // [N, msg_len]
 	Signatures [][]byte // [N, sig_len] threshold sigs
@@ -69,7 +69,7 @@ type MLDSAWork struct {
 // BlockVerifyWork contains all verification batches for a single block.
 type BlockVerifyWork struct {
 	BLS      *BLSWork
-	Ringtail *RingtailWork
+	Corona *RingtailWork
 	ZK       *ZKWork
 	MLDSA    *MLDSAWork
 }
@@ -91,7 +91,7 @@ type BlockVerifyResult struct {
 
 var (
 	ErrBLSSizeMismatch      = errors.New("BLS batch size mismatch: messages, signatures, and pubkeys must have equal length")
-	ErrRingtailSizeMismatch = errors.New("Ringtail batch size mismatch: messages, signatures, and pubkeys must have equal length")
+	ErrRingtailSizeMismatch = errors.New("Corona batch size mismatch: messages, signatures, and pubkeys must have equal length")
 	ErrZKSizeMismatch       = errors.New("ZK batch size mismatch: scalars and bases must have equal length")
 	ErrMLDSASizeMismatch    = errors.New("ML-DSA batch size mismatch: messages, signatures, and pubkeys must have equal length")
 )
@@ -161,13 +161,13 @@ func (p *GPUVerifyPipeline) verifyGPU(work *BlockVerifyWork) (*BlockVerifyResult
 		}()
 	}
 
-	// Ringtail verification stream (uses DilithiumVerifyBatch on lattice ops)
-	if work.Ringtail != nil && len(work.Ringtail.Messages) > 0 {
+	// Corona verification stream (uses DilithiumVerifyBatch on lattice ops)
+	if work.Corona != nil && len(work.Corona.Messages) > 0 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			start := time.Now()
-			valid, err := gpuRingtailVerify(sess, work.Ringtail)
+			valid, err := gpuRingtailVerify(sess, work.Corona)
 			elapsed := time.Since(start)
 			if err != nil {
 				firstErr.CompareAndSwap(nil, err)
@@ -280,8 +280,8 @@ func gpuBLSVerify(sess *accel.Session, work *BLSWork) ([]bool, error) {
 	return valid, nil
 }
 
-// gpuRingtailVerify dispatches Ringtail verification via DilithiumVerifyBatch
-// (Ringtail threshold signatures are lattice-based, same verification kernel).
+// gpuRingtailVerify dispatches Corona verification via DilithiumVerifyBatch
+// (Corona threshold signatures are lattice-based, same verification kernel).
 func gpuRingtailVerify(sess *accel.Session, work *RingtailWork) ([]bool, error) {
 	n := len(work.Messages)
 
@@ -442,12 +442,12 @@ func (p *GPUVerifyPipeline) verifyCPU(work *BlockVerifyWork) *BlockVerifyResult 
 		}()
 	}
 
-	if work.Ringtail != nil && len(work.Ringtail.Messages) > 0 {
+	if work.Corona != nil && len(work.Corona.Messages) > 0 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			start := time.Now()
-			valid := cpuRingtailVerify(work.Ringtail)
+			valid := cpuRingtailVerify(work.Corona)
 			mu.Lock()
 			result.RingtailValid = valid
 			result.RingtailTime = time.Since(start)
@@ -533,7 +533,7 @@ func validateWork(work *BlockVerifyWork) error {
 			return ErrBLSSizeMismatch
 		}
 	}
-	if w := work.Ringtail; w != nil {
+	if w := work.Corona; w != nil {
 		n := len(w.Messages)
 		if n > 0 && (len(w.Signatures) != n || len(w.PubKeys) != n) {
 			return ErrRingtailSizeMismatch
