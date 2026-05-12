@@ -131,6 +131,14 @@ func NewReader(data []byte) *Reader {
 	return &Reader{data: data}
 }
 
+// HasMore reports whether the reader has any unread bytes remaining. Used
+// by append-only field readers (e.g. unmarshalHandshake's IpMldsaSig) to
+// tell a legacy short frame apart from a new frame with a (possibly
+// empty) trailing field.
+func (r *Reader) HasMore() bool {
+	return r.offset < len(r.data)
+}
+
 func (r *Reader) ReadUint8() (uint8, error) {
 	if r.offset+1 > len(r.data) {
 		return 0, io.ErrUnexpectedEOF
@@ -490,6 +498,13 @@ func marshalHandshake(b *Buffer, m *Handshake) {
 		b.WriteUint8(0)
 	}
 	b.WriteBytes(m.IpBlsSig)
+	// IpMldsaSig is append-only: legacy decoders that ran on the
+	// pre-PQ wire format simply stop after IpBlsSig and the reader
+	// returns io.ErrUnexpectedEOF when it tries to keep going.
+	// New decoders (unmarshalHandshake below) check for trailing
+	// bytes before reading IpMldsaSig, so emitting an empty slice
+	// (4 zero length-prefix bytes) is a safe extension.
+	b.WriteBytes(m.IpMldsaSig)
 }
 
 func marshalGetPeerList(b *Buffer, m *GetPeerList) {
@@ -802,7 +817,20 @@ func unmarshalHandshake(r *Reader) (*Handshake, error) {
 		}
 	}
 	m.IpBlsSig, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	// IpMldsaSig is append-only on the wire. Legacy peers don't write it;
+	// their handshake frame ends after IpBlsSig. New peers write a
+	// length-prefixed blob (possibly empty). HasMore() lets us tell them
+	// apart without breaking either case.
+	if r.HasMore() {
+		m.IpMldsaSig, err = r.ReadBytes()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return m, nil
 }
 
 func unmarshalGetPeerList(r *Reader) (*GetPeerList, error) {

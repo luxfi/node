@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/codec/wrappers"
+	consensusconfig "github.com/luxfi/consensus/config"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
@@ -31,6 +32,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
+	"github.com/luxfi/node/network/kem"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
@@ -483,6 +485,46 @@ func NewNetwork(
 		IPSigner:             peer.NewIPSigner(config.MyIPPort, config.TLSKey, config.BLSKey),
 	}
 
+	// Build the per-chain peer.SchemeGate exactly once at network bootstrap.
+	// The gate is the single cross-axis primitive that funnels every
+	// inbound NodeID through the chain's ChainSecurityProfile pin. Chains
+	// that ship no profile (legacy / classical-compat networks) leave the
+	// gate nil — upgrader.connToIDAndCert is nil-safe and refuses nobody.
+	var schemeGate *peer.SchemeGate
+	if config.SecurityProfile != nil {
+		schemeGate, err = peer.NewSchemeGate(config.SecurityProfile, config.ClassicalCompatUnsafe, 0)
+		if err != nil {
+			return nil, fmt.Errorf("building peer SchemeGate: %w", err)
+		}
+		log.Info("peer SchemeGate active",
+			zap.String("profile", config.SecurityProfile.ProfileName),
+			zap.Uint32("profileID", config.SecurityProfile.ProfileID),
+			zap.Bool("classicalCompatUnsafe", config.ClassicalCompatUnsafe),
+		)
+	}
+
+	// On a strict-PQ profile, also pin the application-layer PQ handshake
+	// config onto every peer goroutine. peer.Start runs the ML-KEM +
+	// ML-DSA handshake the moment TLS upgrade succeeds; bare TLS is
+	// refused. Permissive / classical-compat profiles leave PQHandshake
+	// nil and use the legacy bare-TLS path.
+	if config.SecurityProfile != nil && profileRequiresPQHandshake(config.SecurityProfile) {
+		pqIdent, err := peer.NewLocalIdentity(config.MyNodeID)
+		if err != nil {
+			return nil, fmt.Errorf("building PQ local identity: %w", err)
+		}
+		peerConfig.PQHandshakeConfig = &peer.HandshakeConfig{
+			Profile:            peer.ProfileStrictPQ,
+			KEMScheme:          kemSessionScheme(config.SecurityProfile),
+			ForbidClassicalKEM: true,
+		}
+		peerConfig.PQLocalIdentity = pqIdent
+		log.Info("peer PQ handshake active",
+			zap.Stringer("scheme", peerConfig.PQHandshakeConfig.KEMScheme),
+			zap.Stringer("nodeID", config.MyNodeID),
+		)
+	}
+
 	onCloseCtx, cancel := context.WithCancel(context.Background())
 	n := &network{
 		startupTime:          time.Now(),
@@ -494,8 +536,8 @@ func NewNetwork(
 		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
 		listener:                    listener,
 		dialer:                      dialer,
-		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected),
-		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected),
+		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected, schemeGate),
+		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected, schemeGate),
 
 		onCloseCtx:       onCloseCtx,
 		onCloseCtxCancel: cancel,
@@ -527,6 +569,32 @@ func NewNetwork(
 		zap.Bool("hasTLSCerts", ephemeralCert),
 	)
 	return n, nil
+}
+
+// profileRequiresPQHandshake reports whether the chain's locked
+// ChainSecurityProfile mandates the application-layer ML-KEM + ML-DSA
+// handshake on top of TLS. Strict-PQ and FIPS profiles do; permissive
+// profiles fall back to the legacy bare-TLS handshake. Centralised here
+// so the same predicate decides "build SchemeGate" and "build PQ
+// handshake config" — one rule, one place.
+func profileRequiresPQHandshake(p *consensusconfig.ChainSecurityProfile) bool {
+	if p == nil {
+		return false
+	}
+	id := consensusconfig.ProfileID(p.ProfileID)
+	return id == consensusconfig.ProfileStrictPQ || id == consensusconfig.ProfileFIPS
+}
+
+// kemSessionScheme returns the KEM byte the chain's ChainSecurityProfile
+// pins for per-peer session keys. Strict-PQ defaults to ML-KEM-768 (NIST
+// PQ Cat 3); a chain profile that pins ML-KEM-1024 (Cat 5) for sessions
+// is honoured. The DKG KEM (ML-KEM-1024 on strict-PQ — a separate axis
+// captured in HighValueKEM) is not consumed by the peer handshake.
+func kemSessionScheme(p *consensusconfig.ChainSecurityProfile) kem.KeyExchangeID {
+	if p != nil && p.KeyExchangeID == consensusconfig.KeyExchangeMLKEM1024 {
+		return kem.KeyExchangeMLKEM1024
+	}
+	return kem.KeyExchangeMLKEM768
 }
 
 // sequencerID returns the validator-set identity that sequences chainID.
