@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net"
@@ -198,12 +199,27 @@ type peer struct {
 	// isIngress is true only if the remote peer is connected to this node,
 	// in contrast of this node being connected to the remote peer.
 	isIngress bool
+
+	// pqAEADKey is the 32-byte AEAD session key derived by the strict-PQ
+	// application-layer handshake (ML-KEM + ML-DSA-65). Zero-valued on
+	// chains that don't run the PQ handshake; non-zero only after
+	// runPQHandshakeIfRequired completes successfully. The AEAD wrapper
+	// over p.conn reads this key once at handshake completion; it is
+	// never mutated after Start returns.
+	pqAEADKey [32]byte
 }
 
 // Start a new peer instance.
 //
 // Invariant: There must only be one peer running at a time with a reference to
 // the same [config.InboundMsgThrottler].
+//
+// On strict-PQ chains (config.PQHandshakeConfig non-nil) Start runs the
+// application-layer ML-KEM + ML-DSA-65 handshake synchronously on the wire
+// before launching the message-pump goroutines. The role is derived from
+// isIngress — the dial side is the initiator, the accept side is the
+// responder. If the PQ handshake fails the connection is closed and the
+// returned Peer is in the closed state; no fallback to bare TLS.
 func Start(
 	config *Config,
 	conn net.Conn,
@@ -233,11 +249,96 @@ func Start(
 		p.IngressConnectionCount.Add(1)
 	}
 
+	// PQ handshake gate: strict-PQ chains run the application-layer
+	// ML-KEM + ML-DSA-65 handshake on the wire BEFORE any p2p message
+	// is exchanged. Permissive / classical-compat chains skip this step.
+	if err := p.runPQHandshakeIfRequired(); err != nil {
+		p.Log.Warn("PQ handshake refused; closing connection",
+			log.Stringer("nodeID", p.id),
+			log.Bool("isIngress", isIngress),
+			log.Reflect("error", err),
+		)
+		// Mark all 3 goroutines as not running so close() doesn't wait
+		// for them. The connection is torn down; the peer is closed.
+		atomic.StoreInt64(&p.numExecuting, 1)
+		_ = p.conn.Close()
+		p.close()
+		return p
+	}
+
 	go p.readMessages()
 	go p.writeMessages()
 	go p.sendNetworkMessages()
 
 	return p
+}
+
+// runPQHandshakeIfRequired runs the strict-PQ application-layer handshake
+// synchronously over p.conn. Returns nil when the chain is on the legacy
+// bare-TLS path (no PQHandshakeConfig pinned) so the caller proceeds
+// unchanged. On strict-PQ, completes INIT / RESP / FINISH and stashes the
+// derived AEAD key on the peer; subsequent application messages are
+// authenticated against this key by the AEAD wrapper installed by the
+// next CR. Wire framing mirrors the peer's existing 4-byte length-prefix
+// scheme so the framing logic is identical on both sides of the wire.
+func (p *peer) runPQHandshakeIfRequired() error {
+	cfg := p.Config
+	if cfg == nil || cfg.PQHandshakeConfig == nil || cfg.PQLocalIdentity == nil {
+		return nil
+	}
+
+	deadline := time.Now().Add(cfg.MaxClockDifference + 30*time.Second)
+	if err := p.conn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("set PQ handshake deadline: %w", err)
+	}
+	defer func() {
+		// Clear deadline so the rest of the peer flow uses its own.
+		_ = p.conn.SetDeadline(time.Time{})
+	}()
+
+	if p.isIngress {
+		// Responder: read INIT, send RESP, derive AEAD.
+		initBytes, err := readPQFrame(p.conn)
+		if err != nil {
+			return fmt.Errorf("read PQ INIT: %w", err)
+		}
+		init, err := parsePQHandshakeInit(initBytes, cfg.PQHandshakeConfig.KEMScheme)
+		if err != nil {
+			return fmt.Errorf("parse PQ INIT: %w", err)
+		}
+		resp, result, err := RespondHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init)
+		if err != nil {
+			return fmt.Errorf("respond PQ handshake: %w", err)
+		}
+		if err := writePQFrame(p.conn, resp.canonicalBytes()); err != nil {
+			return fmt.Errorf("write PQ RESP: %w", err)
+		}
+		p.pqAEADKey = result.AEADKey
+		return nil
+	}
+
+	// Initiator: send INIT, read RESP, finalize.
+	init, kemSec, err := InitiateHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity)
+	if err != nil {
+		return fmt.Errorf("initiate PQ handshake: %w", err)
+	}
+	if err := writePQFrame(p.conn, init.canonicalBytes()); err != nil {
+		return fmt.Errorf("write PQ INIT: %w", err)
+	}
+	respBytes, err := readPQFrame(p.conn)
+	if err != nil {
+		return fmt.Errorf("read PQ RESP: %w", err)
+	}
+	resp, err := parsePQHandshakeResp(respBytes, cfg.PQHandshakeConfig.KEMScheme)
+	if err != nil {
+		return fmt.Errorf("parse PQ RESP: %w", err)
+	}
+	result, err := FinishInitiatorHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init, resp, kemSec)
+	if err != nil {
+		return fmt.Errorf("finish PQ handshake: %w", err)
+	}
+	p.pqAEADKey = result.AEADKey
+	return nil
 }
 
 func (p *peer) ID() ids.NodeID {
@@ -552,6 +653,7 @@ func (p *peer) writeMessages() {
 		knownPeersFilter,
 		knownPeersSalt,
 		areWeAPrimaryNetworkValidator,
+		mySignedIP.MLDSASignature,
 	)
 	if err != nil {
 		p.Log.Error(failedToCreateMessageLog,
@@ -1015,6 +1117,11 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 			Timestamp: msg.IpSigningTime,
 		},
 		TLSSignature: msg.IpNodeIdSig,
+		// Empty on legacy peers (classical-only); the SignedIP.Verify
+		// call below only enforces the ML-DSA leg under strict-PQ
+		// profile and only when the validator's ML-DSA public key is
+		// known to the verifier. The wire format tolerates absence.
+		MLDSASignature: msg.GetIpMldsaSig(),
 	}
 	maxTimestamp := localTime.Add(p.MaxClockDifference)
 	if err := p.ip.Verify(p.cert, maxTimestamp); err != nil {

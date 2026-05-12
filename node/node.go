@@ -688,6 +688,10 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
 	n.Config.NetworkConfig.GenesisBytes = n.Config.GenesisBytes
+	// Forward the resolved ChainSecurityProfile to the network layer
+	// so the peer.SchemeGate (CR-3) and PQ handshake (CR-5) fire on
+	// strict-PQ chains. Nil on legacy / classical-compat networks.
+	n.Config.NetworkConfig.SecurityProfile = n.securityProfile
 	// Map native chains (P/C/X/etc.) to the primary network validator set.
 	// For L2 chains, return ids.Empty to let blockchainToNetwork map resolve
 	// the correct chain ID. Returning chainID here would short-circuit the
