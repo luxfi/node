@@ -69,7 +69,7 @@ func NewBitcoinAdapter() *BitcoinAdapter {
 
 // ChainID returns the Bitcoin chain ID
 func (a *BitcoinAdapter) ChainID() ChainID {
-	return ChainBitcoin
+	return idBitcoin
 }
 
 // ChainName returns "Bitcoin"
@@ -112,7 +112,7 @@ func (a *BitcoinAdapter) Initialize(config *ChainConfig) error {
 
 // VerifyBlockHeader verifies a Bitcoin block header
 func (a *BitcoinAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainBitcoin {
+	if header.ChainID != idBitcoin {
 		return ErrChainNotSupported
 	}
 
@@ -146,7 +146,7 @@ func (a *BitcoinAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHea
 
 // VerifyTransaction verifies a Bitcoin transaction inclusion proof
 func (a *BitcoinAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusionProof) error {
-	if proof.ChainID != ChainBitcoin {
+	if proof.ChainID != idBitcoin {
 		return ErrChainNotSupported
 	}
 
@@ -178,13 +178,13 @@ func (a *BitcoinAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusi
 
 // VerifyMessage verifies a cross-chain message from Bitcoin
 func (a *BitcoinAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessage) error {
-	if msg.SourceChain != ChainBitcoin {
+	if msg.SourceChain != idBitcoin {
 		return ErrChainNotSupported
 	}
 
 	// For Bitcoin, we verify the transaction containing the message
 	proof := &TxInclusionProof{
-		ChainID:     ChainBitcoin,
+		ChainID:     idBitcoin,
 		BlockNumber: msg.SourceBlock,
 		TxHash:      msg.SourceTxHash,
 		MerkleProof: nil, // Would be extracted from SourceProof
