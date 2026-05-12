@@ -47,7 +47,7 @@ const (
 	KeyTypeMLKEM1024 // ML-KEM-1024
 
 	// Privacy-preserving
-	KeyTypeCorona // Ring signatures
+	KeyTypeRingSig // Ring signatures
 
 	// Hybrid modes (classical + post-quantum)
 	KeyTypeHybridSecp256k1MLDSA44
@@ -124,7 +124,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 		}
 		return nil, ErrInvalidKeyType
 
-	case KeyTypeCorona:
+	case KeyTypeRingSig:
 		// Ring signatures require a ring of public keys
 		// For SignHash without a ring, we return an error
 		// Use SignRing for ring signature operations
@@ -211,7 +211,7 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		}
 		return bls.SignatureToBytes(sig), nil
 
-	case KeyTypeCorona:
+	case KeyTypeRingSig:
 		// Ring signatures require a ring of public keys
 		return nil, errors.New("corona requires ring members - use SignRing method")
 
@@ -293,7 +293,7 @@ func (s *PQSigner) Address() ids.ShortID {
 // SignRing creates a ring signature for the given message using the provided ring of public keys.
 // The signer's public key must be included in the ring at signerIndex.
 func (s *PQSigner) SignRing(message []byte, ringPubKeys [][]byte, signerIndex int) (ring.RingSignature, error) {
-	if s.keyType != KeyTypeCorona {
+	if s.keyType != KeyTypeRingSig {
 		return nil, errors.New("SignRing only supported for Corona key type")
 	}
 	if s.ringSigner == nil {
@@ -340,7 +340,7 @@ func (s *PQSigner) PublicKey() []byte {
 		if s.mlkemPubKey != nil {
 			return s.mlkemPubKey.Bytes()
 		}
-	case KeyTypeCorona:
+	case KeyTypeRingSig:
 		if s.ringSigner != nil {
 			return s.ringSigner.PublicKey()
 		}
@@ -512,9 +512,9 @@ func (kc *PQKeychain) AddMLKEM(pubKey *mlkem.PublicKey, privKey *mlkem.PrivateKe
 	return addrBytes
 }
 
-// AddCorona adds a ring signature key to the keychain
+// AddRingSig adds a ring signature key to the keychain
 // scheme specifies which ring signature scheme to use (LSAG or LatticeLSAG)
-func (kc *PQKeychain) AddCorona(signer ring.Signer, scheme ring.Scheme) ids.ShortID {
+func (kc *PQKeychain) AddRingSig(signer ring.Signer, scheme ring.Scheme) ids.ShortID {
 	pubKeyBytes := signer.PublicKey()
 
 	// Generate address from public key bytes
@@ -523,7 +523,7 @@ func (kc *PQKeychain) AddCorona(signer ring.Signer, scheme ring.Scheme) ids.Shor
 	copy(addrBytes[:], hash[:20])
 
 	pqSigner := &PQSigner{
-		keyType:    KeyTypeCorona,
+		keyType:    KeyTypeRingSig,
 		address:    addrBytes,
 		ringSigner: signer,
 		ringScheme: scheme,
@@ -665,14 +665,14 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 		}
 		return kc.AddMLKEM(pubKey, privKey, mlkem.MLKEM1024), nil
 
-	case KeyTypeCorona:
+	case KeyTypeRingSig:
 		// Default to LSAG (secp256k1-based) ring signatures
 		// Use GenerateCoronaKey with specific scheme if needed
 		signer, err := ring.NewSigner(ring.LSAG)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
-		return kc.AddCorona(signer, ring.LSAG), nil
+		return kc.AddRingSig(signer, ring.LSAG), nil
 
 	case KeyTypeHybridSecp256k1MLDSA44:
 		classical, err := secp256k1.NewPrivateKey()
@@ -719,7 +719,7 @@ func (kc *PQKeychain) GenerateCoronaKey(scheme ring.Scheme) (ids.ShortID, error)
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	return kc.AddCorona(signer, scheme), nil
+	return kc.AddRingSig(signer, scheme), nil
 }
 
 // Addresses returns all addresses in the keychain
