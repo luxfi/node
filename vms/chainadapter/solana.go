@@ -91,7 +91,7 @@ func NewSolanaAdapter() *SolanaAdapter {
 
 // ChainID returns the Solana chain ID
 func (a *SolanaAdapter) ChainID() ChainID {
-	return ChainSolana
+	return idSolana
 }
 
 // ChainName returns "Solana"
@@ -120,7 +120,7 @@ func (a *SolanaAdapter) Initialize(config *ChainConfig) error {
 
 // VerifyBlockHeader verifies a Solana slot header
 func (a *SolanaAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainSolana {
+	if header.ChainID != idSolana {
 		return ErrChainNotSupported
 	}
 
@@ -210,7 +210,7 @@ func (a *SolanaAdapter) UpdateValidatorSet(validators []*SolanaValidator, epoch 
 
 // VerifyTransaction verifies a Solana transaction inclusion
 func (a *SolanaAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusionProof) error {
-	if proof.ChainID != ChainSolana {
+	if proof.ChainID != idSolana {
 		return ErrChainNotSupported
 	}
 
@@ -238,13 +238,13 @@ func (a *SolanaAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusio
 
 // VerifyMessage verifies a cross-chain message from Solana
 func (a *SolanaAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessage) error {
-	if msg.SourceChain != ChainSolana {
+	if msg.SourceChain != idSolana {
 		return ErrChainNotSupported
 	}
 
 	// For Solana messages, verify the transaction containing the message
 	proof := &TxInclusionProof{
-		ChainID:     ChainSolana,
+		ChainID:     idSolana,
 		BlockNumber: msg.SourceBlock,
 		TxHash:      msg.SourceTxHash,
 	}
@@ -259,7 +259,7 @@ func (a *SolanaAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessag
 
 // VerifyEvent verifies a Solana program log
 func (a *SolanaAdapter) VerifyEvent(ctx context.Context, event *ChainEvent) error {
-	if event.ChainID != ChainSolana {
+	if event.ChainID != idSolana {
 		return ErrChainNotSupported
 	}
 
@@ -338,7 +338,7 @@ func (a *SolanaAdapter) GetValidatorSet(ctx context.Context) (*ValidatorSet, err
 	}
 
 	return &ValidatorSet{
-		ChainID:    ChainSolana,
+		ChainID:    idSolana,
 		Epoch:      a.currentEpoch,
 		Validators: validators,
 		TotalStake: totalStake,

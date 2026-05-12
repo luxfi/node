@@ -56,7 +56,7 @@ func NewPolkadotAdapter() *PolkadotAdapter {
 	}
 }
 
-func (a *PolkadotAdapter) ChainID() ChainID        { return ChainPolkadot }
+func (a *PolkadotAdapter) ChainID() ChainID        { return idPolkadot }
 func (a *PolkadotAdapter) ChainName() string       { return "Polkadot" }
 func (a *PolkadotAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *PolkadotAdapter) GetBlockTime() time.Duration { return 6 * time.Second }
@@ -71,7 +71,7 @@ func (a *PolkadotAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *PolkadotAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainPolkadot {
+	if header.ChainID != idPolkadot {
 		return ErrChainNotSupported
 	}
 	// Verify GRANDPA justification from FinalityProof
@@ -155,7 +155,7 @@ func NewPolygonAdapter() *PolygonAdapter {
 	}
 }
 
-func (a *PolygonAdapter) ChainID() ChainID        { return ChainPolygon }
+func (a *PolygonAdapter) ChainID() ChainID        { return idPolygon }
 func (a *PolygonAdapter) ChainName() string       { return "Polygon" }
 func (a *PolygonAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *PolygonAdapter) GetBlockTime() time.Duration { return 2 * time.Second }
@@ -170,7 +170,7 @@ func (a *PolygonAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *PolygonAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainPolygon {
+	if header.ChainID != idPolygon {
 		return ErrChainNotSupported
 	}
 	return nil
@@ -230,7 +230,7 @@ func NewBSCAdapter() *BSCAdapter {
 	}
 }
 
-func (a *BSCAdapter) ChainID() ChainID        { return ChainBSC }
+func (a *BSCAdapter) ChainID() ChainID        { return idBSC }
 func (a *BSCAdapter) ChainName() string       { return "BNB Smart Chain" }
 func (a *BSCAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *BSCAdapter) GetBlockTime() time.Duration { return 3 * time.Second }
@@ -245,7 +245,7 @@ func (a *BSCAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *BSCAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainBSC {
+	if header.ChainID != idBSC {
 		return ErrChainNotSupported
 	}
 	// Verify Parlia signatures from validators
@@ -311,7 +311,7 @@ func NewRippleAdapter() *RippleAdapter {
 	}
 }
 
-func (a *RippleAdapter) ChainID() ChainID        { return ChainRipple }
+func (a *RippleAdapter) ChainID() ChainID        { return idRipple }
 func (a *RippleAdapter) ChainName() string       { return "XRP Ledger" }
 func (a *RippleAdapter) VerificationMode() VerificationMode { return ModeThresholdCert }
 func (a *RippleAdapter) GetBlockTime() time.Duration { return 4 * time.Second }
@@ -326,7 +326,7 @@ func (a *RippleAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *RippleAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainRipple {
+	if header.ChainID != idRipple {
 		return ErrChainNotSupported
 	}
 	// Verify UNL signatures (80% required)
@@ -374,7 +374,7 @@ type EVML2Adapter struct {
 
 func NewArbitrumAdapter() *EVML2Adapter {
 	return &EVML2Adapter{
-		chainID:   ChainArbitrum,
+		chainID:   idArbitrum,
 		chainName: "Arbitrum One",
 		headers:   make(map[uint64]*EVMHeader),
 	}
@@ -382,7 +382,7 @@ func NewArbitrumAdapter() *EVML2Adapter {
 
 func NewOptimismAdapter() *EVML2Adapter {
 	return &EVML2Adapter{
-		chainID:   ChainOptimism,
+		chainID:   idOptimism,
 		chainName: "Optimism",
 		headers:   make(map[uint64]*EVMHeader),
 	}
@@ -390,7 +390,7 @@ func NewOptimismAdapter() *EVML2Adapter {
 
 func NewBaseAdapter() *EVML2Adapter {
 	return &EVML2Adapter{
-		chainID:   ChainBase,
+		chainID:   idBase,
 		chainName: "Base",
 		headers:   make(map[uint64]*EVMHeader),
 	}
@@ -449,39 +449,39 @@ func (a *EVML2Adapter) Close() error {
 // NewAdapter creates a chain adapter for the given chain ID
 func NewAdapter(chainID ChainID) (ChainAdapter, error) {
 	switch chainID {
-	case ChainBitcoin:
+	case idBitcoin:
 		return NewBitcoinAdapter(), nil
-	case ChainEthereum:
+	case idEthereum:
 		return NewEthereumAdapter(), nil
-	case ChainSolana:
+	case idSolana:
 		return NewSolanaAdapter(), nil
-	case ChainCosmos:
+	case idCosmos:
 		return NewCosmosAdapter(), nil
-	case ChainPolkadot:
+	case idPolkadot:
 		return NewPolkadotAdapter(), nil
-	case ChainPolygon:
+	case idPolygon:
 		return NewPolygonAdapter(), nil
-	case ChainBSC:
+	case idBSC:
 		return NewBSCAdapter(), nil
-	case ChainRipple:
+	case idRipple:
 		return NewRippleAdapter(), nil
-	case ChainArbitrum:
+	case idArbitrum:
 		return NewArbitrumAdapter(), nil
-	case ChainOptimism:
+	case idOptimism:
 		return NewOptimismAdapter(), nil
-	case ChainBase:
+	case idBase:
 		return NewBaseAdapter(), nil
-	case ChainCardano:
+	case idCardano:
 		return NewCardanoAdapter(), nil
-	case ChainNear:
+	case idNear:
 		return NewNEARAdapter(), nil
-	case ChainAptos:
+	case idAptos:
 		return NewAptosAdapter(), nil
-	case ChainSui:
+	case idSui:
 		return NewSuiAdapter(), nil
-	case ChainTON:
+	case idTON:
 		return NewTONAdapter(), nil
-	case ChainTron:
+	case idTron:
 		return NewTRONAdapter(), nil
 	default:
 		return nil, fmt.Errorf("%w: chain ID %d", ErrChainNotSupported, chainID)
@@ -493,23 +493,23 @@ func InitializeDefaultAdapters(registry *Registry) error {
 	configs := DefaultChainConfigs()
 
 	chains := []ChainID{
-		ChainBitcoin,
-		ChainEthereum,
-		ChainSolana,
-		ChainCosmos,
-		ChainPolkadot,
-		ChainPolygon,
-		ChainBSC,
-		ChainRipple,
-		ChainArbitrum,
-		ChainOptimism,
-		ChainBase,
-		ChainCardano,
-		ChainNear,
-		ChainAptos,
-		ChainSui,
-		ChainTON,
-		ChainTron,
+		idBitcoin,
+		idEthereum,
+		idSolana,
+		idCosmos,
+		idPolkadot,
+		idPolygon,
+		idBSC,
+		idRipple,
+		idArbitrum,
+		idOptimism,
+		idBase,
+		idCardano,
+		idNear,
+		idAptos,
+		idSui,
+		idTON,
+		idTron,
 	}
 
 	for _, chainID := range chains {
@@ -570,7 +570,7 @@ func NewCardanoAdapter() *CardanoAdapter {
 	}
 }
 
-func (a *CardanoAdapter) ChainID() ChainID              { return ChainCardano }
+func (a *CardanoAdapter) ChainID() ChainID              { return idCardano }
 func (a *CardanoAdapter) ChainName() string             { return "Cardano" }
 func (a *CardanoAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *CardanoAdapter) GetBlockTime() time.Duration   { return 20 * time.Second }
@@ -585,7 +585,7 @@ func (a *CardanoAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *CardanoAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainCardano {
+	if header.ChainID != idCardano {
 		return ErrChainNotSupported
 	}
 	// Verify VRF proof for slot leader eligibility
@@ -665,7 +665,7 @@ func NewNEARAdapter() *NEARAdapter {
 	}
 }
 
-func (a *NEARAdapter) ChainID() ChainID              { return ChainNear }
+func (a *NEARAdapter) ChainID() ChainID              { return idNear }
 func (a *NEARAdapter) ChainName() string             { return "NEAR" }
 func (a *NEARAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *NEARAdapter) GetBlockTime() time.Duration   { return 1 * time.Second }
@@ -680,7 +680,7 @@ func (a *NEARAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *NEARAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainNear {
+	if header.ChainID != idNear {
 		return ErrChainNotSupported
 	}
 	// Verify Doomslug endorsements (2/3 stake)
@@ -751,7 +751,7 @@ func NewAptosAdapter() *AptosAdapter {
 	}
 }
 
-func (a *AptosAdapter) ChainID() ChainID              { return ChainAptos }
+func (a *AptosAdapter) ChainID() ChainID              { return idAptos }
 func (a *AptosAdapter) ChainName() string             { return "Aptos" }
 func (a *AptosAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *AptosAdapter) GetBlockTime() time.Duration   { return 400 * time.Millisecond }
@@ -766,7 +766,7 @@ func (a *AptosAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *AptosAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainAptos {
+	if header.ChainID != idAptos {
 		return ErrChainNotSupported
 	}
 	// Verify HotStuff quorum certificate (2/3 stake)
@@ -835,7 +835,7 @@ func NewSuiAdapter() *SuiAdapter {
 	}
 }
 
-func (a *SuiAdapter) ChainID() ChainID              { return ChainSui }
+func (a *SuiAdapter) ChainID() ChainID              { return idSui }
 func (a *SuiAdapter) ChainName() string             { return "Sui" }
 func (a *SuiAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *SuiAdapter) GetBlockTime() time.Duration   { return 400 * time.Millisecond }
@@ -850,7 +850,7 @@ func (a *SuiAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *SuiAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainSui {
+	if header.ChainID != idSui {
 		return ErrChainNotSupported
 	}
 	// Verify aggregated BLS signature from validators (2/3 stake)
@@ -921,7 +921,7 @@ func NewTONAdapter() *TONAdapter {
 	}
 }
 
-func (a *TONAdapter) ChainID() ChainID              { return ChainTON }
+func (a *TONAdapter) ChainID() ChainID              { return idTON }
 func (a *TONAdapter) ChainName() string             { return "TON" }
 func (a *TONAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *TONAdapter) GetBlockTime() time.Duration   { return 5 * time.Second }
@@ -936,7 +936,7 @@ func (a *TONAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *TONAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainTON {
+	if header.ChainID != idTON {
 		return ErrChainNotSupported
 	}
 	// Verify Catchain BFT signatures (2/3 weight)
@@ -1004,7 +1004,7 @@ func NewTRONAdapter() *TRONAdapter {
 	}
 }
 
-func (a *TRONAdapter) ChainID() ChainID              { return ChainTron }
+func (a *TRONAdapter) ChainID() ChainID              { return idTron }
 func (a *TRONAdapter) ChainName() string             { return "TRON" }
 func (a *TRONAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *TRONAdapter) GetBlockTime() time.Duration   { return 3 * time.Second }
@@ -1019,7 +1019,7 @@ func (a *TRONAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *TRONAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainTron {
+	if header.ChainID != idTron {
 		return ErrChainNotSupported
 	}
 	// Verify SR signature and rotation

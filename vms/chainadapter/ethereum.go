@@ -84,7 +84,7 @@ func NewEthereumAdapter() *EthereumAdapter {
 
 // ChainID returns the Ethereum chain ID
 func (a *EthereumAdapter) ChainID() ChainID {
-	return ChainEthereum
+	return idEthereum
 }
 
 // ChainName returns "Ethereum"
@@ -116,7 +116,7 @@ func (a *EthereumAdapter) Initialize(config *ChainConfig) error {
 
 // VerifyBlockHeader verifies an Ethereum block header
 func (a *EthereumAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainEthereum {
+	if header.ChainID != idEthereum {
 		return ErrChainNotSupported
 	}
 
@@ -196,7 +196,7 @@ func (a *EthereumAdapter) ProcessLightClientUpdate(update *LightClientUpdate) er
 
 // VerifyTransaction verifies an Ethereum transaction inclusion
 func (a *EthereumAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusionProof) error {
-	if proof.ChainID != ChainEthereum {
+	if proof.ChainID != idEthereum {
 		return ErrChainNotSupported
 	}
 
@@ -225,7 +225,7 @@ func (a *EthereumAdapter) VerifyTransaction(ctx context.Context, proof *TxInclus
 
 // VerifyMessage verifies a cross-chain message from Ethereum
 func (a *EthereumAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessage) error {
-	if msg.SourceChain != ChainEthereum {
+	if msg.SourceChain != idEthereum {
 		return ErrChainNotSupported
 	}
 
@@ -237,7 +237,7 @@ func (a *EthereumAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMess
 
 	// Verify the event
 	event := &ChainEvent{
-		ChainID:     ChainEthereum,
+		ChainID:     idEthereum,
 		BlockNumber: msg.SourceBlock,
 		TxHash:      msg.SourceTxHash,
 		Proof:       eventProof,
@@ -248,7 +248,7 @@ func (a *EthereumAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMess
 
 // VerifyEvent verifies an Ethereum event/log
 func (a *EthereumAdapter) VerifyEvent(ctx context.Context, event *ChainEvent) error {
-	if event.ChainID != ChainEthereum {
+	if event.ChainID != idEthereum {
 		return ErrChainNotSupported
 	}
 
@@ -327,7 +327,7 @@ func (a *EthereumAdapter) GetValidatorSet(ctx context.Context) (*ValidatorSet, e
 	}
 
 	return &ValidatorSet{
-		ChainID:    ChainEthereum,
+		ChainID:    idEthereum,
 		Epoch:      a.syncCommittee.Period,
 		Validators: validators,
 		TotalStake: uint64(len(validators)),

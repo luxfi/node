@@ -171,8 +171,8 @@ func (r *Registry) Close() error {
 // DefaultChainConfigs returns default configurations for major chains
 func DefaultChainConfigs() map[ChainID]*ChainConfig {
 	return map[ChainID]*ChainConfig{
-		ChainBitcoin: {
-			ChainID:               ChainBitcoin,
+		idBitcoin: {
+			ChainID:               idBitcoin,
 			Name:                  "Bitcoin",
 			NetworkID:             0, // Mainnet
 			RequiredConfirmations: 6,
@@ -182,8 +182,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         2 * time.Hour,
 			StalenessThreshold:    1 * time.Hour,
 		},
-		ChainEthereum: {
-			ChainID:               ChainEthereum,
+		idEthereum: {
+			ChainID:               idEthereum,
 			Name:                  "Ethereum",
 			NetworkID:             1, // Mainnet
 			RequiredConfirmations: 1, // With sync committee finality
@@ -193,8 +193,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    15 * time.Minute,
 		},
-		ChainSolana: {
-			ChainID:               ChainSolana,
+		idSolana: {
+			ChainID:               idSolana,
 			Name:                  "Solana",
 			NetworkID:             1,
 			RequiredConfirmations: 32, // 32 slots for optimistic
@@ -204,8 +204,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         10 * time.Second,
 			StalenessThreshold:    1 * time.Minute,
 		},
-		ChainCosmos: {
-			ChainID:               ChainCosmos,
+		idCosmos: {
+			ChainID:               idCosmos,
 			Name:                  "Cosmos Hub",
 			NetworkID:             4, // cosmoshub-4
 			RequiredConfirmations: 1, // Instant with Tendermint
@@ -215,8 +215,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainPolkadot: {
-			ChainID:               ChainPolkadot,
+		idPolkadot: {
+			ChainID:               idPolkadot,
 			Name:                  "Polkadot",
 			NetworkID:             0,
 			RequiredConfirmations: 1, // GRANDPA finality
@@ -226,8 +226,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainPolygon: {
-			ChainID:               ChainPolygon,
+		idPolygon: {
+			ChainID:               idPolygon,
 			Name:                  "Polygon",
 			NetworkID:             137, // Polygon Mainnet
 			RequiredConfirmations: 256, // With heimdall checkpoints
@@ -237,8 +237,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    10 * time.Minute,
 		},
-		ChainBSC: {
-			ChainID:               ChainBSC,
+		idBSC: {
+			ChainID:               idBSC,
 			Name:                  "BNB Smart Chain",
 			NetworkID:             56, // BSC Mainnet
 			RequiredConfirmations: 15,
@@ -248,8 +248,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainRipple: {
-			ChainID:               ChainRipple,
+		idRipple: {
+			ChainID:               idRipple,
 			Name:                  "XRP Ledger",
 			NetworkID:             0,
 			RequiredConfirmations: 1, // Federated consensus
@@ -259,8 +259,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainAvalanche: {
-			ChainID:               ChainAvalanche,
+		idAvalanche: {
+			ChainID:               idAvalanche,
 			Name:                  "Avalanche",
 			NetworkID:             43114, // C-Chain
 			RequiredConfirmations: 1,
@@ -270,8 +270,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainArbitrum: {
-			ChainID:               ChainArbitrum,
+		idArbitrum: {
+			ChainID:               idArbitrum,
 			Name:                  "Arbitrum One",
 			NetworkID:             42161,
 			RequiredConfirmations: 1, // L1 batch posting
@@ -281,8 +281,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    15 * time.Minute,
 		},
-		ChainOptimism: {
-			ChainID:               ChainOptimism,
+		idOptimism: {
+			ChainID:               idOptimism,
 			Name:                  "Optimism",
 			NetworkID:             10,
 			RequiredConfirmations: 1,
@@ -292,8 +292,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    15 * time.Minute,
 		},
-		ChainBase: {
-			ChainID:               ChainBase,
+		idBase: {
+			ChainID:               idBase,
 			Name:                  "Base",
 			NetworkID:             8453,
 			RequiredConfirmations: 1,
@@ -303,8 +303,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    15 * time.Minute,
 		},
-		ChainTron: {
-			ChainID:               ChainTron,
+		idTron: {
+			ChainID:               idTron,
 			Name:                  "TRON",
 			NetworkID:             728126428,
 			RequiredConfirmations: 19,
@@ -314,8 +314,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainCardano: {
-			ChainID:               ChainCardano,
+		idCardano: {
+			ChainID:               idCardano,
 			Name:                  "Cardano",
 			NetworkID:             1, // Mainnet
 			RequiredConfirmations: 2160, // ~12 hours
@@ -325,8 +325,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    30 * time.Minute,
 		},
-		ChainNear: {
-			ChainID:               ChainNear,
+		idNear: {
+			ChainID:               idNear,
 			Name:                  "NEAR Protocol",
 			NetworkID:             1,
 			RequiredConfirmations: 1,
@@ -336,8 +336,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainAptos: {
-			ChainID:               ChainAptos,
+		idAptos: {
+			ChainID:               idAptos,
 			Name:                  "Aptos",
 			NetworkID:             1,
 			RequiredConfirmations: 1,
@@ -347,8 +347,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainSui: {
-			ChainID:               ChainSui,
+		idSui: {
+			ChainID:               idSui,
 			Name:                  "Sui",
 			NetworkID:             1,
 			RequiredConfirmations: 1,
@@ -358,8 +358,8 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		ChainTON: {
-			ChainID:               ChainTON,
+		idTON: {
+			ChainID:               idTON,
 			Name:                  "TON",
 			NetworkID:             0xFFFFFFFFFFFFFF11, // -239 as two's complement
 			RequiredConfirmations: 1,
@@ -375,25 +375,25 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 // ChainName returns the name for a chain ID
 func ChainName(id ChainID) string {
 	names := map[ChainID]string{
-		ChainBitcoin:   "Bitcoin",
-		ChainEthereum:  "Ethereum",
-		ChainSolana:    "Solana",
-		ChainCosmos:    "Cosmos Hub",
-		ChainPolkadot:  "Polkadot",
-		ChainPolygon:   "Polygon",
-		ChainBSC:       "BNB Smart Chain",
-		ChainRipple:    "XRP Ledger",
-		ChainAvalanche: "Avalanche",
-		ChainArbitrum:  "Arbitrum One",
-		ChainOptimism:  "Optimism",
-		ChainBase:      "Base",
-		ChainTron:      "TRON",
-		ChainCardano:   "Cardano",
-		ChainNear:      "NEAR Protocol",
-		ChainAptos:     "Aptos",
-		ChainSui:       "Sui",
-		ChainTON:       "TON",
-		ChainLux:       "Lux",
+		idBitcoin:   "Bitcoin",
+		idEthereum:  "Ethereum",
+		idSolana:    "Solana",
+		idCosmos:    "Cosmos Hub",
+		idPolkadot:  "Polkadot",
+		idPolygon:   "Polygon",
+		idBSC:       "BNB Smart Chain",
+		idRipple:    "XRP Ledger",
+		idAvalanche: "Avalanche",
+		idArbitrum:  "Arbitrum One",
+		idOptimism:  "Optimism",
+		idBase:      "Base",
+		idTron:      "TRON",
+		idCardano:   "Cardano",
+		idNear:      "NEAR Protocol",
+		idAptos:     "Aptos",
+		idSui:       "Sui",
+		idTON:       "TON",
+		idLux:       "Lux",
 	}
 	if name, ok := names[id]; ok {
 		return name

@@ -116,7 +116,7 @@ func NewCosmosAdapter() *CosmosAdapter {
 
 // ChainID returns the Cosmos chain ID
 func (a *CosmosAdapter) ChainID() ChainID {
-	return ChainCosmos
+	return idCosmos
 }
 
 // ChainName returns "Cosmos Hub"
@@ -151,7 +151,7 @@ func (a *CosmosAdapter) Initialize(config *ChainConfig) error {
 
 // VerifyBlockHeader verifies a Cosmos block header
 func (a *CosmosAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainCosmos {
+	if header.ChainID != idCosmos {
 		return ErrChainNotSupported
 	}
 
@@ -213,7 +213,7 @@ func (a *CosmosAdapter) UpdateClientState(header *CosmosHeader, validatorSet *Te
 
 // VerifyTransaction verifies a Cosmos transaction inclusion
 func (a *CosmosAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusionProof) error {
-	if proof.ChainID != ChainCosmos {
+	if proof.ChainID != idCosmos {
 		return ErrChainNotSupported
 	}
 
@@ -241,7 +241,7 @@ func (a *CosmosAdapter) VerifyTransaction(ctx context.Context, proof *TxInclusio
 
 // VerifyMessage verifies a cross-chain message from Cosmos (IBC packet)
 func (a *CosmosAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessage) error {
-	if msg.SourceChain != ChainCosmos {
+	if msg.SourceChain != idCosmos {
 		return ErrChainNotSupported
 	}
 
@@ -256,7 +256,7 @@ func (a *CosmosAdapter) VerifyMessage(ctx context.Context, msg *CrossChainMessag
 
 // VerifyEvent verifies a Cosmos event
 func (a *CosmosAdapter) VerifyEvent(ctx context.Context, event *ChainEvent) error {
-	if event.ChainID != ChainCosmos {
+	if event.ChainID != idCosmos {
 		return ErrChainNotSupported
 	}
 
@@ -332,7 +332,7 @@ func (a *CosmosAdapter) GetValidatorSet(ctx context.Context) (*ValidatorSet, err
 	threshold := uint64(float64(a.validatorSet.TotalPower) * TendermintTrustLevel)
 
 	return &ValidatorSet{
-		ChainID:    ChainCosmos,
+		ChainID:    idCosmos,
 		Epoch:      a.latestHeight, // Use height as epoch
 		Validators: validators,
 		TotalStake: uint64(a.validatorSet.TotalPower),
