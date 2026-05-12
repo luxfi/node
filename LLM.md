@@ -8,9 +8,78 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 
 **Key Context:**
 - Original Lux Network node — NOT a fork
+- Latest Tag: v1.26.12
 - Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
 - Go Version: 1.26.1+
 - Database: ZapDB (primary, default)
+
+## Post-E2E-PQ State (current)
+
+Node now consumes the locked `ChainSecurityProfile` end-to-end and enforces
+strict-PQ at four boundaries: peer handshake, mempool, validator scheme
+selection, and EVM contract auth.
+
+- `node/node.go:initSecurityProfile` (F102 closure) loads the chain-wide
+  profile from genesis at boot, hashes it, and pins it into every chain's
+  bootstrap. Resolved profile is what every downstream verifier consults.
+- `network/peer/scheme_gate.go` — `SchemeGate.Classify(presented, site)`
+  funnels every inbound NodeID through the profile's
+  `AcceptsValidatorScheme`. Wire-typed NodeID (`luxfi/ids` TypedNodeID +
+  scheme byte) is the canonical handshake form.
+- `vms/txs/auth/policy.go` — `ClassicalCompatRegistry` + strict-PQ
+  mempool gate. Both `platformvm` (P-Chain) and `avm` (X-Chain) mempools
+  refuse classical credentials when the resolved profile has
+  `ForbidECDSAContractAuth=true`.
+- `vms/mldsafx/` — re-exports the consensus `mldsafx` UTXO feature
+  extension as the node-owned UTXO surface (ML-DSA-65 verify).
+- `network/peer` PQ handshake — ML-KEM-768 / ML-KEM-1024 KEM +
+  ML-DSA-65 identity (`dc906d281b`).
+
+### Recent significant commits
+
+| SHA | Tag | Impact |
+|-----|-----|--------|
+| `9df72a6f55` | v1.26.10 | Wire ChainSecurityProfile into bootstrap (closes F102) |
+| `c4af52411e` | v1.26.10 | X-Chain (avm) mempool refuses classical creds under strict-PQ |
+| `a14a1601f4` | v1.26.10 | P-Chain (platformvm) mempool refuses classical creds under strict-PQ |
+| `1cf0aa80ca` | v1.26.10 | ClassicalCompatRegistry + strict-PQ mempool gate |
+| `a0f4f4b21c` | v1.26.10 | vms/mldsafx: re-export ML-DSA feature extension |
+| `448fdeb7a1` | v1.26.10 | ML-DSA-65 promoted to canonical NodeID under strict-PQ |
+| `dc906d281b` | v1.26.10 | PQ peer handshake — ML-KEM-768/1024 + ML-DSA-65 identity |
+
+### Active versions
+- Repo: `v1.26.12` (next bump: `v1.26.13`).
+- Pinned: `consensus v1.23.4+` (needed `ValidatorSchemeID`),
+  `crypto v1.18.5`, `ids v1.2.9` (will move to v1.2.10 in next bump for
+  `TypedNodeID`), `genesis v1.9.6`.
+
+### Cross-repo dependencies
+- `luxfi/consensus` → profile + auth + zchain types
+- `luxfi/crypto` → ML-DSA / ML-KEM / SLH-DSA primitives
+- `luxfi/genesis` → genesis-pinned profile (`Resolve` at load)
+- `luxfi/ids` → `TypedNodeID` wire form (consumed at handshake)
+- `luxfi/geth` → EVM (for `vm.SetActiveSecurityProfile` install point)
+
+### Where to look for X
+- Profile resolve at boot: `node/node.go:initSecurityProfile`
+- Profile RPC + REST + metrics: `service/security/`
+  - JSON-RPC namespace: `security` at `POST /ext/security`
+    (methods `securityProfile`, `blockSecurity`)
+  - REST sidecars: `GET /ext/security/profile`, `GET /ext/security/block/{n}`
+  - Prometheus gauges: `/ext/metrics` under the `security_*` family
+- Peer scheme gate: `network/peer/scheme_gate.go`
+- Classical-compat registry: `vms/txs/auth/policy.go`
+- Mempool gate (P-Chain): `vms/platformvm/mempool/*.go`
+- Mempool gate (X-Chain): `vms/avm/mempool/*.go`
+- ML-DSA feature extension: `vms/mldsafx/`
+
+### Open follow-ups
+- `vms/zkvm/accel/` still soft-falls-back when CGO is disabled; Z-Chain
+  proof verification path needs CGO-required mode for production strict-PQ.
+- `vm.SetActiveSecurityProfile` install point exists in `luxfi/geth/core/vm`
+  but EVM-side contract-auth refusal still needs a chain-bootstrap call
+  (F102 wiring closes the consensus side; geth-side hookup is the
+  remaining tail).
 
 ## Essential Commands
 
