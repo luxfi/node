@@ -4,6 +4,8 @@
 package peer
 
 import (
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/tls"
 	"errors"
 	"net"
@@ -29,36 +31,53 @@ type Upgrader interface {
 type tlsServerUpgrader struct {
 	config       *tls.Config
 	invalidCerts metric.Counter
+	gate         *SchemeGate
 }
 
-func NewTLSServerUpgrader(config *tls.Config, invalidCerts metric.Counter) Upgrader {
+// NewTLSServerUpgrader returns an Upgrader that runs the server-side TLS
+// handshake and (when gate is non-nil) the cross-axis NodeIDScheme gate
+// against the chain's locked ChainSecurityProfile. A nil gate disables the
+// cross-axis check; this is the legacy / classical-compat behaviour.
+func NewTLSServerUpgrader(config *tls.Config, invalidCerts metric.Counter, gate *SchemeGate) Upgrader {
 	return &tlsServerUpgrader{
 		config:       config,
 		invalidCerts: invalidCerts,
+		gate:         gate,
 	}
 }
 
 func (t *tlsServerUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staking.Certificate, error) {
-	return connToIDAndCert(tls.Server(conn, t.config), t.invalidCerts)
+	return connToIDAndCert(tls.Server(conn, t.config), t.invalidCerts, t.gate)
 }
 
 type tlsClientUpgrader struct {
 	config       *tls.Config
 	invalidCerts metric.Counter
+	gate         *SchemeGate
 }
 
-func NewTLSClientUpgrader(config *tls.Config, invalidCerts metric.Counter) Upgrader {
+// NewTLSClientUpgrader returns an Upgrader that runs the client-side TLS
+// handshake and (when gate is non-nil) the cross-axis NodeIDScheme gate.
+// A nil gate disables the cross-axis check.
+func NewTLSClientUpgrader(config *tls.Config, invalidCerts metric.Counter, gate *SchemeGate) Upgrader {
 	return &tlsClientUpgrader{
 		config:       config,
 		invalidCerts: invalidCerts,
+		gate:         gate,
 	}
 }
 
 func (t *tlsClientUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staking.Certificate, error) {
-	return connToIDAndCert(tls.Client(conn, t.config), t.invalidCerts)
+	return connToIDAndCert(tls.Client(conn, t.config), t.invalidCerts, t.gate)
 }
 
-func connToIDAndCert(conn *tls.Conn, invalidCerts metric.Counter) (ids.NodeID, net.Conn, *staking.Certificate, error) {
+// connToIDAndCert runs the TLS handshake, parses the peer leaf certificate,
+// derives the canonical NodeID, and (when gate is non-nil) refuses the
+// connection at the cross-axis gate before any downstream wiring sees it.
+// Refusal here is by design: the gate is the single place that says "this
+// peer's NodeIDScheme is not admissible on this chain"; later boundaries
+// trust that an admitted peer has already passed.
+func connToIDAndCert(conn *tls.Conn, invalidCerts metric.Counter, gate *SchemeGate) (ids.NodeID, net.Conn, *staking.Certificate, error) {
 	if err := conn.Handshake(); err != nil {
 		return ids.EmptyNodeID, nil, nil, err
 	}
@@ -79,5 +98,32 @@ func connToIDAndCert(conn *tls.Conn, invalidCerts metric.Counter) (ids.NodeID, n
 		Raw:       peerCert.Raw,
 		PublicKey: peerCert.PublicKey,
 	})
+
+	if gate != nil {
+		scheme := schemeFromCert(peerCert)
+		if _, err := gate.Classify(nodeID, scheme, 0, "handshake"); err != nil {
+			return ids.EmptyNodeID, nil, nil, err
+		}
+	}
+
 	return nodeID, conn, peerCert, nil
+}
+
+// schemeFromCert derives the wire NodeIDScheme byte from a parsed TLS leaf
+// certificate. TLS staking certs today carry RSA or ECDSA public keys —
+// both classify as NodeIDSchemeSecp256k1 (the canonical classical-compat
+// byte). A future ML-DSA cert extension (an X.509 extension carrying the
+// FIPS 204 public key) is recognised by its OID; until that extension
+// lands the function returns the classical byte. The gate's profile pin
+// is what decides admission — this function only names the byte.
+func schemeFromCert(cert *staking.Certificate) ids.NodeIDScheme {
+	if cert == nil || cert.PublicKey == nil {
+		return ids.NodeIDSchemeInvalid
+	}
+	switch cert.PublicKey.(type) {
+	case *rsa.PublicKey, *ecdsa.PublicKey:
+		return ids.NodeIDSchemeSecp256k1
+	default:
+		return ids.NodeIDSchemeInvalid
+	}
 }
