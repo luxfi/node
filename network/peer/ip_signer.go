@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
 )
@@ -22,11 +23,19 @@ const (
 )
 
 // IPSigner will return a signedIP for the current value of our dynamic IP.
+//
+// Carries up to three signing legs: TLS (classical, staker cert),
+// BLS12-381 (classical, proof-of-possession), and ML-DSA-65 (FIPS 204
+// post-quantum). The ML-DSA leg is optional at construction time —
+// passing mldsaSigner == nil to NewIPSigner produces classical-only
+// gossip that strict-PQ verifiers refuse. Strict-PQ chains MUST be wired
+// with a real ML-DSA-65 private key.
 type IPSigner struct {
-	ip        *utils.Atomic[netip.AddrPort]
-	clock     mockable.Clock
-	tlsSigner crypto.Signer
-	blsSigner bls.Signer
+	ip          *utils.Atomic[netip.AddrPort]
+	clock       mockable.Clock
+	tlsSigner   crypto.Signer
+	blsSigner   bls.Signer
+	mldsaSigner *mldsa.PrivateKey
 
 	// Must be held while accessing [signedIP]
 	signedIPLock sync.RWMutex
@@ -35,15 +44,32 @@ type IPSigner struct {
 	signedIP *SignedIP
 }
 
+// NewIPSigner constructs a classical-only IPSigner (TLS + BLS legs). Use
+// NewIPSignerPQ when the node has an ML-DSA-65 identity key and the chain
+// runs under a strict-PQ profile.
 func NewIPSigner(
 	ip *utils.Atomic[netip.AddrPort],
 	tlsSigner crypto.Signer,
 	blsSigner bls.Signer,
 ) *IPSigner {
+	return NewIPSignerPQ(ip, tlsSigner, blsSigner, nil)
+}
+
+// NewIPSignerPQ constructs an IPSigner that signs every refresh with all
+// three legs the caller supplies. mldsaSigner may be nil to keep the
+// classical-only behaviour (for permissive chains or for tests that have
+// not yet generated a long-term ML-DSA key).
+func NewIPSignerPQ(
+	ip *utils.Atomic[netip.AddrPort],
+	tlsSigner crypto.Signer,
+	blsSigner bls.Signer,
+	mldsaSigner *mldsa.PrivateKey,
+) *IPSigner {
 	return &IPSigner{
-		ip:        ip,
-		tlsSigner: tlsSigner,
-		blsSigner: blsSigner,
+		ip:          ip,
+		tlsSigner:   tlsSigner,
+		blsSigner:   blsSigner,
+		mldsaSigner: mldsaSigner,
 	}
 }
 
@@ -82,7 +108,7 @@ func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
 		AddrPort:  ip,
 		Timestamp: s.clock.Unix(),
 	}
-	signedIP, err := unsignedIP.Sign(s.tlsSigner, s.blsSigner)
+	signedIP, err := unsignedIP.SignPQ(s.tlsSigner, s.blsSigner, s.mldsaSigner)
 	if err != nil {
 		return nil, err
 	}

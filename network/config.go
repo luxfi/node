@@ -9,6 +9,7 @@ import (
 	"net/netip"
 	"time"
 
+	consensusconfig "github.com/luxfi/consensus/config"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -197,4 +198,19 @@ type Config struct {
 	// Specifies how much disk usage each peer can cause before
 	// we rate-limit them.
 	DiskTargeter tracker.Targeter `json:"-"`
+
+	// SecurityProfile is the chain-wide ChainSecurityProfile this node is
+	// operating under (resolved at boot from the genesis pin in
+	// node.Node.initSecurityProfile). When non-nil, the network upgrader
+	// builds a peer.SchemeGate from it and refuses any inbound or
+	// outbound TLS connection whose wire NodeIDScheme is not admissible
+	// under the profile. nil leaves the cross-axis gate disabled
+	// (legacy / classical-compat networks).
+	SecurityProfile *consensusconfig.ChainSecurityProfile `json:"-"`
+
+	// ClassicalCompatUnsafe mirrors the operator's
+	// LUX_CLASSICAL_COMPAT_UNSAFE knob; threaded into the peer.SchemeGate
+	// so permissive profiles can opt into legacy classical NodeIDs. The
+	// flag has no effect on strict-PQ profiles (defence in depth).
+	ClassicalCompatUnsafe bool `json:"classicalCompatUnsafe"`
 }

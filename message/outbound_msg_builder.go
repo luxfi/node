@@ -36,6 +36,7 @@ type OutboundMsgBuilder interface {
 		knownPeersFilter []byte,
 		knownPeersSalt []byte,
 		requestAllNetIPs bool,
+		ipMLDSASig []byte,
 	) (OutboundMessage, error)
 
 	GetPeerList(
@@ -258,6 +259,7 @@ func (b *outMsgBuilder) Handshake(
 	knownPeersFilter []byte,
 	knownPeersSalt []byte,
 	requestAllNetIPs bool,
+	ipMLDSASig []byte,
 ) (OutboundMessage, error) {
 	subsubchainIDBytes := make([][]byte, len(trackedNets))
 	encodeIDs(trackedNets, subsubchainIDBytes)
@@ -284,8 +286,9 @@ func (b *outMsgBuilder) Handshake(
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,
 					},
-					IpBlsSig:  ipBLSSig,
-					AllChains: requestAllNetIPs,
+					IpBlsSig:   ipBLSSig,
+					AllChains:  requestAllNetIPs,
+					IpMldsaSig: ipMLDSASig,
 				},
 			},
 		},

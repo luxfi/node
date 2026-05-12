@@ -166,21 +166,29 @@ type Handshake struct {
 	KnownPeers    *BloomFilter
 	IpBlsSig      []byte
 	AllChains     bool
+	// IpMldsaSig is the FIPS 204 ML-DSA-65 signature over the canonical
+	// SignedIP bytes. Append-only field on the gossip wire: legacy peers
+	// that never set this send an empty bytes blob, which the receiver
+	// treats as "classical-only" and refuses only when its chain runs
+	// under a strict-PQ profile. New strict-PQ producers MUST populate
+	// it; otherwise their gossip is rejected by strict-PQ verifiers.
+	IpMldsaSig []byte
 }
 
-func (m *Handshake) GetNetworkId() uint32       { return m.NetworkId }
-func (m *Handshake) GetMyTime() uint64          { return m.MyTime }
-func (m *Handshake) GetIpAddr() []byte          { return m.IpAddr }
-func (m *Handshake) GetIpPort() uint32          { return m.IpPort }
-func (m *Handshake) GetIpSigningTime() uint64   { return m.IpSigningTime }
-func (m *Handshake) GetIpNodeIdSig() []byte     { return m.IpNodeIdSig }
-func (m *Handshake) GetTrackedNets() [][]byte   { return m.TrackedNets }
-func (m *Handshake) GetClient() *Client         { return m.Client }
-func (m *Handshake) GetSupportedLps() []uint32  { return m.SupportedLps }
-func (m *Handshake) GetObjectedLps() []uint32   { return m.ObjectedLps }
+func (m *Handshake) GetNetworkId() uint32        { return m.NetworkId }
+func (m *Handshake) GetMyTime() uint64           { return m.MyTime }
+func (m *Handshake) GetIpAddr() []byte           { return m.IpAddr }
+func (m *Handshake) GetIpPort() uint32           { return m.IpPort }
+func (m *Handshake) GetIpSigningTime() uint64    { return m.IpSigningTime }
+func (m *Handshake) GetIpNodeIdSig() []byte      { return m.IpNodeIdSig }
+func (m *Handshake) GetTrackedNets() [][]byte    { return m.TrackedNets }
+func (m *Handshake) GetClient() *Client          { return m.Client }
+func (m *Handshake) GetSupportedLps() []uint32   { return m.SupportedLps }
+func (m *Handshake) GetObjectedLps() []uint32    { return m.ObjectedLps }
 func (m *Handshake) GetKnownPeers() *BloomFilter { return m.KnownPeers }
-func (m *Handshake) GetIpBlsSig() []byte        { return m.IpBlsSig }
-func (m *Handshake) GetAllChains() bool         { return m.AllChains }
+func (m *Handshake) GetIpBlsSig() []byte         { return m.IpBlsSig }
+func (m *Handshake) GetAllChains() bool          { return m.AllChains }
+func (m *Handshake) GetIpMldsaSig() []byte       { return m.IpMldsaSig }
 func (m *Handshake) Reset()                     { *m = Handshake{} }
 func (m *Handshake) String() string             { return fmt.Sprintf("Handshake{NetworkId:%d}", m.NetworkId) }
 

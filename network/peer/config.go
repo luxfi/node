@@ -74,4 +74,17 @@ type Config struct {
 
 	// IngressConnectionCount counts the ingress (to us) connections.
 	IngressConnectionCount atomic.Int64
+
+	// PQHandshakeConfig pins the strict-PQ application-layer handshake
+	// (ML-KEM session + ML-DSA-65 identity) the peer goroutine runs
+	// after the TLS upgrade. Non-nil on strict-PQ chains; nil leaves the
+	// peer on the legacy bare-TLS path. Shared across every peer
+	// instance for the same chain — never mutated post-construction.
+	PQHandshakeConfig *HandshakeConfig
+
+	// PQLocalIdentity is this node's ML-DSA-65 long-term identity. The
+	// per-session ML-KEM keypair is regenerated inside the handshake; the
+	// identity is the only persistent secret. Non-nil iff
+	// PQHandshakeConfig is non-nil.
+	PQLocalIdentity *LocalIdentity
 }

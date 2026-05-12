@@ -101,6 +101,7 @@ func FuzzPeerMessageHandling(f *testing.F) {
 				[]byte{},
 				[]byte{},
 				false,
+				[]byte{},
 			)
 		case 3: // PeerList
 			claimedIPs := []*endpoints.ClaimedIPPort{
