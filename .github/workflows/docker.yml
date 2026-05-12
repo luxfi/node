@@ -14,8 +14,8 @@ jobs:
     uses: hanzoai/.github/.github/workflows/docker-build.yml@main
     with:
       image: ghcr.io/luxfi/node
-      runner-amd64: hanzo-build-linux-amd64
-      runner-arm64: hanzo-build-linux-arm64
+      runner-amd64: lux-build-linux-amd64
+      runner-arm64: lux-build-linux-arm64
     secrets: inherit
 
   notify-universe:
