@@ -342,8 +342,8 @@ func TestPQSigner_TypeSafety(t *testing.T) {
 	require.NotEqual(addr, addr2)
 }
 
-// TestPQKeychain_CoronaSupport tests corona ring signature support
-func TestPQKeychain_CoronaSupport(t *testing.T) {
+// TestPQKeychain_RingSigSupport tests ring-signature (LSAG) support
+func TestPQKeychain_RingSigSupport(t *testing.T) {
 	require := require.New(t)
 
 	// Test that the PQ keychain is ready for future corona integration
@@ -351,7 +351,7 @@ func TestPQKeychain_CoronaSupport(t *testing.T) {
 	require.NotNil(kc)
 
 	// Verify that current keychain supports existing key types
-	// This lays groundwork for future corona ring signature support
+	// This lays groundwork for future ring-signature (LSAG) support
 	supportedTypes := []KeyType{
 		KeyTypeSecp256k1,
 		KeyTypeMLDSA44,
@@ -369,8 +369,8 @@ func TestPQKeychain_CoronaSupport(t *testing.T) {
 	}
 
 	// Test that corona key type is defined (ready for future implementation)
-	coronaKc := NewPQKeychain(KeyTypeCorona)
-	require.NotNil(coronaKc, "Should be able to create keychain with KeyTypeCorona")
+	ringSigKc := NewPQKeychain(KeyTypeRingSig)
+	require.NotNil(ringSigKc, "Should be able to create keychain with KeyTypeRingSig")
 
 	// Future corona ring signature implementation would add:
 	// - Ring signature generation
@@ -453,11 +453,11 @@ func TestPQKeychain_MLKEM(t *testing.T) {
 	}
 }
 
-// TestPQKeychain_Corona tests ring signature functionality
-func TestPQKeychain_Corona(t *testing.T) {
+// TestPQKeychain_RingSig tests ring signature functionality
+func TestPQKeychain_RingSig(t *testing.T) {
 	require := require.New(t)
 
-	kc := NewPQKeychain(KeyTypeCorona)
+	kc := NewPQKeychain(KeyTypeRingSig)
 
 	// Generate a Corona key (defaults to LSAG)
 	addr, err := kc.GenerateKey()
@@ -467,7 +467,7 @@ func TestPQKeychain_Corona(t *testing.T) {
 	// Get the PQ signer
 	pqSigner, exists := kc.GetPQSigner(addr)
 	require.True(exists)
-	require.Equal(KeyTypeCorona, pqSigner.KeyType())
+	require.Equal(KeyTypeRingSig, pqSigner.KeyType())
 
 	// Get public key for the ring
 	signerPubKey := pqSigner.PublicKey()
@@ -510,8 +510,8 @@ func TestPQKeychain_Corona(t *testing.T) {
 	require.False(valid, "Ring signature should not verify with wrong message")
 }
 
-// TestPQKeychain_CoronaLattice tests post-quantum lattice ring signatures
-func TestPQKeychain_CoronaLattice(t *testing.T) {
+// TestPQKeychain_RingSigLattice tests post-quantum lattice ring signatures
+func TestPQKeychain_RingSigLattice(t *testing.T) {
 	require := require.New(t)
 
 	kc := NewPQKeychain(KeyTypeSecp256k1) // Use any type, we'll use GenerateCoronaKey
@@ -524,7 +524,7 @@ func TestPQKeychain_CoronaLattice(t *testing.T) {
 
 	pqSigner, exists := kc.GetPQSigner(addr)
 	require.True(exists)
-	require.Equal(KeyTypeCorona, pqSigner.KeyType())
+	require.Equal(KeyTypeRingSig, pqSigner.KeyType())
 
 	// Verify the scheme is LatticeLSAG (value 1)
 	require.Equal(1, int(pqSigner.RingScheme()))
@@ -590,7 +590,7 @@ func TestPQKeychain_AllKeyTypes(t *testing.T) {
 		KeyTypeMLKEM512,
 		KeyTypeMLKEM768,
 		KeyTypeMLKEM1024,
-		KeyTypeCorona,
+		KeyTypeRingSig,
 		KeyTypeHybridSecp256k1MLDSA44,
 		KeyTypeHybridSecp256k1SLHDSA128,
 		KeyTypeHybridBLSMLDSA44,
@@ -619,7 +619,7 @@ func keyTypeName(kt KeyType) string {
 		KeyTypeMLKEM512:               "MLKEM512",
 		KeyTypeMLKEM768:               "MLKEM768",
 		KeyTypeMLKEM1024:              "MLKEM1024",
-		KeyTypeCorona:               "Corona",
+		KeyTypeRingSig:               "Corona",
 		KeyTypeHybridSecp256k1MLDSA44: "HybridSecp256k1MLDSA44",
 		KeyTypeHybridSecp256k1SLHDSA128: "HybridSecp256k1SLHDSA128",
 		KeyTypeHybridBLSMLDSA44:       "HybridBLSMLDSA44",
