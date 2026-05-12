@@ -717,7 +717,7 @@ func (s *HybridBLSRTSignature) String() string {
 
 // AggregateCoronaPublicKeys aggregates multiple Corona public keys
 // into a single combined public key for threshold verification.
-// This uses the threshold package's SchemeRingtail.
+// This uses the threshold package's SchemeCorona.
 func AggregateCoronaPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	if len(publicKeys) == 0 {
 		return nil, errors.New("no public keys to aggregate")
@@ -733,11 +733,11 @@ func AggregateCoronaPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	}
 
 	// Get the Corona threshold scheme
-	if !threshold.HasScheme(threshold.SchemeRingtail) {
+	if !threshold.HasScheme(threshold.SchemeCorona) {
 		return nil, errors.New("Corona threshold scheme is not registered")
 	}
 
-	scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+	scheme, err := threshold.GetScheme(threshold.SchemeCorona)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Corona scheme: %w", err)
 	}
@@ -764,7 +764,7 @@ func AggregateCoronaPublicKeys(publicKeys [][]byte) ([]byte, error) {
 }
 
 // VerifyCoronaSignature verifies a Corona lattice-based signature.
-// This uses the threshold package's SchemeRingtail verifier.
+// This uses the threshold package's SchemeCorona verifier.
 func VerifyCoronaSignature(publicKey []byte, message []byte, signature []byte) bool {
 	// Basic sanity checks
 	if len(publicKey) < 32 || len(signature) < 64 || len(message) == 0 {
@@ -772,13 +772,13 @@ func VerifyCoronaSignature(publicKey []byte, message []byte, signature []byte) b
 	}
 
 	// Get the Corona threshold scheme
-	if !threshold.HasScheme(threshold.SchemeRingtail) {
+	if !threshold.HasScheme(threshold.SchemeCorona) {
 		// Corona scheme must be registered for production use
 		// This should be done via: import _ "github.com/luxfi/crypto/threshold/corona"
 		return false
 	}
 
-	scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
+	scheme, err := threshold.GetScheme(threshold.SchemeCorona)
 	if err != nil {
 		return false
 	}
