@@ -172,7 +172,7 @@ require (
 	github.com/luxfi/age v1.4.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
 	github.com/luxfi/bft v0.1.5 // indirect
-	github.com/luxfi/corona v0.2.0 // indirect
+	github.com/luxfi/corona v0.3.0 // indirect
 	github.com/luxfi/lens v0.1.3 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pulsar v1.0.0 // indirect
@@ -238,5 +238,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/corona => ../corona
