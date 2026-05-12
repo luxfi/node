@@ -523,7 +523,7 @@ func NewStellarAdapter() *StellarAdapter {
 	}
 }
 
-func (a *StellarAdapter) ChainID() ChainID                   { return ChainStellar }
+func (a *StellarAdapter) ChainID() ChainID                   { return idStellar }
 func (a *StellarAdapter) ChainName() string                  { return "Stellar" }
 func (a *StellarAdapter) VerificationMode() VerificationMode { return ModeSCP }
 func (a *StellarAdapter) GetBlockTime() time.Duration        { return 5 * time.Second }
@@ -538,7 +538,7 @@ func (a *StellarAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *StellarAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainStellar {
+	if header.ChainID != idStellar {
 		return ErrChainNotSupported
 	}
 	// Verify SCP federated voting
@@ -598,7 +598,7 @@ func NewAlgorandAdapter() *AlgorandAdapter {
 	}
 }
 
-func (a *AlgorandAdapter) ChainID() ChainID                   { return ChainAlgorand }
+func (a *AlgorandAdapter) ChainID() ChainID                   { return idAlgorand }
 func (a *AlgorandAdapter) ChainName() string                  { return "Algorand" }
 func (a *AlgorandAdapter) VerificationMode() VerificationMode { return ModePBA }
 func (a *AlgorandAdapter) GetBlockTime() time.Duration        { return 3300 * time.Millisecond }
@@ -613,7 +613,7 @@ func (a *AlgorandAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *AlgorandAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainAlgorand {
+	if header.ChainID != idAlgorand {
 		return ErrChainNotSupported
 	}
 	// Verify BA* consensus certificate
@@ -679,7 +679,7 @@ func NewICPAdapter() *ICPAdapter {
 	}
 }
 
-func (a *ICPAdapter) ChainID() ChainID                   { return ChainICP }
+func (a *ICPAdapter) ChainID() ChainID                   { return idICP }
 func (a *ICPAdapter) ChainName() string                  { return "Internet Computer" }
 func (a *ICPAdapter) VerificationMode() VerificationMode { return ModeChainKey }
 func (a *ICPAdapter) GetBlockTime() time.Duration        { return 1 * time.Second }
@@ -694,7 +694,7 @@ func (a *ICPAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *ICPAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainICP {
+	if header.ChainID != idICP {
 		return ErrChainNotSupported
 	}
 	// Verify Chain Key (threshold BLS) signature
@@ -754,7 +754,7 @@ func NewMoneroAdapter() *MoneroAdapter {
 	}
 }
 
-func (a *MoneroAdapter) ChainID() ChainID                   { return ChainMonero }
+func (a *MoneroAdapter) ChainID() ChainID                   { return idMonero }
 func (a *MoneroAdapter) ChainName() string                  { return "Monero" }
 func (a *MoneroAdapter) VerificationMode() VerificationMode { return ModeSPV } // PoW with privacy
 func (a *MoneroAdapter) GetBlockTime() time.Duration        { return 2 * time.Minute }
@@ -769,7 +769,7 @@ func (a *MoneroAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *MoneroAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainMonero {
+	if header.ChainID != idMonero {
 		return ErrChainNotSupported
 	}
 	// Verify RandomX PoW
@@ -838,7 +838,7 @@ func NewTezosAdapter() *TezosAdapter {
 	}
 }
 
-func (a *TezosAdapter) ChainID() ChainID                   { return ChainTezos }
+func (a *TezosAdapter) ChainID() ChainID                   { return idTezos }
 func (a *TezosAdapter) ChainName() string                  { return "Tezos" }
 func (a *TezosAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *TezosAdapter) GetBlockTime() time.Duration        { return 15 * time.Second }
@@ -853,7 +853,7 @@ func (a *TezosAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *TezosAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainTezos {
+	if header.ChainID != idTezos {
 		return ErrChainNotSupported
 	}
 	return nil
@@ -902,7 +902,7 @@ func NewAvalancheAdapter() *AvalancheAdapter {
 	}
 }
 
-func (a *AvalancheAdapter) ChainID() ChainID                   { return ChainAvalanche }
+func (a *AvalancheAdapter) ChainID() ChainID                   { return idAvalanche }
 func (a *AvalancheAdapter) ChainName() string                  { return "Avalanche C-Chain" }
 func (a *AvalancheAdapter) VerificationMode() VerificationMode { return ModeLightClient }
 func (a *AvalancheAdapter) GetBlockTime() time.Duration        { return 2 * time.Second }
@@ -917,7 +917,7 @@ func (a *AvalancheAdapter) Initialize(config *ChainConfig) error {
 }
 
 func (a *AvalancheAdapter) VerifyBlockHeader(ctx context.Context, header *BlockHeader) error {
-	if header.ChainID != ChainAvalanche {
+	if header.ChainID != idAvalanche {
 		return ErrChainNotSupported
 	}
 	// Verify Quasar consensus acceptance
