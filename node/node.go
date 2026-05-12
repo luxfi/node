@@ -125,15 +125,25 @@ func New(
 		return nil, fmt.Errorf("invalid staking certificate: %w", err)
 	}
 
+	// NodeID derivation routes through the single seam
+	// StakingConfig.DeriveNodeID — strict-PQ chains (StakingMLDSAPub
+	// non-empty) derive NodeID via SHAKE256-384("NODE_ID_V1" ||
+	// chainID || 0x42 || pubKey)[:20] under ids.NodeIDSchemeMLDSA65;
+	// classical-compat chains fall through to ids.NodeIDFromCert.
+	// chainID is the primary-network chain id (ids.Empty, encoded as
+	// "11111111111111111111111111111111LpoYY" in cb58); per-subnet
+	// chain ids are bound at chain-creation time and don't affect
+	// the validator's primary identity.
+	derivedNodeID, err := config.StakingConfig.DeriveNodeID(ids.Empty)
+	if err != nil {
+		return nil, fmt.Errorf("derive NodeID: %w", err)
+	}
 	n := &Node{
 		Log:            logger,
 		LogFactory:     logFactory,
 		StakingTLSCert: stakingCert,
-		ID: ids.NodeIDFromCert(&ids.Certificate{
-			Raw:       stakingCert.Raw,
-			PublicKey: stakingCert.PublicKey,
-		}),
-		Config: config,
+		ID:             derivedNodeID,
+		Config:         config,
 	}
 
 	pop, err := signer.NewProofOfPossession(n.Config.StakingSigningKey)
