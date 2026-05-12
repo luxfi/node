@@ -131,7 +131,7 @@ lux network start
 ### Multi-Chain Design
 
 Primary network (P/X/C) uses Quasar consensus via `luxfi/consensus`.
-All new native chains use Quasar (BLS + Ringtail + ML-DSA).
+All new native chains use Quasar (BLS + Corona + ML-DSA).
 
 | Chain | Purpose | VM | Consensus |
 |-------|---------|-----|-----------|
@@ -154,7 +154,7 @@ All new native chains use Quasar (BLS + Ringtail + ML-DSA).
 
 ### Consensus Layer
 Located in `/consensus/` (separate package `github.com/luxfi/consensus`):
-- **Quasar**: Production consensus -- BLS12-381 + Ringtail (lattice) + ML-DSA-65 (FIPS 204)
+- **Quasar**: Production consensus -- BLS12-381 + Corona (lattice) + ML-DSA-65 (FIPS 204)
 - **Chain Engine**: Linear blockchain consensus (Nova sub-protocol)
 - **DAG Engine**: Directed acyclic graph for parallel processing (Nebula sub-protocol)
 - **PQ Engine**: Post-quantum finality layer
@@ -167,7 +167,7 @@ Located in `/vms/`:
 - **xvm**: Asset transfers, UTXO model
 - **dexvm**: DEX with order book, perpetuals, AMM
 - **thresholdvm**: Threshold MPC and FHE for confidential computing
-- **quantumvm**: PQ consensus coordination (ML-DSA, Ringtail)
+- **quantumvm**: PQ consensus coordination (ML-DSA, Corona)
 - **identityvm**: Decentralized identity (DID, verifiable credentials)
 - **keyvm**: Post-quantum key management (ML-KEM, ML-DSA)
 - **bridgevm**: Cross-chain bridge with MPC attestation

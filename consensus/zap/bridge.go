@@ -56,7 +56,7 @@ func DefaultBridgeConfig() BridgeConfig {
 type Bridge struct {
 	log     log.Logger
 	config  BridgeConfig
-	quasar  *quasar.RingtailCoordinator
+	quasar  *quasar.CoronaCoordinator
 	mu      sync.RWMutex
 	queries map[string]*QueryState // QueryID -> QueryState
 	dids    map[ids.NodeID]*DID    // NodeID -> DID
@@ -73,7 +73,7 @@ func NewBridge(log log.Logger, config BridgeConfig) *Bridge {
 }
 
 // Initialize sets up the bridge with a Quasar coordinator
-func (b *Bridge) Initialize(coordinator *quasar.RingtailCoordinator) error {
+func (b *Bridge) Initialize(coordinator *quasar.CoronaCoordinator) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -354,7 +354,7 @@ func (b *Bridge) Stats() BridgeStats {
 		}
 	}
 
-	var quasarStats quasar.RingtailStats
+	var quasarStats quasar.CoronaStats
 	if b.quasar != nil {
 		quasarStats = b.quasar.Stats()
 	}
@@ -374,5 +374,5 @@ type BridgeStats struct {
 	ActiveQueries        int
 	FinalizedQueries     int
 	QuasarInitialized    bool
-	QuasarStats          quasar.RingtailStats
+	QuasarStats          quasar.CoronaStats
 }

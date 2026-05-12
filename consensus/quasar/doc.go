@@ -20,7 +20,7 @@ Both signature paths run in parallel:
 
 	Block arrives
 	    |
-	    +-- BLS PATH ----------+-- RINGTAIL PATH --------+
+	    +-- BLS PATH ----------+-- CORONA PATH --------+
 	    |   All validators     |   Round 1: commitments  |
 	    |   sign with BLS      |   Round 2: partials     |
 	    |   Aggregate (96B)    |   Combine threshold sig |
@@ -42,7 +42,7 @@ Quasar engine collects these votes and produces finality proofs when:
 
 The package defines several signature types:
   - SignatureTypeBLS: Classical BLS signatures
-  - SignatureTypeRingtail: Post-quantum threshold
+  - SignatureTypeCorona: Post-quantum threshold
   - SignatureTypeQuasar: Hybrid combining both
   - SignatureTypeMLDSA: ML-DSA fallback
 
@@ -50,7 +50,7 @@ The package defines several signature types:
 
 Quasar: Main consensus hub coordinating both signature paths.
 
-RingtailCoordinator: Manages the 2-round threshold signing protocol
+CoronaCoordinator: Manages the 2-round threshold signing protocol
 for post-quantum security.
 
 QuantumFinality: Represents a block that achieved hybrid finality with

@@ -165,8 +165,8 @@ type PQSignatureType uint8
 const (
 	// PQSignatureTypeMLDSA65 is NIST FIPS 204 ML-DSA-65
 	PQSignatureTypeMLDSA65 PQSignatureType = iota
-	// PQSignatureTypeRingtail is Ring-LWE based threshold signatures
-	PQSignatureTypeRingtail
+	// PQSignatureTypeCorona is Ring-LWE based threshold signatures
+	PQSignatureTypeCorona
 	// PQSignatureTypeHybrid combines classical and post-quantum
 	PQSignatureTypeHybrid
 )

@@ -126,7 +126,7 @@ Two strategies to provide that mechanism are:
 
 ## Warp 1.5: Quantum-Safe Cross-Chain Messaging
 
-Warp 1.5 extends Lux Interchain Messaging with post-quantum cryptographic security using Ringtail threshold signatures and ML-KEM encryption.
+Warp 1.5 extends Lux Interchain Messaging with post-quantum cryptographic security using Corona threshold signatures and ML-KEM encryption.
 
 ### Signature Types
 
@@ -135,14 +135,14 @@ Warp 1.5 introduces new signature types for quantum-safe messaging:
 1. **BitSetSignature** (Warp 1.0): Classical BLS aggregate signatures
 2. **RingtailSignature** (Warp 1.5 - Recommended): Post-quantum threshold signatures using LWE
 3. **EncryptedWarpPayload** (Warp 1.5): ML-KEM + AES-256-GCM encrypted cross-chain payloads
-4. **HybridBLSRTSignature** (Deprecated): BLS + Ringtail hybrid for transition period
+4. **HybridBLSRTSignature** (Deprecated): BLS + Corona hybrid for transition period
 
 ### RingtailSignature
 
-Ringtail is a lattice-based threshold signature scheme from LWE (Learning With Errors).
+Corona is a lattice-based threshold signature scheme from LWE (Learning With Errors).
 
 - **Paper**: https://eprint.iacr.org/2024/1113
-- **Implementation**: github.com/luxfi/ringtail
+- **Implementation**: github.com/luxfi/corona
 - **Properties**:
   - Post-quantum secure (based on LWE hardness)
   - Native threshold support (t-of-n signing in 2 rounds)
@@ -207,14 +207,14 @@ const (
 ### Migration Path
 
 1. **Pre-quantum (Current)**: BLS-only (`BitSetSignature`)
-2. **Transition**: Support both BLS and Ringtail signatures
-3. **Post-quantum (Warp 1.5)**: Ringtail-only (`RingtailSignature`) recommended
+2. **Transition**: Support both BLS and Corona signatures
+3. **Post-quantum (Warp 1.5)**: Corona-only (`RingtailSignature`) recommended
 
 ### Security Levels
 
 | Component | Algorithm | Security Level |
 |-----------|-----------|----------------|
-| Threshold Signatures | Ringtail (LWE) | Post-quantum secure |
+| Threshold Signatures | Corona (LWE) | Post-quantum secure |
 | Key Encapsulation | ML-KEM-768 | NIST Level 3 (192-bit PQ) |
 | Symmetric Encryption | AES-256-GCM | 256-bit classical |
 | Legacy Signatures | BLS | Classical (for compatibility) |

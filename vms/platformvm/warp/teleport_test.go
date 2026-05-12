@@ -298,16 +298,16 @@ func TestSignatureType(t *testing.T) {
 
 	// Test recommended type
 	recommended := RecommendedSignatureType()
-	require.Equal(SigTypeRingtail, recommended)
+	require.Equal(SigTypeCorona, recommended)
 
 	// Test quantum safety
 	require.False(SigTypeBLS.IsQuantumSafe())
-	require.True(SigTypeRingtail.IsQuantumSafe())
+	require.True(SigTypeCorona.IsQuantumSafe())
 	require.True(SigTypeHybrid.IsQuantumSafe())
 
 	// Test string representation
 	require.Equal("BLS", SigTypeBLS.String())
-	require.Equal("Corona", SigTypeRingtail.String())
+	require.Equal("Corona", SigTypeCorona.String())
 	require.Equal("Hybrid", SigTypeHybrid.String())
 }
 

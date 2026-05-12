@@ -118,7 +118,7 @@ func (v *testValidator) toValidatorState() quasar.ValidatorState {
 		NodeID:      v.nodeID,
 		Weight:      v.weight,
 		BLSPubKey:   bls.PublicKeyToCompressedBytes(v.blsPubKey),
-		RingtailKey: v.rtKey,
+		CoronaKey: v.rtKey,
 		Active:      v.active,
 	}
 }
@@ -242,13 +242,13 @@ func TestQChainValidatorNetwork(t *testing.T) {
 		}
 
 		// Corona init may fail due to lattice lib constraints in test env
-		err = q.InitializeRingtail(nodeIDs)
+		err = q.InitializeCorona(nodeIDs)
 		if err != nil {
 			t.Skipf("Skipping: Corona initialization requires lattice library: %v", err)
 		}
 
 		stats := q.Stats()
-		require.True(t, stats.RingtailReady, "Corona should be initialized")
+		require.True(t, stats.CoronaReady, "Corona should be initialized")
 	})
 
 	t.Run("consensus_starts_and_stops", func(t *testing.T) {
@@ -308,7 +308,7 @@ func TestQChainValidatorNetwork(t *testing.T) {
 			PChainHeight:  1,
 			QChainHeight:  1,
 			BLSProof:      make([]byte, 96),
-			RingtailProof: make([]byte, mldsa65SigLen),
+			CoronaProof: make([]byte, mldsa65SigLen),
 			TotalWeight:   1000,
 			SignerWeight:  700, // 70% > 67% quorum
 		}
@@ -397,7 +397,7 @@ func TestRTSignatureRequired(t *testing.T) {
 		finality := &quasar.QuantumFinality{
 			BlockID:       ids.GenerateTestID(),
 			BLSProof:      []byte("bls-proof"),
-			RingtailProof: nil, // Missing RT proof!
+			CoronaProof: nil, // Missing RT proof!
 			TotalWeight:   1000,
 			SignerWeight:  700,
 		}

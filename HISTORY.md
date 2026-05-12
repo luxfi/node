@@ -26,7 +26,7 @@
 ### Key Technologies (Original Work)
 
 - **Quasar Consensus** -- Multi-metric BFT with FPC, Wave protocol, pipelined block production
-- **Ringtail** -- Post-quantum signature scheme (ML-DSA + FROST hybrid)
+- **Corona** -- Post-quantum signature scheme (ML-DSA + FROST hybrid)
 - **LuxFHE** -- Fully homomorphic encryption engine with Go bindings, NTT SIMD acceleration
 - **Lattice Cryptography** -- ML-KEM (FIPS 203), constant-time CBD sampler, CKKS/BFV schemes
 - **MPC Engine** -- CGGMP21 + FROST threshold signing, WebAuthn integration
@@ -321,7 +321,7 @@ Major cryptographic research: threshold signing, MPC engines, lattice crypto. AI
 
 ## 2024: BFT Consensus + Hardware Wallets + Compute
 
-Byzantine fault tolerance research, hardware signing, Ringtail post-quantum signatures, and AI model refinement.
+Byzantine fault tolerance research, hardware signing, Corona post-quantum signatures, and AI model refinement.
 
 ### Lux Advanced Protocol
 
@@ -330,7 +330,7 @@ Byzantine fault tolerance research, hardware signing, Ringtail post-quantum sign
 | `lux/chat` | 2024-04-06 | Network communication |
 | `lux/kms-go` | 2024-06-05 | KMS Go SDK |
 | `lux/liquid` | 2024-06-18 | Liquid staking |
-| `lux/ringtail` | 2024-07-08 | Post-quantum signature scheme (30 commits) |
+| `lux/corona` | 2024-07-08 | Post-quantum signature scheme (30 commits) |
 | `lux/xwallet` | 2024-07-09 | Extended wallet |
 | `lux/bank` | 2024-07-09 | Banking integration |
 | `lux/tokens` | 2024-07-15 | Token management |
@@ -615,7 +615,7 @@ All other repositories are original work.
 ### Lux Network (136 papers)
 
 **Consensus**: lux-consensus, lux-quasar-consensus, lux-fpc-consensus, lux-wave-protocol
-**Cryptography**: lux-crypto-agility, lux-ringtail-pq, lux-pq-crypto-suite, lux-pq-migration, lux-ntt-transform
+**Cryptography**: lux-crypto-agility, lux-corona-pq, lux-pq-crypto-suite, lux-pq-migration, lux-ntt-transform
 **FHE**: lux-fhe-smart-contracts, lux-fhe-mpc-hybrid, fhe/fhevm, fhe/fhecrdt, fhe/ml-privacy, fhe/voting
 **MPC**: lux-lss-mpc, lux-mchain-mpc
 **DeFi**: lux-lightspeed-dex, lux-economics, lux-tokenomics, lux-credit-lending, lux-omnichain-yield

@@ -119,7 +119,7 @@ func generateValidatorStates(n int) []ValidatorState {
 			NodeID:      ids.GenerateTestNodeID(),
 			Weight:      1000,
 			BLSPubKey:   blsKey,
-			RingtailKey: rtKey,
+			CoronaKey: rtKey,
 			Active:      true,
 		}
 	}
@@ -139,9 +139,9 @@ func createTestEvent(height uint64, validators []ValidatorState) FinalityEvent {
 	}
 }
 
-// setupQuasarWithRingtail creates a Quasar with a test Corona coordinator.
+// setupQuasarWithCorona creates a Quasar with a test Corona coordinator.
 // Returns nil for Quasar if Corona initialization fails (e.g., lattice lib constraint).
-func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChainProvider, []ids.NodeID, error) {
+func setupQuasarWithCorona(t *testing.T, numParties int) (*Quasar, *mockPChainProvider, []ids.NodeID, error) {
 	t.Helper()
 
 	validatorStates := generateValidatorStates(numParties)
@@ -161,7 +161,7 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 	if threshold < 2 {
 		threshold = 2
 	}
-	rc, err := NewTestRingtailCoordinator(log.NewNoOpLogger(), RingtailConfig{
+	rc, err := NewTestCoronaCoordinator(log.NewNoOpLogger(), CoronaConfig{
 		NumParties: numParties,
 		Threshold:  threshold,
 	})
@@ -169,7 +169,7 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 		pchain.Close()
 		return nil, nil, nil, err
 	}
-	q.ConnectRingtail(rc)
+	q.ConnectCorona(rc)
 
 	// Extract node IDs and initialize Corona
 	nodeIDs := make([]ids.NodeID, len(validatorStates))
@@ -177,7 +177,7 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 		nodeIDs[i] = v.NodeID
 	}
 
-	err = q.InitializeRingtail(nodeIDs)
+	err = q.InitializeCorona(nodeIDs)
 	if err != nil {
 		pchain.Close()
 		return nil, nil, nil, err
@@ -257,7 +257,7 @@ func TestQuasarFullFlow(t *testing.T) {
 	})
 
 	t.Run("process_single_event", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, numValidators)
+		q, pchain, _, err := setupQuasarWithCorona(t, numValidators)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -295,13 +295,13 @@ func TestQuasarFullFlow(t *testing.T) {
 	})
 }
 
-// TestQuasarWithRingtail tests full threshold signing flow
-func TestQuasarWithRingtail(t *testing.T) {
+// TestQuasarWithCorona tests full threshold signing flow
+func TestQuasarWithCorona(t *testing.T) {
 	// All Corona tests require the lattice library to work correctly.
 	// Skip if the library has constraints (e.g., requires prime moduli).
 
 	t.Run("initialize_and_sign", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+		q, pchain, _, err := setupQuasarWithCorona(t, 5)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -314,7 +314,7 @@ func TestQuasarWithRingtail(t *testing.T) {
 	})
 
 	t.Run("sign_and_verify", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+		q, pchain, _, err := setupQuasarWithCorona(t, 5)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -333,7 +333,7 @@ func TestQuasarWithRingtail(t *testing.T) {
 	})
 
 	t.Run("multiple_signing_sessions", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+		q, pchain, _, err := setupQuasarWithCorona(t, 5)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -350,7 +350,7 @@ func TestQuasarWithRingtail(t *testing.T) {
 	})
 
 	t.Run("threshold_parameter_check", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+		q, pchain, _, err := setupQuasarWithCorona(t, 5)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -368,7 +368,7 @@ func TestQuasarConcurrent(t *testing.T) {
 	const numValidators = 5
 	const numEvents = 50
 
-	q, pchain, _, err := setupQuasarWithRingtail(t, numValidators)
+	q, pchain, _, err := setupQuasarWithCorona(t, numValidators)
 	if isLatticeUnavailable(err) {
 		t.Skipf("Skipping: lattice library constraint: %v", err)
 	}
@@ -403,9 +403,9 @@ func TestQuasarConcurrent(t *testing.T) {
 	require.GreaterOrEqual(t, stats.FinalizedBlocks, 1, "should have finalized at least 1 block")
 }
 
-// TestQuasarConcurrentRingtailSigning tests concurrent Corona signing
-func TestQuasarConcurrentRingtailSigning(t *testing.T) {
-	q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+// TestQuasarConcurrentCoronaSigning tests concurrent Corona signing
+func TestQuasarConcurrentCoronaSigning(t *testing.T) {
+	q, pchain, _, err := setupQuasarWithCorona(t, 5)
 	if isLatticeUnavailable(err) {
 		t.Skipf("Skipping: lattice library constraint: %v", err)
 	}
@@ -579,7 +579,7 @@ func TestQuasarMemoryPressure(t *testing.T) {
 				PChainHeight:  uint64(i),
 				QChainHeight:  uint64(i),
 				BLSProof:      make([]byte, 96),
-				RingtailProof: make([]byte, 1024),
+				CoronaProof: make([]byte, 1024),
 				TotalWeight:   1000,
 				SignerWeight:  700,
 			}
@@ -708,8 +708,8 @@ func TestQuasarHealthStatus(t *testing.T) {
 		require.Equal(t, 0, stats.FinalizedBlocks)
 	})
 
-	t.Run("after_ringtail_init", func(t *testing.T) {
-		q, pchain, _, err := setupQuasarWithRingtail(t, 5)
+	t.Run("after_corona_init", func(t *testing.T) {
+		q, pchain, _, err := setupQuasarWithCorona(t, 5)
 		if isLatticeUnavailable(err) {
 			t.Skipf("Skipping: lattice library constraint: %v", err)
 		}
@@ -717,7 +717,7 @@ func TestQuasarHealthStatus(t *testing.T) {
 		defer pchain.Close()
 
 		stats := q.Stats()
-		require.True(t, stats.RingtailReady, "Corona should be ready")
+		require.True(t, stats.CoronaReady, "Corona should be ready")
 	})
 
 	t.Run("running_state", func(t *testing.T) {
@@ -914,7 +914,7 @@ func TestQuasarEdgeCases(t *testing.T) {
 
 		finality := &QuantumFinality{
 			BLSProof:      nil,
-			RingtailProof: nil,
+			CoronaProof: nil,
 			TotalWeight:   1000,
 			SignerWeight:  700,
 		}
@@ -929,7 +929,7 @@ func TestQuasarEdgeCases(t *testing.T) {
 
 		finality := &QuantumFinality{
 			BLSProof:      []byte("proof"),
-			RingtailProof: []byte("proof"),
+			CoronaProof: []byte("proof"),
 			TotalWeight:   1000,
 			SignerWeight:  500, // Only 50%, needs 67%
 		}

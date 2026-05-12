@@ -25,7 +25,7 @@ Production implementations live in `lux/crypto/` and `lux/lattice/`. Formal veri
 | ML-DSA-65 | FIPS 204 | `crypto/mldsa/` | Post-quantum validator identity |
 | SLH-DSA | FIPS 205 | `crypto/slhdsa/` | Hash-based PQ fallback signatures |
 | Falcon-512/1024 | NIST Round 3 | `crypto/pq/` | EVM precompile PQ signatures (ETHFALCON) |
-| Ringtail | Internal | `lux/lattice/` | Lattice-based threshold signatures for anonymous validator participation |
+| Corona | Internal | `lux/lattice/` | Lattice-based threshold signatures for anonymous validator participation |
 
 ### Key Encapsulation
 
@@ -178,7 +178,7 @@ All critical and high findings from the contract audits are resolved. The Decemb
 50 mechanized proofs in `papers/proofs/`, covering:
 
 - **Consensus**: safety, liveness, BFT thresholds, finality composition, validator economics
-- **Cryptography**: BLS aggregation, FROST unforgeability, CGGMP21 UC-security, ML-DSA, ML-KEM, SLH-DSA, Ringtail, TFHE, CKKS, Verkle commitments, hybrid signatures, threshold composition, linear secret sharing
+- **Cryptography**: BLS aggregation, FROST unforgeability, CGGMP21 UC-security, ML-DSA, ML-KEM, SLH-DSA, Corona, TFHE, CKKS, Verkle commitments, hybrid signatures, threshold composition, linear secret sharing
 - **DeFi**: AMM invariants, order book correctness, flash loan safety, router correctness, governance, fee models
 - **Bridge**: Teleport protocol, warp message security/delivery/ordering
 - **Network**: peer discovery and eclipse resistance
