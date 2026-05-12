@@ -16,7 +16,7 @@ import (
 )
 
 // initQuasar creates and starts the Quasar hybrid finality engine.
-// Quasar binds P-Chain BLS finality with Q-Chain Ringtail threshold
+// Quasar binds P-Chain BLS finality with Q-Chain Corona threshold
 // signatures for post-quantum secure block finality.
 //
 // Requires Q-Chain to be present in genesis. If absent, returns an error
@@ -29,7 +29,7 @@ func (n *Node) initQuasar() error {
 	qChainID := createQVMTx.ID()
 
 	// BLS quorum: 2/3 validator weight required
-	// Ringtail threshold: 2 (minimum for threshold signing)
+	// Corona threshold: 2 (minimum for threshold signing)
 	q, err := quasar.NewQuasar(n.Log, 2, 2, 3)
 	if err != nil {
 		return fmt.Errorf("quasar create: %w", err)
@@ -49,7 +49,7 @@ func (n *Node) initQuasar() error {
 
 	// Wire quantum fallback signer using the node's BLS key.
 	// Satisfies the Start() precondition (quantumFallback != nil).
-	// Ringtail threshold signing supersedes this once initialized.
+	// Corona threshold signing supersedes this once initialized.
 	q.ConnectQuantumFallback(&blsQuantumFallback{
 		signer: n.Config.StakingSigningKey,
 	})

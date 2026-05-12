@@ -4,7 +4,7 @@
 // Package pq provides P+Q (Post-Quantum) integration tests for Lux network.
 //
 // These tests verify that all post-quantum security measures are enforced:
-//   - Q-chain validators require RTSignature (Ringtail) in consensus votes
+//   - Q-chain validators require RTSignature (Corona) in consensus votes
 //   - TLS connections use X25519MLKEM768 hybrid key exchange (no fallback)
 //   - SignedHost uses DNS hostnames only (no IP literals)
 //   - ML-DSA signatures work for X-Chain UTXOs
@@ -235,20 +235,20 @@ func TestQChainValidatorNetwork(t *testing.T) {
 
 		q.ConnectPChain(pchain)
 
-		// Initialize Ringtail with node IDs
+		// Initialize Corona with node IDs
 		nodeIDs := make([]ids.NodeID, len(validators))
 		for i, v := range validators {
 			nodeIDs[i] = v.nodeID
 		}
 
-		// Ringtail init may fail due to lattice lib constraints in test env
+		// Corona init may fail due to lattice lib constraints in test env
 		err = q.InitializeRingtail(nodeIDs)
 		if err != nil {
-			t.Skipf("Skipping: Ringtail initialization requires lattice library: %v", err)
+			t.Skipf("Skipping: Corona initialization requires lattice library: %v", err)
 		}
 
 		stats := q.Stats()
-		require.True(t, stats.RingtailReady, "Ringtail should be initialized")
+		require.True(t, stats.RingtailReady, "Corona should be initialized")
 	})
 
 	t.Run("consensus_starts_and_stops", func(t *testing.T) {

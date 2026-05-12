@@ -286,14 +286,14 @@ type SignatureType uint8
 const (
 	// SigTypeBLS uses classical BLS signatures (Warp 1.0 compatibility)
 	SigTypeBLS SignatureType = iota
-	// SigTypeRingtail uses quantum-safe Ringtail signatures (recommended)
+	// SigTypeRingtail uses quantum-safe Corona signatures (recommended)
 	SigTypeRingtail
-	// SigTypeHybrid uses BLS+Ringtail hybrid (deprecated)
+	// SigTypeHybrid uses BLS+Corona hybrid (deprecated)
 	SigTypeHybrid
 )
 
 // RecommendedSignatureType returns the recommended signature type for Warp 1.5
-// This is Ringtail (quantum-safe) by default
+// This is Corona (quantum-safe) by default
 func RecommendedSignatureType() SignatureType {
 	return SigTypeRingtail
 }
@@ -309,7 +309,7 @@ func (s SignatureType) String() string {
 	case SigTypeBLS:
 		return "BLS"
 	case SigTypeRingtail:
-		return "Ringtail"
+		return "Corona"
 	case SigTypeHybrid:
 		return "Hybrid"
 	default:

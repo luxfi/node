@@ -563,7 +563,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// PRIMARY NETWORK = P + Q + Z (minimum quantum-safe validator set)
 	//
 	// P-Chain is implicit (platformvm is the genesis itself).
-	// Q-Chain provides Quasar PQ consensus (BLS + Ringtail + ML-DSA).
+	// Q-Chain provides Quasar PQ consensus (BLS + Corona + ML-DSA).
 	// Z-Chain provides universal receipt registry and ZK verification.
 	//
 	// X, C, D, B, T, G, K, A, I chains are OPT-IN networks created via

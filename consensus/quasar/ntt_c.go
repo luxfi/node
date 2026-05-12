@@ -3,9 +3,9 @@
 
 //go:build cgo
 
-// Package quasar provides GPU-accelerated NTT operations for Ringtail consensus.
+// Package quasar provides GPU-accelerated NTT operations for Corona consensus.
 // This uses the unified lux/accel package for GPU acceleration of lattice
-// operations in the Ringtail threshold signature protocol.
+// operations in the Corona threshold signature protocol.
 //
 // GPU acceleration provides 40x+ speedup for NTT operations on Apple Silicon
 // and NVIDIA GPUs via the accel library (Metal/CUDA/CPU backends).
@@ -15,7 +15,7 @@
 //	luxcpp/accel (C++ GPU)  →  lux/accel (Go CGO)  →  Quasar consensus
 //
 // This enables consistent GPU acceleration across:
-//   - Ringtail threshold signatures
+//   - Corona threshold signatures
 //   - ML-DSA post-quantum signatures
 //   - FHE operations (via luxcpp/fhe which reuses luxcpp/lattice)
 package quasar
@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/node/config"
 )
 
-// NTTAccelerator provides GPU-accelerated NTT operations for Ringtail.
+// NTTAccelerator provides GPU-accelerated NTT operations for Corona.
 // It uses the unified lux/accel package for Metal/CUDA/CPU backends.
 type NTTAccelerator struct {
 	mu       sync.RWMutex

@@ -53,7 +53,7 @@ func VerifyWarpMessages(
 		}
 
 		// Only BitSetSignature uses BLS that can be batched.
-		// Other signature types (Ringtail, Hybrid) fall through to sequential.
+		// Other signature types (Corona, Hybrid) fall through to sequential.
 		bss, ok := msg.Signature.(*warp.BitSetSignature)
 		if !ok || !accel.Available() {
 			// Sequential path for non-BLS signatures or when GPU unavailable.

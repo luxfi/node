@@ -27,8 +27,8 @@ var (
 	ErrInsufficientWeight = errors.New("signature weight is insufficient")
 	ErrInvalidSignature   = errors.New("signature is invalid")
 	ErrParseSignature     = errors.New("failed to parse signature")
-	ErrInvalidRTSignature = errors.New("ringtail signature is invalid")
-	ErrMissingRTPublicKey = errors.New("missing ringtail public key for validator")
+	ErrInvalidRTSignature = errors.New("corona signature is invalid")
+	ErrMissingRTPublicKey = errors.New("missing corona public key for validator")
 	ErrHybridVerifyFailed = errors.New("hybrid signature verification failed")
 	ErrDecryptionFailed   = errors.New("ML-KEM decryption failed")
 	ErrInvalidCiphertext  = errors.New("invalid ciphertext")
@@ -169,12 +169,12 @@ func VerifyWeight(
 }
 
 // =============================================================================
-// Warp 1.5: Ringtail Signature (Post-Quantum Safe, replaces BLS)
+// Warp 1.5: Corona Signature (Post-Quantum Safe, replaces BLS)
 // =============================================================================
 
-// Ringtail is a lattice-based threshold signature scheme from LWE
+// Corona is a lattice-based threshold signature scheme from LWE
 // Paper: https://eprint.iacr.org/2024/1113
-// Implementation: github.com/luxfi/ringtail
+// Implementation: github.com/luxfi/corona
 //
 // Key properties:
 // - Post-quantum secure (based on LWE hardness)
@@ -182,7 +182,7 @@ func VerifyWeight(
 // - Ring-LWE with NTT-friendly prime Q = 0x1000000004A01 (48-bit)
 // - Parameters: M=8, N=7, Dbar=48, Kappa=23
 
-// Ringtail signature constants (from github.com/luxfi/ringtail/sign/config.go)
+// Corona signature constants (from github.com/luxfi/corona/sign/config.go)
 const (
 	// RingtailQ is the NTT-friendly prime modulus
 	RingtailQ = 0x1000000004A01 // 48-bit prime
@@ -226,9 +226,9 @@ const (
 
 // RingtailSignature is the Warp 1.5 quantum-safe signature type.
 // This is the recommended signature type for all new Warp messages.
-// It uses Ringtail (LWE-based) threshold signatures for post-quantum security.
+// It uses Corona (LWE-based) threshold signatures for post-quantum security.
 //
-// Ringtail properties:
+// Corona properties:
 // - Native threshold support (no need for separate TSS layer)
 // - Two-round signing protocol
 // - Post-quantum secure (based on LWE hardness)
@@ -241,7 +241,7 @@ type RingtailSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed
 	Signers []byte `serialize:"true"`
 
-	// Signature is the Ringtail threshold signature
+	// Signature is the Corona threshold signature
 	// Contains: c (challenge polynomial), z (response vector), Delta (hint vector)
 	// Size depends on threshold parameters (M, N, Dbar, Kappa)
 	Signature []byte `serialize:"true"`
@@ -256,7 +256,7 @@ func (s *RingtailSignature) NumSigners() (int, error) {
 	return signerIndices.Len(), nil
 }
 
-// Verify validates the Ringtail (ML-DSA) threshold signature
+// Verify validates the Corona (ML-DSA) threshold signature
 func (s *RingtailSignature) Verify(
 	msg *UnsignedMessage,
 	networkID uint32,
@@ -286,7 +286,7 @@ func (s *RingtailSignature) Verify(
 		return err
 	}
 
-	// Collect Ringtail public keys from signers
+	// Collect Corona public keys from signers
 	rtPubKeys := make([][]byte, 0, len(signers))
 	for _, signer := range signers {
 		if len(signer.RingtailPubKey) == 0 {
@@ -295,13 +295,13 @@ func (s *RingtailSignature) Verify(
 		rtPubKeys = append(rtPubKeys, signer.RingtailPubKey)
 	}
 
-	// Aggregate the Ringtail public keys for threshold verification
+	// Aggregate the Corona public keys for threshold verification
 	aggregatedPK, err := AggregateRingtailPublicKeys(rtPubKeys)
 	if err != nil {
 		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
 	}
 
-	// Verify the Ringtail (LWE-based) signature
+	// Verify the Corona (LWE-based) signature
 	if !VerifyRingtailSignature(aggregatedPK, msg.Bytes(), s.Signature) {
 		return ErrInvalidRTSignature
 	}
@@ -564,12 +564,12 @@ func generateSecureRandom(length int) ([]byte, error) {
 }
 
 // =============================================================================
-// Hybrid BLS+Ringtail Signature (DEPRECATED - use RingtailSignature)
+// Hybrid BLS+Corona Signature (DEPRECATED - use RingtailSignature)
 // =============================================================================
 
 // RingtailSignatureLen is a placeholder for legacy compatibility.
-// Actual Ringtail signature size depends on threshold parameters.
-// Ringtail uses LWE-based signatures, not ML-DSA.
+// Actual Corona signature size depends on threshold parameters.
+// Corona uses LWE-based signatures, not ML-DSA.
 // See: https://eprint.iacr.org/2024/1113
 //
 // Deprecated: Use RingtailSignature type which handles variable-length signatures.
@@ -577,7 +577,7 @@ const RingtailSignatureLen = 3309
 
 // HybridBLSRTSignature implements a quantum-safe hybrid signature combining:
 // - BLS aggregate signatures (classical security, compact)
-// - Ringtail lattice signatures (post-quantum security, larger)
+// - Corona lattice signatures (post-quantum security, larger)
 //
 // Both signatures MUST verify for the message to be considered valid.
 // This provides security against both classical and quantum attackers.
@@ -585,7 +585,7 @@ const RingtailSignatureLen = 3309
 // Migration path:
 // 1. Pre-quantum: BLS-only (BitSetSignature)
 // 2. Transition: HybridBLSRTSignature (both required)
-// 3. Post-quantum: Ringtail-only (future)
+// 3. Post-quantum: Corona-only (future)
 type HybridBLSRTSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed
 	Signers []byte `serialize:"true"`
@@ -593,11 +593,11 @@ type HybridBLSRTSignature struct {
 	// BLSSignature is the aggregated BLS signature (96 bytes)
 	BLSSignature [bls.SignatureLen]byte `serialize:"true"`
 
-	// RingtailSignature is the aggregated Ringtail lattice signature
+	// RingtailSignature is the aggregated Corona lattice signature
 	// Uses threshold signing to produce a single combined signature
 	RingtailSignature []byte `serialize:"true"`
 
-	// RingtailPublicKeys contains the Ringtail public keys for each signer
+	// RingtailPublicKeys contains the Corona public keys for each signer
 	// in the same order as indicated by the Signers bitset
 	// This is needed because validators may have different RT keys than BLS keys
 	RingtailPublicKeys [][]byte `serialize:"true"`
@@ -612,7 +612,7 @@ func (s *HybridBLSRTSignature) NumSigners() (int, error) {
 	return signerIndices.Len(), nil
 }
 
-// Verify validates both BLS and Ringtail signatures
+// Verify validates both BLS and Corona signatures
 // Both MUST be valid for the hybrid signature to be accepted
 func (s *HybridBLSRTSignature) Verify(
 	msg *UnsignedMessage,
@@ -648,9 +648,9 @@ func (s *HybridBLSRTSignature) Verify(
 		return fmt.Errorf("BLS verification failed: %w", err)
 	}
 
-	// === Ringtail Signature Verification ===
+	// === Corona Signature Verification ===
 	if err := s.verifyRingtail(msg, signers); err != nil {
-		return fmt.Errorf("Ringtail verification failed: %w", err)
+		return fmt.Errorf("Corona verification failed: %w", err)
 	}
 
 	return nil
@@ -678,7 +678,7 @@ func (s *HybridBLSRTSignature) verifyBLS(msg *UnsignedMessage, signers []*Valida
 	return nil
 }
 
-// verifyRingtail verifies the Ringtail lattice-based signature
+// verifyRingtail verifies the Corona lattice-based signature
 func (s *HybridBLSRTSignature) verifyRingtail(msg *UnsignedMessage, signers []*Validator) error {
 	// Validate we have RT public keys for all signers
 	if len(s.RingtailPublicKeys) != len(signers) {
@@ -686,18 +686,18 @@ func (s *HybridBLSRTSignature) verifyRingtail(msg *UnsignedMessage, signers []*V
 			ErrMissingRTPublicKey, len(s.RingtailPublicKeys), len(signers))
 	}
 
-	// Validate Ringtail signature is present
+	// Validate Corona signature is present
 	if len(s.RingtailSignature) == 0 {
 		return ErrInvalidRTSignature
 	}
 
-	// Aggregate the Ringtail public keys
+	// Aggregate the Corona public keys
 	aggregatedRTPK, err := AggregateRingtailPublicKeys(s.RingtailPublicKeys)
 	if err != nil {
 		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
 	}
 
-	// Verify the Ringtail signature
+	// Verify the Corona signature
 	unsignedBytes := msg.Bytes()
 	if !VerifyRingtailSignature(aggregatedRTPK, unsignedBytes, s.RingtailSignature) {
 		return ErrInvalidRTSignature
@@ -712,10 +712,10 @@ func (s *HybridBLSRTSignature) String() string {
 }
 
 // =============================================================================
-// Ringtail Signature Functions
+// Corona Signature Functions
 // =============================================================================
 
-// AggregateRingtailPublicKeys aggregates multiple Ringtail public keys
+// AggregateRingtailPublicKeys aggregates multiple Corona public keys
 // into a single combined public key for threshold verification.
 // This uses the threshold package's SchemeRingtail.
 func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
@@ -732,14 +732,14 @@ func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 		}
 	}
 
-	// Get the Ringtail threshold scheme
+	// Get the Corona threshold scheme
 	if !threshold.HasScheme(threshold.SchemeRingtail) {
-		return nil, errors.New("Ringtail threshold scheme is not registered")
+		return nil, errors.New("Corona threshold scheme is not registered")
 	}
 
 	scheme, err := threshold.GetScheme(threshold.SchemeRingtail)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Ringtail scheme: %w", err)
+		return nil, fmt.Errorf("failed to get Corona scheme: %w", err)
 	}
 
 	// Parse all public keys using the threshold scheme
@@ -754,7 +754,7 @@ func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 
 	// For threshold signatures, the "aggregated" public key is typically
 	// just the group public key that all shares were generated from.
-	// In Ringtail threshold protocol, all signers share the same group key,
+	// In Corona threshold protocol, all signers share the same group key,
 	// so we can use any of the parsed keys directly.
 	// The actual threshold verification is done by the scheme's verifier.
 	//
@@ -763,7 +763,7 @@ func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	return parsedKeys[0].Bytes(), nil
 }
 
-// VerifyRingtailSignature verifies a Ringtail lattice-based signature.
+// VerifyRingtailSignature verifies a Corona lattice-based signature.
 // This uses the threshold package's SchemeRingtail verifier.
 func VerifyRingtailSignature(publicKey []byte, message []byte, signature []byte) bool {
 	// Basic sanity checks
@@ -771,10 +771,10 @@ func VerifyRingtailSignature(publicKey []byte, message []byte, signature []byte)
 		return false
 	}
 
-	// Get the Ringtail threshold scheme
+	// Get the Corona threshold scheme
 	if !threshold.HasScheme(threshold.SchemeRingtail) {
-		// Ringtail scheme must be registered for production use
-		// This should be done via: import _ "github.com/luxfi/crypto/threshold/ringtail"
+		// Corona scheme must be registered for production use
+		// This should be done via: import _ "github.com/luxfi/crypto/threshold/corona"
 		return false
 	}
 

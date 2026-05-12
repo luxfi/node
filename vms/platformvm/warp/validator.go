@@ -40,7 +40,7 @@ type ValidatorState interface {
 type ValidatorData struct {
 	NodeID         ids.NodeID
 	PublicKey      []byte // BLS public key (classical)
-	RingtailPubKey []byte // Ringtail public key (post-quantum)
+	RingtailPubKey []byte // Corona public key (post-quantum)
 	Weight         uint64
 }
 
@@ -54,7 +54,7 @@ type CanonicalValidatorSet struct {
 type Validator struct {
 	PublicKey      *bls.PublicKey
 	PublicKeyBytes []byte
-	RingtailPubKey []byte // Post-quantum Ringtail public key
+	RingtailPubKey []byte // Post-quantum Corona public key
 	Weight         uint64
 	NodeIDs        []ids.NodeID
 }
@@ -123,7 +123,7 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*ValidatorData) (CanonicalValidat
 			existingVdr.NodeIDs = append(existingVdr.NodeIDs, vdr.NodeID)
 			// Note: For RT keys, first one wins on merge (should be same anyway)
 		} else {
-			// Create new validator with both BLS and Ringtail public keys
+			// Create new validator with both BLS and Corona public keys
 			newVdr := &Validator{
 				PublicKey:      blsPK,
 				PublicKeyBytes: pkBytes,

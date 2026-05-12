@@ -5,7 +5,7 @@
 //
 // These tests exercise realistic end-to-end scenarios for Quasar consensus:
 //   - Full component wiring and event processing
-//   - Ringtail threshold signing flows (skipped if lattice lib unavailable)
+//   - Corona threshold signing flows (skipped if lattice lib unavailable)
 //   - Concurrent operation safety
 //   - Stop/start lifecycle management
 //   - Memory behavior with many finality events
@@ -139,8 +139,8 @@ func createTestEvent(height uint64, validators []ValidatorState) FinalityEvent {
 	}
 }
 
-// setupQuasarWithRingtail creates a Quasar with a test Ringtail coordinator.
-// Returns nil for Quasar if Ringtail initialization fails (e.g., lattice lib constraint).
+// setupQuasarWithRingtail creates a Quasar with a test Corona coordinator.
+// Returns nil for Quasar if Corona initialization fails (e.g., lattice lib constraint).
 func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChainProvider, []ids.NodeID, error) {
 	t.Helper()
 
@@ -156,7 +156,7 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 	q.ConnectPChain(pchain)
 	q.ConnectQuantumFallback(&mockQuantumSigner{})
 
-	// Create a test Ringtail coordinator (stub signatures, not production)
+	// Create a test Corona coordinator (stub signatures, not production)
 	threshold := (numParties * 2 / 3) + 1
 	if threshold < 2 {
 		threshold = 2
@@ -171,7 +171,7 @@ func setupQuasarWithRingtail(t *testing.T, numParties int) (*Quasar, *mockPChain
 	}
 	q.ConnectRingtail(rc)
 
-	// Extract node IDs and initialize Ringtail
+	// Extract node IDs and initialize Corona
 	nodeIDs := make([]ids.NodeID, len(validatorStates))
 	for i, v := range validatorStates {
 		nodeIDs[i] = v.NodeID
@@ -297,7 +297,7 @@ func TestQuasarFullFlow(t *testing.T) {
 
 // TestQuasarWithRingtail tests full threshold signing flow
 func TestQuasarWithRingtail(t *testing.T) {
-	// All Ringtail tests require the lattice library to work correctly.
+	// All Corona tests require the lattice library to work correctly.
 	// Skip if the library has constraints (e.g., requires prime moduli).
 
 	t.Run("initialize_and_sign", func(t *testing.T) {
@@ -308,9 +308,9 @@ func TestQuasarWithRingtail(t *testing.T) {
 		require.NoError(t, err)
 		defer pchain.Close()
 
-		// Verify Ringtail is connected
-		require.NotNil(t, q.ringtail, "Ringtail should be connected")
-		require.True(t, q.ringtail.IsInitialized(), "Ringtail should be initialized")
+		// Verify Corona is connected
+		require.NotNil(t, q.corona, "Corona should be connected")
+		require.True(t, q.corona.IsInitialized(), "Corona should be initialized")
 	})
 
 	t.Run("sign_and_verify", func(t *testing.T) {
@@ -323,12 +323,12 @@ func TestQuasarWithRingtail(t *testing.T) {
 
 		// Sign a message
 		msg := []byte("test message for signing")
-		sig, err := q.ringtail.Sign(msg)
+		sig, err := q.corona.Sign(msg)
 		require.NoError(t, err, "Sign should succeed")
 		require.NotNil(t, sig, "Signature should not be nil")
 
 		// Verify signature
-		valid := q.ringtail.Verify(msg, sig)
+		valid := q.corona.Verify(msg, sig)
 		require.True(t, valid, "Signature should verify")
 	})
 
@@ -343,9 +343,9 @@ func TestQuasarWithRingtail(t *testing.T) {
 		// Sign multiple messages
 		for i := 0; i < 3; i++ {
 			msg := []byte("message " + string(rune('A'+i)))
-			sig, err := q.ringtail.Sign(msg)
+			sig, err := q.corona.Sign(msg)
 			require.NoError(t, err, "Sign %d should succeed", i)
-			require.True(t, q.ringtail.Verify(msg, sig), "Signature %d should verify", i)
+			require.True(t, q.corona.Verify(msg, sig), "Signature %d should verify", i)
 		}
 	})
 
@@ -358,8 +358,8 @@ func TestQuasarWithRingtail(t *testing.T) {
 		defer pchain.Close()
 
 		// With 5 parties, threshold = (5 * 2 / 3) + 1 = 4
-		require.Equal(t, 4, q.ringtail.Threshold(), "Threshold should be 4 for 5 parties")
-		require.Equal(t, 5, q.ringtail.NumParties(), "NumParties should be 5")
+		require.Equal(t, 4, q.corona.Threshold(), "Threshold should be 4 for 5 parties")
+		require.Equal(t, 5, q.corona.NumParties(), "NumParties should be 5")
 	})
 }
 
@@ -403,7 +403,7 @@ func TestQuasarConcurrent(t *testing.T) {
 	require.GreaterOrEqual(t, stats.FinalizedBlocks, 1, "should have finalized at least 1 block")
 }
 
-// TestQuasarConcurrentRingtailSigning tests concurrent Ringtail signing
+// TestQuasarConcurrentRingtailSigning tests concurrent Corona signing
 func TestQuasarConcurrentRingtailSigning(t *testing.T) {
 	q, pchain, _, err := setupQuasarWithRingtail(t, 5)
 	if isLatticeUnavailable(err) {
@@ -421,8 +421,8 @@ func TestQuasarConcurrentRingtailSigning(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 			msg := []byte("concurrent message " + string(rune('0'+idx)))
-			sig, err := q.ringtail.Sign(msg)
-			if err == nil && q.ringtail.Verify(msg, sig) {
+			sig, err := q.corona.Sign(msg)
+			if err == nil && q.corona.Verify(msg, sig) {
 				successCount.Add(1)
 			}
 		}(i)
@@ -717,7 +717,7 @@ func TestQuasarHealthStatus(t *testing.T) {
 		defer pchain.Close()
 
 		stats := q.Stats()
-		require.True(t, stats.RingtailReady, "Ringtail should be ready")
+		require.True(t, stats.RingtailReady, "Corona should be ready")
 	})
 
 	t.Run("running_state", func(t *testing.T) {

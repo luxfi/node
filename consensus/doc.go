@@ -18,7 +18,7 @@ runtime contexts (indexer, warp, IPC).
 
 Quasar: Node-side wiring around github.com/luxfi/consensus/protocol/quasar.
 The quasar subpackage adapts P-Chain validator state, BLS signers, and the
-Ringtail threshold coordinator into the canonical consensus engine.
+Corona threshold coordinator into the canonical consensus engine.
 
 # Quasar Integration
 
@@ -26,7 +26,7 @@ The Quasar engine achieves hybrid finality by running two signature paths
 in parallel:
 
   - BLS Path: Fast aggregate signatures from 2/3+ validators
-  - Ringtail Path: Post-quantum threshold signatures (t-of-n)
+  - Corona Path: Post-quantum threshold signatures (t-of-n)
 
 Blocks achieve quantum finality only when both paths complete successfully.
 

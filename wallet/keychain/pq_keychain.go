@@ -128,7 +128,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 		// Ring signatures require a ring of public keys
 		// For SignHash without a ring, we return an error
 		// Use SignRing for ring signature operations
-		return nil, errors.New("ringtail requires ring members - use SignRing method")
+		return nil, errors.New("corona requires ring members - use SignRing method")
 
 	case KeyTypeHybridSecp256k1MLDSA44:
 		// Hybrid mode: concatenate both signatures
@@ -213,7 +213,7 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 
 	case KeyTypeRingtail:
 		// Ring signatures require a ring of public keys
-		return nil, errors.New("ringtail requires ring members - use SignRing method")
+		return nil, errors.New("corona requires ring members - use SignRing method")
 
 	case KeyTypeHybridSecp256k1MLDSA44, KeyTypeHybridSecp256k1SLHDSA128:
 		// For hybrid, we need to hash for the classical part
@@ -294,7 +294,7 @@ func (s *PQSigner) Address() ids.ShortID {
 // The signer's public key must be included in the ring at signerIndex.
 func (s *PQSigner) SignRing(message []byte, ringPubKeys [][]byte, signerIndex int) (ring.RingSignature, error) {
 	if s.keyType != KeyTypeRingtail {
-		return nil, errors.New("SignRing only supported for Ringtail key type")
+		return nil, errors.New("SignRing only supported for Corona key type")
 	}
 	if s.ringSigner == nil {
 		return nil, ErrInvalidKeyType
@@ -312,7 +312,7 @@ func (s *PQSigner) KeyImage() []byte {
 	return nil
 }
 
-// RingScheme returns the ring signature scheme used (for Ringtail keys).
+// RingScheme returns the ring signature scheme used (for Corona keys).
 func (s *PQSigner) RingScheme() ring.Scheme {
 	return s.ringScheme
 }

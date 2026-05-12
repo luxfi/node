@@ -16,7 +16,7 @@ type SignatureType uint8
 const (
 	SignatureTypeBLS SignatureType = iota
 	SignatureTypeRingtail
-	SignatureTypeQuasar // Hybrid BLS + Ringtail
+	SignatureTypeQuasar // Hybrid BLS + Corona
 	SignatureTypeMLDSA
 )
 
@@ -45,27 +45,27 @@ type ThresholdSigner interface {
 	Threshold() int
 }
 
-// RingtailConfig holds configuration for Ringtail threshold signatures
+// RingtailConfig holds configuration for Corona threshold signatures
 type RingtailConfig struct {
 	NumParties int
 	Threshold  int
 	PartyIndex int
 }
 
-// RingtailStats contains statistics about the Ringtail coordinator
+// RingtailStats contains statistics about the Corona coordinator
 type RingtailStats struct {
 	NumParties  int
 	Threshold   int
 	Initialized bool
 }
 
-// RingtailSignature represents a threshold Ringtail signature
+// RingtailSignature represents a threshold Corona signature
 type RingtailSignature struct {
 	sig     []byte
 	signers []ids.NodeID
 }
 
-// NewRingtailSignature creates a new Ringtail signature
+// NewRingtailSignature creates a new Corona signature
 func NewRingtailSignature(sig []byte, signers []ids.NodeID) *RingtailSignature {
 	return &RingtailSignature{sig: sig, signers: signers}
 }
@@ -88,7 +88,7 @@ type RingtailCoordinator struct {
 	validators  []ids.NodeID
 }
 
-// NewRingtailCoordinator creates a new Ringtail coordinator.
+// NewRingtailCoordinator creates a new Corona coordinator.
 // Sign and Verify will fail until real lattice key material is loaded.
 func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
 	return &RingtailCoordinator{
@@ -97,7 +97,7 @@ func NewRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoo
 	}, nil
 }
 
-// NewTestRingtailCoordinator creates a Ringtail coordinator for testing.
+// NewTestRingtailCoordinator creates a Corona coordinator for testing.
 // The test coordinator uses deterministic stub signatures that are NOT
 // cryptographically secure.
 func NewTestRingtailCoordinator(log log.Logger, config RingtailConfig) (*RingtailCoordinator, error) {
@@ -120,14 +120,14 @@ func (rc *RingtailCoordinator) IsInitialized() bool {
 
 func (rc *RingtailCoordinator) Sign(msg []byte) (Signature, error) {
 	if !rc.initialized {
-		return nil, errors.New("ringtail: threshold signing not initialized — requires real lattice key material")
+		return nil, errors.New("corona: threshold signing not initialized — requires real lattice key material")
 	}
 	if rc.testing {
 		// Test-only stub: deterministic RT-prefixed signature
 		sig := append([]byte("RT"), msg[:min(32, len(msg))]...)
 		return NewRingtailSignature(sig, rc.validators), nil
 	}
-	return nil, errors.New("ringtail: threshold signing not initialized — requires real lattice key material")
+	return nil, errors.New("corona: threshold signing not initialized — requires real lattice key material")
 }
 
 func (rc *RingtailCoordinator) Verify(msg []byte, sig Signature) bool {
@@ -179,20 +179,20 @@ func (s *BLSSignature) Bytes() []byte         { return s.sig }
 func (s *BLSSignature) Type() SignatureType   { return SignatureTypeBLS }
 func (s *BLSSignature) Signers() []ids.NodeID { return s.signers }
 
-// QuasarSignature combines BLS and Ringtail signatures for P/Q security
+// QuasarSignature combines BLS and Corona signatures for P/Q security
 type QuasarSignature struct {
 	bls      *BLSSignature
-	ringtail *RingtailSignature
+	corona *RingtailSignature
 }
 
-func NewQuasarSignature(bls *BLSSignature, ringtail *RingtailSignature) *QuasarSignature {
-	return &QuasarSignature{bls: bls, ringtail: ringtail}
+func NewQuasarSignature(bls *BLSSignature, corona *RingtailSignature) *QuasarSignature {
+	return &QuasarSignature{bls: bls, corona: corona}
 }
 
 func (s *QuasarSignature) Bytes() []byte {
-	// Concatenate BLS + Ringtail bytes with length prefix
+	// Concatenate BLS + Corona bytes with length prefix
 	blsBytes := s.bls.Bytes()
-	rtBytes := s.ringtail.Bytes()
+	rtBytes := s.corona.Bytes()
 	result := make([]byte, 4+len(blsBytes)+len(rtBytes))
 	// Length of BLS signature (big endian)
 	result[0] = byte(len(blsBytes) >> 24)
@@ -212,14 +212,14 @@ func (s *QuasarSignature) Signers() []ids.NodeID {
 }
 
 func (s *QuasarSignature) BLS() *BLSSignature           { return s.bls }
-func (s *QuasarSignature) Ringtail() *RingtailSignature { return s.ringtail }
+func (s *QuasarSignature) Corona() *RingtailSignature { return s.corona }
 
 // QuasarSigner combines classical and post-quantum signers
 type QuasarSigner interface {
 	Signer
-	// SignQuasar signs with both BLS and Ringtail in parallel
+	// SignQuasar signs with both BLS and Corona in parallel
 	SignQuasar(msg []byte) (*QuasarSignature, error)
-	// VerifyQuasar verifies both BLS and Ringtail signatures
+	// VerifyQuasar verifies both BLS and Corona signatures
 	VerifyQuasar(msg []byte, sig *QuasarSignature) bool
 }
 
