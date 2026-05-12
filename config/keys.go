@@ -101,6 +101,22 @@ const (
 	StakingKMSEndpointKey                              = "staking-kms-endpoint"
 	StakingKMSSecretPathKey                            = "staking-kms-secret-path"
 	StakingKMSTokenKey                                 = "staking-kms-token"
+	// Strict-PQ staking identity (FIPS 204 ML-DSA-65). When set, the node
+	// uses the ML-DSA-65 public key as the NodeID source via
+	// ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, pubKey), replacing the
+	// classical TLS-cert NodeID derivation. Strict-PQ profiles require
+	// these; classical-compat chains ignore them.
+	StakingMLDSAKeyPathKey                             = "staking-mldsa-key-file"
+	StakingMLDSAKeyContentKey                          = "staking-mldsa-key-file-content"
+	StakingMLDSAPubKeyPathKey                          = "staking-mldsa-pub-key-file"
+	StakingMLDSAPubKeyContentKey                       = "staking-mldsa-pub-key-file-content"
+	// Strict-PQ handshake KEM (FIPS 203 ML-KEM-768). Peer-facing public
+	// key is published in the validator-set entry so peers can encapsulate
+	// to it for session-key establishment with no classical fallback.
+	HandshakeMLKEMKeyPathKey                           = "handshake-mlkem-key-file"
+	HandshakeMLKEMKeyContentKey                        = "handshake-mlkem-key-file-content"
+	HandshakeMLKEMPubKeyPathKey                        = "handshake-mlkem-pub-key-file"
+	HandshakeMLKEMPubKeyContentKey                     = "handshake-mlkem-pub-key-file-content"
 	SybilProtectionEnabledKey                          = "sybil-protection-enabled"
 	SybilProtectionDisabledWeightKey                   = "sybil-protection-disabled-weight"
 	NetworkInitialTimeoutKey                           = "network-initial-timeout"

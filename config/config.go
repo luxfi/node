@@ -4,10 +4,12 @@
 package config
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -25,6 +27,8 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/crypto/mldsa"
+	mlkemcrypto "github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/filesystem/storage"
 	"github.com/luxfi/ids"
@@ -823,6 +827,135 @@ func getStakingSigner(v *viper.Viper) (bls.Signer, error) {
 	return key, nil
 }
 
+// loadPEMBlock returns the body of a single PEM block matching
+// expectType. Refuses to silently consume the wrong block type so a
+// misnamed file (e.g. ML-DSA private key supplied as a public-key
+// path) fails loud at config-load instead of producing a NodeID under
+// the wrong key.
+func loadPEMBlock(path, expectType string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return nil, fmt.Errorf("%s: not a PEM file", path)
+	}
+	if block.Type != expectType {
+		return nil, fmt.Errorf("%s: PEM type %q is not %s", path, block.Type, expectType)
+	}
+	return block.Bytes, nil
+}
+
+// pemBytesOrFile resolves either a base64-encoded PEM in
+// contentKey (highest precedence, matches the
+// --foo-file-content / --foo-file pattern the existing TLS
+// loaders use) or a filesystem path in pathKey. Empty return =
+// neither was set; caller decides whether that's a fatal config
+// error or a "fall through to classical-compat" path.
+func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]byte, string, error) {
+	if v.IsSet(contentKey) {
+		raw := v.GetString(contentKey)
+		if raw == "" {
+			return nil, "", nil
+		}
+		decoded, err := base64.StdEncoding.DecodeString(raw)
+		if err != nil {
+			return nil, "", fmt.Errorf("decode %s base64: %w", contentKey, err)
+		}
+		block, _ := pem.Decode(decoded)
+		if block == nil {
+			return nil, "", fmt.Errorf("%s: decoded value is not PEM", contentKey)
+		}
+		if block.Type != expectType {
+			return nil, "", fmt.Errorf("%s: PEM type %q is not %s", contentKey, block.Type, expectType)
+		}
+		return block.Bytes, "<from-content>", nil
+	}
+	path := getExpandedArg(v, pathKey)
+	if path == "" {
+		return nil, "", nil
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return nil, path, nil
+	} else if err != nil {
+		return nil, path, err
+	}
+	body, err := loadPEMBlock(path, expectType)
+	return body, path, err
+}
+
+// loadStakingMLDSA returns the strict-PQ ML-DSA-65 keypair (if any).
+// Both private and public materials are optional at the config layer
+// — a missing pair means classical-compat mode. A strict-PQ chain
+// profile enforces presence at the validator-set boundary.
+func loadStakingMLDSA(v *viper.Viper) (*mldsa.PrivateKey, []byte, string, string, error) {
+	privBytes, privPath, err := pemBytesOrFile(v,
+		StakingMLDSAKeyContentKey, StakingMLDSAKeyPathKey, "ML-DSA-65 PRIVATE KEY")
+	if err != nil {
+		return nil, nil, privPath, "", fmt.Errorf("staking-mldsa-key: %w", err)
+	}
+	pubBytes, pubPath, err := pemBytesOrFile(v,
+		StakingMLDSAPubKeyContentKey, StakingMLDSAPubKeyPathKey, "ML-DSA-65 PUBLIC KEY")
+	if err != nil {
+		return nil, nil, privPath, pubPath, fmt.Errorf("staking-mldsa-pub-key: %w", err)
+	}
+	if len(privBytes) == 0 && len(pubBytes) == 0 {
+		return nil, nil, privPath, pubPath, nil
+	}
+	// Asymmetry is a config error: a strict-PQ chain MUST have both
+	// the private key (for signing) and the public key (so peers can
+	// verify what we signed). Refuse rather than silently degrade.
+	if len(privBytes) == 0 || len(pubBytes) == 0 {
+		return nil, nil, privPath, pubPath, errors.New("staking-mldsa: both private and public key are required (or neither for classical-compat)")
+	}
+	priv, err := mldsa.PrivateKeyFromBytes(mldsa.MLDSA65, privBytes)
+	if err != nil {
+		return nil, nil, privPath, pubPath, fmt.Errorf("parse staking-mldsa private key: %w", err)
+	}
+	// Sanity: the public key on disk must match the one derivable
+	// from the private key. Mismatch would point a NodeID at a
+	// public key the validator cannot actually sign for — silent
+	// authentication failure that snowman++ would later report as
+	// "this validator is offline" rather than "you misconfigured
+	// your keys".
+	derivedPubBytes := priv.PublicKey.Bytes()
+	if !bytes.Equal(derivedPubBytes, pubBytes) {
+		return nil, nil, privPath, pubPath, errors.New("staking-mldsa: public key on disk does not match the public key derived from the private key")
+	}
+	return priv, pubBytes, privPath, pubPath, nil
+}
+
+// loadHandshakeMLKEM returns the strict-PQ ML-KEM-768 KEM keypair
+// (if any). Same shape + invariants as loadStakingMLDSA.
+func loadHandshakeMLKEM(v *viper.Viper) (*mlkemcrypto.PrivateKey, []byte, string, string, error) {
+	privBytes, privPath, err := pemBytesOrFile(v,
+		HandshakeMLKEMKeyContentKey, HandshakeMLKEMKeyPathKey, "ML-KEM-768 PRIVATE KEY")
+	if err != nil {
+		return nil, nil, privPath, "", fmt.Errorf("handshake-mlkem-key: %w", err)
+	}
+	pubBytes, pubPath, err := pemBytesOrFile(v,
+		HandshakeMLKEMPubKeyContentKey, HandshakeMLKEMPubKeyPathKey, "ML-KEM-768 PUBLIC KEY")
+	if err != nil {
+		return nil, nil, privPath, pubPath, fmt.Errorf("handshake-mlkem-pub-key: %w", err)
+	}
+	if len(privBytes) == 0 && len(pubBytes) == 0 {
+		return nil, nil, privPath, pubPath, nil
+	}
+	if len(privBytes) == 0 || len(pubBytes) == 0 {
+		return nil, nil, privPath, pubPath, errors.New("handshake-mlkem: both private and public key are required (or neither for classical-compat)")
+	}
+	priv, err := mlkemcrypto.PrivateKeyFromBytes(privBytes, mlkemcrypto.MLKEM768)
+	if err != nil {
+		return nil, nil, privPath, pubPath, fmt.Errorf("parse handshake-mlkem private key: %w", err)
+	}
+	derivedPubBytes := priv.PublicKey().Bytes()
+	if !bytes.Equal(derivedPubBytes, pubBytes) {
+		return nil, nil, privPath, pubPath, errors.New("handshake-mlkem: public key on disk does not match the public key derived from the private key")
+	}
+	return priv, pubBytes, privPath, pubPath, nil
+}
+
 func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, error) {
 	config := node.StakingConfig{
 		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
@@ -849,6 +982,31 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	if err != nil {
 		return node.StakingConfig{}, err
 	}
+
+	// Strict-PQ identity (FIPS 204 ML-DSA-65 + FIPS 203 ML-KEM-768).
+	// Both pairs are optional at this layer — classical-compat chains
+	// run without them. Strict-PQ profile rejects a missing pair at
+	// the validator-set boundary; that gate lives in consensus/config
+	// (the profile gate that owns the strict-PQ vs classical-compat
+	// dispatch), not here in node-config land.
+	mldsaPriv, mldsaPub, mldsaPrivPath, mldsaPubPath, err := loadStakingMLDSA(v)
+	if err != nil {
+		return node.StakingConfig{}, err
+	}
+	config.StakingMLDSA = mldsaPriv
+	config.StakingMLDSAPub = mldsaPub
+	config.StakingMLDSAKeyPath = mldsaPrivPath
+	config.StakingMLDSAPubPath = mldsaPubPath
+
+	mlkemPriv, mlkemPub, mlkemPrivPath, mlkemPubPath, err := loadHandshakeMLKEM(v)
+	if err != nil {
+		return node.StakingConfig{}, err
+	}
+	config.HandshakeMLKEMPriv = mlkemPriv
+	config.HandshakeMLKEMPub = mlkemPub
+	config.HandshakeMLKEMKeyPath = mlkemPrivPath
+	config.HandshakeMLKEMPubPath = mlkemPubPath
+
 	if networkID != constants.MainnetID && networkID != constants.TestnetID {
 		config.UptimeRequirement = v.GetFloat64(UptimeRequirementKey)
 		config.MinValidatorStake = v.GetUint64(MinValidatorStakeKey)
