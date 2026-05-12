@@ -27,8 +27,8 @@ registration via `AcceptorGroup`.
 
 Node-side wiring around `github.com/luxfi/consensus/protocol/quasar`:
 - `Quasar` - Wraps the canonical engine with P-Chain provider + finality channel
-- `RingtailCoordinator` - Stub for threshold signing (real keys loaded later)
-- `RingtailSignature`, `BLSSignature`, `QuasarSignature` - Node-side signature wrappers
+- `CoronaCoordinator` - Stub for threshold signing (real keys loaded later)
+- `CoronaSignature`, `BLSSignature`, `QuasarSignature` - Node-side signature wrappers
 
 Imports `github.com/luxfi/consensus/protocol/quasar` for the actual protocol.
 
