@@ -38,8 +38,8 @@ func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 		t.Errorf("ProfileID = %d; want %d",
 			reply.ProfileID, consensusconfig.ProfileStrictPQ)
 	}
-	if reply.ProfileName != "STRICT_PQ" {
-		t.Errorf("ProfileName = %q; want STRICT_PQ", reply.ProfileName)
+	if reply.ProfileName != "STRICT" {
+		t.Errorf("ProfileName = %q; want STRICT", reply.ProfileName)
 	}
 	wantHash := "0x" + hex.EncodeToString(profile.ProfileHash[:])
 	if reply.ProfileHash != wantHash {
@@ -184,8 +184,8 @@ func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 	if err := svc.BlockSecurity(nil, &BlockSecurityArgs{}, &reply); err != nil {
 		t.Fatalf("BlockSecurity: %v", err)
 	}
-	if reply.SecurityProfileName != "STRICT_PQ" {
-		t.Errorf("SecurityProfileName = %q; want STRICT_PQ",
+	if reply.SecurityProfileName != "STRICT" {
+		t.Errorf("SecurityProfileName = %q; want STRICT",
 			reply.SecurityProfileName)
 	}
 	if !reply.PulsarMSignatureValid {
@@ -230,8 +230,8 @@ func TestREST_securityProfile_GET(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if body.ProfileName != "STRICT_PQ" {
-		t.Errorf("REST ProfileName = %q; want STRICT_PQ", body.ProfileName)
+	if body.ProfileName != "STRICT" {
+		t.Errorf("REST ProfileName = %q; want STRICT", body.ProfileName)
 	}
 	if body.ContractAuth != "ML_DSA_65|ZCHAIN_AUTH_PROOF" {
 		t.Errorf("REST ContractAuth = %q; want ML_DSA_65|ZCHAIN_AUTH_PROOF",
@@ -286,8 +286,8 @@ func TestREST_blockSecurity_GET(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if body.SecurityProfileName != "STRICT_PQ" {
-		t.Errorf("REST SecurityProfileName = %q; want STRICT_PQ",
+	if body.SecurityProfileName != "STRICT" {
+		t.Errorf("REST SecurityProfileName = %q; want STRICT",
 			body.SecurityProfileName)
 	}
 	if !body.PulsarMSignatureValid {
