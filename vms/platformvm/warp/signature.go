@@ -184,20 +184,20 @@ func VerifyWeight(
 
 // Corona signature constants (from github.com/luxfi/corona/sign/config.go)
 const (
-	// RingtailQ is the NTT-friendly prime modulus
-	RingtailQ = 0x1000000004A01 // 48-bit prime
+	// CoronaQ is the NTT-friendly prime modulus
+	CoronaQ = 0x1000000004A01 // 48-bit prime
 
-	// RingtailM is the matrix dimension M
-	RingtailM = 8
+	// CoronaM is the matrix dimension M
+	CoronaM = 8
 
-	// RingtailN is the matrix dimension N
-	RingtailN = 7
+	// CoronaN is the matrix dimension N
+	CoronaN = 7
 
-	// RingtailKappa is the hash output bound
-	RingtailKappa = 23
+	// CoronaKappa is the hash output bound
+	CoronaKappa = 23
 
-	// RingtailDbar is the signature dimension
-	RingtailDbar = 48
+	// CoronaDbar is the signature dimension
+	CoronaDbar = 48
 
 	// CoronaKeySize is the symmetric key size in bytes (256 bits)
 	CoronaKeySize = 32
@@ -296,7 +296,7 @@ func (s *CoronaSignature) Verify(
 	}
 
 	// Aggregate the Corona public keys for threshold verification
-	aggregatedPK, err := AggregateRingtailPublicKeys(rtPubKeys)
+	aggregatedPK, err := AggregateCoronaPublicKeys(rtPubKeys)
 	if err != nil {
 		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
 	}
@@ -597,10 +597,10 @@ type HybridBLSRTSignature struct {
 	// Uses threshold signing to produce a single combined signature
 	CoronaSignature []byte `serialize:"true"`
 
-	// RingtailPublicKeys contains the Corona public keys for each signer
+	// CoronaPublicKeys contains the Corona public keys for each signer
 	// in the same order as indicated by the Signers bitset
 	// This is needed because validators may have different RT keys than BLS keys
-	RingtailPublicKeys [][]byte `serialize:"true"`
+	CoronaPublicKeys [][]byte `serialize:"true"`
 }
 
 // NumSigners returns the number of validators that participated in signing
@@ -681,9 +681,9 @@ func (s *HybridBLSRTSignature) verifyBLS(msg *UnsignedMessage, signers []*Valida
 // verifyCorona verifies the Corona lattice-based signature
 func (s *HybridBLSRTSignature) verifyCorona(msg *UnsignedMessage, signers []*Validator) error {
 	// Validate we have RT public keys for all signers
-	if len(s.RingtailPublicKeys) != len(signers) {
+	if len(s.CoronaPublicKeys) != len(signers) {
 		return fmt.Errorf("%w: got %d keys, expected %d",
-			ErrMissingRTPublicKey, len(s.RingtailPublicKeys), len(signers))
+			ErrMissingRTPublicKey, len(s.CoronaPublicKeys), len(signers))
 	}
 
 	// Validate Corona signature is present
@@ -692,7 +692,7 @@ func (s *HybridBLSRTSignature) verifyCorona(msg *UnsignedMessage, signers []*Val
 	}
 
 	// Aggregate the Corona public keys
-	aggregatedRTPK, err := AggregateRingtailPublicKeys(s.RingtailPublicKeys)
+	aggregatedRTPK, err := AggregateCoronaPublicKeys(s.CoronaPublicKeys)
 	if err != nil {
 		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
 	}
@@ -715,10 +715,10 @@ func (s *HybridBLSRTSignature) String() string {
 // Corona Signature Functions
 // =============================================================================
 
-// AggregateRingtailPublicKeys aggregates multiple Corona public keys
+// AggregateCoronaPublicKeys aggregates multiple Corona public keys
 // into a single combined public key for threshold verification.
 // This uses the threshold package's SchemeRingtail.
-func AggregateRingtailPublicKeys(publicKeys [][]byte) ([]byte, error) {
+func AggregateCoronaPublicKeys(publicKeys [][]byte) ([]byte, error) {
 	if len(publicKeys) == 0 {
 		return nil, errors.New("no public keys to aggregate")
 	}
