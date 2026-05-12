@@ -289,10 +289,10 @@ func (s *CoronaSignature) Verify(
 	// Collect Corona public keys from signers
 	rtPubKeys := make([][]byte, 0, len(signers))
 	for _, signer := range signers {
-		if len(signer.RingtailPubKey) == 0 {
+		if len(signer.CoronaPubKey) == 0 {
 			return fmt.Errorf("%w: validator missing RT key", ErrMissingRTPublicKey)
 		}
-		rtPubKeys = append(rtPubKeys, signer.RingtailPubKey)
+		rtPubKeys = append(rtPubKeys, signer.CoronaPubKey)
 	}
 
 	// Aggregate the Corona public keys for threshold verification
