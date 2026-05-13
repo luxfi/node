@@ -151,7 +151,7 @@ require (
 	github.com/luxfi/utxo v0.3.0
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.0.40
-	github.com/luxfi/warp v1.18.5
+	github.com/luxfi/warp v1.18.6
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0
@@ -175,6 +175,7 @@ require (
 	github.com/luxfi/corona v0.3.0 // indirect
 	github.com/luxfi/lens v0.1.3 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
+	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/pulsar v1.0.0 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
