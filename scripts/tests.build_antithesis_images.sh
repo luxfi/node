@@ -16,18 +16,18 @@ set -euo pipefail
 # TEST_SETUP=node ./scripts/tests.build_antithesis_images.sh         # Test build of images for node test setup
 # DEBUG=1 TEST_SETUP=node ./scripts/tests.build_antithesis_images.sh # Retain the temporary compose path for troubleshooting
 
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
 # Discover the default tag that will be used for the image
-source "${LUX_PATH}"/scripts/git_commit.sh
+source "${NODE_PATH}"/scripts/git_commit.sh
 export IMAGE_TAG="${commit_hash}"
 
 # Build the images for the specified test setup
 export TEST_SETUP="${TEST_SETUP:-}"
-bash -x "${LUX_PATH}"/scripts/build_antithesis_images.sh
+bash -x "${NODE_PATH}"/scripts/build_antithesis_images.sh
 
 # Test the images
 export IMAGE_NAME="antithesis-${TEST_SETUP}-config"
 export DEBUG="${DEBUG:-}"
 set -x
-. "${LUX_PATH}"/scripts/lib_test_antithesis_images.sh
+. "${NODE_PATH}"/scripts/lib_test_antithesis_images.sh

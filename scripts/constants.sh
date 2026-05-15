@@ -8,10 +8,10 @@ set -euo pipefail
 # Use lower_case variables in the scripts and UPPER_CASE variables for override
 # Use the constants.sh for env overrides
 
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
+NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
 # Where Lux Node binary goes
-node_path="$LUX_PATH/build/luxd"
+node_path="$NODE_PATH/build/luxd"
 
 # Docker Hub repository for node images
 node_dockerhub_repo="luxfi/node"
@@ -45,8 +45,8 @@ export GONOSUMDB="${GONOSUMDB:-github.com/luxfi/*}"
 LUXCPP_ROOT="${LUXCPP_ROOT:-}"
 if [ -z "$LUXCPP_ROOT" ]; then
     # Try to find luxcpp relative to this repo
-    if [ -d "$LUX_PATH/../luxcpp/install/lib/pkgconfig" ]; then
-        LUXCPP_ROOT="$LUX_PATH/../luxcpp/install"
+    if [ -d "$NODE_PATH/../luxcpp/install/lib/pkgconfig" ]; then
+        LUXCPP_ROOT="$NODE_PATH/../luxcpp/install"
     elif [ -d "$HOME/work/luxcpp/install/lib/pkgconfig" ]; then
         LUXCPP_ROOT="$HOME/work/luxcpp/install"
     fi
