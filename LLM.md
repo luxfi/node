@@ -284,10 +284,21 @@ go build -tags=grpc       # gRPC support (for testing/compatibility)
 ```
 
 **Key Packages:**
-- `github.com/luxfi/api/zap` - Core wire protocol and message types
+- `github.com/luxfi/api/zap` - Core wire protocol and message types (Layer A)
+- `github.com/luxfi/proto/rpcdb` - rpcdb service spec / data carriers (Layer B)
+- `github.com/luxfi/node/db/rpcdb` - rpcdb Service + ZAP/gRPC transport adapters (Layer C)
 - `github.com/luxfi/vm/rpc/sender` - p2p.Sender over ZAP/gRPC
 - `vms/rpcchainvm/sender/` - Node-side sender implementation
 - `vms/platformvm/warp/zwarp/` - ZAP-based warp signing client/server
+
+**rpcdb Layered Topology (post-2026-05 reorg):**
+- Layer A — wire framing: `github.com/luxfi/api/zap` (independent module)
+- Layer B — rpcdb service spec: `github.com/luxfi/proto/rpcdb` (transport-agnostic data carriers)
+- Layer C — rpcdb impl: `node/db/rpcdb/{service.go, grpc_server.go, zap_server.go}`
+  - `service.go` — transport-neutral `Service` wrapping `database.Database`
+  - `zap_server.go` (default) — ZAP transport adapter (used by cevm)
+  - `grpc_server.go` (`-tags=grpc`) — gRPC transport adapter
+- One Service, many transport adapters. Adding a transport = new file wrapping `*Service`.
 
 **Wire Protocol Format:**
 ```
