@@ -1259,11 +1259,19 @@ func (n *Node) addDefaultVMAliases() error {
 // XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
 func (n *Node) initChainManager(xAssetID ids.ID) error {
-	createXVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID)
-	if err != nil {
-		return err
+	// X-Chain (XVM, the historic exchange chain) is OPT-IN. Networks that
+	// don't bake an XVM into platform genesis run in "P-only" mode where
+	// asset creation and UTXO ops are first-class on the P-Chain (see
+	// CreateAssetTx/OperationTx in vms/platformvm/txs). All cross-chain
+	// flows that historically went P→X→C are replaced with direct
+	// P→subnet warp transfers.
+	var xChainID ids.ID
+	if createXVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID); err == nil {
+		xChainID = createXVMTx.ID()
+	} else {
+		n.Log.Info("X-Chain not in genesis — skipping",
+			"reason", "platform genesis has no constants.XVMID chain (P-only mode)")
 	}
-	xChainID := createXVMTx.ID()
 
 	// Primary-network EVM (the historic "C-Chain") is OPT-IN. Networks
 	// that don't bake an EVM into platform genesis (because they register
@@ -1299,7 +1307,7 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 		}
 	}
 
-	_, err = metric.MakeAndRegister(
+	_, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		requestsNamespace,
 	)
@@ -1448,37 +1456,56 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("Platform VM registered successfully")
 
-	// Register X-Chain VM (Exchange VM)
-	n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
-	// F102 close-out: thread the chain-wide profile into the X-chain
-	// mempool builder. Nil profile is a no-op gate (legacy networks);
-	// strict-PQ networks refuse classical credentials at gossip time.
-	err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{
-		SecurityProfile:         n.securityProfile,
-		ClassicalCompatRegistry: nil,
-	})
-	if err != nil {
-		n.Log.Error("Failed to register X-Chain VM", "error", err)
-		return err
+	// Register X-Chain VM (Exchange VM) only if X-Chain is in genesis.
+	// In P-only mode there is no XVMID chain in genesis; the X-Chain factory
+	// is therefore not loaded, saving init time and reducing attack surface.
+	xvmRegistered := false
+	if _, xErr := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID); xErr == nil {
+		n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
+		err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{
+			SecurityProfile:         n.securityProfile,
+			ClassicalCompatRegistry: nil,
+		})
+		if err != nil {
+			n.Log.Error("Failed to register X-Chain VM", "error", err)
+			return err
+		}
+		n.Log.Info("X-Chain VM registered successfully")
+		xvmRegistered = true
+	} else {
+		n.Log.Info("X-Chain VM not loaded — P-only mode (CreateAssetTx/OperationTx live on P-Chain)")
 	}
-	n.Log.Info("X-Chain VM registered successfully")
 
-	// C-Chain VM (EVM) is loaded as a plugin via ZAP transport.
-	// Plugin binary placed at <plugin-dir>/<EVMID> by init container.
+	// C-Chain VM (EVM) is loaded as a plugin via ZAP transport when present
+	// in genesis. Plugin binary placed at <plugin-dir>/<EVMID> by init container.
 
 	// Register all VMs (Q, A, B, T, Z, G, D, K, O, R, I chains)
 	if err := n.registerOptionalVMs(); err != nil {
 		return err
 	}
 
-	// Log summary of registered VMs
-	coreVMCount := 3 // P-Chain, X-Chain, C-Chain (plugin via ZAP)
+	// Log summary of registered VMs — derive count from what is actually in
+	// genesis rather than hard-coding "3" for legacy P+X+C.
+	coreVMCount := 1 // P-Chain is always present
+	if xvmRegistered {
+		coreVMCount++
+	}
+	if _, cErr := builder.VMGenesis(n.Config.GenesisBytes, constants.EVMID); cErr == nil {
+		coreVMCount++ // C-Chain (plugin via ZAP)
+	}
+	if _, qErr := builder.VMGenesis(n.Config.GenesisBytes, constants.QuantumVMID); qErr == nil {
+		coreVMCount++ // Q-Chain (quantum finality)
+	}
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 	n.Log.Info("VMs REGISTERED", "core", coreVMCount)
 	n.Log.Info("───────────────────────────────────────────────────────────────────")
-	n.Log.Info("P-Chain (Platform): Validators & staking", "vmID", constants.PlatformVMID)
-	n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
-	n.Log.Info("C-Chain (Contract): EVM smart contracts (ZAP plugin)", "vmID", constants.EVMID)
+	n.Log.Info("P-Chain (Platform): Validators & staking & UTXO assets", "vmID", constants.PlatformVMID)
+	if xvmRegistered {
+		n.Log.Info("X-Chain (Exchange): UTXO asset exchange", "vmID", constants.XVMID)
+	}
+	if _, cErr := builder.VMGenesis(n.Config.GenesisBytes, constants.EVMID); cErr == nil {
+		n.Log.Info("C-Chain (Contract): EVM smart contracts (ZAP plugin)", "vmID", constants.EVMID)
+	}
 	n.Log.Info("═══════════════════════════════════════════════════════════════════")
 
 	// initialize vm runtime manager

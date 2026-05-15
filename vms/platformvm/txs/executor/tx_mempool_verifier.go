@@ -111,6 +111,14 @@ func (v *MempoolTxVerifier) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
 	return v.standardTx(tx)
 }
 
+func (v *MempoolTxVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) OperationTx(tx *txs.OperationTx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	baseState, err := v.standardBaseState()
 	if err != nil {

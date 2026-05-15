@@ -132,6 +132,14 @@ func (*atomicTxExecutor) SlashValidatorTx(*txs.SlashValidatorTx) error {
 	return ErrWrongTxType
 }
 
+func (*atomicTxExecutor) CreateAssetTx(*txs.CreateAssetTx) error {
+	return ErrWrongTxType
+}
+
+func (*atomicTxExecutor) OperationTx(*txs.OperationTx) error {
+	return ErrWrongTxType
+}
+
 func (e *atomicTxExecutor) ImportTx(*txs.ImportTx) error {
 	return e.atomicTx()
 }

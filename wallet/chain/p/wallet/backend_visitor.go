@@ -176,6 +176,17 @@ func (b *backendVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
+func (b *backendVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
+	// Fee inputs are consumed; minted asset outputs become locally tracked
+	// UTXOs owned by the backend so subsequent OperationTx can spend them.
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) OperationTx(tx *txs.OperationTx) error {
+	// Operation UTXOIDs are tracked through InputIDs() (see OperationTx).
+	return b.baseTx(&tx.BaseTx)
+}
+
 func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	return b.b.removeUTXOs(
 		b.ctx,

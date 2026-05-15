@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/luxfi/crypto/secp256k1"
@@ -29,10 +28,8 @@ const (
 
 // MustLoadKey loads a secp256k1 private key from (in order of priority):
 // 1. LUX_MNEMONIC environment variable (BIP39 mnemonic phrase)
-// 2. LUX_PRIVATE_KEY environment variable (hex-encoded)
-// 3. LUX_KEY_NAME environment variable (key name from ~/.lux/keys/<name>/)
-// 4. Key name provided as first command line argument
-// 5. ~/.lux/keys/default/ if it exists
+// 2. Key name provided as first command line argument
+// 3. ~/.lux/keys/default/ if it exists
 //
 // Panics with a helpful message if no key is provided.
 func MustLoadKey() *secp256k1.PrivateKey {
@@ -41,9 +38,7 @@ func MustLoadKey() *secp256k1.PrivateKey {
 		fmt.Fprintf(os.Stderr, "Error loading private key: %s\n", err)
 		fmt.Fprintf(os.Stderr, "\nUsage (in order of priority):\n")
 		fmt.Fprintf(os.Stderr, "  1. Set LUX_MNEMONIC env var (BIP39 mnemonic)\n")
-		fmt.Fprintf(os.Stderr, "  2. Set LUX_PRIVATE_KEY env var (hex-encoded)\n")
-		fmt.Fprintf(os.Stderr, "  3. Set LUX_KEY_NAME env var (key from ~/.lux/keys/)\n")
-		fmt.Fprintf(os.Stderr, "  4. Pass key name as argument: %s <key-name>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  2. Pass key name as argument: %s <key-name>\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "\nAvailable keys in ~/.lux/keys/:\n")
 		listAvailableKeys()
 		fmt.Fprintf(os.Stderr, "\nCreate keys with: lux key create <name>\n")
@@ -61,17 +56,7 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 		}
 	}
 
-	// 2. Try LUX_PRIVATE_KEY environment variable
-	if keyStr := os.Getenv("LUX_PRIVATE_KEY"); keyStr != "" {
-		return parseHexKey(keyStr)
-	}
-
-	// 3. Try LUX_KEY_NAME environment variable
-	if keyName := os.Getenv("LUX_KEY_NAME"); keyName != "" {
-		return LoadKeyByName(keyName)
-	}
-
-	// 4. Try key name from command line arguments
+	// 2. Try key name from command line arguments
 	if len(os.Args) > 1 {
 		keyName := os.Args[1]
 		// Check if it's a key name (exists in ~/.lux/keys/)
@@ -84,7 +69,7 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 		}
 	}
 
-	// 5. Try default key
+	// 3. Try default key
 	if key, err := LoadKeyByName("default"); err == nil {
 		return key, nil
 	}
@@ -164,19 +149,11 @@ func keyFromMnemonic(mnemonic string) (*secp256k1.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to derive change: %w", err)
 	}
 
-	// Support LUX_KEY_INDEX for deriving non-default addresses (m/44'/60'/0'/0/{index})
-	addrIndex := uint32(0)
-	if idxStr := os.Getenv("LUX_KEY_INDEX"); idxStr != "" {
-		idx, err := strconv.ParseUint(idxStr, 10, 32)
-		if err != nil {
-			return nil, fmt.Errorf("invalid LUX_KEY_INDEX %q: %w", idxStr, err)
-		}
-		addrIndex = uint32(idx)
-	}
-
-	childKey, err := change.NewChildKey(addrIndex)
+	// Default address index is 0 (m/44'/60'/0'/0/0). Callers that need a
+	// non-default address use BIP39 with a different account word path.
+	childKey, err := change.NewChildKey(0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derive address index %d: %w", addrIndex, err)
+		return nil, fmt.Errorf("failed to derive address index 0: %w", err)
 	}
 
 	return secp256k1.ToPrivateKey(childKey.Key)

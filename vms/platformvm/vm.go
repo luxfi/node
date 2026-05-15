@@ -8,8 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -459,18 +457,6 @@ func (vm *VM) initBlockchains() error {
 		return err
 	}
 
-	// Migrated-C-Chain recovery path: only attempt when LUX_MIGRATE_CCHAIN=1
-	// is set explicitly. This is for the one-time historical mainnet
-	// migration where post-merge geth state was imported under a fixed
-	// blockchainID. Without the env knob, the function early-returns on
-	// the missing data dir anyway — but checking the flag first avoids
-	// touching the filesystem in the common case.
-	if os.Getenv("LUX_MIGRATE_CCHAIN") == "1" {
-		if err := vm.createCChainIfNeeded(); err != nil {
-			vm.log.Error("Failed to create C-Chain with migrated data", "error", err)
-		}
-	}
-
 	// When TrackAllChains is enabled OR SybilProtection is disabled,
 	// create chains for ALL chains in state
 	if vm.TrackAllChains || !vm.SybilProtectionEnabled {
@@ -533,88 +519,6 @@ func (vm *VM) initBlockchains() error {
 			}
 		}
 	}
-	return nil
-}
-
-// createCChainIfNeeded creates the C-Chain if we have migrated data but no CreateChainTx
-func (vm *VM) createCChainIfNeeded() error {
-	// Check if C-Chain data exists in the chains directory
-	// Note: This is the actual blockchain ID generated for C-Chain
-	cChainID, _ := ids.FromString("2DZ8vjwArzfrRph2aFK7Zm9YLhx6PRuZqasVPQFH")
-	// Use the data directory from the node configuration
-	dataDir := os.Getenv("HOME") + "/.luxd"
-	chainDataPath := filepath.Join(dataDir, "chains", cChainID.String())
-
-	if _, err := os.Stat(chainDataPath); os.IsNotExist(err) {
-		// No C-Chain data, nothing to do
-		vm.log.Debug("No C-Chain data found, skipping creation")
-		return nil
-	}
-
-	// Check if C-Chain is already registered
-	chains, err := vm.state.GetChains(constants.PrimaryNetworkID)
-	if err != nil {
-		return fmt.Errorf("failed to get chains: %w", err)
-	}
-
-	for _, chain := range chains {
-		if chain.ID() == cChainID {
-			// C-Chain already exists
-			vm.log.Debug("C-Chain already registered", "chainID", cChainID)
-			return nil
-		}
-	}
-
-	// C-Chain data exists but not registered, create it
-	vm.log.Info("Creating C-Chain with migrated data",
-		"chainID", cChainID,
-		"vmID", constants.EVMID,
-		"dataPath", chainDataPath,
-	)
-
-	// Create minimal genesis for the migrated C-Chain
-	// This matches the migrated blockchain data at height 1,082,780
-	// 	genesisBytes := []byte(`{
-	// 		"config": {
-	// 			"chainId": 96369,
-	// 			"homesteadBlock": 0,
-	// 			"eip150Block": 0,
-	// 			"eip155Block": 0,
-	// 			"eip158Block": 0,
-	// 			"byzantiumBlock": 0,
-	// 			"constantinopleBlock": 0,
-	// 			"petersburgBlock": 0,
-	// 			"istanbulBlock": 0,
-	// 			"muirGlacierBlock": 0,
-	// 			"berlinBlock": 0,
-	// 			"londonBlock": 0,
-	// 			"shanghaiTime": 1607144400,
-	// 			"cancunTime": 253399622400,
-	// 			"terminalTotalDifficulty": 0,
-	// 			"terminalTotalDifficultyPassed": true
-	// 		},
-	// 		"nonce": "0x0",
-	// 		"timestamp": "0x672485c2",
-	// 		"gasLimit": "0xb71b00",
-	// 		"difficulty": "0x0",
-	// 		"alloc": {
-	// 			"0x9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
-	// 				"balance": "0x193e5939a08ce9dbd480000000"
-	// 			}
-	// 		},
-	// 		"useMigratedData": true
-	// 	}`)
-
-	// Queue the C-Chain for creation
-	// vm.Internal.QueueExistingChainWithGenesis(
-	// 	cChainID,
-	// 	constants.PrimaryNetworkID,
-	// 	constants.EVMID,
-	// 	genesisBytes,
-	// )
-
-	// vm.log.Info("C-Chain queued for creation with migrated data")
-
 	return nil
 }
 

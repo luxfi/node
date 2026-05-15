@@ -191,6 +191,14 @@ func (v *backendVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
 	return v.baseTx(&tx.BaseTx)
 }
 
+func (v *backendVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
+	return v.baseTx(&tx.BaseTx)
+}
+
+func (v *backendVisitor) OperationTx(tx *txs.OperationTx) error {
+	return v.baseTx(&tx.BaseTx)
+}
+
 func (v *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	return v.b.removeUTXOs(v.ctx, constants.PlatformChainID, tx.InputIDs())
 }

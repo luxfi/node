@@ -518,30 +518,11 @@ func New(config *ManagerConfig) (Manager, error) {
 // QueueChainCreation queues a chain creation request
 // Invariant: Tracked Net must be checked before calling this function
 func (m *manager) QueueChainCreation(chainParams ChainParameters) {
-	// Check for chain ID mapping override for C-Chain
 	m.Log.Info("QueueChainCreation called",
 		log.String("vmID", chainParams.VMID.String()),
 		log.String("EVMID", constants.EVMID.String()),
 		log.Bool("vmIDEqualsEVMID", chainParams.VMID == constants.EVMID),
-		log.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
 	)
-
-	if chainParams.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
-		mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
-		parsedID, err := ids.FromString(mappedID)
-		if err == nil {
-			m.Log.Info("Using mapped blockchain ID for C-Chain",
-				log.String("original", chainParams.ID.String()),
-				log.String("mapped", parsedID.String()),
-			)
-			chainParams.ID = parsedID
-		} else {
-			m.Log.Warn("Invalid chain ID mapping",
-				log.String("mapping", mappedID),
-				log.Err(err),
-			)
-		}
-	}
 
 	// Register blockchain→chain mapping with the network layer so gossip
 	// can resolve which validator set to use for this blockchain's blocks.

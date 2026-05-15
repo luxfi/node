@@ -942,3 +942,27 @@ func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwners
 	)
 	return err
 }
+
+// CreateAssetTx complexity is base + the initial-state output complexity
+// (each InitialState carries TransferableOut-shaped outs that mint asset
+// UTXOs). The fee charged is CreateAssetTxFee, applied by the fee calc.
+func (c *complexityVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicBaseTxComplexities.Add(&baseTxComplexity)
+	return err
+}
+
+// OperationTx complexity is base + per-operation overhead. We bound the
+// per-op cost via the BaseTx complexity envelope on P-Chain (no Fx-specific
+// op state cost path).
+func (c *complexityVisitor) OperationTx(tx *txs.OperationTx) error {
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	c.output, err = IntrinsicBaseTxComplexities.Add(&baseTxComplexity)
+	return err
+}

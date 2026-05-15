@@ -173,3 +173,13 @@ func (v *staticVisitor) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) 
 	v.fee = v.config.TxFee
 	return nil
 }
+
+func (v *staticVisitor) CreateAssetTx(*txs.CreateAssetTx) error {
+	v.fee = v.config.CreateAssetTxFee
+	return nil
+}
+
+func (v *staticVisitor) OperationTx(*txs.OperationTx) error {
+	v.fee = v.config.TxFee
+	return nil
+}

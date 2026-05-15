@@ -123,3 +123,17 @@ func (mr *FxMockRecorder) VerifyTransfer(tx, in, cred, utxo any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTransfer", reflect.TypeOf((*Fx)(nil).VerifyTransfer), tx, in, cred, utxo)
 }
+
+// VerifyOperation mocks base method.
+func (m *Fx) VerifyOperation(tx, op, cred any, utxos []any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyOperation", tx, op, cred, utxos)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyOperation indicates an expected call of VerifyOperation.
+func (mr *FxMockRecorder) VerifyOperation(tx, op, cred, utxos any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyOperation", reflect.TypeOf((*Fx)(nil).VerifyOperation), tx, op, cred, utxos)
+}

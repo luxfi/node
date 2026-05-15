@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	keyStr := strings.TrimSpace(os.Getenv("LUX_PRIVATE_KEY"))
+	keyStr := strings.TrimSpace(os.Getenv("PRIVATE_KEY"))
 	keyBytes, _ := hex.DecodeString(keyStr)
 	key, err := secp256k1.ToPrivateKey(keyBytes)
 	if err != nil {
