@@ -31,6 +31,8 @@ var (
 	errUnknownOutputType     = errors.New("unknown output type")
 	errUnknownChainAuthType  = errors.New("unknown net auth type")
 	errInvalidUTXOSigIndex   = errors.New("invalid UTXO signature index")
+	errUnknownOpType         = errors.New("unknown op type")
+	errInvalidNumUTXOsInOp   = errors.New("invalid number of UTXOs in operation")
 
 	emptySig [secp256k1.SignatureLen]byte
 )
@@ -409,4 +411,75 @@ func (s *signerVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error
 	}
 	txSigners = append(txSigners, chainAuthSigners)
 	return sign(s.tx, false, txSigners)
+}
+
+// CreateAssetTx signs a CreateAssetTx (BaseTx fee inputs only).
+func (s *signerVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
+// OperationTx signs an OperationTx (BaseTx fee inputs + per-operation slots).
+// Mirrors XVM's `wallet/chain/x/signer/visitor.go::getOpsSigners`: each Op
+// must be a *secp256k1fx.MintOperation, and the credential signs over the
+// MintOutput owners of the consumed UTXO.
+func (s *signerVisitor) OperationTx(tx *txs.OperationTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	opsSigners, err := s.getOpsSigners(constants.PrimaryNetworkID, tx.Ops)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, opsSigners...)
+	return sign(s.tx, false, txSigners)
+}
+
+func (s *signerVisitor) getOpsSigners(
+	sourceChainID ids.ID,
+	ops []*txs.Operation,
+) ([][]keychain.Signer, error) {
+	txSigners := make([][]keychain.Signer, len(ops))
+	for credIndex, op := range ops {
+		mintOp, ok := op.Op.(*secp256k1fx.MintOperation)
+		if !ok {
+			return nil, errUnknownOpType
+		}
+		input := &mintOp.MintInput
+		inputSigners := make([]keychain.Signer, len(input.SigIndices))
+		txSigners[credIndex] = inputSigners
+
+		if len(op.UTXOIDs) != 1 {
+			return nil, errInvalidNumUTXOsInOp
+		}
+		utxoID := op.UTXOIDs[0].InputID()
+		utxo, err := s.backend.GetUTXO(s.ctx, sourceChainID, utxoID)
+		if err == database.ErrNotFound {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		mintOut, ok := utxo.Out.(*secp256k1fx.MintOutput)
+		if !ok {
+			return nil, errUnknownOutputType
+		}
+		for sigIndex, addrIndex := range input.SigIndices {
+			if addrIndex >= uint32(len(mintOut.Addrs)) {
+				return nil, errInvalidUTXOSigIndex
+			}
+			addr := mintOut.Addrs[addrIndex]
+			key, ok := s.kc.Get(addr)
+			if !ok {
+				continue
+			}
+			inputSigners[sigIndex] = key
+		}
+	}
+	return txSigners, nil
 }
