@@ -3,7 +3,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package gresponsewriter
+package rpcresponsewriter
 
 import (
 	"bufio"
@@ -13,9 +13,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gconn"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gwriter"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcconn"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcreader"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcwriter"
 	"github.com/luxfi/vm/rpc/grpcutils"
 
 	responsewriterpb "github.com/luxfi/node/proto/pb/http/responsewriter"
@@ -108,7 +108,7 @@ func (c *Client) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return nil, nil, err
 	}
 
-	conn := gconn.NewClient(
+	conn := rpcconn.NewClient(
 		connpb.NewConnClient(clientConn),
 		&addr{
 			network: resp.LocalNetwork,
@@ -121,8 +121,8 @@ func (c *Client) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		clientConn,
 	)
 
-	reader := greader.NewClient(readerpb.NewReaderClient(clientConn))
-	writer := gwriter.NewClient(writerpb.NewWriterClient(clientConn))
+	reader := rpcreader.NewClient(readerpb.NewReaderClient(clientConn))
+	writer := rpcwriter.NewClient(writerpb.NewWriterClient(clientConn))
 
 	readWriter := bufio.NewReadWriter(
 		bufio.NewReader(reader),
