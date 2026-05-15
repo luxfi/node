@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	uri := os.Getenv("LUX_URI")
+	uri := os.Getenv("NODE_URI")
 	if uri == "" {
 		uri = "https://api.lux.network"
 	}
