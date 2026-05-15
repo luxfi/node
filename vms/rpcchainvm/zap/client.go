@@ -9,17 +9,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 	"time"
 
 	zapwire "github.com/luxfi/api/zap"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/version"
 	"github.com/luxfi/vm/chain"
+	rpcdbzap "github.com/luxfi/vm/proto/rpcdb"
 )
 
 var (
@@ -37,6 +41,16 @@ type Client struct {
 
 	// Cached state from Initialize
 	lastAcceptedID ids.ID
+
+	// dbServer is the ZAP-native rpcdb server spawned in Initialize that
+	// hosts init.DB for the plugin's outbound RemoteZapDB to dial. It is
+	// the ZAP equivalent of the gRPC `dbServerListener` pattern in
+	// vm/rpc/vm_client.go:201. Lifetime is bound to this Client.
+	dbServerMu  sync.Mutex
+	dbServer    *rpcdbzap.ZAPServer
+	dbListener  net.Listener
+	dbServerCtx context.Context
+	dbServerCxl context.CancelFunc
 }
 
 // NewClient creates a new ZAP-based VM client
@@ -78,6 +92,15 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		}
 	}
 
+	// Spawn the ZAP rpcdb server before calling Initialize so the VM can
+	// dial it back as part of its own bootstrap. Mirrors the gRPC
+	// pattern in vm/rpc/vm_client.go:201 but speaks ZAP. The listener
+	// lifetime is bound to this Client (closed by Shutdown).
+	dbServerAddr, err := c.startDBServer(init.DB)
+	if err != nil {
+		return fmt.Errorf("zap: start db server: %w", err)
+	}
+
 	req := &zapwire.InitializeRequest{
 		NetworkID:       networkID,
 		ChainID:         chainID,
@@ -90,6 +113,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		GenesisBytes:    init.Genesis,
 		UpgradeBytes:    init.Upgrade,
 		ConfigBytes:     init.Config,
+		DBServerAddr:    dbServerAddr,
 		NetworkUpgrades: networkUpgrades,
 	}
 
@@ -135,7 +159,66 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if err != nil {
 		c.logger.Warn("ZAP shutdown error", "error", err)
 	}
+	c.stopDBServer()
 	return c.conn.Close()
+}
+
+// startDBServer binds a fresh TCP listener and serves init.DB over the
+// ZAP rpcdb wire protocol against it. Returns the bound addr to pass
+// to the plugin via InitializeRequest.DBServerAddr. The listener and
+// server are tracked on the Client so Shutdown can close them
+// deterministically.
+//
+// Returns "" if init.DB is nil — some VMs (the platform VM bootstrap)
+// init the DB elsewhere; in that case the plugin falls back to its
+// LocalZapDB path. Production cevm always gets a non-nil DB.
+func (c *Client) startDBServer(db database.Database) (string, error) {
+	if db == nil {
+		c.logger.Warn("zap: init.DB is nil — VM will fall back to local backend")
+		return "", nil
+	}
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", fmt.Errorf("zap db listen: %w", err)
+	}
+
+	s := rpcdbzap.NewZAPServer(db)
+	s.ListenOn(listener)
+
+	c.dbServerMu.Lock()
+	defer c.dbServerMu.Unlock()
+	c.dbServer = s
+	c.dbListener = listener
+	c.dbServerCtx, c.dbServerCxl = context.WithCancel(context.Background())
+
+	addr := listener.Addr().String()
+	go func(ctx context.Context) {
+		if err := s.Serve(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			c.logger.Warn("zap db serve exited", "error", err)
+		}
+	}(c.dbServerCtx)
+
+	c.logger.Info("zap db server listening", "addr", addr)
+	return addr, nil
+}
+
+func (c *Client) stopDBServer() {
+	c.dbServerMu.Lock()
+	defer c.dbServerMu.Unlock()
+	// Cancel ctx FIRST so Serve's loop exits; then closing the listener
+	// makes any pending Accept() return an error promptly. Close()
+	// itself is a no-op on the zapwire.Server map (we deliberately
+	// don't touch it — see ZAPServer.Close comment).
+	if c.dbServerCxl != nil {
+		c.dbServerCxl()
+		c.dbServerCxl = nil
+	}
+	if c.dbServer != nil {
+		_ = c.dbServer.Close()
+		c.dbServer = nil
+	}
+	c.dbListener = nil
 }
 
 // SetState implements chain.ChainVM
