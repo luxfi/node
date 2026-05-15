@@ -177,6 +177,7 @@ require (
 	github.com/luxfi/lens v0.1.3 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
+	github.com/luxfi/precompile v0.5.17 // indirect
 	github.com/luxfi/pulsar v1.0.0 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
