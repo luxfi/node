@@ -220,3 +220,17 @@ func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) erro
 	}).Inc()
 	return nil
 }
+
+func (m *txMetrics) CreateAssetTx(*txs.CreateAssetTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "create_asset",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) OperationTx(*txs.OperationTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "operation",
+	}).Inc()
+	return nil
+}

@@ -127,6 +127,20 @@ func (mr *MockFxMockRecorder) VerifyTransfer(arg0, arg1, arg2, arg3 any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTransfer", reflect.TypeOf((*MockFx)(nil).VerifyTransfer), arg0, arg1, arg2, arg3)
 }
 
+// VerifyOperation mocks base method.
+func (m *MockFx) VerifyOperation(arg0, arg1, arg2 any, arg3 []any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyOperation", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyOperation indicates an expected call of VerifyOperation.
+func (mr *MockFxMockRecorder) VerifyOperation(arg0, arg1, arg2, arg3 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyOperation", reflect.TypeOf((*MockFx)(nil).VerifyOperation), arg0, arg1, arg2, arg3)
+}
+
 // MockOwner is a mock of Owner interface.
 type MockOwner struct {
 	verify.IsNotState

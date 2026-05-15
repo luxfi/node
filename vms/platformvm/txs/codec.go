@@ -74,10 +74,18 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 	// The secp256k1fx is registered here because this is the same place it is
 	// registered in the XVM. This ensures that the typeIDs match up for utxos
 	// in shared memory.
+	//
+	// MintOutput + MintOperation occupy the slots between TransferInput and
+	// TransferOutput and after TransferOutput respectively. PlatformVM used
+	// to SkipRegistrations(1) on those slots because pre-Granite there was
+	// no native asset minting on P-Chain. With Granite + CreateAssetTx /
+	// OperationTx, P-Chain mints and operates assets natively, so the slots
+	// must be filled by the canonical secp256k1fx types — mirroring XVM
+	// type-ID alignment exactly.
 	errs.Add(targetCodec.RegisterType(&secp256k1fx.TransferInput{}))
-	targetCodec.SkipRegistrations(1)
+	errs.Add(targetCodec.RegisterType(&secp256k1fx.MintOutput{}))
 	errs.Add(targetCodec.RegisterType(&secp256k1fx.TransferOutput{}))
-	targetCodec.SkipRegistrations(1)
+	errs.Add(targetCodec.RegisterType(&secp256k1fx.MintOperation{}))
 	errs.Add(
 		targetCodec.RegisterType(&secp256k1fx.Credential{}),
 		targetCodec.RegisterType(&secp256k1fx.Input{}),
@@ -137,5 +145,14 @@ func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 // RegisterGraniteTypes registers the type information for transactions that
 // are valid during the Granite series of upgrades.
 func RegisterGraniteTypes(targetCodec linearcodec.Codec) error {
-	return targetCodec.RegisterType(&SlashValidatorTx{})
+	return errors.Join(
+		targetCodec.RegisterType(&SlashValidatorTx{}),
+
+		// P-only primary network — assets that historically lived on the
+		// X-Chain are first-class P-Chain UTXO operations. Type IDs go at
+		// the end of the existing registration order so they cannot
+		// collide with any subnet / validator tx.
+		targetCodec.RegisterType(&CreateAssetTx{}),
+		targetCodec.RegisterType(&OperationTx{}),
+	)
 }

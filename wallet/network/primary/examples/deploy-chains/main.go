@@ -2,9 +2,9 @@
 //
 // Usage:
 //
-//	LUX_PRIVATE_KEY=<hex> go run . --network=mainnet
-//	LUX_KEY_NAME=mainnet-key-01 go run . --network=mainnet
-//	LUX_PRIVATE_KEY=<hex> go run . --network=mainnet --chain=zoo
+//	LUX_MNEMONIC="word1 word2 ..." go run . --network=mainnet
+//	go run . --network=mainnet mainnet-key-01
+//	LUX_MNEMONIC="word1 word2 ..." go run . --network=mainnet --chain=zoo
 package main
 
 import (
