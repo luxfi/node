@@ -18,13 +18,13 @@ import (
 // package. Pinned at "_V1"; bumping the tag invalidates every prior derived
 // key (which is the correct behaviour for a hard-fork of the encoding).
 //
-// LUX_NODE_AEAD_V1   — peer-to-peer session AEAD key
-// LUX_NODE_DKG_V1    — DKG channel AEAD key (high-value, ML-KEM-1024 only)
-// LUX_NODE_TRANSCRIPT_V1 — TupleHash256 customization for handshake transcript
+// NODE_AEAD_V1   — peer-to-peer session AEAD key
+// NODE_DKG_V1    — DKG channel AEAD key (high-value, ML-KEM-1024 only)
+// NODE_TRANSCRIPT_V1 — TupleHash256 customization for handshake transcript
 const (
-	customizationAEAD       = "LUX_NODE_AEAD_V1"
-	customizationDKGAEAD    = "LUX_NODE_DKG_V1"
-	customizationTranscript = "LUX_NODE_TRANSCRIPT_V1"
+	customizationAEAD       = "NODE_AEAD_V1"
+	customizationDKGAEAD    = "NODE_DKG_V1"
+	customizationTranscript = "NODE_TRANSCRIPT_V1"
 
 	// TranscriptHashSize is the byte width of the bound handshake
 	// transcript hash returned by HashTranscript and stored in KEMSession.
@@ -78,7 +78,7 @@ var (
 // and the 384-bit running transcript hash (cSHAKE256 / TupleHash256 over
 // every handshake message produced before the KEM round, in canonical
 // order). The AEAD key is derived from SharedSecret + TranscriptHash via
-// cSHAKE256 customisation "LUX_NODE_AEAD_V1".
+// cSHAKE256 customisation "NODE_AEAD_V1".
 //
 // Field invariants enforced by package APIs:
 //
@@ -114,13 +114,13 @@ type KEMSession struct {
 
 // HashTranscript returns the canonical cSHAKE256 / TupleHash256 commitment
 // to msgs in the order they appear. Customization is
-// "LUX_NODE_TRANSCRIPT_V1" so two different handshake protocols cannot
+// "NODE_TRANSCRIPT_V1" so two different handshake protocols cannot
 // produce the same hash from the same byte content.
 //
 // The encoding is SP 800-185 TupleHash256: each input is left-encoded with
 // its bit-length prefix, the right-encoded total output bit-length is
 // appended, and the result is fed to cSHAKE256 with the function-name
-// "TupleHash" and customisation "LUX_NODE_TRANSCRIPT_V1". This matches
+// "TupleHash" and customisation "NODE_TRANSCRIPT_V1". This matches
 // the helper used by ChainSecurityProfile.ComputeHash, so the same
 // transcript hash byte-encodes identically across the node and consensus.
 func HashTranscript(msgs ...[]byte) [TranscriptHashSize]byte {
@@ -335,7 +335,7 @@ func finishSession(scheme KeyExchangeID, ssBuf, transcript []byte) *KEMSession {
 
 // DeriveAEADKey returns the 256-bit AEAD session key bound to this KEM
 // session's shared secret AND its transcript hash. Uses cSHAKE256 with
-// customisation "LUX_NODE_AEAD_V1"; the function name is "KEMDerive".
+// customisation "NODE_AEAD_V1"; the function name is "KEMDerive".
 //
 // Two sessions with the same SharedSecret but different TranscriptHash
 // produce two different keys. Two sessions with the same TranscriptHash
@@ -356,7 +356,7 @@ func (s *KEMSession) DeriveAEADKey() [AEADKeySize]byte {
 }
 
 // DeriveDKGAEADKey returns the 256-bit AEAD session key bound to this KEM
-// session under the DKG-channel customisation "LUX_NODE_DKG_V1". A DKG
+// session under the DKG-channel customisation "NODE_DKG_V1". A DKG
 // channel session is required by the strict-PQ profile to negotiate
 // ML-KEM-1024; this function refuses to derive a key on any other scheme
 // so a misconfigured caller fails loud at key derivation rather than
