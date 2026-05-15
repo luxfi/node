@@ -3,7 +3,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package ghttp
+package rpchttp
 
 import (
 	"bytes"
@@ -14,8 +14,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcreader"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcresponsewriter"
 	"github.com/luxfi/node/proto/pb/io/reader"
 	"github.com/luxfi/vm/rpc/grpcutils"
 
@@ -52,8 +52,8 @@ func (s *Server) Handle(ctx context.Context, req *httppb.HTTPRequest) (*httppb.H
 		writerHeaders[elem.Key] = elem.Values
 	}
 
-	writer := gresponsewriter.NewClient(writerHeaders, responsewriterpb.NewWriterClient(clientConn))
-	body := greader.NewClient(reader.NewReaderClient(clientConn))
+	writer := rpcresponsewriter.NewClient(writerHeaders, responsewriterpb.NewWriterClient(clientConn))
+	body := rpcreader.NewClient(reader.NewReaderClient(clientConn))
 
 	// create the request with the current context
 	request, err := http.NewRequestWithContext(
