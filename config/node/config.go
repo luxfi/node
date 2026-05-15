@@ -283,7 +283,7 @@ func (c *StakingConfig) IsStrictPQ() bool {
 // staking identity under chainID:
 //
 //   - Strict-PQ (StakingMLDSAPub set):
-//     NodeID = SHAKE256-384("LUX_NODE_ID_V1" || chainID || 0x42 || pubKey)[:20]
+//     NodeID = SHAKE256-384("NODE_ID_V1" || chainID || 0x42 || pubKey)[:20]
 //     via ids.NodeIDSchemeMLDSA65.DeriveMLDSA. chainID-bound so the
 //     same key on a different chain produces a different NodeID,
 //     blocking cross-chain replay of validator registrations.
