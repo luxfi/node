@@ -3,7 +3,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package gresponsewriter
+package rpcresponsewriter
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gconn"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gwriter"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcconn"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcreader"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcwriter"
 	"github.com/luxfi/vm/rpc/grpcutils"
 
 	responsewriterpb "github.com/luxfi/node/proto/pb/http/responsewriter"
@@ -103,9 +103,9 @@ func (s *Server) Hijack(context.Context, *emptypb.Empty) (*responsewriterpb.Hija
 	closer := grpcutils.ServerCloser{}
 	closer.Add(server)
 
-	connpb.RegisterConnServer(server, gconn.NewServer(conn, &closer))
-	readerpb.RegisterReaderServer(server, greader.NewServer(readWriter))
-	writerpb.RegisterWriterServer(server, gwriter.NewServer(readWriter))
+	connpb.RegisterConnServer(server, rpcconn.NewServer(conn, &closer))
+	readerpb.RegisterReaderServer(server, rpcreader.NewServer(readWriter))
+	writerpb.RegisterWriterServer(server, rpcwriter.NewServer(readWriter))
 
 	go grpcutils.Serve(serverListener, server)
 

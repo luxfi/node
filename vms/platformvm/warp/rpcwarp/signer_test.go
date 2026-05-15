@@ -3,7 +3,7 @@
 
 //go:build test && grpc
 
-package gwarp
+package rpcwarp
 
 import (
 	"testing"

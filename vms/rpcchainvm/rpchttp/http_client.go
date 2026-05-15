@@ -3,7 +3,7 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package ghttp
+package rpchttp
 
 import (
 	"io"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcreader"
+	"github.com/luxfi/node/vms/rpcchainvm/rpchttp/rpcresponsewriter"
 	"github.com/luxfi/node/proto/pb/io/reader"
 	"github.com/luxfi/vm/rpc/grpcutils"
 
@@ -54,7 +54,7 @@ func (c *Client) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer closer.GracefulStop()
 
 	// Wrap [w] with a lock to ensure that it is accessed in a thread-safe manner.
-	w = gresponsewriter.NewLockedWriter(w)
+	w = rpcresponsewriter.NewLockedWriter(w)
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -64,8 +64,8 @@ func (c *Client) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	server := grpcutils.NewServer()
 	closer.Add(server)
-	responsewriterpb.RegisterWriterServer(server, gresponsewriter.NewServer(w))
-	reader.RegisterReaderServer(server, greader.NewServer(r.Body))
+	responsewriterpb.RegisterWriterServer(server, rpcresponsewriter.NewServer(w))
+	reader.RegisterReaderServer(server, rpcreader.NewServer(r.Body))
 
 	// Start responsewriter gRPC service.
 	go grpcutils.Serve(serverListener, server)

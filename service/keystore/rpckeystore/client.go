@@ -3,7 +3,13 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package gkeystore
+// Package rpckeystore is the keystore-over-RPC client and server. The
+// transport is selected by build tag: `grpc` selects the legacy gRPC
+// codepath in this file; the default build (no tag) will eventually
+// select a ZAP-based codepath (task #57). Mirrors the rpcdb naming
+// pattern — `rpc` is the value (remote procedure call), the substrate
+// is per-tag.
+package rpckeystore
 
 import (
 	"context"

@@ -95,7 +95,7 @@ func (f *factory) newZAP(logger log.Logger) (interface{}, error) {
 	// IMPORTANT: Start with os.Environ() so the subprocess inherits PATH, HOME, etc.
 	// Setting cmd.Env to a non-nil value prevents exec.Cmd from inheriting the parent env.
 	cmd := subprocess.NewCmd(f.path)
-	cmd.Env = append(os.Environ(), "LUX_VM_TRANSPORT=zap")
+	cmd.Env = append(os.Environ(), "VM_TRANSPORT=zap")
 
 	status, stopper, err := subprocess.Bootstrap(
 		context.TODO(),
