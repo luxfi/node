@@ -19,7 +19,7 @@ import (
 // after a TLS 1.3 (X25519+ML-KEM-768) channel is established. The TLS
 // layer authenticates the underlying transport; this handshake binds the
 // node-level ML-DSA-65 identity to an ML-KEM session, deriving an AEAD
-// session key under cSHAKE256 customisation "LUX_NODE_AEAD_V1".
+// session key under cSHAKE256 customisation "NODE_AEAD_V1".
 //
 // Wire protocol (4 byte tags described below are encoded big-endian
 // length-prefixed):
@@ -47,11 +47,11 @@ import (
 // Both sides then:
 //
 //  1. Derive shared_secret = ML-KEM.Decapsulate(KEMCiphertext)
-//  2. Derive bound transcript = TupleHash256("LUX_NODE_TRANSCRIPT_V1",
+//  2. Derive bound transcript = TupleHash256("NODE_TRANSCRIPT_V1",
 //                                            INIT bytes ‖ RESP bytes ‖
 //                                            init_ml_dsa_pub ‖ resp_ml_dsa_pub ‖
 //                                            profile_id ‖ chain_id)
-//  3. Derive aead_key = cSHAKE256("LUX_NODE_AEAD_V1",
+//  3. Derive aead_key = cSHAKE256("NODE_AEAD_V1",
 //                                 scheme ‖ shared_secret ‖ transcript)
 //
 // The aead_key is what callers feed to ChaCha20-Poly1305 or AES-256-GCM
@@ -294,7 +294,7 @@ func InitiateHandshake(
 	}
 
 	// Sign the transcript prefix (every field above Sig). The signature
-	// context ("LUX_NODE_PQ_HANDSHAKE_V1") makes role and version part of
+	// context ("NODE_PQ_HANDSHAKE_V1") makes role and version part of
 	// the signed bytes so a captured signature cannot be replayed as a
 	// responder signature or under a future protocol version.
 	transcriptPrefix := init.transcriptPrefix(roleInitiator)
@@ -302,7 +302,7 @@ func InitiateHandshake(
 	if err := mldsa65.SignTo(
 		local.Secret,
 		transcriptPrefix,
-		[]byte("LUX_NODE_PQ_HANDSHAKE_V1/initiator"),
+		[]byte("NODE_PQ_HANDSHAKE_V1/initiator"),
 		false, // deterministic mode; randomized=true is also valid, but determinism keeps test vectors stable
 		sig,
 	); err != nil {
@@ -343,7 +343,7 @@ func RespondHandshake(
 	if !mldsa65.Verify(
 		peerPub,
 		init.transcriptPrefix(roleInitiator),
-		[]byte("LUX_NODE_PQ_HANDSHAKE_V1/initiator"),
+		[]byte("NODE_PQ_HANDSHAKE_V1/initiator"),
 		init.Sig,
 	) {
 		return nil, nil, fmt.Errorf("%w: initiator signature failed", ErrHandshakeBadIdentity)
@@ -374,7 +374,7 @@ func RespondHandshake(
 	if err := mldsa65.SignTo(
 		local.Secret,
 		respPrefix,
-		[]byte("LUX_NODE_PQ_HANDSHAKE_V1/responder"),
+		[]byte("NODE_PQ_HANDSHAKE_V1/responder"),
 		false,
 		sig,
 	); err != nil {
@@ -425,7 +425,7 @@ func FinishInitiatorHandshake(
 	if !mldsa65.Verify(
 		peerPub,
 		resp.transcriptPrefix(init, roleResponder),
-		[]byte("LUX_NODE_PQ_HANDSHAKE_V1/responder"),
+		[]byte("NODE_PQ_HANDSHAKE_V1/responder"),
 		resp.Sig,
 	) {
 		return nil, fmt.Errorf("%w: responder signature failed", ErrHandshakeBadIdentity)

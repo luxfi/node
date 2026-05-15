@@ -204,13 +204,8 @@ type Config struct {
 	// node.Node.initSecurityProfile). When non-nil, the network upgrader
 	// builds a peer.SchemeGate from it and refuses any inbound or
 	// outbound TLS connection whose wire NodeIDScheme is not admissible
-	// under the profile. nil leaves the cross-axis gate disabled
-	// (legacy / classical-compat networks).
+	// under the profile. nil leaves the cross-axis gate disabled (chains
+	// that ship no profile remain accepted by the upgrader's nil-safe
+	// path).
 	SecurityProfile *consensusconfig.ChainSecurityProfile `json:"-"`
-
-	// ClassicalCompatUnsafe mirrors the operator's
-	// LUX_CLASSICAL_COMPAT_UNSAFE knob; threaded into the peer.SchemeGate
-	// so permissive profiles can opt into legacy classical NodeIDs. The
-	// flag has no effect on strict-PQ profiles (defence in depth).
-	ClassicalCompatUnsafe bool `json:"classicalCompatUnsafe"`
 }
