@@ -28,10 +28,9 @@ import (
 func TestUpgrader_StrictPQ_RefusesClassicalTLS(t *testing.T) {
 	require := require.New(t)
 
-	// Strict-PQ SchemeGate active from genesis. No transition window,
-	// ClassicalCompatUnsafe=false — the gate's job is to refuse the
-	// classical scheme byte regardless of operator flag.
-	gate, err := peer.NewSchemeGate(consensusconfig.StrictPQ(), false, 0)
+	// Strict-PQ SchemeGate active from genesis. Forward-only PQ —
+	// the gate refuses the classical scheme byte at every height.
+	gate, err := peer.NewSchemeGate(consensusconfig.StrictPQ(), 0)
 	require.NoError(err)
 
 	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)

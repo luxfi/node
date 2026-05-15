@@ -8,7 +8,7 @@
 //
 // The session shared secret is derived through one FIPS 203 encapsulate /
 // decapsulate dance and then bound to the handshake transcript via cSHAKE256
-// with customization "LUX_NODE_AEAD_V1". The bound key is the AEAD session
+// with customization "NODE_AEAD_V1". The bound key is the AEAD session
 // key used by every subsequent frame on the connection.
 //
 // One and only one KEM family is admitted on a strict-PQ profile: ML-KEM.

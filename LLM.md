@@ -417,11 +417,11 @@ cross-axis check against the chain's `ChainSecurityProfile`.
   `"proposer"`, `"validator"`, `"mempool-sender"`) that appears in the
   refused-by error.
 - Migration path: `ActivationHeight` is the block at which a strict-PQ
-  chain stops accepting the classical `secp256k1` (0x90) scheme. Before
-  `ActivationHeight` the gate accepts BOTH the pinned PQ scheme and the
-  named classical scheme (transition window); from `ActivationHeight`
-  onward, strict-PQ chains refuse classical regardless of the operator
-  `LUX_CLASSICAL_COMPAT_UNSAFE` flag.
+  chain refuses any non-PQ `NodeIDScheme` byte at every height under
+  the forward-only PQ policy. The classical `secp256k1` (0x90) scheme is
+  refused at the gate; there is no transition window and no operator
+  classical-compat escape hatch (strict-PQ chains refuse classical at
+  every boundary, period).
 - Typed errors: `ErrSchemeGateConfig`, `ErrSchemeGateMismatch`,
   `ErrSchemeGateUnknownScheme`.
 
@@ -695,7 +695,7 @@ Testing conducted on a single Lux validator node (testnet mode, macOS):
 **Benchmark Command:**
 ```bash
 cd ~/work/lux/benchmarks
-LUX_ENDPOINT="http://localhost:9640/ext/bc/C/rpc" \
+NODE_ENDPOINT="http://localhost:9640/ext/bc/C/rpc" \
 PRIVATE_KEY="<funded_key>" \
 ./bin/bench tps --chains=lux --duration=60s --concurrency=5
 ```

@@ -33,7 +33,7 @@ var ErrDKGSchemeMismatch = errors.New("kem: DKG channels MUST use ML-KEM-1024")
 //
 // The returned KEMSession is otherwise byte-identical to what
 // InitiateKEMSession(MLKEM1024, ...) returns; downstream code may call
-// DeriveDKGAEADKey on it to bind the AEAD key under the "LUX_NODE_DKG_V1"
+// DeriveDKGAEADKey on it to bind the AEAD key under the "NODE_DKG_V1"
 // customisation.
 func InitiateDKGKEMSession(
 	scheme KeyExchangeID,

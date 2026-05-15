@@ -492,14 +492,13 @@ func NewNetwork(
 	// gate nil — upgrader.connToIDAndCert is nil-safe and refuses nobody.
 	var schemeGate *peer.SchemeGate
 	if config.SecurityProfile != nil {
-		schemeGate, err = peer.NewSchemeGate(config.SecurityProfile, config.ClassicalCompatUnsafe, 0)
+		schemeGate, err = peer.NewSchemeGate(config.SecurityProfile, 0)
 		if err != nil {
 			return nil, fmt.Errorf("building peer SchemeGate: %w", err)
 		}
 		log.Info("peer SchemeGate active",
 			zap.String("profile", config.SecurityProfile.ProfileName),
 			zap.Uint32("profileID", config.SecurityProfile.ProfileID),
-			zap.Bool("classicalCompatUnsafe", config.ClassicalCompatUnsafe),
 		)
 	}
 

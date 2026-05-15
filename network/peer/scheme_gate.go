@@ -14,9 +14,11 @@
 //	"validator"      — platformvm validator registration
 //	"mempool-sender" — mempool signed-tx submission
 //
-// The hardfork-style activation block lets a chain accept BOTH classical
-// and ML-DSA NodeIDs during a transition window, then switch the
-// strict-PQ profile to ML-DSA-only at a configured activation block.
+// Forward-only PQ: there is no transition window and no classical
+// fallback. Every site funnels through Classify which admits only the
+// pinned PQ NodeIDScheme byte (ML-DSA-65 today); anything else — a
+// classical secp256k1 byte, a cross-PQ scheme like ML-DSA-87 on a chain
+// pinning ML-DSA-65, or an unknown byte — is refused at the gate.
 
 package peer
 
@@ -31,35 +33,23 @@ import (
 // SchemeGate is the chain-scoped policy object that decides whether a
 // peer's NodeIDScheme is admissible under the chain's pinned profile.
 // One SchemeGate per chain; created at chain-bootstrap from the chain's
-// ChainSecurityProfile and the operator's classical-compat flag, and
-// pinned for the chain's lifetime (no re-derivation in the hot path).
+// ChainSecurityProfile and pinned for the chain's lifetime (no
+// re-derivation in the hot path).
 //
-// The migration window is expressed as an activation height: until
-// ActivationHeight, the gate accepts BOTH the pinned PQ scheme and the
-// classical secp256k1 scheme (the chain is in "mixed-scheme" mode);
-// from ActivationHeight onward, strict-PQ chains refuse classical
-// regardless of the operator flag.
-//
-// ActivationHeight == 0 means "the gate is already active at genesis"
-// — the right value for a fresh strict-PQ chain. A chain migrating
-// from classical to PQ sets ActivationHeight to the block at which the
-// hardfork takes effect.
+// Forward-only PQ: the gate has no transition window and no operator
+// classical-compat escape hatch. Every Classify call admits only the
+// pinned PQ scheme byte; classical secp256k1 NodeIDs and cross-PQ
+// bytes are refused at every height.
 type SchemeGate struct {
 	// Profile is the chain's locked ChainSecurityProfile. The pinned
 	// ValidatorSchemeID is read through profile.ValidatorSchemeID().
 	Profile *consensusconfig.ChainSecurityProfile
 
-	// ClassicalCompatUnsafe mirrors the operator's
-	// LUX_CLASSICAL_COMPAT_UNSAFE knob. Strict-PQ profiles refuse
-	// classical schemes regardless of this flag (defence in depth);
-	// permissive profiles honour it.
-	ClassicalCompatUnsafe bool
-
-	// ActivationHeight is the block height at which the gate stops
-	// accepting classical NodeIDs on strict-PQ chains. Before
-	// ActivationHeight, the gate is in "transition" mode and accepts
-	// both. At or after ActivationHeight, the strict-PQ rule applies.
-	// Zero means "no transition window — strict from genesis".
+	// ActivationHeight is preserved for symmetry with the per-chain
+	// fork-height bookkeeping; the gate's policy is the same on both
+	// sides of it (PQ-only). Reserved for downstream callers that want
+	// a single field to log "where strict-PQ took effect" alongside
+	// other hardfork heights — the gate itself does not branch on it.
 	ActivationHeight uint64
 }
 
@@ -68,16 +58,14 @@ type SchemeGate struct {
 // the gate does not re-validate the profile on each call.
 func NewSchemeGate(
 	profile *consensusconfig.ChainSecurityProfile,
-	classicalCompatUnsafe bool,
 	activationHeight uint64,
 ) (*SchemeGate, error) {
 	if profile == nil {
 		return nil, fmt.Errorf("%w: profile is nil", ErrSchemeGateConfig)
 	}
 	return &SchemeGate{
-		Profile:               profile,
-		ClassicalCompatUnsafe: classicalCompatUnsafe,
-		ActivationHeight:      activationHeight,
+		Profile:          profile,
+		ActivationHeight: activationHeight,
 	}, nil
 }
 
@@ -87,11 +75,9 @@ func NewSchemeGate(
 // a site tag for the log line; it returns a TypedNodeID stamped with the
 // scheme byte once the chain's policy admits the pair.
 //
-// The classical-secp256k1 input is what the existing TLS upgrader
-// produces today; the gate stamps it with the matching scheme byte and
-// runs the cross-axis check. Strict-PQ chains past their activation
-// height refuse the classical NodeID here; that is the migration
-// enforcement point.
+// Forward-only PQ: only the pinned PQ scheme byte is admitted. A
+// classical secp256k1 byte, a cross-PQ byte (ML-DSA-87 on a chain
+// pinning ML-DSA-65), or an unknown byte is refused at every height.
 //
 // site is a free-form tag ("handshake", "proposer", "validator",
 // "mempool-sender" are the conventional values) included verbatim in
@@ -107,32 +93,11 @@ func (g *SchemeGate) Classify(
 			ErrSchemeGateUnknownScheme, site, byte(derivedScheme))
 	}
 
-	// Transition window: accept the pinned PQ byte AND the named
-	// classical byte. Any byte outside that pair (e.g. ML-DSA-87 on a
-	// chain that pins ML-DSA-65) is still refused as a cross-scheme
-	// mismatch.
-	if height < g.ActivationHeight {
-		pinned := ids.NodeIDScheme(g.Profile.ValidatorSchemeID())
-		if derivedScheme != pinned && derivedScheme != ids.NodeIDSchemeSecp256k1 {
-			return ids.TypedNodeID{}, fmt.Errorf("%w: site=%s presented=%s pinned=%s height=%d (transition)",
-				ErrSchemeGateMismatch,
-				site, derivedScheme, pinned, height)
-		}
-		typed, err := ids.NewTypedNodeID(derivedScheme, nodeID)
-		if err != nil {
-			return ids.TypedNodeID{}, fmt.Errorf("%w: site=%s: %w",
-				ErrSchemeGateMismatch, site, err)
-		}
-		return typed, nil
-	}
-
-	// Post-activation: defer to the profile's cross-axis check. The
-	// profile's strict-PQ class refuses classical even under the
-	// operator flag.
+	// PQ-only: defer to the profile's cross-axis check with the
+	// classical-compat escape hatch pinned off. The profile refuses
+	// classical schemes; this gate refuses them at every height.
 	presentedSig := consensusconfig.SigSchemeID(derivedScheme)
-	if err := g.Profile.AcceptsValidatorScheme(
-		presentedSig, g.ClassicalCompatUnsafe,
-	); err != nil {
+	if err := g.Profile.AcceptsValidatorScheme(presentedSig, false); err != nil {
 		return ids.TypedNodeID{}, fmt.Errorf("%w: site=%s height=%d: %w",
 			ErrSchemeGateMismatch, site, height, err)
 	}

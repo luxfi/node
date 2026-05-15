@@ -1082,10 +1082,9 @@ func allFlags() []FlagSpec {
 		// the node uses the ML-DSA-65 public key as the NodeID source via
 		// ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, pubKey) — replacing
 		// the classical TLS-cert NodeID derivation. The classical TLS
-		// staker.crt/key + signer.key flags above stay defined so a
-		// classical-compat chain (LUX_CLASSICAL_COMPAT_UNSAFE) can still
-		// boot, but a strict-PQ profile rejects any classical material at
-		// the validator-set boundary.
+		// staker.crt/key + signer.key flags above are retained only for
+		// legacy chains that ship no ChainSecurityProfile; strict-PQ
+		// chains refuse classical material at every boundary.
 		{
 			Key:         "staking-mldsa-key-file",
 			Type:        TypeString,
