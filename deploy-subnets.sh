@@ -42,7 +42,7 @@ deploy_network() {
     echo "Deploying subnets to $network"
     echo "=============================="
 
-    LUX_PRIVATE_KEY="$KEY" "$DEPLOY_BIN" \
+    PRIVATE_KEY="$KEY" "$DEPLOY_BIN" \
         --network="$network" \
         --state-dir="$STATE_DIR" 2>&1
 

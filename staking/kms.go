@@ -77,12 +77,12 @@ func FetchFromKMS(cfg KMSConfig) (*KMSStakingKeys, error) {
 
 // FetchFromKMSEnv reads KMS config from environment variables and fetches staking keys.
 func FetchFromKMSEnv() (*KMSStakingKeys, error) {
-	endpoint := os.Getenv("LUX_KMS_ENDPOINT")
-	secretPath := os.Getenv("LUX_KMS_STAKING_PATH")
-	authToken := os.Getenv("LUX_KMS_TOKEN")
+	endpoint := os.Getenv("KMS_ENDPOINT")
+	secretPath := os.Getenv("KMS_STAKING_PATH")
+	authToken := os.Getenv("KMS_TOKEN")
 
 	if endpoint == "" || secretPath == "" {
-		return nil, fmt.Errorf("LUX_KMS_ENDPOINT and LUX_KMS_STAKING_PATH must be set")
+		return nil, fmt.Errorf("KMS_ENDPOINT and KMS_STAKING_PATH must be set")
 	}
 
 	return FetchFromKMS(KMSConfig{

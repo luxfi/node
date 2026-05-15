@@ -82,17 +82,17 @@ RUN ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     ldconfig 2>/dev/null || true
 
 # Fetch pre-built luxcpp/cevm libs (libevm, libevm-gpu, libluxgpu,
-# libcevm_precompiles + go_bridge.h). When LUX_CGO=1 these libraries are
+# libcevm_precompiles + go_bridge.h). When CGO_ENABLED=1 these libraries are
 # linked into the C-Chain plugin via github.com/luxfi/chains/evm/cevm
 # and become the default execution backend (parallel + GPU EVM).
 #
 # CI/RELEASE GAP: the luxcpp/cevm release artifacts MUST publish per-arch
 # tarballs at the URL below for both linux-x86_64 and linux-arm64. Until
-# those tarballs exist, builds with LUX_CGO=1 will fail at this step and
-# operators must build with LUX_CGO=0 (pure-Go fallback).
-ARG LUX_CGO=1
+# those tarballs exist, builds with CGO_ENABLED=1 will fail at this step and
+# operators must build with CGO_ENABLED=0 (pure-Go fallback).
+ARG CGO_ENABLED=1
 ARG CEVM_VERSION=v0.19.0
-RUN if [ "${LUX_CGO}" = "1" ]; then \
+RUN if [ "${CGO_ENABLED}" = "1" ]; then \
         ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
         if [ "$ARCH" = "amd64" ]; then CEVM_ARCH="linux-x86_64"; else CEVM_ARCH="linux-arm64"; fi && \
         wget -q "https://github.com/luxcpp/cevm/releases/download/${CEVM_VERSION}/luxcpp-cevm-${CEVM_ARCH}.tar.gz" \
@@ -101,17 +101,17 @@ RUN if [ "${LUX_CGO}" = "1" ]; then \
         rm /tmp/cevm.tar.gz && \
         ldconfig 2>/dev/null || true ; \
     else \
-        echo "LUX_CGO=0: skipping luxcpp/cevm fetch (pure-Go fallback build)" ; \
+        echo "CGO_ENABLED=0: skipping luxcpp/cevm fetch (pure-Go fallback build)" ; \
     fi
 
-# Build node. LUX_CGO=1 (default) links luxcpp/cevm for parallel + GPU EVM.
-# Set LUX_CGO=0 for portable pure-Go builds without the native libs.
+# Build node. CGO_ENABLED=1 (default) links luxcpp/cevm for parallel + GPU EVM.
+# Set CGO_ENABLED=0 for portable pure-Go builds without the native libs.
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
-ENV CGO_ENABLED=${LUX_CGO}
+ENV CGO_ENABLED=${CGO_ENABLED}
 RUN . ./build_env.sh && \
-    echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM, LUX_CGO=${LUX_CGO}}" && \
+    echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM, CGO_ENABLED=${CGO_ENABLED}}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
     GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}

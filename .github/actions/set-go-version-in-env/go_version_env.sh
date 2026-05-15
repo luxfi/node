@@ -9,6 +9,6 @@ set -euo pipefail
 # when go is already installed.
 
 # 3 directories above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd ../../.. && pwd )
+NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd ../../.. && pwd )
 
-echo GO_VERSION="~$(sed -n -e 's/^go //p' "${LUX_PATH}"/go.mod)"
+echo GO_VERSION="~$(sed -n -e 's/^go //p' "${NODE_PATH}"/go.mod)"

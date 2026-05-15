@@ -9,11 +9,11 @@ set -euo pipefail
 # TODO(marun) Perform more extensive validation (e.g. e2e testing) against one or more images
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
-source "$LUX_PATH"/scripts/constants.sh
-source "$LUX_PATH"/scripts/git_commit.sh
-source "$LUX_PATH"/scripts/image_tag.sh
+source "$NODE_PATH"/scripts/constants.sh
+source "$NODE_PATH"/scripts/git_commit.sh
+source "$NODE_PATH"/scripts/image_tag.sh
 
 build_and_test() {
   local image_name=$1
