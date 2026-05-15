@@ -45,6 +45,12 @@ type Fx interface {
 	// assents to [tx]
 	VerifyPermission(tx, in, cred, controlGroup interface{}) error
 
+	// VerifyOperation verifies that [tx] can perform [op] against [utxos]
+	// using [cred] for authorisation. Mirrors the XVM contract — the
+	// concrete secp256k1fx.Fx satisfies both interfaces identically, so the
+	// same per-Op authorisation logic protects P-Chain assets.
+	VerifyOperation(tx, op, cred interface{}, utxos []interface{}) error
+
 	// CreateOutput creates a new output with the provided control group worth
 	// the specified amount
 	CreateOutput(amount uint64, controlGroup interface{}) (interface{}, error)
