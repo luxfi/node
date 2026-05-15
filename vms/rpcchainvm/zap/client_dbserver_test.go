@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/log"
 	luxruntime "github.com/luxfi/runtime"
-	rpcdbzap "github.com/luxfi/vm/proto/rpcdb"
+	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 )
 
 // TestInitialize_DBServerAddrPopulated confirms that Client.Initialize

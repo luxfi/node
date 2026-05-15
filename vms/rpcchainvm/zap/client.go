@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/version"
 	"github.com/luxfi/vm/chain"
-	rpcdbzap "github.com/luxfi/vm/proto/rpcdb"
+	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 )
 
 var (

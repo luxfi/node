@@ -20,7 +20,7 @@ import (
 
 	zapwire "github.com/luxfi/api/zap"
 	"github.com/luxfi/database/memdb"
-	rpcdbzap "github.com/luxfi/vm/proto/rpcdb"
+	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 )
 
 // TestCEvm_DialsZAPdbServer is a true cross-process end-to-end test:
