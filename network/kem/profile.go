@@ -15,7 +15,7 @@ import (
 // network-layer projection of that profile.
 type ActiveProfile struct {
 	// Name is the canonical profile name for log lines and audit reports.
-	// Production strict-PQ deployments use "LUX_STRICT_E2E_PQ".
+	// Production strict-PQ deployments use "STRICT_E2E_PQ".
 	Name string
 
 	// NodeIdentity is the wire name of the per-node identity signature
@@ -43,13 +43,13 @@ type ActiveProfile struct {
 	ForbidClassicalKEM bool
 }
 
-// LuxStrictE2EPQ returns the canonical Lux strict-PQ profile projection
+// StrictE2EPQ returns the canonical strict-PQ profile projection
 // for the network layer. Mirrors the consensus-config profile of the
 // same shape; values here are pinned so a node that boots without an
 // explicit profile still advertises the strict posture by default.
-func LuxStrictE2EPQ() ActiveProfile {
+func StrictE2EPQ() ActiveProfile {
 	return ActiveProfile{
-		Name:               "LUX_STRICT_E2E_PQ",
+		Name:               "STRICT_E2E_PQ",
 		NodeIdentity:       "ML-DSA-65",
 		SessionKEM:         KeyExchangeMLKEM768,
 		DKGKEM:             KeyExchangeMLKEM1024,
@@ -63,7 +63,7 @@ func LuxStrictE2EPQ() ActiveProfile {
 // startup MUST emit on boot under a strict-PQ profile. Fixed format so
 // log scrapers can match deterministically.
 //
-//	SECURITY PROFILE: LUX_STRICT_E2E_PQ
+//	SECURITY PROFILE: STRICT_E2E_PQ
 //	NODE IDENTITY:    ML-DSA-65
 //	SESSION KEM:      ML-KEM-768
 //	DKG KEM:          ML-KEM-1024
