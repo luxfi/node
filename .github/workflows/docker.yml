@@ -51,7 +51,7 @@ jobs:
           platforms: linux/amd64
           push: true
           build-args: |
-            LUX_CGO=0
+            CGO_ENABLED=0
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
