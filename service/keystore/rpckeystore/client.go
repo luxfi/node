@@ -16,8 +16,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
+	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/node/service/keystore"
-	"github.com/luxfi/node/internal/database/rpcdb"
 	"github.com/luxfi/vm/rpc/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
@@ -60,6 +60,6 @@ func (c *Client) GetRawDatabase(username, password string) (database.Database, e
 		return nil, err
 	}
 
-	dbClient := rpcdb.NewClient(rpcdbpb.NewDatabaseClient(clientConn))
+	dbClient := rpcdb.NewGRPCClient(rpcdbpb.NewDatabaseClient(clientConn))
 	return dbClient, nil
 }

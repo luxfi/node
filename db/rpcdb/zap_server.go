@@ -12,7 +12,7 @@ import (
 
 	zapwire "github.com/luxfi/api/zap"
 	"github.com/luxfi/database"
-	rpcdb "github.com/luxfi/proto/rpcdb"
+	rpcdb "github.com/luxfi/protocol/rpcdb"
 )
 
 // ZAP db channel MsgType IDs. These are the wire-level Layer-A
