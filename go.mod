@@ -196,7 +196,7 @@ require (
 require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/protocol v0.0.4 // indirect
+	github.com/luxfi/protocol v0.0.5
 	github.com/luxfi/upgrade v1.0.0 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -226,7 +226,6 @@ require (
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2
 	github.com/luxfi/math/big v0.1.0 // indirect
-	github.com/luxfi/proto v0.0.0-00010101000000-000000000000
 	github.com/luxfi/sampler v1.0.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -242,5 +241,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/proto => ../proto

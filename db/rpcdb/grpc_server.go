@@ -12,13 +12,13 @@ import (
 
 	"github.com/luxfi/database"
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
-	rpcdb "github.com/luxfi/proto/rpcdb"
+	rpcdb "github.com/luxfi/protocol/rpcdb"
 )
 
 // GRPCServer is the gRPC transport adapter for the rpcdb Service. It
 // wraps *Service and translates gRPC's protobuf-generated request /
 // response types into the transport-neutral wire types in
-// github.com/luxfi/proto/rpcdb. Pure adapter — no storage logic
+// github.com/luxfi/protocol/rpcdb. Pure adapter — no storage logic
 // lives here.
 type GRPCServer struct {
 	rpcdbpb.UnimplementedDatabaseServer
