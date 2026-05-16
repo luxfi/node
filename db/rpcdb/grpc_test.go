@@ -1,6 +1,6 @@
 //go:build grpc
 
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -21,15 +21,15 @@ import (
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
-type testDatabase struct {
-	client *DatabaseClient
+type testGRPCDatabase struct {
+	client *GRPCClient
 	server *memdb.Database
 }
 
-func setupDB(t testing.TB) *testDatabase {
+func setupGRPCDB(t testing.TB) *testGRPCDatabase {
 	require := require.New(t)
 
-	db := &testDatabase{
+	db := &testGRPCDatabase{
 		server: memdb.New(),
 	}
 
@@ -38,7 +38,7 @@ func setupDB(t testing.TB) *testDatabase {
 	serverCloser := grpcutils.ServerCloser{}
 
 	server := grpcutils.NewServer()
-	rpcdbpb.RegisterDatabaseServer(server, NewServer(db.server))
+	rpcdbpb.RegisterDatabaseServer(server, NewGRPCServer(db.server))
 	serverCloser.Add(server)
 
 	go grpcutils.Serve(listener, server)
@@ -46,7 +46,7 @@ func setupDB(t testing.TB) *testDatabase {
 	conn, err := grpcutils.Dial(listener.Addr().String())
 	require.NoError(err)
 
-	db.client = NewClient(rpcdbpb.NewDatabaseClient(conn))
+	db.client = NewGRPCClient(rpcdbpb.NewDatabaseClient(conn))
 
 	t.Cleanup(func() {
 		serverCloser.Stop()
@@ -57,60 +57,57 @@ func setupDB(t testing.TB) *testDatabase {
 	return db
 }
 
-func TestInterface(t *testing.T) {
+func TestGRPCInterface(t *testing.T) {
 	for name, test := range dbtest.Tests {
 		t.Run(name, func(t *testing.T) {
-			db := setupDB(t)
+			db := setupGRPCDB(t)
 			test(t, db.client)
 		})
 	}
 }
 
-func FuzzKeyValue(f *testing.F) {
-	db := setupDB(f)
+func FuzzGRPCKeyValue(f *testing.F) {
+	db := setupGRPCDB(f)
 	dbtest.FuzzKeyValue(f, db.client)
 }
 
-func FuzzNewIteratorWithPrefix(f *testing.F) {
-	db := setupDB(f)
+func FuzzGRPCNewIteratorWithPrefix(f *testing.F) {
+	db := setupGRPCDB(f)
 	dbtest.FuzzNewIteratorWithPrefix(f, db.client)
 }
 
-func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
-	db := setupDB(f)
+func FuzzGRPCNewIteratorWithStartAndPrefix(f *testing.F) {
+	db := setupGRPCDB(f)
 	dbtest.FuzzNewIteratorWithStartAndPrefix(f, db.client)
 }
 
-func BenchmarkInterface(b *testing.B) {
+func BenchmarkGRPCInterface(b *testing.B) {
 	for _, size := range dbtest.BenchmarkSizes {
 		keys, values := dbtest.SetupBenchmark(b, size[0], size[1], size[2])
 		for name, bench := range dbtest.Benchmarks {
 			b.Run(fmt.Sprintf("rpcdb_%d_pairs_%d_keys_%d_values_%s", size[0], size[1], size[2], name), func(b *testing.B) {
-				db := setupDB(b)
+				db := setupGRPCDB(b)
 				bench(b, db.client, keys, values)
 			})
 		}
 	}
 }
 
-func TestHealthCheck(t *testing.T) {
+func TestGRPCHealthCheck(t *testing.T) {
 	scenarios := []struct {
-		name         string
-		testDatabase *testDatabase
-		testFn       func(db *corruptabledb.Database) error
-		wantErr      bool
-		wantErrMsg   string
+		name       string
+		testFn     func(db *corruptabledb.Database) error
+		wantErr    bool
+		wantErrMsg string
 	}{
 		{
-			name:         "healthcheck success",
-			testDatabase: setupDB(t),
+			name: "healthcheck success",
 			testFn: func(_ *corruptabledb.Database) error {
 				return nil
 			},
 		},
 		{
-			name:         "healthcheck failed db closed",
-			testDatabase: setupDB(t),
+			name: "healthcheck failed db closed",
 			testFn: func(db *corruptabledb.Database) error {
 				return db.Close()
 			},
@@ -122,12 +119,11 @@ func TestHealthCheck(t *testing.T) {
 		t.Run(scenario.name, func(t *testing.T) {
 			require := require.New(t)
 
-			baseDB := setupDB(t)
+			baseDB := setupGRPCDB(t)
 			db := corruptabledb.New(baseDB.server, log.NoLog{})
 			defer db.Close()
 			require.NoError(scenario.testFn(db))
 
-			// check db HealthCheck
 			_, err := db.HealthCheck(context.Background())
 			if scenario.wantErr {
 				require.Error(err) //nolint:forbidigo
@@ -136,7 +132,6 @@ func TestHealthCheck(t *testing.T) {
 			}
 			require.NoError(err)
 
-			// check rpc HealthCheck
 			_, err = baseDB.client.HealthCheck(context.Background())
 			require.NoError(err)
 		})
