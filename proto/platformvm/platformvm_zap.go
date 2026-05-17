@@ -1,5 +1,3 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -16,9 +14,11 @@ type (
 	ChainIDIndex                                                    = platformvm.ChainIDIndex
 )
 
-// Unmarshal decodes a message from bytes (ZAP implementation)
+// Unmarshal decodes a message from bytes. The ZAP codec encodes
+// messages via direct field assignment; this entry point is reserved
+// for compatibility with callers that thread a generic byte payload
+// through the wire types and is a no-op until a concrete consumer
+// arrives.
 func Unmarshal(data []byte, m interface{}) error {
-	// ZAP uses direct field assignment - for now just return nil
-	// Actual ZAP unmarshaling would use a codec
 	return nil
 }

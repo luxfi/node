@@ -1,11 +1,8 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package sync re-exports sync types from the appropriate wire format implementation.
-// Without grpc tag: uses ZAP wire format (zero protobuf)
-// With grpc tag: uses protobuf wire format
+// Package sync re-exports sync types from the ZAP wire format
+// implementation. ZAP is the only supported transport.
 package sync
 
 import "github.com/luxfi/node/proto/zap/sync"

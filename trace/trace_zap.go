@@ -1,11 +1,10 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package trace provides tracing functionality.
-// In ZAP mode (default), tracing is disabled - no OpenTelemetry dependencies.
-// Use -tags=grpc to enable full OpenTelemetry tracing support.
+// Package trace provides tracing primitives. The package ships a
+// no-op tracer suitable for ZAP-native production builds; a real
+// exporter implementation lives outside the node tree and plugs in
+// via the Tracer interface.
 package trace
 
 import (
@@ -185,13 +184,13 @@ func (noopTracer) Start(ctx context.Context, _ string, _ ...SpanStartOption) (co
 
 type noopSpan struct{}
 
-func (noopSpan) End(...SpanEndOption)         {}
-func (noopSpan) SetStatus(StatusCode, string) {}
-func (noopSpan) RecordError(error, ...EventOption) {}
-func (noopSpan) AddEvent(string, ...EventOption)   {}
-func (noopSpan) SetAttributes(...KeyValue)         {}
+func (noopSpan) End(...SpanEndOption)               {}
+func (noopSpan) SetStatus(StatusCode, string)       {}
+func (noopSpan) RecordError(error, ...EventOption)  {}
+func (noopSpan) AddEvent(string, ...EventOption)    {}
+func (noopSpan) SetAttributes(...KeyValue)          {}
 
-// New creates a new tracer (returns Noop in ZAP mode)
+// New creates a new tracer (returns Noop in the canonical ZAP build).
 func New(Config) (Tracer, error) {
 	return Noop, nil
 }

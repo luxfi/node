@@ -1,11 +1,8 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package p2p re-exports P2P types from the appropriate wire format implementation.
-// Without grpc tag: uses ZAP wire format (zero protobuf)
-// With grpc tag: uses protobuf wire format
+// Package p2p re-exports P2P types from the ZAP wire format
+// implementation. ZAP is the only supported transport.
 package p2p
 
 import "github.com/luxfi/node/proto/zap/p2p"
