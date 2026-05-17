@@ -22,7 +22,7 @@ import (
 func ExampleWallet() {
 	ctx := context.Background()
 	// Load key from local key storage (~/.lux/keys/) or environment variables
-	// Priority: LUX_MNEMONIC > CLI arg > default key
+	// Priority: MNEMONIC > CLI arg > default key
 	localKey, err := keyutil.LoadKey()
 	if err != nil {
 		log.Printf("no local key available, skipping example: %v", err)

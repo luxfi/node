@@ -27,7 +27,7 @@ const (
 )
 
 // MustLoadKey loads a secp256k1 private key from (in order of priority):
-// 1. LUX_MNEMONIC environment variable (BIP39 mnemonic phrase)
+// 1. MNEMONIC environment variable (BIP39 mnemonic phrase)
 // 2. Key name provided as first command line argument
 // 3. ~/.lux/keys/default/ if it exists
 //
@@ -37,7 +37,7 @@ func MustLoadKey() *secp256k1.PrivateKey {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading private key: %s\n", err)
 		fmt.Fprintf(os.Stderr, "\nUsage (in order of priority):\n")
-		fmt.Fprintf(os.Stderr, "  1. Set LUX_MNEMONIC env var (BIP39 mnemonic)\n")
+		fmt.Fprintf(os.Stderr, "  1. Set MNEMONIC env var (BIP39 mnemonic)\n")
 		fmt.Fprintf(os.Stderr, "  2. Pass key name as argument: %s <key-name>\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "\nAvailable keys in ~/.lux/keys/:\n")
 		listAvailableKeys()
@@ -49,11 +49,9 @@ func MustLoadKey() *secp256k1.PrivateKey {
 
 // LoadKey attempts to load a private key using the priority order above.
 func LoadKey() (*secp256k1.PrivateKey, error) {
-	// 1. Try mnemonic: MNEMONIC > LUX_MNEMONIC > LIGHT_MNEMONIC
-	for _, env := range []string{"MNEMONIC", "LUX_MNEMONIC", "LIGHT_MNEMONIC"} {
-		if mnemonic := os.Getenv(env); mnemonic != "" {
-			return keyFromMnemonic(mnemonic)
-		}
+	// 1. Try mnemonic from MNEMONIC env var.
+	if mnemonic := os.Getenv("MNEMONIC"); mnemonic != "" {
+		return keyFromMnemonic(mnemonic)
 	}
 
 	// 2. Try key name from command line arguments
