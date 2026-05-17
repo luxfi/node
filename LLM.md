@@ -8,7 +8,7 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 
 **Key Context:**
 - Original Lux Network node — NOT a fork
-- Latest Tag: v1.26.12
+- Latest Tag: v1.26.31
 - Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
 - Go Version: 1.26.1+
 - Database: ZapDB (primary, default)
@@ -274,31 +274,33 @@ Located in `vms/thresholdvm/fhe/`:
 | Gateway | `0x0200000000000000000000000000000000000083` |
 
 ### ZAP Transport (Zero-Copy App Proto)
-ZAP is the default high-performance binary wire protocol for VM<->Node communication.
-gRPC support is available via build tag for testing/compatibility.
+ZAP is the only wire protocol for VM<->Node communication. The gRPC
+fallback (and its `-tags=grpc` opt-in) was retired in v1.26.31 along
+with every `//go:build grpc` file under `node/`. There is one and only
+one way to talk to a Chain VM: ZAP.
 
-**Build Tags:**
+**Build:**
 ```bash
-go build                  # ZAP only (default, production)
-go build -tags=grpc       # gRPC support (for testing/compatibility)
+go build                  # ZAP only — there are no build tags
 ```
 
 **Key Packages:**
-- `github.com/luxfi/api/zap` - Core wire protocol and message types (Layer A)
-- `github.com/luxfi/proto/rpcdb` - rpcdb service spec / data carriers (Layer B)
-- `github.com/luxfi/node/db/rpcdb` - rpcdb Service + ZAP/gRPC transport adapters (Layer C)
-- `github.com/luxfi/vm/rpc/sender` - p2p.Sender over ZAP/gRPC
-- `vms/rpcchainvm/sender/` - Node-side sender implementation
-- `vms/platformvm/warp/zwarp/` - ZAP-based warp signing client/server
+- `github.com/luxfi/api/zap` — Core wire protocol and message types (Layer A)
+- `github.com/luxfi/protocol/rpcdb` — rpcdb service spec / data carriers (Layer B)
+- `github.com/luxfi/node/db/rpcdb` — rpcdb Service + ZAP transport adapter (Layer C)
+- `vms/rpcchainvm/sender/` — Node-side `p2p.Sender` over ZAP
+- `vms/rpcchainvm/zap/` — ChainVM client/server over ZAP
+- `vms/platformvm/warp/zwarp/` — Warp signing over ZAP
 
-**rpcdb Layered Topology (post-2026-05 reorg):**
-- Layer A — wire framing: `github.com/luxfi/api/zap` (independent module)
-- Layer B — rpcdb service spec: `github.com/luxfi/proto/rpcdb` (transport-agnostic data carriers)
-- Layer C — rpcdb impl: `node/db/rpcdb/{service.go, grpc_server.go, zap_server.go}`
+**rpcdb Layered Topology:**
+- Layer A — wire framing: `github.com/luxfi/api/zap`
+- Layer B — rpcdb service spec: `github.com/luxfi/protocol/rpcdb`
+- Layer C — rpcdb impl: `node/db/rpcdb/{service.go, zap_server.go}`
   - `service.go` — transport-neutral `Service` wrapping `database.Database`
-  - `zap_server.go` (default) — ZAP transport adapter (used by cevm)
-  - `grpc_server.go` (`-tags=grpc`) — gRPC transport adapter
-- One Service, many transport adapters. Adding a transport = new file wrapping `*Service`.
+  - `zap_server.go` — ZAP transport adapter (only adapter)
+- One Service, one transport. The dual-adapter pattern stays available
+  for future transports (each is a new file wrapping `*Service`), but
+  ZAP is the only one shipping.
 
 **Wire Protocol Format:**
 ```
@@ -313,11 +315,8 @@ go build -tags=grpc       # gRPC support (for testing/compatibility)
 
 **Sender Usage:**
 ```go
-// ZAP transport (default)
+// ZAP transport — the only transport
 s := sender.ZAP(zapConn)
-
-// gRPC transport (requires -tags=grpc build)
-s := sender.GRPC(senderpb.NewSenderClient(grpcConn))
 ```
 
 **Warp over ZAP:**
@@ -459,7 +458,7 @@ go test -v -run "TestHybrid" ./node/network/dialer/... -count=1
 
 ### 1. P2P Sender Interface
 Node's rpcchainvm implements `p2p.Sender` (from `github.com/luxfi/p2p`) for cross-chain messaging.
-The `sender` package is a gRPC implementation of `p2p.Sender`.
+The `sender` package is the ZAP-native implementation of `p2p.Sender`.
 
 ### 2. Chain Tracking
 Nodes don't automatically track chains. Use:
