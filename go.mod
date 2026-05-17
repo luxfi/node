@@ -68,7 +68,7 @@ require (
 	golang.org/x/tools v0.43.0
 	gonum.org/v1/gonum v0.17.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -194,7 +194,6 @@ require (
 )
 
 require (
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/luxfi/concurrent v0.0.3
 	github.com/luxfi/protocol v0.0.5
 	github.com/luxfi/upgrade v1.0.0 // indirect
