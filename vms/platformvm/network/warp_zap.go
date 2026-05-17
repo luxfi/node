@@ -1,5 +1,3 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -15,6 +13,10 @@ import (
 
 var _ warp.Verifier = (*signatureRequestVerifier)(nil)
 
+// signatureRequestVerifier is the warp signature verifier wired into
+// the platformvm network. Verification logic for L1 validator messages
+// is pending the cross-chain warp message refactor; until then the
+// verifier accepts every message.
 type signatureRequestVerifier struct {
 	stateLock sync.Locker
 	state     state.Chain
@@ -25,6 +27,5 @@ func (s signatureRequestVerifier) Verify(
 	_ *warp.UnsignedMessage,
 	_ []byte,
 ) error {
-	// ZAP mode: warp verification not implemented
 	return nil
 }

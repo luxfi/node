@@ -25,59 +25,27 @@ type factory struct {
 	processTracker  resource.ProcessTracker
 	runtimeTracker  runtime.Tracker
 	metricsGatherer metric.MultiGatherer
-	transportConfig TransportConfig
 }
 
-// NewFactory creates a new factory with default transport configuration (ZAP)
+// NewFactory creates a new factory. VM subprocesses are spawned and
+// communication uses ZAP — the one and only wire protocol for rpcchainvm.
 func NewFactory(
 	path string,
 	processTracker resource.ProcessTracker,
 	runtimeTracker runtime.Tracker,
 	metricsGatherer metric.MultiGatherer,
 ) vms.Factory {
-	return NewFactoryWithTransport(
-		path,
-		processTracker,
-		runtimeTracker,
-		metricsGatherer,
-		DefaultTransportConfig(),
-	)
-}
-
-// NewFactoryWithTransport creates a new factory with specified transport configuration
-func NewFactoryWithTransport(
-	path string,
-	processTracker resource.ProcessTracker,
-	runtimeTracker runtime.Tracker,
-	metricsGatherer metric.MultiGatherer,
-	transportConfig TransportConfig,
-) vms.Factory {
 	return &factory{
 		path:            path,
 		processTracker:  processTracker,
 		runtimeTracker:  runtimeTracker,
 		metricsGatherer: metricsGatherer,
-		transportConfig: transportConfig,
 	}
 }
 
 func (f *factory) New(logger log.Logger) (interface{}, error) {
-	logger.Info("creating VM client",
-		"path", f.path,
-		"transport", f.transportConfig.Transport,
-	)
+	logger.Info("creating VM client", "path", f.path)
 
-	// Use gRPC transport if explicitly configured (requires grpc build tag)
-	if f.transportConfig.Transport.UsesGRPC() {
-		return f.newGRPC(logger)
-	}
-
-	// Default to ZAP
-	return f.newZAP(logger)
-}
-
-// newZAP creates a VM client using ZAP transport
-func (f *factory) newZAP(logger log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
 		Stderr:           os.Stderr,
 		Stdout:           os.Stdout,

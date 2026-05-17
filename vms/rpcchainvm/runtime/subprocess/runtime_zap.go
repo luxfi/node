@@ -1,5 +1,3 @@
-//go:build !grpc
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -19,14 +17,13 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
 
-// Bootstrap starts a VM as a subprocess after initialization completes and
-// pipes the IO to the appropriate writers.
+// Bootstrap starts a VM as a subprocess after initialization completes
+// and pipes the IO to the appropriate writers. Handshake is the ZAP
+// binary framed exchange ([len][protocol version][vm addr]).
 //
-// This is the ZAP transport version which uses a simple binary handshake
-// instead of gRPC.
-//
-// The subprocess is expected to be stopped by the caller if a non-nil error is
-// returned. If piping the IO fails then the subprocess will be stopped.
+// The subprocess is expected to be stopped by the caller if a non-nil
+// error is returned. If piping the IO fails then the subprocess will
+// be stopped.
 func Bootstrap(
 	ctx context.Context,
 	listener net.Listener,
