@@ -12,7 +12,6 @@ go 1.26.3
 exclude github.com/luxfi/geth v1.16.1
 
 require (
-	connectrpc.com/connect v1.19.1
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/StephenButtolph/canoto v0.17.3
 	github.com/btcsuite/btcd/btcutil v1.1.6
@@ -52,11 +51,11 @@ require (
 	github.com/supranational/blst v0.3.16 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/thepudds/fzgen v0.4.3
-	go.opentelemetry.io/otel v1.42.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.42.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.42.0
-	go.opentelemetry.io/otel/sdk v1.42.0
-	go.opentelemetry.io/otel/trace v1.42.0
+	go.opentelemetry.io/otel v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.42.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.42.0 // indirect
+	go.opentelemetry.io/otel/trace v1.42.0 // indirect
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.50.0
@@ -68,8 +67,8 @@ require (
 	golang.org/x/tools v0.43.0
 	gonum.org/v1/gonum v0.17.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	google.golang.org/grpc v1.80.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/grpc v1.80.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -120,7 +119,6 @@ require (
 )
 
 require (
-	connectrpc.com/grpcreflect v1.3.0
 	github.com/cloudflare/circl v1.6.3
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
@@ -154,7 +152,6 @@ require (
 	github.com/luxfi/warp v1.18.6
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0
 	go.uber.org/zap v1.27.1
 )
 
@@ -171,7 +168,6 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.3.0 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/lens v0.1.3 // indirect
@@ -191,10 +187,10 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0 // indirect
 )
 
 require (
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/luxfi/concurrent v0.0.3
 	github.com/luxfi/protocol v0.0.5
 	github.com/luxfi/upgrade v1.0.0 // indirect
