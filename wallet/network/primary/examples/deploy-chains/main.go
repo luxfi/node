@@ -2,9 +2,9 @@
 //
 // Usage:
 //
-//	LUX_MNEMONIC="word1 word2 ..." go run . --network=mainnet
+//	MNEMONIC="word1 word2 ..." go run . --network=mainnet
 //	go run . --network=mainnet mainnet-key-01
-//	LUX_MNEMONIC="word1 word2 ..." go run . --network=mainnet --chain=zoo
+//	MNEMONIC="word1 word2 ..." go run . --network=mainnet --chain=zoo
 package main
 
 import (

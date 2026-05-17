@@ -1349,7 +1349,7 @@ func buildAutomineGenesis(stakingCfg *builder.StakingConfig, startTime uint64) (
 	cChainGenesis := automineCChainGenesis
 
 	// Lux Treasury address: 0x9011E888251AB053B7bD1cdB598Db4f9DEd94714
-	// This is derived from LUX_MNEMONIC and funded on C-Chain
+	// This is derived from the MNEMONIC env var and funded on C-Chain
 	var rewardAddress ids.ShortID
 	treasuryAddr := "9011E888251AB053B7bD1cdB598Db4f9DEd94714"
 	treasuryBytes, err := ids.ShortFromString(treasuryAddr)
