@@ -168,9 +168,8 @@ type Config struct {
 	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
 
 	// Genesis information
-	GenesisBytes       []byte `json:"-"`
-	XAssetID         ids.ID `json:"xAssetID"`
-	AllowGenesisUpdate bool   `json:"allowGenesisUpdate,omitempty"`
+	GenesisBytes []byte `json:"-"`
+	XAssetID     ids.ID `json:"xAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

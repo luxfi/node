@@ -132,13 +132,6 @@ func allFlags() []FlagSpec {
 			Category:    CategoryGenesis,
 		},
 		{
-			Key:         "allow-custom-genesis",
-			Type:        TypeBool,
-			Default:     true,
-			Description: "Allow custom genesis for mainnet/testnet (default: true for development, set false for production)",
-			Category:    CategoryGenesis,
-		},
-		{
 			Key:         "upgrade-file",
 			Type:        TypeString,
 			Default:     "",

@@ -115,8 +115,6 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
 	fs.String(GenesisDBTypeKey, "zapdb", "Database type to use for genesis database. Must be one of {pebbledb, zapdb}")
 	fs.Uint64(GenesisBlockLimitKey, 0, "Limit number of blocks to replay during genesis (0 = all blocks)")
-	fs.Bool(AllowCustomGenesisKey, true, "Allow custom genesis for mainnet/testnet (default: true for development, set false for production)")
-	fs.Bool(AllowGenesisUpdateKey, false, "Allow updating stored genesis hash when genesis changes (use for adding new primary network chains)")
 
 	// Upgrade
 	fs.String(UpgradeFileKey, "", fmt.Sprintf("Specifies an upgrade config file path. Ignored when running standard networks or if %s is specified",
