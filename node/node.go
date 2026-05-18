@@ -921,16 +921,18 @@ func (n *Node) initDatabase() error {
 	}
 
 	if genesisHash != expectedGenesisHash {
-		if n.Config.AllowGenesisUpdate {
-			n.Log.Warn("genesis hash changed, updating stored hash (--allow-genesis-update)",
-				"oldHash", genesisHash,
-				"newHash", expectedGenesisHash,
-			)
-			if err := n.DB.Put(genesisHashKey, rawExpectedGenesisHash); err != nil {
-				return fmt.Errorf("failed to update genesis hash: %w", err)
-			}
-		} else {
-			return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s (use --allow-genesis-update to migrate)", genesisHash, expectedGenesisHash)
+		// Sovereign-L1 invariant: the operator owns the chainset; if the
+		// generated genesis disagrees with the stored hash, the operator
+		// changed it on purpose (initial bootstrap, validator-set rotation,
+		// or chainset upgrade) and we silently advance. No --allow-genesis-update
+		// flag, no manual migration step — the stored hash is a tag, not
+		// a lock.
+		n.Log.Info("genesis hash advanced, updating stored hash",
+			"oldHash", genesisHash,
+			"newHash", expectedGenesisHash,
+		)
+		if err := n.DB.Put(genesisHashKey, rawExpectedGenesisHash); err != nil {
+			return fmt.Errorf("failed to update genesis hash: %w", err)
 		}
 	}
 

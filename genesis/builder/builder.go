@@ -647,20 +647,11 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	return pChainGenesisBytes, xAssetID, nil
 }
 
-// FromFile loads genesis config from file and builds genesis bytes
-func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig, allowCustomGenesis bool) ([]byte, ids.ID, error) {
-	// Protect standard networks from custom genesis unless explicitly allowed
-	if !allowCustomGenesis {
-		switch networkID {
-		case constants.MainnetID, constants.TestnetID:
-			return nil, ids.Empty, fmt.Errorf(
-				"%w: %s",
-				errOverridesStandardNetworkConfig,
-				constants.NetworkName(networkID),
-			)
-		}
-	}
-
+// FromFile loads genesis config from file and builds genesis bytes.
+// Caller owns the choice — if a genesis file is set, we use it. No
+// "is this networkID standard?" guard, no allow-flag. Operator-owned
+// chainset.
+func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	config, err := genesiscfg.GetConfigFile(filepath)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to load genesis file %s: %w", filepath, err)
@@ -671,20 +662,9 @@ func FromFile(networkID uint32, filepath string, stakingCfg *StakingConfig, allo
 	return FromConfig(config)
 }
 
-// FromFlag parses base64-encoded genesis content and builds genesis bytes
-func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig, allowCustomGenesis bool) ([]byte, ids.ID, error) {
-	// Protect standard networks from custom genesis unless explicitly allowed
-	if !allowCustomGenesis {
-		switch networkID {
-		case constants.MainnetID, constants.TestnetID:
-			return nil, ids.Empty, fmt.Errorf(
-				"%w: %s",
-				errOverridesStandardNetworkConfig,
-				constants.NetworkName(networkID),
-			)
-		}
-	}
-
+// FromFlag parses base64-encoded genesis content and builds genesis bytes.
+// Same contract as FromFile — caller owns the override.
+func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	data, err := base64.StdEncoding.DecodeString(genesisContent)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to decode base64 genesis content: %w", err)
