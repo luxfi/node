@@ -1115,9 +1115,6 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
-	// Get allow-custom-genesis flag (defaults to true for development)
-	allowCustomGenesis := v.GetBool(AllowCustomGenesisKey)
-
 	// Handle automine mode genesis - dynamically generate genesis with the node's own credentials
 	if v.GetBool(DevModeKey) && !v.IsSet(GenesisFileKey) && !v.IsSet(GenesisFileContentKey) && !v.IsSet(GenesisDBKey) {
 		return getOrCreateAutomineGenesis(stakingCfg, dataDir)
@@ -1162,7 +1159,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// try first loading genesis content directly from flag/env-var
 	if v.IsSet(GenesisFileContentKey) {
 		genesisData := v.GetString(GenesisFileContentKey)
-		return builder.FromFlag(networkID, genesisData, stakingCfg, allowCustomGenesis)
+		return builder.FromFlag(networkID, genesisData, stakingCfg)
 	}
 
 	// if content is not specified go for the file
@@ -1185,7 +1182,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 			}
 		}
 		// No cache or invalid cache - build from file and cache the result
-		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg, allowCustomGenesis)
+		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
 		if err != nil {
 			return nil, ids.Empty, err
 		}
@@ -2170,7 +2167,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}
-	nodeConfig.AllowGenesisUpdate = v.GetBool(AllowGenesisUpdateKey)
 
 	// StateSync Configs
 	nodeConfig.StateSyncConfig, err = getStateSyncConfig(v)
