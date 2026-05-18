@@ -1275,7 +1275,19 @@ func (n *network) samplePeers(
 	if requestedValidators <= 0 {
 		requestedValidators = defaultSampleK
 	}
+	// Chicken-and-egg fallback: in a freshly bootstrapped sovereign
+	// primary network, the validator manager is briefly empty until
+	// the first P-chain block commits initial stakers from genesis.
+	// During that window, treating peers tracking the chain as
+	// validator candidates is the only way out — otherwise P-chain
+	// can never produce its first block, because the proposer would
+	// sample 0 peers and reach 0 votes. Once the manager has any
+	// validators registered, the strict cap returns.
+	bootstrapFallback := numValidatorsInManager == 0
 	numValidatorsToSample := min(requestedValidators, numValidatorsInManager)
+	if bootstrapFallback {
+		numValidatorsToSample = requestedValidators
+	}
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
@@ -1325,7 +1337,12 @@ func (n *network) samplePeers(
 				return true
 			}
 
-			if areTheyAValidator {
+			// Bootstrap fallback (see numValidatorsToSample setup above):
+			// when validator manager is empty, every chain-tracking peer
+			// counts as a validator candidate. Without this, sample
+			// always returns zero because GetValidator() can't yet see
+			// the genesis-declared initial stakers.
+			if areTheyAValidator || bootstrapFallback {
 				numValidatorsToSample--
 				return numValidatorsToSample >= 0
 			}
