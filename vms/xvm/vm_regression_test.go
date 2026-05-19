@@ -4,12 +4,13 @@
 package xvm
 
 import (
+	"github.com/luxfi/node/upgrade"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/utxo/nftfx"
@@ -19,7 +20,7 @@ import (
 func TestVerifyFxUsage(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: upgradetest.GetConfig(upgradetest.Latest)})
+	env := setup(t, &envConfig{fork: upgrade.Default})
 	env.vm.Lock.Unlock()
 
 	var (
