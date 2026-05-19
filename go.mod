@@ -174,6 +174,7 @@ require (
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/precompile v0.5.17 // indirect
+	github.com/luxfi/protocol v0.0.4 // indirect
 	github.com/luxfi/pulsar v1.0.8 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
@@ -192,7 +193,7 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/protocol v0.0.5
+	github.com/luxfi/proto v1.0.0
 	github.com/luxfi/upgrade v1.0.0 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
