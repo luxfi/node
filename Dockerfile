@@ -58,6 +58,14 @@ RUN [ -d ./build ] && rm -rf ./build/* || true
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
+# Per SCALE_STANDARD.md §2 (https://github.com/hanzoai/hips/blob/main/docs/SCALE_STANDARD.md)
+# — every Go production Dockerfile that emits JSON to a client builds
+# with GOEXPERIMENT=jsonv2. Verified -12% time / -23% allocs on the
+# edge POST roundtrip vs encoding/json v1. Applies to luxd + every
+# in-stage VM plugin build below.
+ARG GO_EXPERIMENT=jsonv2
+ENV GOEXPERIMENT=${GO_EXPERIMENT}
+
 # Configure a cross-compiler if the target platform differs from the build platform.
 #
 # build_env.sh is used to capture the environmental changes required by the build step since RUN
