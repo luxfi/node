@@ -42,20 +42,20 @@ type options struct {
 	alternateBlock block.Block
 }
 
-func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
+func (*options) AbortBlock(*block.AbortBlock) error {
 	return ErrNotOracle
 }
 
-func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
+func (*options) CommitBlock(*block.CommitBlock) error {
 	return ErrNotOracle
 }
 
-func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
+func (o *options) ProposalBlock(b *block.ProposalBlock) error {
 	timestamp := b.Timestamp()
 	blkID := b.ID()
 	nextHeight := b.Height() + 1
 
-	commitBlock, err := block.NewBanffCommitBlock(timestamp, blkID, nextHeight)
+	commitBlock, err := block.NewCommitBlock(timestamp, blkID, nextHeight)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to create commit block: %w",
@@ -63,7 +63,7 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 		)
 	}
 
-	abortBlock, err := block.NewBanffAbortBlock(timestamp, blkID, nextHeight)
+	abortBlock, err := block.NewAbortBlock(timestamp, blkID, nextHeight)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to create abort block: %w",
@@ -95,46 +95,7 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 	return nil
 }
 
-func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return ErrNotOracle
-}
-
-func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return ErrNotOracle
-}
-
-func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return ErrNotOracle
-}
-
-func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
-	blkID := b.ID()
-	nextHeight := b.Height() + 1
-
-	var err error
-	o.preferredBlock, err = block.NewApricotCommitBlock(blkID, nextHeight)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to create commit block: %w",
-			err,
-		)
-	}
-
-	o.alternateBlock, err = block.NewApricotAbortBlock(blkID, nextHeight)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to create abort block: %w",
-			err,
-		)
-	}
-	return nil
-}
-
-func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return ErrNotOracle
-}
-
-func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
+func (*options) StandardBlock(*block.StandardBlock) error {
 	return ErrNotOracle
 }
 
