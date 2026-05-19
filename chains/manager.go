@@ -918,13 +918,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		XAssetID:     m.XAssetID,
 		ChainDataDir: chainDataDir,
 
-		BCLookup:        m,
-		ValidatorState:  getValidatorState(m.validatorState),
-		SharedMemory:    chainSharedMemory,
-		Metrics:         chainMetricsGatherer,
-		Log:             chainLog,
-		WarpSigner:      warpSigner,
-		NetworkUpgrades: upgrade.AlwaysOn{},
+		BCLookup:       m,
+		ValidatorState: getValidatorState(m.validatorState),
+		SharedMemory:   chainSharedMemory,
+		Metrics:        chainMetricsGatherer,
+		Log:            chainLog,
+		WarpSigner:     warpSigner,
 	}
 
 	// Get a factory for the vm we want to use on our chain
