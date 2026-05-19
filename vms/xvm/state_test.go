@@ -4,6 +4,7 @@
 package xvm
 
 import (
+	"github.com/luxfi/node/upgrade"
 	"fmt"
 	"math"
 	"testing"
@@ -14,7 +15,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -25,7 +26,7 @@ func TestSetsAndGets(t *testing.T) {
 
 	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 		additionalFxs: []interface{}{
 			&vm.Fx{
 				ID: ids.GenerateTestID(),
@@ -92,7 +93,7 @@ func TestSetsAndGets(t *testing.T) {
 func TestFundingNoAddresses(t *testing.T) {
 	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 		additionalFxs: []interface{}{
 			&vm.Fx{
 				ID: ids.GenerateTestID(),
@@ -129,7 +130,7 @@ func TestFundingAddresses(t *testing.T) {
 
 	// secp256k1fx is now included by default, so we only need the custom Fx
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 		additionalFxs: []interface{}{
 			&vm.Fx{
 				ID: ids.GenerateTestID(),

@@ -4,6 +4,7 @@
 package xvm
 
 import (
+	"github.com/luxfi/node/upgrade"
 	"math/rand"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
@@ -22,7 +23,7 @@ import (
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
-	env := setup(b, &envConfig{fork: upgradetest.GetConfig(upgradetest.Latest)})
+	env := setup(b, &envConfig{fork: upgrade.Default})
 	defer env.vm.Lock.Unlock()
 
 	addr := ids.GenerateTestShortID()
