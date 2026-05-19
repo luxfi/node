@@ -1068,14 +1068,12 @@ func initTestRemoteProposerVM(
 		}
 	}
 
+	_ = activationTime
+	_ = durangoTime
 	proVM := New(
 		&coreVM,
 		Config{
-			Upgrades: upgrade.Config{
-				ApricotPhase4Time:            activationTime,
-				ApricotPhase4MinPChainHeight: 0,
-				DurangoTime:                  durangoTime,
-			},
+			Upgrades:            upgrade.Default,
 			MinBlkDelay:         DefaultMinBlockDelay,
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,

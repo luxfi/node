@@ -3,25 +3,14 @@
 
 package upgradetest
 
-import (
-	"time"
+import "github.com/luxfi/node/upgrade"
 
-	"github.com/luxfi/node/upgrade"
-)
-
-// TestConfig returns a test upgrade configuration
-func TestConfig() map[string]time.Time {
-	return map[string]time.Time{
-		"testUpgrade": time.Now().Add(time.Hour),
-	}
-}
-
-// LatestVersion represents the latest upgrade configuration for testing
+// LatestVersion is a stable token identifying the activate-all-implicitly
+// upgrade snapshot used by tests.
 const LatestVersion = "latest"
 
-// GetConfigForVersion returns an upgrade configuration for testing
-func GetConfigForVersion(version string) upgrade.Config {
-	return upgrade.Config{
-		GraniteTime: time.Now().Add(time.Hour),
-	}
+// GetConfigForVersion returns the canonical upgrade config; under activate-
+// all-implicitly all version tokens map to the same Lux default.
+func GetConfigForVersion(string) upgrade.Config {
+	return upgrade.Default
 }

@@ -221,11 +221,6 @@ func advanceTimeTo(
 		changed = true
 	}
 
-	if !backend.Config.UpgradeConfig.IsEtnaActivated(newChainTime) {
-		changes.SetTimestamp(newChainTime)
-		return changes, changed, nil
-	}
-
 	newChainTimeUnix := uint64(newChainTime.Unix())
 	if err := removeStaleExpiries(parentState, changes, newChainTimeUnix); err != nil {
 		return nil, false, fmt.Errorf("failed to remove stale expiries: %w", err)

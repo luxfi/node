@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"time"
 
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/crypto/bls"
@@ -254,8 +253,8 @@ type cacheMetrics struct {
 	misses metric.Counter
 }
 
-// NewCachedValidatorState creates a new cached validator state aware of the
-// LP-181 epoch upgrade (gated by upgrade.Config.GraniteTime).
+// NewCachedValidatorState creates a new cached validator state with the
+// LP-181 epoch cache enabled (always-on under activate-all-implicitly).
 func NewCachedValidatorState(
 	state ValidatorState,
 	upgradeConfig *upgrade.Config,
@@ -293,35 +292,24 @@ func NewCachedValidatorState(
 	}, nil
 }
 
-// GetValidatorSet implements ValidatorState with caching gated by the
-// LP-181 epoch-upgrade activation (upgrade.Config.GraniteTime).
+// GetValidatorSet implements ValidatorState with LP-181 epoch caching.
 func (c *CachedValidatorState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	chainID ids.ID,
 ) (map[ids.NodeID]*ValidatorData, error) {
-	// Only cache after the epoch upgrade is active.
-	// Use current time as approximation since we don't have block timestamp.
-	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
-		key := cacheKey{height: height, chainID: chainID}
-		if cached, ok := c.cache.Get(key); ok {
-			c.metrics.hits.Inc()
-			return cached, nil
-		}
-		c.metrics.misses.Inc()
+	key := cacheKey{height: height, chainID: chainID}
+	if cached, ok := c.cache.Get(key); ok {
+		c.metrics.hits.Inc()
+		return cached, nil
 	}
+	c.metrics.misses.Inc()
 
-	// Cache miss or pre-epoch-upgrade — fetch from underlying state.
 	vdrSet, err := c.state.GetValidatorSet(ctx, height, chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Cache the result if the epoch upgrade is active.
-	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
-		key := cacheKey{height: height, chainID: chainID}
-		c.cache.Put(key, vdrSet)
-	}
-
+	c.cache.Put(key, vdrSet)
 	return vdrSet, nil
 }

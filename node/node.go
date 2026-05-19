@@ -56,6 +56,7 @@ import (
 	"github.com/luxfi/node/service/metrics"
 	luxsecurity "github.com/luxfi/node/service/security"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/xvm"
@@ -722,7 +723,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
-		n.Config.UpgradeConfig.FortunaTime,
+		upgrade.InitiallyActiveTime,
 		n.msgCreator,
 		networkRegistry,
 		n.Log,

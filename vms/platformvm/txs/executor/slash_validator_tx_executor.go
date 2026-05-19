@@ -15,11 +15,10 @@ import (
 )
 
 var (
-	errGraniteUpgradeNotActive    = errors.New("attempting to use a Granite-upgrade feature prior to activation")
-	errValidatorNotFound          = errors.New("validator not found in current staker set")
-	errValidatorNoBLSKey          = errors.New("validator has no BLS public key registered")
-	errInvalidEvidenceSignature   = errors.New("evidence signature does not verify against validator BLS key")
-	errSlashPercentMismatch = errors.New("slash percentage does not match expected value for evidence type")
+	errValidatorNotFound        = errors.New("validator not found in current staker set")
+	errValidatorNoBLSKey        = errors.New("validator has no BLS public key registered")
+	errInvalidEvidenceSignature = errors.New("evidence signature does not verify against validator BLS key")
+	errSlashPercentMismatch     = errors.New("slash percentage does not match expected value for evidence type")
 )
 
 // Default slash percentages per evidence type.
@@ -29,11 +28,6 @@ const (
 )
 
 func (e *standardTxExecutor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	currentTimestamp := e.state.GetTimestamp()
-	if !e.backend.Config.UpgradeConfig.IsGraniteActivated(currentTimestamp) {
-		return errGraniteUpgradeNotActive
-	}
-
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}

@@ -67,13 +67,9 @@ func (t *BaseTx) Verify(rt *runtime.Runtime) error {
 	}
 }
 
-// VerifyMemoFieldLength validates memo field length based on Durango activation status
-func VerifyMemoFieldLength(memo types.JSONByteSlice, isDurangoActive bool) error {
-	if !isDurangoActive {
-		// SyntacticVerify validates this field pre-Durango
-		return nil
-	}
-
+// VerifyMemoFieldLength enforces the Lux memo-field length rule: under
+// activate-all-implicitly the memo field must be empty on every tx.
+func VerifyMemoFieldLength(memo types.JSONByteSlice, _ bool) error {
 	if len(memo) != 0 {
 		return fmt.Errorf(
 			"%w: %d > %d",

@@ -61,10 +61,7 @@ func (s *state) Close() error {
 }
 
 func (s *state) write(updateValidators bool, height uint64) error {
-	codecVersion := CodecVersion1
-	if !s.upgrades.IsDurangoActivated(s.GetTimestamp()) {
-		codecVersion = CodecVersion0
-	}
+	const codecVersion = CodecVersion1
 
 	return errors.Join(
 		s.writeBlocks(),

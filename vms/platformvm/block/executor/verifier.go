@@ -205,64 +205,12 @@ func (v *verifier) ApricotStandardBlock(b *block.ApricotStandardBlock) error {
 }
 
 func (v *verifier) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
-	// We call [commonBlock] here rather than [apricotCommonBlock] because below
-	// this check we perform the more strict check that ApricotPhase5 isn't
-	// activated.
+	// Atomic blocks must go through the standard-block path under
+	// activate-all-implicitly; legacy ApricotAtomicBlocks are never accepted.
 	if err := v.commonBlock(b); err != nil {
 		return err
 	}
-
-	parentID := b.Parent()
-	currentTimestamp := v.getTimestamp(parentID)
-	cfg := v.txExecutorBackend.Config
-	if cfg.UpgradeConfig.IsApricotPhase5Activated(currentTimestamp) {
-		return fmt.Errorf(
-			"the chain timestamp (%d) is after the apricot phase 5 time (%d), hence atomic transactions should go through the standard block",
-			currentTimestamp.Unix(),
-			cfg.UpgradeConfig.ApricotPhase5Time.Unix(),
-		)
-	}
-
-	feeCalculator := txfee.NewSimpleCalculator(0)
-	onAcceptState, atomicInputs, atomicRequests, err := txexecutor.AtomicTx(
-		v.txExecutorBackend,
-		feeCalculator,
-		parentID,
-		v,
-		b.Tx,
-	)
-	if err != nil {
-		txID := b.Tx.ID()
-		v.MarkDropped(txID, err) // cache tx as dropped
-		return err
-	}
-
-	onAcceptState.AddTx(b.Tx, status.Committed)
-
-	if err := v.verifyUniqueInputs(parentID, atomicInputs); err != nil {
-		return err
-	}
-
-	v.Mempool.Remove(b.Tx)
-
-	blkID := b.ID()
-	v.setBlockState(blkID, &blockState{
-		statelessBlock: b,
-
-		onAcceptState: onAcceptState,
-
-		inputs:          atomicInputs,
-		timestamp:       onAcceptState.GetTimestamp(),
-		atomicRequests:  atomicRequests,
-		verifiedHeights: set.Of(v.pChainHeight),
-		metrics: calculateBlockMetrics(
-			v.txExecutorBackend.Config,
-			b,
-			onAcceptState,
-			0,
-		),
-	})
-	return nil
+	return errApricotBlockIssuedAfterFork
 }
 
 func (v *verifier) banffOptionBlock(b block.BanffBlock) error {
@@ -310,20 +258,12 @@ func (v *verifier) banffNonOptionBlock(b block.BanffBlock) error {
 }
 
 func (v *verifier) apricotCommonBlock(b block.Block) error {
-	// We can use the parent timestamp here, because we are guaranteed that the
-	// parent was verified. Apricot blocks only update the timestamp with
-	// AdvanceTimeTxs. This means that this block's timestamp will be equal to
-	// the parent block's timestamp; unless this is a CommitBlock. In order for
-	// the timestamp of the CommitBlock to be after the Banff activation,
-	// the parent ApricotProposalBlock must include an AdvanceTimeTx with a
-	// timestamp after the Banff timestamp. This is verified not to occur
-	// during the verification of the ProposalBlock.
-	parentID := b.Parent()
-	timestamp := v.getTimestamp(parentID)
-	if v.txExecutorBackend.Config.UpgradeConfig.IsBanffActivated(timestamp) {
-		return fmt.Errorf("%w: timestamp = %s", errApricotBlockIssuedAfterFork, timestamp)
+	// Apricot blocks are permanently refused under activate-all-implicitly;
+	// every chain-time is post-Banff.
+	if err := v.commonBlock(b); err != nil {
+		return err
 	}
-	return v.commonBlock(b)
+	return errApricotBlockIssuedAfterFork
 }
 
 func (v *verifier) commonBlock(b block.Block) error {
@@ -523,7 +463,7 @@ func (v *verifier) processStandardTxs(txs []*txs.Tx, feeCalculator txfee.Calcula
 ) {
 	// Complexity is limited first to avoid processing too large of a block.
 	var gasConsumed gas.Gas
-	if timestamp := diff.GetTimestamp(); v.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+	{
 		var blockComplexity gas.Dimensions
 		for _, tx := range txs {
 			txComplexity, err := txfee.TxComplexity(tx.Unsigned)

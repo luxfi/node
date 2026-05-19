@@ -364,19 +364,6 @@ func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 		}
 	}
 
-	if !b.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
-		return packDurangoBlockTxs(
-			context.TODO(),
-			preferredID,
-			preferredState,
-			b.Mempool,
-			b.txExecutorBackend,
-			b.blkManager,
-			timestamp,
-			recommendedPChainHeight,
-			math.MaxInt,
-		)
-	}
 	return packEtnaBlockTxs(
 		context.TODO(),
 		preferredID,
@@ -405,31 +392,17 @@ func buildBlock(
 		blockTxs []*txs.Tx
 		err      error
 	)
-	if builder.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
-		blockTxs, err = packEtnaBlockTxs(
-			ctx,
-			parentID,
-			parentState,
-			builder.Mempool,
-			builder.txExecutorBackend,
-			builder.blkManager,
-			timestamp,
-			pChainHeight,
-			0, // minCapacity is 0 as we want to honor the capacity in state.
-		)
-	} else {
-		blockTxs, err = packDurangoBlockTxs(
-			ctx,
-			parentID,
-			parentState,
-			builder.Mempool,
-			builder.txExecutorBackend,
-			builder.blkManager,
-			timestamp,
-			pChainHeight,
-			targetBlockSize,
-		)
-	}
+	blockTxs, err = packEtnaBlockTxs(
+		ctx,
+		parentID,
+		parentState,
+		builder.Mempool,
+		builder.txExecutorBackend,
+		builder.blkManager,
+		timestamp,
+		pChainHeight,
+		0, // minCapacity is 0 as we want to honor the capacity in state.
+	)
 	if err != nil {
 		logger := builder.txExecutorBackend.Runtime.Log.(log.Logger)
 		logger.Warn("failed to pack block transactions: " + err.Error())

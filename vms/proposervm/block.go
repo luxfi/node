@@ -180,12 +180,7 @@ func (p *postForkCommonComponents) Verify(
 		}
 
 		// 3. Proposer window validation
-		var shouldHaveProposer bool
-		if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
-			shouldHaveProposer, err = p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
-		} else {
-			shouldHaveProposer, err = p.verifyPreDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
-		}
+		shouldHaveProposer, err := p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
 		if err != nil {
 			return err
 		}
@@ -202,15 +197,10 @@ func (p *postForkCommonComponents) Verify(
 		)
 	}
 
-	var contextPChainHeight uint64
-	switch {
-	case p.vm.Upgrades.IsGraniteActivated(childTimestamp):
-		contextPChainHeight = childEpoch.PChainHeight
-	case p.vm.Upgrades.IsEtnaActivated(childTimestamp):
-		contextPChainHeight = childPChainHeight
-	default:
-		contextPChainHeight = parentPChainHeight
-	}
+	// Activate-all-implicitly: Granite is always live → epoch-based height.
+	_ = childPChainHeight
+	_ = parentPChainHeight
+	contextPChainHeight := childEpoch.PChainHeight
 
 	return p.vm.verifyAndRecordInnerBlk(
 		ctx,
@@ -247,39 +237,22 @@ func (p *postForkCommonComponents) buildChild(
 		return nil, err
 	}
 
-	var shouldBuildSignedBlock bool
-	if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
-		shouldBuildSignedBlock, err = p.shouldBuildSignedBlockPostDurango(
-			ctx,
-			parentID,
-			parentTimestamp,
-			parentPChainHeight,
-			newTimestamp,
-		)
-	} else {
-		shouldBuildSignedBlock, err = p.shouldBuildSignedBlockPreDurango(
-			ctx,
-			parentID,
-			parentTimestamp,
-			parentPChainHeight,
-			newTimestamp,
-		)
-	}
+	shouldBuildSignedBlock, err := p.shouldBuildSignedBlockPostDurango(
+		ctx,
+		parentID,
+		parentTimestamp,
+		parentPChainHeight,
+		newTimestamp,
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	epoch := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, newTimestamp)
 
-	var contextPChainHeight uint64
-	switch {
-	case p.vm.Upgrades.IsGraniteActivated(newTimestamp):
-		contextPChainHeight = epoch.PChainHeight
-	case p.vm.Upgrades.IsEtnaActivated(newTimestamp):
-		contextPChainHeight = pChainHeight
-	default:
-		contextPChainHeight = parentPChainHeight
-	}
+	// Activate-all-implicitly: Granite is always live → epoch-based height.
+	_ = pChainHeight
+	contextPChainHeight := epoch.PChainHeight
 
 	var innerBlock chain.Block
 	if p.vm.blockBuilderVM != nil {
@@ -389,41 +362,6 @@ func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
 	}
 }
 
-func (p *postForkCommonComponents) verifyPreDurangoBlockDelay(
-	ctx context.Context,
-	parentTimestamp time.Time,
-	parentPChainHeight uint64,
-	blk *postForkBlock,
-) (bool, error) {
-	var (
-		blkTimestamp = blk.Timestamp()
-		childHeight  = blk.Height()
-		proposerID   = blk.Proposer()
-	)
-	minDelay, err := p.vm.Windower.Delay(
-		ctx,
-		childHeight,
-		parentPChainHeight,
-		proposerID,
-		proposer.MaxVerifyWindows,
-	)
-	if err != nil {
-		p.vm.logger.Error("unexpected block verification failure",
-			log.String("reason", "failed to calculate required timestamp delay"),
-			log.Stringer("blkID", blk.ID()),
-			log.Err(err),
-		)
-		return false, err
-	}
-
-	delay := blkTimestamp.Sub(parentTimestamp)
-	if delay < minDelay {
-		return false, fmt.Errorf("%w: delay %s < minDelay %s", errProposerWindowNotStarted, delay, minDelay)
-	}
-
-	return delay < proposer.MaxVerifyDelay, nil
-}
-
 func (p *postForkCommonComponents) verifyPostDurangoBlockDelay(
 	ctx context.Context,
 	parentTimestamp time.Time,
@@ -504,43 +442,3 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	return false, fmt.Errorf("%w: slot %d expects %s", errUnexpectedProposer, currentSlot, expectedProposerID)
 }
 
-func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
-	ctx context.Context,
-	parentID ids.ID,
-	parentTimestamp time.Time,
-	parentPChainHeight uint64,
-	newTimestamp time.Time,
-) (bool, error) {
-	delay := newTimestamp.Sub(parentTimestamp)
-	if delay >= proposer.MaxBuildDelay {
-		return false, nil // time for any node to build an unsigned block
-	}
-
-	parentHeight := p.innerBlk.Height()
-	proposerID := p.vm.rt.NodeID
-	minDelay, err := p.vm.Windower.Delay(ctx, parentHeight+1, parentPChainHeight, proposerID, proposer.MaxBuildWindows)
-	if err != nil {
-		p.vm.logger.Error("unexpected build block failure",
-			log.String("reason", "failed to calculate required timestamp delay"),
-			log.Stringer("parentID", parentID),
-			log.Err(err),
-		)
-		return false, err
-	}
-
-	if delay >= minDelay {
-		// it's time for this node to propose a block. It'll be signed or
-		// unsigned depending on the delay
-		return delay < proposer.MaxVerifyDelay, nil
-	}
-
-	// It's not our turn to propose a block yet. This is likely caused by having
-	// previously notified the consensus engine to attempt to build a block on
-	// top of a block that is no longer the preferred block.
-	p.vm.logger.Debug("build block dropped",
-		log.Time("parentTimestamp", parentTimestamp),
-		log.Duration("minDelay", minDelay),
-		log.Time("blockTimestamp", newTimestamp),
-	)
-	return false, fmt.Errorf("%w: delay %s < minDelay %s", errProposerWindowNotStarted, delay, minDelay)
-}
