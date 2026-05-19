@@ -134,8 +134,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
+		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID
@@ -390,8 +390,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	expectedUnsignedComplexAddPrimaryTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
+		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
@@ -881,8 +881,8 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// AddPermissionlessDelegationTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		// AddPermissionlessDelegationTx type ID (post codec-collapse: 30)
+		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
@@ -1158,8 +1158,8 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// AddPermissionlessDelegatorTx type ID
-		0x00, 0x00, 0x00, 0x1a,
+		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
+		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
