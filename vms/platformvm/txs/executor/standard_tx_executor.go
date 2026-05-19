@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/luxfi/log"
 
@@ -194,11 +193,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		return err
 	}
 
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		isDurangoActive  = e.backend.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
-	)
-	if err := lux.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -253,11 +248,7 @@ func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 		return err
 	}
 
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		isDurangoActive  = e.backend.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
-	)
-	if err := lux.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -296,11 +287,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 		return err
 	}
 
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		isDurangoActive  = e.backend.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
-	)
-	if err := lux.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -393,11 +380,7 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		return err
 	}
 
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		isDurangoActive  = e.backend.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
-	)
-	if err := lux.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -505,65 +488,11 @@ func (e *standardTxExecutor) RemoveChainValidatorTx(tx *txs.RemoveChainValidator
 	return nil
 }
 
-func (e *standardTxExecutor) TransformChainTx(tx *txs.TransformChainTx) error {
-	currentTimestamp := e.state.GetTimestamp()
-	if e.backend.Config.UpgradeConfig.IsEtnaActivated(currentTimestamp) {
-		return errTransformChainTxPostEtna
-	}
-
-	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
-		return err
-	}
-
-	isDurangoActive := e.backend.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
-	if err := lux.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
-		return err
-	}
-
-	// Note: math.MaxInt32 * time.Second < math.MaxInt64 - so this can never
-	// overflow.
-	if time.Duration(tx.MaxStakeDuration)*time.Second > e.backend.Config.MaxStakeDuration {
-		return errMaxStakeDurationTooLarge
-	}
-
-	baseTxCreds, err := verifyPoAChainAuthorization(e.backend.Fx, e.state, e.tx, tx.Chain, tx.ChainAuth)
-	if err != nil {
-		return err
-	}
-
-	// Verify the flowcheck
-	fee, err := e.feeCalculator.CalculateFee(tx)
-	if err != nil {
-		return err
-	}
-	totalRewardAmount := tx.MaximumSupply - tx.InitialSupply
-	if err := e.backend.FlowChecker.VerifySpend(
-		tx,
-		e.state,
-		tx.Ins,
-		tx.Outs,
-		baseTxCreds,
-		// Invariant: [tx.AssetID != e.XAssetID]. This prevents the first
-		//            entry in this map literal from being overwritten by the
-		//            second entry.
-		map[ids.ID]uint64{
-			e.backend.Runtime.XAssetID: fee,
-			tx.AssetID:             totalRewardAmount,
-		},
-	); err != nil {
-		return err
-	}
-
-	txID := e.tx.ID()
-
-	// Consume the UTXOS
-	lux.Consume(e.state, tx.Ins)
-	// Produce the UTXOS
-	lux.Produce(e.state, txID, tx.Outs)
-	// Transform the new chain in the database
-	e.state.AddNetTransformation(e.tx)
-	e.state.SetCurrentSupply(tx.Chain, tx.InitialSupply)
-	return nil
+func (e *standardTxExecutor) TransformChainTx(*txs.TransformChainTx) error {
+	// TransformChainTx is permanently rejected: it has no role under
+	// activate-all-implicitly. Any historical TransformChainTx in genesis is
+	// already applied; live submissions are always refused.
+	return errTransformChainTxPostEtna
 }
 
 func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
@@ -645,20 +574,12 @@ func (e *standardTxExecutor) TransferChainOwnershipTx(tx *txs.TransferChainOwner
 }
 
 func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsDurangoActivated(currentTimestamp) {
-		return ErrDurangoUpgradeNotActive
-	}
-
 	// Verify the tx is well-formed
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -689,19 +610,13 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 }
 
 func (e *standardTxExecutor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsEtnaActivated(currentTimestamp) {
-		return errEtnaUpgradeNotActive
-	}
+	currentTimestamp := e.state.GetTimestamp()
 
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -817,19 +732,13 @@ func (e *standardTxExecutor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) 
 }
 
 func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsEtnaActivated(currentTimestamp) {
-		return errEtnaUpgradeNotActive
-	}
+	currentTimestamp := e.state.GetTimestamp()
 
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -969,19 +878,11 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 }
 
 func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsEtnaActivated(currentTimestamp) {
-		return errEtnaUpgradeNotActive
-	}
-
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -1105,19 +1006,11 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 }
 
 func (e *standardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsEtnaActivated(currentTimestamp) {
-		return errEtnaUpgradeNotActive
-	}
-
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -1177,19 +1070,11 @@ func (e *standardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1Vali
 }
 
 func (e *standardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	var (
-		currentTimestamp = e.state.GetTimestamp()
-		upgrades         = e.backend.Config.UpgradeConfig
-	)
-	if !upgrades.IsEtnaActivated(currentTimestamp) {
-		return errEtnaUpgradeNotActive
-	}
-
 	if err := e.tx.SyntacticVerify(e.backend.Runtime); err != nil {
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
 		return err
 	}
 
@@ -1293,46 +1178,35 @@ func (e *standardTxExecutor) putStaker(stakerTx txs.Staker) error {
 		err       error
 	)
 
-	if !e.backend.Config.UpgradeConfig.IsDurangoActivated(chainTime) {
-		// Pre-Durango, stakers set a future [StartTime] and are added to the
-		// pending staker set. They are promoted to the current staker set once
-		// the chain time reaches [StartTime].
-		scheduledStakerTx, ok := stakerTx.(txs.ScheduledStaker)
-		if !ok {
-			return fmt.Errorf("%w: %T", errMissingStartTimePreDurango, stakerTx)
-		}
-		staker, err = state.NewPendingStaker(txID, scheduledStakerTx)
-	} else {
-		// Only calculate the potentialReward for permissionless stakers.
-		// Recall that we only need to check if this is a permissioned
-		// validator as there are no permissioned delegators
-		var potentialReward uint64
-		if !stakerTx.CurrentPriority().IsPermissionedValidator() {
-			chainID := stakerTx.ChainID()
-			currentSupply, err := e.state.GetCurrentSupply(chainID)
-			if err != nil {
-				return err
-			}
-
-			rewards, err := GetRewardsCalculator(e.backend, e.state, chainID)
-			if err != nil {
-				return err
-			}
-
-			// Post-Durango, stakers are immediately added to the current staker
-			// set. Their [StartTime] is the current chain time.
-			stakeDuration := stakerTx.EndTime().Sub(chainTime)
-			potentialReward = rewards.Calculate(
-				stakeDuration,
-				stakerTx.Weight(),
-				currentSupply,
-			)
-
-			e.state.SetCurrentSupply(chainID, currentSupply+potentialReward)
+	// Only calculate the potentialReward for permissionless stakers.
+	// Recall that we only need to check if this is a permissioned
+	// validator as there are no permissioned delegators
+	var potentialReward uint64
+	if !stakerTx.CurrentPriority().IsPermissionedValidator() {
+		chainID := stakerTx.ChainID()
+		currentSupply, err := e.state.GetCurrentSupply(chainID)
+		if err != nil {
+			return err
 		}
 
-		staker, err = state.NewCurrentStaker(txID, stakerTx, chainTime, potentialReward)
+		rewards, err := GetRewardsCalculator(e.backend, e.state, chainID)
+		if err != nil {
+			return err
+		}
+
+		// Stakers are immediately added to the current staker set. Their
+		// [StartTime] is the current chain time.
+		stakeDuration := stakerTx.EndTime().Sub(chainTime)
+		potentialReward = rewards.Calculate(
+			stakeDuration,
+			stakerTx.Weight(),
+			currentSupply,
+		)
+
+		e.state.SetCurrentSupply(chainID, currentSupply+potentialReward)
 	}
+
+	staker, err = state.NewCurrentStaker(txID, stakerTx, chainTime, potentialReward)
 	if err != nil {
 		return err
 	}
