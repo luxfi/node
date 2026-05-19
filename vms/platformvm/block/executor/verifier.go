@@ -138,7 +138,7 @@ func (v *verifier) StandardBlock(b *block.StandardBlock) error {
 	)
 }
 
-func (v *verifier) optionBlock(b block.BanffBlock) error {
+func (v *verifier) optionBlock(b block.TimestampedBlock) error {
 	if err := v.commonBlock(b); err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (v *verifier) optionBlock(b block.BanffBlock) error {
 	return nil
 }
 
-func (v *verifier) nonOptionBlock(b block.BanffBlock) error {
+func (v *verifier) nonOptionBlock(b block.TimestampedBlock) error {
 	if err := v.commonBlock(b); err != nil {
 		return err
 	}
