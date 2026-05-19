@@ -22,9 +22,14 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
+  # Cross-compile both darwin/amd64 and darwin/arm64 on macos-13.
   build-mac:
-    # The type of runner that the job will run on
-    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch: [amd64, arm64]
+    # The type of runner that the job will run on (GH-hosted arm64 macos forbidden).
+    runs-on: macos-13
     permissions:
       id-token: write
       contents: read
@@ -37,8 +42,8 @@ jobs:
       - run: go version
 
       # Runs a single command using the runners shell
-      - name: Build the luxd binary
-        run: CGO_ENABLED=0 ./scripts/run_task.sh build
+      - name: Build the luxd binary (cross-compile via GOOS/GOARCH)
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=${{ matrix.goarch }} ./scripts/run_task.sh build
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"
@@ -56,17 +61,17 @@ jobs:
 
       - name: Create zip file with CLI-compatible naming
         run: |
-          # CLI expects: node-macos-{version}.zip containing build/luxd
+          # CLI expects: node-macos-{arch}-{version}.zip containing build/luxd
           mkdir -p build
-          7z a "node-macos-${TAG}.zip" build/luxd
+          7z a "node-macos-${{ matrix.goarch }}-${TAG}.zip" build/luxd
         env:
           TAG: ${{ env.TAG }}
 
       - name: Save as Github artifact
         uses: actions/upload-artifact@v7
         with:
-          name: build
-          path: node-macos-${{ env.TAG }}.zip
+          name: build-darwin-${{ matrix.goarch }}
+          path: node-macos-${{ matrix.goarch }}-${{ env.TAG }}.zip
 
       - name: Cleanup
         run: |
