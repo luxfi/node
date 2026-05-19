@@ -38,9 +38,9 @@ var (
 	ErrDuplicateValidator              = errors.New("duplicate validator")
 	ErrDelegateToPermissionedValidator = errors.New("delegation to permissioned validator")
 	ErrWrongStakedAssetID              = errors.New("incorrect staked assetID")
-	ErrDurangoUpgradeNotActive         = errors.New("attempting to use a Durango-upgrade feature prior to activation")
-	ErrAddValidatorTxPostDurango       = errors.New("AddValidatorTx is not permitted post-Durango")
-	ErrAddDelegatorTxPostDurango       = errors.New("AddDelegatorTx is not permitted post-Durango")
+	ErrLegacyUpgradeNotActive         = errors.New("legacy upgrade feature not active")
+	ErrAddValidatorTxNotPermitted       = errors.New("AddValidatorTx is not permitted")
+	ErrAddDelegatorTxNotPermitted       = errors.New("AddDelegatorTx is not permitted")
 )
 
 // verifyChainValidatorPrimaryNetworkRequirements verifies the primary
@@ -92,7 +92,7 @@ func verifyAddValidatorTx(
 	[]*lux.TransferableOutput,
 	error,
 ) {
-	return nil, ErrAddValidatorTxPostDurango
+	return nil, ErrAddValidatorTxNotPermitted
 }
 
 // verifyAddChainValidatorTx carries out the validation for an
@@ -270,7 +270,7 @@ func verifyAddDelegatorTx(
 	[]*lux.TransferableOutput,
 	error,
 ) {
-	return nil, ErrAddDelegatorTxPostDurango
+	return nil, ErrAddDelegatorTxNotPermitted
 }
 
 // verifyAddPermissionlessValidatorTx carries out the validation for an
