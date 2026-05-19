@@ -4,6 +4,7 @@
 package xvm
 
 import (
+	"github.com/luxfi/node/upgrade"
 	"context"
 	"math"
 	"testing"
@@ -19,7 +20,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/vm/chains/atomic"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	xvmtxs "github.com/luxfi/node/vms/xvm/txs"
@@ -96,7 +97,7 @@ func TestIssueTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	env.vm.Lock.Unlock()
 
@@ -110,7 +111,7 @@ func TestIssueNFT(t *testing.T) {
 
 	// secp256k1fx and nftfx are now included by default
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	env.vm.Lock.Unlock()
 
@@ -187,7 +188,7 @@ func TestIssueProperty(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 		additionalFxs: []interface{}{
 			&vm.Fx{
 				ID: propertyfx.ID,
@@ -278,7 +279,7 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	env.vm.Lock.Unlock()
 
@@ -291,7 +292,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	env.vm.Lock.Unlock()
 
@@ -337,7 +338,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 
 func TestVMFormat(t *testing.T) {
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	// setup() already acquired the lock, so release it
 	env.vm.Lock.Unlock()
@@ -368,7 +369,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          upgradetest.GetConfig(upgradetest.Latest),
+		fork:          upgrade.Default,
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -449,7 +450,7 @@ func TestIssueImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Durango),
+		fork: upgrade.Default,
 	})
 	// Note: Manual lock management in this test, no defer
 
@@ -525,7 +526,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          upgradetest.GetConfig(upgradetest.Durango),
+		fork:          upgrade.Default,
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -596,7 +597,7 @@ func TestImportTxNotState(t *testing.T) {
 func TestIssueExportTx(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: upgradetest.GetConfig(upgradetest.Durango)})
+	env := setup(t, &envConfig{fork: upgrade.Default})
 	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
@@ -655,7 +656,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.GetConfig(upgradetest.Latest),
+		fork: upgrade.Default,
 	})
 	defer env.vm.Lock.Unlock()
 
