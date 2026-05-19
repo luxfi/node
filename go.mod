@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.23.29
+	github.com/luxfi/consensus v1.24.0
 	github.com/luxfi/crypto v1.19.0
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
@@ -238,9 +238,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace (
-	github.com/luxfi/api => ../api
-	github.com/luxfi/consensus => ../consensus
-	github.com/luxfi/runtime => ../runtime
-)
