@@ -181,7 +181,7 @@ func advanceTimeTo(
 			}
 			changes.DeletePendingValidator(stakerToRemove)
 
-		case txs.PrimaryNetworkDelegatorApricotPendingPriority, txs.PrimaryNetworkDelegatorBanffPendingPriority, txs.NetPermissionlessDelegatorPendingPriority:
+		case txs.PrimaryNetworkDelegatorLegacyPendingPriority, txs.PrimaryNetworkDelegatorPermissionlessPendingPriority, txs.NetPermissionlessDelegatorPendingPriority:
 			changes.PutCurrentDelegator(&stakerToAdd)
 			changes.DeletePendingDelegator(stakerToRemove)
 
