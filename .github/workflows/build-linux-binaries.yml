@@ -68,7 +68,7 @@ jobs:
           rm -rf ${{ github.workspace }}/luxd-pkg
 
   build-arm64-binaries-tarball:
-    runs-on: ubuntu-24.04-arm
+    runs-on: hanzo-build-linux-amd64
     permissions:
       id-token: write
       contents: read
@@ -80,8 +80,8 @@ jobs:
 
       - run: go version
 
-      - name: Build the luxd binaries (native arm64)
-        run: CGO_ENABLED=0 ./scripts/build.sh
+      - name: Build the luxd binaries (cross-compile arm64 on amd64)
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 ./scripts/build.sh
 
       - name: Try to get tag from git
         if: "${{ github.event.inputs.tag == '' }}"

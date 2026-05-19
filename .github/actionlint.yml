@@ -3,5 +3,3 @@ self-hosted-runner:
     - custom-arm64-focal
     - custom-arm64-jammy
     - hanzo-build-linux-amd64
-    - hanzo-build-linux-arm64
-    - ubuntu-24.04-arm
