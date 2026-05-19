@@ -126,7 +126,7 @@ require (
 	github.com/luxfi/accel v1.0.9
 	github.com/luxfi/api v1.0.11
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.2.2
+	github.com/luxfi/chains v1.2.3
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.5.2
 	github.com/luxfi/container v0.0.4
@@ -174,7 +174,7 @@ require (
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/precompile v0.5.17 // indirect
-	github.com/luxfi/pulsar v1.0.7 // indirect
+	github.com/luxfi/pulsar v1.0.8 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/threshold v1.6.17 // indirect
