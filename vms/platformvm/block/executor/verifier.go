@@ -304,7 +304,6 @@ func (v *verifier) proposalBlock(
 		inputs: inputs,
 		// It is safe to use [b.onAbortState] here because the timestamp will
 		// never be modified by an Apricot Abort block and the timestamp will
-		// always be the same as the Banff Proposal Block.
 		timestamp:       onAbortState.GetTimestamp(),
 		atomicRequests:  atomicRequests,
 		verifiedHeights: set.Of(v.pChainHeight),

@@ -34,10 +34,8 @@ type Internal struct {
 	//            calling VM.Initialize.
 	Validators validators.Manager
 
-	// Dynamic fees are active after Etna
 	DynamicFeeConfig gas.Config
 
-	// LP-77 validator fees are active after Etna
 	ValidatorFeeConfig fee.Config
 
 	// Provides access to the uptime manager as a thread safe data structure
