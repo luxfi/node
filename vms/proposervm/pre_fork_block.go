@@ -108,21 +108,16 @@ func (b *preForkBlock) getInnerBlk() chain.Block {
 }
 
 func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlock) error {
-	// FIX 2: Byzantine validation BEFORE proposer window check
-	// Ensure parent is an oracle block if post-fork
-	parentTimestamp := b.Timestamp()
-	if b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
-		if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
-			// If parent is post-fork but not an oracle block,
-			// preFork children are not allowed
-			return errUnexpectedBlockType
-		}
-
-		b.vm.logger.Debug("allowing pre-fork block after the fork time",
-			log.String("reason", "parent is an oracle block"),
-			log.Stringer("blkID", b.ID()),
-		)
+	// Under activate-all-implicitly, every parent is post-ApricotPhase4 so
+	// preFork children are only allowed when the parent is an oracle block.
+	if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
+		return errUnexpectedBlockType
 	}
+
+	b.vm.logger.Debug("allowing pre-fork block after the fork time",
+		log.String("reason", "parent is an oracle block"),
+		log.Stringer("blkID", b.ID()),
+	)
 
 	return child.Block.Verify(ctx)
 }
@@ -157,10 +152,6 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 			currentPChainHeight,
 		)
 	}
-	if childPChainHeight < b.vm.Upgrades.ApricotPhase4MinPChainHeight {
-		return errPChainHeightTooLow
-	}
-
 	// Make sure [b] is the parent of [child]'s inner block
 	expectedInnerParentID := b.ID()
 	innerParentID := child.innerBlk.Parent()
@@ -168,13 +159,9 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 		return errInnerParentMismatch
 	}
 
-	// A *preForkBlock can only have a *postForkBlock child
-	// if the *preForkBlock is the last *preForkBlock before activation takes effect
-	// (its timestamp is at or after the activation time)
+	// Activate-all-implicitly: ApricotPhase4 is always live, so the
+	// pre-fork → post-fork transition condition is permanently satisfied.
 	parentTimestamp := b.Timestamp()
-	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
-		return errProposersNotActivated
-	}
 
 	// Child's timestamp must be at or after its parent's timestamp
 	childTimestamp := child.Timestamp()
@@ -182,8 +169,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 		return errTimeNotMonotonic
 	}
 
-	// Validate epoch (LP-181 epoching, gated by upgrade.Config.GraniteTime
-	// for upstream-codec compatibility).
+	// Validate epoch (LP-181 epoching, always-on under activate-all-implicitly).
 	// Pre-fork blocks always have empty epoch, so use that as parent epoch
 	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
 	childEpoch := child.PChainEpoch()
@@ -215,48 +201,19 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 }
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
+	// Activate-all-implicitly: ApricotPhase4 is always live, so the
+	// "chain is currently forking" path is the only one taken.
 	parentTimestamp := b.Timestamp()
-	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
-		// The chain hasn't forked yet
-		// FIX 5: BuildBlockWithRuntime - proper context passing
-		var innerBlock chain.Block
-		if b.vm.blockBuilderVM != nil {
-			builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{})
-			if err != nil {
-				return nil, err
-			}
-			innerBlock = builtBlock
-		} else {
-			engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
-			if err != nil {
-				return nil, err
-			}
-			innerBlock = engineBlock
-		}
-
-		b.vm.logger.Info("built block",
-			log.Stringer("blkID", innerBlock.ID()),
-			log.Uint64("height", innerBlock.Height()),
-			log.Time("parentTimestamp", parentTimestamp),
-		)
-
-		return &preForkBlock{
-			Block: innerBlock,
-			vm:    b.vm,
-		}, nil
-	}
-
-	// The chain is currently forking
-
 	parentID := b.ID()
 	newTimestamp := b.vm.Time().Truncate(time.Second)
 	if newTimestamp.Before(parentTimestamp) {
 		newTimestamp = parentTimestamp
 	}
 
-	// The child's P-Chain height is proposed as the optimal P-Chain height that
-	// is at least the minimum height
-	pChainHeight, err := b.vm.selectChildPChainHeight(ctx, b.vm.Upgrades.ApricotPhase4MinPChainHeight)
+	// The child's P-Chain height is proposed as the optimal P-Chain height
+	// available; under activate-all-implicitly there is no historical
+	// minimum-height floor.
+	pChainHeight, err := b.vm.selectChildPChainHeight(ctx, 0)
 	if err != nil {
 		b.vm.logger.Error("unexpected build block failure",
 			log.String("reason", "failed to calculate optimal P-chain height"),
@@ -283,8 +240,8 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		innerBlock = engineBlock
 	}
 
-	// Calculate the epoch for the child block (LP-181, gated by
-	// upgrade.Config.GraniteTime for upstream-codec compatibility).
+	// Calculate the epoch for the child block (LP-181, always-on under
+	// activate-all-implicitly).
 	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
 	// For pre-fork blocks, we don't have explicit P-chain height tracking.
 	// We use 0 as the parent P-chain height for genesis/pre-fork blocks.

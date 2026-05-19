@@ -134,16 +134,11 @@ func getNextL1ValidatorEvictionTime(
 	return nextTime, nil
 }
 
-// PickFeeCalculator creates either a simple or a dynamic fee calculator,
-// depending on the active upgrade.
+// PickFeeCalculator returns the dynamic fee calculator; the legacy simple
+// (zero-fee) calculator is unreachable under activate-all-implicitly.
 //
 // PickFeeCalculator does not modify [state].
 func PickFeeCalculator(config *config.Internal, state Chain) txfee.Calculator {
-	timestamp := state.GetTimestamp()
-	if !config.UpgradeConfig.IsEtnaActivated(timestamp) {
-		return txfee.NewSimpleCalculator(0)
-	}
-
 	feeState := state.GetFeeState()
 	gasPrice := gas.CalculatePrice(
 		config.DynamicFeeConfig.MinPrice,
