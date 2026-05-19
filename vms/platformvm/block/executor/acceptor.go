@@ -31,97 +31,21 @@ type acceptor struct {
 	validators validators.Manager
 }
 
-func (a *acceptor) BanffAbortBlock(b *block.BanffAbortBlock) error {
-	return a.optionBlock(b, "banff abort")
+func (a *acceptor) AbortBlock(b *block.AbortBlock) error {
+	return a.optionBlock(b, "abort")
 }
 
-func (a *acceptor) BanffCommitBlock(b *block.BanffCommitBlock) error {
-	return a.optionBlock(b, "banff commit")
+func (a *acceptor) CommitBlock(b *block.CommitBlock) error {
+	return a.optionBlock(b, "commit")
 }
 
-func (a *acceptor) BanffProposalBlock(b *block.BanffProposalBlock) error {
-	a.proposalBlock(b, "banff proposal")
+func (a *acceptor) ProposalBlock(b *block.ProposalBlock) error {
+	a.proposalBlock(b, "proposal")
 	return nil
 }
 
-func (a *acceptor) BanffStandardBlock(b *block.BanffStandardBlock) error {
-	return a.standardBlock(b, "banff standard")
-}
-
-func (a *acceptor) ApricotAbortBlock(b *block.ApricotAbortBlock) error {
-	return a.optionBlock(b, "apricot abort")
-}
-
-func (a *acceptor) ApricotCommitBlock(b *block.ApricotCommitBlock) error {
-	return a.optionBlock(b, "apricot commit")
-}
-
-func (a *acceptor) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
-	a.proposalBlock(b, "apricot proposal")
-	return nil
-}
-
-func (a *acceptor) ApricotStandardBlock(b *block.ApricotStandardBlock) error {
-	return a.standardBlock(b, "apricot standard")
-}
-
-func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
-	blkID := b.ID()
-	defer a.free(blkID)
-
-	blkState, ok := a.getBlockState(blkID)
-	if !ok {
-		return fmt.Errorf("%w %s", errMissingBlockState, blkID)
-	}
-
-	if err := a.commonAccept(blkState); err != nil {
-		return err
-	}
-
-	// Update the state to reflect the changes made in [onAcceptState].
-	if err := blkState.onAcceptState.Apply(a.state); err != nil {
-		return err
-	}
-
-	defer a.state.Abort()
-	batch, err := a.state.CommitBatch()
-	if err != nil {
-		return fmt.Errorf(
-			"failed to commit VM's database for block %s: %w",
-			blkID,
-			err,
-		)
-	}
-
-	// Note that this method writes [batch] to the database.
-	// Apply atomic requests via SharedMemory from context
-	if a.rt.SharedMemory != nil {
-		sharedMemory := a.rt.SharedMemory.(atomic.SharedMemory)
-		if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
-			return fmt.Errorf(
-				"failed to atomically accept tx %s in block %s: %w",
-				b.Tx.ID(),
-				blkID,
-				err,
-			)
-		}
-	} else {
-		// If SharedMemory is nil, we must write the batch ourselves
-		if err := batch.Write(); err != nil {
-			return fmt.Errorf("failed to write batch for block %s: %w", blkID, err)
-		}
-	}
-
-	log.Trace(
-		"accepted block",
-		log.String("blockType", "apricot atomic"),
-		log.Stringer("blkID", blkID),
-		log.Uint64("height", b.Height()),
-		log.Stringer("parentID", b.Parent()),
-		log.Stringer("checksum", a.state.Checksum()),
-	)
-
-	return nil
+func (a *acceptor) StandardBlock(b *block.StandardBlock) error {
+	return a.standardBlock(b, "standard")
 }
 
 func (a *acceptor) optionBlock(b block.Block, blockType string) error {
