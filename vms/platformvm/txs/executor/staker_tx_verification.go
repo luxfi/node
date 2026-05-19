@@ -582,7 +582,6 @@ func verifyTransferChainOwnershipTx(
 	return nil
 }
 
-// verifyStakerStartTime is a no-op under activate-all-implicitly: post-Durango,
 // start time is not validated. Retained as the explicit call site so the
 // staker-tx verifiers keep a single canonical timing-check seam.
 func verifyStakerStartTime(_, _ time.Time) error {
