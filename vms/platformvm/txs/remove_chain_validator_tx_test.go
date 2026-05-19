@@ -111,8 +111,8 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// RemoveChainValidatorTx Type ID
-		0x00, 0x00, 0x00, 0x17,
+		// RemoveChainValidatorTx Type ID (post codec-collapse: 27)
+		0x00, 0x00, 0x00, 0x1b,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
@@ -281,8 +281,8 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// RemoveChainValidatorTx Type ID
-		0x00, 0x00, 0x00, 0x17,
+		// RemoveChainValidatorTx Type ID (post codec-collapse: 27)
+		0x00, 0x00, 0x00, 0x1b,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
