@@ -67,7 +67,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		}
 	)
 
-	// Add a chain staker during the Etna upgrade
+	// Add a chain staker at upgradeTime (post-EtnaTime gate)
 	{
 		blk, err := block.NewBanffStandardBlock(upgradeTime, s.GetLastAccepted(), 1, nil)
 		require.NoError(err)

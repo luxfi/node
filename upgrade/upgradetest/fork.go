@@ -1,6 +1,11 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+// Package upgradetest exposes a Fork enum identifying every legacy upstream
+// network upgrade. The enum values are retained verbatim so that the large
+// surface of upstream-derived test code that pins behaviour to "fork X" keeps
+// compiling. In production Lux all forks are active from InitiallyActiveTime
+// (Dec 5, 2020); the Fork enum has no policy effect outside test fixtures.
 package upgradetest
 
 const (

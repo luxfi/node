@@ -144,7 +144,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after Durango fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after DurangoTime since now.After(activeForkTime)
 				return mockState
 			},
 			sTxF: func() *txs.Tx {
@@ -505,7 +505,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now).Times(3) // chain time is after Durango fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(3) // chain time is after DurangoTime since now.After(activeForkTime)
 				mockState.EXPECT().GetNetTransformation(netID).Return(&transformTx, nil)
 				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)

@@ -47,7 +47,7 @@ Each chain has one or more index. To see if a C-Chain block is accepted, for exa
 ```
 
 <Callout type="warn">
-To ensure historical data can be accessed, the `/ext/index/X/vtx` is still accessible, even though it is no longer populated with chain data since the Cortina activation. If you are using `V1.10.0` or higher, you need to migrate to using the `/ext/index/X/block` endpoint.
+To ensure historical data can be accessed, the `/ext/index/X/vtx` is still accessible, even though it is no longer populated with chain data since the X-Chain block linearization landed. If you are using `V1.10.0` or higher, you need to migrate to using the `/ext/index/X/block` endpoint.
 </Callout>
 
 ## Methods

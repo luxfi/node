@@ -586,7 +586,7 @@ Defaults to `0.1`.
 
 Partial sync enables nodes that are not primary network validators to optionally sync
 only the P-chain on the primary network. Nodes that use this option can still track
-Chains. After the Etna upgrade, nodes that use this option can also validate L1s.
+Chains. Nodes that use this option can also validate L1s.
 This config defaults to `false`.
 
 ## Public IP
