@@ -924,7 +924,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		Metrics:         chainMetricsGatherer,
 		Log:             chainLog,
 		WarpSigner:      warpSigner,
-		NetworkUpgrades: &m.Upgrades,
+		NetworkUpgrades: upgrade.AlwaysOn{},
 	}
 
 	// Get a factory for the vm we want to use on our chain
