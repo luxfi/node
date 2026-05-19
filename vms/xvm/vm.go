@@ -31,6 +31,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
@@ -545,8 +546,9 @@ func (vm *VM) ParseAddress(addrStr string) (ids.ID, ids.ShortID, error) {
 }
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- vmcore.Message) error {
-	// Use EtnaTime from config for chain state initialization
-	err := vm.state.InitializeChainState(stopVertexID, vm.Config.EtnaTime)
+	// Chain state initialization timestamp under activate-all-implicitly is
+	// the canonical Lux InitiallyActiveTime (Dec 5, 2020).
+	err := vm.state.InitializeChainState(stopVertexID, upgrade.InitiallyActiveTime)
 	if err != nil {
 		return err
 	}
