@@ -55,8 +55,6 @@ type validatorMetadata struct {
 }
 
 // Permissioned validators originally wrote their values as nil.
-// With Banff we wrote the potential reward.
-// With Cortina we wrote the potential reward with the potential delegatee reward.
 // We now write the uptime, reward, and delegatee reward together.
 func parseValidatorMetadata(bytes []byte, metadata *validatorMetadata) error {
 	switch len(bytes) {

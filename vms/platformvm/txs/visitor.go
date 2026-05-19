@@ -16,24 +16,20 @@ type Visitor interface {
 	AdvanceTimeTx(*AdvanceTimeTx) error
 	RewardValidatorTx(*RewardValidatorTx) error
 
-	// Banff Transactions:
 	RemoveChainValidatorTx(*RemoveChainValidatorTx) error
 	TransformChainTx(*TransformChainTx) error
 	AddPermissionlessValidatorTx(*AddPermissionlessValidatorTx) error
 	AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) error
 
-	// Durango Transactions:
 	TransferChainOwnershipTx(*TransferChainOwnershipTx) error
 	BaseTx(*BaseTx) error
 
-	// Etna Transactions:
 	ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error
 	DisableL1ValidatorTx(*DisableL1ValidatorTx) error
 
-	// Granite Transactions:
 	SlashValidatorTx(*SlashValidatorTx) error
 
 	// P-only primary network — historically X-Chain

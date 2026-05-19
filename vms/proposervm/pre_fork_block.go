@@ -108,7 +108,6 @@ func (b *preForkBlock) getInnerBlk() chain.Block {
 }
 
 func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlock) error {
-	// Under activate-all-implicitly, every parent is post-ApricotPhase4 so
 	// preFork children are only allowed when the parent is an oracle block.
 	if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
 		return errUnexpectedBlockType
@@ -159,7 +158,6 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 		return errInnerParentMismatch
 	}
 
-	// Activate-all-implicitly: ApricotPhase4 is always live, so the
 	// pre-fork → post-fork transition condition is permanently satisfied.
 	parentTimestamp := b.Timestamp()
 
@@ -201,7 +199,6 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 }
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
-	// Activate-all-implicitly: ApricotPhase4 is always live, so the
 	// "chain is currently forking" path is the only one taken.
 	parentTimestamp := b.Timestamp()
 	parentID := b.ID()

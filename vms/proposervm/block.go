@@ -197,7 +197,6 @@ func (p *postForkCommonComponents) Verify(
 		)
 	}
 
-	// Activate-all-implicitly: Granite is always live → epoch-based height.
 	_ = childPChainHeight
 	_ = parentPChainHeight
 	contextPChainHeight := childEpoch.PChainHeight
@@ -250,7 +249,6 @@ func (p *postForkCommonComponents) buildChild(
 
 	epoch := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, newTimestamp)
 
-	// Activate-all-implicitly: Granite is always live → epoch-based height.
 	_ = pChainHeight
 	contextPChainHeight := epoch.PChainHeight
 
@@ -441,4 +439,3 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	)
 	return false, fmt.Errorf("%w: slot %d expects %s", errUnexpectedProposer, currentSlot, expectedProposerID)
 }
-
