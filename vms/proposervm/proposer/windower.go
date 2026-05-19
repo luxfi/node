@@ -63,9 +63,10 @@ type Windower interface {
 		maxWindows int,
 	) (time.Duration, error)
 
-	// In the Post-Durango windowing scheme, every validator active at
+	// In the current per-slot windowing scheme, every validator active at
 	// [pChainHeight] gets specific slots it can propose in (instead of being
-	// able to propose from a given time on as it happens Pre-Durango).
+	// able to propose from a given time on as in the legacy time-window
+	// scheme).
 	// [ExpectedProposer] calculates which nodeID is scheduled to propose a
 	// block of height [blockHeight] at [slot].
 	// If no validators are currently available, [ErrAnyoneCanPropose] is
@@ -77,9 +78,10 @@ type Windower interface {
 		slot uint64,
 	) (ids.NodeID, error)
 
-	// In the Post-Durango windowing scheme, every validator active at
+	// In the current per-slot windowing scheme, every validator active at
 	// [pChainHeight] gets specific slots it can propose in (instead of being
-	// able to propose from a given time on as it happens Pre-Durango).
+	// able to propose from a given time on as in the legacy time-window
+	// scheme).
 	// [MinDelayForProposer] specifies how long [nodeID] needs to wait for its
 	// slot to start. Delay is specified as starting from slot zero start.
 	// (which is parent timestamp). For efficiency reasons, we cap the slot

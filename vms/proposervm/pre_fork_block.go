@@ -182,7 +182,8 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 		return errTimeNotMonotonic
 	}
 
-	// Validate epoch for Granite upgrade (LP-181)
+	// Validate epoch (LP-181 epoching, gated by upgrade.Config.GraniteTime
+	// for upstream-codec compatibility).
 	// Pre-fork blocks always have empty epoch, so use that as parent epoch
 	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
 	childEpoch := child.PChainEpoch()
@@ -282,7 +283,8 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		innerBlock = engineBlock
 	}
 
-	// Calculate the epoch for the child block based on Granite activation
+	// Calculate the epoch for the child block (LP-181, gated by
+	// upgrade.Config.GraniteTime for upstream-codec compatibility).
 	parentEpoch := block.Epoch{} // Pre-fork blocks have no epoch
 	// For pre-fork blocks, we don't have explicit P-chain height tracking.
 	// We use 0 as the parent P-chain height for genesis/pre-fork blocks.

@@ -816,7 +816,7 @@ func (p *peer) shouldDisconnect() bool {
 	}
 
 	// Enforce that all validators that have registered a BLS key are signing
-	// their IP with it after the activation of Durango.
+	// their IP with the signed-IP payload.
 	vdr, ok := p.Validators.GetValidator(constants.PrimaryNetworkID, p.id)
 	if !ok || vdr.PublicKey == nil || vdr.TxID == p.txIDOfVerifiedBLSKey {
 		return false

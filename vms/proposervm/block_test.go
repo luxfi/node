@@ -305,8 +305,9 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 	require.NoError(err)
 }
 
-// Confirm that VM rejects blocks with non-zero epoch prior to granite upgrade activation
-func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
+// Confirm that VM rejects blocks with non-zero epoch prior to the LP-181
+// epoch-upgrade activation (upgrade.Config.GraniteTime).
+func TestPreEpochUpgradeBlock_NonZeroEpoch(t *testing.T) {
 	require := require.New(t)
 
 	var (
