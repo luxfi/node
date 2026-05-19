@@ -4,7 +4,6 @@
 package block
 
 // Visitor dispatches by the canonical P-Chain block type. Under
-// activate-all-implicitly there is no legacy Apricot variant — every block
 // carries a timestamp and is one of the four canonical kinds.
 type Visitor interface {
 	AbortBlock(*AbortBlock) error

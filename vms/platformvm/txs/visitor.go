@@ -5,7 +5,6 @@ package txs
 
 // Allow vm to execute custom logic against the underlying transaction types.
 type Visitor interface {
-	// Apricot Transactions:
 	AddValidatorTx(*AddValidatorTx) error
 	AddChainValidatorTx(*AddChainValidatorTx) error
 	AddDelegatorTx(*AddDelegatorTx) error
