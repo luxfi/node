@@ -34,7 +34,8 @@ import (
 // Test keys for use in tests
 var keys = secp256k1.TestKeys()
 
-// durango is a shorthand for the Durango fork config
+// durango is a shorthand for the upgradetest.Durango fork config (kept for
+// upstream-codec compatibility; all gates are active on Lux at chain birth).
 var durango = upgradetest.GetConfig(upgradetest.Durango)
 
 // Test constants
