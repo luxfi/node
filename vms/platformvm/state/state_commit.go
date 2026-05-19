@@ -240,7 +240,6 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 
 		stakeAmount := validatorTx.Weight()
 		// Note: We use [StartTime()] here because genesis transactions are
-		// guaranteed to be pre-Durango activation.
 		startTime := validatorTx.StartTime()
 		stakeDuration := validatorTx.EndTime().Sub(startTime)
 		currentSupply, err := s.GetCurrentSupply(constants.PrimaryNetworkID)
