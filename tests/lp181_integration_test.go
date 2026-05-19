@@ -22,8 +22,10 @@ import (
 	"github.com/luxfi/node/vms/proposervm/lp181"
 )
 
-// TestGraniteActivation tests that granite activates at the correct timestamp
-func TestGraniteActivation(t *testing.T) {
+// TestEpochUpgradeActivation tests that the LP-181 epoch-upgrade gate
+// (carried in the upgrade.Config.GraniteTime field for upstream-codec
+// compatibility) activates at the correct timestamp.
+func TestEpochUpgradeActivation(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         upgrade.Config
@@ -31,13 +33,13 @@ func TestGraniteActivation(t *testing.T) {
 		shouldBeActive bool
 	}{
 		{
-			name:           "pre_granite",
+			name:           "pre_epoch_upgrade",
 			config:         upgrade.Default,
 			timestamp:      upgrade.InitiallyActiveTime,
 			shouldBeActive: false,
 		},
 		{
-			name: "exactly_at_granite",
+			name: "exactly_at_epoch_upgrade",
 			config: upgrade.Config{
 				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
 				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
@@ -59,7 +61,7 @@ func TestGraniteActivation(t *testing.T) {
 			shouldBeActive: true,
 		},
 		{
-			name: "after_granite",
+			name: "after_epoch_upgrade",
 			config: upgrade.Config{
 				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
 				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
@@ -81,7 +83,7 @@ func TestGraniteActivation(t *testing.T) {
 			shouldBeActive: true,
 		},
 		{
-			name: "one_nanosecond_before_granite",
+			name: "one_nanosecond_before_epoch_upgrade",
 			config: upgrade.Config{
 				ApricotPhase1Time:     upgrade.InitiallyActiveTime,
 				ApricotPhase2Time:     upgrade.InitiallyActiveTime,
@@ -108,7 +110,7 @@ func TestGraniteActivation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			isActive := test.config.IsGraniteActivated(test.timestamp)
 			require.Equal(t, test.shouldBeActive, isActive,
-				"Granite activation mismatch at timestamp %v", test.timestamp)
+				"epoch-upgrade activation mismatch at timestamp %v", test.timestamp)
 		})
 	}
 }
@@ -132,7 +134,7 @@ func TestLP181_EpochTransitions(t *testing.T) {
 		expected           statelessblock.Epoch
 	}{
 		{
-			name:               "pre_granite_no_epoch",
+			name:               "pre_epoch_no_epoch",
 			fork:               upgradetest.NoUpgrades,
 			parentPChainHeight: 100,
 			parentTimestamp:    now,
@@ -140,7 +142,7 @@ func TestLP181_EpochTransitions(t *testing.T) {
 			expected:           statelessblock.Epoch{},
 		},
 		{
-			name:               "first_post_granite_epoch",
+			name:               "first_post_epoch_upgrade_epoch",
 			fork:               upgradetest.Latest,
 			parentPChainHeight: 100,
 			parentTimestamp:    now,
@@ -292,7 +294,7 @@ func TestLP204_Secp256r1Precompile(t *testing.T) {
 				privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 				require.NoError(t, err)
 
-				message := []byte("test message for granite LP-204")
+				message := []byte("test message for LP-204")
 				hash := sha256.Sum256(message)
 
 				r, s, err := ecdsa.Sign(rand.Reader, privKey, hash[:])
@@ -570,8 +572,9 @@ func TestLP226_UnderLoadConditions(t *testing.T) {
 	}
 }
 
-// TestGraniteIntegration_AllLPsTogether tests all granite LPs working together
-func TestGraniteIntegration_AllLPsTogether(t *testing.T) {
+// TestEpochUpgradeIntegration_AllLPsTogether tests all epoch-upgrade LPs
+// (LP-181 epoching, LP-204 P-256, LP-226 dynamic block timing) working together.
+func TestEpochUpgradeIntegration_AllLPsTogether(t *testing.T) {
 	now := upgrade.InitiallyActiveTime.Add(24 * time.Hour)
 	config := upgradetest.GetConfig(upgradetest.Latest)
 
@@ -596,7 +599,7 @@ func TestGraniteIntegration_AllLPsTogether(t *testing.T) {
 	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
-	message := []byte("granite integration test")
+	message := []byte("epoch-upgrade integration test")
 	hash := sha256.Sum256(message)
 
 	r, s, err := ecdsa.Sign(rand.Reader, privKey, hash[:])
@@ -612,9 +615,10 @@ func TestGraniteIntegration_AllLPsTogether(t *testing.T) {
 	require.True(t, valid)
 }
 
-// TestGraniteRollbackScenarios tests network behavior during rollback
-func TestGraniteRollbackScenarios(t *testing.T) {
-	graniteTime := upgrade.InitiallyActiveTime.Add(time.Hour)
+// TestEpochUpgradeRollbackScenarios tests network behavior during rollback
+// of the LP-181 epoch upgrade (gated by upgrade.Config.GraniteTime).
+func TestEpochUpgradeRollbackScenarios(t *testing.T) {
+	epochUpgradeTime := upgrade.InitiallyActiveTime.Add(time.Hour)
 
 	config := upgrade.Config{
 		ApricotPhase1Time:     upgrade.InitiallyActiveTime,
@@ -630,40 +634,40 @@ func TestGraniteRollbackScenarios(t *testing.T) {
 		DurangoTime:           upgrade.InitiallyActiveTime,
 		EtnaTime:              upgrade.InitiallyActiveTime,
 		FortunaTime:           upgrade.InitiallyActiveTime,
-		GraniteTime:           graniteTime,
+		GraniteTime:           epochUpgradeTime,
 		GraniteEpochDuration:  30 * time.Second,
 	}
 
 	tests := []struct {
 		name           string
 		blockTimestamp time.Time
-		expectGranite  bool
+		expectEpochUpgrade bool
 		expectEpoch    bool
 	}{
 		{
-			name:           "before_granite",
-			blockTimestamp: graniteTime.Add(-time.Second),
-			expectGranite:  false,
-			expectEpoch:    false,
+			name:               "before_epoch_upgrade",
+			blockTimestamp:     epochUpgradeTime.Add(-time.Second),
+			expectEpochUpgrade: false,
+			expectEpoch:        false,
 		},
 		{
-			name:           "at_granite_activation",
-			blockTimestamp: graniteTime,
-			expectGranite:  true,
-			expectEpoch:    true,
+			name:               "at_epoch_upgrade_activation",
+			blockTimestamp:     epochUpgradeTime,
+			expectEpochUpgrade: true,
+			expectEpoch:        true,
 		},
 		{
-			name:           "after_granite",
-			blockTimestamp: graniteTime.Add(time.Minute),
-			expectGranite:  true,
-			expectEpoch:    true,
+			name:               "after_epoch_upgrade",
+			blockTimestamp:     epochUpgradeTime.Add(time.Minute),
+			expectEpochUpgrade: true,
+			expectEpoch:        true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			isActive := config.IsGraniteActivated(test.blockTimestamp)
-			require.Equal(t, test.expectGranite, isActive)
+			require.Equal(t, test.expectEpochUpgrade, isActive)
 
 			if test.expectEpoch {
 				epoch := lp181.NewEpoch(
@@ -679,8 +683,9 @@ func TestGraniteRollbackScenarios(t *testing.T) {
 	}
 }
 
-// TestGraniteNetworkIDConfiguration tests granite configuration across network IDs
-func TestGraniteNetworkIDConfiguration(t *testing.T) {
+// TestEpochUpgradeNetworkIDConfiguration tests the LP-181 epoch-upgrade
+// configuration across network IDs.
+func TestEpochUpgradeNetworkIDConfiguration(t *testing.T) {
 	tests := []struct {
 		name                  string
 		networkID             uint32
@@ -781,8 +786,8 @@ func BenchmarkLP226_DelayExcessUpdate(b *testing.B) {
 	}
 }
 
-// BenchmarkGraniteActivationCheck benchmarks granite activation checks
-func BenchmarkGraniteActivationCheck(b *testing.B) {
+// BenchmarkEpochUpgradeActivationCheck benchmarks epoch-upgrade activation checks
+func BenchmarkEpochUpgradeActivationCheck(b *testing.B) {
 	config := upgrade.Default
 	timestamp := upgrade.InitiallyActiveTime.Add(time.Hour)
 
@@ -792,8 +797,9 @@ func BenchmarkGraniteActivationCheck(b *testing.B) {
 	}
 }
 
-// BenchmarkFullGraniteIntegration benchmarks all granite features together
-func BenchmarkFullGraniteIntegration(b *testing.B) {
+// BenchmarkFullEpochUpgradeIntegration benchmarks all epoch-upgrade features
+// (LP-181 / LP-204 / LP-226) together.
+func BenchmarkFullEpochUpgradeIntegration(b *testing.B) {
 	now := upgrade.InitiallyActiveTime.Add(24 * time.Hour)
 	config := upgradetest.GetConfig(upgradetest.Latest)
 

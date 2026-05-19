@@ -336,8 +336,8 @@ func NewNetwork(
 			)
 			for _, validatorTx := range parsedGenesis.Validators {
 				// Extract validator details from the transaction.
-				// Genesis may encode validators as AddValidatorTx (pre-permissionless)
-				// or AddPermissionlessValidatorTx (post-Etna). Handle both.
+				// Genesis may encode validators as AddValidatorTx (legacy) or
+				// AddPermissionlessValidatorTx (modern). Handle both.
 				switch tx := validatorTx.Unsigned.(type) {
 				case *txs.AddPermissionlessValidatorTx:
 					nodeID := tx.Validator.NodeID
