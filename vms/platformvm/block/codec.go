@@ -19,7 +19,7 @@ var (
 	// GenesisCodec allows blocks of larger than usual size to be parsed.
 	// While this gives flexibility in accommodating large genesis blocks
 	// it must not be used to parse new, unverified blocks which instead
-	// must be processed by Codec
+	// must be processed by Codec.
 	GenesisCodec codec.Manager
 
 	Codec codec.Manager
@@ -35,12 +35,7 @@ func init() {
 
 	errs := wrappers.Errs{}
 	for _, c := range []linearcodec.Codec{c, gc} {
-		errs.Add(
-			RegisterApricotTypes(c),
-			RegisterBanffTypes(c),
-			RegisterDurangoTypes(c),
-			RegisterEtnaTypes(c),
-		)
+		errs.Add(RegisterBlockTypes(c))
 	}
 
 	Codec = codec.NewDefaultManager()
@@ -56,44 +51,21 @@ func init() {
 }
 
 // RegisterGenesisType registers a type with the GenesisCodec.
-// This is used by other packages (like state) to register backward-compatibility types.
+// This is used by other packages (e.g. state) to register types that are
+// only ever encountered in genesis bytes.
 func RegisterGenesisType(val interface{}) error {
 	return genesisLinearCodec.RegisterType(val)
 }
 
-// RegisterApricotTypes registers the type information for blocks that were
-// valid during the Apricot series of upgrades.
-func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
+// RegisterBlockTypes registers the canonical block type IDs. There is exactly
+// one type per block kind: StandardBlock, ProposalBlock, CommitBlock,
+// AbortBlock. Tx types come from txs.RegisterTypes.
+func RegisterBlockTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&ApricotProposalBlock{}),
-		targetCodec.RegisterType(&ApricotAbortBlock{}),
-		targetCodec.RegisterType(&ApricotCommitBlock{}),
-		targetCodec.RegisterType(&ApricotStandardBlock{}),
-		targetCodec.RegisterType(&ApricotAtomicBlock{}),
-		txs.RegisterApricotTypes(targetCodec),
+		txs.RegisterTypes(targetCodec),
+		targetCodec.RegisterType(&ProposalBlock{}),
+		targetCodec.RegisterType(&AbortBlock{}),
+		targetCodec.RegisterType(&CommitBlock{}),
+		targetCodec.RegisterType(&StandardBlock{}),
 	)
-}
-
-// RegisterBanffTypes registers the type information for blocks that were valid
-// during the Banff series of upgrades.
-func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
-	return errors.Join(
-		txs.RegisterBanffTypes(targetCodec),
-		targetCodec.RegisterType(&BanffProposalBlock{}),
-		targetCodec.RegisterType(&BanffAbortBlock{}),
-		targetCodec.RegisterType(&BanffCommitBlock{}),
-		targetCodec.RegisterType(&BanffStandardBlock{}),
-	)
-}
-
-// RegisterDurangoTypes registers the type information for blocks that were
-// valid during the Durango series of upgrades.
-func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
-	return txs.RegisterDurangoTypes(targetCodec)
-}
-
-// RegisterEtnaTypes registers the type information for blocks that were valid
-// during the Etna series of upgrades.
-func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
-	return txs.RegisterEtnaTypes(targetCodec)
 }

@@ -13,49 +13,20 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var (
-	_ BanffBlock = (*BanffStandardBlock)(nil)
-	_ Block      = (*ApricotStandardBlock)(nil)
-)
+var _ Block = (*StandardBlock)(nil)
 
-type BanffStandardBlock struct {
-	Time                 uint64 `serialize:"true" json:"time"`
-	ApricotStandardBlock `serialize:"true"`
-}
-
-func (b *BanffStandardBlock) Timestamp() time.Time {
-	return time.Unix(int64(b.Time), 0)
-}
-
-func (b *BanffStandardBlock) Visit(v Visitor) error {
-	return v.BanffStandardBlock(b)
-}
-
-func NewBanffStandardBlock(
-	timestamp time.Time,
-	parentID ids.ID,
-	height uint64,
-	txs []*txs.Tx,
-) (*BanffStandardBlock, error) {
-	blk := &BanffStandardBlock{
-		Time: uint64(timestamp.Unix()),
-		ApricotStandardBlock: ApricotStandardBlock{
-			CommonBlock: CommonBlock{
-				PrntID: parentID,
-				Hght:   height,
-			},
-			Transactions: txs,
-		},
-	}
-	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-type ApricotStandardBlock struct {
+// StandardBlock is the canonical P-Chain standard block. It carries a
+// per-block timestamp (advance-all-implicitly removed the separate
+// AdvanceTimeTx flow) and an ordered list of decision txs.
+type StandardBlock struct {
+	Time         uint64    `serialize:"true" json:"time"`
 	CommonBlock  `serialize:"true"`
 	Transactions []*txs.Tx `serialize:"true" json:"txs"`
 }
 
-func (b *ApricotStandardBlock) initialize(bytes []byte) error {
+func (b *StandardBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 0) }
+
+func (b *StandardBlock) initialize(bytes []byte) error {
 	b.CommonBlock.initialize(bytes)
 	for _, tx := range b.Transactions {
 		if err := tx.Initialize(txs.Codec); err != nil {
@@ -65,46 +36,26 @@ func (b *ApricotStandardBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotStandardBlock) InitRuntime(rt *runtime.Runtime) {
+func (b *StandardBlock) InitRuntime(rt *runtime.Runtime) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitRuntime(rt)
 	}
 }
 
-func (b *ApricotStandardBlock) Txs() []*txs.Tx {
-	return b.Transactions
-}
+func (b *StandardBlock) Txs() []*txs.Tx          { return b.Transactions }
+func (b *StandardBlock) Visit(v Visitor) error   { return v.StandardBlock(b) }
+func (*StandardBlock) Initialize(context.Context) error { return nil }
 
-func (b *ApricotStandardBlock) Visit(v Visitor) error {
-	return v.ApricotStandardBlock(b)
-}
-
-// NewApricotStandardBlock is kept for testing purposes only.
-// Following Banff activation and subsequent code cleanup, Apricot Standard blocks
-// should be only verified (upon bootstrap), never created anymore
-func NewApricotStandardBlock(
+func NewStandardBlock(
+	timestamp time.Time,
 	parentID ids.ID,
 	height uint64,
 	txs []*txs.Tx,
-) (*ApricotStandardBlock, error) {
-	blk := &ApricotStandardBlock{
-		CommonBlock: CommonBlock{
-			PrntID: parentID,
-			Hght:   height,
-		},
+) (*StandardBlock, error) {
+	blk := &StandardBlock{
+		Time:         uint64(timestamp.Unix()),
+		CommonBlock:  CommonBlock{PrntID: parentID, Hght: height},
 		Transactions: txs,
 	}
 	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *BanffStandardBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *ApricotStandardBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
 }

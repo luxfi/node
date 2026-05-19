@@ -422,7 +422,7 @@ func buildBlock(
 			return nil, fmt.Errorf("could not build tx to reward staker: %w", err)
 		}
 
-		return platformblock.NewBanffProposalBlock(
+		return platformblock.NewProposalBlock(
 			timestamp,
 			parentID,
 			height,
@@ -438,82 +438,12 @@ func buildBlock(
 	}
 
 	// Issue a block with as many transactions as possible.
-	return platformblock.NewBanffStandardBlock(
+	return platformblock.NewStandardBlock(
 		timestamp,
 		parentID,
 		height,
 		blockTxs,
 	)
-}
-
-func packDurangoBlockTxs(
-	ctx context.Context,
-	parentID ids.ID,
-	parentState state.Chain,
-	mempool mempool.Mempool[*txs.Tx],
-	backend *txexecutor.Backend,
-	manager blockexecutor.Manager,
-	timestamp time.Time,
-	pChainHeight uint64,
-	remainingSize int,
-) ([]*txs.Tx, error) {
-	logger := backend.Runtime.Log.(log.Logger)
-	logger.Debug("packDurangoBlockTxs starting",
-		log.Time("timestamp", timestamp),
-		log.Uint64("pChainHeight", pChainHeight),
-	)
-	stateDiff, err := state.NewDiffOn(parentState)
-	if err != nil {
-		logger.Warn("packDurangoBlockTxs NewDiffOn failed: " + err.Error())
-		return nil, err
-	}
-	logger.Debug("packDurangoBlockTxs NewDiffOn succeeded")
-
-	if _, err := txexecutor.AdvanceTimeTo(backend, stateDiff, timestamp); err != nil {
-		logger.Warn("packDurangoBlockTxs AdvanceTimeTo failed: " + err.Error())
-		return nil, err
-	}
-	logger.Debug("packDurangoBlockTxs AdvanceTimeTo succeeded")
-
-	var (
-		blockTxs      []*txs.Tx
-		inputs        set.Set[ids.ID]
-		feeCalculator = state.PickFeeCalculator(backend.Config, stateDiff)
-	)
-	for {
-		tx, exists := mempool.Peek()
-		if !exists {
-			break
-		}
-		txSize := len(tx.Bytes())
-		if txSize > remainingSize {
-			break
-		}
-
-		shouldAdd, err := executeTx(
-			ctx,
-			parentID,
-			stateDiff,
-			mempool,
-			backend,
-			manager,
-			pChainHeight,
-			&inputs,
-			feeCalculator,
-			tx,
-		)
-		if err != nil {
-			return nil, err
-		}
-		if !shouldAdd {
-			continue
-		}
-
-		remainingSize -= txSize
-		blockTxs = append(blockTxs, tx)
-	}
-
-	return blockTxs, nil
 }
 
 func packEtnaBlockTxs(

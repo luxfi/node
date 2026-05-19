@@ -13,20 +13,24 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var (
-	_ BanffBlock = (*BanffProposalBlock)(nil)
-	_ Block      = (*ApricotProposalBlock)(nil)
-)
+var _ Block = (*ProposalBlock)(nil)
 
-type BanffProposalBlock struct {
-	Time                 uint64    `serialize:"true" json:"time"`
-	Transactions         []*txs.Tx `serialize:"true" json:"txs"`
-	ApricotProposalBlock `serialize:"true"`
+// ProposalBlock is the canonical P-Chain proposal block. It carries a
+// per-block timestamp, a single proposal Tx, and a tail of decision Txs that
+// commit atomically with the proposal outcome.
+type ProposalBlock struct {
+	Time         uint64    `serialize:"true" json:"time"`
+	Transactions []*txs.Tx `serialize:"true" json:"txs"`
+	CommonBlock  `serialize:"true"`
+	Tx           *txs.Tx `serialize:"true" json:"tx"`
 }
 
-func (b *BanffProposalBlock) initialize(bytes []byte) error {
-	if err := b.ApricotProposalBlock.initialize(bytes); err != nil {
-		return err
+func (b *ProposalBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 0) }
+
+func (b *ProposalBlock) initialize(bytes []byte) error {
+	b.CommonBlock.initialize(bytes)
+	if err := b.Tx.Initialize(txs.Codec); err != nil {
+		return fmt.Errorf("failed to initialize tx: %w", err)
 	}
 	for _, tx := range b.Transactions {
 		if err := tx.Initialize(txs.Codec); err != nil {
@@ -36,101 +40,36 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *BanffProposalBlock) InitRuntime(rt *runtime.Runtime) {
+func (b *ProposalBlock) InitRuntime(rt *runtime.Runtime) {
+	b.Tx.Unsigned.InitRuntime(rt)
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitRuntime(rt)
 	}
-	b.ApricotProposalBlock.InitRuntime(rt)
 }
 
-func (b *BanffProposalBlock) Timestamp() time.Time {
-	return time.Unix(int64(b.Time), 0)
-}
-
-func (b *BanffProposalBlock) Txs() []*txs.Tx {
+func (b *ProposalBlock) Txs() []*txs.Tx {
 	l := len(b.Transactions)
-	txs := make([]*txs.Tx, l+1)
-	copy(txs, b.Transactions)
-	txs[l] = b.Tx
-	return txs
+	out := make([]*txs.Tx, l+1)
+	copy(out, b.Transactions)
+	out[l] = b.Tx
+	return out
 }
 
-func (b *BanffProposalBlock) Visit(v Visitor) error {
-	return v.BanffProposalBlock(b)
-}
+func (b *ProposalBlock) Visit(v Visitor) error          { return v.ProposalBlock(b) }
+func (*ProposalBlock) Initialize(context.Context) error { return nil }
 
-func NewBanffProposalBlock(
+func NewProposalBlock(
 	timestamp time.Time,
 	parentID ids.ID,
 	height uint64,
 	proposalTx *txs.Tx,
 	decisionTxs []*txs.Tx,
-) (*BanffProposalBlock, error) {
-	blk := &BanffProposalBlock{
-		Transactions: decisionTxs,
+) (*ProposalBlock, error) {
+	blk := &ProposalBlock{
 		Time:         uint64(timestamp.Unix()),
-		ApricotProposalBlock: ApricotProposalBlock{
-			CommonBlock: CommonBlock{
-				PrntID: parentID,
-				Hght:   height,
-			},
-			Tx: proposalTx,
-		},
+		Transactions: decisionTxs,
+		CommonBlock:  CommonBlock{PrntID: parentID, Hght: height},
+		Tx:           proposalTx,
 	}
 	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-type ApricotProposalBlock struct {
-	CommonBlock `serialize:"true"`
-	Tx          *txs.Tx `serialize:"true" json:"tx"`
-}
-
-func (b *ApricotProposalBlock) initialize(bytes []byte) error {
-	b.CommonBlock.initialize(bytes)
-	if err := b.Tx.Initialize(txs.Codec); err != nil {
-		return fmt.Errorf("failed to initialize tx: %w", err)
-	}
-	return nil
-}
-
-func (b *ApricotProposalBlock) InitRuntime(rt *runtime.Runtime) {
-	b.Tx.Unsigned.InitRuntime(rt)
-}
-
-func (b *ApricotProposalBlock) Txs() []*txs.Tx {
-	return []*txs.Tx{b.Tx}
-}
-
-func (b *ApricotProposalBlock) Visit(v Visitor) error {
-	return v.ApricotProposalBlock(b)
-}
-
-// NewApricotProposalBlock is kept for testing purposes only.
-// Following Banff activation and subsequent code cleanup, Apricot Proposal blocks
-// should be only verified (upon bootstrap), never created anymore
-func NewApricotProposalBlock(
-	parentID ids.ID,
-	height uint64,
-	tx *txs.Tx,
-) (*ApricotProposalBlock, error) {
-	blk := &ApricotProposalBlock{
-		CommonBlock: CommonBlock{
-			PrntID: parentID,
-			Hght:   height,
-		},
-		Tx: tx,
-	}
-	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *BanffProposalBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *ApricotProposalBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
 }

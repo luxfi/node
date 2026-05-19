@@ -28,9 +28,8 @@ var (
 	_ block.Visitor = (*verifier)(nil)
 
 	ErrConflictingBlockTxs         = errors.New("block contains conflicting transactions")
-	ErrStandardBlockWithoutChanges = errors.New("BanffStandardBlock performs no state changes")
+	ErrStandardBlockWithoutChanges = errors.New("StandardBlock performs no state changes")
 
-	errApricotBlockIssuedAfterFork           = errors.New("apricot block issued after fork")
 	errIncorrectBlockHeight                  = errors.New("incorrect block height")
 	errOptionBlockTimestampNotMatchingParent = errors.New("option block proposed timestamp not matching parent block one")
 )
@@ -42,22 +41,22 @@ type verifier struct {
 	pChainHeight      uint64
 }
 
-func (v *verifier) BanffAbortBlock(b *block.BanffAbortBlock) error {
-	if err := v.banffOptionBlock(b); err != nil {
+func (v *verifier) AbortBlock(b *block.AbortBlock) error {
+	if err := v.optionBlock(b); err != nil {
 		return err
 	}
 	return v.abortBlock(b) // Must be the last validity check on the block
 }
 
-func (v *verifier) BanffCommitBlock(b *block.BanffCommitBlock) error {
-	if err := v.banffOptionBlock(b); err != nil {
+func (v *verifier) CommitBlock(b *block.CommitBlock) error {
+	if err := v.optionBlock(b); err != nil {
 		return err
 	}
 	return v.commitBlock(b) // Must be the last validity check on the block
 }
 
-func (v *verifier) BanffProposalBlock(b *block.BanffProposalBlock) error {
-	if err := v.banffNonOptionBlock(b); err != nil {
+func (v *verifier) ProposalBlock(b *block.ProposalBlock) error {
+	if err := v.nonOptionBlock(b); err != nil {
 		return err
 	}
 
@@ -108,8 +107,8 @@ func (v *verifier) BanffProposalBlock(b *block.BanffProposalBlock) error {
 	)
 }
 
-func (v *verifier) BanffStandardBlock(b *block.BanffStandardBlock) error {
-	if err := v.banffNonOptionBlock(b); err != nil {
+func (v *verifier) StandardBlock(b *block.StandardBlock) error {
+	if err := v.nonOptionBlock(b); err != nil {
 		return err
 	}
 
@@ -139,89 +138,14 @@ func (v *verifier) BanffStandardBlock(b *block.BanffStandardBlock) error {
 	)
 }
 
-func (v *verifier) ApricotAbortBlock(b *block.ApricotAbortBlock) error {
-	if err := v.apricotCommonBlock(b); err != nil {
-		return err
-	}
-	return v.abortBlock(b) // Must be the last validity check on the block
-}
-
-func (v *verifier) ApricotCommitBlock(b *block.ApricotCommitBlock) error {
-	if err := v.apricotCommonBlock(b); err != nil {
-		return err
-	}
-	return v.commitBlock(b) // Must be the last validity check on the block
-}
-
-func (v *verifier) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
-	if err := v.apricotCommonBlock(b); err != nil {
-		return err
-	}
-
-	parentID := b.Parent()
-	onCommitState, err := state.NewDiff(parentID, v.backend)
-	if err != nil {
-		return err
-	}
-	onAbortState, err := state.NewDiff(parentID, v.backend)
-	if err != nil {
-		return err
-	}
-
-	feeCalculator := txfee.NewSimpleCalculator(0)
-	return v.proposalBlock( // Must be the last validity check on the block
-		b,
-		b.Tx,
-		nil,
-		0,
-		onCommitState,
-		onAbortState,
-		feeCalculator,
-		nil,
-		nil,
-		nil,
-	)
-}
-
-func (v *verifier) ApricotStandardBlock(b *block.ApricotStandardBlock) error {
-	if err := v.apricotCommonBlock(b); err != nil {
-		return err
-	}
-
-	parentID := b.Parent()
-	onAcceptState, err := state.NewDiff(parentID, v)
-	if err != nil {
-		return err
-	}
-
-	feeCalculator := txfee.NewSimpleCalculator(0)
-	return v.standardBlock( // Must be the last validity check on the block
-		b,
-		b.Transactions,
-		feeCalculator,
-		onAcceptState,
-		true,
-	)
-}
-
-func (v *verifier) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
-	// Atomic blocks must go through the standard-block path under
-	// activate-all-implicitly; legacy ApricotAtomicBlocks are never accepted.
-	if err := v.commonBlock(b); err != nil {
-		return err
-	}
-	return errApricotBlockIssuedAfterFork
-}
-
-func (v *verifier) banffOptionBlock(b block.BanffBlock) error {
+func (v *verifier) optionBlock(b block.BanffBlock) error {
 	if err := v.commonBlock(b); err != nil {
 		return err
 	}
 
-	// Banff option blocks must be uniquely generated from the
-	// BanffProposalBlock. This means that the timestamp must be
-	// standardized to a specific value. Therefore, we require the timestamp to
-	// be equal to the parents timestamp.
+	// Option blocks must be uniquely generated from the parent ProposalBlock.
+	// This means that the timestamp must be standardized to the parent's
+	// timestamp.
 	parentID := b.Parent()
 	parentBlkTime := v.getTimestamp(parentID)
 	blkTime := b.Timestamp()
@@ -236,7 +160,7 @@ func (v *verifier) banffOptionBlock(b block.BanffBlock) error {
 	return nil
 }
 
-func (v *verifier) banffNonOptionBlock(b block.BanffBlock) error {
+func (v *verifier) nonOptionBlock(b block.BanffBlock) error {
 	if err := v.commonBlock(b); err != nil {
 		return err
 	}
@@ -255,15 +179,6 @@ func (v *verifier) banffNonOptionBlock(b block.BanffBlock) error {
 		now,
 		parentState,
 	)
-}
-
-func (v *verifier) apricotCommonBlock(b block.Block) error {
-	// Apricot blocks are permanently refused under activate-all-implicitly;
-	// every chain-time is post-Banff.
-	if err := v.commonBlock(b); err != nil {
-		return err
-	}
-	return errApricotBlockIssuedAfterFork
 }
 
 func (v *verifier) commonBlock(b block.Block) error {

@@ -3,15 +3,12 @@
 
 package block
 
+// Visitor dispatches by the canonical P-Chain block type. Under
+// activate-all-implicitly there is no legacy Apricot variant — every block
+// carries a timestamp and is one of the four canonical kinds.
 type Visitor interface {
-	BanffAbortBlock(*BanffAbortBlock) error
-	BanffCommitBlock(*BanffCommitBlock) error
-	BanffProposalBlock(*BanffProposalBlock) error
-	BanffStandardBlock(*BanffStandardBlock) error
-
-	ApricotAbortBlock(*ApricotAbortBlock) error
-	ApricotCommitBlock(*ApricotCommitBlock) error
-	ApricotProposalBlock(*ApricotProposalBlock) error
-	ApricotStandardBlock(*ApricotStandardBlock) error
-	ApricotAtomicBlock(*ApricotAtomicBlock) error
+	AbortBlock(*AbortBlock) error
+	CommitBlock(*CommitBlock) error
+	ProposalBlock(*ProposalBlock) error
+	StandardBlock(*StandardBlock) error
 }

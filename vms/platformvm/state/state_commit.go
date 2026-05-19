@@ -13,6 +13,7 @@ import (
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/components/gas"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -140,7 +141,7 @@ func (s *state) init(genesisBytes []byte) error {
 	// genesisBlock.Accept() because then it'd look for genesisBlock's
 	// non-existent parent)
 	genesisID := hash.ComputeHash256Array(genesisBytes)
-	genesisBlock, err := block.NewApricotCommitBlock(genesisID, 0 /*height*/)
+	genesisBlock, err := block.NewCommitBlock(upgrade.InitiallyActiveTime, genesisID, 0 /*height*/)
 	if err != nil {
 		return err
 	}
