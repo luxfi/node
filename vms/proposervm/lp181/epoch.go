@@ -30,7 +30,7 @@ func NewEpoch(
 		}
 	}
 
-	epochEndTime := time.Unix(parentEpoch.StartTime, 0).Add(upgrades.GraniteEpochDuration)
+	epochEndTime := time.Unix(parentEpoch.StartTime, 0).Add(upgrades.EpochDuration)
 	if parentTimestamp.Before(epochEndTime) {
 		// If the parent was issued before the end of its epoch, then it did not
 		// seal the epoch.

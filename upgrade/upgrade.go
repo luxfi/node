@@ -24,13 +24,13 @@ var InitiallyActiveTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC
 
 // Config carries the runtime tunables that survived the upstream upgrade rip.
 //
-//   - CortinaXChainStopVertexID encodes the per-network stop-vertex ID that
-//     pins X-Chain genesis state at boot. It is a value, not a gate.
-//   - GraniteEpochDuration is the LP-181 epoch duration; per-network value
+//   - XChainStopVertexID encodes the per-network stop-vertex ID that pins
+//     X-Chain genesis state at boot. It is a value, not a gate.
+//   - EpochDuration is the LP-181 epoch duration; per-network value
 //     (5m on mainnet, 30s on test/dev) tunes consensus pacing.
 type Config struct {
-	CortinaXChainStopVertexID ids.ID        `json:"cortinaXChainStopVertexID"`
-	GraniteEpochDuration      time.Duration `json:"graniteEpochDuration"`
+	XChainStopVertexID ids.ID        `json:"xChainStopVertexID"`
+	EpochDuration      time.Duration `json:"epochDuration"`
 }
 
 // Validate is retained for callers that still invoke it; under activate-all-
@@ -40,16 +40,16 @@ func (*Config) Validate() error { return nil }
 
 var (
 	Mainnet = Config{
-		CortinaXChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
-		GraniteEpochDuration:      5 * time.Minute,
+		XChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
+		EpochDuration:      5 * time.Minute,
 	}
 	Testnet = Config{
-		CortinaXChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
-		GraniteEpochDuration:      30 * time.Second,
+		XChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
+		EpochDuration:      30 * time.Second,
 	}
 	Default = Config{
-		CortinaXChainStopVertexID: ids.Empty,
-		GraniteEpochDuration:      30 * time.Second,
+		XChainStopVertexID: ids.Empty,
+		EpochDuration:      30 * time.Second,
 	}
 )
 
@@ -64,23 +64,3 @@ func GetConfig(networkID uint32) Config {
 		return Default
 	}
 }
-
-// AlwaysOn is the activate-all-implicitly bridge that satisfies
-// runtime.NetworkUpgrades for callers that haven't yet been migrated off the
-// legacy predicate interface. Every method returns true.
-type AlwaysOn struct{}
-
-func (AlwaysOn) IsApricotPhase1Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhase2Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhase3Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhase4Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhase5Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhasePre6Activated(time.Time) bool  { return true }
-func (AlwaysOn) IsApricotPhase6Activated(time.Time) bool     { return true }
-func (AlwaysOn) IsApricotPhasePost6Activated(time.Time) bool { return true }
-func (AlwaysOn) IsBanffActivated(time.Time) bool             { return true }
-func (AlwaysOn) IsCortinaActivated(time.Time) bool           { return true }
-func (AlwaysOn) IsDurangoActivated(time.Time) bool           { return true }
-func (AlwaysOn) IsEtnaActivated(time.Time) bool              { return true }
-func (AlwaysOn) IsFortunaActivated(time.Time) bool           { return true }
-func (AlwaysOn) IsGraniteActivated(time.Time) bool           { return true }
