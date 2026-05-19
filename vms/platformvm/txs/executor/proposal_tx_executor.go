@@ -159,184 +159,28 @@ func (*proposalTxExecutor) OperationTx(*txs.OperationTx) error {
 	return ErrWrongTxType
 }
 
-func (e *proposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	// AddValidatorTx is a proposal transaction until upgrade.Config.BanffTime.
-	// After that, AddValidatorTxs must be issued into StandardBlocks.
-	currentTimestamp := e.onCommitState.GetTimestamp()
-	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
-		return fmt.Errorf(
-			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
-			ErrProposedAddStakerTxAfterBanff,
-			currentTimestamp,
-			e.backend.Config.UpgradeConfig.BanffTime,
-		)
-	}
-
-	onAbortOuts, err := verifyAddValidatorTx(
-		e.backend,
-		e.feeCalculator,
-		e.onCommitState,
-		e.tx,
-		tx,
-	)
-	if err != nil {
-		return err
-	}
-
-	txID := e.tx.ID()
-
-	// Set up the state if this tx is committed
-	// Consume the UTXOs
-	lux.Consume(e.onCommitState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onCommitState, txID, tx.Outs)
-
-	newStaker, err := state.NewPendingStaker(txID, tx)
-	if err != nil {
-		return err
-	}
-
-	if err := e.onCommitState.PutPendingValidator(newStaker); err != nil {
-		return err
-	}
-
-	// Set up the state if this tx is aborted
-	// Consume the UTXOs
-	lux.Consume(e.onAbortState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onAbortState, txID, onAbortOuts)
-	return nil
+func (*proposalTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
+	// Proposal-style AddValidatorTx is permanently rejected; only standard
+	// blocks may carry staker txs.
+	return ErrProposedAddStakerTxAfterBanff
 }
 
-func (e *proposalTxExecutor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	// AddChainValidatorTx is a proposal transaction until upgrade.Config.BanffTime.
-	// activation. Following the activation, AddChainValidatorTxs must be
-	// issued into StandardBlocks.
-	currentTimestamp := e.onCommitState.GetTimestamp()
-	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
-		return fmt.Errorf(
-			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
-			ErrProposedAddStakerTxAfterBanff,
-			currentTimestamp,
-			e.backend.Config.UpgradeConfig.BanffTime,
-		)
-	}
-
-	if err := verifyAddChainValidatorTx(
-		e.backend,
-		e.feeCalculator,
-		e.onCommitState,
-		e.tx,
-		tx,
-	); err != nil {
-		return err
-	}
-
-	txID := e.tx.ID()
-
-	// Set up the state if this tx is committed
-	// Consume the UTXOs
-	lux.Consume(e.onCommitState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onCommitState, txID, tx.Outs)
-
-	newStaker, err := state.NewPendingStaker(txID, tx)
-	if err != nil {
-		return err
-	}
-
-	if err := e.onCommitState.PutPendingValidator(newStaker); err != nil {
-		return err
-	}
-
-	// Set up the state if this tx is aborted
-	// Consume the UTXOs
-	lux.Consume(e.onAbortState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onAbortState, txID, tx.Outs)
-	return nil
+func (*proposalTxExecutor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
+	// Proposal-style AddChainValidatorTx is permanently rejected; only standard
+	// blocks may carry staker txs.
+	return ErrProposedAddStakerTxAfterBanff
 }
 
-func (e *proposalTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	// AddDelegatorTx is a proposal transaction until upgrade.Config.BanffTime.
-	// activation. Following the activation, AddDelegatorTxs must be issued into
-	// StandardBlocks.
-	currentTimestamp := e.onCommitState.GetTimestamp()
-	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
-		return fmt.Errorf(
-			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
-			ErrProposedAddStakerTxAfterBanff,
-			currentTimestamp,
-			e.backend.Config.UpgradeConfig.BanffTime,
-		)
-	}
-
-	onAbortOuts, err := verifyAddDelegatorTx(
-		e.backend,
-		e.feeCalculator,
-		e.onCommitState,
-		e.tx,
-		tx,
-	)
-	if err != nil {
-		return err
-	}
-
-	txID := e.tx.ID()
-
-	// Set up the state if this tx is committed
-	// Consume the UTXOs
-	lux.Consume(e.onCommitState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onCommitState, txID, tx.Outs)
-
-	newStaker, err := state.NewPendingStaker(txID, tx)
-	if err != nil {
-		return err
-	}
-
-	e.onCommitState.PutPendingDelegator(newStaker)
-
-	// Set up the state if this tx is aborted
-	// Consume the UTXOs
-	lux.Consume(e.onAbortState, tx.Ins)
-	// Produce the UTXOs
-	lux.Produce(e.onAbortState, txID, onAbortOuts)
-	return nil
+func (*proposalTxExecutor) AddDelegatorTx(*txs.AddDelegatorTx) error {
+	// Proposal-style AddDelegatorTx is permanently rejected; only standard
+	// blocks may carry staker txs.
+	return ErrProposedAddStakerTxAfterBanff
 }
 
-func (e *proposalTxExecutor) AdvanceTimeTx(tx *txs.AdvanceTimeTx) error {
-	switch {
-	case tx == nil:
-		return txs.ErrNilTx
-	case len(e.tx.Creds) != 0:
-		return errWrongNumberOfCredentials
-	}
-
-	// Validate [newChainTime]
-	newChainTime := tx.Timestamp()
-	if e.backend.Config.UpgradeConfig.IsBanffActivated(newChainTime) {
-		return fmt.Errorf(
-			"%w: proposed timestamp (%s) >= upgrade.Config.BanffTime (%s)",
-			ErrAdvanceTimeTxIssuedAfterBanff,
-			newChainTime,
-			e.backend.Config.UpgradeConfig.BanffTime,
-		)
-	}
-
-	now := e.backend.Clk.Time()
-	if err := VerifyNewChainTime(
-		e.backend.Config.ValidatorFeeConfig,
-		newChainTime,
-		now,
-		e.onCommitState,
-	); err != nil {
-		return err
-	}
-
-	// Note that state doesn't change if this proposal is aborted
-	_, err := AdvanceTimeTo(e.backend, e.onCommitState, newChainTime)
-	return err
+func (*proposalTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
+	// AdvanceTimeTx is permanently rejected post-Banff; chain time advances
+	// implicitly via Banff standard blocks.
+	return ErrAdvanceTimeTxIssuedAfterBanff
 }
 
 func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error {
@@ -608,54 +452,28 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 		return nil
 	}
 
-	// Reward the delegatee here
-	if e.backend.Config.UpgradeConfig.IsCortinaActivated(validator.StartTime) {
-		previousDelegateeReward, err := e.onCommitState.GetDelegateeReward(
-			validator.ChainID,
-			validator.NodeID,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get delegatee reward: %w", err)
-		}
+	// Reward the delegatee here. Post-Cortina, the delegatee reward is
+	// deferred until the staking period ends, so accumulate it into the
+	// delegatee-reward ledger instead of emitting a UTXO here.
+	previousDelegateeReward, err := e.onCommitState.GetDelegateeReward(
+		validator.ChainID,
+		validator.NodeID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get delegatee reward: %w", err)
+	}
 
-		// Invariant: The rewards calculator can never return a
-		//            [potentialReward] that would overflow the
-		//            accumulated rewards.
-		newDelegateeReward := previousDelegateeReward + delegateeReward
+	// Invariant: The rewards calculator can never return a
+	//            [potentialReward] that would overflow the
+	//            accumulated rewards.
+	newDelegateeReward := previousDelegateeReward + delegateeReward
 
-		// For any validators starting after [CortinaTime], we defer rewarding the
-		// [reward] until their staking period is over.
-		err = e.onCommitState.SetDelegateeReward(
-			validator.ChainID,
-			validator.NodeID,
-			newDelegateeReward,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to update delegatee reward: %w", err)
-		}
-	} else {
-		// For any validators who started prior to [CortinaTime], we issue the
-		// [delegateeReward] immediately.
-		delegationRewardsOwner := vdrTx.DelegationRewardsOwner()
-		outIntf, err := e.backend.Fx.CreateOutput(delegateeReward, delegationRewardsOwner)
-		if err != nil {
-			return fmt.Errorf("failed to create output: %w", err)
-		}
-		out, ok := outIntf.(verify.State)
-		if !ok {
-			return ErrInvalidState
-		}
-		utxo := &lux.UTXO{
-			UTXOID: lux.UTXOID{
-				TxID:        txID,
-				OutputIndex: uint32(len(outputs) + len(stake) + utxosOffset),
-			},
-			Asset: stakeAsset,
-			Out:   out,
-		}
-
-		e.onCommitState.AddUTXO(utxo)
-		e.onCommitState.AddRewardUTXO(txID, utxo)
+	if err := e.onCommitState.SetDelegateeReward(
+		validator.ChainID,
+		validator.NodeID,
+		newDelegateeReward,
+	); err != nil {
+		return fmt.Errorf("failed to update delegatee reward: %w", err)
 	}
 	return nil
 }

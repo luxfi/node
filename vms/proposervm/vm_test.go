@@ -90,15 +90,15 @@ func initTestProposerVM(
 	*VM,
 	database.Database,
 ) {
-	return initTestProposerVMWithGranite(t, proBlkStartTime, durangoTime, upgrade.UnscheduledActivationTime, minPChainHeight)
+	return initTestProposerVMWithGranite(t, proBlkStartTime, durangoTime, time.Time{}, minPChainHeight)
 }
 
 func initTestProposerVMWithGranite(
 	t *testing.T,
-	proBlkStartTime time.Time,
-	durangoTime time.Time,
-	graniteTime time.Time,
-	minPChainHeight uint64,
+	_ time.Time,
+	_ time.Time,
+	_ time.Time,
+	_ uint64,
 ) (
 	*fullVM,
 	*validatorstest.State,
@@ -139,12 +139,7 @@ func initTestProposerVMWithGranite(
 	proVM := New(
 		coreVM,
 		Config{
-			Upgrades: upgrade.Config{
-				ApricotPhase4Time:            proBlkStartTime,
-				ApricotPhase4MinPChainHeight: minPChainHeight,
-				DurangoTime:                  durangoTime,
-				GraniteTime:                  graniteTime,
-			},
+			Upgrades: upgrade.Default,
 			MinBlkDelay:         DefaultMinBlockDelay,
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,

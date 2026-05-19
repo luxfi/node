@@ -18,12 +18,8 @@ func NewEpoch(
 	parentPChainHeight uint64,
 	parentEpoch block.Epoch,
 	parentTimestamp time.Time,
-	childTimestamp time.Time,
+	_ time.Time,
 ) block.Epoch {
-	if !upgrades.IsGraniteActivated(childTimestamp) {
-		return block.Epoch{}
-	}
-
 	if parentEpoch == (block.Epoch{}) {
 		// If the parent was not assigned an epoch, then the child is the first
 		// block of the initial epoch.
