@@ -12,81 +12,34 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var (
-	_ BanffBlock = (*BanffCommitBlock)(nil)
-	_ Block      = (*ApricotCommitBlock)(nil)
-)
+var _ Block = (*CommitBlock)(nil)
 
-type BanffCommitBlock struct {
-	Time               uint64 `serialize:"true" json:"time"`
-	ApricotCommitBlock `serialize:"true"`
-}
-
-func (b *BanffCommitBlock) Timestamp() time.Time {
-	return time.Unix(int64(b.Time), 0)
-}
-
-func (b *BanffCommitBlock) Visit(v Visitor) error {
-	return v.BanffCommitBlock(b)
-}
-
-func NewBanffCommitBlock(
-	timestamp time.Time,
-	parentID ids.ID,
-	height uint64,
-) (*BanffCommitBlock, error) {
-	blk := &BanffCommitBlock{
-		Time: uint64(timestamp.Unix()),
-		ApricotCommitBlock: ApricotCommitBlock{
-			CommonBlock: CommonBlock{
-				PrntID: parentID,
-				Hght:   height,
-			},
-		},
-	}
-	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-type ApricotCommitBlock struct {
+// CommitBlock is the canonical P-Chain commit outcome of a ProposalBlock.
+type CommitBlock struct {
+	Time        uint64 `serialize:"true" json:"time"`
 	CommonBlock `serialize:"true"`
 }
 
-func (b *ApricotCommitBlock) initialize(bytes []byte) error {
+func (b *CommitBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 0) }
+
+func (b *CommitBlock) initialize(bytes []byte) error {
 	b.CommonBlock.initialize(bytes)
 	return nil
 }
 
-func (*ApricotCommitBlock) InitRuntime(*runtime.Runtime) {}
+func (*CommitBlock) InitRuntime(*runtime.Runtime) {}
+func (*CommitBlock) Txs() []*txs.Tx                 { return nil }
+func (b *CommitBlock) Visit(v Visitor) error        { return v.CommitBlock(b) }
+func (*CommitBlock) Initialize(context.Context) error { return nil }
 
-func (*ApricotCommitBlock) Txs() []*txs.Tx {
-	return nil
-}
-
-func (b *ApricotCommitBlock) Visit(v Visitor) error {
-	return v.ApricotCommitBlock(b)
-}
-
-func NewApricotCommitBlock(
+func NewCommitBlock(
+	timestamp time.Time,
 	parentID ids.ID,
 	height uint64,
-) (*ApricotCommitBlock, error) {
-	blk := &ApricotCommitBlock{
-		CommonBlock: CommonBlock{
-			PrntID: parentID,
-			Hght:   height,
-		},
+) (*CommitBlock, error) {
+	blk := &CommitBlock{
+		Time:        uint64(timestamp.Unix()),
+		CommonBlock: CommonBlock{PrntID: parentID, Hght: height},
 	}
 	return blk, initialize(blk, &blk.CommonBlock)
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *BanffCommitBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
-
-// InitializeWithRuntime initializes the block with Runtime
-func (b *ApricotCommitBlock) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
 }
