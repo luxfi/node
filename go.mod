@@ -27,7 +27,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.24.0
-	github.com/luxfi/crypto v1.19.0
+	github.com/luxfi/crypto v1.19.3
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
 	github.com/luxfi/keychain v1.0.2
@@ -123,7 +123,7 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.0.9
+	github.com/luxfi/accel v1.1.0
 	github.com/luxfi/api v1.0.11
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
@@ -132,7 +132,7 @@ require (
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.9.8-0.20260512210243-caa876fa623c
-	github.com/luxfi/geth v1.16.90
+	github.com/luxfi/geth v1.16.98
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.1.0
 	github.com/luxfi/math/safe v0.0.1
@@ -168,12 +168,11 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/corona v0.4.0 // indirect
+	github.com/luxfi/corona v0.4.1 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/lens v0.1.3 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.5.17 // indirect
 	github.com/luxfi/protocol v0.0.4 // indirect
 	github.com/luxfi/pulsar v1.0.8 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
@@ -202,7 +201,6 @@ require (
 require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260311194731-d5b7577c683d // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
