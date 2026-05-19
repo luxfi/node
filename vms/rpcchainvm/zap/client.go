@@ -72,7 +72,6 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	var chainID, nodeID, publicKey []byte
 	var xChainID, cChainID, luxAssetID []byte
 	var chainDataDir string
-	var networkUpgrades zapwire.NetworkUpgrades
 
 	if init.Runtime != nil {
 		rt := init.Runtime
@@ -84,12 +83,6 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		cChainID = rt.CChainID[:]
 		luxAssetID = rt.XAssetID[:]
 		chainDataDir = rt.ChainDataDir
-
-		// Extract network upgrades if available
-		if rt.NetworkUpgrades != nil {
-			// NetworkUpgrades is an interface{}, we need to extract timestamps
-			// For now, use defaults - the VM will use its own config
-		}
 	}
 
 	// Spawn the ZAP rpcdb server before calling Initialize so the VM can
@@ -102,19 +95,18 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	}
 
 	req := &zapwire.InitializeRequest{
-		NetworkID:       networkID,
-		ChainID:         chainID,
-		NodeID:          nodeID,
-		PublicKey:       publicKey,
-		XChainID:        xChainID,
-		CChainID:        cChainID,
-		LuxAssetID:      luxAssetID,
-		ChainDataDir:    chainDataDir,
-		GenesisBytes:    init.Genesis,
-		UpgradeBytes:    init.Upgrade,
-		ConfigBytes:     init.Config,
-		DBServerAddr:    dbServerAddr,
-		NetworkUpgrades: networkUpgrades,
+		NetworkID:    networkID,
+		ChainID:      chainID,
+		NodeID:       nodeID,
+		PublicKey:    publicKey,
+		XChainID:     xChainID,
+		CChainID:     cChainID,
+		LuxAssetID:   luxAssetID,
+		ChainDataDir: chainDataDir,
+		GenesisBytes: init.Genesis,
+		UpgradeBytes: init.Upgrade,
+		ConfigBytes:  init.Config,
+		DBServerAddr: dbServerAddr,
 	}
 
 	buf := zapwire.GetBuffer()

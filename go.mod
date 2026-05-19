@@ -238,3 +238,9 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace (
+	github.com/luxfi/api => ../api
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/runtime => ../runtime
+)
