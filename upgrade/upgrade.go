@@ -77,6 +77,17 @@ var (
 	ErrInvalidUpgradeTimes = errors.New("invalid upgrade configuration")
 )
 
+// Config carries the timestamp schedule for legacy network upgrades inherited
+// from the upstream codebase. In Lux all of these are activated at
+// InitiallyActiveTime (Dec 5, 2020) which is before mainnet genesis, so every
+// IsXxxActivated() predicate evaluates to true under all real timestamps.
+//
+// The field names and predicate methods are kept verbatim so that upstream-
+// derived chain code (P-Chain block parsers, X-Chain VM, tx codec, etc.) and
+// any third-party tooling that consumes the JSON `*Time` tags continues to
+// load Lux genesis without modification. The gates are no longer policy knobs
+// — they are inert compatibility surfaces. Lux-native gating belongs in the
+// ChainSecurityProfile (see service/security/), not here.
 type Config struct {
 	ApricotPhase1Time            time.Time     `json:"apricotPhase1Time"`
 	ApricotPhase2Time            time.Time     `json:"apricotPhase2Time"`

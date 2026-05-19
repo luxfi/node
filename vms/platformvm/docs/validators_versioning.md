@@ -85,7 +85,7 @@ Note that:
 ## Validators diff usage in rebuilding validators state
 
 Now let's see how diffs are used to rebuild the validator set at a given height. The procedure varies slightly between Primary Network and Net validator, so we'll describe them separately.
-We assume that the reader knows that, as of the Cortina fork, every Net validator must also be a Primary Network validator.
+We assume that the reader knows that every Net validator must also be a Primary Network validator.
 
 ### Primary network validator set rebuild
 
@@ -103,7 +103,7 @@ If the P-Chain's current height is `T` and we want to retrieve the Primary Netwo
 
 ### Net validator set rebuild
 
-Let's see first the reason why Net validators needs to have handled differently. As of `Cortina` fork, we allow `BLS Public Key` registration only for Primary network validators. A given `NodeID` may be both a Primary Network validator and a Net validator, but it'll register its `BLS Public Key` only when it registers as Primary Network validator. Despite this, we want to provide a validator `BLS Public Key` when `validators.GetValidatorOutput` is called. So we need to fetch it from the Primary Network validator set.
+Let's see first the reason why Net validators needs to be handled differently. We allow `BLS Public Key` registration only for Primary network validators. A given `NodeID` may be both a Primary Network validator and a Net validator, but it'll register its `BLS Public Key` only when it registers as Primary Network validator. Despite this, we want to provide a validator `BLS Public Key` when `validators.GetValidatorOutput` is called. So we need to fetch it from the Primary Network validator set.
 
 Say P-chain current height is `T` and we want to retrieve Primary network validators at height `H < T`. We proceed as follows:
 
