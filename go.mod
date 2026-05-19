@@ -192,7 +192,7 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/protocol v0.0.5
+	github.com/luxfi/proto v0.0.0-proto-rename
 	github.com/luxfi/upgrade v1.0.0 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -237,3 +237,7 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+// Local-dev overlay for the protocol → proto rename.
+// Strip once GitHub admin renames luxfi/protocol → luxfi/proto and a real tag exists.
+replace github.com/luxfi/proto => ../protocol
