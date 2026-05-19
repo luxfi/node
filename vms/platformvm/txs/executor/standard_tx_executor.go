@@ -45,9 +45,9 @@ var (
 
 	errEmptyNodeID                     = errors.New("validator nodeID cannot be empty")
 	errMaxStakeDurationTooLarge        = errors.New("max stake duration must be less than or equal to the global max stake duration")
-	errMissingStartTimePreDurango      = errors.New("staker transactions must have a StartTime pre-Durango")
-	errEtnaUpgradeNotActive            = errors.New("attempting to use an Etna-upgrade feature prior to activation")
-	errTransformChainTxPostEtna        = errors.New("TransformChainTx is not permitted post-Etna")
+	errStakerStartTimeMissing      = errors.New("staker transactions must have a StartTime")
+	errL1FeatureNotActive            = errors.New("L1 validator feature not active")
+	errTransformChainTxNotPermitted        = errors.New("TransformChainTx is not permitted")
 	errMaxNumActiveValidators          = errors.New("already at the max number of active validators")
 	errCouldNotLoadChainToL1Conversion = errors.New("could not load chain conversion")
 	errWrongWarpMessageSourceChainID   = errors.New("wrong warp message source chain ID")
@@ -492,7 +492,7 @@ func (e *standardTxExecutor) TransformChainTx(*txs.TransformChainTx) error {
 	// TransformChainTx is permanently rejected: it has no role under
 	// activate-all-implicitly. Any historical TransformChainTx in genesis is
 	// already applied; live submissions are always refused.
-	return errTransformChainTxPostEtna
+	return errTransformChainTxNotPermitted
 }
 
 func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {

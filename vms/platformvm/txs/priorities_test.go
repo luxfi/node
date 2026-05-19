@@ -16,7 +16,7 @@ func TestPriorityIsCurrent(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -24,7 +24,7 @@ func TestPriorityIsCurrent(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -73,7 +73,7 @@ func TestPriorityIsPending(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: true,
 		},
 		{
@@ -81,7 +81,7 @@ func TestPriorityIsPending(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: true,
 		},
 		{
@@ -130,7 +130,7 @@ func TestPriorityIsValidator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -138,7 +138,7 @@ func TestPriorityIsValidator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -187,7 +187,7 @@ func TestPriorityIsPermissionedValidator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -195,7 +195,7 @@ func TestPriorityIsPermissionedValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -244,7 +244,7 @@ func TestPriorityIsDelegator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: true,
 		},
 		{
@@ -252,7 +252,7 @@ func TestPriorityIsDelegator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: true,
 		},
 		{
@@ -301,7 +301,7 @@ func TestPriorityIsCurrentValidator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -309,7 +309,7 @@ func TestPriorityIsCurrentValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -358,7 +358,7 @@ func TestPriorityIsCurrentDelegator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -366,7 +366,7 @@ func TestPriorityIsCurrentDelegator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -415,7 +415,7 @@ func TestPriorityIsPendingValidator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: false,
 		},
 		{
@@ -423,7 +423,7 @@ func TestPriorityIsPendingValidator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: false,
 		},
 		{
@@ -472,7 +472,7 @@ func TestPriorityIsPendingDelegator(t *testing.T) {
 		expected bool
 	}{
 		{
-			priority: PrimaryNetworkDelegatorApricotPendingPriority,
+			priority: PrimaryNetworkDelegatorLegacyPendingPriority,
 			expected: true,
 		},
 		{
@@ -480,7 +480,7 @@ func TestPriorityIsPendingDelegator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: PrimaryNetworkDelegatorBanffPendingPriority,
+			priority: PrimaryNetworkDelegatorPermissionlessPendingPriority,
 			expected: true,
 		},
 		{
