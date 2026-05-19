@@ -178,8 +178,6 @@ func (*proposalTxExecutor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 }
 
 func (*proposalTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	// AdvanceTimeTx is permanently rejected post-Banff; chain time advances
-	// implicitly via Banff standard blocks.
 	return ErrAdvanceTimeTxIssuedAfterBanff
 }
 
@@ -452,7 +450,6 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 		return nil
 	}
 
-	// Reward the delegatee here. Post-Cortina, the delegatee reward is
 	// deferred until the staking period ends, so accumulate it into the
 	// delegatee-reward ledger instead of emitting a UTXO here.
 	previousDelegateeReward, err := e.onCommitState.GetDelegateeReward(
