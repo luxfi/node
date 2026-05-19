@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/database"
-	rpcdb "github.com/luxfi/protocol/rpcdb"
+	rpcdb "github.com/luxfi/proto/rpcdb"
 )
 
 // errUnknownIterator is the sentinel returned by IteratorNext / Error
