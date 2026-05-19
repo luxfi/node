@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-jammy-arm64-package:
-    runs-on: hanzo-build-linux-amd64
+    runs-on: lux-build
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
           rm -rf /tmp/luxd
 
   build-focal-arm64-package:
-    runs-on: hanzo-build-linux-amd64
+    runs-on: lux-build
 
     steps:
       - uses: actions/checkout@v4
