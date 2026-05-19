@@ -60,7 +60,7 @@ func TestStakerLess(t *testing.T) {
 			left: &Staker{
 				TxID:     ids.ID([32]byte{}),
 				NextTime: time.Unix(0, 0),
-				Priority: txs.PrimaryNetworkDelegatorApricotPendingPriority,
+				Priority: txs.PrimaryNetworkDelegatorLegacyPendingPriority,
 			},
 			right: &Staker{
 				TxID:     ids.ID([32]byte{}),
@@ -79,7 +79,7 @@ func TestStakerLess(t *testing.T) {
 			right: &Staker{
 				TxID:     ids.ID([32]byte{}),
 				NextTime: time.Unix(0, 0),
-				Priority: txs.PrimaryNetworkDelegatorApricotPendingPriority,
+				Priority: txs.PrimaryNetworkDelegatorLegacyPendingPriority,
 			},
 			less: false,
 		},
