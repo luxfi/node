@@ -254,7 +254,8 @@ type cacheMetrics struct {
 	misses metric.Counter
 }
 
-// NewCachedValidatorState creates a new cached validator state with Granite upgrade awareness
+// NewCachedValidatorState creates a new cached validator state aware of the
+// LP-181 epoch upgrade (gated by upgrade.Config.GraniteTime).
 func NewCachedValidatorState(
 	state ValidatorState,
 	upgradeConfig *upgrade.Config,
@@ -292,14 +293,15 @@ func NewCachedValidatorState(
 	}, nil
 }
 
-// GetValidatorSet implements ValidatorState with caching for post-Granite queries
+// GetValidatorSet implements ValidatorState with caching gated by the
+// LP-181 epoch-upgrade activation (upgrade.Config.GraniteTime).
 func (c *CachedValidatorState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
 	chainID ids.ID,
 ) (map[ids.NodeID]*ValidatorData, error) {
-	// Check if Granite is activated - we only cache post-Granite
-	// Use current time as approximation since we don't have block timestamp
+	// Only cache after the epoch upgrade is active.
+	// Use current time as approximation since we don't have block timestamp.
 	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
 		key := cacheKey{height: height, chainID: chainID}
 		if cached, ok := c.cache.Get(key); ok {
@@ -309,13 +311,13 @@ func (c *CachedValidatorState) GetValidatorSet(
 		c.metrics.misses.Inc()
 	}
 
-	// Cache miss or pre-Granite - fetch from underlying state
+	// Cache miss or pre-epoch-upgrade — fetch from underlying state.
 	vdrSet, err := c.state.GetValidatorSet(ctx, height, chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Cache the result if Granite is active
+	// Cache the result if the epoch upgrade is active.
 	if c.upgradeConfig != nil && c.upgradeConfig.IsGraniteActivated(time.Now()) {
 		key := cacheKey{height: height, chainID: chainID}
 		c.cache.Put(key, vdrSet)

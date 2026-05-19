@@ -2,7 +2,7 @@
 
 Lux Interchain Messaging (ICM) provides a primitive for cross-chain communication on the Lux Network.
 
-The Lux P-Chain provides an index of every network's validator set on the Lux Network, including the BLS public key of each validator (as of the [Banff Upgrade](https://github.com/luxfi/node/releases/v1.9.0)). ICM utilizes the weighted validator sets stored on the P-Chain to build a cross-chain communication protocol between any two networks on Lux.
+The Lux P-Chain provides an index of every network's validator set on the Lux Network, including the BLS public key of each validator. ICM utilizes the weighted validator sets stored on the P-Chain to build a cross-chain communication protocol between any two networks on Lux.
 
 Any Virtual Machine (VM) on Lux can integrate Lux Interchain Messaging to send and receive messages cross-chain.
 
