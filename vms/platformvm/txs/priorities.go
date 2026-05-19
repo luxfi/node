@@ -4,13 +4,12 @@
 package txs
 
 const (
-	// First primary network apricot delegators are moved from the pending to
-	// the current validator set,
-	PrimaryNetworkDelegatorApricotPendingPriority Priority = iota + 1
+	// Legacy AddDelegatorTx delegators move from pending to current first,
+	PrimaryNetworkDelegatorLegacyPendingPriority Priority = iota + 1
 	// then primary network validators,
 	PrimaryNetworkValidatorPendingPriority
-	// then primary network banff delegators,
-	PrimaryNetworkDelegatorBanffPendingPriority
+	// then AddPermissionlessDelegatorTx delegators,
+	PrimaryNetworkDelegatorPermissionlessPendingPriority
 	// then permissionless chain validators,
 	ChainPermissionlessValidatorPendingPriority
 	// then permissionless chain delegators.
@@ -45,9 +44,9 @@ const (
 )
 
 var PendingToCurrentPriorities = []Priority{
-	PrimaryNetworkDelegatorApricotPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
+	PrimaryNetworkDelegatorLegacyPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
 	PrimaryNetworkValidatorPendingPriority:        PrimaryNetworkValidatorCurrentPriority,
-	PrimaryNetworkDelegatorBanffPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
+	PrimaryNetworkDelegatorPermissionlessPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
 	ChainPermissionlessValidatorPendingPriority:   ChainPermissionlessValidatorCurrentPriority,
 	ChainPermissionlessDelegatorPendingPriority:   ChainPermissionlessDelegatorCurrentPriority,
 	ChainPermissionedValidatorPendingPriority:     ChainPermissionedValidatorCurrentPriority,
@@ -94,7 +93,7 @@ func (p Priority) IsPendingValidator() bool {
 }
 
 func (p Priority) IsPendingDelegator() bool {
-	return p == PrimaryNetworkDelegatorBanffPendingPriority ||
-		p == PrimaryNetworkDelegatorApricotPendingPriority ||
+	return p == PrimaryNetworkDelegatorPermissionlessPendingPriority ||
+		p == PrimaryNetworkDelegatorLegacyPendingPriority ||
 		p == ChainPermissionlessDelegatorPendingPriority
 }
