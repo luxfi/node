@@ -1,13 +1,10 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package upgrade publishes the canonical Lux genesis-activation timestamp and
-// the small set of runtime tunables that survived the upstream upgrade rip.
-//
-// All historical "fork timestamp + IsXxxActivated()" gates were deleted under
-// the activate-all-implicitly directive: every Lux chain runs the post-Granite
-// rule-set from genesis, so the legacy predicates are unreachable. The fields
-// retained here encode real runtime values, not gates.
+// Package upgrade publishes the canonical Lux genesis-activation timestamp
+// and the runtime tunables consumed at chain birth. Every Lux chain runs the
+// full feature-set from genesis (activate-all-implicitly); the fields here
+// encode values, not gates.
 package upgrade
 
 import (

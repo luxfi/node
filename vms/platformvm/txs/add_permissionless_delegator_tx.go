@@ -63,7 +63,7 @@ func (*AddPermissionlessDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 
 func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
 	if tx.Chain == constants.PrimaryNetworkID {
-		return PrimaryNetworkDelegatorBanffPendingPriority
+		return PrimaryNetworkDelegatorPermissionlessPendingPriority
 	}
 	return NetPermissionlessDelegatorPendingPriority
 }

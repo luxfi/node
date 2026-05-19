@@ -64,7 +64,7 @@ func (*AddDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 }
 
 func (*AddDelegatorTx) PendingPriority() Priority {
-	return PrimaryNetworkDelegatorApricotPendingPriority
+	return PrimaryNetworkDelegatorLegacyPendingPriority
 }
 
 func (*AddDelegatorTx) CurrentPriority() Priority {

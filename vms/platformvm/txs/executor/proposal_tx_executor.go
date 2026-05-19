@@ -38,8 +38,8 @@ var (
 	ErrShouldBePermissionlessStaker  = errors.New("expected permissionless staker")
 	ErrWrongTxType                   = errors.New("wrong transaction type")
 	ErrInvalidID                     = errors.New("invalid ID")
-	ErrProposedAddStakerTxAfterBanff = errors.New("staker transaction proposed after Banff")
-	ErrAdvanceTimeTxIssuedAfterBanff = errors.New("AdvanceTimeTx issued after Banff")
+	ErrProposedAddStakerTxNotPermitted = errors.New("staker transaction not permitted")
+	ErrAdvanceTimeTxNotPermitted = errors.New("AdvanceTimeTx not permitted")
 )
 
 // ProposalTx executes the proposal transaction [tx].
@@ -162,23 +162,23 @@ func (*proposalTxExecutor) OperationTx(*txs.OperationTx) error {
 func (*proposalTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
 	// Proposal-style AddValidatorTx is permanently rejected; only standard
 	// blocks may carry staker txs.
-	return ErrProposedAddStakerTxAfterBanff
+	return ErrProposedAddStakerTxNotPermitted
 }
 
 func (*proposalTxExecutor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	// Proposal-style AddChainValidatorTx is permanently rejected; only standard
 	// blocks may carry staker txs.
-	return ErrProposedAddStakerTxAfterBanff
+	return ErrProposedAddStakerTxNotPermitted
 }
 
 func (*proposalTxExecutor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 	// Proposal-style AddDelegatorTx is permanently rejected; only standard
 	// blocks may carry staker txs.
-	return ErrProposedAddStakerTxAfterBanff
+	return ErrProposedAddStakerTxNotPermitted
 }
 
 func (*proposalTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrAdvanceTimeTxIssuedAfterBanff
+	return ErrAdvanceTimeTxNotPermitted
 }
 
 func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error {

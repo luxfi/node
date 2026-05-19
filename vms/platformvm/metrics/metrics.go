@@ -124,7 +124,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		),
 		accruedValidatorFees: metric.NewGauge(metric.GaugeOpts{
 			Name: "accrued_validator_fees",
-			Help: "The total cost of running an active L1 validator since Etna activation",
+			Help: "The total cost of running an active L1 validator since L1-validator feature launch",
 		}),
 
 		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
