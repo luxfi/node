@@ -160,13 +160,12 @@ func (*proposalTxExecutor) OperationTx(*txs.OperationTx) error {
 }
 
 func (e *proposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	// AddValidatorTx is a proposal transaction until the Banff fork
-	// activation. Following the activation, AddValidatorTxs must be issued into
-	// StandardBlocks.
+	// AddValidatorTx is a proposal transaction until upgrade.Config.BanffTime.
+	// After that, AddValidatorTxs must be issued into StandardBlocks.
 	currentTimestamp := e.onCommitState.GetTimestamp()
 	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
-			"%w: timestamp (%s) >= Banff fork time (%s)",
+			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
 			e.backend.Config.UpgradeConfig.BanffTime,
@@ -210,13 +209,13 @@ func (e *proposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 }
 
 func (e *proposalTxExecutor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	// AddChainValidatorTx is a proposal transaction until the Banff fork
+	// AddChainValidatorTx is a proposal transaction until upgrade.Config.BanffTime.
 	// activation. Following the activation, AddChainValidatorTxs must be
 	// issued into StandardBlocks.
 	currentTimestamp := e.onCommitState.GetTimestamp()
 	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
-			"%w: timestamp (%s) >= Banff fork time (%s)",
+			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
 			e.backend.Config.UpgradeConfig.BanffTime,
@@ -259,13 +258,13 @@ func (e *proposalTxExecutor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) er
 }
 
 func (e *proposalTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	// AddDelegatorTx is a proposal transaction until the Banff fork
+	// AddDelegatorTx is a proposal transaction until upgrade.Config.BanffTime.
 	// activation. Following the activation, AddDelegatorTxs must be issued into
 	// StandardBlocks.
 	currentTimestamp := e.onCommitState.GetTimestamp()
 	if e.backend.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
-			"%w: timestamp (%s) >= Banff fork time (%s)",
+			"%w: timestamp (%s) >= upgrade.Config.BanffTime (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
 			e.backend.Config.UpgradeConfig.BanffTime,
@@ -318,7 +317,7 @@ func (e *proposalTxExecutor) AdvanceTimeTx(tx *txs.AdvanceTimeTx) error {
 	newChainTime := tx.Timestamp()
 	if e.backend.Config.UpgradeConfig.IsBanffActivated(newChainTime) {
 		return fmt.Errorf(
-			"%w: proposed timestamp (%s) >= Banff fork time (%s)",
+			"%w: proposed timestamp (%s) >= upgrade.Config.BanffTime (%s)",
 			ErrAdvanceTimeTxIssuedAfterBanff,
 			newChainTime,
 			e.backend.Config.UpgradeConfig.BanffTime,

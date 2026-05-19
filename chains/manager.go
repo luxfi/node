@@ -1483,7 +1483,7 @@ func (m *manager) createDAG(
 		}
 	}
 
-	// Linearize the DAG chain (required for X-Chain post-Cortina)
+	// Linearize the DAG chain (required for X-Chain).
 	// This transitions the chain from DAG mode to linear block mode.
 	if vmInitialized {
 		if linearVM, ok := vmImpl.(interface {
