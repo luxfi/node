@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/upgrade/upgradetest"
+	
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/txstest"
@@ -34,9 +34,8 @@ import (
 // Test keys for use in tests
 var keys = secp256k1.TestKeys()
 
-// durango is a shorthand for the upgradetest.Durango fork config (kept for
-// upstream-codec compatibility; all gates are active on Lux at chain birth).
-var durango = upgradetest.GetConfig(upgradetest.Durango)
+// All upgrades are active at genesis under activate-all-implicitly.
+var durango = upgrade.Default
 
 // Test constants
 const (
@@ -210,7 +209,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 
 	if config == nil {
 		config = &envConfig{
-			fork: upgradetest.GetConfig(upgradetest.Latest),
+			fork: upgrade.Default,
 		}
 	}
 
