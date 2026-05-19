@@ -153,55 +153,39 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Each VM is an independent Go module under /tmp/chains/<vm>/.
 # Build each plugin binary and place it at /luxd/build/plugins/<cb58-vm-id>.
+#
+# NB(2026-05-19): luxfi/chains main has unresolved sibling go.mod replace
+# directives (luxfi/{evm,precompile,threshold} => ../*) that break in any
+# isolated build context. Each chain plugin is therefore built best-effort;
+# production deployments pull plugins from S3 (`pluginSource.bucket`) at
+# runtime per LuxNetwork CR, so an embedded plugin miss is non-fatal.
 RUN --mount=type=cache,target=/root/.cache/go-build \
     . /build/build_env.sh && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
-    set -e && \
-    cd /tmp/chains/aivm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA \
-      ./cmd/plugin && \
-    cd /tmp/chains/bridgevm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY \
-      ./cmd/plugin && \
-    cd /tmp/chains/dexvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
-      ./cmd/plugin && \
-    cd /tmp/chains/graphvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt \
-      ./cmd/plugin && \
-    cd /tmp/chains/identityvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM \
-      ./cmd/plugin && \
-    cd /tmp/chains/keyvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M \
-      ./cmd/plugin && \
-    cd /tmp/chains/oraclevm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
-      ./cmd/plugin && \
-    cd /tmp/chains/quantumvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
-      ./cmd/plugin && \
-    cd /tmp/chains/relayvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
-      ./cmd/plugin && \
-    cd /tmp/chains/thresholdvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
-      ./cmd/plugin && \
-    cd /tmp/chains/zkvm && \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-      -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
-      ./cmd/plugin && \
-    chmod +x /luxd/build/plugins/* && \
+    mkdir -p /luxd/build/plugins && \
+    ( cd /tmp/chains/aivm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
+    ( cd /tmp/chains/bridgevm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY ./cmd/plugin ) || echo "WARN: bridgevm plugin build skipped" ; \
+    ( cd /tmp/chains/dexvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/plugin ) || echo "WARN: dexvm plugin build skipped" ; \
+    ( cd /tmp/chains/graphvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt ./cmd/plugin ) || echo "WARN: graphvm plugin build skipped" ; \
+    ( cd /tmp/chains/identityvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM ./cmd/plugin ) || echo "WARN: identityvm plugin build skipped" ; \
+    ( cd /tmp/chains/keyvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M ./cmd/plugin ) || echo "WARN: keyvm plugin build skipped" ; \
+    ( cd /tmp/chains/oraclevm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS ./cmd/plugin ) || echo "WARN: oraclevm plugin build skipped" ; \
+    ( cd /tmp/chains/quantumvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug ./cmd/plugin ) || echo "WARN: quantumvm plugin build skipped" ; \
+    ( cd /tmp/chains/relayvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz ./cmd/plugin ) || echo "WARN: relayvm plugin build skipped" ; \
+    ( cd /tmp/chains/thresholdvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t ./cmd/plugin ) || echo "WARN: thresholdvm plugin build skipped" ; \
+    ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
+    ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
     rm -rf /tmp/chains
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails
