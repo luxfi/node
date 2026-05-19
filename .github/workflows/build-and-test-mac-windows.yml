@@ -20,7 +20,10 @@ jobs:
       GOWORK: off
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        # `macos-latest` currently resolves to GH-hosted arm64 macos (forbidden);
+        # pin to `macos-13` (amd64). darwin/arm64 coverage lives in
+        # build-macos-release.yml via cross-compile.
+        os: [windows-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
