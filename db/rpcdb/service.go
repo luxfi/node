@@ -8,7 +8,7 @@
 // Layered topology:
 //
 //	Layer A — wire framing                   (github.com/luxfi/api/zap)
-//	Layer B — service spec (data carriers)   (github.com/luxfi/protocol/rpcdb)
+//	Layer B — service spec (data carriers)   (github.com/luxfi/proto/rpcdb)
 //	Layer C — service impl + transports      (this package)
 //
 // One Service. Many transport adapters. Adding a new transport is a
