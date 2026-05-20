@@ -128,10 +128,10 @@ require (
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.5.2
+	github.com/luxfi/constants v1.5.5
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.11.1
+	github.com/luxfi/genesis v1.11.8
 	github.com/luxfi/geth v1.16.98
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/lattice/v7 v7.1.0

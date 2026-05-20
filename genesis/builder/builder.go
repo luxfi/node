@@ -366,16 +366,16 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	// Sort allocations for deterministic output
 	type allocation struct {
-		ETHAddr       ids.ShortID
-		LUXAddr       ids.ShortID
+		EVMAddr       ids.ShortID
+		UTXOAddr      ids.ShortID
 		InitialAmount uint64
 	}
 	xAllocations := []allocation{}
 	for _, a := range config.Allocations {
 		if a.InitialAmount > 0 {
 			xAllocations = append(xAllocations, allocation{
-				ETHAddr:       a.ETHAddr,
-				LUXAddr:       a.LUXAddr,
+				EVMAddr:       a.EVMAddr,
+				UTXOAddr:       a.UTXOAddr,
 				InitialAmount: a.InitialAmount,
 			})
 		}
@@ -386,7 +386,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	for _, a := range xAllocations {
 		// Format address as bech32 for the X-Chain
-		bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+		bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to format bech32 address: %w", err)
 		}
@@ -395,7 +395,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			Address: bech32Addr,
 		})
 		// Add ETH address to memo for reference
-		ethAddrStr := a.ETHAddr.Hex()
+		ethAddrStr := a.EVMAddr.Hex()
 		if len(ethAddrStr) > 2 { // "0x" prefix
 			memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
 		}
@@ -416,10 +416,16 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 	}
 
-	xAssetID, err := XAssetID(xvmGenesisBytes)
-	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
-	}
+	// LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID), not
+	// derived from X-Chain genesis bytes. This decouples the asset from the
+	// X-Chain so X-Chain can be made optional for P-only L2s.
+	//
+	// We still build xvmGenesisBytes above so X-Chain (when baked) has a
+	// consistent initial-supply view, but the asset ID itself is the
+	// deterministic constant — all chains reference the same ID regardless
+	// of whether X-Chain is part of the chain set.
+	_ = xvmGenesisBytes // bytes still used downstream when X-Chain is baked
+	xAssetID := constants.UTXO_ASSET_ID
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
 
@@ -441,14 +447,14 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	platformAllocations := []genesis.Allocation{}
 	skippedAllocations := []genesiscfg.Allocation{}
 	for _, a := range config.Allocations {
-		if initiallyStaked.Contains(a.LUXAddr) {
+		if initiallyStaked.Contains(a.UTXOAddr) {
 			skippedAllocations = append(skippedAllocations, a)
 			continue
 		}
 		for _, unlock := range a.UnlockSchedule {
 			if unlock.Amount > 0 {
 				// Format address as bech32 for the P-Chain
-				bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+				bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 				if err != nil {
 					return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for P-chain: %w", err)
 				}
@@ -456,14 +462,14 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
 					Address:  bech32Addr,
-					Message:  a.ETHAddr.Bytes(),
+					Message:  a.EVMAddr.Bytes(),
 				})
 			}
 		}
 
 		// Also create P-Chain UTXO for initialAmount (spendable, no locktime)
 		if a.InitialAmount > 0 {
-			bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+			bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 			if err != nil {
 				return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for P-chain initialAmount: %w", err)
 			}
@@ -471,7 +477,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				Locktime: 0, // immediately spendable
 				Amount:   a.InitialAmount,
 				Address:  bech32Addr,
-				Message:  a.ETHAddr.Bytes(),
+				Message:  a.EVMAddr.Bytes(),
 			})
 		}
 	}
@@ -506,7 +512,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		for _, a := range nodeAllocations {
 			for _, unlock := range a.UnlockSchedule {
 				// Format address as bech32 for staker allocations
-				bech32Addr, err := address.FormatBech32(hrp, a.LUXAddr[:])
+				bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 				if err != nil {
 					return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for staker allocation: %w", err)
 				}
@@ -514,7 +520,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
 					Address:  bech32Addr,
-					Message:  a.ETHAddr.Bytes(),
+					Message:  a.EVMAddr.Bytes(),
 				})
 			}
 		}
@@ -892,8 +898,8 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 	const oneBillionLUX = 1_000_000_000_000_000_000 // 1B LUX in nLUX
 
 	allocation := genesiscfg.Allocation{
-		ETHAddr:       cfg.RewardAddress, // Same as LUX addr for simplicity
-		LUXAddr:       cfg.RewardAddress,
+		EVMAddr:       cfg.RewardAddress, // Same as LUX addr for simplicity
+		UTXOAddr:       cfg.RewardAddress,
 		InitialAmount: oneMillionLUX, // Initial unlocked amount
 		UnlockSchedule: []genesiscfg.LockedAmount{
 			{
