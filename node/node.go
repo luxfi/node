@@ -1542,9 +1542,8 @@ func (n *Node) initVMs() error {
 			"error", err,
 		)
 	}
-	// Don't fail if Reload returns an error - it might be due to already registered VMs
 	if err != nil {
-		n.Log.Warn("VM registry reload encountered issues, continuing anyway", "error", err)
+		return fmt.Errorf("reload VM registry: %w", err)
 	}
 	return nil
 }

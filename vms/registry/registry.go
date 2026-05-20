@@ -80,75 +80,56 @@ func NewVMGetter(config VMGetterConfig) VMGetter {
 	}
 }
 
+// Reload scans the plugin directory and registers any VM that isn't yet
+// known to the manager. Files whose name doesn't parse as an ids.ID are
+// skipped silently; a VM that is already registered is skipped without
+// error. Per-VM load failures are collected into failedVMs so the caller
+// can report them. Only fundamental issues (unreadable plugin dir) bubble
+// up as the third return value.
 func (r *vmRegistry) Reload(ctx context.Context) ([]ids.ID, map[ids.ID]error, error) {
 	var newVMs []ids.ID
 	failedVMs := make(map[ids.ID]error)
 
 	getter, ok := r.config.VMGetter.(*vmGetter)
 	if !ok {
-		fmt.Printf("[Registry] VMGetter type assertion failed\n")
 		return newVMs, failedVMs, nil
 	}
 
 	pluginDir := getter.config.PluginDirectory
 	if pluginDir == "" {
-		fmt.Printf("[Registry] No plugin directory configured\n")
 		return newVMs, failedVMs, nil
 	}
-	fmt.Printf("[Registry] Loading plugins from: %s\n", pluginDir)
 
 	files, err := os.ReadDir(pluginDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Printf("[Registry] Plugin directory does not exist: %s\n", pluginDir)
 			return newVMs, failedVMs, nil
 		}
-		return nil, nil, fmt.Errorf("failed to read plugin directory: %w", err)
+		return nil, nil, fmt.Errorf("read plugin directory %s: %w", pluginDir, err)
 	}
 
-	fmt.Printf("[Registry] Found %d files in plugin directory\n", len(files))
 	for _, file := range files {
 		if file.IsDir() {
-			fmt.Printf("[Registry] Skipping directory: %s\n", file.Name())
 			continue
 		}
-
-		pluginPath := filepath.Join(pluginDir, file.Name())
-		fmt.Printf("[Registry] Checking file: %s\n", file.Name())
 		vmID, err := ids.FromString(file.Name())
 		if err != nil {
-			// Skip files that aren't valid VM IDs
-			fmt.Printf("[Registry] Invalid VM ID format: %s (err: %v)\n", file.Name(), err)
 			continue
 		}
-		fmt.Printf("[Registry] Parsed VM ID: %s\n", vmID)
-
-		// Check if already registered
-		fmt.Printf("[Registry] Checking if VM %s is already registered...\n", vmID)
-		existingFactory, getErr := r.config.VMManager.GetFactory(ctx, vmID)
-		fmt.Printf("[Registry] GetFactory returned: factory=%v, err=%v\n", existingFactory, getErr)
-		if getErr == nil {
-			// Already registered
-			fmt.Printf("[Registry] VM already registered: %s\n", vmID)
+		if _, getErr := r.config.VMManager.GetFactory(ctx, vmID); getErr == nil {
 			continue
 		}
-		fmt.Printf("[Registry] VM not registered, will load from plugin\n")
-
-		fmt.Printf("[Registry] Loading factory from plugin: %s\n", pluginPath)
-		factory, err := r.config.VMGetter.Get(pluginPath)
+		factory, err := r.config.VMGetter.Get(filepath.Join(pluginDir, file.Name()))
 		if err != nil {
 			failedVMs[vmID] = err
 			continue
 		}
-
 		if err := r.config.VMManager.RegisterFactory(ctx, vmID, factory); err != nil {
 			failedVMs[vmID] = err
 			continue
 		}
-
 		newVMs = append(newVMs, vmID)
 	}
-
 	return newVMs, failedVMs, nil
 }
 

@@ -26,7 +26,6 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/mldsa"
 	mlkemcrypto "github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/filesystem/perms"
@@ -99,90 +98,16 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-// AutomineNetworkConfig captures immutable network state for automine mode persistence.
-// Once written to automine-network.json, this ensures the same genesis is produced
-// on every restart, making C-Chain/EVM state persistence work correctly.
-type AutomineNetworkConfig struct {
-	// Version for forward compatibility
-	Version int `json:"version"`
-
-	// Genesis start time - captured on first boot, reused on restart
-	StartTime uint64 `json:"startTime"`
-
-	// Node identity
-	NodeID string `json:"nodeId"`
-
-	// BLS credentials (hex-encoded)
-	BLSPublicKey string `json:"blsPublicKey"`
-	BLSPopProof  string `json:"blsPopProof"`
-
-	// Computed genesis bytes and hash (for verification)
-	GenesisBytes []byte `json:"genesisBytes"`
-	GenesisHash  string `json:"genesisHash"` // Actual hash of GenesisBytes
-
-	// X-Chain asset ID (LUX token ID)
-	XAssetID string `json:"xAssetId"`
-
-	// C-Chain genesis (stored separately for EVM immutability)
-	CChainGenesis string `json:"cChainGenesis"`
-}
-
-const (
-	devNetworkConfigVersion  = 1
-	devNetworkConfigFilename = "automine-network.json"
-)
-
-// loadAutomineNetworkConfig attempts to load automine-network.json from the data directory.
-// Returns nil if the file doesn't exist (first boot scenario).
-func loadAutomineNetworkConfig(dataDir string) (*AutomineNetworkConfig, error) {
-	path := filepath.Join(dataDir, devNetworkConfigFilename)
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil // First boot - no config yet
-		}
-		return nil, fmt.Errorf("failed to read dev network config: %w", err)
-	}
-
-	var cfg AutomineNetworkConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse dev network config: %w", err)
-	}
-
-	if cfg.Version != devNetworkConfigVersion {
-		return nil, fmt.Errorf("unsupported dev network config version: %d (expected %d)", cfg.Version, devNetworkConfigVersion)
-	}
-
-	return &cfg, nil
-}
-
-// saveAutomineNetworkConfig atomically writes the dev network config to disk.
-// Uses write-to-temp-then-rename pattern for crash safety.
-func saveAutomineNetworkConfig(dataDir string, cfg *AutomineNetworkConfig) error {
-	path := filepath.Join(dataDir, devNetworkConfigFilename)
-	tempPath := path + ".tmp"
-
-	cfg.Version = devNetworkConfigVersion
-
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal dev network config: %w", err)
-	}
-
-	// Write to temp file
-	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
-		return fmt.Errorf("failed to write temp dev network config: %w", err)
-	}
-
-	// Atomic rename
-	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath) // Clean up on failure
-		return fmt.Errorf("failed to rename dev network config: %w", err)
-	}
-
-	return nil
-}
+// (Removed: AutomineNetworkConfig + loadAutomineNetworkConfig +
+//  saveAutomineNetworkConfig + automine-network.json persistence.)
+//
+// --automine is a *consensus-mode* flag (single-node, single-validator
+// quorum), nothing more. It MUST NOT swap in a different C-Chain
+// genesis or persist any "dev network config" sidecar. C-Chain
+// genesis is canonical genesis — for network-id 1/2/3/1337 it's the
+// embedded luxfi/genesis config, period. If the operator wants a
+// custom genesis they pass --genesis-file. No backwards compatibility
+// for the deleted automine-network.json sidecar.
 
 func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Start with default parameters
@@ -1115,10 +1040,10 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
-	// Handle automine mode genesis - dynamically generate genesis with the node's own credentials
-	if v.GetBool(DevModeKey) && !v.IsSet(GenesisFileKey) && !v.IsSet(GenesisFileContentKey) && !v.IsSet(GenesisDBKey) {
-		return getOrCreateAutomineGenesis(stakingCfg, dataDir)
-	}
+	// (Removed: automine-mode genesis swap.) --automine is single-node
+	// consensus only; it falls through to the canonical genesis loader
+	// below — same as a real network. C-Chain genesis comes from the
+	// canonical luxfi/genesis embedded config or --genesis-file. Period.
 
 	// HIGHEST PRIORITY: Raw genesis bytes - use directly without rebuilding
 	// This is critical for snapshot resume to avoid hash mismatch
@@ -1204,259 +1129,6 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	config := builder.GetConfig(networkID)
 	return builder.FromConfig(config)
 }
-
-// getOrCreateAutomineGenesis handles automine mode genesis with persistence.
-// On first boot: generates genesis, saves to automine-network.json, returns genesis.
-// On restart: loads from automine-network.json to ensure genesis hash stability.
-// Returns: (genesisBytes, xAssetID, error) - xAssetID is the LUX token asset ID
-func getOrCreateAutomineGenesis(stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
-	// Try to load existing dev network config
-	devCfg, err := loadAutomineNetworkConfig(dataDir)
-	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("failed to load dev network config: %w", err)
-	}
-
-	if devCfg != nil {
-		// Existing config found - check if credentials match
-		// In automine mode with ephemeral certs, credentials will change on restart.
-		// We log a warning but continue with the stored genesis since automine mode
-		// is single-node and doesn't require credential consistency.
-		expectedNodeID := stakingCfg.NodeID
-		expectedBLSPK := fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey)
-		expectedBLSPoP := fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession)
-
-		credentialsMismatch := false
-		if devCfg.NodeID != expectedNodeID {
-			log.Warn("automine-network.json nodeID mismatch (using stored genesis anyway for automine mode)",
-				"stored", devCfg.NodeID,
-				"current", expectedNodeID,
-			)
-			credentialsMismatch = true
-		}
-		if devCfg.BLSPublicKey != expectedBLSPK {
-			log.Warn("automine-network.json BLS public key mismatch (using stored genesis anyway for automine mode)")
-			credentialsMismatch = true
-		}
-		if devCfg.BLSPopProof != expectedBLSPoP {
-			log.Warn("automine-network.json BLS PoP mismatch (using stored genesis anyway for automine mode)")
-			credentialsMismatch = true
-		}
-		if credentialsMismatch {
-			log.Warn("credentials changed since first boot - for persistent staking, use --staking-ephemeral-cert-enabled=false with persistent key files")
-		}
-
-		// Verify the stored genesis hash matches what we'll compute from the bytes
-		storedHash, err := ids.FromString(devCfg.GenesisHash)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("invalid genesis hash in automine-network.json: %w", err)
-		}
-
-		// Compute actual hash from stored bytes to verify integrity
-		computedHashBytes := hash.ComputeHash256(devCfg.GenesisBytes)
-		computedHash, err := ids.ToID(computedHashBytes)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to convert computed hash to ID: %w", err)
-		}
-
-		if storedHash != computedHash {
-			return nil, ids.Empty, fmt.Errorf("genesis bytes corrupted: stored hash %s != computed hash %s", storedHash, computedHash)
-		}
-
-		// Parse stored X-Chain asset ID
-		xAssetID, err := ids.FromString(devCfg.XAssetID)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("invalid xAssetId in automine-network.json: %w", err)
-		}
-
-		log.Info("loaded dev network config",
-			"path", filepath.Join(dataDir, devNetworkConfigFilename),
-			"genesisHash", devCfg.GenesisHash,
-			"xAssetID", devCfg.XAssetID,
-			"startTime", devCfg.StartTime,
-		)
-
-		return devCfg.GenesisBytes, xAssetID, nil
-	}
-
-	// First boot - generate new genesis with current timestamp
-	startTime := uint64(time.Now().Unix())
-
-	// buildAutomineGenesis returns (genesisBytes, xAssetID) - the LUX token asset ID
-	genesisBytes, xAssetID, err := buildAutomineGenesis(stakingCfg, startTime)
-	if err != nil {
-		return nil, ids.Empty, err
-	}
-
-	// Compute actual genesis hash from bytes (this is what the node uses for DB validation)
-	genesisHashBytes := hash.ComputeHash256(genesisBytes)
-	genesisHash, err := ids.ToID(genesisHashBytes)
-	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("failed to convert genesis hash to ID: %w", err)
-	}
-
-	// Save for future restarts. The CChainGenesis field is metadata only —
-	// the actual genesis bytes are embedded in genesisBytes — but mirror
-	// the resolved value so audits read true.
-	savedCChain := automineCChainGenesis
-	newDevCfg := &AutomineNetworkConfig{
-		Version:       devNetworkConfigVersion,
-		StartTime:     startTime,
-		NodeID:        stakingCfg.NodeID,
-		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
-		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
-		GenesisBytes:  genesisBytes,
-		GenesisHash:   genesisHash.String(),
-		XAssetID:      xAssetID.String(),
-		CChainGenesis: savedCChain,
-	}
-
-	if err := saveAutomineNetworkConfig(dataDir, newDevCfg); err != nil {
-		// Log warning but don't fail - genesis is still valid
-		log.Warn("failed to save dev network config (persistence may not work on restart)",
-			"error", err,
-		)
-	} else {
-		log.Info("created dev network config",
-			"path", filepath.Join(dataDir, devNetworkConfigFilename),
-			"genesisHash", genesisHash.String(),
-			"xAssetID", xAssetID.String(),
-			"startTime", startTime,
-		)
-	}
-
-	return genesisBytes, xAssetID, nil
-}
-
-// buildAutomineGenesis creates a genesis configuration for single-node development mode.
-// It uses the node's own credentials as the sole validator.
-//
-// C-Chain genesis comes from the embedded automineCChainGenesis constant
-// below (chainId 31337). Downstream networks that need a different
-// chainId ship their own platform-genesis bundle; the node does not
-// accept an out-of-band file path at runtime.
-func buildAutomineGenesis(stakingCfg *builder.StakingConfig, startTime uint64) ([]byte, ids.ID, error) {
-	// Parse node ID from staking config
-	nodeID, err := ids.NodeIDFromString(stakingCfg.NodeID)
-	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("failed to parse node ID for automine mode: %w", err)
-	}
-
-	// C-Chain genesis: built-in default (downstream networks bring
-	// their own platform-genesis bundle, not a path read at boot).
-	cChainGenesis := automineCChainGenesis
-
-	// Lux Treasury address: 0x9011E888251AB053B7bD1cdB598Db4f9DEd94714
-	// This is derived from the MNEMONIC env var and funded on C-Chain
-	var rewardAddress ids.ShortID
-	treasuryAddr := "9011E888251AB053B7bD1cdB598Db4f9DEd94714"
-	treasuryBytes, err := ids.ShortFromString(treasuryAddr)
-	if err == nil {
-		rewardAddress = treasuryBytes
-	} else {
-		// Fall back to a deterministic address derived from node ID
-		copy(rewardAddress[:], nodeID[:20])
-	}
-
-	// Create automine mode config with embedded C-Chain genesis (resolved
-	// above — operator override or built-in default).
-	devCfg := builder.DevModeConfig{
-		NodeID:        nodeID,
-		BLSPublicKey:  fmt.Sprintf("0x%x", stakingCfg.BLSPublicKey),
-		BLSPopProof:   fmt.Sprintf("0x%x", stakingCfg.BLSProofOfPossession),
-		RewardAddress: rewardAddress,
-		CChainGenesis: cChainGenesis,
-		StartTime:     startTime, // Use provided start time for determinism
-	}
-
-	return builder.ForDevMode(devCfg, stakingCfg)
-}
-
-// automineCChainGenesis is the default C-Chain genesis for automine mode.
-// Network ID 1337, EVM Chain ID 31337.
-// Funds Lux Treasury (0x9011), light mnemonic accounts (BIP44 m/44'/9000'/0'/0/{0-4}), and Anvil/Hardhat accounts.
-const automineCChainGenesis = `{
-  "config": {
-    "chainId": 31337,
-    "homesteadBlock": 0,
-    "eip150Block": 0,
-    "eip155Block": 0,
-    "eip158Block": 0,
-    "byzantiumBlock": 0,
-    "constantinopleBlock": 0,
-    "petersburgBlock": 0,
-    "istanbulBlock": 0,
-    "muirGlacierBlock": 0,
-    "berlinBlock": 0,
-    "londonBlock": 0,
-    "arrowGlacierBlock": 0,
-    "grayGlacierBlock": 0,
-    "mergeNetsplitBlock": 0,
-    "shanghaiTime": 0,
-    "cancunTime": 0,
-    "blobSchedule": {
-      "cancun": {"target": 3, "max": 6, "baseFeeUpdateFraction": 3338477}
-    },
-    "terminalTotalDifficulty": 0,
-    "chainEVMTimestamp": 0,
-    "feeConfig": {
-      "gasLimit": 30000000,
-      "targetBlockRate": 1,
-      "minBaseFee": 1000000000,
-      "targetGas": 100000000,
-      "baseFeeChangeDenominator": 48,
-      "minBlockGasCost": 0,
-      "maxBlockGasCost": 1000000,
-      "blockGasCostStep": 200000
-    },
-    "warpConfig": {
-      "blockTimestamp": 0,
-      "quorumNumerator": 67,
-      "requirePrimaryNetworkSigners": false
-    }
-  },
-  "alloc": {
-    "9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "5369615110ca435bdf798f31c20ba6163d7b0a54": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "2e701063ccdffa2b1872c596222d8067d124d3ef": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "9030463eb1aaa563c8247468416cc0bf06347502": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "f77b06331152fd0e536de0af65688a6559c6f914": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "944fd51713652b9922690b7d06498fbf8742beac": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "70997970C51812dc3A010C7d01b50e0d17dc79C8": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    },
-    "90F79bf6EB2c4f870365E785982E1f101E93b906": {
-      "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-    }
-  },
-  "nonce": "0x0",
-  "timestamp": "0x0",
-  "extraData": "0x",
-  "gasLimit": "0x1c9c380",
-  "difficulty": "0x0",
-  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "coinbase": "0x0000000000000000000000000000000000000000",
-  "number": "0x0",
-  "gasUsed": "0x0",
-  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
-}`
 
 func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackChainsStr := v.GetString(TrackChainsKey)
