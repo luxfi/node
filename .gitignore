@@ -91,3 +91,6 @@ LLM.md
 QWEN.md
 .AGENTS.md
 GEMINI.md
+
+# Built dev-tool binaries
+/cmd/gen_zoo_addr/gen_zoo_addr
