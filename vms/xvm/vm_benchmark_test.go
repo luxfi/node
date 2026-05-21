@@ -17,8 +17,6 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-// BenchmarkLoadUser has been removed - keystore functionality is no longer supported
-
 // getAllUTXOsBenchmark is a helper func to benchmark the GetAllUTXOs depending on the size
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)

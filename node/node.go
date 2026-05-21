@@ -816,9 +816,6 @@ func (n *Node) Dispatch() error {
 	}
 
 	// Add bootstrap nodes to the peer network
-	fmt.Println("================================================================================")
-	fmt.Printf("[BOOTSTRAP] Adding %d bootstrap nodes to peer network\n", len(n.Config.Bootstrappers))
-	fmt.Println("================================================================================")
 	n.Log.Info("Adding bootstrap nodes to peer network",
 		"count", len(n.Config.Bootstrappers),
 	)
@@ -841,7 +838,6 @@ func (n *Node) Dispatch() error {
 		}
 		n.Net.ManuallyTrack(bootstrapper.ID, bootstrapper.Endpoint)
 	}
-	fmt.Println("[BOOTSTRAP] Finished adding bootstrap nodes, starting Dispatch")
 	n.Log.Info("Finished adding bootstrap nodes, starting Dispatch")
 
 	// Start P2P connections
