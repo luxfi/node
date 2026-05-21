@@ -1054,7 +1054,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		}
 		// LUX asset ID is the network-scoped constant — same regardless of
 		// what's in genesisBytes, so no need to parse them.
-		xAssetID := constants.LUXAssetIDFor(networkID)
+		xAssetID := constants.UTXOAssetIDFor(networkID)
 		log.Info("loaded raw genesis bytes directly",
 			"size", len(genesisBytes),
 			"xAssetID", xAssetID,
@@ -1094,7 +1094,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 				"cacheFile", cacheFile,
 				"size", len(cachedBytes),
 			)
-			return cachedBytes, constants.LUXAssetIDFor(networkID), nil
+			return cachedBytes, constants.UTXOAssetIDFor(networkID), nil
 		}
 		// No cache or invalid cache - build from file and cache the result
 		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
