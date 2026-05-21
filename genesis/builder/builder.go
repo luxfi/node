@@ -22,8 +22,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/vms/components/gas"
-	exchangevm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm/genesis"
+	xvmgenesis "github.com/luxfi/node/vms/xvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
@@ -42,29 +42,22 @@ import (
 	genesisconfigs "github.com/luxfi/genesis/configs"
 )
 
+// Chain alias vars are derived from the single source of truth (Registry
+// in registry.go). Rebranding a chain — adding/removing aliases or
+// renaming the letter — edits one row in Registry; these vars and the
+// VMAliases map re-derive at package init.
 var (
-	// PChainAliases are the default aliases for the P-Chain
-	PChainAliases = []string{"P", "platform"}
-	// XChainAliases are the default aliases for the X-Chain
-	XChainAliases = []string{"X", "xvm"}
-	// CChainAliases are the default aliases for the C-Chain
-	CChainAliases = []string{"C", "evm"}
-	// DChainAliases are the default aliases for the D-Chain (DEX)
-	DChainAliases = []string{"D", "dex", "dexvm"}
-	// QChainAliases are the default aliases for the Q-Chain (Quantum)
-	QChainAliases = []string{"Q", "quantum", "quantumvm", "pq"}
-	// AChainAliases are the default aliases for the A-Chain (Attestation/AI)
-	AChainAliases = []string{"A", "attest", "ai", "aivm"}
-	// BChainAliases are the default aliases for the B-Chain (Bridge)
-	BChainAliases = []string{"B", "bridge", "bridgevm"}
-	// TChainAliases are the default aliases for the T-Chain (Threshold)
-	TChainAliases = []string{"T", "threshold", "thresholdvm", "mpc"}
-	// ZChainAliases are the default aliases for the Z-Chain (ZK)
-	ZChainAliases = []string{"Z", "zk", "zkvm"}
-	// GChainAliases are the default aliases for the G-Chain (Graph)
-	GChainAliases = []string{"G", "graph", "graphvm", "dgraph"}
-	// KChainAliases are the default aliases for the K-Chain (KMS)
-	KChainAliases = []string{"K", "key", "keyvm"}
+	PChainAliases = AliasesFor("P")
+	XChainAliases = AliasesFor("X")
+	CChainAliases = AliasesFor("C")
+	DChainAliases = AliasesFor("D")
+	QChainAliases = AliasesFor("Q")
+	AChainAliases = AliasesFor("A")
+	BChainAliases = AliasesFor("B")
+	TChainAliases = AliasesFor("T")
+	ZChainAliases = AliasesFor("Z")
+	GChainAliases = AliasesFor("G")
+	KChainAliases = AliasesFor("K")
 
 	// Network-specific genesis messages (Latin for mainnet, descriptive for others)
 	// Mainnet: "Lux et Libertas" - Light and Liberty
@@ -76,29 +69,10 @@ var (
 	// Local/Custom: "Carpe Diem" - Seize the day
 	LocalChainGenesis = `{"version":1,"message":"Carpe Diem"}`
 
-	// VMAliases are the default aliases for VMs
-	VMAliases = map[ids.ID][]string{
-		constants.PlatformVMID:  {"platform"},
-		constants.XVMID:         {"xvm"},
-		constants.EVMID:         {"evm"},
-		constants.DexVMID:       {"dexvm", "dex"},
-		constants.QuantumVMID:   {"quantumvm", "quantum", "pq"},
-		constants.AIVMID:        {"aivm", "attest", "ai"},
-		constants.BridgeVMID:    {"bridgevm", "bridge"},
-		constants.ThresholdVMID: {"thresholdvm", "threshold", "mpc"},
-		constants.ZKVMID:        {"zkvm", "zk"},
-		constants.GraphVMID:     {"graphvm", "graph", "dgraph"},
-		constants.KeyVMID:       {"keyvm", "key"},
-		secp256k1fx.ID:          {"secp256k1fx"},
-		nftfx.ID:                {"nftfx"},
-		propertyfx.ID:           {"propertyfx"},
-		mldsafx.ID:              {"mldsafx"},
-		slhdsafx.ID:             {"slhdsafx"},
-		ed25519fx.ID:            {"ed25519fx"},
-		secp256r1fx.ID:          {"secp256r1fx"},
-		schnorrfx.ID:            {"schnorrfx"},
-		bls12381fx.ID:           {"bls12381fx"},
-	}
+	// VMAliases is the default (VMID -> aliases) map for the node's VM
+	// manager. Chain entries are derived from Registry; fx entries are
+	// the static feature-extension aliases (secp256k1fx, nftfx, ...).
+	VMAliases = VMAliasesMap()
 
 	errOverridesStandardNetworkConfig = errors.New("overrides standard network genesis config")
 )
@@ -379,69 +353,36 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// empty and the optIn loop below skips emitting an X-Chain CreateChainTx.
 	var xvmGenesisBytes []byte
 	if config.XChainGenesis != "" {
-		var asset struct {
-			Symbol       string `json:"symbol"`
-			Name         string `json:"name"`
-			Denomination byte   `json:"denomination"`
-		}
+		var asset xvmgenesis.AssetDescriptor
 		if err := json.Unmarshal([]byte(config.XChainGenesis), &asset); err != nil {
 			return nil, ids.Empty, fmt.Errorf("invalid xChainGenesis shard: %w", err)
 		}
-		primary := exchangevm.GenesisAssetDefinition{
-			Name:         asset.Name,
-			Symbol:       asset.Symbol,
-			Denomination: asset.Denomination,
-			InitialState: exchangevm.AssetInitialState{},
-		}
+
+		holders := []xvmgenesis.Holder{}
 		memoBytes := []byte{}
-
-		// Sort allocations for deterministic output
-		type allocation struct {
-			EVMAddr       ids.ShortID
-			UTXOAddr      ids.ShortID
-			InitialAmount uint64
-		}
-		xAllocations := []allocation{}
 		for _, a := range config.Allocations {
-			if a.InitialAmount > 0 {
-				xAllocations = append(xAllocations, allocation{
-					EVMAddr:       a.EVMAddr,
-					UTXOAddr:       a.UTXOAddr,
-					InitialAmount: a.InitialAmount,
-				})
+			if a.InitialAmount == 0 {
+				continue
 			}
-		}
-
-		for _, a := range xAllocations {
 			// Format address as bech32 for the X-Chain
 			bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 			if err != nil {
 				return nil, ids.Empty, fmt.Errorf("failed to format bech32 address: %w", err)
 			}
-			primary.InitialState.FixedCap = append(primary.InitialState.FixedCap, exchangevm.GenesisHolder{
+			holders = append(holders, xvmgenesis.Holder{
 				Amount:  a.InitialAmount,
 				Address: bech32Addr,
 			})
-			// Add ETH address to memo for reference
-			ethAddrStr := a.EVMAddr.Hex()
-			if len(ethAddrStr) > 2 { // "0x" prefix
+			// Add ETH address to memo for reference (strip 0x prefix)
+			if ethAddrStr := a.EVMAddr.Hex(); len(ethAddrStr) > 2 {
 				memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
 			}
 		}
-		primary.Memo = memoBytes
 
-		xvmGenesis, err := exchangevm.NewGenesis(
-			config.NetworkID,
-			map[string]exchangevm.GenesisAssetDefinition{
-				asset.Symbol: primary,
-			},
-		)
+		var err error
+		xvmGenesisBytes, err = xvmgenesis.BuildBytes(config.NetworkID, asset, holders, memoBytes)
 		if err != nil {
 			return nil, ids.Empty, err
-		}
-		xvmGenesisBytes, err = xvmGenesis.Bytes()
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 		}
 	}
 
