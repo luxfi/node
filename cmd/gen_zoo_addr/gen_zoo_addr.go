@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// Load validators from Lux genesis
-	luxGenesis, _ := os.ReadFile("/Users/z/work/lux/mainnet/genesis_mainnet.json")
+	luxGenesis, _ := os.ReadFile(os.ExpandEnv("$HOME/work/lux/mainnet/genesis_mainnet.json"))
 	var lux map[string]interface{}
 	json.Unmarshal(luxGenesis, &lux)
 
@@ -76,6 +76,6 @@ func main() {
 	genesis["cChainGenesis"] = string(ccBytes)
 
 	out, _ := json.MarshalIndent(genesis, "", "  ")
-	os.WriteFile("/Users/z/work/lux/mainnet/zoo_genesis_valid.json", out, 0644)
+	os.WriteFile(os.ExpandEnv("$HOME/work/lux/mainnet/zoo_genesis_valid.json"), out, 0644)
 	fmt.Println("Wrote zoo_genesis_valid.json")
 }
