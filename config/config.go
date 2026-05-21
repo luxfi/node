@@ -50,7 +50,6 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/timer"
@@ -1965,24 +1964,15 @@ func saveCachedGenesisBytes(cacheFile string, genesisBytes []byte) error {
 	return os.WriteFile(cacheFile, genesisBytes, 0o600)
 }
 
-// extractXAssetID extracts the LUX asset ID from raw platform genesis bytes.
-// This is needed when loading raw genesis bytes directly (for snapshot resume)
-// to avoid rebuilding genesis which causes hash mismatch.
-func extractXAssetID(genesisBytes []byte) (ids.ID, error) {
-	// Get the X-chain creation TX from the platform genesis
-	xChainTx, err := builder.VMGenesis(genesisBytes, constants.XVMID)
-	if err != nil {
-		return ids.Empty, fmt.Errorf("couldn't find X-chain genesis in platform genesis: %w", err)
-	}
-
-	// Extract the XVM genesis bytes from the create chain TX
-	createChainTx, ok := xChainTx.Unsigned.(*pchaintxs.CreateChainTx)
-	if !ok {
-		return ids.Empty, fmt.Errorf("X-chain genesis TX is not a CreateChainTx")
-	}
-
-	// Use the builder.XAssetID function to extract the asset ID from XVM genesis
-	return builder.XAssetID(createChainTx.GenesisData)
+// extractXAssetID returns the LUX asset ID for the given platform genesis.
+//
+// The LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID),
+// not derived from X-Chain genesis bytes — so it is identical whether the
+// raw genesis includes an X-Chain entry or not. The genesisBytes argument
+// is kept so the snapshot-resume path stays a single function call site;
+// it is otherwise unused.
+func extractXAssetID(_ []byte) (ids.ID, error) {
+	return constants.UTXO_ASSET_ID, nil
 }
 
 func providedFlags(v *viper.Viper) map[string]interface{} {
