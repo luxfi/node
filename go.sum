@@ -270,8 +270,6 @@ github.com/luxfi/concurrent v0.0.3 h1:eJyv1fhaC0jMLMw6+QS774cUmp7GK+ouMgvLCqnC7c
 github.com/luxfi/concurrent v0.0.3/go.mod h1:Aj/FR5NpM0cB2P4Nt3+tz9+dV6V+LUW4HuMgSjwq5hw=
 github.com/luxfi/consensus v1.24.0 h1:vyBPYPeZbbZutUCMxKBW7Ief9+8OZB7cu3MfNc87xYE=
 github.com/luxfi/consensus v1.24.0/go.mod h1:eFknd+fzTmGEa/FzxgoL6unccnHGVxxOrZUZdReWII0=
-github.com/luxfi/constants v1.5.6 h1:4eOPTy7haj8ri2U91dymaw6f0NOqh9Sr16WK40Hk8sc=
-github.com/luxfi/constants v1.5.6/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
 github.com/luxfi/constants v1.5.7 h1:a1tCMdxd+pClPMIPOaI9vcYGNy6cQIc2rubac2Trc0k=
 github.com/luxfi/constants v1.5.7/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
 github.com/luxfi/container v0.0.4 h1:BXhF82WyfqVP5mjlNcr7tP0Fcnvl0Ap1rkiu+rq5XuM=
@@ -288,8 +286,8 @@ github.com/luxfi/filesystem v0.0.1 h1:VZ6xMFKaAPBW/ddlMsDnI2G0VU1lV5rYaVcW5d+KwE
 github.com/luxfi/filesystem v0.0.1/go.mod h1:OQVSU6XNwqrr1AI+MqkID2taHUclx7NYmmr3svgttec=
 github.com/luxfi/formatting v1.0.1 h1:ZnE1rAdEUds9yAegdVdGDOBGN6hLMPOv6E03Fp8IEYo=
 github.com/luxfi/formatting v1.0.1/go.mod h1:mYzNf5DJOiqSSKUPzNj5dKy4tstFbN3pZlkI5716eKc=
-github.com/luxfi/genesis v1.11.8 h1:bzaM4qKE5cU+L5VR2z7dDmv+JPUbjhGpe3GaAB+ntT4=
-github.com/luxfi/genesis v1.11.8/go.mod h1:FclUFoXgU+/FrTDS5NQGZg53tnHTYhHtfQ8XFDNLPI4=
+github.com/luxfi/genesis v1.11.9 h1:E41MpOp+e8AWA96HyPFL5+M4ZOTUAk5xpvDKzVEMf9U=
+github.com/luxfi/genesis v1.11.9/go.mod h1:FclUFoXgU+/FrTDS5NQGZg53tnHTYhHtfQ8XFDNLPI4=
 github.com/luxfi/geth v1.16.98 h1:w187TtKuGStf3tm2bshuHVKBv2Frjx0lT54kQVXyNHA=
 github.com/luxfi/geth v1.16.98/go.mod h1:6kEzSExdk9CPQDPXALt6P3HfQqBq7KF1Jrrv9gBpxbU=
 github.com/luxfi/go-bip32 v1.0.2 h1:7vFbb+Wr4Z499q2tuCLdd7wWjtn8sH+HWBlx76mhH9Y=
