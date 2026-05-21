@@ -445,10 +445,13 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 	}
 
-	// LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID),
-	// not derived from X-Chain genesis bytes. All chains reference the
-	// same ID regardless of whether X-Chain is part of the chain set.
-	xAssetID := constants.UTXO_ASSET_ID
+	// LUX asset ID is a network-scoped constant (constants.LUXAssetIDFor),
+	// not derived from X-Chain genesis bytes. Domain-separated by networkID
+	// so mainnet/testnet/devnet/local each have a distinct asset ID — this
+	// prevents cross-network UTXO accounting collapse in wallets/indexers
+	// that key balance by AssetID alone. Mainnet (networkID=1) returns the
+	// legacy UTXO_ASSET_ID literal to preserve existing on-chain state.
+	xAssetID := constants.LUXAssetIDFor(config.NetworkID)
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
 

@@ -27,7 +27,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.24.0
-	github.com/luxfi/crypto v1.19.3
+	github.com/luxfi/crypto v1.19.6
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
 	github.com/luxfi/keychain v1.0.2
@@ -128,7 +128,7 @@ require (
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.5.5
+	github.com/luxfi/constants v1.5.6
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.11.8

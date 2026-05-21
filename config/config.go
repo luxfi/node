@@ -1052,11 +1052,9 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
 		}
-		// Extract xAssetID from the X-chain genesis within the platform genesis
-		xAssetID, err := extractXAssetID(genesisBytes)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to extract xAssetID from raw genesis bytes: %w", err)
-		}
+		// LUX asset ID is the network-scoped constant — same regardless of
+		// what's in genesisBytes, so no need to parse them.
+		xAssetID := constants.LUXAssetIDFor(networkID)
 		log.Info("loaded raw genesis bytes directly",
 			"size", len(genesisBytes),
 			"xAssetID", xAssetID,
@@ -1092,18 +1090,11 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		// Check if we have cached genesis bytes to avoid rebuilding
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
-			xAssetID, err := extractXAssetID(cachedBytes)
-			if err != nil {
-				log.Warn("failed to extract xAssetID from cached genesis, rebuilding",
-					"error", err,
-				)
-			} else {
-				log.Info("loaded cached genesis bytes for hash stability",
-					"cacheFile", cacheFile,
-					"size", len(cachedBytes),
-				)
-				return cachedBytes, xAssetID, nil
-			}
+			log.Info("loaded cached genesis bytes for hash stability",
+				"cacheFile", cacheFile,
+				"size", len(cachedBytes),
+			)
+			return cachedBytes, constants.LUXAssetIDFor(networkID), nil
 		}
 		// No cache or invalid cache - build from file and cache the result
 		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
@@ -1962,17 +1953,6 @@ func loadCachedGenesisBytes(cacheFile string) ([]byte, error) {
 // saveCachedGenesisBytes saves platform genesis bytes to a cache file.
 func saveCachedGenesisBytes(cacheFile string, genesisBytes []byte) error {
 	return os.WriteFile(cacheFile, genesisBytes, 0o600)
-}
-
-// extractXAssetID returns the LUX asset ID for the given platform genesis.
-//
-// The LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID),
-// not derived from X-Chain genesis bytes — so it is identical whether the
-// raw genesis includes an X-Chain entry or not. The genesisBytes argument
-// is kept so the snapshot-resume path stays a single function call site;
-// it is otherwise unused.
-func extractXAssetID(_ []byte) (ids.ID, error) {
-	return constants.UTXO_ASSET_ID, nil
 }
 
 func providedFlags(v *viper.Viper) map[string]interface{} {
