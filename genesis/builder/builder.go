@@ -23,8 +23,6 @@ import (
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/vms/components/gas"
 	exchangevm "github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -102,7 +100,6 @@ var (
 		bls12381fx.ID:           {"bls12381fx"},
 	}
 
-	errNoTxs                          = errors.New("genesis creates no transactions")
 	errOverridesStandardNetworkConfig = errors.New("overrides standard network genesis config")
 )
 
@@ -353,78 +350,104 @@ func GetConfig(networkID uint32) *genesiscfg.Config {
 	return genesiscfg.GetConfig(networkID)
 }
 
-// FromConfig builds genesis bytes from a config
+// FromConfig builds genesis bytes from a config.
+//
+// X-Chain is opt-in via config.XChainGenesis (a small JSON descriptor like
+//
+//	{"symbol":"LUX","name":"Lux","denomination":9}
+//
+// ). When set, the builder constructs an XVM genesis whose primary asset
+// is that descriptor (initial holders sourced from config.Allocations) and
+// emits an X-Chain entry in the primary-network CreateChainTx set. When
+// empty, no XVM genesis is built and X-Chain is omitted from the chain
+// set — the path used by P-only L2s whose value capture lives on a
+// downstream EVM (Liquid EVM etc.).
+//
+// The LUX asset ID returned is always the network-wide constant
+// (constants.UTXO_ASSET_ID), independent of whether X-Chain is baked.
+// This is what decouples the asset from any specific chain's genesis
+// bytes — P-Chain stake/UTXO references stay byte-stable across both
+// shapes of primary network.
 func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
-	// Build XVM (X-Chain) genesis
-	lux := exchangevm.GenesisAssetDefinition{
-		Name:         "Lux",
-		Symbol:       "LUX",
-		Denomination: 9,
-		InitialState: exchangevm.AssetInitialState{},
-	}
-	memoBytes := []byte{}
-
-	// Sort allocations for deterministic output
-	type allocation struct {
-		EVMAddr       ids.ShortID
-		UTXOAddr      ids.ShortID
-		InitialAmount uint64
-	}
-	xAllocations := []allocation{}
-	for _, a := range config.Allocations {
-		if a.InitialAmount > 0 {
-			xAllocations = append(xAllocations, allocation{
-				EVMAddr:       a.EVMAddr,
-				UTXOAddr:       a.UTXOAddr,
-				InitialAmount: a.InitialAmount,
-			})
-		}
-	}
-
-	// Get HRP for this network to format bech32 addresses
+	// HRP is needed for X-Chain holder addresses, P-Chain protocol
+	// allocations, staker allocations, and reward addresses — define once,
+	// before the X-Chain conditional, so it's available on both paths.
 	hrp := constants.GetHRP(config.NetworkID)
 
-	for _, a := range xAllocations {
-		// Format address as bech32 for the X-Chain
-		bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
+	// X-Chain is the first opt-in chain. Build its XVM genesis bytes only
+	// when config.XChainGenesis is non-empty; otherwise leave the slot
+	// empty and the optIn loop below skips emitting an X-Chain CreateChainTx.
+	var xvmGenesisBytes []byte
+	if config.XChainGenesis != "" {
+		var asset struct {
+			Symbol       string `json:"symbol"`
+			Name         string `json:"name"`
+			Denomination byte   `json:"denomination"`
+		}
+		if err := json.Unmarshal([]byte(config.XChainGenesis), &asset); err != nil {
+			return nil, ids.Empty, fmt.Errorf("invalid xChainGenesis shard: %w", err)
+		}
+		primary := exchangevm.GenesisAssetDefinition{
+			Name:         asset.Name,
+			Symbol:       asset.Symbol,
+			Denomination: asset.Denomination,
+			InitialState: exchangevm.AssetInitialState{},
+		}
+		memoBytes := []byte{}
+
+		// Sort allocations for deterministic output
+		type allocation struct {
+			EVMAddr       ids.ShortID
+			UTXOAddr      ids.ShortID
+			InitialAmount uint64
+		}
+		xAllocations := []allocation{}
+		for _, a := range config.Allocations {
+			if a.InitialAmount > 0 {
+				xAllocations = append(xAllocations, allocation{
+					EVMAddr:       a.EVMAddr,
+					UTXOAddr:       a.UTXOAddr,
+					InitialAmount: a.InitialAmount,
+				})
+			}
+		}
+
+		for _, a := range xAllocations {
+			// Format address as bech32 for the X-Chain
+			bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
+			if err != nil {
+				return nil, ids.Empty, fmt.Errorf("failed to format bech32 address: %w", err)
+			}
+			primary.InitialState.FixedCap = append(primary.InitialState.FixedCap, exchangevm.GenesisHolder{
+				Amount:  a.InitialAmount,
+				Address: bech32Addr,
+			})
+			// Add ETH address to memo for reference
+			ethAddrStr := a.EVMAddr.Hex()
+			if len(ethAddrStr) > 2 { // "0x" prefix
+				memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
+			}
+		}
+		primary.Memo = memoBytes
+
+		xvmGenesis, err := exchangevm.NewGenesis(
+			config.NetworkID,
+			map[string]exchangevm.GenesisAssetDefinition{
+				asset.Symbol: primary,
+			},
+		)
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to format bech32 address: %w", err)
+			return nil, ids.Empty, err
 		}
-		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, exchangevm.GenesisHolder{
-			Amount:  a.InitialAmount,
-			Address: bech32Addr,
-		})
-		// Add ETH address to memo for reference
-		ethAddrStr := a.EVMAddr.Hex()
-		if len(ethAddrStr) > 2 { // "0x" prefix
-			memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
+		xvmGenesisBytes, err = xvmGenesis.Bytes()
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 		}
 	}
-	lux.Memo = memoBytes
 
-	xvmGenesis, err := exchangevm.NewGenesis(
-		config.NetworkID,
-		map[string]exchangevm.GenesisAssetDefinition{
-			"LUX": lux,
-		},
-	)
-	if err != nil {
-		return nil, ids.Empty, err
-	}
-	xvmGenesisBytes, err := xvmGenesis.Bytes()
-	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
-	}
-
-	// LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID), not
-	// derived from X-Chain genesis bytes. This decouples the asset from the
-	// X-Chain so X-Chain can be made optional for P-only L2s.
-	//
-	// We still build xvmGenesisBytes above so X-Chain (when baked) has a
-	// consistent initial-supply view, but the asset ID itself is the
-	// deterministic constant — all chains reference the same ID regardless
-	// of whether X-Chain is part of the chain set.
-	_ = xvmGenesisBytes // bytes still used downstream when X-Chain is baked
+	// LUX asset ID is a network-wide constant (constants.UTXO_ASSET_ID),
+	// not derived from X-Chain genesis bytes. All chains reference the
+	// same ID regardless of whether X-Chain is part of the chain set.
 	xAssetID := constants.UTXO_ASSET_ID
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
@@ -567,29 +590,29 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	// Primary-network chain set is data-driven.
 	//
-	// Mandatory:
-	//   P-Chain — implicit (the platform genesis itself).
-	//   X-Chain — staking and tx-fee UTXOs are anchored here; removing it
-	//             requires a new native fee asset. Always baked.
+	// P-Chain is implicit (the platform genesis itself). Every other
+	// primary-network chain — including X-Chain — is opt-in via a
+	// non-empty genesis string in the resolved Config. Entries with
+	// empty GenesisData are SKIPPED — luxd will not start a chain
+	// manager for them. Mainnet/testnet/devnet ship XChainGenesis so
+	// X-Chain stays baked; P-only L2s (Liquidity etc.) leave it empty
+	// and the chain is omitted.
 	//
-	// Opt-in (every other chain):
-	//   Each XChainGenesis string in the config is the gate. Non-empty →
-	//   the chain is included in the primary-network CreateChainTx set.
-	//   Downstream forks (Liquidity etc.) that only want P+X just leave
-	//   their other genesis fields empty in the config JSON / shard tree;
-	//   no env knob per chain, no compile-time hack.
+	// Order is fixed (X→C→D→B→T→Q→Z) and preserved across
+	// presence/absence so byte-identical genesis holds when the same
+	// shard set is supplied. Append-only — reordering shifts the
+	// P-Chain genesis byte layout.
 	//
 	// Runtime tracking is separate: an operator decides which of the
 	// baked chains this node actually runs via --track-chains /
 	// --track-all-chains. Baked-but-untracked chains stay dormant.
-	chains := []genesis.Chain{}
-
-	// X-Chain — staking + LUX asset, always present.
-	chains = append(chains, genesis.Chain{
-		GenesisData: xvmGenesisBytes,
-		ChainID:     constants.PrimaryNetworkID,
-		VMID:        constants.XVMID,
-		FxIDs: []ids.ID{
+	optIn := []struct {
+		genesisData []byte
+		vmID        ids.ID
+		name        string
+		fxIDs       []ids.ID // X-Chain only; nil for everything else.
+	}{
+		{xvmGenesisBytes, constants.XVMID, "X-Chain", []ids.ID{
 			secp256k1fx.ID,
 			nftfx.ID,
 			propertyfx.ID,
@@ -599,33 +622,24 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 			secp256r1fx.ID,
 			schnorrfx.ID,
 			bls12381fx.ID,
-		},
-		Name: "X-Chain",
-	})
-
-	// Every other chain is opt-in via a non-empty genesis string in the
-	// resolved Config. Table-driven so adding a new primary-network chain
-	// is one row, not a new env knob.
-	optIn := []struct {
-		genesisData string
-		vmID        ids.ID
-		name        string
-	}{
-		{config.CChainGenesis, constants.EVMID, "C-Chain"},
-		{config.DChainGenesis, constants.DexVMID, "D-Chain"},
-		{config.BChainGenesis, constants.BridgeVMID, "B-Chain"},
-		{config.TChainGenesis, constants.ThresholdVMID, "T-Chain"},
-		{config.QChainGenesis, constants.QuantumVMID, "Q-Chain"},
-		{config.ZChainGenesis, constants.ZKVMID, "Z-Chain"},
+		}},
+		{[]byte(config.CChainGenesis), constants.EVMID, "C-Chain", nil},
+		{[]byte(config.DChainGenesis), constants.DexVMID, "D-Chain", nil},
+		{[]byte(config.BChainGenesis), constants.BridgeVMID, "B-Chain", nil},
+		{[]byte(config.TChainGenesis), constants.ThresholdVMID, "T-Chain", nil},
+		{[]byte(config.QChainGenesis), constants.QuantumVMID, "Q-Chain", nil},
+		{[]byte(config.ZChainGenesis), constants.ZKVMID, "Z-Chain", nil},
 	}
+	chains := []genesis.Chain{}
 	for _, c := range optIn {
-		if c.genesisData == "" {
+		if len(c.genesisData) == 0 {
 			continue
 		}
 		chains = append(chains, genesis.Chain{
-			GenesisData: []byte(c.genesisData),
+			GenesisData: c.genesisData,
 			ChainID:     constants.PrimaryNetworkID,
 			VMID:        c.vmID,
+			FxIDs:       c.fxIDs,
 			Name:        c.name,
 		})
 	}
@@ -827,35 +841,6 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 		}
 	}
 	return apiAliases, chainAliases, nil
-}
-
-// XAssetID returns the LUX asset ID from XVM genesis bytes
-func XAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
-	parser, err := xchaintxs.NewParser(
-		[]fxs.Fx{
-			&secp256k1fx.Fx{},
-		},
-	)
-	if err != nil {
-		return ids.Empty, err
-	}
-
-	genesisCodec := parser.GenesisCodec()
-	gen := exchangevm.Genesis{}
-	if _, err := genesisCodec.Unmarshal(xvmGenesisBytes, &gen); err != nil {
-		return ids.Empty, err
-	}
-
-	if len(gen.Txs) == 0 {
-		return ids.Empty, errNoTxs
-	}
-	genesisTx := gen.Txs[0]
-
-	tx := xchaintxs.Tx{Unsigned: &genesisTx.CreateAssetTx}
-	if err := tx.Initialize(genesisCodec); err != nil {
-		return ids.Empty, err
-	}
-	return tx.ID(), nil
 }
 
 // validateConfig validates the genesis config
