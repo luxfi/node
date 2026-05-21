@@ -278,16 +278,16 @@ func TestFromConfigExplicitStakers(t *testing.T) {
 		NetworkID: constants.LocalID,
 		Allocations: []genesiscfg.Allocation{
 			{
-				EVMAddr:       secpAddr,
-				UTXOAddr:       secpAddr,
+				ETHAddr:       secpAddr,
+				UTXOAddr:      secpAddr,
 				InitialAmount: 0,
 				UnlockSchedule: []genesiscfg.LockedAmount{
 					{Amount: oneBillionLUX, Locktime: 0},
 				},
 			},
 			{
-				EVMAddr:       ethShortID,
-				UTXOAddr:       ethShortID,
+				ETHAddr:       ethShortID,
+				UTXOAddr:      ethShortID,
 				InitialAmount: oneMillionLUX,
 			},
 		},
@@ -369,8 +369,8 @@ func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 		NetworkID: constants.LocalID,
 		Allocations: []genesiscfg.Allocation{
 			{
-				EVMAddr:       deployerAddr,
-				UTXOAddr:       deployerAddr,
+				ETHAddr:       deployerAddr,
+				UTXOAddr:      deployerAddr,
 				InitialAmount: oneMillionLUX,
 			},
 		},
