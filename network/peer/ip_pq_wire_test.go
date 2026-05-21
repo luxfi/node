@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	zappb "github.com/luxfi/node/proto/zap/p2p"
+	zappb "github.com/luxfi/proto/node/zap/p2p"
 )
 
 // TestHandshakeWire_LegacyFrameOmitsMLDSA verifies the wire-compat
