@@ -5,7 +5,7 @@
 // implementation. ZAP is the only supported transport.
 package p2p
 
-import "github.com/luxfi/node/proto/zap/p2p"
+import "github.com/luxfi/proto/node/zap/p2p"
 
 // Re-export all types from ZAP implementation
 type (

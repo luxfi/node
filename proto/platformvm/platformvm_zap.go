@@ -3,7 +3,7 @@
 
 package platformvm
 
-import "github.com/luxfi/node/proto/zap/platformvm"
+import "github.com/luxfi/proto/node/zap/platformvm"
 
 type (
 	L1ValidatorRegistrationJustification                            = platformvm.L1ValidatorRegistrationJustification

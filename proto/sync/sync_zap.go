@@ -5,7 +5,7 @@
 // implementation. ZAP is the only supported transport.
 package sync
 
-import "github.com/luxfi/node/proto/zap/sync"
+import "github.com/luxfi/proto/node/zap/sync"
 
 // Re-export all types from ZAP implementation
 type (
