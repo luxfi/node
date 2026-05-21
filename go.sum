@@ -272,6 +272,8 @@ github.com/luxfi/consensus v1.24.0 h1:vyBPYPeZbbZutUCMxKBW7Ief9+8OZB7cu3MfNc87xY
 github.com/luxfi/consensus v1.24.0/go.mod h1:eFknd+fzTmGEa/FzxgoL6unccnHGVxxOrZUZdReWII0=
 github.com/luxfi/constants v1.5.6 h1:4eOPTy7haj8ri2U91dymaw6f0NOqh9Sr16WK40Hk8sc=
 github.com/luxfi/constants v1.5.6/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
+github.com/luxfi/constants v1.5.7 h1:a1tCMdxd+pClPMIPOaI9vcYGNy6cQIc2rubac2Trc0k=
+github.com/luxfi/constants v1.5.7/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
 github.com/luxfi/container v0.0.4 h1:BXhF82WyfqVP5mjlNcr7tP0Fcnvl0Ap1rkiu+rq5XuM=
 github.com/luxfi/container v0.0.4/go.mod h1:Z3SpmMF5d4t77MM0nHYXURpn+EMVaeu1fhbd/3BGaek=
 github.com/luxfi/corona v0.4.1 h1:DGMdZMrENl6vmJf9CgiQMD8c5ORSTMymL0z9KgcZstk=
