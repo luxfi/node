@@ -98,8 +98,6 @@ func (testManager) NumValidators(ids.ID) int {
 // RegisterSetCallbackListener implements validators.Manager interface
 func (testManager) RegisterSetCallbackListener(ids.ID, validators.SetCallbackListener) {}
 
-// RegisterWeightCallbackListener removed - doesn't exist in consensus
-
 // GetValidators implements validators.Manager interface
 func (testManager) GetValidators(ids.ID) (validators.Set, error) {
 	return nil, nil

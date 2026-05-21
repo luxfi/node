@@ -194,5 +194,3 @@ func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 		tx.InputIDs(),
 	)
 }
-
-// Duplicate methods removed - already defined above
