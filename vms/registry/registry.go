@@ -133,16 +133,13 @@ func (r *vmRegistry) Reload(ctx context.Context) ([]ids.ID, map[ids.ID]error, er
 	return newVMs, failedVMs, nil
 }
 
+// Get returns an rpcchainvm-backed factory for the plugin at pluginPath.
+// The plugin binary is launched lazily on the first factory.New call.
 func (g *vmGetter) Get(pluginPath string) (vms.Factory, error) {
-	fmt.Printf("[VMGetter] Creating rpcchainvm factory for: %s\n", pluginPath)
-	// VM binaries are executable files that run as gRPC plugins via rpcchainvm
-	// This is the standard approach for EVM and other VM binaries
-	factory := rpcchainvm.NewFactory(
+	return rpcchainvm.NewFactory(
 		pluginPath,
 		g.config.ProcessTracker,
 		g.config.RuntimeTracker,
 		g.config.MetricsGatherer,
-	)
-	fmt.Printf("[VMGetter] Factory created successfully\n")
-	return factory, nil
+	), nil
 }

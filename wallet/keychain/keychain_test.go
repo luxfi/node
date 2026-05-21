@@ -105,9 +105,6 @@ func TestCryptoKeychain_SLHDSA(t *testing.T) {
 	}
 }
 
-// ML-KEM tests are removed as ML-KEM is for key encapsulation, not signing
-// and PQKeychain doesn't support generating ML-KEM keys
-
 func TestCryptoKeychain_MultipleAlgorithms(t *testing.T) {
 	require := require.New(t)
 
