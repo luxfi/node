@@ -3,7 +3,7 @@
 
 package vm
 
-import "github.com/luxfi/node/proto/zap/vm"
+import "github.com/luxfi/proto/node/zap/vm"
 
 type (
 	State = vm.State
