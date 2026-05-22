@@ -105,7 +105,7 @@ var (
 		Chain: constants.PrimaryNetworkID,
 	}
 
-	testContextPostEtna = &builder.Context{
+	testContext = &builder.Context{
 		NetworkID: constants.UnitTestID,
 		XAssetID:  xAssetID,
 
@@ -118,19 +118,19 @@ var (
 		GasPrice: 1,
 	}
 	dynamicFeeCalculator = fee.NewDynamicCalculator(
-		testContextPostEtna.ComplexityWeights,
-		testContextPostEtna.GasPrice,
+		testContext.ComplexityWeights,
+		testContext.GasPrice,
 	)
 
 	testEnvironment = []environment{
 		{
-			name:          "Post-Etna",
-			context:       testContextPostEtna,
+			name:          "default",
+			context:       testContext,
 			feeCalculator: dynamicFeeCalculator,
 		},
 		{
-			name:          "Post-Etna with memo",
-			context:       testContextPostEtna,
+			name:          "default with memo",
+			context:       testContext,
 			feeCalculator: dynamicFeeCalculator,
 			memo:          []byte("memo"),
 		},
