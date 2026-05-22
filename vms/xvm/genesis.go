@@ -172,3 +172,61 @@ func newGenesisCodec() (codec.Manager, error) {
 	}
 	return parser.GenesisCodec(), nil
 }
+
+// ParseGenesisBytes decodes the canonical XVM genesis bytes produced by
+// (*Genesis).Bytes() back into a *Genesis with each GenesisAsset's
+// embedded CreateAssetTx initialised against the genesis codec. After
+// Initialize, each tx's deterministic ID (tx.ID()) is the runtime asset
+// ID of that genesis-minted asset — i.e. the same value vm.initGenesis
+// computes when bootstrapping the X-Chain.
+//
+// Callers (genesis/builder, config/getGenesisData) use this to derive
+// the X-Chain native asset ID from genesis content rather than the
+// network-id-keyed constants.UTXOAssetIDFor(networkID). On sovereign
+// L1s (Liquidity / MLC / VCC) those two values DIFFER — the wallet
+// builder context's XAssetID must be the genesis-derived one or every
+// fee-paying tx fails with "insufficient funds, needs N more nLUX".
+func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
+	codec, err := newGenesisCodec()
+	if err != nil {
+		return nil, err
+	}
+	g := &Genesis{}
+	if _, err := codec.Unmarshal(genesisBytes, g); err != nil {
+		return nil, fmt.Errorf("unmarshal xvm genesis: %w", err)
+	}
+	for i := range g.Txs {
+		tx := &txs.Tx{Unsigned: &g.Txs[i].CreateAssetTx}
+		if err := tx.Initialize(codec); err != nil {
+			return nil, fmt.Errorf("initialize genesis asset %d (%s): %w", i, g.Txs[i].Alias, err)
+		}
+	}
+	return g, nil
+}
+
+// AssetIDFromGenesisBytes returns the first genesis asset's runtime
+// asset ID — the ID vm.initGenesis assigns to genesis.Txs[0]. This is
+// the X-Chain native fee asset by convention (the same asset the
+// platform-vm reports via platform.getStakingAssetID and the wallet
+// builder context's XAssetID).
+//
+// Returns an error when genesisBytes is malformed or contains zero
+// assets — both are unrecoverable on a primary-network bootstrap.
+func AssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, error) {
+	g, err := ParseGenesisBytes(genesisBytes)
+	if err != nil {
+		return ids.Empty, err
+	}
+	if len(g.Txs) == 0 {
+		return ids.Empty, fmt.Errorf("xvm genesis has zero asset txs")
+	}
+	tx := &txs.Tx{Unsigned: &g.Txs[0].CreateAssetTx}
+	codec, err := newGenesisCodec()
+	if err != nil {
+		return ids.Empty, err
+	}
+	if err := tx.Initialize(codec); err != nil {
+		return ids.Empty, fmt.Errorf("initialize first genesis asset (%s): %w", g.Txs[0].Alias, err)
+	}
+	return tx.ID(), nil
+}
