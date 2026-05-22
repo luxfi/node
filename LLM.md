@@ -101,6 +101,7 @@ no per-VM bespoke fee structs.
 | thresholdvm | M-Chain | service-only | `NoUserTxPolicy{}` |
 | oraclevm | O-Chain | service-only | `NoUserTxPolicy{}` |
 | relayvm | R-Chain | service-only | `NoUserTxPolicy{}` |
+| graphvm | G-Chain | read-only | `NoUserTxPolicy{}` (GraphQL refuses `mutation`) |
 | evm | C-Chain | user-tx | native EVM gas (gas * gasPrice >= 0 enforced upstream) |
 | platformvm | P-Chain | user-tx | native `TxFee` field on Config |
 | avm | X-Chain | user-tx | native `TxFee` field on Config |
@@ -128,8 +129,9 @@ charge less.
 - `vms/types/fee/policy.go` — interface + FlatPolicy + NoUserTxPolicy + Validate
 - `~/work/lux/chains/<vm>/feegate.go` — per-VM helper + gate method
 - `~/work/lux/chains/<vm>/feegate_test.go` — RejectsZeroFee + AcceptsMinFee
-- Oracle (O-Chain): `~/work/lux/oracle/vm/feegate.go`
-- Relay (R-Chain): `~/work/lux/relay/vm/feegate.go`
+- Oracle (O-Chain): `~/work/lux/oracle/vm/feegate.go` (re-exported by `~/work/lux/chains/oraclevm/`)
+- Relay (R-Chain): `~/work/lux/relay/vm/feegate.go` (re-exported by `~/work/lux/chains/relayvm/`)
+- Graph (G-Chain): `~/work/lux/chains/graphvm/feegate.go` (read-only; NoUserTxPolicy)
 
 ## Essential Commands
 
