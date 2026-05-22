@@ -52,6 +52,8 @@ jobs:
           push: true
           build-args: |
             CGO_ENABLED=0
+          secrets: |
+            ghtok=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
