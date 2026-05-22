@@ -12,7 +12,10 @@ permissions:
 
 jobs:
   build-amd64:
-    runs-on: lux-build
+    # `lux-build` ARC runner pool (EKS lux-arm64-runners) is currently
+    # unreachable. Fall back to GitHub-hosted ubuntu-latest until ARC is
+    # restored — slower (no warm cache) but reliable.
+    runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
