@@ -37,7 +37,7 @@ import (
 func TestIndexTransaction_Ordered(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env := setup(t, &envConfig{fork: activeUpgrade, indexTransactions: true})
 	env.vm.Lock.Unlock()
 
 	key := keys[0]
@@ -78,7 +78,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env := setup(t, &envConfig{fork: activeUpgrade, indexTransactions: true})
 	env.vm.Lock.Unlock()
 
 	addressTxMap := map[ids.ShortID]*txs.Tx{}
@@ -118,7 +118,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env := setup(t, &envConfig{fork: activeUpgrade, indexTransactions: true})
 	env.vm.Lock.Unlock()
 
 	addrs := make([]ids.ShortID, len(keys))
@@ -153,7 +153,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 func TestIndexer_Read(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango, indexTransactions: true})
+	env := setup(t, &envConfig{fork: activeUpgrade, indexTransactions: true})
 	env.vm.Lock.Unlock()
 
 	// generate test address and asset IDs
