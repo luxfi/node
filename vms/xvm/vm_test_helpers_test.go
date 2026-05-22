@@ -35,7 +35,7 @@ import (
 var keys = secp256k1.TestKeys()
 
 // All upgrades are active at genesis under activate-all-implicitly.
-var durango = upgrade.Default
+var activeUpgrade = upgrade.Default
 
 // Test constants
 const (
