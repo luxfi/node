@@ -18,6 +18,7 @@ package genesis
 import (
 	"fmt"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm"
 )
 
@@ -79,4 +80,20 @@ func BuildBytes(
 		return nil, fmt.Errorf("couldn't serialize xvm genesis: %w", err)
 	}
 	return b, nil
+}
+
+// AssetIDFromBytes returns the runtime X-Chain native asset ID derived
+// from the canonical XVM genesis bytes (the same blob BuildBytes
+// produces). This is the value vm.initGenesis assigns to the first
+// genesis CreateAssetTx — the ID under which the X-Chain's fee asset is
+// indexed in state.
+//
+// Callers (genesis/builder, config.getGenesisData) use this to derive
+// the X-Chain native asset ID from genesis content rather than
+// constants.UTXOAssetIDFor(networkID). On sovereign L1s the two values
+// differ: the constant is network-id-keyed and identical across every
+// L1 sharing a primary-network ID, while the genesis-derived ID
+// captures the asset's actual on-chain identity (different per L1).
+func AssetIDFromBytes(genesisBytes []byte) (ids.ID, error) {
+	return xvm.AssetIDFromGenesisBytes(genesisBytes)
 }

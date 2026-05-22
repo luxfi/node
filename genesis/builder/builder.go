@@ -386,13 +386,31 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 	}
 
-	// LUX asset ID is a network-scoped constant (constants.UTXOAssetIDFor),
-	// not derived from X-Chain genesis bytes. Domain-separated by networkID
-	// so mainnet/testnet/devnet/local each have a distinct asset ID — this
-	// prevents cross-network UTXO accounting collapse in wallets/indexers
-	// that key balance by AssetID alone. Mainnet (networkID=1) returns the
-	// legacy UTXO_ASSET_ID literal to preserve existing on-chain state.
-	xAssetID := constants.UTXOAssetIDFor(config.NetworkID)
+	// X-Chain native asset ID is derived from the actual XVM genesis bytes
+	// (the runtime ID of the first GenesisAsset.CreateAssetTx) so the value
+	// the wallet builder reads back via platform.getStakingAssetID matches
+	// the asset the X-Chain genuinely mints. On sovereign L1s (Liquidity,
+	// MLC, VCC, future tenants) every primary network has its own X-Chain
+	// genesis content (different validator set, different initial holders,
+	// different denomination/name) so the genesis-derived asset ID is
+	// distinct from any constants.UTXOAssetIDFor(networkID) value — those
+	// are network-id-keyed constants and identical across every L1 sharing
+	// the same primary-network ID, which would let two sovereign networks
+	// collide.
+	//
+	// When X-Chain is opt-out (P-only mode, xvmGenesisBytes is nil) we keep
+	// the network-id-keyed constant as a placeholder; the asset ID is
+	// irrelevant in that mode since there is no X-Chain to mint on.
+	var xAssetID ids.ID
+	if len(xvmGenesisBytes) > 0 {
+		var err error
+		xAssetID, err = xvmgenesis.AssetIDFromBytes(xvmGenesisBytes)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("derive X-Chain asset ID from genesis: %w", err)
+		}
+	} else {
+		xAssetID = constants.UTXOAssetIDFor(config.NetworkID)
+	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
 
@@ -649,6 +667,54 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE"
 	return FromConfig(config)
+}
+
+// XAssetIDFromGenesisBytes returns the X-Chain native asset ID encoded
+// in a platform-genesis blob. It parses the platform genesis, finds the
+// X-Chain CreateChainTx (vmID == constants.XVMID), then decodes that
+// chain's embedded XVM genesis bytes to recover the runtime asset ID
+// (the same value vm.initGenesis assigns to the first GenesisAsset).
+//
+// Returns (ids.Empty, false, nil) when the platform genesis contains
+// no X-Chain (P-only mode) — callers fall back to whatever default
+// they prefer (e.g. constants.UTXOAssetIDFor(networkID)).
+//
+// Returns a non-nil error when the platform genesis is unparseable or
+// the X-Chain genesis bytes embedded inside it are malformed; both are
+// unrecoverable on a primary-network bootstrap.
+//
+// Used by config.getGenesisData when it loads genesis via the cached /
+// raw paths that skip FromConfig — those paths historically returned
+// constants.UTXOAssetIDFor(networkID), but on sovereign L1s that value
+// disagrees with what's actually in the genesis bytes. Wiring this
+// helper through getGenesisData means the node always reports the
+// genesis-derived asset ID via platform.getStakingAssetID regardless
+// of which load path was taken.
+func XAssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, bool, error) {
+	// Parse the platform genesis directly so we can distinguish parse
+	// failure ("garbage bytes — fatal") from missing X-Chain ("P-only
+	// mode — caller falls back to UTXOAssetIDFor"). VMGenesis collapses
+	// both into one error, which is the wrong shape here.
+	gen, err := genesis.Parse(genesisBytes)
+	if err != nil {
+		return ids.Empty, false, fmt.Errorf("parse platform genesis: %w", err)
+	}
+	for _, chain := range gen.Chains {
+		uChain, ok := chain.Unsigned.(*pchaintxs.CreateChainTx)
+		if !ok {
+			continue
+		}
+		if uChain.VMID != constants.XVMID {
+			continue
+		}
+		id, err := xvmgenesis.AssetIDFromBytes(uChain.GenesisData)
+		if err != nil {
+			return ids.Empty, false, fmt.Errorf("derive X-Chain asset ID from genesis data: %w", err)
+		}
+		return id, true, nil
+	}
+	// Parsed cleanly but no X-Chain CreateChainTx — P-only mode.
+	return ids.Empty, false, nil
 }
 
 // VMGenesis returns the genesis tx for a specific VM
