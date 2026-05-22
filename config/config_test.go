@@ -16,10 +16,14 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/nets"
+	pchaingenesis "github.com/luxfi/node/vms/platformvm/genesis"
+	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 )
 
 const chainConfigFilenameExtension = ".ex"
@@ -672,3 +676,57 @@ func TestDevModeFlags(t *testing.T) {
 	}
 }
 
+// TestResolveXAssetID_FromSovereignGenesis covers the canonical
+// behaviour the sovereign-L1 fix relies on: when the loaded platform
+// genesis bakes an X-Chain, resolveXAssetID returns the runtime asset
+// ID encoded IN the genesis (matches what FromConfig produces, matches
+// what the running X-Chain reports via platform.getStakingAssetID).
+//
+// Critically: NOT constants.UTXOAssetIDFor(networkID). That value is
+// network-id-keyed and would silently collide between two sovereign L1s
+// sharing a primary-network ID.
+func TestResolveXAssetID_FromSovereignGenesis(t *testing.T) {
+	require := require.New(t)
+
+	cfg := builder.GetConfig(constants.LocalID)
+	require.NotNil(cfg)
+	require.NotEmpty(cfg.XChainGenesis, "fixture must bake X-Chain")
+
+	genesisBytes, expectedID, err := builder.FromConfig(cfg)
+	require.NoError(err)
+	require.NotEqual(ids.Empty, expectedID)
+
+	gotID, err := resolveXAssetID(constants.LocalID, genesisBytes)
+	require.NoError(err)
+	require.Equal(expectedID, gotID,
+		"resolveXAssetID must agree with FromConfig on the genesis-derived asset ID")
+}
+
+// TestResolveXAssetID_POnlyFallback verifies that when the platform
+// genesis bakes no X-Chain (P-only mode), resolveXAssetID falls back
+// to constants.UTXOAssetIDFor(networkID). That value is unused at
+// runtime (no X-Chain to mint on) but keeps the existing nodeConfig
+// shape consistent for downstream consumers.
+func TestResolveXAssetID_POnlyFallback(t *testing.T) {
+	require := require.New(t)
+
+	pOnly := &pchaingenesis.Genesis{Chains: nil}
+	pOnlyBytes, err := pchaingenesis.Codec.Marshal(pchaintxs.CodecVersion, pOnly)
+	require.NoError(err)
+
+	gotID, err := resolveXAssetID(42, pOnlyBytes)
+	require.NoError(err)
+	require.Equal(constants.UTXOAssetIDFor(42), gotID,
+		"P-only must fall through to UTXOAssetIDFor(networkID)")
+}
+
+// TestResolveXAssetID_Malformed asserts that bad genesis bytes surface
+// an error rather than silently returning ids.Empty (which would
+// reintroduce the UTXOAssetIDFor fallback and defeat the fix on
+// sovereign L1s where the fallback value is wrong).
+func TestResolveXAssetID_Malformed(t *testing.T) {
+	require := require.New(t)
+
+	_, err := resolveXAssetID(1, []byte{0xff, 0xfe, 0xfd, 0xfc})
+	require.Error(err)
+}
