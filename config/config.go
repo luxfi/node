@@ -1052,9 +1052,10 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
 		}
-		// LUX asset ID is the network-scoped constant — same regardless of
-		// what's in genesisBytes, so no need to parse them.
-		xAssetID := constants.UTXOAssetIDFor(networkID)
+		xAssetID, err := resolveXAssetID(networkID, genesisBytes)
+		if err != nil {
+			return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
+		}
 		log.Info("loaded raw genesis bytes directly",
 			"size", len(genesisBytes),
 			"xAssetID", xAssetID,
@@ -1090,11 +1091,16 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		// Check if we have cached genesis bytes to avoid rebuilding
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
+			xAssetID, err := resolveXAssetID(networkID, cachedBytes)
+			if err != nil {
+				return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from cached genesis: %w", err)
+			}
 			log.Info("loaded cached genesis bytes for hash stability",
 				"cacheFile", cacheFile,
 				"size", len(cachedBytes),
+				"xAssetID", xAssetID,
 			)
-			return cachedBytes, constants.UTXOAssetIDFor(networkID), nil
+			return cachedBytes, xAssetID, nil
 		}
 		// No cache or invalid cache - build from file and cache the result
 		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
@@ -1118,6 +1124,36 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// finally if file is not specified/readable go for the predefined config
 	config := builder.GetConfig(networkID)
 	return builder.FromConfig(config)
+}
+
+// resolveXAssetID extracts the X-Chain native asset ID from the loaded
+// platform-genesis blob. It is the canonical source of truth used by
+// every load path that bypasses FromConfig (raw bytes, cached bytes —
+// the paths that historically defaulted to constants.UTXOAssetIDFor and
+// silently disagreed with the genesis content on sovereign L1s).
+//
+// Behaviour:
+//
+//   - If the genesis bakes an X-Chain, returns the runtime asset ID
+//     derived from that chain's CreateAssetTx (the same value
+//     vm.initGenesis assigns at runtime).
+//   - If the genesis is P-only (no X-Chain), returns the network-id-
+//     keyed constant. The asset ID is unused in that mode.
+//   - If the genesis is unparseable or the embedded X-Chain genesis
+//     is malformed, returns the corresponding error — these are
+//     unrecoverable on a primary-network bootstrap.
+//
+// Tested against both sovereign-network genesis (X-Chain present, asset
+// ID differs from the constant) and upstream Lux genesis fixtures.
+func resolveXAssetID(networkID uint32, genesisBytes []byte) (ids.ID, error) {
+	id, ok, err := builder.XAssetIDFromGenesisBytes(genesisBytes)
+	if err != nil {
+		return ids.Empty, err
+	}
+	if !ok {
+		return constants.UTXOAssetIDFor(networkID), nil
+	}
+	return id, nil
 }
 
 func getTrackedChains(v *viper.Viper) (set.Set[ids.ID], error) {
