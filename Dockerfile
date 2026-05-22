@@ -44,10 +44,20 @@ ENV GOPROXY=https://proxy.golang.org,direct
 ENV GONOPROXY=github.com/luxfi/*
 ENV GOFLAGS="-mod=mod"
 
-# Copy and download lux dependencies using go mod
+# Copy and download lux dependencies using go mod.
+# Some luxfi/* modules (e.g. corona) are private and require a token to
+# resolve via go mod. The token is injected as a BuildKit secret from the
+# CI workflow; locally, set DOCKER_BUILDKIT=1 and pass
+# `--secret id=ghtok,src=$HOME/.gh-token`. If the secret is absent the
+# build still attempts the download (works when all deps are public).
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN --mount=type=secret,id=ghtok,required=false \
+    if [ -s /run/secrets/ghtok ]; then \
+        git config --global url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/".insteadOf "https://github.com/"; \
+    fi && \
+    go mod download && \
+    git config --global --remove-section url."https://x-access-token:$(cat /run/secrets/ghtok 2>/dev/null)@github.com/" 2>/dev/null || true
 
 # Copy the code into the container
 COPY . .
