@@ -81,6 +81,56 @@ selection, and EVM contract auth.
   (F102 wiring closes the consensus side; geth-side hookup is the
   remaining tail).
 
+## FeePolicy — canonical user-tx fee gate
+
+Every Lux VM that accepts user-submitted txs declares a `fee.Policy`
+(package `vms/types/fee`). There is one interface and one validator —
+no per-VM bespoke fee structs.
+
+### Policy choice per VM
+
+| VM | Chain | Posture | Policy |
+|----|-------|---------|--------|
+| dexvm | D-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, AssetID: UTXOAssetIDFor(networkID)}` |
+| zkvm | Z-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| aivm | A-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| keyvm | K-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| bridgevm | B-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| quantumvm | Q-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| identityvm | I-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| thresholdvm | M-Chain | service-only | `NoUserTxPolicy{}` |
+| oraclevm | O-Chain | service-only | `NoUserTxPolicy{}` |
+| relayvm | R-Chain | service-only | `NoUserTxPolicy{}` |
+| evm | C-Chain | user-tx | native EVM gas (gas * gasPrice >= 0 enforced upstream) |
+| platformvm | P-Chain | user-tx | native `TxFee` field on Config |
+| avm | X-Chain | user-tx | native `TxFee` field on Config |
+
+`MinTxFeeFloor = 1 mLUX = 1_000_000 nLUX` (the same minimum the P-Chain
+base fee enforces). User-facing chains MAY charge more; they MUST NOT
+charge less.
+
+### Wiring contract
+
+1. VM struct holds `feePolicy fee.Policy` (and `networkID uint32`).
+2. `Initialize` sets `feePolicy = fee.FlatPolicy{...}` (or
+   `fee.NoUserTxPolicy{}` for service-only) from `init.Runtime.NetworkID`
+   and calls `fee.Validate(vm.feePolicy)` — refuses zero-fee user-facing
+   chains at boot, before any block is accepted.
+3. The canonical user-tx admission entry (e.g. `SubmitTx`, `IssueTx`,
+   `InitiateBridgeTransfer`, mutating service RPCs) calls
+   `policy.ValidateFee(paid, asset)` BEFORE mempool insert.
+4. Consensus-internal paths (engine→VM block delivery, replay, internal
+   tx emission) bypass the fee gate — the policy gates only the
+   *user-submitted* entrypoint.
+
+### Where the gates live
+
+- `vms/types/fee/policy.go` — interface + FlatPolicy + NoUserTxPolicy + Validate
+- `~/work/lux/chains/<vm>/feegate.go` — per-VM helper + gate method
+- `~/work/lux/chains/<vm>/feegate_test.go` — RejectsZeroFee + AcceptsMinFee
+- Oracle (O-Chain): `~/work/lux/oracle/vm/feegate.go`
+- Relay (R-Chain): `~/work/lux/relay/vm/feegate.go`
+
 ## Essential Commands
 
 ### Building
