@@ -28,8 +28,8 @@ type GenesisConfig struct {
 
 // Allocation represents an initial fund allocation
 type Allocation struct {
-	ETHAddr        string         `json:"evmAddr"`
-	LUXAddr        string         `json:"utxoAddr"`
+	EVMAddr        string         `json:"evmAddr"`
+	UTXOAddr        string         `json:"utxoAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []UnlockPeriod `json:"unlockSchedule,omitempty"`
 }
@@ -67,7 +67,7 @@ func NewTestGenesisWithFunds(
 	for _, key := range fundedKeys {
 		addr := key.Address()
 		allocation := Allocation{
-			LUXAddr:       addr.String(),
+			UTXOAddr:       addr.String(),
 			InitialAmount: 300 * constants.MegaLux, // 300M LUX per funded key
 		}
 		config.Allocations = append(config.Allocations, allocation)
@@ -145,7 +145,7 @@ func ValidateGenesis(genesisBytes []byte) error {
 
 	// Validate allocations
 	for i, alloc := range config.Allocations {
-		if alloc.LUXAddr == "" && alloc.ETHAddr == "" {
+		if alloc.UTXOAddr == "" && alloc.EVMAddr == "" {
 			return fmt.Errorf("allocation %d has no address", i)
 		}
 	}
