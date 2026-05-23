@@ -373,9 +373,9 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				Amount:  a.InitialAmount,
 				Address: bech32Addr,
 			})
-			// Add ETH address to memo for reference (strip 0x prefix)
-			if ethAddrStr := a.ETHAddr.Hex(); len(ethAddrStr) > 2 {
-				memoBytes = append(memoBytes, []byte(ethAddrStr[2:])...)
+			// Add EVM address to memo for reference (strip 0x prefix)
+			if evmAddrStr := a.EVMAddr.Hex(); len(evmAddrStr) > 2 {
+				memoBytes = append(memoBytes, []byte(evmAddrStr[2:])...)
 			}
 		}
 
@@ -447,7 +447,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
 					Address:  bech32Addr,
-					Message:  a.ETHAddr.Bytes(),
+					Message:  a.EVMAddr.Bytes(),
 				})
 			}
 		}
@@ -462,7 +462,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 				Locktime: 0, // immediately spendable
 				Amount:   a.InitialAmount,
 				Address:  bech32Addr,
-				Message:  a.ETHAddr.Bytes(),
+				Message:  a.EVMAddr.Bytes(),
 			})
 		}
 	}
@@ -505,7 +505,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 					Locktime: unlock.Locktime,
 					Amount:   unlock.Amount,
 					Address:  bech32Addr,
-					Message:  a.ETHAddr.Bytes(),
+					Message:  a.EVMAddr.Bytes(),
 				})
 			}
 		}
@@ -893,8 +893,8 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 	const oneBillionLUX = 1_000_000_000_000_000_000 // 1B LUX in nLUX
 
 	allocation := genesiscfg.Allocation{
-		ETHAddr:       cfg.RewardAddress, // Same as UTXO addr for simplicity
-		UTXOAddr:       cfg.RewardAddress,
+		EVMAddr:       cfg.RewardAddress, // Same as UTXO addr for simplicity
+		UTXOAddr:      cfg.RewardAddress,
 		InitialAmount: oneMillionLUX, // Initial unlocked amount
 		UnlockSchedule: []genesiscfg.LockedAmount{
 			{

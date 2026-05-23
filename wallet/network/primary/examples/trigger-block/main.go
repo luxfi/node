@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/wallet/network/primary"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	luxcrypto "github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("invalid key hex: %v", err)
 	}
-	privKey, err := luxcrypto.ToPrivateKey(keyBytes)
+	privKey, err := secp256k1.ToPrivateKey(keyBytes)
 	if err != nil {
 		log.Fatalf("failed to create private key: %v", err)
 	}
