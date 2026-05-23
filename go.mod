@@ -26,14 +26,14 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.24.0
-	github.com/luxfi/crypto v1.19.6
+	github.com/luxfi/consensus v1.24.6
+	github.com/luxfi/crypto v1.19.10
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
-	github.com/luxfi/math v1.4.0
-	github.com/luxfi/metric v1.5.1
+	github.com/luxfi/math v1.4.1
+	github.com/luxfi/metric v1.5.5
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -123,7 +123,7 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.1.0
+	github.com/luxfi/accel v1.1.2
 	github.com/luxfi/api v1.0.11
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
@@ -168,16 +168,16 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/corona v0.4.1 // indirect
+	github.com/luxfi/corona v0.7.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
-	github.com/luxfi/lens v0.1.3 // indirect
+	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/protocol v0.0.4 // indirect
-	github.com/luxfi/pulsar v1.0.8 // indirect
+	github.com/luxfi/pulsar v1.0.12 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/threshold v1.6.17 // indirect
+	github.com/luxfi/threshold v1.8.5 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
