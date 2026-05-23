@@ -28,8 +28,8 @@ func main() {
 		"networkID": 200200,
 		"allocations": []map[string]interface{}{
 			{
-				"ethAddr":       "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
-				"luxAddr":       zooAddr,
+				"evmAddr":       "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
+				"utxoAddr":       zooAddr,
 				"initialAmount": 0,
 				"unlockSchedule": []map[string]interface{}{
 					{
