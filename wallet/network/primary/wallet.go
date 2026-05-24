@@ -26,35 +26,41 @@ import (
 
 var _ Wallet = (*wallet)(nil)
 
-// KeccakKeychain is the canonical interface for keychains that expose
-// 20-byte Keccak-derived addresses (the EVM-runtime address format
-// consumed by Lux C-Chain, Liquid EVM, and every EVM-compatible chain).
+// EVMKeychain is the canonical interface for keychains that expose
+// 20-byte account addresses used by EVM-runtime chains (Lux C-Chain,
+// Liquid EVM, Hanzo EVM, and every EVM-compatible chain).
 //
-// Naming: the derivation primitive (Keccak256 of the secp256k1 pubkey)
-// is what determines the value. Hashing pubkeys with Keccak predates
-// and is consumed by many chains; the interface is named after the
-// value, not the brand of any downstream consumer.
+// Naming: the value IS "EVM-runtime account address". The internal
+// derivation uses Keccak256 of the secp256k1 pubkey, but that's HOW
+// the value is computed — WHAT the value is is determined by the data
+// model that consumes it (EVM account). The relevant contrast in a
+// multi-chain keychain is UTXO data model vs EVM data model — not
+// "what hash produced it".
+type EVMKeychain interface {
+	GetByEVM(addr gethcommon.Address) (keychain.Signer, bool)
+	EVMAddresses() set.Set[gethcommon.Address]
+}
+
+// KeccakKeychain is the deprecated alias of EVMKeychain.
+//
+// Deprecated: use EVMKeychain.
 type KeccakKeychain interface {
 	GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool)
 	KeccakAddresses() set.Set[gethcommon.Address]
 }
 
-// EthKeychain is the deprecated alias of KeccakKeychain retained so
-// downstream callers (cli emptyEthKeychain, mpc, kms, state) don't
-// break in one wave. The two interfaces are structurally distinct
-// (different method names), so impls that want to satisfy both must
-// provide both method sets. KeychainAdapter in this package does so.
+// EthKeychain is the deprecated alias of EVMKeychain.
 //
-// Deprecated: use KeccakKeychain.
+// Deprecated: use EVMKeychain.
 type EthKeychain interface {
 	GetEth(addr gethcommon.Address) (keychain.Signer, bool)
 	EthAddresses() set.Set[gethcommon.Address]
 }
 
 // KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain
-// AND BOTH the canonical KeccakKeychain and deprecated EthKeychain
-// interfaces. This lets secp256k1fx.Keychain be used with MakeWallet
-// today while downstream callers migrate from the eth* names.
+// AND all three interfaces (canonical EVMKeychain, deprecated
+// KeccakKeychain, deprecated EthKeychain). This lets secp256k1fx.Keychain
+// be used with MakeWallet today while downstream callers migrate.
 type KeychainAdapter struct {
 	*secp256k1fx.Keychain
 }
@@ -69,9 +75,9 @@ func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
 	return kc.Keychain.Get(addr)
 }
 
-// GetByKeccak implements KeccakKeychain — canonical name.
-func (kc *KeychainAdapter) GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool) {
-	signer, ok := kc.Keychain.GetByKeccak(addr)
+// GetByEVM implements EVMKeychain — canonical name.
+func (kc *KeychainAdapter) GetByEVM(addr gethcommon.Address) (keychain.Signer, bool) {
+	signer, ok := kc.Keychain.GetByEVM(addr)
 	if !ok {
 		return nil, false
 	}
@@ -79,23 +85,37 @@ func (kc *KeychainAdapter) GetByKeccak(addr gethcommon.Address) (keychain.Signer
 	return signer.(keychain.Signer), true
 }
 
-// KeccakAddresses implements KeccakKeychain — canonical name.
+// EVMAddresses implements EVMKeychain — canonical name.
+func (kc *KeychainAdapter) EVMAddresses() set.Set[gethcommon.Address] {
+	return kc.Keychain.EVMAddrs
+}
+
+// GetByKeccak implements KeccakKeychain.
+//
+// Deprecated: use GetByEVM.
+func (kc *KeychainAdapter) GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool) {
+	return kc.GetByEVM(addr)
+}
+
+// KeccakAddresses implements KeccakKeychain.
+//
+// Deprecated: use EVMAddresses.
 func (kc *KeychainAdapter) KeccakAddresses() set.Set[gethcommon.Address] {
-	return kc.Keychain.KeccakAddrs
+	return kc.EVMAddresses()
 }
 
 // GetEth implements EthKeychain.
 //
-// Deprecated: use GetByKeccak.
+// Deprecated: use GetByEVM.
 func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
-	return kc.GetByKeccak(addr)
+	return kc.GetByEVM(addr)
 }
 
 // EthAddresses implements EthKeychain.
 //
-// Deprecated: use KeccakAddresses.
+// Deprecated: use EVMAddresses.
 func (kc *KeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
-	return kc.KeccakAddresses()
+	return kc.EVMAddresses()
 }
 
 // NewKeychainAdapter creates a KeychainAdapter from a secp256k1fx.Keychain
