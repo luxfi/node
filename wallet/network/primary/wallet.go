@@ -142,8 +142,8 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 		return nil, err
 	}
 
-	// ethAddrs := config.EVMKeychain.EthAddresses()
-	// ethState, err := FetchEthState(ctx, config.URI, ethAddrs)
+	// evmAddrs := config.EVMKeychain.EVMAddresses()
+	// evmState, err := FetchEVMState(ctx, config.URI, evmAddrs)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -179,7 +179,7 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 	// cChainID := luxState.CCTX.BlockchainID
 	// cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
 	// cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
-	// cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
+	// cBuilder := c.NewBuilder(luxAddrs, evmAddrs, luxState.CCTX, cBackend)
 	// cSigner := c.NewSigner(config.LUXKeychain, config.EVMKeychain, cBackend)
 
 	pClient := p.NewClient(luxState.PClient, pBackend)
