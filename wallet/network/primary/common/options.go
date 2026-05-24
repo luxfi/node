@@ -98,11 +98,23 @@ func (o *Options) Addresses(defaultAddresses set.Set[ids.ShortID]) set.Set[ids.S
 	return defaultAddresses
 }
 
-func (o *Options) EthAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
+// KeccakAddresses returns the configured set of 20-byte Keccak-derived
+// addresses (the EVM-runtime address format consumed by Lux C-Chain,
+// , and every EVM-compatible chain). Naming reflects the
+// derivation primitive (Keccak of secp256k1 pubkey), not the brand
+// of any consuming chain.
+func (o *Options) KeccakAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
 	if o.customEthAddressesSet {
 		return o.customEthAddresses
 	}
 	return defaultAddresses
+}
+
+// EthAddresses is the deprecated alias of KeccakAddresses.
+//
+// Deprecated: use KeccakAddresses.
+func (o *Options) EthAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
+	return o.KeccakAddresses(defaultAddresses)
 }
 
 func (o *Options) BaseFee(defaultBaseFee *big.Int) *big.Int {
@@ -166,11 +178,21 @@ func WithCustomAddresses(addrs set.Set[ids.ShortID]) Option {
 	}
 }
 
-func WithCustomEthAddresses(addrs set.Set[ethcommon.Address]) Option {
+// WithCustomKeccakAddresses sets the option's filter to use a custom set
+// of Keccak-derived 20-byte addresses (the EVM-runtime address format).
+// Canonical name; preferred over WithCustomEthAddresses.
+func WithCustomKeccakAddresses(addrs set.Set[ethcommon.Address]) Option {
 	return func(o *Options) {
 		o.customEthAddressesSet = true
 		o.customEthAddresses = addrs
 	}
+}
+
+// WithCustomEthAddresses is the deprecated alias of WithCustomKeccakAddresses.
+//
+// Deprecated: use WithCustomKeccakAddresses.
+func WithCustomEthAddresses(addrs set.Set[ethcommon.Address]) Option {
+	return WithCustomKeccakAddresses(addrs)
 }
 
 func WithBaseFee(baseFee *big.Int) Option {
