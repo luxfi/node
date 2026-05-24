@@ -125,7 +125,7 @@ func main() {
 	fundWallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         nc.URI,
 		LUXKeychain: kc,
-		EthKeychain: kc,
+		EVMKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("wallet sync failed: %v", err)
@@ -189,7 +189,7 @@ func main() {
 					fundWallet, _ = primary.MakeWallet(ctx, &primary.WalletConfig{
 						URI:         nc.URI,
 						LUXKeychain: kc,
-						EthKeychain: kc,
+						EVMKeychain: kc,
 					})
 					pBalanceMap, _ = fundWallet.P().Builder().GetBalance()
 					pBalance = pBalanceMap[luxAssetID]
@@ -220,7 +220,7 @@ func main() {
 		wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 			URI:         nc.URI,
 			LUXKeychain: kc,
-			EthKeychain: kc,
+			EVMKeychain: kc,
 		})
 		if err != nil {
 			log.Fatalf("wallet sync failed: %v", err)
@@ -250,7 +250,7 @@ func main() {
 			wallet2, err = primary.MakeWallet(ctx, &primary.WalletConfig{
 				URI:              nc.URI,
 				LUXKeychain:      kc,
-				EthKeychain:      kc,
+				EVMKeychain:      kc,
 				PChainTxsToFetch: set.Of(networkID),
 			})
 			if err == nil {
@@ -289,7 +289,7 @@ func main() {
 			wallet3, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 				URI:              nc.URI,
 				LUXKeychain:      kc,
-				EthKeychain:      kc,
+				EVMKeychain:      kc,
 				PChainTxsToFetch: set.Of(networkID),
 			})
 			if err != nil {

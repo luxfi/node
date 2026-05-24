@@ -26,56 +26,36 @@ import (
 
 var _ Wallet = (*wallet)(nil)
 
-// EVMKeychain is the canonical interface for keychains that expose
-// 20-byte account addresses used by EVM-runtime chains (Lux C-Chain,
-// Liquid EVM, Hanzo EVM, and every EVM-compatible chain).
+// EVMKeychain is the interface for keychains that expose 20-byte
+// account addresses used by EVM-runtime chains (Lux C-Chain, Liquid
+// EVM, Hanzo EVM, and every EVM-compatible chain).
 //
 // Naming: the value IS "EVM-runtime account address". The internal
-// derivation uses Keccak256 of the secp256k1 pubkey, but that's HOW
-// the value is computed — WHAT the value is is determined by the data
-// model that consumes it (EVM account). The relevant contrast in a
-// multi-chain keychain is UTXO data model vs EVM data model — not
-// "what hash produced it".
+// derivation uses Keccak256 of the secp256k1 pubkey — that's HOW it's
+// computed. The data model that consumes it (EVM account) is WHAT it
+// is. UTXO vs EVM is the relevant axis in a multi-chain keychain.
 type EVMKeychain interface {
 	GetByEVM(addr gethcommon.Address) (keychain.Signer, bool)
 	EVMAddresses() set.Set[gethcommon.Address]
 }
 
-// KeccakKeychain is the deprecated alias of EVMKeychain.
-//
-// Deprecated: use EVMKeychain.
-type KeccakKeychain interface {
-	GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool)
-	KeccakAddresses() set.Set[gethcommon.Address]
-}
-
-// EthKeychain is the deprecated alias of EVMKeychain.
-//
-// Deprecated: use EVMKeychain.
-type EthKeychain interface {
-	GetEth(addr gethcommon.Address) (keychain.Signer, bool)
-	EthAddresses() set.Set[gethcommon.Address]
-}
-
-// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain
-// AND all three interfaces (canonical EVMKeychain, deprecated
-// KeccakKeychain, deprecated EthKeychain). This lets secp256k1fx.Keychain
-// be used with MakeWallet today while downstream callers migrate.
+// KeychainAdapter adapts secp256k1fx.Keychain to BOTH
+// wallet/keychain.Keychain (UTXO-side) and EVMKeychain (EVM-side).
 type KeychainAdapter struct {
 	*secp256k1fx.Keychain
 }
 
-// Addresses implements wallet/keychain.Keychain
+// Addresses implements wallet/keychain.Keychain (UTXO-side).
 func (kc *KeychainAdapter) Addresses() set.Set[ids.ShortID] {
 	return kc.Keychain.Addrs
 }
 
-// Get implements keychain.Keychain
+// Get implements keychain.Keychain (UTXO-side lookup by ShortID).
 func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
 	return kc.Keychain.Get(addr)
 }
 
-// GetByEVM implements EVMKeychain — canonical name.
+// GetByEVM implements EVMKeychain (EVM-side lookup by 20-byte addr).
 func (kc *KeychainAdapter) GetByEVM(addr gethcommon.Address) (keychain.Signer, bool) {
 	signer, ok := kc.Keychain.GetByEVM(addr)
 	if !ok {
@@ -85,37 +65,9 @@ func (kc *KeychainAdapter) GetByEVM(addr gethcommon.Address) (keychain.Signer, b
 	return signer.(keychain.Signer), true
 }
 
-// EVMAddresses implements EVMKeychain — canonical name.
+// EVMAddresses implements EVMKeychain (EVM-side address set).
 func (kc *KeychainAdapter) EVMAddresses() set.Set[gethcommon.Address] {
 	return kc.Keychain.EVMAddrs
-}
-
-// GetByKeccak implements KeccakKeychain.
-//
-// Deprecated: use GetByEVM.
-func (kc *KeychainAdapter) GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool) {
-	return kc.GetByEVM(addr)
-}
-
-// KeccakAddresses implements KeccakKeychain.
-//
-// Deprecated: use EVMAddresses.
-func (kc *KeychainAdapter) KeccakAddresses() set.Set[gethcommon.Address] {
-	return kc.EVMAddresses()
-}
-
-// GetEth implements EthKeychain.
-//
-// Deprecated: use GetByEVM.
-func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
-	return kc.GetByEVM(addr)
-}
-
-// EthAddresses implements EthKeychain.
-//
-// Deprecated: use EVMAddresses.
-func (kc *KeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
-	return kc.EVMAddresses()
 }
 
 // NewKeychainAdapter creates a KeychainAdapter from a secp256k1fx.Keychain
@@ -164,7 +116,7 @@ type WalletConfig struct {
 	URI string // required
 	// Keys to use for signing all transactions.
 	LUXKeychain keychain.Keychain // required
-	EthKeychain EthKeychain       // optional - for future C-Chain support
+	EVMKeychain EVMKeychain       // optional - for future C-Chain support
 	// Set of P-chain transactions that the wallet should know about to be able
 	// to generate transactions.
 	PChainTxs map[ids.ID]*txs.Tx // optional
@@ -190,7 +142,7 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 		return nil, err
 	}
 
-	// ethAddrs := config.EthKeychain.EthAddresses()
+	// ethAddrs := config.EVMKeychain.EthAddresses()
 	// ethState, err := FetchEthState(ctx, config.URI, ethAddrs)
 	// if err != nil {
 	// 	return nil, err
@@ -228,7 +180,7 @@ func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
 	// cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
 	// cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
 	// cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
-	// cSigner := c.NewSigner(config.LUXKeychain, config.EthKeychain, cBackend)
+	// cSigner := c.NewSigner(config.LUXKeychain, config.EVMKeychain, cBackend)
 
 	pClient := p.NewClient(luxState.PClient, pBackend)
 

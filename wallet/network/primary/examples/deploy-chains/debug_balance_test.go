@@ -45,7 +45,7 @@ func debugBalance() {
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri,
 		LUXKeychain: kc,
-		EthKeychain: kc,
+		EVMKeychain: kc,
 	})
 	if err != nil {
 		log.Fatal("MakeWallet error: ", err)
