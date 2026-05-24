@@ -161,7 +161,7 @@ func main() {
 	w, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         *uri,
 		LUXKeychain: kc,
-		EthKeychain: kc,
+		EVMKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("wallet sync: %v", err)
@@ -205,7 +205,7 @@ func main() {
 		w2, err = primary.MakeWallet(ctx, &primary.WalletConfig{
 			URI:              *uri,
 			LUXKeychain:      kc,
-			EthKeychain:      kc,
+			EVMKeychain:      kc,
 			PChainTxsToFetch: set.Of(netID),
 		})
 		if err == nil {
@@ -231,7 +231,7 @@ func main() {
 		w3, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 			URI:              *uri,
 			LUXKeychain:      kc,
-			EthKeychain:      kc,
+			EVMKeychain:      kc,
 			PChainTxsToFetch: set.Of(netID),
 		})
 		if err != nil {
