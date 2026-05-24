@@ -33,7 +33,7 @@ func main() {
 		&primary.WalletConfig{
 			URI:              uri,
 			LUXKeychain:      kc,
-			EthKeychain:      kc,
+			EVMKeychain:      kc,
 			PChainTxsToFetch: set.Of(validationID),
 		},
 	)
