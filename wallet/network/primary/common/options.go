@@ -41,8 +41,8 @@ type Options struct {
 	customAddressesSet bool
 	customAddresses    set.Set[ids.ShortID]
 
-	customEthAddressesSet bool
-	customEthAddresses    set.Set[ethcommon.Address]
+	customEVMAddressesSet bool
+	customEVMAddresses    set.Set[ethcommon.Address]
 
 	baseFee *big.Int
 
@@ -104,24 +104,10 @@ func (o *Options) Addresses(defaultAddresses set.Set[ids.ShortID]) set.Set[ids.S
 // that consumes the value (EVM account), not the hash primitive that
 // derives it.
 func (o *Options) EVMAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
-	if o.customEthAddressesSet {
-		return o.customEthAddresses
+	if o.customEVMAddressesSet {
+		return o.customEVMAddresses
 	}
 	return defaultAddresses
-}
-
-// KeccakAddresses is the deprecated alias of EVMAddresses.
-//
-// Deprecated: use EVMAddresses.
-func (o *Options) KeccakAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
-	return o.EVMAddresses(defaultAddresses)
-}
-
-// EthAddresses is the deprecated alias of EVMAddresses.
-//
-// Deprecated: use EVMAddresses.
-func (o *Options) EthAddresses(defaultAddresses set.Set[ethcommon.Address]) set.Set[ethcommon.Address] {
-	return o.EVMAddresses(defaultAddresses)
 }
 
 func (o *Options) BaseFee(defaultBaseFee *big.Int) *big.Int {
@@ -186,27 +172,13 @@ func WithCustomAddresses(addrs set.Set[ids.ShortID]) Option {
 }
 
 // WithCustomEVMAddresses sets the option's filter to a custom set of
-// 20-byte EVM-runtime account addresses. Canonical name; the value
-// IS "EVM-runtime account address" — that's the data model.
+// 20-byte EVM-runtime account addresses. The value IS "EVM-runtime
+// account address" — that's the data model.
 func WithCustomEVMAddresses(addrs set.Set[ethcommon.Address]) Option {
 	return func(o *Options) {
-		o.customEthAddressesSet = true
-		o.customEthAddresses = addrs
+		o.customEVMAddressesSet = true
+		o.customEVMAddresses = addrs
 	}
-}
-
-// WithCustomKeccakAddresses is the deprecated alias of WithCustomEVMAddresses.
-//
-// Deprecated: use WithCustomEVMAddresses.
-func WithCustomKeccakAddresses(addrs set.Set[ethcommon.Address]) Option {
-	return WithCustomEVMAddresses(addrs)
-}
-
-// WithCustomEthAddresses is the deprecated alias of WithCustomEVMAddresses.
-//
-// Deprecated: use WithCustomEVMAddresses.
-func WithCustomEthAddresses(addrs set.Set[ethcommon.Address]) Option {
-	return WithCustomEVMAddresses(addrs)
 }
 
 func WithBaseFee(baseFee *big.Int) Option {
