@@ -26,14 +26,35 @@ import (
 
 var _ Wallet = (*wallet)(nil)
 
-// EthKeychain is an interface for keychains that support Ethereum addresses
+// KeccakKeychain is the canonical interface for keychains that expose
+// 20-byte Keccak-derived addresses (the EVM-runtime address format
+// consumed by Lux C-Chain, Liquid EVM, and every EVM-compatible chain).
+//
+// Naming: the derivation primitive (Keccak256 of the secp256k1 pubkey)
+// is what determines the value. Hashing pubkeys with Keccak predates
+// and is consumed by many chains; the interface is named after the
+// value, not the brand of any downstream consumer.
+type KeccakKeychain interface {
+	GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool)
+	KeccakAddresses() set.Set[gethcommon.Address]
+}
+
+// EthKeychain is the deprecated alias of KeccakKeychain retained so
+// downstream callers (cli emptyEthKeychain, mpc, kms, state) don't
+// break in one wave. The two interfaces are structurally distinct
+// (different method names), so impls that want to satisfy both must
+// provide both method sets. KeychainAdapter in this package does so.
+//
+// Deprecated: use KeccakKeychain.
 type EthKeychain interface {
 	GetEth(addr gethcommon.Address) (keychain.Signer, bool)
 	EthAddresses() set.Set[gethcommon.Address]
 }
 
-// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain and EthKeychain interfaces.
-// This allows secp256k1fx.Keychain to be used with MakeWallet.
+// KeychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain
+// AND BOTH the canonical KeccakKeychain and deprecated EthKeychain
+// interfaces. This lets secp256k1fx.Keychain be used with MakeWallet
+// today while downstream callers migrate from the eth* names.
 type KeychainAdapter struct {
 	*secp256k1fx.Keychain
 }
@@ -48,9 +69,9 @@ func (kc *KeychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
 	return kc.Keychain.Get(addr)
 }
 
-// GetEth implements EthKeychain
-func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
-	signer, ok := kc.Keychain.GetEth(addr)
+// GetByKeccak implements KeccakKeychain — canonical name.
+func (kc *KeychainAdapter) GetByKeccak(addr gethcommon.Address) (keychain.Signer, bool) {
+	signer, ok := kc.Keychain.GetByKeccak(addr)
 	if !ok {
 		return nil, false
 	}
@@ -58,9 +79,23 @@ func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, boo
 	return signer.(keychain.Signer), true
 }
 
-// EthAddresses implements EthKeychain
+// KeccakAddresses implements KeccakKeychain — canonical name.
+func (kc *KeychainAdapter) KeccakAddresses() set.Set[gethcommon.Address] {
+	return kc.Keychain.KeccakAddrs
+}
+
+// GetEth implements EthKeychain.
+//
+// Deprecated: use GetByKeccak.
+func (kc *KeychainAdapter) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
+	return kc.GetByKeccak(addr)
+}
+
+// EthAddresses implements EthKeychain.
+//
+// Deprecated: use KeccakAddresses.
 func (kc *KeychainAdapter) EthAddresses() set.Set[gethcommon.Address] {
-	return kc.Keychain.EthAddrs
+	return kc.KeccakAddresses()
 }
 
 // NewKeychainAdapter creates a KeychainAdapter from a secp256k1fx.Keychain
