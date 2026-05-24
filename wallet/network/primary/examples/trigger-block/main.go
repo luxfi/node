@@ -44,7 +44,7 @@ func main() {
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         testnetURI,
 		LUXKeychain: pKC,
-		EthKeychain: pKC,
+		EVMKeychain: pKC,
 	})
 	if err != nil {
 		log.Fatalf("failed to make wallet: %v", err)
