@@ -72,7 +72,7 @@ func main() {
 		&primary.WalletConfig{
 			URI:         uri,
 			LUXKeychain: kc,
-			EthKeychain: kc, // Empty ETH keychain
+			EVMKeychain: kc, // Empty ETH keychain
 		},
 	)
 	if err != nil {

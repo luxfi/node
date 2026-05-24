@@ -32,7 +32,7 @@ func main() {
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri,
 		LUXKeychain: kc,
-		EthKeychain: kc,
+		EVMKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("MakeWallet: %s", err)

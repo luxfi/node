@@ -56,7 +56,7 @@ func main() {
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
 		LUXKeychain:      kc,
-		EthKeychain:      kc,
+		EVMKeychain:      kc,
 		PChainTxsToFetch: set.Of(netID),
 	})
 	if err != nil {
