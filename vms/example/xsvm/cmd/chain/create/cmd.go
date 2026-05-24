@@ -47,7 +47,7 @@ func createFunc(c *cobra.Command, args []string) error {
 		&primary.WalletConfig{
 			URI:         config.URI,
 			LUXKeychain: kcAdapter,
-			EthKeychain: kcAdapter,
+			EVMKeychain: kcAdapter,
 		},
 	)
 	if err != nil {
