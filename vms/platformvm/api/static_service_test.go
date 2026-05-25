@@ -101,7 +101,7 @@ func TestBuildGenesisInvalidStakeWeight(t *testing.T) {
 
 	ss := StaticService{}
 	err = ss.BuildGenesis(nil, &args, &reply)
-	require.ErrorIs(err, errValidatorHasNoWeight)
+	require.ErrorIs(err, errValidatorHasZeroWeight)
 }
 
 func TestBuildGenesisInvalidEndtime(t *testing.T) {

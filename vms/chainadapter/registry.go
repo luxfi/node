@@ -259,17 +259,6 @@ func DefaultChainConfigs() map[ChainID]*ChainConfig {
 			MaxClockDrift:         30 * time.Second,
 			StalenessThreshold:    5 * time.Minute,
 		},
-		idAvalanche: {
-			ChainID:               idAvalanche,
-			Name:                  "Avalanche",
-			NetworkID:             43114, // C-Chain
-			RequiredConfirmations: 1,
-			FinalityMode:          "instant", // Quasar consensus
-			BlockTime:             2 * time.Second,
-			TrustThreshold:        0.67,
-			MaxClockDrift:         30 * time.Second,
-			StalenessThreshold:    5 * time.Minute,
-		},
 		idArbitrum: {
 			ChainID:               idArbitrum,
 			Name:                  "Arbitrum One",
@@ -383,7 +372,6 @@ func ChainName(id ChainID) string {
 		idPolygon:   "Polygon",
 		idBSC:       "BNB Smart Chain",
 		idRipple:    "XRP Ledger",
-		idAvalanche: "Avalanche",
 		idArbitrum:  "Arbitrum One",
 		idOptimism:  "Optimism",
 		idBase:      "Base",
