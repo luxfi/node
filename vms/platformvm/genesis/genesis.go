@@ -28,7 +28,7 @@ import (
 
 var (
 	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
-	errValidatorHasNoWeight   = errors.New("validator has not weight")
+	errValidatorHasZeroWeight   = errors.New("validator has zero weight")
 	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
 	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
@@ -253,7 +253,7 @@ func New(
 		}
 
 		if weight == 0 {
-			return nil, errValidatorHasNoWeight
+			return nil, errValidatorHasZeroWeight
 		}
 		if vdr.EndTime <= time {
 			return nil, errValidatorAlreadyExited
