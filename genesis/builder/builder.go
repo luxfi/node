@@ -414,12 +414,20 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
 
-	// Calculate initial supply
+	// Calculate initial supply. Match the UTXO emission policy: when
+	// unlockSchedule is non-empty it IS the allocation (initialAmount is a
+	// redundant total in legacy Avalanche-shaped configs); when empty,
+	// initialAmount is the allocation. Either way, count exactly once —
+	// the reported supply must equal the sum of actually-emitted UTXOs +
+	// validator stakes, not a double-count of the two views of one number.
 	initialSupply := uint64(0)
 	for _, a := range config.Allocations {
-		initialSupply += a.InitialAmount
-		for _, unlock := range a.UnlockSchedule {
-			initialSupply += unlock.Amount
+		if len(a.UnlockSchedule) > 0 {
+			for _, unlock := range a.UnlockSchedule {
+				initialSupply += unlock.Amount
+			}
+		} else {
+			initialSupply += a.InitialAmount
 		}
 	}
 
