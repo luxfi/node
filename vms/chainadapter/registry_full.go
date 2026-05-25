@@ -69,13 +69,6 @@ func AllChainConfigs() map[ChainID]*ChainConfig {
 			BlockTime: 4 * time.Second, TrustThreshold: 0.80,
 			ExplorerURL: "https://xrpscan.com",
 		},
-		idAvalanche: {
-			ChainID: idAvalanche, Name: "Avalanche C-Chain", NetworkID: 43114,
-			EVMChainID: 43114, NativeSymbol: "AVAX", NativeDecimals: 18, IsEVM: true,
-			RequiredConfirmations: 1, FinalityMode: "instant",
-			BlockTime: 2 * time.Second, TrustThreshold: 0.67,
-			ExplorerURL: "https://snowtrace.io",
-		},
 		idArbitrum: {
 			ChainID: idArbitrum, Name: "Arbitrum One", NetworkID: 42161,
 			EVMChainID: 42161, NativeSymbol: "ETH", NativeDecimals: 18, IsEVM: true,
@@ -821,7 +814,7 @@ func AllChainConfigs() map[ChainID]*ChainConfig {
 			EVMChainID: 4337, NativeSymbol: "BEAM", NativeDecimals: 18, IsEVM: true,
 			RequiredConfirmations: 1, FinalityMode: "instant",
 			BlockTime: 2 * time.Second, TrustThreshold: 0.67,
-			ExplorerURL: "https://subnets.avax.network/beam",
+			ExplorerURL: "https://explorer.onbeam.com",
 		},
 		idXai: {
 			ChainID: idXai, Name: "Xai", NetworkID: 660279,

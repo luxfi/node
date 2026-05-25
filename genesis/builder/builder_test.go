@@ -411,12 +411,12 @@ func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 	}
 }
 
-// TestFromConfigLegacyAvalancheBackCompat proves the back-compat rule for
-// legacy Avalanche-shaped pchain configs where initialAmount AND unlockSchedule
+// TestFromConfigLegacyShapedBackCompat proves the back-compat rule for
+// legacy legacy-shaped pchain configs where initialAmount AND unlockSchedule
 // are both set and initialAmount == sum(unlockSchedule). These are two views
 // of the same total. Emitting both would double-mint. The builder must emit
 // exactly one UTXO per unlock entry (no additional initialAmount UTXO).
-func TestFromConfigLegacyAvalancheBackCompat(t *testing.T) {
+func TestFromConfigLegacyShapedBackCompat(t *testing.T) {
 	require := require.New(t)
 
 	var stakerAddr ids.ShortID
@@ -429,7 +429,7 @@ func TestFromConfigLegacyAvalancheBackCompat(t *testing.T) {
 	const hundredYears = 100 * 365 * 24 * 60 * 60
 
 	// holder gets 100 LUX, split into 10 yearly unlocks of 10 LUX each.
-	// initialAmount is the total (Avalanche convention).
+	// initialAmount is the total (legacy convention).
 	const holderTotal = 100_000_000_000_000 // 100 LUX in nLUX
 	const perUnlock = holderTotal / 10
 	holderUnlocks := make([]genesiscfg.LockedAmount, 10)
@@ -455,7 +455,7 @@ func TestFromConfigLegacyAvalancheBackCompat(t *testing.T) {
 				},
 			},
 			{
-				// Legacy Avalanche-shaped: both fields set, initialAmount
+				// Legacy legacy-shaped: both fields set, initialAmount
 				// equals sum(unlockSchedule). The builder MUST treat these
 				// as one allocation (no double-mint).
 				EVMAddr:        holderAddr,
@@ -478,7 +478,7 @@ func TestFromConfigLegacyAvalancheBackCompat(t *testing.T) {
 			},
 		},
 		CChainGenesis: `{"config":{"chainId":31337},"alloc":{}}`,
-		Message:       "Legacy Avalanche Back-Compat",
+		Message:       "Legacy Shaped Back-Compat",
 	}
 
 	genesisBytes, _, err := FromConfig(cfg)

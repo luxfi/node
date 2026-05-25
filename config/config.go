@@ -840,7 +840,7 @@ func loadStakingMLDSA(v *viper.Viper) (*mldsa.PrivateKey, []byte, string, string
 	// Sanity: the public key on disk must match the one derivable
 	// from the private key. Mismatch would point a NodeID at a
 	// public key the validator cannot actually sign for — silent
-	// authentication failure that snowman++ would later report as
+	// authentication failure that the consensus engine would later report as
 	// "this validator is offline" rather than "you misconfigured
 	// your keys".
 	derivedPubBytes := priv.PublicKey.Bytes()
