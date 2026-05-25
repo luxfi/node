@@ -47,9 +47,27 @@ jobs:
             type=ref,event=tag
             type=sha,format=short,prefix=sha-
 
+      - name: Verify GH_TOKEN secret resolved (length only, no value)
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Self-check: if this prints len=0 the org GH_TOKEN secret did
+          # not propagate to the workflow, in which case go mod download
+          # for private luxfi/* deps cannot succeed. The token value itself
+          # is never echoed.
+          echo "GH_TOKEN length: ${#GH_TOKEN}"
+          test -n "$GH_TOKEN"
+
       - name: Build & push (amd64)
         id: build
         uses: docker/build-push-action@v6
+        env:
+          # build-push-action reads secret-env mappings from the job env,
+          # so put GH_TOKEN here once and reference via `env=GH_TOKEN`
+          # below — avoids passing the secret value through GitHub's
+          # ${{ secrets.* }} interpolation into the action's secrets input
+          # (which has occasionally proven flaky on ARC runners).
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           context: .
           file: Dockerfile
@@ -57,10 +75,10 @@ jobs:
           push: true
           build-args: |
             CGO_ENABLED=0
-          # The Dockerfile resolves private luxfi/* modules via `git config
-          # url.insteadOf` using this token. Default workflow GITHUB_TOKEN
-          # only sees luxfi/node, so use the org-level GH_TOKEN (PAT) which
-          # has read access to all luxfi/* repos (corona, etc.).
+          # Resolve private luxfi/* modules via git url.insteadOf in the
+          # Dockerfile. Take the token value from the GH_TOKEN env var
+          # set above (cross-repo PAT scope; default GITHUB_TOKEN is
+          # repo-scoped and cannot read luxfi/corona, luxfi/evm).
           secrets: |
             ghtok=${{ secrets.GH_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
