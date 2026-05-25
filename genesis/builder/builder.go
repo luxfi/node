@@ -453,7 +453,12 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 
 		// Also create P-Chain UTXO for initialAmount (spendable, no locktime)
-		if a.InitialAmount > 0 {
+		// when unlockSchedule is empty. Avalanche/legacy genesis JSONs set
+		// initialAmount AS THE SUM of unlockSchedule (two views of the same
+		// total). Emitting both would double-mint that total. Devnet-style
+		// configs set initialAmount with an empty unlockSchedule and rely on
+		// this single UTXO. One semantic, one UTXO, no double-mint.
+		if a.InitialAmount > 0 && len(a.UnlockSchedule) == 0 {
 			bech32Addr, err := address.FormatBech32(hrp, a.UTXOAddr[:])
 			if err != nil {
 				return nil, ids.Empty, fmt.Errorf("failed to format bech32 address for P-chain initialAmount: %w", err)
