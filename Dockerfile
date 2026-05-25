@@ -52,12 +52,16 @@ ENV GOFLAGS="-mod=mod"
 # build still attempts the download (works when all deps are public).
 COPY go.mod .
 COPY go.sum .
+# Configure global git insteadOf so EVERY subsequent step (go mod download
+# now, the build step's implicit fetch later) can reach private luxfi/*
+# modules. The token is written into /etc/gitconfig (root-readable in the
+# image), so explicit cleanup is unnecessary on this throwaway builder
+# stage — only the compiled binary is COPYed into the runtime image.
 RUN --mount=type=secret,id=ghtok,required=false \
     if [ -s /run/secrets/ghtok ]; then \
         git config --global url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/".insteadOf "https://github.com/"; \
     fi && \
-    go mod download && \
-    git config --global --remove-section url."https://x-access-token:$(cat /run/secrets/ghtok 2>/dev/null)@github.com/" 2>/dev/null || true
+    go mod download
 
 # Copy the code into the container
 COPY . .
