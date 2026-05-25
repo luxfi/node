@@ -236,3 +236,5 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace github.com/luxfi/corona => github.com/luxfi/corona v0.7.5
