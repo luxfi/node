@@ -42,32 +42,51 @@ jobs:
           images: ghcr.io/luxfi/node
           # Semver-only policy: only `v*` git tags yield a published image
           # tag; every push gets an immutable `sha-<sha7>` for traceability.
-          # No `:latest`, no `:main`, no floating tags ever.
+          # No `:latest`, no `:main`, no floating tags ever. `flavor.latest`
+          # has to be explicit-false; docker/metadata-action defaults to
+          # `latest=auto` which silently emits `:latest` on tag pushes.
+          flavor: |
+            latest=false
           tags: |
             type=ref,event=tag
             type=sha,format=short,prefix=sha-
 
-      - name: Verify GH_TOKEN secret resolved (length only, no value)
+      - name: Resolve cross-repo PAT for private luxfi/* deps
+        id: pat
         env:
+          # The default GITHUB_TOKEN is repo-scoped and cannot read
+          # private cross-repo deps like luxfi/corona or luxfi/evm. We
+          # need a PAT with org-wide read scope. Order of preference:
+          # 1) org GH_TOKEN (visibility=all, set on luxfi org since 2024)
+          # 2) repo UNIVERSE_PAT (set on luxfi/node since 2026-04)
+          # Either suffices; we just need ONE non-empty token. If both
+          # are empty the build is going to fail at go mod download for
+          # corona — fail fast here with a clear message.
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          UNIVERSE_PAT: ${{ secrets.UNIVERSE_PAT }}
         run: |
-          # Self-check: if this prints len=0 the org GH_TOKEN secret did
-          # not propagate to the workflow, in which case go mod download
-          # for private luxfi/* deps cannot succeed. The token value itself
-          # is never echoed.
-          echo "GH_TOKEN length: ${#GH_TOKEN}"
-          test -n "$GH_TOKEN"
+          tok="$GH_TOKEN"
+          src="GH_TOKEN"
+          if [ -z "$tok" ]; then
+            tok="$UNIVERSE_PAT"
+            src="UNIVERSE_PAT"
+          fi
+          if [ -z "$tok" ]; then
+            echo "::error::Neither GH_TOKEN (org) nor UNIVERSE_PAT (repo) is set. Private luxfi/* deps cannot be resolved."
+            exit 1
+          fi
+          echo "Using secret: $src (length=${#tok})"
+          # Pass the resolved token to subsequent steps without exposing
+          # the value. ::add-mask:: prevents accidental log leaks if the
+          # value ever appears in later step output.
+          echo "::add-mask::$tok"
+          echo "token<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$tok" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Build & push (amd64)
         id: build
         uses: docker/build-push-action@v6
-        env:
-          # build-push-action reads secret-env mappings from the job env,
-          # so put GH_TOKEN here once and reference via `env=GH_TOKEN`
-          # below — avoids passing the secret value through GitHub's
-          # ${{ secrets.* }} interpolation into the action's secrets input
-          # (which has occasionally proven flaky on ARC runners).
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           context: .
           file: Dockerfile
@@ -76,11 +95,10 @@ jobs:
           build-args: |
             CGO_ENABLED=0
           # Resolve private luxfi/* modules via git url.insteadOf in the
-          # Dockerfile. Take the token value from the GH_TOKEN env var
-          # set above (cross-repo PAT scope; default GITHUB_TOKEN is
-          # repo-scoped and cannot read luxfi/corona, luxfi/evm).
+          # Dockerfile. Take the token value from the previous step's
+          # output (it picked GH_TOKEN or fell back to UNIVERSE_PAT).
           secrets: |
-            ghtok=${{ secrets.GH_TOKEN }}
+            ghtok=${{ steps.pat.outputs.token }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
