@@ -136,7 +136,7 @@ func TestNewInvalidStakeWeight(t *testing.T) {
 		0,
 		"",
 	)
-	require.ErrorIs(err, errValidatorHasNoWeight)
+	require.ErrorIs(err, errValidatorHasZeroWeight)
 	require.Nil(genesis)
 }
 
