@@ -57,8 +57,12 @@ jobs:
           push: true
           build-args: |
             CGO_ENABLED=0
+          # The Dockerfile resolves private luxfi/* modules via `git config
+          # url.insteadOf` using this token. Default workflow GITHUB_TOKEN
+          # only sees luxfi/node, so use the org-level GH_TOKEN (PAT) which
+          # has read access to all luxfi/* repos (corona, etc.).
           secrets: |
-            ghtok=${{ secrets.GITHUB_TOKEN }}
+            ghtok=${{ secrets.GH_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
