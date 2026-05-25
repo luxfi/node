@@ -65,7 +65,6 @@ func DefaultChainSeed() []Chain {
 		{ID: 6, Name: "polygon", EVM: true, Constructor: func() ChainAdapter { return NewPolygonAdapter() }},
 		{ID: 7, Name: "bsc", EVM: true, Constructor: func() ChainAdapter { return NewBSCAdapter() }},
 		{ID: 8, Name: "ripple", EVM: false, Constructor: func() ChainAdapter { return NewRippleAdapter() }},
-		{ID: 9, Name: "avalanche", EVM: true, Constructor: func() ChainAdapter { return NewAvalancheAdapter() }},
 		{ID: 10, Name: "arbitrum", EVM: true, Constructor: func() ChainAdapter { return adapterCtorByName["arbitrum"]() }},
 		{ID: 11, Name: "optimism", EVM: true, Constructor: func() ChainAdapter { return adapterCtorByName["optimism"]() }},
 		{ID: 12, Name: "base", EVM: true, Constructor: func() ChainAdapter { return adapterCtorByName["base"]() }},

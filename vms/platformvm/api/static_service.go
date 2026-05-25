@@ -32,7 +32,7 @@ import (
 
 var (
 	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
-	errValidatorHasNoWeight   = errors.New("validator has no weight")
+	errValidatorHasZeroWeight   = errors.New("validator has zero weight")
 	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
 	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
@@ -288,7 +288,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		}
 
 		if weight == 0 {
-			return errValidatorHasNoWeight
+			return errValidatorHasZeroWeight
 		}
 		if uint64(vdr.EndTime) <= uint64(args.Time) {
 			return errValidatorAlreadyExited

@@ -19,7 +19,6 @@ var (
 	idPolygon   = mustID("polygon")
 	idBSC       = mustID("bsc")
 	idRipple    = mustID("ripple")
-	idAvalanche = mustID("avalanche")
 	idArbitrum  = mustID("arbitrum")
 	idOptimism  = mustID("optimism")
 	idBase      = mustID("base")
