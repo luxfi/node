@@ -46,7 +46,7 @@ var (
 	defaultStakingTLSKeyPath    = filepath.Join(defaultStakingPath, "staker.key")
 	defaultStakingCertPath      = filepath.Join(defaultStakingPath, "staker.crt")
 	defaultStakingSignerKeyPath = filepath.Join(defaultStakingPath, "signer.key")
-	// Strict-PQ default paths — mirror /cli `liquid key gen`
+	// Strict-PQ default paths — mirror downstream-tenant CLI `<tenantctl> key gen`
 	// layout so the operator init container + lqd see the same files.
 	defaultStakingMLDSAKeyPath    = filepath.Join(defaultStakingPath, "mldsa.key")
 	defaultStakingMLDSAPubKeyPath = filepath.Join(defaultStakingPath, "mldsa.pub")
@@ -298,7 +298,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// When the ML-DSA pubkey is provided, NodeID derivation pivots from
 	// the classical TLS-cert path to the wire-discriminated strict-PQ
 	// scheme (ids.NodeIDSchemeMLDSA65.DeriveMLDSA). Both pairs default
-	// to the layout /cli `liquid key gen` writes — wire the
+	// to the layout downstream-tenant CLI `<tenantctl> key gen` writes — wire the
 	// init container and lqd reads the files with zero extra config.
 	fs.String(StakingMLDSAKeyPathKey, defaultStakingMLDSAKeyPath, fmt.Sprintf("Path to the ML-DSA-65 staking private key (FIPS 204 PEM). Ignored if %s is specified", StakingMLDSAKeyContentKey))
 	fs.String(StakingMLDSAKeyContentKey, "", "Base64-encoded ML-DSA-65 staking private key (FIPS 204 PEM)")

@@ -335,7 +335,7 @@ func GetConfig(networkID uint32) *genesiscfg.Config {
 // emits an X-Chain entry in the primary-network CreateChainTx set. When
 // empty, no XVM genesis is built and X-Chain is omitted from the chain
 // set — the path used by P-only L2s whose value capture lives on a
-// downstream EVM ( etc.).
+// downstream EVM (downstream EVM etc.).
 //
 // The LUX asset ID returned is always the network-wide constant
 // (constants.UTXO_ASSET_ID), independent of whether X-Chain is baked.
@@ -389,7 +389,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// X-Chain native asset ID is derived from the actual XVM genesis bytes
 	// (the runtime ID of the first GenesisAsset.CreateAssetTx) so the value
 	// the wallet builder reads back via platform.getStakingAssetID matches
-	// the asset the X-Chain genuinely mints. On sovereign L1s (Liquidity,
+	// the asset the X-Chain genuinely mints. On sovereign L1s (tenant networks,
 	// MLC, VCC, future tenants) every primary network has its own X-Chain
 	// genesis content (different validator set, different initial holders,
 	// different denomination/name) so the genesis-derived asset ID is
@@ -416,7 +416,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 
 	// Calculate initial supply. Match the UTXO emission policy: when
 	// unlockSchedule is non-empty it IS the allocation (initialAmount is a
-	// redundant total in legacy Avalanche-shaped configs); when empty,
+	// redundant total in legacy-shaped configs); when empty,
 	// initialAmount is the allocation. Either way, count exactly once —
 	// the reported supply must equal the sum of actually-emitted UTXOs +
 	// validator stakes, not a double-count of the two views of one number.
@@ -461,7 +461,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		}
 
 		// Also create P-Chain UTXO for initialAmount (spendable, no locktime)
-		// when unlockSchedule is empty. Avalanche/legacy genesis JSONs set
+		// when unlockSchedule is empty. Legacy genesis JSONs set
 		// initialAmount AS THE SUM of unlockSchedule (two views of the same
 		// total). Emitting both would double-mint that total. Devnet-style
 		// configs set initialAmount with an empty unlockSchedule and rely on
