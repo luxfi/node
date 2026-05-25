@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   build-amd64:
-    # `lux-build` ARC runner pool (EKS lux-arm64-runners) is currently
-    # unreachable. Fall back to GitHub-hosted ubuntu-latest until ARC is
-    # restored — slower (no warm cache) but reliable.
-    runs-on: ubuntu-latest
+    # Self-hosted `lux-build` ARC pool on DOKS hanzo-k8s (max 20 runners,
+    # scales 0→N on demand). Org-isolated: luxfi workflows must use this
+    # pool (never the hanzoai pools). amd64 only — DOKS has no arm64 yet.
+    runs-on: lux-build
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -40,9 +40,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/luxfi/node
+          # Semver-only policy: only `v*` git tags yield a published image
+          # tag; every push gets an immutable `sha-<sha7>` for traceability.
+          # No `:latest`, no `:main`, no floating tags ever.
           tags: |
             type=ref,event=tag
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=sha,format=short,prefix=sha-
 
       - name: Build & push (amd64)

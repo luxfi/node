@@ -14,7 +14,9 @@ import (
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/utxo/secp256k1fx"
 
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 )
@@ -407,4 +409,118 @@ func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 			t.Fatalf("unexpected validator tx type: %T", ut)
 		}
 	}
+}
+
+// TestFromConfigLegacyAvalancheBackCompat proves the back-compat rule for
+// legacy Avalanche-shaped pchain configs where initialAmount AND unlockSchedule
+// are both set and initialAmount == sum(unlockSchedule). These are two views
+// of the same total. Emitting both would double-mint. The builder must emit
+// exactly one UTXO per unlock entry (no additional initialAmount UTXO).
+func TestFromConfigLegacyAvalancheBackCompat(t *testing.T) {
+	require := require.New(t)
+
+	var stakerAddr ids.ShortID
+	copy(stakerAddr[:], hash.ComputeHash160([]byte("legacy-staker")))
+
+	var holderAddr ids.ShortID
+	copy(holderAddr[:], hash.ComputeHash160([]byte("legacy-holder")))
+
+	startTime := uint64(time.Now().Unix())
+	const hundredYears = 100 * 365 * 24 * 60 * 60
+
+	// holder gets 100 LUX, split into 10 yearly unlocks of 10 LUX each.
+	// initialAmount is the total (Avalanche convention).
+	const holderTotal = 100_000_000_000_000 // 100 LUX in nLUX
+	const perUnlock = holderTotal / 10
+	holderUnlocks := make([]genesiscfg.LockedAmount, 10)
+	for i := range holderUnlocks {
+		holderUnlocks[i] = genesiscfg.LockedAmount{
+			Amount:   perUnlock,
+			Locktime: startTime + uint64(i)*365*24*60*60,
+		}
+	}
+
+	nodeID, err := ids.NodeIDFromString("NodeID-7D3wajA7bNpfyHpfEtkjUF1KcuhFEfPbZ")
+	require.NoError(err)
+
+	cfg := &genesiscfg.Config{
+		NetworkID: constants.LocalID,
+		Allocations: []genesiscfg.Allocation{
+			{
+				EVMAddr:       stakerAddr,
+				UTXOAddr:      stakerAddr,
+				InitialAmount: 0,
+				UnlockSchedule: []genesiscfg.LockedAmount{
+					{Amount: holderTotal, Locktime: 0},
+				},
+			},
+			{
+				// Legacy Avalanche-shaped: both fields set, initialAmount
+				// equals sum(unlockSchedule). The builder MUST treat these
+				// as one allocation (no double-mint).
+				EVMAddr:        holderAddr,
+				UTXOAddr:       holderAddr,
+				InitialAmount:  holderTotal,
+				UnlockSchedule: holderUnlocks,
+			},
+		},
+		StartTime:                  startTime,
+		InitialStakeDuration:       hundredYears,
+		InitialStakeDurationOffset: 0,
+		InitialStakedFunds:         []ids.ShortID{stakerAddr},
+		InitialStakers: []genesiscfg.Staker{
+			{
+				NodeID:        nodeID,
+				RewardAddress: stakerAddr,
+				DelegationFee: 1000000,
+				StartTime:     startTime,
+				EndTime:       startTime + hundredYears,
+			},
+		},
+		CChainGenesis: `{"config":{"chainId":31337},"alloc":{}}`,
+		Message:       "Legacy Avalanche Back-Compat",
+	}
+
+	genesisBytes, _, err := FromConfig(cfg)
+	require.NoError(err)
+	require.NotEmpty(genesisBytes)
+
+	parsed, err := genesis.Parse(genesisBytes)
+	require.NoError(err)
+
+	// Count UTXOs belonging to holderAddr. With the back-compat fix the
+	// builder emits exactly len(holderUnlocks) UTXOs (one per unlock entry)
+	// and no extra immediately-spendable UTXO for initialAmount. Without
+	// the fix it would emit len(holderUnlocks)+1 UTXOs (double-mint).
+	//
+	// Outputs with locktime in the future are wrapped in *stakeable.LockOut
+	// whose inner Out is the *secp256k1fx.TransferOutput; outputs that are
+	// immediately spendable are raw *secp256k1fx.TransferOutput.
+	var holderUTXOs int
+	var holderSum uint64
+	for _, u := range parsed.UTXOs {
+		var out *secp256k1fx.TransferOutput
+		switch o := u.Out.(type) {
+		case *secp256k1fx.TransferOutput:
+			out = o
+		case *stakeable.LockOut:
+			inner, ok := o.TransferableOut.(*secp256k1fx.TransferOutput)
+			if !ok {
+				continue
+			}
+			out = inner
+		default:
+			continue
+		}
+		if len(out.OutputOwners.Addrs) != 1 || out.OutputOwners.Addrs[0] != holderAddr {
+			continue
+		}
+		holderUTXOs++
+		holderSum += out.Amt
+	}
+	require.Equal(len(holderUnlocks), holderUTXOs,
+		"holder must have exactly %d UTXOs (one per unlock entry), got %d (double-mint?)",
+		len(holderUnlocks), holderUTXOs)
+	require.Equal(uint64(holderTotal), holderSum,
+		"holder UTXO sum must equal initialAmount (no double-mint)")
 }
