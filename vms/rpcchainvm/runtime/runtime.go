@@ -13,6 +13,12 @@ const (
 	// Address of the runtime engine server.
 	EngineAddressKey = "VM_RUNTIME_ENGINE_ADDR"
 
+	// LegacyEngineAddressKey is the pre-rename env-var name. Plugin binaries
+	// compiled against luxfi/node <= v1.26.x read this key. The host sets
+	// both keys until every plugin in /data/plugins has been rebuilt against
+	// a luxfi/node version that has the rename.
+	LegacyEngineAddressKey = "LUX_VM_RUNTIME_ENGINE_ADDR"
+
 	// Duration before handshake timeout during bootstrap.
 	DefaultHandshakeTimeout = 5 * time.Second
 

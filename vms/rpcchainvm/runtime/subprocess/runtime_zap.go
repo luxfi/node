@@ -49,6 +49,15 @@ func Bootstrap(
 		cmd.Env = os.Environ()
 	}
 	cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", runtime.EngineAddressKey, serverAddr.String()))
+	// Compat shim: also set the pre-rename env key so plugin binaries built
+	// against luxfi/node <= v1.26.x (which had EngineAddressKey =
+	// "LUX_VM_RUNTIME_ENGINE_ADDR") can still dial back. Plugins built from
+	// luxfi/node >= the rename pick up the new key; old plugins keep working.
+	// Remove this line once every plugin in /data/plugins is rebuilt against
+	// a luxfi/node version that has the rename.
+	if runtime.EngineAddressKey != runtime.LegacyEngineAddressKey {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", runtime.LegacyEngineAddressKey, serverAddr.String()))
+	}
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
