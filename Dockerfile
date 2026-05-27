@@ -131,8 +131,15 @@ RUN . ./build_env.sh && \
     GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # ============= EVM Plugin Stage ================
-# Build EVM plugin from source (includes custom precompile registry)
-ARG EVM_VERSION=v0.8.40
+# Build EVM plugin from source (includes custom precompile registry).
+# EVM_VERSION must pin a luxfi/evm release whose go.mod points at a
+# luxfi/node version that has the runtime.EngineAddressKey rename
+# (LUX_VM_RUNTIME_ENGINE_ADDR → VM_RUNTIME_ENGINE_ADDR landed in
+# 4ae211d46d on 2026-05-15). v0.18.14 pins node v1.27.6 which is
+# post-rename. Older evm tags (e.g. v0.8.40 → node v1.23.4) ship a
+# plugin that os.Getenv()'s the old key, mismatching the host that
+# sets the new key, and C-chain never bootstraps.
+ARG EVM_VERSION=v0.18.14
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
