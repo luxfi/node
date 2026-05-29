@@ -183,7 +183,7 @@ func newGenesisCodec() (codec.Manager, error) {
 // Callers (genesis/builder, config/getGenesisData) use this to derive
 // the X-Chain native asset ID from genesis content rather than the
 // network-id-keyed constants.UTXOAssetIDFor(networkID). On sovereign
-// L1s (Liquidity / MLC / VCC) those two values DIFFER — the wallet
+// L1s those two values DIFFER — the wallet
 // builder context's XAssetID must be the genesis-derived one or every
 // fee-paying tx fails with "insufficient funds, needs N more nLUX".
 func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
