@@ -570,7 +570,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// non-empty genesis string in the resolved Config. Entries with
 	// empty GenesisData are SKIPPED — luxd will not start a chain
 	// manager for them. Mainnet/testnet/devnet ship XChainGenesis so
-	// X-Chain stays baked; P-only L2s (Liquidity etc.) leave it empty
+	// X-Chain stays baked; P-only L2s leave it empty
 	// and the chain is omitted.
 	//
 	// Order is fixed (X→C→D→B→T→Q→Z) and preserved across
