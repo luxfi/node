@@ -140,8 +140,8 @@ else
 {
   "allocations": [
     {
-      "luxAddr": "P-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
-      "ethAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
+      "utxoAddr": "P-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
+      "evmAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
       "initialAmount": 1000000000000000000,
       "unlockSchedule": []
     }
@@ -167,8 +167,8 @@ EOF
 {
   "allocations": [
     {
-      "luxAddr": "X-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
-      "ethAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
+      "utxoAddr": "X-local1jfdgmqduuyuxjp9sq7szp08xpynav88sd7qxvv",
+      "evmAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
       "initialAmount": 1000000000000000000,
       "unlockSchedule": []
     }
