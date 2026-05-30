@@ -33,8 +33,8 @@ const (
 
 var (
 	// Use a fixed test asset ID for X-chain native asset
-	XAssetID = ids.ID{'l', 'u', 'x', ' ', 'a', 's', 's', 'e', 't', ' ', 'i', 'd'}
-	XAsset   = lux.Asset{ID: XAssetID}
+	UTXOAssetID = ids.ID{'l', 'u', 'x', ' ', 'a', 's', 's', 'e', 't', ' ', 'i', 'd'}
+	XAsset   = lux.Asset{ID: UTXOAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +102,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        XAssetID,
+				TxID:        UTXOAssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: XAsset,

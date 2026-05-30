@@ -209,7 +209,7 @@ func New(
 		rt:                rt,
 		NetworkID:         rt.NetworkID,
 		ChainID:           rt.ChainID,
-		XAssetID:          rt.XAssetID,
+		UTXOAssetID:          rt.UTXOAssetID,
 		clk:               clk,
 		fx:                fx,
 	}
@@ -224,7 +224,7 @@ type builder struct {
 	rt *runtime.Runtime
 	NetworkID uint32
 	ChainID   ids.ID
-	XAssetID  ids.ID
+	UTXOAssetID  ids.ID
 	clk       *mockable.Clock
 	fx        fx.Fx
 }
@@ -275,7 +275,7 @@ func (b *builder) NewImportTx(
 		return nil, ErrNoFunds // No imported UTXOs were spendable
 	}
 
-	importedLUX := importedAmounts[b.XAssetID]
+	importedLUX := importedAmounts[b.UTXOAssetID]
 
 	ins := []*lux.TransferableInput{}
 	outs := []*lux.TransferableOutput{}
@@ -287,11 +287,11 @@ func (b *builder) NewImportTx(
 			return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 		}
 		signers = append(baseSigners, signers...)
-		delete(importedAmounts, b.XAssetID)
+		delete(importedAmounts, b.UTXOAssetID)
 	case importedLUX == b.cfg.TxFee:
-		delete(importedAmounts, b.XAssetID)
+		delete(importedAmounts, b.UTXOAssetID)
 	default:
-		importedAmounts[b.XAssetID] -= b.cfg.TxFee
+		importedAmounts[b.UTXOAssetID] -= b.cfg.TxFee
 	}
 
 	for assetID, amount := range importedAmounts {
@@ -354,7 +354,7 @@ func (b *builder) NewExportTx(
 		}},
 		DestinationChain: chainID,
 		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
-			Asset: lux.Asset{ID: b.XAssetID},
+			Asset: lux.Asset{ID: b.UTXOAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -693,7 +693,7 @@ func (b *builder) NewBaseTx(
 	}
 
 	outs = append(outs, &lux.TransferableOutput{
-		Asset: lux.Asset{ID: b.XAssetID},
+		Asset: lux.Asset{ID: b.UTXOAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          amount,
 			OutputOwners: owner,

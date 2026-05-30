@@ -34,7 +34,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -75,7 +75,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -104,7 +104,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(rt))
 
@@ -176,7 +176,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -216,7 +216,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.Lux,
@@ -274,7 +274,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID,
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(complexRemoveValidatorTx.SyntacticVerify(rt2))
 
@@ -437,7 +437,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	unsignedComplexRemoveValidatorTx.InitRuntime(rt3)
 

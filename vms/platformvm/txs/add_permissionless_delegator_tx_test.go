@@ -40,7 +40,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -75,7 +75,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: 2 * constants.KiloLux,
@@ -98,7 +98,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: xAssetID,
+					ID: utxoAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -127,7 +127,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetworkID: 1,
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(rt))
 
@@ -232,7 +232,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -247,7 +247,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -287,7 +287,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -343,7 +343,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
-					ID: xAssetID,
+					ID: utxoAssetID,
 				},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: 2 * constants.KiloLux,
@@ -358,7 +358,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			},
 			{
 				Asset: lux.Asset{
-					ID: xAssetID,
+					ID: utxoAssetID,
 				},
 				Out: &stakeable.LockOut{
 					Locktime: 987654321,
@@ -383,7 +383,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(rt))
 
@@ -616,7 +616,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	unsignedComplexAddPrimaryTx.InitRuntime(rt2)
 
@@ -761,7 +761,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -802,7 +802,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MilliLux,
@@ -874,7 +874,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(simpleAddNetTx.SyntacticVerify(rt))
 
@@ -1000,7 +1000,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 1,
@@ -1015,7 +1015,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 					},
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -1055,7 +1055,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.MegaLux,
@@ -1151,7 +1151,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID: 1,
 
 		ChainID:  constants.PlatformChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(complexAddNetTx.SyntacticVerify(rt))
 
@@ -1384,7 +1384,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID for "P-lux1..." address encoding
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	unsignedComplexAddNetTx.InitRuntime(rt3)
 

@@ -286,7 +286,7 @@ func New(
 	if err := n.addDefaultVMAliases(); err != nil {
 		return nil, fmt.Errorf("couldn't initialize API aliases: %w", err)
 	}
-	if err := n.initChainManager(n.Config.XAssetID); err != nil { // Set up the chain manager
+	if err := n.initChainManager(n.Config.UTXOAssetID); err != nil { // Set up the chain manager
 		return nil, fmt.Errorf("couldn't initialize chain manager: %w", err)
 	}
 	if err := n.initVMs(); err != nil { // Initialize the VM registry.
@@ -1257,7 +1257,7 @@ func (n *Node) addDefaultVMAliases() error {
 // Create the chainManager and register the following VMs:
 // XVM, Simple Payments DAG, Simple Payments Chain, and Platform VM
 // Assumes n.DBManager, n.vdrs all initialized (non-nil)
-func (n *Node) initChainManager(xAssetID ids.ID) error {
+func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 	// X-Chain (XVM, the historic exchange chain) is OPT-IN. Networks that
 	// don't bake an XVM into platform genesis run in "P-only" mode where
 	// asset creation and UTXO ops are first-class on the P-Chain (see
@@ -1352,7 +1352,7 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 			NetworkID:                               n.Config.NetworkID,
 			Server:                                  n.APIServer,
 			AtomicMemory:                            n.sharedMemory,
-			XAssetID:                                xAssetID,
+			UTXOAssetID:                                utxoAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			DChainID:                                dChainID,
