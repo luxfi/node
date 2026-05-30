@@ -35,7 +35,7 @@ func (e *standardTxExecutor) CreateAssetTx(tx *txs.CreateAssetTx) error {
 		tx.Outs,
 		e.tx.Creds,
 		map[ids.ID]uint64{
-			e.backend.Runtime.XAssetID: fee,
+			e.backend.Runtime.UTXOAssetID: fee,
 		},
 	); err != nil {
 		return err

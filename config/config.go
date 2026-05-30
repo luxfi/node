@@ -1052,15 +1052,15 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
 		}
-		xAssetID, err := resolveXAssetID(networkID, genesisBytes)
+		utxoAssetID, err := resolveXAssetID(networkID, genesisBytes)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
 		}
 		log.Info("loaded raw genesis bytes directly",
 			"size", len(genesisBytes),
-			"xAssetID", xAssetID,
+			"utxoAssetID", utxoAssetID,
 		)
-		return genesisBytes, xAssetID, nil
+		return genesisBytes, utxoAssetID, nil
 	}
 
 	// Check if genesis-db is specified for database replay
@@ -1091,19 +1091,19 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		// Check if we have cached genesis bytes to avoid rebuilding
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
-			xAssetID, err := resolveXAssetID(networkID, cachedBytes)
+			utxoAssetID, err := resolveXAssetID(networkID, cachedBytes)
 			if err != nil {
 				return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from cached genesis: %w", err)
 			}
 			log.Info("loaded cached genesis bytes for hash stability",
 				"cacheFile", cacheFile,
 				"size", len(cachedBytes),
-				"xAssetID", xAssetID,
+				"utxoAssetID", utxoAssetID,
 			)
-			return cachedBytes, xAssetID, nil
+			return cachedBytes, utxoAssetID, nil
 		}
 		// No cache or invalid cache - build from file and cache the result
-		genesisBytes, xAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
+		genesisBytes, utxoAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
 		if err != nil {
 			return nil, ids.Empty, err
 		}
@@ -1118,7 +1118,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 				"size", len(genesisBytes),
 			)
 		}
-		return genesisBytes, xAssetID, nil
+		return genesisBytes, utxoAssetID, nil
 	}
 
 	// finally if file is not specified/readable go for the predefined config
@@ -1859,7 +1859,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// Get data directory for dev network config persistence
 	dataDir := getExpandedArg(v, DataDirKey)
 
-	nodeConfig.GenesisBytes, nodeConfig.XAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
+	nodeConfig.GenesisBytes, nodeConfig.UTXOAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}

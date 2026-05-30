@@ -120,8 +120,8 @@ func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		xAssetID := rt.XAssetID
-		if assetID != xAssetID {
+		utxoAssetID := rt.UTXOAssetID
+		if assetID != utxoAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
 	}
