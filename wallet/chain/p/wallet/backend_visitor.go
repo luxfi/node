@@ -136,6 +136,13 @@ func (b *backendVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) erro
 	return b.baseTx(&tx.BaseTx)
 }
 
+func (b *backendVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	// Sovereign L1 launch: the new network ID is derived from the tx
+	// hash at commit time. The wallet backend does not need to
+	// preregister owners — that happens P-chain-side during execution.
+	return b.baseTx(&tx.BaseTx)
+}
+
 func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	warpMessage, err := warp.ParseMessage(tx.Message)
 	if err != nil {
