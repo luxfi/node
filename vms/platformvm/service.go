@@ -603,7 +603,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 // APIChain is the canonical wire-shape for a chain registered on the
 // platform via CreateNetworkTx. Replaces APINet — same fields, named
 // after the user-facing concept ("chain") rather than the internal
-// "net" / "subnet" jargon. The wire encoding is byte-identical so a
+// canonical naming. The wire encoding is byte-identical so a
 // deserializer that targets APIChain reads APINet responses and vice
 // versa; no proxies need to translate.
 type APIChain struct {
