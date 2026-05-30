@@ -167,7 +167,7 @@ func main() {
 		log.Fatalf("wallet sync: %v", err)
 	}
 
-	luxAssetID := w.X().Builder().Context().XAssetID
+	luxAssetID := w.X().Builder().Context().UTXOAssetID
 	pBal, err := w.P().Builder().GetBalance()
 	if err != nil {
 		log.Fatalf("P balance: %v", err)
