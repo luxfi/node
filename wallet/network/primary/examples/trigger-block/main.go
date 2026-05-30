@@ -53,14 +53,14 @@ func main() {
 	pWallet := wallet.P()
 	pBuilder := pWallet.Builder()
 	pCtx := pBuilder.Context()
-	xAssetID := pCtx.XAssetID
+	utxoAssetID := pCtx.UTXOAssetID
 
 	// Check balance
 	balances, err := pBuilder.GetBalance()
 	if err != nil {
 		log.Fatalf("failed to get balance: %v", err)
 	}
-	luxBalance := balances[xAssetID]
+	luxBalance := balances[utxoAssetID]
 	log.Printf("P-chain LUX balance: %d µLUX = %d LUX", luxBalance, luxBalance/constants.Lux)
 
 	// Send 1 LUX to self — this forces block production on P-chain
@@ -73,7 +73,7 @@ func main() {
 	tx, err := pWallet.IssueBaseTx(
 		[]*lux.TransferableOutput{
 			{
-				Asset: lux.Asset{ID: xAssetID},
+				Asset: lux.Asset{ID: utxoAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amount,
 					OutputOwners: secp256k1fx.OutputOwners{
