@@ -23,7 +23,7 @@ func newContext(
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		XAssetID:         feeAssetID,
+		UTXOAssetID:         feeAssetID,
 		BaseTxFee:        cfg.TxFee,
 		CreateAssetTxFee: cfg.CreateAssetTxFee,
 	}

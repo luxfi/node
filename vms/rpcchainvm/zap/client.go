@@ -81,7 +81,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		publicKey = rt.PublicKey
 		xChainID = rt.XChainID[:]
 		cChainID = rt.CChainID[:]
-		luxAssetID = rt.XAssetID[:]
+		luxAssetID = rt.UTXOAssetID[:]
 		chainDataDir = rt.ChainDataDir
 	}
 

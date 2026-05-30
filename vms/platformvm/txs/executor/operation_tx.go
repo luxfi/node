@@ -58,7 +58,7 @@ func (e *standardTxExecutor) OperationTx(tx *txs.OperationTx) error {
 		tx.Outs,
 		e.tx.Creds[:len(tx.Ins)],
 		map[ids.ID]uint64{
-			e.backend.Runtime.XAssetID: fee,
+			e.backend.Runtime.UTXOAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("op tx fee verification: %w", err)

@@ -201,7 +201,7 @@ func (h *handler) Spend(
 			break
 		}
 
-		if assetID := utxo.AssetID(); assetID != XAssetID {
+		if assetID := utxo.AssetID(); assetID != UTXOAssetID {
 			continue // We only care about staking LUX, so ignore other assets
 		}
 
@@ -247,7 +247,7 @@ func (h *handler) Spend(
 		// Add the input to the consumed inputs
 		ins = append(ins, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  lux.Asset{ID: XAssetID},
+			Asset:  lux.Asset{ID: UTXOAssetID},
 			In: &stakeable.LockIn{
 				Locktime:       out.Locktime,
 				TransferableIn: in,
@@ -256,7 +256,7 @@ func (h *handler) Spend(
 
 		// Add the output to the staked outputs
 		stakedOuts = append(stakedOuts, &lux.TransferableOutput{
-			Asset: lux.Asset{ID: XAssetID},
+			Asset: lux.Asset{ID: UTXOAssetID},
 			Out: &stakeable.LockOut{
 				Locktime: out.Locktime,
 				TransferableOut: &secp256k1fx.TransferOutput{
@@ -270,7 +270,7 @@ func (h *handler) Spend(
 			// This input provided more value than was needed to be locked.
 			// Some of it must be returned
 			returnedOuts = append(returnedOuts, &lux.TransferableOutput{
-				Asset: lux.Asset{ID: XAssetID},
+				Asset: lux.Asset{ID: UTXOAssetID},
 				Out: &stakeable.LockOut{
 					Locktime: out.Locktime,
 					TransferableOut: &secp256k1fx.TransferOutput{
@@ -296,7 +296,7 @@ func (h *handler) Spend(
 			break
 		}
 
-		if assetID := utxo.AssetID(); assetID != XAssetID {
+		if assetID := utxo.AssetID(); assetID != UTXOAssetID {
 			continue // We only care about burning LUX, so ignore other assets
 		}
 
@@ -346,14 +346,14 @@ func (h *handler) Spend(
 		// Add the input to the consumed inputs
 		ins = append(ins, &lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
-			Asset:  lux.Asset{ID: XAssetID},
+			Asset:  lux.Asset{ID: UTXOAssetID},
 			In:     in,
 		})
 
 		if amountToStake > 0 {
 			// Some of this input was put for staking
 			stakedOuts = append(stakedOuts, &lux.TransferableOutput{
-				Asset: lux.Asset{ID: XAssetID},
+				Asset: lux.Asset{ID: UTXOAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: amountToStake,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -368,7 +368,7 @@ func (h *handler) Spend(
 		if remainingValue > 0 {
 			// This input had extra value, so some of it must be returned
 			returnedOuts = append(returnedOuts, &lux.TransferableOutput{
-				Asset: lux.Asset{ID: XAssetID},
+				Asset: lux.Asset{ID: UTXOAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: remainingValue,
 					OutputOwners: secp256k1fx.OutputOwners{

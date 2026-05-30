@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.24.6
+	github.com/luxfi/consensus v1.25.0
 	github.com/luxfi/crypto v1.19.15
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
@@ -140,7 +140,7 @@ require (
 	github.com/luxfi/p2p v1.19.2
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.2
-	github.com/luxfi/runtime v1.0.1
+	github.com/luxfi/runtime v1.1.0
 	github.com/luxfi/sdk v1.16.60
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/timer v1.0.2
@@ -168,7 +168,7 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/corona v0.7.4 // indirect
+	github.com/luxfi/corona v0.7.5 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect

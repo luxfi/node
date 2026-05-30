@@ -131,7 +131,7 @@ func main() {
 		log.Fatalf("wallet sync failed: %v", err)
 	}
 
-	luxAssetID := fundWallet.X().Builder().Context().XAssetID
+	luxAssetID := fundWallet.X().Builder().Context().UTXOAssetID
 	pBalanceMap, err := fundWallet.P().Builder().GetBalance()
 	if err != nil {
 		log.Fatalf("P-chain balance check failed: %v", err)

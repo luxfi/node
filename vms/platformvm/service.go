@@ -244,10 +244,10 @@ utxoFor:
 	response.Unlockeds = newJSONBalanceMap(unlockeds)
 	response.LockedStakeables = newJSONBalanceMap(lockedStakeables)
 	response.LockedNotStakeables = newJSONBalanceMap(lockedNotStakeables)
-	response.Balance = response.Balances[s.vm.xAssetID]
-	response.Unlocked = response.Unlockeds[s.vm.xAssetID]
-	response.LockedStakeable = response.LockedStakeables[s.vm.xAssetID]
-	response.LockedNotStakeable = response.LockedNotStakeables[s.vm.xAssetID]
+	response.Balance = response.Balances[s.vm.utxoAssetID]
+	response.Unlocked = response.Unlockeds[s.vm.utxoAssetID]
+	response.LockedStakeable = response.LockedStakeables[s.vm.utxoAssetID]
+	response.LockedNotStakeable = response.LockedNotStakeables[s.vm.utxoAssetID]
 	return nil
 }
 
@@ -676,7 +676,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	)
 
 	if args.ChainID == constants.PrimaryNetworkID {
-		response.AssetID = s.vm.xAssetID
+		response.AssetID = s.vm.utxoAssetID
 		return nil
 	}
 
@@ -1672,7 +1672,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	}
 
 	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
-	response.Staked = response.Stakeds[s.vm.xAssetID]
+	response.Staked = response.Stakeds[s.vm.utxoAssetID]
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		bytes, err := txs.Codec.Marshal(txs.CodecVersion, output)

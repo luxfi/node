@@ -66,7 +66,7 @@ func main() {
 	pWallet := wallet.P()
 	pBuilder := pWallet.Builder()
 	pContext := pBuilder.Context()
-	xAssetID := pContext.XAssetID
+	utxoAssetID := pContext.UTXOAssetID
 
 	addValidatorStartTime := time.Now()
 	addValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
@@ -77,7 +77,7 @@ func main() {
 			Wght:   weight,
 		}},
 		pop,
-		xAssetID,
+		utxoAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{validatorRewardAddr},

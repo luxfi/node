@@ -194,14 +194,14 @@ func TestGenesis(t *testing.T) {
 	require := require.New(t)
 	genesis := createTestGenesis(t)
 
-	xAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
+	utxoAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
 	nodeID := ids.BuildTestNodeID([]byte{1})
 	require.Equal("Test Genesis", genesis.Message)
 
 	// Validate allocations
 	require.Len(genesis.UTXOs, 1)
 	utxo := genesis.UTXOs[0]
-	require.Equal(xAssetID, utxo.Asset.ID)
+	require.Equal(utxoAssetID, utxo.Asset.ID)
 	output, ok := utxo.Out.(*secp256k1fx.TransferOutput)
 	require.True(ok)
 	require.Equal(uint64(123456789), output.Amt)
@@ -285,9 +285,9 @@ func TestNewReturnsSortedValidators(t *testing.T) {
 		}},
 	}
 
-	xAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
+	utxoAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
 	genesis, err := New(
-		xAssetID,
+		utxoAssetID,
 		constants.UnitTestID,
 		[]Allocation{allocation},
 		[]PermissionlessValidator{

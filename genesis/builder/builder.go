@@ -401,15 +401,15 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// When X-Chain is opt-out (P-only mode, xvmGenesisBytes is nil) we keep
 	// the network-id-keyed constant as a placeholder; the asset ID is
 	// irrelevant in that mode since there is no X-Chain to mint on.
-	var xAssetID ids.ID
+	var utxoAssetID ids.ID
 	if len(xvmGenesisBytes) > 0 {
 		var err error
-		xAssetID, err = xvmgenesis.AssetIDFromBytes(xvmGenesisBytes)
+		utxoAssetID, err = xvmgenesis.AssetIDFromBytes(xvmGenesisBytes)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("derive X-Chain asset ID from genesis: %w", err)
 		}
 	} else {
-		xAssetID = constants.UTXOAssetIDFor(config.NetworkID)
+		utxoAssetID = constants.UTXOAssetIDFor(config.NetworkID)
 	}
 
 	genesisTime := time.Unix(int64(config.StartTime), 0)
@@ -623,7 +623,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// CreateChainTx post-genesis on their own chains.
 
 	pChainGenesis, err := genesis.New(
-		xAssetID,
+		utxoAssetID,
 		config.NetworkID,
 		platformAllocations,
 		validators,
@@ -639,7 +639,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("problem while serializing platform chain's genesis state: %w", err)
 	}
-	return pChainGenesisBytes, xAssetID, nil
+	return pChainGenesisBytes, utxoAssetID, nil
 }
 
 // FromFile loads genesis config from file and builds genesis bytes.

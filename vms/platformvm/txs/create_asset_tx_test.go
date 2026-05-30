@@ -20,7 +20,7 @@ func newRuntime(t *testing.T) *runtime.Runtime {
 	return &runtime.Runtime{
 		NetworkID: 1337,
 		ChainID:   ids.GenerateTestID(),
-		XAssetID:  ids.GenerateTestID(),
+		UTXOAssetID:  ids.GenerateTestID(),
 	}
 }
 

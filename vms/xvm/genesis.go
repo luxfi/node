@@ -184,7 +184,7 @@ func newGenesisCodec() (codec.Manager, error) {
 // the X-Chain native asset ID from genesis content rather than the
 // network-id-keyed constants.UTXOAssetIDFor(networkID). On sovereign
 // L1s those two values DIFFER — the wallet
-// builder context's XAssetID must be the genesis-derived one or every
+// builder context's UTXOAssetID must be the genesis-derived one or every
 // fee-paying tx fails with "insufficient funds, needs N more nLUX".
 func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
 	codec, err := newGenesisCodec()
@@ -208,7 +208,7 @@ func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
 // asset ID — the ID vm.initGenesis assigns to genesis.Txs[0]. This is
 // the X-Chain native fee asset by convention (the same asset the
 // platform-vm reports via platform.getStakingAssetID and the wallet
-// builder context's XAssetID).
+// builder context's UTXOAssetID).
 //
 // Returns an error when genesisBytes is malformed or contains zero
 // assets — both are unrecoverable on a primary-network bootstrap.

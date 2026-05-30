@@ -40,7 +40,7 @@ func debugBalance() {
 		log.Fatal("FetchState error: ", err)
 	}
 	fmt.Printf("NetworkID: %d\n", state.PCTX.NetworkID)
-	fmt.Printf("XAssetID: %s\n", state.PCTX.XAssetID)
+	fmt.Printf("UTXOAssetID: %s\n", state.PCTX.UTXOAssetID)
 
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri,
@@ -51,7 +51,7 @@ func debugBalance() {
 		log.Fatal("MakeWallet error: ", err)
 	}
 
-	luxAssetID := wallet.X().Builder().Context().XAssetID
+	luxAssetID := wallet.X().Builder().Context().UTXOAssetID
 	pBal, _ := wallet.P().Builder().GetBalance()
 	fmt.Printf("P balance: %v\n", pBal)
 	fmt.Printf("P LUX: %d\n", pBal[luxAssetID])
