@@ -363,8 +363,6 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *apiinfo.GetTxFeeRes
 	switch i.NetworkID {
 	case constants.MainnetID:
 		*reply = mainnetGetTxFeeResponse
-	// case constants.FujiID: // FujiID not available in constants package
-	// 	*reply = fujiGetTxFeeResponse
 	default:
 		*reply = defaultGetTxFeeResponse
 	}
