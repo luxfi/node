@@ -652,7 +652,7 @@ type ICPAdapter struct {
 	mu              sync.RWMutex
 	config          *ChainConfig
 	blocks          map[uint64]*ICPBlock
-	subnets         map[[32]byte]*ICPSubnet
+	nets            map[[32]byte]*ICPNet
 	latestHeight    uint64
 	initialized     bool
 }
@@ -666,7 +666,7 @@ type ICPBlock struct {
 	ChainID     [32]byte `json:"chainId"`
 }
 
-type ICPSubnet struct {
+type ICPNet struct {
 	ChainID     [32]byte   `json:"chainId"`
 	PublicKey    []byte     `json:"publicKey"` // Threshold BLS
 	Nodes        [][32]byte `json:"nodes"`
@@ -675,7 +675,7 @@ type ICPSubnet struct {
 func NewICPAdapter() *ICPAdapter {
 	return &ICPAdapter{
 		blocks:  make(map[uint64]*ICPBlock),
-		subnets: make(map[[32]byte]*ICPSubnet),
+		nets: make(map[[32]byte]*ICPNet),
 	}
 }
 
@@ -723,7 +723,7 @@ func (a *ICPAdapter) Close() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.blocks = nil
-	a.subnets = nil
+	a.nets = nil
 	a.initialized = false
 	return nil
 }

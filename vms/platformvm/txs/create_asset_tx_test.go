@@ -199,6 +199,7 @@ func (*mockVisitor) AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) 
 func (*mockVisitor) TransferChainOwnershipTx(*TransferChainOwnershipTx) error          { return nil }
 func (*mockVisitor) BaseTx(*BaseTx) error                                              { return nil }
 func (*mockVisitor) ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error                  { return nil }
+func (*mockVisitor) CreateSovereignL1Tx(*CreateSovereignL1Tx) error                    { return nil }
 func (*mockVisitor) RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error                { return nil }
 func (*mockVisitor) SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error              { return nil }
 func (*mockVisitor) IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error  { return nil }

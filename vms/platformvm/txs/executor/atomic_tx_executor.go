@@ -112,6 +112,10 @@ func (*atomicTxExecutor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return ErrWrongTxType
 }
 
+func (*atomicTxExecutor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	return ErrWrongTxType
+}
+
 func (*atomicTxExecutor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
 	return ErrWrongTxType
 }

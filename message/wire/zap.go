@@ -418,7 +418,7 @@ func marshalHandshake(b *Buffer, m *Handshake) {
 	b.WriteUint32(m.IpPort)
 	b.WriteUint64(m.IpSigningTime)
 	b.WriteBytes(m.IpNodeIdSig)
-	b.WriteBytesSlice(m.TrackedSubnets)
+	b.WriteBytesSlice(m.TrackedChains)
 	if m.Client != nil {
 		b.WriteUint8(1)
 		b.WriteString(m.Client.Name)
@@ -674,7 +674,7 @@ func unmarshalHandshake(r *Reader) (*Handshake, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.TrackedSubnets, err = r.ReadBytesSlice()
+	m.TrackedChains, err = r.ReadBytesSlice()
 	if err != nil {
 		return nil, err
 	}

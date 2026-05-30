@@ -15,7 +15,7 @@
 //	  --bip44-idx=10
 //
 // EVM keys are derived at BIP44 m/44'/60'/0'/0/<idx> (Ethereum coin type 60).
-// Index 10 is reserved for heartbeats — validators occupy 0-4 and subnet
+// Index 10 is reserved for heartbeats — validators occupy 0-4 and chain
 // control keys occupy 5-7.
 //
 // One failed chain does not abort the run; each chain reports its own error.

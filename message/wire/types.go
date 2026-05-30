@@ -52,7 +52,7 @@ type Ping struct {
 
 // ChainPingEntry is the per-chain payload in Ping/Pong.
 // In Lux's L1/L2 model each chain is its own validator set, so the legacy
-// (chain, subnet) pair collapses to a single chain identifier.
+// (chain, network) pair collapses to a single chain identifier.
 type ChainPingEntry struct {
 	ChainId []byte
 }
@@ -71,7 +71,7 @@ type Handshake struct {
 	IpPort         uint32
 	IpSigningTime  uint64
 	IpNodeIdSig    []byte
-	TrackedSubnets [][]byte
+	TrackedChains [][]byte
 	Client         *Client
 	SupportedAcps  []uint32
 	ObjectedAcps   []uint32

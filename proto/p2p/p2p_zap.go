@@ -39,7 +39,7 @@ type (
 	Message_BFT                 = p2p.Message_BFT
 	Ping                    = p2p.Ping
 	Pong                    = p2p.Pong
-	SubnetUptime            = p2p.SubnetUptime
+	ChainUptime             = p2p.ChainUptime
 	Handshake               = p2p.Handshake
 	Client                  = p2p.Client
 	BloomFilter             = p2p.BloomFilter

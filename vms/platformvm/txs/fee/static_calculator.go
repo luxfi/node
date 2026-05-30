@@ -129,6 +129,10 @@ func (*staticVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return ErrUnsupportedTx
 }
 
+func (*staticVisitor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	return ErrUnsupportedTx
+}
+
 func (*staticVisitor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return ErrUnsupportedTx
 }

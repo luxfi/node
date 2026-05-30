@@ -106,6 +106,10 @@ func (*warpVerifier) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return nil
 }
 
+func (*warpVerifier) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	return nil
+}
+
 func (*warpVerifier) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
 	return nil
 }

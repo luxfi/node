@@ -1,4 +1,4 @@
-// bootstrap-hanzo creates the hanzo subnet + blockchain on testnet/devnet
+// bootstrap-hanzo creates the hanzo chain on testnet/devnet
 // using a BIP-44 m/44'/9000'/0'/0/<idx> key derived from MNEMONIC.
 //
 // Usage:
@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-// Default hanzo subnet-evm VM ID (matches mainnet hanzo deployment).
+// Default hanzo EVM VM ID (matches mainnet hanzo deployment).
 const defaultHanzoVMID = "nyGCobireNhxFB7iM5bxV74hAY6j9nQX6wizxfWomnMMtztkr"
 
 func deriveLuxKey(mnemonic string, idx uint32) (*secp256k1.PrivateKey, error) {
@@ -79,13 +79,13 @@ func formatPAddr(hrp string, a ids.ShortID) string {
 func main() {
 	uri := flag.String("uri", "", "luxd API URI (e.g. http://localhost:19640)")
 	network := flag.String("network", "", "human label: testnet|devnet (for logs)")
-	genesisPath := flag.String("genesis", "", "EVM genesis JSON for the hanzo subnet")
+	genesisPath := flag.String("genesis", "", "EVM genesis JSON for the hanzo chain")
 	hrp := flag.String("hrp", "", "P-chain bech32 HRP: test|dev")
 	bipIdx := flag.Uint("bip44-idx", 5, "BIP44 derivation index at m/44'/9000'/0'/0/<idx>")
-	chainName := flag.String("chain-name", "hanzo", "subnet/chain name (don't change unless intentional)")
-	skipValidators := flag.Bool("skip-validators", false, "skip adding primary validators to the new subnet")
-	vmIDStr := flag.String("vm-id", defaultHanzoVMID, "subnet-evm VM ID present in luxd's --plugin-dir")
-	existingSubnetID := flag.String("subnet-id", "", "if set, skip CreateNetworkTx and reuse this subnet ID for the CreateChainTx")
+	chainName := flag.String("chain-name", "hanzo", "chain name (don't change unless intentional)")
+	skipValidators := flag.Bool("skip-validators", false, "skip adding primary validators to the new chain")
+	vmIDStr := flag.String("vm-id", defaultHanzoVMID, "EVM VM ID present in luxd's --plugin-dir")
+	existingNetID := flag.String("network-id", "", "if set, skip CreateNetworkTx and reuse this network ID for the CreateChainTx")
 	flag.Parse()
 
 	if *uri == "" || *genesisPath == "" || *hrp == "" {
@@ -183,12 +183,12 @@ func main() {
 	}
 
 	var netID ids.ID
-	if *existingSubnetID != "" {
-		netID, err = ids.FromString(*existingSubnetID)
+	if *existingNetID != "" {
+		netID, err = ids.FromString(*existingNetID)
 		if err != nil {
-			log.Fatalf("invalid --subnet-id: %v", err)
+			log.Fatalf("invalid --network-id: %v", err)
 		}
-		log.Printf("[%s] reusing existing subnet ID = %s (skipping CreateNetworkTx)", *network, netID)
+		log.Printf("[%s] reusing existing network ID = %s (skipping CreateNetworkTx)", *network, netID)
 	} else {
 		log.Printf("[%s] IssueCreateNetworkTx ...", *network)
 		createNetTx, err := w.P().IssueCreateNetworkTx(owner)
@@ -196,7 +196,7 @@ func main() {
 			log.Fatalf("create network: %v", err)
 		}
 		netID = createNetTx.ID()
-		log.Printf("[%s] subnet (network) ID = %s", *network, netID)
+		log.Printf("[%s] network ID = %s", *network, netID)
 		time.Sleep(10 * time.Second)
 	}
 
@@ -259,7 +259,7 @@ func main() {
 				if err != nil {
 					log.Printf("WARN add validator %s: %v", nid, err)
 				} else {
-					log.Printf("[%s] added subnet validator: %s", *network, nid)
+					log.Printf("[%s] added chain validator: %s", *network, nid)
 				}
 				time.Sleep(1 * time.Second)
 			}
@@ -267,8 +267,8 @@ func main() {
 	}
 
 	fmt.Println()
-	fmt.Printf("---- %s hanzo subnet bootstrap COMPLETE ----\n", *network)
-	fmt.Printf("SUBNET_ID=%s\n", netID)
+	fmt.Printf("---- %s hanzo chain bootstrap COMPLETE ----\n", *network)
+	fmt.Printf("NETWORK_ID=%s\n", netID)
 	fmt.Printf("BLOCKCHAIN_ID=%s\n", bcID)
 	fmt.Printf("VM_ID=%s\n", hanzoVMID)
 	fmt.Printf("EVM_CHAIN_ID=%v\n", evmChainID)

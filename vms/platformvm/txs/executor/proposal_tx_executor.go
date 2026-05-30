@@ -131,6 +131,10 @@ func (*proposalTxExecutor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error
 	return ErrWrongTxType
 }
 
+func (*proposalTxExecutor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	return ErrWrongTxType
+}
+
 func (*proposalTxExecutor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
 	return ErrWrongTxType
 }

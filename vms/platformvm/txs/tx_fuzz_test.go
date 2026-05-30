@@ -524,6 +524,7 @@ func (v *visitor) RewardValidatorTx(*RewardValidatorTx) error                   
 func (v *visitor) TransferChainOwnershipTx(*TransferChainOwnershipTx) error         { return nil }
 func (v *visitor) TransformChainTx(*TransformChainTx) error                         { return nil }
 func (v *visitor) ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error                     { return nil }
+func (v *visitor) CreateSovereignL1Tx(*CreateSovereignL1Tx) error                       { return nil }
 func (v *visitor) RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error               { return nil }
 func (v *visitor) SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error             { return nil }
 func (v *visitor) DisableL1ValidatorTx(*DisableL1ValidatorTx) error                 { return nil }

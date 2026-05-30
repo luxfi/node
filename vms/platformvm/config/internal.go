@@ -111,7 +111,7 @@ type Internal struct {
 // P-only primary network: P-Chain is the sole mandatory chain (created out
 // of band by the chain manager at startup). EVERY other chain — X-Chain
 // (XVM), C-Chain (EVM), Q-Chain (Quantum), D-Chain (DEX), and any
-// subnet-spawned blockchain — is opt-in via --track-chains / --track-all
+// per-chain blockchain — opt-in via --track-chains / --track-all
 // or by being present in platform genesis. Operators bring up exactly what
 // their workload needs, nothing more.
 func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {

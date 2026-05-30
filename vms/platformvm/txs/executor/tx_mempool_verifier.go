@@ -90,6 +90,10 @@ func (v *MempoolTxVerifier) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) e
 	return v.standardTx(tx)
 }
 
+func (v *MempoolTxVerifier) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	return v.standardTx(tx)
 }

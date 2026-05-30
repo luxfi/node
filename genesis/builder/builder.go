@@ -620,7 +620,7 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	}
 
 	// G/K/A/I chains are loaded as plugins and instantiated via
-	// CreateChainTx post-genesis on their own subnets.
+	// CreateChainTx post-genesis on their own chains.
 
 	pChainGenesis, err := genesis.New(
 		xAssetID,
