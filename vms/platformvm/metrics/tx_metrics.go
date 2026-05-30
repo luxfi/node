@@ -151,6 +151,13 @@ func (m *txMetrics) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return nil
 }
 
+func (m *txMetrics) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "create_sovereign_l1",
+	}).Inc()
+	return nil
+}
+
 func (m *txMetrics) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "register_l1_validator",

@@ -106,6 +106,10 @@ func RegisterTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&BaseTx{}),
 
 		targetCodec.RegisterType(&ConvertNetworkToL1Tx{}),
+		// CreateSovereignL1Tx is the single-step alternative to
+		// CreateNetworkTx + AddChainValidatorTx ×N + CreateChainTx ×K
+		// + ConvertNetworkToL1Tx — registers a sovereign L1 atomically.
+		targetCodec.RegisterType(&CreateSovereignL1Tx{}),
 		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
 		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),
