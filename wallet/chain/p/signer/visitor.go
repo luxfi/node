@@ -201,6 +201,14 @@ func (s *visitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
 	return sign(s.tx, true, txSigners)
 }
 
+func (s *visitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, true, txSigners)
+}
+
 func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {

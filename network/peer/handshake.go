@@ -27,7 +27,7 @@ import (
 //	INIT (initiator → responder)
 //	  ProtocolVersion u8                         ; 0x01 today
 //	  ProfileID       u8                         ; LuxStrictPQ etc.
-//	  ChainID         [32]byte                   ; primary-network or subnet
+//	  ChainID         [32]byte                   ; primary-network or per-chain
 //	  KEMScheme       u8                         ; ML-KEM-768 / ML-KEM-1024
 //	  NodeID          [20]byte                   ; canonical Lux NodeID
 //	  MLDSAPublicKey  [PublicKeySize]byte        ; FIPS 204 ML-DSA-65 pub
