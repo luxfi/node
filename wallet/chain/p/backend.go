@@ -171,6 +171,10 @@ func (v *backendVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
 	return nil
 }
 
+func (v *backendVisitor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+	return nil
+}
+
 func (v *backendVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
 	return nil
 }
