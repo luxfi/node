@@ -413,6 +413,14 @@ func (s *signerVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error
 	return sign(s.tx, false, txSigners)
 }
 
+func (s *signerVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
 // CreateAssetTx signs a CreateAssetTx (BaseTx fee inputs only).
 func (s *signerVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
 	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)

@@ -216,7 +216,7 @@ type ClientNet struct {
 // ClientChain is the canonical client-side view of a chain registered
 // on the platform. Replaces ClientNet with field naming that matches
 // the user-facing concept ("chain") rather than the internal "net" /
-// "subnet" jargon. Same shape — drop-in replacement.
+// canonical naming.
 type ClientChain = ClientNet
 
 // GetChains returns information about the specified chains. Empty
