@@ -29,7 +29,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77,
 	}
 
-	xAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
 	require.NoError(err)
 
 	customAssetID := ids.ID{
@@ -58,7 +58,7 @@ func TestBaseTxSerialization(t *testing.T) {
 						OutputIndex: 1,
 					},
 					Asset: lux.Asset{
-						ID: xAssetID,
+						ID: utxoAssetID,
 					},
 					In: &secp256k1fx.TransferInput{
 						Amt: constants.MilliLux,
@@ -76,7 +76,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(simpleBaseTx.SyntacticVerify(rt))
 
@@ -132,7 +132,7 @@ func TestBaseTxSerialization(t *testing.T) {
 			Outs: []*lux.TransferableOutput{
 				{
 					Asset: lux.Asset{
-						ID: xAssetID,
+						ID: utxoAssetID,
 					},
 					Out: &stakeable.LockOut{
 						Locktime: 87654321,
@@ -172,7 +172,7 @@ func TestBaseTxSerialization(t *testing.T) {
 						OutputIndex: 1,
 					},
 					Asset: lux.Asset{
-						ID: xAssetID,
+						ID: utxoAssetID,
 					},
 					In: &secp256k1fx.TransferInput{
 						Amt: constants.Lux,
@@ -224,7 +224,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	require.NoError(complexBaseTx.SyntacticVerify(rt2))
 
@@ -374,7 +374,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 	}
 	unsignedComplexBaseTx.InitRuntime(rt3)
 

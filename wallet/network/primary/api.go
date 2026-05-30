@@ -124,11 +124,11 @@ func FetchState(
 	// X-chain fees are derived from the P-chain context. The fee values
 	// here match the primary network defaults and are overridden at the
 	// chain level when dynamic fees are enabled.
-	xAssetID := pCTX.XAssetID
+	utxoAssetID := pCTX.UTXOAssetID
 	baseTxFee := uint64(1000000)         // 0.001 LUX
 	createAssetTxFee := uint64(10000000) // 0.01 LUX
 
-	xCTX, err := x.NewContextFromClients(ctx, infoClient, xAssetID, baseTxFee, createAssetTxFee)
+	xCTX, err := x.NewContextFromClients(ctx, infoClient, utxoAssetID, baseTxFee, createAssetTxFee)
 	if err != nil {
 		return nil, err
 	}
