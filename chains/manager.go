@@ -345,7 +345,7 @@ type ManagerConfig struct {
 	PartialSyncPrimaryNetwork bool
 	Server                    server.Server // Handles HTTP API calls
 	AtomicMemory              *atomic.Memory
-	XAssetID                  ids.ID
+	UTXOAssetID                  ids.ID
 	SkipBootstrap             bool            // Skip bootstrapping and start processing immediately
 	EnableAutomining          bool            // Enable automining in POA mode
 	XChainID                  ids.ID          // ID of the X-Chain,
@@ -915,7 +915,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 		XChainID:     m.XChainID,
 		CChainID:     m.CChainID,
-		XAssetID:     m.XAssetID,
+		UTXOAssetID:     m.UTXOAssetID,
 		ChainDataDir: chainDataDir,
 
 		BCLookup:       m,

@@ -39,7 +39,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 			0x44, 0x55, 0x66, 0x77,
 		}
-		xAssetID = ids.ID{
+		utxoAssetID = ids.ID{
 			0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 			0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 			0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
@@ -67,7 +67,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						Out: &stakeable.LockOut{
 							Locktime: 87654321,
@@ -107,7 +107,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 							OutputIndex: 1,
 						},
 						Asset: lux.Asset{
-							ID: xAssetID,
+							ID: utxoAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
 							Amt: constants.Lux,

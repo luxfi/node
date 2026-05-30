@@ -23,7 +23,7 @@ import (
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	xAssetID := ids.GenerateTestID()
+	utxoAssetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	rt := &runtime.Runtime{
@@ -34,7 +34,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	rt = &runtime.Runtime{
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 		NodeID:   nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
@@ -60,14 +60,14 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: xAssetID},
+		Asset: lux.Asset{ID: utxoAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
 	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: xAssetID},
+		Asset: lux.Asset{ID: utxoAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -77,7 +77,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: xAssetID},
+		Asset: lux.Asset{ID: utxoAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -159,7 +159,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	xAssetID := ids.GenerateTestID()
+	utxoAssetID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	rt := &runtime.Runtime{
@@ -170,7 +170,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	rt = &runtime.Runtime{
 
 		ChainID:  testChainID,
-		XAssetID: xAssetID,
+		UTXOAssetID: utxoAssetID,
 		NodeID:   nodeID,
 	}
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
