@@ -132,7 +132,7 @@ func New(
 	// chainID || 0x42 || pubKey)[:20] under ids.NodeIDSchemeMLDSA65;
 	// classical-compat chains fall through to ids.NodeIDFromCert.
 	// chainID is the primary-network chain id (ids.Empty, encoded as
-	// "11111111111111111111111111111111LpoYY" in cb58); per-subnet
+	// "11111111111111111111111111111111LpoYY" in cb58); per-chain
 	// chain ids are bound at chain-creation time and don't affect
 	// the validator's primary identity.
 	derivedNodeID, err := config.StakingConfig.DeriveNodeID(ids.Empty)
@@ -1263,7 +1263,7 @@ func (n *Node) initChainManager(xAssetID ids.ID) error {
 	// asset creation and UTXO ops are first-class on the P-Chain (see
 	// CreateAssetTx/OperationTx in vms/platformvm/txs). All cross-chain
 	// flows that historically went P→X→C are replaced with direct
-	// P→subnet warp transfers.
+	// P→chain warp transfers.
 	var xChainID ids.ID
 	if createXVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID); err == nil {
 		xChainID = createXVMTx.ID()
