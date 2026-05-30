@@ -774,6 +774,35 @@ func (c *complexityVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) e
 	return err
 }
 
+func (c *complexityVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	// Sovereign L1 = network + N validators + K chains. Fee complexity
+	// is approximately the sum: baseTx + ConvertNetworkToL1 (validators)
+	// + sum(CreateChain) (chains). Charge as composite.
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators...)
+	if err != nil {
+		return err
+	}
+	c.output, err = baseTxComplexity.Add(&validatorComplexity)
+	if err != nil {
+		return err
+	}
+	// Per-chain genesis adds to the bandwidth dimension.
+	for _, ch := range tx.Chains {
+		chainBytes := gas.Dimensions{
+			gas.Bandwidth: uint64(len(ch.GenesisData)) + uint64(len(ch.BlockchainName)),
+		}
+		c.output, err = c.output.Add(&chainBytes)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *complexityVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
