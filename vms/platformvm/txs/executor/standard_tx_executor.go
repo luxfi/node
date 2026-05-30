@@ -609,6 +609,33 @@ func (e *standardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 	return nil
 }
 
+// CreateSovereignL1Tx executes a sovereign-L1 launch — atomically
+// registers a new network, seeds its genesis validator set, registers
+// every chain in tx.Chains, and records the on-chain validator-manager
+// contract as the L1's authority. Replaces what is today the 4-step
+// CreateNetworkTx + AddChainValidatorTx + CreateChainTx + ConvertNetworkToL1Tx
+// flow. After commit, the primary network has a permanent record of
+// the L1 but does NOT track-chains or validate its blocks.
+//
+// TODO(sovereign-l1): full executor body lands in a follow-up PR.
+// Outline of the steps the body needs:
+//   - SyntacticVerify (already does this via tx.Visit pipeline)
+//   - VerifyMemoFieldLength
+//   - VerifyAndApplyInputs (Owner sigs, UTXO consumption)
+//   - Derive new networkID from tx hash
+//   - Reject if derivedNetworkID == constants.PrimaryNetworkID
+//   - Seed validator-manager state with tx.Validators
+//   - Register tx.Chains[i] for each i (VMID + genesis blob, parent
+//     network = derivedNetworkID)
+//   - Record (tx.Chains[tx.ManagerChainIdx], tx.ManagerAddress) as
+//     the validator authority for the new L1
+//   - Charge fee via feeCalculator.CalculateFee(tx)
+//   - Produce change UTXOs
+//   - Emit on-chain event so warp-aware validators learn of the L1
+func (e *standardTxExecutor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+	return fmt.Errorf("CreateSovereignL1Tx executor: not yet implemented (follow-up PR)")
+}
+
 func (e *standardTxExecutor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
 	currentTimestamp := e.state.GetTimestamp()
 
