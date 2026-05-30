@@ -99,7 +99,7 @@ type VM struct {
 	log      log.Logger
 	nodeID   ids.NodeID
 	lock     sync.RWMutex
-	xAssetID ids.ID
+	utxoAssetID ids.ID
 	chainID  ids.ID
 	state state.State
 
@@ -223,15 +223,15 @@ func (vm *VM) Initialize(
 	vm.nodeID = init.Runtime.NodeID
 	vm.log.Info("platformvm initialized with node ID", "nodeID", vm.nodeID)
 
-	// Initialize utxo.XAssetID from the context
-	utxo.XAssetID = init.Runtime.XAssetID
+	// Initialize utxo.UTXOAssetID from the context
+	utxo.UTXOAssetID = init.Runtime.UTXOAssetID
 
-	// Initialize vm.xAssetID for GetStakingAssetID API
-	// Use LUXAssetID if set, otherwise fall back to XAssetID
-	if init.Runtime.XAssetID != ids.Empty {
-		vm.xAssetID = init.Runtime.XAssetID
+	// Initialize vm.utxoAssetID for GetStakingAssetID API
+	// Use LUXAssetID if set, otherwise fall back to UTXOAssetID
+	if init.Runtime.UTXOAssetID != ids.Empty {
+		vm.utxoAssetID = init.Runtime.UTXOAssetID
 	} else {
-		vm.xAssetID = init.Runtime.XAssetID
+		vm.utxoAssetID = init.Runtime.UTXOAssetID
 	}
 
 	// Get the current database from the DBManager

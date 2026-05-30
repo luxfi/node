@@ -152,14 +152,14 @@ func TestNetworkConfiguration(t *testing.T) {
 }
 
 func TestXAssetID(t *testing.T) {
-	// Verify XAssetID is used for native asset
-	xAssetID := ids.Empty // Our implementation uses Empty ID for native asset
+	// Verify UTXOAssetID is used for native asset
+	utxoAssetID := ids.Empty // Our implementation uses Empty ID for native asset
 
-	if xAssetID != ids.Empty {
-		t.Fatal("XAssetID should be Empty for native asset")
+	if utxoAssetID != ids.Empty {
+		t.Fatal("UTXOAssetID should be Empty for native asset")
 	}
 
-	t.Log("✓ XAssetID verified for native LUX asset")
+	t.Log("✓ UTXOAssetID verified for native LUX asset")
 }
 
 func TestConsensusConfig(t *testing.T) {
@@ -319,7 +319,7 @@ func TestSummary(t *testing.T) {
 	t.Log("✓ Validator Manager: PASS")
 	t.Log("✓ Network Configuration: PASS")
 	t.Log("✓ Consensus Parameters: PASS")
-	t.Log("✓ XAssetID Configuration: PASS")
+	t.Log("✓ UTXOAssetID Configuration: PASS")
 	t.Log("✓ Validator Lifecycle: PASS")
 	t.Log("✓ Validator Set Interface: PASS")
 	t.Log("----------------------------------------")
