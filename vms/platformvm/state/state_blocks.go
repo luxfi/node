@@ -112,7 +112,7 @@ func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 
 	// Fallback to [stateBlk] using our legacy codec
 	blkState := stateBlk{}
-	if _, err := block.GenesisCodec.Unmarshal(blkBytes, &blkState); err != nil {
+	if _, err := multiVersionUnmarshal(block.GenesisCodec, blkBytes, &blkState); err != nil {
 		// If we can't unmarshal as stateBlk, this might not be a block at all
 		// (could be an index entry or other data in the blockDB)
 		// Return the original parse error
