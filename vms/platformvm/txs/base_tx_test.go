@@ -82,7 +82,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleBaseTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// BaseTx Type ID
 		0x00, 0x00, 0x00, 0x22,
 		// Mainnet network ID
@@ -230,7 +230,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// BaseTx Type ID
 		0x00, 0x00, 0x00, 0x22,
 		// Mainnet network ID
