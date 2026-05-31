@@ -147,7 +147,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessValidatorTx type ID (post codec-collapse: 29)
 		0x00, 0x00, 0x00, 0x1d,
 		// Mainnet network ID
@@ -451,7 +451,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 
 	_ = []byte{ // expectedUnsignedComplexAddPrimaryTxBytes - not used since we skip exact byte comparison
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessValidatorTx type ID (post codec-collapse: 29)
 		0x00, 0x00, 0x00, 0x1d,
 		// Mainnet network ID
@@ -842,7 +842,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessValidatorTx type ID (post codec-collapse: 29)
 		0x00, 0x00, 0x00, 0x1d,
 		// Mainnet network ID
@@ -1144,7 +1144,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessValidatorTx type ID (post codec-collapse: 29)
 		0x00, 0x00, 0x00, 0x1d,
 		// Mainnet network ID
