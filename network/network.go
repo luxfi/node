@@ -220,7 +220,7 @@ type network struct {
 	router ExternalHandler
 
 	// blockchainToNetwork maps blockchain IDs to their chain network IDs.
-	// This is needed for chain gossip: when gossiping a block for an L2
+	// This is needed for chain gossip: when gossiping a block for another chain
 	// blockchain, we need to know which chain network's validator set to
 	// use for peer sampling, and which network ID to check in peers'
 	// trackedChains. Protected by peersLock.
@@ -598,13 +598,13 @@ func kemSessionScheme(p *consensusconfig.ChainSecurityProfile) kem.KeyExchangeID
 
 // sequencerID returns the validator-set identity that sequences chainID.
 // This resolves the distinction between:
-//   - chainID: execution domain (C-Chain, Zoo L2, etc.)
+//   - chainID: execution domain (C-Chain, Zoo chain, etc.)
 //   - sequencerID: validator-set / sequencing authority for a given chain
 //
 // For example:
 //   - C-Chain is sequenced by PrimaryNetworkID validators
-//   - A self-sequenced L2 uses its own chainID as sequencerID
-//   - L2 blockchains map to their chain ID for validator lookups
+//   - A self-sequenced chain uses its own chainID as sequencerID
+//   - non-primary chains map to their chain ID for validator lookups
 func (n *network) sequencerID(chainID ids.ID) ids.ID {
 	// Primary network is a special routing concept; membership is still primary.
 	if chainID == constants.PrimaryNetworkID {
@@ -1305,7 +1305,7 @@ func (n *network) samplePeers(
 			isPrimaryNetwork := chainID == constants.PrimaryNetworkID || ids.IsNativeChain(chainID)
 			containsChainID := isPrimaryNetwork || trackedChains.Contains(chainID)
 
-			// For L2 blockchains, also check if the peer tracks the chain ID.
+			// For non-primary chains, also check if the peer tracks the chain ID.
 			// Peers advertise chain IDs (not blockchain IDs) in their tracked chains,
 			// but gossip uses blockchain IDs as the chainID parameter.
 			if !containsChainID {
@@ -1942,7 +1942,7 @@ func (n *network) TrackedChains() set.Set[ids.ID] {
 
 // RegisterBlockchainNetwork registers a mapping from a blockchain ID to its
 // chain network ID. This allows the gossip layer to correctly resolve which
-// validator set to use when gossiping blocks for L2 chains, and to check
+// validator set to use when gossiping blocks for non-primary chains, and to check
 // whether peers are tracking the chain network that owns the blockchain.
 func (n *network) RegisterBlockchainNetwork(blockchainID, networkID ids.ID) {
 	n.peersLock.Lock()
