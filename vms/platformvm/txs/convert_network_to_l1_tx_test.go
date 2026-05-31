@@ -135,7 +135,7 @@ func TestConvertNetworkToL1TxSerialization(t *testing.T) {
 			},
 			expectedBytes: []byte{
 				// Codec version
-				0x00, 0x00,
+				0x00, 0x01,
 				// ConvertNetworkToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Mainnet Network ID
@@ -324,7 +324,7 @@ func TestConvertNetworkToL1TxSerialization(t *testing.T) {
 			},
 			expectedBytes: []byte{
 				// Codec version
-				0x00, 0x00,
+				0x00, 0x01,
 				// ConvertNetworkToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Mainnet Network ID
