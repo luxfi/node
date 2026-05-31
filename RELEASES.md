@@ -4762,7 +4762,7 @@ This was the version used for the first public Lux Network deployment in Decembe
 ### Network Support
 
 - **Primary Network**: LUX mainnet and testnet
-- **Net Support**: Full L2/chain capabilities
+- **Net Support**: Full chain capabilities
 - **Cross-Chain**: Warp messaging and atomic swaps
 - **Validator Management**: Staking and delegation
 
