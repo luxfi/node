@@ -47,7 +47,7 @@ type Network struct {
 	Nets []*Net
 }
 
-// Net represents a net (L2 chain) in the network
+// Net represents a net (non-primary chain) in the network
 type Net struct {
 	ChainID        ids.ID
 	Chains       []*Chain

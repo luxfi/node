@@ -1,10 +1,10 @@
 #!/bin/bash
-# Import RLP blocks for subnet chains after deployment
-# Usage: ./import-subnet-rlp.sh [mainnet|testnet|both]
+# Import RLP blocks for chains after deployment
+# Usage: ./import-chain-rlp.sh [mainnet|testnet|both]
 #
 # Prerequisites:
-#   - Subnets must be deployed (run deploy-subnets.sh first)
-#   - Nodes must be tracking the subnet chains
+#   - Chains must be deployed (run deploy-chains.sh first)
+#   - Nodes must be tracking the chains
 #   - Blockchain IDs must be set in the node config
 
 set -e
@@ -37,7 +37,7 @@ import_rlp() {
         local ns="lux-$network"
         kubectl --context do-sfo3-lux-k8s exec -n "$ns" luxd-0 -- \
             wget -q -O /tmp/import.rlp "$rpc_url" 2>/dev/null || true
-        echo "NOTE: For subnet chain import, you may need to use admin.importChain RPC"
+        echo "NOTE: For chain import, you may need to use admin.importChain RPC"
         echo "      or copy the RLP file to the node and import manually."
     }
 }
@@ -46,20 +46,20 @@ TARGET="${1:-both}"
 
 case "$TARGET" in
     mainnet)
-        echo "=== Importing subnet RLP blocks to mainnet ==="
+        echo "=== Importing chain RLP blocks to mainnet ==="
         import_rlp mainnet zoo-mainnet 200200 zoo-mainnet-200200.rlp "$MAINNET_RPC"
         import_rlp mainnet spc-mainnet 36911 spc-mainnet-36911.rlp "$MAINNET_RPC"
         ;;
     testnet)
-        echo "=== Importing subnet RLP blocks to testnet ==="
+        echo "=== Importing chain RLP blocks to testnet ==="
         import_rlp testnet zoo-testnet 200201 zoo-testnet-200201.rlp "$TESTNET_RPC"
         ;;
     both|all)
-        echo "=== Importing subnet RLP blocks to mainnet ==="
+        echo "=== Importing chain RLP blocks to mainnet ==="
         import_rlp mainnet zoo-mainnet 200200 zoo-mainnet-200200.rlp "$MAINNET_RPC"
         import_rlp mainnet spc-mainnet 36911 spc-mainnet-36911.rlp "$MAINNET_RPC"
         echo ""
-        echo "=== Importing subnet RLP blocks to testnet ==="
+        echo "=== Importing chain RLP blocks to testnet ==="
         import_rlp testnet zoo-testnet 200201 zoo-testnet-200201.rlp "$TESTNET_RPC"
         ;;
     *)
