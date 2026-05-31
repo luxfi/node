@@ -11,6 +11,7 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
+	genesissecurity "github.com/luxfi/genesis/pkg/genesis/security"
 	"github.com/luxfi/log"
 )
 
@@ -82,7 +83,7 @@ func TestApplySecurityProfile_HashMismatchRejected(t *testing.T) {
 	if err == nil {
 		t.Fatal("applySecurityProfile accepted a wrong-hash pin")
 	}
-	if !errors.Is(err, genesiscfg.ErrSecurityProfileHashMismatch) {
+	if !errors.Is(err, genesissecurity.ErrSecurityProfileHashMismatch) {
 		t.Errorf("applySecurityProfile returned %v; want wrap of ErrSecurityProfileHashMismatch", err)
 	}
 	if n.SecurityProfile() != nil {
@@ -103,7 +104,7 @@ func TestApplySecurityProfile_UnknownProfileIDRejected(t *testing.T) {
 	if err == nil {
 		t.Fatal("applySecurityProfile accepted an unknown ProfileID")
 	}
-	if !errors.Is(err, genesiscfg.ErrSecurityProfileInvalidID) {
+	if !errors.Is(err, genesissecurity.ErrSecurityProfileInvalidID) {
 		t.Errorf("applySecurityProfile returned %v; want wrap of ErrSecurityProfileInvalidID", err)
 	}
 }
