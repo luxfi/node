@@ -1,6 +1,6 @@
 #!/bin/bash
-# Deploy all 4 subnet chains (Zoo, Hanzo, SPC, Pars) to mainnet + testnet
-# Usage: ./deploy-subnets.sh [mainnet|testnet|devnet|both]
+# Deploy all 4 app chains (Zoo, Hanzo, SPC, Pars) to mainnet + testnet
+# Usage: ./deploy-chains.sh [mainnet|testnet|devnet|both]
 #
 # Prerequisites:
 #   - macOS keychain must have mainnet-key-02 key (will prompt for approval)
@@ -21,7 +21,7 @@ if [ ! -f "$DEPLOY_BIN" ]; then
 fi
 
 # Use mainnet-key-02 (NOT 01!) because 01's funds are all staked by initialStakers
-# mainnet-key-02 has 70M LUX unlocked on P-chain, sufficient for subnet creation
+# mainnet-key-02 has 70M LUX unlocked on P-chain, sufficient for chain creation
 KEY_NAME="mainnet-key-02"
 echo "Extracting $KEY_NAME from keychain..."
 echo "(Approve the macOS keychain dialog that appears)"
@@ -39,7 +39,7 @@ deploy_network() {
     local network=$1
     echo ""
     echo "=============================="
-    echo "Deploying subnets to $network"
+    echo "Deploying chains to $network"
     echo "=============================="
 
     PRIVATE_KEY="$KEY" "$DEPLOY_BIN" \
@@ -77,7 +77,7 @@ echo ""
 echo "All deployments complete!"
 echo ""
 echo "Next steps:"
-echo "  1. Copy the Subnet IDs and Blockchain IDs from output above"
+echo "  1. Copy the Chain IDs and Blockchain IDs from output above"
 echo "  2. Update Helm values files:"
 echo "     ~/work/lux/devops/charts/lux/values-mainnet.yaml"
 echo "     ~/work/lux/devops/charts/lux/values-testnet.yaml"
