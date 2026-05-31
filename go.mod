@@ -26,14 +26,14 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.25.2
+	github.com/luxfi/consensus v1.25.3
 	github.com/luxfi/crypto v1.19.15
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
 	github.com/luxfi/math v1.4.1
-	github.com/luxfi/metric v1.5.5
+	github.com/luxfi/metric v1.5.7
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -135,7 +135,7 @@ require (
 	github.com/luxfi/genesis/pkg/genesis/security v1.12.19
 	github.com/luxfi/geth v1.16.98
 	github.com/luxfi/go-bip39 v1.1.2
-	github.com/luxfi/lattice/v7 v7.1.0
+	github.com/luxfi/lattice/v7 v7.1.4
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.4
 	github.com/luxfi/p2p v1.19.2
@@ -175,10 +175,10 @@ require (
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/protocol v0.0.4 // indirect
-	github.com/luxfi/pulsar v1.0.12 // indirect
+	github.com/luxfi/pulsar v1.0.23 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/threshold v1.8.5 // indirect
+	github.com/luxfi/threshold v1.8.8 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
