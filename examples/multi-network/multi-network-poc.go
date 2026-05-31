@@ -55,9 +55,9 @@ func NewMultiNetworkNode() *MultiNetworkNode {
 				ChainID:     "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm",
 				Active:      true,
 			},
-			200200: { // Zoo L2 Chain ID
+			200200: { // Zoo chain Chain ID
 				NetworkID:   200200,
-				NetworkName: "Zoo Network (L2)",
+				NetworkName: "Zoo Network",
 				RPCPort:     2000,
 				Validators:  5,
 				ChainID:     "2ebCneCbwthjQ1rYT41nhd7M76Hc6YmosMAQrTFhBq8qeqh6tt",

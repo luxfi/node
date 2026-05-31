@@ -148,8 +148,8 @@ type Config struct {
 	// This allows chains to be sequenced by a different validator set than their own.
 	// Examples:
 	//   - C-Chain → returns PrimaryNetworkID (sequenced by primary network validators)
-	//   - Zoo L2 (self-sequenced) → returns ZooChainID
-	//   - Zoo L2 (Lux-sequenced) → returns the Lux network's sequencerID
+	//   - Zoo chain (self-sequenced) → returns ZooChainID
+	//   - Zoo chain (Lux-sequenced) → returns the Lux network's sequencerID
 	// Default: returns chainID (self-sequenced).
 	SequencerIDForChain func(chainID ids.ID) ids.ID `json:"-"`
 

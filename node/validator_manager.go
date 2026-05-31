@@ -110,7 +110,7 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 		}
 
 		// Also add to ALL tracked chain validator sets so chain consensus
-		// engines can find validators for their chains. Without this, L2
+		// engines can find validators for their chains. Without this, non-primary
 		// chains can't gossip blocks because the validator set is empty.
 		for _, networkID := range v.trackedNetworks {
 			networkTxID := ids.Empty
