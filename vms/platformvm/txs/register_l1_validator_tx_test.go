@@ -169,9 +169,9 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 
 	expectedBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// RegisterL1ValidatorTx Type ID
-		0x00, 0x00, 0x00, 0x24,
+		0x00, 0x00, 0x00, 0x25,
 		// Network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')
