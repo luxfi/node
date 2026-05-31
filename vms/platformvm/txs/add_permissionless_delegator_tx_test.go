@@ -133,7 +133,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
 		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
@@ -389,7 +389,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 	expectedUnsignedComplexAddPrimaryTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
 		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
@@ -880,7 +880,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessDelegationTx type ID (post codec-collapse: 30)
 		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID
@@ -1157,7 +1157,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 
 	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// AddPermissionlessDelegatorTx type ID (post codec-collapse: 30)
 		0x00, 0x00, 0x00, 0x1e,
 		// Mainnet network ID

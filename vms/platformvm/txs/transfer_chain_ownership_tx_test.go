@@ -104,7 +104,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleTransferChainOwnershipTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// TransferChainOwnershipTx Type ID
 		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
@@ -288,7 +288,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 
 	expectedUnsignedComplexTransferChainOwnershipTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// TransferChainOwnershipTx Type ID
 		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
