@@ -705,7 +705,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	// strict-PQ chains. Nil on legacy / classical-compat networks.
 	n.Config.NetworkConfig.SecurityProfile = n.securityProfile
 	// Map native chains (P/C/X/etc.) to the primary network validator set.
-	// For L2 chains, return ids.Empty to let blockchainToNetwork map resolve
+	// For non-primary chains, return ids.Empty to let blockchainToNetwork map resolve
 	// the correct chain ID. Returning chainID here would short-circuit the
 	// lookup and cause chain messages to be sequenced under the wrong ID,
 	// preventing block propagation to other nodes.
