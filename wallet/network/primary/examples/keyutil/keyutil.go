@@ -6,15 +6,18 @@
 package keyutil
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/go-bip32"
 	"github.com/luxfi/go-bip39"
+	"github.com/luxfi/kms/pkg/zapclient"
 )
 
 const (
@@ -27,9 +30,13 @@ const (
 )
 
 // MustLoadKey loads a secp256k1 private key from (in order of priority):
-// 1. MNEMONIC environment variable (BIP39 mnemonic phrase)
-// 2. Key name provided as first command line argument
-// 3. ~/.lux/keys/default/ if it exists
+//  1. MNEMONIC environment variable (BIP-39 mnemonic phrase)
+//  2. Liquid KMS via native ZAP — when KMS_ADDR + KMS_ENV +
+//     KMS_MNEMONIC_PATH are set in the environment. Uses the canonical
+//     luxfi/kms zapclient.LoadMnemonic loader so every Lux-derived
+//     service resolves keys the same way.
+//  3. Key name provided as first command-line argument
+//  4. ~/.lux/keys/default/ if it exists
 //
 // Panics with a helpful message if no key is provided.
 func MustLoadKey() *secp256k1.PrivateKey {
@@ -37,8 +44,9 @@ func MustLoadKey() *secp256k1.PrivateKey {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading private key: %s\n", err)
 		fmt.Fprintf(os.Stderr, "\nUsage (in order of priority):\n")
-		fmt.Fprintf(os.Stderr, "  1. Set MNEMONIC env var (BIP39 mnemonic)\n")
-		fmt.Fprintf(os.Stderr, "  2. Pass key name as argument: %s <key-name>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  1. Set MNEMONIC env var (BIP-39 mnemonic)\n")
+		fmt.Fprintf(os.Stderr, "  2. Set KMS_ADDR + KMS_ENV + KMS_MNEMONIC_PATH (native ZAP)\n")
+		fmt.Fprintf(os.Stderr, "  3. Pass key name as argument: %s <key-name>\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "\nAvailable keys in ~/.lux/keys/:\n")
 		listAvailableKeys()
 		fmt.Fprintf(os.Stderr, "\nCreate keys with: lux key create <name>\n")
@@ -49,15 +57,30 @@ func MustLoadKey() *secp256k1.PrivateKey {
 
 // LoadKey attempts to load a private key using the priority order above.
 func LoadKey() (*secp256k1.PrivateKey, error) {
-	// 1. Try mnemonic from MNEMONIC env var.
-	if mnemonic := os.Getenv("MNEMONIC"); mnemonic != "" {
+	// 1. MNEMONIC env var — local dev + CI test seam.
+	if mnemonic := strings.TrimSpace(os.Getenv("MNEMONIC")); mnemonic != "" {
 		return keyFromMnemonic(mnemonic)
 	}
 
-	// 2. Try key name from command line arguments
+	// 2. Liquid KMS via native ZAP — production path for any Lux-derived
+	// service running under a KMS-projected env. The canonical loader
+	// lives in luxfi/kms/pkg/zapclient so luxd, netrunner, lux/cli, and
+	// every descending L1's bootstrap all resolve mnemonics the same way.
+	if addr := os.Getenv("KMS_ADDR"); addr != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		mnemonic, err := zapclient.LoadMnemonicFromKMS(ctx, addr,
+			os.Getenv("KMS_ENV"),
+			envOr("KMS_MNEMONIC_PATH", "/mnemonic"))
+		if err != nil {
+			return nil, fmt.Errorf("load mnemonic from KMS: %w", err)
+		}
+		return keyFromMnemonic(mnemonic)
+	}
+
+	// 3. Key name from command-line arguments.
 	if len(os.Args) > 1 {
 		keyName := os.Args[1]
-		// Check if it's a key name (exists in ~/.lux/keys/)
 		if key, err := LoadKeyByName(keyName); err == nil {
 			return key, nil
 		}
@@ -67,12 +90,20 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 		}
 	}
 
-	// 3. Try default key
+	// 4. Default key in ~/.lux/keys/default/
 	if key, err := LoadKeyByName("default"); err == nil {
 		return key, nil
 	}
 
 	return nil, fmt.Errorf("no private key provided")
+}
+
+// envOr returns the value of env var `name` if set + non-empty, else def.
+func envOr(name, def string) string {
+	if v := strings.TrimSpace(os.Getenv(name)); v != "" {
+		return v
+	}
+	return def
 }
 
 // LoadKeyByName loads a key from ~/.lux/keys/<name>/
