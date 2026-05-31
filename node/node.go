@@ -32,6 +32,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
+	genesissecurity "github.com/luxfi/genesis/pkg/genesis/security"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -1035,7 +1036,7 @@ func (n *Node) applySecurityProfile(pin *genesiscfg.SecurityProfile) error {
 		return nil
 	}
 
-	profile, err := pin.Resolve()
+	profile, err := genesissecurity.ResolveProfile(pin)
 	if err != nil {
 		return fmt.Errorf("genesis SecurityProfile failed to resolve: %w", err)
 	}
