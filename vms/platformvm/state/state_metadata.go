@@ -173,7 +173,7 @@ func (s *state) loadMetadata() error {
 	}
 
 	indexedHeights := &heightRange{}
-	_, err = block.GenesisCodec.Unmarshal(indexedHeightsBytes, indexedHeights)
+	_, err = multiVersionUnmarshal(block.GenesisCodec, indexedHeightsBytes, indexedHeights)
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func getFeeState(db database.KeyValueReader) (gas.State, error) {
 	}
 
 	var feeState gas.State
-	if _, err := block.GenesisCodec.Unmarshal(feeStateBytes, &feeState); err != nil {
+	if _, err := multiVersionUnmarshal(block.GenesisCodec, feeStateBytes, &feeState); err != nil {
 		return gas.State{}, err
 	}
 	return feeState, nil
