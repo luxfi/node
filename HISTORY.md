@@ -204,7 +204,7 @@ Wallet, CLI, EVM, DeFi, threshold cryptography, and the first key management sys
 | `lux/threshold` | 2021-02-16 | Threshold ECDSA (tECDSA) library |
 | `lux/erc20-go` | 2021-05-21 | ERC-20 Go bindings |
 | `lux/netrunner` | 2021-10-22 | Network testing framework (2,384 commits) |
-| `lux/evm` | 2021-12-15 | Subnet EVM (1,632 commits) |
+| `lux/evm` | 2021-12-15 | App chain EVM (1,632 commits) |
 | `lux/devops` / `lux/lux-ops` | 2022-01-28 | Infrastructure automation |
 | `lux/ledger` | 2022-03-14 | Ledger hardware wallet integration |
 | `lux/lpm` | 2022-03-28 | Lux Plugin Manager |
