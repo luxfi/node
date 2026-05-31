@@ -125,7 +125,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleTransformTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// TransformChainTx type ID (post codec-collapse: 28)
 		0x00, 0x00, 0x00, 0x1c,
 		// Mainnet network ID
@@ -353,7 +353,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 
 	expectedUnsignedComplexTransformTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// TransformChainTx type ID (post codec-collapse: 28)
 		0x00, 0x00, 0x00, 0x1c,
 		// Mainnet network ID

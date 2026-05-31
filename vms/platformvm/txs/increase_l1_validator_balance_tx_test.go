@@ -161,9 +161,9 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 
 	expectedBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// IncreaseL1ValidatorBalanceTx Type ID
-		0x00, 0x00, 0x00, 0x26,
+		0x00, 0x00, 0x00, 0x27,
 		// Network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')

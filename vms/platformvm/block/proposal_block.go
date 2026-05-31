@@ -29,12 +29,12 @@ func (b *ProposalBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 
 
 func (b *ProposalBlock) initialize(bytes []byte) error {
 	b.CommonBlock.initialize(bytes)
-	if err := b.Tx.Initialize(txs.Codec); err != nil {
-		return fmt.Errorf("failed to initialize tx: %w", err)
+	if err := b.Tx.InitializeFromBytesAtVersion(txs.Codec, txs.CodecVersionV1); err != nil {
+		return fmt.Errorf("failed to initialize proposal tx: %w", err)
 	}
 	for _, tx := range b.Transactions {
-		if err := tx.Initialize(txs.Codec); err != nil {
-			return fmt.Errorf("failed to initialize tx: %w", err)
+		if err := tx.InitializeFromBytesAtVersion(txs.Codec, txs.CodecVersionV1); err != nil {
+			return fmt.Errorf("failed to initialize decision tx: %w", err)
 		}
 	}
 	return nil

@@ -51,18 +51,39 @@ type Genesis struct {
 	Message       string    `serialize:"true"`
 }
 
+// Parse deserializes a P-Chain genesis blob produced by either the
+// v0 (v1.23.x) or v1 (current) codec. Wire version is taken from the
+// 2-byte codec prefix; the matching codec.Manager entry is used to
+// unmarshal the outer Genesis struct, and embedded validator + chain
+// txs are bound to their original signedBytes via InitializeFromBytes
+// (NOT Initialize, which would re-marshal and rotate the TxID).
+//
+// TxID stability across the v0->v1 migration is preserved because:
+//   - v0 genesis blobs decode via the v0 slot map and embedded txs are
+//     re-bound at version 0; their hash(signedBytes) is identical to
+//     what the v1.23.x producer committed.
+//   - v1 genesis blobs decode via the v1 slot map; embedded txs are
+//     re-bound at version 1; bytes are deterministic so the result is
+//     byte-equal to what a v1 producer emits.
+//
+// Genesis blobs are typically produced fresh from the JSON config at
+// each bootstrap (see New + Bytes), so the path that matters for
+// mainnet/testnet is the v0 fallback: the originally-committed genesis
+// hash is what subsequent block headers chain back to, and that hash
+// is hash(v0 genesis bytes).
 func Parse(genesisBytes []byte) (*Genesis, error) {
 	gen := &Genesis{}
-	if _, err := Codec.Unmarshal(genesisBytes, gen); err != nil {
+	version, err := Codec.Unmarshal(genesisBytes, gen)
+	if err != nil {
 		return nil, err
 	}
 	for _, tx := range gen.Validators {
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+		if err := tx.InitializeFromBytesAtVersion(txs.GenesisCodec, version); err != nil {
 			return nil, err
 		}
 	}
 	for _, tx := range gen.Chains {
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+		if err := tx.InitializeFromBytesAtVersion(txs.GenesisCodec, version); err != nil {
 			return nil, err
 		}
 	}

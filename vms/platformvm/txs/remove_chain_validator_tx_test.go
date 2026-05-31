@@ -110,7 +110,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 
 	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// RemoveChainValidatorTx Type ID (post codec-collapse: 27)
 		0x00, 0x00, 0x00, 0x1b,
 		// Mainnet network ID
@@ -280,7 +280,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 
 	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// RemoveChainValidatorTx Type ID (post codec-collapse: 27)
 		0x00, 0x00, 0x00, 0x1b,
 		// Mainnet network ID

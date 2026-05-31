@@ -154,9 +154,9 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 
 	expectedBytes := []byte{
 		// Codec version
-		0x00, 0x00,
+		0x00, 0x01,
 		// SetL1ValidatorWeightTx Type ID
-		0x00, 0x00, 0x00, 0x25,
+		0x00, 0x00, 0x00, 0x26,
 		// Network ID
 		0x00, 0x00, 0x00, 0x01,
 		// P-chain blockchain ID (31 zeros + 'P')

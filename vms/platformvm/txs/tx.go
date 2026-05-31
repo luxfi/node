@@ -48,6 +48,12 @@ func NewSigned(
 	return res, res.Sign(c, signers)
 }
 
+// Initialize marshals tx with the canonical write codec (v1) and
+// derives TxID = hash(signedBytes). This is appropriate ONLY for txs
+// built fresh in this process (e.g. by the wallet or by the block
+// builder). For txs loaded from disk or received from the wire, use
+// InitializeFromBytes — Initialize would re-encode at v1, changing the
+// TxID of any tx that was originally serialized at v0.
 func (tx *Tx) Initialize(c codec.Manager) error {
 	signedBytes, err := c.Marshal(CodecVersion, tx)
 	if err != nil {
@@ -64,28 +70,93 @@ func (tx *Tx) Initialize(c codec.Manager) error {
 	return nil
 }
 
+// InitializeFromBytes binds the tx to the EXACT signedBytes it was
+// decoded from, deriving TxID = hash(signedBytes) under the codec
+// version the bytes were originally written at. It never re-marshals,
+// so a tx whose bytes were written at v0 keeps its v0-derived TxID
+// forever — the chain commitment is therefore stable across the v0->v1
+// codec migration.
+//
+// version is the codec version the bytes were decoded under (returned
+// by codec.Manager.Unmarshal). It selects the c.Size(...) call used to
+// split signedBytes into unsignedBytes (the prefix the signature
+// covers) and the credentials suffix.
+func (tx *Tx) InitializeFromBytes(c codec.Manager, version uint16, signedBytes []byte) error {
+	unsignedBytesLen, err := c.Size(version, &tx.Unsigned)
+	if err != nil {
+		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
+	}
+	if unsignedBytesLen > len(signedBytes) {
+		return fmt.Errorf("unsigned length %d exceeds signed length %d", unsignedBytesLen, len(signedBytes))
+	}
+	unsignedBytes := signedBytes[:unsignedBytesLen]
+	tx.SetBytes(unsignedBytes, signedBytes)
+	return nil
+}
+
+// InitializeFromBytesAtVersion is the byte-preserving init used after
+// a struct-level Unmarshal where the outer container (a genesis blob,
+// a stored block) decoded the tx field directly — in that case we
+// only have the struct value and the codec version it was decoded
+// under, not the raw signed bytes (which were never sliced out of the
+// outer stream by the codec).
+//
+// We re-derive signedBytes by Marshal'ing the just-decoded tx at the
+// SAME version, then bind via SetBytes. The wire format is
+// deterministic and the codec is closed at v0, so the re-marshal
+// produces the exact bytes the original v0 producer emitted; therefore
+// TxID = hash(re-marshaled v0 bytes) = TxID the chain committed.
+//
+// This single bounded re-marshal is the ONLY place we allow
+// c.Marshal(v0, ...) inside the read path. It is justified because:
+//   1. Linearcodec marshal is a pure function of the struct fields
+//      under a fixed slot map, so the output is byte-equal to the
+//      original v0 producer's output.
+//   2. The struct fields were just populated by c.Unmarshal at the
+//      same version, so no information has been lost or rotated.
+//   3. The c.Size(v0, ...) inverse used by InitializeFromBytes is the
+//      same path, just in the opposite direction — the size of an
+//      Unsigned in v0 layout is a fixed function of its fields.
+//
+// Once every genesis blob and every stored block on disk has been
+// re-encoded at v1 (a future migration), this method becomes dead
+// code and the v0 codec entry can be removed.
+func (tx *Tx) InitializeFromBytesAtVersion(c codec.Manager, version uint16) error {
+	signedBytes, err := c.Marshal(version, tx)
+	if err != nil {
+		return fmt.Errorf("couldn't re-marshal tx at v%d: %w", version, err)
+	}
+	return tx.InitializeFromBytes(c, version, signedBytes)
+}
+
 func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 	tx.Unsigned.SetBytes(unsignedBytes)
 	tx.bytes = signedBytes
 	tx.TxID = hash.ComputeHash256Array(signedBytes)
 }
 
-// Parse signed tx starting from its byte representation.
-// Note: We explicitly pass the codec in Parse since we may need to parse
-// P-Chain genesis txs whose length exceed the max length of txs.Codec.
+// Parse signed tx starting from its byte representation. The wire
+// version is taken from the 2-byte prefix that c.Unmarshal reads;
+// c.Size(...) is then called under THAT version so the split point
+// between unsignedBytes and the credentials suffix is correct for
+// either v0 or v1 layouts.
+//
+// Parse never re-marshals: TxID = hash(signedBytes) verbatim. This is
+// the byte-preserving path that all from-disk and from-wire reads must
+// go through to keep TxIDs stable across the v0→v1 migration.
+//
+// We explicitly pass the codec in Parse since some call sites (genesis,
+// state fallback) must use GenesisCodec to admit txs larger than the
+// max length of Codec.
 func Parse(c codec.Manager, signedBytes []byte) (*Tx, error) {
 	tx := &Tx{}
-	if _, err := c.Unmarshal(signedBytes, tx); err != nil {
+	version, err := c.Unmarshal(signedBytes, tx)
+	if err != nil {
 		return nil, fmt.Errorf("couldn't parse tx: %w", err)
 	}
-
-	unsignedBytesLen, err := c.Size(CodecVersion, &tx.Unsigned)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
+	if err := tx.InitializeFromBytes(c, version, signedBytes); err != nil {
+		return nil, fmt.Errorf("couldn't initialize tx from bytes: %w", err)
 	}
-
-	unsignedBytes := signedBytes[:unsignedBytesLen]
-	tx.SetBytes(unsignedBytes, signedBytes)
 	return tx, nil
 }
 
