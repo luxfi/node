@@ -1092,15 +1092,28 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
 			utxoAssetID, err := resolveXAssetID(networkID, cachedBytes)
-			if err != nil {
-				return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from cached genesis: %w", err)
+			if err == nil {
+				log.Info("loaded cached genesis bytes for hash stability",
+					"cacheFile", cacheFile,
+					"size", len(cachedBytes),
+					"utxoAssetID", utxoAssetID,
+				)
+				return cachedBytes, utxoAssetID, nil
 			}
-			log.Info("loaded cached genesis bytes for hash stability",
+			// Cache parse failed — almost certainly a codec mismatch
+			// after a binary upgrade (e.g. v1-codec bytes persisted by
+			// an older luxd, multi-version v0+v1 dispatcher in this
+			// luxd doesn't recognise a type the cached blob still
+			// uses). Drop the cache and rebuild from the file rather
+			// than wedging in a CrashLoop. Hash stability is forfeit
+			// for this single restart — intentional, the alternative
+			// is a permanent outage on every binary bump.
+			log.Warn("cached genesis bytes failed to parse — invalidating cache and rebuilding from genesis-file",
 				"cacheFile", cacheFile,
 				"size", len(cachedBytes),
-				"utxoAssetID", utxoAssetID,
+				"error", err,
 			)
-			return cachedBytes, utxoAssetID, nil
+			_ = os.Remove(cacheFile)
 		}
 		// No cache or invalid cache - build from file and cache the result
 		genesisBytes, utxoAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
