@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.25.5
+	github.com/luxfi/consensus v1.25.7
 	github.com/luxfi/crypto v1.19.15
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.10
@@ -172,10 +172,11 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/corona v0.7.5 // indirect
+	github.com/luxfi/corona v0.7.6 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/kms v1.9.13 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
+	github.com/luxfi/magnetar v0.5.2 // indirect
 	github.com/luxfi/mdns v0.1.0 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
@@ -183,7 +184,7 @@ require (
 	github.com/luxfi/pulsar v1.0.23 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/threshold v1.8.10 // indirect
+	github.com/luxfi/threshold v1.9.0 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zap v0.2.0 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
@@ -216,7 +217,7 @@ require (
 	github.com/dgraph-io/ristretto/v2 v2.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.7 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
