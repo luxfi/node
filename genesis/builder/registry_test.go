@@ -45,6 +45,9 @@ func TestChainAliasesRegistryParity(t *testing.T) {
 		{"Z", ZChainAliases, []string{"Z", "zk", "zkvm"}},
 		{"G", GChainAliases, []string{"G", "graph", "graphvm", "dgraph"}},
 		{"K", KChainAliases, []string{"K", "key", "keyvm"}},
+		{"I", IChainAliases, []string{"I", "identity", "identityvm", "id"}},
+		{"O", OChainAliases, []string{"O", "oracle", "oraclevm", "feed"}},
+		{"R", RChainAliases, []string{"R", "relay", "relayvm", "msg"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -73,6 +76,9 @@ func TestVMAliasesRegistryParity(t *testing.T) {
 		constants.ZKVMID:        {"zkvm", "zk"},
 		constants.GraphVMID:     {"graphvm", "graph", "dgraph"},
 		constants.KeyVMID:       {"keyvm", "key"},
+		constants.IdentityVMID:  {"identity", "identityvm", "id"},
+		constants.OracleVMID:    {"oracle", "oraclevm", "feed"},
+		constants.RelayVMID:     {"relay", "relayvm", "msg"},
 		secp256k1fx.ID:          {"secp256k1fx"},
 		nftfx.ID:                {"nftfx"},
 		propertyfx.ID:           {"propertyfx"},
