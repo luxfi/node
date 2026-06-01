@@ -5,7 +5,7 @@
 ---
 
 [![Build Status](https://github.com/luxfi/node/actions/workflows/ci.yml/badge.svg)](https://github.com/luxfi/node/actions)
-[![Go Version](https://img.shields.io/badge/go-1.21.12-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/go-1.26.3-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 
 Node implementation for the [Lux](https://lux.network) network -
@@ -38,7 +38,7 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 
 If you plan to build Lux Node from source, you will also need the following software:
 
-- [Go](https://golang.org/doc/install) version >= 1.23.9
+- [Go](https://golang.org/doc/install) version >= 1.26.3
 - [gcc](https://gcc.gnu.org/)
 - g++
 
