@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/go-bip32"
 	"github.com/luxfi/go-bip39"
-	"github.com/luxfi/kms/pkg/zapclient"
+	"github.com/luxfi/keys"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 //  1. MNEMONIC environment variable (BIP-39 mnemonic phrase)
 //  2. Liquid KMS via native ZAP — when KMS_ADDR + KMS_ENV +
 //     KMS_MNEMONIC_PATH are set in the environment. Uses the canonical
-//     luxfi/kms zapclient.LoadMnemonic loader so every Lux-derived
+//     luxfi/kms keys.LoadMnemonic loader so every Lux-derived
 //     service resolves keys the same way.
 //  3. Key name provided as first command-line argument
 //  4. ~/.lux/keys/default/ if it exists
@@ -64,12 +64,13 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 
 	// 2. Liquid KMS via native ZAP — production path for any Lux-derived
 	// service running under a KMS-projected env. The canonical loader
-	// lives in luxfi/kms/pkg/zapclient so luxd, netrunner, lux/cli, and
-	// every descending L1's bootstrap all resolve mnemonics the same way.
+	// lives in luxfi/keys (alongside the BIP-39 derivation primitives)
+	// so luxd, netrunner, lux/cli, and every descending L1's bootstrap
+	// all resolve mnemonics the same way.
 	if addr := os.Getenv("KMS_ADDR"); addr != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		mnemonic, err := zapclient.LoadMnemonicFromKMS(ctx, addr,
+		mnemonic, err := keys.LoadMnemonicFromKMS(ctx, addr,
 			os.Getenv("KMS_ENV"),
 			envOr("KMS_MNEMONIC_PATH", "/mnemonic"))
 		if err != nil {
