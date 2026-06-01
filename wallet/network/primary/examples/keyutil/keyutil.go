@@ -67,12 +67,26 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 	// lives in luxfi/keys (alongside the BIP-39 derivation primitives)
 	// so luxd, netrunner, lux/cli, and every descending L1's bootstrap
 	// all resolve mnemonics the same way.
+	//
+	// Consensus-native auth (KMS-side gate flipped 2026-05-30): every
+	// secret-opcode envelope MUST carry a signed identity. The dial
+	// derives a *keys.ServiceIdentity from KMS_BOOTSTRAP_MNEMONIC under
+	// the well-known service path "luxd/staking-bootstrap"; production
+	// operators provision this bootstrap mnemonic out-of-band (sealed
+	// envelope, hardware token unwrap, etc.) so the on-disk staking
+	// material itself comes from the KMS-held operational mnemonic.
 	if addr := os.Getenv("KMS_ADDR"); addr != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
+		identity, err := bootstrapIdentity("luxd/staking-bootstrap")
+		if err != nil {
+			return nil, fmt.Errorf("derive KMS dial identity: %w", err)
+		}
+		defer identity.Wipe()
 		mnemonic, err := keys.LoadMnemonicFromKMS(ctx, addr,
 			os.Getenv("KMS_ENV"),
-			envOr("KMS_MNEMONIC_PATH", "/mnemonic"))
+			envOr("KMS_MNEMONIC_PATH", "/mnemonic"),
+			identity)
 		if err != nil {
 			return nil, fmt.Errorf("load mnemonic from KMS: %w", err)
 		}
@@ -105,6 +119,32 @@ func envOr(name, def string) string {
 		return v
 	}
 	return def
+}
+
+// bootstrapIdentity derives the *keys.ServiceIdentity used to sign the
+// initial KMS dial envelope. The bootstrap mnemonic comes from (in
+// order):
+//
+//  1. KMS_BOOTSTRAP_MNEMONIC env var — explicit operator override.
+//  2. MNEMONIC env var — local dev + CI test seam; the same mnemonic
+//     used for staking material derivation is reused for the dial.
+//
+// At least one MUST be set when the KMS dial path is engaged. Empty
+// or invalid bootstrap mnemonic returns an error so the dial never
+// reaches the KMS server with nil identity.
+//
+// Identity derivation is the canonical luxfi/keys.NewServiceIdentity
+// path: the bootstrap mnemonic + servicePath fold deterministically
+// into an ML-DSA-65 NodeID via BIP-32 + SHAKE-256.
+func bootstrapIdentity(servicePath string) (*keys.ServiceIdentity, error) {
+	m := strings.TrimSpace(os.Getenv("KMS_BOOTSTRAP_MNEMONIC"))
+	if m == "" {
+		m = strings.TrimSpace(os.Getenv("MNEMONIC"))
+	}
+	if m == "" {
+		return nil, fmt.Errorf("KMS_BOOTSTRAP_MNEMONIC (or MNEMONIC) must be set to dial KMS")
+	}
+	return keys.NewServiceIdentity(m, servicePath)
 }
 
 // LoadKeyByName loads a key from ~/.lux/keys/<name>/
