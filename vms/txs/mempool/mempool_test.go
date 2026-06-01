@@ -325,3 +325,119 @@ func TestWaitForEventWithTx(t *testing.T) {
 	require.Equal(vmcore.PendingTxs, msg.Type)
 	require.NoError(<-errs)
 }
+
+// -----------------------------------------------------------------------------
+// AdmissionVerifier tests (luxfi/node#115)
+// -----------------------------------------------------------------------------
+
+// fakeVerifier implements AdmissionVerifier[*dummyTx] for the tests below.
+// It tracks every call so tests can assert call counts and inspect the txs
+// that the gate observed.
+type fakeVerifier struct {
+	err  error
+	seen []ids.ID
+}
+
+func (v *fakeVerifier) VerifyAdmit(tx *dummyTx) error {
+	v.seen = append(v.seen, tx.ID())
+	return v.err
+}
+
+// Nil verifier path: NewWithAdmissionVerifier with nil must behave
+// byte-identically to New. We assert Add succeeds and Len reflects the tx.
+func TestAdmissionVerifier_nilVerifierMatchesNew(t *testing.T) {
+	require := require.New(t)
+
+	m := NewWithAdmissionVerifier[*dummyTx](&noMetrics{}, nil)
+	tx := newTx(0, 32)
+	require.NoError(m.Add(tx))
+	require.Equal(1, m.Len())
+}
+
+// Verifier returning nil: tx is admitted. The gate must run exactly once
+// per Add (not on Get, Peek, Iterate, or Remove).
+func TestAdmissionVerifier_acceptsWhenVerifierReturnsNil(t *testing.T) {
+	require := require.New(t)
+
+	v := &fakeVerifier{err: nil}
+	m := NewWithAdmissionVerifier[*dummyTx](&noMetrics{}, v)
+	tx := newTx(0, 32)
+	require.NoError(m.Add(tx))
+	require.Equal(1, m.Len())
+	require.Len(v.seen, 1)
+	require.Equal(tx.ID(), v.seen[0])
+
+	// Get / Peek / Iterate do not re-run the verifier.
+	_, _ = m.Get(tx.ID())
+	_, _ = m.Peek()
+	m.Iterate(func(*dummyTx) bool { return true })
+	require.Len(v.seen, 1, "verifier must run only on Add")
+
+	// Remove does not re-run the verifier.
+	m.Remove(tx)
+	require.Len(v.seen, 1, "Remove must not invoke the verifier")
+}
+
+// Verifier returning an error: tx is rejected, the returned error wraps
+// ErrAdmissionRejected and carries the verifier's reason, and the drop
+// reason is recorded.
+func TestAdmissionVerifier_rejectsWhenVerifierReturnsError(t *testing.T) {
+	require := require.New(t)
+
+	verifyErr := errors.New("nizk proof invalid")
+	v := &fakeVerifier{err: verifyErr}
+	m := NewWithAdmissionVerifier[*dummyTx](&noMetrics{}, v)
+	tx := newTx(0, 32)
+
+	addErr := m.Add(tx)
+	require.Error(addErr)
+	require.ErrorIs(addErr, ErrAdmissionRejected, "outer error must wrap ErrAdmissionRejected")
+	require.ErrorIs(addErr, verifyErr, "outer error must wrap the verifier's reason")
+
+	require.Equal(0, m.Len(), "rejected tx must not be inserted")
+
+	dropReason := m.GetDropReason(tx.ID())
+	require.Error(dropReason, "rejected tx must have a recorded drop reason")
+	require.ErrorIs(dropReason, ErrAdmissionRejected)
+	require.ErrorIs(dropReason, verifyErr)
+
+	require.Len(v.seen, 1, "verifier must be invoked exactly once")
+}
+
+// Cheap checks short-circuit before the verifier runs. We exercise the
+// three cheap reject paths (duplicate, oversize, conflict) and assert the
+// verifier never observed those txs — verification cost should not be paid
+// on a tx that would have been dropped anyway.
+func TestAdmissionVerifier_cheapChecksShortCircuit(t *testing.T) {
+	require := require.New(t)
+
+	v := &fakeVerifier{err: nil}
+	m := NewWithAdmissionVerifier[*dummyTx](&noMetrics{}, v)
+
+	// 1. Duplicate: first Add admits and runs the verifier once; second Add
+	// must reject with ErrDuplicateTx without re-running it.
+	tx := newTx(0, 32)
+	require.NoError(m.Add(tx))
+	require.Len(v.seen, 1)
+	dupErr := m.Add(tx)
+	require.ErrorIs(dupErr, ErrDuplicateTx)
+	require.Len(v.seen, 1, "verifier must not run on duplicate")
+
+	// 2. Oversize: tx larger than MaxTxSize is rejected before the
+	// verifier sees it.
+	bigTx := newTx(99, MaxTxSize+1)
+	bigErr := m.Add(bigTx)
+	require.ErrorIs(bigErr, ErrTxTooLarge)
+	require.Len(v.seen, 1, "verifier must not run on oversize tx")
+
+	// 3. Conflict: a second tx consuming the same UTXO as the admitted tx
+	// is rejected before the verifier sees it.
+	conflictTx := &dummyTx{
+		id:       ids.GenerateTestID(),
+		size:     32,
+		inputIDs: tx.inputIDs, // same inputs as the admitted tx
+	}
+	conflictErr := m.Add(conflictTx)
+	require.ErrorIs(conflictErr, ErrConflictsWithOtherTx)
+	require.Len(v.seen, 1, "verifier must not run on conflicting tx")
+}
