@@ -37,12 +37,39 @@ var (
 	ErrTxTooLarge           = errors.New("tx too large")
 	ErrMempoolFull          = errors.New("mempool is full")
 	ErrConflictsWithOtherTx = errors.New("tx conflicts with other tx")
+	// ErrAdmissionRejected wraps a rejection emitted by an AdmissionVerifier
+	// configured via NewWithAdmissionVerifier. The wrapped error carries the
+	// verifier's specific reason (e.g. NIZK proof invalid, fee bid below
+	// floor, budget meter exhausted).
+	ErrAdmissionRejected = errors.New("tx admission rejected")
 )
 
 type Tx interface {
 	InputIDs() set.Set[ids.ID]
 	ID() ids.ID
 	Size() int
+}
+
+// AdmissionVerifier is an optional admission gate. When configured via
+// NewWithAdmissionVerifier the mempool calls VerifyAdmit on every Add()
+// after the cheap structural checks (duplicate / size / space / conflict)
+// pass and before the tx is inserted. A non-nil return rejects the tx; the
+// returned error is wrapped in ErrAdmissionRejected and recorded as the
+// drop reason.
+//
+// Intended consumers: validators that admit encrypted-payload transactions
+// (FHE ciphertext + NIZK proof of well-formedness) without decryption, per
+// LP-066 / luxfi/precompile/fhe. The verifier runs signature verify + fee
+// check + NIZK verify; the actual decryption never happens at admission
+// time.
+//
+// VerifyAdmit MUST be safe to call without holding any mempool lock — the
+// mempool holds its own write lock across Add() and the call is made from
+// within that critical section. Implementations that need to do expensive
+// work (NIZK verification) should not perform additional locking that
+// could re-enter the mempool.
+type AdmissionVerifier[T Tx] interface {
+	VerifyAdmit(tx T) error
 }
 
 type Metrics interface {
@@ -83,17 +110,40 @@ type mempool[T Tx] struct {
 	droppedTxIDs   *lru.Cache[ids.ID, error] // TxID -> Verification error
 
 	metrics Metrics
+
+	// admissionVerifier is nil for the default New constructor (preserving
+	// the existing admission policy of signature/fee verification happening
+	// at the caller). When non-nil it is invoked from Add() after the cheap
+	// checks pass.
+	admissionVerifier AdmissionVerifier[T]
 }
 
 func New[T Tx](
 	metrics Metrics,
 ) *mempool[T] {
+	return NewWithAdmissionVerifier[T](metrics, nil)
+}
+
+// NewWithAdmissionVerifier constructs a mempool that runs verifier.VerifyAdmit
+// on every Add() after the duplicate / size / space / conflict checks
+// succeed. A nil verifier is equivalent to New — no admission gate is
+// installed and behavior is byte-identical to the prior API.
+//
+// This is the entry point for encrypted-payload tx pools per luxfi/node#115:
+// validators construct a mempool partition with a verifier that runs
+// signature + fee + NIZK checks (sourced from luxfi/precompile/fhe) so
+// ciphertexts are admitted without decryption.
+func NewWithAdmissionVerifier[T Tx](
+	metrics Metrics,
+	verifier AdmissionVerifier[T],
+) *mempool[T] {
 	m := &mempool[T]{
-		unissuedTxs:    linked.NewHashmap[ids.ID, T](),
-		consumedUTXOs:  setmap.New[ids.ID, ids.ID](),
-		bytesAvailable: maxMempoolSize,
-		droppedTxIDs:   lru.NewCache[ids.ID, error](droppedTxIDsCacheSize),
-		metrics:        metrics,
+		unissuedTxs:       linked.NewHashmap[ids.ID, T](),
+		consumedUTXOs:     setmap.New[ids.ID, ids.ID](),
+		bytesAvailable:    maxMempoolSize,
+		droppedTxIDs:      lru.NewCache[ids.ID, error](droppedTxIDsCacheSize),
+		metrics:           metrics,
+		admissionVerifier: verifier,
 	}
 	m.cond = lock.NewCond(&m.lock)
 	m.updateMetrics()
@@ -135,6 +185,20 @@ func (m *mempool[T]) Add(tx T) error {
 	inputs := tx.InputIDs()
 	if m.consumedUTXOs.HasOverlap(inputs) {
 		return fmt.Errorf("%w: %s", ErrConflictsWithOtherTx, txID)
+	}
+
+	// Admission gate runs last among Add() checks: it is the most expensive
+	// (e.g. NIZK verify for encrypted-payload txs per LP-066). All cheap
+	// rejects have fired by this point so verification cost is only paid on
+	// txs that pass structural admission.
+	if m.admissionVerifier != nil {
+		if verr := m.admissionVerifier.VerifyAdmit(tx); verr != nil {
+			wrapped := fmt.Errorf("%w: %s: %w", ErrAdmissionRejected, txID, verr)
+			// Record the drop reason so downstream propagation / inspection
+			// surfaces match the existing dropped-tx tracking contract.
+			m.droppedTxIDs.Put(txID, wrapped)
+			return wrapped
+		}
 	}
 
 	m.bytesAvailable -= txSize
