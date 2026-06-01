@@ -58,6 +58,9 @@ var (
 	ZChainAliases = AliasesFor("Z")
 	GChainAliases = AliasesFor("G")
 	KChainAliases = AliasesFor("K")
+	IChainAliases = AliasesFor("I")
+	OChainAliases = AliasesFor("O")
+	RChainAliases = AliasesFor("R")
 
 	// Network-specific genesis messages (Latin for mainnet, descriptive for others)
 	// Mainnet: "Lux et Libertas" - Light and Liberty
@@ -861,6 +864,36 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "kms"),
 			}
 			chainAliases[chainID] = KChainAliases
+		case constants.IdentityVMID:
+			apiAliases[endpoint] = []string{
+				"I",
+				"identity",
+				"identityvm",
+				"id",
+				path.Join(constants.ChainAliasPrefix, "I"),
+				path.Join(constants.ChainAliasPrefix, "identity"),
+			}
+			chainAliases[chainID] = IChainAliases
+		case constants.OracleVMID:
+			apiAliases[endpoint] = []string{
+				"O",
+				"oracle",
+				"oraclevm",
+				"feed",
+				path.Join(constants.ChainAliasPrefix, "O"),
+				path.Join(constants.ChainAliasPrefix, "oracle"),
+			}
+			chainAliases[chainID] = OChainAliases
+		case constants.RelayVMID:
+			apiAliases[endpoint] = []string{
+				"R",
+				"relay",
+				"relayvm",
+				"msg",
+				path.Join(constants.ChainAliasPrefix, "R"),
+				path.Join(constants.ChainAliasPrefix, "relay"),
+			}
+			chainAliases[chainID] = RChainAliases
 		}
 	}
 	return apiAliases, chainAliases, nil
