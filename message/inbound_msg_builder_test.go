@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/timer/mockable"
-	compression "github.com/luxfi/compress"
 )
 
 func Test_newMsgBuilder(t *testing.T) {

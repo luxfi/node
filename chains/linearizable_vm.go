@@ -8,13 +8,13 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/vm/chain"
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/runtime"
 	vmcore "github.com/luxfi/vm"
+	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/warp"
 )
 

@@ -126,4 +126,3 @@ func VMAliasesMap() map[ids.ID][]string {
 	}
 	return m
 }
-

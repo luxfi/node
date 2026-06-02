@@ -61,15 +61,15 @@ import (
 // 2. t-of-n validators completed Corona threshold (post-quantum secure)
 
 var (
-	ErrQuasarNotStarted     = errors.New("quasar not started")
-	ErrPChainNotConnected   = errors.New("P-Chain not connected")
-	ErrQChainNotConnected   = errors.New("Q-Chain not connected")
-	ErrCoronaNotConnected = errors.New("Corona coordinator not connected")
-	ErrInsufficientWeight   = errors.New("insufficient validator weight")
-	ErrInsufficientSigners  = errors.New("insufficient Corona signers")
-	ErrFinalityFailed       = errors.New("hybrid finality verification failed")
-	ErrBLSFailed            = errors.New("BLS aggregation failed")
-	ErrCoronaFailed       = errors.New("Corona threshold signing failed")
+	ErrQuasarNotStarted    = errors.New("quasar not started")
+	ErrPChainNotConnected  = errors.New("P-Chain not connected")
+	ErrQChainNotConnected  = errors.New("Q-Chain not connected")
+	ErrCoronaNotConnected  = errors.New("Corona coordinator not connected")
+	ErrInsufficientWeight  = errors.New("insufficient validator weight")
+	ErrInsufficientSigners = errors.New("insufficient Corona signers")
+	ErrFinalityFailed      = errors.New("hybrid finality verification failed")
+	ErrBLSFailed           = errors.New("BLS aggregation failed")
+	ErrCoronaFailed        = errors.New("Corona threshold signing failed")
 )
 
 // PChainProvider provides P-Chain state and finality events
@@ -87,11 +87,11 @@ type QuantumSignerFallback interface {
 // ValidatorState represents a validator's current state
 // Each validator has BOTH BLS and Corona keys
 type ValidatorState struct {
-	NodeID      ids.NodeID
-	Weight      uint64
-	BLSPubKey   []byte // BLS public key for aggregate signatures
+	NodeID    ids.NodeID
+	Weight    uint64
+	BLSPubKey []byte // BLS public key for aggregate signatures
 	CoronaKey []byte // Corona public key share for threshold sigs
-	Active      bool
+	Active    bool
 }
 
 // FinalityEvent represents a P-Chain finality event
@@ -104,18 +104,18 @@ type FinalityEvent struct {
 
 // QuantumFinality represents a block that achieved hybrid quantum finality
 type QuantumFinality struct {
-	BlockID         ids.ID
-	PChainHeight    uint64
-	QChainHeight    uint64
-	BLSProof        []byte       // Aggregated BLS signature (96 bytes)
+	BlockID       ids.ID
+	PChainHeight  uint64
+	QChainHeight  uint64
+	BLSProof      []byte       // Aggregated BLS signature (96 bytes)
 	CoronaProof   []byte       // Serialized Corona threshold signature
-	SignerBitset    []byte       // Which validators signed BLS
+	SignerBitset  []byte       // Which validators signed BLS
 	CoronaSigners []ids.NodeID // Which validators participated in Corona
-	TotalWeight     uint64
-	SignerWeight    uint64
-	BLSLatency      time.Duration
+	TotalWeight   uint64
+	SignerWeight  uint64
+	BLSLatency    time.Duration
 	CoronaLatency time.Duration
-	Timestamp       time.Time
+	Timestamp     time.Time
 }
 
 // Quasar binds P-Chain and Q-Chain consensus into hybrid quantum finality
@@ -369,18 +369,18 @@ func (q *Quasar) processFinality(ctx context.Context, event FinalityEvent) error
 		coronaProof = coronaSig.Bytes()
 	}
 	finality := &QuantumFinality{
-		BlockID:         event.BlockID,
-		PChainHeight:    event.Height,
-		QChainHeight:    q.qHeight,
-		BLSProof:        blsProof,
+		BlockID:       event.BlockID,
+		PChainHeight:  event.Height,
+		QChainHeight:  q.qHeight,
+		BLSProof:      blsProof,
 		CoronaProof:   coronaProof,
-		SignerBitset:    signerBitset,
+		SignerBitset:  signerBitset,
 		CoronaSigners: coronaSigners,
-		TotalWeight:     totalWeight,
-		SignerWeight:    signerWeight,
-		BLSLatency:      blsLatency,
+		TotalWeight:   totalWeight,
+		SignerWeight:  signerWeight,
+		BLSLatency:    blsLatency,
 		CoronaLatency: coronaLatency,
-		Timestamp:       time.Now(),
+		Timestamp:     time.Now(),
 	}
 
 	q.finalized[event.BlockID] = finality
@@ -590,13 +590,13 @@ func (q *Quasar) Stats() QuasarStats {
 	}
 
 	return QuasarStats{
-		PChainHeight:      q.pHeight,
-		QChainHeight:      q.qHeight,
-		FinalizedBlocks:   len(q.finalized),
-		Threshold:         q.threshold,
-		QuorumNum:         q.quorumNum,
-		QuorumDen:         q.quorumDen,
-		Running:           q.running,
+		PChainHeight:    q.pHeight,
+		QChainHeight:    q.qHeight,
+		FinalizedBlocks: len(q.finalized),
+		Threshold:       q.threshold,
+		QuorumNum:       q.quorumNum,
+		QuorumDen:       q.quorumDen,
+		Running:         q.running,
 		CoronaParties:   coronaStats.NumParties,
 		CoronaThreshold: coronaStats.Threshold,
 		CoronaReady:     coronaStats.Initialized,
@@ -605,13 +605,13 @@ func (q *Quasar) Stats() QuasarStats {
 
 // QuasarStats contains quasar statistics
 type QuasarStats struct {
-	PChainHeight      uint64
-	QChainHeight      uint64
-	FinalizedBlocks   int
-	Threshold         int
-	QuorumNum         uint64
-	QuorumDen         uint64
-	Running           bool
+	PChainHeight    uint64
+	QChainHeight    uint64
+	FinalizedBlocks int
+	Threshold       int
+	QuorumNum       uint64
+	QuorumDen       uint64
+	Running         bool
 	CoronaParties   int
 	CoronaThreshold int
 	CoronaReady     bool

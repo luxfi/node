@@ -70,7 +70,7 @@ func (s *mockServer) AddAliasesWithReadLock(endpoint string, aliases ...string) 
 func (s *mockServer) Dispatch() error { return nil }
 func (s *mockServer) RegisterChain(chainName string, rt *runtime.Runtime, vm vm.VM) {
 }
-func (s *mockServer) Shutdown() error { return nil }
+func (s *mockServer) Shutdown() error                               { return nil }
 func (s *mockServer) SetRootInfoProvider(_ server.RootInfoProvider) {}
 
 func TestHandlerManager_RegisterChainHandlers(t *testing.T) {

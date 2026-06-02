@@ -10,23 +10,23 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/server/http"
 	// "github.com/luxfi/consensus/core/router" // Unused
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/mldsa"
 	mlkemcrypto "github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/upgrade"
 	// "github.com/luxfi/log" // Unused
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/timer"
 	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/timer"
 )
 
 type APIIndexerConfig struct {
@@ -101,13 +101,13 @@ type StakingConfig struct {
 	// publishes in its validator-set entry so peers can encapsulate to it
 	// for session-key establishment with no classical fallback. The
 	// HandshakeMLKEMPriv stays local to the pod.
-	StakingMLDSA       *mldsa.PrivateKey         `json:"-"`
-	StakingMLDSAPub    []byte                    `json:"-"`
-	HandshakeMLKEMPriv *mlkemcrypto.PrivateKey   `json:"-"`
-	HandshakeMLKEMPub  []byte                    `json:"-"`
+	StakingMLDSA       *mldsa.PrivateKey       `json:"-"`
+	StakingMLDSAPub    []byte                  `json:"-"`
+	HandshakeMLKEMPriv *mlkemcrypto.PrivateKey `json:"-"`
+	HandshakeMLKEMPub  []byte                  `json:"-"`
 	// File paths kept for log-line context, mirroring StakingKeyPath etc.
-	StakingMLDSAKeyPath  string `json:"stakingMLDSAKeyPath,omitempty"`
-	StakingMLDSAPubPath  string `json:"stakingMLDSAPubPath,omitempty"`
+	StakingMLDSAKeyPath   string `json:"stakingMLDSAKeyPath,omitempty"`
+	StakingMLDSAPubPath   string `json:"stakingMLDSAPubPath,omitempty"`
 	HandshakeMLKEMKeyPath string `json:"handshakeMLKEMKeyPath,omitempty"`
 	HandshakeMLKEMPubPath string `json:"handshakeMLKEMPubPath,omitempty"`
 }
@@ -169,7 +169,7 @@ type Config struct {
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	UTXOAssetID     ids.ID `json:"utxoAssetID"`
+	UTXOAssetID  ids.ID `json:"utxoAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`

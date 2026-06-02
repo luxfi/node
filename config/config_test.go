@@ -16,8 +16,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/constants"
 	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"

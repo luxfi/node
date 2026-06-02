@@ -116,11 +116,11 @@ func generateValidatorStates(n int) []ValidatorState {
 		_, _ = rand.Read(rtKey)
 
 		states[i] = ValidatorState{
-			NodeID:      ids.GenerateTestNodeID(),
-			Weight:      1000,
-			BLSPubKey:   blsKey,
+			NodeID:    ids.GenerateTestNodeID(),
+			Weight:    1000,
+			BLSPubKey: blsKey,
 			CoronaKey: rtKey,
-			Active:      true,
+			Active:    true,
 		}
 	}
 	return states
@@ -575,13 +575,13 @@ func TestQuasarMemoryPressure(t *testing.T) {
 			_, _ = rand.Read(blockID[:])
 
 			finality := &QuantumFinality{
-				BlockID:       blockID,
-				PChainHeight:  uint64(i),
-				QChainHeight:  uint64(i),
-				BLSProof:      make([]byte, 96),
-				CoronaProof: make([]byte, 1024),
-				TotalWeight:   1000,
-				SignerWeight:  700,
+				BlockID:      blockID,
+				PChainHeight: uint64(i),
+				QChainHeight: uint64(i),
+				BLSProof:     make([]byte, 96),
+				CoronaProof:  make([]byte, 1024),
+				TotalWeight:  1000,
+				SignerWeight: 700,
 			}
 			q.SetFinalized(blockID, finality)
 		}
@@ -913,10 +913,10 @@ func TestQuasarEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		finality := &QuantumFinality{
-			BLSProof:      nil,
-			CoronaProof: nil,
-			TotalWeight:   1000,
-			SignerWeight:  700,
+			BLSProof:     nil,
+			CoronaProof:  nil,
+			TotalWeight:  1000,
+			SignerWeight: 700,
 		}
 
 		err = q.Verify(finality)
@@ -928,10 +928,10 @@ func TestQuasarEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		finality := &QuantumFinality{
-			BLSProof:      []byte("proof"),
-			CoronaProof: []byte("proof"),
-			TotalWeight:   1000,
-			SignerWeight:  500, // Only 50%, needs 67%
+			BLSProof:     []byte("proof"),
+			CoronaProof:  []byte("proof"),
+			TotalWeight:  1000,
+			SignerWeight: 500, // Only 50%, needs 67%
 		}
 
 		err = q.Verify(finality)

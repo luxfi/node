@@ -12,16 +12,16 @@ import (
 
 // CeremonyState holds the full state of a powers-of-tau ceremony.
 type CeremonyState struct {
-	Circuit       string         `json:"circuit"`
-	NumConstraints int           `json:"numConstraints"`
-	PowersNeeded  int            `json:"powersNeeded"`
-	Participants  int            `json:"participants"`
-	TauG1         []G1Point      `json:"tauG1"`
-	TauG2         []G2Point      `json:"tauG2"`
-	AlphaG1       []G1Point      `json:"alphaG1"`
-	BetaG1        []G1Point      `json:"betaG1"`
-	BetaG2        G2Point        `json:"betaG2"`
-	Contributions []Contribution `json:"contributions"`
+	Circuit        string         `json:"circuit"`
+	NumConstraints int            `json:"numConstraints"`
+	PowersNeeded   int            `json:"powersNeeded"`
+	Participants   int            `json:"participants"`
+	TauG1          []G1Point      `json:"tauG1"`
+	TauG2          []G2Point      `json:"tauG2"`
+	AlphaG1        []G1Point      `json:"alphaG1"`
+	BetaG1         []G1Point      `json:"betaG1"`
+	BetaG2         G2Point        `json:"betaG2"`
+	Contributions  []Contribution `json:"contributions"`
 }
 
 // Contribution records a single participant's contribution.

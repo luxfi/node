@@ -79,10 +79,10 @@ func TestGPUPipeline_AllFourTypes(t *testing.T) {
 	pipeline := NewGPUVerifyPipeline()
 
 	work := &BlockVerifyWork{
-		BLS:      makeBLSWork(5),
+		BLS:    makeBLSWork(5),
 		Corona: makeCoronaWork(3),
-		ZK:       makeZKWork(2),
-		MLDSA:    makeMLDSAWork(10),
+		ZK:     makeZKWork(2),
+		MLDSA:  makeMLDSAWork(10),
 	}
 
 	result, err := pipeline.VerifyBlock(work)
@@ -276,10 +276,10 @@ func BenchmarkGPUPipeline(b *testing.B) {
 	pipeline := NewGPUVerifyPipeline()
 
 	work := &BlockVerifyWork{
-		BLS:      makeBLSWork(100),
+		BLS:    makeBLSWork(100),
 		Corona: makeCoronaWork(50),
-		ZK:       makeZKWork(10),
-		MLDSA:    makeMLDSAWork(200),
+		ZK:     makeZKWork(10),
+		MLDSA:  makeMLDSAWork(200),
 	}
 
 	b.ResetTimer()

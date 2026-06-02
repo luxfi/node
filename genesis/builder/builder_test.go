@@ -160,10 +160,10 @@ func TestGetConfig(t *testing.T) {
 
 func TestGetConfigAllocations(t *testing.T) {
 	tests := []struct {
-		name         string
-		networkID    uint32
-		minAllocs    int
-		minStakers   int
+		name       string
+		networkID  uint32
+		minAllocs  int
+		minStakers int
 	}{
 		{"Mainnet", constants.MainnetID, 50, 1},
 		{"Testnet", constants.TestnetID, 50, 1},

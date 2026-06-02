@@ -10,13 +10,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/vm"
 )
 
 // TestNew tests creating a new manager
@@ -106,9 +106,9 @@ func TestQueueChainCreation(t *testing.T) {
 	chainID := ids.GenerateTestID()
 	netID := ids.GenerateTestID()
 	chainParams := ChainParameters{
-		ID:    chainID,
+		ID:      chainID,
 		ChainID: netID,
-		VMID:  ids.GenerateTestID(),
+		VMID:    ids.GenerateTestID(),
 	}
 
 	// Queue the chain

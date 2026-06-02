@@ -401,7 +401,7 @@ func TestConcurrentPruningStress(t *testing.T) {
 	require.NoError(t, err)
 
 	const (
-		numWriters = 8
+		numWriters   = 8
 		opsPerWriter = 5000
 	)
 

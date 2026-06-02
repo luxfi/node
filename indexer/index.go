@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 )
 

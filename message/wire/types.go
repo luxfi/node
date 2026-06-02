@@ -17,37 +17,37 @@ const (
 // Message is the top-level P2P message container
 type Message struct {
 	// Only one of these should be set
-	CompressedZstd              []byte
-	Ping                        *Ping
-	Pong                        *Pong
-	Handshake                   *Handshake
-	GetPeerList                 *GetPeerList
-	PeerList                    *PeerList
-	GetStateSummaryFrontier     *GetStateSummaryFrontier
-	StateSummaryFrontier        *StateSummaryFrontier
-	GetAcceptedStateSummary     *GetAcceptedStateSummary
-	AcceptedStateSummary        *AcceptedStateSummary
-	GetAcceptedFrontier         *GetAcceptedFrontier
-	AcceptedFrontier            *AcceptedFrontier
-	GetAccepted                 *GetAccepted
-	Accepted                    *Accepted
-	GetAncestors                *GetAncestors
-	Ancestors                   *Ancestors
-	Get                         *Get
-	Put                         *Put
-	PushQuery                   *PushQuery
-	PullQuery                   *PullQuery
-	Chits                       *Chits
-	Request                     *Request
-	Response                    *Response
-	Gossip                      *Gossip
+	CompressedZstd          []byte
+	Ping                    *Ping
+	Pong                    *Pong
+	Handshake               *Handshake
+	GetPeerList             *GetPeerList
+	PeerList                *PeerList
+	GetStateSummaryFrontier *GetStateSummaryFrontier
+	StateSummaryFrontier    *StateSummaryFrontier
+	GetAcceptedStateSummary *GetAcceptedStateSummary
+	AcceptedStateSummary    *AcceptedStateSummary
+	GetAcceptedFrontier     *GetAcceptedFrontier
+	AcceptedFrontier        *AcceptedFrontier
+	GetAccepted             *GetAccepted
+	Accepted                *Accepted
+	GetAncestors            *GetAncestors
+	Ancestors               *Ancestors
+	Get                     *Get
+	Put                     *Put
+	PushQuery               *PushQuery
+	PullQuery               *PullQuery
+	Chits                   *Chits
+	Request                 *Request
+	Response                *Response
+	Gossip                  *Gossip
 	BFT                     *BFT
 }
 
 // Ping message
 type Ping struct {
-	Uptime    uint32
-	ChainIds  []*ChainPingEntry
+	Uptime   uint32
+	ChainIds []*ChainPingEntry
 }
 
 // ChainPingEntry is the per-chain payload in Ping/Pong.
@@ -59,24 +59,24 @@ type ChainPingEntry struct {
 
 // Pong message
 type Pong struct {
-	Uptime    uint32
-	ChainIds  []*ChainPingEntry
+	Uptime   uint32
+	ChainIds []*ChainPingEntry
 }
 
 // Handshake message
 type Handshake struct {
-	NetworkId      uint32
-	MyTime         uint64
-	IpAddr         []byte
-	IpPort         uint32
-	IpSigningTime  uint64
-	IpNodeIdSig    []byte
+	NetworkId     uint32
+	MyTime        uint64
+	IpAddr        []byte
+	IpPort        uint32
+	IpSigningTime uint64
+	IpNodeIdSig   []byte
 	TrackedChains [][]byte
-	Client         *Client
-	SupportedAcps  []uint32
-	ObjectedAcps   []uint32
-	KnownPeers     *BloomFilter
-	IpBlsSig       []byte
+	Client        *Client
+	SupportedAcps []uint32
+	ObjectedAcps  []uint32
+	KnownPeers    *BloomFilter
+	IpBlsSig      []byte
 }
 
 // Client info in handshake
@@ -210,9 +210,9 @@ type GetAncestors struct {
 	EngineType  EngineType
 }
 
-func (m *GetAncestors) GetChainId() []byte      { return m.ChainId }
-func (m *GetAncestors) GetRequestId() uint32    { return m.RequestId }
-func (m *GetAncestors) GetDeadline() uint64     { return m.Deadline }
+func (m *GetAncestors) GetChainId() []byte        { return m.ChainId }
+func (m *GetAncestors) GetRequestId() uint32      { return m.RequestId }
+func (m *GetAncestors) GetDeadline() uint64       { return m.Deadline }
 func (m *GetAncestors) GetEngineType() EngineType { return m.EngineType }
 
 // Ancestors message
@@ -240,10 +240,10 @@ func (m *Get) GetDeadline() uint64  { return m.Deadline }
 
 // Put message
 type Put struct {
-	ChainId     []byte
-	RequestId   uint32
-	Container   []byte
-	EngineType  EngineType
+	ChainId    []byte
+	RequestId  uint32
+	Container  []byte
+	EngineType EngineType
 }
 
 func (m *Put) GetChainId() []byte   { return m.ChainId }
@@ -251,11 +251,11 @@ func (m *Put) GetRequestId() uint32 { return m.RequestId }
 
 // PushQuery message
 type PushQuery struct {
-	ChainId      []byte
-	RequestId    uint32
-	Deadline     uint64
-	Container    []byte
-	EngineType   EngineType
+	ChainId         []byte
+	RequestId       uint32
+	Deadline        uint64
+	Container       []byte
+	EngineType      EngineType
 	RequestedHeight uint64
 }
 
@@ -279,11 +279,11 @@ func (m *PullQuery) GetDeadline() uint64  { return m.Deadline }
 
 // Chits message
 type Chits struct {
-	ChainId        []byte
-	RequestId      uint32
-	PreferredId    []byte
+	ChainId             []byte
+	RequestId           uint32
+	PreferredId         []byte
 	PreferredIdAtHeight []byte
-	AcceptedId     []byte
+	AcceptedId          []byte
 }
 
 func (m *Chits) GetChainId() []byte   { return m.ChainId }

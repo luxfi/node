@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/rpc"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/utils/json"
 )
 
 type mockClient struct {

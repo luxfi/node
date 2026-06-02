@@ -6,8 +6,8 @@ package message
 import (
 	"time"
 
-	"github.com/luxfi/metric"
 	compression "github.com/luxfi/compress"
+	"github.com/luxfi/metric"
 )
 
 var _ Creator = (*creator)(nil)

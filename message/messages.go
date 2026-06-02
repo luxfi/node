@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/timer/mockable"
-	compression "github.com/luxfi/compress"
 )
 
 const (

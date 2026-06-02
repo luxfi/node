@@ -68,32 +68,32 @@ type MLDSAWork struct {
 
 // BlockVerifyWork contains all verification batches for a single block.
 type BlockVerifyWork struct {
-	BLS      *BLSWork
+	BLS    *BLSWork
 	Corona *CoronaWork
-	ZK       *ZKWork
-	MLDSA    *MLDSAWork
+	ZK     *ZKWork
+	MLDSA  *MLDSAWork
 }
 
 // BlockVerifyResult contains verification results for all batch types.
 type BlockVerifyResult struct {
-	BLSValid      []bool
+	BLSValid    []bool
 	CoronaValid []bool
-	ZKValid       bool
-	MLDSAValid    []bool
+	ZKValid     bool
+	MLDSAValid  []bool
 
-	GPUUsed     bool
-	BLSTime     time.Duration
+	GPUUsed    bool
+	BLSTime    time.Duration
 	CoronaTime time.Duration
-	ZKTime      time.Duration
-	MLDSATime   time.Duration
-	TotalTime   time.Duration
+	ZKTime     time.Duration
+	MLDSATime  time.Duration
+	TotalTime  time.Duration
 }
 
 var (
-	ErrBLSSizeMismatch      = errors.New("BLS batch size mismatch: messages, signatures, and pubkeys must have equal length")
+	ErrBLSSizeMismatch    = errors.New("BLS batch size mismatch: messages, signatures, and pubkeys must have equal length")
 	ErrCoronaSizeMismatch = errors.New("Corona batch size mismatch: messages, signatures, and pubkeys must have equal length")
-	ErrZKSizeMismatch       = errors.New("ZK batch size mismatch: scalars and bases must have equal length")
-	ErrMLDSASizeMismatch    = errors.New("ML-DSA batch size mismatch: messages, signatures, and pubkeys must have equal length")
+	ErrZKSizeMismatch     = errors.New("ZK batch size mismatch: scalars and bases must have equal length")
+	ErrMLDSASizeMismatch  = errors.New("ML-DSA batch size mismatch: messages, signatures, and pubkeys must have equal length")
 )
 
 // VerifyBlock dispatches all verification work for a block through the GPU pipeline.

@@ -23,11 +23,11 @@ import (
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/genesis"
-	xvmgenesis "github.com/luxfi/node/vms/xvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	xvmgenesis "github.com/luxfi/node/vms/xvm/genesis"
 	"github.com/luxfi/utxo/bls12381fx"
 	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
@@ -38,8 +38,8 @@ import (
 	"github.com/luxfi/utxo/secp256r1fx"
 	"github.com/luxfi/utxo/slhdsafx"
 
-	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	genesisconfigs "github.com/luxfi/genesis/configs"
+	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 )
 
 // Chain alias vars are derived from the single source of truth (Registry
