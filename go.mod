@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.25.9
+	github.com/luxfi/consensus v1.25.11
 	github.com/luxfi/crypto v1.19.15
 	github.com/luxfi/database v1.18.3
 	github.com/luxfi/ids v1.2.13
@@ -123,7 +123,7 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.1.4
+	github.com/luxfi/accel v1.1.7
 	github.com/luxfi/api v1.0.11
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
@@ -181,10 +181,10 @@ require (
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/protocol v0.0.4 // indirect
-	github.com/luxfi/pulsar v1.0.23 // indirect
+	github.com/luxfi/pulsar v1.1.1 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
-	github.com/luxfi/threshold v1.9.2 // indirect
+	github.com/luxfi/threshold v1.9.4 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
 	github.com/luxfi/zap v0.2.0 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
