@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/genesis/pkg/genesis"
+	"github.com/luxfi/net/dynamicip"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/proposervm"
-	compression "github.com/luxfi/compress"
-	"github.com/luxfi/net/dynamicip"
 	"github.com/luxfi/sys/ulimit"
 
 	consensusconfig "github.com/luxfi/consensus/config"
@@ -48,19 +48,19 @@ var (
 	defaultStakingSignerKeyPath = filepath.Join(defaultStakingPath, "signer.key")
 	// Strict-PQ default paths — mirror downstream-tenant CLI `<tenantctl> key gen`
 	// layout so the operator init container + lqd see the same files.
-	defaultStakingMLDSAKeyPath    = filepath.Join(defaultStakingPath, "mldsa.key")
-	defaultStakingMLDSAPubKeyPath = filepath.Join(defaultStakingPath, "mldsa.pub")
+	defaultStakingMLDSAKeyPath      = filepath.Join(defaultStakingPath, "mldsa.key")
+	defaultStakingMLDSAPubKeyPath   = filepath.Join(defaultStakingPath, "mldsa.pub")
 	defaultHandshakeMLKEMKeyPath    = filepath.Join(defaultStakingPath, "mlkem.key")
 	defaultHandshakeMLKEMPubKeyPath = filepath.Join(defaultStakingPath, "mlkem.pub")
-	defaultConfigDir            = filepath.Join(defaultUnexpandedDataDir, "configs")
-	defaultChainConfigDir       = filepath.Join(defaultConfigDir, "chains")
-	defaultVMConfigDir          = filepath.Join(defaultConfigDir, "vms")
-	defaultVMAliasFilePath      = filepath.Join(defaultVMConfigDir, "aliases.json")
-	defaultChainAliasFilePath   = filepath.Join(defaultChainConfigDir, "aliases.json")
-	defaultNetConfigDir         = filepath.Join(defaultConfigDir, "chains")
-	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins", "current")
-	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
-	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
+	defaultConfigDir                = filepath.Join(defaultUnexpandedDataDir, "configs")
+	defaultChainConfigDir           = filepath.Join(defaultConfigDir, "chains")
+	defaultVMConfigDir              = filepath.Join(defaultConfigDir, "vms")
+	defaultVMAliasFilePath          = filepath.Join(defaultVMConfigDir, "aliases.json")
+	defaultChainAliasFilePath       = filepath.Join(defaultChainConfigDir, "aliases.json")
+	defaultNetConfigDir             = filepath.Join(defaultConfigDir, "chains")
+	defaultPluginDir                = filepath.Join(defaultUnexpandedDataDir, "plugins", "current")
+	defaultChainDataDir             = filepath.Join(defaultUnexpandedDataDir, "chainData")
+	defaultProcessContextPath       = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
 )
 
 func deprecateFlags(fs *pflag.FlagSet) error {

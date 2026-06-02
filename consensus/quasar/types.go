@@ -181,7 +181,7 @@ func (s *BLSSignature) Signers() []ids.NodeID { return s.signers }
 
 // QuasarSignature combines BLS and Corona signatures for P/Q security
 type QuasarSignature struct {
-	bls      *BLSSignature
+	bls    *BLSSignature
 	corona *CoronaSignature
 }
 
@@ -211,7 +211,7 @@ func (s *QuasarSignature) Signers() []ids.NodeID {
 	return s.bls.Signers()
 }
 
-func (s *QuasarSignature) BLS() *BLSSignature           { return s.bls }
+func (s *QuasarSignature) BLS() *BLSSignature       { return s.bls }
 func (s *QuasarSignature) Corona() *CoronaSignature { return s.corona }
 
 // QuasarSigner combines classical and post-quantum signers

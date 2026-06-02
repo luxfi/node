@@ -35,12 +35,12 @@ import (
 
 var (
 	// Flags
-	outputPath  string
-	inputPath   string
-	sinceVer    uint64
-	dataDir     string
-	dbType      string
-	noCompress  bool
+	outputPath   string
+	inputPath    string
+	sinceVer     uint64
+	dataDir      string
+	dbType       string
+	noCompress   bool
 	forceRestore bool
 )
 
