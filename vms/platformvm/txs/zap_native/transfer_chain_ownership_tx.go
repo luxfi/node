@@ -76,13 +76,9 @@ func (t TransferChainOwnershipTx) Bytes() []byte { return t.msg.Bytes() }
 func (t TransferChainOwnershipTx) IsZero() bool  { return t.msg == nil }
 
 func WrapTransferChainOwnershipTx(b []byte) (TransferChainOwnershipTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindTransferChainOwnership)
 	if err != nil {
 		return TransferChainOwnershipTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindTransferChainOwnership {
-		return TransferChainOwnershipTx{}, ErrWrongTxKind
 	}
 	return TransferChainOwnershipTx{msg: msg, obj: obj}, nil
 }

@@ -3,7 +3,11 @@
 
 package zap_native
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/luxfi/zap"
+)
 
 // TxKind is the 1-byte tx-type discriminator stored at offset 0 of every
 // zap_native tx's fixed section. Wrap*Tx functions verify the kind matches
@@ -45,3 +49,31 @@ const OffsetTxKind = 0
 // does not match the expected tx type. Caller passed the wrong buffer to the
 // wrong wrapper — a cross-type confusion attempt or a dispatch bug.
 var ErrWrongTxKind = errors.New("zap_native: tx kind discriminator does not match expected tx type")
+
+// ErrWrongSchemaVersion is returned by Wrap*Tx when the buffer's ZAP wire
+// header version is not Version2. v3 platformvm tx schemas live exclusively
+// under Version2; v1-header buffers (legacy v2 platformvm schema) collide
+// with the v3 TxKind discriminator (e.g. NetworkID=11 byte 0 == TxKindBaseFull)
+// and must be rejected before any field interpretation. RED-MEDIUM-1
+// (LP-023 v3.1 round 2).
+var ErrWrongSchemaVersion = errors.New("zap_native: wire version does not match v3 schema (Version2)")
+
+// parseAndCheckKind is the shared Wrap*Tx prologue. It parses the ZAP buffer,
+// gates the wire-header version on Version2 (RED-MEDIUM-1), and confirms the
+// TxKind discriminator at offset 0 matches the expected kind (V14
+// cross-type confusion defense). Returns the parsed message + root object
+// on success, or a typed error.
+func parseAndCheckKind(b []byte, want TxKind) (*zap.Message, zap.Object, error) {
+	msg, err := zap.Parse(b)
+	if err != nil {
+		return nil, zap.Object{}, err
+	}
+	if msg.Version() != zap.Version2 {
+		return nil, zap.Object{}, ErrWrongSchemaVersion
+	}
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != want {
+		return nil, zap.Object{}, ErrWrongTxKind
+	}
+	return msg, obj, nil
+}

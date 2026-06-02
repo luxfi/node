@@ -35,13 +35,9 @@ func (t RewardValidatorTx) Bytes() []byte { return t.msg.Bytes() }
 func (t RewardValidatorTx) IsZero() bool  { return t.msg == nil }
 
 func WrapRewardValidatorTx(b []byte) (RewardValidatorTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindRewardValidator)
 	if err != nil {
 		return RewardValidatorTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindRewardValidator {
-		return RewardValidatorTx{}, ErrWrongTxKind
 	}
 	return RewardValidatorTx{msg: msg, obj: obj}, nil
 }

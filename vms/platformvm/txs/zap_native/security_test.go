@@ -920,3 +920,227 @@ func TestRed_V20_MemoLengthCastSafety(t *testing.T) {
 	}
 	t.Logf("V20 verified: uint32(MaxUint32) length passes through uint32→int positive cast on 64-bit; bounds check in zap.Object.Bytes catches absPos+length > len(data) → returns nil.")
 }
+
+// -----------------------------------------------------------------------------
+// LP-023 v3.1 Red round 2 — regression tests pinned in-tree.
+// -----------------------------------------------------------------------------
+//
+// RED-HIGH-3: poisoned EvidenceEntry (Rel,Len) cursors panic the consumer
+// when used to slice the parent message/sig blobs. The safe MessageA/B +
+// SignatureA/B accessors on a Bind'd list clamp against parent blob
+// length and return empty slices.
+
+func TestRedRound2_HIGH3_EvidenceListSafeAccessorsClamp(t *testing.T) {
+	// Forge an EvidenceList with one entry whose MessageARel=0 and
+	// MessageALen=0xFFFFFFFF — the wire-format poison Red demonstrated in
+	// /tmp/red_zap_attacks/batch3_attacks_test.go.
+	b := zap.NewBuilder(512)
+	mb := []byte("msgA-1")
+	sb := []byte("sigA-1")
+
+	var entry [SizeEvidenceEntry]byte
+	putU64(entry[OffsetEvidenceEntry_Height:], 1)
+	entry[OffsetEvidenceEntry_EvidenceType] = 1
+	putU32(entry[OffsetEvidenceEntry_MessageARel:], 0)
+	putU32(entry[OffsetEvidenceEntry_MessageALen:], 0xFFFFFFFF) // POISONED
+	putU32(entry[OffsetEvidenceEntry_SignatureARel:], 0)
+	putU32(entry[OffsetEvidenceEntry_SignatureALen:], 0)
+	putU32(entry[OffsetEvidenceEntry_MessageBRel:], 0xFFFFFFFF) // also poisoned (rel oob)
+	putU32(entry[OffsetEvidenceEntry_MessageBLen:], 1)
+	putU32(entry[OffsetEvidenceEntry_SignatureBRel:], 0)
+	putU32(entry[OffsetEvidenceEntry_SignatureBLen:], 0xFFFFFFFE) // poisoned (length oob)
+
+	lb := b.StartList(SizeEvidenceEntry)
+	lb.AddBytes(entry[:])
+	listOff, _ := lb.Finish()
+	// SetList's count is entry count (1), not byte count (48). The list
+	// element-stride is SizeEvidenceEntry; consumers index by entry index.
+	ob := b.StartObject(24)
+	ob.SetList(0, listOff, 1)
+	ob.SetBytes(8, mb)
+	ob.SetBytes(16, sb)
+	ob.FinishAsRoot()
+	buf := b.Finish()
+
+	msg, err := zap.Parse(buf)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+	mb2 := msg.Root().Bytes(8)
+	sb2 := msg.Root().Bytes(16)
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("RED-HIGH-3 regression: panic on poisoned cursors: %v", r)
+		}
+	}()
+
+	// Bound list — safe accessors clamp.
+	list := EvidenceListView(msg.Root(), 0).Bind(mb2, sb2)
+	if list.Len() != 1 {
+		t.Fatalf("expected 1 entry, got %d", list.Len())
+	}
+	e := list.At(0)
+
+	if got := e.MessageA(); got != nil {
+		t.Fatalf("RED-HIGH-3 regression (MessageA): got len=%d, want nil (poisoned len=0xFFFFFFFF)", len(got))
+	}
+	if got := e.MessageB(); got != nil {
+		t.Fatalf("RED-HIGH-3 regression (MessageB): got len=%d, want nil (poisoned rel=0xFFFFFFFF)", len(got))
+	}
+	if got := e.SignatureB(); got != nil {
+		t.Fatalf("RED-HIGH-3 regression (SignatureB): got len=%d, want nil (poisoned len=0xFFFFFFFE)", len(got))
+	}
+	// Sanity: unbound list returns nil for all safe accessors (no parent).
+	unbound := EvidenceListView(msg.Root(), 0).At(0)
+	if got := unbound.MessageA(); got != nil {
+		t.Fatalf("unbound MessageA: got %x, want nil", got)
+	}
+}
+
+// TestRedRound2_HIGH3_SigIndicesArraySliceClamp pins the existence + clamp
+// semantics of SigIndicesArray.Slice. Prior to LP-023 v3.1 r2 this accessor
+// was referenced in comments but did not exist; consumers built the slice
+// inline via raw At() loops with attacker-controlled start/count.
+func TestRedRound2_HIGH3_SigIndicesArraySliceClamp(t *testing.T) {
+	b := zap.NewBuilder(256)
+	lb := b.StartList(4)
+	lb.AddUint32(10)
+	lb.AddUint32(20)
+	lb.AddUint32(30)
+	off, count := lb.Finish()
+	ob := b.StartObject(8)
+	ob.SetList(0, off, count)
+	ob.FinishAsRoot()
+	buf := b.Finish()
+
+	msg, err := zap.Parse(buf)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	arr := SigIndicesArrayView(msg.Root(), 0)
+
+	// Honest slice.
+	if got := arr.Slice(0, 3); len(got) != 3 || got[0] != 10 || got[2] != 30 {
+		t.Fatalf("honest Slice(0,3) = %v", got)
+	}
+	if got := arr.Slice(1, 2); len(got) != 2 || got[0] != 20 || got[1] != 30 {
+		t.Fatalf("honest Slice(1,2) = %v", got)
+	}
+	// Poisoned start.
+	if got := arr.Slice(0xFFFFFFFF, 1); got != nil {
+		t.Fatalf("poisoned start: got %v, want nil", got)
+	}
+	// Poisoned count.
+	if got := arr.Slice(0, 0xFFFFFFFF); got != nil {
+		t.Fatalf("poisoned count: got len=%d, want nil", len(got))
+	}
+	// start + count overflows.
+	if got := arr.Slice(2, 0xFFFFFFFE); got != nil {
+		t.Fatalf("overflowing (start, count): got %v, want nil", got)
+	}
+}
+
+// TestRedRound2_HIGH3_SignatureArraySliceClamp pins SignatureArray.Slice.
+func TestRedRound2_HIGH3_SignatureArraySliceClamp(t *testing.T) {
+	var s1, s2 [SigBlobSize]byte
+	for i := range s1 {
+		s1[i] = byte(i)
+		s2[i] = byte(0xFF - i)
+	}
+	sigs := [][SigBlobSize]byte{s1, s2}
+
+	b := zap.NewBuilder(512)
+	off, count := WriteSignatureArray(b, sigs)
+	ob := b.StartObject(8)
+	ob.SetList(0, off, count)
+	ob.FinishAsRoot()
+	buf := b.Finish()
+
+	msg, err := zap.Parse(buf)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	arr := SignatureArrayView(msg.Root(), 0)
+
+	if got := arr.Slice(0, 2); len(got) != 2 || got[0] != s1 || got[1] != s2 {
+		t.Fatalf("honest Slice(0,2) = %v", got)
+	}
+	if got := arr.Slice(1, 1); len(got) != 1 || got[0] != s2 {
+		t.Fatalf("honest Slice(1,1) = %v", got)
+	}
+	if got := arr.Slice(0xFFFFFFFF, 1); got != nil {
+		t.Fatalf("poisoned start: got %v, want nil", got)
+	}
+	if got := arr.Slice(0, 0xFFFFFFFF); got != nil {
+		t.Fatalf("poisoned count: got len=%d, want nil", len(got))
+	}
+	if got := arr.Slice(2, 0xFFFFFFFE); got != nil {
+		t.Fatalf("overflowing (start, count): got %v, want nil", got)
+	}
+}
+
+// TestRedRound2_MEDIUM1_V2BufferRejectedAtSchemaGate pins v1-vs-v2 schema
+// confusion: a Version1-header buffer that happens to carry NetworkID=11
+// (whose byte 0 == 0x0B == TxKindBaseFull) must be rejected before TxKind
+// is interpreted. Prior to LP-023 v3.1 r2 such a buffer would slip past
+// the discriminator gate.
+func TestRedRound2_MEDIUM1_V2BufferRejectedAtSchemaGate(t *testing.T) {
+	// Forge a Version1 buffer where byte 0 of the root happens to be
+	// TxKindBaseFull (0x0B).
+	b := zap.NewBuilderV1(128)
+	ob := b.StartObject(SizeBaseTxFull)
+	// In v2 schema, byte 0 of the root would be a uint32 NetworkID. We set
+	// byte 0 to 11 (0x0B) directly — the discriminator-byte-0 collision
+	// from Red's v9 attack.
+	ob.SetUint8(0, 0x0B)
+	ob.FinishAsRoot()
+	buf := b.Finish()
+
+	// Confirm Version1 was emitted.
+	if v := binary.LittleEndian.Uint16(buf[4:6]); v != zap.Version1 {
+		t.Fatalf("test setup: expected Version1, got %d", v)
+	}
+
+	// Wrap*Tx MUST reject at the schema-version gate.
+	if _, err := WrapBaseTxFull(buf); err != ErrWrongSchemaVersion {
+		t.Fatalf("RED-MEDIUM-1 regression: WrapBaseTxFull on Version1 buffer returned %v, want ErrWrongSchemaVersion", err)
+	}
+	if _, err := WrapBaseTx(buf); err != ErrWrongSchemaVersion {
+		t.Fatalf("RED-MEDIUM-1 regression: WrapBaseTx on Version1 buffer returned %v, want ErrWrongSchemaVersion", err)
+	}
+	// Every Wrap*Tx must reject (uniform gate).
+	for name, fn := range map[string]func([]byte) error{
+		"AdvanceTimeTx":                func(b []byte) error { _, e := WrapAdvanceTimeTx(b); return e },
+		"RewardValidatorTx":            func(b []byte) error { _, e := WrapRewardValidatorTx(b); return e },
+		"SetL1ValidatorWeightTx":       func(b []byte) error { _, e := WrapSetL1ValidatorWeightTx(b); return e },
+		"IncreaseL1ValidatorBalanceTx": func(b []byte) error { _, e := WrapIncreaseL1ValidatorBalanceTx(b); return e },
+		"DisableL1ValidatorTx":         func(b []byte) error { _, e := WrapDisableL1ValidatorTx(b); return e },
+		"RegisterL1ValidatorTx":        func(b []byte) error { _, e := WrapRegisterL1ValidatorTx(b); return e },
+		"SlashValidatorTx":             func(b []byte) error { _, e := WrapSlashValidatorTx(b); return e },
+		"TransferChainOwnershipTx":     func(b []byte) error { _, e := WrapTransferChainOwnershipTx(b); return e },
+		"RemoveChainValidatorTx":       func(b []byte) error { _, e := WrapRemoveChainValidatorTx(b); return e },
+		"ImportTx":                     func(b []byte) error { _, e := WrapImportTx(b); return e },
+		"ExportTx":                     func(b []byte) error { _, e := WrapExportTx(b); return e },
+		"CreateChainTx":                func(b []byte) error { _, e := WrapCreateChainTx(b); return e },
+		"AddPermissionlessValidatorTx": func(b []byte) error { _, e := WrapAddPermissionlessValidatorTx(b); return e },
+	} {
+		if err := fn(buf); err != ErrWrongSchemaVersion {
+			t.Errorf("RED-MEDIUM-1 regression: %s on Version1 buffer returned %v, want ErrWrongSchemaVersion", name, err)
+		}
+	}
+}
+
+// TestRedRound2_MEDIUM1_HonestV2BuffersStillWork confirms that current
+// builder output (Version2 by default) continues to round-trip through
+// Wrap*Tx. The schema gate only rejects Version1.
+func TestRedRound2_MEDIUM1_HonestV2BuffersStillWork(t *testing.T) {
+	atx := NewAdvanceTimeTx(42)
+	if _, err := WrapAdvanceTimeTx(atx.Bytes()); err != nil {
+		t.Fatalf("Honest v2 AdvanceTimeTx rejected: %v", err)
+	}
+	btx := NewBaseTx(1, ids.ID{1}, []byte("memo"))
+	if _, err := WrapBaseTx(btx.Bytes()); err != nil {
+		t.Fatalf("Honest v2 BaseTx rejected: %v", err)
+	}
+}
