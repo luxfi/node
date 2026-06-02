@@ -18,19 +18,19 @@ import (
 
 	"github.com/luxfi/log"
 
+	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/endpoints"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/codec/wrappers"
 )
 
 const (
@@ -314,7 +314,7 @@ func (p *peer) runPQHandshakeIfRequired() error {
 			return fmt.Errorf("write PQ RESP: %w", err)
 		}
 		p.pqAEADKey = result.AEADKey
-		return nil
+		return p.adoptVerifiedPQIdentity(result)
 	}
 
 	// Initiator: send INIT, read RESP, finalize.
@@ -338,6 +338,50 @@ func (p *peer) runPQHandshakeIfRequired() error {
 		return fmt.Errorf("finish PQ handshake: %w", err)
 	}
 	p.pqAEADKey = result.AEADKey
+	return p.adoptVerifiedPQIdentity(result)
+}
+
+// adoptVerifiedPQIdentity binds the peer's handshake-presented NodeID to
+// the ML-DSA-65 public key it proved possession of, then adopts that
+// NodeID as this peer's canonical identity.
+//
+// The PQ handshake proves the remote holds the secret key for the ML-DSA
+// public key it sent, and that it signed a transcript carrying its claimed
+// NodeID. That alone is insufficient: nothing yet ties the claimed NodeID
+// to that key, so a peer could sign a self-asserted NodeID (e.g. a
+// validator's) with a throwaway key. We therefore re-derive the NodeID
+// from the presented key under the node-identity domain — ids.Empty, the
+// exact domain config.StakingConfig.DeriveNodeID uses for a node's primary
+// identity (see node.Node, which sets MyNodeID = DeriveNodeID(ids.Empty)) —
+// and require it to equal the claimed NodeID.
+//
+// On success p.id is switched from the TLS-cert NodeID (a transport-layer
+// artifact assigned at construction) to the ML-DSA validator-set NodeID.
+// This is the fix for the strict-PQ block-production failure: consensus and
+// the validator set key peers by the ML-DSA NodeID, so a peer left on its
+// TLS-cert NodeID was never matched to the validator set — the P-chain saw
+// zero connected validators and never produced a block. Skipped entirely on
+// classical-compat chains (runPQHandshakeIfRequired returns before this).
+func (p *peer) adoptVerifiedPQIdentity(result *HandshakeResult) error {
+	if result == nil || result.PeerMLDSA == nil {
+		return errors.New("peer: PQ handshake produced no peer identity")
+	}
+	derived, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(ids.Empty, packMLDSAPub(result.PeerMLDSA))
+	if err != nil {
+		return fmt.Errorf("peer: derive NodeID from peer ML-DSA key: %w", err)
+	}
+	if derived != result.PeerNodeID {
+		return fmt.Errorf(
+			"peer: PQ identity binding failed — peer presented NodeID %s but its ML-DSA key derives %s",
+			result.PeerNodeID, derived,
+		)
+	}
+	p.Log.Debug("adopted strict-PQ peer identity from handshake",
+		log.Stringer("tlsNodeID", p.id),
+		log.Stringer("mldsaNodeID", derived),
+		log.Bool("isIngress", p.isIngress),
+	)
+	p.id = derived
 	return nil
 }
 
@@ -595,7 +639,6 @@ func (p *peer) readMessages() {
 			onFinishedHandling()
 			continue
 		}
-
 
 		now := p.Clock.Time()
 		p.storeLastReceived(now)

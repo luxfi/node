@@ -9,18 +9,19 @@ import (
 	"net/netip"
 	"time"
 
+	compression "github.com/luxfi/compress"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/utils"
-	compression "github.com/luxfi/compress"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -117,7 +118,22 @@ type Config struct {
 
 	TLSKeyLogFile string `json:"tlsKeyLogFile"`
 
-	MyNodeID           ids.NodeID                    `json:"myNodeID"`
+	MyNodeID ids.NodeID `json:"myNodeID"`
+
+	// StakingMLDSA / StakingMLDSAPub are this node's persistent strict-PQ
+	// ML-DSA-65 staking keypair (FIPS 204), mirrored from
+	// StakingConfig.StakingMLDSA{,Pub} by node.Node so the network layer
+	// can build the PQ peer-handshake identity WITHOUT generating an
+	// ephemeral key. They are nil/empty on classical-compat chains.
+	//
+	// Why this matters: MyNodeID is derived from StakingMLDSAPub
+	// (StakingConfig.DeriveNodeID), so the peer handshake MUST sign with
+	// THIS keypair — not a throwaway one — for a completed handshake to
+	// prove possession of the validator identity. See
+	// peer.NewLocalIdentityFromStakingKey and peer.adoptVerifiedPQIdentity.
+	StakingMLDSA    *mldsa.PrivateKey `json:"-"`
+	StakingMLDSAPub []byte            `json:"-"`
+
 	MyIPPort           *utils.Atomic[netip.AddrPort] `json:"myIP"`
 	NetworkID          uint32                        `json:"networkID"`
 	MaxClockDifference time.Duration                 `json:"maxClockDifference"`
