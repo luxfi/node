@@ -152,7 +152,15 @@ func (l EvidenceListView) IsNull() bool { return l.list.IsNull() }
 // Range accessors work; the bound-only MessageA/B + SignatureA/B safe
 // accessors are absent. For consumer-side safe access, call .Bind() to
 // produce a BoundEvidenceList and iterate via BoundEvidenceList.At().
+//
+// Returns the zero-value EvidenceEntry when out of range (defensive: a
+// clamped ListStride view may have Len()=0 after R4V9 rejected a
+// poisoned wire length; constructing an EvidenceEntry from List.Object{}
+// on that view would carry a nil msg and panic on downstream field reads).
 func (l EvidenceListView) At(i int) EvidenceEntry {
+	if i < 0 || i >= l.list.Len() {
+		return EvidenceEntry{}
+	}
 	return EvidenceEntry{obj: l.list.Object(i, SizeEvidenceEntry)}
 }
 
@@ -237,7 +245,9 @@ func (e BoundEvidenceEntry) SignatureB() []byte {
 }
 
 // NewEvidenceListView reads an EvidenceListView from a parent object's
-// field offset.
+// field offset. Uses the per-stride clamp introduced in zap v0.7.2: a
+// poisoned length field that passes the permissive baseline gets rejected
+// here (R4V9, LP-023 Red round 4).
 //
 // CONTRACT: callers MUST call .Bind(messageBlobs, signatureBlobs) before
 // using MessageA/B/SignatureA/B accessors. Unbound use returns silent-empty
@@ -246,7 +256,7 @@ func (e BoundEvidenceEntry) SignatureB() []byte {
 // EvidenceListView lacks the safe accessors entirely, forcing consumers
 // through Bind() to get a BoundEvidenceList.
 func NewEvidenceListView(parent zap.Object, fieldOffset int) EvidenceListView {
-	return EvidenceListView{list: parent.List(fieldOffset)}
+	return EvidenceListView{list: parent.ListStride(fieldOffset, SizeEvidenceEntry)}
 }
 
 // EvidenceListEntry is the constructor input for an EvidenceList. The four
