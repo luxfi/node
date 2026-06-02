@@ -48,8 +48,25 @@ const (
 )
 
 // EvidenceEntry is the zero-copy view over one entry in an EvidenceList.
+//
+// To resolve the (Rel,Len) cursors into actual byte slices the entry must
+// be bound to the parent tx's MessageBlobs + SignatureBlobs via
+// EvidenceList.Bind(). The bound form exposes safe accessors MessageA(),
+// MessageB(), SignatureA(), SignatureB() that clamp against the parent
+// blob lengths and return EMPTY slices on poisoned (Rel,Len) pairs.
+//
+// The raw *Range() accessors below are UNSAFE: they return the wire
+// (Rel,Len) verbatim without clamping. Consumers that index parent blobs
+// directly with these values can be panicked by an adversary who sets
+// Len=0xFFFFFFFF. New code MUST go through the bound MessageA/SignatureA
+// safe accessors. The Range() helpers remain for legacy internal
+// constructors only (see RED-HIGH-3, LP-023 v3.1 round 2).
 type EvidenceEntry struct {
 	obj zap.Object
+	// Bound parent-blob references. nil for unbound entries (raw range
+	// access only); set via EvidenceList.Bind().
+	messageBlobs   []byte
+	signatureBlobs []byte
 }
 
 // Height returns the height at which the slashable equivocation occurred.
@@ -63,37 +80,98 @@ func (e EvidenceEntry) EvidenceType() uint8 {
 	return e.obj.Uint8(OffsetEvidenceEntry_EvidenceType)
 }
 
-// MessageARange returns the (start, length) byte slice into the parent tx's
-// MessageBlobs array for the first conflicting message.
+// MessageARange returns the raw (start, length) wire cursors into the
+// parent tx's MessageBlobs array for the first conflicting message.
+//
+// UNSAFE — call MessageA() instead. The raw (Rel,Len) pair carries no
+// clamp; consumers indexing mb[rel:rel+len] panic if an adversary set
+// len=0xFFFFFFFF or rel>len(mb). RED-HIGH-3.
 func (e EvidenceEntry) MessageARange() (uint32, uint32) {
 	return e.obj.Uint32(OffsetEvidenceEntry_MessageARel),
 		e.obj.Uint32(OffsetEvidenceEntry_MessageALen)
 }
 
-// SignatureARange returns the (start, length) byte slice for the first
-// signature.
+// SignatureARange returns the raw (start, length) wire cursors for the
+// first signature.
+//
+// UNSAFE — call SignatureA() instead. See MessageARange.
 func (e EvidenceEntry) SignatureARange() (uint32, uint32) {
 	return e.obj.Uint32(OffsetEvidenceEntry_SignatureARel),
 		e.obj.Uint32(OffsetEvidenceEntry_SignatureALen)
 }
 
-// MessageBRange returns the (start, length) byte slice for the second
-// conflicting message.
+// MessageBRange returns the raw (start, length) wire cursors for the
+// second conflicting message.
+//
+// UNSAFE — call MessageB() instead. See MessageARange.
 func (e EvidenceEntry) MessageBRange() (uint32, uint32) {
 	return e.obj.Uint32(OffsetEvidenceEntry_MessageBRel),
 		e.obj.Uint32(OffsetEvidenceEntry_MessageBLen)
 }
 
-// SignatureBRange returns the (start, length) byte slice for the second
-// signature.
+// SignatureBRange returns the raw (start, length) wire cursors for the
+// second signature.
+//
+// UNSAFE — call SignatureB() instead. See MessageARange.
 func (e EvidenceEntry) SignatureBRange() (uint32, uint32) {
 	return e.obj.Uint32(OffsetEvidenceEntry_SignatureBRel),
 		e.obj.Uint32(OffsetEvidenceEntry_SignatureBLen)
 }
 
+// safeSlice returns parent[rel:rel+length] clamped against len(parent).
+// Any of {rel > len(parent), length > len(parent) - rel, rel+length wraps}
+// yields an empty slice. RED-HIGH-3 (LP-023 v3.1 round 2): adversary
+// crafts a tx where this slice would panic on the consumer side.
+func safeSlice(parent []byte, rel, length uint32) []byte {
+	parentLen := uint32(len(parent))
+	if rel > parentLen {
+		return nil
+	}
+	if length > parentLen-rel {
+		return nil
+	}
+	return parent[rel : rel+length]
+}
+
+// MessageA returns the first conflicting message bytes, clamped against
+// the bound parent MessageBlobs. Returns an empty slice if the entry is
+// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
+func (e EvidenceEntry) MessageA() []byte {
+	rel, length := e.MessageARange()
+	return safeSlice(e.messageBlobs, rel, length)
+}
+
+// MessageB returns the second conflicting message bytes, clamped against
+// the bound parent MessageBlobs. Returns an empty slice if the entry is
+// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
+func (e EvidenceEntry) MessageB() []byte {
+	rel, length := e.MessageBRange()
+	return safeSlice(e.messageBlobs, rel, length)
+}
+
+// SignatureA returns the first signature bytes, clamped against the bound
+// parent SignatureBlobs. Returns an empty slice if the entry is unbound
+// or the wire (Rel,Len) cursors fall outside the parent blob.
+func (e EvidenceEntry) SignatureA() []byte {
+	rel, length := e.SignatureARange()
+	return safeSlice(e.signatureBlobs, rel, length)
+}
+
+// SignatureB returns the second signature bytes, clamped against the
+// bound parent SignatureBlobs. Returns an empty slice if the entry is
+// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
+func (e EvidenceEntry) SignatureB() []byte {
+	rel, length := e.SignatureBRange()
+	return safeSlice(e.signatureBlobs, rel, length)
+}
+
 // EvidenceList is the zero-copy view over a list of EvidenceEntry items.
 type EvidenceList struct {
 	list zap.List
+	// Bound parent blobs for safe accessors. nil for raw views; set via
+	// Bind().
+	messageBlobs   []byte
+	signatureBlobs []byte
 }
 
 // Len returns the entry count.
@@ -102,12 +180,32 @@ func (l EvidenceList) Len() int { return l.list.Len() }
 // IsNull returns true if no list pointer was set.
 func (l EvidenceList) IsNull() bool { return l.list.IsNull() }
 
-// At returns the i'th EvidenceEntry.
+// At returns the i'th EvidenceEntry, carrying any bound parent blobs.
 func (l EvidenceList) At(i int) EvidenceEntry {
-	return EvidenceEntry{obj: l.list.Object(i, SizeEvidenceEntry)}
+	return EvidenceEntry{
+		obj:            l.list.Object(i, SizeEvidenceEntry),
+		messageBlobs:   l.messageBlobs,
+		signatureBlobs: l.signatureBlobs,
+	}
+}
+
+// Bind attaches the parent tx's MessageBlobs and SignatureBlobs to this
+// EvidenceList view so that subsequent At() returns entries that expose
+// safe MessageA/B + SignatureA/B accessors. This is the consumer-side
+// API for RED-HIGH-3: the raw (Rel,Len) cursors are attacker-controlled,
+// but the safe accessors clamp against the bound parent blobs and return
+// empty slices on poisoned cursors.
+func (l EvidenceList) Bind(messageBlobs, signatureBlobs []byte) EvidenceList {
+	l.messageBlobs = messageBlobs
+	l.signatureBlobs = signatureBlobs
+	return l
 }
 
 // EvidenceListView reads an EvidenceList from a parent object's field offset.
+// The returned list is UNBOUND — call .Bind(messageBlobs, signatureBlobs)
+// to enable safe accessors. Bare At() on an unbound view returns entries
+// whose MessageA/B + SignatureA/B return empty slices (clamped against
+// nil blobs).
 func EvidenceListView(parent zap.Object, fieldOffset int) EvidenceList {
 	return EvidenceList{list: parent.List(fieldOffset)}
 }

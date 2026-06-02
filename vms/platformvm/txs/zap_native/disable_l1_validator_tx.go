@@ -42,13 +42,9 @@ func (t DisableL1ValidatorTx) Bytes() []byte { return t.msg.Bytes() }
 func (t DisableL1ValidatorTx) IsZero() bool  { return t.msg == nil }
 
 func WrapDisableL1ValidatorTx(b []byte) (DisableL1ValidatorTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindDisableL1Validator)
 	if err != nil {
 		return DisableL1ValidatorTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindDisableL1Validator {
-		return DisableL1ValidatorTx{}, ErrWrongTxKind
 	}
 	return DisableL1ValidatorTx{msg: msg, obj: obj}, nil
 }

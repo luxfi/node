@@ -192,6 +192,32 @@ func (a SigIndicesArray) IsNull() bool { return a.list.IsNull() }
 // At returns the i'th uint32 sig index.
 func (a SigIndicesArray) At(i int) uint32 { return a.list.Uint32(i) }
 
+// Slice returns the per-input signature-index window
+// [start, start+count) as a fresh []uint32. RED-HIGH-3 (LP-023 v3.1 round
+// 2): start and count are attacker-controlled through TransferableInput's
+// SigIndicesStart / SigIndicesCount fields. The accessor clamps both
+// against a.Len(); any value outside the array yields an empty slice
+// without panicking. Callers MUST NOT index a.At() in a loop with these
+// raw values themselves — go through Slice() so the clamp is enforced in
+// one place.
+func (a SigIndicesArray) Slice(start, count uint32) []uint32 {
+	total := uint32(a.list.Len())
+	if start > total {
+		return nil
+	}
+	if count > total-start {
+		return nil
+	}
+	if count == 0 {
+		return nil
+	}
+	out := make([]uint32, count)
+	for i := uint32(0); i < count; i++ {
+		out[i] = a.list.Uint32(int(start + i))
+	}
+	return out
+}
+
 // SigIndicesArrayView reads the shared sig-indices array from a parent
 // object's field offset.
 func SigIndicesArrayView(parent zap.Object, fieldOffset int) SigIndicesArray {

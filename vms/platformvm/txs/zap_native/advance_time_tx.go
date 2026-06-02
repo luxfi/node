@@ -60,13 +60,9 @@ func (t AdvanceTimeTx) IsZero() bool {
 // TxKindAdvanceTime; returns ErrInvalidMagic/ErrInvalidVersion from the
 // ZAP layer on a malformed buffer.
 func WrapAdvanceTimeTx(b []byte) (AdvanceTimeTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindAdvanceTime)
 	if err != nil {
 		return AdvanceTimeTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindAdvanceTime {
-		return AdvanceTimeTx{}, ErrWrongTxKind
 	}
 	return AdvanceTimeTx{msg: msg, obj: obj}, nil
 }

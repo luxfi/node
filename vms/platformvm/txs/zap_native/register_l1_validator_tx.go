@@ -88,13 +88,9 @@ func (t RegisterL1ValidatorTx) Bytes() []byte { return t.msg.Bytes() }
 func (t RegisterL1ValidatorTx) IsZero() bool  { return t.msg == nil }
 
 func WrapRegisterL1ValidatorTx(b []byte) (RegisterL1ValidatorTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindRegisterL1Validator)
 	if err != nil {
 		return RegisterL1ValidatorTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindRegisterL1Validator {
-		return RegisterL1ValidatorTx{}, ErrWrongTxKind
 	}
 	return RegisterL1ValidatorTx{msg: msg, obj: obj}, nil
 }

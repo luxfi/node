@@ -132,13 +132,9 @@ func (t CreateChainTx) Bytes() []byte { return t.msg.Bytes() }
 func (t CreateChainTx) IsZero() bool  { return t.msg == nil }
 
 func WrapCreateChainTx(b []byte) (CreateChainTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindCreateChain)
 	if err != nil {
 		return CreateChainTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindCreateChain {
-		return CreateChainTx{}, ErrWrongTxKind
 	}
 	return CreateChainTx{msg: msg, obj: obj}, nil
 }

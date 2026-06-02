@@ -264,9 +264,14 @@ func TestEvidenceListRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
-	list := EvidenceListView(msg.Root(), 0)
+	// Bind the parent message+signature blobs so the safe MessageA/B +
+	// SignatureA/B accessors clamp against attacker-controlled (Rel,Len)
+	// cursors. RED-HIGH-3 (LP-023 v3.1 round 2): the bare *Range accessors
+	// + mb[rel:rel+len] indexing panics on poisoned cursors; the safe
+	// accessors return empty slices instead.
 	mb := msg.Root().Bytes(8)
 	sb := msg.Root().Bytes(16)
+	list := EvidenceListView(msg.Root(), 0).Bind(mb, sb)
 
 	if list.Len() != len(entries) {
 		t.Fatalf("EvidenceList.Len() = %d, want %d", list.Len(), len(entries))
@@ -279,21 +284,16 @@ func TestEvidenceListRoundTrip(t *testing.T) {
 		if got.EvidenceType() != e.EvidenceType {
 			t.Errorf("evidence[%d].EvidenceType = %d, want %d", i, got.EvidenceType(), e.EvidenceType)
 		}
-
-		mARel, mALen := got.MessageARange()
-		if !bytes.Equal(mb[mARel:mARel+mALen], e.MessageA) {
-			t.Errorf("evidence[%d].MessageA mismatch", i)
+		if !bytes.Equal(got.MessageA(), e.MessageA) {
+			t.Errorf("evidence[%d].MessageA mismatch: got %x want %x", i, got.MessageA(), e.MessageA)
 		}
-		sARel, sALen := got.SignatureARange()
-		if !bytes.Equal(sb[sARel:sARel+sALen], e.SignatureA) {
+		if !bytes.Equal(got.SignatureA(), e.SignatureA) {
 			t.Errorf("evidence[%d].SignatureA mismatch", i)
 		}
-		mBRel, mBLen := got.MessageBRange()
-		if !bytes.Equal(mb[mBRel:mBRel+mBLen], e.MessageB) {
+		if !bytes.Equal(got.MessageB(), e.MessageB) {
 			t.Errorf("evidence[%d].MessageB mismatch", i)
 		}
-		sBRel, sBLen := got.SignatureBRange()
-		if !bytes.Equal(sb[sBRel:sBRel+sBLen], e.SignatureB) {
+		if !bytes.Equal(got.SignatureB(), e.SignatureB) {
 			t.Errorf("evidence[%d].SignatureB mismatch", i)
 		}
 	}

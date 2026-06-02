@@ -72,13 +72,9 @@ func (t BaseTx) IsZero() bool  { return t.msg == nil }
 // TxKindBase; returns ErrInvalidMagic/ErrInvalidVersion from the ZAP layer
 // on a malformed buffer.
 func WrapBaseTx(b []byte) (BaseTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindBase)
 	if err != nil {
 		return BaseTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindBase {
-		return BaseTx{}, ErrWrongTxKind
 	}
 	return BaseTx{msg: msg, obj: obj}, nil
 }
