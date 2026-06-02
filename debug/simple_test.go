@@ -4,9 +4,9 @@
 package debug
 
 import (
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	validators "github.com/luxfi/validators"
 	"testing"
 )
 

@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	metrics "github.com/luxfi/metric"
+	validators "github.com/luxfi/validators"
 )
 
 // NewManager creates a new benchlist manager
