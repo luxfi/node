@@ -508,9 +508,20 @@ func NewNetwork(
 	// refused. Permissive / classical-compat profiles leave PQHandshake
 	// nil and use the legacy bare-TLS path.
 	if config.SecurityProfile != nil && profileRequiresPQHandshake(config.SecurityProfile) {
-		pqIdent, err := peer.NewLocalIdentity(config.MyNodeID)
+		// The PQ peer handshake MUST sign with the node's PERSISTENT
+		// staking ML-DSA-65 keypair — the one whose public half derives
+		// MyNodeID — so that completing the handshake proves possession of
+		// the validator identity. The old peer.NewLocalIdentity path
+		// generated an EPHEMERAL keypair per process, signing a NodeID that
+		// no peer could bind back to the validator set; that is exactly why
+		// every strict-PQ peer was classified as a non-validator and the
+		// P-chain never formed consensus (no block production).
+		if config.StakingMLDSA == nil || len(config.StakingMLDSAPub) == 0 {
+			return nil, errors.New("network: strict-PQ profile requires the staking ML-DSA keypair, but StakingMLDSA/StakingMLDSAPub were not populated on the network config")
+		}
+		pqIdent, err := peer.NewLocalIdentityFromStakingKey(config.MyNodeID, config.StakingMLDSAPub, config.StakingMLDSA.Bytes())
 		if err != nil {
-			return nil, fmt.Errorf("building PQ local identity: %w", err)
+			return nil, fmt.Errorf("building PQ local identity from staking ML-DSA key: %w", err)
 		}
 		peerConfig.PQHandshakeConfig = &peer.HandshakeConfig{
 			Profile:            peer.ProfileStrictPQ,
