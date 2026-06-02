@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 
 	gethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
@@ -128,9 +129,27 @@ func FetchState(
 	baseTxFee := uint64(1000000)         // 0.001 LUX
 	createAssetTxFee := uint64(10000000) // 0.01 LUX
 
+	// X-Chain is opt-in: post-coreth networks (e.g. test+dev primary that
+	// bake only P + EVM genesis chains) run in P-only mode where the X
+	// alias is not registered. We fail-soft to an empty XCTX in that case
+	// — XCTX.BlockchainID == ids.Empty becomes a stable sentinel, and the
+	// UTXO scan below treats it as "no X-chain UTXOs to fetch" because the
+	// XClient.GetAtomicUTXOs returns empty. This lets MakeWallet succeed
+	// in P-only mode without leaking X-chain queries into wallet callers.
 	xCTX, err := x.NewContextFromClients(ctx, infoClient, utxoAssetID, baseTxFee, createAssetTxFee)
 	if err != nil {
-		return nil, err
+		// One specific class of failure is expected: "no ID with alias X".
+		// Any other error (network, codec, etc.) is fatal and must surface.
+		if !isXChainNotEnabled(err) {
+			return nil, err
+		}
+		xCTX = &xbuilder.Context{
+			NetworkID:        pCTX.NetworkID,
+			BlockchainID:     ids.Empty, // sentinel: X-Chain disabled in this network
+			UTXOAssetID:      utxoAssetID,
+			BaseTxFee:        baseTxFee,
+			CreateAssetTxFee: createAssetTxFee,
+		}
 	}
 
 	// Create X-chain client using standard "X" alias
@@ -153,17 +172,27 @@ func FetchState(
 			client: pClient,
 			codec:  ptxs.Codec,
 		},
-		{
+	}
+	// Only include the X-chain entry when the network actually serves an
+	// X-Chain. In P-only mode (xCTX.BlockchainID == ids.Empty) skipping
+	// the pair avoids spurious `platform.getUTXOs` calls with sourceChain
+	// = zero ID, which the P-chain API rejects.
+	if xCTX.BlockchainID != ids.Empty {
+		chains = append(chains, struct {
+			id     ids.ID
+			client UTXOClient
+			codec  codec.Manager
+		}{
 			id:     xCTX.BlockchainID,
 			client: xClient,
 			codec:  codec.NewDefaultManager(),
-		},
-		// {
-		// 	id:     cCTX.BlockchainID,
-		// 	client: cClient,
-		// 	codec:  evm.Codec,
-		// },
+		})
 	}
+	// {
+	// 	id:     cCTX.BlockchainID,
+	// 	client: cClient,
+	// 	codec:  evm.Codec,
+	// },
 	for _, destinationChain := range chains {
 		for _, sourceChain := range chains {
 			err = AddAllUTXOs(
@@ -291,4 +320,20 @@ func AddAllUTXOs(
 		startUTXO = endUTXO
 	}
 	return nil
+}
+
+// isXChainNotEnabled detects the canonical "info.getBlockchainID returns
+// no-such-alias for X" error that surfaces when running against a P-only
+// network (one whose platform genesis does not include an XVM chain).
+// We match by substring of the JSON-RPC error message rather than a typed
+// sentinel because the upstream info-service emits a free-form string;
+// re-evaluate this matcher if/when info.getBlockchainID gains a typed
+// error path.
+func isXChainNotEnabled(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "there is no id with alias: x") ||
+		strings.Contains(msg, "no chain with alias")
 }
