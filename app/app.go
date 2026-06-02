@@ -10,10 +10,10 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/sys/ulimit"
 
 	nodeconfig "github.com/luxfi/node/config/node"
@@ -58,9 +58,9 @@ func New(config nodeconfig.Config) (App, error) {
 	infoLevel, _ := log.ToLevel("info")
 	logFactory := log.NewFactoryWithConfig(log.Config{
 		RotatingWriterConfig: log.RotatingWriterConfig{
-			MaxSize:   8,  // 8MB per log file (reasonable for standard profile)
-			MaxFiles:  5,  // Keep 5 rotated files
-			MaxAge:    7,  // 7 days retention
+			MaxSize:   8, // 8MB per log file (reasonable for standard profile)
+			MaxFiles:  5, // Keep 5 rotated files
+			MaxAge:    7, // 7 days retention
 			Directory: config.DatabaseConfig.Path,
 		},
 		DisplayLevel: infoLevel,

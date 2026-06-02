@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/crypto/hash"
 )
 
 // BenchmarkHashingComputeHash256 benchmarks SHA256 hashing performance

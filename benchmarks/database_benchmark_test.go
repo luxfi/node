@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/hash"
 )
 
 // BenchmarkMemoryDatabase benchmarks in-memory database operations

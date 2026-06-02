@@ -19,7 +19,7 @@ func getPMPRouter() *pmpRouter {
 // pmpRouter stub for minimal build
 type pmpRouter struct{}
 
-func (*pmpRouter) SupportsNAT() bool                                           { return false }
-func (*pmpRouter) MapPort(_, _ uint16, _ string, _ time.Duration) error         { return nil }
-func (*pmpRouter) UnmapPort(_, _ uint16) error                                  { return nil }
-func (*pmpRouter) ExternalIP() (netip.Addr, error)                              { return netip.Addr{}, nil }
+func (*pmpRouter) SupportsNAT() bool                                    { return false }
+func (*pmpRouter) MapPort(_, _ uint16, _ string, _ time.Duration) error { return nil }
+func (*pmpRouter) UnmapPort(_, _ uint16) error                          { return nil }
+func (*pmpRouter) ExternalIP() (netip.Addr, error)                      { return netip.Addr{}, nil }
