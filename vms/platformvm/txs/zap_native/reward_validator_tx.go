@@ -8,14 +8,14 @@ import (
 	"github.com/luxfi/zap"
 )
 
-// RewardValidatorTx — single 32-byte TxID field.
+// RewardValidatorTx v3 schema — TxKind + 32-byte TxID.
 // Issued by the chain at the end of every validator's stake period to
 // distribute the reward.
 const (
-	SchemaVersionRewardValidatorTx uint16 = 2
+	SchemaVersionRewardValidatorTx uint16 = 3
 
-	OffsetRewardValidatorTx_TxID = 0 // ids.ID (32 bytes)
-	SizeRewardValidatorTx        = 32
+	OffsetRewardValidatorTx_TxID = 1 // ids.ID (32 bytes), after TxKind@0
+	SizeRewardValidatorTx        = 33
 )
 
 type RewardValidatorTx struct {
@@ -39,12 +39,17 @@ func WrapRewardValidatorTx(b []byte) (RewardValidatorTx, error) {
 	if err != nil {
 		return RewardValidatorTx{}, err
 	}
-	return RewardValidatorTx{msg: msg, obj: msg.Root()}, nil
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindRewardValidator {
+		return RewardValidatorTx{}, ErrWrongTxKind
+	}
+	return RewardValidatorTx{msg: msg, obj: obj}, nil
 }
 
 func NewRewardValidatorTx(txID ids.ID) RewardValidatorTx {
 	b := zap.NewBuilder(zap.HeaderSize + 16 + SizeRewardValidatorTx)
 	ob := b.StartObject(SizeRewardValidatorTx)
+	ob.SetUint8(OffsetTxKind, uint8(TxKindRewardValidator))
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(OffsetRewardValidatorTx_TxID+i, txID[i])
 	}
