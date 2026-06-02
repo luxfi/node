@@ -78,21 +78,39 @@ func TestIsZAPBytes(t *testing.T) {
 }
 
 func TestShouldUseZAPForWrite(t *testing.T) {
-	cases := []struct {
-		name string
-		ts   uint64
-		want bool
-	}{
-		{"pre-activation", 1782604800 - 1, false},
-		{"at activation", 1782604800, true},
-		{"post-activation", 1782604800 + 86400, true},
-		{"epoch", 0, false},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			if got := ShouldUseZAPForWrite(c.ts); got != c.want {
-				t.Fatalf("ShouldUseZAPForWrite(%d) = %v, want %v", c.ts, got, c.want)
+	// Default: native ZAP for every timestamp. Legacy is opt-in via
+	// LUXD_ENABLE_LEGACY_CODEC. The package-level LegacyEnabled is read
+	// once at init from the env var; tests assert the default-false path
+	// and the explicitly-toggled path.
+	defer func(prev bool) { LegacyEnabled = prev }(LegacyEnabled)
+
+	t.Run("default (legacy disabled): ZAP always", func(t *testing.T) {
+		LegacyEnabled = false
+		for _, ts := range []uint64{0, 1, 1782604800 - 1, 1782604800, 1782604800 + 86400} {
+			if !ShouldUseZAPForWrite(ts) {
+				t.Fatalf("ShouldUseZAPForWrite(%d) = false, want true (ZAP default)", ts)
 			}
-		})
-	}
+		}
+	})
+
+	t.Run("legacy enabled: timestamp-gated", func(t *testing.T) {
+		LegacyEnabled = true
+		cases := []struct {
+			name string
+			ts   uint64
+			want bool
+		}{
+			{"pre-activation", 1782604800 - 1, false},
+			{"at activation", 1782604800, true},
+			{"post-activation", 1782604800 + 86400, true},
+			{"epoch", 0, false},
+		}
+		for _, c := range cases {
+			t.Run(c.name, func(t *testing.T) {
+				if got := ShouldUseZAPForWrite(c.ts); got != c.want {
+					t.Fatalf("ShouldUseZAPForWrite(%d) = %v, want %v", c.ts, got, c.want)
+				}
+			})
+		}
+	})
 }
