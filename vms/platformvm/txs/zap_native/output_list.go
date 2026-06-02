@@ -89,19 +89,28 @@ func (l OutputList) Len() int { return l.list.Len() }
 // IsNull returns true if no list pointer was set.
 func (l OutputList) IsNull() bool { return l.list.IsNull() }
 
-// At returns the i'th TransferableOutput. Returns a zero accessor when out
-// of range.
+// At returns the i'th TransferableOutput. Returns the zero-value
+// TransferableOutput when out of range (defensive: a clamped ListStride
+// view may have Len()=0 after R4V9 rejected a poisoned wire length;
+// constructing a TransferableOutput from List.Object{} on that view
+// would carry a nil msg and panic on downstream field reads).
 func (l OutputList) At(i int) TransferableOutput {
+	if i < 0 || i >= l.list.Len() {
+		return TransferableOutput{}
+	}
 	return TransferableOutput{obj: l.list.Object(i, SizeTransferableOutput)}
 }
 
 // OutputListView reads an OutputList from a parent object's field offset.
+// Uses the per-stride clamp introduced in zap v0.7.2: a poisoned length
+// field that passes the permissive baseline gets rejected here (R4V9,
+// LP-023 Red round 4).
 //
 // READ-ONLY: each TransferableOutput aliases the underlying ZAP buffer.
 // Mutation corrupts the parsed tx and any TxID = hash(buffer) computed
 // downstream. To own the bytes, copy first: append([]byte(nil), buf...).
 func OutputListView(parent zap.Object, fieldOffset int) OutputList {
-	return OutputList{list: parent.List(fieldOffset)}
+	return OutputList{list: parent.ListStride(fieldOffset, SizeTransferableOutput)}
 }
 
 // OutputListEntry is the input to an OutputList builder. Constructors copy

@@ -14,7 +14,7 @@ import (
 // our v3 form pins ChainValidator semantics. ChainAuth (credential proof)
 // lives in the signed-tx wrapper, not in the unsigned encoding here.
 //
-// Fixed-section layout (size 165 bytes):
+// Fixed-section layout (size 161 bytes):
 //
 //	TxKind                  uint8  @ 0
 //	NetworkID               uint32 @ 1
