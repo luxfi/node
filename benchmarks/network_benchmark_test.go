@@ -9,8 +9,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/luxfi/ids"
 	compression "github.com/luxfi/compress"
+	"github.com/luxfi/ids"
 )
 
 // BenchmarkMessageCompression benchmarks message compression

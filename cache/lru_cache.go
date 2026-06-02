@@ -6,8 +6,8 @@ package cache
 import (
 	"sync"
 
-	"github.com/luxfi/utils"
 	"github.com/luxfi/container/linked"
+	"github.com/luxfi/utils"
 )
 
 var _ Cacher[struct{}, struct{}] = (*LRU[struct{}, struct{}])(nil)
