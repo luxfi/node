@@ -68,6 +68,36 @@ var ErrOwnerSingleAddrUseStub = errors.New(
 	"zap_native: Owner requires len(Addresses) >= 2; use OwnerStub for single-address fast path",
 )
 
+// Owner SyntacticVerify error set (LP-023 Red round 4, R4V7 — executor
+// side gate). The wire layer accepts any (threshold, locktime, addrlist)
+// triple as long as the buffer geometry passes the ListStride clamp; a
+// malicious encoder can publish threshold=0 (no-op gate) or threshold >
+// len(Addresses) (unsatisfiable gate) or empty Addresses (undefined). The
+// executor MUST call SyntacticVerify before trusting the Owner.
+var (
+	// ErrOwnerThresholdZero is returned when threshold == 0. A zero
+	// threshold semantically means "no signature required" which is an
+	// authorization bypass. The single-address fast path (OwnerStub) is
+	// also gated by this — there is no legitimate threshold=0 owner.
+	ErrOwnerThresholdZero = errors.New(
+		"zap_native: Owner.Threshold must be > 0; threshold=0 disables authorization",
+	)
+
+	// ErrOwnerThresholdExceedsAddrs is returned when threshold >
+	// Addresses.Len(). An unsatisfiable gate (DoS — spend can never
+	// authorize) and on signed-arithmetic consumers can underflow.
+	ErrOwnerThresholdExceedsAddrs = errors.New(
+		"zap_native: Owner.Threshold exceeds Addresses.Len() — unsatisfiable signer quorum",
+	)
+
+	// ErrOwnerAddrsEmpty is returned when Addresses.Len() == 0. With no
+	// signer set the gate is undefined; combined with R4V7's threshold=0
+	// case this would silently allow any tx to spend.
+	ErrOwnerAddrsEmpty = errors.New(
+		"zap_native: Owner.Addresses is empty — signer set undefined",
+	)
+)
+
 // Owner is the multi-address output owner. It composes a threshold +
 // locktime + a variable AddressList. Stride for the AddressList lives in
 // the same buffer's variable section; the parent object's fixed section
@@ -126,6 +156,41 @@ func (o Owner) Addresses() AddressList {
 	return AddressListView(o.parent, o.baseOffset+OffsetOwnerHeader_AddressList)
 }
 
+// SyntacticVerify enforces R4V7 executor-side semantic gates on an Owner
+// header parsed from an untrusted wire buffer. Returns one of:
+//
+//   - nil — Owner is well-formed: threshold ∈ [1, Addresses.Len()] and
+//     Addresses.Len() > 0.
+//   - ErrOwnerAddrsEmpty — Addresses.Len() == 0 (signer set undefined).
+//   - ErrOwnerThresholdZero — threshold == 0 (authorization bypass).
+//   - ErrOwnerThresholdExceedsAddrs — threshold > Addresses.Len()
+//     (unsatisfiable quorum).
+//
+// CONTRACT (LP-023 Red round 4 R4V7): every tx executor's Verify() entry
+// point MUST call SyntacticVerify on every Owner consumed from a wire
+// buffer before treating the Threshold/Addresses pair as a quorum gate.
+// The wire layer (ZAP) is permissive by design — semantic gates live
+// here in the consumer.
+//
+// Ordering matters: addrs-empty is checked BEFORE threshold==0 so a
+// fully-empty Owner reports the more informative "addrs empty" error
+// rather than the threshold one.
+func (o Owner) SyntacticVerify() error {
+	addrs := o.Addresses()
+	n := addrs.Len()
+	if n == 0 {
+		return ErrOwnerAddrsEmpty
+	}
+	t := o.Threshold()
+	if t == 0 {
+		return ErrOwnerThresholdZero
+	}
+	if uint64(t) > uint64(n) {
+		return ErrOwnerThresholdExceedsAddrs
+	}
+	return nil
+}
+
 // OwnerView reads an Owner from a parent object's embedded-header offset.
 // The Owner header is INLINE within the parent's fixed section (size
 // SizeOwnerHeader = 20 bytes), so this returns a sub-view rather than
@@ -135,6 +200,33 @@ func (o Owner) Addresses() AddressList {
 // offset for the embedded Owner; this constructor returns the accessor.
 func OwnerView(parent zap.Object, fieldOffset int) Owner {
 	return Owner{parent: parent, baseOffset: fieldOffset}
+}
+
+// SyntacticVerify enforces R4V7 executor-side semantic gates on an
+// OwnerStub. The stub by construction carries exactly ONE address, so
+// the only valid threshold value is 1. Returns:
+//
+//   - nil — Threshold == 1 and Address != zero-ShortID.
+//   - ErrOwnerThresholdZero — Threshold == 0 (auth bypass).
+//   - ErrOwnerThresholdExceedsAddrs — Threshold > 1 (unsatisfiable: only
+//     one address present, no quorum > 1 can ever be reached).
+//
+// The address-zero check is intentionally NOT enforced here: a zero
+// ShortID is not a wire-protocol violation, only a usability footgun
+// (no key can ever match), so the executor catches it at the spend
+// stage if the user fat-fingers it.
+//
+// CONTRACT (parallel of Owner.SyntacticVerify): every tx executor's
+// Verify() entry point that consumes an OwnerStub from a wire buffer
+// MUST call SyntacticVerify before treating Threshold as a quorum gate.
+func (s OwnerStub) SyntacticVerify() error {
+	if s.Threshold == 0 {
+		return ErrOwnerThresholdZero
+	}
+	if s.Threshold > 1 {
+		return ErrOwnerThresholdExceedsAddrs
+	}
+	return nil
 }
 
 // OwnerInput is the constructor input for a multi-address Owner.
