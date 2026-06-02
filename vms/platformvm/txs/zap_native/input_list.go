@@ -97,14 +97,24 @@ func (l InputList) Len() int { return l.list.Len() }
 // IsNull returns true if no list pointer was set.
 func (l InputList) IsNull() bool { return l.list.IsNull() }
 
-// At returns the i'th TransferableInput.
+// At returns the i'th TransferableInput. Returns the zero-value
+// TransferableInput when out of range (defensive: a clamped ListStride
+// view may have Len()=0 after R4V9 rejected a poisoned wire length;
+// constructing a TransferableInput from List.Object{} on that view
+// would carry a nil msg and panic on downstream field reads).
 func (l InputList) At(i int) TransferableInput {
+	if i < 0 || i >= l.list.Len() {
+		return TransferableInput{}
+	}
 	return TransferableInput{obj: l.list.Object(i, SizeTransferableInput)}
 }
 
 // InputListView reads an InputList from a parent object's field offset.
+// Uses the per-stride clamp introduced in zap v0.7.2: a poisoned length
+// field that passes the permissive baseline gets rejected here (R4V9,
+// LP-023 Red round 4).
 func InputListView(parent zap.Object, fieldOffset int) InputList {
-	return InputList{list: parent.List(fieldOffset)}
+	return InputList{list: parent.ListStride(fieldOffset, SizeTransferableInput)}
 }
 
 // InputListEntry is the constructor input for an InputList. SigIndices is the
@@ -219,7 +229,14 @@ func (a SigIndicesArray) Slice(start, count uint32) []uint32 {
 }
 
 // SigIndicesArrayView reads the shared sig-indices array from a parent
-// object's field offset.
+// object's field offset. Uses the per-stride clamp introduced in zap
+// v0.7.2: a poisoned length field that passes the permissive baseline
+// gets rejected here. SizeSigIndex = 4 (each entry is a uint32 sig index)
+// (R4V9, LP-023 Red round 4).
 func SigIndicesArrayView(parent zap.Object, fieldOffset int) SigIndicesArray {
-	return SigIndicesArray{list: parent.List(fieldOffset)}
+	return SigIndicesArray{list: parent.ListStride(fieldOffset, SizeSigIndex)}
 }
+
+// SizeSigIndex is the stride of a single uint32 sig index in the shared
+// SigIndices array. Used by SigIndicesArrayView's ListStride clamp.
+const SizeSigIndex = 4

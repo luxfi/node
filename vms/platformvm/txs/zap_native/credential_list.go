@@ -57,15 +57,24 @@ func (l CredentialList) Len() int { return l.list.Len() }
 // IsNull returns true if no list pointer was set.
 func (l CredentialList) IsNull() bool { return l.list.IsNull() }
 
-// At returns the i'th Credential.
+// At returns the i'th Credential. Returns the zero-value Credential when
+// out of range (defensive: a clamped ListStride view may have Len()=0
+// after R4V9 rejected a poisoned wire length; constructing a Credential
+// from List.Object{} on that view would carry a nil msg and panic on
+// downstream field reads).
 func (l CredentialList) At(i int) Credential {
+	if i < 0 || i >= l.list.Len() {
+		return Credential{}
+	}
 	return Credential{obj: l.list.Object(i, SizeCredential)}
 }
 
 // CredentialListView reads a CredentialList from a parent object's field
-// offset.
+// offset. Uses the per-stride clamp introduced in zap v0.7.2: a poisoned
+// length field that passes the permissive baseline gets rejected here
+// (R4V9, LP-023 Red round 4).
 func CredentialListView(parent zap.Object, fieldOffset int) CredentialList {
-	return CredentialList{list: parent.List(fieldOffset)}
+	return CredentialList{list: parent.ListStride(fieldOffset, SizeCredential)}
 }
 
 // SignatureArray is the zero-copy view over a parent tx's shared signature
@@ -180,7 +189,9 @@ func WriteSignatureArray(b *zap.Builder, sigs [][SigBlobSize]byte) (offset, entr
 }
 
 // SignatureArrayView reads the shared signature array from a parent object's
-// field offset.
+// field offset. Uses the per-stride clamp introduced in zap v0.7.2: a poisoned
+// length field that passes the permissive baseline gets rejected here
+// (R4V9, LP-023 Red round 4).
 func SignatureArrayView(parent zap.Object, fieldOffset int) SignatureArray {
-	return SignatureArray{list: parent.List(fieldOffset)}
+	return SignatureArray{list: parent.ListStride(fieldOffset, SigBlobSize)}
 }
