@@ -39,6 +39,15 @@ const (
 	TxKindImport                     TxKind = 13
 	TxKindExport                     TxKind = 14
 	TxKindCreateChain                TxKind = 15
+	// Batch 4 — remaining P-chain tx types:
+	TxKindAddValidator                TxKind = 16 // pre-Etna legacy validator add
+	TxKindAddDelegator                TxKind = 17 // pre-Etna legacy delegator add
+	TxKindAddPermissionlessDelegator  TxKind = 18 // Etna+ permissionless delegator
+	TxKindAddChainValidator           TxKind = 19 // chain/subnet validator add (rebranded from AddSubnetValidator)
+	TxKindCreateNetwork               TxKind = 20 // create a network (rebranded from CreateSubnet)
+	TxKindTransformChain              TxKind = 21 // transform chain config (rebranded from TransformSubnet)
+	TxKindConvertNetworkToL1          TxKind = 22 // convert network → L1 (rebranded from ConvertSubnetToL1)
+	TxKindCreateSovereignL1           TxKind = 23 // create sovereign L1
 )
 
 // OffsetTxKind is the fixed wire position of the discriminator. Every
