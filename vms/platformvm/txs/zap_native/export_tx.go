@@ -96,13 +96,9 @@ func (t ExportTx) Bytes() []byte { return t.msg.Bytes() }
 func (t ExportTx) IsZero() bool  { return t.msg == nil }
 
 func WrapExportTx(b []byte) (ExportTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindExport)
 	if err != nil {
 		return ExportTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindExport {
-		return ExportTx{}, ErrWrongTxKind
 	}
 	return ExportTx{msg: msg, obj: obj}, nil
 }

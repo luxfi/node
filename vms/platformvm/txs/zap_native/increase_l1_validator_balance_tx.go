@@ -47,13 +47,9 @@ func (t IncreaseL1ValidatorBalanceTx) Bytes() []byte { return t.msg.Bytes() }
 func (t IncreaseL1ValidatorBalanceTx) IsZero() bool  { return t.msg == nil }
 
 func WrapIncreaseL1ValidatorBalanceTx(b []byte) (IncreaseL1ValidatorBalanceTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindIncreaseL1ValidatorBalance)
 	if err != nil {
 		return IncreaseL1ValidatorBalanceTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindIncreaseL1ValidatorBalance {
-		return IncreaseL1ValidatorBalanceTx{}, ErrWrongTxKind
 	}
 	return IncreaseL1ValidatorBalanceTx{msg: msg, obj: obj}, nil
 }
