@@ -156,13 +156,43 @@ type LocalIdentity struct {
 
 // NewLocalIdentity generates a fresh ML-DSA-65 identity. Convenience for
 // tests and one-shot tooling; production nodes load their identity from
-// persistent storage.
+// persistent storage via NewLocalIdentityFromStakingKey.
+//
+// WARNING: the keypair this returns is EPHEMERAL and unrelated to any
+// staking identity, so the NodeID it advertises cannot be bound to the
+// validator set by a remote peer. Never use this for a node that must be
+// recognised as a validator — use NewLocalIdentityFromStakingKey.
 func NewLocalIdentity(nodeID ids.NodeID) (*LocalIdentity, error) {
 	pk, sk, err := mldsa65.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("peer: generate ML-DSA-65 identity: %w", err)
 	}
 	return &LocalIdentity{NodeID: nodeID, Public: pk, Secret: sk}, nil
+}
+
+// NewLocalIdentityFromStakingKey builds a peer handshake identity from the
+// node's PERSISTENT strict-PQ staking ML-DSA-65 keypair, supplied in
+// canonical FIPS 204 byte form (pubBytes == mldsa65.PublicKeySize,
+// privBytes == mldsa65.PrivateKeySize — exactly what
+// crypto/mldsa.{PublicKey,PrivateKey}.Bytes() emit).
+//
+// Unlike NewLocalIdentity the keypair is NOT ephemeral: its public half is
+// the very key MyNodeID derives from (StakingConfig.DeriveNodeID). That is
+// what lets a remote peer verify the handshake signature AND bind the
+// presented NodeID back to the validator set
+// (see (*peer).adoptVerifiedPQIdentity). This is the constructor
+// production nodes must use.
+func NewLocalIdentityFromStakingKey(nodeID ids.NodeID, pubBytes, privBytes []byte) (*LocalIdentity, error) {
+	pub, err := unpackMLDSAPub(pubBytes)
+	if err != nil {
+		return nil, fmt.Errorf("peer: unpack staking ML-DSA-65 public key: %w", err)
+	}
+	sk := new(mldsa65.PrivateKey)
+	if err := sk.UnmarshalBinary(privBytes); err != nil {
+		return nil, fmt.Errorf("peer: parse staking ML-DSA-65 private key (size=%d, want=%d): %w",
+			len(privBytes), mldsa65.PrivateKeySize, err)
+	}
+	return &LocalIdentity{NodeID: nodeID, Public: pub, Secret: sk}, nil
 }
 
 // HandshakeConfig pins the policy bits the handshake enforces. One value
@@ -251,11 +281,11 @@ type HandshakeResp struct {
 // hash; AEADKey is the 256-bit cSHAKE256-derived key for the connection's
 // authenticated cipher.
 type HandshakeResult struct {
-	Local       *LocalIdentity
-	PeerNodeID  ids.NodeID
-	PeerMLDSA   *mldsa65.PublicKey
-	KEMSession  *kem.KEMSession
-	AEADKey     [kem.AEADKeySize]byte
+	Local      *LocalIdentity
+	PeerNodeID ids.NodeID
+	PeerMLDSA  *mldsa65.PublicKey
+	KEMSession *kem.KEMSession
+	AEADKey    [kem.AEADKeySize]byte
 }
 
 // InitiateHandshake is the initiator's side of the PQ peer handshake.

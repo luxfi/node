@@ -60,9 +60,9 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/vm/chains/atomic"
 
@@ -685,6 +685,12 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// add node configs to network config
 	n.Config.NetworkConfig.MyNodeID = n.ID
+	// Mirror the strict-PQ staking ML-DSA keypair so the network layer's
+	// PQ peer handshake signs with the SAME key that derives MyNodeID
+	// (see network.NewNetwork -> peer.NewLocalIdentityFromStakingKey).
+	// Nil on classical-compat chains, where the PQ handshake is skipped.
+	n.Config.NetworkConfig.StakingMLDSA = n.Config.StakingConfig.StakingMLDSA
+	n.Config.NetworkConfig.StakingMLDSAPub = n.Config.StakingConfig.StakingMLDSAPub
 	n.Config.NetworkConfig.MyIPPort = atomicIP
 	n.Config.NetworkConfig.NetworkID = n.Config.NetworkID
 	n.Config.NetworkConfig.Validators = n.vdrs
@@ -1353,7 +1359,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			NetworkID:                               n.Config.NetworkID,
 			Server:                                  n.APIServer,
 			AtomicMemory:                            n.sharedMemory,
-			UTXOAssetID:                                utxoAssetID,
+			UTXOAssetID:                             utxoAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			DChainID:                                dChainID,
