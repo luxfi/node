@@ -131,8 +131,8 @@ require (
 	github.com/luxfi/constants v1.5.7
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.12.19
-	github.com/luxfi/genesis/pkg/genesis/security v1.12.19
+	github.com/luxfi/genesis v1.13.8
+	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.16.98
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/keys v1.1.0
@@ -172,7 +172,6 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
 	github.com/luxfi/ai v0.1.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.7.6 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/kms v1.11.2 // indirect
