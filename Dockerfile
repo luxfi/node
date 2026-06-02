@@ -147,7 +147,7 @@ RUN . ./build_env.sh && \
 # post-rename. Older evm tags (e.g. v0.8.40 → node v1.23.4) ship a
 # plugin that os.Getenv()'s the old key, mismatching the host that
 # sets the new key, and C-chain never bootstraps.
-ARG EVM_VERSION=v0.18.16
+ARG EVM_VERSION=v0.18.18
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
