@@ -18,17 +18,23 @@ import "errors"
 type TxKind uint8
 
 const (
-	TxKindReserved                     TxKind = 0
-	TxKindAdvanceTime                  TxKind = 1
-	TxKindRewardValidator              TxKind = 2
-	TxKindSetL1ValidatorWeight         TxKind = 3
-	TxKindIncreaseL1ValidatorBalance   TxKind = 4
-	TxKindDisableL1Validator           TxKind = 5
-	TxKindBase                         TxKind = 6
-	TxKindRegisterL1Validator          TxKind = 7
-	TxKindSlashValidator               TxKind = 8
-	TxKindTransferChainOwnership       TxKind = 9
-	TxKindRemoveChainValidator         TxKind = 10
+	TxKindReserved                   TxKind = 0
+	TxKindAdvanceTime                TxKind = 1
+	TxKindRewardValidator            TxKind = 2
+	TxKindSetL1ValidatorWeight       TxKind = 3
+	TxKindIncreaseL1ValidatorBalance TxKind = 4
+	TxKindDisableL1Validator         TxKind = 5
+	TxKindBase                       TxKind = 6
+	TxKindRegisterL1Validator        TxKind = 7
+	TxKindSlashValidator             TxKind = 8
+	TxKindTransferChainOwnership     TxKind = 9
+	TxKindRemoveChainValidator       TxKind = 10
+	// Batch 3 — tx types that compose batch-3 list/object primitives:
+	TxKindBaseFull                   TxKind = 11 // BaseTx with Outs+Ins+Credentials
+	TxKindAddPermissionlessValidator TxKind = 12
+	TxKindImport                     TxKind = 13
+	TxKindExport                     TxKind = 14
+	TxKindCreateChain                TxKind = 15
 )
 
 // OffsetTxKind is the fixed wire position of the discriminator. Every
