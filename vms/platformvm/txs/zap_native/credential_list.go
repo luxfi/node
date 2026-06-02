@@ -96,6 +96,31 @@ func (s SignatureArray) At(i int) [SigBlobSize]byte {
 	return out
 }
 
+// Slice returns the per-credential signature window [start, start+count)
+// as a fresh [][SigBlobSize]byte. RED-HIGH-3 (LP-023 v3.1 round 2): start
+// and count are attacker-controlled through Credential's SigsStart /
+// SigsCount fields. The accessor clamps both against s.Len(); any value
+// outside the array yields an empty slice without panicking. Callers MUST
+// NOT index s.At() in a loop with these raw values themselves — go
+// through Slice() so the clamp is enforced in one place.
+func (s SignatureArray) Slice(start, count uint32) [][SigBlobSize]byte {
+	total := uint32(s.list.Len())
+	if start > total {
+		return nil
+	}
+	if count > total-start {
+		return nil
+	}
+	if count == 0 {
+		return nil
+	}
+	out := make([][SigBlobSize]byte, count)
+	for i := uint32(0); i < count; i++ {
+		out[i] = s.At(int(start + i))
+	}
+	return out
+}
+
 // CredentialListEntry is the constructor input for a CredentialList.
 type CredentialListEntry struct {
 	// Sigs is the per-credential signature slice. Each sig MUST be exactly

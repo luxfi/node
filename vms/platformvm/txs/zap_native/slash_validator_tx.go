@@ -63,13 +63,9 @@ func (t SlashValidatorTx) Bytes() []byte { return t.msg.Bytes() }
 func (t SlashValidatorTx) IsZero() bool  { return t.msg == nil }
 
 func WrapSlashValidatorTx(b []byte) (SlashValidatorTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindSlashValidator)
 	if err != nil {
 		return SlashValidatorTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindSlashValidator {
-		return SlashValidatorTx{}, ErrWrongTxKind
 	}
 	return SlashValidatorTx{msg: msg, obj: obj}, nil
 }
