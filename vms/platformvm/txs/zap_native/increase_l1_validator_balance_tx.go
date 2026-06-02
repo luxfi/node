@@ -8,16 +8,22 @@ import (
 	"github.com/luxfi/zap"
 )
 
-// IncreaseL1ValidatorBalanceTx — ValidationID (ids.ID) + Balance uint64.
+// IncreaseL1ValidatorBalanceTx v3 schema — TxKind + ValidationID + Balance.
 //
 // Tops up the continuous-fee balance for an L1 validator without changing
 // its stake weight or nonce.
+//
+// Fixed-section layout (size 41 bytes):
+//
+//	TxKind         uint8  @ 0
+//	ValidationID   32B    @ 1
+//	Balance        uint64 @ 33
 const (
-	SchemaVersionIncreaseL1ValidatorBalanceTx uint16 = 2
+	SchemaVersionIncreaseL1ValidatorBalanceTx uint16 = 3
 
-	OffsetIncreaseL1ValidatorBalanceTx_ValidationID = 0  // 32 bytes
-	OffsetIncreaseL1ValidatorBalanceTx_Balance      = 32 // uint64
-	SizeIncreaseL1ValidatorBalanceTx                = 40
+	OffsetIncreaseL1ValidatorBalanceTx_ValidationID = 1  // 32 bytes
+	OffsetIncreaseL1ValidatorBalanceTx_Balance      = 33 // uint64
+	SizeIncreaseL1ValidatorBalanceTx                = 41
 )
 
 type IncreaseL1ValidatorBalanceTx struct {
@@ -45,12 +51,17 @@ func WrapIncreaseL1ValidatorBalanceTx(b []byte) (IncreaseL1ValidatorBalanceTx, e
 	if err != nil {
 		return IncreaseL1ValidatorBalanceTx{}, err
 	}
-	return IncreaseL1ValidatorBalanceTx{msg: msg, obj: msg.Root()}, nil
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindIncreaseL1ValidatorBalance {
+		return IncreaseL1ValidatorBalanceTx{}, ErrWrongTxKind
+	}
+	return IncreaseL1ValidatorBalanceTx{msg: msg, obj: obj}, nil
 }
 
 func NewIncreaseL1ValidatorBalanceTx(validationID ids.ID, balance uint64) IncreaseL1ValidatorBalanceTx {
 	b := zap.NewBuilder(zap.HeaderSize + 16 + SizeIncreaseL1ValidatorBalanceTx)
 	ob := b.StartObject(SizeIncreaseL1ValidatorBalanceTx)
+	ob.SetUint8(OffsetTxKind, uint8(TxKindIncreaseL1ValidatorBalance))
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(OffsetIncreaseL1ValidatorBalanceTx_ValidationID+i, validationID[i])
 	}
