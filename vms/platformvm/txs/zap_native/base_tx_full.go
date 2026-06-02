@@ -115,13 +115,9 @@ func (t BaseTxFull) IsZero() bool  { return t.msg == nil }
 //
 // Returns ErrWrongTxKind if the discriminator does not match TxKindBaseFull.
 func WrapBaseTxFull(b []byte) (BaseTxFull, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindBaseFull)
 	if err != nil {
 		return BaseTxFull{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindBaseFull {
-		return BaseTxFull{}, ErrWrongTxKind
 	}
 	return BaseTxFull{msg: msg, obj: obj}, nil
 }

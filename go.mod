@@ -152,6 +152,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.0.40
 	github.com/luxfi/warp v1.18.6
+	github.com/luxfi/zap v0.7.1
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.uber.org/zap v1.27.1
@@ -186,7 +187,6 @@ require (
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/threshold v1.9.7 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
-	github.com/luxfi/zap v0.6.1 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect

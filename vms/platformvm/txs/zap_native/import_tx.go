@@ -100,13 +100,9 @@ func (t ImportTx) Bytes() []byte { return t.msg.Bytes() }
 func (t ImportTx) IsZero() bool  { return t.msg == nil }
 
 func WrapImportTx(b []byte) (ImportTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindImport)
 	if err != nil {
 		return ImportTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindImport {
-		return ImportTx{}, ErrWrongTxKind
 	}
 	return ImportTx{msg: msg, obj: obj}, nil
 }
