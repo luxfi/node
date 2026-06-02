@@ -174,15 +174,15 @@ func TestRegisterL1ValidatorTxRoundTrip(t *testing.T) {
 
 func TestSlashValidatorTxRoundTrip(t *testing.T) {
 	wantNode := ids.NodeID{0x01, 0x02, 0x03, 0x04, 0x05}
-	wantSubnet := ids.ID{0xa1, 0xa2, 0xa3, 0xa4}
+	wantNet := ids.ID{0xa1, 0xa2, 0xa3, 0xa4}
 	const wantPct uint32 = 250_000 // 25% in PercentDenominator units
 
-	tx := NewSlashValidatorTx(wantNode, wantSubnet, wantPct)
+	tx := NewSlashValidatorTx(wantNode, wantNet, wantPct)
 	if tx.NodeID() != wantNode {
 		t.Fatalf("NodeID = %v, want %v", tx.NodeID(), wantNode)
 	}
-	if tx.Subnet() != wantSubnet {
-		t.Fatal("Subnet mismatch")
+	if tx.Network() != wantNet {
+		t.Fatal("Network mismatch")
 	}
 	if tx.SlashPercentage() != wantPct {
 		t.Fatalf("SlashPercentage = %d, want %d", tx.SlashPercentage(), wantPct)
@@ -192,7 +192,7 @@ func TestSlashValidatorTxRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tx2.NodeID() != wantNode || tx2.Subnet() != wantSubnet || tx2.SlashPercentage() != wantPct {
+	if tx2.NodeID() != wantNode || tx2.Network() != wantNet || tx2.SlashPercentage() != wantPct {
 		t.Fatal("wrap-round-trip mismatch")
 	}
 }
@@ -229,21 +229,21 @@ func TestTransferChainOwnershipTxRoundTrip(t *testing.T) {
 
 func TestRemoveChainValidatorTxRoundTrip(t *testing.T) {
 	wantNode := ids.NodeID{0x10, 0x20, 0x30, 0x40, 0x50}
-	wantSubnet := ids.ID{0xfa, 0xce, 0xb0, 0x0c}
+	wantNet := ids.ID{0xfa, 0xce, 0xb0, 0x0c}
 
-	tx := NewRemoveChainValidatorTx(wantNode, wantSubnet)
+	tx := NewRemoveChainValidatorTx(wantNode, wantNet)
 	if tx.NodeID() != wantNode {
 		t.Fatal("NodeID mismatch")
 	}
-	if tx.Subnet() != wantSubnet {
-		t.Fatal("Subnet mismatch")
+	if tx.Network() != wantNet {
+		t.Fatal("Network mismatch")
 	}
 
 	tx2, err := WrapRemoveChainValidatorTx(tx.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tx2.NodeID() != wantNode || tx2.Subnet() != wantSubnet {
+	if tx2.NodeID() != wantNode || tx2.Network() != wantNet {
 		t.Fatal("wrap-round-trip mismatch")
 	}
 }
@@ -289,14 +289,14 @@ func TestAllAccessorsZeroAlloc(t *testing.T) {
 		{"RegisterL1ValidatorTx.Expiry", func() { _ = regTx.Expiry() }},
 		{"RegisterL1ValidatorTx.ValidationID", func() { _ = regTx.ValidationID() }},
 		{"SlashValidatorTx.NodeID", func() { _ = slTx.NodeID() }},
-		{"SlashValidatorTx.Subnet", func() { _ = slTx.Subnet() }},
+		{"SlashValidatorTx.Network", func() { _ = slTx.Network() }},
 		{"SlashValidatorTx.SlashPercentage", func() { _ = slTx.SlashPercentage() }},
 		{"TransferChainOwnershipTx.Chain", func() { _ = tcoTx.Chain() }},
 		{"TransferChainOwnershipTx.OwnerThreshold", func() { _ = tcoTx.OwnerThreshold() }},
 		{"TransferChainOwnershipTx.OwnerLocktime", func() { _ = tcoTx.OwnerLocktime() }},
 		{"TransferChainOwnershipTx.OwnerAddress", func() { _ = tcoTx.OwnerAddress() }},
 		{"RemoveChainValidatorTx.NodeID", func() { _ = rcvTx.NodeID() }},
-		{"RemoveChainValidatorTx.Subnet", func() { _ = rcvTx.Subnet() }},
+		{"RemoveChainValidatorTx.Network", func() { _ = rcvTx.Network() }},
 	}
 	for _, c := range cases {
 		c := c
