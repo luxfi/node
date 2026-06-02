@@ -976,7 +976,7 @@ func TestRedRound2_HIGH3_EvidenceListSafeAccessorsClamp(t *testing.T) {
 	}()
 
 	// Bound list — safe accessors clamp.
-	list := EvidenceListView(msg.Root(), 0).Bind(mb2, sb2)
+	list := NewEvidenceListView(msg.Root(), 0).Bind(mb2, sb2)
 	if list.Len() != 1 {
 		t.Fatalf("expected 1 entry, got %d", list.Len())
 	}
@@ -991,11 +991,16 @@ func TestRedRound2_HIGH3_EvidenceListSafeAccessorsClamp(t *testing.T) {
 	if got := e.SignatureB(); got != nil {
 		t.Fatalf("RED-HIGH-3 regression (SignatureB): got len=%d, want nil (poisoned len=0xFFFFFFFE)", len(got))
 	}
-	// Sanity: unbound list returns nil for all safe accessors (no parent).
-	unbound := EvidenceListView(msg.Root(), 0).At(0)
-	if got := unbound.MessageA(); got != nil {
-		t.Fatalf("unbound MessageA: got %x, want nil", got)
-	}
+	// Compile-time enforcement (NEW-V2): unbound EvidenceListView.At(0)
+	// returns an EvidenceEntry (no safe accessors). Calling .MessageA() on
+	// it is a build error — the type system refuses, forcing consumers
+	// through Bind() first. This is the "EvidenceEntry has no method
+	// MessageA" compile-time gate.
+	unbound := NewEvidenceListView(msg.Root(), 0).At(0)
+	_ = unbound.Height()             // raw accessor: OK
+	rel, length := unbound.MessageARange() // raw cursor: OK
+	_, _ = rel, length
+	// unbound.MessageA()           // BUILD ERROR — EvidenceEntry lacks MessageA
 }
 
 // TestRedRound2_HIGH3_SigIndicesArraySliceClamp pins the existence + clamp

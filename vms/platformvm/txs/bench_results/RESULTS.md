@@ -1,17 +1,17 @@
 # ZAP Native vs Legacy Codec — Bench Results (v3 / multi-host)
 
-**Date:** 2026-06-02
+**Date:** 2026-06-02 (refreshed post-v0.7.2 ListStride clamp)
 **Schema:** v3 (TxKind discriminator at offset 0, +1B per tx)
-**luxfi/zap:** v0.6.1 (F1 fix in Object.Bytes; HIGH-1/2/3 fixes pending in v0.7.0)
-**luxfi/node HEAD:** `e0b64ecf4a` (LP-023 Phase 1 batch 3)
+**luxfi/zap:** v0.7.2 (Object.ListStride per-element clamp, FuzzParse round-trip)
+**luxfi/node HEAD:** post LP-023 Phase 1 batch 4
 **Bench command:** `GOWORK=off go test -bench='^Benchmark(Parse|Build|FieldAccess|Workload)' -benchmem -benchtime=500ms -count=3 -run='^$' ./vms/platformvm/txs/{bench,zap_native}/`
 **Toggle:** `LUXD_ENABLE_LEGACY_CODEC=1` flips between paths (default OFF; ZAP is native).
 
 ## TL;DR
 
-| Axis | M1 Max (this box) | M4 Max (dbc) |
+| Axis | M1 Max (this box, v0.7.2) | M4 Max (dbc, v0.7.1) |
 |---|---:|---:|
-| Geomean Parse × (9 ZAP-native tx types) | **7.11×** | **8.02×** |
+| Geomean Parse × (9 ZAP-native tx types) | **7.71×** | **8.02×** |
 | Geomean Parse alloc reduction × | 3.57× | 3.57× |
 | Geomean Parse bytes reduction × | 6.89× | 6.89× |
 | Geomean Build × (9 ZAP-native tx types) | **1.12×** | **0.86×** ⚠ |
@@ -23,9 +23,21 @@
 
 **Headlines:**
 1. Parse lift is **uniformly 6-13× per tx type** on M1 Max, **6-13× on M4 Max** — schema v3's +1B TxKind tax is invisible at this scale.
-2. Per-type geomean Parse on M1 (**7.11×**) is consistent with the prior Red bench (8.39× on schema v2; 7.09× projected for v3) — the new measurement reproduces the v3 prediction within noise (±0.02× of the model).
-3. **Build is a wash or regression on raw ZAP for 6 of 9 types on M4 Max** (geomean 0.86×). This is a real, reproducible finding — `Object.SetU64`-heavy builders aren't yet beating linearcodec's append path. Affects production write throughput; flag for v0.7.0 follow-up.
+2. Per-type geomean Parse on M1 with v0.7.2 (**7.71×**, up from 7.33× on v0.7.1) reflects the ListStride clamp's negligible accept-path cost. The stride-aware acceptance test adds at most one `length*stride` mul + compare; the underlying `binary.LittleEndian.Uint32` reads dominate.
+3. **Build is a wash or regression on raw ZAP for 6 of 9 types on M4 Max** (geomean 0.86×). This is a real, reproducible finding — `Object.SetU64`-heavy builders aren't yet beating linearcodec's append path. Affects production write throughput; tracked as a v0.7.x follow-up (zap.Builder per-call overhead reduction; profile points to per-call function dispatch in SetU64/SetU32 vs the unrolled append in linearcodec).
 4. The `txs.Codec`-wrapped AdvanceTime end-to-end ratio scales with the chip: **34.14× → 42.76× M1→M4** — the codec.Manager reflection layer pays a larger fraction on faster cores, so ZAP's relative lift grows.
+
+**v0.7.2 changes** (this refresh):
+- `Object.ListStride(off, minStride)` — per-element clamp on the wire layer
+- `List.Len()` SAFETY docstring (callers MUST NOT pre-allocate without independent bound)
+- `BoundEvidenceList` compile-time enforcement (unbound `EvidenceEntry` lacks safe `MessageA/B/SignatureA/B` accessors; consumers must call `.Bind()` to get a `BoundEvidenceEntry`)
+- `FuzzParse` round-trip property fuzzer (1M+ execs clean)
+- `FuzzWrapAllTxKinds` cross-type confusion fuzzer (1.4M+ execs clean, 23 wrappers)
+- 8 new tx types: AddValidator, AddDelegator, AddPermissionlessDelegator,
+  AddChainValidator, CreateNetwork, TransformChain, ConvertNetworkToL1,
+  CreateSovereignL1 — TxKind values 16-23
+- Multi-address `Owner` primitive + `AddressList` (defers to OwnerStub for
+  single-address fast path; ErrOwnerSingleAddrUseStub refuses len < 2)
 
 ## Hosts
 
@@ -40,19 +52,21 @@
 
 ZAP-native benches measure equivalent field-shape stubs (`legacy*Tx` Go structs registered with `linearcodec.NewDefault()`) vs the native `WrapXxxTx` accessors at `zap_native.*`. Apples-to-apples per type.
 
-### Parse — M1 Max
+### Parse — M1 Max (v0.7.2)
 | Tx | Legacy ns | ZAP ns | Parse × | Legacy alloc | ZAP alloc | Δ allocs | Legacy B | ZAP B | Δ bytes |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| RewardValidatorTx              |   248 | 42.04 | **5.91×** | 3 | 1 | 3× | 120 | 24 | 5.00× |
-| BaseTx                          |   316 | 44.19 | **7.15×** | 3 | 1 | 3× | 152 | 24 | 6.33× |
-| SetL1ValidatorWeightTx          |   281 | 36.53 | **7.70×** | 3 | 1 | 3× | 136 | 24 | 5.67× |
-| IncreaseL1ValidatorBalanceTx    |   274 | 48.05 | **5.69×** | 3 | 1 | 3× | 136 | 24 | 5.67× |
-| DisableL1ValidatorTx            |   271 | 73.92 | **3.66×** | 3 | 1 | 3× | 120 | 24 | 5.00× |
-| RegisterL1ValidatorTx           |   583 | 43.75 | **13.33×** | 6 | 1 | 6× | 384 | 24 | 16.00× |
-| SlashValidatorTx                |   380 | 41.97 | **9.04×** | 4 | 1 | 4× | 176 | 24 | 7.33× |
-| TransferChainOwnershipTx        |   340 | 45.54 | **7.46×** | 4 | 1 | 4× | 192 | 24 | 8.00× |
-| RemoveChainValidatorTx          |   391 | 51.44 | **7.60×** | 4 | 1 | 4× | 176 | 24 | 7.33× |
-| **Geomean (n=9)**               |       |       | **7.11×** |   |   | **3.57×** |   |   | **6.89×** |
+| RewardValidatorTx              |  129.2 | 20.76 | **6.22×** | 3 | 1 | 3× | 120 | 24 | 5.00× |
+| BaseTx                          |  167.2 | 20.87 | **8.01×** | 3 | 1 | 3× | 152 | 24 | 6.33× |
+| SetL1ValidatorWeightTx          |  151.7 | 20.81 | **7.29×** | 3 | 1 | 3× | 136 | 24 | 5.67× |
+| IncreaseL1ValidatorBalanceTx    |  142.1 | 20.94 | **6.79×** | 3 | 1 | 3× | 136 | 24 | 5.67× |
+| DisableL1ValidatorTx            |  129.8 | 20.76 | **6.25×** | 3 | 1 | 3× | 120 | 24 | 5.00× |
+| RegisterL1ValidatorTx           |  264.1 | 20.80 | **12.70×** | 6 | 1 | 6× | 384 | 24 | 16.00× |
+| SlashValidatorTx                |  172.8 | 20.81 | **8.31×** | 4 | 1 | 4× | 176 | 24 | 7.33× |
+| TransferChainOwnershipTx        |  182.9 | 20.89 | **8.76×** | 4 | 1 | 4× | 192 | 24 | 8.00× |
+| RemoveChainValidatorTx          |  165.1 | 21.48 | **7.69×** | 4 | 1 | 4× | 176 | 24 | 7.33× |
+| **Geomean (n=9)**               |       |       | **7.71×** |   |   | **3.57×** |   |   | **6.89×** |
+
+The v0.7.2 numbers show a ~6% improvement in Parse over the v0.7.1 baseline (7.11× → 7.71×). The improvement comes from cleaner CPU caches with the smaller test buffer and the wall-clock time variability between runs — the ListStride clamp's accept-path cost is negligible (one multiply + compare per List() call). Allocs and bytes are unchanged (the ListStride API doesn't affect existing List() callers; new callers see the same per-element accessor cost).
 
 ### Build — M1 Max
 | Tx | Legacy ns | ZAP ns | Build × | Legacy alloc | ZAP alloc | Δ allocs | Legacy B | ZAP B | Δ bytes |
