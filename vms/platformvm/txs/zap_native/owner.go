@@ -13,17 +13,49 @@ import (
 // AddressList is a variable-length list of 20-byte ids.ShortID addresses.
 // Stride is ids.ShortIDLen (20). The wire layer guarantees length*stride
 // fits in the message buffer via Object.ListStride (zap v0.7.2+).
+//
+// CONSUMER SAFETY (LP-023 Red round 4 R4V3): a malicious wire-encoded
+// AddressList may report Len() > N for an actual N entries via the
+// permissive ListStride clamp (Len() reflects the wire length field
+// only). At(i) for i >= N returns zero-valued ShortID{} — which a naive
+// "iterate every Len() index and treat every ShortID as a valid signer"
+// loop would silently accept as a zero-co-signer. That zero co-signer
+// can match any zero key in a buggy keystore, granting unauthorized
+// spend authority.
+//
+// Consumers MUST:
+//   1. Validate each returned address is non-zero before treating it
+//      as a signer, OR
+//   2. Correlate Len() against an explicit count from a sibling field
+//      (e.g. parent tx's signer-count uint32), OR
+//   3. Call Owner.SyntacticVerify() before iterating — it caps the
+//      threshold against Len() and rejects empty lists, which closes
+//      the "honest overcount" attack at the gate.
+//
+// Path (3) is the canonical one; the executor-side tx.Verify() entry
+// point invokes Owner.SyntacticVerify().
 type AddressList struct {
 	list zap.List
 }
 
-// Len returns the number of addresses.
+// Len returns the number of addresses as reported by the wire-encoded
+// length field. CONSUMER SAFETY: see AddressList type-level docstring —
+// this value is attacker-controlled within the per-stride clamp.
 func (a AddressList) Len() int { return a.list.Len() }
 
 // IsNull returns true if no list pointer was set.
 func (a AddressList) IsNull() bool { return a.list.IsNull() }
 
 // At returns the i'th address. Returns the zero ShortID when out of range.
+//
+// CONSUMER SAFETY (R4V3): when i >= the actual entry count (a malicious
+// encoder published a length-padded list), this returns ShortID{} which
+// is the zero address. Treating a zero address as a valid signer in a
+// quorum count is a silent auth bypass. Always validate non-zero before
+// indexing into a keystore, OR use Owner.SyntacticVerify() at the
+// boundary (canonical path) — that gate clamps the threshold against
+// Len() and rejects empty lists, so a malicious overcount can never
+// lead to a "zero co-signer" being accepted.
 func (a AddressList) At(i int) ids.ShortID {
 	var out ids.ShortID
 	if i < 0 || i >= a.list.Len() {
@@ -96,6 +128,16 @@ var (
 	ErrOwnerAddrsEmpty = errors.New(
 		"zap_native: Owner.Addresses is empty — signer set undefined",
 	)
+
+	// ErrOwnerAddrZero is returned by Owner.SyntacticVerify when one or
+	// more addresses in the list is the zero ShortID. This closes R4V3:
+	// a malicious wire-encoded list with honest overcount (length field
+	// claims M, actual entries N < M) returns zero-padded phantom
+	// entries at i >= N for some buffer geometries. Treating those as
+	// valid signers is an auth bypass. Fail-closed at the gate.
+	ErrOwnerAddrZero = errors.New(
+		"zap_native: Owner.Addresses contains the zero ShortID — phantom signer",
+	)
 )
 
 // Owner is the multi-address output owner. It composes a threshold +
@@ -156,25 +198,29 @@ func (o Owner) Addresses() AddressList {
 	return AddressListView(o.parent, o.baseOffset+OffsetOwnerHeader_AddressList)
 }
 
-// SyntacticVerify enforces R4V7 executor-side semantic gates on an Owner
-// header parsed from an untrusted wire buffer. Returns one of:
+// SyntacticVerify enforces R4V7 + R4V3 executor-side semantic gates on
+// an Owner header parsed from an untrusted wire buffer. Returns one of:
 //
-//   - nil — Owner is well-formed: threshold ∈ [1, Addresses.Len()] and
-//     Addresses.Len() > 0.
+//   - nil — Owner is well-formed: threshold ∈ [1, Addresses.Len()],
+//     Addresses.Len() > 0, AND every Address is non-zero.
 //   - ErrOwnerAddrsEmpty — Addresses.Len() == 0 (signer set undefined).
 //   - ErrOwnerThresholdZero — threshold == 0 (authorization bypass).
 //   - ErrOwnerThresholdExceedsAddrs — threshold > Addresses.Len()
 //     (unsatisfiable quorum).
+//   - ErrOwnerAddrZero — at least one address is the zero ShortID. This
+//     closes R4V3: a malicious wire-encoded list with honest overcount
+//     returns zero-padded phantom entries at i >= actual_count, which
+//     a naive consumer treats as a "zero co-signer". Fail-closed here.
 //
-// CONTRACT (LP-023 Red round 4 R4V7): every tx executor's Verify() entry
-// point MUST call SyntacticVerify on every Owner consumed from a wire
-// buffer before treating the Threshold/Addresses pair as a quorum gate.
-// The wire layer (ZAP) is permissive by design — semantic gates live
-// here in the consumer.
+// CONTRACT (LP-023 Red round 4 R4V7 + R4V3): every tx executor's Verify()
+// entry point MUST call SyntacticVerify on every Owner consumed from a
+// wire buffer before treating the Threshold/Addresses pair as a quorum
+// gate. The wire layer (ZAP) is permissive by design — semantic gates
+// live here in the consumer.
 //
-// Ordering matters: addrs-empty is checked BEFORE threshold==0 so a
-// fully-empty Owner reports the more informative "addrs empty" error
-// rather than the threshold one.
+// Ordering: addrs-empty → threshold-zero → threshold-exceeds → walk for
+// zero-addresses. The walk is O(Len()) but acceptable: typical owners
+// have <= 5 addresses; the verify is the only authorization gate.
 func (o Owner) SyntacticVerify() error {
 	addrs := o.Addresses()
 	n := addrs.Len()
@@ -187,6 +233,11 @@ func (o Owner) SyntacticVerify() error {
 	}
 	if uint64(t) > uint64(n) {
 		return ErrOwnerThresholdExceedsAddrs
+	}
+	for i := 0; i < n; i++ {
+		if addrs.At(i) == (ids.ShortID{}) {
+			return ErrOwnerAddrZero
+		}
 	}
 	return nil
 }
