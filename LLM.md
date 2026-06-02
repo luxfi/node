@@ -39,6 +39,8 @@ selection, and EVM contract auth.
 
 | SHA | Tag | Impact |
 |-----|-----|--------|
+| (pending) | next | LP-023 Phase 1 batch 2: 5 more native-ZAP tx types — BaseTx v1, RegisterL1ValidatorTx v1, SlashValidatorTx v1, TransferChainOwnershipTx v1, RemoveChainValidatorTx. Cross-type Parse mean speedup 8.5× over linearcodec. Variable-length nested-object schemas (Outs/Ins/full OutputOwners/Warp Message/Evidence) deferred to batch 3. |
+| `e77a7ef78e` | (pre) | LP-023 Phase 1 batch 1: 4 simple tx types + bench harness. 37× Parse, 5.6× cross-type mean. |
 | `9df72a6f55` | v1.26.10 | Wire ChainSecurityProfile into bootstrap (closes F102) |
 | `c4af52411e` | v1.26.10 | X-Chain (avm) mempool refuses classical creds under strict-PQ |
 | `a14a1601f4` | v1.26.10 | P-Chain (platformvm) mempool refuses classical creds under strict-PQ |
