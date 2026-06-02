@@ -47,26 +47,20 @@ const (
 	SizeEvidenceEntry                 = 48
 )
 
-// EvidenceEntry is the zero-copy view over one entry in an EvidenceList.
-//
-// To resolve the (Rel,Len) cursors into actual byte slices the entry must
-// be bound to the parent tx's MessageBlobs + SignatureBlobs via
-// EvidenceList.Bind(). The bound form exposes safe accessors MessageA(),
-// MessageB(), SignatureA(), SignatureB() that clamp against the parent
-// blob lengths and return EMPTY slices on poisoned (Rel,Len) pairs.
+// EvidenceEntry is the zero-copy WIRE view over one entry in an
+// EvidenceListView. It exposes raw (Rel,Len) cursor accessors only — the
+// safe MessageA/B + SignatureA/B accessors live on BoundEvidenceEntry,
+// reachable only via EvidenceListView.Bind(...).At(i). Compile-time
+// enforcement of NEW-V2 (LP-023 Red round 3).
 //
 // The raw *Range() accessors below are UNSAFE: they return the wire
 // (Rel,Len) verbatim without clamping. Consumers that index parent blobs
 // directly with these values can be panicked by an adversary who sets
-// Len=0xFFFFFFFF. New code MUST go through the bound MessageA/SignatureA
-// safe accessors. The Range() helpers remain for legacy internal
-// constructors only (see RED-HIGH-3, LP-023 v3.1 round 2).
+// Len=0xFFFFFFFF. New code MUST go through BoundEvidenceEntry's safe
+// accessors. The Range() helpers remain for legacy internal constructors
+// (RED-HIGH-3, LP-023 v3.1 round 2).
 type EvidenceEntry struct {
 	obj zap.Object
-	// Bound parent-blob references. nil for unbound entries (raw range
-	// access only); set via EvidenceList.Bind().
-	messageBlobs   []byte
-	signatureBlobs []byte
 }
 
 // Height returns the height at which the slashable equivocation occurred.
@@ -133,81 +127,126 @@ func safeSlice(parent []byte, rel, length uint32) []byte {
 	return parent[rel : rel+length]
 }
 
-// MessageA returns the first conflicting message bytes, clamped against
-// the bound parent MessageBlobs. Returns an empty slice if the entry is
-// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
-func (e EvidenceEntry) MessageA() []byte {
-	rel, length := e.MessageARange()
-	return safeSlice(e.messageBlobs, rel, length)
-}
-
-// MessageB returns the second conflicting message bytes, clamped against
-// the bound parent MessageBlobs. Returns an empty slice if the entry is
-// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
-func (e EvidenceEntry) MessageB() []byte {
-	rel, length := e.MessageBRange()
-	return safeSlice(e.messageBlobs, rel, length)
-}
-
-// SignatureA returns the first signature bytes, clamped against the bound
-// parent SignatureBlobs. Returns an empty slice if the entry is unbound
-// or the wire (Rel,Len) cursors fall outside the parent blob.
-func (e EvidenceEntry) SignatureA() []byte {
-	rel, length := e.SignatureARange()
-	return safeSlice(e.signatureBlobs, rel, length)
-}
-
-// SignatureB returns the second signature bytes, clamped against the
-// bound parent SignatureBlobs. Returns an empty slice if the entry is
-// unbound or the wire (Rel,Len) cursors fall outside the parent blob.
-func (e EvidenceEntry) SignatureB() []byte {
-	rel, length := e.SignatureBRange()
-	return safeSlice(e.signatureBlobs, rel, length)
-}
-
-// EvidenceList is the zero-copy view over a list of EvidenceEntry items.
-type EvidenceList struct {
+// EvidenceListView is the zero-copy WIRE view over a list of EvidenceEntry
+// items. The view is UNBOUND — its raw cursor accessors (Range methods on
+// EvidenceEntry) are exposed for legacy internal constructors, but the safe
+// accessors MessageA/B + SignatureA/B are NOT available on the entries
+// returned by EvidenceListView.At().
+//
+// To get safe accessors, call .Bind(messageBlobs, signatureBlobs) to convert
+// to BoundEvidenceList. This is a compile-time enforcement of NEW-V2
+// (LP-023 Red round 3 follow-up #1): consumers cannot accidentally read
+// raw (Rel,Len) cursors and panic on attacker-set length=0xFFFFFFFF; the
+// type system forces them through Bind() first.
+type EvidenceListView struct {
 	list zap.List
-	// Bound parent blobs for safe accessors. nil for raw views; set via
-	// Bind().
+}
+
+// Len returns the entry count.
+func (l EvidenceListView) Len() int { return l.list.Len() }
+
+// IsNull returns true if no list pointer was set.
+func (l EvidenceListView) IsNull() bool { return l.list.IsNull() }
+
+// At returns the i'th EvidenceEntry in raw (unbound) form. The entry's
+// Range accessors work; the bound-only MessageA/B + SignatureA/B safe
+// accessors are absent. For consumer-side safe access, call .Bind() to
+// produce a BoundEvidenceList and iterate via BoundEvidenceList.At().
+func (l EvidenceListView) At(i int) EvidenceEntry {
+	return EvidenceEntry{obj: l.list.Object(i, SizeEvidenceEntry)}
+}
+
+// Bind attaches the parent tx's MessageBlobs and SignatureBlobs and returns
+// a BoundEvidenceList whose At() exposes safe MessageA/B + SignatureA/B
+// accessors. The raw (Rel,Len) cursors are attacker-controlled, but the
+// safe accessors clamp against the bound parent blobs and return empty
+// slices on poisoned cursors. RED-HIGH-3 + NEW-V2.
+func (l EvidenceListView) Bind(messageBlobs, signatureBlobs []byte) BoundEvidenceList {
+	return BoundEvidenceList{
+		view:           l,
+		messageBlobs:   messageBlobs,
+		signatureBlobs: signatureBlobs,
+	}
+}
+
+// BoundEvidenceList is the safe-accessor view over an EvidenceListView
+// after Bind(). The bound parent MessageBlobs + SignatureBlobs are pinned
+// at the type level so that BoundEvidenceList.At() returns entries whose
+// MessageA/B + SignatureA/B safely slice the blobs (returning empty on
+// poisoned cursors). Compile-time enforcement: EvidenceListView lacks the
+// safe accessors so consumers cannot bypass Bind() by accident.
+type BoundEvidenceList struct {
+	view           EvidenceListView
 	messageBlobs   []byte
 	signatureBlobs []byte
 }
 
 // Len returns the entry count.
-func (l EvidenceList) Len() int { return l.list.Len() }
+func (l BoundEvidenceList) Len() int { return l.view.Len() }
 
 // IsNull returns true if no list pointer was set.
-func (l EvidenceList) IsNull() bool { return l.list.IsNull() }
+func (l BoundEvidenceList) IsNull() bool { return l.view.IsNull() }
 
-// At returns the i'th EvidenceEntry, carrying any bound parent blobs.
-func (l EvidenceList) At(i int) EvidenceEntry {
-	return EvidenceEntry{
-		obj:            l.list.Object(i, SizeEvidenceEntry),
+// At returns the i'th BoundEvidenceEntry. The bound parent blobs travel
+// with the entry so MessageA/B and SignatureA/B safely clamp against the
+// blobs returned by the parent tx.
+func (l BoundEvidenceList) At(i int) BoundEvidenceEntry {
+	return BoundEvidenceEntry{
+		EvidenceEntry:  l.view.At(i),
 		messageBlobs:   l.messageBlobs,
 		signatureBlobs: l.signatureBlobs,
 	}
 }
 
-// Bind attaches the parent tx's MessageBlobs and SignatureBlobs to this
-// EvidenceList view so that subsequent At() returns entries that expose
-// safe MessageA/B + SignatureA/B accessors. This is the consumer-side
-// API for RED-HIGH-3: the raw (Rel,Len) cursors are attacker-controlled,
-// but the safe accessors clamp against the bound parent blobs and return
-// empty slices on poisoned cursors.
-func (l EvidenceList) Bind(messageBlobs, signatureBlobs []byte) EvidenceList {
-	l.messageBlobs = messageBlobs
-	l.signatureBlobs = signatureBlobs
-	return l
+// BoundEvidenceEntry composes EvidenceEntry with bound parent blobs. Only
+// this type exposes the safe MessageA/B + SignatureA/B accessors —
+// EvidenceEntry (raw, unbound) does not. NEW-V2 compile-time enforcement.
+type BoundEvidenceEntry struct {
+	EvidenceEntry
+	messageBlobs   []byte
+	signatureBlobs []byte
 }
 
-// EvidenceListView reads an EvidenceList from a parent object's field offset.
-// The returned list is UNBOUND — call .Bind(messageBlobs, signatureBlobs)
-// to enable safe accessors. Bare At() on an unbound view returns entries
-// whose MessageA/B + SignatureA/B return empty slices (clamped against
-// nil blobs).
-func EvidenceListView(parent zap.Object, fieldOffset int) EvidenceList {
-	return EvidenceList{list: parent.List(fieldOffset)}
+// MessageA returns the first conflicting message bytes, clamped against
+// the bound parent MessageBlobs. Returns an empty slice when the wire
+// (Rel,Len) cursors fall outside the parent blob.
+func (e BoundEvidenceEntry) MessageA() []byte {
+	rel, length := e.MessageARange()
+	return safeSlice(e.messageBlobs, rel, length)
+}
+
+// MessageB returns the second conflicting message bytes, clamped against
+// the bound parent MessageBlobs.
+func (e BoundEvidenceEntry) MessageB() []byte {
+	rel, length := e.MessageBRange()
+	return safeSlice(e.messageBlobs, rel, length)
+}
+
+// SignatureA returns the first signature bytes, clamped against the bound
+// parent SignatureBlobs.
+func (e BoundEvidenceEntry) SignatureA() []byte {
+	rel, length := e.SignatureARange()
+	return safeSlice(e.signatureBlobs, rel, length)
+}
+
+// SignatureB returns the second signature bytes, clamped against the
+// bound parent SignatureBlobs.
+func (e BoundEvidenceEntry) SignatureB() []byte {
+	rel, length := e.SignatureBRange()
+	return safeSlice(e.signatureBlobs, rel, length)
+}
+
+// NewEvidenceListView reads an EvidenceListView from a parent object's
+// field offset.
+//
+// CONTRACT: callers MUST call .Bind(messageBlobs, signatureBlobs) before
+// using MessageA/B/SignatureA/B accessors. Unbound use returns silent-empty
+// slices — a fail-closed default that masks evidence in slashing logic.
+// The BoundEvidenceList type enforces this at compile-time: the unbound
+// EvidenceListView lacks the safe accessors entirely, forcing consumers
+// through Bind() to get a BoundEvidenceList.
+func NewEvidenceListView(parent zap.Object, fieldOffset int) EvidenceListView {
+	return EvidenceListView{list: parent.List(fieldOffset)}
 }
 
 // EvidenceListEntry is the constructor input for an EvidenceList. The four
