@@ -15,9 +15,9 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
+	"github.com/luxfi/net/endpoints"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/p2p"
-	"github.com/luxfi/net/endpoints"
 	gomock "go.uber.org/mock/gomock"
 )
 

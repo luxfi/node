@@ -19,7 +19,7 @@ func getUPnPRouter() *upnpRouter {
 // upnpRouter stub for minimal build
 type upnpRouter struct{}
 
-func (*upnpRouter) SupportsNAT() bool                                           { return false }
-func (*upnpRouter) MapPort(_, _ uint16, _ string, _ time.Duration) error         { return nil }
-func (*upnpRouter) UnmapPort(_, _ uint16) error                                  { return nil }
-func (*upnpRouter) ExternalIP() (netip.Addr, error)                              { return netip.Addr{}, nil }
+func (*upnpRouter) SupportsNAT() bool                                    { return false }
+func (*upnpRouter) MapPort(_, _ uint16, _ string, _ time.Duration) error { return nil }
+func (*upnpRouter) UnmapPort(_, _ uint16) error                          { return nil }
+func (*upnpRouter) ExternalIP() (netip.Addr, error)                      { return netip.Addr{}, nil }

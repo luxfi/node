@@ -12,9 +12,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/p2p"
-	compression "github.com/luxfi/compress"
 )
 
 var (
