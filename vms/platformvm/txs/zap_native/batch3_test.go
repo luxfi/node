@@ -271,7 +271,7 @@ func TestEvidenceListRoundTrip(t *testing.T) {
 	// accessors return empty slices instead.
 	mb := msg.Root().Bytes(8)
 	sb := msg.Root().Bytes(16)
-	list := EvidenceListView(msg.Root(), 0).Bind(mb, sb)
+	list := NewEvidenceListView(msg.Root(), 0).Bind(mb, sb)
 
 	if list.Len() != len(entries) {
 		t.Fatalf("EvidenceList.Len() = %d, want %d", list.Len(), len(entries))
