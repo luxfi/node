@@ -152,7 +152,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.0.40
 	github.com/luxfi/warp v1.18.6
-	github.com/luxfi/zap v0.7.1
+	github.com/luxfi/zap v0.7.2
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.uber.org/zap v1.27.1
