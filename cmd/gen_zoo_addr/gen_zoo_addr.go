@@ -29,7 +29,7 @@ func main() {
 		"allocations": []map[string]interface{}{
 			{
 				"evmAddr":       "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
-				"utxoAddr":       zooAddr,
+				"utxoAddr":      zooAddr,
 				"initialAmount": 0,
 				"unlockSchedule": []map[string]interface{}{
 					{
