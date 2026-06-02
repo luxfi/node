@@ -52,7 +52,7 @@ type legacyRegisterL1ValidatorTx struct {
 
 type legacySlashValidatorTx struct {
 	NodeID          ids.NodeID `serialize:"true"`
-	Subnet          ids.ID     `serialize:"true"`
+	Chain           ids.ID     `serialize:"true"`
 	SlashPercentage uint32     `serialize:"true"`
 }
 
@@ -65,7 +65,7 @@ type legacyTransferChainOwnershipTx struct {
 
 type legacyRemoveChainValidatorTx struct {
 	NodeID ids.NodeID `serialize:"true"`
-	Subnet ids.ID     `serialize:"true"`
+	Chain  ids.ID     `serialize:"true"`
 }
 
 // newLegacyManagerFor builds a codec.Manager with the given types registered.
@@ -441,7 +441,7 @@ func BenchmarkBuild_ZAP_RegisterL1ValidatorTx(b *testing.B) {
 
 func BenchmarkParse_Legacy_SlashValidatorTx(b *testing.B) {
 	m := newLegacyManagerFor(b, &legacySlashValidatorTx{})
-	src := &legacySlashValidatorTx{NodeID: ids.NodeID{0xa1}, Subnet: ids.ID{0xa2}, SlashPercentage: 100_000}
+	src := &legacySlashValidatorTx{NodeID: ids.NodeID{0xa1}, Chain: ids.ID{0xa2}, SlashPercentage: 100_000}
 	encoded, err := m.Marshal(0, src)
 	if err != nil {
 		b.Fatal(err)
@@ -473,7 +473,7 @@ func BenchmarkBuild_Legacy_SlashValidatorTx(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		src := &legacySlashValidatorTx{NodeID: ids.NodeID{byte(i)}, Subnet: ids.ID{byte(i)}, SlashPercentage: uint32(i)}
+		src := &legacySlashValidatorTx{NodeID: ids.NodeID{byte(i)}, Chain: ids.ID{byte(i)}, SlashPercentage: uint32(i)}
 		if _, err := m.Marshal(0, src); err != nil {
 			b.Fatal(err)
 		}
@@ -549,7 +549,7 @@ func BenchmarkBuild_ZAP_TransferChainOwnershipTx(b *testing.B) {
 
 func BenchmarkParse_Legacy_RemoveChainValidatorTx(b *testing.B) {
 	m := newLegacyManagerFor(b, &legacyRemoveChainValidatorTx{})
-	src := &legacyRemoveChainValidatorTx{NodeID: ids.NodeID{0x10}, Subnet: ids.ID{0xfa}}
+	src := &legacyRemoveChainValidatorTx{NodeID: ids.NodeID{0x10}, Chain: ids.ID{0xfa}}
 	encoded, err := m.Marshal(0, src)
 	if err != nil {
 		b.Fatal(err)
@@ -581,7 +581,7 @@ func BenchmarkBuild_Legacy_RemoveChainValidatorTx(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		src := &legacyRemoveChainValidatorTx{NodeID: ids.NodeID{byte(i)}, Subnet: ids.ID{byte(i)}}
+		src := &legacyRemoveChainValidatorTx{NodeID: ids.NodeID{byte(i)}, Chain: ids.ID{byte(i)}}
 		if _, err := m.Marshal(0, src); err != nil {
 			b.Fatal(err)
 		}
