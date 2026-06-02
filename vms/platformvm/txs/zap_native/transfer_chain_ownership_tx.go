@@ -8,12 +8,12 @@ import (
 	"github.com/luxfi/zap"
 )
 
-// TransferChainOwnershipTx v1 schema — Chain + a single-address Owner stub.
+// TransferChainOwnershipTx v3 schema — TxKind + Chain + single-address Owner.
 //
 // The legacy struct's Owner is an fx.Owner interface — almost always
 // *secp256k1fx.OutputOwners with {Threshold uint32, Locktime uint64,
 // AddressIDs []ids.ShortID}. The variable AddressIDs list ships with the
-// proper schema in batch 3. The v1 form pins the single most common
+// proper schema in batch 3. The v3 form pins the single most common
 // configuration: threshold-1 / locktime-0 / single owner address. Callers
 // that need richer Owner shapes still have the legacy encoder available
 // behind LUXD_ENABLE_LEGACY_CODEC.
@@ -23,19 +23,23 @@ import (
 // rides outside the unsigned-tx bytes in the signed wrapper, so it stays
 // in the signed-tx schema (separate from the unsigned encoding here).
 //
-// Fixed-section layout (size 56 bytes):
+// Fixed-section layout (size 69 bytes):
 //
-//	Chain          32B    @ 0    (ids.ID)
-//	OwnerThreshold uint32 @ 32
-//	OwnerLocktime  uint64 @ 40
-//	OwnerAddress   20B    @ 48   (ids.ShortID; single owner v1 stub)
+//	TxKind         uint8  @ 0
+//	Chain          32B    @ 1     (ids.ID)
+//	OwnerThreshold uint32 @ 33
+//	OwnerLocktime  uint64 @ 37
+//	OwnerAddress   20B    @ 45    (ids.ShortID; single owner v3 stub)
+//
+// Fields are tightly packed; uint64 reads via binary.LittleEndian.Uint64 are
+// alignment-tolerant so no natural-alignment padding is required.
 const (
-	SchemaVersionTransferChainOwnershipTx uint16 = 2
+	SchemaVersionTransferChainOwnershipTx uint16 = 3
 
-	OffsetTransferChainOwnershipTx_Chain          = 0
-	OffsetTransferChainOwnershipTx_OwnerThreshold = 32
-	OffsetTransferChainOwnershipTx_OwnerLocktime  = 40
-	OffsetTransferChainOwnershipTx_OwnerAddress   = 48
+	OffsetTransferChainOwnershipTx_Chain          = 1
+	OffsetTransferChainOwnershipTx_OwnerThreshold = 33
+	OffsetTransferChainOwnershipTx_OwnerLocktime  = 37
+	OffsetTransferChainOwnershipTx_OwnerAddress   = 45
 	SizeTransferChainOwnershipTx                  = OffsetTransferChainOwnershipTx_OwnerAddress + ids.ShortIDLen
 )
 
@@ -76,7 +80,11 @@ func WrapTransferChainOwnershipTx(b []byte) (TransferChainOwnershipTx, error) {
 	if err != nil {
 		return TransferChainOwnershipTx{}, err
 	}
-	return TransferChainOwnershipTx{msg: msg, obj: msg.Root()}, nil
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindTransferChainOwnership {
+		return TransferChainOwnershipTx{}, ErrWrongTxKind
+	}
+	return TransferChainOwnershipTx{msg: msg, obj: obj}, nil
 }
 
 func NewTransferChainOwnershipTx(
@@ -87,6 +95,7 @@ func NewTransferChainOwnershipTx(
 ) TransferChainOwnershipTx {
 	b := zap.NewBuilder(zap.HeaderSize + 16 + SizeTransferChainOwnershipTx)
 	ob := b.StartObject(SizeTransferChainOwnershipTx)
+	ob.SetUint8(OffsetTxKind, uint8(TxKindTransferChainOwnership))
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(OffsetTransferChainOwnershipTx_Chain+i, chain[i])
 	}

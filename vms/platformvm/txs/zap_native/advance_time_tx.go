@@ -20,14 +20,14 @@ import (
 	"github.com/luxfi/zap"
 )
 
-// AdvanceTimeTx ZAP schema: one uint64 field, fixed layout.
+// AdvanceTimeTx ZAP schema v3: TxKind discriminator + uint64 timestamp.
 //
-// Wire = ZAP_HEADER (16 bytes) + Object{ Time: uint64@0 } (8 bytes data).
+// Wire = ZAP_HEADER (16 bytes) + Object{ TxKind: u8@0, Time: u64@1 } (9 bytes).
 const (
-	SchemaVersionAdvanceTimeTx uint16 = 2
+	SchemaVersionAdvanceTimeTx uint16 = 3
 
-	OffsetAdvanceTimeTx_Time = 0 // uint64
-	SizeAdvanceTimeTx        = 8
+	OffsetAdvanceTimeTx_Time = 1 // uint64 (after TxKind@0)
+	SizeAdvanceTimeTx        = 9
 )
 
 // AdvanceTimeTx is a zero-copy typed accessor over a ZAP buffer.
@@ -56,24 +56,30 @@ func (t AdvanceTimeTx) IsZero() bool {
 //
 // Zero copy: the returned accessor references the input buffer directly.
 // The caller MUST keep the buffer alive while the accessor is in use.
-// Returns ErrInvalidMagic/ErrInvalidVersion from the ZAP layer on a
-// malformed buffer.
+// Returns ErrWrongTxKind if the discriminator byte does not match
+// TxKindAdvanceTime; returns ErrInvalidMagic/ErrInvalidVersion from the
+// ZAP layer on a malformed buffer.
 func WrapAdvanceTimeTx(b []byte) (AdvanceTimeTx, error) {
 	msg, err := zap.Parse(b)
 	if err != nil {
 		return AdvanceTimeTx{}, err
 	}
-	return AdvanceTimeTx{msg: msg, obj: msg.Root()}, nil
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindAdvanceTime {
+		return AdvanceTimeTx{}, ErrWrongTxKind
+	}
+	return AdvanceTimeTx{msg: msg, obj: obj}, nil
 }
 
 // NewAdvanceTimeTx builds an AdvanceTimeTx into a fresh ZAP buffer.
 //
-// No reflection. No serialize tag walk. The builder writes Time at offset 0
-// in the object payload, finalizes the ZAP message, and returns a typed
-// accessor over the resulting buffer.
+// No reflection. No serialize tag walk. The builder writes TxKind at offset 0
+// and Time at offset 1 in the object payload, finalizes the ZAP message, and
+// returns a typed accessor over the resulting buffer.
 func NewAdvanceTimeTx(time uint64) AdvanceTimeTx {
 	b := zap.NewBuilder(zap.HeaderSize + 16 + SizeAdvanceTimeTx)
 	ob := b.StartObject(SizeAdvanceTimeTx)
+	ob.SetUint8(OffsetTxKind, uint8(TxKindAdvanceTime))
 	ob.SetUint64(OffsetAdvanceTimeTx_Time, time)
 	ob.FinishAsRoot()
 	buf := b.Finish()

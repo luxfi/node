@@ -8,18 +8,25 @@ import (
 	"github.com/luxfi/zap"
 )
 
-// SetL1ValidatorWeightTx — ValidationID (ids.ID, 32 bytes) + Nonce uint64 + Weight uint64.
+// SetL1ValidatorWeightTx v3 schema — TxKind + ValidationID + Nonce + Weight.
 //
 // Used to adjust the stake weight of an L1 validator without a full
 // re-register cycle. The Nonce is a strict monotonic counter scoped to the
 // ValidationID, preventing replay.
+//
+// Fixed-section layout (size 49 bytes):
+//
+//	TxKind         uint8  @ 0
+//	ValidationID   32B    @ 1
+//	Nonce          uint64 @ 33
+//	Weight         uint64 @ 41
 const (
-	SchemaVersionSetL1ValidatorWeightTx uint16 = 2
+	SchemaVersionSetL1ValidatorWeightTx uint16 = 3
 
-	OffsetSetL1ValidatorWeightTx_ValidationID = 0  // 32 bytes
-	OffsetSetL1ValidatorWeightTx_Nonce        = 32 // uint64
-	OffsetSetL1ValidatorWeightTx_Weight       = 40 // uint64
-	SizeSetL1ValidatorWeightTx                = 48
+	OffsetSetL1ValidatorWeightTx_ValidationID = 1  // 32 bytes
+	OffsetSetL1ValidatorWeightTx_Nonce        = 33 // uint64
+	OffsetSetL1ValidatorWeightTx_Weight       = 41 // uint64
+	SizeSetL1ValidatorWeightTx                = 49
 )
 
 type SetL1ValidatorWeightTx struct {
@@ -51,12 +58,17 @@ func WrapSetL1ValidatorWeightTx(b []byte) (SetL1ValidatorWeightTx, error) {
 	if err != nil {
 		return SetL1ValidatorWeightTx{}, err
 	}
-	return SetL1ValidatorWeightTx{msg: msg, obj: msg.Root()}, nil
+	obj := msg.Root()
+	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindSetL1ValidatorWeight {
+		return SetL1ValidatorWeightTx{}, ErrWrongTxKind
+	}
+	return SetL1ValidatorWeightTx{msg: msg, obj: obj}, nil
 }
 
 func NewSetL1ValidatorWeightTx(validationID ids.ID, nonce, weight uint64) SetL1ValidatorWeightTx {
 	b := zap.NewBuilder(zap.HeaderSize + 16 + SizeSetL1ValidatorWeightTx)
 	ob := b.StartObject(SizeSetL1ValidatorWeightTx)
+	ob.SetUint8(OffsetTxKind, uint8(TxKindSetL1ValidatorWeight))
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(OffsetSetL1ValidatorWeightTx_ValidationID+i, validationID[i])
 	}
