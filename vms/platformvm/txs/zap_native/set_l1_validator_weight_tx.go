@@ -54,13 +54,9 @@ func (t SetL1ValidatorWeightTx) Bytes() []byte { return t.msg.Bytes() }
 func (t SetL1ValidatorWeightTx) IsZero() bool  { return t.msg == nil }
 
 func WrapSetL1ValidatorWeightTx(b []byte) (SetL1ValidatorWeightTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindSetL1ValidatorWeight)
 	if err != nil {
 		return SetL1ValidatorWeightTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindSetL1ValidatorWeight {
-		return SetL1ValidatorWeightTx{}, ErrWrongTxKind
 	}
 	return SetL1ValidatorWeightTx{msg: msg, obj: obj}, nil
 }

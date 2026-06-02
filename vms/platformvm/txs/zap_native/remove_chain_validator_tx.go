@@ -53,13 +53,9 @@ func (t RemoveChainValidatorTx) Bytes() []byte { return t.msg.Bytes() }
 func (t RemoveChainValidatorTx) IsZero() bool  { return t.msg == nil }
 
 func WrapRemoveChainValidatorTx(b []byte) (RemoveChainValidatorTx, error) {
-	msg, err := zap.Parse(b)
+	msg, obj, err := parseAndCheckKind(b, TxKindRemoveChainValidator)
 	if err != nil {
 		return RemoveChainValidatorTx{}, err
-	}
-	obj := msg.Root()
-	if TxKind(obj.Uint8(OffsetTxKind)) != TxKindRemoveChainValidator {
-		return RemoveChainValidatorTx{}, ErrWrongTxKind
 	}
 	return RemoveChainValidatorTx{msg: msg, obj: obj}, nil
 }
