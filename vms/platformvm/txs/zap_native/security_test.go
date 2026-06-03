@@ -705,24 +705,31 @@ func TestRed_V14_CrossTypeConfusion(t *testing.T) {
 // The owning layer is block/executor. Document the requirement.
 
 func TestRed_V15_PreActivationZAPTxRejection(t *testing.T) {
-	// Verify the wire layer's stance.
-	atx := NewAdvanceTimeTx(ZAPActivationUnix - 1) // pre-activation timestamp
+	// LP-023 cutover (2026-06-02): ZAPActivationUnix is now 0 — there is no
+	// pre-activation window. V15's threat model only applies in the legacy
+	// cutover-window scenario, which is closed. We pin the always-on
+	// invariant: regardless of LegacyEnabled, the write rule says ZAP for
+	// every timestamp.
+	atx := NewAdvanceTimeTx(0) // any timestamp; activation gate is dead
 	if !IsZAPBytes(atx.Bytes()) {
-		t.Fatal("V15: AdvanceTimeTx with pre-activation timestamp is still ZAP-encoded (wire layer is timestamp-agnostic)")
+		t.Fatal("V15: AdvanceTimeTx must be ZAP-encoded (wire layer is timestamp-agnostic post-LP-023)")
 	}
 
-	// Save and restore LegacyEnabled state.
 	defer func(prev bool) { LegacyEnabled = prev }(LegacyEnabled)
 
 	LegacyEnabled = false
-	if !ShouldUseZAPForWrite(ZAPActivationUnix - 1) {
-		t.Fatal("V15: default (legacy disabled) should write ZAP for ALL timestamps")
+	for _, ts := range []uint64{0, 1, 1782604800, 1782604800 + 86400} {
+		if !ShouldUseZAPForWrite(ts) {
+			t.Fatalf("V15: legacy-disabled should write ZAP for ts=%d", ts)
+		}
 	}
 	LegacyEnabled = true
-	if ShouldUseZAPForWrite(ZAPActivationUnix - 1) {
-		t.Fatal("V15: legacy-enabled mode should NOT write ZAP pre-activation")
+	for _, ts := range []uint64{0, 1, 1782604800, 1782604800 + 86400} {
+		if !ShouldUseZAPForWrite(ts) {
+			t.Fatalf("V15: legacy-enabled with activation=0 should still write ZAP for ts=%d (no pre-activation window exists)", ts)
+		}
 	}
-	t.Logf("V15 documented: wire encoder respects ShouldUseZAPForWrite rule. CONSENSUS RULE OWNER: block/executor layer MUST reject ZAP-encoded blocks at pre-activation timestamps when in legacy-enabled mode. This invariant lives at consensus, not wire.")
+	t.Logf("V15 closed: LP-023 cutover (2026-06-02) makes ZAP unconditional on the write path. The legacy cutover-window threat model is no longer applicable; LegacyEnabled is now read-only-relevant.")
 }
 
 // -----------------------------------------------------------------------------
