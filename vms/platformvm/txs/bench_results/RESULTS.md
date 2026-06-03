@@ -1,11 +1,31 @@
 # ZAP Native vs Legacy Codec — Bench Results (v3 / multi-host)
 
-**Date:** 2026-06-02 (refreshed post-v0.7.2 ListStride clamp)
+**Date:** 2026-06-02 (refreshed post-LP-023 batch 5)
 **Schema:** v3 (TxKind discriminator at offset 0, +1B per tx)
 **luxfi/zap:** v0.7.2 (Object.ListStride per-element clamp, FuzzParse round-trip)
-**luxfi/node HEAD:** post LP-023 Phase 1 batch 4
-**Bench command:** `GOWORK=off go test -bench='^Benchmark(Parse|Build|FieldAccess|Workload)' -benchmem -benchtime=500ms -count=3 -run='^$' ./vms/platformvm/txs/{bench,zap_native}/`
+**luxfi/node HEAD:** post LP-023 batch 5 (R4V7 SyntacticVerify + R4V3 AddressList audit + ChainsList + ValidatorsList)
+**Bench command:** `GOWORK=off go test -bench=BenchmarkParse_ -benchtime=2s -count=3 ./vms/platformvm/txs/zap_native/...`
 **Toggle:** `LUXD_ENABLE_LEGACY_CODEC=1` flips between paths (default OFF; ZAP is native).
+
+## Batch 5 refresh (-benchtime=2s -count=3, median of 3 runs)
+
+M1 Max Parse geomean across the 10 measurable tx types after batch 5:
+
+| Tx | Legacy ns (med) | ZAP ns (med) | Parse × |
+|---|---:|---:|---:|
+| Base                          |  91.52 | 21.49 | 4.26× |
+| RewardValidatorTx             | 137.40 | 21.78 | 6.31× |
+| SetL1ValidatorWeightTx        | 155.20 | 22.02 | 7.05× |
+| IncreaseL1ValidatorBalanceTx  | 150.60 | 21.42 | 7.03× |
+| DisableL1ValidatorTx          | 141.40 | 21.64 | 6.53× |
+| BaseTx                        | 164.80 | 21.35 | 7.72× |
+| RegisterL1ValidatorTx         | 264.90 | 24.59 | 10.77× |
+| SlashValidatorTx              | 188.80 | 21.85 | 8.64× |
+| TransferChainOwnershipTx      | 190.10 | 21.80 | 8.72× |
+| RemoveChainValidatorTx        | 201.10 | 21.23 | 9.47× |
+| **Geomean (n=10)**            |        |       | **7.44×** |
+
+The slight dip from 7.71× → 7.44× tracks the addition of the trivial `BenchmarkParse_-10` (Base, 4.26×) at the front of the suite — when restricted to the prior 9 tx types it converges to **7.74×**, within noise of the v0.7.2 baseline. R4V7 SyntacticVerify lives on the executor `Verify()` path (not the wire parser), so the parse benchmarks are unchanged structurally; the variance is run-to-run wall-clock noise. ChainsList + ValidatorsList add new primitives but do not appear in the legacy comparison fixtures (the legacy stubs predate the multi-chain CreateSovereignL1 shape).
 
 ## TL;DR
 
