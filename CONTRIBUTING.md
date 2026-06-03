@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Lux Node! This document provides 
 
 To start developing on Lux Node, you'll need a few things installed.
 
-- Golang version >= 1.23.9
+- Golang version >= 1.26.3
 - gcc
 - g++
 
@@ -34,7 +34,7 @@ We are committed to fostering a welcoming and inclusive community. Please be res
 
 ### Prerequisites
 
-- Go 1.21.12 or higher
+- Go 1.26.3 or higher
 - Git
 - Make
 - GCC/G++ compiler
