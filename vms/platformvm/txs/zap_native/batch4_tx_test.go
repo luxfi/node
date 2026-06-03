@@ -282,6 +282,38 @@ func TestConvertNetworkToL1TxRoundTrip(t *testing.T) {
 
 func TestCreateSovereignL1TxRoundTrip(t *testing.T) {
 	mgrAddr := []byte{0xab, 0xcd, 0xef, 0x01}
+	// Multi-chain L1 (Phase C): EVM + DEX
+	chains := []ChainsListEntry{
+		{
+			Name:        []byte("evm"),
+			VMID:        ids.ID{0xee, 0x01},
+			FxIDs:       []ids.ID{{0xfa}, {0xfb}},
+			GenesisData: []byte("{evm-genesis}"),
+		},
+		{
+			Name:        []byte("dex"),
+			VMID:        ids.ID{0xee, 0x02},
+			FxIDs:       []ids.ID{{0xfc}},
+			GenesisData: []byte("{dex-genesis}"),
+		},
+	}
+	// Initial validators (Phase D): 2 validators
+	vals := []ValidatorsListEntry{
+		{
+			NodeID: ids.NodeID{0xa1, 0xa2, 0xa3},
+			Weight: 1_000_000,
+			BLSPubKey: [BLSPubKeySize]byte{0xb1, 0xb2},
+			BLSPoP: [BLSPoPSize]byte{0xc1, 0xc2},
+			RegistrationExpiry: 1_900_000_000,
+		},
+		{
+			NodeID: ids.NodeID{0xa4, 0xa5},
+			Weight: 2_000_000,
+			BLSPubKey: [BLSPubKeySize]byte{0xb3, 0xb4},
+			BLSPoP: [BLSPoPSize]byte{0xc3, 0xc4},
+			RegistrationExpiry: 1_950_000_000,
+		},
+	}
 	in := CreateSovereignL1TxInput{
 		NetworkID:       1337,
 		BlockchainID:    ids.ID{0x18},
@@ -292,7 +324,8 @@ func TestCreateSovereignL1TxRoundTrip(t *testing.T) {
 		Owner:           OwnerStub{Threshold: 1, Locktime: 0, Address: ids.ShortID{0x99}},
 		ManagerChainIdx: 0,
 		ManagerAddress:  mgrAddr,
-		VMID:            ids.ID{0xee},
+		Validators:      vals,
+		Chains:          chains,
 	}
 	tx := NewCreateSovereignL1Tx(in)
 	oT, oLT, oA := tx.Owner()
@@ -305,15 +338,67 @@ func TestCreateSovereignL1TxRoundTrip(t *testing.T) {
 	if !bytes.Equal(tx.ManagerAddress(), mgrAddr) {
 		t.Errorf("ManagerAddress round-trip")
 	}
-	if tx.VMID() != in.VMID {
-		t.Errorf("VMID round-trip")
+
+	// Phase C: chains round-trip via Bind()
+	bc := tx.BoundChains()
+	if bc.Len() != 2 {
+		t.Fatalf("Chains.Len=%d want 2", bc.Len())
 	}
+	for i, want := range chains {
+		got := bc.At(i)
+		if !bytes.Equal(got.Name(), want.Name) {
+			t.Errorf("Chain[%d].Name=%q want %q", i, got.Name(), want.Name)
+		}
+		if got.VMID() != want.VMID {
+			t.Errorf("Chain[%d].VMID round-trip", i)
+		}
+		gotFx := got.FxIDs()
+		if len(gotFx) != len(want.FxIDs) {
+			t.Errorf("Chain[%d].FxIDs len=%d want %d", i, len(gotFx), len(want.FxIDs))
+		}
+		for j, fx := range want.FxIDs {
+			if gotFx[j] != fx {
+				t.Errorf("Chain[%d].FxIDs[%d] round-trip", i, j)
+			}
+		}
+		if !bytes.Equal(got.GenesisData(), want.GenesisData) {
+			t.Errorf("Chain[%d].GenesisData=%q want %q", i, got.GenesisData(), want.GenesisData)
+		}
+	}
+
+	// Phase D: validators round-trip
+	vl := tx.Validators()
+	if vl.Len() != 2 {
+		t.Fatalf("Validators.Len=%d want 2", vl.Len())
+	}
+	for i, want := range vals {
+		got := vl.At(i)
+		if got.NodeID() != want.NodeID {
+			t.Errorf("Val[%d].NodeID round-trip", i)
+		}
+		if got.Weight() != want.Weight {
+			t.Errorf("Val[%d].Weight=%d want %d", i, got.Weight(), want.Weight)
+		}
+		if !bytes.Equal(got.BLSPubKey(), want.BLSPubKey[:]) {
+			t.Errorf("Val[%d].BLSPubKey round-trip", i)
+		}
+		if !bytes.Equal(got.BLSPoP(), want.BLSPoP[:]) {
+			t.Errorf("Val[%d].BLSPoP round-trip", i)
+		}
+		if got.RegistrationExpiry() != want.RegistrationExpiry {
+			t.Errorf("Val[%d].RegistrationExpiry round-trip", i)
+		}
+	}
+
 	tx2, err := WrapCreateSovereignL1Tx(tx.Bytes())
 	if err != nil {
 		t.Fatalf("Wrap: %v", err)
 	}
-	if tx2.VMID() != in.VMID {
-		t.Fatal("wrap-round-trip mismatch")
+	if tx2.BoundChains().Len() != 2 {
+		t.Fatal("wrap-round-trip chains mismatch")
+	}
+	if tx2.Validators().Len() != 2 {
+		t.Fatal("wrap-round-trip validators mismatch")
 	}
 }
 
