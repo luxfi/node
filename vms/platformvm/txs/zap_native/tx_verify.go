@@ -93,6 +93,22 @@ var (
 	ErrMalformedFxIDsLen = errors.New(
 		"zap_native: ChainEntry.FxIDsLen must be an exact multiple of FxIDSize (32)",
 	)
+
+	// ErrReservedNonZero is returned when a ChainEntry's RESERVED bytes
+	// at wire offsets [56..64) are not all zero. The writer
+	// (WriteChainsList) emits zero for these 8 bytes — they are reserved
+	// for future expansion (subnet flags, initial supply hint, etc.).
+	// Today the parser ignores them, which means an adversary can
+	// smuggle arbitrary state inside what consensus considers an empty
+	// region. If a v4 parser later attaches meaning to those bytes (e.g.
+	// adds a flag at offset 56), every v3 tx that smuggled non-zero bytes
+	// becomes a silent wire-fork: the same tx now means two different
+	// things on v3 vs v4 nodes. Reject at the wire boundary now, before
+	// any tx is ever accepted with non-zero reserved bytes — that pins
+	// the upgrade-safe invariant for all future expansions.
+	ErrReservedNonZero = errors.New(
+		"zap_native: ChainEntry RESERVED bytes [56..64) must be zero",
+	)
 )
 
 // stubFromTuple reconstructs an OwnerStub from the (threshold, locktime,
