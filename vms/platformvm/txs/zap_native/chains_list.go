@@ -41,6 +41,7 @@ const (
 	OffsetChainEntry_FxIDsLen       = 44
 	OffsetChainEntry_GenesisDataRel = 48
 	OffsetChainEntry_GenesisDataLen = 52
+	OffsetChainEntry_Reserved       = 56 // [56..64) — must be zero, gated by ChainsListView.Verify (R6-4)
 	SizeChainEntry                  = 64
 
 	// FxIDSize is the wire size of one chain ID inside the FxIDs blob.
@@ -131,6 +132,47 @@ func (e ChainEntry) GenesisDataRange() (uint32, uint32) {
 //
 // Compile-time enforcement: ChainsListView lacks the safe accessors so
 // consumers cannot bypass Bind() by accident.
+//
+// CROSS-BLOB ALIASING ALLOWANCE (LP-023 Red round 6 R6-2 design decision):
+//
+// A wire-encoded ChainsList may legitimately encode overlapping
+// `(rel, len)` ranges across entries pointing into the shared
+// NameBlobs / FxIDsBlobs / GenesisDataBlobs sibling arrays. For example,
+// two chains with the same VMID may share the same FxIDsBlob range; two
+// chains that share a name template can share the same NameBlob range.
+// The writer (WriteChainsList) concatenates without dedup, so today
+// this is a "won't happen by accident" path — but the WIRE layer must
+// not reject it, because a future writer optimization may emit aliased
+// ranges to shrink the blob arrays.
+//
+// CONTRACT (the wire layer makes these promises; consumers must respect them):
+//
+//  1. Name(), FxIDs(), GenesisData() return PAYLOAD slices into the
+//     shared blob, NOT identity. Two distinct entries whose `(rel, len)`
+//     windows overlap will return byte-equal (or byte-overlapping) slices.
+//
+//  2. Chain IDENTITY is the (VMID, BlockchainID) pair set by the
+//     executor via CreateChainTx. Wire-layer Name is descriptive metadata,
+//     not consensus-binding. The executor never derives identity from
+//     Name() bytes.
+//
+//  3. Consumers MUST NOT use returned bytes as a deduplication key.
+//     Two entries returning the same Name() bytes are two distinct chains
+//     on the network if their (VMID, BlockchainID) differ. Using Name()
+//     as a set membership key would silently merge them.
+//
+//  4. Returned slices are READ-ONLY. Mutating any byte returned from
+//     Name() / FxIDs() / GenesisData() corrupts the parent message AND
+//     any aliased entries simultaneously. The slice headers point into
+//     the wire buffer; there is no copy boundary.
+//
+// If a future feature requires per-entry NON-overlapping ranges (e.g.
+// to enable in-place mutation of one chain's name without affecting
+// others), add a `ChainsListView.VerifyNonOverlappingRanges() error`
+// method and call it from the relevant tx's Verify() entry. Until then,
+// aliasing is allowed and exercised by the
+// TestChainsList_AllowsOverlappingRanges_DocumentedContract test which
+// pins the byte-equality guarantee.
 type ChainsListView struct {
 	list zap.List
 }
@@ -246,19 +288,24 @@ func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 	return ChainsListView{list: parent.ListStride(fieldOffset, SizeChainEntry)}
 }
 
-// Verify walks every entry in the list and asserts that FxIDsLen is an
-// exact multiple of FxIDSize. R6V5 closes the silent-nil path where
-// BoundChainEntry.FxIDs returns nil for a malformed length, which a
-// downstream consumer can mis-interpret as "no FxIDs allowed". The check
-// is pure cursor inspection — no Bind required, no blob slicing. Wired
-// into CreateSovereignL1Tx.Verify (and any future tx that embeds a
-// ChainsList).
+// Verify walks every entry in the list and asserts:
+//   - FxIDsLen is an exact multiple of FxIDSize (R6V5).
+//   - RESERVED bytes at offsets [56..64) within each entry are all zero
+//     (R6-4 / batch 5 v3.5). The writer pads them to zero; a parser that
+//     ignores them lets an adversary smuggle non-zero state inside what
+//     consensus considers an empty region. Today that's invisible; the
+//     day a v4 parser attaches meaning to byte 56 (e.g. a subnet flag),
+//     every v3 tx with non-zero reserved bytes silently means two
+//     different things on v3 vs v4 nodes — a wire-fork. Reject NOW.
 //
-// Returns ErrMalformedFxIDsLen wrapped with the entry index on the first
-// malformed entry. Returns nil when the list is empty or every entry's
-// FxIDsLen passes — empty-list rejection is the caller's gate
-// (CreateSovereignL1Tx.Verify enforces non-empty via ErrZeroChains
-// before invoking this).
+// The check is pure cursor inspection — no Bind required, no blob
+// slicing. Wired into CreateSovereignL1Tx.Verify (and any future tx
+// that embeds a ChainsList).
+//
+// Returns the first failure wrapped with the entry index. Returns nil
+// when the list is empty or every entry passes — empty-list rejection
+// is the caller's gate (CreateSovereignL1Tx.Verify enforces non-empty
+// via ErrZeroChains before invoking this).
 func (l ChainsListView) Verify() error {
 	n := l.Len()
 	for i := 0; i < n; i++ {
@@ -266,6 +313,20 @@ func (l ChainsListView) Verify() error {
 		_, length := entry.FxIDsRange()
 		if length%FxIDSize != 0 {
 			return fmt.Errorf("ChainsList[%d].FxIDsLen=%d: %w", i, length, ErrMalformedFxIDsLen)
+		}
+		// R6-4: reserved bytes [56..64) must all be zero. Read via the
+		// raw object surface; bypass IsNull guard because entries we just
+		// iterated are in-range by construction (i < l.Len()).
+		if entry.IsNull() {
+			continue
+		}
+		for off := OffsetChainEntry_Reserved; off < SizeChainEntry; off++ {
+			if entry.obj.Uint8(off) != 0 {
+				return fmt.Errorf(
+					"ChainsList[%d].Reserved[%d]=0x%02x: %w",
+					i, off-OffsetChainEntry_Reserved, entry.obj.Uint8(off), ErrReservedNonZero,
+				)
+			}
 		}
 	}
 	return nil
