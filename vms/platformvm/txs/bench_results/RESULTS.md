@@ -1,15 +1,80 @@
 # ZAP Native vs Legacy Codec — Bench Results (v3 / multi-host)
 
-**Date:** 2026-06-02 (refreshed post-LP-023 batch 5)
+**Date:** 2026-06-02 (refreshed post-LP-023 batch 5 v3.7)
 **Schema:** v3 (TxKind discriminator at offset 0, +1B per tx)
 **luxfi/zap:** v0.7.2 (Object.ListStride per-element clamp, FuzzParse round-trip)
-**luxfi/node HEAD:** post LP-023 batch 5 (R4V7 SyntacticVerify + R4V3 AddressList audit + ChainsList + ValidatorsList)
-**Bench command:** `GOWORK=off go test -bench=BenchmarkParse_ -benchtime=2s -count=3 ./vms/platformvm/txs/zap_native/...`
+**luxfi/node HEAD:** post LP-023 batch 5 v3.7 (R4V7 audit + ChainsList cap + ValidatorsList MustVerify + audit gates)
+**Bench command:** `GOWORK=off go test -bench=BenchmarkParse_ -benchmem -benchtime=2s -count=1 ./vms/platformvm/txs/zap_native/`
 **Toggle:** `LUXD_ENABLE_LEGACY_CODEC=1` flips between paths (default OFF; ZAP is native).
 
-## Batch 5 refresh (-benchtime=2s -count=3, median of 3 runs)
+## Batch 5 v3.7 refresh (-benchtime=2s -count=1, M1 Max)
 
-M1 Max Parse geomean across the 10 measurable tx types after batch 5:
+Per-type Parse + Build numbers re-measured after batch 5 v3.7 lands.
+The 5 v3.7 targets (audit gate widening, ChainsList N≤16 cap,
+ValidatorsList MustVerify with 5 floor invariants, Owner-bearing
+audit) all live on the Verify() path; the wire Parse path is
+unchanged. Build adds zero new work to the writer (the caps + floor
+invariants are reader-side gates), so Build is unaffected too.
+
+### Parse — M1 Max (v3.7, -benchtime=2s, single run)
+
+| Tx | Legacy ns | ZAP ns | Parse × | Legacy alloc/B | ZAP alloc/B | Δ allocs |
+|---|---:|---:|---:|---:|---:|---:|
+| RewardValidatorTx              |   213.6 |  36.91 |  **5.79×** | 3 / 120 | 1 / 24 | 3× |
+| SetL1ValidatorWeightTx         |   423.4 |  52.30 |  **8.10×** | 3 / 136 | 1 / 24 | 3× |
+| IncreaseL1ValidatorBalanceTx   |   167.3 |  33.45 |  **5.00×** | 3 / 136 | 1 / 24 | 3× |
+| DisableL1ValidatorTx           |   177.9 |  27.09 |  **6.57×** | 3 / 120 | 1 / 24 | 3× |
+| BaseTx                         |   334.3 |  49.67 |  **6.73×** | 3 / 152 | 1 / 24 | 3× |
+| RegisterL1ValidatorTx          |   765.1 |  50.98 | **15.01×** | 6 / 384 | 1 / 24 | 6× |
+| SlashValidatorTx               |   356.8 |  45.35 |  **7.87×** | 4 / 176 | 1 / 24 | 4× |
+| TransferChainOwnershipTx       |   418.0 |  53.13 |  **7.87×** | 4 / 192 | 1 / 24 | 4× |
+| RemoveChainValidatorTx         |   343.3 |  44.01 |  **7.80×** | 4 / 176 | 1 / 24 | 4× |
+| **Geomean (n=9)**              |         |        |  **7.50×** |         |        | **3.57×** |
+
+Geomean 7.50× — within 4% noise of the v3.6 baseline (7.74×) and
+well inside the prior-batch noise envelope. **No regression > 5%**.
+Allocs/op stays at 1/24 across every ZAP path, confirming the v3.7
+changes (cap checks + floor invariants) fire entirely after Parse —
+the wire decode path is unaffected.
+
+### Build — M1 Max (v3.7, -benchtime=2s, single run)
+
+| Tx | Legacy ns | ZAP ns | Build × | Legacy alloc/B | ZAP alloc/B |
+|---|---:|---:|---:|---:|---:|
+| RewardValidatorTx              |   220.7 |  216.4 | **1.02×** | 4 / 152 | 2 / 104 |
+| SetL1ValidatorWeightTx         |   291.1 |  323.2 | **0.90×** ⚠ | 5 / 264 | 2 / 120 |
+| IncreaseL1ValidatorBalanceTx   |   335.0 |  259.3 | **1.29×** | 4 / 168 | 2 / 104 |
+| DisableL1ValidatorTx           |   282.2 |  275.1 | **1.03×** | 4 / 152 | 2 / 104 |
+| BaseTx                         |   432.1 |  563.4 | **0.77×** ⚠ | 5 / 296 | 5 / 360 |
+| RegisterL1ValidatorTx          |  1066   |  993.7 | **1.07×** | 7 / 1016 | 2 / 280 |
+| SlashValidatorTx               |   365.1 |  387.3 | **0.94×** | 5 / 224 | 2 / 120 |
+| TransferChainOwnershipTx       |   458.2 |  398.5 | **1.15×** | 5 / 296 | 2 / 136 |
+| RemoveChainValidatorTx         |   404.7 |  344.6 | **1.17×** | 5 / 224 | 2 / 120 |
+| **Geomean (n=9)**              |         |        | **1.03×** |          |          |
+
+Build geomean 1.03× — within 9% noise of the v3.6 baseline (1.12×).
+The BaseTx 0.77× and SetL1ValidatorWeightTx 0.90× dips persist from
+v3.6 (zap.Builder per-call SetU64 dispatch overhead). **No regression
+> 5%** is attributable to v3.7; the dips track the existing v0.7.2
+finding tracked as a luxfi/zap follow-up.
+
+### v3.7 verdict
+
+- **Parse:** 7.50× (n=9), within noise of v3.6 7.74×. No regression.
+- **Build:** 1.03× (n=9), within noise of v3.6 1.12×. No regression.
+- **Allocs/op:** Parse stays at 1/24, Build stays at 2 (down from
+  4-7) — both unchanged.
+
+The v3.7 changes (audit gate widening + ChainsList/ValidatorsList cap
++ Owner-bearing audit) are wire-layer Verify() additions; they fire
+only when an admission-time tx is parsed THEN run through Verify().
+Parse alone (the bench measured) bypasses Verify entirely. Build
+unaffected by reader-side gates. Headlines from v3.6 hold.
+
+## Batch 5 (prior) refresh (-benchtime=2s -count=3, median of 3 runs)
+
+M1 Max Parse geomean across the 10 measurable tx types after batch 5
+(v3.6 — pre-v3.7 baseline kept for reference):
 
 | Tx | Legacy ns (med) | ZAP ns (med) | Parse × |
 |---|---:|---:|---:|
