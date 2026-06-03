@@ -134,8 +134,8 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
-	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
+	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs)
+	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts)
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	rt := &runtime.Runtime{
 		NetworkID: constants.MainnetID,
@@ -829,8 +829,8 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
-	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
+	lux.SortTransferableOutputs(simpleAddNetTx.Outs)
+	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts)
 	utils.Sort(simpleAddNetTx.Ins)
 	rt := &runtime.Runtime{
 		NetworkID: constants.MainnetID,

@@ -392,8 +392,8 @@ func (h *handler) Spend(
 	}
 
 	lux.SortTransferableInputsWithSigners(ins, signers)  // sort inputs and keys
-	lux.SortTransferableOutputs(returnedOuts, txs.Codec) // sort outputs
-	lux.SortTransferableOutputs(stakedOuts, txs.Codec)   // sort outputs
+	lux.SortTransferableOutputs(returnedOuts) // sort outputs
+	lux.SortTransferableOutputs(stakedOuts)   // sort outputs
 
 	return ins, returnedOuts, stakedOuts, signers, nil
 }

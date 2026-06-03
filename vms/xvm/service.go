@@ -496,7 +496,6 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *
 		// This is a workaround for the type mismatch between interfaces.SharedMemory and atomic.SharedMemory
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
 			nil, // Temporarily pass nil - will need proper fix
-			s.vm.parser.Codec(),
 			sourceChain,
 			addrSet,
 			startAddr,
@@ -1389,7 +1388,7 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 	}
 
 	codec := s.vm.parser.Codec()
-	lux.SortTransferableOutputs(outs, codec)
+	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    s.vm.consensusRuntime.NetworkID,
@@ -1881,7 +1880,6 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 
 	atomicUTXOs, _, _, err := lux.GetAtomicUTXOs(
 		nil, // Temporarily pass nil - will need proper fix
-		s.vm.parser.Codec(),
 		chainID,
 		kc.Addrs,
 		ids.ShortEmpty,
@@ -1943,7 +1941,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 			})
 		}
 	}
-	lux.SortTransferableOutputs(outs, s.vm.parser.Codec())
+	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -2106,7 +2104,7 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 	}
 
 	codec := s.vm.parser.Codec()
-	lux.SortTransferableOutputs(outs, codec)
+	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
