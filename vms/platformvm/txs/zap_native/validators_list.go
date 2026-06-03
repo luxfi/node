@@ -4,6 +4,9 @@
 package zap_native
 
 import (
+	"bytes"
+	"fmt"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/zap"
 )
@@ -38,6 +41,19 @@ const (
 
 	BLSPubKeySize = 48
 	BLSPoPSize    = 96
+
+	// MaxValidatorsPerL1 is the hard cap on the number of initial
+	// validators a CreateSovereignL1Tx or ConvertNetworkToL1Tx may
+	// declare. 1024 matches the practical upper bound on initial-
+	// validator sets for an L1 spawn and limits the worst-case BLS
+	// pairing walk (O(N) expensive, fires per validator at admission).
+	//
+	// MustVerify rejects any wire-encoded ValidatorsList with Len() >
+	// this value at the boundary so an adversary cannot bypass the cap
+	// by declaring validators they don't intend to bootstrap.
+	//
+	// LP-023 batch 5 v3.7 (paired with MaxChainsPerL1).
+	MaxValidatorsPerL1 = 1024
 )
 
 // ValidatorRecord is the zero-copy WIRE view over one initial-validator
@@ -154,6 +170,75 @@ func (l ValidatorsList) At(i int) ValidatorRecord {
 // field offset. Uses the per-stride clamp (R4V9).
 func NewValidatorsListView(parent zap.Object, fieldOffset int) ValidatorsList {
 	return ValidatorsList{list: parent.ListStride(fieldOffset, SizeValidatorRecord)}
+}
+
+// MustVerify walks every entry in the list and asserts the 5 sub-field
+// invariants the wire layer cannot enforce structurally:
+//
+//   - Len() <= MaxValidatorsPerL1 (1024). An adversary claiming 100k
+//     validators would force the per-validator BLS pairing walk
+//     (O(N) expensive) at admission time.
+//   - Weight > 0. A zero-weight validator contributes nothing to
+//     quorum but pads the count — a quorum-skew primitive. Mirrors
+//     the per-validator check already wired in tx_verify.go for
+//     CreateSovereignL1Tx and ConvertNetworkToL1Tx; lifting it onto
+//     the list-level MustVerify makes the floor invariant grep-able
+//     and keeps the per-tx Verify body purely orchestration logic.
+//   - BLSPubKey not all-zero. The R6V3 pairing check would catch the
+//     downstream substitution, but the all-zero pubkey is a structural
+//     floor invariant cheaper to check first and a clear signal of
+//     malformed wire bytes rather than a cryptographic attack.
+//   - BLSPoP not all-zero. Same structural floor as BLSPubKey.
+//   - RegistrationExpiry > 0. Wire-canonically a unix timestamp can
+//     never be zero in a legitimate registration window (parallel of
+//     ErrZeroExpiry on RegisterL1ValidatorTx).
+//
+// Returns the first failure wrapped with the validator index. Returns
+// nil when the list is empty or every entry passes — empty-list
+// rejection is the caller's gate (CreateSovereignL1Tx.Verify enforces
+// non-empty via ErrZeroValidators before invoking this).
+//
+// Receiver name MustVerify (not Verify) mirrors the ChainsList pattern
+// from R7V8: makes "I forgot to call this" a grep-able regression. The
+// audit gate (audit_test.go + .github/workflows/zap-audit.yml
+// validatorslist-mustverify-gate) confirms every tx embedder calls it.
+//
+// LP-023 batch 5 v3.7.
+func (l ValidatorsList) MustVerify() error {
+	n := l.Len()
+	if n > MaxValidatorsPerL1 {
+		return fmt.Errorf("ValidatorsList.Len=%d: %w", n, ErrTooManyValidators)
+	}
+	var zeroPubKey [BLSPubKeySize]byte
+	var zeroPoP [BLSPoPSize]byte
+	for i := 0; i < n; i++ {
+		rec := l.At(i)
+		if rec.IsNull() {
+			continue
+		}
+		if rec.Weight() == 0 {
+			return fmt.Errorf(
+				"ValidatorsList[%d].Weight: %w", i, ErrValidatorWeightZero,
+			)
+		}
+		if bytes.Equal(rec.BLSPubKey(), zeroPubKey[:]) {
+			return fmt.Errorf(
+				"ValidatorsList[%d].BLSPubKey: %w", i, ErrValidatorBLSPubKeyZero,
+			)
+		}
+		if bytes.Equal(rec.BLSPoP(), zeroPoP[:]) {
+			return fmt.Errorf(
+				"ValidatorsList[%d].BLSPoP: %w", i, ErrValidatorBLSPoPZero,
+			)
+		}
+		if rec.RegistrationExpiry() == 0 {
+			return fmt.Errorf(
+				"ValidatorsList[%d].RegistrationExpiry: %w",
+				i, ErrValidatorRegistrationExpiryZero,
+			)
+		}
+	}
+	return nil
 }
 
 // ValidatorsListEntry is the constructor input for a ValidatorsList. Each

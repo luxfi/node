@@ -125,3 +125,156 @@ jobs:
             exit 1
           fi
           echo "Audit clean: all ChainsList embedders call MustVerify()"
+
+  validatorslist-mustverify-gate:
+    name: ValidatorsList embedders — MustVerify() required
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure ValidatorsList embedders call MustVerify()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd vms/platformvm/txs/zap_native
+          # Step 1: enumerate tx types that EMBED ValidatorsList. A tx
+          # type T is an embedder if it has an accessor like
+          #   func (t T) Validators() ValidatorsList
+          # defined in a production file.
+          embedders=$(grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) Validators\(\) ValidatorsList' \
+            --include='*.go' . \
+            | grep -vE '(_test\.go)' \
+            | sed -E 's/^func \(t ([A-Za-z0-9_]+)\) Validators.*/\1/' \
+            | sort -u || true)
+          if [ -z "$embedders" ]; then
+            echo "Audit clean: zero ValidatorsList embedder tx types"
+            exit 0
+          fi
+          # Step 2: for each embedder T, locate the bounded Verify()
+          # body in tx_verify.go and confirm it contains a MustVerify(
+          # token. Body delimited by matching braces from the opening
+          # `{` of the function header.
+          offenders=""
+          for T in $embedders; do
+            if ! grep -qE "func \(t ${T}\) Verify\(\) error \{" tx_verify.go; then
+              # No Verify() — covered by other audits; skip here.
+              continue
+            fi
+            body=$(awk -v T="${T}" '
+              BEGIN { in_fn=0; depth=0 }
+              {
+                if (in_fn == 0) {
+                  if ($0 ~ ("func \\(t " T "\\) Verify\\(\\) error \\{$")) {
+                    in_fn=1
+                    depth=1
+                    next
+                  }
+                } else {
+                  for (i=1; i<=length($0); i++) {
+                    c = substr($0,i,1)
+                    if (c == "{") depth++
+                    else if (c == "}") {
+                      depth--
+                      if (depth == 0) { exit }
+                    }
+                  }
+                  print $0
+                }
+              }
+            ' tx_verify.go)
+            if ! echo "$body" | grep -q '\.MustVerify('; then
+              offenders="${offenders}\n${T} (Verify() body does not call validators.MustVerify())"
+            fi
+          done
+          if [ -n "$offenders" ]; then
+            echo "ERROR: ValidatorsList embedder tx type(s) missing .MustVerify() call."
+            echo "Every tx type T with a Validators() accessor AND a Verify()"
+            echo "method MUST call list.MustVerify() inside that Verify()"
+            echo "to enforce the 5 structural floor invariants"
+            echo "(cap, weight, BLS-non-zero, expiry-non-zero)."
+            echo ""
+            echo -e "Offenders:${offenders}"
+            exit 1
+          fi
+          echo "Audit clean: all ValidatorsList embedders call MustVerify()"
+
+  owner-bearing-syntacticverify-gate:
+    name: Owner-bearing tx — SyntacticVerify() required
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure Owner-bearing tx types call SyntacticVerify()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd vms/platformvm/txs/zap_native
+          # Step 1: enumerate Owner-bearing tx types. Match any of the
+          # named owner accessors that return the (uint32, uint64,
+          # ids.ShortID) tuple. TransferChainOwnershipTx uses split
+          # accessors (OwnerThreshold/Locktime/Address) so a separate
+          # check picks it up.
+          embedders=$(grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) (Owner|RewardsOwner|ValidationRewardsOwner|DelegationRewardsOwner)\(\) \(uint32, uint64, ids\.ShortID\)' \
+            --include='*.go' . \
+            | grep -vE '(_test\.go)' \
+            | sed -E 's/^func \(t ([A-Za-z0-9_]+)\).*/\1/' \
+            | sort -u || true)
+          if grep -qE 'func \(t TransferChainOwnershipTx\) (OwnerThreshold|OwnerLocktime|OwnerAddress)\(\)' \
+              --include='*.go' -r . ; then
+            embedders="${embedders}
+TransferChainOwnershipTx"
+          fi
+          embedders=$(echo "${embedders}" | sort -u | grep -v '^$' || true)
+          if [ -z "$embedders" ]; then
+            echo "Audit clean: zero Owner-bearing tx types"
+            exit 0
+          fi
+          # Step 2: for each embedder T, locate the bounded Verify() body
+          # in tx_verify.go and confirm it contains a SyntacticVerify
+          # token. The body is delimited by matching braces from the
+          # opening `{` of the function header.
+          offenders=""
+          for T in $embedders; do
+            if ! grep -qE "func \(t ${T}\) Verify\(\) error \{" tx_verify.go; then
+              offenders="${offenders}\n${T} (no Verify() method in tx_verify.go — Owner consumed without gate)"
+              continue
+            fi
+            # Extract the bounded body via awk with brace depth tracking.
+            body=$(awk -v T="${T}" '
+              BEGIN { in_fn=0; depth=0 }
+              {
+                if (in_fn == 0) {
+                  if ($0 ~ ("func \\(t " T "\\) Verify\\(\\) error \\{$")) {
+                    in_fn=1
+                    depth=1
+                    next
+                  }
+                } else {
+                  for (i=1; i<=length($0); i++) {
+                    c = substr($0,i,1)
+                    if (c == "{") depth++
+                    else if (c == "}") {
+                      depth--
+                      if (depth == 0) { exit }
+                    }
+                  }
+                  print $0
+                }
+              }
+            ' tx_verify.go)
+            if ! echo "$body" | grep -q 'SyntacticVerify'; then
+              offenders="${offenders}\n${T} (Verify() body does not call SyntacticVerify)"
+            fi
+          done
+          if [ -n "$offenders" ]; then
+            echo "ERROR: Owner-bearing tx type(s) missing SyntacticVerify call."
+            echo "Every tx type T with an Owner accessor MUST call"
+            echo "  stubFromTuple(...).SyntacticVerify()  OR"
+            echo "  OwnerView(...).SyntacticVerify()"
+            echo "inside its per-tx Verify() body."
+            echo ""
+            echo "Skipping the gate makes a threshold=0 wire-encoded Owner a"
+            echo "silent authorization bypass (R4V7)."
+            echo ""
+            echo -e "Offenders:${offenders}"
+            exit 1
+          fi
+          echo "Audit clean: all Owner-bearing tx types call SyntacticVerify()"

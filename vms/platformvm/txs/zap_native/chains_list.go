@@ -47,6 +47,21 @@ const (
 	// FxIDSize is the wire size of one chain ID inside the FxIDs blob.
 	// FxIDsLen is in BYTES; entry count = FxIDsLen / FxIDSize.
 	FxIDSize = 32
+
+	// MaxChainsPerL1 is the hard cap on the number of chains a single
+	// CreateSovereignL1Tx may declare. Consistent with the FxIDs-per-chain
+	// soft cap (16) used elsewhere in the schema; the surface comes from
+	// the multi-chain L1 spawn use case (P + X + EVM + 1-2 application
+	// L2s = 5; cap at 16 leaves ample headroom while preventing a
+	// quadratic-DOS encoder from emitting hundreds of zero-weight chains
+	// and forcing the executor to walk each one).
+	//
+	// MustVerify rejects any wire-encoded ChainsList with Len() > this
+	// value at the boundary so an adversary cannot bypass the cap by
+	// declaring chains they don't intend to bootstrap.
+	//
+	// LP-023 batch 5 v3.7 (R4V3-companion cap).
+	MaxChainsPerL1 = 16
 )
 
 // ChainEntry is the zero-copy WIRE view over one entry in a ChainsListView.
@@ -289,6 +304,10 @@ func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 }
 
 // MustVerify walks every entry in the list and asserts:
+//   - Len() <= MaxChainsPerL1 (16). A hostile encoder claiming hundreds
+//     of chains would force the executor through a quadratic-in-N walk
+//     at admission; cap the surface at the spec floor (LP-023 batch 5
+//     v3.7).
 //   - FxIDsLen is an exact multiple of FxIDSize (R6V5).
 //   - RESERVED bytes at offsets [56..64) within each entry are all zero
 //     (R6-4 / batch 5 v3.5). The writer pads them to zero; a parser that
@@ -319,6 +338,9 @@ func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 // the per-field gates, not the list-level walk.
 func (l ChainsListView) MustVerify() error {
 	n := l.Len()
+	if n > MaxChainsPerL1 {
+		return fmt.Errorf("ChainsList.Len=%d: %w", n, ErrTooManyChains)
+	}
 	for i := 0; i < n; i++ {
 		entry := l.At(i)
 		_, length := entry.FxIDsRange()

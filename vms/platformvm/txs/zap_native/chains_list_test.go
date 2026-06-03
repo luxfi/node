@@ -226,3 +226,54 @@ func TestChainsList_FxIDsNonMultipleClampsToNil(t *testing.T) {
 		t.Errorf("FxIDs() with truncated blob must clamp to nil, got len=%d", len(got))
 	}
 }
+
+// TestChainsList_MustVerify_RejectsOverCap pins MaxChainsPerL1 (16):
+// a CreateSovereignL1Tx declaring 17 chains must fail MustVerify at the
+// cap gate before walking entries. Cap matches the multi-chain L1 spawn
+// upper bound (P + X + EVM + small application stack) plus headroom.
+//
+// LP-023 batch 5 v3.7.
+func TestChainsList_MustVerify_RejectsOverCap(t *testing.T) {
+	entries := make([]ChainsListEntry, MaxChainsPerL1+1)
+	for i := range entries {
+		entries[i] = ChainsListEntry{
+			Name:        []byte("evm"),
+			VMID:        ids.ID{byte(i)},
+			GenesisData: []byte("g"),
+		}
+	}
+	in := CreateSovereignL1TxInput{
+		NetworkID:    1,
+		BlockchainID: ids.ID{0x18},
+		Owner:        OwnerStub{Threshold: 1, Address: ids.ShortID{0x01}},
+		Chains:       entries,
+	}
+	tx := NewCreateSovereignL1Tx(in)
+	err := tx.Chains().MustVerify()
+	if err == nil {
+		t.Fatalf("MustVerify(over cap) = nil, want ErrTooManyChains")
+	}
+}
+
+// TestChainsList_MustVerify_AcceptsAtCap pins the boundary: exactly
+// MaxChainsPerL1 (16) entries must pass.
+func TestChainsList_MustVerify_AcceptsAtCap(t *testing.T) {
+	entries := make([]ChainsListEntry, MaxChainsPerL1)
+	for i := range entries {
+		entries[i] = ChainsListEntry{
+			Name:        []byte("evm"),
+			VMID:        ids.ID{byte(i)},
+			GenesisData: []byte("g"),
+		}
+	}
+	in := CreateSovereignL1TxInput{
+		NetworkID:    1,
+		BlockchainID: ids.ID{0x18},
+		Owner:        OwnerStub{Threshold: 1, Address: ids.ShortID{0x01}},
+		Chains:       entries,
+	}
+	tx := NewCreateSovereignL1Tx(in)
+	if err := tx.Chains().MustVerify(); err != nil {
+		t.Fatalf("MustVerify(at cap) = %v, want nil", err)
+	}
+}

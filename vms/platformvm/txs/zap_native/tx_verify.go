@@ -17,6 +17,18 @@ import (
 // Semantic gates live HERE so the parser stays pure and the consumer-side
 // boundary is one and only one method per tx type.
 //
+// LP-023 batch 5 v3.7 audit (R4V3 re-grep, 2026-06-02): the package-wide
+// grep
+//
+//   grep -rn 'AddressList\.At(' --include='*.go' . | grep -vE \
+//     '(_test\.go|tx_verify\.go|owner\.go|audit_test\.go)'
+//
+// returns zero hits across the entire tree. The CI gate
+// .github/workflows/zap-audit.yml addresslist-production-gate
+// reproduces this on every PR; the local mirror lives at
+// TestAuditGate_AddressListNoProductionConsumers in audit_test.go.
+// No new consumers have been introduced since batch 5 v3.5 closed R4V3.
+//
 // LP-023 Red round 4 R4V7: executor MUST call tx.Verify() before treating
 // any embedded Owner as authoritative. Skipping Verify() opens an
 // authorization bypass when the wire-encoded threshold == 0 or threshold
@@ -108,6 +120,60 @@ var (
 	// the upgrade-safe invariant for all future expansions.
 	ErrReservedNonZero = errors.New(
 		"zap_native: ChainEntry RESERVED bytes [56..64) must be zero",
+	)
+
+	// ErrTooManyChains is returned when ChainsList.Len() > MaxChainsPerL1
+	// (16). The cap matches the multi-chain L1 spawn use case (P + X +
+	// EVM + a small application stack) plus headroom; without it a
+	// hostile encoder can declare hundreds of zero-weight chains to
+	// force the executor through a quadratic walk at admission.
+	//
+	// LP-023 batch 5 v3.7.
+	ErrTooManyChains = errors.New(
+		"zap_native: ChainsList.Len exceeds MaxChainsPerL1 (16) — encoder must split into multiple txs",
+	)
+
+	// ErrTooManyValidators is returned when ValidatorsList.Len() exceeds
+	// MaxValidatorsPerL1 (1024). The cap matches the practical upper
+	// bound on initial-validator sets for an L1 spawn and prevents an
+	// encoder from forcing a per-validator BLS pairing walk (O(N)
+	// expensive) at admission time.
+	//
+	// LP-023 batch 5 v3.7.
+	ErrTooManyValidators = errors.New(
+		"zap_native: ValidatorsList.Len exceeds MaxValidatorsPerL1 (1024) — encoder must split into multiple txs",
+	)
+
+	// ErrValidatorBLSPubKeyZero is returned when a validator record's BLS
+	// public key is all zero. The BLS pairing check (R6V3) would still
+	// fire and reject — but the zero pubkey is a structural floor
+	// invariant cheaper to check than the pairing, and a clear signal
+	// of malformed wire bytes rather than a cryptographic-substitution
+	// attack. Per-validator MustVerify-floor invariant.
+	//
+	// LP-023 batch 5 v3.7.
+	ErrValidatorBLSPubKeyZero = errors.New(
+		"zap_native: validator BLSPubKey is all zero — structural floor invariant",
+	)
+
+	// ErrValidatorBLSPoPZero is returned when a validator record's BLS
+	// proof-of-possession is all zero. Same structural floor as
+	// ErrValidatorBLSPubKeyZero — the pairing check would catch this,
+	// but the all-zero check is cheaper and a clear malformed signal.
+	//
+	// LP-023 batch 5 v3.7.
+	ErrValidatorBLSPoPZero = errors.New(
+		"zap_native: validator BLSPoP is all zero — structural floor invariant",
+	)
+
+	// ErrValidatorRegistrationExpiryZero is returned when a validator
+	// record's RegistrationExpiry is zero. The wire field is a unix
+	// timestamp; zero never represents a legitimate registration window
+	// (parallel of ErrZeroExpiry on RegisterL1ValidatorTx).
+	//
+	// LP-023 batch 5 v3.7.
+	ErrValidatorRegistrationExpiryZero = errors.New(
+		"zap_native: validator RegistrationExpiry must be > 0; zero never represents a legitimate window",
 	)
 )
 
@@ -204,19 +270,23 @@ func (t CreateSovereignL1Tx) Verify() error {
 
 	// R6V4: non-empty validators + per-validator weight > 0.
 	// R6V3: BLS PoP verification per validator.
+	// Batch 5 v3.7: ValidatorsList.MustVerify enforces the structural
+	// floor first (cap, weight, BLS-non-zero, expiry-non-zero); the
+	// expensive BLS pairing walk fires only after the cheap structural
+	// gate has accepted the buffer.
 	vals := t.Validators()
 	n := vals.Len()
 	if n == 0 {
 		return fmt.Errorf("CreateSovereignL1Tx.Validators: %w", ErrZeroValidators)
 	}
+	if err := vals.MustVerify(); err != nil {
+		return fmt.Errorf("CreateSovereignL1Tx.Validators: %w", err)
+	}
 	for i := 0; i < n; i++ {
 		rec := vals.At(i)
-		if rec.Weight() == 0 {
-			return fmt.Errorf(
-				"CreateSovereignL1Tx.Validators[%d].Weight: %w", i, ErrValidatorWeightZero,
-			)
-		}
-		// BLS PoP gate — R6V3.
+		// BLS PoP gate — R6V3. MustVerify already enforced Weight > 0
+		// and BLS fields non-zero; the pairing check is the heavy
+		// crypto step.
 		pkBytes := rec.BLSPubKey()
 		sigBytes := rec.BLSPoP()
 		pk, err := bls.PublicKeyFromCompressedBytes(pkBytes)
@@ -364,13 +434,14 @@ func (t ConvertNetworkToL1Tx) Verify() error {
 	if n == 0 {
 		return fmt.Errorf("ConvertNetworkToL1Tx.Validators: %w", ErrZeroValidators)
 	}
+	// Batch 5 v3.7: ValidatorsList.MustVerify enforces structural floor
+	// first (cap, weight, BLS-non-zero, expiry-non-zero); BLS pairing
+	// walks happen only after the cheap gate accepts.
+	if err := vals.MustVerify(); err != nil {
+		return fmt.Errorf("ConvertNetworkToL1Tx.Validators: %w", err)
+	}
 	for i := 0; i < n; i++ {
 		rec := vals.At(i)
-		if rec.Weight() == 0 {
-			return fmt.Errorf(
-				"ConvertNetworkToL1Tx.Validators[%d].Weight: %w", i, ErrValidatorWeightZero,
-			)
-		}
 		pkBytes := rec.BLSPubKey()
 		sigBytes := rec.BLSPoP()
 		pk, err := bls.PublicKeyFromCompressedBytes(pkBytes)
