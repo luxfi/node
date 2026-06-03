@@ -159,7 +159,14 @@ RUN . ./build_env.sh && \
 # Pairing) now returns its own ConfigKey, fixing a Key() collision
 # that forced #114 to drop bls12381 entries from mainnet upgrade.json.
 # Re-adding them is gated on this plugin version.
-ARG EVM_VERSION=v0.19.1
+#
+# v0.19.2 bumps luxfi/vm v1.1.5 → v1.1.6, which drops the obsolete
+# GetNetworkUpgrades() method on the VMContext interface. Required by
+# the Etna→Quasar rename in v0.19.0: vm v1.1.5 still expected
+# upgrade.Config to implement the old IsEtnaActivated() runtime
+# interface, which no longer exists. Without v0.19.2 the plugin
+# fails to compile in the Dockerfile build stage.
+ARG EVM_VERSION=v0.19.2
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
