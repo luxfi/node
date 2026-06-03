@@ -164,9 +164,15 @@ RUN . ./build_env.sh && \
 # GetNetworkUpgrades() method on the VMContext interface. Required by
 # the Etna→Quasar rename in v0.19.0: vm v1.1.5 still expected
 # upgrade.Config to implement the old IsEtnaActivated() runtime
-# interface, which no longer exists. Without v0.19.2 the plugin
-# fails to compile in the Dockerfile build stage.
-ARG EVM_VERSION=v0.19.2
+# interface, which no longer exists.
+#
+# v0.19.3 closes the cascade: bumps vm v1.1.6 → v1.1.7 + runtime
+# v1.0.1 → v1.1.0. runtime v1.1.0 ripped the always-true
+# NetworkUpgrades interface (decomplect 9e6e597) and renamed
+# XAssetID → UTXOAssetID (refactor 034ec47). v1.1.6 anticipated the
+# rip in rpc/context.go but still pinned the old runtime, leaving
+# itself internally inconsistent. v1.1.7 pins the post-rip runtime.
+ARG EVM_VERSION=v0.19.3
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
