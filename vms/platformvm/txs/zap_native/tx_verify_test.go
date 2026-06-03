@@ -7,9 +7,52 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/zap"
 )
+
+// makeValidVerifyingValidator mints a real BLS keypair and returns a
+// ValidatorsListEntry whose PoP passes bls.VerifyProofOfPossession. Used
+// by tests that want a well-formed CreateSovereignL1Tx and need the R6V3
+// PoP gate to succeed. Not used at runtime — keep this in tests only.
+func makeValidVerifyingValidator(t *testing.T) ValidatorsListEntry {
+	t.Helper()
+	sk, err := bls.NewSecretKey()
+	if err != nil {
+		t.Fatalf("bls.NewSecretKey: %v", err)
+	}
+	ls, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk))
+	if err != nil {
+		t.Fatalf("localsigner.FromBytes: %v", err)
+	}
+	pk := ls.PublicKey()
+	pkBytes := bls.PublicKeyToCompressedBytes(pk)
+	sig, err := ls.SignProofOfPossession(pkBytes)
+	if err != nil {
+		t.Fatalf("SignProofOfPossession: %v", err)
+	}
+	sigBytes := bls.SignatureToBytes(sig)
+	var rec ValidatorsListEntry
+	rec.NodeID = ids.NodeID{0x77}
+	rec.Weight = 1_000_000
+	copy(rec.BLSPubKey[:], pkBytes)
+	copy(rec.BLSPoP[:], sigBytes)
+	rec.RegistrationExpiry = 1_900_000_000
+	return rec
+}
+
+// makeValidChainsEntry returns a ChainsListEntry whose FxIDsLen is a
+// proper multiple of FxIDSize (R6V5 must pass).
+func makeValidChainsEntry() ChainsListEntry {
+	return ChainsListEntry{
+		Name:        []byte("evm"),
+		VMID:        ids.ID{0xed, 0xed},
+		FxIDs:       []ids.ID{{0x01}},
+		GenesisData: []byte(`{"config":{}}`),
+	}
+}
 
 // TestVerify_AcceptsWellFormed walks every tx type that embeds an
 // OwnerStub and pins that Verify() returns nil on a well-formed tx.
@@ -62,7 +105,22 @@ func TestVerify_AcceptsWellFormed(t *testing.T) {
 		}
 	})
 	t.Run("CreateSovereignL1", func(t *testing.T) {
-		tx := NewCreateSovereignL1Tx(CreateSovereignL1TxInput{NetworkID: 1, Owner: stub})
+		// R6V4 + R6V3 + R6V5: Verify now requires non-empty validators
+		// with valid BLS PoP, non-empty chains, and well-formed FxIDsLen.
+		tx := NewCreateSovereignL1Tx(CreateSovereignL1TxInput{
+			NetworkID:  1,
+			Owner:      stub,
+			Validators: []ValidatorsListEntry{makeValidVerifyingValidator(t)},
+			Chains:     []ChainsListEntry{makeValidChainsEntry()},
+		})
+		if err := tx.Verify(); err != nil {
+			t.Fatalf("Verify = %v, want nil", err)
+		}
+	})
+	t.Run("TransferChainOwnership", func(t *testing.T) {
+		// R6V8: Verify is now wired in. The legitimate single-signer
+		// case (threshold=1) must pass.
+		tx := NewTransferChainOwnershipTx(ids.ID{0xCA}, 1, 0, addr)
 		if err := tx.Verify(); err != nil {
 			t.Fatalf("Verify = %v, want nil", err)
 		}
