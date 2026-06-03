@@ -270,7 +270,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	}
 
 	codec := w.vm.parser.Codec()
-	lux.SortTransferableOutputs(outs, codec)
+	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    w.vm.consensusRuntime.NetworkID,

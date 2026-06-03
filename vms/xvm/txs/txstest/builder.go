@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
@@ -31,14 +30,13 @@ type Builder struct {
 }
 
 func New(
-	codec codec.Manager,
 	ctx context.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 	state state.State,
 	sharedMemory atomic.SharedMemory,
 ) *Builder {
-	utxos := newUTXOs(ctx, state, sharedMemory, codec)
+	utxos := newUTXOs(ctx, state, sharedMemory)
 	return &Builder{
 		utxos:     utxos,
 		ctx:       newContext(ctx, cfg, feeAssetID),

@@ -69,7 +69,7 @@ func (tx *ExportTx) SyntacticVerify(rt *runtime.Runtime) error {
 			return ErrWrongLocktime
 		}
 	}
-	if !lux.IsSortedTransferableOutputs(tx.ExportedOutputs, Codec) {
+	if !lux.IsSortedTransferableOutputs(tx.ExportedOutputs) {
 		return errOutputsNotSorted
 	}
 

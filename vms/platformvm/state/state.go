@@ -39,6 +39,11 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 
+	// utxo.ParseUTXO factory registration — see
+	// vms/components/lux/utxo_parser.go init(). Required for
+	// utxoState.GetUTXO to decode wire bytes off disk.
+	_ "github.com/luxfi/node/vms/components/lux"
+
 	safemath "github.com/luxfi/math"
 )
 
@@ -677,7 +682,7 @@ func New(
 	}
 
 	utxoDB := prefixdb.New(UTXOPrefix, baseDB)
-	utxoState, err := lux.NewMeteredUTXOState(utxoDB, txs.GenesisCodec, metricsReg, execCfg.ChecksumsEnabled)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, metricsReg, execCfg.ChecksumsEnabled)
 	if err != nil {
 		return nil, err
 	}

@@ -276,7 +276,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 			},
 		},
 	}
-	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs, Codec)
+	lux.SortTransferableOutputs(complexTransferChainOwnershipTx.Outs)
 	utils.Sort(complexTransferChainOwnershipTx.Ins)
 	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID,

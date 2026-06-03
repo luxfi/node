@@ -308,7 +308,7 @@ func (b *builder) NewImportTx(
 		})
 	}
 
-	lux.SortTransferableOutputs(outs, txs.Codec) // sort imported outputs
+	lux.SortTransferableOutputs(outs) // sort imported outputs
 
 	// Create the transaction
 	utx := &txs.ImportTx{
@@ -700,7 +700,7 @@ func (b *builder) NewBaseTx(
 		},
 	})
 
-	lux.SortTransferableOutputs(outs, txs.Codec)
+	lux.SortTransferableOutputs(outs)
 
 	utx := &txs.BaseTx{
 		BaseTx: lux.BaseTx{
