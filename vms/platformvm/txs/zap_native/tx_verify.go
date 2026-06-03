@@ -243,11 +243,15 @@ func (t CreateSovereignL1Tx) Verify() error {
 
 	// R6V4: non-empty chains.
 	// R6V5: every entry's FxIDsLen must be an exact multiple of FxIDSize.
+	// R7V8: ChainsListView.Verify was renamed MustVerify so the gate is
+	// CALLED explicitly by every embedder — the receiver name makes
+	// "I forgot to call this" a compile-time error in CI (audit_test +
+	// .github/workflows/zap-audit.yml chainslist-verify-gate).
 	chains := t.Chains()
 	if chains.Len() == 0 {
 		return fmt.Errorf("CreateSovereignL1Tx.Chains: %w", ErrZeroChains)
 	}
-	if err := chains.Verify(); err != nil {
+	if err := chains.MustVerify(); err != nil {
 		return fmt.Errorf("CreateSovereignL1Tx.Chains: %w", err)
 	}
 	return nil
@@ -267,6 +271,128 @@ func (t TransferChainOwnershipTx) Verify() error {
 	o := stubFromTuple(t.OwnerThreshold(), t.OwnerLocktime(), t.OwnerAddress())
 	if err := o.SyntacticVerify(); err != nil {
 		return fmt.Errorf("TransferChainOwnershipTx.Owner: %w", err)
+	}
+	return nil
+}
+
+// ErrZeroExpiry is returned when a RegisterL1ValidatorTx carries Expiry == 0.
+// Wire-layer Expiry is a unix timestamp; zero never represents a legitimate
+// future registration window. Full timestamp-vs-now() gate lives in the
+// executor (R7V7: SyntacticVerify is clock-independent here).
+//
+// LP-023 Red round 7 R7V7.
+var ErrZeroExpiry = errors.New(
+	"zap_native: RegisterL1ValidatorTx.Expiry must be > 0; zero never represents a legitimate window",
+)
+
+// Verify pins R7V7 HIGH: a RegisterL1ValidatorTx must carry a verifiable
+// BLS proof-of-possession, a non-zero Expiry, and (if non-zero) a
+// well-formed RemainingBalanceOwnerID. The wire-decoded buffer geometry
+// is canonical via parseAndCheckKind; this gate fires the semantic
+// invariants the wire layer cannot infer.
+//
+// LP-023 Red round 7 R7V7 closes the gap where the wire carried
+// BLS+Expiry+OwnerID fields but Blue's 8-tx Verify() list excluded
+// RegisterL1ValidatorTx — defense-in-depth pairing with the mempool
+// admission gate (R7V5) which refuses the tx at the network boundary
+// today.
+//
+// Note: per-validator RegistrationExpiry > now() is intentionally NOT
+// enforced here. SyntacticVerify is clock-independent (executor
+// wall-clock lives in the staking handler); this file enforces only
+// properties that are invariant under wire encoding. The zero-Expiry
+// gate is a syntactic floor — wire-canonically a unix timestamp can
+// never be zero in a legitimate registration.
+func (t RegisterL1ValidatorTx) Verify() error {
+	// BLS PoP gate — same pairing the CreateSovereignL1Tx walk fires
+	// per-validator. Wire layer is opaque about pairing validity; this
+	// gate is the only place it fires before the executor commits the
+	// validator registration.
+	pkBytes := t.BLSPublicKey()
+	sigBytes := t.ProofOfPossession()
+	pk, err := bls.PublicKeyFromCompressedBytes(pkBytes[:])
+	if err != nil {
+		return fmt.Errorf(
+			"RegisterL1ValidatorTx.BLSPublicKey: %w (%v)", ErrBadBLSPoP, err,
+		)
+	}
+	sig, err := bls.SignatureFromBytes(sigBytes[:])
+	if err != nil {
+		return fmt.Errorf(
+			"RegisterL1ValidatorTx.ProofOfPossession: %w (%v)", ErrBadBLSPoP, err,
+		)
+	}
+	if !bls.VerifyProofOfPossession(pk, sig, pkBytes[:]) {
+		return fmt.Errorf(
+			"RegisterL1ValidatorTx.ProofOfPossession: %w", ErrBadBLSPoP,
+		)
+	}
+
+	// Zero-Expiry gate — full clock check lives in the executor.
+	if t.Expiry() == 0 {
+		return fmt.Errorf("RegisterL1ValidatorTx.Expiry: %w", ErrZeroExpiry)
+	}
+
+	// RemainingBalanceOwnerID is a v3 placeholder ids.ID. Treat as
+	// optional — zero ID is a legitimate "no remaining balance owner"
+	// encoding. Batch 3 replaces this with a full OutputOwners schema
+	// (threshold + AddressIDs list) at which point a proper
+	// SyntacticVerify lands; for now the wire layer's only invariant
+	// is that the field is 32 bytes (already enforced by the parser).
+	return nil
+}
+
+// Verify pins R7V7 HIGH for ConvertNetworkToL1Tx: the Validators sub-list
+// must be non-empty, every validator's Weight must be > 0, and every
+// validator's BLS proof-of-possession must verify. Same per-validator
+// walk as CreateSovereignL1Tx — the two tx types share the
+// ValidatorsList primitive, and any malformed entry in either is a
+// quorum-skew or authority-substitution primitive.
+//
+// LP-023 Red round 7 R7V7 closes the gap where ConvertNetworkToL1Tx was
+// excluded from Blue's 8-tx Verify() list. Defense-in-depth pairing with
+// the mempool admission gate (R7V5).
+//
+// Note: the legacy txs.ConvertNetworkToL1Tx executor is already
+// implemented (standard_tx_executor.go:639), but the zap_native wire
+// path still needs the syntactic gate so when zap_native ConvertNetworkToL1
+// finally wires into the codec, the executor admission boundary is
+// covered defense-in-depth alongside the network-layer R7V5 gate.
+func (t ConvertNetworkToL1Tx) Verify() error {
+	vals := t.Validators()
+	n := vals.Len()
+	if n == 0 {
+		return fmt.Errorf("ConvertNetworkToL1Tx.Validators: %w", ErrZeroValidators)
+	}
+	for i := 0; i < n; i++ {
+		rec := vals.At(i)
+		if rec.Weight() == 0 {
+			return fmt.Errorf(
+				"ConvertNetworkToL1Tx.Validators[%d].Weight: %w", i, ErrValidatorWeightZero,
+			)
+		}
+		pkBytes := rec.BLSPubKey()
+		sigBytes := rec.BLSPoP()
+		pk, err := bls.PublicKeyFromCompressedBytes(pkBytes)
+		if err != nil {
+			return fmt.Errorf(
+				"ConvertNetworkToL1Tx.Validators[%d].BLSPubKey: %w (%v)",
+				i, ErrBadBLSPoP, err,
+			)
+		}
+		sig, err := bls.SignatureFromBytes(sigBytes)
+		if err != nil {
+			return fmt.Errorf(
+				"ConvertNetworkToL1Tx.Validators[%d].BLSPoP: %w (%v)",
+				i, ErrBadBLSPoP, err,
+			)
+		}
+		if !bls.VerifyProofOfPossession(pk, sig, pkBytes) {
+			return fmt.Errorf(
+				"ConvertNetworkToL1Tx.Validators[%d].BLSPoP: %w",
+				i, ErrBadBLSPoP,
+			)
+		}
 	}
 	return nil
 }
