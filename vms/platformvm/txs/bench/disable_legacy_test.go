@@ -75,14 +75,23 @@ func TestLegacyCodecGateEnabledViaSubprocess(t *testing.T) {
 
 // runEnableLegacyChild runs in the re-exec'd child where
 // LUXD_ENABLE_LEGACY_CODEC=1 is set at startup.
+//
+// LP-023 cutover (2026-06-02): ZAPActivationUnix is now 0 — the
+// pre-activation window is gone. With LegacyEnabled=true the write
+// rule degenerates to `blockTimestamp >= 0`, which is true for every
+// uint64. We pin the always-on invariant: regardless of LegacyEnabled,
+// every timestamp picks ZAP for write. Mirrors zap_native.V15 closure.
 func runEnableLegacyChild(t *testing.T) {
 	if !zap_native.LegacyEnabled {
 		t.Fatalf("zap_native.LegacyEnabled should be true in child (LUXD_ENABLE_LEGACY_CODEC=1)")
 	}
-	// With legacy enabled, pre-activation timestamps pick legacy
-	// for write.
-	if zap_native.ShouldUseZAPForWrite(zap_native.ZAPActivationUnix - 1) {
-		t.Fatalf("ShouldUseZAPForWrite(pre-activation) should be false when legacy is enabled")
+	// With ZAPActivationUnix=0 the timestamp gate is a no-op even
+	// when legacy is enabled. Probe a spread including the legacy
+	// forward-date (1782604800) — all must pick ZAP for write.
+	for _, ts := range []uint64{0, 1, 1782604800, 1782604800 + 86400} {
+		if !zap_native.ShouldUseZAPForWrite(ts) {
+			t.Fatalf("ShouldUseZAPForWrite(ts=%d) must be true (LP-023 always-on; ZAPActivationUnix=0)", ts)
+		}
 	}
 	// At/after activation, ZAP is picked regardless.
 	if !zap_native.ShouldUseZAPForWrite(zap_native.ZAPActivationUnix) {
