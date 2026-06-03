@@ -25,7 +25,7 @@ Lux implements a 4-chain primary network architecture, each optimized for specif
 │                 (Quantum)                        │
 │                                                  │
 │         Post-Quantum Consensus                   │
-│          Ringtail Signatures                     │
+│        Corona Threshold Signatures               │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -76,7 +76,7 @@ Lux implements a 4-chain primary network architecture, each optimized for specif
 **Purpose:** Post-quantum security layer
 - Quantum-resistant cryptography
 - ML-DSA-65 (Dilithium) signatures
-- Ringtail ring signatures for privacy
+- Corona (LWE-based) threshold signatures
 - Hybrid classical/quantum consensus
 
 **Key Features:**
@@ -301,7 +301,7 @@ Native cross-chain communication protocol:
 | secp256k1 | ECDSA signatures | 128-bit |
 | BLS12-381 | Threshold signatures | 128-bit |
 | ML-DSA-65 | Post-quantum signatures | 192-bit |
-| Ringtail | Ring signatures | 128-bit |
+| Corona | LWE threshold signatures | 192-bit (post-quantum) |
 | SHA-256 | Hashing | 128-bit |
 | AES-256-GCM | Encryption | 256-bit |
 
