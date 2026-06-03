@@ -206,7 +206,7 @@ EOF
     "apricotPhase4BlockTimestamp": 0,
     "apricotPhase5BlockTimestamp": 0,
     "durangoBlockTimestamp": 0,
-    "etnaTimestamp": 0,
+    "quasarTimestamp": 0,
     "feeConfig": {
       "gasLimit": 20000000,
       "minBaseFee": 1000000000,
