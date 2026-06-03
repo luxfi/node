@@ -4,6 +4,8 @@
 package zap_native
 
 import (
+	"fmt"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/zap"
 )
@@ -242,6 +244,31 @@ func (e BoundChainEntry) GenesisData() []byte {
 // The BoundChainsList type enforces this at compile-time.
 func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 	return ChainsListView{list: parent.ListStride(fieldOffset, SizeChainEntry)}
+}
+
+// Verify walks every entry in the list and asserts that FxIDsLen is an
+// exact multiple of FxIDSize. R6V5 closes the silent-nil path where
+// BoundChainEntry.FxIDs returns nil for a malformed length, which a
+// downstream consumer can mis-interpret as "no FxIDs allowed". The check
+// is pure cursor inspection — no Bind required, no blob slicing. Wired
+// into CreateSovereignL1Tx.Verify (and any future tx that embeds a
+// ChainsList).
+//
+// Returns ErrMalformedFxIDsLen wrapped with the entry index on the first
+// malformed entry. Returns nil when the list is empty or every entry's
+// FxIDsLen passes — empty-list rejection is the caller's gate
+// (CreateSovereignL1Tx.Verify enforces non-empty via ErrZeroChains
+// before invoking this).
+func (l ChainsListView) Verify() error {
+	n := l.Len()
+	for i := 0; i < n; i++ {
+		entry := l.At(i)
+		_, length := entry.FxIDsRange()
+		if length%FxIDSize != 0 {
+			return fmt.Errorf("ChainsList[%d].FxIDsLen=%d: %w", i, length, ErrMalformedFxIDsLen)
+		}
+	}
+	return nil
 }
 
 // ChainsListEntry is the constructor input for a ChainsList. The variable
