@@ -60,7 +60,6 @@ func (v *SyntacticVerifier) BaseTx(tx *txs.BaseTx) error {
 		v.FeeAssetID,
 		[][]*lux.TransferableInput{tx.Ins},
 		[][]*lux.TransferableOutput{tx.Outs},
-		v.Codec,
 	)
 	if err != nil {
 		return err
@@ -123,7 +122,6 @@ func (v *SyntacticVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
 		v.FeeAssetID,
 		[][]*lux.TransferableInput{tx.Ins},
 		[][]*lux.TransferableOutput{tx.Outs},
-		v.Codec,
 	)
 	if err != nil {
 		return err
@@ -171,7 +169,6 @@ func (v *SyntacticVerifier) OperationTx(tx *txs.OperationTx) error {
 		v.FeeAssetID,
 		[][]*lux.TransferableInput{tx.Ins},
 		[][]*lux.TransferableOutput{tx.Outs},
-		v.Codec,
 	)
 	if err != nil {
 		return err
@@ -234,7 +231,6 @@ func (v *SyntacticVerifier) ImportTx(tx *txs.ImportTx) error {
 			tx.ImportedIns,
 		},
 		[][]*lux.TransferableOutput{tx.Outs},
-		v.Codec,
 	)
 	if err != nil {
 		return err
@@ -276,7 +272,6 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 			tx.Outs,
 			tx.ExportedOuts,
 		},
-		v.Codec,
 	)
 	if err != nil {
 		return err
