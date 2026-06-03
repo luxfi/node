@@ -5,8 +5,10 @@ package p
 
 import (
 	"context"
+	"os"
 
 	"github.com/luxfi/constants"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/wallet/chain/p/builder"
@@ -39,6 +41,20 @@ func NewContextFromClients(
 	utxoAssetID, err := chainClient.GetStakingAssetID(ctx, constants.PrimaryNetworkID)
 	if err != nil {
 		return nil, err
+	}
+
+	// LUX_WALLET_UTXO_ASSET_ID_OVERRIDE pins the fee-payment asset to a
+	// specific 32-byte asset ID, bypassing the platform.getStakingAssetID
+	// result. Required on networks where the live staking asset differs
+	// from the legacy LUX asset on existing P-chain UTXOs (lux-mainnet
+	// today, where staking == pmSJ7BfZ... but UTXOs hold HrJCm4yvN...).
+	// Empty / unset is a no-op.
+	if override := os.Getenv("LUX_WALLET_UTXO_ASSET_ID_OVERRIDE"); override != "" {
+		overrideID, perr := ids.FromString(override)
+		if perr != nil {
+			return nil, perr
+		}
+		utxoAssetID = overrideID
 	}
 
 	dynamicFeeConfig, err := chainClient.GetFeeConfig(ctx)
