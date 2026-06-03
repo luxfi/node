@@ -5,6 +5,7 @@ package zap_native
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/luxfi/ids"
@@ -227,4 +228,174 @@ func TestValidatorsList_CreateSovereignL1Integration(t *testing.T) {
 			t.Errorf("v[%d].Weight=%d want %d", i, got, want)
 		}
 	}
+}
+
+// TestValidatorsList_MustVerify_HappyPath asserts a well-formed list with
+// non-zero weight, non-zero BLS fields, and non-zero RegistrationExpiry
+// passes the structural floor walk.
+func TestValidatorsList_MustVerify_HappyPath(t *testing.T) {
+	good := ValidatorsListEntry{
+		NodeID:             ids.NodeID{0xa1},
+		Weight:             100,
+		BLSPubKey:          [BLSPubKeySize]byte{0xb1},
+		BLSPoP:             [BLSPoPSize]byte{0xc1},
+		RegistrationExpiry: 1,
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		BlockchainID:   ids.ID{0x18},
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     []ValidatorsListEntry{good},
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	if err := tx.Validators().MustVerify(); err != nil {
+		t.Fatalf("MustVerify(happy) = %v, want nil", err)
+	}
+}
+
+// TestValidatorsList_MustVerify_RejectsZeroWeight pins the per-validator
+// weight floor — a zero-weight validator pads the count without
+// contributing to quorum.
+func TestValidatorsList_MustVerify_RejectsZeroWeight(t *testing.T) {
+	bad := ValidatorsListEntry{
+		NodeID:             ids.NodeID{0xa1},
+		Weight:             0, // <- floor invariant violation
+		BLSPubKey:          [BLSPubKeySize]byte{0xb1},
+		BLSPoP:             [BLSPoPSize]byte{0xc1},
+		RegistrationExpiry: 1,
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     []ValidatorsListEntry{bad},
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	err := tx.Validators().MustVerify()
+	if err == nil || !errorsIsValidatorWeightZero(err) {
+		t.Fatalf("MustVerify(zero weight) = %v, want ErrValidatorWeightZero", err)
+	}
+}
+
+// TestValidatorsList_MustVerify_RejectsAllZeroBLSPubKey pins the BLS
+// pubkey structural floor (cheaper than the pairing check, fires first).
+func TestValidatorsList_MustVerify_RejectsAllZeroBLSPubKey(t *testing.T) {
+	bad := ValidatorsListEntry{
+		NodeID:             ids.NodeID{0xa1},
+		Weight:             100,
+		BLSPubKey:          [BLSPubKeySize]byte{}, // <- all-zero
+		BLSPoP:             [BLSPoPSize]byte{0xc1},
+		RegistrationExpiry: 1,
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     []ValidatorsListEntry{bad},
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	err := tx.Validators().MustVerify()
+	if err == nil || !errorsIsValidatorBLSPubKeyZero(err) {
+		t.Fatalf("MustVerify(zero pubkey) = %v, want ErrValidatorBLSPubKeyZero", err)
+	}
+}
+
+// TestValidatorsList_MustVerify_RejectsAllZeroBLSPoP pins the BLS PoP
+// structural floor.
+func TestValidatorsList_MustVerify_RejectsAllZeroBLSPoP(t *testing.T) {
+	bad := ValidatorsListEntry{
+		NodeID:             ids.NodeID{0xa1},
+		Weight:             100,
+		BLSPubKey:          [BLSPubKeySize]byte{0xb1},
+		BLSPoP:             [BLSPoPSize]byte{}, // <- all-zero
+		RegistrationExpiry: 1,
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     []ValidatorsListEntry{bad},
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	err := tx.Validators().MustVerify()
+	if err == nil || !errorsIsValidatorBLSPoPZero(err) {
+		t.Fatalf("MustVerify(zero PoP) = %v, want ErrValidatorBLSPoPZero", err)
+	}
+}
+
+// TestValidatorsList_MustVerify_RejectsZeroExpiry pins the
+// RegistrationExpiry floor (a unix timestamp can never legitimately be
+// zero in a registration window).
+func TestValidatorsList_MustVerify_RejectsZeroExpiry(t *testing.T) {
+	bad := ValidatorsListEntry{
+		NodeID:             ids.NodeID{0xa1},
+		Weight:             100,
+		BLSPubKey:          [BLSPubKeySize]byte{0xb1},
+		BLSPoP:             [BLSPoPSize]byte{0xc1},
+		RegistrationExpiry: 0, // <- floor invariant violation
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     []ValidatorsListEntry{bad},
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	err := tx.Validators().MustVerify()
+	if err == nil || !errorsIsValidatorRegistrationExpiryZero(err) {
+		t.Fatalf("MustVerify(zero expiry) = %v, want ErrValidatorRegistrationExpiryZero", err)
+	}
+}
+
+// TestValidatorsList_MustVerify_RejectsOverCap covers MaxValidatorsPerL1.
+// Constructs a tx with 1025 validators (cap is 1024) and confirms
+// MustVerify refuses the buffer at the cap gate before walking entries.
+func TestValidatorsList_MustVerify_RejectsOverCap(t *testing.T) {
+	vals := make([]ValidatorsListEntry, MaxValidatorsPerL1+1)
+	for i := range vals {
+		vals[i] = ValidatorsListEntry{
+			NodeID:             ids.NodeID{byte(i)},
+			Weight:             100,
+			BLSPubKey:          [BLSPubKeySize]byte{0xb1},
+			BLSPoP:             [BLSPoPSize]byte{0xc1},
+			RegistrationExpiry: 1,
+		}
+	}
+	in := ConvertNetworkToL1TxInput{
+		NetworkID:      1,
+		Chain:          ids.ID{0x66},
+		ManagerChainID: ids.ID{0x67},
+		Address:        []byte{0xab},
+		Validators:     vals,
+	}
+	tx := NewConvertNetworkToL1Tx(in)
+	err := tx.Validators().MustVerify()
+	if err == nil || !errorsIsTooManyValidators(err) {
+		t.Fatalf("MustVerify(over cap) = %v, want ErrTooManyValidators", err)
+	}
+}
+
+// Small typed-error helpers — keep the test set free of errors.Is noise
+// at the assertion site. The helper bodies are one-liners around
+// errors.Is(err, target).
+func errorsIsValidatorWeightZero(err error) bool {
+	return errors.Is(err, ErrValidatorWeightZero)
+}
+func errorsIsValidatorBLSPubKeyZero(err error) bool {
+	return errors.Is(err, ErrValidatorBLSPubKeyZero)
+}
+func errorsIsValidatorBLSPoPZero(err error) bool {
+	return errors.Is(err, ErrValidatorBLSPoPZero)
+}
+func errorsIsValidatorRegistrationExpiryZero(err error) bool {
+	return errors.Is(err, ErrValidatorRegistrationExpiryZero)
+}
+func errorsIsTooManyValidators(err error) bool {
+	return errors.Is(err, ErrTooManyValidators)
 }
