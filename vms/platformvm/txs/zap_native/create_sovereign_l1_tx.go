@@ -13,11 +13,12 @@ import (
 // ConvertNetworkToL1 into one atomic commit. See legacy
 // /vms/platformvm/txs/create_sovereign_l1_tx.go for full semantics.
 //
-// This v3 form pins the most common single-chain L1 case (e.g. EVM-only).
-// Multi-chain L1s (EVM + DEX + FHE) still ride the legacy schema until
-// the per-chain Chains list primitive ships in a follow-up batch.
+// LP-023 batch 5 (Phase C+D): this v3 form now supports MULTI-CHAIN L1s
+// (EVM + DEX + FHE + …) via the ChainsList primitive and carries the
+// real initial-validator set via ValidatorsList. The previous batch-4
+// stub pinned a single (VMID, blockchainID) pair; that field is gone.
 //
-// Fixed-section layout (size 165 bytes):
+// Fixed-section layout (size 193 bytes):
 //
 //	TxKind                  uint8  @ 0
 //	NetworkID               uint32 @ 1
@@ -33,27 +34,32 @@ import (
 //	OwnerAddress            20B    @ 97
 //	ManagerChainIdx         uint32 @ 117
 //	ManagerAddress          8B     @ 121  (variable bytes)
-//	ValidatorsList          8B     @ 129  (fixed-stride list; pending)
-//	ChainsList              8B     @ 137  (fixed-stride list; pending)
-//	VMID                    32B    @ 145  (single-chain v3 stub; multi-chain via legacy)
+//	ValidatorsList          8B     @ 129  (fixed-stride 180B records)
+//	ChainsList              8B     @ 137  (fixed-stride 64B entries)
+//	NameBlobs               8B     @ 145  (sibling for ChainsList.Name)
+//	FxIDsBlobs              8B     @ 153  (sibling for ChainsList.FxIDs)
+//	GenesisDataBlobs        8B     @ 161  (sibling for ChainsList.GenesisData)
+//	Reserved                24B    @ 169..193 (zero — future expansion)
 const (
-	OffsetCreateSovereignL1Tx_NetworkID       = 1
-	OffsetCreateSovereignL1Tx_BlockchainID    = 5
-	OffsetCreateSovereignL1Tx_OutsList        = 37
-	OffsetCreateSovereignL1Tx_InsList         = 45
-	OffsetCreateSovereignL1Tx_CredsList       = 53
-	OffsetCreateSovereignL1Tx_SigIndicesArr   = 61
-	OffsetCreateSovereignL1Tx_SigArr          = 69
-	OffsetCreateSovereignL1Tx_Memo            = 77
-	OffsetCreateSovereignL1Tx_OwnerThreshold  = 85
-	OffsetCreateSovereignL1Tx_OwnerLocktime   = 89
-	OffsetCreateSovereignL1Tx_OwnerAddress    = 97
-	OffsetCreateSovereignL1Tx_ManagerChainIdx = 117
-	OffsetCreateSovereignL1Tx_ManagerAddress  = 121
-	OffsetCreateSovereignL1Tx_ValidatorsList  = 129
-	OffsetCreateSovereignL1Tx_ChainsList      = 137
-	OffsetCreateSovereignL1Tx_VMID            = 145
-	SizeCreateSovereignL1Tx                   = 177
+	OffsetCreateSovereignL1Tx_NetworkID        = 1
+	OffsetCreateSovereignL1Tx_BlockchainID     = 5
+	OffsetCreateSovereignL1Tx_OutsList         = 37
+	OffsetCreateSovereignL1Tx_InsList          = 45
+	OffsetCreateSovereignL1Tx_CredsList        = 53
+	OffsetCreateSovereignL1Tx_SigIndicesArr    = 61
+	OffsetCreateSovereignL1Tx_SigArr           = 69
+	OffsetCreateSovereignL1Tx_Memo             = 77
+	OffsetCreateSovereignL1Tx_OwnerThreshold   = 85
+	OffsetCreateSovereignL1Tx_OwnerLocktime    = 89
+	OffsetCreateSovereignL1Tx_OwnerAddress     = 97
+	OffsetCreateSovereignL1Tx_ManagerChainIdx  = 117
+	OffsetCreateSovereignL1Tx_ManagerAddress   = 121
+	OffsetCreateSovereignL1Tx_ValidatorsList   = 129
+	OffsetCreateSovereignL1Tx_ChainsList       = 137
+	OffsetCreateSovereignL1Tx_NameBlobs        = 145
+	OffsetCreateSovereignL1Tx_FxIDsBlobs       = 153
+	OffsetCreateSovereignL1Tx_GenesisDataBlobs = 161
+	SizeCreateSovereignL1Tx                    = 193
 )
 
 type CreateSovereignL1Tx struct {
@@ -105,12 +111,45 @@ func (t CreateSovereignL1Tx) ManagerChainIdx() uint32 {
 func (t CreateSovereignL1Tx) ManagerAddress() []byte {
 	return t.obj.Bytes(OffsetCreateSovereignL1Tx_ManagerAddress)
 }
-func (t CreateSovereignL1Tx) VMID() ids.ID {
-	var out ids.ID
-	for i := 0; i < 32; i++ {
-		out[i] = t.obj.Uint8(OffsetCreateSovereignL1Tx_VMID + i)
-	}
-	return out
+
+// Validators returns the initial-validator set as a fixed-stride list view
+// over ValidatorRecord entries (180B per record).
+func (t CreateSovereignL1Tx) Validators() ValidatorsList {
+	return NewValidatorsListView(t.obj, OffsetCreateSovereignL1Tx_ValidatorsList)
+}
+
+// Chains returns the chains-to-create list as an UNBOUND ChainsListView.
+// Callers MUST invoke .Bind(NameBlobs(), FxIDsBlobs(), GenesisDataBlobs())
+// to get a BoundChainsList with safe Name/FxIDs/GenesisData accessors.
+// Compile-time enforcement of NEW-V2 (see ChainsListView docstring).
+func (t CreateSovereignL1Tx) Chains() ChainsListView {
+	return NewChainsListView(t.obj, OffsetCreateSovereignL1Tx_ChainsList)
+}
+
+// BoundChains is the convenience accessor that auto-binds the three
+// sibling blobs and returns the safe-accessor BoundChainsList. Prefer
+// this in consumer code; the explicit Chains()+Bind() path is reserved
+// for tests and lower-level wire inspection.
+func (t CreateSovereignL1Tx) BoundChains() BoundChainsList {
+	return t.Chains().Bind(t.NameBlobs(), t.FxIDsBlobs(), t.GenesisDataBlobs())
+}
+
+// NameBlobs returns the concatenated chain-name bytes sibling array. Each
+// chain's name lives at (NameRel, NameLen) within this blob — but
+// consumers should reach for BoundChains() instead of indexing directly.
+func (t CreateSovereignL1Tx) NameBlobs() []byte {
+	return t.obj.Bytes(OffsetCreateSovereignL1Tx_NameBlobs)
+}
+
+// FxIDsBlobs returns the concatenated FxIDs sibling array. Entry count
+// per chain = FxIDsLen / FxIDSize.
+func (t CreateSovereignL1Tx) FxIDsBlobs() []byte {
+	return t.obj.Bytes(OffsetCreateSovereignL1Tx_FxIDsBlobs)
+}
+
+// GenesisDataBlobs returns the concatenated genesis-blob sibling array.
+func (t CreateSovereignL1Tx) GenesisDataBlobs() []byte {
+	return t.obj.Bytes(OffsetCreateSovereignL1Tx_GenesisDataBlobs)
 }
 
 func (t CreateSovereignL1Tx) Bytes() []byte { return t.msg.Bytes() }
@@ -134,7 +173,8 @@ type CreateSovereignL1TxInput struct {
 	Owner           OwnerStub
 	ManagerChainIdx uint32
 	ManagerAddress  []byte
-	VMID            ids.ID
+	Validators      []ValidatorsListEntry
+	Chains          []ChainsListEntry
 }
 
 func NewCreateSovereignL1Tx(in CreateSovereignL1TxInput) CreateSovereignL1Tx {
@@ -143,6 +183,12 @@ func NewCreateSovereignL1Tx(in CreateSovereignL1TxInput) CreateSovereignL1Tx {
 	cap += len(in.Ins) * SizeTransferableInput
 	cap += len(in.Credentials) * SizeCredential
 	cap += len(in.Memo) + len(in.ManagerAddress)
+	cap += len(in.Validators) * SizeValidatorRecord
+	cap += len(in.Chains) * SizeChainEntry
+	// Coarse upper bound for the three sibling blobs.
+	for _, c := range in.Chains {
+		cap += len(c.Name) + len(c.FxIDs)*FxIDSize + len(c.GenesisData)
+	}
 	b := zap.NewBuilder(cap)
 
 	outsOff, outsCount := WriteOutputList(b, in.Outs)
@@ -150,13 +196,14 @@ func NewCreateSovereignL1Tx(in CreateSovereignL1TxInput) CreateSovereignL1Tx {
 	credsOff, credsCount, sigBlobs := WriteCredentialList(b, in.Credentials)
 	sigIdxArrOff, sigIdxArrCount := WriteSigIndicesArray(b, sigIndices)
 	sigArrOff, sigArrCount := WriteSignatureArray(b, sigBlobs)
+	valsOff, valsCount := WriteValidatorsList(b, in.Validators)
+	chainsOff, chainsCount, nameBlobs, fxIDsBlobs, genesisDataBlobs := WriteChainsList(b, in.Chains)
 
 	ob := b.StartObject(SizeCreateSovereignL1Tx)
 	ob.SetUint8(OffsetTxKind, uint8(TxKindCreateSovereignL1))
 	ob.SetUint32(OffsetCreateSovereignL1Tx_NetworkID, in.NetworkID)
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(OffsetCreateSovereignL1Tx_BlockchainID+i, in.BlockchainID[i])
-		ob.SetUint8(OffsetCreateSovereignL1Tx_VMID+i, in.VMID[i])
 	}
 	ob.SetList(OffsetCreateSovereignL1Tx_OutsList, outsOff, outsCount)
 	ob.SetList(OffsetCreateSovereignL1Tx_InsList, insOff, insCount)
@@ -171,6 +218,11 @@ func NewCreateSovereignL1Tx(in CreateSovereignL1TxInput) CreateSovereignL1Tx {
 	}
 	ob.SetUint32(OffsetCreateSovereignL1Tx_ManagerChainIdx, in.ManagerChainIdx)
 	ob.SetBytes(OffsetCreateSovereignL1Tx_ManagerAddress, in.ManagerAddress)
+	ob.SetList(OffsetCreateSovereignL1Tx_ValidatorsList, valsOff, valsCount)
+	ob.SetList(OffsetCreateSovereignL1Tx_ChainsList, chainsOff, chainsCount)
+	ob.SetBytes(OffsetCreateSovereignL1Tx_NameBlobs, nameBlobs)
+	ob.SetBytes(OffsetCreateSovereignL1Tx_FxIDsBlobs, fxIDsBlobs)
+	ob.SetBytes(OffsetCreateSovereignL1Tx_GenesisDataBlobs, genesisDataBlobs)
 	ob.FinishAsRoot()
 	msg, _ := zap.Parse(b.Finish())
 	return CreateSovereignL1Tx{msg: msg, obj: msg.Root()}
