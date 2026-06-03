@@ -208,11 +208,16 @@ func TestChainsList_Verify_RejectsBadFxIDsLen(t *testing.T) {
 	}
 }
 
-// TestChainsListView_Verify_StandaloneEntries exercises the helper on a
-// hand-constructed ChainsListView so Verify is callable independently
+// TestChainsListView_MustVerify_StandaloneEntries exercises the helper on
+// a hand-constructed ChainsListView so MustVerify is callable independently
 // of CreateSovereignL1Tx. Defense-in-depth: any future tx that embeds
-// ChainsList can call Verify() directly.
-func TestChainsListView_Verify_StandaloneEntries(t *testing.T) {
+// ChainsList must call MustVerify() inside its own Verify() body — the
+// audit gate (audit_test.go + .github/workflows/zap-audit.yml
+// chainslist-verify-gate) enforces this at CI.
+//
+// LP-023 R7V8: renamed Verify → MustVerify so the consumer-side gate
+// is grep-able from the CI workflow.
+func TestChainsListView_MustVerify_StandaloneEntries(t *testing.T) {
 	// Good entry: FxIDsLen = 2*32 = 64.
 	entries := []ChainsListEntry{
 		{Name: []byte("a"), VMID: ids.ID{0x01}, FxIDs: []ids.ID{{0xff}, {0xee}}},
@@ -224,8 +229,8 @@ func TestChainsListView_Verify_StandaloneEntries(t *testing.T) {
 		Validators: []ValidatorsListEntry{makeValidVerifyingValidator(t)},
 		Chains:     entries,
 	})
-	if err := tx.Chains().Verify(); err != nil {
-		t.Fatalf("ChainsListView.Verify = %v, want nil", err)
+	if err := tx.Chains().MustVerify(); err != nil {
+		t.Fatalf("ChainsListView.MustVerify = %v, want nil", err)
 	}
 }
 

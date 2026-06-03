@@ -95,11 +95,19 @@ func New(
 		return nil, err
 	}
 
+	// LP-023 R7V5: wrap the verifier so zap_native tx kinds whose
+	// executor body is not-yet-implemented are refused at the mempool
+	// admission boundary. The gate fires BEFORE state-machine execution
+	// so a not-yet-implemented kind never becomes a zombie tx in the
+	// mempool during Neo's ZAP-activation=0 rollout. Removal checklist
+	// lives in vms/platformvm/network/zap_native_admission.go.
+	gatedVerifier := NewZapNativeAdmissionGate(txVerifier)
+
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		registerer,
 		log,
-		txVerifier,
+		gatedVerifier,
 		config.ExpectedBloomFilterElements,
 		config.ExpectedBloomFilterFalsePositiveProbability,
 		config.MaxBloomFilterFalsePositiveProbability,

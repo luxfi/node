@@ -41,7 +41,7 @@ const (
 	OffsetChainEntry_FxIDsLen       = 44
 	OffsetChainEntry_GenesisDataRel = 48
 	OffsetChainEntry_GenesisDataLen = 52
-	OffsetChainEntry_Reserved       = 56 // [56..64) — must be zero, gated by ChainsListView.Verify (R6-4)
+	OffsetChainEntry_Reserved       = 56 // [56..64) — must be zero, gated by ChainsListView.MustVerify (R6-4 + R7V8)
 	SizeChainEntry                  = 64
 
 	// FxIDSize is the wire size of one chain ID inside the FxIDs blob.
@@ -288,7 +288,7 @@ func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 	return ChainsListView{list: parent.ListStride(fieldOffset, SizeChainEntry)}
 }
 
-// Verify walks every entry in the list and asserts:
+// MustVerify walks every entry in the list and asserts:
 //   - FxIDsLen is an exact multiple of FxIDSize (R6V5).
 //   - RESERVED bytes at offsets [56..64) within each entry are all zero
 //     (R6-4 / batch 5 v3.5). The writer pads them to zero; a parser that
@@ -306,7 +306,18 @@ func NewChainsListView(parent zap.Object, fieldOffset int) ChainsListView {
 // when the list is empty or every entry passes — empty-list rejection
 // is the caller's gate (CreateSovereignL1Tx.Verify enforces non-empty
 // via ErrZeroChains before invoking this).
-func (l ChainsListView) Verify() error {
+//
+// LP-023 Red round 7 R7V8 renamed Verify → MustVerify. The receiver-
+// name pattern makes "I forgot to call this" a grep-able regression:
+// the audit gate (audit_test.go +
+// .github/workflows/zap-audit.yml chainslist-verify-gate) walks every
+// file that embeds a ChainsList in a tx type and confirms it calls
+// .MustVerify() somewhere inside its Verify() body. The previous
+// Verify() name collided with the tx-level Verify() convention and
+// invited the reader to assume "the tx Verify already covered this"
+// — wrong, because the tx-level Verify is responsible for orchestrating
+// the per-field gates, not the list-level walk.
+func (l ChainsListView) MustVerify() error {
 	n := l.Len()
 	for i := 0; i < n; i++ {
 		entry := l.At(i)

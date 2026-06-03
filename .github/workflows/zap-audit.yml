@@ -1,16 +1,24 @@
 name: zap-audit
 
-# LP-023 R6-6: AddressList.At() must remain non-production until owner-model
-# migration / executor-side equivalence is proven. This workflow fails the
-# PR if any new production caller is introduced.
+# LP-023 — audit gates for zap_native invariants.
 #
-# Allowed callers:
+# Job 1 (R6-6): AddressList.At() must remain non-production until
+# owner-model migration / executor-side equivalence is proven. This
+# workflow fails the PR if any new production caller is introduced.
+#
+# Job 2 (R7V8): Every tx type that EMBEDS a ChainsList in its per-tx
+# Verify() body MUST call .MustVerify() on it. The receiver-name rename
+# (Verify → MustVerify, batch 5 v3.6) makes the gate grep-able. Without
+# this gate, a future Verify() author can silently skip the per-entry
+# FxIDsLen + reserved-bytes walk and ship a wire-fork primitive.
+#
+# Allowed callers (Job 1):
 #   - *_test.go         — tests
 #   - tx_verify.go      — executor-side SyntacticVerify boundary
 #   - owner.go          — the type's own implementation
 #   - audit_test.go     — the mirroring local test that reproduces this gate
 #
-# To LEGITIMATELY introduce a production caller:
+# To LEGITIMATELY introduce a production caller (Job 1):
 #   1. Land the owner-model migration that retires AddressList.At() OR
 #   2. Add the caller's file to the allowlist below AND document the
 #      equivalence proof in vms/platformvm/txs/zap_native/owner.go.
@@ -67,3 +75,53 @@ jobs:
             exit 1
           fi
           echo "Audit clean: zero AddressList.At() production consumers"
+
+  chainslist-verify-gate:
+    name: ChainsList embedders — MustVerify() required
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure ChainsList embedders call MustVerify()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd vms/platformvm/txs/zap_native
+          # Step 1: enumerate tx types that EMBED ChainsList. A tx type
+          # T is an embedder if it has an accessor like
+          #   func (t T) Chains() ChainsListView
+          # defined in a production file.
+          embedders=$(grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) Chains\(\) (ChainsList|ChainsListView|BoundChainsList)' \
+            --include='*.go' . \
+            | grep -vE '(_test\.go)' \
+            | sed -E 's/^func \(t ([A-Za-z0-9_]+)\) Chains.*/\1/' \
+            | sort -u || true)
+          if [ -z "$embedders" ]; then
+            echo "Audit clean: zero ChainsList embedder tx types"
+            exit 0
+          fi
+          # Step 2: for each embedder T, confirm tx_verify.go has a
+          # Verify() method for T AND calls .MustVerify(). Centralized
+          # in tx_verify.go by convention; embedder file (type
+          # definition) and Verify file (gate body) are decoupled.
+          offenders=""
+          for T in $embedders; do
+            if grep -qE "func \([a-z]+ ${T}\) Verify\(\)" tx_verify.go; then
+              if ! grep -q '\.MustVerify(' tx_verify.go; then
+                offenders="${offenders}\n${T} (tx_verify.go has Verify() for ${T} but no .MustVerify() call)"
+              fi
+            fi
+          done
+          if [ -n "$offenders" ]; then
+            echo "ERROR: ChainsList embedder tx type(s) missing .MustVerify() call."
+            echo "Every tx type T with a Chains() accessor AND a Verify()"
+            echo "method MUST call list.MustVerify() inside that Verify()"
+            echo "to enforce FxIDsLen + reserved-bytes invariants"
+            echo "(R6-4 / R6V5 / R7V8)."
+            echo ""
+            echo "Either wire the gate or document why it's safe to skip"
+            echo "inline with a clear comment."
+            echo ""
+            echo -e "Offenders:${offenders}"
+            exit 1
+          fi
+          echo "Audit clean: all ChainsList embedders call MustVerify()"
