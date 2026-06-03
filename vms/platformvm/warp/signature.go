@@ -21,17 +21,17 @@ import (
 var (
 	_ Signature = (*BitSetSignature)(nil)
 	_ Signature = (*CoronaSignature)(nil)
-	_ Signature = (*HybridBLSRTSignature)(nil) // Deprecated: use CoronaSignature
+	_ Signature = (*HybridBLSCoronaSignature)(nil) // Deprecated: use CoronaSignature
 
-	ErrInvalidBitSet      = errors.New("bitset is invalid")
-	ErrInsufficientWeight = errors.New("signature weight is insufficient")
-	ErrInvalidSignature   = errors.New("signature is invalid")
-	ErrParseSignature     = errors.New("failed to parse signature")
-	ErrInvalidRTSignature = errors.New("corona signature is invalid")
-	ErrMissingRTPublicKey = errors.New("missing corona public key for validator")
-	ErrHybridVerifyFailed = errors.New("hybrid signature verification failed")
-	ErrDecryptionFailed   = errors.New("ML-KEM decryption failed")
-	ErrInvalidCiphertext  = errors.New("invalid ciphertext")
+	ErrInvalidBitSet          = errors.New("bitset is invalid")
+	ErrInsufficientWeight     = errors.New("signature weight is insufficient")
+	ErrInvalidSignature       = errors.New("signature is invalid")
+	ErrParseSignature         = errors.New("failed to parse signature")
+	ErrInvalidCoronaSignature = errors.New("corona signature is invalid")
+	ErrMissingCoronaPublicKey = errors.New("missing corona public key for validator")
+	ErrHybridVerifyFailed     = errors.New("hybrid signature verification failed")
+	ErrDecryptionFailed       = errors.New("ML-KEM decryption failed")
+	ErrInvalidCiphertext      = errors.New("invalid ciphertext")
 )
 
 type Signature interface {
@@ -234,7 +234,7 @@ const (
 // - Post-quantum secure (based on LWE hardness)
 // - Paper: https://eprint.iacr.org/2024/1113
 //
-// Replaces: BitSetSignature (BLS), HybridBLSRTSignature
+// Replaces: BitSetSignature (BLS), HybridBLSCoronaSignature
 // Security: Post-quantum secure (LWE-based)
 // Size: Variable based on threshold parameters
 type CoronaSignature struct {
@@ -290,7 +290,7 @@ func (s *CoronaSignature) Verify(
 	rtPubKeys := make([][]byte, 0, len(signers))
 	for _, signer := range signers {
 		if len(signer.CoronaPubKey) == 0 {
-			return fmt.Errorf("%w: validator missing RT key", ErrMissingRTPublicKey)
+			return fmt.Errorf("%w: validator missing Corona key", ErrMissingCoronaPublicKey)
 		}
 		rtPubKeys = append(rtPubKeys, signer.CoronaPubKey)
 	}
@@ -298,12 +298,12 @@ func (s *CoronaSignature) Verify(
 	// Aggregate the Corona public keys for threshold verification
 	aggregatedPK, err := AggregateCoronaPublicKeys(rtPubKeys)
 	if err != nil {
-		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
+		return fmt.Errorf("failed to aggregate Corona public keys: %w", err)
 	}
 
 	// Verify the Corona (LWE-based) signature
 	if !VerifyCoronaSignature(aggregatedPK, msg.Bytes(), s.Signature) {
-		return ErrInvalidRTSignature
+		return ErrInvalidCoronaSignature
 	}
 
 	return nil
@@ -575,7 +575,7 @@ func generateSecureRandom(length int) ([]byte, error) {
 // Deprecated: Use CoronaSignature type which handles variable-length signatures.
 const CoronaSignatureLen = 3309
 
-// HybridBLSRTSignature implements a quantum-safe hybrid signature combining:
+// HybridBLSCoronaSignature implements a quantum-safe hybrid signature combining:
 // - BLS aggregate signatures (classical security, compact)
 // - Corona lattice signatures (post-quantum security, larger)
 //
@@ -584,9 +584,16 @@ const CoronaSignatureLen = 3309
 //
 // Migration path:
 // 1. Pre-quantum: BLS-only (BitSetSignature)
-// 2. Transition: HybridBLSRTSignature (both required)
+// 2. Transition: HybridBLSCoronaSignature (both required)
 // 3. Post-quantum: Corona-only (future)
-type HybridBLSRTSignature struct {
+//
+// Wire format: this type is the 4th type registered in the warp codec
+// (codec.go), which assigns it linearcodec typeID 0x03. The typeID, field
+// order, and field encodings are part of the on-chain wire format and
+// MUST NOT change. The Go-side type name is metadata only and was renamed
+// from HybridBLSRTSignature in the threshold sweep; wire bytes are
+// byte-equal pre/post rename.
+type HybridBLSCoronaSignature struct {
 	// Signers is a big-endian byte slice encoding which validators signed
 	Signers []byte `serialize:"true"`
 
@@ -599,12 +606,12 @@ type HybridBLSRTSignature struct {
 
 	// CoronaPublicKeys contains the Corona public keys for each signer
 	// in the same order as indicated by the Signers bitset
-	// This is needed because validators may have different RT keys than BLS keys
+	// This is needed because validators may have different Corona keys than BLS keys
 	CoronaPublicKeys [][]byte `serialize:"true"`
 }
 
 // NumSigners returns the number of validators that participated in signing
-func (s *HybridBLSRTSignature) NumSigners() (int, error) {
+func (s *HybridBLSCoronaSignature) NumSigners() (int, error) {
 	signerIndices := set.BitsFromBytes(s.Signers)
 	if len(signerIndices.Bytes()) != len(s.Signers) {
 		return 0, ErrInvalidBitSet
@@ -614,7 +621,7 @@ func (s *HybridBLSRTSignature) NumSigners() (int, error) {
 
 // Verify validates both BLS and Corona signatures
 // Both MUST be valid for the hybrid signature to be accepted
-func (s *HybridBLSRTSignature) Verify(
+func (s *HybridBLSCoronaSignature) Verify(
 	msg *UnsignedMessage,
 	networkID uint32,
 	validators CanonicalValidatorSet,
@@ -657,7 +664,7 @@ func (s *HybridBLSRTSignature) Verify(
 }
 
 // verifyBLS verifies the BLS aggregate signature
-func (s *HybridBLSRTSignature) verifyBLS(msg *UnsignedMessage, signers []*Validator) error {
+func (s *HybridBLSCoronaSignature) verifyBLS(msg *UnsignedMessage, signers []*Validator) error {
 	// Parse the aggregate BLS signature
 	aggSig, err := bls.SignatureFromBytes(s.BLSSignature[:])
 	if err != nil {
@@ -679,35 +686,35 @@ func (s *HybridBLSRTSignature) verifyBLS(msg *UnsignedMessage, signers []*Valida
 }
 
 // verifyCorona verifies the Corona lattice-based signature
-func (s *HybridBLSRTSignature) verifyCorona(msg *UnsignedMessage, signers []*Validator) error {
-	// Validate we have RT public keys for all signers
+func (s *HybridBLSCoronaSignature) verifyCorona(msg *UnsignedMessage, signers []*Validator) error {
+	// Validate we have Corona public keys for all signers
 	if len(s.CoronaPublicKeys) != len(signers) {
 		return fmt.Errorf("%w: got %d keys, expected %d",
-			ErrMissingRTPublicKey, len(s.CoronaPublicKeys), len(signers))
+			ErrMissingCoronaPublicKey, len(s.CoronaPublicKeys), len(signers))
 	}
 
 	// Validate Corona signature is present
 	if len(s.CoronaSignature) == 0 {
-		return ErrInvalidRTSignature
+		return ErrInvalidCoronaSignature
 	}
 
 	// Aggregate the Corona public keys
-	aggregatedRTPK, err := AggregateCoronaPublicKeys(s.CoronaPublicKeys)
+	aggregatedCoronaPK, err := AggregateCoronaPublicKeys(s.CoronaPublicKeys)
 	if err != nil {
-		return fmt.Errorf("failed to aggregate RT public keys: %w", err)
+		return fmt.Errorf("failed to aggregate Corona public keys: %w", err)
 	}
 
 	// Verify the Corona signature
 	unsignedBytes := msg.Bytes()
-	if !VerifyCoronaSignature(aggregatedRTPK, unsignedBytes, s.CoronaSignature) {
-		return ErrInvalidRTSignature
+	if !VerifyCoronaSignature(aggregatedCoronaPK, unsignedBytes, s.CoronaSignature) {
+		return ErrInvalidCoronaSignature
 	}
 
 	return nil
 }
 
-func (s *HybridBLSRTSignature) String() string {
-	return fmt.Sprintf("HybridBLSRTSignature(Signers = %x, BLS = %x, RT = %x)",
+func (s *HybridBLSCoronaSignature) String() string {
+	return fmt.Sprintf("HybridBLSCoronaSignature(Signers = %x, BLS = %x, Corona = %x)",
 		s.Signers, s.BLSSignature, s.CoronaSignature[:min(32, len(s.CoronaSignature))])
 }
 

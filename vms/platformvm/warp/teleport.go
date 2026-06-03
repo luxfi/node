@@ -46,7 +46,7 @@ var (
 // Warp 1.5 supports three signature types:
 // - BitSetSignature: Classical BLS (legacy)
 // - CoronaSignature: Quantum-safe (recommended)
-// - HybridBLSRTSignature: BLS+RT hybrid (deprecated)
+// - HybridBLSCoronaSignature: BLS+Corona hybrid (deprecated)
 type TeleportMessage struct {
 	// Version is the Teleport protocol version
 	Version uint8 `serialize:"true"`
