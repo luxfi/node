@@ -66,6 +66,9 @@ var Registry = []ChainSpec{
 	{Letter: "Z", VMID: constants.ZKVMID, Aliases: []string{"zk", "zkvm"}, Name: "Z-Chain"},
 	{Letter: "G", VMID: constants.GraphVMID, Aliases: []string{"graph", "graphvm", "dgraph"}, Name: "G-Chain"},
 	{Letter: "K", VMID: constants.KeyVMID, Aliases: []string{"key", "keyvm"}, Name: "K-Chain"},
+	{Letter: "I", VMID: constants.IdentityVMID, Aliases: []string{"identity", "identityvm", "id"}, Name: "I-Chain"},
+	{Letter: "O", VMID: constants.OracleVMID, Aliases: []string{"oracle", "oraclevm", "feed"}, Name: "O-Chain"},
+	{Letter: "R", VMID: constants.RelayVMID, Aliases: []string{"relay", "relayvm", "msg"}, Name: "R-Chain"},
 }
 
 // specsByLetter is an O(1) lookup built once at package init.
