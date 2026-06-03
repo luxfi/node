@@ -1,0 +1,69 @@
+name: zap-audit
+
+# LP-023 R6-6: AddressList.At() must remain non-production until owner-model
+# migration / executor-side equivalence is proven. This workflow fails the
+# PR if any new production caller is introduced.
+#
+# Allowed callers:
+#   - *_test.go         — tests
+#   - tx_verify.go      — executor-side SyntacticVerify boundary
+#   - owner.go          — the type's own implementation
+#   - audit_test.go     — the mirroring local test that reproduces this gate
+#
+# To LEGITIMATELY introduce a production caller:
+#   1. Land the owner-model migration that retires AddressList.At() OR
+#   2. Add the caller's file to the allowlist below AND document the
+#      equivalence proof in vms/platformvm/txs/zap_native/owner.go.
+#
+# Local reproduction:
+#   cd vms/platformvm/txs/zap_native && go test -run TestAuditGate -v
+
+on:
+  pull_request:
+    paths:
+      - "vms/platformvm/txs/zap_native/**"
+      - ".github/workflows/zap-audit.yml"
+  push:
+    branches: [main, dev]
+    paths:
+      - "vms/platformvm/txs/zap_native/**"
+      - ".github/workflows/zap-audit.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  addresslist-production-gate:
+    name: AddressList.At() — no production consumers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Grep for production consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          hits=$(grep -rn 'AddressList\.At(' --include='*.go' vms/platformvm/txs/zap_native/ \
+            | grep -vE '(_test\.go|tx_verify\.go|owner\.go)' \
+            || true)
+          if [ -n "$hits" ]; then
+            echo "ERROR: New production consumer(s) of AddressList.At() found."
+            echo "AddressList is forward-looking — see"
+            echo "  vms/platformvm/txs/zap_native/owner.go"
+            echo "for the consumer-safety contract."
+            echo ""
+            echo "If you have a legitimate production use, either:"
+            echo "  1. Land the owner-model migration that retires AddressList.At, OR"
+            echo "  2. Add the file to the allowlist in"
+            echo "     .github/workflows/zap-audit.yml AND"
+            echo "     vms/platformvm/txs/zap_native/audit_test.go"
+            echo "     with the equivalence proof recorded in owner.go."
+            echo ""
+            echo "Offenders:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "Audit clean: zero AddressList.At() production consumers"
