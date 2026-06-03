@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
+	"github.com/luxfi/node/vms/wire"
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -743,16 +743,36 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 			}
 		}
 
+		// LP-023 batch 5 v3.8 V3: Owner accessors are read into the
+		// stakerAttributes cache. Verify them as Verifiable before
+		// caching so a downstream consumer can never treat a
+		// wire-permissive Owner (threshold==0 or threshold>len(addrs))
+		// as an authorization quorum source. The Verify path is the
+		// only canonical gate on fx.Owner.
+		validationRewardsOwner := stakerTx.ValidationRewardsOwner()
+		if err := validationRewardsOwner.Verify(); err != nil {
+			return nil, fmt.Errorf("loadStakerTxAttributes: ValidationRewardsOwner failed Verify: %w", err)
+		}
+		delegationRewardsOwner := stakerTx.DelegationRewardsOwner()
+		if err := delegationRewardsOwner.Verify(); err != nil {
+			return nil, fmt.Errorf("loadStakerTxAttributes: DelegationRewardsOwner failed Verify: %w", err)
+		}
 		attr = &stakerAttributes{
 			shares:                 stakerTx.Shares(),
-			validationRewardsOwner: stakerTx.ValidationRewardsOwner(),
-			delegationRewardsOwner: stakerTx.DelegationRewardsOwner(),
+			validationRewardsOwner: validationRewardsOwner,
+			delegationRewardsOwner: delegationRewardsOwner,
 			proofOfPossession:      pop,
 		}
 
 	case txs.DelegatorTx:
+		// LP-023 batch 5 v3.8 V3: gate Owner via Verifiable before
+		// caching. See the ValidatorTx branch above for rationale.
+		rewardsOwner := stakerTx.RewardsOwner()
+		if err := rewardsOwner.Verify(); err != nil {
+			return nil, fmt.Errorf("loadStakerTxAttributes: RewardsOwner failed Verify: %w", err)
+		}
 		attr = &stakerAttributes{
-			rewardsOwner: stakerTx.RewardsOwner(),
+			rewardsOwner: rewardsOwner,
 		}
 
 	default:
@@ -1072,25 +1092,25 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 }
 
 func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapitypes.APIL1Validator, error) {
-	var remainingBalanceOwner message.PChainOwner
-	if _, err := txs.Codec.Unmarshal(vdr.RemainingBalanceOwner, &remainingBalanceOwner); err != nil {
+	remainingBalanceOwner, err := wire.WrapPChainOwner(vdr.RemainingBalanceOwner)
+	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling remaining balance owner: %w", err)
 	}
 	remainingBalanceAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
-		Threshold: remainingBalanceOwner.Threshold,
-		Addrs:     remainingBalanceOwner.Addresses,
+		Threshold: remainingBalanceOwner.Threshold(),
+		Addrs:     remainingBalanceOwner.AddressList().All(),
 	})
 	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed formatting remaining balance owner: %w", err)
 	}
 
-	var deactivationOwner message.PChainOwner
-	if _, err := txs.Codec.Unmarshal(vdr.DeactivationOwner, &deactivationOwner); err != nil {
+	deactivationOwner, err := wire.WrapPChainOwner(vdr.DeactivationOwner)
+	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling deactivation owner: %w", err)
 	}
 	deactivationAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
-		Threshold: deactivationOwner.Threshold,
-		Addrs:     deactivationOwner.Addresses,
+		Threshold: deactivationOwner.Threshold(),
+		Addrs:     deactivationOwner.AddressList().All(),
 	})
 	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed formatting deactivation owner: %w", err)

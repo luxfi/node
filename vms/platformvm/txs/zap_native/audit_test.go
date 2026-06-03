@@ -4,7 +4,12 @@
 package zap_native
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -44,88 +49,267 @@ func TestAuditGate_AddressListNoProductionConsumers(t *testing.T) {
 	}
 }
 
+// astParseFile parses a Go source file and returns its AST. fatal-fails the
+// test on parse error so audit-gate failures surface as real test failures
+// rather than silent skips.
+func astParseFile(t *testing.T, path string) (*token.FileSet, *ast.File) {
+	t.Helper()
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse %s: %v", path, err)
+	}
+	return fset, f
+}
+
+// recvTypeName returns the unqualified type name of a method receiver, or
+// "" if the FuncDecl has no receiver or the receiver type is not a bare
+// *ast.Ident (e.g. `func (t *T) M()` returns "T"). The audit gates use
+// the bare identifier (no pointer) because every zap_native tx type is a
+// value receiver.
+func recvTypeName(fd *ast.FuncDecl) string {
+	if fd == nil || fd.Recv == nil || len(fd.Recv.List) != 1 {
+		return ""
+	}
+	expr := fd.Recv.List[0].Type
+	// Strip pointer indirection if present.
+	if star, ok := expr.(*ast.StarExpr); ok {
+		expr = star.X
+	}
+	id, ok := expr.(*ast.Ident)
+	if !ok {
+		return ""
+	}
+	return id.Name
+}
+
+// findMethod returns the FuncDecl for `func (... T) name()` in the file, or
+// nil if not found. The lookup matches receiver type name + method name only;
+// the receiver variable name (`t`, `r`, `_`, etc.) is ignored.
+func findMethod(f *ast.File, recvType, methodName string) *ast.FuncDecl {
+	for _, decl := range f.Decls {
+		fd, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if fd.Name == nil || fd.Name.Name != methodName {
+			continue
+		}
+		if recvTypeName(fd) != recvType {
+			continue
+		}
+		return fd
+	}
+	return nil
+}
+
+// hasSelectorCall reports whether any *ast.CallExpr in node's subtree is
+// either of:
+//
+//   - SelectorExpr with .Sel.Name == selector       (e.g. `x.MustVerify()`)
+//   - Ident with .Name == selector                  (e.g. `MustVerify()`,
+//     a bare package-local function call — used for free functions; not
+//     today's pattern in tx_verify.go but here for completeness)
+//
+// Crucially, this walks the AST — string literals containing "MustVerify"
+// and comments containing "// MustVerify" do NOT match because the parser
+// produces neither *ast.CallExpr nor *ast.SelectorExpr / *ast.Ident nodes
+// for them. *ast.BasicLit holds the literal, *ast.CommentGroup holds the
+// comment — both are skipped by the call-site scan.
+func hasSelectorCall(node ast.Node, selector string) bool {
+	if node == nil {
+		return false
+	}
+	var found bool
+	ast.Inspect(node, func(n ast.Node) bool {
+		if found {
+			return false
+		}
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		switch fn := call.Fun.(type) {
+		case *ast.SelectorExpr:
+			if fn.Sel != nil && fn.Sel.Name == selector {
+				found = true
+				return false
+			}
+		case *ast.Ident:
+			if fn.Name == selector {
+				found = true
+				return false
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// collectMethodsOnFiles walks every .go file in dir (non-test only by
+// default; if includeTests is true, *_test.go files are included) and
+// returns the set of receiver type names for which a method matching
+// methodPred exists. The methodPred lets the caller match by method name
+// AND a return-tuple shape — used by the Owner-bearing gate to enumerate
+// types that expose the (uint32, uint64, ids.ShortID) tuple specifically.
+func collectMethodsOnFiles(t *testing.T, dir string, includeTests bool, methodPred func(fd *ast.FuncDecl) bool) map[string]struct{} {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir %s: %v", dir, err)
+	}
+	out := make(map[string]struct{})
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasSuffix(name, ".go") {
+			continue
+		}
+		if !includeTests && strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		_, f := astParseFile(t, filepath.Join(dir, name))
+		for _, decl := range f.Decls {
+			fd, ok := decl.(*ast.FuncDecl)
+			if !ok {
+				continue
+			}
+			if !methodPred(fd) {
+				continue
+			}
+			T := recvTypeName(fd)
+			if T == "" {
+				continue
+			}
+			out[T] = struct{}{}
+		}
+	}
+	return out
+}
+
+// returnsOwnerTuple reports whether the FuncDecl returns exactly the
+// (uint32, uint64, ids.ShortID) tuple. The audit gates use this to find
+// embedded-Owner tuple accessors regardless of method name (Owner /
+// RewardsOwner / ValidationRewardsOwner / DelegationRewardsOwner all
+// share the same return shape).
+func returnsOwnerTuple(fd *ast.FuncDecl) bool {
+	if fd == nil || fd.Type == nil || fd.Type.Results == nil {
+		return false
+	}
+	results := fd.Type.Results.List
+	if len(results) != 3 {
+		return false
+	}
+	// Each list entry may carry multiple names if grouped — here we
+	// expect 3 separate result types.
+	if len(results[0].Names) > 0 || len(results[1].Names) > 0 || len(results[2].Names) > 0 {
+		// Named results are allowed; the audit just needs the type
+		// shape. Fall through.
+	}
+	want := []string{"uint32", "uint64", "ShortID"}
+	got := []string{
+		exprIdentName(results[0].Type),
+		exprIdentName(results[1].Type),
+		exprIdentName(results[2].Type),
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// exprIdentName returns the unqualified identifier name of an expression,
+// handling bare idents and selector exprs (e.g. `ids.ShortID` -> "ShortID").
+func exprIdentName(e ast.Expr) string {
+	switch v := e.(type) {
+	case *ast.Ident:
+		return v.Name
+	case *ast.SelectorExpr:
+		if v.Sel != nil {
+			return v.Sel.Name
+		}
+	}
+	return ""
+}
+
+// returnsTypeName reports whether the FuncDecl returns exactly one value
+// whose unqualified type name equals want. Used to enumerate Chains() and
+// Validators() accessors.
+func returnsTypeName(fd *ast.FuncDecl, want ...string) bool {
+	if fd == nil || fd.Type == nil || fd.Type.Results == nil {
+		return false
+	}
+	results := fd.Type.Results.List
+	if len(results) != 1 {
+		return false
+	}
+	got := exprIdentName(results[0].Type)
+	for _, w := range want {
+		if got == w {
+			return true
+		}
+	}
+	return false
+}
+
 // TestAuditGate_ChainsListEmbeddersCallMustVerify mirrors the
 // chainslist-verify-gate workflow job. Every tx type that EMBEDS a
 // ChainsList (returns it from an accessor and exposes it through a
 // per-tx Verify() body) MUST call .MustVerify() inside that Verify().
 //
 // LP-023 R7V8: the receiver-name rename Verify → MustVerify makes the
-// gate grep-able from CI. The previous Verify() name collided with
+// gate AST-walkable from CI. The previous Verify() name collided with
 // the tx-level Verify() convention and invited the reader to assume
 // "the tx Verify already covered this" — wrong, because the tx-level
 // Verify is responsible for orchestrating the per-field gates, not
 // the list-level walk.
 //
-// Heuristic: enumerate tx types that own a ChainsList-returning Chains()
-// accessor. For each such tx type T, confirm that .MustVerify() is
-// called inside ANY function with a receiver of (T) or (T )
-// (the per-tx Verify body, which by convention lives in tx_verify.go).
-// The check is whole-package because tx_verify.go centralizes the
-// Verify methods for the package — embedder file (type definition)
-// and Verify file (gate body) are decoupled by design.
-//
-// Allowlist mechanism: a file may legitimately skip the call (e.g.
-// the type definition itself, or audit_test.go which would self-match).
-// Document any exception inline.
+// V2 fix (LP-023 batch 5 v3.8): the previous gate used
+// `strings.Contains(body, ".MustVerify(")` which a string literal
+// `_ = ".MustVerify("` or a `// .MustVerify(` comment would silently
+// satisfy. The current implementation parses tx_verify.go via
+// go/parser and walks *ast.CallExpr nodes — strings and comments do
+// not produce CallExpr nodes, so the bypass surface is closed.
 //
 // Local repro: `cd vms/platformvm/txs/zap_native && go test -run
 // TestAuditGate_ChainsListEmbeddersCallMustVerify -v`
 func TestAuditGate_ChainsListEmbeddersCallMustVerify(t *testing.T) {
-	// Step 1: enumerate tx types that EMBED ChainsList. A tx type T is
-	// an embedder if it has an accessor like `func (t T) Chains()
-	// ChainsListView` defined in a production file.
-	out, err := exec.Command("sh", "-c",
-		`grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) Chains\(\) (ChainsList|ChainsListView|BoundChainsList)' `+
-			`--include='*.go' . `+
-			`| grep -vE '(_test\.go)' `+
-			`| sed -E 's/^func \(t ([A-Za-z0-9_]+)\) Chains.*/\1/' `+
-			`| sort -u || true`,
-	).Output()
-	if err != nil {
-		t.Fatalf("embedder-type grep exec failed: %v", err)
-	}
-	embedderTypes := strings.Fields(strings.TrimSpace(string(out)))
-	if len(embedderTypes) == 0 {
+	// Step 1: enumerate ChainsList embedder tx types via AST. An embedder
+	// is any production type T with a method `func (t T) Chains()
+	// ChainsList | ChainsListView | BoundChainsList`.
+	embedders := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		if fd.Name == nil || fd.Name.Name != "Chains" {
+			return false
+		}
+		return returnsTypeName(fd, "ChainsList", "ChainsListView", "BoundChainsList")
+	})
+	if len(embedders) == 0 {
 		t.Log("Audit clean: zero ChainsList embedder tx types")
 		return
 	}
 
-	// Step 2: for each embedder type T, scan the package for a
-	// MustVerify() call inside any method body whose receiver
-	// includes T. The simplest grep: look for the package-wide
-	// presence of `.MustVerify(` AND a method `func (...T) Verify()`.
-	// Since this package centralizes Verify in tx_verify.go, we just
-	// confirm that EVERY embedder T appears in a function-receiver
-	// line within tx_verify.go AND that file contains `.MustVerify(`.
+	// Step 2: parse tx_verify.go and for each embedder T confirm
+	// `(t T) Verify() error` exists AND its body contains a real
+	// MustVerify() CallExpr.
+	_, verifyFile := astParseFile(t, "tx_verify.go")
+
 	var offenders []string
-	for _, T := range embedderTypes {
-		// (a) confirm a Verify() method for T exists in tx_verify.go.
-		methodRe := `func \([a-z]+ ` + T + `\) Verify\(\)`
-		hits, err := exec.Command("sh", "-c",
-			`grep -E '`+methodRe+`' tx_verify.go || true`,
-		).Output()
-		if err != nil {
-			t.Fatalf("method grep exec failed for %s: %v", T, err)
+	for T := range embedders {
+		fd := findMethod(verifyFile, T, "Verify")
+		if fd == nil {
+			// No Verify() at all — the gate is a no-op for embedders
+			// that don't expose Verify(). Mirror the legacy
+			// behavior: continue, do not fail.
+			continue
 		}
-		hasVerify := strings.TrimSpace(string(hits)) != ""
-
-		// (b) confirm the same file calls .MustVerify().
-		mvOut, err := exec.Command("sh", "-c",
-			`grep -l '\.MustVerify(' tx_verify.go || true`,
-		).Output()
-		if err != nil {
-			t.Fatalf("MustVerify grep exec failed for %s: %v", T, err)
-		}
-		hasMV := strings.TrimSpace(string(mvOut)) != ""
-
-		if hasVerify && !hasMV {
+		if !hasSelectorCall(fd.Body, "MustVerify") {
 			offenders = append(offenders,
-				T+" (Verify() in tx_verify.go does not call .MustVerify())")
+				T+" (Verify() in tx_verify.go does not call .MustVerify() — AST walk)")
 		}
-		// If the embedder type has NO Verify() method at all, it can't
-		// have skipped MustVerify by definition. The gate is a no-op
-		// for embedders that don't expose Verify() (e.g. future tx
-		// types that punt the gate to a follow-up).
 	}
 
 	if len(offenders) > 0 {
@@ -134,10 +318,8 @@ func TestAuditGate_ChainsListEmbeddersCallMustVerify(t *testing.T) {
 				"Every tx type T that has Chains() accessor AND a Verify()\n"+
 				"method MUST call list.MustVerify() inside that Verify()\n"+
 				"to enforce the FxIDsLen + reserved-bytes invariants\n"+
-				"(R6-4 / R6V5 / R7V8).\n"+
-				"\n"+
-				"Either wire the gate or document why it's safe to skip\n"+
-				"inline with a clear comment.\n"+
+				"(R6-4 / R6V5 / R7V8). AST walker confirms a REAL call site\n"+
+				"exists (not a string literal, not a comment).\n"+
 				"\n"+
 				"Offenders:\n%s",
 			strings.Join(offenders, "\n"),
@@ -152,77 +334,34 @@ func TestAuditGate_ChainsListEmbeddersCallMustVerify(t *testing.T) {
 // that Verify() to enforce the 5 sub-field structural floor
 // invariants (cap, weight, BLS-non-zero, expiry-non-zero).
 //
-// Parallel of TestAuditGate_ChainsListEmbeddersCallMustVerify; LP-023
-// batch 5 v3.7.
+// V2 fix (LP-023 batch 5 v3.8): AST-based call-site walk; see
+// TestAuditGate_ChainsListEmbeddersCallMustVerify docstring for the
+// rationale.
 //
 // Local repro: `cd vms/platformvm/txs/zap_native && go test -run
 // TestAuditGate_ValidatorsListEmbeddersCallMustVerify -v`
 func TestAuditGate_ValidatorsListEmbeddersCallMustVerify(t *testing.T) {
-	// Step 1: enumerate tx types that EMBED ValidatorsList. A tx type T
-	// is an embedder if it has an accessor like
-	//   func (t T) Validators() ValidatorsList
-	// defined in a production file.
-	out, err := exec.Command("sh", "-c",
-		`grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) Validators\(\) ValidatorsList' `+
-			`--include='*.go' . `+
-			`| grep -vE '(_test\.go)' `+
-			`| sed -E 's/^func \(t ([A-Za-z0-9_]+)\) Validators.*/\1/' `+
-			`| sort -u || true`,
-	).Output()
-	if err != nil {
-		t.Fatalf("embedder-type grep exec failed: %v", err)
-	}
-	embedderTypes := strings.Fields(strings.TrimSpace(string(out)))
-	if len(embedderTypes) == 0 {
+	embedders := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		if fd.Name == nil || fd.Name.Name != "Validators" {
+			return false
+		}
+		return returnsTypeName(fd, "ValidatorsList")
+	})
+	if len(embedders) == 0 {
 		t.Log("Audit clean: zero ValidatorsList embedder tx types")
 		return
 	}
 
-	// Step 2: for each embedder T, confirm the Verify body in
-	// tx_verify.go calls .MustVerify() on the validators view. The
-	// search is body-bounded by brace nesting (the same heuristic as
-	// the Owner-bearing audit).
-	verifyBytes, err := exec.Command("cat", "tx_verify.go").Output()
-	if err != nil {
-		t.Fatalf("read tx_verify.go failed: %v", err)
-	}
-	verifySrc := string(verifyBytes)
-
+	_, verifyFile := astParseFile(t, "tx_verify.go")
 	var offenders []string
-	for _, T := range embedderTypes {
-		methodOpen := "func (t " + T + ") Verify() error {"
-		startIdx := strings.Index(verifySrc, methodOpen)
-		if startIdx < 0 {
-			// No Verify() at all — the per-tx audit covers this
-			// elsewhere; nothing to enforce on the MustVerify side.
+	for T := range embedders {
+		fd := findMethod(verifyFile, T, "Verify")
+		if fd == nil {
 			continue
 		}
-		braceDepth := 0
-		bodyStart := startIdx + len(methodOpen)
-		bodyEnd := -1
-		for i := bodyStart; i < len(verifySrc); i++ {
-			switch verifySrc[i] {
-			case '{':
-				braceDepth++
-			case '}':
-				if braceDepth == 0 {
-					bodyEnd = i
-					i = len(verifySrc)
-				} else {
-					braceDepth--
-				}
-			}
-		}
-		if bodyEnd < 0 {
+		if !hasSelectorCall(fd.Body, "MustVerify") {
 			offenders = append(offenders,
-				T+" (Verify() body has unmatched braces — parse aborted)")
-			continue
-		}
-		body := verifySrc[bodyStart:bodyEnd]
-		// vals.MustVerify() / t.Validators().MustVerify() / etc.
-		if !strings.Contains(body, ".MustVerify(") {
-			offenders = append(offenders,
-				T+" (Verify() body does not call validators.MustVerify())")
+				T+" (Verify() in tx_verify.go does not call .MustVerify() — AST walk)")
 		}
 	}
 
@@ -232,7 +371,8 @@ func TestAuditGate_ValidatorsListEmbeddersCallMustVerify(t *testing.T) {
 				"Every tx type T with a Validators() accessor AND a Verify()\n"+
 				"method MUST call list.MustVerify() inside that Verify()\n"+
 				"to enforce the 5 structural floor invariants (cap, weight,\n"+
-				"BLS-non-zero, expiry-non-zero).\n"+
+				"BLS-non-zero, expiry-non-zero). AST walker confirms a REAL\n"+
+				"call site exists (not a string literal, not a comment).\n"+
 				"\n"+
 				"Offenders:\n%s",
 			strings.Join(offenders, "\n"),
@@ -241,124 +381,88 @@ func TestAuditGate_ValidatorsListEmbeddersCallMustVerify(t *testing.T) {
 }
 
 // TestAuditGate_OwnerBearingTxCallsSyntacticVerify pins LP-023 R4V7 batch
-// 5 v3.7: every tx type with an embedded Owner accessor (any function
+// 5 v3.8: every tx type with an embedded Owner accessor (any function
 // named Owner / RewardsOwner / ValidationRewardsOwner /
 // DelegationRewardsOwner returning the (threshold, locktime, address)
 // tuple) MUST call SyntacticVerify on the reconstructed OwnerStub inside
 // its per-tx Verify() body. The wire layer is permissive by design —
 // threshold == 0 or threshold > addrcount slips through parseAndCheckKind;
-// the only gate is the executor-side SyntacticVerify hook. Without this
-// audit, a future tx type could expose an Owner accessor, ship a
-// half-finished Verify() that reads Threshold() directly, and silently
-// admit a threshold=0 authorization bypass.
+// the only gate is the executor-side SyntacticVerify hook.
 //
-// Heuristic: enumerate Owner-bearing tx types via grep on production files
-// for `func (t T) (Owner|RewardsOwner|ValidationRewardsOwner|
-// DelegationRewardsOwner)() (uint32, uint64, ids.ShortID)`. For each such
-// type T:
-//
-//   - Confirm tx_verify.go has `func (t T) Verify() error` (every
-//     Owner-bearing type MUST surface Verify; skip is documented inline
-//     with the reason).
-//   - Confirm the Verify body invokes SyntacticVerify on the reconstructed
-//     OwnerStub. The reconstruction goes through stubFromTuple in
-//     tx_verify.go; the call site signature is `stubFromTuple(...)` and
-//     then `.SyntacticVerify()` on the result. A heuristic scan for the
-//     bare token `SyntacticVerify` inside the Verify function body
-//     suffices because the helper exists for one and only one purpose.
+// V2 fix (LP-023 batch 5 v3.8): AST-based call-site walk. The previous
+// `strings.Contains(body, "SyntacticVerify")` heuristic was defeated by
+// string literals containing the word and by commented-out call sites.
+// The current implementation parses tx_verify.go via go/parser and walks
+// *ast.CallExpr nodes — strings and comments do not produce CallExpr
+// nodes, so the bypass surface is closed.
 //
 // Local repro: `cd vms/platformvm/txs/zap_native && go test -run
 // TestAuditGate_OwnerBearingTxCallsSyntacticVerify -v`
 func TestAuditGate_OwnerBearingTxCallsSyntacticVerify(t *testing.T) {
-	// Step 1: enumerate Owner-bearing tx types. Match `func (t T) Owner()`
-	// OR any of the named-rewards-owner accessors that return the
-	// (uint32, uint64, ids.ShortID) tuple. The grep is whole-package; the
-	// receiver-type name is extracted via sed.
-	out, err := exec.Command("sh", "-c",
-		`grep -rEoh 'func \(t [A-Z][A-Za-z0-9_]+\) (Owner|RewardsOwner|ValidationRewardsOwner|DelegationRewardsOwner)\(\) \(uint32, uint64, ids\.ShortID\)' `+
-			`--include='*.go' . `+
-			`| grep -vE '(_test\.go)' `+
-			`| sed -E 's/^func \(t ([A-Za-z0-9_]+)\).*/\1/' `+
-			`| sort -u || true`,
-	).Output()
-	if err != nil {
-		t.Fatalf("owner-embedder grep failed: %v", err)
+	// Step 1: enumerate Owner-bearing tx types via AST. Method name MUST
+	// be one of {Owner, RewardsOwner, ValidationRewardsOwner,
+	// DelegationRewardsOwner} AND the return tuple MUST be exactly
+	// (uint32, uint64, ids.ShortID).
+	ownerNames := map[string]struct{}{
+		"Owner":                  {},
+		"RewardsOwner":           {},
+		"ValidationRewardsOwner": {},
+		"DelegationRewardsOwner": {},
 	}
+	embedders := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		if fd.Name == nil {
+			return false
+		}
+		if _, ok := ownerNames[fd.Name.Name]; !ok {
+			return false
+		}
+		return returnsOwnerTuple(fd)
+	})
+
 	// TransferChainOwnershipTx uses OwnerThreshold/OwnerLocktime/OwnerAddress
-	// (separate accessors) instead of a single Owner() tuple. Add it
-	// explicitly so the audit covers it.
-	embedderTypes := strings.Fields(strings.TrimSpace(string(out)))
-	tcoSeen := false
-	for _, T := range embedderTypes {
-		if T == "TransferChainOwnershipTx" {
-			tcoSeen = true
-			break
+	// (separate accessors) instead of a single Owner() tuple. A type is
+	// only the TCO pattern if it has ALL THREE accessors — otherwise we'd
+	// flag TransferableOutput (which only has OwnerAddress + Threshold +
+	// Locktime accessors but no embedded Owner semantic).
+	tcoThreshold := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		return fd.Name != nil && fd.Name.Name == "OwnerThreshold"
+	})
+	tcoLocktime := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		return fd.Name != nil && fd.Name.Name == "OwnerLocktime"
+	})
+	tcoAddress := collectMethodsOnFiles(t, ".", false, func(fd *ast.FuncDecl) bool {
+		return fd.Name != nil && fd.Name.Name == "OwnerAddress"
+	})
+	for T := range tcoThreshold {
+		if _, hasLT := tcoLocktime[T]; !hasLT {
+			continue
 		}
-	}
-	if !tcoSeen {
-		// Confirm the type actually exposes OwnerThreshold/Locktime/Address.
-		hits, _ := exec.Command("sh", "-c",
-			`grep -El 'func \(t TransferChainOwnershipTx\) (OwnerThreshold|OwnerLocktime|OwnerAddress)\(\)' `+
-				`--include='*.go' . || true`,
-		).Output()
-		if strings.TrimSpace(string(hits)) != "" {
-			embedderTypes = append(embedderTypes, "TransferChainOwnershipTx")
+		if _, hasAD := tcoAddress[T]; !hasAD {
+			continue
 		}
+		embedders[T] = struct{}{}
 	}
-	if len(embedderTypes) == 0 {
+
+	if len(embedders) == 0 {
 		t.Log("Audit clean: zero Owner-bearing tx types")
 		return
 	}
 
-	// Step 2: for each embedder T, confirm tx_verify.go has a Verify()
-	// method AND its body invokes SyntacticVerify. Because tx_verify.go
-	// is the centralized Verify file, a single grep over its content
-	// suffices to locate both the method header and the SyntacticVerify
-	// call. We extract the bounded function body and search inside it.
-	verifyBytes, err := exec.Command("cat", "tx_verify.go").Output()
-	if err != nil {
-		t.Fatalf("read tx_verify.go failed: %v", err)
-	}
-	verifySrc := string(verifyBytes)
-
+	// Step 2: parse tx_verify.go and for each embedder T confirm
+	// `(t T) Verify() error` exists AND its body contains a real
+	// SyntacticVerify() CallExpr (selector or bare).
+	_, verifyFile := astParseFile(t, "tx_verify.go")
 	var offenders []string
-	for _, T := range embedderTypes {
-		methodOpen := "func (t " + T + ") Verify() error {"
-		startIdx := strings.Index(verifySrc, methodOpen)
-		if startIdx < 0 {
+	for T := range embedders {
+		fd := findMethod(verifyFile, T, "Verify")
+		if fd == nil {
 			offenders = append(offenders,
 				T+" (no Verify() method in tx_verify.go — Owner is consumed without gate)")
 			continue
 		}
-		// Locate the matching close brace by tracking nesting depth from
-		// the opening brace of the function. tx_verify.go is hand-written
-		// Go without raw-string literals containing '{' or '}', so a
-		// nesting counter suffices.
-		braceDepth := 0
-		bodyStart := startIdx + len(methodOpen)
-		bodyEnd := -1
-		for i := bodyStart; i < len(verifySrc); i++ {
-			switch verifySrc[i] {
-			case '{':
-				braceDepth++
-			case '}':
-				if braceDepth == 0 {
-					bodyEnd = i
-					i = len(verifySrc)
-				} else {
-					braceDepth--
-				}
-			}
-		}
-		if bodyEnd < 0 {
+		if !hasSelectorCall(fd.Body, "SyntacticVerify") {
 			offenders = append(offenders,
-				T+" (Verify() body has unmatched braces — parse aborted)")
-			continue
-		}
-		body := verifySrc[bodyStart:bodyEnd]
-		if !strings.Contains(body, "SyntacticVerify") {
-			offenders = append(offenders,
-				T+" (Verify() body does not call SyntacticVerify)")
+				T+" (Verify() body does not call SyntacticVerify — AST walk)")
 		}
 	}
 
@@ -369,12 +473,217 @@ func TestAuditGate_OwnerBearingTxCallsSyntacticVerify(t *testing.T) {
 				"  stubFromTuple(...).SyntacticVerify()\n"+
 				"OR (for multi-address Owner)\n"+
 				"  OwnerView(...).SyntacticVerify()\n"+
-				"inside its per-tx Verify() body. Skipping this gate\n"+
-				"makes a threshold=0 wire-encoded Owner a silent\n"+
-				"authorization bypass (R4V7).\n"+
+				"inside its per-tx Verify() body. AST walker confirms a REAL\n"+
+				"call site exists (not a string literal, not a comment).\n"+
+				"Skipping this gate makes a threshold=0 wire-encoded Owner a\n"+
+				"silent authorization bypass (R4V7).\n"+
 				"\n"+
 				"Offenders:\n%s",
 			strings.Join(offenders, "\n"),
 		)
+	}
+}
+
+// --- V2 positive tests: confirm the AST walker REJECTS the three known
+// bypass shapes that defeated the previous strings.Contains gate. Each
+// test synthesizes a small Go source via parser.ParseFile and asserts
+// hasSelectorCall returns the expected boolean.
+
+// TestAuditGate_ASTWalkerRejects_CommentOnly confirms that a Verify()
+// body containing ONLY a `// SyntacticVerify` comment does NOT count as
+// calling SyntacticVerify. The previous string-contains gate would
+// silently accept this.
+func TestAuditGate_ASTWalkerRejects_CommentOnly(t *testing.T) {
+	src := `package x
+type T struct{}
+func (t T) Verify() error {
+	// SyntacticVerify — placeholder comment, no real call
+	return nil
+}`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "synth.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	fd := findMethod(f, "T", "Verify")
+	if fd == nil {
+		t.Fatal("synth Verify not found")
+	}
+	if hasSelectorCall(fd.Body, "SyntacticVerify") {
+		t.Fatal("AST walker incorrectly matched a COMMENT — gate is defeated")
+	}
+}
+
+// TestAuditGate_ASTWalkerRejects_StringLiteral confirms that a Verify()
+// body whose only mention of SyntacticVerify is inside a string literal
+// does NOT count as calling SyntacticVerify.
+func TestAuditGate_ASTWalkerRejects_StringLiteral(t *testing.T) {
+	src := `package x
+type T struct{}
+func (t T) Verify() error {
+	_ = "SyntacticVerify"
+	return nil
+}`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "synth.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	fd := findMethod(f, "T", "Verify")
+	if fd == nil {
+		t.Fatal("synth Verify not found")
+	}
+	if hasSelectorCall(fd.Body, "SyntacticVerify") {
+		t.Fatal("AST walker incorrectly matched a STRING LITERAL — gate is defeated")
+	}
+}
+
+// TestAuditGate_ASTWalkerRejects_EmptyBody confirms that an empty
+// Verify() body does NOT count as calling SyntacticVerify.
+func TestAuditGate_ASTWalkerRejects_EmptyBody(t *testing.T) {
+	src := `package x
+type T struct{}
+func (t T) Verify() error {
+	return nil
+}`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "synth.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	fd := findMethod(f, "T", "Verify")
+	if fd == nil {
+		t.Fatal("synth Verify not found")
+	}
+	if hasSelectorCall(fd.Body, "SyntacticVerify") {
+		t.Fatal("AST walker incorrectly matched an EMPTY body — gate is defeated")
+	}
+}
+
+// TestAuditGate_ASTWalkerAccepts_RealCall confirms the positive case:
+// a Verify() body that contains a real `view.SyntacticVerify()` call IS
+// accepted by the AST walker. This is the canonical pattern from
+// tx_verify.go and the audit gate MUST accept it.
+func TestAuditGate_ASTWalkerAccepts_RealCall(t *testing.T) {
+	src := `package x
+type View struct{}
+func (v View) SyntacticVerify() error { return nil }
+type T struct{}
+func (t T) view() View { return View{} }
+func (t T) Verify() error {
+	if err := t.view().SyntacticVerify(); err != nil {
+		return err
+	}
+	return nil
+}`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "synth.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	fd := findMethod(f, "T", "Verify")
+	if fd == nil {
+		t.Fatal("synth Verify not found")
+	}
+	if !hasSelectorCall(fd.Body, "SyntacticVerify") {
+		t.Fatal("AST walker FAILED to match a real SelectorExpr call — gate is too strict")
+	}
+}
+
+// TestAuditGate_OwnerConsumersInExecutorAndService extends the V2 gate
+// to the cross-package call sites flagged by V3 (LP-023 batch 5 v3.8):
+// Owner-bearing tx accessors are consumed without an in-line
+// SyntacticVerify gate at:
+//
+//   - ~/work/lux/node/vms/platformvm/txs/executor/proposal_tx_executor.go
+//     lines 303, 340, 429 — calls ValidationRewardsOwner /
+//     DelegationRewardsOwner / RewardsOwner and passes the result to
+//     Fx.CreateOutput. CreateOutput goes through fx.Owner.Verify() which
+//     is the canonical gate; this audit confirms that path is taken via
+//     an explicit .Verify() call site, NOT silently dropped.
+//
+//   - ~/work/lux/node/vms/platformvm/service.go lines 748-755 — caches
+//     ValidationRewardsOwner / DelegationRewardsOwner / RewardsOwner on
+//     stakerAttributes. The cache is a READ-ONLY view; the audit confirms
+//     the caller-side path goes through Verify() before treating the
+//     Owner as authoritative.
+//
+// The gate is structural: it confirms each callsite either:
+//   (a) calls .Verify() on the Owner directly before returning / passing
+//       it onward (proposal_tx_executor.go path), OR
+//   (b) caches the Owner only after a .Verify() in the originating Verify
+//       path of the embedder tx (service.go path).
+//
+// Today both paths satisfy (a) — see proposal_tx_executor.go where each
+// call site is preceded by an explicit `if err := X.Verify(); err != nil`
+// guard. service.go inherits the gate from the embedder tx's
+// SyntacticVerify which fired at admission time. The audit pins this
+// invariant so a future edit cannot silently drop the gate.
+//
+// LP-023 batch 5 v3.8 V3 HIGH.
+func TestAuditGate_OwnerConsumersInExecutorAndService(t *testing.T) {
+	type site struct {
+		path     string
+		consumer string // function name (or "<top-level>" for non-method call sites)
+		callee   string // method name expected to be called on the consumed Owner
+	}
+	// Each site is the callsite we want the audit to confirm. The
+	// consumer function name identifies WHICH FuncDecl in the file to
+	// inspect; the callee identifies the SelectorExpr we expect to find
+	// somewhere in the consumer body — `.Verify(` (fx.Owner is a
+	// verify.Verifiable; .Verify() is the canonical method).
+	sites := []site{
+		{
+			path:     "../../../../vms/platformvm/txs/executor/proposal_tx_executor.go",
+			consumer: "rewardValidatorTx",
+			callee:   "Verify",
+		},
+		{
+			path:     "../../../../vms/platformvm/txs/executor/proposal_tx_executor.go",
+			consumer: "rewardDelegatorTx",
+			callee:   "Verify",
+		},
+		{
+			path:     "../../../../vms/platformvm/service.go",
+			consumer: "loadStakerTxAttributes",
+			callee:   "Verify",
+		},
+	}
+	for _, s := range sites {
+		_, err := os.Stat(s.path)
+		if err != nil {
+			// File missing — log and continue (audit gate is informational
+			// for cross-package consumers; the in-package gates above are
+			// the hard fail).
+			t.Logf("skip cross-package audit for %s: %v", s.path, err)
+			continue
+		}
+		_, f := astParseFile(t, s.path)
+		// The consumer can be either a method (receiver-bound FuncDecl)
+		// or a top-level function. Walk all FuncDecls and match by name.
+		var fd *ast.FuncDecl
+		for _, decl := range f.Decls {
+			d, ok := decl.(*ast.FuncDecl)
+			if !ok {
+				continue
+			}
+			if d.Name != nil && d.Name.Name == s.consumer {
+				fd = d
+				break
+			}
+		}
+		if fd == nil {
+			t.Errorf("audit: consumer %s not found in %s — extend regex or wire the gate", s.consumer, s.path)
+			continue
+		}
+		if !hasSelectorCall(fd.Body, s.callee) {
+			t.Errorf(
+				"audit: %s::%s does not call .%s() on Owner — the call site "+
+					"reads Owner from a tx accessor without an executor-side "+
+					"Verifiable gate. Either invoke .Verify() inline OR document the "+
+					"upstream Verify-path that guarantees the gate fired at admission.",
+				s.path, s.consumer, s.callee,
+			)
+		}
 	}
 }

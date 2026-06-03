@@ -4,7 +4,6 @@
 package zap_native
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/luxfi/ids"
@@ -140,6 +139,47 @@ func (r ValidatorRecord) RegistrationExpiry() uint64 {
 	return r.obj.Uint64(OffsetValidatorRecord_RegistrationExpiry)
 }
 
+// IsBLSPubKeyZero walks the 48B BLSPubKey field byte-by-byte via
+// Object.Uint8(offset) without allocating. Returns true iff every byte
+// is zero. Returns true on a zero-value record.
+//
+// LP-023 batch 5 v3.8 R4 (Red round 6 V4): the structural floor check
+// in ValidatorsList.MustVerify previously allocated 48B+96B per
+// validator via BLSPubKey()/BLSPoP() — amplification at N=1024 was
+// ~144KB on all-zero rejection. The zero-scan path keeps the floor
+// gate O(1) allocations regardless of N. The allocating accessor is
+// retained for the BLS pairing path in tx_verify.go where the verifier
+// requires a copy.
+func (r ValidatorRecord) IsBLSPubKeyZero() bool {
+	if r.obj.IsNull() {
+		return true
+	}
+	for i := 0; i < BLSPubKeySize; i++ {
+		if r.obj.Uint8(OffsetValidatorRecord_BLSPubKey+i) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// IsBLSPoPZero walks the 96B BLSPoP field byte-by-byte via
+// Object.Uint8(offset) without allocating. Returns true iff every byte
+// is zero. Returns true on a zero-value record.
+//
+// Companion to IsBLSPubKeyZero — see that docstring for LP-023 batch 5
+// v3.8 R4 (Red round 6 V4) amplification rationale.
+func (r ValidatorRecord) IsBLSPoPZero() bool {
+	if r.obj.IsNull() {
+		return true
+	}
+	for i := 0; i < BLSPoPSize; i++ {
+		if r.obj.Uint8(OffsetValidatorRecord_BLSPoP+i) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // ValidatorsList is the zero-copy WIRE view over a list of ValidatorRecord
 // items. Fixed-stride only — no sibling arrays needed.
 //
@@ -209,8 +249,11 @@ func (l ValidatorsList) MustVerify() error {
 	if n > MaxValidatorsPerL1 {
 		return fmt.Errorf("ValidatorsList.Len=%d: %w", n, ErrTooManyValidators)
 	}
-	var zeroPubKey [BLSPubKeySize]byte
-	var zeroPoP [BLSPoPSize]byte
+	// LP-023 batch 5 v3.8 R4 (Red round 6 V4): use the zero-scan
+	// IsBLSPubKeyZero / IsBLSPoPZero accessors so the structural floor
+	// check stays O(1) allocations regardless of N. The allocating
+	// BLSPubKey() / BLSPoP() copies are retained for the BLS pairing
+	// path in tx_verify.go where the verifier requires a copy.
 	for i := 0; i < n; i++ {
 		rec := l.At(i)
 		if rec.IsNull() {
@@ -221,12 +264,12 @@ func (l ValidatorsList) MustVerify() error {
 				"ValidatorsList[%d].Weight: %w", i, ErrValidatorWeightZero,
 			)
 		}
-		if bytes.Equal(rec.BLSPubKey(), zeroPubKey[:]) {
+		if rec.IsBLSPubKeyZero() {
 			return fmt.Errorf(
 				"ValidatorsList[%d].BLSPubKey: %w", i, ErrValidatorBLSPubKeyZero,
 			)
 		}
-		if bytes.Equal(rec.BLSPoP(), zeroPoP[:]) {
+		if rec.IsBLSPoPZero() {
 			return fmt.Errorf(
 				"ValidatorsList[%d].BLSPoP: %w", i, ErrValidatorBLSPoPZero,
 			)

@@ -301,6 +301,14 @@ func (e *proposalTxExecutor) rewardValidatorTx(uValidatorTx txs.ValidatorTx, val
 	reward := validator.PotentialReward
 	if reward > 0 {
 		validationRewardsOwner := uValidatorTx.ValidationRewardsOwner()
+		// LP-023 batch 5 v3.8 V3: Owner is consumed without an in-line
+		// gate. Verify it as a Verifiable before treating it as an
+		// authorization quorum source — the wire layer is permissive
+		// (threshold==0 or threshold>len(addrs) slip through), and the
+		// only canonical gate is the Verifiable.Verify() hook.
+		if err := validationRewardsOwner.Verify(); err != nil {
+			return fmt.Errorf("rewardValidatorTx: ValidationRewardsOwner failed Verify: %w", err)
+		}
 		outIntf, err := e.backend.Fx.CreateOutput(reward, validationRewardsOwner)
 		if err != nil {
 			return fmt.Errorf("failed to create output: %w", err)
@@ -338,6 +346,11 @@ func (e *proposalTxExecutor) rewardValidatorTx(uValidatorTx txs.ValidatorTx, val
 	}
 
 	delegationRewardsOwner := uValidatorTx.DelegationRewardsOwner()
+	// LP-023 batch 5 v3.8 V3: gate Owner via Verifiable before
+	// passing to CreateOutput. See validationRewardsOwner comment above.
+	if err := delegationRewardsOwner.Verify(); err != nil {
+		return fmt.Errorf("rewardValidatorTx: DelegationRewardsOwner failed Verify: %w", err)
+	}
 	outIntf, err := e.backend.Fx.CreateOutput(delegateeReward, delegationRewardsOwner)
 	if err != nil {
 		return fmt.Errorf("failed to create output: %w", err)
@@ -427,6 +440,12 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	reward := delegatorReward
 	if reward > 0 {
 		rewardsOwner := uDelegatorTx.RewardsOwner()
+		// LP-023 batch 5 v3.8 V3: gate Owner via Verifiable before
+		// passing to CreateOutput. See validationRewardsOwner comment in
+		// rewardValidatorTx above.
+		if err := rewardsOwner.Verify(); err != nil {
+			return fmt.Errorf("rewardDelegatorTx: RewardsOwner failed Verify: %w", err)
+		}
 		outIntf, err := e.backend.Fx.CreateOutput(reward, rewardsOwner)
 		if err != nil {
 			return fmt.Errorf("failed to create output: %w", err)
