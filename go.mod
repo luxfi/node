@@ -29,7 +29,7 @@ require (
 	github.com/luxfi/consensus v1.25.13
 	github.com/luxfi/crypto v1.19.17
 	github.com/luxfi/database v1.18.3
-	github.com/luxfi/ids v1.2.13
+	github.com/luxfi/ids v1.2.14
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.1
 	github.com/luxfi/math v1.4.1
