@@ -237,8 +237,8 @@ Final Validation
 ### Properties
 
 - **Security**: Quantum-resistant (192-bit)
-- **Signatures**: ML-DSA-65 (Dilithium)
-- **Privacy**: Corona ring signatures
+- **Signatures**: ML-DSA-65 (Dilithium) + Corona (LWE-based threshold)
+- **Threshold scheme**: Corona — native t-of-n in 2 rounds
 - **Performance**: ~1,500 TPS
 
 ### Implementation
@@ -247,7 +247,7 @@ Final Validation
 type PQConsensus struct {
     classicalSigner  *bls.Signer
     quantumSigner    *mldsa.Signer
-    coronaSigner   *corona.Signer
+    coronaSigner     *corona.Signer
 
     threshold        int
     validatorSet     []Validator
@@ -279,27 +279,32 @@ func (pq *PQConsensus) VerifyBlock(block Block, sig Signature) bool {
 }
 ```
 
-### Corona Privacy Layer
+### Corona Threshold Layer
+
+Corona is a lattice-based threshold signature scheme from LWE
+([eprint 2024/1113](https://eprint.iacr.org/2024/1113)) implemented in
+`github.com/luxfi/corona`. Unlike a ring signature, Corona signers are
+known and weighted; the scheme provides a single aggregated signature
+that anyone can verify against the group public key.
 
 ```go
 type CoronaSignature struct {
-    Ring      []PublicKey
-    Signature []byte
-    KeyImage  []byte
+    Signers   []byte // bitset of signing validator indices
+    Signature []byte // aggregated lattice signature
 }
 
-func (pq *PQConsensus) CreateRingSignature(
+func (pq *PQConsensus) CoronaSign(
     message []byte,
-    signerKey PrivateKey,
-    ring []PublicKey,
+    signerKey *corona.PrivateKey,
+    signers []*Validator,
 ) (*CoronaSignature, error) {
-    // Create anonymous signature within ring
-    sig := pq.coronaSigner.Sign(message, signerKey, ring)
-
+    sig, err := pq.coronaSigner.Sign(message, signerKey, signers)
+    if err != nil {
+        return nil, err
+    }
     return &CoronaSignature{
-        Ring:      ring,
+        Signers:   sig.SignerBitset(),
         Signature: sig.Bytes(),
-        KeyImage:  sig.KeyImage(),
     }, nil
 }
 ```
