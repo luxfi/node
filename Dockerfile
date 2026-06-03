@@ -153,7 +153,13 @@ RUN . ./build_env.sh && \
 # json.NewDecoder(...).DisallowUnknownFields() — stale etnaTimestamp
 # in any deployed upgrade.json now fails parse loudly at boot rather
 # than silently disabling the fork.
-ARG EVM_VERSION=v0.19.0
+#
+# v0.19.1 bumps luxfi/precompile v0.5.27 → v0.5.35 (commit 794912f):
+# each of the 7 EIP-2537 bls12381 sub-configs (G1/G2 × {Add,Mul,MSM} +
+# Pairing) now returns its own ConfigKey, fixing a Key() collision
+# that forced #114 to drop bls12381 entries from mainnet upgrade.json.
+# Re-adding them is gated on this plugin version.
+ARG EVM_VERSION=v0.19.1
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
