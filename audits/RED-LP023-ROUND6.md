@@ -3,49 +3,20 @@
 Scope: diff 3f8f7e79ec..67cff34428 across `vms/platformvm/txs/zap_native/`,
 `vms/platformvm/network/zap_native_admission.go`, `.github/workflows/zap-audit.yml`.
 
-Verdict: **DO-NOT-SHIP / HOLD**.
+Verdict (round 6 v2, 2026-06-02): **FIX-THEN-SHIP**. V1 retracted on
+re-verification. V2 (textual-audit-gate meta-attack), V3 (legacy `*Owner()`
+scope leak), V4 (BLS alloc amplification), V5 (no block-level cap) stand.
+None block a fix-then-ship — V2 is the priority because it disarms the gate
+infrastructure that prevents future regressions.
 
 ---
 
-## V1 — CRITICAL — GOVERNANCE — TransferChainOwnershipTx.Verify regressed to no-op (R6V8 undone)
+## V1 — RETRACTED — TransferChainOwnershipTx.Verify is correctly gated in v3.7
 
-**Class**: ADMISSION / GOVERNANCE. **Severity**: CRITICAL.
-
-`vms/platformvm/txs/zap_native/tx_verify.go:330-336` ships a Verify body that
-does NOT call `SyntacticVerify`. Body:
-
-```go
-// Verify — ATTACK PROBE V3: gate-bypass via string-literal SyntacticVerify token.
-// Removed the actual call. Audit gate should fail; if it passes, V3 is confirmed.
-func (t TransferChainOwnershipTx) Verify() error {
-    _ = "SyntacticVerify"
-    return nil
-}
-```
-
-This is the exact regression Blue's R6V8 closed at commit 30c9608255 and that the
-new audit gate was supposed to catch.
-
-**Repro** (already failing in 67cff34428 tree, no PoC needed):
-
-```
-cd vms/platformvm/txs/zap_native && go test ./...
---- FAIL: TestTransferChainOwnershipTx_Verify_RejectsZeroThreshold
---- FAIL: TestTransferChainOwnershipTx_Verify_RejectsThresholdAboveOne
---- FAIL: TestTransferChainOwnershipTx_Verify_AdversarialWireBuffer
-```
-
-**Impact**: An attacker submits a `TransferChainOwnershipTx` with
-`OwnerThreshold == 0` (no signer required) or `OwnerThreshold > addrcount`
-(unsatisfiable — chain ownership permanently DoS'd). Either path takes over
-chain ownership without authorization or destroys it. Wire-canonically valid;
-admission boundary admits it; standard_tx_executor commits it.
-
-**Detectability**: Zero. Package tests already fail at HEAD; nobody ran them
-before tagging v3.7. The audit gate (V2 below) PASSES because the token
-"SyntacticVerify" appears in the function body as a string literal.
-
-**Fix**: Restore the gate body that existed at 30c9608255:
+**Re-verification (round 6 v2, 2026-06-02)**: The original V1 finding was
+based on a working-tree probe that mutated `tx_verify.go:330-336` to insert
+an `_ = "SyntacticVerify"` no-op probe; the actual `67cff34428` commit
+ships the correctly-gated body:
 
 ```go
 func (t TransferChainOwnershipTx) Verify() error {
@@ -57,8 +28,21 @@ func (t TransferChainOwnershipTx) Verify() error {
 }
 ```
 
-Delete the "ATTACK PROBE V3" doc-comment; intentional gate-bypass code never
-lives in the production tree.
+Repro: `git show 67cff34428:vms/platformvm/txs/zap_native/tx_verify.go |
+sed -n '330,346p'`. The R6V8 gate Blue closed at 30c9608255 is intact at
+v3.7. **V1 is retracted — no regression in the actual commit.**
+
+The misclassification root cause: the prior Red round 6 author had local
+uncommitted edits crafting a PoC for V2 (meta-attack on the textual audit
+gate). When the audit was written, the PoC was misread as Blue's regression
+instead of a Red-injected demonstration.
+
+**V2 below stands** — the textual audit gate is genuinely defeatable by
+string literals; the PoC that proved it was real, but it lives in the
+adversary's working tree, not the committed v3.7. The attack vector remains:
+**a future legitimate edit by Blue** that drops the SyntacticVerify call but
+keeps the token in any form (comment / string literal / dead-code branch /
+imported constant) will pass CI today.
 
 ---
 
@@ -271,10 +255,8 @@ What Blue missed:
 - The audit gate (the new infrastructure shipped in this batch) is fooled
   by string literals (V2). This is the single most important finding.
   The gate Blue added to prevent regressions of R4V7 cannot detect the
-  very regression that ships in this same commit (V1).
-- TransferChainOwnershipTx.Verify (V1) — Blue's own R6V8 gate is undone
-  and the package test suite already fails. Blue did not run
-  `go test ./vms/platformvm/txs/zap_native/...` before tagging v3.7.
+  class of regression it exists to prevent — a PoC against the working
+  tree confirmed this experimentally.
 - Legacy `*Owner()` consumers in `proposal_tx_executor.go` and `service.go`
   (V3) are out-of-scope for the audit gate but are real Owner consumers.
 - BLS pubkey/PoP allocation amplification (V4) — Blue self-audited and
@@ -282,29 +264,35 @@ What Blue missed:
 - Per-block cap absence (V5) — Blue self-audited and shipped no fix.
 
 Fix priority for Blue:
-1. **V1**: Restore `TransferChainOwnershipTx.Verify` body, strip the
-   ATTACK PROBE comment. **Run `go test ./vms/platformvm/txs/zap_native/`
-   to green BEFORE tagging anything.**
-2. **V2**: Replace textual audit gate with AST-based, OR replace with
+1. **V2**: Replace textual audit gate with AST-based, OR replace with
    positive-test matrix in `r6_verify_test.go`. One and only one way.
-3. **V3**: Broaden audit scope to `fx.Owner`-returning accessors, OR
+2. **V3**: Broaden audit scope to `fx.Owner`-returning accessors, OR
    document the legacy boundary explicitly with a positive test matrix.
-4. **V4**: `ValidatorRecord.BLSPubKey/BLSPoP` no-copy path for MustVerify
+3. **V4**: `ValidatorRecord.BLSPubKey/BLSPoP` no-copy path for MustVerify
    (or cache on record). 144 KB → near-zero.
-5. **V5**: Block-level validator/chain budget in standard_tx_executor.
-6. **V7**: Delete the ATTACK PROBE comment from production source.
-7. **V6**: Single-pass kind discriminator read in admission gate.
+4. **V5**: Block-level validator/chain budget in standard_tx_executor.
+5. **V6**: Single-pass kind discriminator read in admission gate.
 
-Re-review scope: V1, V2, V3 mandatory before re-review. V4, V5, V6, V7
-can land in a follow-up batch but Blue should report the plan.
+Re-review scope: V2 and V3 mandatory before re-review. V4, V5, V6 can land
+in a follow-up batch but Blue should report the plan. V1 retracted —
+no action required.
 
 ---
 
-RED COMPLETE. Findings ready for Blue.
-Total: 2 critical, 2 high, 2 medium, 1 low, 1 info.
+RED COMPLETE (round 6 v2 — 2026-06-02 re-verification).
+Total: 1 CRITICAL retracted, 1 critical, 2 high, 2 medium, 1 low, 1 info.
 Top 3 for Blue to fix:
-1. V1 — TransferChainOwnershipTx.Verify regression (R6V8 undone)
-2. V2 — Audit gate fooled by string-literal token (meta-attack proven)
-3. V3 — Legacy `*Owner()` consumers bypass audit gate scope
-Re-review needed: yes — V1, V2, V3 must close before re-review.
-Recommendation: **do-not-ship**.
+1. V2 — Audit gate fooled by string-literal token (meta-attack; gate cannot
+   detect the very class of regression it exists to prevent)
+2. V3 — Legacy `*Owner()` consumers in `proposal_tx_executor.go` + `service.go`
+   bypass audit gate scope (fx.Owner-typed return)
+3. V4 — BLS pubkey/PoP allocation amplification (144 KB per MustVerify at
+   N=1024; Blue self-audit V1, not fixed)
+Re-review needed: yes — V2 and V3 must close before re-review.
+Recommendation: **fix-then-ship**.
+
+V1 retraction note (2026-06-02): the original "R6V8 undone" finding was a
+working-tree-only PoC that proved V2's textual-gate weakness; the actual
+67cff34428 commit ships the correctly-gated Verify body. The PoC remains
+a valid demonstration of V2 — a future legitimate Blue edit that drops
+the call while keeping the token in any form passes CI today.
