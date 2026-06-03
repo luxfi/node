@@ -341,7 +341,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 			SigIndices: []uint32{},
 		},
 	}
-	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
+	lux.SortTransferableOutputs(complexTransformTx.Outs)
 	utils.Sort(complexTransformTx.Ins)
 	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID

@@ -268,7 +268,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 			SigIndices: []uint32{},
 		},
 	}
-	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
+	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs)
 	utils.Sort(complexRemoveValidatorTx.Ins)
 	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID,

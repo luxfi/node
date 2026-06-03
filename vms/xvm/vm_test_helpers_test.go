@@ -293,7 +293,6 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// Create transaction builder with SharedMemory
 	atomicMemForBuilder := sharedMemory.NewSharedMemory(rt.ChainID)
 	txBuilder := txstest.New(
-		vmImpl.parser.Codec(),
 		context.Background(),
 		&vmImpl.Config,
 		vmImpl.feeAssetID,

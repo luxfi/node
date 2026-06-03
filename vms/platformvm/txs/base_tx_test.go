@@ -218,7 +218,7 @@ func TestBaseTxSerialization(t *testing.T) {
 			Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 		},
 	}
-	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
+	lux.SortTransferableOutputs(complexBaseTx.Outs)
 	utils.Sort(complexBaseTx.Ins)
 	rt2 := &runtime.Runtime{
 		NetworkID: constants.MainnetID, // Must match tx.NetworkID

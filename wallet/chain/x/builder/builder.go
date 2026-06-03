@@ -226,7 +226,7 @@ func (b *builder) NewBaseTx(
 		return nil, err
 	}
 	outputs = append(outputs, changeOutputs...)
-	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the outputs
+	lux.SortTransferableOutputs(outputs) // sort the outputs
 
 	tx := &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    b.context.NetworkID,
@@ -455,7 +455,7 @@ func (b *builder) NewImportTx(
 		})
 	}
 
-	lux.SortTransferableOutputs(outputs, Parser.Codec())
+	lux.SortTransferableOutputs(outputs)
 	tx := &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -493,7 +493,7 @@ func (b *builder) NewExportTx(
 		return nil, err
 	}
 
-	lux.SortTransferableOutputs(outputs, Parser.Codec())
+	lux.SortTransferableOutputs(outputs)
 	tx := &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -640,7 +640,7 @@ func (b *builder) spend(
 	}
 
 	utils.Sort(inputs)                                   // sort inputs
-	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the change outputs
+	lux.SortTransferableOutputs(outputs) // sort the change outputs
 	return inputs, outputs, nil
 }
 

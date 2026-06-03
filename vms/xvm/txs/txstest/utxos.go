@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -29,7 +28,6 @@ func newUTXOs(
 	ctx context.Context,
 	state state.State,
 	sharedMemory atomic.SharedMemory,
-	codec codec.Manager,
 ) *utxos {
 	// Use empty chain ID - caller should set this if needed
 	chainID := ids.Empty
@@ -37,7 +35,6 @@ func newUTXOs(
 		xchainID:     chainID,
 		state:        state,
 		sharedMemory: sharedMemory,
-		codec:        codec,
 	}
 }
 
@@ -50,7 +47,6 @@ type utxos struct {
 	xchainID     ids.ID
 	state        state.State
 	sharedMemory atomic.SharedMemory
-	codec        codec.Manager
 }
 
 func (u *utxos) UTXOs(addrs set.Set[ids.ShortID], sourceChainID ids.ID) ([]*lux.UTXO, error) {
@@ -60,7 +56,6 @@ func (u *utxos) UTXOs(addrs set.Set[ids.ShortID], sourceChainID ids.ID) ([]*lux.
 
 	atomicUTXOs, _, _, err := lux.GetAtomicUTXOs(
 		u.sharedMemory,
-		u.codec,
 		sourceChainID,
 		addrs,
 		ids.ShortEmpty,
@@ -77,7 +72,6 @@ func (u *utxos) GetUTXO(addrs set.Set[ids.ShortID], chainID, utxoID ids.ID) (*lu
 
 	atomicUTXOs, _, _, err := lux.GetAtomicUTXOs(
 		u.sharedMemory,
-		u.codec,
 		chainID,
 		addrs,
 		ids.ShortEmpty,

@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // CodecVersion is the current default codec version
@@ -94,6 +95,23 @@ func NewCustomParser(
 		// Initialize with a proper VM that has a logger
 		if err := fx.Initialize(vm); err != nil {
 			return nil, err
+		}
+		// utxo v0.3.5+ fx.Initialize is a no-op (ZAP-native; LP-023 /
+		// utxo FINAL_RIP step 8). Per-fx wire types used to be registered
+		// inside fx.Initialize via vm.CodecRegistry().RegisterType(...);
+		// re-register them here through vm.codecRegistry so both the
+		// linearcodec (read path for pre-ZAP X-chain bytes) AND the
+		// typeToFxIndex map (semantic_verifier.getFx) are populated.
+		if _, ok := fx.(*secp256k1fx.Fx); ok {
+			if err := errors.Join(
+				vm.codecRegistry.RegisterType(&secp256k1fx.TransferInput{}),
+				vm.codecRegistry.RegisterType(&secp256k1fx.MintOutput{}),
+				vm.codecRegistry.RegisterType(&secp256k1fx.TransferOutput{}),
+				vm.codecRegistry.RegisterType(&secp256k1fx.MintOperation{}),
+				vm.codecRegistry.RegisterType(&secp256k1fx.Credential{}),
+			); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return &parser{

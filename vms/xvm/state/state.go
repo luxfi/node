@@ -20,6 +20,11 @@ import (
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
+
+	// utxo.ParseUTXO factory registration — see
+	// vms/components/lux/utxo_parser.go init(). Required for
+	// utxoState.GetUTXO to decode wire bytes off disk.
+	_ "github.com/luxfi/node/vms/components/lux"
 )
 
 const (
@@ -181,7 +186,7 @@ func New(
 		return nil, err
 	}
 
-	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), registry, trackChecksums)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, registry, trackChecksums)
 	if err != nil {
 		return nil, err
 	}
