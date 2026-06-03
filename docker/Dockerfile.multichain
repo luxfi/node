@@ -12,7 +12,7 @@ COPY . .
 RUN if [ "$CHAIN_TYPE" = "platform" ]; then \
         go build -o luxd-p-chain ./cmd/luxd; \
     elif [ "$CHAIN_TYPE" = "exchange" ]; then \
-        go build -tags ringtail -o luxd-x-chain ./cmd/luxd; \
+        go build -tags corona -o luxd-x-chain ./cmd/luxd; \
     elif [ "$CHAIN_TYPE" = "contract" ]; then \
         go build -tags evm -o luxd-c-chain ./cmd/luxd; \
     else \
