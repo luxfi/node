@@ -114,7 +114,7 @@ func (tx *AddDelegatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts):
 		return errOutputsNotSorted
 	case totalStakeWeight != tx.Wght:
 		return fmt.Errorf("%w, delegator weight %d total stake weight %d",

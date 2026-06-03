@@ -32,12 +32,12 @@ func TestSetsAndGets(t *testing.T) {
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {
-						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM
-						vm, ok := vmIntf.(secp256k1fx.VM)
-						if !ok {
+						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM.
+						// Post-ZAP, fx Initialize is a no-op (no codec registration chain).
+						if _, ok := vmIntf.(secp256k1fx.VM); !ok {
 							return fmt.Errorf("unexpected VM type: %T", vmIntf)
 						}
-						return vm.CodecRegistry().RegisterType(&lux.TestState{})
+						return nil
 					},
 				},
 			},
@@ -99,12 +99,12 @@ func TestFundingNoAddresses(t *testing.T) {
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {
-						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM
-						vm, ok := vmIntf.(secp256k1fx.VM)
-						if !ok {
+						// The VM passed here is actually a txs.fxVM which implements secp256k1fx.VM.
+						// Post-ZAP, fx Initialize is a no-op (no codec registration chain).
+						if _, ok := vmIntf.(secp256k1fx.VM); !ok {
 							return fmt.Errorf("unexpected VM type: %T", vmIntf)
 						}
-						return vm.CodecRegistry().RegisterType(&lux.TestState{})
+						return nil
 					},
 				},
 			},
@@ -136,8 +136,9 @@ func TestFundingAddresses(t *testing.T) {
 				ID: ids.GenerateTestID(),
 				Fx: &FxTest{
 					InitializeF: func(vmIntf interface{}) error {
-						vm := vmIntf.(secp256k1fx.VM)
-						return vm.CodecRegistry().RegisterType(&lux.TestAddressable{})
+						// Post-ZAP, fx Initialize is a no-op (no codec registration chain).
+						_ = vmIntf.(secp256k1fx.VM)
+						return nil
 					},
 				},
 			},

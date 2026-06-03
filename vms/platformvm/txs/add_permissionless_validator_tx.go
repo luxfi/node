@@ -175,7 +175,7 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(rt *runtime.Runtime) err
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts, Codec):
+	case !lux.IsSortedTransferableOutputs(tx.StakeOuts):
 		return errOutputsNotSorted
 	case totalStakeWeight != tx.Wght:
 		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Wght, totalStakeWeight)
