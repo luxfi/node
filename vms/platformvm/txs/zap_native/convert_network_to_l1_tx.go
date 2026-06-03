@@ -17,11 +17,12 @@ import (
 //   - Validators list (initial pay-as-you-go validators)
 //
 // The Validators sub-list is a fixed-stride record per validator carrying
-// (NodeID, Weight, BLSPubKey, BLSPoP, RegistrationExpiry). The
-// initial-validator schema is intentionally simple (no nested owner lists)
-// — owner lists for each validator's balance ride in a sibling array.
+// (NodeID, Weight, BLSPubKey, BLSPoP, RegistrationExpiry). LP-023 batch 5
+// Phase D wires the real ValidatorsList primitive — previously stubbed at
+// (0, 0). The encoding now matches the primitive in validators_list.go
+// (180B per record, stride-clamped via Object.ListStride from zap v0.7.2).
 //
-// Fixed-section layout (size 137 bytes):
+// Fixed-section layout (size 165 bytes):
 //
 //	TxKind                  uint8  @ 0
 //	NetworkID               uint32 @ 1
@@ -35,7 +36,7 @@ import (
 //	Chain                   32B    @ 85
 //	ManagerChainID          32B    @ 117
 //	Address                 8B     @ 149  (variable bytes)
-//	ValidatorsList          8B     @ 157  (fixed-stride list)
+//	ValidatorsList          8B     @ 157  (fixed-stride 180B records)
 const (
 	OffsetConvertNetworkToL1Tx_NetworkID      = 1
 	OffsetConvertNetworkToL1Tx_BlockchainID   = 5
@@ -107,6 +108,13 @@ func (t ConvertNetworkToL1Tx) Address() []byte {
 	return t.obj.Bytes(OffsetConvertNetworkToL1Tx_Address)
 }
 
+// Validators returns the initial-validator set as a fixed-stride list view
+// over ValidatorRecord entries (180B per record). Uses Object.ListStride
+// for per-element clamp against poisoned wire length fields.
+func (t ConvertNetworkToL1Tx) Validators() ValidatorsList {
+	return NewValidatorsListView(t.obj, OffsetConvertNetworkToL1Tx_ValidatorsList)
+}
+
 func (t ConvertNetworkToL1Tx) Bytes() []byte { return t.msg.Bytes() }
 func (t ConvertNetworkToL1Tx) IsZero() bool  { return t.msg == nil }
 
@@ -128,6 +136,7 @@ type ConvertNetworkToL1TxInput struct {
 	Chain          ids.ID
 	ManagerChainID ids.ID
 	Address        []byte
+	Validators     []ValidatorsListEntry
 }
 
 func NewConvertNetworkToL1Tx(in ConvertNetworkToL1TxInput) ConvertNetworkToL1Tx {
@@ -136,6 +145,7 @@ func NewConvertNetworkToL1Tx(in ConvertNetworkToL1TxInput) ConvertNetworkToL1Tx 
 	cap += len(in.Ins) * SizeTransferableInput
 	cap += len(in.Credentials) * SizeCredential
 	cap += len(in.Memo) + len(in.Address)
+	cap += len(in.Validators) * SizeValidatorRecord
 	b := zap.NewBuilder(cap)
 
 	outsOff, outsCount := WriteOutputList(b, in.Outs)
@@ -143,6 +153,7 @@ func NewConvertNetworkToL1Tx(in ConvertNetworkToL1TxInput) ConvertNetworkToL1Tx 
 	credsOff, credsCount, sigBlobs := WriteCredentialList(b, in.Credentials)
 	sigIdxArrOff, sigIdxArrCount := WriteSigIndicesArray(b, sigIndices)
 	sigArrOff, sigArrCount := WriteSignatureArray(b, sigBlobs)
+	valsOff, valsCount := WriteValidatorsList(b, in.Validators)
 
 	ob := b.StartObject(SizeConvertNetworkToL1Tx)
 	ob.SetUint8(OffsetTxKind, uint8(TxKindConvertNetworkToL1))
@@ -159,8 +170,7 @@ func NewConvertNetworkToL1Tx(in ConvertNetworkToL1TxInput) ConvertNetworkToL1Tx 
 	ob.SetList(OffsetConvertNetworkToL1Tx_SigArr, sigArrOff, sigArrCount)
 	ob.SetBytes(OffsetConvertNetworkToL1Tx_Memo, in.Memo)
 	ob.SetBytes(OffsetConvertNetworkToL1Tx_Address, in.Address)
-	// ValidatorsList intentionally left at (0, 0) — initial-validator
-	// records use a sibling primitive that's not part of this batch.
+	ob.SetList(OffsetConvertNetworkToL1Tx_ValidatorsList, valsOff, valsCount)
 	ob.FinishAsRoot()
 	msg, _ := zap.Parse(b.Finish())
 	return ConvertNetworkToL1Tx{msg: msg, obj: msg.Root()}
