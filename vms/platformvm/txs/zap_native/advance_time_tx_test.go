@@ -94,23 +94,28 @@ func TestShouldUseZAPForWrite(t *testing.T) {
 	})
 
 	t.Run("legacy enabled: timestamp-gated", func(t *testing.T) {
+		// ZAPActivationUnix is now 0 (always-on). With activation=0, the
+		// "pre-activation" window is empty — every block timestamp satisfies
+		// blockTimestamp >= 0, so writes are always ZAP even when
+		// LegacyEnabled. LegacyEnabled remains meaningful only on the READ
+		// path (decoding pre-2026-06-02 archival linearcodec bytes); it has
+		// no semantic effect on writes once activation = 0.
 		LegacyEnabled = true
-		cases := []struct {
-			name string
-			ts   uint64
-			want bool
-		}{
-			{"pre-activation", 1782604800 - 1, false},
-			{"at activation", 1782604800, true},
-			{"post-activation", 1782604800 + 86400, true},
-			{"epoch", 0, false},
-		}
-		for _, c := range cases {
-			t.Run(c.name, func(t *testing.T) {
-				if got := ShouldUseZAPForWrite(c.ts); got != c.want {
-					t.Fatalf("ShouldUseZAPForWrite(%d) = %v, want %v", c.ts, got, c.want)
-				}
-			})
+		for _, ts := range []uint64{0, 1, 1782604800 - 1, 1782604800, 1782604800 + 86400} {
+			if !ShouldUseZAPForWrite(ts) {
+				t.Fatalf("ShouldUseZAPForWrite(%d) = false, want true (ZAP always-on regardless of LegacyEnabled when activation=0)", ts)
+			}
 		}
 	})
+}
+
+// TestZAPActivationUnixIsAlwaysOn pins the activation constant to 0 so any
+// regression that re-introduces a forward-date guard fails this gate. Once
+// LP-023 ZAP-native activation shipped (2026-06-02 cutover), the legacy
+// timestamp gate is dead — the only legacy path is the explicit read-only
+// LUXD_ENABLE_LEGACY_CODEC opt-in for archival linearcodec bytes.
+func TestZAPActivationUnixIsAlwaysOn(t *testing.T) {
+	if ZAPActivationUnix != 0 {
+		t.Fatalf("ZAPActivationUnix = %d, want 0 (always-on per LP-023 cutover)", ZAPActivationUnix)
+	}
 }
