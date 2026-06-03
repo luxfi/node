@@ -13,8 +13,13 @@ import (
 // switch governs the WRITE path: post-activation blocks MUST be ZAP-encoded.
 // Validator coordination is documented in LP-023.
 //
-// Value: 2026-07-01 00:00 UTC = 1782604800.
-const ZAPActivationUnix uint64 = 1782604800
+// Value: 0 — ZAP is mandatory from genesis. The legacy codec is only
+// reachable via the LUXD_ENABLE_LEGACY_CODEC=1 dev knob for reading
+// pre-2026-06-02 historical P-chain bytes. New deployments, fresh syncs,
+// and all production binaries from v1.28.19 onward are ZAP-only by
+// construction. The previous forward-dated 1782604800 (2026-07-01) value
+// is dead — see LP-023 ZAP-native activation cutover (2026-06-02).
+const ZAPActivationUnix uint64 = 0
 
 // LegacyEnabled is true when the operator has set LUXD_ENABLE_LEGACY_CODEC=1.
 //
@@ -53,12 +58,11 @@ func IsZAPBytes(b []byte) bool {
 // ShouldUseZAPForWrite reports whether new outgoing txs/blocks should be
 // encoded as ZAP.
 //
-// Default behavior — native ZAP always. The block timestamp gate exists ONLY
-// to maintain consensus with pre-activation peers during the cutover window;
-// once activation passes, this function returns true unconditionally.
-//
-// When LUXD_ENABLE_LEGACY_CODEC=1, pre-activation timestamps still emit
-// legacy linearcodec to preserve back-compat with un-upgraded peers.
+// Default behavior — native ZAP always. ZAPActivationUnix is now 0
+// (always-on), so the timestamp gate is a no-op except when the operator
+// explicitly opts back into legacy via LUXD_ENABLE_LEGACY_CODEC=1, in
+// which case the original forward-date semantics are preserved for the
+// LegacyEnabled path only.
 func ShouldUseZAPForWrite(blockTimestamp uint64) bool {
 	if !LegacyEnabled {
 		return true // native ZAP default
