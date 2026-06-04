@@ -8,6 +8,7 @@ import (
 
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/runtime"
+	"github.com/luxfi/utxo/wire"
 )
 
 var (
@@ -42,6 +43,28 @@ func (s *LockOut) Verify() error {
 		return errNestedStakeableLocks
 	}
 	return s.TransferableOut.Verify()
+}
+
+// Bytes returns the ZAP-native wire envelope for this LockOut.
+// Envelope = (TypeKindReserved, ShapeKindLockedOutput, ZAP message)
+// where the ZAP message carries Locktime and the inner TransferableOut's
+// own wire envelope (which carries its own TypeKind+ShapeKind+message).
+//
+// The inner TransferableOut MUST satisfy the wireSerializable contract
+// (Bytes() []byte) — every fx package's wire.go adapter does. Nested
+// LockOut is forbidden by Verify() and panics here to surface the bug.
+func (s *LockOut) Bytes() []byte {
+	type wireSerializable interface {
+		Bytes() []byte
+	}
+	inner, ok := s.TransferableOut.(wireSerializable)
+	if !ok {
+		panic("stakeable.LockOut: inner TransferableOut does not implement wire-serializable (Bytes() []byte)")
+	}
+	return wire.NewLockedOutput(wire.LockedOutputInput{
+		Locktime:         s.Locktime,
+		TransferOutBytes: inner.Bytes(),
+	})
 }
 
 type LockIn struct {
