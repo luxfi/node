@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -19,6 +18,7 @@ import (
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/vm"

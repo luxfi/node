@@ -131,7 +131,7 @@ func (i *index) Accept(rt *runtime.Runtime, containerID ids.ID, containerBytes [
 	)
 	// Persist index --> Container
 	nextAcceptedIndexBytes := database.PackUInt64(i.nextAcceptedIndex)
-	bytes, err := Codec.Marshal(CodecVersion, Container{
+	bytes, err := marshalContainer(Container{
 		ID:        containerID,
 		Bytes:     containerBytes,
 		Timestamp: i.clock.Time().UnixNano(),
@@ -189,8 +189,8 @@ func (i *index) getContainerByIndexBytes(indexBytes []byte) (Container, error) {
 		)
 		return Container{}, fmt.Errorf("couldn't read from database: %w", err)
 	}
-	var container Container
-	if _, err := Codec.Unmarshal(containerBytes, &container); err != nil {
+	container, err := unmarshalContainer(containerBytes)
+	if err != nil {
 		return Container{}, fmt.Errorf("couldn't unmarshal container: %w", err)
 	}
 	return container, nil
