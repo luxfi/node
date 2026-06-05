@@ -674,7 +674,7 @@ func getNextStakerToReward(
 		// If the staker is a permissionless staker (not a permissioned net
 		// validator), it's the next staker we will want to remove with a
 		// RewardValidatorTx rather than an AdvanceTimeTx.
-		if priority != txs.NetPermissionedValidatorCurrentPriority {
+		if priority != txs.ChainPermissionedValidatorCurrentPriority {
 			return currentStaker.TxID, chainTimestamp.Equal(currentStaker.EndTime), nil
 		}
 	}

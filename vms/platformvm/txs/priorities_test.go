@@ -28,27 +28,27 @@ func TestPriorityIsCurrent(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -85,27 +85,27 @@ func TestPriorityIsPending(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -142,27 +142,27 @@ func TestPriorityIsValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -199,27 +199,27 @@ func TestPriorityIsPermissionedValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -256,27 +256,27 @@ func TestPriorityIsDelegator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -313,27 +313,27 @@ func TestPriorityIsCurrentValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -370,27 +370,27 @@ func TestPriorityIsCurrentDelegator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -427,27 +427,27 @@ func TestPriorityIsPendingValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -484,27 +484,27 @@ func TestPriorityIsPendingDelegator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: NetPermissionlessValidatorPendingPriority,
+			priority: ChainPermissionlessValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorPendingPriority,
+			priority: ChainPermissionlessDelegatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: NetPermissionedValidatorPendingPriority,
+			priority: ChainPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionedValidatorCurrentPriority,
+			priority: ChainPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessDelegatorCurrentPriority,
+			priority: ChainPermissionlessDelegatorCurrentPriority,
 			expected: false,
 		},
 		{
-			priority: NetPermissionlessValidatorCurrentPriority,
+			priority: ChainPermissionlessValidatorCurrentPriority,
 			expected: false,
 		},
 		{
