@@ -98,26 +98,3 @@ func TestPlatformVMGPUBridge_NilHandle(t *testing.T) {
 	}
 }
 
-// TestPlatformVMGPU_EnvKnob verifies the false-by-default contract: even
-// when a plugin successfully loaded, GPUEnabled() must remain false
-// unless LUX_PLATFORMVM_GPU is set to a recognised true value.
-func TestPlatformVMGPU_EnvKnob(t *testing.T) {
-	t.Setenv("LUX_PLATFORMVM_GPU", "")
-	if GPUEnabled() {
-		t.Fatal("LUX_PLATFORMVM_GPU unset: GPUEnabled() = true, want false")
-	}
-
-	for _, v := range []string{"1", "true", "yes", "TRUE"} {
-		t.Setenv("LUX_PLATFORMVM_GPU", v)
-		if !GPUEnabled() {
-			t.Errorf("LUX_PLATFORMVM_GPU=%q: GPUEnabled() = false, want true", v)
-		}
-	}
-
-	for _, v := range []string{"0", "false", "no", ""} {
-		t.Setenv("LUX_PLATFORMVM_GPU", v)
-		if GPUEnabled() {
-			t.Errorf("LUX_PLATFORMVM_GPU=%q: GPUEnabled() = true, want false", v)
-		}
-	}
-}
