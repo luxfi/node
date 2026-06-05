@@ -11,7 +11,7 @@ import (
 
 // TestNodeGPULayoutSizes pins the re-exported wire structs to the same
 // device-side __align__(16) values declared in
-// ~/work/lux-private/gpu-kernels/ops/mpcvm/cuda/mpcvm_kernels_common.cuh.
+// the GPU plugin install tree ops/mpcvm/cuda/mpcvm_kernels_common.cuh.
 //
 // Even though the structs are type aliases to chains/thresholdvm, this
 // test sits at the node import boundary — if upstream sizes drift the
