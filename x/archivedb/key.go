@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 var (
