@@ -94,3 +94,6 @@ GEMINI.md
 
 # Built dev-tool binaries
 /cmd/gen_zoo_addr/gen_zoo_addr
+
+# Local ceremony test binary (out-of-tree compile artifact)
+/ceremony
