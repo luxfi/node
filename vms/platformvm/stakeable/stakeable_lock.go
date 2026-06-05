@@ -5,16 +5,54 @@ package stakeable
 
 import (
 	"errors"
+	"fmt"
 
-	lux "github.com/luxfi/utxo"
+	luxcomp "github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/wire"
+	"github.com/luxfi/vm/components/verify"
 )
 
 var (
 	errInvalidLocktime      = errors.New("invalid locktime")
 	errNestedStakeableLocks = errors.New("shouldn't nest stakeable locks")
 )
+
+// init registers the LockedOutput wire handler with the cross-fx
+// dispatcher in node/vms/components/lux. Without this registration the
+// dispatcher returns "unknown (TypeKind=0x00, ShapeKind=0x0F)" for every
+// vesting-allocation UTXO in genesis — observed live as
+// `platform.getBalance = 0` for every funded P-chain address on
+// mainnet/testnet/devnet despite the genesis allocations being
+// well-formed and the supply tally matching the sum of allocations.
+//
+// The cycle that forced this registration pattern: stakeable.LockOut
+// embeds utxo.TransferableOut so node/vms/components/lux cannot import
+// stakeable directly (would import the embed source through the embed,
+// breaking the dispatcher package's "no fx-specific deps" property).
+// The registration lets stakeable own the *LockOut reconstruction
+// without flipping the dependency graph.
+func init() {
+	luxcomp.RegisterLockedOutputHandler(func(b []byte) (verify.State, error) {
+		lo, err := wire.WrapLockedOutput(b)
+		if err != nil {
+			return nil, fmt.Errorf("wire.WrapLockedOutput: %w", err)
+		}
+		innerState, err := luxcomp.WrapOutputBytes(lo.TransferOutBytes())
+		if err != nil {
+			return nil, fmt.Errorf("inner output dispatch: %w", err)
+		}
+		inner, ok := innerState.(lux.TransferableOut)
+		if !ok {
+			return nil, fmt.Errorf("inner state is %T, not lux.TransferableOut — LockOut envelope corrupted", innerState)
+		}
+		return &LockOut{
+			Locktime:        lo.Locktime(),
+			TransferableOut: inner,
+		}, nil
+	})
+}
 
 type LockOut struct {
 	Locktime            uint64 `serialize:"true" json:"locktime"`

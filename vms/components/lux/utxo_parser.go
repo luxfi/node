@@ -66,10 +66,66 @@ func parseUTXO(wireBytes []byte) (*utxo.UTXO, error) {
 	}, nil
 }
 
+// LockedOutputHandler reconstructs the cross-fx LockedOutput composite
+// (stakeable.LockOut on the platformvm side) from its wire envelope.
+// stakeable.LockOut embeds lux.TransferableOut so this package cannot
+// import it without a cycle — instead the platformvm/stakeable package
+// registers a handler in its init() that knows how to:
+//
+//  1. wire.WrapLockedOutput(b) to surface (Locktime, TransferOutBytes)
+//  2. WrapOutputBytes(TransferOutBytes) to recursively dispatch the
+//     inner output through the same fx-aware dispatcher
+//  3. construct a *stakeable.LockOut{Locktime, TransferableOut: inner}
+//
+// Without a registration, locked-output UTXOs (the canonical shape for
+// vesting allocations in mainnet/testnet genesis) decode as
+// "unknown (TypeKind=0x00, ShapeKind=0x0F)" and silently disappear
+// from address balances — observed live as `platform.getBalance = 0`
+// for every genesis-funded P-chain address.
+type LockedOutputHandler func([]byte) (verify.State, error)
+
+var lockedOutputHandler LockedOutputHandler
+
+// RegisterLockedOutputHandler installs the locked-output wire handler.
+// Called from platformvm/stakeable.init(). Panics on double-install so a
+// duplicate registration during test fixture setup is loud, not silent.
+func RegisterLockedOutputHandler(h LockedOutputHandler) {
+	if lockedOutputHandler != nil {
+		panic("lux: LockedOutputHandler already registered")
+	}
+	lockedOutputHandler = h
+}
+
+// WrapOutputBytes is the public entry to the fx-aware output dispatcher
+// for composite shapes that recurse on a child envelope. Reads the
+// envelope's (TypeKind, ShapeKind) prefix and routes through wrapOutput.
+//
+// The LockedOutput handler uses this on its inner TransferOutBytes —
+// since the lock is fx-agnostic (TypeKind=Reserved) the inner envelope
+// carries the actual fx discriminator.
+func WrapOutputBytes(b []byte) (verify.State, error) {
+	tk, sk, err := wire.PeekDiscriminator(b)
+	if err != nil {
+		return nil, fmt.Errorf("peek inner discriminator: %w", err)
+	}
+	return wrapOutput(b, tk, sk)
+}
+
 // wrapOutput dispatches the inner Output envelope on (TypeKind,
 // ShapeKind). Each branch calls exactly one fx-package WrapXxxOutput.
 // Adding a new (fx, shape) is a new branch — no shared codec to grow.
 func wrapOutput(b []byte, tk wire.TypeKind, sk wire.ShapeKind) (verify.State, error) {
+	// Composite shapes (fx-agnostic). The lock wrapper carries
+	// TypeKind=Reserved because the inner envelope encodes the actual fx
+	// family. Dispatch through the registered handler so the
+	// vms/platformvm/stakeable package owns the *LockOut reconstruction
+	// without this package having to import it (cycle).
+	if tk == wire.TypeKindReserved && sk == wire.ShapeKindLockedOutput {
+		if lockedOutputHandler == nil {
+			return nil, fmt.Errorf("zap utxo dispatch: ShapeKindLockedOutput envelope but no LockedOutputHandler registered (platformvm/stakeable init() did not run)")
+		}
+		return lockedOutputHandler(b)
+	}
 	switch tk {
 	case wire.TypeKindSecp256k1:
 		switch sk {
