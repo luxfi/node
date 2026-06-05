@@ -6,7 +6,7 @@
 // substrate for the P-Chain validator/stake/slashing/epoch transitions is
 // resolved at PROCESS START via dlopen/dlsym against the lux-gpu-kernels
 // plugin DSOs. This keeps the node module compilable without
-// lux-private/gpu-kernels present in the build tree — the plugin is fully
+// the lux GPU plugin present in the build tree — the plugin is fully
 // optional and the chain runs the existing pure-Go path otherwise.
 //
 // Lookup order (handled by backend.go):
@@ -195,7 +195,7 @@ func (k GPUBackendKind) String() string {
 // + platformvm_gpu_layout.hpp byte-for-byte.
 //
 // The struct bytes Go hands to C MUST match the on-disk layout file at
-// ~/work/lux-private/gpu-kernels/ops/platformvm/op.yaml — every kernel reads
+// the GPU plugin install tree ops/platformvm/op.yaml — every kernel reads
 // them via reinterpret_cast. A silent layout shift produces consensus-divergent
 // state roots. init() refuses to load if any size drifts.
 // =============================================================================
@@ -380,7 +380,7 @@ func init() {
 			panic(fmt.Sprintf(
 				"platformvm: layout drift — Go sizeof(%s)=%d but on-device layout=%d. "+
 					"Re-sync vms/platformvm/platformvm_gpu.go against "+
-					"~/work/lux-private/gpu-kernels/ops/platformvm/cuda/platformvm_kernels_common.cuh.",
+					"the GPU plugin install tree ops/platformvm/cuda/platformvm_kernels_common.cuh.",
 				c.name, c.got, c.want))
 		}
 	}
