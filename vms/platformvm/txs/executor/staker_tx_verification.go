@@ -461,7 +461,7 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	maximumWeight, err := safemath.Mul64(
+	maximumWeight, err := safemath.Mul(
 		uint64(delegatorRules.maxValidatorWeightFactor),
 		validator.Weight,
 	)

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/zap_native"
+	"github.com/luxfi/proto/zap_native"
 )
 
 // allocLoopSeconds: 5 seconds keeps a full bench run under 10 min on
