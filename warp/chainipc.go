@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (

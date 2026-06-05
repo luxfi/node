@@ -22,15 +22,15 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/net/endpoints"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/codec/wrappers"
 )
 
 const (
@@ -595,7 +595,6 @@ func (p *peer) readMessages() {
 			onFinishedHandling()
 			continue
 		}
-
 
 		now := p.Clock.Time()
 		p.storeLastReceived(now)

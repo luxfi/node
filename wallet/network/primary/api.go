@@ -12,19 +12,18 @@ import (
 	gethcommon "github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethclient"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
+	_ "github.com/luxfi/node/vms/components/lux" // registers utxo.ParseUTXO ZAP dispatcher
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/rpc"
 	"github.com/luxfi/sdk/info"
+	lux "github.com/luxfi/utxo"
 
 	ethcommon "github.com/luxfi/geth/common"
-	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/network/primary/common"
@@ -165,12 +164,10 @@ func FetchState(
 	chains := []struct {
 		id     ids.ID
 		client UTXOClient
-		codec  codec.Manager
 	}{
 		{
 			id:     constants.PlatformChainID,
 			client: pClient,
-			codec:  ptxs.Codec,
 		},
 	}
 	// Only include the X-chain entry when the network actually serves an
@@ -181,25 +178,17 @@ func FetchState(
 		chains = append(chains, struct {
 			id     ids.ID
 			client UTXOClient
-			codec  codec.Manager
 		}{
 			id:     xCTX.BlockchainID,
 			client: xClient,
-			codec:  codec.NewDefaultManager(),
 		})
 	}
-	// {
-	// 	id:     cCTX.BlockchainID,
-	// 	client: cClient,
-	// 	codec:  evm.Codec,
-	// },
 	for _, destinationChain := range chains {
 		for _, sourceChain := range chains {
 			err = AddAllUTXOs(
 				ctx,
 				utxos,
 				destinationChain.client,
-				destinationChain.codec,
 				sourceChain.id,
 				destinationChain.id,
 				addrList,
@@ -264,14 +253,14 @@ func FetchEthState(
 }
 
 // AddAllUTXOs fetches all the UTXOs referenced by [addresses] that were sent
-// from [sourceChainID] to [destinationChainID] from the [client]. It then uses
-// [codec] to parse the returned UTXOs and it adds them into [utxos]. If [ctx]
-// expires, then the returned error will be immediately reported.
+// from [sourceChainID] to [destinationChainID] from the [client]. It parses
+// the returned UTXOs via the registered ZAP wire dispatcher
+// (utxo.ParseUTXO, wired by node/vms/components/lux) and adds them into
+// [utxos]. If [ctx] expires, the returned error is reported immediately.
 func AddAllUTXOs(
 	ctx context.Context,
 	utxos walletcommon.UTXOs,
 	client UTXOClient,
-	codec codec.Manager,
 	sourceChainID ids.ID,
 	destinationChainID ids.ID,
 	addrs []ids.ShortID,
@@ -300,13 +289,11 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			var utxo lux.UTXO
-			_, err := codec.Unmarshal(utxoBytes, &utxo)
+			u, err := lux.ParseUTXO(utxoBytes)
 			if err != nil {
 				return err
 			}
-
-			if err := utxos.AddUTXO(ctx, sourceChainID, destinationChainID, &utxo); err != nil {
+			if err := utxos.AddUTXO(ctx, sourceChainID, destinationChainID, u); err != nil {
 				return err
 			}
 		}

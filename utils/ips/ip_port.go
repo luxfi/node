@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package ips
 
 import (
@@ -10,7 +9,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const nullStr = "null"

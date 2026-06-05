@@ -11,11 +11,11 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/utils"
 )
 
