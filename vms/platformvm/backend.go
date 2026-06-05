@@ -64,29 +64,17 @@ func candidatePlugins() []pluginCandidate {
 // searchPaths returns the directories the loader probes for each
 // candidate basename. Order:
 //
-//  1. LUX_GPU_PLUGIN_DIR — shared with every other VM (aivm, bridgevm, …).
-//  2. ~/work/lux-private/gpu-kernels/build/<flavor>_backend/ — dev tree.
-//  3. /usr/local/lib/lux-gpu/ — prefix install.
-//  4. /usr/lib/lux-gpu/.
-//  5. Empty string ("" — let dlopen consult the system search path).
+//  1. LUX_GPU_PLUGIN_DIR — explicit override.
+//  2. /usr/local/lib/lux-gpu/ — prefix install.
+//  3. /usr/lib/lux-gpu/.
+//  4. Empty string ("" — let dlopen consult the system search path).
 //
 // The empty-string fallback lets a plugin in DYLD_LIBRARY_PATH /
 // LD_LIBRARY_PATH still resolve, which is the standard CI override.
 func searchPaths() []string {
-	out := make([]string, 0, 8)
+	out := make([]string, 0, 4)
 	if d := os.Getenv("LUX_GPU_PLUGIN_DIR"); d != "" {
 		out = append(out, d)
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		// Match the lux-private/gpu-kernels Cmake out-of-tree
-		// convention: each backend lands in its own subdir.
-		out = append(out,
-			home+"/work/lux-private/gpu-kernels/build/cuda_backend",
-			home+"/work/lux-private/gpu-kernels/build/hip_backend",
-			home+"/work/lux-private/gpu-kernels/build/metal_backend",
-			home+"/work/lux-private/gpu-kernels/build/vulkan_backend",
-			home+"/work/lux-private/gpu-kernels/build/webgpu_backend",
-		)
 	}
 	out = append(out, "/usr/local/lib/lux-gpu", "/usr/lib/lux-gpu", "")
 	return out
