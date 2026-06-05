@@ -518,18 +518,26 @@ func (b *GPUBackend) Close() error {
 // WITHOUT panic and the caller is expected to emit a warn log.
 // =============================================================================
 
-// ValidatorSetApply runs the GPU validator-set-apply kernel. `validators` is
-// read+written in place; `appliedOut` receives the count of successfully
-// applied ops.
+// ValidatorSetApply runs the validator-set-apply transition. `validators`
+// is read+written in place; `*appliedOut` receives the count of
+// successfully applied ops.
+//
+// Dispatch: if an open GPU plugin is bound to this backend handle, the
+// cgo trampoline is tried first. On a nonzero launcher return code, the
+// canonical pure-Go path (cpuValidatorSetApply in platformvm_gpu_cpu.go)
+// runs against the SAME input + output buffers — GPU is a strict positive
+// overlay. The Go path is also taken when this backend handle is nil or
+// not currently bound to a plugin.
+//
+// Either dispatch path produces byte-identical results — the GPU device
+// code is validated against the Go impl in
+// TestPlatformVMGPUBridge_CgoNocgoParity.
 func (b *GPUBackend) ValidatorSetApply(
 	desc *PVMRoundDescriptor,
 	ops []PVMValidatorOp,
 	validators []PVMValidatorSlot,
 	appliedOut *uint32,
 ) error {
-	if !b.IsAvailable() {
-		return ErrGPUNotAvailable
-	}
 	if desc == nil || appliedOut == nil {
 		return errors.New("platformvm: ValidatorSetApply: nil desc or appliedOut")
 	}
@@ -537,31 +545,37 @@ func (b *GPUBackend) ValidatorSetApply(
 		return errors.New("platformvm: ValidatorSetApply: empty validators table")
 	}
 
-	var opsPtr unsafe.Pointer
-	if len(ops) > 0 {
-		opsPtr = unsafe.Pointer(&ops[0])
+	if b.IsAvailable() {
+		var opsPtr unsafe.Pointer
+		if len(ops) > 0 {
+			opsPtr = unsafe.Pointer(&ops[0])
+		}
+		rc := C.call_pvm_validator_set(
+			b.fnValidatorSet,
+			unsafe.Pointer(desc),
+			opsPtr,
+			unsafe.Pointer(&validators[0]),
+			unsafe.Pointer(appliedOut),
+			C.uint32_t(len(validators)),
+		)
+		runtime.KeepAlive(desc)
+		runtime.KeepAlive(ops)
+		runtime.KeepAlive(validators)
+		runtime.KeepAlive(appliedOut)
+		if rc == 0 {
+			return nil
+		}
+		// Plugin returned an error — fall through to the Go path.
 	}
-	rc := C.call_pvm_validator_set(
-		b.fnValidatorSet,
-		unsafe.Pointer(desc),
-		opsPtr,
-		unsafe.Pointer(&validators[0]),
-		unsafe.Pointer(appliedOut),
-		C.uint32_t(len(validators)),
-	)
-	runtime.KeepAlive(desc)
-	runtime.KeepAlive(ops)
-	runtime.KeepAlive(validators)
-	runtime.KeepAlive(appliedOut)
-	if rc != 0 {
-		return fmt.Errorf("platformvm: %s_platformvm_validator_set_apply returned %d",
-			b.kind, int(rc))
-	}
+
+	*appliedOut = cpuValidatorSetApply(desc, ops, validators)
 	return nil
 }
 
-// StakeTransition runs the GPU stake-transition kernel. Reads + writes
-// `validators` and `stake` in place; `appliedOut` receives the count.
+// StakeTransition runs the stake-transition. Reads + writes `validators`
+// and `stake` in place; `*appliedOut` receives the count of successfully
+// applied ops. Dispatch: GPU first if a plugin is bound, Go fallback
+// otherwise.
 func (b *GPUBackend) StakeTransition(
 	desc *PVMRoundDescriptor,
 	ops []PVMStakeOp,
@@ -569,9 +583,6 @@ func (b *GPUBackend) StakeTransition(
 	stake []PVMStakeRecord,
 	appliedOut *uint32,
 ) error {
-	if !b.IsAvailable() {
-		return ErrGPUNotAvailable
-	}
 	if desc == nil || appliedOut == nil {
 		return errors.New("platformvm: StakeTransition: nil desc or appliedOut")
 	}
@@ -582,36 +593,39 @@ func (b *GPUBackend) StakeTransition(
 		return errors.New("platformvm: StakeTransition: empty stake table")
 	}
 
-	var opsPtr unsafe.Pointer
-	if len(ops) > 0 {
-		opsPtr = unsafe.Pointer(&ops[0])
+	if b.IsAvailable() {
+		var opsPtr unsafe.Pointer
+		if len(ops) > 0 {
+			opsPtr = unsafe.Pointer(&ops[0])
+		}
+		rc := C.call_pvm_stake(
+			b.fnStake,
+			unsafe.Pointer(desc),
+			opsPtr,
+			unsafe.Pointer(&validators[0]),
+			unsafe.Pointer(&stake[0]),
+			unsafe.Pointer(appliedOut),
+			C.uint32_t(len(validators)),
+			C.uint32_t(len(stake)),
+		)
+		runtime.KeepAlive(desc)
+		runtime.KeepAlive(ops)
+		runtime.KeepAlive(validators)
+		runtime.KeepAlive(stake)
+		runtime.KeepAlive(appliedOut)
+		if rc == 0 {
+			return nil
+		}
 	}
-	rc := C.call_pvm_stake(
-		b.fnStake,
-		unsafe.Pointer(desc),
-		opsPtr,
-		unsafe.Pointer(&validators[0]),
-		unsafe.Pointer(&stake[0]),
-		unsafe.Pointer(appliedOut),
-		C.uint32_t(len(validators)),
-		C.uint32_t(len(stake)),
-	)
-	runtime.KeepAlive(desc)
-	runtime.KeepAlive(ops)
-	runtime.KeepAlive(validators)
-	runtime.KeepAlive(stake)
-	runtime.KeepAlive(appliedOut)
-	if rc != 0 {
-		return fmt.Errorf("platformvm: %s_platformvm_stake_transition returned %d",
-			b.kind, int(rc))
-	}
+
+	*appliedOut = cpuStakeTransition(desc, ops, validators, stake)
 	return nil
 }
 
-// SlashingTransition runs the GPU slashing-transition kernel. Reads +
-// writes `validators` and `slashing` in place; `appliedOut` receives the
-// count, and `totalLoOut`/`totalHiOut` receive the low/high u32 halves of
-// the total slashed amount (u64).
+// SlashingTransition runs the slashing-transition. Reads + writes
+// `validators` and `slashing` in place; `*appliedOut` receives the count,
+// and `*totalLoOut` / `*totalHiOut` receive the low/high u32 halves of
+// the total slashed amount (u64). Dispatch: GPU first, Go fallback.
 func (b *GPUBackend) SlashingTransition(
 	desc *PVMRoundDescriptor,
 	evidence []PVMSlashEvidence,
@@ -619,9 +633,6 @@ func (b *GPUBackend) SlashingTransition(
 	slashing []PVMSlashEvidence,
 	appliedOut, totalLoOut, totalHiOut *uint32,
 ) error {
-	if !b.IsAvailable() {
-		return ErrGPUNotAvailable
-	}
 	if desc == nil || appliedOut == nil || totalLoOut == nil || totalHiOut == nil {
 		return errors.New("platformvm: SlashingTransition: nil desc or output pointer")
 	}
@@ -629,36 +640,39 @@ func (b *GPUBackend) SlashingTransition(
 		return errors.New("platformvm: SlashingTransition: empty validators table")
 	}
 
-	var evidencePtr, slashingPtr unsafe.Pointer
-	if len(evidence) > 0 {
-		evidencePtr = unsafe.Pointer(&evidence[0])
+	if b.IsAvailable() {
+		var evidencePtr, slashingPtr unsafe.Pointer
+		if len(evidence) > 0 {
+			evidencePtr = unsafe.Pointer(&evidence[0])
+		}
+		if len(slashing) > 0 {
+			slashingPtr = unsafe.Pointer(&slashing[0])
+		}
+		rc := C.call_pvm_slashing(
+			b.fnSlashing,
+			unsafe.Pointer(desc),
+			evidencePtr,
+			unsafe.Pointer(&validators[0]),
+			slashingPtr,
+			unsafe.Pointer(appliedOut),
+			unsafe.Pointer(totalLoOut),
+			unsafe.Pointer(totalHiOut),
+			C.uint32_t(len(validators)),
+			C.uint32_t(len(slashing)),
+		)
+		runtime.KeepAlive(desc)
+		runtime.KeepAlive(evidence)
+		runtime.KeepAlive(validators)
+		runtime.KeepAlive(slashing)
+		runtime.KeepAlive(appliedOut)
+		runtime.KeepAlive(totalLoOut)
+		runtime.KeepAlive(totalHiOut)
+		if rc == 0 {
+			return nil
+		}
 	}
-	if len(slashing) > 0 {
-		slashingPtr = unsafe.Pointer(&slashing[0])
-	}
-	rc := C.call_pvm_slashing(
-		b.fnSlashing,
-		unsafe.Pointer(desc),
-		evidencePtr,
-		unsafe.Pointer(&validators[0]),
-		slashingPtr,
-		unsafe.Pointer(appliedOut),
-		unsafe.Pointer(totalLoOut),
-		unsafe.Pointer(totalHiOut),
-		C.uint32_t(len(validators)),
-		C.uint32_t(len(slashing)),
-	)
-	runtime.KeepAlive(desc)
-	runtime.KeepAlive(evidence)
-	runtime.KeepAlive(validators)
-	runtime.KeepAlive(slashing)
-	runtime.KeepAlive(appliedOut)
-	runtime.KeepAlive(totalLoOut)
-	runtime.KeepAlive(totalHiOut)
-	if rc != 0 {
-		return fmt.Errorf("platformvm: %s_platformvm_slashing_transition returned %d",
-			b.kind, int(rc))
-	}
+
+	*appliedOut, *totalLoOut, *totalHiOut = cpuSlashingTransition(desc, evidence, validators, slashing)
 	return nil
 }
 
@@ -679,9 +693,6 @@ func (b *GPUBackend) EpochTransition(
 	result *PVMTransitionResult,
 	leafScratch []byte,
 ) error {
-	if !b.IsAvailable() {
-		return ErrGPUNotAvailable
-	}
 	if desc == nil || epoch == nil || result == nil {
 		return errors.New("platformvm: EpochTransition: nil desc, epoch, or result")
 	}
@@ -689,39 +700,42 @@ func (b *GPUBackend) EpochTransition(
 		return errors.New("platformvm: EpochTransition: empty validators table")
 	}
 
-	var stakePtr, slashingPtr, scratchPtr unsafe.Pointer
-	if len(stake) > 0 {
-		stakePtr = unsafe.Pointer(&stake[0])
+	if b.IsAvailable() {
+		var stakePtr, slashingPtr, scratchPtr unsafe.Pointer
+		if len(stake) > 0 {
+			stakePtr = unsafe.Pointer(&stake[0])
+		}
+		if len(slashing) > 0 {
+			slashingPtr = unsafe.Pointer(&slashing[0])
+		}
+		if len(leafScratch) > 0 {
+			scratchPtr = unsafe.Pointer(&leafScratch[0])
+		}
+		rc := C.call_pvm_epoch(
+			b.fnEpoch,
+			unsafe.Pointer(desc),
+			unsafe.Pointer(&validators[0]),
+			stakePtr,
+			slashingPtr,
+			unsafe.Pointer(epoch),
+			unsafe.Pointer(result),
+			C.uint32_t(len(validators)),
+			C.uint32_t(len(stake)),
+			C.uint32_t(len(slashing)),
+			scratchPtr,
+		)
+		runtime.KeepAlive(desc)
+		runtime.KeepAlive(validators)
+		runtime.KeepAlive(stake)
+		runtime.KeepAlive(slashing)
+		runtime.KeepAlive(epoch)
+		runtime.KeepAlive(result)
+		runtime.KeepAlive(leafScratch)
+		if rc == 0 {
+			return nil
+		}
 	}
-	if len(slashing) > 0 {
-		slashingPtr = unsafe.Pointer(&slashing[0])
-	}
-	if len(leafScratch) > 0 {
-		scratchPtr = unsafe.Pointer(&leafScratch[0])
-	}
-	rc := C.call_pvm_epoch(
-		b.fnEpoch,
-		unsafe.Pointer(desc),
-		unsafe.Pointer(&validators[0]),
-		stakePtr,
-		slashingPtr,
-		unsafe.Pointer(epoch),
-		unsafe.Pointer(result),
-		C.uint32_t(len(validators)),
-		C.uint32_t(len(stake)),
-		C.uint32_t(len(slashing)),
-		scratchPtr,
-	)
-	runtime.KeepAlive(desc)
-	runtime.KeepAlive(validators)
-	runtime.KeepAlive(stake)
-	runtime.KeepAlive(slashing)
-	runtime.KeepAlive(epoch)
-	runtime.KeepAlive(result)
-	runtime.KeepAlive(leafScratch)
-	if rc != 0 {
-		return fmt.Errorf("platformvm: %s_platformvm_epoch_transition returned %d",
-			b.kind, int(rc))
-	}
+
+	cpuEpochTransition(desc, validators, stake, slashing, epoch, result)
 	return nil
 }

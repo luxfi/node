@@ -1,22 +1,26 @@
 //go:build !cgo
 
-// Package platformvm GPU backend — stub used when CGO is disabled.
+// Package platformvm GPU backend — pure-Go path when CGO is disabled.
 //
-// The cgo build (platformvm_gpu.go + backend.go) uses dlopen/dlsym to find a
-// lux-gpu-kernels plugin at process start. Without cgo there's no way to
-// reach a C function pointer, so every GPUBackend method returns
-// ErrGPUNotAvailable. vm.go callers see GPUAvailable() == false and
-// fall through to the existing Go path.
+// The cgo build (platformvm_gpu.go + backend.go) uses dlopen/dlsym to find
+// a lux-gpu-kernels plugin at process start and routes the four
+// validator/stake/slashing/epoch transitions through the GPU launcher
+// (falling back to the Go path on any launcher error). Without cgo
+// there's no way to reach a C function pointer, so every GPUBackend
+// method goes DIRECTLY through the canonical Go path defined in
+// platformvm_gpu_cpu.go.
 //
 // This file keeps the public API surface identical between build modes:
 // the same struct names, the same method signatures, the same package
-// constants. Only the implementation differs.
+// constants, and bit-equivalent output. Both build tags drive the same
+// pure-Go state-transition impl when no GPU plugin is bound.
 package platformvm
 
 import "errors"
 
-// ErrGPUNotAvailable mirrors the cgo build's sentinel. vm.go can compare
-// against it without caring which build mode is active.
+// ErrGPUNotAvailable is kept declared so callers can compare against it in
+// either build mode. The four bridge methods do NOT return it in the
+// nocgo build — they always run the canonical pure-Go path.
 var ErrGPUNotAvailable = errors.New("platformvm: GPU plugin unavailable (built without CGo)")
 
 // GPUBackendKind identifies which lux-gpu-kernels plugin satisfied the
@@ -216,15 +220,20 @@ const (
 )
 
 // =============================================================================
-// GPUBackend stub — every method returns ErrGPUNotAvailable.
+// GPUBackend — nocgo handle. Carries no plugin state; every transition
+// method dispatches directly to the canonical pure-Go path defined in
+// platformvm_gpu_cpu.go. The struct is intentionally empty so a zero
+// value is safe to use (matching the cgo build's nil-receiver contract).
 // =============================================================================
 
-// GPUBackend is the nocgo stub. All methods return ErrGPUNotAvailable so
-// vm.go can treat both builds identically.
+// GPUBackend is the nocgo handle. Calling its transition methods runs the
+// canonical Go state-transition impl directly.
 type GPUBackend struct{}
 
-// openGPUBackend is the nocgo entry point used by backend.go. Always
-// returns (nil, ErrGPUNotAvailable) since dlopen requires cgo.
+// openGPUBackend is the nocgo entry point used by backend.go. There is no
+// dlopen without cgo so this always returns (nil, ErrGPUNotAvailable);
+// callers fall through to ActiveGPUBackend()=nil and invoke the four
+// transition methods on the nil receiver — which still runs the Go path.
 func openGPUBackend(_ GPUBackendKind, _ string) (*GPUBackend, error) {
 	return nil, ErrGPUNotAvailable
 }
@@ -235,23 +244,34 @@ func (b *GPUBackend) Kind() GPUBackendKind { return GPUNone }
 // Path returns an empty string under nocgo.
 func (b *GPUBackend) Path() string { return "" }
 
-// IsAvailable always returns false under nocgo.
+// IsAvailable always returns false under nocgo — no plugin can be bound
+// without cgo. The transition methods do NOT consult IsAvailable; they
+// dispatch unconditionally to the pure-Go path.
 func (b *GPUBackend) IsAvailable() bool { return false }
 
 // Close is a no-op under nocgo.
 func (b *GPUBackend) Close() error { return nil }
 
-// ValidatorSetApply returns ErrGPUNotAvailable under nocgo.
+// ValidatorSetApply runs the canonical pure-Go validator-set-apply
+// transition (cpuValidatorSetApply in platformvm_gpu_cpu.go). Same
+// validation contract as the cgo build, byte-identical output.
 func (b *GPUBackend) ValidatorSetApply(
 	desc *PVMRoundDescriptor,
 	ops []PVMValidatorOp,
 	validators []PVMValidatorSlot,
 	appliedOut *uint32,
 ) error {
-	return ErrGPUNotAvailable
+	if desc == nil || appliedOut == nil {
+		return errors.New("platformvm: ValidatorSetApply: nil desc or appliedOut")
+	}
+	if len(validators) == 0 {
+		return errors.New("platformvm: ValidatorSetApply: empty validators table")
+	}
+	*appliedOut = cpuValidatorSetApply(desc, ops, validators)
+	return nil
 }
 
-// StakeTransition returns ErrGPUNotAvailable under nocgo.
+// StakeTransition runs the canonical pure-Go stake transition.
 func (b *GPUBackend) StakeTransition(
 	desc *PVMRoundDescriptor,
 	ops []PVMStakeOp,
@@ -259,10 +279,20 @@ func (b *GPUBackend) StakeTransition(
 	stake []PVMStakeRecord,
 	appliedOut *uint32,
 ) error {
-	return ErrGPUNotAvailable
+	if desc == nil || appliedOut == nil {
+		return errors.New("platformvm: StakeTransition: nil desc or appliedOut")
+	}
+	if len(validators) == 0 {
+		return errors.New("platformvm: StakeTransition: empty validators table")
+	}
+	if len(stake) == 0 {
+		return errors.New("platformvm: StakeTransition: empty stake table")
+	}
+	*appliedOut = cpuStakeTransition(desc, ops, validators, stake)
+	return nil
 }
 
-// SlashingTransition returns ErrGPUNotAvailable under nocgo.
+// SlashingTransition runs the canonical pure-Go slashing transition.
 func (b *GPUBackend) SlashingTransition(
 	desc *PVMRoundDescriptor,
 	evidence []PVMSlashEvidence,
@@ -270,10 +300,19 @@ func (b *GPUBackend) SlashingTransition(
 	slashing []PVMSlashEvidence,
 	appliedOut, totalLoOut, totalHiOut *uint32,
 ) error {
-	return ErrGPUNotAvailable
+	if desc == nil || appliedOut == nil || totalLoOut == nil || totalHiOut == nil {
+		return errors.New("platformvm: SlashingTransition: nil desc or output pointer")
+	}
+	if len(validators) == 0 {
+		return errors.New("platformvm: SlashingTransition: empty validators table")
+	}
+	*appliedOut, *totalLoOut, *totalHiOut = cpuSlashingTransition(desc, evidence, validators, slashing)
+	return nil
 }
 
-// EpochTransition returns ErrGPUNotAvailable under nocgo.
+// EpochTransition runs the canonical pure-Go epoch transition. The
+// `leafScratch` argument is accepted for ABI parity with the cgo build
+// and ignored — the Go impl allocates per-leaf.
 func (b *GPUBackend) EpochTransition(
 	desc *PVMRoundDescriptor,
 	validators []PVMValidatorSlot,
@@ -283,5 +322,13 @@ func (b *GPUBackend) EpochTransition(
 	result *PVMTransitionResult,
 	leafScratch []byte,
 ) error {
-	return ErrGPUNotAvailable
+	_ = leafScratch
+	if desc == nil || epoch == nil || result == nil {
+		return errors.New("platformvm: EpochTransition: nil desc, epoch, or result")
+	}
+	if len(validators) == 0 {
+		return errors.New("platformvm: EpochTransition: empty validators table")
+	}
+	cpuEpochTransition(desc, validators, stake, slashing, epoch, result)
+	return nil
 }
