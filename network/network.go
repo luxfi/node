@@ -18,7 +18,6 @@ import (
 	"github.com/pires/go-proxyproto"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/codec/wrappers"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/constants"
@@ -38,6 +37,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/txs"

@@ -10,18 +10,18 @@ import (
 	"syscall"
 
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	nodeconsensus "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/warp/socket"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
 
 var (
-	_ consensuscore.Acceptor    = (*EventSockets)(nil)
-	_ nodeconsensus.Acceptor    = (*eventSocketAcceptor)(nil)
+	_ consensuscore.Acceptor = (*EventSockets)(nil)
+	_ nodeconsensus.Acceptor = (*eventSocketAcceptor)(nil)
 )
 
 // eventSocketAcceptor adapts an eventSocket to the nodeconsensus.Acceptor interface

@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/utils/wrappers"
 )
 
 const (
@@ -50,7 +50,7 @@ func NewClaimedIPPort(
 		Raw:       cert.Raw,
 		PublicKey: cert.PublicKey,
 	}
-	
+
 	ip := &ClaimedIPPort{
 		Cert:      cert,
 		AddrPort:  ipPort,
