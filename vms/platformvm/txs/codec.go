@@ -10,6 +10,7 @@ import (
 	"github.com/luxfi/codec"
 	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/codec/zapcodec"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -19,17 +20,31 @@ const (
 	// CodecVersionV0 is the v1.23.x ("Apricot/Banff") wire layout. It is
 	// retained as a READ-ONLY decoder so that pre-codec-v1 blocks and txs
 	// on disk (mainnet, testnet) continue to deserialize. All write paths
-	// MUST use CodecVersionV1.
+	// at ts < ZAPCodecActivationTimestamp MUST use CodecVersionV1.
 	CodecVersionV0 uint16 = 0
 
-	// CodecVersionV1 is the current canonical wire layout used for every
-	// new tx and every new block. It is the only version produced by the
-	// build/sign paths.
+	// CodecVersionV1 is the canonical linearcodec layout — big-endian,
+	// produced by every binary up to and including the pre-ZAP cutover.
+	// Read forever; written only when block.Timestamp <
+	// ZAPCodecActivationTimestamp.
 	CodecVersionV1 uint16 = 1
 
-	// CodecVersion is the canonical write version. All Marshal call sites
-	// in this package use CodecVersion so that any future bump of the
-	// write target updates exactly one symbol.
+	// CodecVersionV2 is the ZAP-native layout — little-endian, structurally
+	// identical to V1 (same slot map, same field order), only the wire
+	// encoding differs. Produced when block.Timestamp >=
+	// ZAPCodecActivationTimestamp. Read always.
+	//
+	// V2 is NOT a slot-map change; it's a wire-encoding change. The same
+	// Go types are registered at the same slot IDs as V1. A V1-encoded
+	// tx and a V2-encoded tx of the same logical content differ in
+	// byte content (LE vs BE) but produce identical Go values after
+	// Unmarshal.
+	CodecVersionV2 uint16 = 2
+
+	// CodecVersion is the deprecated alias preserved for code that
+	// historically referenced "the write version". New code MUST use
+	// CodecVersionForTimestamp instead — there is no single canonical
+	// write version after the ZAP cutover.
 	CodecVersion = CodecVersionV1
 
 	// Version is retained as a deprecated alias for code that referenced
@@ -39,6 +54,9 @@ const (
 
 var (
 	// Codec is the standard-size multi-version codec used for normal txs.
+	// Registers V0 + V1 (linearcodec) AND V2 (zapcodec). The right write
+	// version is selected via CodecVersionForTimestamp; reads dispatch on
+	// the 2-byte wire prefix.
 	Codec codec.Manager
 
 	// GenesisCodec allows txs of larger than usual size to be parsed.
@@ -52,8 +70,10 @@ var (
 func init() {
 	cV0 := linearcodec.NewDefault()
 	cV1 := linearcodec.NewDefault()
+	cV2 := zapcodec.NewDefault()
 	gcV0 := linearcodec.NewDefault()
 	gcV1 := linearcodec.NewDefault()
+	gcV2 := zapcodec.NewDefault()
 
 	errs := wrappers.Errs{}
 	errs.Add(
@@ -61,6 +81,10 @@ func init() {
 		registerV0TxTypes(gcV0),
 		registerV1TxTypes(cV1),
 		registerV1TxTypes(gcV1),
+		// V2 reuses the V1 slot map verbatim — only the wire encoding
+		// differs. Same Go types, same IDs.
+		registerV1TxTypes(cV2),
+		registerV1TxTypes(gcV2),
 	)
 
 	Codec = codec.NewDefaultManager()
@@ -68,12 +92,80 @@ func init() {
 	errs.Add(
 		Codec.RegisterCodec(CodecVersionV0, cV0),
 		Codec.RegisterCodec(CodecVersionV1, cV1),
+		Codec.RegisterCodec(CodecVersionV2, cV2),
 		GenesisCodec.RegisterCodec(CodecVersionV0, gcV0),
 		GenesisCodec.RegisterCodec(CodecVersionV1, gcV1),
+		GenesisCodec.RegisterCodec(CodecVersionV2, gcV2),
 	)
 	if errs.Errored() {
 		panic(errs.Err)
 	}
+}
+
+// slotRegistrar is the subset of {linearcodec.Codec, zapcodec.Codec}
+// that registerV0TxTypes and registerV1TxTypes need. Identifying it as
+// an in-package interface keeps the registration functions wire-
+// agnostic: they decide the SLOT MAP, the codec implementation decides
+// the WIRE FORMAT. Same slot IDs across all codec implementations.
+type slotRegistrar interface {
+	RegisterType(interface{}) error
+	SkipRegistrations(int)
+}
+
+// CodecVersionForTimestamp returns the canonical write-codec version
+// for a transaction (or block) whose timestamp is ts. Reads should NOT
+// use this — dispatch on the wire prefix via Codec.Unmarshal directly.
+//
+// The cutover is strict — a tx with ts == ZAPCodecActivationTimestamp
+// is V2. A tx with ts == ZAPCodecActivationTimestamp - 1 is V1. There
+// is no fallback; if the wire bytes do not match the expected version
+// for the chain's current time, the tx is rejected by the codec
+// version-not-allowed gate in TxsForTimestamp.
+func CodecVersionForTimestamp(ts uint64) uint16 {
+	if ts >= ZAPCodecActivationTimestamp {
+		return CodecVersionV2
+	}
+	return CodecVersionV1
+}
+
+// CodecForTimestamp returns the codec.Manager configured to write at
+// the canonical version for the given timestamp. The returned Manager
+// is always the package-level Codec — it hosts every registered
+// version. The Manager's Marshal(version, ...) method is what selects
+// the wire encoding; this helper just returns the right version too,
+// via the companion CodecVersionForTimestamp.
+//
+// Why expose both Manager AND version: callers historically pass a
+// version into Codec.Marshal/Codec.Unmarshal. They keep that pattern;
+// CodecForTimestamp is a no-op for the manager handle, kept here so
+// future evolutions can swap the manager itself (e.g. a ZAP-only
+// manager after V1 retirement) without changing call sites.
+func CodecForTimestamp(_ uint64) codec.Manager {
+	return Codec
+}
+
+// CodecAllowsRead reports whether v is one of the codec versions this
+// binary recognises for reads. Used by tx-parse gates: a wire whose
+// prefix is V0/V1/V2 is accepted; anything else is rejected before
+// the codec.Manager would surface ErrUnknownVersion.
+//
+// V0 reads are always allowed (legacy historical txs).
+// V1 reads are always allowed.
+// V2 reads are always allowed once the binary ships with this
+//     constant — there is no "too early" rejection. The activation gate
+//     only protects WRITES.
+func CodecAllowsRead(v uint16) bool {
+	return v == CodecVersionV0 || v == CodecVersionV1 || v == CodecVersionV2
+}
+
+// CodecRequiresLegacy reports whether wire-version v is in the
+// pre-ZAP-activation legacy set. After activation a node MAY still
+// accept a V1-encoded tx — there is no historical-bytes lookback
+// problem — but the build path MUST refuse to PRODUCE V1 once ts
+// crosses the activation threshold. This predicate distinguishes
+// "legacy but accepted" from "current write version".
+func CodecRequiresLegacy(v uint16) bool {
+	return v == CodecVersionV0 || v == CodecVersionV1
 }
 
 // RegisterTypes registers the v1 tx-codec types (the only version a
@@ -100,7 +192,7 @@ func RegisterTypes(targetCodec linearcodec.Codec) error {
 //	      SetL1ValidatorWeightTx, IncreaseL1ValidatorBalanceTx,
 //	      DisableL1ValidatorTx, SlashValidatorTx, CreateAssetTx,
 //	      OperationTx)
-func registerV1TxTypes(targetCodec linearcodec.Codec) error {
+func registerV1TxTypes(targetCodec slotRegistrar) error {
 	// Reserve 5 slots for the four canonical block types + one historical
 	// slot (atomic block ID) so existing tx type IDs remain stable.
 	targetCodec.SkipRegistrations(5)
@@ -198,7 +290,7 @@ func registerV1TxTypes(targetCodec linearcodec.Codec) error {
 //
 // Pre-Etna v0 blobs that contain only slots 5..28 decode cleanly
 // without touching the post-Etna types.
-func registerV0TxTypes(targetCodec linearcodec.Codec) error {
+func registerV0TxTypes(targetCodec slotRegistrar) error {
 	// Slots 0-4: reserved for block-codec block types.
 	targetCodec.SkipRegistrations(5)
 
