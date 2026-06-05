@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/zap_native"
+	"github.com/luxfi/proto/zap_native"
 )
 
 // SyntheticMempoolCount is the synthetic-mempool size used when no

@@ -113,7 +113,7 @@ func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("failed to verify output: %w", err)
 		}
-		newWeight, err := safemath.Add64(totalStakeWeight, out.Output().Amount())
+		newWeight, err := safemath.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}
