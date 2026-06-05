@@ -501,7 +501,7 @@ func (v *ValidatorWeightDiff) Sub(amount uint64) error {
 func (v *ValidatorWeightDiff) addOrSub(sub bool, amount uint64) error {
 	if v.Decrease == sub {
 		var err error
-		v.Amount, err = safemath.Add64(v.Amount, amount)
+		v.Amount, err = safemath.Add(v.Amount, amount)
 		return err
 	}
 

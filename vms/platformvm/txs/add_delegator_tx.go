@@ -100,7 +100,7 @@ func (tx *AddDelegatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("output verification failed: %w", err)
 		}
-		newWeight, err := safemath.Add64(totalStakeWeight, out.Output().Amount())
+		newWeight, err := safemath.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}

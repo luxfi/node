@@ -905,7 +905,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 		jsonDelegateeReward := avajson.Uint64(delegateeReward)
 
 		switch currentStaker.Priority {
-		case txs.PrimaryNetworkValidatorCurrentPriority, txs.NetPermissionlessValidatorCurrentPriority:
+		case txs.PrimaryNetworkValidatorCurrentPriority, txs.ChainPermissionlessValidatorCurrentPriority:
 			attr, err := s.loadStakerTxAttributes(currentStaker.TxID)
 			if err != nil {
 				return nil, err
@@ -964,7 +964,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			}
 			validators = append(validators, vdr)
 
-		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.NetPermissionlessDelegatorCurrentPriority:
+		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.ChainPermissionlessDelegatorCurrentPriority:
 			var rewardOwner *platformapitypes.Owner
 			// If we are handling multiple nodeIDs, we don't return the
 			// delegator information.
@@ -989,7 +989,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			}
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 
-		case txs.NetPermissionedValidatorCurrentPriority:
+		case txs.ChainPermissionedValidatorCurrentPriority:
 			validators = append(validators, apiStaker)
 
 		default:

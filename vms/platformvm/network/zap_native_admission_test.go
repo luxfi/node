@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/zap_native"
+	"github.com/luxfi/proto/zap_native"
 )
 
 // LP-023 Red round 7 R7V5 — admission-gate tests.

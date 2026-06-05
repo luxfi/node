@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luxfi/node/vms/platformvm/txs/zap_native"
+	"github.com/luxfi/proto/zap_native"
 )
 
 // TestLegacyCodecGateDefault verifies that with

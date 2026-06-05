@@ -104,7 +104,7 @@ func applyWeightDiff(
 	if weightDiff.Decrease {
 		// The validator's weight was decreased at this block, so in the
 		// prior block it was higher.
-		vdr.Weight, err = safemath.Add64(vdr.Weight, weightDiff.Amount)
+		vdr.Weight, err = safemath.Add(vdr.Weight, weightDiff.Amount)
 	} else {
 		// The validator's weight was increased at this block, so in the
 		// prior block it was lower.

@@ -33,16 +33,6 @@ const (
 	PrimaryNetworkValidatorCurrentPriority
 )
 
-// Deprecated: Use Chain* priority constants instead
-const (
-	NetPermissionlessValidatorPendingPriority = ChainPermissionlessValidatorPendingPriority
-	NetPermissionlessDelegatorPendingPriority = ChainPermissionlessDelegatorPendingPriority
-	NetPermissionedValidatorPendingPriority   = ChainPermissionedValidatorPendingPriority
-	NetPermissionedValidatorCurrentPriority   = ChainPermissionedValidatorCurrentPriority
-	NetPermissionlessDelegatorCurrentPriority = ChainPermissionlessDelegatorCurrentPriority
-	NetPermissionlessValidatorCurrentPriority = ChainPermissionlessValidatorCurrentPriority
-)
-
 var PendingToCurrentPriorities = []Priority{
 	PrimaryNetworkDelegatorLegacyPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
 	PrimaryNetworkValidatorPendingPriority:        PrimaryNetworkValidatorCurrentPriority,

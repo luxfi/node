@@ -258,7 +258,7 @@ func (b *builder) NewImportTx(
 			continue
 		}
 		assetID := utxo.AssetID()
-		importedAmounts[assetID], err = math.Add64(importedAmounts[assetID], input.Amount())
+		importedAmounts[assetID], err = math.Add(importedAmounts[assetID], input.Amount())
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +335,7 @@ func (b *builder) NewExportTx(
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	toBurn, err := math.Add64(amount, b.cfg.TxFee)
+	toBurn, err := math.Add(amount, b.cfg.TxFee)
 	if err != nil {
 		return nil, fmt.Errorf("amount (%d) + tx fee(%d) overflows", amount, b.cfg.TxFee)
 	}
@@ -683,7 +683,7 @@ func (b *builder) NewBaseTx(
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
-	toBurn, err := math.Add64(amount, b.cfg.TxFee)
+	toBurn, err := math.Add(amount, b.cfg.TxFee)
 	if err != nil {
 		return nil, fmt.Errorf("amount (%d) + tx fee(%d) overflows", amount, b.cfg.TxFee)
 	}

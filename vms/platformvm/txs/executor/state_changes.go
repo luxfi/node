@@ -144,7 +144,7 @@ func advanceTimeTo(
 		stakerToAdd.NextTime = stakerToRemove.EndTime
 		stakerToAdd.Priority = txs.PendingToCurrentPriorities[stakerToRemove.Priority]
 
-		if stakerToRemove.Priority == txs.NetPermissionedValidatorPendingPriority {
+		if stakerToRemove.Priority == txs.ChainPermissionedValidatorPendingPriority {
 			if err := changes.PutCurrentValidator(&stakerToAdd); err != nil {
 				return nil, false, err
 			}
@@ -175,13 +175,13 @@ func advanceTimeTo(
 		changes.SetCurrentSupply(stakerToRemove.ChainID, supply+potentialReward)
 
 		switch stakerToRemove.Priority {
-		case txs.PrimaryNetworkValidatorPendingPriority, txs.NetPermissionlessValidatorPendingPriority:
+		case txs.PrimaryNetworkValidatorPendingPriority, txs.ChainPermissionlessValidatorPendingPriority:
 			if err := changes.PutCurrentValidator(&stakerToAdd); err != nil {
 				return nil, false, err
 			}
 			changes.DeletePendingValidator(stakerToRemove)
 
-		case txs.PrimaryNetworkDelegatorLegacyPendingPriority, txs.PrimaryNetworkDelegatorPermissionlessPendingPriority, txs.NetPermissionlessDelegatorPendingPriority:
+		case txs.PrimaryNetworkDelegatorLegacyPendingPriority, txs.PrimaryNetworkDelegatorPermissionlessPendingPriority, txs.ChainPermissionlessDelegatorPendingPriority:
 			changes.PutCurrentDelegator(&stakerToAdd)
 			changes.DeletePendingDelegator(stakerToRemove)
 
@@ -211,7 +211,7 @@ func advanceTimeTo(
 
 		// Invariant: Permissioned stakers are encountered first for a given
 		//            timestamp because their priority is the smallest.
-		if stakerToRemove.Priority != txs.NetPermissionedValidatorCurrentPriority {
+		if stakerToRemove.Priority != txs.ChainPermissionedValidatorCurrentPriority {
 			// Permissionless stakers are removed by the RewardValidatorTx, not
 			// an AdvanceTimeTx.
 			break
