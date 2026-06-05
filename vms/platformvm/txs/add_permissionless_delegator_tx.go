@@ -65,14 +65,14 @@ func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
 	if tx.Chain == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorPermissionlessPendingPriority
 	}
-	return NetPermissionlessDelegatorPendingPriority
+	return ChainPermissionlessDelegatorPendingPriority
 }
 
 func (tx *AddPermissionlessDelegatorTx) CurrentPriority() Priority {
 	if tx.Chain == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorCurrentPriority
 	}
-	return NetPermissionlessDelegatorCurrentPriority
+	return ChainPermissionlessDelegatorCurrentPriority
 }
 
 func (tx *AddPermissionlessDelegatorTx) Stake() []*lux.TransferableOutput {
@@ -111,7 +111,7 @@ func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(rt *runtime.Runtime) err
 	stakedAssetID := firstStakeOutput.AssetID()
 	totalStakeWeight := firstStakeOutput.Output().Amount()
 	for _, out := range tx.StakeOuts[1:] {
-		newWeight, err := safemath.Add64(totalStakeWeight, out.Output().Amount())
+		newWeight, err := safemath.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}

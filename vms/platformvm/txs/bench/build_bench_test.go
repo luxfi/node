@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/zap_native"
+	"github.com/luxfi/proto/zap_native"
 )
 
 // BenchmarkBuildLegacy measures fields→bytes via the legacy
