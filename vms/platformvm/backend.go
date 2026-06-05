@@ -4,18 +4,16 @@
 // open as ActiveGPUBackend().
 //
 // Decomplected from platformvm_gpu.go / platformvm_gpu_nocgo.go: the
-// probe order, environment knob (LUX_PLATFORMVM_GPU), and the
-// package-level handle live here. The actual dlopen + dlsym calls live
-// in platformvm_gpu.go (cgo build) or in the nocgo stub. Both files
-// expose the same openGPUBackend signature so this file compiles
-// identically in either mode.
+// probe order and package-level handle live here. The actual dlopen +
+// dlsym calls live in platformvm_gpu.go (cgo build) or in the nocgo
+// stub. Both files expose the same openGPUBackend signature so this
+// file compiles identically in either mode.
 //
-// FALSE-by-default: a successful dlopen here does NOT cause the chain to
-// route through the GPU. The bridge is a strict positive overlay — the
-// pure-Go P-Chain transition logic continues to drive consensus until
-// an operator opts in by setting LUX_PLATFORMVM_GPU=1. Even then, every
-// GPU launcher error makes the caller fall back to the existing Go path
-// WITHOUT panic.
+// If a plugin opens cleanly, the chain routes transitions through it.
+// If a probe fails (no plugin installed, missing runtime, etc.) the
+// chain runs the existing pure-Go path. Every GPU launcher error makes
+// the caller fall back to the Go path WITHOUT panic — strict positive
+// overlay with graceful degradation.
 package platformvm
 
 import (
@@ -66,20 +64,16 @@ func candidatePlugins() []pluginCandidate {
 // searchPaths returns the directories the loader probes for each
 // candidate basename. Order:
 //
-//  1. LUX_PLATFORMVM_GPU_DIR — explicit override.
-//  2. LUX_GPU_PLUGIN_DIR — shared with other VMs (aivm, etc).
-//  3. ~/work/lux-private/gpu-kernels/build/<flavor>_backend/ — dev tree.
-//  4. /usr/local/lib/lux-gpu/ — prefix install.
-//  5. /usr/lib/lux-gpu/.
-//  6. Empty string ("" — let dlopen consult the system search path).
+//  1. LUX_GPU_PLUGIN_DIR — shared with every other VM (aivm, bridgevm, …).
+//  2. ~/work/lux-private/gpu-kernels/build/<flavor>_backend/ — dev tree.
+//  3. /usr/local/lib/lux-gpu/ — prefix install.
+//  4. /usr/lib/lux-gpu/.
+//  5. Empty string ("" — let dlopen consult the system search path).
 //
 // The empty-string fallback lets a plugin in DYLD_LIBRARY_PATH /
 // LD_LIBRARY_PATH still resolve, which is the standard CI override.
 func searchPaths() []string {
 	out := make([]string, 0, 8)
-	if d := os.Getenv("LUX_PLATFORMVM_GPU_DIR"); d != "" {
-		out = append(out, d)
-	}
 	if d := os.Getenv("LUX_GPU_PLUGIN_DIR"); d != "" {
 		out = append(out, d)
 	}
@@ -138,11 +132,6 @@ func SetActiveGPUBackend(b *GPUBackend) *GPUBackend {
 // hip → metal → vulkan → webgpu order and returns the first backend that
 // opens AND resolves all four host launchers. Returns nil + the last
 // error if no plugin satisfies the probe.
-//
-// AutoBackend does NOT consult LUX_PLATFORMVM_GPU — it always probes.
-// The env knob gates whether the chain ROUTES through the GPU; the probe
-// itself runs unconditionally so operators can inspect ActiveGPUBackend()
-// and decide whether to opt in.
 func AutoBackend() (*GPUBackend, error) {
 	var lastErr error = ErrGPUNotAvailable
 	for _, cand := range candidatePlugins() {
@@ -185,30 +174,6 @@ func kindLikelyOnHost(k GPUBackendKind) bool {
 	case GPUVulkan, GPUWebGPU:
 		// Vulkan via MoltenVK works on darwin too; WebGPU via Dawn/wgpu
 		// is portable.
-		return true
-	default:
-		return false
-	}
-}
-
-// =============================================================================
-// Feature flag — LUX_PLATFORMVM_GPU=1 is the operator opt-in. Until this
-// is set, the chain runs the existing pure-Go path even when a plugin
-// successfully loaded. Decomplected from the load itself so operators can
-// inspect ActiveGPUBackend() (loaded but inert) before flipping the gate.
-// =============================================================================
-
-// GPUEnabled reports whether the operator opted into the GPU bridge via
-// the LUX_PLATFORMVM_GPU env knob. Recognised true values: "1", "true",
-// "yes" (case-insensitive). Anything else, or unset, → false.
-//
-// Even when GPUEnabled() is true, callers MUST still check
-// ActiveGPUBackend().IsAvailable() — the operator may have asked for GPU
-// without a plugin being installed.
-func GPUEnabled() bool {
-	v := os.Getenv("LUX_PLATFORMVM_GPU")
-	switch v {
-	case "1", "true", "TRUE", "True", "yes", "YES", "Yes":
 		return true
 	default:
 		return false
