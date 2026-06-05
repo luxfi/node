@@ -252,7 +252,7 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 			stakeAmount,
 			currentSupply,
 		)
-		newCurrentSupply, err := safemath.Add64(currentSupply, potentialReward)
+		newCurrentSupply, err := safemath.Add(currentSupply, potentialReward)
 		if err != nil {
 			return err
 		}
