@@ -17,9 +17,8 @@ import (
 	"github.com/luxfi/metric"
 	metrics "github.com/luxfi/metric"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/address"
+	"github.com/luxfi/constants"
 	chain "github.com/luxfi/vm/chain"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/engine/dag"
@@ -35,6 +34,7 @@ import (
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
+	"github.com/luxfi/node/vms/pcodecs"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
@@ -1073,7 +1073,7 @@ func (vm *VM) Clock() *mockable.Clock {
 }
 
 // CodecRegistry returns the codec registry for marshalling/unmarshalling
-func (vm *VM) CodecRegistry() codec.Registry {
+func (vm *VM) CodecRegistry() pcodecs.Registry {
 	if vm.parser == nil {
 		return nil
 	}

@@ -8,12 +8,12 @@ import (
 	"fmt"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/bls12381fx"
 	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
@@ -155,7 +155,7 @@ func (g *Genesis) Bytes() ([]byte, error) {
 	return codec.Marshal(txs.CodecVersion, g)
 }
 
-func newGenesisCodec() (codec.Manager, error) {
+func newGenesisCodec() (pcodecs.Manager, error) {
 	parser, err := txs.NewParser(
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
