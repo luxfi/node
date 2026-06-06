@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestParse(t *testing.T) {
@@ -27,7 +27,7 @@ func TestParse(t *testing.T) {
 		{
 			name:        "invalid message",
 			bytes:       []byte{255, 255, 255, 255},
-			expectedErr: codec.ErrUnknownVersion,
+			expectedErr: pcodecs.ErrUnknownVersion,
 		},
 		{
 			name: "ChainToL1Conversion",
