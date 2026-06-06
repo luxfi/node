@@ -6,12 +6,10 @@ package txs
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -23,21 +21,21 @@ const CodecVersion = 0
 var _ Parser = (*parser)(nil)
 
 type Parser interface {
-	Codec() codec.Manager
-	GenesisCodec() codec.Manager
+	Codec() pcodecs.Manager
+	GenesisCodec() pcodecs.Manager
 
-	CodecRegistry() codec.Registry
-	GenesisCodecRegistry() codec.Registry
+	CodecRegistry() pcodecs.Registry
+	GenesisCodecRegistry() pcodecs.Registry
 
 	ParseTx(bytes []byte) (*Tx, error)
 	ParseGenesisTx(bytes []byte) (*Tx, error)
 }
 
 type parser struct {
-	cm  codec.Manager
-	gcm codec.Manager
-	c   linearcodec.Codec
-	gc  linearcodec.Codec
+	cm  pcodecs.Manager
+	gcm pcodecs.Manager
+	c   pcodecs.LinearCodec
+	gc  pcodecs.LinearCodec
 }
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
@@ -56,11 +54,11 @@ func NewCustomParser(
 	log log.Logger,
 	fxs []fxs.Fx,
 ) (Parser, error) {
-	gc := linearcodec.NewDefault()
-	c := linearcodec.NewDefault()
+	gc := pcodecs.NewLinearCodec()
+	c := pcodecs.NewLinearCodec()
 
-	gcm := codec.NewManager(math.MaxInt32)
-	cm := codec.NewDefaultManager()
+	gcm := pcodecs.NewMaxInt32Manager()
+	cm := pcodecs.NewDefaultManager()
 
 	err := errors.Join(
 		c.RegisterType(&BaseTx{}),
@@ -88,7 +86,7 @@ func NewCustomParser(
 	}
 	for i, fx := range fxs {
 		vm.codecRegistry = &codecRegistry{
-			codecs:      []codec.Registry{gc, c},
+			codecs:      []pcodecs.Registry{gc, c},
 			index:       i,
 			typeToIndex: vm.typeToFxIndex,
 		}
@@ -122,19 +120,19 @@ func NewCustomParser(
 	}, nil
 }
 
-func (p *parser) Codec() codec.Manager {
+func (p *parser) Codec() pcodecs.Manager {
 	return p.cm
 }
 
-func (p *parser) GenesisCodec() codec.Manager {
+func (p *parser) GenesisCodec() pcodecs.Manager {
 	return p.gcm
 }
 
-func (p *parser) CodecRegistry() codec.Registry {
+func (p *parser) CodecRegistry() pcodecs.Registry {
 	return p.c
 }
 
-func (p *parser) GenesisCodecRegistry() codec.Registry {
+func (p *parser) GenesisCodecRegistry() pcodecs.Registry {
 	return p.gc
 }
 
@@ -146,7 +144,7 @@ func (p *parser) ParseGenesisTx(bytes []byte) (*Tx, error) {
 	return parse(p.gcm, bytes)
 }
 
-func parse(cm codec.Manager, signedBytes []byte) (*Tx, error) {
+func parse(cm pcodecs.Manager, signedBytes []byte) (*Tx, error) {
 	tx := &Tx{}
 	parsedVersion, err := cm.Unmarshal(signedBytes, tx)
 	if err != nil {
