@@ -14,8 +14,8 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/codec/wrappers"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {
@@ -31,7 +31,7 @@ func stop(ctx context.Context, log log.Logger, cmd *exec.Cmd) {
 	waitChan := make(chan error)
 	go func() {
 		// attempt graceful shutdown
-		errs := wrappers.Errs{}
+		errs := pcodecs.Errs{}
 		err := cmd.Process.Signal(syscall.SIGTERM)
 		errs.Add(err)
 		_, err = cmd.Process.Wait()
