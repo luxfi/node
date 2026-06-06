@@ -6,8 +6,8 @@ package state
 import (
 	"sync"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 // probe is a flat struct chosen so its codec walk is the empty walk
@@ -36,7 +36,7 @@ type probe struct{}
 // returns ErrUnknownVersion if and only if version 0 is not registered
 // in its map. The probe is cheap (a 10-byte Marshal at most) and only
 // happens on the first observation of each distinct codec pointer.
-func multiVersionUnmarshal(c codec.Manager, b []byte, dest interface{}) (uint16, error) {
+func multiVersionUnmarshal(c pcodecs.Manager, b []byte, dest interface{}) (uint16, error) {
 	checkMultiVersion(c)
 	return c.Unmarshal(b, dest)
 }
@@ -45,7 +45,7 @@ var (
 	multiVersionProbeOnce sync.Map // codec.Manager -> struct{}
 )
 
-func checkMultiVersion(c codec.Manager) {
+func checkMultiVersion(c pcodecs.Manager) {
 	if _, observed := multiVersionProbeOnce.LoadOrStore(c, struct{}{}); observed {
 		return
 	}

@@ -22,10 +22,9 @@
 package v0
 
 import (
-	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/codec/wrappers"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
@@ -56,8 +55,8 @@ const CodecVersion uint16 = 0
 // ConvertNetworkToL1Tx (post-rename source type, identical struct
 // layout, same slot 35). Codec wire matching is by slot ID, not type
 // name; the rename did not change the serialized format.
-func RegisterBlockTypes(c linearcodec.Codec) error {
-	errs := wrappers.Errs{}
+func RegisterBlockTypes(c pcodecs.LinearCodec) error {
+	errs := pcodecs.Errs{}
 
 	// Slots 0-4: Apricot blocks.
 	errs.Add(
@@ -144,8 +143,8 @@ func RegisterBlockTypes(c linearcodec.Codec) error {
 // used by v1.23.x txs.init(). Apricot block slots (0-4) and Banff block
 // slots (29-32) are SkipRegistrations rather than RegisterType so that
 // shared tx slots line up with the block codec.
-func RegisterTxTypes(c linearcodec.Codec) error {
-	errs := wrappers.Errs{}
+func RegisterTxTypes(c pcodecs.LinearCodec) error {
+	errs := pcodecs.Errs{}
 
 	// Slots 0-4: Apricot block slots reserved.
 	c.SkipRegistrations(5)

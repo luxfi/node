@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/codec"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block/v0"
 )
 
@@ -29,7 +29,7 @@ var ErrShortBytes = errors.New("block bytes too short for codec version prefix")
 // c must be one of block.Codec or block.GenesisCodec. The v0 codec is
 // selected internally based on the size class of c. Other codecs are
 // rejected with codec.ErrUnknownVersion.
-func Parse(c codec.Manager, b []byte) (Block, error) {
+func Parse(c pcodecs.Manager, b []byte) (Block, error) {
 	if len(b) < 2 {
 		return nil, ErrShortBytes
 	}
@@ -41,14 +41,14 @@ func Parse(c codec.Manager, b []byte) (Block, error) {
 	case CodecVersionV0:
 		return parseV0(c, b)
 	default:
-		return nil, fmt.Errorf("%w: %d", codec.ErrUnknownVersion, version)
+		return nil, fmt.Errorf("%w: %d", pcodecs.ErrUnknownVersion, version)
 	}
 }
 
 // parseV1 is the canonical block-decode path. Bytes are unmarshalled
 // against the v1 slot map and the resulting Block keeps b as its
 // authoritative bytes.
-func parseV1(c codec.Manager, b []byte) (Block, error) {
+func parseV1(c pcodecs.Manager, b []byte) (Block, error) {
 	var blk Block
 	if _, err := c.Unmarshal(b, &blk); err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func parseV1(c codec.Manager, b []byte) (Block, error) {
 // pre-Banff atomic block left on disk should have been replaced by the
 // Banff history. We return an explicit error so the caller can decide
 // whether to surface it as DB corruption or as a soft skip.
-func parseV0(c codec.Manager, b []byte) (Block, error) {
+func parseV0(c pcodecs.Manager, b []byte) (Block, error) {
 	v0c := v0CodecFor(c)
 	var v0blk v0.Block
 	if _, err := v0c.Unmarshal(b, &v0blk); err != nil {
@@ -89,7 +89,7 @@ func parseV0(c codec.Manager, b []byte) (Block, error) {
 // of c. We mirror the size class so that a GenesisCodec caller (large
 // max size) gets the v0GenesisCodec (also large) rather than v0Codec
 // (1 MiB).
-func v0CodecFor(c codec.Manager) codec.Manager {
+func v0CodecFor(c pcodecs.Manager) pcodecs.Manager {
 	if c == GenesisCodec {
 		return v0GenesisCodec
 	}

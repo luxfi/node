@@ -5,19 +5,17 @@ package warp
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const CodecVersion = 0
 
-var Codec codec.Manager
+var Codec pcodecs.Manager
 
 func init() {
-	Codec = codec.NewManager(math.MaxInt)
-	lc := linearcodec.NewDefault()
+	Codec = pcodecs.NewMaxIntManager()
+	lc := pcodecs.NewLinearCodec()
 
 	// CRITICAL: RegisterType order is the on-chain wire format. linearcodec
 	// assigns a monotonically increasing typeID per call. Reordering ANY of

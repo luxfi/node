@@ -12,8 +12,7 @@ import (
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/runtime"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -260,7 +259,7 @@ type stateBlk struct {
 
 // RegisterStateBlockType registers the stateBlk type with the given codec.
 // This is needed for backward compatibility with old block storage format.
-func RegisterStateBlockType(targetCodec codec.Registry) error {
+func RegisterStateBlockType(targetCodec pcodecs.Registry) error {
 	return targetCodec.RegisterType(&stateBlk{})
 }
 
@@ -546,7 +545,7 @@ func txAndStatusSize(_ ids.ID, t *txAndStatus) int {
 	if t == nil {
 		return ids.IDLen + constants.PointerOverhead
 	}
-	return ids.IDLen + len(t.tx.Bytes()) + wrappers.IntLen + 2*constants.PointerOverhead
+	return ids.IDLen + len(t.tx.Bytes()) + pcodecs.IntLen + 2*constants.PointerOverhead
 }
 
 func blockSize(_ ids.ID, blk block.Block) int {
@@ -620,7 +619,7 @@ func New(
 		"l1_validator_weights_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1WeightsCacheSize, func(ids.ID, uint64) int {
-			return ids.IDLen + wrappers.LongLen
+			return ids.IDLen + pcodecs.LongLen
 		}),
 	)
 	if err != nil {
@@ -634,8 +633,8 @@ func New(
 			execCfg.L1InactiveValidatorsCacheSize,
 			func(_ ids.ID, maybeL1Validator maybe.Maybe[L1Validator]) int {
 				const (
-					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*wrappers.LongLen + 3*constants.PointerOverhead
-					maybeL1ValidatorOverhead = wrappers.BoolLen + l1ValidatorOverhead
+					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*pcodecs.LongLen + 3*constants.PointerOverhead
+					maybeL1ValidatorOverhead = pcodecs.BoolLen + l1ValidatorOverhead
 					entryOverhead            = ids.IDLen + maybeL1ValidatorOverhead
 				)
 				if maybeL1Validator.IsNothing() {
@@ -655,7 +654,7 @@ func New(
 		"l1_validator_chain_id_node_id_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1ChainIDNodeIDCacheSize, func(chainIDNodeID, bool) int {
-			return ids.IDLen + ids.NodeIDLen + wrappers.BoolLen
+			return ids.IDLen + ids.NodeIDLen + pcodecs.BoolLen
 		}),
 	)
 	if err != nil {

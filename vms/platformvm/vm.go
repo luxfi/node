@@ -14,9 +14,6 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -25,7 +22,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -38,6 +35,7 @@ import (
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -104,7 +102,7 @@ type VM struct {
 	state state.State
 
 	fx            fx.Fx
-	codecRegistry codec.Registry
+	codecRegistry pcodecs.Registry
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
 	bootstrappedConsensus utils.Atomic[bool]
@@ -239,7 +237,7 @@ func (vm *VM) Initialize(
 	// logic simplified as we now just trust init.DB or fallback to memdb if nil above
 
 	// Note: this codec is never used to serialize anything
-	vm.codecRegistry = linearcodec.NewDefault()
+	vm.codecRegistry = pcodecs.NewLinearCodec()
 	vm.fx = &secp256k1fx.Fx{}
 	if err := vm.fx.Initialize(vm); err != nil {
 		return fmt.Errorf("failed to initialize fx: %w", err)
@@ -784,7 +782,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	return vm.Network.Disconnected(ctx, nodeID)
 }
 
-func (vm *VM) CodecRegistry() codec.Registry {
+func (vm *VM) CodecRegistry() pcodecs.Registry {
 	return vm.codecRegistry
 }
 
