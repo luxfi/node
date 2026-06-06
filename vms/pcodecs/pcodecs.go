@@ -88,6 +88,20 @@ var (
 // — 8 bytes). Used by index code to size cursor buffers.
 const LongLen = wrappers.LongLen
 
+// IntLen re-exports wrappers.IntLen (the on-wire length of a uint32
+// — 4 bytes). Used by p2p response-size accounting code.
+const IntLen = wrappers.IntLen
+
+// ShortLen re-exports wrappers.ShortLen (the on-wire length of a uint16
+// — 2 bytes).
+const ShortLen = wrappers.ShortLen
+
+// ByteLen re-exports wrappers.ByteLen (1).
+const ByteLen = wrappers.ByteLen
+
+// BoolLen re-exports wrappers.BoolLen (1).
+const BoolLen = wrappers.BoolLen
+
 // NewLinearCodec returns a fresh linearcodec-backed Codec instance with
 // the default tag set. Mirrors linearcodec.NewDefault().
 func NewLinearCodec() LinearCodec {

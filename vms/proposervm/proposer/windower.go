@@ -12,11 +12,11 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	validators "github.com/luxfi/validators"
+	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/container/sampler"
-	"github.com/luxfi/codec/wrappers"
 )
 
 // Proposer list constants
@@ -106,7 +106,7 @@ type windower struct {
 }
 
 func New(state validators.State, netID, chainID ids.ID) Windower {
-	w := wrappers.Packer{Bytes: chainID[:]}
+	w := pcodecs.Packer{Bytes: chainID[:]}
 	return &windower{
 		state:       state,
 		netID:       netID,

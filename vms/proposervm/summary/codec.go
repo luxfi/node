@@ -5,23 +5,21 @@ package summary
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const CodecVersion = 0
 
 var (
-	Codec codec.Manager
+	Codec pcodecs.Manager
 
 	errWrongCodecVersion = errors.New("wrong codec version")
 )
 
 func init() {
-	lc := linearcodec.NewDefault()
-	Codec = codec.NewManager(math.MaxInt32)
+	lc := pcodecs.NewLinearCodec()
+	Codec = pcodecs.NewMaxInt32Manager()
 	if err := Codec.RegisterCodec(CodecVersion, lc); err != nil {
 		panic(err)
 	}
