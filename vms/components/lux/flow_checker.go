@@ -8,14 +8,14 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 var ErrInsufficientFunds = errors.New("insufficient funds")
 
 type FlowChecker struct {
 	consumed, produced map[ids.ID]uint64
-	errs               wrappers.Errs
+	errs               pcodecs.Errs
 }
 
 func NewFlowChecker() *FlowChecker {
