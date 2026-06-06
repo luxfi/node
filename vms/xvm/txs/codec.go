@@ -6,20 +6,19 @@ package txs
 import (
 	"reflect"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/wrappers"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (
-	_ codec.Registry = (*codecRegistry)(nil)
-	_ secp256k1fx.VM = (*fxVM)(nil)
+	_ pcodecs.Registry = (*codecRegistry)(nil)
+	_ secp256k1fx.VM   = (*fxVM)(nil)
 )
 
 type codecRegistry struct {
-	codecs      []codec.Registry
+	codecs      []pcodecs.Registry
 	index       int
 	typeToIndex map[reflect.Type]int
 }
@@ -28,7 +27,7 @@ func (cr *codecRegistry) RegisterType(val interface{}) error {
 	valType := reflect.TypeOf(val)
 	cr.typeToIndex[valType] = cr.index
 
-	errs := wrappers.Errs{}
+	errs := pcodecs.Errs{}
 	for _, c := range cr.codecs {
 		errs.Add(c.RegisterType(val))
 	}
@@ -40,14 +39,14 @@ type fxVM struct {
 
 	clock         *mockable.Clock
 	log           log.Logger
-	codecRegistry codec.Registry
+	codecRegistry pcodecs.Registry
 }
 
 func (vm *fxVM) Clock() *mockable.Clock {
 	return vm.clock
 }
 
-func (vm *fxVM) CodecRegistry() codec.Registry {
+func (vm *fxVM) CodecRegistry() pcodecs.Registry {
 	return vm.codecRegistry
 }
 

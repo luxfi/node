@@ -9,10 +9,10 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
 
@@ -36,7 +36,7 @@ func (is *InitialState) InitRuntime(rt *runtime.Runtime) {
 	// The InitRuntime is handled at a higher level
 }
 
-func (is *InitialState) Verify(c codec.Manager, numFxs int) error {
+func (is *InitialState) Verify(c pcodecs.Manager, numFxs int) error {
 	switch {
 	case is == nil:
 		return ErrNilInitialState
@@ -63,13 +63,13 @@ func (is *InitialState) Compare(other *InitialState) int {
 	return cmp.Compare(is.FxIndex, other.FxIndex)
 }
 
-func (is *InitialState) Sort(c codec.Manager) {
+func (is *InitialState) Sort(c pcodecs.Manager) {
 	sortState(is.Outs, c)
 }
 
 type innerSortState struct {
 	vers  []verify.State
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
 func (vers *innerSortState) Less(i, j int) bool {
@@ -96,10 +96,10 @@ func (vers *innerSortState) Swap(i, j int) {
 	v[j], v[i] = v[i], v[j]
 }
 
-func sortState(vers []verify.State, c codec.Manager) {
+func sortState(vers []verify.State, c pcodecs.Manager) {
 	sort.Sort(&innerSortState{vers: vers, codec: c})
 }
 
-func isSortedState(vers []verify.State, c codec.Manager) bool {
+func isSortedState(vers []verify.State, c pcodecs.Manager) bool {
 	return sort.IsSorted(&innerSortState{vers: vers, codec: c})
 }

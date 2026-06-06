@@ -6,14 +6,14 @@ package txs
 import (
 	"fmt"
 
-	"github.com/luxfi/codec"
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/p2p/gossip"
-	"github.com/luxfi/crypto/hash"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -47,7 +47,7 @@ type Tx struct {
 	bytes []byte
 }
 
-func (t *Tx) Initialize(c codec.Manager) error {
+func (t *Tx) Initialize(c pcodecs.Manager) error {
 	signedBytes, err := c.Marshal(CodecVersion, t)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
@@ -101,7 +101,7 @@ func (t *Tx) InputIDs() set.Set[ids.ID] {
 	return t.Unsigned.InputIDs()
 }
 
-func (t *Tx) SignSECP256K1Fx(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+func (t *Tx) SignSECP256K1Fx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
 	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
@@ -130,7 +130,7 @@ func (t *Tx) SignSECP256K1Fx(c codec.Manager, signers [][]*secp256k1.PrivateKey)
 	return nil
 }
 
-func (t *Tx) SignPropertyFx(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+func (t *Tx) SignPropertyFx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
 	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
@@ -159,7 +159,7 @@ func (t *Tx) SignPropertyFx(c codec.Manager, signers [][]*secp256k1.PrivateKey) 
 	return nil
 }
 
-func (t *Tx) SignNFTFx(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+func (t *Tx) SignNFTFx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
 	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)

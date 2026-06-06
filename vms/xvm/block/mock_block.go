@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	codec "github.com/luxfi/codec"
 	ids "github.com/luxfi/ids"
+	pcodecs "github.com/luxfi/node/vms/pcodecs"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -142,7 +142,7 @@ func (mr *MockBlockMockRecorder) Txs() *gomock.Call {
 }
 
 // initialize mocks base method.
-func (m *MockBlock) initialize(bytes []byte, cm codec.Manager) error {
+func (m *MockBlock) initialize(bytes []byte, cm pcodecs.Manager) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "initialize", bytes, cm)
 	ret0, _ := ret[0].(error)

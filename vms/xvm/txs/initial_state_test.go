@@ -10,11 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -23,9 +22,9 @@ var errTest = errors.New("non-nil error")
 func TestInitialStateVerifySerialization(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 	require.NoError(c.RegisterType(&secp256k1fx.TransferOutput{}))
-	m := codec.NewDefaultManager()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 
 	expected := []byte{
@@ -80,8 +79,8 @@ func TestInitialStateVerifySerialization(t *testing.T) {
 func TestInitialStateVerifyNil(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
+	c := pcodecs.NewLinearCodec()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
@@ -93,8 +92,8 @@ func TestInitialStateVerifyNil(t *testing.T) {
 func TestInitialStateVerifyUnknownFxID(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
+	c := pcodecs.NewLinearCodec()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
@@ -108,8 +107,8 @@ func TestInitialStateVerifyUnknownFxID(t *testing.T) {
 func TestInitialStateVerifyNilOutput(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
-	m := codec.NewDefaultManager()
+	c := pcodecs.NewLinearCodec()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
@@ -124,9 +123,9 @@ func TestInitialStateVerifyNilOutput(t *testing.T) {
 func TestInitialStateVerifyInvalidOutput(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 	require.NoError(c.RegisterType(&lux.TestState{}))
-	m := codec.NewDefaultManager()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
@@ -141,9 +140,9 @@ func TestInitialStateVerifyInvalidOutput(t *testing.T) {
 func TestInitialStateVerifyUnsortedOutputs(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 	require.NoError(c.RegisterType(&lux.TestTransferable{}))
-	m := codec.NewDefaultManager()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 

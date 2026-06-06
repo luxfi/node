@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
@@ -93,7 +93,7 @@ type Spender interface {
 
 func NewSpender(
 	clk *mockable.Clock,
-	codec codec.Manager,
+	codec pcodecs.Manager,
 ) Spender {
 	return &spender{
 		clock: clk,
@@ -103,7 +103,7 @@ func NewSpender(
 
 type spender struct {
 	clock *mockable.Clock
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
 func (s *spender) Spend(
