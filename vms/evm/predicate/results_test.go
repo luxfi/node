@@ -10,8 +10,8 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 // Valid result parsing is tested by [TestBlockResultsBytes]
@@ -24,7 +24,7 @@ func TestParseBlockResultsInvalid(t *testing.T) {
 		{
 			name:    "nil",
 			b:       nil,
-			wantErr: codec.ErrCantUnpackVersion,
+			wantErr: pcodecs.ErrCantUnpackVersion,
 		},
 		{
 			name: "too_big",
@@ -50,7 +50,7 @@ func TestParseBlockResultsInvalid(t *testing.T) {
 				},
 				make([]byte, 1<<24), // Append the bitset
 			),
-			wantErr: codec.ErrMaxSliceLenExceeded,
+			wantErr: pcodecs.ErrMaxSliceLenExceeded,
 		},
 	}
 	for _, test := range tests {
