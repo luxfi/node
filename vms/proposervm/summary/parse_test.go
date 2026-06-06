@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestParse(t *testing.T) {
@@ -37,5 +37,5 @@ func TestParseGibberish(t *testing.T) {
 	bytes := []byte{0, 1, 2, 3, 4, 5}
 
 	_, err := Parse(bytes)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }
