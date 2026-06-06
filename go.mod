@@ -150,7 +150,7 @@ require (
 	github.com/luxfi/utils v1.1.5
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
-	github.com/luxfi/vm v1.1.10
+	github.com/luxfi/vm v1.1.11
 	github.com/luxfi/warp v1.18.6
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354

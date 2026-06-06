@@ -36,7 +36,7 @@ func TestParseAddressedCallJunk(t *testing.T) {
 
 func TestAddressedCallBytes(t *testing.T) {
 	require := require.New(t)
-	base64Payload := "AAAAAAABAAAAEAECAwAAAAAAAAAAAAAAAAAAAAADCgsM"
+	base64Payload := "AAABAAAAEAAAAAECAwAAAAAAAAAAAAAAAAADAAAACgsM"
 	addressedPayload, err := NewAddressedCall(
 		[]byte{1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		[]byte{10, 11, 12},
