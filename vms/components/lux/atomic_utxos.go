@@ -8,18 +8,18 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/vm/chains/atomic"
-	"github.com/luxfi/codec"
 )
 
 var _ AtomicUTXOManager = (*atomicUTXOManager)(nil)
 
 type atomicUTXOManager struct {
 	sm    atomic.SharedMemory
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
-func NewAtomicUTXOManager(sm atomic.SharedMemory, codec codec.Manager) AtomicUTXOManager {
+func NewAtomicUTXOManager(sm atomic.SharedMemory, codec pcodecs.Manager) AtomicUTXOManager {
 	return &atomicUTXOManager{
 		sm:    sm,
 		codec: codec,
@@ -84,7 +84,7 @@ func (a *atomicUTXOManager) GetAtomicUTXOs(
 // * Any error that may have occurred upstream.
 func GetAtomicUTXOs(
 	sharedMemory atomic.SharedMemory,
-	codec codec.Manager,
+	codec pcodecs.Manager,
 	chainID ids.ID,
 	addrs set.Set[ids.ShortID],
 	startAddr ids.ShortID,
