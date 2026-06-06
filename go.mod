@@ -128,7 +128,7 @@ require (
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.2.3
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.5.7
+	github.com/luxfi/constants v1.5.8-0.20260603055356-93c2c2ceb9ca
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.13.8
@@ -201,8 +201,8 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/proto v1.0.2
-	github.com/luxfi/upgrade v1.0.0 // indirect
+	github.com/luxfi/proto v1.3.0
+	github.com/luxfi/upgrade v1.0.1-0.20260603055252-f51810805436 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
