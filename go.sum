@@ -276,6 +276,8 @@ github.com/luxfi/consensus v1.25.13 h1:hqbFq6W+oRvCrovj6Yu1zOsJNiRymHpjGdqZT1LvZ
 github.com/luxfi/consensus v1.25.13/go.mod h1:7/tlpy+byv2tP7YZSMG+XtS8C2bbz3qpB4H8jxXhHxk=
 github.com/luxfi/constants v1.5.7 h1:a1tCMdxd+pClPMIPOaI9vcYGNy6cQIc2rubac2Trc0k=
 github.com/luxfi/constants v1.5.7/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
+github.com/luxfi/constants v1.5.8-0.20260603055356-93c2c2ceb9ca h1:N2lM2gMJ2Hk5yZ6GqURWtg6nIVtodsjqMe+MGNiuCNw=
+github.com/luxfi/constants v1.5.8-0.20260603055356-93c2c2ceb9ca/go.mod h1:z+Wc7skybZAA+xuBWNcmtv402S/BFqixL+FiSQXPg8U=
 github.com/luxfi/container v0.0.4 h1:BXhF82WyfqVP5mjlNcr7tP0Fcnvl0Ap1rkiu+rq5XuM=
 github.com/luxfi/container v0.0.4/go.mod h1:Z3SpmMF5d4t77MM0nHYXURpn+EMVaeu1fhbd/3BGaek=
 github.com/luxfi/corona v0.7.6 h1:CJP6smygD55dL0HHkKkWryL9H24a+wXvs+L+WchK7Nc=
@@ -340,6 +342,8 @@ github.com/luxfi/precompile v0.5.27 h1:lEF5gXY8ny5xXp8Qg8PK0Y2RQlaRNOZeDU+wP6Sj2
 github.com/luxfi/precompile v0.5.27/go.mod h1:boKRJeoa4XEhCoylRnPI/0IGfBgm5bZnFNI9llDktWo=
 github.com/luxfi/proto v1.0.2 h1:kT/2c6M85nqJOzOZ9SYyZHCSGH32qexovMCB7ZPGk8g=
 github.com/luxfi/proto v1.0.2/go.mod h1:pZLKsCmhiPtmm3z7ezBbnsYT2m79q+cFSmzxvuBeANE=
+github.com/luxfi/proto v1.3.0 h1:OkBQ72K+2cvck1LlZVbMxrUJbjov2ci2JUWF2P6986o=
+github.com/luxfi/proto v1.3.0/go.mod h1:JkzinRBQu02HsVPIGQvLVhG/xyO1ovTqoEAphOiNBso=
 github.com/luxfi/protocol v0.0.4 h1:wf3JSyeNMEabOUG0vExtIAtjfpJAyHXlepGBwv5g9NE=
 github.com/luxfi/protocol v0.0.4/go.mod h1:9f35GLNlcHAz6LCvFBDZP5fTD2QnN0URXWGUOcD1JPU=
 github.com/luxfi/pulsar v1.1.2 h1:iPQlEpnVCggQSTZzUa9i/la2WLEN7fl7/4QVahGs9Ag=
@@ -372,6 +376,8 @@ github.com/luxfi/units v1.0.0 h1:2aNVB+WsP1XeDob71IsO0w3jJqP3FtZdYnFsmORkJZg=
 github.com/luxfi/units v1.0.0/go.mod h1:tma28v4ed1tupdS0kpSeyO+u1wWK/g1NqODPbN1YzmA=
 github.com/luxfi/upgrade v1.0.0 h1:mM6YXvU8VzoclA7IdtuE5bmnMuFquYxjKUUW84LJz54=
 github.com/luxfi/upgrade v1.0.0/go.mod h1:DZF7dO4erhUEKf907B2e65k4/vGkCPkUngpvIEUS3eI=
+github.com/luxfi/upgrade v1.0.1-0.20260603055252-f51810805436 h1:0VTZNA1+rXh9Tr0OpGmkwg+mYC6xgLv+XymMlZvLH/E=
+github.com/luxfi/upgrade v1.0.1-0.20260603055252-f51810805436/go.mod h1:zBBG2VkZmWLr6u6DxzI/4DSFYjHizHrr7MqCDZkMSJc=
 github.com/luxfi/utils v1.1.4 h1:8OY0jXCkpp6OotN1Y++6DATJkvtEwzq2k0p56imJlAk=
 github.com/luxfi/utils v1.1.4/go.mod h1:c3yz1RjzrB+cs5GZm+q1T3/2cCKElO9vxm9yRRtgSEM=
 github.com/luxfi/utils v1.1.5 h1:6q85557b7djbZ/OF6S1k5wyGddozWnsoUuhokPHQRvo=
