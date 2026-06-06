@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/xvm/txs"
 	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var _ Block = (*StandardBlock)(nil)
@@ -29,7 +29,7 @@ type StandardBlock struct {
 	bytes   []byte
 }
 
-func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
+func (b *StandardBlock) initialize(bytes []byte, cm pcodecs.Manager) error {
 	b.BlockID = hash.ComputeHash256Array(bytes)
 	b.bytes = bytes
 	for _, tx := range b.Transactions {
@@ -73,7 +73,7 @@ func NewStandardBlock(
 	height uint64,
 	timestamp time.Time,
 	txs []*txs.Tx,
-	cm codec.Manager,
+	cm pcodecs.Manager,
 ) (*StandardBlock, error) {
 	blk := &StandardBlock{
 		PrntID:       parentID,
