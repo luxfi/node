@@ -2,150 +2,163 @@
 // See the file LICENSE for licensing terms.
 
 // Package pcodecs is the canonical construction site for every
-// codec.Manager + linearcodec / zapcodec instance under node/vms. Wave 2D
-// of the codec rip (#101) consolidates direct `github.com/luxfi/codec`
-// imports here so the rest of node/vms can reach for typed Manager /
-// Registry values without importing luxfi/codec themselves.
+// codec.Manager + codec instance under node/vms. Wave 2G-Internal of
+// the codec rip (#101) replaces the previous direct imports of
+// github.com/luxfi/codec / linearcodec / zapcodec with a single
+// import of github.com/luxfi/proto/zap_codec — the proto-layer wire
+// codec entry point established in Wave 2G-Wallet.
 //
 // Layout:
 //
-//   - Type aliases re-export the codec / linearcodec / zapcodec / wrappers
-//     surfaces every VM consumer needs (Manager, Registry, LinearCodec,
-//     ZAPCodec, Errs, Packer, VersionSize, sentinel errors).
-//   - Constructor helpers return fresh Manager / linearcodec / zapcodec
-//     instances at canonical size budgets (Default, MaxInt32, MaxInt,
-//     Sized). They are wire-agnostic — each VM's own codec.go layer
-//     registers its type set on top.
-//   - Genesis / runtime helpers compose Manager + LinearCodec pairs for
-//     the recurring "register types + register codec at version" pattern
-//     used by every VM's init().
+//   - Type aliases re-export the proto/zap_codec surfaces every VM
+//     consumer needs (Manager, Registry, LinearCodec, ZAPCodec, Errs,
+//     Packer, VersionSize, sentinel errors).
+//   - Constructor helpers return fresh Manager / Codec instances at
+//     canonical size budgets (Default, MaxInt32, MaxInt, Sized). They
+//     are wire-agnostic — each VM's own codec.go layer registers its
+//     type set on top.
 //
 // pcodecs has NO knowledge of any specific VM's type set. VM-specific
 // registration stays in the VM's own codec.go (e.g.
 // vms/platformvm/txs/codec.go). This split keeps pcodecs a leaf package
 // — every node/vms subpackage is free to import it without closing an
 // import cycle.
+//
+// Wire format: ZAP-native (little-endian) — the underlying impl is
+// luxfi/codec/zapcodec routed through proto/zap_codec. The "Linear"
+// name on LinearCodec / NewLinearCodec refers to LINEAR TYPE-ID
+// ASSIGNMENT (sequential ids assigned in registration order), NOT to
+// the historical linearcodec big-endian wire format. Activation
+// per LP-023 (proto/zap_native/codec_select.go: ZAPActivationUnix=0).
 package pcodecs
 
 import (
 	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/codec/wrappers"
-	"github.com/luxfi/codec/zapcodec"
+	"github.com/luxfi/proto/zap_codec"
 )
 
-// Manager is the codec.Manager surface every node/vms consumer holds.
-// Aliased so the rest of node/vms references pcodecs.Manager rather than
-// importing luxfi/codec directly.
-type Manager = codec.Manager
+// Manager is the multi-version wire codec surface every node/vms
+// consumer holds. Aliased to zap_codec.MultiManager so the rest of
+// node/vms references pcodecs.Manager rather than reaching into
+// proto/zap_codec or luxfi/codec directly.
+type Manager = zap_codec.MultiManager
 
-// Registry is the codec.Registry surface used for type registration.
-type Registry = codec.Registry
+// Registry is the type-registration surface. Aliased to
+// zap_codec.Registry — structurally identical to the legacy
+// codec.Registry interface (RegisterType only).
+type Registry = zap_codec.Registry
 
-// LinearCodec is the linearcodec.Codec surface (Registry +
-// SkipRegistrations). Several VMs need the SkipRegistrations method on
-// their per-version codec, so the alias exposes the concrete linearcodec
-// type rather than just codec.Registry.
-type LinearCodec = linearcodec.Codec
+// LinearCodec is the union of Registry + Codec + SkipRegistrations.
+// Used by VMs that need SkipRegistrations on their per-version codec
+// to preserve historical type-id slot layouts (Apricot / Banff /
+// Durango / Quasar registration sequences).
+//
+// Despite the name, this codec is backed by luxfi/codec/zapcodec — the
+// "Linear" refers to LINEAR TYPE-ID ASSIGNMENT, not to the legacy
+// linearcodec big-endian wire layout.
+type LinearCodec = zap_codec.LinearCodec
 
-// ZAPCodec is the zapcodec.Codec surface used by post-cutover wire
-// layouts (platformvm V2). Same shape as LinearCodec; different wire
-// encoding.
-type ZAPCodec = zapcodec.Codec
+// ZAPCodec is an explicit alias for the same zapcodec-backed Codec
+// surface — used by post-cutover wire layouts (currently platformvm
+// txs V2) that want to emphasise the ZAP-native wire layout. Same
+// backing type as LinearCodec; the alias exists for readability.
+type ZAPCodec = zap_codec.ZAPCodec
 
-// Errs is the wrappers.Errs multi-error accumulator. Used by per-VM
-// codec.go files that fan in many RegisterCodec / RegisterType calls
-// under a single error tap.
-type Errs = wrappers.Errs
+// Errs is the multi-error accumulator used by per-VM codec.go files
+// that fan in many RegisterCodec / RegisterType calls under a single
+// error tap.
+type Errs = zap_codec.Errs
 
-// Packer re-exports wrappers.Packer for VM tests that drive
+// Packer is the wire-byte packer used by VM tests that drive
 // MarshalInto / UnmarshalFrom byte streams directly.
-type Packer = wrappers.Packer
+type Packer = zap_codec.Packer
 
 // VersionSize is the on-wire length of the codec-version prefix
-// (codec.VersionSize == 2). VM fee-complexity calculations subtract
-// this from observed byte sizes to isolate the payload component.
-const VersionSize = codec.VersionSize
+// (2 bytes). VM fee-complexity calculations subtract this from
+// observed byte sizes to isolate the payload component.
+const VersionSize = zap_codec.VersionSize
 
-// Sentinel errors re-exported from luxfi/codec / luxfi/codec/wrappers so
-// VM packages can assert on them without importing luxfi/codec.
+// Sentinel errors re-exported from proto/zap_codec so VM packages can
+// assert on them without importing proto/zap_codec themselves.
 var (
-	ErrCantPackVersion           = codec.ErrCantPackVersion
-	ErrCantUnpackVersion         = codec.ErrCantUnpackVersion
-	ErrUnknownVersion            = codec.ErrUnknownVersion
-	ErrMaxSliceLenExceeded       = codec.ErrMaxSliceLenExceeded
-	ErrMarshalNil                = codec.ErrMarshalNil
-	ErrUnmarshalNil              = codec.ErrUnmarshalNil
-	ErrDoesNotImplementInterface = codec.ErrDoesNotImplementInterface
-	ErrExtraSpace                = codec.ErrExtraSpace
+	ErrCantPackVersion           = zap_codec.ErrCantPackVersion
+	ErrCantUnpackVersion         = zap_codec.ErrCantUnpackVersion
+	ErrUnknownVersion            = zap_codec.ErrUnknownVersion
+	ErrMaxSliceLenExceeded       = zap_codec.ErrMaxSliceLenExceeded
+	ErrMarshalNil                = zap_codec.ErrMarshalNil
+	ErrUnmarshalNil              = zap_codec.ErrUnmarshalNil
+	ErrDoesNotImplementInterface = zap_codec.ErrDoesNotImplementInterface
+	ErrExtraSpace                = zap_codec.ErrExtraSpace
 
-	ErrInsufficientLength = wrappers.ErrInsufficientLength
+	ErrInsufficientLength = zap_codec.ErrInsufficientLength
 )
 
-// LongLen re-exports wrappers.LongLen (the on-wire length of a uint64
-// — 8 bytes). Used by index code to size cursor buffers.
-const LongLen = wrappers.LongLen
+// LongLen is the on-wire length of a uint64 (8 bytes). Used by index
+// code to size cursor buffers.
+const LongLen = zap_codec.LongLen
 
-// IntLen re-exports wrappers.IntLen (the on-wire length of a uint32
-// — 4 bytes). Used by p2p response-size accounting code.
-const IntLen = wrappers.IntLen
+// IntLen is the on-wire length of a uint32 (4 bytes). Used by p2p
+// response-size accounting code.
+const IntLen = zap_codec.IntLen
 
-// ShortLen re-exports wrappers.ShortLen (the on-wire length of a uint16
-// — 2 bytes).
-const ShortLen = wrappers.ShortLen
+// ShortLen is the on-wire length of a uint16 (2 bytes).
+const ShortLen = zap_codec.ShortLen
 
-// ByteLen re-exports wrappers.ByteLen (1).
-const ByteLen = wrappers.ByteLen
+// ByteLen is the on-wire length of a uint8 (1 byte).
+const ByteLen = zap_codec.ByteLen
 
-// BoolLen re-exports wrappers.BoolLen (1).
-const BoolLen = wrappers.BoolLen
+// BoolLen is the on-wire length of a bool (1 byte).
+const BoolLen = zap_codec.BoolLen
 
-// NewLinearCodec returns a fresh linearcodec-backed Codec instance with
-// the default tag set. Mirrors linearcodec.NewDefault().
+// NewLinearCodec returns a fresh ZAP-native Codec instance with the
+// default ("serialize") struct tag. The "Linear" name refers to
+// LINEAR TYPE-ID ASSIGNMENT (sequential ids assigned in registration
+// order), NOT to the legacy linearcodec big-endian wire format.
 func NewLinearCodec() LinearCodec {
-	return linearcodec.NewDefault()
+	return zap_codec.NewLinearCodec()
 }
 
-// NewLinearCodecWithTags returns a fresh linearcodec.Codec with the
-// supplied struct-tag names. Mirrors linearcodec.New([]string{tag...}).
-// Used by the metadata codec wiring where v0:"true" / v1:"true" tags
-// select per-version field sets.
+// NewLinearCodecWithTags returns a fresh ZAP-native Codec instance
+// that honours the supplied struct-tag names. Used by the metadata
+// codec wiring where v0:"true" / v1:"true" tags select per-version
+// field sets.
 func NewLinearCodecWithTags(tags ...string) LinearCodec {
-	return linearcodec.New(tags)
+	return zap_codec.NewLinearCodecWithTags(tags...)
 }
 
-// NewZAPCodec returns a fresh zapcodec-backed Codec instance with the
-// default tag set. Mirrors zapcodec.NewDefault(). Used by post-cutover
-// wire formats (currently platformvm txs V2).
+// NewZAPCodec returns a fresh ZAP-native Codec instance. Alias for
+// NewLinearCodec — both return the same zapcodec-backed Codec; the
+// name exists for call sites that want to emphasise the ZAP-native
+// wire layout (e.g. platformvm txs V2).
 func NewZAPCodec() ZAPCodec {
-	return zapcodec.NewDefault()
+	return zap_codec.NewZAPCodec()
 }
 
-// NewDefaultManager returns a fresh codec.Manager with the default wire
-// payload size. Mirrors codec.NewDefaultManager().
+// NewDefaultManager returns a fresh multi-version Manager with the
+// default 1 MiB wire-payload size.
 func NewDefaultManager() Manager {
-	return codec.NewDefaultManager()
+	return zap_codec.NewDefaultManager()
 }
 
-// NewManager returns a fresh codec.Manager with the supplied max wire
-// payload size. Mirrors codec.NewManager(maxSize).
+// NewManager returns a fresh multi-version Manager with the supplied
+// max wire-payload size.
 func NewManager(maxSize uint64) Manager {
-	return codec.NewManager(maxSize)
+	return zap_codec.NewManager(maxSize)
 }
 
-// NewMaxInt32Manager returns a fresh codec.Manager sized for
+// NewMaxInt32Manager returns a fresh multi-version Manager sized for
 // genesis-style blobs (math.MaxInt32 budget). VM genesis codec wiring
 // reaches for this rather than re-deriving the budget at every call
 // site.
 func NewMaxInt32Manager() Manager {
-	return codec.NewManager(math.MaxInt32)
+	return zap_codec.NewMaxInt32Manager()
 }
 
-// NewMaxIntManager returns a fresh codec.Manager sized for warp /
-// proposervm-block style payloads (math.MaxInt budget — effectively
-// unbounded). The p2p layer caps real-world wire sizes well below this.
+// NewMaxIntManager returns a fresh multi-version Manager sized for
+// warp / proposervm-block style payloads (math.MaxInt budget —
+// effectively unbounded). The p2p layer caps real-world wire sizes
+// well below this.
 func NewMaxIntManager() Manager {
-	return codec.NewManager(math.MaxInt)
+	return zap_codec.NewManager(uint64(math.MaxInt))
 }
