@@ -9,12 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
 )
 
 type testOperable struct {
@@ -82,10 +81,10 @@ func TestOperationVerify(t *testing.T) {
 func TestOperationSorting(t *testing.T) {
 	require := require.New(t)
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 	require.NoError(c.RegisterType(&testOperable{}))
 
-	m := codec.NewDefaultManager()
+	m := pcodecs.NewDefaultManager()
 	require.NoError(m.RegisterCodec(CodecVersion, c))
 
 	ops := []*Operation{
