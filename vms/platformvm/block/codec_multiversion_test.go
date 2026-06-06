@@ -10,9 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -26,7 +25,7 @@ import (
 // testnet bootstrapped at v1.23.x had written feeState bytes with the
 // v0 prefix (0x0000); v1.28.0+ called block.GenesisCodec.Unmarshal on
 // those bytes, codec.Manager looked up version 0 in its map, missed,
-// and returned codec.ErrUnknownVersion — surfacing as the
+// and returned pcodecs.ErrUnknownVersion — surfacing as the
 // "unknown codec version" error at loadMetadata: feeState.
 //
 // Post-fix, block.GenesisCodec is multi-version (v0 read-only + v1
@@ -47,7 +46,7 @@ func TestGenesisCodecAcceptsV0FeeState(t *testing.T) {
 	require.Equal(uint16(CodecVersionV0), binary.BigEndian.Uint16(v0Bytes[:2]),
 		"marshaled bytes must carry the v0 wire prefix")
 
-	// The bug: this Unmarshal used to fail with codec.ErrUnknownVersion.
+	// The bug: this Unmarshal used to fail with pcodecs.ErrUnknownVersion.
 	var decoded gas.State
 	version, err := GenesisCodec.Unmarshal(v0Bytes, &decoded)
 	require.NoError(err, "v0-prefixed feeState must decode via the multi-version GenesisCodec")
@@ -81,7 +80,7 @@ func TestGenesisCodecAcceptsV1FeeState(t *testing.T) {
 // TestGenesisCodecRejectsUnknownVersion locks in that the multi-version
 // extension did NOT silently open the door to bogus prefixes. Only v0
 // and v1 are registered on GenesisCodec; anything else must surface as
-// codec.ErrUnknownVersion.
+// pcodecs.ErrUnknownVersion.
 func TestGenesisCodecRejectsUnknownVersion(t *testing.T) {
 	require := require.New(t)
 
@@ -90,7 +89,7 @@ func TestGenesisCodecRejectsUnknownVersion(t *testing.T) {
 
 	var sink gas.State
 	_, err := GenesisCodec.Unmarshal(bogus, &sink)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }
 
 // TestGenesisCodecV0RoundtripIsBytePreserving documents the byte-
