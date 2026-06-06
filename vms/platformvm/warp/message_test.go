@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestMessage(t *testing.T) {
@@ -47,5 +47,5 @@ func TestParseMessageJunk(t *testing.T) {
 
 	bytes := []byte{0, 1, 2, 3, 4, 5, 6, 7}
 	_, err := ParseMessage(bytes)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }

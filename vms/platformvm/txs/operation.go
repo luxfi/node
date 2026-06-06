@@ -8,11 +8,11 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -65,7 +65,7 @@ var _ = secp256k1fx.ID
 // SortOperations sorts the given operations by their codec-marshalled bytes.
 type operationAndCodec struct {
 	op    *Operation
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
 func (o *operationAndCodec) Compare(other *operationAndCodec) int {
@@ -80,7 +80,7 @@ func (o *operationAndCodec) Compare(other *operationAndCodec) int {
 	return bytes.Compare(oBytes, otherBytes)
 }
 
-func SortOperations(ops []*Operation, c codec.Manager) {
+func SortOperations(ops []*Operation, c pcodecs.Manager) {
 	wrapped := make([]*operationAndCodec, len(ops))
 	for i, op := range ops {
 		wrapped[i] = &operationAndCodec{op: op, codec: c}
@@ -93,7 +93,7 @@ func SortOperations(ops []*Operation, c codec.Manager) {
 
 // IsSortedAndUniqueOperations reports whether [ops] is sorted by codec bytes
 // and contains no duplicates.
-func IsSortedAndUniqueOperations(ops []*Operation, c codec.Manager) bool {
+func IsSortedAndUniqueOperations(ops []*Operation, c pcodecs.Manager) bool {
 	wrapped := make([]*operationAndCodec, len(ops))
 	for i, op := range ops {
 		wrapped[i] = &operationAndCodec{op: op, codec: c}
@@ -104,7 +104,7 @@ func IsSortedAndUniqueOperations(ops []*Operation, c codec.Manager) bool {
 type innerSortOperationsWithSigners struct {
 	ops     []*Operation
 	signers [][]*secp256k1.PrivateKey
-	codec   codec.Manager
+	codec   pcodecs.Manager
 }
 
 func (s *innerSortOperationsWithSigners) Less(i, j int) bool {
@@ -125,6 +125,6 @@ func (s *innerSortOperationsWithSigners) Swap(i, j int) {
 	s.signers[j], s.signers[i] = s.signers[i], s.signers[j]
 }
 
-func SortOperationsWithSigners(ops []*Operation, signers [][]*secp256k1.PrivateKey, c codec.Manager) {
+func SortOperationsWithSigners(ops []*Operation, signers [][]*secp256k1.PrivateKey, c pcodecs.Manager) {
 	sort.Sort(&innerSortOperationsWithSigners{ops: ops, signers: signers, codec: c})
 }

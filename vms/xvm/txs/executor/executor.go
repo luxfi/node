@@ -6,19 +6,19 @@ package executor
 import (
 	"fmt"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 var _ txs.Visitor = (*Executor)(nil)
 
 type Executor struct {
-	Codec          codec.Manager
+	Codec          pcodecs.Manager
 	State          state.Chain // state will be modified
 	Tx             *txs.Tx
 	Inputs         set.Set[ids.ID]             // imported inputs

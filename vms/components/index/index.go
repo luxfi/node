@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/pcodecs"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/codec/wrappers"
 )
 
 var (
@@ -143,7 +143,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 				idx = binary.BigEndian.Uint64(idxBytes)
 			case database.ErrNotFound:
 				// idx not found; this must be the first entry.
-				idxBytes = make([]byte, wrappers.LongLen)
+				idxBytes = make([]byte, pcodecs.LongLen)
 			default:
 				// Unexpected error
 				return fmt.Errorf("unexpected error when indexing txID %s: %w", txID, err)
@@ -184,7 +184,7 @@ func (i *indexer) Read(address []byte, assetID ids.ID, cursor, pageSize uint64) 
 	assetPrefixDB := prefixdb.New(assetID[:], addressTxDB)
 
 	// get cursor in bytes
-	cursorBytes := make([]byte, wrappers.LongLen)
+	cursorBytes := make([]byte, pcodecs.LongLen)
 	binary.BigEndian.PutUint64(cursorBytes, cursor)
 
 	// start reading from the cursor bytes, numeric keys maintain the order (see Accept)
