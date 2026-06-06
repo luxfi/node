@@ -8,10 +8,10 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
@@ -89,7 +89,7 @@ func (out *TransferableOutput) Verify() error {
 
 type innerSortTransferableOutputs struct {
 	outs  []*TransferableOutput
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
 func (outs *innerSortTransferableOutputs) Less(i, j int) bool {
@@ -127,12 +127,12 @@ func (outs *innerSortTransferableOutputs) Swap(i, j int) {
 }
 
 // SortTransferableOutputs sorts output objects
-func SortTransferableOutputs(outs []*TransferableOutput, c codec.Manager) {
+func SortTransferableOutputs(outs []*TransferableOutput, c pcodecs.Manager) {
 	sort.Sort(&innerSortTransferableOutputs{outs: outs, codec: c})
 }
 
 // IsSortedTransferableOutputs returns true if output objects are sorted
-func IsSortedTransferableOutputs(outs []*TransferableOutput, c codec.Manager) bool {
+func IsSortedTransferableOutputs(outs []*TransferableOutput, c pcodecs.Manager) bool {
 	return sort.IsSorted(&innerSortTransferableOutputs{outs: outs, codec: c})
 }
 
@@ -211,7 +211,7 @@ func VerifyTx(
 	feeAssetID ids.ID,
 	allIns [][]*TransferableInput,
 	allOuts [][]*TransferableOutput,
-	c codec.Manager,
+	c pcodecs.Manager,
 ) error {
 	fc := NewFlowChecker()
 
