@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/codec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const (
@@ -72,7 +72,7 @@ type UTXOWriter interface {
 }
 
 type utxoState struct {
-	codec codec.Manager
+	codec pcodecs.Manager
 
 	// UTXO ID -> *UTXO. If the *UTXO is nil the UTXO doesn't exist
 	utxoCache cache.Cacher[ids.ID, *UTXO]
@@ -87,7 +87,7 @@ type utxoState struct {
 
 func NewUTXOState(
 	db database.Database,
-	codec codec.Manager,
+	codec pcodecs.Manager,
 	trackChecksum bool,
 ) (UTXOState, error) {
 	s := &utxoState{
@@ -106,7 +106,7 @@ func NewUTXOState(
 
 func NewMeteredUTXOState(
 	db database.Database,
-	codec codec.Manager,
+	codec pcodecs.Manager,
 	metrics metric.Registerer,
 	trackChecksum bool,
 ) (UTXOState, error) {
