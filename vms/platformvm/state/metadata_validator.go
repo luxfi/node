@@ -6,25 +6,24 @@ package state
 import (
 	"time"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 // preDelegateeRewardSize is the size of codec marshalling
 // [preDelegateeRewardMetadata].
 //
 // CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen
-const preDelegateeRewardSize = codec.VersionSize + 3*wrappers.LongLen
+const preDelegateeRewardSize = pcodecs.VersionSize + 3*pcodecs.LongLen
 
 // preStakerStartTimeSize is the size of codec marshalling
 // [preStakerStartTimeMetadata].
 //
 // CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen + PotentialDelegateeRewardLen
-const preStakerStartTimeSize = codec.VersionSize + 4*wrappers.LongLen
+const preStakerStartTimeSize = pcodecs.VersionSize + 4*pcodecs.LongLen
 
 var _ validatorState = (*metadata)(nil)
 

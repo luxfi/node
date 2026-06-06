@@ -5,10 +5,8 @@ package state
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const (
@@ -19,12 +17,12 @@ const (
 	CodecVersion1    uint16 = 1
 )
 
-var MetadataCodec codec.Manager
+var MetadataCodec pcodecs.Manager
 
 func init() {
-	c0 := linearcodec.NewDefault()
-	c1 := linearcodec.NewDefault()
-	MetadataCodec = codec.NewManager(math.MaxInt32)
+	c0 := pcodecs.NewLinearCodec()
+	c1 := pcodecs.NewLinearCodec()
+	MetadataCodec = pcodecs.NewMaxInt32Manager()
 
 	err := errors.Join(
 		MetadataCodec.RegisterCodec(CodecVersion0, c0),
