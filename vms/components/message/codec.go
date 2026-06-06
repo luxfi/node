@@ -4,9 +4,8 @@
 package message
 
 import (
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/utils"
 )
 
@@ -17,11 +16,11 @@ const (
 )
 
 // Codec does serialization and deserialization
-var c codec.Manager
+var c pcodecs.Manager
 
 func init() {
-	c = codec.NewManager(maxMessageSize)
-	lc := linearcodec.NewDefault()
+	c = pcodecs.NewManager(maxMessageSize)
+	lc := pcodecs.NewLinearCodec()
 
 	err := utils.Err(
 		lc.RegisterType(&Tx{}),

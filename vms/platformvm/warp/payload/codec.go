@@ -6,9 +6,8 @@ package payload
 import (
 	"errors"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const (
@@ -17,11 +16,11 @@ const (
 	MaxMessageSize = 24 * constants.KiB
 )
 
-var Codec codec.Manager
+var Codec pcodecs.Manager
 
 func init() {
-	Codec = codec.NewManager(MaxMessageSize)
-	lc := linearcodec.NewDefault()
+	Codec = pcodecs.NewManager(MaxMessageSize)
+	lc := pcodecs.NewLinearCodec()
 
 	err := errors.Join(
 		lc.RegisterType(&Hash{}),

@@ -5,12 +5,8 @@ package txs
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/codec/wrappers"
-	"github.com/luxfi/codec/zapcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -57,25 +53,25 @@ var (
 	// Registers V0 + V1 (linearcodec) AND V2 (zapcodec). The right write
 	// version is selected via CodecVersionForTimestamp; reads dispatch on
 	// the 2-byte wire prefix.
-	Codec codec.Manager
+	Codec pcodecs.Manager
 
 	// GenesisCodec allows txs of larger than usual size to be parsed.
 	// It registers the same versioned slot layouts as Codec but with an
 	// unbounded maximum size. New, unverified txs MUST be processed by
 	// Codec; GenesisCodec is reserved for genesis decode + state read
 	// fallback paths.
-	GenesisCodec codec.Manager
+	GenesisCodec pcodecs.Manager
 )
 
 func init() {
-	cV0 := linearcodec.NewDefault()
-	cV1 := linearcodec.NewDefault()
-	cV2 := zapcodec.NewDefault()
-	gcV0 := linearcodec.NewDefault()
-	gcV1 := linearcodec.NewDefault()
-	gcV2 := zapcodec.NewDefault()
+	cV0 := pcodecs.NewLinearCodec()
+	cV1 := pcodecs.NewLinearCodec()
+	cV2 := pcodecs.NewZAPCodec()
+	gcV0 := pcodecs.NewLinearCodec()
+	gcV1 := pcodecs.NewLinearCodec()
+	gcV2 := pcodecs.NewZAPCodec()
 
-	errs := wrappers.Errs{}
+	errs := pcodecs.Errs{}
 	errs.Add(
 		registerV0TxTypes(cV0),
 		registerV0TxTypes(gcV0),
@@ -87,8 +83,8 @@ func init() {
 		registerV1TxTypes(gcV2),
 	)
 
-	Codec = codec.NewDefaultManager()
-	GenesisCodec = codec.NewManager(math.MaxInt32)
+	Codec = pcodecs.NewDefaultManager()
+	GenesisCodec = pcodecs.NewMaxInt32Manager()
 	errs.Add(
 		Codec.RegisterCodec(CodecVersionV0, cV0),
 		Codec.RegisterCodec(CodecVersionV1, cV1),
@@ -140,7 +136,7 @@ func CodecVersionForTimestamp(ts uint64) uint16 {
 // CodecForTimestamp is a no-op for the manager handle, kept here so
 // future evolutions can swap the manager itself (e.g. a ZAP-only
 // manager after V1 retirement) without changing call sites.
-func CodecForTimestamp(_ uint64) codec.Manager {
+func CodecForTimestamp(_ uint64) pcodecs.Manager {
 	return Codec
 }
 
@@ -172,7 +168,7 @@ func CodecRequiresLegacy(v uint16) bool {
 // new build path uses) on the given linearcodec. Existing call sites
 // outside this package continue to compose with RegisterTypes; the v0
 // decoder is gated to the txs.Codec / txs.GenesisCodec entries.
-func RegisterTypes(targetCodec linearcodec.Codec) error {
+func RegisterTypes(targetCodec pcodecs.LinearCodec) error {
 	return registerV1TxTypes(targetCodec)
 }
 
@@ -197,7 +193,7 @@ func registerV1TxTypes(targetCodec slotRegistrar) error {
 	// slot (atomic block ID) so existing tx type IDs remain stable.
 	targetCodec.SkipRegistrations(5)
 
-	errs := wrappers.Errs{}
+	errs := pcodecs.Errs{}
 
 	// secp256k1fx types are registered here because this matches the
 	// XVM registration order — utxos crossed in shared memory must
@@ -294,7 +290,7 @@ func registerV0TxTypes(targetCodec slotRegistrar) error {
 	// Slots 0-4: reserved for block-codec block types.
 	targetCodec.SkipRegistrations(5)
 
-	errs := wrappers.Errs{}
+	errs := pcodecs.Errs{}
 
 	// Slots 5-11: secp256k1fx with the two v0 historical holes.
 	errs.Add(targetCodec.RegisterType(&secp256k1fx.TransferInput{}))

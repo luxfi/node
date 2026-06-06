@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 var junkBytes = []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88}
@@ -17,7 +17,7 @@ var junkBytes = []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88}
 func TestParseJunk(t *testing.T) {
 	require := require.New(t)
 	_, err := Parse(junkBytes)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }
 
 func TestParseWrongPayloadType(t *testing.T) {
