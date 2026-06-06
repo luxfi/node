@@ -7,12 +7,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/codec/wrappers"
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/runtime"
 	validators "github.com/luxfi/validators"
@@ -91,7 +91,7 @@ func (t *Tx) Export(e *tx.Export) error {
 		return err
 	}
 
-	var errs wrappers.Errs
+	var errs pcodecs.Errs
 	errs.Add(
 		state.IncrementNonce(t.Database, t.Sender, e.Nonce),
 		state.DecreaseBalance(t.Database, t.Sender, e.ChainID, t.ExportFee),
@@ -127,7 +127,7 @@ func (t *Tx) Import(i *tx.Import) error {
 		return err
 	}
 
-	var errs wrappers.Errs
+	var errs pcodecs.Errs
 	errs.Add(
 		state.IncrementNonce(t.Database, t.Sender, i.Nonce),
 		state.DecreaseBalance(t.Database, t.Sender, t.Runtime.ChainID, t.ImportFee),
