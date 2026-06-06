@@ -205,7 +205,7 @@ type PVMValidatorSlot struct {
 	ValidatorID      uint64
 	Weight           uint64
 	BLSPubkey        [48]byte
-	CoronaPubkey     [32]byte // Corona / Ringtail commitment digest
+	CoronaPubkey     [32]byte // Corona / Corona commitment digest
 	MLDSAPubkey      [32]byte
 	MLDSAGroth16Root [32]byte
 	Status           uint32
