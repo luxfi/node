@@ -33,7 +33,8 @@ func Parse(c pcodecs.Manager, b []byte) (Block, error) {
 	if len(b) < 2 {
 		return nil, ErrShortBytes
 	}
-	version := uint16(b[0])<<8 | uint16(b[1])
+	// Codec version prefix is uint16 LE (LP-023 ZAP-native multi-manager).
+	version := uint16(b[0]) | uint16(b[1])<<8
 
 	switch version {
 	case CodecVersionV1:
