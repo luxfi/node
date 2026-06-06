@@ -8,12 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -93,7 +92,7 @@ func FuzzBaseTx(f *testing.F) {
 	testID := ids.GenerateTestID()
 	f.Add(uint64(0), uint32(0), testID[:])
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 
 	f.Fuzz(func(t *testing.T, networkID uint64, blockchainID uint32, assetData []byte) {
 		// Create asset ID
@@ -124,7 +123,7 @@ func FuzzBaseTx(f *testing.F) {
 		}
 
 		// Try to serialize
-		p := wrappers.Packer{MaxSize: 1024 * 1024}
+		p := pcodecs.Packer{MaxSize: 1024 * 1024}
 		err := c.MarshalInto(baseTx, &p)
 		if err != nil {
 			// Some combinations might be invalid
@@ -133,7 +132,7 @@ func FuzzBaseTx(f *testing.F) {
 
 		// Try to deserialize
 		var parsed BaseTx
-		p2 := wrappers.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
+		p2 := pcodecs.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
 		err = c.UnmarshalFrom(&p2, &parsed)
 		if err != nil {
 			t.Errorf("Failed to unmarshal BaseTx: %v", err)
@@ -158,7 +157,7 @@ func FuzzCreateChainTx(f *testing.F) {
 	f.Add([]byte("test"), bytes.Repeat([]byte{0x01}, 100), []byte("customvm"))
 	f.Add([]byte{}, []byte{}, []byte{})
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 
 	f.Fuzz(func(t *testing.T, chainName []byte, genesisData []byte, vmIDData []byte) {
 		// Limit sizes
@@ -196,7 +195,7 @@ func FuzzCreateChainTx(f *testing.F) {
 		}
 
 		// Try to serialize
-		p := wrappers.Packer{MaxSize: 10 * 1024 * 1024}
+		p := pcodecs.Packer{MaxSize: 10 * 1024 * 1024}
 		err := c.MarshalInto(tx, &p)
 		if err != nil {
 			// Some combinations might be invalid
@@ -205,7 +204,7 @@ func FuzzCreateChainTx(f *testing.F) {
 
 		// Try to deserialize
 		var parsed CreateChainTx
-		p2 := wrappers.Packer{Bytes: p.Bytes, MaxSize: 10 * 1024 * 1024}
+		p2 := pcodecs.Packer{Bytes: p.Bytes, MaxSize: 10 * 1024 * 1024}
 		err = c.UnmarshalFrom(&p2, &parsed)
 		if err != nil {
 			t.Errorf("Failed to unmarshal CreateChainTx: %v", err)
@@ -234,7 +233,7 @@ func FuzzAddValidatorTx(f *testing.F) {
 	f.Add(uint64(0), uint64(0), uint64(0), uint32(0))
 	f.Add(uint64(time.Now().Unix()), uint64(time.Now().Add(time.Hour).Unix()), uint64(1000000), uint32(20000))
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 
 	f.Fuzz(func(t *testing.T, startTime, endTime, weight uint64, shares uint32) {
 		// Create validator transaction
@@ -273,7 +272,7 @@ func FuzzAddValidatorTx(f *testing.F) {
 		}
 
 		// Try to serialize
-		p := wrappers.Packer{MaxSize: 1024 * 1024}
+		p := pcodecs.Packer{MaxSize: 1024 * 1024}
 		err := c.MarshalInto(tx, &p)
 		if err != nil {
 			return
@@ -281,7 +280,7 @@ func FuzzAddValidatorTx(f *testing.F) {
 
 		// Try to deserialize
 		var parsed AddValidatorTx
-		p2 := wrappers.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
+		p2 := pcodecs.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
 		err = c.UnmarshalFrom(&p2, &parsed)
 		if err != nil {
 			t.Errorf("Failed to unmarshal AddValidatorTx: %v", err)
@@ -316,7 +315,7 @@ func FuzzImportExportTx(f *testing.F) {
 	f.Add(testID1[:], testID2[:])
 	f.Add(bytes.Repeat([]byte{0xff}, 32), bytes.Repeat([]byte{0xaa}, 32))
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 
 	f.Fuzz(func(t *testing.T, sourceChainData, destChainData []byte) {
 		// Create chain IDs
@@ -362,7 +361,7 @@ func FuzzImportExportTx(f *testing.F) {
 		}
 
 		// Try to serialize ImportTx
-		p := wrappers.Packer{MaxSize: 1024 * 1024}
+		p := pcodecs.Packer{MaxSize: 1024 * 1024}
 		err := c.MarshalInto(importTx, &p)
 		if err != nil {
 			return
@@ -370,7 +369,7 @@ func FuzzImportExportTx(f *testing.F) {
 
 		// Try to deserialize
 		var parsedImport ImportTx
-		p2 := wrappers.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
+		p2 := pcodecs.Packer{Bytes: p.Bytes, MaxSize: 1024 * 1024}
 		err = c.UnmarshalFrom(&p2, &parsedImport)
 		if err != nil {
 			t.Errorf("Failed to unmarshal ImportTx: %v", err)
@@ -408,7 +407,7 @@ func FuzzImportExportTx(f *testing.F) {
 		}
 
 		// Try to serialize ExportTx
-		p3 := wrappers.Packer{MaxSize: 1024 * 1024}
+		p3 := pcodecs.Packer{MaxSize: 1024 * 1024}
 		err = c.MarshalInto(exportTx, &p3)
 		if err != nil {
 			return
@@ -416,7 +415,7 @@ func FuzzImportExportTx(f *testing.F) {
 
 		// Try to deserialize
 		var parsedExport ExportTx
-		p4 := wrappers.Packer{Bytes: p3.Bytes, MaxSize: 1024 * 1024}
+		p4 := pcodecs.Packer{Bytes: p3.Bytes, MaxSize: 1024 * 1024}
 		err = c.UnmarshalFrom(&p4, &parsedExport)
 		if err != nil {
 			t.Errorf("Failed to unmarshal ExportTx: %v", err)

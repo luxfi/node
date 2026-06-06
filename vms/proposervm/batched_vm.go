@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/codec/wrappers"
 	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 
+	"github.com/luxfi/node/vms/pcodecs"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -42,10 +42,10 @@ func (vm *VM) GetAncestors(
 
 		blkBytes := blk.Bytes()
 
-		// Ensure response size isn't too large. Include wrappers.IntLen because
+		// Ensure response size isn't too large. Include pcodecs.IntLen because
 		// the size of the message is included with each container, and the size
 		// is repr. by an int.
-		currentByteLength += wrappers.IntLen + len(blkBytes)
+		currentByteLength += pcodecs.IntLen + len(blkBytes)
 		elapsedTime := vm.Clock.Time().Sub(startTime)
 		if len(res) > 0 && (currentByteLength >= maxBlocksSize || maxBlocksRetrievalTime <= elapsedTime) {
 			return res, nil // reached maximum size or ran out of time

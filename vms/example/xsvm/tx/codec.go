@@ -5,19 +5,17 @@ package tx
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const CodecVersion = 0
 
-var Codec codec.Manager
+var Codec pcodecs.Manager
 
 func init() {
-	c := linearcodec.NewDefault()
-	Codec = codec.NewManager(math.MaxInt32)
+	c := pcodecs.NewLinearCodec()
+	Codec = pcodecs.NewMaxInt32Manager()
 
 	err := errors.Join(
 		c.RegisterType(&Transfer{}),

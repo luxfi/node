@@ -5,21 +5,19 @@ package block
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const CodecVersion = 0
 
-var Codec codec.Manager
+var Codec pcodecs.Manager
 
 func init() {
-	lc := linearcodec.NewDefault()
+	lc := pcodecs.NewLinearCodec()
 	// The maximum block size is enforced by the p2p message size limit.
 	// See: [constants.DefaultMaxMessageSize]
-	Codec = codec.NewManager(math.MaxInt)
+	Codec = pcodecs.NewMaxIntManager()
 
 	err := errors.Join(
 		lc.RegisterType(&statelessBlock{}),
