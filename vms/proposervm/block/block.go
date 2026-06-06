@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 var (
@@ -104,7 +104,7 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 	// The serialized form of the block is the unsignedBytes followed by the
 	// signature, which is prefixed by a uint32. So, we need to strip off the
 	// signature as well as it's length prefix to get the unsigned bytes.
-	lenUnsignedBytes := len(bytes) - wrappers.IntLen - len(b.Signature)
+	lenUnsignedBytes := len(bytes) - pcodecs.IntLen - len(b.Signature)
 	unsignedBytes := bytes[:lenUnsignedBytes]
 	b.id = hash.ComputeHash256Array(unsignedBytes)
 
