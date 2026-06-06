@@ -13,7 +13,6 @@ import (
 
 	apiinfo "github.com/luxfi/api/info"
 	apitypes "github.com/luxfi/api/types"
-	jsonrpc "github.com/luxfi/codec/jsonrpc"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/network"
@@ -140,7 +139,7 @@ func toP2PPeerInfo(info nodepeer.Info) p2ppeer.Info {
 		Version:        info.Version,
 		LastSent:       info.LastSent,
 		LastReceived:   info.LastReceived,
-		ObservedUptime: jsonrpc.Uint32(info.ObservedUptime),
+		ObservedUptime: p2ppeer.Uint32(info.ObservedUptime),
 		TrackedChains:  info.TrackedChains,
 		SupportedLPs:   info.SupportedLPs,
 		ObjectedLPs:    info.ObjectedLPs,
