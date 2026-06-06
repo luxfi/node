@@ -139,7 +139,7 @@ require (
 	github.com/luxfi/lattice/v7 v7.1.4
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.4
-	github.com/luxfi/p2p v1.19.2
+	github.com/luxfi/p2p v1.21.1
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.2
 	github.com/luxfi/runtime v1.1.0
@@ -226,7 +226,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.0.1
 	github.com/luxfi/cache v1.2.1 // indirect
-	github.com/luxfi/codec v1.1.4
+	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2
 	github.com/luxfi/math/big v0.1.0 // indirect

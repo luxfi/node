@@ -12,26 +12,30 @@ import (
 
 // TestCodecVersionForTimestamp_StrictBoundary asserts the timestamp
 // selector is bit-exact at the activation boundary. ts ==
-// ZAPCodecActivationTimestamp - 1 is V1 (linearcodec); ts ==
-// ZAPCodecActivationTimestamp is V2 (zapcodec). No fuzz, no fallback.
+// ZAPCodecActivationTimestamp - 1 is V1; ts ==
+// ZAPCodecActivationTimestamp is V2. No fuzz, no fallback.
+//
+// Note (LP-023 phase-7): both V1 and V2 are now backed by zapcodec
+// (LE on the wire); the version-selector still distinguishes them so
+// downstream tooling that pins on the prefix uint16 keeps working.
 func TestCodecVersionForTimestamp_StrictBoundary(t *testing.T) {
 	require := require.New(t)
 
 	// One second BEFORE activation: must be V1.
 	require.Equal(CodecVersionV1, CodecVersionForTimestamp(ZAPCodecActivationTimestamp-1),
-		"ts < activation must select linearcodec (V1)")
+		"ts < activation must select V1")
 
 	// EXACTLY at activation: must be V2.
 	require.Equal(CodecVersionV2, CodecVersionForTimestamp(ZAPCodecActivationTimestamp),
-		"ts == activation must select zapcodec (V2)")
+		"ts == activation must select V2")
 
 	// Far after activation: still V2.
 	require.Equal(CodecVersionV2, CodecVersionForTimestamp(ZAPCodecActivationTimestamp+1_000_000),
-		"ts > activation must select zapcodec (V2)")
+		"ts > activation must select V2")
 
 	// Genesis (ts=0): V1, the historical write path.
 	require.Equal(CodecVersionV1, CodecVersionForTimestamp(0),
-		"ts == 0 must select linearcodec (V1)")
+		"ts == 0 must select V1")
 }
 
 // TestCodecForTimestamp_ManagerIsStable asserts the manager handle is
@@ -50,8 +54,11 @@ func TestCodecForTimestamp_ManagerIsStable(t *testing.T) {
 }
 
 // TestPreActivationRoundTripV1 asserts a tx with ts < activation
-// round-trips through V1 (linearcodec): marshal at V1 → unmarshal as
-// V1 → identical Go value. The wire prefix MUST be V1.
+// round-trips through V1: marshal at V1 → unmarshal as V1 → identical
+// Go value. The wire prefix MUST be V1.
+//
+// The version prefix is uint16 LE per the multi-manager wire layout
+// (proto/zap_codec/multi.go): [uint16 LE codec version][inner body].
 func TestPreActivationRoundTripV1(t *testing.T) {
 	require := require.New(t)
 
@@ -62,8 +69,8 @@ func TestPreActivationRoundTripV1(t *testing.T) {
 	b, err := Codec.Marshal(v, tx)
 	require.NoError(err)
 
-	// Wire prefix is the codec version (2 bytes BE per codec.Manager).
-	require.Equal(uint16(CodecVersionV1), binary.BigEndian.Uint16(b[:2]),
+	// Wire prefix is the codec version (2 bytes LE per multi-manager).
+	require.Equal(uint16(CodecVersionV1), binary.LittleEndian.Uint16(b[:2]),
 		"pre-activation wire MUST be V1-prefixed")
 
 	out := &AdvanceTimeTx{}
@@ -74,8 +81,8 @@ func TestPreActivationRoundTripV1(t *testing.T) {
 }
 
 // TestPostActivationRoundTripV2 asserts a tx with ts >= activation
-// round-trips through V2 (zapcodec): marshal at V2 → unmarshal as V2 →
-// identical Go value. Wire prefix MUST be V2.
+// round-trips through V2: marshal at V2 → unmarshal as V2 → identical
+// Go value. Wire prefix MUST be V2.
 func TestPostActivationRoundTripV2(t *testing.T) {
 	require := require.New(t)
 
@@ -85,7 +92,7 @@ func TestPostActivationRoundTripV2(t *testing.T) {
 
 	b, err := Codec.Marshal(v, tx)
 	require.NoError(err)
-	require.Equal(uint16(CodecVersionV2), binary.BigEndian.Uint16(b[:2]),
+	require.Equal(uint16(CodecVersionV2), binary.LittleEndian.Uint16(b[:2]),
 		"post-activation wire MUST be V2-prefixed")
 
 	out := &AdvanceTimeTx{}
@@ -95,15 +102,15 @@ func TestPostActivationRoundTripV2(t *testing.T) {
 	require.Equal(tx.Time, out.Time)
 }
 
-// TestCrossVersionWireIsDistinct asserts that V1 and V2 bytes for the
-// same logical tx differ — the only thing they share is structural
-// equivalence (same Go value out). Endianness flips the integer field
-// bytes, so wire equality must NOT hold.
+// TestCrossVersionWirePrefixDistinct asserts that V1 and V2 bytes for
+// the same logical tx differ in their version prefix.
 //
-// AdvanceTimeTx has a uint64 Time field whose LE and BE encodings are
-// distinct for any non-palindromic value. We pick activation_ts
-// because it's not palindromic.
-func TestCrossVersionWireIsDistinct(t *testing.T) {
+// Per LP-023 phase-7, V1 and V2 use the same zapcodec wire encoding
+// (both LE) — they only differ in the 2-byte version prefix. The
+// payload bytes are byte-identical for the same logical tx; only the
+// prefix selects which slot map the decoder will use. This is the
+// inverse of the pre-rip world where V1 was BE and V2 was LE.
+func TestCrossVersionWirePrefixDistinct(t *testing.T) {
 	require := require.New(t)
 
 	tx := &AdvanceTimeTx{Time: ZAPCodecActivationTimestamp}
@@ -113,7 +120,7 @@ func TestCrossVersionWireIsDistinct(t *testing.T) {
 	v2Bytes, err := Codec.Marshal(CodecVersionV2, tx)
 	require.NoError(err)
 
-	// Same length — V2 is a wire-encoding flip, not a slot-map change.
+	// Same length — V1 and V2 share the zapcodec wire encoding.
 	require.Equal(len(v1Bytes), len(v2Bytes),
 		"V1 and V2 wire MUST have identical length for the same logical tx")
 
@@ -121,9 +128,11 @@ func TestCrossVersionWireIsDistinct(t *testing.T) {
 	require.NotEqual(v1Bytes[:2], v2Bytes[:2],
 		"V1 and V2 wire prefix MUST differ")
 
-	// Payload (post-prefix) differs because of LE vs BE on Time uint64.
-	require.NotEqual(v1Bytes[2:], v2Bytes[2:],
-		"V1 and V2 wire payload MUST differ when timestamp has non-palindromic LE/BE forms")
+	// Payload (post-prefix) is identical: both V1 and V2 are backed
+	// by zapcodec (LE) with the same slot map. The only on-wire
+	// difference is the 2-byte version prefix.
+	require.Equal(v1Bytes[2:], v2Bytes[2:],
+		"V1 and V2 wire payload MUST be byte-equal — both are zapcodec-backed (LE)")
 }
 
 // TestCodecAllowsRead asserts the read-acceptance gate. V0, V1, V2 are
@@ -146,7 +155,7 @@ func TestCodecRequiresLegacy(t *testing.T) {
 }
 
 // TestV2WireIsZapNative asserts the canonical detection: a V2-prefixed
-// wire has the codec version 0x0002 (BE per codec.Manager) followed by
+// wire has the codec version 0x0002 (LE per multi-manager) followed by
 // the zapcodec little-endian payload. The activation contract is that
 // V2 == zapcodec; if anyone changes the underlying impl, this test
 // surfaces the regression.
@@ -164,11 +173,11 @@ func TestV2WireIsZapNative(t *testing.T) {
 	b, err := Codec.Marshal(CodecVersionV2, tx)
 	require.NoError(err)
 
-	// Wire layout for AdvanceTimeTx under V2:
-	//   bytes 0-1: 0x0002 (BE, codec version)
+	// Wire layout for AdvanceTimeTx under V2 (LP-023 ZAP-native):
+	//   bytes 0-1: 0x0002 (LE, codec version) -> 0x02 0x00
 	//   bytes 2-9: Time uint64 in LE — LSB first
-	require.Equal(byte(0x00), b[0])
-	require.Equal(byte(CodecVersionV2), b[1])
+	require.Equal(byte(CodecVersionV2), b[0], "V2 version prefix is LE: byte 0 = LSB of version (0x02)")
+	require.Equal(byte(0x00), b[1], "V2 version prefix is LE: byte 1 = MSB of version (0x00)")
 	require.Equal(byte(0x08), b[2], "V2 LSB-first: byte 2 must be LSB of Time")
 	require.Equal(byte(0x07), b[3])
 	require.Equal(byte(0x06), b[4])
@@ -183,20 +192,25 @@ func TestV2WireIsZapNative(t *testing.T) {
 		"V2 payload MUST be LE-decodable as the original Time value")
 }
 
-// TestV1WireIsBigEndian is the mirror assertion for V1: the first
-// payload byte is the MSB of Time. If V1 ever flipped endianness, the
-// hash-stable TxIDs of every historical P-chain tx would change —
-// this test guards that invariant.
-func TestV1WireIsBigEndian(t *testing.T) {
+// TestV1WireIsLittleEndian asserts V1 is on the zapcodec (LE) wire too.
+//
+// Pre-LP-023, V1 was linearcodec (BE). Phase-7 of the codec rip moved
+// the V1 backend to zapcodec, so V1 wire bytes are now LE. The version
+// prefix is still uint16 LE (matches V0/V2). The slot map is the only
+// thing that distinguishes V1 from V2 — the wire encoding is identical
+// for any payload that doesn't cross a slot-dispatched type.
+func TestV1WireIsLittleEndian(t *testing.T) {
 	require := require.New(t)
 
 	tx := &AdvanceTimeTx{Time: 0x0102030405060708}
 
 	b, err := Codec.Marshal(CodecVersionV1, tx)
 	require.NoError(err)
-	require.Equal(byte(CodecVersionV1), b[1])
-	require.Equal(byte(0x01), b[2], "V1 MSB-first: byte 2 must be MSB of Time")
-	require.Equal(byte(0x08), b[9], "V1 MSB-first: byte 9 must be LSB of Time")
+	// V1 version prefix is also LE.
+	require.Equal(byte(CodecVersionV1), b[0], "V1 version prefix is LE: byte 0 = LSB of version (0x01)")
+	require.Equal(byte(0x00), b[1], "V1 version prefix is LE: byte 1 = MSB of version (0x00)")
+	require.Equal(byte(0x08), b[2], "V1 LSB-first: byte 2 must be LSB of Time")
+	require.Equal(byte(0x01), b[9], "V1 LSB-first: byte 9 must be MSB of Time")
 }
 
 // TestActivationConstantUnchanged is the watchdog test. Anyone who

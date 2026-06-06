@@ -41,7 +41,8 @@ func TestParseAcceptsV0CachedGenesis(t *testing.T) {
 	require.NoError(err, "v0 marshal must succeed — proves the v0 slot map is registered")
 	require.GreaterOrEqual(len(v0Bytes), 2)
 
-	prefix := binary.BigEndian.Uint16(v0Bytes[:2])
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	prefix := binary.LittleEndian.Uint16(v0Bytes[:2])
 	require.Equal(txs.CodecVersionV0, prefix, "marshaled bytes must carry the v0 wire prefix")
 
 	// The bug: Parse used to fail here with codec.ErrUnknownVersion.
@@ -74,7 +75,8 @@ func TestParseAcceptsV1Genesis(t *testing.T) {
 	require.NoError(err)
 	require.GreaterOrEqual(len(v1Bytes), 2)
 
-	prefix := binary.BigEndian.Uint16(v1Bytes[:2])
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	prefix := binary.LittleEndian.Uint16(v1Bytes[:2])
 	require.Equal(txs.CodecVersionV1, prefix, "Genesis.Bytes must emit the v1 wire prefix")
 
 	parsed, err := Parse(v1Bytes)
@@ -124,7 +126,8 @@ func TestParseRejectsUnknownVersion(t *testing.T) {
 
 	bogus := make([]byte, len(v1Bytes))
 	copy(bogus, v1Bytes)
-	binary.BigEndian.PutUint16(bogus[:2], 0xFFFE)
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	binary.LittleEndian.PutUint16(bogus[:2], 0xFFFE)
 
 	_, err = Parse(bogus)
 	require.Error(err, "Parse must reject codec versions outside {v0, v1}")

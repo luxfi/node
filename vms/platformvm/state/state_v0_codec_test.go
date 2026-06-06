@@ -34,12 +34,13 @@ func TestStateV0FeeStateReadable(t *testing.T) {
 		excess   = uint64(987_654_321)
 	)
 
-	// Construct the exact byte shape v1.23.x wrote. Linearcodec is
-	// big-endian for both the version prefix and uint64 fields.
+	// Construct the exact byte shape post-LP-023 writes. The
+	// multi-manager version prefix is uint16 LE and the zapcodec-
+	// backed body packs uint64 fields in little-endian.
 	v0Bytes := make([]byte, 18)
-	binary.BigEndian.PutUint16(v0Bytes[:2], 0)
-	binary.BigEndian.PutUint64(v0Bytes[2:10], capacity)
-	binary.BigEndian.PutUint64(v0Bytes[10:18], excess)
+	binary.LittleEndian.PutUint16(v0Bytes[:2], 0)
+	binary.LittleEndian.PutUint64(v0Bytes[2:10], capacity)
+	binary.LittleEndian.PutUint64(v0Bytes[10:18], excess)
 
 	// Cross-check the fixture: GenesisCodec.Marshal at v0 should
 	// produce the same shape, otherwise the fixture is wrong and the
@@ -72,7 +73,8 @@ func TestStateV0HeightRangeReadable(t *testing.T) {
 
 	v0Bytes, err := block.GenesisCodec.Marshal(block.CodecVersionV0, expected)
 	require.NoError(err)
-	require.Equal(uint16(block.CodecVersionV0), binary.BigEndian.Uint16(v0Bytes[:2]))
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	require.Equal(uint16(block.CodecVersionV0), binary.LittleEndian.Uint16(v0Bytes[:2]))
 
 	var decoded heightRange
 	_, err = block.GenesisCodec.Unmarshal(v0Bytes, &decoded)
@@ -166,7 +168,8 @@ func TestStateV1FeeStateReadable(t *testing.T) {
 	expected := gas.State{Capacity: 100, Excess: 200}
 	v1Bytes, err := block.GenesisCodec.Marshal(block.CodecVersion, expected)
 	require.NoError(err)
-	require.Equal(uint16(block.CodecVersionV1), binary.BigEndian.Uint16(v1Bytes[:2]))
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	require.Equal(uint16(block.CodecVersionV1), binary.LittleEndian.Uint16(v1Bytes[:2]))
 
 	var decoded gas.State
 	_, err = block.GenesisCodec.Unmarshal(v1Bytes, &decoded)
@@ -246,7 +249,8 @@ func TestStateCodecRejectsUnknownVersion(t *testing.T) {
 	require := require.New(t)
 
 	bogus := make([]byte, 18)
-	binary.BigEndian.PutUint16(bogus[:2], 0xFFFD)
+	// Version prefix is uint16 LE per multi-manager wire layout.
+	binary.LittleEndian.PutUint16(bogus[:2], 0xFFFD)
 
 	var sink gas.State
 	_, err := block.GenesisCodec.Unmarshal(bogus, &sink)

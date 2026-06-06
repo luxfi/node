@@ -35,6 +35,8 @@ package pcodecs
 import (
 	"math"
 
+	"github.com/luxfi/codec"
+	"github.com/luxfi/codec/zapcodec"
 	"github.com/luxfi/proto/zap_codec"
 )
 
@@ -82,16 +84,28 @@ const VersionSize = zap_codec.VersionSize
 // Sentinel errors re-exported from proto/zap_codec so VM packages can
 // assert on them without importing proto/zap_codec themselves.
 var (
-	ErrCantPackVersion           = zap_codec.ErrCantPackVersion
-	ErrCantUnpackVersion         = zap_codec.ErrCantUnpackVersion
-	ErrUnknownVersion            = zap_codec.ErrUnknownVersion
-	ErrMaxSliceLenExceeded       = zap_codec.ErrMaxSliceLenExceeded
-	ErrMarshalNil                = zap_codec.ErrMarshalNil
-	ErrUnmarshalNil              = zap_codec.ErrUnmarshalNil
+	ErrCantPackVersion = zap_codec.ErrCantPackVersion
+	ErrCantUnpackVersion = zap_codec.ErrCantUnpackVersion
+	ErrUnknownVersion = zap_codec.ErrUnknownVersion
+	// ErrMaxSliceLenExceeded points at the codec-layer sentinel that the
+	// underlying reflect/zapcodec impls actually wrap. The proto layer
+	// defines its own value with a different string ("zap_codec: max
+	// slice length exceeded") which is unused by the runtime decode
+	// path — using that would not chain through errors.Is.
+	ErrMaxSliceLenExceeded = codec.ErrMaxSliceLenExceeded
+	ErrMarshalNil = zap_codec.ErrMarshalNil
+	ErrUnmarshalNil = zap_codec.ErrUnmarshalNil
 	ErrDoesNotImplementInterface = zap_codec.ErrDoesNotImplementInterface
-	ErrExtraSpace                = zap_codec.ErrExtraSpace
+	ErrExtraSpace = zap_codec.ErrExtraSpace
 
-	ErrInsufficientLength = zap_codec.ErrInsufficientLength
+	// ErrInsufficientLength is the sentinel returned when a wire payload
+	// is shorter than the inner Codec needs to decode a field. The proto
+	// layer's multiManager.Unmarshal returns the inner zapcodec error
+	// unwrapped (see proto/zap_codec/multi.go:Unmarshal), so callers
+	// asserting on this value must point at the zapcodec-side sentinel —
+	// the legacy wrappers-side sentinel is a different value with the
+	// same human-readable text and does NOT chain through errors.Is.
+	ErrInsufficientLength = zapcodec.ErrInsufficientLength
 )
 
 // LongLen is the on-wire length of a uint64 (8 bytes). Used by index
