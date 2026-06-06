@@ -6,8 +6,8 @@ package block
 import (
 	"time"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
@@ -26,5 +26,5 @@ type Block interface {
 
 	// note: initialize does not assume that the transactions are initialized,
 	// and initializes them itself.
-	initialize(bytes []byte, cm codec.Manager) error
+	initialize(bytes []byte, cm pcodecs.Manager) error
 }

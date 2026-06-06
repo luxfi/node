@@ -5,24 +5,22 @@ package keystore
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const CodecVersion = 0
 
 var (
-	Codec       codec.Manager
-	LegacyCodec codec.Manager
+	Codec       pcodecs.Manager
+	LegacyCodec pcodecs.Manager
 )
 
 func init() {
-	c := linearcodec.NewDefault()
-	Codec = codec.NewDefaultManager()
-	lc := linearcodec.NewDefault()
-	LegacyCodec = codec.NewManager(math.MaxInt32)
+	c := pcodecs.NewLinearCodec()
+	Codec = pcodecs.NewDefaultManager()
+	lc := pcodecs.NewLinearCodec()
+	LegacyCodec = pcodecs.NewMaxInt32Manager()
 
 	err := errors.Join(
 		Codec.RegisterCodec(CodecVersion, c),

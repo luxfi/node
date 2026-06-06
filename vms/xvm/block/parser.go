@@ -7,8 +7,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/timer/mockable"
@@ -77,7 +77,7 @@ func (p *parser) ParseGenesisBlock(bytes []byte) (Block, error) {
 	return parse(p.GenesisCodec(), bytes)
 }
 
-func parse(cm codec.Manager, bytes []byte) (Block, error) {
+func parse(cm pcodecs.Manager, bytes []byte) (Block, error) {
 	var blk Block
 	if _, err := cm.Unmarshal(bytes, &blk); err != nil {
 		return nil, err

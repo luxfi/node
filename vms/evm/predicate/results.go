@@ -8,10 +8,9 @@ import (
 
 	"github.com/luxfi/geth/common"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const (
@@ -33,12 +32,12 @@ const (
 	maxResultsSize = constants.MiB
 )
 
-var resultsCodec codec.Manager
+var resultsCodec pcodecs.Manager
 
 func init() {
-	resultsCodec = codec.NewManager(maxResultsSize)
+	resultsCodec = pcodecs.NewManager(maxResultsSize)
 
-	c := linearcodec.NewDefault()
+	c := pcodecs.NewLinearCodec()
 	if err := resultsCodec.RegisterCodec(version, c); err != nil {
 		panic(err)
 	}

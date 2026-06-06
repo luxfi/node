@@ -9,13 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -36,7 +36,7 @@ func TestInvalidBlock(t *testing.T) {
 	require.NoError(err)
 
 	_, err = parser.ParseBlock(nil)
-	require.ErrorIs(err, codec.ErrCantUnpackVersion)
+	require.ErrorIs(err, pcodecs.ErrCantUnpackVersion)
 }
 
 func TestStandardBlocks(t *testing.T) {
@@ -78,7 +78,7 @@ func TestStandardBlocks(t *testing.T) {
 	require.Equal(parsed.Txs(), parsedStandardBlk.Txs())
 }
 
-func createTestTxs(cm codec.Manager) ([]*txs.Tx, error) {
+func createTestTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
 	countTxs := 1
 	testTxs := make([]*txs.Tx, 0, countTxs)
 	for i := 0; i < countTxs; i++ {

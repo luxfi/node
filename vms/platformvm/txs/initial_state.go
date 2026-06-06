@@ -9,9 +9,9 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
 
@@ -42,7 +42,7 @@ type InitialState struct {
 func (is *InitialState) InitRuntime(_ *runtime.Runtime) {}
 
 // Verify returns nil iff this InitialState is well formed.
-func (is *InitialState) Verify(c codec.Manager) error {
+func (is *InitialState) Verify(c pcodecs.Manager) error {
 	switch {
 	case is == nil:
 		return ErrNilInitialState
@@ -70,13 +70,13 @@ func (is *InitialState) Compare(other *InitialState) int {
 }
 
 // Sort orders the outputs of this InitialState by their byte representation.
-func (is *InitialState) Sort(c codec.Manager) {
+func (is *InitialState) Sort(c pcodecs.Manager) {
 	sortState(is.Outs, c)
 }
 
 type innerSortState struct {
 	vers  []verify.State
-	codec codec.Manager
+	codec pcodecs.Manager
 }
 
 func (s *innerSortState) Less(i, j int) bool {
@@ -96,10 +96,10 @@ func (s *innerSortState) Less(i, j int) bool {
 func (s *innerSortState) Len() int      { return len(s.vers) }
 func (s *innerSortState) Swap(i, j int) { s.vers[j], s.vers[i] = s.vers[i], s.vers[j] }
 
-func sortState(vers []verify.State, c codec.Manager) {
+func sortState(vers []verify.State, c pcodecs.Manager) {
 	sort.Sort(&innerSortState{vers: vers, codec: c})
 }
 
-func isSortedState(vers []verify.State, c codec.Manager) bool {
+func isSortedState(vers []verify.State, c pcodecs.Manager) bool {
 	return sort.IsSorted(&innerSortState{vers: vers, codec: c})
 }

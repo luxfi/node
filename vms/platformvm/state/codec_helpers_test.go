@@ -10,10 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -49,14 +47,14 @@ func TestMultiVersionUnmarshalAcceptsBothVersions(t *testing.T) {
 // We can't directly intercept log.Warn (it's a global logger), so we
 // instead exercise the underlying probe deterministically: marshaling
 // the empty `probe` struct at v0 on a single-version codec must return
-// codec.ErrUnknownVersion. This is the exact condition that triggers
+// pcodecs.ErrUnknownVersion. This is the exact condition that triggers
 // the warning emission.
 func TestMultiVersionUnmarshalSurfacesSingleVersionCodec(t *testing.T) {
 	require := require.New(t)
 
 	// Build a single-version codec by hand — only v1 registered.
-	singleC := linearcodec.NewDefault()
-	singleVersion := codec.NewDefaultManager()
+	singleC := pcodecs.NewLinearCodec()
+	singleVersion := pcodecs.NewDefaultManager()
 	require.NoError(singleVersion.RegisterCodec(block.CodecVersionV1, singleC))
 
 	// Confirm v1 Unmarshal still succeeds (helper is non-blocking).
@@ -72,7 +70,7 @@ func TestMultiVersionUnmarshalSurfacesSingleVersionCodec(t *testing.T) {
 	// Marshal on this codec returns ErrUnknownVersion, which is what
 	// the post-condition check picks up.
 	_, err = singleVersion.Marshal(block.CodecVersionV0, probe{})
-	require.ErrorIs(err, codec.ErrUnknownVersion,
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion,
 		"single-version codec must surface ErrUnknownVersion on the v0 probe — this is the warning trigger")
 }
 
@@ -84,8 +82,8 @@ func TestMultiVersionUnmarshalSurfacesSingleVersionCodec(t *testing.T) {
 func TestMultiVersionUnmarshalSurfacesSingleVersionCodec_Idempotent(t *testing.T) {
 	require := require.New(t)
 
-	singleC := linearcodec.NewDefault()
-	singleVersion := codec.NewDefaultManager()
+	singleC := pcodecs.NewLinearCodec()
+	singleVersion := pcodecs.NewDefaultManager()
 	require.NoError(singleVersion.RegisterCodec(block.CodecVersionV1, singleC))
 
 	v1Bytes, err := singleVersion.Marshal(block.CodecVersionV1, gas.State{Capacity: 5, Excess: 6})
@@ -109,7 +107,7 @@ func TestMultiVersionUnmarshalSurfacesSingleVersionCodec_Idempotent(t *testing.T
 }
 
 // TestMultiVersionUnmarshalRejectsUnknownVersionUpstream confirms the
-// helper does NOT swallow codec.ErrUnknownVersion — if the input bytes
+// helper does NOT swallow pcodecs.ErrUnknownVersion — if the input bytes
 // carry a prefix that the codec does not have registered (e.g. a future
 // codec v2 prefix on a v0+v1 codec), the original error surfaces so the
 // caller can decide whether to treat it as a corruption or a soft skip.
@@ -121,7 +119,7 @@ func TestMultiVersionUnmarshalRejectsUnknownVersionUpstream(t *testing.T) {
 
 	var sink gas.State
 	_, err := multiVersionUnmarshal(block.GenesisCodec, bogus, &sink)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }
 
 // TestBlockGenesisCodecPassesMultiVersionProbe pins the post-v1.28.2

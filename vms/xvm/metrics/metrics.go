@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/metric"
 
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -74,7 +74,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		return nil, errors.New("registerer must implement metric.Registry")
 	}
 	txMetrics, err := newTxMetrics(registry)
-	errs := wrappers.Errs{Err: err}
+	errs := pcodecs.Errs{Err: err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
 

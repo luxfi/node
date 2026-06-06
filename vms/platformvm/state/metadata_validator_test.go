@@ -9,11 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestValidatorUptimes(t *testing.T) {
@@ -264,7 +263,7 @@ func TestParseValidatorMetadata(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4E, 0x20,
 			},
 			expected:    nil,
-			expectedErr: codec.ErrUnknownVersion,
+			expectedErr: pcodecs.ErrUnknownVersion,
 		},
 		{
 			name: "short byte len",
@@ -281,7 +280,7 @@ func TestParseValidatorMetadata(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00, 0x4E, 0x20,
 			},
 			expected:    nil,
-			expectedErr: wrappers.ErrInsufficientLength,
+			expectedErr: pcodecs.ErrInsufficientLength,
 		},
 	}
 	for _, tt := range tests {

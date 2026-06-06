@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestHash(t *testing.T) {
@@ -27,7 +27,7 @@ func TestHash(t *testing.T) {
 
 func TestParseHashJunk(t *testing.T) {
 	_, err := ParseHash(junkBytes)
-	require.ErrorIs(t, err, codec.ErrUnknownVersion)
+	require.ErrorIs(t, err, pcodecs.ErrUnknownVersion)
 }
 
 func TestHashBytes(t *testing.T) {

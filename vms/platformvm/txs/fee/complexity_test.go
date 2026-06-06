@@ -10,17 +10,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -219,7 +219,7 @@ func TestOutputComplexity(t *testing.T) {
 			bytes, err := txs.Codec.Marshal(txs.CodecVersion, test.out)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(bytes) - codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(bytes) - pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
@@ -343,7 +343,7 @@ func TestInputComplexity(t *testing.T) {
 			credentialBytes, err := txs.Codec.Marshal(txs.CodecVersion, &cred)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(inputBytes) + len(credentialBytes) - 2*codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(inputBytes) + len(credentialBytes) - 2*pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
@@ -419,7 +419,7 @@ func TestConvertNetworkToL1ValidatorComplexity(t *testing.T) {
 			vdrBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.vdr)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(vdrBytes) - codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(vdrBytes) - pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
@@ -484,7 +484,7 @@ func TestOwnerComplexity(t *testing.T) {
 			ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.owner)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(ownerBytes) - codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(ownerBytes) - pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
@@ -565,7 +565,7 @@ func TestAuthComplexity(t *testing.T) {
 			credentialBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.cred)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(authBytes) + len(credentialBytes) - 2*codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(authBytes) + len(credentialBytes) - 2*pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
@@ -615,7 +615,7 @@ func TestSignerComplexity(t *testing.T) {
 			signerBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.signer)
 			require.NoError(err)
 
-			numBytesWithoutCodecVersion := uint64(len(signerBytes) - codec.VersionSize)
+			numBytesWithoutCodecVersion := uint64(len(signerBytes) - pcodecs.VersionSize)
 			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}

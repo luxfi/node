@@ -14,8 +14,6 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/codecmock"
 	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -23,7 +21,8 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/node/vms/pcodecs/pcodecsmock"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
@@ -37,6 +36,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs/txsmock"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -331,7 +331,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx2))
 
 				// To marshal the tx/block
-				codec := codecmock.NewManager(ctrl)
+				codec := pcodecsmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -404,7 +404,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
-				codec := codecmock.NewManager(ctrl)
+				codec := pcodecsmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -479,7 +479,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
-				codec := codecmock.NewManager(ctrl)
+				codec := pcodecsmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -608,7 +608,7 @@ func createTxs() []*txs.Tx {
 	}}
 }
 
-func createParentTxs(cm codec.Manager) ([]*txs.Tx, error) {
+func createParentTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
 	countTxs := 1
 	testTxs := make([]*txs.Tx, 0, countTxs)
 	for i := 0; i < countTxs; i++ {

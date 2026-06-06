@@ -7,15 +7,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/p2p/gossip"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -41,7 +41,7 @@ type Tx struct {
 
 func NewSigned(
 	unsigned UnsignedTx,
-	c codec.Manager,
+	c pcodecs.Manager,
 	signers [][]*secp256k1.PrivateKey,
 ) (*Tx, error) {
 	res := &Tx{Unsigned: unsigned}
@@ -54,7 +54,7 @@ func NewSigned(
 // builder). For txs loaded from disk or received from the wire, use
 // InitializeFromBytes — Initialize would re-encode at v1, changing the
 // TxID of any tx that was originally serialized at v0.
-func (tx *Tx) Initialize(c codec.Manager) error {
+func (tx *Tx) Initialize(c pcodecs.Manager) error {
 	signedBytes, err := c.Marshal(CodecVersion, tx)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal ProposalTx: %w", err)
@@ -81,7 +81,7 @@ func (tx *Tx) Initialize(c codec.Manager) error {
 // by codec.Manager.Unmarshal). It selects the c.Size(...) call used to
 // split signedBytes into unsignedBytes (the prefix the signature
 // covers) and the credentials suffix.
-func (tx *Tx) InitializeFromBytes(c codec.Manager, version uint16, signedBytes []byte) error {
+func (tx *Tx) InitializeFromBytes(c pcodecs.Manager, version uint16, signedBytes []byte) error {
 	unsignedBytesLen, err := c.Size(version, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
@@ -121,7 +121,7 @@ func (tx *Tx) InitializeFromBytes(c codec.Manager, version uint16, signedBytes [
 // Once every genesis blob and every stored block on disk has been
 // re-encoded at v1 (a future migration), this method becomes dead
 // code and the v0 codec entry can be removed.
-func (tx *Tx) InitializeFromBytesAtVersion(c codec.Manager, version uint16) error {
+func (tx *Tx) InitializeFromBytesAtVersion(c pcodecs.Manager, version uint16) error {
 	signedBytes, err := c.Marshal(version, tx)
 	if err != nil {
 		return fmt.Errorf("couldn't re-marshal tx at v%d: %w", version, err)
@@ -148,7 +148,7 @@ func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 // We explicitly pass the codec in Parse since some call sites (genesis,
 // state fallback) must use GenesisCodec to admit txs larger than the
 // max length of Codec.
-func Parse(c codec.Manager, signedBytes []byte) (*Tx, error) {
+func Parse(c pcodecs.Manager, signedBytes []byte) (*Tx, error) {
 	tx := &Tx{}
 	version, err := c.Unmarshal(signedBytes, tx)
 	if err != nil {
@@ -212,7 +212,7 @@ func (tx *Tx) SyntacticVerify(rt *runtime.Runtime) error {
 // Sign this transaction with the provided signers
 // Note: We explicitly pass the codec in Sign since we may need to sign P-Chain
 // genesis txs whose length exceed the max length of txs.Codec.
-func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+func (tx *Tx) Sign(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
 	unsignedBytes, err := c.Marshal(CodecVersion, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal UnsignedTx: %w", err)
