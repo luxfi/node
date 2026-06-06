@@ -8,10 +8,10 @@ import (
 	"crypto/rand"
 	"time"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/crypto/hash"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func BuildUnsigned(
@@ -78,7 +78,7 @@ func Build(
 	// signature, which is prefixed by a uint32. Because we are marshalling the
 	// block with an empty signature, we only need to strip off the length
 	// prefix to get the unsigned bytes.
-	lenUnsignedBytes := len(unsignedBytesWithEmptySignature) - wrappers.IntLen
+	lenUnsignedBytes := len(unsignedBytesWithEmptySignature) - pcodecs.IntLen
 	unsignedBytes := unsignedBytesWithEmptySignature[:lenUnsignedBytes]
 	block.id = hash.ComputeHash256Array(unsignedBytes)
 

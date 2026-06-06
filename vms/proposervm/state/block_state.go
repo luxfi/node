@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/proposervm/block"
-	"github.com/luxfi/codec/wrappers"
 )
 
 const blockCacheSize = 64 * constants.MiB
@@ -52,7 +52,7 @@ func cachedBlockSize(_ ids.ID, bw *blockWrapper) int {
 	if bw == nil {
 		return ids.IDLen + constants.PointerOverhead
 	}
-	return ids.IDLen + len(bw.Block) + wrappers.IntLen + 2*constants.PointerOverhead
+	return ids.IDLen + len(bw.Block) + pcodecs.IntLen + 2*constants.PointerOverhead
 }
 
 func NewBlockState(db database.Database) BlockState {
