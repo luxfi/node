@@ -7,13 +7,13 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/runtime"
 )
 
 type Backend struct {
@@ -22,7 +22,7 @@ type Backend struct {
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int
-	Codec         codec.Manager
+	Codec         pcodecs.Manager
 	// Note: FeeAssetID may be different than ctx.UTXOAssetID if this XVM is
 	// running in a chain.
 	FeeAssetID   ids.ID
