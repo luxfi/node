@@ -67,7 +67,7 @@ require (
 	golang.org/x/tools v0.45.0
 	gonum.org/v1/gonum v0.17.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	google.golang.org/grpc v1.80.0 // indirect
+	google.golang.org/grpc v1.81.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -139,20 +139,19 @@ require (
 	github.com/luxfi/lattice/v7 v7.1.4
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.4
-	github.com/luxfi/p2p v1.19.2
+	github.com/luxfi/p2p v1.21.1
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.0.2
 	github.com/luxfi/runtime v1.1.0
-	github.com/luxfi/sdk v1.16.60
+	github.com/luxfi/sdk v1.17.6
 	github.com/luxfi/sys v0.0.0-20260110090042-50187ec5ffd8
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.1.5
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
-	github.com/luxfi/vm v1.0.40
+	github.com/luxfi/vm v1.1.10
 	github.com/luxfi/warp v1.18.6
-	github.com/luxfi/zap v0.7.2
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.uber.org/zap v1.27.1
@@ -181,12 +180,12 @@ require (
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/protocol v0.0.4 // indirect
 	github.com/luxfi/pulsar v1.1.2 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
 	github.com/luxfi/staking v1.1.0 // indirect
 	github.com/luxfi/threshold v1.9.7 // indirect
 	github.com/luxfi/trace v0.1.4 // indirect
+	github.com/luxfi/zap v0.7.2 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
@@ -226,7 +225,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.0.1
 	github.com/luxfi/cache v1.2.1 // indirect
-	github.com/luxfi/codec v1.1.4
+	github.com/luxfi/codec v1.1.5 // indirect
 	github.com/luxfi/formatting v1.0.1
 	github.com/luxfi/go-bip32 v1.0.2
 	github.com/luxfi/math/big v0.1.0 // indirect
