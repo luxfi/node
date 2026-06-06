@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestAddressedCall(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAddressedCall(t *testing.T) {
 
 func TestParseAddressedCallJunk(t *testing.T) {
 	_, err := ParseAddressedCall(junkBytes)
-	require.ErrorIs(t, err, codec.ErrUnknownVersion)
+	require.ErrorIs(t, err, pcodecs.ErrUnknownVersion)
 }
 
 func TestAddressedCallBytes(t *testing.T) {

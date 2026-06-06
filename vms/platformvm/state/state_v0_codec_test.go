@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/ids"
 
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -21,7 +21,7 @@ import (
 // failed on the v1.28.1 testnet-canary:
 //
 //	loadMetadata → getFeeState → block.GenesisCodec.Unmarshal(v0Bytes, &feeState)
-//	→ codec.ErrUnknownVersion (unknown codec version)
+//	→ pcodecs.ErrUnknownVersion (unknown codec version)
 //
 // The fixture is byte-for-byte what v1.23.x wrote to singletonDB at the
 // FeeStateKey: 2 bytes wire prefix (0x0000) + 8 bytes Capacity + 8 bytes
@@ -250,5 +250,5 @@ func TestStateCodecRejectsUnknownVersion(t *testing.T) {
 
 	var sink gas.State
 	_, err := block.GenesisCodec.Unmarshal(bogus, &sink)
-	require.ErrorIs(err, codec.ErrUnknownVersion)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
 }
