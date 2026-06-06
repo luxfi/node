@@ -8,10 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/codec"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestParseDelegatorMetadata(t *testing.T) {
@@ -60,7 +59,7 @@ func TestParseDelegatorMetadata(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc8,
 			},
 			expected:    nil,
-			expectedErr: codec.ErrUnknownVersion,
+			expectedErr: pcodecs.ErrUnknownVersion,
 		},
 		{
 			name: "short byte len",
@@ -73,7 +72,7 @@ func TestParseDelegatorMetadata(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 			expected:    nil,
-			expectedErr: wrappers.ErrInsufficientLength,
+			expectedErr: pcodecs.ErrInsufficientLength,
 		},
 	}
 	for _, tt := range tests {
