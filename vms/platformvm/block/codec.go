@@ -5,11 +5,8 @@ package block
 
 import (
 	"errors"
-	"math"
 
-	"github.com/luxfi/codec"
-	"github.com/luxfi/codec/linearcodec"
-	"github.com/luxfi/codec/wrappers"
+	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block/v0"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -41,7 +38,7 @@ var (
 	// 2-byte prefix and selects v0Codec or Codec) because v0 blocks
 	// implement v0.Block, not block.Block — they cannot be unmarshalled
 	// into a block.Block destination. Hence Codec is v1-only by design.
-	Codec codec.Manager
+	Codec pcodecs.Manager
 
 	// GenesisCodec is the unbounded-size codec.Manager used by both
 	// large-genesis decode AND every P-Chain state-side read of
@@ -62,39 +59,39 @@ var (
 	// not GenesisCodec.Unmarshal(b, &Block). The v0 slot map registered
 	// here covers the tx + sub-tx slots referenced by serialized state
 	// values (e.g. fx.Owner -> secp256k1fx.OutputOwners).
-	GenesisCodec codec.Manager
+	GenesisCodec pcodecs.Manager
 
 	// v0Codec is the v1.23.x read-only codec.Manager. It registers v0
 	// block + tx slots and unmarshals into v0.Block (the v0 interface),
 	// not block.Block — these are two distinct interface destinations.
 	// External packages MUST NOT Marshal at v0; that is verified at
 	// Parse time (Parse never re-marshals).
-	v0Codec codec.Manager
+	v0Codec pcodecs.Manager
 
 	// v0GenesisCodec mirrors v0Codec at large size.
-	v0GenesisCodec codec.Manager
+	v0GenesisCodec pcodecs.Manager
 
 	// genesisLinearCodec is the underlying v1 codec for GenesisCodec.
 	// This is exposed for registering additional types from other
 	// packages (e.g. state) at the canonical write version.
-	genesisLinearCodec linearcodec.Codec
+	genesisLinearCodec pcodecs.LinearCodec
 
 	// genesisLinearCodecV0 is the underlying v0 codec for GenesisCodec.
 	// Exposed so state-side types that want to be decodable from both
 	// v0 and v1 state bytes can register symmetrically via
 	// RegisterGenesisType.
-	genesisLinearCodecV0 linearcodec.Codec
+	genesisLinearCodecV0 pcodecs.LinearCodec
 )
 
 func init() {
-	cV1 := linearcodec.NewDefault()
-	gcV1 := linearcodec.NewDefault()
-	gcV0 := linearcodec.NewDefault()
-	cV0 := linearcodec.NewDefault()
-	gcV0BlockOnly := linearcodec.NewDefault()
+	cV1 := pcodecs.NewLinearCodec()
+	gcV1 := pcodecs.NewLinearCodec()
+	gcV0 := pcodecs.NewLinearCodec()
+	cV0 := pcodecs.NewLinearCodec()
+	gcV0BlockOnly := pcodecs.NewLinearCodec()
 
-	errs := wrappers.Errs{}
-	for _, c := range []linearcodec.Codec{cV1, gcV1} {
+	errs := pcodecs.Errs{}
+	for _, c := range []pcodecs.LinearCodec{cV1, gcV1} {
 		errs.Add(RegisterBlockTypes(c))
 	}
 	// gcV0 carries only the v0 tx slot map (no block types) because
@@ -103,14 +100,14 @@ func init() {
 	errs.Add(v0.RegisterTxTypes(gcV0))
 	// cV0 and gcV0BlockOnly carry the full v0 block+tx slot map for
 	// block.Parse's v0 dispatch path.
-	for _, c := range []linearcodec.Codec{cV0, gcV0BlockOnly} {
+	for _, c := range []pcodecs.LinearCodec{cV0, gcV0BlockOnly} {
 		errs.Add(v0.RegisterBlockTypes(c))
 	}
 
-	Codec = codec.NewDefaultManager()
-	GenesisCodec = codec.NewManager(math.MaxInt32)
-	v0Codec = codec.NewDefaultManager()
-	v0GenesisCodec = codec.NewManager(math.MaxInt32)
+	Codec = pcodecs.NewDefaultManager()
+	GenesisCodec = pcodecs.NewMaxInt32Manager()
+	v0Codec = pcodecs.NewDefaultManager()
+	v0GenesisCodec = pcodecs.NewMaxInt32Manager()
 	errs.Add(
 		Codec.RegisterCodec(CodecVersionV1, cV1),
 		// GenesisCodec carries BOTH v0 (read-only) AND v1 (read+write)
@@ -152,7 +149,7 @@ func RegisterGenesisType(val interface{}) error {
 // is exactly one type per block kind: ProposalBlock, AbortBlock,
 // CommitBlock, StandardBlock. Tx types come from txs.RegisterTypes
 // (which registers the v1 tx slot layout).
-func RegisterBlockTypes(targetCodec linearcodec.Codec) error {
+func RegisterBlockTypes(targetCodec pcodecs.LinearCodec) error {
 	return errors.Join(
 		txs.RegisterTypes(targetCodec),
 		targetCodec.RegisterType(&ProposalBlock{}),
