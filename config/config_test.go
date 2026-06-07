@@ -5,7 +5,7 @@ package config
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"fmt"
 	"log"
 	"os"

@@ -4,11 +4,11 @@
 package xvm
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/address"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"

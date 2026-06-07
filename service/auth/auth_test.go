@@ -307,7 +307,7 @@ func TestWriteUnauthorizedResponse(t *testing.T) {
 	rr := httptest.NewRecorder()
 	writeUnauthorizedResponse(rr, errTest)
 	require.Equal(http.StatusUnauthorized, rr.Code)
-	require.Equal(`{"jsonrpc":"2.0","error":{"code":-32600,"message":"non-nil error"},"id":1}`+"\n", rr.Body.String())
+	require.Equal(`{"jsonrpc":"2.0","error":{"code":-32600,"message":"non-nil error"},"id":1}`, rr.Body.String())
 }
 
 func TestWrapHandlerMutatedRevokedToken(t *testing.T) {

@@ -10,7 +10,7 @@ package chains
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"testing"
 
 	consensusconfig "github.com/luxfi/consensus/config"
