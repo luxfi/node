@@ -775,15 +775,18 @@ func loadPEMBlock(path, expectType string) ([]byte, error) {
 // pemBytesOrFile resolves either a base64-encoded PEM in
 // contentKey (highest precedence, matches the
 // --foo-file-content / --foo-file pattern the existing TLS
-// loaders use) or a filesystem path in pathKey. Empty return =
-// neither was set; caller decides whether that's a fatal config
-// error or a "fall through to classical-compat" path.
+// loaders use) or a filesystem path in pathKey. A set-but-empty
+// contentKey is treated as absent and falls through to pathKey, so a
+// blank content flag and a missing one behave identically. Empty
+// return = neither was provided; caller decides whether that's a fatal
+// config error or a "fall through to classical-compat" path.
 func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]byte, string, error) {
-	if v.IsSet(contentKey) {
-		raw := v.GetString(contentKey)
-		if raw == "" {
-			return nil, "", nil
-		}
+	// A non-empty *-content flag wins. A set-but-empty one (e.g. an env var or
+	// a deploy template that rendered to "") is treated identically to an
+	// absent flag: fall through to the *-file path below. Short-circuiting on
+	// the empty value here would silently degrade a strict-PQ validator to a
+	// classical ECDSA NodeID — the strict-PQ activation outage this guards.
+	if raw := v.GetString(contentKey); raw != "" {
 		decoded, err := base64.StdEncoding.DecodeString(raw)
 		if err != nil {
 			return nil, "", fmt.Errorf("decode %s base64: %w", contentKey, err)
