@@ -254,6 +254,11 @@ COPY --from=builder /build/build/ .
 # Create plugins directory and lpm state directory
 RUN mkdir -p /luxd/build/plugins /root/.lpm /root/.lux/plugins
 
+# Liquidity deploy convention: the operator-rendered lqd startup script
+# execs /lqd/build/lqd. Upstream builds the binary as /luxd/build/luxd,
+# so symlink it for compatibility with the operator's StatefulSet render.
+RUN mkdir -p /lqd/build && ln -sf /luxd/build/luxd /lqd/build/lqd
+
 # Add lpm to PATH
 ENV PATH="/luxd/build:${PATH}"
 

@@ -15,16 +15,24 @@ import (
 
 // newTestIdentities returns two fresh ML-DSA-65 identities and a shared
 // chain ID. Used by every handshake test that needs a happy-path setup.
+//
+// Each identity's NodeID is derived FROM its own ML-DSA-65 public key via
+// deriveMLDSANodeID — the same binding production enforces (the handshake
+// now rejects a claimed NodeID that doesn't match the presented key, and
+// adopts the key-derived NodeID as the authoritative peer identity). A
+// random ids.GenerateTestNodeID() would no longer round-trip.
 func newTestIdentities(t *testing.T) (initiator, responder *LocalIdentity, chainID [32]byte) {
 	t.Helper()
 	require := require.New(t)
 
-	initNodeID := ids.GenerateTestNodeID()
-	respNodeID := ids.GenerateTestNodeID()
-
-	init, err := NewLocalIdentity(initNodeID)
+	init, err := NewLocalIdentity(ids.EmptyNodeID)
 	require.NoError(err)
-	resp, err := NewLocalIdentity(respNodeID)
+	init.NodeID, err = deriveMLDSANodeID(packMLDSAPub(init.Public))
+	require.NoError(err)
+
+	resp, err := NewLocalIdentity(ids.EmptyNodeID)
+	require.NoError(err)
+	resp.NodeID, err = deriveMLDSANodeID(packMLDSAPub(resp.Public))
 	require.NoError(err)
 
 	_, err = rand.Read(chainID[:])

@@ -150,6 +150,7 @@ func StartTestPeer(
 			maxMessageToSend,
 		),
 		false,
+		nil,
 	)
 	return peer, peer.AwaitReady(ctx)
 }

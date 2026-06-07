@@ -60,9 +60,9 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/vm/chains/atomic"
 
@@ -685,6 +685,16 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// add node configs to network config
 	n.Config.NetworkConfig.MyNodeID = n.ID
+	// Bind the PQ handshake identity to the persistent staking ML-DSA-65
+	// keypair so the on-wire NodeID equals n.ID (StakingConfig.DeriveNodeID)
+	// and is stable across restarts. Without this the network layer mints a
+	// fresh ephemeral ML-DSA identity each boot (peer.NewLocalIdentity),
+	// which never matches the validator set → ProposerVM has no online
+	// proposer → P-Chain produces no blocks.
+	n.Config.NetworkConfig.StakingMLDSAPub = n.Config.StakingConfig.StakingMLDSAPub
+	if n.Config.StakingConfig.StakingMLDSA != nil {
+		n.Config.NetworkConfig.StakingMLDSAPriv = n.Config.StakingConfig.StakingMLDSA.Bytes()
+	}
 	n.Config.NetworkConfig.MyIPPort = atomicIP
 	n.Config.NetworkConfig.NetworkID = n.Config.NetworkID
 	n.Config.NetworkConfig.Validators = n.vdrs
@@ -1007,6 +1017,20 @@ func (n *Node) SecurityProfile() *consensusconfig.ChainSecurityProfile {
 //
 // Closes red-team finding F102 at the node bootstrap layer.
 func (n *Node) initSecurityProfile() error {
+	// A file-based genesis (--genesis-file / --genesis-file-content) carries
+	// its ChainSecurityProfile pin as a top-level "securityProfile" object.
+	// config.getGenesisData parses it onto GenesisSecurityProfile. Prefer it:
+	// networkID=3 and other sovereign L1s have no compiled-in profile, so the
+	// file pin is the only place strict-PQ is declared. Falling back to
+	// genesiscfg.GetConfig(networkID) here would (wrongly) leave them in
+	// classical-compat. Closes the strict-PQ-never-activates gap.
+	if n.Config.GenesisSecurityProfile != nil {
+		return n.applySecurityProfile(n.Config.GenesisSecurityProfile)
+	}
+
+	// No file pin (raw-bytes / db-replay load, or a genesis file with no
+	// securityProfile field). Fall back to the compiled-in config so standard
+	// networks that bake a pin (mainnet/testnet) still activate it.
 	cfg := genesiscfg.GetConfig(n.Config.NetworkID)
 	if cfg == nil {
 		n.Log.Warn("genesis config not found — node boots in classical-compat mode")
@@ -1353,7 +1377,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			NetworkID:                               n.Config.NetworkID,
 			Server:                                  n.APIServer,
 			AtomicMemory:                            n.sharedMemory,
-			UTXOAssetID:                                utxoAssetID,
+			UTXOAssetID:                             utxoAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			DChainID:                                dChainID,

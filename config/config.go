@@ -30,6 +30,7 @@ import (
 	mlkemcrypto "github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/filesystem/storage"
+	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -774,15 +775,25 @@ func loadPEMBlock(path, expectType string) ([]byte, error) {
 // pemBytesOrFile resolves either a base64-encoded PEM in
 // contentKey (highest precedence, matches the
 // --foo-file-content / --foo-file pattern the existing TLS
-// loaders use) or a filesystem path in pathKey. Empty return =
-// neither was set; caller decides whether that's a fatal config
-// error or a "fall through to classical-compat" path.
+// loaders use) or a filesystem path in pathKey. A *non-empty*
+// content value wins; an empty/unset content value falls through
+// to the path (so `--foo-content=` next to a real `--foo-file`
+// loads the file rather than silently returning nothing). Empty
+// return = neither content nor a readable path was set; caller
+// decides whether that's a fatal config error or a "fall through
+// to classical-compat" path.
 func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]byte, string, error) {
-	if v.IsSet(contentKey) {
+	// An empty content value (flag passed as `--foo-content=` or an env/template
+	// that rendered to "") is NOT "content provided" — it means "no content,
+	// use the path". Falling through here (instead of returning empty) is the
+	// difference between loading the persisted key and a SILENT degrade to
+	// classical-compat: with an ephemeral TLS cert and an empty MLDSA content
+	// flag, returning here leaves StakingMLDSAPub empty, so DeriveNodeID takes
+	// the ECDSA branch and the node boots under the wrong (non-validator)
+	// NodeID with no error. Only a non-empty content value short-circuits the
+	// path.
+	if v.IsSet(contentKey) && v.GetString(contentKey) != "" {
 		raw := v.GetString(contentKey)
-		if raw == "" {
-			return nil, "", nil
-		}
 		decoded, err := base64.StdEncoding.DecodeString(raw)
 		if err != nil {
 			return nil, "", fmt.Errorf("decode %s base64: %w", contentKey, err)
@@ -1038,35 +1049,40 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	return upgradeConfig, nil
 }
 
-func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, error) {
+func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.StakingConfig, dataDir string) ([]byte, ids.ID, *genesiscfg.SecurityProfile, error) {
 	// (Removed: automine-mode genesis swap.) --automine is single-node
 	// consensus only; it falls through to the canonical genesis loader
 	// below — same as a real network. C-Chain genesis comes from the
 	// canonical luxfi/genesis embedded config or --genesis-file. Period.
 
 	// HIGHEST PRIORITY: Raw genesis bytes - use directly without rebuilding
-	// This is critical for snapshot resume to avoid hash mismatch
+	// This is critical for snapshot resume to avoid hash mismatch.
+	// Raw platform-genesis bytes carry no top-level "securityProfile" JSON
+	// pin (it lives in the file-based ConfigOutput, not in the serialized
+	// platform genesis), so the SecurityProfile pin is nil here — the
+	// compiled-in genesiscfg.GetConfig(networkID) pin (if any) is honored
+	// by initSecurityProfile as the fallback.
 	if v.IsSet(GenesisRawBytesKey) {
 		genesisB64 := v.GetString(GenesisRawBytesKey)
 		genesisBytes, err := base64.StdEncoding.DecodeString(genesisB64)
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
+			return nil, ids.Empty, nil, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
 		}
 		utxoAssetID, err := resolveXAssetID(networkID, genesisBytes)
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
+			return nil, ids.Empty, nil, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
 		}
 		log.Info("loaded raw genesis bytes directly",
 			"size", len(genesisBytes),
 			"utxoAssetID", utxoAssetID,
 		)
-		return genesisBytes, utxoAssetID, nil
+		return genesisBytes, utxoAssetID, nil, nil
 	}
 
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
-			return nil, ids.Empty, fmt.Errorf("cannot specify %s with %s or %s", GenesisDBKey, GenesisFileKey, GenesisFileContentKey)
+			return nil, ids.Empty, nil, fmt.Errorf("cannot specify %s with %s or %s", GenesisDBKey, GenesisFileKey, GenesisFileContentKey)
 		}
 		genesisDBPath := getExpandedArg(v, GenesisDBKey)
 		genesisDBType := v.GetString(GenesisDBTypeKey)
@@ -1076,18 +1092,40 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 			genesisDBType = "zapdb" // Default is always zapdb
 		}
 
-		return builder.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
+		genesisBytes, utxoAssetID, err := builder.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
+		return genesisBytes, utxoAssetID, nil, err
 	}
 
 	// try first loading genesis content directly from flag/env-var
 	if v.IsSet(GenesisFileContentKey) {
 		genesisData := v.GetString(GenesisFileContentKey)
-		return builder.FromFlag(networkID, genesisData, stakingCfg)
+		genesisBytes, utxoAssetID, err := builder.FromFlag(networkID, genesisData, stakingCfg)
+		if err != nil {
+			return nil, ids.Empty, nil, err
+		}
+		// Surface the chain-wide ChainSecurityProfile pin (top-level
+		// "securityProfile") from the same base64 content the builder
+		// consumed, so a file-based strict-PQ genesis activates strict-PQ.
+		pin, err := securityProfileFromContent(genesisData)
+		if err != nil {
+			return nil, ids.Empty, nil, err
+		}
+		return genesisBytes, utxoAssetID, pin, nil
 	}
 
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
 		genesisFileName := getExpandedArg(v, GenesisFileKey)
+		// The chain-wide ChainSecurityProfile pin is parsed from the
+		// genesis file itself (top-level "securityProfile"), never from
+		// the built/cached platform bytes — the pin does not survive into
+		// the serialized platform genesis. Read it once here regardless of
+		// whether the platform bytes come from cache or a fresh build, so
+		// strict-PQ activation is independent of the genesis.bytes cache.
+		pin, err := securityProfileFromFile(genesisFileName)
+		if err != nil {
+			return nil, ids.Empty, nil, err
+		}
 		// Check if we have cached genesis bytes to avoid rebuilding
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
@@ -1098,7 +1136,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 					"size", len(cachedBytes),
 					"utxoAssetID", utxoAssetID,
 				)
-				return cachedBytes, utxoAssetID, nil
+				return cachedBytes, utxoAssetID, pin, nil
 			}
 			// Cache parse failed — almost certainly a codec mismatch
 			// after a binary upgrade (e.g. v1-codec bytes persisted by
@@ -1118,7 +1156,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		// No cache or invalid cache - build from file and cache the result
 		genesisBytes, utxoAssetID, err := builder.FromFile(networkID, genesisFileName, stakingCfg)
 		if err != nil {
-			return nil, ids.Empty, err
+			return nil, ids.Empty, nil, err
 		}
 		// Cache the built bytes for future restarts
 		if err := saveCachedGenesisBytes(cacheFile, genesisBytes); err != nil {
@@ -1131,12 +1169,44 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 				"size", len(genesisBytes),
 			)
 		}
-		return genesisBytes, utxoAssetID, nil
+		return genesisBytes, utxoAssetID, pin, nil
 	}
 
-	// finally if file is not specified/readable go for the predefined config
+	// finally if file is not specified/readable go for the predefined config.
+	// The compiled-in config carries the SecurityProfile pin for standard
+	// networks (mainnet/testnet) that bake one in.
 	config := builder.GetConfig(networkID)
-	return builder.FromConfig(config)
+	genesisBytes, utxoAssetID, err := builder.FromConfig(config)
+	return genesisBytes, utxoAssetID, config.SecurityProfile, err
+}
+
+// securityProfileFromFile parses the top-level "securityProfile" pin from a
+// genesis file. Reuses genesiscfg.GetConfigFile so the JSON shape stays
+// single-sourced with builder.FromFile. Returns nil (no pin) when the file
+// omits the field; a parse error is fatal — a malformed pin on a strict-PQ
+// genesis must not silently degrade to classical-compat.
+func securityProfileFromFile(filepath string) (*genesiscfg.SecurityProfile, error) {
+	cfg, err := genesiscfg.GetConfigFile(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("parse securityProfile from genesis file %s: %w", filepath, err)
+	}
+	return cfg.SecurityProfile, nil
+}
+
+// securityProfileFromContent parses the top-level "securityProfile" pin from
+// base64-encoded genesis content (--genesis-file-content). Mirrors
+// builder.FromFlag's decode + ConfigOutput parse so the pin matches the
+// platform bytes the builder produced from the same content.
+func securityProfileFromContent(content string) (*genesiscfg.SecurityProfile, error) {
+	data, err := base64.StdEncoding.DecodeString(content)
+	if err != nil {
+		return nil, fmt.Errorf("decode base64 genesis content for securityProfile: %w", err)
+	}
+	var output genesiscfg.ConfigOutput
+	if err := json.Unmarshal(data, &output); err != nil {
+		return nil, fmt.Errorf("parse securityProfile from genesis content: %w", err)
+	}
+	return output.SecurityProfile, nil
 }
 
 // resolveXAssetID extracts the X-Chain native asset ID from the loaded
@@ -1746,7 +1816,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 	nodeConfig.TrackAllChains = v.GetBool(TrackAllChainsKey)
 
-
 	// HTTP APIs
 	nodeConfig.HTTPConfig, err = getHTTPConfig(v)
 	if err != nil {
@@ -1872,7 +1941,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// Get data directory for dev network config persistence
 	dataDir := getExpandedArg(v, DataDirKey)
 
-	nodeConfig.GenesisBytes, nodeConfig.UTXOAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
+	nodeConfig.GenesisBytes, nodeConfig.UTXOAssetID, nodeConfig.GenesisSecurityProfile, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg, dataDir)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
 	}

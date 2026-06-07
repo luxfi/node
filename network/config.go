@@ -118,6 +118,14 @@ type Config struct {
 	TLSKeyLogFile string `json:"tlsKeyLogFile"`
 
 	MyNodeID           ids.NodeID                    `json:"myNodeID"`
+	// StakingMLDSAPub/Priv carry this node's PERSISTENT strict-PQ ML-DSA-65
+	// staking keypair as raw FIPS-204 bytes (luxfi/crypto/mldsa wraps circl,
+	// so these are circl-parseable). The PQ handshake binds its identity to
+	// THIS keypair so the on-wire NodeID equals the staking-derived MyNodeID
+	// and is stable across restarts. Empty on classical-compat profiles
+	// (handshake then falls back to an ephemeral identity).
+	StakingMLDSAPub    []byte                        `json:"-"`
+	StakingMLDSAPriv   []byte                        `json:"-"`
 	MyIPPort           *utils.Atomic[netip.AddrPort] `json:"myIP"`
 	NetworkID          uint32                        `json:"networkID"`
 	MaxClockDifference time.Duration                 `json:"maxClockDifference"`

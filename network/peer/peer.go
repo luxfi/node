@@ -227,6 +227,7 @@ func Start(
 	id ids.NodeID,
 	messageQueue MessageQueue,
 	isIngress bool,
+	pq *PQPreHandshake,
 ) Peer {
 	onClosingCtx, onClosingCtxCancel := context.WithCancel(context.Background())
 	p := &peer{
@@ -252,7 +253,18 @@ func Start(
 	// PQ handshake gate: strict-PQ chains run the application-layer
 	// ML-KEM + ML-DSA-65 handshake on the wire BEFORE any p2p message
 	// is exchanged. Permissive / classical-compat chains skip this step.
-	if err := p.runPQHandshakeIfRequired(); err != nil {
+	//
+	// When pq != nil the caller (network.upgrade) already ran the handshake
+	// over this conn BEFORE connection dedup, holding no lock — adopt its
+	// result and skip the in-Start run. Running it pre-dedup is what lets
+	// both ends of a simultaneous mutual dial complete independently (each
+	// TCP conn has a distinct dialer=initiator / acceptor=responder); the
+	// old in-Start, under-peersLock run made every node a lone initiator and
+	// deadlocked. p.id was already set to the handshake-derived ML-DSA NodeID
+	// via the id param, so only the AEAD key needs adopting here.
+	if pq != nil {
+		p.pqAEADKey = pq.AEADKey
+	} else if err := p.runPQHandshakeIfRequired(); err != nil {
 		p.Log.Warn("PQ handshake refused; closing connection",
 			log.Stringer("nodeID", p.id),
 			log.Bool("isIngress", isIngress),
@@ -286,59 +298,87 @@ func (p *peer) runPQHandshakeIfRequired() error {
 	if cfg == nil || cfg.PQHandshakeConfig == nil || cfg.PQLocalIdentity == nil {
 		return nil
 	}
+	peerNodeID, aeadKey, err := RunPQHandshakeConn(p.conn, cfg.PQHandshakeConfig, cfg.PQLocalIdentity, p.isIngress, cfg.MaxClockDifference)
+	if err != nil {
+		return err
+	}
+	p.pqAEADKey = aeadKey
+	// Adopt the ML-DSA identity authenticated by the handshake as this peer's
+	// NodeID, replacing the ephemeral TLS-cert NodeID from the upgrader.
+	p.id = peerNodeID
+	return nil
+}
 
-	deadline := time.Now().Add(cfg.MaxClockDifference + 30*time.Second)
-	if err := p.conn.SetDeadline(deadline); err != nil {
-		return fmt.Errorf("set PQ handshake deadline: %w", err)
+// PQPreHandshake carries a strict-PQ handshake result computed by the caller
+// (network.upgrade) BEFORE connection dedup so Start adopts it instead of
+// re-running the handshake. Nil on the legacy bare-TLS path.
+type PQPreHandshake struct {
+	AEADKey    [32]byte
+	PeerNodeID ids.NodeID
+}
+
+// RunPQHandshakeConn runs the strict-PQ ML-KEM + ML-DSA-65 application
+// handshake over conn and returns the handshake-authenticated peer NodeID and
+// derived AEAD session key. Role is by dial direction — the dialer
+// (isIngress=false) initiates, the acceptor (isIngress=true) responds — which
+// is well-defined per TCP connection. network.upgrade calls this BEFORE
+// connection dedup so both ends of a simultaneous mutual dial complete
+// independently (each conn has a distinct dialer/acceptor) and the dedup keys
+// on the stable ML-DSA NodeID rather than the ephemeral TLS-cert NodeID. Holds
+// no lock; bounded by a MaxClockDifference+30s deadline. Wire framing mirrors
+// the peer's 4-byte length-prefix scheme (see pq_frame.go).
+func RunPQHandshakeConn(conn net.Conn, hs *HandshakeConfig, local *LocalIdentity, isIngress bool, maxClockDifference time.Duration) (ids.NodeID, [32]byte, error) {
+	var zeroKey [32]byte
+	deadline := time.Now().Add(maxClockDifference + 30*time.Second)
+	if err := conn.SetDeadline(deadline); err != nil {
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("set PQ handshake deadline: %w", err)
 	}
 	defer func() {
 		// Clear deadline so the rest of the peer flow uses its own.
-		_ = p.conn.SetDeadline(time.Time{})
+		_ = conn.SetDeadline(time.Time{})
 	}()
 
-	if p.isIngress {
+	if isIngress {
 		// Responder: read INIT, send RESP, derive AEAD.
-		initBytes, err := readPQFrame(p.conn)
+		initBytes, err := readPQFrame(conn)
 		if err != nil {
-			return fmt.Errorf("read PQ INIT: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("read PQ INIT: %w", err)
 		}
-		init, err := parsePQHandshakeInit(initBytes, cfg.PQHandshakeConfig.KEMScheme)
+		init, err := parsePQHandshakeInit(initBytes, hs.KEMScheme)
 		if err != nil {
-			return fmt.Errorf("parse PQ INIT: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("parse PQ INIT: %w", err)
 		}
-		resp, result, err := RespondHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init)
+		resp, result, err := RespondHandshake(hs, local, init)
 		if err != nil {
-			return fmt.Errorf("respond PQ handshake: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("respond PQ handshake: %w", err)
 		}
-		if err := writePQFrame(p.conn, resp.canonicalBytes()); err != nil {
-			return fmt.Errorf("write PQ RESP: %w", err)
+		if err := writePQFrame(conn, resp.canonicalBytes()); err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("write PQ RESP: %w", err)
 		}
-		p.pqAEADKey = result.AEADKey
-		return nil
+		return result.PeerNodeID, result.AEADKey, nil
 	}
 
 	// Initiator: send INIT, read RESP, finalize.
-	init, kemSec, err := InitiateHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity)
+	init, kemSec, err := InitiateHandshake(hs, local)
 	if err != nil {
-		return fmt.Errorf("initiate PQ handshake: %w", err)
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("initiate PQ handshake: %w", err)
 	}
-	if err := writePQFrame(p.conn, init.canonicalBytes()); err != nil {
-		return fmt.Errorf("write PQ INIT: %w", err)
+	if err := writePQFrame(conn, init.canonicalBytes()); err != nil {
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("write PQ INIT: %w", err)
 	}
-	respBytes, err := readPQFrame(p.conn)
+	respBytes, err := readPQFrame(conn)
 	if err != nil {
-		return fmt.Errorf("read PQ RESP: %w", err)
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("read PQ RESP: %w", err)
 	}
-	resp, err := parsePQHandshakeResp(respBytes, cfg.PQHandshakeConfig.KEMScheme)
+	resp, err := parsePQHandshakeResp(respBytes, hs.KEMScheme)
 	if err != nil {
-		return fmt.Errorf("parse PQ RESP: %w", err)
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("parse PQ RESP: %w", err)
 	}
-	result, err := FinishInitiatorHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init, resp, kemSec)
+	result, err := FinishInitiatorHandshake(hs, local, init, resp, kemSec)
 	if err != nil {
-		return fmt.Errorf("finish PQ handshake: %w", err)
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("finish PQ handshake: %w", err)
 	}
-	p.pqAEADKey = result.AEADKey
-	return nil
+	return result.PeerNodeID, result.AEADKey, nil
 }
 
 func (p *peer) ID() ids.NodeID {

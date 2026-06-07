@@ -508,9 +508,19 @@ func NewNetwork(
 	// refused. Permissive / classical-compat profiles leave PQHandshake
 	// nil and use the legacy bare-TLS path.
 	if config.SecurityProfile != nil && profileRequiresPQHandshake(config.SecurityProfile) {
-		pqIdent, err := peer.NewLocalIdentity(config.MyNodeID)
-		if err != nil {
-			return nil, fmt.Errorf("building PQ local identity: %w", err)
+		var pqIdent *peer.LocalIdentity
+		var identErr error
+		if len(config.StakingMLDSAPub) > 0 && len(config.StakingMLDSAPriv) > 0 {
+			// Production strict-PQ: bind the handshake identity to the
+			// persistent staking ML-DSA key so the on-wire NodeID equals
+			// the staking-derived MyNodeID (stable across restarts).
+			pqIdent, identErr = peer.NewLocalIdentityFromMLDSA(config.MyNodeID, config.StakingMLDSAPub, config.StakingMLDSAPriv)
+		} else {
+			// No staking ML-DSA material (tests / non-strict-PQ): ephemeral.
+			pqIdent, identErr = peer.NewLocalIdentity(config.MyNodeID)
+		}
+		if identErr != nil {
+			return nil, fmt.Errorf("building PQ local identity: %w", identErr)
 		}
 		peerConfig.PQHandshakeConfig = &peer.HandshakeConfig{
 			Profile:            peer.ProfileStrictPQ,
@@ -524,6 +534,24 @@ func NewNetwork(
 		)
 	}
 
+	// When the application-layer PQ handshake is active, TLS is transport-
+	// only: peer leaf certs are ephemeral ECDSA (classical scheme) by design
+	// (schemeFromCert classifies every current cert as classical until an
+	// ML-DSA cert extension lands), and the authoritative ML-DSA NodeID is
+	// established + bound in peer.Start's PQ handshake — which forbids
+	// classical KEM and verifies the key-derived NodeID. Feeding the
+	// classical TLS-cert scheme to the strict-PQ SchemeGate would refuse
+	// every connection at the upgrade, before the PQ handshake can run
+	// (the cause of the strict-PQ "TLS upgrade failed" / 0-peers stall).
+	// Defer scheme admission to the PQ handshake by passing a nil gate to
+	// the upgrader (connToIDAndCert is nil-safe). The SchemeGate still
+	// guards the legacy / classical-compat path (no PQ handshake), and
+	// bare-TLS peers are still refused — just at peer.Start, not the gate.
+	upgraderGate := schemeGate
+	if peerConfig.PQHandshakeConfig != nil {
+		upgraderGate = nil
+	}
+
 	onCloseCtx, cancel := context.WithCancel(context.Background())
 	n := &network{
 		startupTime:          time.Now(),
@@ -535,8 +563,8 @@ func NewNetwork(
 		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
 		listener:                    listener,
 		dialer:                      dialer,
-		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected, schemeGate),
-		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected, schemeGate),
+		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected, upgraderGate),
+		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected, upgraderGate),
 
 		onCloseCtx:       onCloseCtx,
 		onCloseCtxCancel: cancel,
@@ -1734,6 +1762,41 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader, isIngress bool)
 	// At this point we have successfully upgraded the connection and will
 	// return a nil error.
 
+	// Strict-PQ: run the application-layer ML-KEM + ML-DSA-65 handshake on
+	// this connection BEFORE the dedup/lock below. The handshake authenticates
+	// the peer's stable ML-DSA NodeID (replacing the ephemeral TLS-cert NodeID
+	// the upgrader derived), so the self / AllowConnection / connecting +
+	// connected dedup all key on the validator-set NodeID. Running it here —
+	// in this per-conn goroutine (dialEndpointOnly or the Dispatch accept
+	// goroutine), holding no lock — lets both ends of a simultaneous mutual
+	// dial complete independently: each TCP conn has a distinct
+	// dialer=initiator / acceptor=responder. The prior in-Start, under-peersLock
+	// run made every node a lone initiator (each kept its outbound, dropped the
+	// peer's inbound as "already connecting") → INIT sent, no responder → 90s
+	// deadlock → 0 peers. Classical / no-PQ chains leave PQHandshakeConfig nil
+	// and skip this entirely.
+	var pq *peer.PQPreHandshake
+	if n.peerConfig.PQHandshakeConfig != nil && n.peerConfig.PQLocalIdentity != nil {
+		mldsaID, aeadKey, herr := peer.RunPQHandshakeConn(
+			tlsConn,
+			n.peerConfig.PQHandshakeConfig,
+			n.peerConfig.PQLocalIdentity,
+			isIngress,
+			n.peerConfig.MaxClockDifference,
+		)
+		if herr != nil {
+			_ = tlsConn.Close()
+			n.peerConfig.Log.Debug("PQ handshake failed during upgrade",
+				"direction", direction,
+				"ephemeralNodeID", nodeID.String(),
+				"error", herr,
+			)
+			return herr
+		}
+		nodeID = mldsaID
+		pq = &peer.PQPreHandshake{AEADKey: aeadKey, PeerNodeID: mldsaID}
+	}
+
 	if nodeID == n.config.MyNodeID {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug("dropping connection to myself")
@@ -1807,6 +1870,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader, isIngress bool)
 			n.outboundMsgThrottler,
 		),
 		isIngress,
+		pq,
 	)
 	n.connectingPeers.Add(peer)
 	n.peersLock.Unlock()

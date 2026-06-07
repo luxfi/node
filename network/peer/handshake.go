@@ -165,6 +165,42 @@ func NewLocalIdentity(nodeID ids.NodeID) (*LocalIdentity, error) {
 	return &LocalIdentity{NodeID: nodeID, Public: pk, Secret: sk}, nil
 }
 
+// NewLocalIdentityFromMLDSA builds the PQ-handshake identity from this
+// node's PERSISTENT strict-PQ staking ML-DSA-65 keypair (raw FIPS-204
+// bytes). Production nodes MUST use this rather than NewLocalIdentity: the
+// on-wire identity then equals the staking-derived NodeID (see
+// StakingConfig.DeriveNodeID) and is stable across restarts, so peers see
+// the same NodeID that appears in the validator set. NewLocalIdentity
+// (fresh random) is for tests and one-shot tooling only — using it in
+// production mints a new ephemeral NodeID every boot that never matches
+// the genesis/validator set, starving the ProposerVM of an online proposer.
+func NewLocalIdentityFromMLDSA(nodeID ids.NodeID, pubBytes, privBytes []byte) (*LocalIdentity, error) {
+	pk := new(mldsa65.PublicKey)
+	if err := pk.UnmarshalBinary(pubBytes); err != nil {
+		return nil, fmt.Errorf("peer: parse staking ML-DSA-65 public key (%d bytes): %w", len(pubBytes), err)
+	}
+	sk := new(mldsa65.PrivateKey)
+	if err := sk.UnmarshalBinary(privBytes); err != nil {
+		return nil, fmt.Errorf("peer: parse staking ML-DSA-65 private key (%d bytes): %w", len(privBytes), err)
+	}
+	return &LocalIdentity{NodeID: nodeID, Public: pk, Secret: sk}, nil
+}
+
+// deriveMLDSANodeID computes the canonical NodeID bound to an ML-DSA-65
+// public key, using the SAME scheme as StakingConfig.DeriveNodeID
+// (ids.NodeIDSchemeMLDSA65.DeriveMLDSA over the primary-network chainID,
+// ids.Empty). The handshake verifies the peer's claimed NodeID against
+// this so a peer can't present one validator's NodeID while holding a
+// different key — and so the post-handshake peer identity equals the
+// validator-set NodeID (DeriveNodeID), unifying transport + consensus.
+func deriveMLDSANodeID(pubBytes []byte) (ids.NodeID, error) {
+	id, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(ids.Empty, pubBytes)
+	if err != nil {
+		return ids.EmptyNodeID, err
+	}
+	return id, nil
+}
+
 // HandshakeConfig pins the policy bits the handshake enforces. One value
 // per peer connection; the network-level config builds one shared
 // HandshakeConfig and hands a pointer to every per-peer goroutine.
@@ -391,9 +427,22 @@ func RespondHandshake(
 		TranscriptHash: kem.HashTranscript(fullTranscript),
 	}
 
+	// Bind the peer's NodeID to its ML-DSA key (same scheme as
+	// StakingConfig.DeriveNodeID): reject a claimed NodeID that doesn't
+	// match its key, and adopt the key-derived NodeID as the authoritative
+	// peer identity so consensus tracks the validator-set NodeID.
+	derivedID, derr := deriveMLDSANodeID(init.MLDSAPub)
+	if derr != nil {
+		return nil, nil, fmt.Errorf("%w: derive initiator NodeID: %v", ErrHandshakeBadIdentity, derr)
+	}
+	if derivedID != init.NodeID {
+		return nil, nil, fmt.Errorf("%w: initiator NodeID %s != ML-DSA-derived %s",
+			ErrHandshakeBadIdentity, init.NodeID, derivedID)
+	}
+
 	return resp, &HandshakeResult{
 		Local:      local,
-		PeerNodeID: init.NodeID,
+		PeerNodeID: derivedID,
 		PeerMLDSA:  peerPub,
 		KEMSession: finalSession,
 		AEADKey:    finalSession.DeriveAEADKey(),
@@ -444,9 +493,19 @@ func FinishInitiatorHandshake(
 		TranscriptHash: kem.HashTranscript(fullTranscript),
 	}
 
+	// Bind the responder's NodeID to its ML-DSA key (see RespondHandshake).
+	derivedID, derr := deriveMLDSANodeID(resp.MLDSAPub)
+	if derr != nil {
+		return nil, fmt.Errorf("%w: derive responder NodeID: %v", ErrHandshakeBadIdentity, derr)
+	}
+	if derivedID != resp.NodeID {
+		return nil, fmt.Errorf("%w: responder NodeID %s != ML-DSA-derived %s",
+			ErrHandshakeBadIdentity, resp.NodeID, derivedID)
+	}
+
 	return &HandshakeResult{
 		Local:      local,
-		PeerNodeID: resp.NodeID,
+		PeerNodeID: derivedID,
 		PeerMLDSA:  peerPub,
 		KEMSession: finalSession,
 		AEADKey:    finalSession.DeriveAEADKey(),

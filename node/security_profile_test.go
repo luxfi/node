@@ -12,6 +12,7 @@ import (
 	consensusconfig "github.com/luxfi/consensus/config"
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	genesissecurity "github.com/luxfi/genesis/pkg/genesis/security"
+	nodecfg "github.com/luxfi/node/config/node"
 	"github.com/luxfi/log"
 )
 
@@ -106,6 +107,68 @@ func TestApplySecurityProfile_UnknownProfileIDRejected(t *testing.T) {
 	}
 	if !errors.Is(err, genesissecurity.ErrSecurityProfileInvalidID) {
 		t.Errorf("applySecurityProfile returned %v; want wrap of ErrSecurityProfileInvalidID", err)
+	}
+}
+
+// TestInitSecurityProfile_FilePinPreferred proves a file-based genesis
+// pin (GenesisSecurityProfile, parsed by config.getGenesisData from the
+// genesis file's top-level "securityProfile") activates strict-PQ even on
+// a networkID that has no compiled-in profile. This is the load-bearing
+// fix for the strict-PQ L1 (networkID=3, file-based genesis) that
+// previously booted classical-compat because genesiscfg.GetConfig(3)
+// returns a nil-profile config.
+func TestInitSecurityProfile_FilePinPreferred(t *testing.T) {
+	canonical := consensusconfig.StrictPQ()
+	live, err := canonical.ComputeHash()
+	if err != nil {
+		t.Fatalf("ComputeHash: %v", err)
+	}
+	pin := &genesiscfg.SecurityProfile{
+		ProfileID:      uint8(consensusconfig.ProfileStrictPQ),
+		ProfileHashHex: hex.EncodeToString(live[:]),
+	}
+	n := &Node{
+		Log: log.NoLog{},
+		Config: &nodecfg.Config{
+			NetworkID:              3, // sovereign L1, no compiled-in profile
+			GenesisSecurityProfile: pin,
+		},
+	}
+	if err := n.initSecurityProfile(); err != nil {
+		t.Fatalf("initSecurityProfile returned: %v", err)
+	}
+	got := n.SecurityProfile()
+	if got == nil {
+		t.Fatal("SecurityProfile() is nil — strict-PQ did not activate from the file pin")
+	}
+	if got.ProfileID != uint32(consensusconfig.ProfileStrictPQ) {
+		t.Errorf("ProfileID = %d; want %d (StrictPQ)", got.ProfileID, consensusconfig.ProfileStrictPQ)
+	}
+	if got.ProfileHash != live {
+		t.Errorf("ProfileHash mismatch after file-pin resolution")
+	}
+}
+
+// TestInitSecurityProfile_NoFilePinFallsBack proves that when no file pin
+// is present (raw-bytes / db-replay load, or a genesis file without a
+// securityProfile field) on a network with no compiled-in profile, the
+// node boots classical-compat (nil SecurityProfile) without error — the
+// preserved legacy behavior. NetworkID=3 has no compiled-in profile and
+// no on-disk genesis dir in the test environment, so GetConfig(3) yields a
+// nil-profile config.
+func TestInitSecurityProfile_NoFilePinFallsBack(t *testing.T) {
+	n := &Node{
+		Log: log.NoLog{},
+		Config: &nodecfg.Config{
+			NetworkID:              3,
+			GenesisSecurityProfile: nil,
+		},
+	}
+	if err := n.initSecurityProfile(); err != nil {
+		t.Fatalf("initSecurityProfile returned %v; want nil (classical-compat)", err)
+	}
+	if n.SecurityProfile() != nil {
+		t.Errorf("SecurityProfile() = %v; want nil with no pin", n.SecurityProfile())
 	}
 }
 
