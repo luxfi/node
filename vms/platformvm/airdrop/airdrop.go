@@ -5,7 +5,7 @@ package airdrop
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"math/big"
 	"sync"

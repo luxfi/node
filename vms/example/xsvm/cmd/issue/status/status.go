@@ -4,7 +4,8 @@
 package status
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"fmt"
 	"time"
 
@@ -20,7 +21,7 @@ type TxIssuance struct {
 }
 
 func (s *TxIssuance) String() string {
-	txJSON, err := json.MarshalIndent(s.Tx, "", "  ")
+	txJSON, err := json.Marshal(s.Tx, jsontext.WithIndent("  "))
 	if err != nil {
 		return "failed to marshal transaction: " + err.Error()
 	}

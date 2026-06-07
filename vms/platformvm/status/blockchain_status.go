@@ -4,10 +4,10 @@
 package status
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/node/vms/components/verify"
 )
 

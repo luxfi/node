@@ -10,7 +10,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"sync"
 	"time"

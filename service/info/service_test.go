@@ -4,11 +4,11 @@
 package info
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 

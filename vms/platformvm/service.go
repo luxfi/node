@@ -5,7 +5,6 @@ package platformvm
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -14,6 +13,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/log"
 
 	validators "github.com/luxfi/validators"
