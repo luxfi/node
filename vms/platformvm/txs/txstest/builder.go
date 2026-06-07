@@ -4,7 +4,6 @@
 package txstest
 
 import (
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
@@ -13,6 +12,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -74,9 +74,9 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		kc      = secp256k1fx.NewKeychain(keys...)
 		addrSet = kc.AddressSet()
 		backend = newBackend(addrSet, w.state)
-		// Extract networkID and LUXAssetID from context
-		networkID = w.rt.NetworkID
-		utxoAssetID  = w.rt.UTXOAssetID
+		// Extract networkID and UTXOAssetID from context
+		networkID   = w.rt.NetworkID
+		utxoAssetID = w.rt.UTXOAssetID
 	)
 
 	context := newContext(w.rt, networkID, utxoAssetID, w.cfg, nil, w.state.GetTimestamp())
