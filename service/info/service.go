@@ -26,7 +26,6 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	p2ppeer "github.com/luxfi/p2p/peer"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
@@ -131,15 +130,15 @@ func toAPIProofOfPossession(pop *signer.ProofOfPossession) (*apiinfo.ProofOfPoss
 	}, nil
 }
 
-func toP2PPeerInfo(info nodepeer.Info) p2ppeer.Info {
-	return p2ppeer.Info{
+func toP2PPeerInfo(info nodepeer.Info) apiinfo.PeerInfo {
+	return apiinfo.PeerInfo{
 		IP:             info.IP,
 		PublicIP:       info.PublicIP,
 		ID:             info.ID,
 		Version:        info.Version,
 		LastSent:       info.LastSent,
 		LastReceived:   info.LastReceived,
-		ObservedUptime: p2ppeer.Uint32(info.ObservedUptime),
+		ObservedUptime: apitypes.Uint32(info.ObservedUptime),
 		TrackedChains:  info.TrackedChains,
 		SupportedLPs:   info.SupportedLPs,
 		ObjectedLPs:    info.ObjectedLPs,
@@ -247,8 +246,8 @@ func (i *Info) Peers(_ *http.Request, args *apiinfo.PeersArgs, reply *apiinfo.Pe
 		// 	benchedAliases[idx] = alias
 		// }
 		peerInfo[index] = apiinfo.Peer{
-			Info:    toP2PPeerInfo(peer),
-			Benched: benchedAliases,
+			PeerInfo: toP2PPeerInfo(peer),
+			Benched:  benchedAliases,
 		}
 	}
 
