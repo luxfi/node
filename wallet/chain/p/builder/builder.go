@@ -10,21 +10,21 @@ import (
 	"time"
 
 	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var (
@@ -1138,7 +1138,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		utxoAssetID      = b.context.UTXOAssetID
+		utxoAssetID     = b.context.UTXOAssetID
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmounts = make(map[ids.ID]uint64)
@@ -1718,8 +1718,8 @@ func (b *builder) spend(
 	}
 
 	// LUX is handled last to account for fees.
-	utxosByLUXAssetID := splitByAssetID(utxosByLocktime.unlocked, b.context.UTXOAssetID)
-	for _, utxo := range utxosByLUXAssetID.other {
+	utxosByUTXOAssetID := splitByAssetID(utxosByLocktime.unlocked, b.context.UTXOAssetID)
+	for _, utxo := range utxosByUTXOAssetID.other {
 		assetID := utxo.AssetID()
 		if !s.shouldConsumeAsset(assetID) {
 			continue
@@ -1768,7 +1768,7 @@ func (b *builder) spend(
 		}
 	}
 
-	for _, utxo := range utxosByLUXAssetID.requested {
+	for _, utxo := range utxosByUTXOAssetID.requested {
 		// Check if we already have enough excessLUX to pay fees before adding more inputs.
 		// This early exit is crucial for ImportTx where imported inputs may already provide
 		// sufficient LUX to cover fees, and we don't want to add unnecessary platform chain inputs.
@@ -1894,7 +1894,7 @@ func (b *builder) spend(
 	// If excessLUX <= feeWithChange, we don't add the change output
 	// and we don't modify s.complexity (it stays without the change output)
 
-	utils.Sort(s.inputs)                                    // sort inputs
+	utils.Sort(s.inputs)                         // sort inputs
 	lux.SortTransferableOutputs(s.changeOutputs) // sort the change outputs
 	lux.SortTransferableOutputs(s.stakeOutputs)  // sort stake outputs
 	return s.inputs, s.changeOutputs, s.stakeOutputs, nil
