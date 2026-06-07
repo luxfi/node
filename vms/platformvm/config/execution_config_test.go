@@ -5,6 +5,7 @@ package config
 
 import (
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"testing"
 	"time"
 
@@ -77,7 +78,7 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 		verifyInitializedStruct(t, *expected)
 		verifyInitializedStruct(t, expected.Network)
 
-		b, err := json.Marshal(expected)
+		b, err := json.Marshal(expected, jsonv1.FormatDurationAsNano(true))
 		require.NoError(err)
 
 		actual, err := GetExecutionConfig(b)

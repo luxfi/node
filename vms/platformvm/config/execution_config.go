@@ -5,6 +5,7 @@ package config
 
 import (
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"time"
 
 	"github.com/luxfi/constants"
@@ -50,5 +51,5 @@ func GetExecutionConfig(b []byte) (*ExecutionConfig, error) {
 		return &ec, nil
 	}
 
-	return &ec, json.Unmarshal(b, &ec)
+	return &ec, json.Unmarshal(b, &ec, jsonv1.FormatDurationAsNano(true))
 }
