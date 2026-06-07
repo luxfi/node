@@ -4,8 +4,10 @@
 package lux
 
 import (
-	"github.com/luxfi/runtime"
+	"encoding/binary"
+
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/runtime"
 )
 
 var (
@@ -40,6 +42,15 @@ func (t *TestTransferable) Amount() uint64 {
 
 func (*TestTransferable) Cost() (uint64, error) {
 	return 0, nil
+}
+
+// Bytes implements the utxo wire-serializable interface (utxo v0.3.7+)
+// so the test primitive can be stored as a UTXO.Out. Test-only: returns
+// a deterministic encoding of the amount, not a production wire format.
+func (t *TestTransferable) Bytes() []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, t.Val)
+	return b
 }
 
 type TestAddressable struct {

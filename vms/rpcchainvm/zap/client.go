@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/version"
 	"github.com/luxfi/vm/chain"
-	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 )
 
 var (
@@ -70,7 +70,7 @@ func Dial(ctx context.Context, addr string, config *zapwire.Config) (*zapwire.Co
 func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	var networkID uint32
 	var chainID, nodeID, publicKey []byte
-	var xChainID, cChainID, luxAssetID []byte
+	var xChainID, cChainID, utxoAssetID []byte
 	var chainDataDir string
 
 	if init.Runtime != nil {
@@ -81,7 +81,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		publicKey = rt.PublicKey
 		xChainID = rt.XChainID[:]
 		cChainID = rt.CChainID[:]
-		luxAssetID = rt.UTXOAssetID[:]
+		utxoAssetID = rt.UTXOAssetID[:]
 		chainDataDir = rt.ChainDataDir
 	}
 
@@ -101,7 +101,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		PublicKey:    publicKey,
 		XChainID:     xChainID,
 		CChainID:     cChainID,
-		LuxAssetID:   luxAssetID,
+		UTXOAssetID:  utxoAssetID,
 		ChainDataDir: chainDataDir,
 		GenesisBytes: init.Genesis,
 		UpgradeBytes: init.Upgrade,

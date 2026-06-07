@@ -25,15 +25,15 @@ import (
 
 // TestCEvm_DialsZAPdbServer is a true cross-process end-to-end test:
 //
-// 1. Spawn the cevm binary as a subprocess with VM_TRANSPORT=zap and
-//    VM_RUNTIME_ENGINE_ADDR pointing at a Go test ZAP runtime engine.
-// 2. Accept the cevm's handshake; tell cevm to dial back into a ZAP
-//    server we're hosting.
-// 3. Send InitializeRequest with a non-empty DBServerAddr that points
-//    to a Go-side rpcdb.ZAPServer wrapping a memdb.
-// 4. Verify cevm received the addr, dialed it (showing up as a TCP
-//    accept on our db listener), and at least one DB op landed in the
-//    underlying memdb.
+//  1. Spawn the cevm binary as a subprocess with VM_TRANSPORT=zap and
+//     VM_RUNTIME_ENGINE_ADDR pointing at a Go test ZAP runtime engine.
+//  2. Accept the cevm's handshake; tell cevm to dial back into a ZAP
+//     server we're hosting.
+//  3. Send InitializeRequest with a non-empty DBServerAddr that points
+//     to a Go-side rpcdb.ZAPServer wrapping a memdb.
+//  4. Verify cevm received the addr, dialed it (showing up as a TCP
+//     accept on our db listener), and at least one DB op landed in the
+//     underlying memdb.
 //
 // This proves the WHOLE chain works: Go ZAP db server ↔ cevm
 // RemoteZapDB outbound dial ↔ memdb backend.
@@ -173,7 +173,7 @@ func TestCEvm_DialsZAPdbServer(t *testing.T) {
 		PublicKey:    make([]byte, 0),
 		XChainID:     make([]byte, 32),
 		CChainID:     make([]byte, 32),
-		LuxAssetID:   make([]byte, 32),
+		UTXOAssetID:  make([]byte, 32),
 		ChainDataDir: tmpDir,
 		GenesisBytes: []byte(`{"config":{"chainId":96369},"alloc":{}}`),
 		UpgradeBytes: nil,
