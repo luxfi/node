@@ -77,7 +77,7 @@ var (
 const (
 	defaultMajor = 1
 	defaultMinor = 30
-	defaultPatch = 4
+	defaultPatch = 6
 )
 
 func init() {
