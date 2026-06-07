@@ -307,10 +307,39 @@ github.com/luxfi/genesis (JSON config)  →  github.com/luxfi/node/genesis/build
 - Genesis package has no node dependencies
 - Builder package handles type conversions (string → ids.NodeID, uint64 → time.Duration)
 
+### Building (GPU is an optional runtime drop-in — the build needs nothing)
+
+```bash
+go build ./...                    # default. Works everywhere, no setup.
+CGO_ENABLED=1 go build ./...      # same, but validating blst BLS (recommended)
+```
+
+Both build with **zero external setup** — no luxcpp, no `pkg-config`, no
+install step. Crypto runs on the pure-Go / blst CPU path. (Requires
+`github.com/luxfi/accel >= v1.2.1`, which made native HQC opt-in; older pins
+need the GPU libs installed to build CGO=1.)
+
+GPU acceleration (Apple Silicon Metal / CUDA) is a **runtime plugin**, never
+a build dependency. To turn it on, drop the backend plugin somewhere and point
+the node at it:
+
+```bash
+export LUX_GPU_BACKEND=metal
+export LUX_GPU_BACKEND_PATH=/path/to/dir/with/libluxgpu_backend_metal.dylib
+./build/luxd ...                  # crypto dispatches to the GPU; absent → CPU
+```
+
+The Metal plugin is built from `lux-private/gpu-kernels` (proprietary;
+`cd backends/metal && cmake -B build && cmake --build build`). Its kernels are
+KAT-proven byte-equal to the CPU oracle (`ctest --test-dir build` → 17/17:
+BLS12-381, BN254 pairing, NTT, ML-DSA/ML-KEM/SLH-DSA NTT, FHE PBS). The same
+node binary runs with or without it — no rebuild, no tags.
+
 ### CGO Dependencies
-These require CGO for full functionality (graceful fallback when disabled):
-- `consensus/quasar` - GPU NTT acceleration
-- `vms/thresholdvm/fhe` - GPU FHE operations
+These accelerate on the GPU when the runtime plugin is present (graceful CPU
+fallback otherwise — the build never requires them):
+- `consensus/quasar` - GPU NTT acceleration (BLS12-381 batch verify, Corona NTT)
+- `vms/thresholdvm/fhe` - GPU FHE operations (TFHE programmable bootstrap)
 - `x/blockdb` - zstd compression
 
 ### FHE (Fully Homomorphic Encryption)
