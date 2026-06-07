@@ -9,23 +9,23 @@ package main
 
 import (
 	"context"
-	"github.com/go-json-experiment/json"
 	"flag"
 	"fmt"
+	"github.com/go-json-experiment/json"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/constants"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/network/primary"
 	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
 	"github.com/luxfi/sdk/info"
 	"github.com/luxfi/sdk/platformvm"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -131,18 +131,18 @@ func main() {
 		log.Fatalf("wallet sync failed: %v", err)
 	}
 
-	luxAssetID := fundWallet.X().Builder().Context().UTXOAssetID
+	utxoAssetID := fundWallet.X().Builder().Context().UTXOAssetID
 	pBalanceMap, err := fundWallet.P().Builder().GetBalance()
 	if err != nil {
 		log.Fatalf("P-chain balance check failed: %v", err)
 	}
-	pBalance := pBalanceMap[luxAssetID]
+	pBalance := pBalanceMap[utxoAssetID]
 	log.Printf("Wallet P-chain balance: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
 
 	if pBalance < 1_000_000_000 { // Need at least 1 LUX for tx fees
 		log.Printf("P-chain balance low (%d nLUX). Checking X-chain...", pBalance)
 		xBalanceMap, _ := fundWallet.X().Builder().GetFTBalance()
-		xBalance := xBalanceMap[luxAssetID]
+		xBalance := xBalanceMap[utxoAssetID]
 		log.Printf("X-chain balance: %d nLUX (%.2f LUX)", xBalance, float64(xBalance)/1e9)
 
 		if xBalance > 0 {
@@ -156,7 +156,7 @@ func main() {
 			exportTx, err := fundWallet.X().IssueExportTx(
 				constants.PlatformChainID,
 				[]*lux.TransferableOutput{{
-					Asset: lux.Asset{ID: luxAssetID},
+					Asset: lux.Asset{ID: utxoAssetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: exportAmount,
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -192,7 +192,7 @@ func main() {
 						EVMKeychain: kc,
 					})
 					pBalanceMap, _ = fundWallet.P().Builder().GetBalance()
-					pBalance = pBalanceMap[luxAssetID]
+					pBalance = pBalanceMap[utxoAssetID]
 					log.Printf("P-Chain balance after import: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
 				}
 			}
