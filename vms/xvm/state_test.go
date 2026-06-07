@@ -4,20 +4,20 @@
 package xvm
 
 import (
-	"github.com/luxfi/node/upgrade"
 	"fmt"
+	"github.com/luxfi/node/upgrade"
 	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/vm"
+
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -146,21 +146,29 @@ func TestFundingAddresses(t *testing.T) {
 	})
 	defer env.testLock.Unlock()
 
+	addr := ids.ShortID{0x01}
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
 			TxID:        ids.Empty,
 			OutputIndex: 1,
 		},
 		Asset: lux.Asset{ID: ids.Empty},
-		Out: &lux.TestAddressable{
-			Addrs: [][]byte{{0}},
+		// Use a real wire-serializable fx output (utxo v0.3.7 requires the
+		// UTXO.Out to be a registered fx primitive for ZAP marshaling; the
+		// lux.TestAddressable mock is not wire-serializable).
+		Out: &secp256k1fx.TransferOutput{
+			Amt: 1,
+			OutputOwners: secp256k1fx.OutputOwners{
+				Threshold: 1,
+				Addrs:     []ids.ShortID{addr},
+			},
 		},
 	}
 
 	env.vm.state.AddUTXO(utxo)
 	require.NoError(env.vm.state.Commit())
 
-	utxos, err := env.vm.state.UTXOIDs([]byte{0}, ids.Empty, math.MaxInt32)
+	utxos, err := env.vm.state.UTXOIDs(addr.Bytes(), ids.Empty, math.MaxInt32)
 	require.NoError(err)
 	require.Len(utxos, 1)
 	require.Equal(utxo.InputID(), utxos[0])
@@ -168,7 +176,7 @@ func TestFundingAddresses(t *testing.T) {
 	env.vm.state.DeleteUTXO(utxo.InputID())
 	require.NoError(env.vm.state.Commit())
 
-	utxos, err = env.vm.state.UTXOIDs([]byte{0}, ids.Empty, math.MaxInt32)
+	utxos, err = env.vm.state.UTXOIDs(addr.Bytes(), ids.Empty, math.MaxInt32)
 	require.NoError(err)
 	require.Empty(utxos)
 }

@@ -128,7 +128,7 @@ require (
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.16.99
 	github.com/luxfi/go-bip39 v1.1.2
-	github.com/luxfi/keys v1.1.0
+	github.com/luxfi/keys v1.2.0
 	github.com/luxfi/lattice/v7 v7.1.4
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.0.5
@@ -167,7 +167,7 @@ require (
 	github.com/luxfi/ai v0.1.0 // indirect
 	github.com/luxfi/corona v0.7.6 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
-	github.com/luxfi/kms v1.11.2 // indirect
+	github.com/luxfi/kms v1.11.3 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/magnetar v1.2.0 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
