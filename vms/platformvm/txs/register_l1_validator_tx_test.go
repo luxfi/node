@@ -6,6 +6,7 @@ package txs
 import (
 	"encoding/hex"
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
@@ -222,7 +223,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	rt := consensustest.Runtime(t, constants.PlatformChainID)
 	unsignedTx.InitRuntime(rt)
 
-	txJSON, err := json.Marshal(unsignedTx, jsontext.WithIndent("\t"))
+	txJSON, err := json.Marshal(unsignedTx, jsontext.WithIndent("\t"), jsonv1.FormatByteArrayAsArray(true))
 	require.NoError(err)
 	require.JSONEq(string(registerL1ValidatorTxJSON), string(txJSON))
 }

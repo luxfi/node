@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/luxfi/log"
 
 	validators "github.com/luxfi/validators"
@@ -1504,7 +1505,7 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, response *api
 		}
 	}
 
-	response.Tx, err = json.Marshal(result)
+	response.Tx, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return err
 }
 
@@ -2029,7 +2030,7 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, respons
 		}
 	}
 
-	response.Block, err = json.Marshal(result)
+	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return err
 }
 
@@ -2071,7 +2072,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 		}
 	}
 
-	response.Block, err = json.Marshal(result)
+	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return err
 }
 
