@@ -12,6 +12,8 @@ import (
 	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/timer/mockable"
+	"github.com/luxfi/utxo/nftfx"
+	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -98,15 +100,36 @@ func NewCustomParser(
 		// utxo FINAL_RIP step 8). Per-fx wire types used to be registered
 		// inside fx.Initialize via vm.CodecRegistry().RegisterType(...);
 		// re-register them here through vm.codecRegistry so both the
-		// linearcodec (read path for pre-ZAP X-chain bytes) AND the
-		// typeToFxIndex map (semantic_verifier.getFx) are populated.
-		if _, ok := fx.(*secp256k1fx.Fx); ok {
+		// zapcodec interface dispatch AND the typeToFxIndex map
+		// (semantic_verifier.getFx) are populated.
+		switch fx.(type) {
+		case *secp256k1fx.Fx:
 			if err := errors.Join(
 				vm.codecRegistry.RegisterType(&secp256k1fx.TransferInput{}),
 				vm.codecRegistry.RegisterType(&secp256k1fx.MintOutput{}),
 				vm.codecRegistry.RegisterType(&secp256k1fx.TransferOutput{}),
 				vm.codecRegistry.RegisterType(&secp256k1fx.MintOperation{}),
 				vm.codecRegistry.RegisterType(&secp256k1fx.Credential{}),
+			); err != nil {
+				return nil, err
+			}
+		case *nftfx.Fx:
+			if err := errors.Join(
+				vm.codecRegistry.RegisterType(&nftfx.MintOutput{}),
+				vm.codecRegistry.RegisterType(&nftfx.TransferOutput{}),
+				vm.codecRegistry.RegisterType(&nftfx.MintOperation{}),
+				vm.codecRegistry.RegisterType(&nftfx.TransferOperation{}),
+				vm.codecRegistry.RegisterType(&nftfx.Credential{}),
+			); err != nil {
+				return nil, err
+			}
+		case *propertyfx.Fx:
+			if err := errors.Join(
+				vm.codecRegistry.RegisterType(&propertyfx.MintOutput{}),
+				vm.codecRegistry.RegisterType(&propertyfx.OwnedOutput{}),
+				vm.codecRegistry.RegisterType(&propertyfx.MintOperation{}),
+				vm.codecRegistry.RegisterType(&propertyfx.BurnOperation{}),
+				vm.codecRegistry.RegisterType(&propertyfx.Credential{}),
 			); err != nil {
 				return nil, err
 			}

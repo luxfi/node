@@ -107,7 +107,6 @@ func TestIssueTx(t *testing.T) {
 
 // Test issuing a transaction that creates an NFT family
 func TestIssueNFT(t *testing.T) {
-	t.Skip("nftfx codec registration not yet ZAP-native post-LP-023")
 	require := require.New(t)
 
 	// secp256k1fx and nftfx are now included by default
@@ -186,7 +185,6 @@ func TestIssueNFT(t *testing.T) {
 
 // Test issuing a transaction that creates an Property family
 func TestIssueProperty(t *testing.T) {
-	t.Skip("propertyfx codec registration not yet ZAP-native post-LP-023")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
@@ -368,7 +366,6 @@ func TestVMFormat(t *testing.T) {
 }
 
 func TestTxAcceptAfterParseTx(t *testing.T) {
-	t.Skip("ZAP-native UTXO envelope amount-vs-input mismatch — fxs/utxo wave 2 follow-up")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
@@ -399,6 +396,27 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	)
 	require.NoError(err)
 
+	// Find the output index that holds the requested startBalance-TxFee
+	// amount; firstTx may have a separate change output, and the canonical
+	// output sort (ZAP-native wire envelope bytes per LP-023) determines
+	// which index that lands on.
+	requestedAmt := startBalance - env.vm.TxFee
+	firstBaseTx := firstTx.Unsigned.(*xvmtxs.BaseTx)
+	var requestedIdx uint32
+	found := false
+	for i, out := range firstBaseTx.Outs {
+		o, ok := out.Out.(*secp256k1fx.TransferOutput)
+		if !ok {
+			continue
+		}
+		if o.Amt == requestedAmt {
+			requestedIdx = uint32(i)
+			found = true
+			break
+		}
+	}
+	require.True(found, "firstTx must produce an output with the requested amount")
+
 	// let secondTx spend firstTx outputs
 	secondTx := &xvmtxs.Tx{Unsigned: &xvmtxs.BaseTx{
 		BaseTx: lux.BaseTx{
@@ -407,11 +425,11 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 			Ins: []*lux.TransferableInput{{
 				UTXOID: lux.UTXOID{
 					TxID:        firstTx.ID(),
-					OutputIndex: 0,
+					OutputIndex: requestedIdx,
 				},
 				Asset: lux.Asset{ID: env.genesisTx.ID()},
 				In: &secp256k1fx.TransferInput{
-					Amt: startBalance - env.vm.TxFee,
+					Amt: requestedAmt,
 					Input: secp256k1fx.Input{
 						SigIndices: []uint32{
 							0,
@@ -450,7 +468,6 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 
 // Test issuing an import transaction.
 func TestIssueImportTx(t *testing.T) {
-	t.Skip("ZAP-native UTXO envelope ShapeKind discriminator mismatch — fxs/utxo wave 2 follow-up")
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
@@ -489,8 +506,10 @@ func TestIssueImportTx(t *testing.T) {
 		}
 	)
 
-	// Provide the platform UTXO:
-	utxoBytes, err := env.vm.parser.Codec().Marshal(xvmtxs.CodecVersion, importedUtxo)
+	// Provide the platform UTXO via the ZAP-native wire envelope —
+	// matches the production exporter path (state.PutUTXO + GetAtomicUTXOs
+	// dispatch through utxo.ParseUTXO).
+	utxoBytes, err := importedUtxo.WireBytes()
 	require.NoError(err)
 
 	inputID := importedUtxo.InputID()

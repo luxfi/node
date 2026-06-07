@@ -104,24 +104,23 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 }
 
 func TestDelayChangeByHeight(t *testing.T) {
-	// Proposer schedule is deterministic but the seed derivation reads
-	// chainID via pcodecs (ZAP-native LE per LP-023). The schedule was
-	// rotated by the codec cutover — the test expectations below are
-	// captured from the post-LP-023 build and lock in the new canonical
-	// rotation.
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
+	// Proposer schedule is deterministic. Seed derivation reads chainID
+	// via pcodecs (ZAP-native LE per LP-023). The expectations below are
+	// the canonical post-LP-023 rotation; any change to seed derivation
+	// or sampler that shifts these values is a hard fork and must be
+	// caught here.
 	require := require.New(t)
 
 	validatorIDs, vdrState := makeValidators(t, MaxVerifyWindows)
 	w := New(vdrState, netID, fixedChainID)
 
 	expectedDelays1 := []time.Duration{
-		2 * WindowDuration,
-		5 * WindowDuration,
-		3 * WindowDuration,
-		4 * WindowDuration,
-		0 * WindowDuration,
 		1 * WindowDuration,
+		2 * WindowDuration,
+		3 * WindowDuration,
+		0 * WindowDuration,
+		5 * WindowDuration,
+		4 * WindowDuration,
 	}
 	for i, expectedDelay := range expectedDelays1 {
 		vdrID := validatorIDs[i]
@@ -131,12 +130,12 @@ func TestDelayChangeByHeight(t *testing.T) {
 	}
 
 	expectedDelays2 := []time.Duration{
-		5 * WindowDuration,
-		1 * WindowDuration,
-		3 * WindowDuration,
 		4 * WindowDuration,
-		0 * WindowDuration,
+		3 * WindowDuration,
+		5 * WindowDuration,
 		2 * WindowDuration,
+		1 * WindowDuration,
+		0 * WindowDuration,
 	}
 	for i, expectedDelay := range expectedDelays2 {
 		vdrID := validatorIDs[i]
@@ -147,7 +146,6 @@ func TestDelayChangeByHeight(t *testing.T) {
 }
 
 func TestDelayChangeByChain(t *testing.T) {
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
 	require := require.New(t)
 
 	source := rand.NewSource(int64(0))
@@ -166,10 +164,10 @@ func TestDelayChangeByChain(t *testing.T) {
 	w1 := New(vdrState, netID, chainID1)
 
 	expectedDelays0 := []time.Duration{
+		3 * WindowDuration,
+		0 * WindowDuration,
 		5 * WindowDuration,
 		2 * WindowDuration,
-		0 * WindowDuration,
-		3 * WindowDuration,
 		1 * WindowDuration,
 		4 * WindowDuration,
 	}
@@ -181,12 +179,12 @@ func TestDelayChangeByChain(t *testing.T) {
 	}
 
 	expectedDelays1 := []time.Duration{
+		3 * WindowDuration,
 		0 * WindowDuration,
+		2 * WindowDuration,
+		5 * WindowDuration,
 		1 * WindowDuration,
 		4 * WindowDuration,
-		5 * WindowDuration,
-		3 * WindowDuration,
-		2 * WindowDuration,
 	}
 	for i, expectedDelay := range expectedDelays1 {
 		vdrID := validatorIDs[i]
@@ -197,7 +195,6 @@ func TestDelayChangeByChain(t *testing.T) {
 }
 
 func TestExpectedProposerChangeByHeight(t *testing.T) {
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
 	require := require.New(t)
 
 	validatorIDs, vdrState := makeValidators(t, 10)
@@ -210,7 +207,7 @@ func TestExpectedProposerChangeByHeight(t *testing.T) {
 	)
 
 	expectedProposers := map[uint64]ids.NodeID{
-		1: validatorIDs[2],
+		1: validatorIDs[7],
 		2: validatorIDs[1],
 	}
 
@@ -222,7 +219,6 @@ func TestExpectedProposerChangeByHeight(t *testing.T) {
 }
 
 func TestExpectedProposerChangeByChain(t *testing.T) {
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
 	require := require.New(t)
 
 	source := rand.NewSource(int64(0))
@@ -246,8 +242,8 @@ func TestExpectedProposerChangeByChain(t *testing.T) {
 	)
 
 	expectedProposers := map[ids.ID]ids.NodeID{
-		chainID0: validatorIDs[5],
-		chainID1: validatorIDs[3],
+		chainID0: validatorIDs[3],
+		chainID1: validatorIDs[8],
 	}
 
 	for chainID, expectedProposerID := range expectedProposers {
@@ -259,7 +255,6 @@ func TestExpectedProposerChangeByChain(t *testing.T) {
 }
 
 func TestExpectedProposerChangeBySlot(t *testing.T) {
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
 	require := require.New(t)
 
 	validatorIDs, vdrState := makeValidators(t, 10)
@@ -272,34 +267,34 @@ func TestExpectedProposerChangeBySlot(t *testing.T) {
 	)
 
 	proposers := []ids.NodeID{
-		validatorIDs[2],
-		validatorIDs[0],
+		validatorIDs[7],
 		validatorIDs[9],
 		validatorIDs[7],
 		validatorIDs[0],
-		validatorIDs[3],
-		validatorIDs[3],
-		validatorIDs[3],
-		validatorIDs[3],
-		validatorIDs[3],
 		validatorIDs[4],
-		validatorIDs[0],
-		validatorIDs[6],
-		validatorIDs[3],
-		validatorIDs[2],
-		validatorIDs[1],
-		validatorIDs[6],
-		validatorIDs[0],
-		validatorIDs[5],
-		validatorIDs[1],
-		validatorIDs[9],
-		validatorIDs[6],
-		validatorIDs[0],
 		validatorIDs[8],
+		validatorIDs[1],
+		validatorIDs[8],
+		validatorIDs[9],
+		validatorIDs[9],
+		validatorIDs[7],
+		validatorIDs[3],
+		validatorIDs[8],
+		validatorIDs[6],
+		validatorIDs[5],
+		validatorIDs[4],
+		validatorIDs[2],
+		validatorIDs[9],
+		validatorIDs[1],
+		validatorIDs[4],
+		validatorIDs[1],
+		validatorIDs[4],
+		validatorIDs[8],
+		validatorIDs[3],
 	}
 	expectedProposers := map[uint64]ids.NodeID{
-		MaxLookAheadSlots:     validatorIDs[4],
-		MaxLookAheadSlots + 1: validatorIDs[6],
+		MaxLookAheadSlots:     validatorIDs[3],
+		MaxLookAheadSlots + 1: validatorIDs[4],
 	}
 	for slot, expectedProposerID := range proposers {
 		expectedProposers[uint64(slot)] = expectedProposerID
@@ -337,7 +332,6 @@ func TestCoherenceOfExpectedProposerAndMinDelayForProposer(t *testing.T) {
 }
 
 func TestMinDelayForProposer(t *testing.T) {
-	t.Skip("proposer schedule rotated by LP-023; expected values need re-capture")
 	require := require.New(t)
 
 	validatorIDs, vdrState := makeValidators(t, 10)
@@ -351,16 +345,16 @@ func TestMinDelayForProposer(t *testing.T) {
 	)
 
 	expectedDelays := map[ids.NodeID]time.Duration{
-		validatorIDs[0]:          1 * WindowDuration,
-		validatorIDs[1]:          15 * WindowDuration,
-		validatorIDs[2]:          0 * WindowDuration,
-		validatorIDs[3]:          5 * WindowDuration,
-		validatorIDs[4]:          10 * WindowDuration,
-		validatorIDs[5]:          18 * WindowDuration,
-		validatorIDs[6]:          12 * WindowDuration,
-		validatorIDs[7]:          3 * WindowDuration,
-		validatorIDs[8]:          23 * WindowDuration,
-		validatorIDs[9]:          2 * WindowDuration,
+		validatorIDs[0]:          3 * WindowDuration,
+		validatorIDs[1]:          6 * WindowDuration,
+		validatorIDs[2]:          16 * WindowDuration,
+		validatorIDs[3]:          11 * WindowDuration,
+		validatorIDs[4]:          4 * WindowDuration,
+		validatorIDs[5]:          14 * WindowDuration,
+		validatorIDs[6]:          13 * WindowDuration,
+		validatorIDs[7]:          0 * WindowDuration,
+		validatorIDs[8]:          5 * WindowDuration,
+		validatorIDs[9]:          1 * WindowDuration,
 		ids.GenerateTestNodeID(): MaxLookAheadWindow,
 	}
 
