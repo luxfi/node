@@ -1074,7 +1074,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		Asset:  asset,
 		Out:    &output,
 	}
-	utxoBytes, err := codec.Marshal(txs.CodecVersion, utxo)
+	utxoBytes, err := utxo.WireBytes()
 	require.NoError(t, err)
 
 	peerSharedMemory := m.NewSharedMemory(cChainID)
