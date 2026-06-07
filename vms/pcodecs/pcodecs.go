@@ -86,6 +86,7 @@ var (
 	ErrCantUnpackVersion         = zap_codec.ErrCantUnpackVersion
 	ErrUnknownVersion            = zap_codec.ErrUnknownVersion
 	ErrMaxSliceLenExceeded       = zap_codec.ErrMaxSliceLenExceeded
+	ErrMaxSizeExceeded           = zap_codec.ErrMaxSizeExceeded
 	ErrMarshalNil                = zap_codec.ErrMarshalNil
 	ErrUnmarshalNil              = zap_codec.ErrUnmarshalNil
 	ErrDoesNotImplementInterface = zap_codec.ErrDoesNotImplementInterface

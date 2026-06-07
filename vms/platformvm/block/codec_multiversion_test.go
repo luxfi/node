@@ -43,8 +43,8 @@ func TestGenesisCodecAcceptsV0FeeState(t *testing.T) {
 	v0Bytes, err := GenesisCodec.Marshal(CodecVersionV0, original)
 	require.NoError(err, "v0 marshal must succeed — proves the v0 slot map is registered on block.GenesisCodec")
 	require.GreaterOrEqual(len(v0Bytes), 2)
-	require.Equal(uint16(CodecVersionV0), binary.BigEndian.Uint16(v0Bytes[:2]),
-		"marshaled bytes must carry the v0 wire prefix")
+	require.Equal(uint16(CodecVersionV0), binary.LittleEndian.Uint16(v0Bytes[:2]),
+		"marshaled bytes must carry the v0 wire prefix (LE per LP-023)")
 
 	// The bug: this Unmarshal used to fail with pcodecs.ErrUnknownVersion.
 	var decoded gas.State
@@ -67,8 +67,8 @@ func TestGenesisCodecAcceptsV1FeeState(t *testing.T) {
 
 	v1Bytes, err := GenesisCodec.Marshal(CodecVersion, original)
 	require.NoError(err)
-	require.Equal(uint16(CodecVersionV1), binary.BigEndian.Uint16(v1Bytes[:2]),
-		"canonical write path must emit v1 prefix")
+	require.Equal(uint16(CodecVersionV1), binary.LittleEndian.Uint16(v1Bytes[:2]),
+		"canonical write path must emit v1 prefix (LE per LP-023)")
 
 	var decoded gas.State
 	version, err := GenesisCodec.Unmarshal(v1Bytes, &decoded)
@@ -85,7 +85,7 @@ func TestGenesisCodecRejectsUnknownVersion(t *testing.T) {
 	require := require.New(t)
 
 	bogus := make([]byte, 16)
-	binary.BigEndian.PutUint16(bogus[:2], 0xFFFE)
+	binary.LittleEndian.PutUint16(bogus[:2], 0xFFFE)
 
 	var sink gas.State
 	_, err := GenesisCodec.Unmarshal(bogus, &sink)
