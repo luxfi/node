@@ -6,6 +6,7 @@ package xvm
 import (
 	"context"
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"errors"
 	"sync"
 	"testing"
@@ -73,7 +74,7 @@ func TestXVMInitialize_WiresSecurityProfileIntoMempool(t *testing.T) {
 		&vm.Fx{ID: propertyfx.ID, Fx: &propertyfx.Fx{}},
 	}
 
-	configBytes, err := json.Marshal(DefaultConfig)
+	configBytes, err := json.Marshal(DefaultConfig, jsonv1.FormatDurationAsNano(true))
 	require.NoError(err)
 
 	require.NoError(vmImpl.Initialize(
