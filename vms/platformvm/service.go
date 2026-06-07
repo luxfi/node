@@ -347,7 +347,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, respons
 
 	response.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
-		bytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
+		bytes, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("couldn't serialize UTXO %q: %w", utxo.InputID(), err)
 		}
@@ -1801,7 +1801,7 @@ func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, repl
 	reply.NumFetched = avajson.Uint64(len(utxos))
 	reply.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
-		utxoBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, utxo)
+		utxoBytes, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("couldn't encode UTXO to bytes: %w", err)
 		}
