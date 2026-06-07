@@ -1,12 +1,16 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package staking includes a thin HTTP client to the external Hanzo KMS
-// service (kms.hanzo.ai / lux KMS). The KMS service speaks JSON over HTTP
-// as its public contract — this file therefore stays on json/v2 by design.
-// Do NOT migrate to ZAP: the wire format here is defined by the external
-// service, not by us. Internal Lux paths that consume the keys MUST hash
-// or copy the result into typed Go values before any internal codec.
+// Package staking includes a thin HTTP client to the external Lux KMS
+// service (~/work/lux/kms, github.com/luxfi/kms). The KMS service speaks
+// JSON over HTTP as its public contract — this file therefore stays on
+// json/v2 by design. Do NOT migrate to ZAP: the wire format here is
+// defined by the external service, not by us. Internal Lux paths that
+// consume the keys MUST hash or copy the result into typed Go values
+// before any internal codec.
+//
+// Not to be confused with Hanzo KMS (~/work/hanzo/kms) which serves
+// Hanzoai apps — Lux blockchain node staking uses Lux KMS only.
 package staking
 
 import (
