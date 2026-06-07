@@ -13,7 +13,7 @@ module github.com/luxfi/node/tools
 //   - go tool -modfile=tools/go.mod [tool] [args]
 //   - ./scripts/run_tool.sh [tool] [args]
 
-go 1.26.3
+go 1.26.4
 
 tool (
 	github.com/go-task/task/v3/cmd/task
