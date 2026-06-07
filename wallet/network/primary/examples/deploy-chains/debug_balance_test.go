@@ -51,8 +51,8 @@ func debugBalance() {
 		log.Fatal("MakeWallet error: ", err)
 	}
 
-	luxAssetID := wallet.X().Builder().Context().UTXOAssetID
+	utxoAssetID := wallet.X().Builder().Context().UTXOAssetID
 	pBal, _ := wallet.P().Builder().GetBalance()
 	fmt.Printf("P balance: %v\n", pBal)
-	fmt.Printf("P LUX: %d\n", pBal[luxAssetID])
+	fmt.Printf("P LUX: %d\n", pBal[utxoAssetID])
 }
