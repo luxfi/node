@@ -4,7 +4,7 @@
 package xvm
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"

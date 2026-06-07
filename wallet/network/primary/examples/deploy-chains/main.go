@@ -9,7 +9,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"flag"
 	"fmt"
 	"log"

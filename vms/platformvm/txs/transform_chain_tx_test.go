@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/luxfi/runtime"
@@ -336,7 +337,7 @@ func TestTransformChainTxSerialization(t *testing.T) {
 	}
 	unsignedComplexTransformTx.InitRuntime(rt3)
 
-	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
+	unsignedComplexTransformTxJSONBytes, err := json.Marshal(unsignedComplexTransformTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,

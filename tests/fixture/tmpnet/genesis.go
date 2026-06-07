@@ -4,7 +4,8 @@
 package tmpnet
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"fmt"
 	"time"
 
@@ -91,7 +92,7 @@ func NewTestGenesisWithFunds(
 	// Add basic C-Chain genesis
 	config.CChainGenesis = getBasicCChainGenesis(networkID)
 
-	return json.MarshalIndent(config, "", "  ")
+	return json.Marshal(config, jsontext.WithIndent("  "))
 }
 
 // getBasicCChainGenesis returns a basic C-Chain genesis configuration

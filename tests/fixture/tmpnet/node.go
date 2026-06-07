@@ -7,7 +7,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/x509"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"encoding/pem"
 	"fmt"
 	"net/netip"
@@ -121,7 +122,7 @@ func (n *Node) Write() error {
 		Flags:       n.Flags,
 	}
 
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.Marshal(config, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal node config: %w", err)
 	}

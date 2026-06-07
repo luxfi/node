@@ -6,7 +6,8 @@ package txs
 import (
 	"github.com/luxfi/runtime"
 
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -250,7 +251,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	unsignedComplexBaseTx.InitRuntime(rt3)
 
-	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")
+	unsignedComplexBaseTxJSONBytes, err := json.Marshal(unsignedComplexBaseTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,

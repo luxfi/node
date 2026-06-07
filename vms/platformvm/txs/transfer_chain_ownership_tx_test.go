@@ -6,7 +6,8 @@ package txs
 import (
 	"github.com/luxfi/runtime"
 
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/luxfi/mock/gomock"
@@ -296,7 +297,7 @@ func TestTransferChainOwnershipTxSerialization(t *testing.T) {
 	}
 	unsignedComplexTransferChainOwnershipTx.InitRuntime(rt3)
 
-	unsignedComplexTransferChainOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferChainOwnershipTx, "", "\t")
+	unsignedComplexTransferChainOwnershipTxJSONBytes, err := json.Marshal(unsignedComplexTransferChainOwnershipTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,

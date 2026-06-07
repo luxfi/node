@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"errors"
 	"testing"
 
@@ -292,7 +293,7 @@ func TestRemoveChainValidatorTxSerialization(t *testing.T) {
 	}
 	unsignedComplexRemoveValidatorTx.InitRuntime(rt3)
 
-	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
+	unsignedComplexRemoveValidatorTxJSONBytes, err := json.Marshal(unsignedComplexRemoveValidatorTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,

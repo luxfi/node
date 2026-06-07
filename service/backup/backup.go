@@ -8,7 +8,6 @@ package backup
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/klauspost/compress/zstd"
 	"github.com/luxfi/database"
 	"github.com/luxfi/log"
@@ -315,7 +316,7 @@ func (s *Service) saveMetadata() error {
 		return fmt.Errorf("failed to create metadata directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(meta, "", "  ")
+	data, err := json.Marshal(meta, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}

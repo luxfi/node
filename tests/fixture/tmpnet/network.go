@@ -5,7 +5,8 @@ package tmpnet
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -123,7 +124,7 @@ func (n *Network) Write() error {
 		return fmt.Errorf("failed to create network directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(n, "", "  ")
+	data, err := json.Marshal(n, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal network config: %w", err)
 	}

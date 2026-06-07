@@ -6,13 +6,13 @@ package security
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/go-json-experiment/json"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/log"
 )
@@ -227,7 +227,7 @@ func TestREST_securityProfile_GET(t *testing.T) {
 		t.Errorf("Content-Type = %q; want application/json prefix", got)
 	}
 	var body ProfileReply
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if body.ProfileName != "STRICT" {
@@ -283,7 +283,7 @@ func TestREST_blockSecurity_GET(t *testing.T) {
 		t.Fatalf("status = %d; want 200", resp.StatusCode)
 	}
 	var body BlockSecurityReply
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if body.SecurityProfileName != "STRICT" {

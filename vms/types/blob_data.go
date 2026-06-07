@@ -4,8 +4,7 @@
 package types
 
 import (
-	"encoding/json"
-
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/formatting"
 )
 

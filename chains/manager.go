@@ -9,7 +9,7 @@ import (
 	"context"
 	"crypto"
 	"encoding/binary"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"fmt"
 	"net/http"

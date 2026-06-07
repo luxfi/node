@@ -3,10 +3,12 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 func main() {
@@ -190,7 +192,7 @@ func cmdExport(args []string) {
 
 // stateEnvelope wraps CeremonyState with a SHA-256 integrity hash.
 type stateEnvelope struct {
-	State     json.RawMessage `json:"state"`
+	State     jsontext.Value `json:"state"`
 	Integrity string          `json:"integrity"` // hex(SHA-256(state bytes))
 }
 

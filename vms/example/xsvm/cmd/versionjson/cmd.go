@@ -4,7 +4,8 @@
 package versionjson
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -37,7 +38,7 @@ func versionFunc(*cobra.Command, []string) error {
 		Version:    xsvm.Version,
 		RPCChainVM: uint64(version.RPCChainVMProtocol),
 	}
-	jsonBytes, err := json.MarshalIndent(versions, "", "  ")
+	jsonBytes, err := json.Marshal(versions, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal versions: %w", err)
 	}

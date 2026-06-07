@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/consensys/gnark-crypto/ecc/bn254"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 // =============================================================================
@@ -309,7 +310,7 @@ func TestRegressionL03_StateFileHasIntegrity(t *testing.T) {
 	}
 
 	var envelope struct {
-		State     json.RawMessage `json:"state"`
+		State     jsontext.Value `json:"state"`
 		Integrity string          `json:"integrity"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {

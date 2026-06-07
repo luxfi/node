@@ -4,12 +4,12 @@
 package xvm
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"

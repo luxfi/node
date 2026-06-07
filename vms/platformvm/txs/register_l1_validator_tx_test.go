@@ -5,7 +5,8 @@ package txs
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -221,7 +222,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	rt := consensustest.Runtime(t, constants.PlatformChainID)
 	unsignedTx.InitRuntime(rt)
 
-	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
+	txJSON, err := json.Marshal(unsignedTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(string(registerL1ValidatorTxJSON), string(txJSON))
 }

@@ -5,9 +5,10 @@ package formatting
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"testing"
 
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +29,7 @@ func TestEncodingUnmarshalJSON(t *testing.T) {
 	require.NoError(json.Unmarshal(jsonBytes, &enc))
 	require.Equal(Hex, enc)
 
-	var serr *json.SyntaxError
+	var serr *jsontext.SyntacticError
 	jsonBytes = []byte("")
 	require.ErrorAs(json.Unmarshal(jsonBytes, &enc), &serr)
 

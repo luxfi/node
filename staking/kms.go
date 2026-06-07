@@ -4,7 +4,7 @@
 package staking
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -63,7 +63,7 @@ func FetchFromKMS(cfg KMSConfig) (*KMSStakingKeys, error) {
 			Value string `json:"secretValue"`
 		} `json:"secret"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &result); err != nil {
 		return nil, fmt.Errorf("decoding KMS response: %w", err)
 	}
 

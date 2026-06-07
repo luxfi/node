@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -192,7 +193,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 	rt := consensustest.Runtime(t, constants.PlatformChainID)
 	unsignedTx.InitRuntime(rt)
 
-	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
+	txJSON, err := json.Marshal(unsignedTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(string(setL1ValidatorWeightTxJSON), string(txJSON))
 }

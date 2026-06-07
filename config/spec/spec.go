@@ -7,7 +7,8 @@
 package spec
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"time"
 )
 
@@ -207,7 +208,7 @@ func (s *ConfigSpec) DeprecatedFlags() []FlagSpec {
 
 // JSON returns the spec as formatted JSON.
 func (s *ConfigSpec) JSON() ([]byte, error) {
-	return json.MarshalIndent(s, "", "  ")
+	return json.Marshal(s, jsontext.WithIndent("  "))
 }
 
 // ValidateValue checks if a value is valid for a flag.

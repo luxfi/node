@@ -4,12 +4,12 @@
 package pubsub
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
 
+	"github.com/go-json-experiment/json"
 	"github.com/gorilla/websocket"
 	"github.com/luxfi/log"
 
@@ -162,7 +162,7 @@ func (c *connection) readMessage() error {
 		return err
 	}
 	cmd := &Command{}
-	err = json.NewDecoder(r).Decode(cmd)
+	err = json.UnmarshalRead(r, cmd)
 	if err != nil {
 		return err
 	}

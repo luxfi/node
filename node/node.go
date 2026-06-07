@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	nodevalidators "github.com/luxfi/validators"
 
 	"github.com/luxfi/metric"
@@ -756,7 +757,7 @@ func (n *Node) writeProcessContext() error {
 		URI:            n.apiURI,
 		StakingAddress: n.stakingAddress, // Set by network initialization
 	}
-	bytes, err := json.MarshalIndent(processContext, "", "  ")
+	bytes, err := json.Marshal(processContext, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal process context: %w", err)
 	}

@@ -5,11 +5,11 @@ package security
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/go-json-experiment/json"
 	"github.com/gorilla/rpc/v2"
 
 	consensusconfig "github.com/luxfi/consensus/config"
@@ -227,8 +227,7 @@ func buildBlockSecurityReply(p *consensusconfig.ChainSecurityProfile) BlockSecur
 // behaviour (no per-endpoint drift).
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	if err := enc.Encode(v); err != nil {
+	if err := json.MarshalWrite(w, v); err != nil {
 		// Body may have been partially written; nothing further to
 		// do at this layer. Frameworks log encoder failures at the
 		// HTTP listener boundary.

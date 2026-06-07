@@ -4,9 +4,9 @@
 package signer
 
 import (
-	"encoding/json"
 	"errors"
 
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/formatting"
 )
 

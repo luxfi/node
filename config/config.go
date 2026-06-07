@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/spf13/viper"
 
 	compression "github.com/luxfi/compress"
@@ -1429,7 +1430,7 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 	}
 
 	// partially parse configs to be filled by defaults later
-	chainConfigs := make(map[ids.ID]json.RawMessage, len(netIDs))
+	chainConfigs := make(map[ids.ID]jsontext.Value, len(netIDs))
 	if err := json.Unmarshal(netConfigContent, &chainConfigs); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}

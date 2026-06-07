@@ -4,7 +4,7 @@
 package staking
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,7 +40,7 @@ func TestFetchFromKMS(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(kmsResponse)
+		json.MarshalWrite(w, kmsResponse)
 	}))
 	defer server.Close()
 
@@ -76,7 +76,7 @@ func TestFetchFromKMS_NoAuth(t *testing.T) {
 			t.Errorf("expected no Authorization header, got %q", auth)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(kmsResponse)
+		json.MarshalWrite(w, kmsResponse)
 	}))
 	defer server.Close()
 
@@ -150,7 +150,7 @@ func TestFetchFromKMS_InvalidSecretValue(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(kmsResponse)
+		json.MarshalWrite(w, kmsResponse)
 	}))
 	defer server.Close()
 

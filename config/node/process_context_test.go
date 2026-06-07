@@ -4,7 +4,8 @@
 package node
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"net/netip"
 	"testing"
 
@@ -54,7 +55,7 @@ func TestProcessContext(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			contextJSON, err := json.MarshalIndent(test.context, "", "\t")
+			contextJSON, err := json.Marshal(test.context, jsontext.WithIndent("\t"))
 			require.NoError(err)
 			require.JSONEq(test.expected, string(contextJSON))
 		})

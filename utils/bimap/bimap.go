@@ -5,7 +5,7 @@ package bimap
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"maps"
 	"slices"

@@ -4,8 +4,7 @@
 package platformvm
 
 import (
-	"encoding/json"
-
+	"github.com/go-json-experiment/json"
 	"github.com/luxfi/address"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/api"

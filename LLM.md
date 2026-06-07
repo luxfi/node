@@ -764,6 +764,47 @@ PRIVATE_KEY="<funded_key>" \
 ./bin/bench tps --chains=lux --duration=60s --concurrency=5
 ```
 
+## JSON rule — json/v2 at HTTP boundary only; ZAP for all internal data
+
+Encoding boundaries are one-way and explicit:
+
+- **External (HTTP / JSON-RPC API)** — `github.com/go-json-experiment/json` (v2).
+  Never `encoding/json`. This covers: `service/*`, `server/*`, `pubsub/`,
+  `vms/platformvm/service.go`, `vms/xvm/service.go`, JSON-RPC clients
+  (`vms/platformvm/client_*`), CLI tools (`cmd/*`), wallet examples,
+  on-disk config files (read once at boot), genesis/upgrade blobs.
+- **Internal (state, P2P, consensus, MPC, logs, metrics)** — ZAP wire only.
+  No JSON in: `network/`, `consensus/`, `snow/`, `chains/` (data-plane),
+  `vms/*/state/`, `vms/*/block/`, `vms/*/txs/` (struct codec), threshold
+  payloads, P2P message bodies, internal databases.
+
+Migration helpers (v2 API delta vs v1):
+
+| v1 (encoding/json)                | v2 (go-json-experiment/json)                 |
+|-----------------------------------|----------------------------------------------|
+| `json.Marshal(v)`                 | `json.Marshal(v)` (variadic opts; signature compat) |
+| `json.MarshalIndent(v, "", "  ")` | `json.Marshal(v, jsontext.WithIndent("  "))` |
+| `json.Unmarshal(b, &v)`           | `json.Unmarshal(b, &v)`                      |
+| `json.NewEncoder(w).Encode(v)`    | `json.MarshalWrite(w, v)` (no trailing `\n`) |
+| `json.NewDecoder(r).Decode(&v)`   | `json.UnmarshalRead(r, &v)`                  |
+| `json.RawMessage`                 | `jsontext.Value`                             |
+| `*json.SyntaxError`               | `*jsontext.SyntacticError`                   |
+
+v2 semantic differences worth knowing (these change wire shape):
+
+- `[N]byte` field with no `MarshalJSON` ⇒ v2 marshals as base64 string,
+  v1 marshalled as JSON array of byte numbers. Add `MarshalJSON` on the
+  type if the array form is wanted on the wire.
+- `time.Duration` ⇒ v2 default is the standard string form ("30m");
+  v1 marshalled as int nanoseconds. v1 sub-package
+  (`github.com/go-json-experiment/json/v1`) exposes `FormatDurationAsNano(true)`;
+  v2 root does not. Prefer the string form on new APIs.
+- v2 enforces strict UTF-8; raw arbitrary bytes in JSON strings fail.
+  This matters for legacy P2P/internal blobs that happen to be stored
+  through JSON — those should already be on ZAP.
+- `json.MarshalWrite` does NOT append a trailing `\n` (v1 `NewEncoder.Encode` did).
+  Adjust HTTP-handler test fixtures accordingly.
+
 ---
 
-*Last Updated*: 2026-02-04
+*Last Updated*: 2026-06-06
