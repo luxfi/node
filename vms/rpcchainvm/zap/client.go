@@ -6,7 +6,7 @@ package zap
 
 import (
 	"context"
-	"github.com/go-json-experiment/json"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"net"
@@ -493,15 +493,59 @@ func (c *Client) HealthCheck(ctx context.Context) (block.HealthCheckResult, erro
 		Healthy: true,
 	}
 
-	// Parse details if present
-	if len(resp.Details) > 0 {
-		var details map[string]string
-		if err := json.Unmarshal(resp.Details, &details); err == nil {
-			result.Details = details
-		}
+	// Parse details if present. Wire shape (ZAP-native, k/v list):
+	//
+	//   [u32 count]( [u32 keylen][key bytes] [u32 vallen][val bytes] )*
+	//
+	// Servers that still emit legacy JSON details are tolerated: parse
+	// failure is non-fatal and Details remains nil. The lux/vm server
+	// emits an empty Details by default; the day-1 contract is "Details
+	// is optional and opaque" so this is forward-compatible.
+	if details, ok := decodeHealthDetails(resp.Details); ok {
+		result.Details = details
 	}
 
 	return result, nil
+}
+
+// decodeHealthDetails parses a ZAP-encoded health-details k/v list. The
+// envelope is described above HealthCheck; returns ok=false (silently)
+// on any wire-shape mismatch so legacy JSON-emitting servers don't
+// trigger spurious health failures.
+func decodeHealthDetails(b []byte) (map[string]string, bool) {
+	if len(b) < 4 {
+		return nil, false
+	}
+	count := binary.LittleEndian.Uint32(b[:4])
+	out := make(map[string]string, count)
+	rest := b[4:]
+	for i := uint32(0); i < count; i++ {
+		if len(rest) < 4 {
+			return nil, false
+		}
+		klen := binary.LittleEndian.Uint32(rest[:4])
+		rest = rest[4:]
+		if uint32(len(rest)) < klen {
+			return nil, false
+		}
+		key := string(rest[:klen])
+		rest = rest[klen:]
+		if len(rest) < 4 {
+			return nil, false
+		}
+		vlen := binary.LittleEndian.Uint32(rest[:4])
+		rest = rest[4:]
+		if uint32(len(rest)) < vlen {
+			return nil, false
+		}
+		val := string(rest[:vlen])
+		rest = rest[vlen:]
+		out[key] = val
+	}
+	if len(rest) != 0 {
+		return nil, false
+	}
+	return out, true
 }
 
 // GetBlockIDAtHeight implements chain.ChainVM
