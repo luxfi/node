@@ -135,7 +135,10 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return fmt.Errorf("zap decode initialize response: %w", err)
 	}
 
-	copy(c.lastAcceptedID[:], resp.LastAcceptedID)
+	c.lastAcceptedID, err = ids.ToID(resp.LastAcceptedID)
+	if err != nil {
+		return err
+	}
 
 	c.logger.Info("VM initialized via ZAP",
 		"height", resp.Height,
@@ -258,9 +261,14 @@ func (c *Client) BuildBlock(ctx context.Context) (block.Block, error) {
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	var id, parentID ids.ID
-	copy(id[:], resp.ID)
-	copy(parentID[:], resp.ParentID)
+	id, err := ids.ToID(resp.ID)
+	if err != nil {
+		return nil, err
+	}
+	parentID, err := ids.ToID(resp.ParentID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &zapBlock{
 		client:    c,
@@ -296,9 +304,14 @@ func (c *Client) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	var id, parentID ids.ID
-	copy(id[:], resp.ID)
-	copy(parentID[:], resp.ParentID)
+	id, err := ids.ToID(resp.ID)
+	if err != nil {
+		return nil, err
+	}
+	parentID, err := ids.ToID(resp.ParentID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &zapBlock{
 		client:    c,
@@ -334,8 +347,10 @@ func (c *Client) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	var parentID ids.ID
-	copy(parentID[:], resp.ParentID)
+	parentID, err := ids.ToID(resp.ParentID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &zapBlock{
 		client:    c,
@@ -513,8 +528,10 @@ func (c *Client) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID,
 		return ids.Empty, errorFromZAP(resp.Err)
 	}
 
-	var blkID ids.ID
-	copy(blkID[:], resp.BlkID)
+	blkID, err := ids.ToID(resp.BlkID)
+	if err != nil {
+		return ids.Empty, err
+	}
 	return blkID, nil
 }
 
