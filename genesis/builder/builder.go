@@ -8,9 +8,9 @@ package builder
 
 import (
 	"encoding/base64"
-	"github.com/go-json-experiment/json"
 	"errors"
 	"fmt"
+	"github.com/go-json-experiment/json"
 	"path"
 	"time"
 
@@ -685,7 +685,7 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 	return FromConfig(config)
 }
 
-// XAssetIDFromGenesisBytes returns the X-Chain native asset ID encoded
+// UTXOAssetIDFromGenesisBytes returns the X-Chain native asset ID encoded
 // in a platform-genesis blob. It parses the platform genesis, finds the
 // X-Chain CreateChainTx (vmID == constants.XVMID), then decodes that
 // chain's embedded XVM genesis bytes to recover the runtime asset ID
@@ -706,7 +706,7 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 // helper through getGenesisData means the node always reports the
 // genesis-derived asset ID via platform.getStakingAssetID regardless
 // of which load path was taken.
-func XAssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, bool, error) {
+func UTXOAssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, bool, error) {
 	// Parse the platform genesis directly so we can distinguish parse
 	// failure ("garbage bytes — fatal") from missing X-Chain ("P-only
 	// mode — caller falls back to UTXOAssetIDFor"). VMGenesis collapses

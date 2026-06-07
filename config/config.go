@@ -1053,7 +1053,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
 		}
-		utxoAssetID, err := resolveXAssetID(networkID, genesisBytes)
+		utxoAssetID, err := resolveUTXOAssetID(networkID, genesisBytes)
 		if err != nil {
 			return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
 		}
@@ -1092,7 +1092,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		// Check if we have cached genesis bytes to avoid rebuilding
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
 		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
-			utxoAssetID, err := resolveXAssetID(networkID, cachedBytes)
+			utxoAssetID, err := resolveUTXOAssetID(networkID, cachedBytes)
 			if err == nil {
 				log.Info("loaded cached genesis bytes for hash stability",
 					"cacheFile", cacheFile,
@@ -1140,7 +1140,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	return builder.FromConfig(config)
 }
 
-// resolveXAssetID extracts the X-Chain native asset ID from the loaded
+// resolveUTXOAssetID extracts the X-Chain native asset ID from the loaded
 // platform-genesis blob. It is the canonical source of truth used by
 // every load path that bypasses FromConfig (raw bytes, cached bytes —
 // the paths that historically defaulted to constants.UTXOAssetIDFor and
@@ -1159,8 +1159,8 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 //
 // Tested against both sovereign-network genesis (X-Chain present, asset
 // ID differs from the constant) and upstream Lux genesis fixtures.
-func resolveXAssetID(networkID uint32, genesisBytes []byte) (ids.ID, error) {
-	id, ok, err := builder.XAssetIDFromGenesisBytes(genesisBytes)
+func resolveUTXOAssetID(networkID uint32, genesisBytes []byte) (ids.ID, error) {
+	id, ok, err := builder.UTXOAssetIDFromGenesisBytes(genesisBytes)
 	if err != nil {
 		return ids.Empty, err
 	}
