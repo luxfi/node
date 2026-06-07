@@ -6,6 +6,7 @@ package xvm
 import (
 	"context"
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"sync"
 	"testing"
 
@@ -269,7 +270,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	if config.indexTransactions {
 		vmConfig.IndexTransactions = true
 	}
-	configBytes, err := json.Marshal(vmConfig)
+	configBytes, err := json.Marshal(vmConfig, jsonv1.FormatDurationAsNano(true))
 	require.NoError(err)
 
 	toEngine := make(chan vm.Message, 1)
