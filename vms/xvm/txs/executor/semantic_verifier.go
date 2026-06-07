@@ -106,15 +106,18 @@ func (v *SemanticVerifier) ImportTx(tx *txs.ImportTx) error {
 
 	offset := len(tx.Ins)
 	for i, in := range tx.ImportedIns {
-		utxo := lux.UTXO{}
-		if _, err := v.Codec.Unmarshal(allUTXOBytes[i], &utxo); err != nil {
+		// ZAP-native wire envelope — matches executor.ExportTx's
+		// utxo.WireBytes() emit path. Same bytes flow on shared memory
+		// and disk.
+		u, err := lux.ParseUTXO(allUTXOBytes[i])
+		if err != nil {
 			return err
 		}
 
 		// Note: Verification of the length of [t.tx.Creds] happens during
 		// syntactic verification, which happens before semantic verification.
 		cred := v.Tx.Creds[i+offset].Credential
-		if err := v.verifyTransferOfUTXO(tx, in, cred, &utxo); err != nil {
+		if err := v.verifyTransferOfUTXO(tx, in, cred, u); err != nil {
 			return err
 		}
 	}
