@@ -151,7 +151,7 @@ func TestNetworkConfiguration(t *testing.T) {
 	t.Logf("✓ Network configuration verified: ID=%d, Name=%s", networkID, expectedName)
 }
 
-func TestXAssetID(t *testing.T) {
+func TestUTXOAssetID(t *testing.T) {
 	// Verify UTXOAssetID is used for native asset
 	utxoAssetID := ids.Empty // Our implementation uses Empty ID for native asset
 
