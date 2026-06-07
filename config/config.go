@@ -1033,7 +1033,7 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	}
 
 	var upgradeConfig upgrade.Config
-	if err := json.Unmarshal(upgradeBytes, &upgradeConfig); err != nil {
+	if err := json.Unmarshal(upgradeBytes, &upgradeConfig, json.MatchCaseInsensitiveNames(true)); err != nil {
 		return upgrade.Config{}, fmt.Errorf("unable to unmarshal upgrade bytes: %w", err)
 	}
 	return upgradeConfig, nil
@@ -1308,7 +1308,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 	}
 
 	aliasMap := make(map[ids.ID][]string)
-	if err := json.Unmarshal(fileBytes, &aliasMap); err != nil {
+	if err := json.Unmarshal(fileBytes, &aliasMap, json.MatchCaseInsensitiveNames(true)); err != nil {
 		return nil, fmt.Errorf("%w on %s: %w", errUnmarshalling, name, err)
 	}
 	return aliasMap, nil
@@ -1348,7 +1348,7 @@ func getChainConfigsFromFlag(v *viper.Viper) (map[string]chains.ChainConfig, err
 	}
 
 	chainConfigs := make(map[string]chains.ChainConfig)
-	if err := json.Unmarshal(chainConfigContent, &chainConfigs); err != nil {
+	if err := json.Unmarshal(chainConfigContent, &chainConfigs, json.MatchCaseInsensitiveNames(true)); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 	return chainConfigs, nil
@@ -1431,7 +1431,7 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 
 	// partially parse configs to be filled by defaults later
 	chainConfigs := make(map[ids.ID]jsontext.Value, len(netIDs))
-	if err := json.Unmarshal(netConfigContent, &chainConfigs); err != nil {
+	if err := json.Unmarshal(netConfigContent, &chainConfigs, json.MatchCaseInsensitiveNames(true)); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
@@ -1440,7 +1440,7 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 		config := getDefaultNetConfig(v)
 
 		if rawNetConfigBytes, ok := chainConfigs[chainID]; ok {
-			if err := json.Unmarshal(rawNetConfigBytes, &config); err != nil {
+			if err := json.Unmarshal(rawNetConfigBytes, &config, json.MatchCaseInsensitiveNames(true)); err != nil {
 				return nil, err
 			}
 
@@ -1499,7 +1499,7 @@ func getNetConfigsFromDir(v *viper.Viper, chainIDs []ids.ID) (map[ids.ID]nets.Co
 		}
 
 		// Update the default config with the values from the file
-		if err := json.Unmarshal(file, &config); err != nil {
+		if err := json.Unmarshal(file, &config, json.MatchCaseInsensitiveNames(true)); err != nil {
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
 		}
 
