@@ -5,7 +5,6 @@ package da
 
 import (
 	"context"
-	"github.com/go-json-experiment/json"
 	"errors"
 	"sync"
 	"time"
@@ -66,7 +65,7 @@ func NewStore(db database.Database, config *StoreConfig) *Store {
 	}
 }
 
-// StoreBlob stores a DA blob
+// StoreBlob stores a DA blob (ZAP-encoded).
 func (s *Store) StoreBlob(ctx context.Context, blob *DABlob) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -75,10 +74,7 @@ func (s *Store) StoreBlob(ctx context.Context, blob *DABlob) error {
 	s.blobs[blob.ID] = blob
 
 	// Persist to database
-	blobBytes, err := json.Marshal(blob)
-	if err != nil {
-		return err
-	}
+	blobBytes := encodeDABlob(blob)
 
 	key := append(blobPrefix, blob.ID[:]...)
 	return s.db.Put(key, blobBytes)
@@ -103,17 +99,17 @@ func (s *Store) GetBlob(ctx context.Context, blobID ids.ID) (*DABlob, error) {
 		return nil, err
 	}
 
-	var blob DABlob
-	if err := json.Unmarshal(blobBytes, &blob); err != nil {
+	blob, err := decodeDABlob(blobBytes)
+	if err != nil {
 		return nil, err
 	}
 
 	// Cache for future access
 	s.mu.Lock()
-	s.blobs[blobID] = &blob
+	s.blobs[blobID] = blob
 	s.mu.Unlock()
 
-	return &blob, nil
+	return blob, nil
 }
 
 // DeleteBlob deletes a DA blob
@@ -126,17 +122,14 @@ func (s *Store) DeleteBlob(ctx context.Context, blobID ids.ID) error {
 	return s.db.Delete(key)
 }
 
-// StoreCert stores a DA certificate
+// StoreCert stores a DA certificate (ZAP-encoded).
 func (s *Store) StoreCert(ctx context.Context, cert *DACert) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.certs[cert.Commitment.BlobID] = cert
 
-	certBytes, err := json.Marshal(cert)
-	if err != nil {
-		return err
-	}
+	certBytes := encodeDACert(cert)
 
 	key := append(certPrefix, cert.Commitment.BlobID[:]...)
 	return s.db.Put(key, certBytes)
@@ -160,16 +153,16 @@ func (s *Store) GetCert(ctx context.Context, blobID ids.ID) (*DACert, error) {
 		return nil, err
 	}
 
-	var cert DACert
-	if err := json.Unmarshal(certBytes, &cert); err != nil {
+	cert, err := decodeDACert(certBytes)
+	if err != nil {
 		return nil, err
 	}
 
 	s.mu.Lock()
-	s.certs[blobID] = &cert
+	s.certs[blobID] = cert
 	s.mu.Unlock()
 
-	return &cert, nil
+	return cert, nil
 }
 
 // GetChunks retrieves specific chunks from a blob
