@@ -433,7 +433,7 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 			Out:   out.Out,
 		}
 
-		utxoBytes, err := txs.Codec.Marshal(txs.CodecVersion, utxo)
+		utxoBytes, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("failed to marshal UTXO: %w", err)
 		}
