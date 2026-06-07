@@ -227,6 +227,7 @@ func Start(
 	id ids.NodeID,
 	messageQueue MessageQueue,
 	isIngress bool,
+	pq *PQPreHandshake,
 ) Peer {
 	onClosingCtx, onClosingCtxCancel := context.WithCancel(context.Background())
 	p := &peer{
@@ -252,7 +253,21 @@ func Start(
 	// PQ handshake gate: strict-PQ chains run the application-layer
 	// ML-KEM + ML-DSA-65 handshake on the wire BEFORE any p2p message
 	// is exchanged. Permissive / classical-compat chains skip this step.
-	if err := p.runPQHandshakeIfRequired(); err != nil {
+	//
+	// When pq != nil the caller (network.upgrade) already ran the handshake
+	// over this conn BEFORE connection dedup, holding no lock — adopt its
+	// result and skip the in-Start run. Running it pre-dedup is what lets
+	// both ends of a simultaneous mutual dial complete independently (each
+	// TCP conn has a distinct dialer=initiator / acceptor=responder); the
+	// old in-Start, under-peersLock run made every node a lone initiator and
+	// deadlocked. p.id was already set to the handshake-derived, key-bound
+	// ML-DSA NodeID via the id param (network.upgrade sets nodeID to the
+	// verified ML-DSA NodeID before calling Start), so only the AEAD key
+	// needs adopting here — the binding was already enforced inside
+	// RunPQHandshakeConn.
+	if pq != nil {
+		p.pqAEADKey = pq.AEADKey
+	} else if err := p.runPQHandshakeIfRequired(); err != nil {
 		p.Log.Warn("PQ handshake refused; closing connection",
 			log.Stringer("nodeID", p.id),
 			log.Bool("isIngress", isIngress),
@@ -286,64 +301,118 @@ func (p *peer) runPQHandshakeIfRequired() error {
 	if cfg == nil || cfg.PQHandshakeConfig == nil || cfg.PQLocalIdentity == nil {
 		return nil
 	}
+	peerNodeID, aeadKey, err := RunPQHandshakeConn(p.conn, cfg.PQHandshakeConfig, cfg.PQLocalIdentity, p.isIngress, cfg.MaxClockDifference)
+	if err != nil {
+		return err
+	}
+	p.pqAEADKey = aeadKey
+	// Adopt the verified, key-bound ML-DSA identity authenticated by the
+	// handshake as this peer's NodeID, replacing the ephemeral TLS-cert
+	// NodeID from the upgrader. RunPQHandshakeConn already enforced the
+	// NodeID<->ML-DSA-key binding (see adoptVerifiedPQIdentity's rationale),
+	// so peerNodeID is the key-derived validator-set NodeID.
+	p.Log.Debug("adopted strict-PQ peer identity from handshake",
+		log.Stringer("tlsNodeID", p.id),
+		log.Stringer("mldsaNodeID", peerNodeID),
+		log.Bool("isIngress", p.isIngress),
+	)
+	p.id = peerNodeID
+	return nil
+}
 
-	deadline := time.Now().Add(cfg.MaxClockDifference + 30*time.Second)
-	if err := p.conn.SetDeadline(deadline); err != nil {
-		return fmt.Errorf("set PQ handshake deadline: %w", err)
+// PQPreHandshake carries a strict-PQ handshake result computed by the caller
+// (network.upgrade) BEFORE connection dedup so Start adopts it instead of
+// re-running the handshake. Nil on the legacy bare-TLS path. PeerNodeID is
+// the verified, key-bound ML-DSA NodeID; network.upgrade also sets the
+// peer's id param to this same value, so Start need only adopt AEADKey.
+type PQPreHandshake struct {
+	AEADKey    [32]byte
+	PeerNodeID ids.NodeID
+}
+
+// RunPQHandshakeConn runs the strict-PQ ML-KEM + ML-DSA-65 application
+// handshake over conn and returns the handshake-authenticated, key-bound
+// peer NodeID and derived AEAD session key. Role is by dial direction — the
+// dialer (isIngress=false) initiates, the acceptor (isIngress=true) responds
+// — which is well-defined per TCP connection. network.upgrade calls this
+// BEFORE connection dedup so both ends of a simultaneous mutual dial
+// complete independently (each conn has a distinct dialer/acceptor) and the
+// dedup keys on the stable ML-DSA NodeID rather than the ephemeral TLS-cert
+// NodeID. Holds no lock; bounded by a MaxClockDifference+30s deadline. Wire
+// framing mirrors the peer's 4-byte length-prefix scheme (see pq_frame.go).
+//
+// The returned NodeID is bound to the peer's ML-DSA-65 key by
+// verifyPQIdentityBinding before it is returned — the exact binding the
+// in-Start adoptVerifiedPQIdentity path enforces — so a peer cannot present
+// one validator's NodeID while signing with a different key.
+func RunPQHandshakeConn(conn net.Conn, hs *HandshakeConfig, local *LocalIdentity, isIngress bool, maxClockDifference time.Duration) (ids.NodeID, [32]byte, error) {
+	var zeroKey [32]byte
+	deadline := time.Now().Add(maxClockDifference + 30*time.Second)
+	if err := conn.SetDeadline(deadline); err != nil {
+		return ids.EmptyNodeID, zeroKey, fmt.Errorf("set PQ handshake deadline: %w", err)
 	}
 	defer func() {
 		// Clear deadline so the rest of the peer flow uses its own.
-		_ = p.conn.SetDeadline(time.Time{})
+		_ = conn.SetDeadline(time.Time{})
 	}()
 
-	if p.isIngress {
+	var result *HandshakeResult
+	if isIngress {
 		// Responder: read INIT, send RESP, derive AEAD.
-		initBytes, err := readPQFrame(p.conn)
+		initBytes, err := readPQFrame(conn)
 		if err != nil {
-			return fmt.Errorf("read PQ INIT: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("read PQ INIT: %w", err)
 		}
-		init, err := parsePQHandshakeInit(initBytes, cfg.PQHandshakeConfig.KEMScheme)
+		init, err := parsePQHandshakeInit(initBytes, hs.KEMScheme)
 		if err != nil {
-			return fmt.Errorf("parse PQ INIT: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("parse PQ INIT: %w", err)
 		}
-		resp, result, err := RespondHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init)
+		resp, res, err := RespondHandshake(hs, local, init)
 		if err != nil {
-			return fmt.Errorf("respond PQ handshake: %w", err)
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("respond PQ handshake: %w", err)
 		}
-		if err := writePQFrame(p.conn, resp.canonicalBytes()); err != nil {
-			return fmt.Errorf("write PQ RESP: %w", err)
+		if err := writePQFrame(conn, resp.canonicalBytes()); err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("write PQ RESP: %w", err)
 		}
-		p.pqAEADKey = result.AEADKey
-		return p.adoptVerifiedPQIdentity(result)
+		result = res
+	} else {
+		// Initiator: send INIT, read RESP, finalize.
+		init, kemSec, err := InitiateHandshake(hs, local)
+		if err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("initiate PQ handshake: %w", err)
+		}
+		if err := writePQFrame(conn, init.canonicalBytes()); err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("write PQ INIT: %w", err)
+		}
+		respBytes, err := readPQFrame(conn)
+		if err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("read PQ RESP: %w", err)
+		}
+		resp, err := parsePQHandshakeResp(respBytes, hs.KEMScheme)
+		if err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("parse PQ RESP: %w", err)
+		}
+		res, err := FinishInitiatorHandshake(hs, local, init, resp, kemSec)
+		if err != nil {
+			return ids.EmptyNodeID, zeroKey, fmt.Errorf("finish PQ handshake: %w", err)
+		}
+		result = res
 	}
 
-	// Initiator: send INIT, read RESP, finalize.
-	init, kemSec, err := InitiateHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity)
+	// Bind the peer's claimed NodeID to the ML-DSA-65 key it proved
+	// possession of, and adopt the key-derived NodeID. This is the
+	// authoritative identity check (RespondHandshake / FinishInitiatorHandshake
+	// only verify the signature, not the NodeID derivation).
+	derived, err := verifyPQIdentityBinding(result)
 	if err != nil {
-		return fmt.Errorf("initiate PQ handshake: %w", err)
+		return ids.EmptyNodeID, zeroKey, err
 	}
-	if err := writePQFrame(p.conn, init.canonicalBytes()); err != nil {
-		return fmt.Errorf("write PQ INIT: %w", err)
-	}
-	respBytes, err := readPQFrame(p.conn)
-	if err != nil {
-		return fmt.Errorf("read PQ RESP: %w", err)
-	}
-	resp, err := parsePQHandshakeResp(respBytes, cfg.PQHandshakeConfig.KEMScheme)
-	if err != nil {
-		return fmt.Errorf("parse PQ RESP: %w", err)
-	}
-	result, err := FinishInitiatorHandshake(cfg.PQHandshakeConfig, cfg.PQLocalIdentity, init, resp, kemSec)
-	if err != nil {
-		return fmt.Errorf("finish PQ handshake: %w", err)
-	}
-	p.pqAEADKey = result.AEADKey
-	return p.adoptVerifiedPQIdentity(result)
+	return derived, result.AEADKey, nil
 }
 
-// adoptVerifiedPQIdentity binds the peer's handshake-presented NodeID to
-// the ML-DSA-65 public key it proved possession of, then adopts that
-// NodeID as this peer's canonical identity.
+// verifyPQIdentityBinding binds the peer's handshake-presented NodeID to the
+// ML-DSA-65 public key it proved possession of, returning the key-derived
+// NodeID.
 //
 // The PQ handshake proves the remote holds the secret key for the ML-DSA
 // public key it sent, and that it signed a transcript carrying its claimed
@@ -353,7 +422,29 @@ func (p *peer) runPQHandshakeIfRequired() error {
 // from the presented key under the node-identity domain — ids.Empty, the
 // exact domain config.StakingConfig.DeriveNodeID uses for a node's primary
 // identity (see node.Node, which sets MyNodeID = DeriveNodeID(ids.Empty)) —
-// and require it to equal the claimed NodeID.
+// and require it to equal the claimed NodeID. The returned NodeID is the
+// ML-DSA validator-set NodeID that consensus keys peers by.
+func verifyPQIdentityBinding(result *HandshakeResult) (ids.NodeID, error) {
+	if result == nil || result.PeerMLDSA == nil {
+		return ids.EmptyNodeID, errors.New("peer: PQ handshake produced no peer identity")
+	}
+	derived, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(ids.Empty, packMLDSAPub(result.PeerMLDSA))
+	if err != nil {
+		return ids.EmptyNodeID, fmt.Errorf("peer: derive NodeID from peer ML-DSA key: %w", err)
+	}
+	if derived != result.PeerNodeID {
+		return ids.EmptyNodeID, fmt.Errorf(
+			"peer: PQ identity binding failed — peer presented NodeID %s but its ML-DSA key derives %s",
+			result.PeerNodeID, derived,
+		)
+	}
+	return derived, nil
+}
+
+// adoptVerifiedPQIdentity binds the peer's handshake-presented NodeID to
+// the ML-DSA-65 public key it proved possession of, then adopts that
+// NodeID as this peer's canonical identity. See verifyPQIdentityBinding for
+// the binding rationale.
 //
 // On success p.id is switched from the TLS-cert NodeID (a transport-layer
 // artifact assigned at construction) to the ML-DSA validator-set NodeID.
@@ -363,18 +454,9 @@ func (p *peer) runPQHandshakeIfRequired() error {
 // zero connected validators and never produced a block. Skipped entirely on
 // classical-compat chains (runPQHandshakeIfRequired returns before this).
 func (p *peer) adoptVerifiedPQIdentity(result *HandshakeResult) error {
-	if result == nil || result.PeerMLDSA == nil {
-		return errors.New("peer: PQ handshake produced no peer identity")
-	}
-	derived, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(ids.Empty, packMLDSAPub(result.PeerMLDSA))
+	derived, err := verifyPQIdentityBinding(result)
 	if err != nil {
-		return fmt.Errorf("peer: derive NodeID from peer ML-DSA key: %w", err)
-	}
-	if derived != result.PeerNodeID {
-		return fmt.Errorf(
-			"peer: PQ identity binding failed — peer presented NodeID %s but its ML-DSA key derives %s",
-			result.PeerNodeID, derived,
-		)
+		return err
 	}
 	p.Log.Debug("adopted strict-PQ peer identity from handshake",
 		log.Stringer("tlsNodeID", p.id),

@@ -183,6 +183,7 @@ func startTestPeer(self *rawTestPeer, peer *rawTestPeer, conn net.Conn) *testPee
 				throttling.NewNoOutboundThrottler(),
 			),
 			false,
+			nil,
 		),
 		inboundMsgChan: self.inboundMsgChan,
 	}
