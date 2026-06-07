@@ -2,7 +2,8 @@ package main
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"fmt"
 	"os"
 	"time"
@@ -75,7 +76,7 @@ func main() {
 	ccBytes, _ := json.Marshal(cc)
 	genesis["cChainGenesis"] = string(ccBytes)
 
-	out, _ := json.MarshalIndent(genesis, "", "  ")
+	out, _ := json.Marshal(genesis, jsontext.WithIndent("  "))
 	os.WriteFile(os.ExpandEnv("$HOME/work/lux/mainnet/zoo_genesis_valid.json"), out, 0644)
 	fmt.Println("Wrote zoo_genesis_valid.json")
 }

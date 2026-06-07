@@ -4,9 +4,9 @@
 package health
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/go-json-experiment/json"
 	"github.com/gorilla/rpc/v2"
 
 	apihealth "github.com/luxfi/api/health"
@@ -55,7 +55,7 @@ func NewGetHandler(reporter func(tags ...string) (map[string]apihealth.Result, b
 		}
 		// The encoder will call write on the writer, which will write the
 		// header with a 200.
-		_ = json.NewEncoder(w).Encode(apihealth.APIReply{
+		_ = json.MarshalWrite(w, apihealth.APIReply{
 			Checks:  checks,
 			Healthy: healthy,
 		})

@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"errors"
 	"math"
 	"testing"
@@ -397,7 +398,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	}
 	unsignedComplexAddPrimaryTx.InitRuntime(rt2)
 
-	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
+	unsignedComplexAddPrimaryTxJSONBytes, err := json.Marshal(unsignedComplexAddPrimaryTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,
@@ -926,7 +927,7 @@ func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	}
 	unsignedComplexAddNetTx.InitRuntime(rt3)
 
-	unsignedComplexAddNetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddNetTx, "", "\t")
+	unsignedComplexAddNetTxJSONBytes, err := json.Marshal(unsignedComplexAddNetTx, jsontext.WithIndent("\t"))
 	require.NoError(err)
 	require.JSONEq(`{
 	"networkID": 1,

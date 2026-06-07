@@ -5,7 +5,7 @@ package rpc
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -132,7 +132,7 @@ func (d *DebugTool) testEndpoint(url string) TestResult {
 
 	// Check if we got a valid JSON-RPC response
 	var rpcResp map[string]interface{}
-	if err := json.NewDecoder(postResp.Body).Decode(&rpcResp); err == nil {
+	if err := json.UnmarshalRead(postResp.Body, &rpcResp); err == nil {
 		if _, hasResult := rpcResp["result"]; hasResult {
 			result.Success = true
 			result.Response = fmt.Sprintf("Valid JSON-RPC response: %v", rpcResp["result"])
@@ -179,7 +179,7 @@ func (d *DebugTool) testRPCMethods(url string) []RPCTest {
 			defer resp.Body.Close()
 
 			var result map[string]interface{}
-			if err := json.NewDecoder(resp.Body).Decode(&result); err == nil {
+			if err := json.UnmarshalRead(resp.Body, &result); err == nil {
 				if res, ok := result["result"]; ok {
 					test.Success = true
 					test.Result = fmt.Sprintf("%v", res)

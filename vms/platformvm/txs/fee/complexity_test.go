@@ -5,7 +5,8 @@ package fee
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestTxComplexity_Individual(t *testing.T) {
 
 			// If the test fails, logging the transaction can be helpful for
 			// debugging.
-			txJSON, err := json.MarshalIndent(tx, "", "\t")
+			txJSON, err := json.Marshal(tx, jsontext.WithIndent("\t"))
 			require.NoError(err)
 			t.Log(string(txJSON))
 
