@@ -10,7 +10,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
-	"github.com/go-json-experiment/json"
 	"errors"
 	"sync"
 	"time"
@@ -553,18 +552,16 @@ func (s *MessageStore) IncrementRateLimit(accountID [32]byte) {
 	s.rateLimiter.Increment(accountID)
 }
 
-// SerializeConversation serializes a conversation to JSON
+// SerializeConversation serializes a conversation to ZAP. Replaces the
+// legacy JSON codec, which was UTF-8 unsafe (binary OR-Set tags stuffed
+// into Go map keys).
 func SerializeConversation(conv *Conversation) ([]byte, error) {
-	return json.Marshal(conv)
+	return encodeConversation(conv), nil
 }
 
-// DeserializeConversation deserializes a conversation from JSON
+// DeserializeConversation deserializes a conversation from ZAP.
 func DeserializeConversation(data []byte) (*Conversation, error) {
-	var conv Conversation
-	if err := json.Unmarshal(data, &conv); err != nil {
-		return nil, err
-	}
-	return &conv, nil
+	return decodeConversation(data)
 }
 
 // MergeConversations merges two conversation states
