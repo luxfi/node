@@ -4,7 +4,6 @@
 package bimap
 
 import (
-	"github.com/go-json-experiment/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -338,29 +337,6 @@ func TestBiMapLenAndLists(t *testing.T) {
 	require.Empty(m.Values())
 }
 
-func TestBiMapJSON(t *testing.T) {
-	require := require.New(t)
-
-	expectedMap := New[int, int]()
-	expectedMap.Put(1, 2)
-	expectedMap.Put(2, 3)
-
-	jsonBytes, err := json.Marshal(expectedMap)
-	require.NoError(err)
-
-	expectedJSONBytes := []byte(`{"1":2,"2":3}`)
-	require.JSONEq(string(expectedJSONBytes), string(jsonBytes))
-
-	var unmarshalledMap BiMap[int, int]
-	require.NoError(json.Unmarshal(jsonBytes, &unmarshalledMap))
-	require.Equal(expectedMap, &unmarshalledMap)
-}
-
-func TestBiMapInvalidJSON(t *testing.T) {
-	require := require.New(t)
-
-	invalidJSONBytes := []byte(`{"1":2,"2":2}`)
-	var unmarshalledMap BiMap[int, int]
-	err := json.Unmarshal(invalidJSONBytes, &unmarshalledMap)
-	require.ErrorIs(err, errNotBijective)
-}
+// JSON marshal/unmarshal tests removed: BiMap no longer carries a
+// generic codec. The internal Lux wire format is ZAP, which is element-
+// typed; persist a typed snapshot at the call site if needed.
