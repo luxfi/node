@@ -8,7 +8,7 @@ package builder
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"fmt"
 	"path"

@@ -6,7 +6,8 @@ package main
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"log"
 	"time"
 
@@ -73,7 +74,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create L1ValidatorWeight message: %s\n", err)
 	}
-	addressedCallPayloadJSON, err := json.MarshalIndent(addressedCallPayload, "", "\t")
+	addressedCallPayloadJSON, err := json.Marshal(addressedCallPayload, jsontext.WithIndent("\t"))
 	if err != nil {
 		log.Fatalf("failed to marshal L1ValidatorWeight message: %s\n", err)
 	}

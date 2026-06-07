@@ -11,7 +11,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"fmt"
 	"sync"

@@ -4,9 +4,9 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/go-json-experiment/json"
 	rpc "github.com/gorilla/rpc/v2/json2"
 )
 
@@ -29,7 +29,7 @@ func writeUnauthorizedResponse(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusUnauthorized)
 
 	// There isn't anything to do with the returned error, so it is dropped.
-	_ = json.NewEncoder(w).Encode(responseBody{
+	_ = json.MarshalWrite(w, responseBody{
 		Version: rpc.Version,
 		Err: responseErr{
 			Code:    rpc.E_INVALID_REQ,

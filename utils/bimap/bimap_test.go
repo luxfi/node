@@ -4,7 +4,7 @@
 package bimap
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"

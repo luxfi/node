@@ -4,9 +4,9 @@
 package types
 
 import (
-	"encoding/json"
 	"testing"
 
+	"github.com/go-json-experiment/json"
 	"github.com/stretchr/testify/require"
 )
 

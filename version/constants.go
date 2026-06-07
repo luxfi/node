@@ -4,7 +4,7 @@
 package version
 
 import (
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"strconv"
 	"time"
 
