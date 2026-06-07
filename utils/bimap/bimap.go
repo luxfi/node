@@ -1,24 +1,18 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+// Package bimap is an in-memory bi-directional map. Serialization is the
+// caller's concern — this type is generic over comparable K/V, and the
+// internal Lux wire format is ZAP, which is element-typed. Use a typed
+// ZAP schema (or a typed snapshot struct) at the call site to persist a
+// bimap; do not bolt a generic marshaler onto BiMap itself.
 package bimap
 
 import (
-	"bytes"
-	"github.com/go-json-experiment/json"
-	"errors"
 	"maps"
 	"slices"
 
 	"github.com/luxfi/node/utils"
-)
-
-var (
-	_ json.Marshaler   = (*BiMap[int, int])(nil)
-	_ json.Unmarshaler = (*BiMap[int, int])(nil)
-
-	nullBytes       = []byte("null")
-	errNotBijective = errors.New("map not bijective")
 )
 
 type Entry[K, V any] struct {
@@ -126,29 +120,4 @@ func (m *BiMap[_, V]) Values() []V {
 // Len return the number of entries in this map.
 func (m *BiMap[K, V]) Len() int {
 	return len(m.keyToValue)
-}
-
-func (m *BiMap[K, V]) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.keyToValue)
-}
-
-func (m *BiMap[K, V]) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, nullBytes) {
-		return nil
-	}
-	var keyToValue map[K]V
-	if err := json.Unmarshal(b, &keyToValue); err != nil {
-		return err
-	}
-	valueToKey := make(map[V]K, len(keyToValue))
-	for k, v := range keyToValue {
-		valueToKey[v] = k
-	}
-	if len(keyToValue) != len(valueToKey) {
-		return errNotBijective
-	}
-
-	m.keyToValue = keyToValue
-	m.valueToKey = valueToKey
-	return nil
 }
