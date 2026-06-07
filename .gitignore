@@ -73,9 +73,6 @@ vendor
 
 *.bak*
 
-AGENTS.md
-CLAUDE.md
-GEMINI.md
 GROK.md
 QWEN.md
 .env
@@ -87,10 +84,7 @@ genesis-gen
 /luxd
 evm-plugin-*
 
-LLM.md
 QWEN.md
-.AGENTS.md
-GEMINI.md
 
 # Built dev-tool binaries
 /cmd/gen_zoo_addr/gen_zoo_addr
