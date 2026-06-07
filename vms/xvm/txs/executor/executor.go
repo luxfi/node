@@ -123,7 +123,10 @@ func (e *Executor) ExportTx(tx *txs.ExportTx) error {
 		}
 		index++
 
-		utxoBytes, err := e.Codec.Marshal(txs.CodecVersion, utxo)
+		// ZAP-native wire envelope — matches GetAtomicUTXOs' utxo.ParseUTXO
+		// dispatch on the import side. Same bytes flow on shared memory
+		// and disk (state.PutUTXO uses WireBytes too).
+		utxoBytes, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("failed to marshal UTXO: %w", err)
 		}
