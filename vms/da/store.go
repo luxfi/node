@@ -5,7 +5,7 @@ package da
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/go-json-experiment/json"
 	"errors"
 	"sync"
 	"time"

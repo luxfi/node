@@ -4,12 +4,12 @@
 package server
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 
+	"github.com/go-json-experiment/json"
 	"github.com/gorilla/mux"
 
 	apitypes "github.com/luxfi/api/types"
@@ -165,7 +165,7 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 
-	if err := json.NewEncoder(w).Encode(info); err != nil {
+	if err := json.MarshalWrite(w, info); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
