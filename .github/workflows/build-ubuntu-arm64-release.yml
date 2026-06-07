@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-jammy-arm64-package:
-    runs-on: lux-build
+    runs-on: evo
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
           rm -rf /tmp/luxd
 
   build-focal-arm64-package:
-    runs-on: lux-build
+    runs-on: evo
 
     steps:
       - uses: actions/checkout@v4

@@ -15,7 +15,7 @@ jobs:
     # Self-hosted `lux-build` ARC pool on DOKS hanzo-k8s (max 20 runners,
     # scales 0→N on demand). Org-isolated: luxfi workflows must use this
     # pool (never the hanzoai pools). amd64 only — DOKS has no arm64 yet.
-    runs-on: lux-build
+    runs-on: evo
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:

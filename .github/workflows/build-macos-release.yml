@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         goarch: [amd64, arm64]
-    runs-on: lux-build
+    runs-on: evo
     permissions:
       id-token: write
       contents: read
