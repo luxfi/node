@@ -116,8 +116,8 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.1.9
-	github.com/luxfi/api v1.0.12
+	github.com/luxfi/accel v1.2.2
+	github.com/luxfi/api v1.0.14
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.3.6
 	github.com/luxfi/compress v0.0.5
