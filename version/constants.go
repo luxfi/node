@@ -76,8 +76,8 @@ var (
 // These should match the latest git tag
 const (
 	defaultMajor = 1
-	defaultMinor = 28
-	defaultPatch = 0
+	defaultMinor = 30
+	defaultPatch = 2
 )
 
 func init() {
