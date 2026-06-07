@@ -508,9 +508,8 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *
 	}
 
 	reply.UTXOs = make([]string, len(utxos))
-	codec := s.vm.parser.Codec()
 	for i, utxo := range utxos {
-		b, err := codec.Marshal(txs.CodecVersion, utxo)
+		b, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("problem marshalling UTXO: %w", err)
 		}
