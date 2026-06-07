@@ -4,6 +4,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/base64"
 	"github.com/go-json-experiment/json"
 	"fmt"
@@ -27,6 +28,23 @@ import (
 )
 
 const chainConfigFilenameExtension = ".ex"
+
+// equalChainConfigs compares two ChainConfig maps using bytes.Equal for the
+// []byte fields, so nil and empty []byte compare equal. json/v2 unmarshals
+// absent/null []byte fields to empty (non-nil), unlike v1 which left them nil.
+func equalChainConfigs(t *testing.T, expected, actual map[string]chains.ChainConfig) {
+	t.Helper()
+	require := require.New(t)
+	require.Equal(len(expected), len(actual), "map length mismatch")
+	for k, want := range expected {
+		got, ok := actual[k]
+		require.True(ok, "missing key %q", k)
+		require.True(bytes.Equal(want.Config, got.Config),
+			"%q Config: expected %x got %x", k, want.Config, got.Config)
+		require.True(bytes.Equal(want.Upgrade, got.Upgrade),
+			"%q Upgrade: expected %x got %x", k, want.Upgrade, got.Upgrade)
+	}
+}
 
 func TestGetChainConfigsFromFiles(t *testing.T) {
 	tests := map[string]struct {
@@ -91,7 +109,7 @@ func TestGetChainConfigsFromFiles(t *testing.T) {
 			require.Equal(root, v.GetString(ChainConfigDirKey))
 			chainConfigs, err := getChainConfigs(v)
 			require.NoError(err)
-			require.Equal(test.expected, chainConfigs)
+			equalChainConfigs(t, test.expected, chainConfigs)
 		})
 	}
 }
@@ -151,7 +169,11 @@ func TestGetChainConfigsDirNotExist(t *testing.T) {
 			// don't read with getConfigFromViper since it's very slow.
 			chainConfigs, err := getChainConfigs(v)
 			require.ErrorIs(err, test.expectedErr)
-			require.Equal(test.expected, chainConfigs)
+			if test.expected == nil {
+				require.Nil(chainConfigs)
+			} else {
+				equalChainConfigs(t, test.expected, chainConfigs)
+			}
 		})
 	}
 }
@@ -171,7 +193,7 @@ func TestSetChainConfigDefaultDir(t *testing.T) {
 	chainConfigs, err := getChainConfigs(v)
 	require.NoError(err)
 	expected := map[string]chains.ChainConfig{"C": {Config: []byte("helloworld"), Upgrade: []byte(nil)}}
-	require.Equal(expected, chainConfigs)
+	equalChainConfigs(t, expected, chainConfigs)
 }
 
 func TestGetChainConfigsFromFlags(t *testing.T) {
@@ -238,7 +260,7 @@ func TestGetChainConfigsFromFlags(t *testing.T) {
 			// Parse config
 			chainConfigs, err := getChainConfigs(v)
 			require.NoError(err)
-			require.Equal(test.expected, chainConfigs)
+			equalChainConfigs(t, test.expected, chainConfigs)
 		})
 	}
 }
