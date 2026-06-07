@@ -158,6 +158,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
