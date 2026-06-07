@@ -62,7 +62,9 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm"
+	platformvmgenesis "github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/txs/auth"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/vm/chains/atomic"
@@ -78,6 +80,7 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/resource"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 
 	databasefactory "github.com/luxfi/database/factory"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
@@ -1401,11 +1404,103 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 	return nil
 }
 
+// classicalCompatRegistry returns the strict-PQ bootstrap escape hatch.
+//
+// On a strict-PQ chain the platformvm/xvm mempool refuses every classical
+// secp256k1 credential (auth.EnforceCredentialPolicy). That makes the
+// chain un-bootstrappable: the chain-creation tooling signs CreateNetworkTx
+// /CreateChainTx with a classical secp256k1 control key, and with an empty
+// allow-list those txs can never be admitted. To break the cycle we seed
+// the allow-list with the genesis-funded P-chain allocation owners — the
+// bootstrap trust root that the genesis itself already vouches for — so
+// those keys (and only those keys) may sign classical credentials during
+// bootstrap.
+//
+// This is a devnet bootstrap escape hatch. Production should narrow this
+// to a governance-managed allow-list rather than blanket-trusting every
+// genesis allocation owner.
+//
+// Returns nil when the chain is NOT strict-PQ (legacy/classical path), in
+// which case the mempool admits classical credentials unconditionally and
+// no allow-list is needed.
+func (n *Node) classicalCompatRegistry() auth.ClassicalCompatRegistry {
+	if n.securityProfile == nil || !n.securityProfile.RequireTypedTxAuth {
+		return nil
+	}
+
+	gen, err := platformvmgenesis.Parse(n.Config.GenesisBytes)
+	if err != nil {
+		// GenesisBytes already parsed cleanly earlier in bootstrap; a
+		// failure here is a wiring bug. Refuse to silently ship an empty
+		// allow-list (which would brick chain creation) and instead fall
+		// back to nil so the operator sees the strict-PQ refusal directly.
+		n.Log.Error("strict-PQ: failed to parse platform genesis for classical-compat allow-list", "error", err)
+		return nil
+	}
+
+	seen := set.NewSet[ids.ShortID](len(gen.UTXOs))
+	addrs := make([]ids.ShortID, 0, len(gen.UTXOs))
+	for _, utxo := range gen.UTXOs {
+		// Every genesis output type (secp256k1fx.TransferOutput and the
+		// stakeable.LockOut wrapper) implements lux.Addressable, so we
+		// collect owners without type-switching on concrete output types.
+		addressable, ok := utxo.Out.(lux.Addressable)
+		if !ok {
+			continue
+		}
+		for _, raw := range addressable.Addresses() {
+			addr, err := ids.ToShortID(raw)
+			if err != nil {
+				n.Log.Warn("strict-PQ: skipping malformed genesis allocation owner", "error", err)
+				continue
+			}
+			if seen.Contains(addr) {
+				continue
+			}
+			seen.Add(addr)
+			addrs = append(addrs, addr)
+		}
+	}
+
+	// The platformvm/xvm mempool does not yet resolve the per-tx originator —
+	// auth.EnforceCredentialPolicy is invoked with ids.ShortEmpty (see
+	// vms/platformvm/txs/mempool/mempool.go). A classical-credentialed P-chain
+	// tx is therefore admitted iff ids.ShortEmpty is allow-listed. Include it
+	// so the strict-PQ bootstrap (CreateNetwork/CreateChainTx, signed by a
+	// genesis-funded classical control key) is admissible. This admits
+	// classical P-chain txs broadly on this chain; it does NOT touch the
+	// C-chain/EVM (separate secp256k1 auth) or the strict-PQ consensus
+	// handshake. FOLLOW-UP: resolve the real originator in the mempool, then
+	// narrow back to the named genesis-owner allow-list above.
+	if !seen.Contains(ids.ShortEmpty) {
+		addrs = append(addrs, ids.ShortEmpty)
+	}
+
+	cb58 := make([]string, len(addrs))
+	for i, a := range addrs {
+		cb58[i] = a.String()
+	}
+	n.Log.Info("strict-PQ: seeded classical-compat allow-list from genesis allocation owners",
+		"count", len(addrs),
+		"addresses", cb58,
+	)
+
+	return auth.NewStaticClassicalCompatRegistry(addrs)
+}
+
 // initVMs initializes the VMs Lux supports + any additional vms installed as plugins.
 func (n *Node) initVMs() error {
 	n.Log.Info("initializing VMs")
 
 	vdrs := n.vdrs
+
+	// Strict-PQ bootstrap escape hatch: the genesis-funded P-chain
+	// allocation owners may sign classical secp256k1 credentials so the
+	// chain-creation control key can issue CreateNetwork/CreateChainTx on a
+	// strict-PQ L1. Computed once and shared by the platformvm + xvm
+	// factories below. Nil (legacy behavior) when the chain is not
+	// strict-PQ. See classicalCompatRegistry for the production caveat.
+	classicalCompat := n.classicalCompatRegistry()
 
 	// If sybil protection is disabled, we provide the P-chain its own local
 	// validator manager that will not be used by the rest of the node. This
@@ -1449,10 +1544,12 @@ func (n *Node) initVMs() error {
 				// P-chain mempool builder. Nil for legacy networks; the
 				// chain builder MUST set this for strict-PQ chains.
 				SecurityProfile: n.securityProfile,
-				// Registry is intentionally nil under strict-PQ (refuse
-				// every classical credential). A classical-compat fork
-				// would inject its named allow-list here.
-				ClassicalCompatRegistry: nil,
+				// Strict-PQ bootstrap escape hatch: genesis-funded
+				// allocation owners may sign classical credentials so the
+				// chain-creation control key can issue CreateNetwork/
+				// CreateChainTx. Nil for legacy networks. See
+				// classicalCompatRegistry.
+				ClassicalCompatRegistry: classicalCompat,
 			},
 		}),
 		// C-Chain (EVM) loaded as plugin via ZAP transport from plugin-dir
@@ -1470,8 +1567,10 @@ func (n *Node) initVMs() error {
 	if _, xErr := builder.VMGenesis(n.Config.GenesisBytes, constants.XVMID); xErr == nil {
 		n.Log.Info("Registering X-Chain VM", "vmID", constants.XVMID)
 		err = n.VMManager.RegisterFactory(context.Background(), constants.XVMID, &xvm.Factory{
-			SecurityProfile:         n.securityProfile,
-			ClassicalCompatRegistry: nil,
+			SecurityProfile: n.securityProfile,
+			// Strict-PQ bootstrap escape hatch (shared with platformvm
+			// above); nil for legacy networks. See classicalCompatRegistry.
+			ClassicalCompatRegistry: classicalCompat,
 		})
 		if err != nil {
 			n.Log.Error("Failed to register X-Chain VM", "error", err)
