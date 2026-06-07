@@ -286,8 +286,8 @@ github.com/luxfi/filesystem v0.0.1 h1:VZ6xMFKaAPBW/ddlMsDnI2G0VU1lV5rYaVcW5d+KwE
 github.com/luxfi/filesystem v0.0.1/go.mod h1:OQVSU6XNwqrr1AI+MqkID2taHUclx7NYmmr3svgttec=
 github.com/luxfi/formatting v1.0.1 h1:ZnE1rAdEUds9yAegdVdGDOBGN6hLMPOv6E03Fp8IEYo=
 github.com/luxfi/formatting v1.0.1/go.mod h1:mYzNf5DJOiqSSKUPzNj5dKy4tstFbN3pZlkI5716eKc=
-github.com/luxfi/genesis v1.13.8 h1:oddTmow0gEX/q/FrLQv77jXuSePCFRyMUvT9Pr3WnCw=
-github.com/luxfi/genesis v1.13.8/go.mod h1:iwXcnFHY997cWUKzyP4SCBl7o493SYHQniy3QViZOAg=
+github.com/luxfi/genesis v1.13.14 h1:CauxugSR1NP6Zhng+6BvBvXjTnbMwQrfGILg5a9LbR0=
+github.com/luxfi/genesis v1.13.14/go.mod h1:qUa+AcTWwxv0x+CJochBsRNOMbmEBjw07HJKZLhs5c0=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8 h1:9ier0p55ErSpoXHRJpZ04WV5HwwMB1uDrU7PHGBKG2U=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8/go.mod h1:DzU+GYUFv12ja4Vc46bWKNBBmNYbcow3u/DASx4wpfI=
 github.com/luxfi/geth v1.16.99 h1:LDN2D5r3EEukdYv4ha2zBkfp80konzIRSfe9HCK2RZ4=

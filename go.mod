@@ -126,7 +126,7 @@ require (
 	github.com/luxfi/constants v1.5.8-0.20260603055356-93c2c2ceb9ca
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.13.8
+	github.com/luxfi/genesis v1.13.14
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.16.99
 	github.com/luxfi/go-bip39 v1.1.2
@@ -147,6 +147,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.0
 	github.com/luxfi/warp v1.19.3
+	github.com/luxfi/zap v0.7.2
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.uber.org/zap v1.27.1
@@ -180,7 +181,6 @@ require (
 	github.com/luxfi/staking v1.5.0 // indirect
 	github.com/luxfi/threshold v1.9.7 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
-	github.com/luxfi/zap v0.7.2 // indirect
 	github.com/luxfi/zapcodec v1.0.1 // indirect
 	github.com/luxfi/zapdb v1.10.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
