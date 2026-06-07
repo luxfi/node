@@ -5,7 +5,6 @@ package airdrop
 
 import (
 	"context"
-	"github.com/go-json-experiment/json"
 	"errors"
 	"math/big"
 	"sync"
@@ -233,9 +232,8 @@ func (m *Manager) loadSnapshot() error {
 	return nil
 }
 
-// loadClaims loads existing claims from the database
+// loadClaims loads existing claims from the database (ZAP-encoded).
 func (m *Manager) loadClaims() error {
-	// Load claims from database
 	claimsData, err := m.db.Get([]byte("airdrop_claims"))
 	if err != nil {
 		if err == database.ErrNotFound {
@@ -244,8 +242,8 @@ func (m *Manager) loadClaims() error {
 		return err
 	}
 
-	var claims map[common.Address]*AirdropClaim
-	if err := json.Unmarshal(claimsData, &claims); err != nil {
+	claims, err := decodeClaims(claimsData)
+	if err != nil {
 		return err
 	}
 
@@ -253,14 +251,13 @@ func (m *Manager) loadClaims() error {
 	return nil
 }
 
-// saveClaim saves a claim to the database
+// saveClaim persists the full claims map to the database (ZAP-encoded).
+// The argument is retained for call-site compatibility but unused — the
+// receiver writes the entire in-memory map, the same semantics as the
+// legacy JSON path.
 func (m *Manager) saveClaim(claim *AirdropClaim) error {
-	claimsData, err := json.Marshal(m.claims)
-	if err != nil {
-		return err
-	}
-
-	return m.db.Put([]byte("airdrop_claims"), claimsData)
+	_ = claim
+	return m.db.Put([]byte("airdrop_claims"), encodeClaims(m.claims))
 }
 
 // verifySignature verifies ownership of the Ethereum address
