@@ -94,12 +94,12 @@ type VM struct {
 	db database.Database
 
 	// Additional fields needed for platformvm
-	log      log.Logger
-	nodeID   ids.NodeID
-	lock     sync.RWMutex
+	log         log.Logger
+	nodeID      ids.NodeID
+	lock        sync.RWMutex
 	utxoAssetID ids.ID
-	chainID  ids.ID
-	state state.State
+	chainID     ids.ID
+	state       state.State
 
 	fx            fx.Fx
 	codecRegistry pcodecs.Registry
@@ -224,13 +224,8 @@ func (vm *VM) Initialize(
 	// Initialize utxo.UTXOAssetID from the context
 	utxo.UTXOAssetID = init.Runtime.UTXOAssetID
 
-	// Initialize vm.utxoAssetID for GetStakingAssetID API
-	// Use LUXAssetID if set, otherwise fall back to UTXOAssetID
-	if init.Runtime.UTXOAssetID != ids.Empty {
-		vm.utxoAssetID = init.Runtime.UTXOAssetID
-	} else {
-		vm.utxoAssetID = init.Runtime.UTXOAssetID
-	}
+	// Initialize vm.utxoAssetID for the GetStakingAssetID API.
+	vm.utxoAssetID = init.Runtime.UTXOAssetID
 
 	// Get the current database from the DBManager
 	// Since DBManager is now an interface{}, we need to handle it differently
