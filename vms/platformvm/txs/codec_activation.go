@@ -4,36 +4,21 @@
 package txs
 
 // ZAPCodecActivationTimestamp is the unix timestamp at which the
-// canonical write codec for the P-chain transitions from
-// linearcodec (V1, big-endian) to zapcodec (V2, little-endian).
+// canonical write codec for the P-chain transitions from V1 to V2.
 //
-// Value: 1782864000 = 2026-07-01 00:00:00 UTC.
+// Value: 0 — ZAP-native is mandatory from genesis (LP-023). Aligned
+// with proto/zap_native/codec_select.go: ZAPActivationUnix=0. There
+// is no pre-activation regime in this binary; every emitted block
+// carries the V2 wire prefix.
 //
-// Why 2026-07-01:
-//
-//   - The historical Quasar activation milestone (Dec 25 2025 16:20
-//     PST) is retro-impossible for a wire-format flip; the cluster
-//     has been running and producing V1-encoded blocks since then.
-//   - 2026-07-01 aligns with the existing post-Quasar phase-2
-//     precompile activation calendar (see the network of blockchains
-//     architecture memo in MEMORY.md). Bundling wire-codec flips
-//     with precompile bundles reduces the number of forward-dated
-//     activations operators must track.
-//   - Far enough out that every validator binary in the field before
-//     activation will recognise V2 as a registered codec (this
-//     constant ships in v1.28.x+ and the activation gives operators
-//     a multi-week soak window).
+// V1 remains a registered READ slot for nominal historical
+// compatibility (the slot map mechanism that would otherwise serve a
+// pre-activation network). In this binary V1 and V2 use identical
+// LE wire encoding and identical slot maps, so the version byte is
+// the only thing that distinguishes them on the wire.
 //
 // Read path is timestamp-blind: any binary with this constant baked
-// in unmarshals both V1 and V2 bytes via codec.Manager's wire-prefix
-// dispatch. The timestamp gates only the WRITE path — which version
-// the mempool/block-builder/signer emits.
-//
-// Coordination protocol: changing this constant requires every
-// validator to ship the new binary BEFORE the new timestamp ticks.
-// Otherwise validators on the old binary will reject V2-prefixed
-// blocks produced by the new binary (codec.Manager returns
-// ErrUnknownVersion) and the chain halts. A long forward-dated
-// activation gives operators time to upgrade without coordination
-// drama.
-const ZAPCodecActivationTimestamp uint64 = 1782864000
+// in unmarshals both V1 and V2 bytes via the multi-version codec's
+// wire-prefix dispatch. The timestamp gates only the WRITE path —
+// which version the mempool/block-builder/signer emits.
+const ZAPCodecActivationTimestamp uint64 = 0

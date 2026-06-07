@@ -50,7 +50,7 @@ func TestParseBlockResultsInvalid(t *testing.T) {
 				},
 				make([]byte, 1<<24), // Append the bitset
 			),
-			wantErr: pcodecs.ErrMaxSliceLenExceeded,
+			wantErr: pcodecs.ErrMaxSizeExceeded,
 		},
 	}
 	for _, test := range tests {

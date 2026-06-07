@@ -74,8 +74,8 @@ func TestParseAcceptsV1Genesis(t *testing.T) {
 	require.NoError(err)
 	require.GreaterOrEqual(len(v1Bytes), 2)
 
-	prefix := binary.BigEndian.Uint16(v1Bytes[:2])
-	require.Equal(txs.CodecVersionV1, prefix, "Genesis.Bytes must emit the v1 wire prefix")
+	prefix := binary.LittleEndian.Uint16(v1Bytes[:2])
+	require.Equal(txs.CodecVersionV1, prefix, "Genesis.Bytes must emit the v1 wire prefix (LE per LP-023)")
 
 	parsed, err := Parse(v1Bytes)
 	require.NoError(err)

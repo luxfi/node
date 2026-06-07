@@ -42,11 +42,11 @@ func TestCodecVersionV0V1Coexist(t *testing.T) {
 	v1Bytes, err := Codec.Marshal(CodecVersionV1, tx)
 	require.NoError(err, "v1 marshal")
 
-	// First 2 bytes carry the version prefix.
+	// First 2 bytes carry the version prefix (LE per LP-023).
 	require.Equal(byte(0x00), v0Bytes[0])
 	require.Equal(byte(0x00), v0Bytes[1])
-	require.Equal(byte(0x00), v1Bytes[0])
-	require.Equal(byte(0x01), v1Bytes[1])
+	require.Equal(byte(0x01), v1Bytes[0])
+	require.Equal(byte(0x00), v1Bytes[1])
 
 	// The post-prefix payload must be identical for AdvanceTimeTx —
 	// slot 19 is the same in both layouts. This is the structural
@@ -147,10 +147,10 @@ func TestCrossVersionRefuses(t *testing.T) {
 	v0Bytes, err := Codec.Marshal(CodecVersionV0, tx)
 	require.NoError(err)
 
-	// Build a Frankenbytes: v1 prefix + v0 payload.
+	// Build a Frankenbytes: v1 prefix + v0 payload (LE per LP-023).
 	frank := make([]byte, len(v0Bytes))
 	copy(frank, v0Bytes)
-	frank[0], frank[1] = 0x00, 0x01
+	frank[0], frank[1] = 0x01, 0x00
 
 	// Parse must NOT yield a tx whose TxID equals the v0 tx's TxID —
 	// the version prefix is part of hash input. AdvanceTimeTx is one
