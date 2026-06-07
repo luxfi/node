@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
-	"github.com/go-json-experiment/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -161,10 +160,10 @@ func (m *SQLiteMaterializer) initSystemTables() error {
 			block_height INTEGER,
 			FOREIGN KEY(doc_hash) REFERENCES _documents(doc_hash)
 		)`,
-		// Collection schemas
+		// Collection schemas — stored as ZAP blob.
 		`CREATE TABLE IF NOT EXISTS _schemas (
 			collection TEXT PRIMARY KEY,
-			schema_json TEXT NOT NULL,
+			schema_zap BLOB NOT NULL,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL
 		)`,
@@ -233,11 +232,11 @@ func (m *SQLiteMaterializer) CreateCollection(ctx context.Context, schema *Colle
 		}
 	}
 
-	// Store schema
-	schemaJSON, _ := json.Marshal(schema)
+	// Store schema as ZAP blob.
+	schemaBlob := encodeSchemaBlob(schema)
 	_, err := m.db.ExecContext(ctx,
-		"INSERT OR REPLACE INTO _schemas (collection, schema_json, created_at, updated_at) VALUES (?, ?, ?, ?)",
-		schema.Name, string(schemaJSON), time.Now().Unix(), time.Now().Unix())
+		"INSERT OR REPLACE INTO _schemas (collection, schema_zap, created_at, updated_at) VALUES (?, ?, ?, ?)",
+		schema.Name, schemaBlob, time.Now().Unix(), time.Now().Unix())
 	if err != nil {
 		return fmt.Errorf("failed to store schema: %w", err)
 	}
@@ -329,9 +328,9 @@ func (m *SQLiteMaterializer) applySet(ctx context.Context, tx *sql.Tx, op *Opera
 		data = op.EncryptedOp
 	}
 
-	// Parse field updates
-	var updates map[string]any
-	if err := json.Unmarshal(data, &updates); err != nil {
+	// Parse field updates from ZAP-encoded user data envelope.
+	updates, err := decodeUserData(data)
+	if err != nil {
 		return err
 	}
 
@@ -399,12 +398,13 @@ func (m *SQLiteMaterializer) insertDocument(ctx context.Context, tx *sql.Tx, op 
 	return err
 }
 
-// insertDynamic inserts into a dynamically created table
+// insertDynamic inserts into a dynamically created table. The user-data
+// payload is persisted as a ZAP blob in the _data column.
 func (m *SQLiteMaterializer) insertDynamic(ctx context.Context, tx *sql.Tx, collection, docID string, op *Operation, data map[string]any) error {
-	// Create table if not exists with id and _data JSON column
+	// Create table if not exists with id and ZAP-blob _data column.
 	createSQL := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 		id TEXT PRIMARY KEY,
-		_data TEXT,
+		_data BLOB,
 		_seq INTEGER NOT NULL,
 		_version BLOB NOT NULL,
 		_created_at INTEGER NOT NULL,
@@ -415,12 +415,15 @@ func (m *SQLiteMaterializer) insertDynamic(ctx context.Context, tx *sql.Tx, coll
 		return err
 	}
 
-	dataJSON, _ := json.Marshal(data)
+	dataBlob, err := encodeUserData(data)
+	if err != nil {
+		return err
+	}
 	now := time.Now().Unix()
 
-	_, err := tx.ExecContext(ctx,
+	_, err = tx.ExecContext(ctx,
 		fmt.Sprintf("INSERT INTO %s (id, _data, _seq, _version, _created_at, _updated_at) VALUES (?, ?, ?, ?, ?, ?)", collection),
-		docID, string(dataJSON), op.Seq, op.OpCommitment[:], now, now)
+		docID, dataBlob, op.Seq, op.OpCommitment[:], now, now)
 	return err
 }
 
@@ -452,19 +455,17 @@ func (m *SQLiteMaterializer) updateDocument(ctx context.Context, tx *sql.Tx, col
 	return err
 }
 
-// applyCounter applies increment/decrement operations
+// applyCounter applies increment/decrement operations. The (Field, Delta)
+// payload is decoded from a ZAP envelope; see appchain_zap.go::CounterOp.
 func (m *SQLiteMaterializer) applyCounter(ctx context.Context, tx *sql.Tx, op *Operation, docHash [32]byte) error {
-	// Decrypt to get field and delta
+	// Decrypt to get field and delta.
 	data, err := m.encryptor.Decrypt(ctx, op.EncryptedOp, DomainShared, nil)
 	if err != nil {
 		data = op.EncryptedOp
 	}
 
-	var counterOp struct {
-		Field string `json:"field"`
-		Delta int64  `json:"delta"`
-	}
-	if err := json.Unmarshal(data, &counterOp); err != nil {
+	counterOp, err := decodeCounterOp(data)
+	if err != nil {
 		return err
 	}
 
