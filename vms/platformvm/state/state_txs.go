@@ -76,8 +76,8 @@ func (s *state) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
 
 	utxos := []*lux.UTXO(nil)
 	for it.Next() {
-		utxo := &lux.UTXO{}
-		if _, err := txs.GenesisCodec.Unmarshal(it.Value(), utxo); err != nil {
+		utxo, err := lux.ParseUTXO(it.Value())
+		if err != nil {
 			return nil, err
 		}
 		utxos = append(utxos, utxo)
@@ -128,7 +128,7 @@ func (s *state) writeRewardUTXOs() error {
 		txDB := linkeddb.NewDefault(rawTxDB)
 
 		for _, utxo := range utxos {
-			utxoBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, utxo)
+			utxoBytes, err := utxo.WireBytes()
 			if err != nil {
 				return fmt.Errorf("failed to serialize reward UTXO: %w", err)
 			}
