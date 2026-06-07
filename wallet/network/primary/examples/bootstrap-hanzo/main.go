@@ -10,9 +10,9 @@ package main
 
 import (
 	"context"
-	"github.com/go-json-experiment/json"
 	"flag"
 	"fmt"
+	"github.com/go-json-experiment/json"
 	"log"
 	"os"
 	"strings"
@@ -167,14 +167,14 @@ func main() {
 		log.Fatalf("wallet sync: %v", err)
 	}
 
-	luxAssetID := w.X().Builder().Context().UTXOAssetID
+	utxoAssetID := w.X().Builder().Context().UTXOAssetID
 	pBal, err := w.P().Builder().GetBalance()
 	if err != nil {
 		log.Fatalf("P balance: %v", err)
 	}
-	log.Printf("[%s] wallet P-chain LUX = %d nLUX", *network, pBal[luxAssetID])
-	if pBal[luxAssetID] < 1_500_000_000 { // 1.5 LUX min: createNetwork ~1 LUX + createChain ~0.5 LUX
-		log.Fatalf("insufficient P-chain balance, need >= 1.5 LUX, have %d nLUX", pBal[luxAssetID])
+	log.Printf("[%s] wallet P-chain LUX = %d nLUX", *network, pBal[utxoAssetID])
+	if pBal[utxoAssetID] < 1_500_000_000 { // 1.5 LUX min: createNetwork ~1 LUX + createChain ~0.5 LUX
+		log.Fatalf("insufficient P-chain balance, need >= 1.5 LUX, have %d nLUX", pBal[utxoAssetID])
 	}
 
 	owner := &secp256k1fx.OutputOwners{
