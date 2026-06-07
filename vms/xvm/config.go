@@ -5,6 +5,7 @@ package xvm
 
 import (
 	"github.com/go-json-experiment/json"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"
@@ -31,6 +32,6 @@ func ParseConfig(configBytes []byte) (Config, error) {
 	}
 
 	cfg := DefaultConfig
-	err := json.Unmarshal(configBytes, &cfg)
+	err := json.Unmarshal(configBytes, &cfg, jsonv1.FormatDurationAsNano(true))
 	return cfg, err
 }
