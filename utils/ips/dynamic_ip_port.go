@@ -1,11 +1,9 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-
 package ips
 
 import (
-	"github.com/go-json-experiment/json"
 	"net"
 	"sync"
 )
@@ -47,11 +45,4 @@ func (i *dynamicIPPort) SetIP(ip net.IP) {
 	defer i.lock.Unlock()
 
 	i.ipPort.IP = ip
-}
-
-func (i *dynamicIPPort) MarshalJSON() ([]byte, error) {
-	i.lock.RLock()
-	defer i.lock.RUnlock()
-
-	return json.Marshal(i.ipPort)
 }
