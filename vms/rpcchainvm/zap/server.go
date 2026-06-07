@@ -11,6 +11,7 @@ import (
 
 	zapwire "github.com/luxfi/api/zap"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/vm"
 )
@@ -175,8 +176,10 @@ func (s *Server) handleGetBlock(ctx context.Context, payload []byte) (zapwire.Me
 		return 0, nil, err
 	}
 
-	var blkID [32]byte
-	copy(blkID[:], req.ID)
+	blkID, err := ids.ToID(req.ID)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	blk, err := s.vm.GetBlock(ctx, blkID)
 	if err != nil {
@@ -214,8 +217,10 @@ func (s *Server) handleSetPreference(ctx context.Context, payload []byte) (zapwi
 		return 0, nil, err
 	}
 
-	var blkID [32]byte
-	copy(blkID[:], req.ID)
+	blkID, err := ids.ToID(req.ID)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	if err := s.vm.SetPreference(ctx, blkID); err != nil {
 		return 0, nil, err
@@ -257,8 +262,10 @@ func (s *Server) handleBlockAccept(ctx context.Context, payload []byte) (zapwire
 		return 0, nil, err
 	}
 
-	var blkID [32]byte
-	copy(blkID[:], req.ID)
+	blkID, err := ids.ToID(req.ID)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	blk, err := s.vm.GetBlock(ctx, blkID)
 	if err != nil {
@@ -278,8 +285,10 @@ func (s *Server) handleBlockReject(ctx context.Context, payload []byte) (zapwire
 		return 0, nil, err
 	}
 
-	var blkID [32]byte
-	copy(blkID[:], req.ID)
+	blkID, err := ids.ToID(req.ID)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	blk, err := s.vm.GetBlock(ctx, blkID)
 	if err != nil {
@@ -338,8 +347,14 @@ func (s *Server) handleGetAncestors(ctx context.Context, payload []byte) (zapwir
 		return 0, nil, err
 	}
 
-	var blkID [32]byte
-	copy(blkID[:], req.BlkID)
+	blkID, err := ids.ToID(req.BlkID)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	if req.MaxBlocksNum < 0 {
+		return 0, nil, fmt.Errorf("getancestors: negative MaxBlocksNum %d", req.MaxBlocksNum)
+	}
 
 	ancestors := make([][]byte, 0, req.MaxBlocksNum)
 	currentID := blkID
