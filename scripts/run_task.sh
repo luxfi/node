@@ -26,7 +26,11 @@ else
   env -u GOOS -u GOARCH GOBIN="${bin_dir}" go install github.com/go-task/task/v3/cmd/task@v3.39.2
   # Re-export the cross-compile target so the build step inside the task
   # (scripts/build.sh -> `go build`) produces the requested artifact.
-  [ -n "${target_goos}" ] && export GOOS="${target_goos}"
-  [ -n "${target_goarch}" ] && export GOARCH="${target_goarch}"
+  if [ -n "${target_goos}" ]; then
+    export GOOS="${target_goos}"
+  fi
+  if [ -n "${target_goarch}" ]; then
+    export GOARCH="${target_goarch}"
+  fi
   exec "${task_bin}" "${@}"
 fi
