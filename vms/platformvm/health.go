@@ -38,7 +38,7 @@ func (vm *VM) HealthCheck(context.Context) (chain.HealthResult, error) {
 		case database.ErrNotFound:
 			vm.metrics.SetTimeUntilNetUnstake(chainID, 0)
 		default:
-			return chain.HealthResult{}, fmt.Errorf("couldn't get current chain validator of %q: %w", chainID, err)
+			return chain.HealthResult{}, fmt.Errorf("couldn't get current network validator on %q: %w", chainID, err)
 		}
 	}
 	return chain.HealthResult{Healthy: true, Details: nil}, nil

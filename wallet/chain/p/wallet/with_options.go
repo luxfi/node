@@ -70,7 +70,9 @@ func (w *withOptions) IssueAddValidatorTx(
 	)
 }
 
-// Removed in regenesis
+// Deprecated: Use IssueAddValidatorTx. Under LP-018 sovereign-L1,
+// validators join a network — never a chain. See the wallet interface
+// declaration for the full migration note.
 func (w *withOptions) IssueAddChainValidatorTx(
 	vdr *txs.ChainValidator,
 	options ...common.Option,
