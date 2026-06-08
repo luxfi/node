@@ -109,20 +109,23 @@ func (v *ValidatorManager) Connected(nodeID ids.NodeID, nodeVersion *version.App
 			)
 		}
 
-		// Also add to ALL tracked chain validator sets so chain consensus
-		// engines can find validators for their chains. Without this, non-primary
-		// chains can't gossip blocks because the validator set is empty.
+		// Also add to ALL tracked network validator sets so each
+		// network's consensus engine can find validators for the chains
+		// it hosts. Without this, non-primary networks can't gossip
+		// blocks because the validator set is empty. Under the
+		// canonical model, validators validate networks; chains live on
+		// networks.
 		for _, networkID := range v.trackedNetworks {
 			networkTxID := ids.Empty
 			copy(networkTxID[:], nodeID.Bytes())
 			if err := v.vdrs.AddStaker(networkID, nodeID, nil, networkTxID, v.weight); err != nil {
-				v.log.Debug("failed to add chain validator on connect",
+				v.log.Debug("failed to add network validator on connect",
 					log.Stringer("nodeID", nodeID),
 					log.Stringer("networkID", networkID),
 					log.Reflect("error", err),
 				)
 			} else {
-				v.log.Info("added chain validator on connect (sybil protection disabled)",
+				v.log.Info("added network validator on connect (sybil protection disabled)",
 					log.Stringer("nodeID", nodeID),
 					log.Stringer("networkID", networkID),
 				)
@@ -173,10 +176,10 @@ func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 			)
 		}
 
-		// Also remove from all tracked chain validator sets
+		// Also remove from all tracked network validator sets.
 		for _, networkID := range v.trackedNetworks {
 			if err := v.vdrs.RemoveWeight(networkID, nodeID, v.weight); err != nil {
-				v.log.Debug("failed to remove chain validator on disconnect",
+				v.log.Debug("failed to remove network validator on disconnect",
 					log.Stringer("nodeID", nodeID),
 					log.Stringer("networkID", networkID),
 				)

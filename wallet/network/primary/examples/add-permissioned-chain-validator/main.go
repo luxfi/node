@@ -1,5 +1,13 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
+//
+// Deprecated example: this binary exercises the legacy
+// AddChainValidatorTx flow (validator scoped to a non-primary network
+// id). Under LP-018 sovereign-L1, validators join a network — never a
+// chain — via AddValidatorTx. A sovereign L1 IS a primary network at
+// its own networkID; new code should issue AddValidatorTx against that
+// primary network. This example is kept to exercise the deprecated tx
+// path for one release cycle.
 
 package main
 
