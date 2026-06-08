@@ -84,10 +84,16 @@ type Builder interface {
 		options ...common.Option,
 	) (*txs.AddValidatorTx, error)
 
-	// NewAddChainValidatorTx creates a new validator of a chain.
+	// NewAddChainValidatorTx builds an unsigned legacy per-chain
+	// validator registration tx.
 	//
 	// - [vdr] specifies all the details of the validation period such as the
 	//   startTime, endTime, sampling weight, nodeID, and netID.
+	//
+	// Deprecated: Use NewAddValidatorTx. Under LP-018 sovereign-L1,
+	// validators join a network — never a chain. A sovereign L1 IS a
+	// primary network at its own networkID. Retained for one release
+	// cycle for wire/codec compat with pre-LP-018 binaries.
 	NewAddChainValidatorTx(
 		vdr *txs.ChainValidator,
 		options ...common.Option,

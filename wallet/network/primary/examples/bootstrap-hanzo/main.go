@@ -6,6 +6,13 @@
 //	MNEMONIC="..." go run . --uri=http://localhost:19640 --network=testnet \
 //	  --genesis=/Users/z/work/lux/genesis/configs/hanzo-testnet/genesis.json \
 //	  --hrp=test --bip44-idx=5
+//
+// Deprecated post-chain-create flow: after CreateChainTx, this binary
+// adds validators to the created network via the legacy
+// IssueAddChainValidatorTx. Under LP-018 sovereign-L1, validators join
+// a network via AddValidatorTx — chains live on networks, validators
+// do not register per-chain. The legacy call is preserved for one
+// release cycle for wire/codec compat with pre-LP-018 binaries.
 package main
 
 import (
