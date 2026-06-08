@@ -63,20 +63,31 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueAddChainValidatorTx creates, signs, and issues a new validator of a
-	// chain.
+	// IssueAddChainValidatorTx creates, signs, and issues a legacy
+	// per-chain validator registration tx.
 	//
 	// - [vdr] specifies all the details of the validation period such as the
 	//   startTime, endTime, sampling weight, nodeID, and chainID.
+	//
+	// Deprecated: Use IssueAddValidatorTx. Under LP-018 sovereign-L1,
+	// validators join a network — never a chain — via AddValidatorTx.
+	// Chains live on networks (created via CreateChainTx); the
+	// canonical model has validators validate networks, not chains. A
+	// sovereign L1 IS a primary network at its own networkID (Lux
+	// primaries at 1/2/3/1337; any downstream consumer's primary at
+	// whatever uint32 it picks). Retained for one release cycle for
+	// wire/codec compat with pre-LP-018 binaries.
 	IssueAddChainValidatorTx(
 		vdr *txs.ChainValidator,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueRemoveChainValidatorTx creates, signs, and issues a transaction
-	// that removes a validator of a chain.
+	// IssueRemoveChainValidatorTx creates, signs, and issues a
+	// transaction that removes a validator from a network (legacy:
+	// from a chain's permissioned validator set).
 	//
-	// - [nodeID] is the validator being removed from [chainID].
+	// - [nodeID] is the validator being removed from the network
+	//   referenced by [chainID].
 	IssueRemoveChainValidatorTx(
 		nodeID ids.NodeID,
 		chainID ids.ID,
@@ -365,6 +376,8 @@ func (w *wallet) IssueAddValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
+// Deprecated: Use IssueAddValidatorTx. See the interface declaration
+// for the LP-018 migration note.
 func (w *wallet) IssueAddChainValidatorTx(
 	vdr *txs.ChainValidator,
 	options ...common.Option,
