@@ -5,6 +5,13 @@
 //	MNEMONIC="word1 word2 ..." go run . --network=mainnet
 //	go run . --network=mainnet mainnet-key-01
 //	MNEMONIC="word1 word2 ..." go run . --network=mainnet --chain=zoo
+//
+// Deprecated post-chain-create flow: after CreateChainTx, this binary
+// adds validators to the created network via the legacy
+// IssueAddChainValidatorTx. Under LP-018 sovereign-L1, validators join
+// a network via AddValidatorTx — chains live on networks, validators
+// do not register per-chain. The legacy call is preserved for one
+// release cycle for wire/codec compat with pre-LP-018 binaries.
 package main
 
 import (
