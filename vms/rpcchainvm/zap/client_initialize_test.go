@@ -19,12 +19,12 @@ import (
 )
 
 // TestInitialize_SuccessResponseNotMistakenForError is a regression guard
-// for a wire-protocol misread that bricked every C-Chain start in the
-// 8675312 stack: the client treated every response with MsgResponseFlag set
-// (i.e. ALL responses) as an error, then printed the binary
-// InitializeResponse payload as if it were the error string. The result was
-// "vm error: <unprintable bytes>" and a chain that never came up despite
-// the plugin reporting "VM initialized successfully".
+// for a wire-protocol misread that bricked every C-Chain start in a
+// downstream EVM L1 stack: the client treated every response with
+// MsgResponseFlag set (i.e. ALL responses) as an error, then printed the
+// binary InitializeResponse payload as if it were the error string. The
+// result was "vm error: <unprintable bytes>" and a chain that never came up
+// despite the plugin reporting "VM initialized successfully".
 //
 // What this test asserts: when the plugin returns a well-formed
 // InitializeResponse (with MsgResponseFlag — the normal success encoding),
