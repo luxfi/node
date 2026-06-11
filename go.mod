@@ -31,7 +31,7 @@ require (
 	github.com/luxfi/database v1.19.2
 	github.com/luxfi/ids v1.2.15
 	github.com/luxfi/keychain v1.0.2
-	github.com/luxfi/log v1.4.1
+	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.4.1
 	github.com/luxfi/metric v1.5.8
 	github.com/luxfi/mock v0.1.1
@@ -64,7 +64,7 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.45.0
 	gonum.org/v1/gonum v0.17.0
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -123,7 +123,7 @@ require (
 	github.com/luxfi/chains v1.3.6
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.5.8-0.20260603055356-93c2c2ceb9ca
+	github.com/luxfi/constants v1.5.8
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.13.14
@@ -138,7 +138,7 @@ require (
 	github.com/luxfi/resource v0.0.1
 	github.com/luxfi/rpc v1.1.0
 	github.com/luxfi/runtime v1.1.1
-	github.com/luxfi/sdk v1.17.6
+	github.com/luxfi/sdk v1.17.9
 	github.com/luxfi/sys v0.1.0
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
@@ -170,11 +170,11 @@ require (
 	github.com/luxfi/ai v0.1.0 // indirect
 	github.com/luxfi/corona v0.7.6 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
-	github.com/luxfi/kms v1.11.3 // indirect
+	github.com/luxfi/kms v1.11.4 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/magnetar v1.2.0 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
-	github.com/luxfi/oracle v0.1.1-0.20260429020431-76258cfcddf9 // indirect
+	github.com/luxfi/oracle v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/pulsar v1.1.2 // indirect
 	github.com/luxfi/relay v0.0.0-20260429020048-c629fe160d3c // indirect
@@ -190,14 +190,14 @@ require (
 	github.com/minio/minio-go/v7 v7.0.100 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
-	github.com/tinylib/msgp v1.6.1 // indirect
+	github.com/tinylib/msgp v1.6.3 // indirect
 	go.mongodb.org/mongo-driver v1.17.4 // indirect
 )
 
 require (
 	github.com/luxfi/concurrent v0.0.3
 	github.com/luxfi/proto v1.3.4
-	github.com/luxfi/upgrade v1.0.1-0.20260603055252-f51810805436 // indirect
+	github.com/luxfi/upgrade v1.0.1 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )

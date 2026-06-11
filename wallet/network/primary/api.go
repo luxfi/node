@@ -17,13 +17,11 @@ import (
 	"github.com/luxfi/math/set"
 	_ "github.com/luxfi/node/vms/components/lux" // registers utxo.ParseUTXO ZAP dispatcher
 	"github.com/luxfi/node/vms/platformvm"
-	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/rpc"
 	"github.com/luxfi/sdk/info"
 	lux "github.com/luxfi/utxo"
-	luxwire "github.com/luxfi/utxo/wire"
 
 	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
@@ -255,23 +253,9 @@ func FetchEthState(
 }
 
 // AddAllUTXOs fetches all the UTXOs referenced by [addresses] that were sent
-// from [sourceChainID] to [destinationChainID] from the [client]. It parses
-// the returned UTXOs via either the ZAP wire dispatcher (post-activation
-// builds) or the legacy linearcodec path (V0/V1 wire), dispatching on the
-// 2-byte envelope prefix. Adds them into [utxos]. If [ctx] expires, the
-// returned error is reported immediately.
-//
-// Wire-format dispatch contract:
-//   - ZAP envelope: prefix = (TypeKindReserved=0x00, ShapeKindUTXO=0x0A).
-//     Routed to lux.ParseUTXO via the dispatcher registered by
-//     node/vms/components/lux.
-//   - Legacy codec: prefix = (0x00, V) where V ∈ {0x00,0x01,0x02} is the
-//     2-byte codec version (big-endian uint16 in {0,1,2}). Routed to
-//     ptxs.Codec.Unmarshal into a *lux.UTXO. Required because the
-//     platformvm GetUTXOs server-side encoder still writes V1 wire bytes
-//     (the codec rip is currently asymmetric — wallet was migrated first).
-//
-// Both branches yield a *lux.UTXO; the AddUTXO contract is unchanged.
+// from [sourceChainID] to [destinationChainID] from the [client] and adds
+// them into [utxos]. Each UTXO is decoded by lux.ParseUTXO (ZAP wire). If
+// [ctx] expires, the returned error is reported immediately.
 func AddAllUTXOs(
 	ctx context.Context,
 	utxos walletcommon.UTXOs,
@@ -304,7 +288,7 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			u, err := parseUTXOAnyWire(utxoBytes)
+			u, err := lux.ParseUTXO(utxoBytes)
 			if err != nil {
 				return err
 			}
@@ -322,29 +306,6 @@ func AddAllUTXOs(
 		startUTXO = endUTXO
 	}
 	return nil
-}
-
-// parseUTXOAnyWire decodes a UTXO from either the ZAP wire envelope
-// (post-activation luxd) or the legacy linearcodec wire (pre-rip luxd
-// still in production, including the lux-mainnet validator set as of
-// 2026-06-05). The dispatch is on the 2-byte prefix:
-//
-//   - byte[0] = 0x00, byte[1] = 0x0A → ZAP UTXO envelope (lux.ParseUTXO).
-//   - byte[0] = 0x00, byte[1] ∈ {0x00,0x01,0x02} → legacy codec (V0/V1/V2),
-//     routed through ptxs.Codec.Unmarshal.
-//   - anything else → return ZAP path's error (caller surfaces it).
-//
-// This bridge is removed once the platformvm GetUTXOs server-side encoder
-// is migrated to wire.NewUTXO (tracked separately from the wallet rip).
-func parseUTXOAnyWire(utxoBytes []byte) (*lux.UTXO, error) {
-	if len(utxoBytes) >= 2 && utxoBytes[0] == byte(luxwire.TypeKindReserved) && utxoBytes[1] == byte(luxwire.ShapeKindUTXO) {
-		return lux.ParseUTXO(utxoBytes)
-	}
-	var u lux.UTXO
-	if _, err := ptxs.Codec.Unmarshal(utxoBytes, &u); err != nil {
-		return nil, fmt.Errorf("legacy-codec UTXO parse: %w", err)
-	}
-	return &u, nil
 }
 
 // isXChainNotEnabled detects the canonical "info.getBlockchainID returns
