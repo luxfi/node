@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         goarch: [amd64, arm64]
-    runs-on: evo
+    runs-on: [self-hosted, linux, amd64]
     permissions:
       id-token: write
       contents: read
