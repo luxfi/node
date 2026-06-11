@@ -4,9 +4,12 @@
 package health
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 
 	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/gorilla/rpc/v2"
 
 	apihealth "github.com/luxfi/api/health"
@@ -53,11 +56,21 @@ func NewGetHandler(reporter func(tags ...string) (map[string]apihealth.Result, b
 			// If a health check has failed, we should return a 503.
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
-		// The encoder will call write on the writer, which will write the
-		// header with a 200.
-		_ = json.MarshalWrite(w, apihealth.APIReply{
+		// Buffer the reply — a streaming encoder that errors part-way
+		// (jsonv2 rejects invalid UTF-8, and check Details may embed raw
+		// chain-ID bytes) leaves the client a torn body whose
+		// Content-Length matches the truncation. Buffering makes the
+		// reply atomic; AllowInvalidUTF8 turns binary detail bytes into
+		// replacement runes instead of an encode error.
+		var buf bytes.Buffer
+		err := json.MarshalWrite(&buf, apihealth.APIReply{
 			Checks:  checks,
 			Healthy: healthy,
-		})
+		}, jsontext.AllowInvalidUTF8(true))
+		if err != nil {
+			buf.Reset()
+			fmt.Fprintf(&buf, `{"healthy":%t,"error":"health reply encode failed"}`, healthy)
+		}
+		_, _ = w.Write(buf.Bytes())
 	})
 }
