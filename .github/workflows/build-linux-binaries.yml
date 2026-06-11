@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-x86_64-binaries-tarball:
-    runs-on: evo
+    runs-on: [self-hosted, linux, amd64]
     permissions:
       id-token: write
       contents: read
@@ -68,7 +68,7 @@ jobs:
           rm -rf ${{ github.workspace }}/luxd-pkg
 
   build-arm64-binaries-tarball:
-    runs-on: evo
+    runs-on: [self-hosted, linux, amd64]
     permissions:
       id-token: write
       contents: read
