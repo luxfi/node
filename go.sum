@@ -248,6 +248,8 @@ github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzW
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
 github.com/luxfi/accel v1.2.2 h1:IzG1qUogapr4/KbbHP9avAimu3ioGJqh67WYKHxfZys=
 github.com/luxfi/accel v1.2.2/go.mod h1:5IvpNMfw9FgeBB9oobp+jbauAdhapfhc2bHYPUsHL9Y=
+github.com/luxfi/accel v1.2.4 h1:5VbIHyEvvfobn2zBiTFODxDw1CeqxCepZOLlvkuf9yQ=
+github.com/luxfi/accel v1.2.4/go.mod h1:ISIwAX+ZfsL/S5nsP2JvfldXN6Nc+QzoWf6Jtaq+xsQ=
 github.com/luxfi/address v1.0.1 h1:Sc4keyuVzBIvHr7uVeYZf2/WY9YDGUgDi/iiWenj49g=
 github.com/luxfi/address v1.0.1/go.mod h1:5j3Eh66v9zvv1GbNdZwt+23krV8JlSDaRzmWZU8ZRM0=
 github.com/luxfi/age v1.5.0 h1:G69HbSV4R3vKEH9B0CulnRaMdSdf4RalMgP8xKmxHeI=
@@ -278,6 +280,8 @@ github.com/luxfi/corona v0.7.6 h1:CJP6smygD55dL0HHkKkWryL9H24a+wXvs+L+WchK7Nc=
 github.com/luxfi/corona v0.7.6/go.mod h1:4aD7+ZqnlZ2aVuU/DBQ5aspIagv5ux45LW2sJ4+siY8=
 github.com/luxfi/crypto v1.19.17 h1:l2LLu7UFyICtJVfraLDLRi+lFGiDXKHSL18M9/m1gsQ=
 github.com/luxfi/crypto v1.19.17/go.mod h1:INjdZtke85k8hX/QAmTMAY8bbZ4gzGZQLqURg3xf6Gk=
+github.com/luxfi/crypto v1.19.21 h1:x7s/Yy1BYMv5sbbWsZk+mUU007Z0HX/Ta4/RkrNHiw0=
+github.com/luxfi/crypto v1.19.21/go.mod h1:0tfz+EbAjsW1QBWB0cte9kdjB5XhhYFmCr8BkZRux48=
 github.com/luxfi/crypto/ipa v1.2.4 h1:6xfwhI9/HrcDkF3Ti5/NxsNQIWbwYDJmRSNIHRQ/xfU=
 github.com/luxfi/crypto/ipa v1.2.4/go.mod h1:43J6f6rcfUMrZt4cQectMOZb6Ps+fAEj8ZTPC3Kk+gE=
 github.com/luxfi/database v1.19.2 h1:o1vROPnO1I4LPiA2RkpR2J5zp6RVodgJ5Tct20J+UiA=
