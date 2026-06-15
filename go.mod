@@ -27,7 +27,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.25.15
-	github.com/luxfi/crypto v1.19.17
+	github.com/luxfi/crypto v1.19.21
 	github.com/luxfi/database v1.19.2
 	github.com/luxfi/ids v1.2.15
 	github.com/luxfi/keychain v1.0.2
@@ -117,7 +117,7 @@ require (
 	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.2.2
+	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.14
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.3.6
