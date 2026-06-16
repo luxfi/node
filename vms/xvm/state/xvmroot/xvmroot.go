@@ -147,6 +147,21 @@ func txLeafDigest(t TxLeaf, i uint32) [Size]byte {
 	return hash.ComputeKeccak256Array(b)
 }
 
+// UTXOLeafDigest returns the canonical per-element keccak256 leaf digest d_i for
+// the UTXO at slot index i — the same bytes UTXORoot folds. It is exported so a
+// parallel builder can compute the family's leaf digests across worker
+// goroutines from the one canonical preimage definition (no second copy of the
+// layout), then merkle.Root-combine to a byte-identical root.
+func UTXOLeafDigest(u UTXOLeaf, i uint32) [Size]byte { return utxoLeafDigest(u, i) }
+
+// AssetLeafDigest returns the canonical per-element keccak256 leaf digest d_i for
+// the asset at slot index i — the same bytes AssetRoot folds.
+func AssetLeafDigest(a AssetLeaf, i uint32) [Size]byte { return assetLeafDigest(a, i) }
+
+// TxLeafDigest returns the canonical per-element keccak256 leaf digest d_i for
+// the tx at slot index i — the same bytes TxRoot folds.
+func TxLeafDigest(t TxLeaf, i uint32) [Size]byte { return txLeafDigest(t, i) }
+
 // UTXORoot is the tagged binary Merkle root over the occupied UTXOs' leaf
 // digests, in ascending slot index. Slot index i is the position in utxos
 // (bound into each leaf preimage); a UTXO with (Status & UTXOOccupied) == 0 is
