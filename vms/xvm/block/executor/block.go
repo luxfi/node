@@ -265,7 +265,10 @@ func (b *Block) Verify(ctx context.Context) error {
 	// activation this is skipped and the empty-root rule checked above stands.
 	// [height] was already resolved (and validated against the parent) above.
 	if b.manager.backend.Config.IsMerkleRootActivated(height) {
-		expectedRoot := BlockExecutionRoot(parent.MerkleRoot(), txs, stateDiff, height)
+		expectedRoot, err := BlockExecutionRoot(parent.MerkleRoot(), txs, stateDiff, height)
+		if err != nil {
+			return fmt.Errorf("failed to compute expected block execution root: %w", err)
+		}
 		if merkleRoot != expectedRoot {
 			return fmt.Errorf(
 				"%w: block root %s, expected %s",
