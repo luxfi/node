@@ -7,16 +7,16 @@ import (
 	"context"
 	"errors"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
 	vmcore "github.com/luxfi/vm"
+	chain "github.com/luxfi/vm/chain"
 
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -165,10 +165,37 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 		return nil, ErrNoTransactions
 	}
 
-	statelessBlk, err := block.NewStandardBlock(
+	// Below the xvm execution_root activation height (the default on every
+	// published network, where MerkleRootActivationHeight is the never
+	// sentinel), the block carries an empty root — byte-for-byte the historical
+	// shape. At and above activation, stamp the execution_root computed over the
+	// post-block state so the verifier can recompute and check it.
+	if !b.backend.Config.IsMerkleRootActivated(nextHeight) {
+		statelessBlk, err := block.NewStandardBlock(
+			preferredID,
+			nextHeight,
+			nextTimestamp,
+			blockTxs,
+			b.backend.Codec,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return b.manager.NewBlock(statelessBlk), nil
+	}
+
+	parentRoot := preferred.MerkleRoot()
+	root := blockexecutor.BlockExecutionRoot(
+		parentRoot,
+		blockTxs,
+		stateDiff,
+		nextHeight,
+	)
+	statelessBlk, err := block.NewStandardBlockWithRoot(
 		preferredID,
 		nextHeight,
 		nextTimestamp,
+		root,
 		blockTxs,
 		b.backend.Codec,
 	)
