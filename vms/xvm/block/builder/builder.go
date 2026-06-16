@@ -166,25 +166,12 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 		return nil, ErrNoTransactions
 	}
 
-	// Below the xvm execution_root activation height (the default on every
-	// published network, where MerkleRootActivationHeight is the never
-	// sentinel), the block carries an empty root — byte-for-byte the historical
-	// shape. At and above activation, stamp the execution_root computed over the
-	// post-block state so the verifier can recompute and check it.
-	if !b.backend.Config.IsMerkleRootActivated(nextHeight) {
-		statelessBlk, err := block.NewStandardBlock(
-			preferredID,
-			nextHeight,
-			nextTimestamp,
-			blockTxs,
-			b.backend.Codec,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return b.manager.NewBlock(statelessBlk), nil
-	}
-
+	// Stamp the xvm execution_root computed over the post-block state into the
+	// block so the verifier can recompute and check it. The root is the tagged
+	// Merkle-tree fold over the post-block state (utxo ‖ asset ‖ tx ‖ height);
+	// the builder and the executor share exactly one computation
+	// (BlockExecutionRoot) so the stamped root and the verified root can never
+	// disagree.
 	parentRoot := preferred.MerkleRoot()
 	root, err := blockexecutor.BlockExecutionRoot(
 		parentRoot,
