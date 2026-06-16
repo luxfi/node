@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core/choices"
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/vm/chains/atomic"
 )
 
@@ -87,9 +87,17 @@ func (b *Block) Verify(ctx context.Context) error {
 		return nil
 	}
 
-	// Currently we don't populate the blocks merkle root.
+	// Gate the merkle-root rule on the xvm execution_root activation height.
+	// Below activation (the default on every published network, where
+	// MerkleRootActivationHeight is the never sentinel) the historical rule
+	// holds verbatim: the block must carry an empty root, and a non-empty root
+	// is rejected here. At and above activation the block must carry the
+	// execution_root over the post-block state; that is recomputed and checked
+	// below, once the parent and the block's txs are available. A non-empty root
+	// is the only case the activation height affects at this point, so the gate
+	// is consulted only then.
 	merkleRoot := b.Block.MerkleRoot()
-	if merkleRoot != ids.Empty {
+	if merkleRoot != ids.Empty && !b.manager.backend.Config.IsMerkleRootActivated(b.Height()) {
 		return fmt.Errorf("%w: %s", ErrUnexpectedMerkleRoot, merkleRoot)
 	}
 
@@ -248,6 +256,24 @@ func (b *Block) Verify(ctx context.Context) error {
 			parent,
 			err,
 		)
+	}
+
+	// At and above the xvm execution_root activation height, the block must
+	// carry the execution_root over the now-fully-applied post-block state.
+	// Recompute it from the same canonical projection the builder stamped (one
+	// shared code path — see BlockExecutionRoot) and reject any mismatch. Below
+	// activation this is skipped and the empty-root rule checked above stands.
+	// [height] was already resolved (and validated against the parent) above.
+	if b.manager.backend.Config.IsMerkleRootActivated(height) {
+		expectedRoot := BlockExecutionRoot(parent.MerkleRoot(), txs, stateDiff, height)
+		if merkleRoot != expectedRoot {
+			return fmt.Errorf(
+				"%w: block root %s, expected %s",
+				ErrUnexpectedMerkleRoot,
+				merkleRoot,
+				expectedRoot,
+			)
+		}
 	}
 
 	// Now that the block has been executed, we can add the block data to the

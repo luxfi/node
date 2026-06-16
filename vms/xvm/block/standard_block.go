@@ -75,10 +75,28 @@ func NewStandardBlock(
 	txs []*txs.Tx,
 	cm pcodecs.Manager,
 ) (*StandardBlock, error) {
+	return NewStandardBlockWithRoot(parentID, height, timestamp, ids.Empty, txs, cm)
+}
+
+// NewStandardBlockWithRoot builds a StandardBlock carrying an explicit merkle
+// root and serializes it. NewStandardBlock is the root == ids.Empty special case
+// — the historical, pre-activation shape. Above the xvm execution_root
+// activation height the builder passes the computed execution_root here so it is
+// part of the serialized, hashed block bytes; below activation the empty-root
+// path (NewStandardBlock) is used and the bytes are byte-for-byte unchanged.
+func NewStandardBlockWithRoot(
+	parentID ids.ID,
+	height uint64,
+	timestamp time.Time,
+	root ids.ID,
+	txs []*txs.Tx,
+	cm pcodecs.Manager,
+) (*StandardBlock, error) {
 	blk := &StandardBlock{
 		PrntID:       parentID,
 		Hght:         height,
 		Time:         uint64(timestamp.Unix()),
+		Root:         root,
 		Transactions: txs,
 	}
 

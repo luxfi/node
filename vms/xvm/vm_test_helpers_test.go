@@ -13,20 +13,20 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/vm"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/consensus/core/choices"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/upgrade"
-	
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/runtime"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/vm"
+	"github.com/luxfi/vm/chains/atomic"
+
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/txstest"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -54,17 +54,21 @@ type envConfig struct {
 	notLinearized     bool
 	additionalFxs     []interface{}
 	indexTransactions bool // Enable transaction indexing
+	// merkleRootActivationHeight, when non-nil, overrides the xvm
+	// execution_root activation height in the VM's config. nil leaves the safe
+	// default (never sentinel) from DefaultConfig in place.
+	merkleRootActivationHeight *uint64
 }
 
 // testEnv is the test environment
 type testEnv struct {
-	vm           *VM
+	vm               *VM
 	consensusRuntime *runtime.Runtime
-	genesisBytes []byte
-	genesisTx    *txs.Tx
-	testLock     *sync.Mutex
-	txBuilder    *txstest.Builder
-	sharedMemory *atomic.Memory
+	genesisBytes     []byte
+	genesisTx        *txs.Tx
+	testLock         *sync.Mutex
+	txBuilder        *txstest.Builder
+	sharedMemory     *atomic.Memory
 }
 
 // newGenesisBytesTest creates test genesis bytes
@@ -270,6 +274,9 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	if config.indexTransactions {
 		vmConfig.IndexTransactions = true
 	}
+	if config.merkleRootActivationHeight != nil {
+		vmConfig.MerkleRootActivationHeight = *config.merkleRootActivationHeight
+	}
 	configBytes, err := json.Marshal(vmConfig, jsonv1.FormatDurationAsNano(true))
 	require.NoError(err)
 
@@ -277,14 +284,14 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	require.NoError(vmImpl.Initialize(
 		context.Background(),
 		vm.Init{
-			Runtime: rt,
-			DB:      baseDB,
-			Genesis: genesisBytes,
-			Upgrade: nil,
-			Config:  configBytes,
+			Runtime:  rt,
+			DB:       baseDB,
+			Genesis:  genesisBytes,
+			Upgrade:  nil,
+			Config:   configBytes,
 			ToEngine: toEngine,
-			Fx:      fxs,
-			Sender:  appSender,
+			Fx:       fxs,
+			Sender:   appSender,
 		},
 	))
 
@@ -305,13 +312,13 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	txBuilder.SetContextIDs(rt.NetworkID, rt.ChainID)
 
 	env := &testEnv{
-		vm:           vmImpl,
+		vm:               vmImpl,
 		consensusRuntime: rt,
-		genesisBytes: genesisBytes,
-		genesisTx:    genesisTx,
-		testLock:     testLock,
-		txBuilder:    txBuilder,
-		sharedMemory: sharedMemory,
+		genesisBytes:     genesisBytes,
+		genesisTx:        genesisTx,
+		testLock:         testLock,
+		txBuilder:        txBuilder,
+		sharedMemory:     sharedMemory,
 	}
 
 	// Register cleanup to prevent goroutine leaks
