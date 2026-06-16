@@ -6,6 +6,7 @@ package builder
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
@@ -185,12 +186,15 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	}
 
 	parentRoot := preferred.MerkleRoot()
-	root := blockexecutor.BlockExecutionRoot(
+	root, err := blockexecutor.BlockExecutionRoot(
 		parentRoot,
 		blockTxs,
 		stateDiff,
 		nextHeight,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute block execution root: %w", err)
+	}
 	statelessBlk, err := block.NewStandardBlockWithRoot(
 		preferredID,
 		nextHeight,
