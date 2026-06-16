@@ -11,9 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
+	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/txs"
+	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
 )
 
 func u64ptr(v uint64) *uint64 { return &v }
@@ -61,7 +65,10 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	require.NoError(err)
 
 	// The builder stamped the execution_root: non-empty, and equal to the
-	// canonical projection over the block's parent root + tx family.
+	// canonical projection over the block's parent root + post-block state. The
+	// CreateAssetTx in this block produces UTXOs, so the projected UTXO family is
+	// non-empty — the stamped root is the real execution_root, not a degenerate
+	// (empty-family) value.
 	built := blkIntf.(*blkexecutor.Block)
 	root := built.MerkleRoot()
 	require.NotEqual(ids.Empty, root, "gate on: built block must carry a non-empty root")
@@ -69,8 +76,22 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	parentID := built.Parent()
 	parentBlk, err := env.vm.chainManager.GetStatelessBlock(parentID)
 	require.NoError(err)
-	wantRoot := blkexecutor.BlockExecutionRoot(parentBlk.MerkleRoot(), built.Txs(), nil, built.Height())
-	require.Equal(wantRoot, root, "stamped root must equal the canonical execution_root")
+
+	// Recompute the canonical root over the real post-block state, mirroring how
+	// block verification builds it: a state diff on the parent with the block's
+	// txs executed. The stamped root must equal this canonical projection, and
+	// because the diff holds the block's freshly-produced UTXOs the UTXO family
+	// (and thus the root) is non-trivial.
+	postState := postBlockState(t, env, parentID, built.Txs())
+	wantRoot, err := blkexecutor.BlockExecutionRoot(parentBlk.MerkleRoot(), built.Txs(), postState, built.Height())
+	require.NoError(err)
+	require.Equal(wantRoot, root, "stamped root must equal the canonical execution_root over the post-block state")
+
+	// The projected UTXO family is genuinely non-empty (the CreateAssetTx
+	// produced outputs), so the stamped root is the real execution_root.
+	postUTXOs, err := postState.UTXOs(ids.Empty, 0)
+	require.NoError(err)
+	require.NotEmpty(postUTXOs, "gate on: the post-block UTXO set the root commits to must be non-empty")
 
 	// Build a sibling block identical in every way EXCEPT a deliberately wrong
 	// root, parse it through the VM, and verify it: the executor recomputes the
@@ -95,4 +116,31 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	// The correctly-stamped block still verifies and accepts.
 	require.NoError(blkIntf.Verify(context.Background()))
 	require.NoError(blkIntf.Accept(context.Background()))
+}
+
+// postBlockState reconstructs the post-block state a block's execution_root is
+// projected over: a state diff on [parentID] with [blkTxs] executed in order.
+// It mirrors the state mutation block verification performs (vms/xvm/block/
+// executor/block.go) using the same txs executor, so the projected UTXO set is
+// exactly the one the verifier folds. It does not re-run semantic verification
+// (validation), only the state mutation (consume inputs / produce outputs) that
+// determines the occupied set the root commits to.
+func postBlockState(t *testing.T, env *testEnv, parentID ids.ID, blkTxs []*txs.Tx) state.Chain {
+	t.Helper()
+	require := require.New(t)
+
+	diff, err := state.NewDiff(parentID, env.vm.chainManager)
+	require.NoError(err)
+
+	for _, tx := range blkTxs {
+		executor := &txexecutor.Executor{
+			Codec:  env.vm.parser.Codec(),
+			State:  diff,
+			Tx:     tx,
+			Inputs: set.NewSet[ids.ID](0),
+		}
+		require.NoError(tx.Unsigned.Visit(executor))
+		diff.AddTx(tx)
+	}
+	return diff
 }
