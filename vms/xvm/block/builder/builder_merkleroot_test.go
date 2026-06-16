@@ -56,6 +56,12 @@ func buildOneTxBlock(
 	preferredState := statemock.NewChain(ctrl)
 	preferredState.EXPECT().GetLastAccepted().Return(preferredID).AnyTimes()
 	preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp).AnyTimes()
+	// The execution_root projection enumerates the post-block occupied UTXO set
+	// through the parent chain. This unit's tx produces no UTXOs, so the parent
+	// (and thus the post-block) UTXO set is empty — the UTXO family folds to the
+	// empty root, leaving the tx family + parent root + height to make the
+	// stamped root non-empty.
+	preferredState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	// One tx that passes semantic verification and execution and adds no inputs.
 	unsignedTx := txsmock.NewUnsignedTx(ctrl)
@@ -81,7 +87,10 @@ func buildOneTxBlock(
 	manager := executormock.NewManager(ctrl)
 	manager.EXPECT().Preferred().Return(preferredID)
 	manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
-	manager.EXPECT().GetState(preferredID).Return(preferredState, true)
+	// GetState(preferredID) is consulted by NewDiff and again by the
+	// execution_root projection (the diff fetches its parent state to enumerate
+	// the post-block UTXO set), so allow repeated calls.
+	manager.EXPECT().GetState(preferredID).Return(preferredState, true).AnyTimes()
 	manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil).AnyTimes()
 
 	var built *block.StandardBlock
@@ -162,8 +171,13 @@ func TestBuildBlockMerkleRootGateOn(t *testing.T) {
 	require.NotEqual(ids.Empty, built.MerkleRoot(), "gate on must stamp a non-empty root")
 
 	// Recompute the expected root from the canonical projection: parent root +
-	// the block's tx family (UTXO/asset families empty per the snapshot seam) at
-	// the built height (parentHeight + 1).
-	want := blkexecutor.BlockExecutionRoot(parentRoot, built.Txs(), nil, parentHeight+1)
+	// the block's tx family at the built height (parentHeight + 1), over a
+	// post-block state whose occupied UTXO set is empty (this unit's tx produces
+	// none — same as the parent state the builder projected). The asset family is
+	// always empty (xvm's UTXO-only executor state has no asset arena).
+	emptyState := statemock.NewChain(ctrl)
+	emptyState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	want, err := blkexecutor.BlockExecutionRoot(parentRoot, built.Txs(), emptyState, parentHeight+1)
+	require.NoError(err)
 	require.Equal(want, built.MerkleRoot())
 }
