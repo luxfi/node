@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
@@ -38,6 +37,7 @@ import (
 	"github.com/luxfi/timer/mockable"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
+	chain "github.com/luxfi/vm/chain"
 )
 
 const trackChecksums = false
@@ -260,10 +260,16 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock := block.NewMockBlock(ctrl)
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
+				// The builder always stamps the execution_root, recomputed from
+				// the parent's root.
+				preferredBlock.EXPECT().MerkleRoot().Return(ids.GenerateTestID()).AnyTimes()
 
 				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
+				// The execution_root projection enumerates the post-block UTXO set
+				// through the parent; this unit produces none.
+				preferredState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 				// tx1 and tx2 both consume [inputID].
 				// tx1 is added to the block first, so tx2 should be dropped.
@@ -308,7 +314,10 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
-				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
+				// GetState is consulted by NewDiff and again by the execution_root
+				// projection (the diff pages its parent to enumerate the post-block
+				// UTXO set), so allow repeated calls.
+				manager.EXPECT().GetState(preferredID).Return(preferredState, true).AnyTimes()
 				// VerifyUniqueInputs is called once for tx1. tx2 should be dropped due to
 				// inputs.Overlaps check, so VerifyUniqueInputs should not be called for tx2
 				// But if it's being called twice, we need to handle it
@@ -358,6 +367,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock := block.NewMockBlock(ctrl)
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
+				preferredBlock.EXPECT().MerkleRoot().Return(ids.GenerateTestID()).AnyTimes()
 
 				// Clock reads just before the preferred timestamp.
 				// Created block should have the preferred timestamp since it's later.
@@ -367,11 +377,12 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
+				preferredState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
-				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
+				manager.EXPECT().GetState(preferredID).Return(preferredState, true).AnyTimes()
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(
@@ -433,6 +444,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock := block.NewMockBlock(ctrl)
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
+				preferredBlock.EXPECT().MerkleRoot().Return(ids.GenerateTestID()).AnyTimes()
 
 				// Clock reads after the preferred timestamp.
 				// Created block should have [now] timestamp since it's later.
@@ -442,11 +454,12 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
+				preferredState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
-				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
+				manager.EXPECT().GetState(preferredID).Return(preferredState, true).AnyTimes()
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil)
 				// Assert that the created block has the right timestamp
 				manager.EXPECT().NewBlock(gomock.Any()).DoAndReturn(

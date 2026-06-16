@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/pcodecs/pcodecsmock"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
@@ -31,14 +30,14 @@ import (
 )
 
 // buildOneTxBlock drives BuildBlock with a single always-valid mocked tx over a
-// mocked manager/state, parent at [parentHeight] with [parentRoot], and the
-// given xvm config (which carries the execution_root activation height). It
-// returns the *StandardBlock the builder handed to NewBlock so the test can
-// inspect the stamped Root.
+// mocked manager/state, parent at [parentHeight] with [parentRoot]. It returns
+// the *StandardBlock the builder handed to NewBlock so the test can inspect the
+// stamped Root. The builder always stamps the xvm execution_root — there is no
+// activation gate — so the block's Root is the canonical execution_root over the
+// post-block state.
 func buildOneTxBlock(
 	t *testing.T,
 	ctrl *gomock.Controller,
-	cfg *config.Config,
 	parentRoot ids.ID,
 	parentHeight uint64,
 ) *block.StandardBlock {
@@ -116,7 +115,7 @@ func buildOneTxBlock(
 			Ctx:     context.Background(),
 			Runtime: testRuntime(),
 			Codec:   codec,
-			Config:  cfg,
+			Config:  &config.Config{},
 			Log:     log.NewNoOpLogger(),
 		},
 		manager,
@@ -130,45 +129,20 @@ func buildOneTxBlock(
 	return built
 }
 
-// TestBuildBlockMerkleRootGateOff is deliverable case (a), builder side: with
-// the gate OFF (the default, never-sentinel height) the builder leaves the
-// block's merkle root empty — byte-for-byte the historical behavior.
-func TestBuildBlockMerkleRootGateOff(t *testing.T) {
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
-
-	cfg := &config.Config{MerkleRootActivationHeight: upgrade.MerkleRootNeverActivate}
-	built := buildOneTxBlock(t, ctrl, cfg, ids.Empty, 1337)
-
-	require.Equal(ids.Empty, built.MerkleRoot(), "gate off must leave the root empty")
-}
-
-// TestBuildBlockMerkleRootGateOffNilConfig confirms the fail-safe: a backend
-// with no config at all is treated as OFF, so the root stays empty.
-func TestBuildBlockMerkleRootGateOffNilConfig(t *testing.T) {
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
-
-	built := buildOneTxBlock(t, ctrl, nil, ids.Empty, 1337)
-
-	require.Equal(ids.Empty, built.MerkleRoot(), "nil config must fail safe to off (empty root)")
-}
-
-// TestBuildBlockMerkleRootGateOn is deliverable case (b), builder side: with the
-// gate ON (activation height 0) the builder stamps the xvm execution_root
-// computed over the post-block state. The stamped root must be non-empty and
-// must equal the canonical BlockExecutionRoot over the same inputs.
-func TestBuildBlockMerkleRootGateOn(t *testing.T) {
+// TestBuildBlockStampsExecutionRoot is the builder-side always-active proof: the
+// builder always stamps the xvm execution_root computed over the post-block
+// state. The stamped root must be non-empty and must equal the canonical
+// BlockExecutionRoot over the same inputs — there is no empty-root path.
+func TestBuildBlockStampsExecutionRoot(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
 	parentRoot := ids.GenerateTestID()
 	const parentHeight = uint64(41)
-	cfg := &config.Config{MerkleRootActivationHeight: 0} // activate from genesis
 
-	built := buildOneTxBlock(t, ctrl, cfg, parentRoot, parentHeight)
+	built := buildOneTxBlock(t, ctrl, parentRoot, parentHeight)
 
-	require.NotEqual(ids.Empty, built.MerkleRoot(), "gate on must stamp a non-empty root")
+	require.NotEqual(ids.Empty, built.MerkleRoot(), "builder must stamp a non-empty execution_root")
 
 	// Recompute the expected root from the canonical projection: parent root +
 	// the block's tx family at the built height (parentHeight + 1), over a

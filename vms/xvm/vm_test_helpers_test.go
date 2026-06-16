@@ -54,10 +54,6 @@ type envConfig struct {
 	notLinearized     bool
 	additionalFxs     []interface{}
 	indexTransactions bool // Enable transaction indexing
-	// merkleRootActivationHeight, when non-nil, overrides the xvm
-	// execution_root activation height in the VM's config. nil leaves the safe
-	// default (never sentinel) from DefaultConfig in place.
-	merkleRootActivationHeight *uint64
 }
 
 // testEnv is the test environment
@@ -273,9 +269,6 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	vmConfig := DefaultConfig
 	if config.indexTransactions {
 		vmConfig.IndexTransactions = true
-	}
-	if config.merkleRootActivationHeight != nil {
-		vmConfig.MerkleRootActivationHeight = *config.merkleRootActivationHeight
 	}
 	configBytes, err := json.Marshal(vmConfig, jsonv1.FormatDurationAsNano(true))
 	require.NoError(err)

@@ -20,42 +20,16 @@ import (
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
 )
 
-func u64ptr(v uint64) *uint64 { return &v }
-
-// TestMerkleRootGateOffDefaultBlockEmpty is deliverable case (a), end to end: a
-// VM with the default config (gate OFF, never sentinel) builds and accepts a
-// real block whose merkle root is empty — the historical behavior, unchanged.
-func TestMerkleRootGateOffDefaultBlockEmpty(t *testing.T) {
+// TestMerkleRootStampedAndVerified is the always-active end-to-end proof: a VM
+// with the default config builds a real block that carries the xvm
+// execution_root over the post-block state (never empty), that block verifies
+// and accepts, and a sibling block whose root is tampered is rejected with
+// ErrUnexpectedMerkleRoot. There is no activation gate — the execution_root is
+// part of the current version, stamped and verified unconditionally.
+func TestMerkleRootStampedAndVerified(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: upgrade.Default})
-	env.vm.Lock.Unlock()
-
-	tx := newTx(t, env.genesisBytes, env.consensusRuntime.ChainID, env.vm.parser, "LUX")
-	require.NoError(env.vm.network.IssueTxFromRPC(tx))
-
-	blkIntf, err := env.vm.BuildBlock(context.Background())
-	require.NoError(err)
-
-	require.Equal(ids.Empty, blkIntf.(*blkexecutor.Block).MerkleRoot(),
-		"gate off: built block must carry an empty root")
-
-	// And it verifies and accepts under the historical empty-root rule.
-	require.NoError(blkIntf.Verify(context.Background()))
-	require.NoError(blkIntf.Accept(context.Background()))
-}
-
-// TestMerkleRootGateOnAcceptsAndRejects is deliverable case (b), end to end: a
-// VM with the gate ON (activation height 0) builds a real block that carries a
-// non-empty xvm execution_root, that block verifies and accepts, and a sibling
-// block whose root is tampered is rejected with ErrUnexpectedMerkleRoot.
-func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
-	require := require.New(t)
-
-	env := setup(t, &envConfig{
-		fork:                       upgrade.Default,
-		merkleRootActivationHeight: u64ptr(0), // activate from genesis
-	})
 	env.vm.Lock.Unlock()
 
 	tx := newTx(t, env.genesisBytes, env.consensusRuntime.ChainID, env.vm.parser, "LUX")
@@ -71,7 +45,7 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	// (empty-family) value.
 	built := blkIntf.(*blkexecutor.Block)
 	root := built.MerkleRoot()
-	require.NotEqual(ids.Empty, root, "gate on: built block must carry a non-empty root")
+	require.NotEqual(ids.Empty, root, "built block must carry a non-empty execution_root")
 
 	parentID := built.Parent()
 	parentBlk, err := env.vm.chainManager.GetStatelessBlock(parentID)
@@ -91,7 +65,7 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	// produced outputs), so the stamped root is the real execution_root.
 	postUTXOs, err := postState.UTXOs(ids.Empty, 0)
 	require.NoError(err)
-	require.NotEmpty(postUTXOs, "gate on: the post-block UTXO set the root commits to must be non-empty")
+	require.NotEmpty(postUTXOs, "the post-block UTXO set the root commits to must be non-empty")
 
 	// Build a sibling block identical in every way EXCEPT a deliberately wrong
 	// root, parse it through the VM, and verify it: the executor recomputes the
@@ -116,6 +90,43 @@ func TestMerkleRootGateOnAcceptsAndRejects(t *testing.T) {
 	// The correctly-stamped block still verifies and accepts.
 	require.NoError(blkIntf.Verify(context.Background()))
 	require.NoError(blkIntf.Accept(context.Background()))
+}
+
+// TestMerkleRootEmptyRootRejected confirms the empty root is not a valid block
+// root under the always-active rule: a block whose root is ids.Empty (the
+// historical pre-activation shape) no longer verifies, because the executor
+// recomputes the real execution_root and rejects the mismatch. This pins that
+// there is no surviving empty-root path.
+func TestMerkleRootEmptyRootRejected(t *testing.T) {
+	require := require.New(t)
+
+	env := setup(t, &envConfig{fork: upgrade.Default})
+	env.vm.Lock.Unlock()
+
+	tx := newTx(t, env.genesisBytes, env.consensusRuntime.ChainID, env.vm.parser, "LUX")
+	require.NoError(env.vm.network.IssueTxFromRPC(tx))
+
+	blkIntf, err := env.vm.BuildBlock(context.Background())
+	require.NoError(err)
+	built := blkIntf.(*blkexecutor.Block)
+
+	// A sibling block identical to the built block but carrying an EMPTY root.
+	cm := env.vm.parser.Codec()
+	empty, err := block.NewStandardBlock(
+		built.Parent(),
+		built.Height(),
+		time.Unix(int64(built.Timestamp().Unix()), 0),
+		built.Txs(),
+		cm,
+	)
+	require.NoError(err)
+	require.Equal(ids.Empty, empty.MerkleRoot())
+
+	emptyParsed, err := env.vm.ParseBlock(context.Background(), empty.Bytes())
+	require.NoError(err)
+	err = emptyParsed.Verify(context.Background())
+	require.ErrorIs(err, blkexecutor.ErrUnexpectedMerkleRoot,
+		"an empty root must be rejected: the real execution_root is non-empty")
 }
 
 // postBlockState reconstructs the post-block state a block's execution_root is

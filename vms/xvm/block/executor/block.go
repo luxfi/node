@@ -87,19 +87,12 @@ func (b *Block) Verify(ctx context.Context) error {
 		return nil
 	}
 
-	// Gate the merkle-root rule on the xvm execution_root activation height.
-	// Below activation (the default on every published network, where
-	// MerkleRootActivationHeight is the never sentinel) the historical rule
-	// holds verbatim: the block must carry an empty root, and a non-empty root
-	// is rejected here. At and above activation the block must carry the
-	// execution_root over the post-block state; that is recomputed and checked
-	// below, once the parent and the block's txs are available. A non-empty root
-	// is the only case the activation height affects at this point, so the gate
-	// is consulted only then.
+	// The block's MerkleRoot carries the xvm execution_root over the post-block
+	// state. It is verified unconditionally once the parent and the block's txs
+	// are available: the executor recomputes the canonical execution_root and
+	// rejects any block whose stamped root disagrees (see the recompute below,
+	// after the txs have been applied to the state diff).
 	merkleRoot := b.Block.MerkleRoot()
-	if merkleRoot != ids.Empty && !b.manager.backend.Config.IsMerkleRootActivated(b.Height()) {
-		return fmt.Errorf("%w: %s", ErrUnexpectedMerkleRoot, merkleRoot)
-	}
 
 	// Only allow timestamp to reasonably far forward
 	newChainTime := b.Timestamp()
@@ -258,25 +251,22 @@ func (b *Block) Verify(ctx context.Context) error {
 		)
 	}
 
-	// At and above the xvm execution_root activation height, the block must
-	// carry the execution_root over the now-fully-applied post-block state.
-	// Recompute it from the same canonical projection the builder stamped (one
-	// shared code path — see BlockExecutionRoot) and reject any mismatch. Below
-	// activation this is skipped and the empty-root rule checked above stands.
-	// [height] was already resolved (and validated against the parent) above.
-	if b.manager.backend.Config.IsMerkleRootActivated(height) {
-		expectedRoot, err := BlockExecutionRoot(parent.MerkleRoot(), txs, stateDiff, height)
-		if err != nil {
-			return fmt.Errorf("failed to compute expected block execution root: %w", err)
-		}
-		if merkleRoot != expectedRoot {
-			return fmt.Errorf(
-				"%w: block root %s, expected %s",
-				ErrUnexpectedMerkleRoot,
-				merkleRoot,
-				expectedRoot,
-			)
-		}
+	// The block must carry the execution_root over the now-fully-applied
+	// post-block state. Recompute it from the same canonical projection the
+	// builder stamped (one shared code path — see BlockExecutionRoot) and reject
+	// any mismatch. [height] was already resolved (and validated against the
+	// parent) above.
+	expectedRoot, err := BlockExecutionRoot(parent.MerkleRoot(), txs, stateDiff, height)
+	if err != nil {
+		return fmt.Errorf("failed to compute expected block execution root: %w", err)
+	}
+	if merkleRoot != expectedRoot {
+		return fmt.Errorf(
+			"%w: block root %s, expected %s",
+			ErrUnexpectedMerkleRoot,
+			merkleRoot,
+			expectedRoot,
+		)
 	}
 
 	// Now that the block has been executed, we can add the block data to the
