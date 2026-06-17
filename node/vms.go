@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/chains/aivm"
 	"github.com/luxfi/chains/bridgevm"
-	"github.com/luxfi/chains/dexvm"
 	"github.com/luxfi/chains/graphvm"
 	"github.com/luxfi/chains/identityvm"
 	"github.com/luxfi/chains/keyvm"
@@ -28,14 +27,18 @@ type vmEntry struct {
 	factory vms.Factory
 }
 
-// registerOptionalVMs registers the 11 optional VMs (A/B/D/G/I/K/O/Q/R/T/Z).
+// registerOptionalVMs registers the optional VMs (A/B/G/I/K/O/Q/R/T/Z).
 // Primary network (P/X/C) is registered separately.
 // Session (S-Chain) is a standalone plugin at github.com/luxfi/session/plugin.
+//
+// The D-Chain (DEXVM) proxy is registered ONLY in the `dchain` build (see
+// vms_dchain.go / vms_nodchain.go): the public OSS luxd MUST NOT even link the
+// proxy/D-Chain tree (public-build purity). appendDChainVM is the seam — a
+// no-op in the default build, the real registration under -tags dchain.
 func (n *Node) registerOptionalVMs() error {
 	entries := []vmEntry{
 		{"AIVM (A-Chain)", aivm.VMID, &aivm.Factory{}},
 		{"BridgeVM (B-Chain)", bridgevm.VMID, &bridgevm.Factory{}},
-		{"DEXVM (D-Chain)", dexvm.VMID, &dexvm.Factory{}},
 		{"GraphVM (G-Chain)", graphvm.VMID, &graphvm.Factory{}},
 		{"IdentityVM (I-Chain)", identityvm.VMID, &identityvm.Factory{}},
 		{"KeyVM (K-Chain)", keyvm.VMID, &keyvm.Factory{}},
@@ -45,6 +48,9 @@ func (n *Node) registerOptionalVMs() error {
 		{"ThresholdVM (T-Chain)", thresholdvm.VMID, &thresholdvm.Factory{}},
 		{"ZKVM (Z-Chain)", zkvm.VMID, &zkvm.Factory{}},
 	}
+
+	// D-Chain proxy VM: linked + appended only under -tags dchain.
+	appendDChainVM(n, &entries)
 
 	registered := 0
 	for _, e := range entries {
