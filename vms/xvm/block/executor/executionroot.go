@@ -4,6 +4,8 @@
 package executor
 
 import (
+	"errors"
+	"fmt"
 	"runtime"
 	"sync"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/state/xvmroot"
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 )
 
 // xvmExecutionRoot computes the xvm execution_root over a block's post-block
@@ -193,42 +196,129 @@ func parallelFor(n int, body func(i int)) {
 // of the post-block state the root commits to. The tx family is fully realized
 // from the block's transactions (TxID = tx.ID(), every tx folded in block
 // order, status = accepted); it is identical on the builder and the verifier
-// because both observe the same ordered tx set. The UTXO/asset families come
-// from postBlockUTXOLeaves / postBlockAssetLeaves; see those for the
-// snapshot-producer seam.
+// because both observe the same ordered tx set. The UTXO family is enumerated
+// from the post-block occupied UTXO set and projected by postBlockUTXOLeaves;
+// the asset family is empty (see postBlockAssetLeaves for why xvm's UTXO-only
+// executor state has no enumerable asset arena to project).
+//
+// It returns an error if the post-block state cannot be enumerated or an output
+// carries an owner model with no canonical owner_root yet — a wrong root must
+// never be stamped or accepted silently.
 func BlockExecutionRoot(
 	parentExecutionRoot ids.ID,
 	blkTxs []*txs.Tx,
 	postState state.Chain,
 	height uint64,
-) ids.ID {
+) (ids.ID, error) {
 	leafTxs := txLeaves(blkTxs)
-	utxos := postBlockUTXOLeaves(postState)
+	utxos, err := postBlockUTXOLeaves(postState)
+	if err != nil {
+		return ids.Empty, err
+	}
 	assets := postBlockAssetLeaves(postState)
 	executionRoot, _, _, _ := xvmExecutionRoot([xvmroot.Size]byte(parentExecutionRoot), utxos, assets, leafTxs, height)
-	return ids.ID(executionRoot)
+	return ids.ID(executionRoot), nil
 }
 
-// postBlockUTXOLeaves and postBlockAssetLeaves project the post-block state into
-// the xvm execution_root's UTXO and asset family leaves — the occupied set in
-// canonical ascending slot order, as the kernel snapshot lays it out.
+// postBlockUTXOLeaves projects the post-block state's occupied UTXO set into the
+// execution_root UTXO family leaves, in canonical ascending-UTXOID order — the
+// deterministic full-set order state.Chain.UTXOs returns and the order xvmroot
+// folds. Every enumerated UTXO is occupied (the iterator never returns a spent
+// or removed UTXO), so each leaf carries Status = UTXOOccupied and its leaf
+// index is its position in the ascending enumeration (0,1,2,…), matching the
+// `index` the kernel binds into each occupied slot's leaf preimage.
 //
-// SEAM (gated off; not yet wired): the canonical mapping from the xvm executor's
-// codec/output-interface UTXO and asset types to the accelerator's flat
-// state-snapshot leaf fields (UTXOLeaf.OwnerRoot / AmountHi / Threshold,
-// AssetLeaf.TotalSupply / MintAuthorityRoot / FreezeFlag / Denomination) is owned
-// by the GPU state-snapshot producer — the same component that feeds xvmroot's
-// KAT — and enumerating the full occupied set needs a state iterator the xvm
-// state layer does not yet expose. Until that producer lands, these families are
-// empty, so the execution_root commits to the parent root, the empty UTXO/asset
-// roots, the tx family (fully derived from the block), and the height. This is
-// consensus-inert today: the gate defaults to the never sentinel on every
-// published network (see upgrade.MerkleRootNeverActivate), so the path is never
-// taken until a real upgrade both sets a height AND wires the snapshot producer.
-// The builder and verifier call this identical projection, so the stamped and
-// verified roots always agree.
-func postBlockUTXOLeaves(state.Chain) []xvmroot.UTXOLeaf { return nil }
+// Each lux.UTXO is projected field-by-field onto the canonical UTXOLeaf the GPU
+// state-snapshot producer must match (xvm_gpu_layout.hpp's UTXO struct):
+//
+//	UTXOID    = utxo.InputID()                  (keccak(tx_id ‖ output_index))
+//	AssetID   = utxo.AssetID()
+//	AmountLo  = output amount (uint64)          (0 for a non-value output)
+//	AmountHi  = 0                               (no xvm output exceeds 2^64-1;
+//	                                             Amt is a single uint64, so the
+//	                                             high limb is always 0)
+//	OwnerRoot = OwnerRoot(extractOwners(out))   (the canonical owner commitment;
+//	                                             see ownerroot.go — this is the
+//	                                             Go definition the GPU matches)
+//	Locktime  = owner locktime                  (0 when the owner has none)
+//	Threshold = owner threshold                 (the N-of-M spend parameter)
+//	Status    = UTXOOccupied                    (the set is the occupied set)
+//
+// It is a pure, deterministic function of the post-block state: the builder and
+// the verifier both call it over the same post-block state, so the stamped and
+// verified UTXO roots always agree.
+func postBlockUTXOLeaves(postState state.Chain) ([]xvmroot.UTXOLeaf, error) {
+	utxos, err := postState.UTXOs(ids.Empty, 0) // 0 = unbounded: the full occupied set
+	if err != nil {
+		return nil, fmt.Errorf("enumerating post-block UTXO set: %w", err)
+	}
+	leaves := make([]xvmroot.UTXOLeaf, len(utxos))
+	for i, utxo := range utxos {
+		leaf, err := utxoLeaf(utxo)
+		if err != nil {
+			return nil, fmt.Errorf("projecting UTXO %s: %w", utxo.InputID(), err)
+		}
+		leaves[i] = leaf
+	}
+	return leaves, nil
+}
 
+// utxoLeaf projects one lux.UTXO onto its canonical UTXOLeaf field values. See
+// postBlockUTXOLeaves for the field-by-field mapping; the owner_root derivation
+// is defined in ownerroot.go.
+func utxoLeaf(utxo *lux.UTXO) (xvmroot.UTXOLeaf, error) {
+	o, ok := extractOwners(utxo.Out)
+	if !ok {
+		return xvmroot.UTXOLeaf{}, fmt.Errorf("%w: output type %T", errUnsupportedOwnerModel, utxo.Out)
+	}
+
+	var amount uint64
+	if a, ok := utxo.Out.(lux.Amounter); ok {
+		amount = a.Amount()
+	}
+
+	return xvmroot.UTXOLeaf{
+		UTXOID:    ids.ID(utxo.InputID()),
+		AssetID:   ids.ID(utxo.AssetID()),
+		AmountLo:  amount,
+		AmountHi:  0, // xvm amounts are uint64; the high limb is always zero.
+		OwnerRoot: OwnerRoot(o),
+		Locktime:  o.locktime,
+		Threshold: o.threshold,
+		Status:    xvmroot.UTXOOccupied,
+	}, nil
+}
+
+// errUnsupportedOwnerModel is returned when a UTXO output carries an owner model
+// the execution_root projection does not yet define a canonical owner_root for.
+// It surfaces as a block-verification/build error rather than silently hashing
+// an unknown output under an invented rule.
+var errUnsupportedOwnerModel = errors.New("xvm execution_root: output owner model has no canonical owner_root")
+
+// postBlockAssetLeaves projects the post-block asset family. It is intentionally
+// EMPTY: xvm's executor state is UTXO-only and maintains no enumerable asset
+// arena.
+//
+// The GPU substrate (xvm_gpu_layout.hpp) carries a dedicated Asset arena with
+// total_supply / mint_authority_root / freeze_flag / denomination because it is
+// a GPU-NATIVE state model. The xvm executor's authoritative state has no such
+// structure: an asset exists only as the AssetID stamped on the UTXOs a
+// CreateAssetTx produces (txs/executor/executor.go CreateAssetTx), and the
+// asset's denomination/name live only in that creating transaction's history —
+// there is no GetAsset, no asset index, and no per-asset total-supply or
+// mint-authority record the state layer can enumerate.
+//
+// Projecting a faithful asset arena would therefore require INVENTING state the
+// executor does not track (e.g. summing UTXO amounts per asset for
+// total_supply, and deriving a mint_authority_root from the asset's mint
+// outputs) — unverified semantics with no executor-side authority to validate
+// against. That is deliberately NOT auto-invented here: it is a consensus-state
+// decision flagged for human ratification (a future asset-arena state model
+// would have to be added to the executor first, then projected). Until then the
+// asset family is the empty set, so asset_root = keccak256("") and the
+// execution_root commits to a faithful UTXO family, the tx family, the parent,
+// and the height. The UTXOs themselves still carry their AssetID, so the asset
+// binding is not lost — it is committed through the UTXO family.
 func postBlockAssetLeaves(state.Chain) []xvmroot.AssetLeaf { return nil }
 
 // txLeaves projects a block's transactions onto the canonical tx-family leaf
