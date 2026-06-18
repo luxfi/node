@@ -17,9 +17,9 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 
 	// utxo.ParseUTXO factory registration — see
 	// vms/components/lux/utxo_parser.go init(). Required for
@@ -40,6 +40,14 @@ var (
 	blockPrefix     = []byte("block")
 	singletonPrefix = []byte("singleton")
 
+	// utxoRecordPrefix mirrors the record sub-prefix the luxfi/utxo UTXOState
+	// nests inside our utxoDB (utxo_state.go: prefixdb.New([]byte("utxo"), db)).
+	// We reconstruct that exact sub-view to enumerate committed UTXO records in
+	// ascending-UTXOID order for the execution_root projection. It MUST stay
+	// equal to UTXOState's internal record prefix; it is a frozen on-disk
+	// layout, not a free parameter.
+	utxoRecordPrefix = []byte("utxo")
+
 	isInitializedKey = []byte{0x00}
 	timestampKey     = []byte{0x01}
 	lastAcceptedKey  = []byte{0x02}
@@ -49,6 +57,17 @@ var (
 
 type ReadOnlyChain interface {
 	lux.UTXOGetter
+
+	// UTXOs returns the occupied UTXOs of this chain in canonical ascending
+	// UTXOID order — the deterministic full-set ordering the xvm execution_root
+	// projection folds (see vms/xvm/state/xvmroot and the execution_root leaf
+	// spec). Enumeration begins immediately after [start] (ids.Empty starts at
+	// the first UTXOID) and returns at most [limit] UTXOs; pass a non-positive
+	// [limit] for "no bound" (all remaining). The returned slice is in strictly
+	// increasing UTXOID order with no duplicates, so a caller can page by
+	// passing the last returned UTXOID as the next [start]. A spent/removed UTXO
+	// is never returned (it is not part of the occupied set).
+	UTXOs(start ids.ID, limit int) ([]*lux.UTXO, error)
 
 	GetTx(txID ids.ID) (*txs.Tx, error)
 	GetBlockIDAtHeight(height uint64) (ids.ID, error)
@@ -124,6 +143,19 @@ type state struct {
 	utxoDB        database.Database
 	utxoState     lux.UTXOState
 
+	// utxoRecordDB is a read-only view of just the committed UTXO records,
+	// keyed by raw 32-byte UTXOID. The luxfi/utxo UTXOState (utxoState above)
+	// nests its records one prefix deeper inside utxoDB — under utxoPrefix —
+	// alongside an address index under indexPrefix. UTXOState exposes
+	// point lookups (GetUTXO) and per-address listing (UTXOIDs) but no
+	// full-set enumeration, which the canonical execution_root projection
+	// requires in ascending-UTXOID order. We mirror UTXOState's record-prefix
+	// layout exactly so iterating this handle yields every committed UTXO
+	// record (and only records, not index entries) in ascending UTXOID order.
+	// It is a frozen on-disk layout, so this mirror reads a stable format
+	// rather than inventing one.
+	utxoRecordDB database.Database
+
 	addedTxs map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
 	txCache  cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
 	txDB     database.Database
@@ -198,6 +230,7 @@ func New(
 		modifiedUTXOs: make(map[ids.ID]*lux.UTXO),
 		utxoDB:        utxoDB,
 		utxoState:     utxoState,
+		utxoRecordDB:  prefixdb.New(utxoRecordPrefix, utxoDB),
 
 		addedTxs: make(map[ids.ID]*txs.Tx),
 		txCache:  txCache,
