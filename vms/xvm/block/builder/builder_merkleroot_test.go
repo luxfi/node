@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/pcodecs/pcodecsmock"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
@@ -31,14 +30,14 @@ import (
 )
 
 // buildOneTxBlock drives BuildBlock with a single always-valid mocked tx over a
-// mocked manager/state, parent at [parentHeight] with [parentRoot], and the
-// given xvm config (which carries the execution_root activation height). It
-// returns the *StandardBlock the builder handed to NewBlock so the test can
-// inspect the stamped Root.
+// mocked manager/state, parent at [parentHeight] with [parentRoot]. It returns
+// the *StandardBlock the builder handed to NewBlock so the test can inspect the
+// stamped Root. The builder always stamps the xvm execution_root — there is no
+// activation gate — so the block's Root is the canonical execution_root over the
+// post-block state.
 func buildOneTxBlock(
 	t *testing.T,
 	ctrl *gomock.Controller,
-	cfg *config.Config,
 	parentRoot ids.ID,
 	parentHeight uint64,
 ) *block.StandardBlock {
@@ -56,6 +55,12 @@ func buildOneTxBlock(
 	preferredState := statemock.NewChain(ctrl)
 	preferredState.EXPECT().GetLastAccepted().Return(preferredID).AnyTimes()
 	preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp).AnyTimes()
+	// The execution_root projection enumerates the post-block occupied UTXO set
+	// through the parent chain. This unit's tx produces no UTXOs, so the parent
+	// (and thus the post-block) UTXO set is empty — the UTXO family folds to the
+	// empty root, leaving the tx family + parent root + height to make the
+	// stamped root non-empty.
+	preferredState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	// One tx that passes semantic verification and execution and adds no inputs.
 	unsignedTx := txsmock.NewUnsignedTx(ctrl)
@@ -81,7 +86,10 @@ func buildOneTxBlock(
 	manager := executormock.NewManager(ctrl)
 	manager.EXPECT().Preferred().Return(preferredID)
 	manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
-	manager.EXPECT().GetState(preferredID).Return(preferredState, true)
+	// GetState(preferredID) is consulted by NewDiff and again by the
+	// execution_root projection (the diff fetches its parent state to enumerate
+	// the post-block UTXO set), so allow repeated calls.
+	manager.EXPECT().GetState(preferredID).Return(preferredState, true).AnyTimes()
 	manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(nil).AnyTimes()
 
 	var built *block.StandardBlock
@@ -107,7 +115,7 @@ func buildOneTxBlock(
 			Ctx:     context.Background(),
 			Runtime: testRuntime(),
 			Codec:   codec,
-			Config:  cfg,
+			Config:  &config.Config{},
 			Log:     log.NewNoOpLogger(),
 		},
 		manager,
@@ -121,49 +129,29 @@ func buildOneTxBlock(
 	return built
 }
 
-// TestBuildBlockMerkleRootGateOff is deliverable case (a), builder side: with
-// the gate OFF (the default, never-sentinel height) the builder leaves the
-// block's merkle root empty — byte-for-byte the historical behavior.
-func TestBuildBlockMerkleRootGateOff(t *testing.T) {
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
-
-	cfg := &config.Config{MerkleRootActivationHeight: upgrade.MerkleRootNeverActivate}
-	built := buildOneTxBlock(t, ctrl, cfg, ids.Empty, 1337)
-
-	require.Equal(ids.Empty, built.MerkleRoot(), "gate off must leave the root empty")
-}
-
-// TestBuildBlockMerkleRootGateOffNilConfig confirms the fail-safe: a backend
-// with no config at all is treated as OFF, so the root stays empty.
-func TestBuildBlockMerkleRootGateOffNilConfig(t *testing.T) {
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
-
-	built := buildOneTxBlock(t, ctrl, nil, ids.Empty, 1337)
-
-	require.Equal(ids.Empty, built.MerkleRoot(), "nil config must fail safe to off (empty root)")
-}
-
-// TestBuildBlockMerkleRootGateOn is deliverable case (b), builder side: with the
-// gate ON (activation height 0) the builder stamps the xvm execution_root
-// computed over the post-block state. The stamped root must be non-empty and
-// must equal the canonical BlockExecutionRoot over the same inputs.
-func TestBuildBlockMerkleRootGateOn(t *testing.T) {
+// TestBuildBlockStampsExecutionRoot is the builder-side always-active proof: the
+// builder always stamps the xvm execution_root computed over the post-block
+// state. The stamped root must be non-empty and must equal the canonical
+// BlockExecutionRoot over the same inputs — there is no empty-root path.
+func TestBuildBlockStampsExecutionRoot(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
 	parentRoot := ids.GenerateTestID()
 	const parentHeight = uint64(41)
-	cfg := &config.Config{MerkleRootActivationHeight: 0} // activate from genesis
 
-	built := buildOneTxBlock(t, ctrl, cfg, parentRoot, parentHeight)
+	built := buildOneTxBlock(t, ctrl, parentRoot, parentHeight)
 
-	require.NotEqual(ids.Empty, built.MerkleRoot(), "gate on must stamp a non-empty root")
+	require.NotEqual(ids.Empty, built.MerkleRoot(), "builder must stamp a non-empty execution_root")
 
 	// Recompute the expected root from the canonical projection: parent root +
-	// the block's tx family (UTXO/asset families empty per the snapshot seam) at
-	// the built height (parentHeight + 1).
-	want := blkexecutor.BlockExecutionRoot(parentRoot, built.Txs(), nil, parentHeight+1)
+	// the block's tx family at the built height (parentHeight + 1), over a
+	// post-block state whose occupied UTXO set is empty (this unit's tx produces
+	// none — same as the parent state the builder projected). The asset family is
+	// always empty (xvm's UTXO-only executor state has no asset arena).
+	emptyState := statemock.NewChain(ctrl)
+	emptyState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	want, err := blkexecutor.BlockExecutionRoot(parentRoot, built.Txs(), emptyState, parentHeight+1)
+	require.NoError(err)
 	require.Equal(want, built.MerkleRoot())
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/mock/gomock"
-	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/metrics/metricsmock"
@@ -59,25 +58,6 @@ func TestBlockVerify(t *testing.T) {
 				return b
 			},
 			expectedErr: nil,
-		},
-		{
-			name: "block timestamp too far in the future",
-			blockFunc: func(ctrl *gomock.Controller) *Block {
-				mockBlock := block.NewMockBlock(ctrl)
-				mockBlock.EXPECT().ID().Return(ids.Empty).AnyTimes()
-				mockBlock.EXPECT().MerkleRoot().Return(ids.GenerateTestID()).AnyTimes()
-				// A non-empty root makes the gate consult the block height to
-				// decide if the execution_root path is active (it is not, by
-				// default), so Height is now read on this path.
-				mockBlock.EXPECT().Height().Return(uint64(1)).AnyTimes()
-				return &Block{
-					Block: mockBlock,
-					manager: &manager{
-						backend: defaultTestBackend(false, nil),
-					},
-				}
-			},
-			expectedErr: ErrUnexpectedMerkleRoot,
 		},
 		{
 			name: "block timestamp too far in the future",
@@ -524,24 +504,44 @@ func TestBlockVerify(t *testing.T) {
 			expectedErr: ErrConflictingParentTxs,
 		},
 		{
+			// Happy path under the always-active execution_root rule: the block
+			// carries the canonical execution_root over the post-block state, so
+			// the executor's unconditional recompute matches and the block
+			// verifies. The post-block UTXO set is empty (this tx produces none),
+			// so the root is the canonical compose over the empty UTXO/asset
+			// families, the tx family, the parent root, and the height.
 			name: "happy path",
 			blockFunc: func(ctrl *gomock.Controller) *Block {
-				mockBlock := block.NewMockBlock(ctrl)
-				mockBlock.EXPECT().ID().Return(ids.Empty).AnyTimes()
-				mockBlock.EXPECT().MerkleRoot().Return(ids.Empty).AnyTimes()
-				blockTimestamp := time.Now()
-				mockBlock.EXPECT().Timestamp().Return(blockTimestamp).AnyTimes()
 				blockHeight := uint64(1337)
-				mockBlock.EXPECT().Height().Return(blockHeight).AnyTimes()
+				parentRoot := ids.GenerateTestID()
 
 				mockUnsignedTx := txsmock.NewUnsignedTx(ctrl)
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Syntactic verification passes
-				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification fails
+				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Semantic verification passes
 				mockUnsignedTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1) // Execution passes
 				mockUnsignedTx.EXPECT().InputIDs().AnyTimes()
-				tx := &txs.Tx{
-					Unsigned: mockUnsignedTx,
-				}
+				mockUnsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
+				tx := &txs.Tx{Unsigned: mockUnsignedTx}
+				// Stable tx ID so the tx-family leaf (and thus the expected root)
+				// is deterministic for both the executor and this test.
+				tx.SetBytes(nil, []byte{0x01, 0x02, 0x03, 0x04})
+
+				// The execution_root the block must carry: the canonical root over
+				// the parent root + this block's tx family at [blockHeight], with an
+				// empty post-block UTXO set (this tx produces no UTXOs). Computed via
+				// the same shared BlockExecutionRoot the executor recomputes.
+				emptyState := statemock.NewChain(ctrl)
+				emptyState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+				expectedRoot, err := BlockExecutionRoot(parentRoot, []*txs.Tx{tx}, emptyState, blockHeight)
+				require.NoError(t, err)
+				require.NotEqual(t, ids.Empty, expectedRoot)
+
+				mockBlock := block.NewMockBlock(ctrl)
+				mockBlock.EXPECT().ID().Return(ids.Empty).AnyTimes()
+				mockBlock.EXPECT().MerkleRoot().Return(expectedRoot).AnyTimes()
+				blockTimestamp := time.Now()
+				mockBlock.EXPECT().Timestamp().Return(blockTimestamp).AnyTimes()
+				mockBlock.EXPECT().Height().Return(blockHeight).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{tx}).AnyTimes()
 
 				parentID := ids.GenerateTestID()
@@ -549,10 +549,16 @@ func TestBlockVerify(t *testing.T) {
 
 				mockParentBlock := block.NewMockBlock(ctrl)
 				mockParentBlock.EXPECT().Height().Return(blockHeight - 1)
+				// The executor recomputes the execution_root from the parent's root.
+				mockParentBlock.EXPECT().MerkleRoot().Return(parentRoot).AnyTimes()
 
 				mockParentState := statemock.NewDiff(ctrl)
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
+				// The post-block state diff pages the parent to enumerate the
+				// occupied UTXO set for the execution_root projection; the parent
+				// has none.
+				mockParentState.EXPECT().UTXOs(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
@@ -976,10 +982,6 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *tx
 		Config: &config.Config{
 			TxFee:            0,
 			CreateAssetTxFee: 0,
-			// Model production: the xvm execution_root gate is OFF (never
-			// sentinel) unless a test overrides it. Without this, the Go zero
-			// value (0) would mean "activate from genesis".
-			MerkleRootActivationHeight: upgrade.MerkleRootNeverActivate,
 		},
 		Log: log.NoLog{},
 	}

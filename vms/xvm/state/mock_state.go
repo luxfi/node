@@ -15,16 +15,17 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
-	lux "github.com/luxfi/utxo"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	utxo "github.com/luxfi/utxo"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockChain is a mock of Chain interface.
 type MockChain struct {
 	ctrl     *gomock.Controller
 	recorder *MockChainMockRecorder
+	isgomock struct{}
 }
 
 // MockChainMockRecorder is the mock recorder for MockChain.
@@ -57,19 +58,19 @@ func (mr *MockChainMockRecorder) AddBlock(arg0 any) *gomock.Call {
 }
 
 // AddTx mocks base method.
-func (m *MockChain) AddTx(arg0 *txs.Tx) {
+func (m *MockChain) AddTx(tx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", arg0)
+	m.ctrl.Call(m, "AddTx", tx)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockChainMockRecorder) AddTx(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) AddTx(tx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockChain)(nil).AddTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockChain)(nil).AddTx), tx)
 }
 
 // AddUTXO mocks base method.
-func (m *MockChain) AddUTXO(arg0 *lux.UTXO) {
+func (m *MockChain) AddUTXO(arg0 *utxo.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddUTXO", arg0)
 }
@@ -81,45 +82,45 @@ func (mr *MockChainMockRecorder) AddUTXO(arg0 any) *gomock.Call {
 }
 
 // DeleteUTXO mocks base method.
-func (m *MockChain) DeleteUTXO(arg0 ids.ID) {
+func (m *MockChain) DeleteUTXO(utxoID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteUTXO", arg0)
+	m.ctrl.Call(m, "DeleteUTXO", utxoID)
 }
 
 // DeleteUTXO indicates an expected call of DeleteUTXO.
-func (mr *MockChainMockRecorder) DeleteUTXO(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) DeleteUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockChain)(nil).DeleteUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockChain)(nil).DeleteUTXO), utxoID)
 }
 
 // GetBlock mocks base method.
-func (m *MockChain) GetBlock(arg0 ids.ID) (block.Block, error) {
+func (m *MockChain) GetBlock(blkID ids.ID) (block.Block, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlock", arg0)
+	ret := m.ctrl.Call(m, "GetBlock", blkID)
 	ret0, _ := ret[0].(block.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlock indicates an expected call of GetBlock.
-func (mr *MockChainMockRecorder) GetBlock(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) GetBlock(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockChain)(nil).GetBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockChain)(nil).GetBlock), blkID)
 }
 
 // GetBlockIDAtHeight mocks base method.
-func (m *MockChain) GetBlockIDAtHeight(arg0 uint64) (ids.ID, error) {
+func (m *MockChain) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", arg0)
+	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", height)
 	ret0, _ := ret[0].(ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlockIDAtHeight indicates an expected call of GetBlockIDAtHeight.
-func (mr *MockChainMockRecorder) GetBlockIDAtHeight(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) GetBlockIDAtHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockChain)(nil).GetBlockIDAtHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockChain)(nil).GetBlockIDAtHeight), height)
 }
 
 // GetLastAccepted mocks base method.
@@ -151,63 +152,79 @@ func (mr *MockChainMockRecorder) GetTimestamp() *gomock.Call {
 }
 
 // GetTx mocks base method.
-func (m *MockChain) GetTx(arg0 ids.ID) (*txs.Tx, error) {
+func (m *MockChain) GetTx(txID ids.ID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTx", arg0)
+	ret := m.ctrl.Call(m, "GetTx", txID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTx indicates an expected call of GetTx.
-func (mr *MockChainMockRecorder) GetTx(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) GetTx(txID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockChain)(nil).GetTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockChain)(nil).GetTx), txID)
 }
 
 // GetUTXO mocks base method.
-func (m *MockChain) GetUTXO(arg0 ids.ID) (*lux.UTXO, error) {
+func (m *MockChain) GetUTXO(utxoID ids.ID) (*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUTXO", arg0)
-	ret0, _ := ret[0].(*lux.UTXO)
+	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
+	ret0, _ := ret[0].(*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUTXO indicates an expected call of GetUTXO.
-func (mr *MockChainMockRecorder) GetUTXO(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) GetUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockChain)(nil).GetUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockChain)(nil).GetUTXO), utxoID)
 }
 
 // SetLastAccepted mocks base method.
-func (m *MockChain) SetLastAccepted(arg0 ids.ID) {
+func (m *MockChain) SetLastAccepted(blkID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastAccepted", arg0)
+	m.ctrl.Call(m, "SetLastAccepted", blkID)
 }
 
 // SetLastAccepted indicates an expected call of SetLastAccepted.
-func (mr *MockChainMockRecorder) SetLastAccepted(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) SetLastAccepted(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockChain)(nil).SetLastAccepted), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockChain)(nil).SetLastAccepted), blkID)
 }
 
 // SetTimestamp mocks base method.
-func (m *MockChain) SetTimestamp(arg0 time.Time) {
+func (m *MockChain) SetTimestamp(t time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTimestamp", arg0)
+	m.ctrl.Call(m, "SetTimestamp", t)
 }
 
 // SetTimestamp indicates an expected call of SetTimestamp.
-func (mr *MockChainMockRecorder) SetTimestamp(arg0 any) *gomock.Call {
+func (mr *MockChainMockRecorder) SetTimestamp(t any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockChain)(nil).SetTimestamp), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockChain)(nil).SetTimestamp), t)
+}
+
+// UTXOs mocks base method.
+func (m *MockChain) UTXOs(start ids.ID, limit int) ([]*utxo.UTXO, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UTXOs", start, limit)
+	ret0, _ := ret[0].([]*utxo.UTXO)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UTXOs indicates an expected call of UTXOs.
+func (mr *MockChainMockRecorder) UTXOs(start, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UTXOs", reflect.TypeOf((*MockChain)(nil).UTXOs), start, limit)
 }
 
 // MockState is a mock of State interface.
 type MockState struct {
 	ctrl     *gomock.Controller
 	recorder *MockStateMockRecorder
+	isgomock struct{}
 }
 
 // MockStateMockRecorder is the mock recorder for MockState.
@@ -252,19 +269,19 @@ func (mr *MockStateMockRecorder) AddBlock(arg0 any) *gomock.Call {
 }
 
 // AddTx mocks base method.
-func (m *MockState) AddTx(arg0 *txs.Tx) {
+func (m *MockState) AddTx(tx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", arg0)
+	m.ctrl.Call(m, "AddTx", tx)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockStateMockRecorder) AddTx(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) AddTx(tx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockState)(nil).AddTx), tx)
 }
 
 // AddUTXO mocks base method.
-func (m *MockState) AddUTXO(arg0 *lux.UTXO) {
+func (m *MockState) AddUTXO(arg0 *utxo.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddUTXO", arg0)
 }
@@ -275,19 +292,18 @@ func (mr *MockStateMockRecorder) AddUTXO(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockState)(nil).AddUTXO), arg0)
 }
 
-// Checksums mocks base method.
-func (m *MockState) Checksums() (ids.ID, ids.ID) {
+// Checksum mocks base method.
+func (m *MockState) Checksum() ids.ID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checksums")
+	ret := m.ctrl.Call(m, "Checksum")
 	ret0, _ := ret[0].(ids.ID)
-	ret1, _ := ret[1].(ids.ID)
-	return ret0, ret1
+	return ret0
 }
 
-// Checksums indicates an expected call of Checksums.
-func (mr *MockStateMockRecorder) Checksums() *gomock.Call {
+// Checksum indicates an expected call of Checksum.
+func (mr *MockStateMockRecorder) Checksum() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksums", reflect.TypeOf((*MockState)(nil).Checksums))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksum", reflect.TypeOf((*MockState)(nil).Checksum))
 }
 
 // Close mocks base method.
@@ -334,45 +350,45 @@ func (mr *MockStateMockRecorder) CommitBatch() *gomock.Call {
 }
 
 // DeleteUTXO mocks base method.
-func (m *MockState) DeleteUTXO(arg0 ids.ID) {
+func (m *MockState) DeleteUTXO(utxoID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteUTXO", arg0)
+	m.ctrl.Call(m, "DeleteUTXO", utxoID)
 }
 
 // DeleteUTXO indicates an expected call of DeleteUTXO.
-func (mr *MockStateMockRecorder) DeleteUTXO(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) DeleteUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), utxoID)
 }
 
 // GetBlock mocks base method.
-func (m *MockState) GetBlock(arg0 ids.ID) (block.Block, error) {
+func (m *MockState) GetBlock(blkID ids.ID) (block.Block, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlock", arg0)
+	ret := m.ctrl.Call(m, "GetBlock", blkID)
 	ret0, _ := ret[0].(block.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlock indicates an expected call of GetBlock.
-func (mr *MockStateMockRecorder) GetBlock(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetBlock(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockState)(nil).GetBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockState)(nil).GetBlock), blkID)
 }
 
 // GetBlockIDAtHeight mocks base method.
-func (m *MockState) GetBlockIDAtHeight(arg0 uint64) (ids.ID, error) {
+func (m *MockState) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", arg0)
+	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", height)
 	ret0, _ := ret[0].(ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlockIDAtHeight indicates an expected call of GetBlockIDAtHeight.
-func (mr *MockStateMockRecorder) GetBlockIDAtHeight(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetBlockIDAtHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockState)(nil).GetBlockIDAtHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockState)(nil).GetBlockIDAtHeight), height)
 }
 
 // GetLastAccepted mocks base method.
@@ -404,47 +420,47 @@ func (mr *MockStateMockRecorder) GetTimestamp() *gomock.Call {
 }
 
 // GetTx mocks base method.
-func (m *MockState) GetTx(arg0 ids.ID) (*txs.Tx, error) {
+func (m *MockState) GetTx(txID ids.ID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTx", arg0)
+	ret := m.ctrl.Call(m, "GetTx", txID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTx indicates an expected call of GetTx.
-func (mr *MockStateMockRecorder) GetTx(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetTx(txID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockState)(nil).GetTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockState)(nil).GetTx), txID)
 }
 
 // GetUTXO mocks base method.
-func (m *MockState) GetUTXO(arg0 ids.ID) (*lux.UTXO, error) {
+func (m *MockState) GetUTXO(utxoID ids.ID) (*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUTXO", arg0)
-	ret0, _ := ret[0].(*lux.UTXO)
+	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
+	ret0, _ := ret[0].(*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUTXO indicates an expected call of GetUTXO.
-func (mr *MockStateMockRecorder) GetUTXO(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockState)(nil).GetUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockState)(nil).GetUTXO), utxoID)
 }
 
 // InitializeChainState mocks base method.
-func (m *MockState) InitializeChainState(arg0 ids.ID, arg1 time.Time) error {
+func (m *MockState) InitializeChainState(stopVertexID ids.ID, genesisTimestamp time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitializeChainState", arg0, arg1)
+	ret := m.ctrl.Call(m, "InitializeChainState", stopVertexID, genesisTimestamp)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // InitializeChainState indicates an expected call of InitializeChainState.
-func (mr *MockStateMockRecorder) InitializeChainState(arg0, arg1 any) *gomock.Call {
+func (mr *MockStateMockRecorder) InitializeChainState(stopVertexID, genesisTimestamp any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeChainState", reflect.TypeOf((*MockState)(nil).InitializeChainState), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeChainState", reflect.TypeOf((*MockState)(nil).InitializeChainState), stopVertexID, genesisTimestamp)
 }
 
 // IsInitialized mocks base method.
@@ -477,48 +493,64 @@ func (mr *MockStateMockRecorder) SetInitialized() *gomock.Call {
 }
 
 // SetLastAccepted mocks base method.
-func (m *MockState) SetLastAccepted(arg0 ids.ID) {
+func (m *MockState) SetLastAccepted(blkID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastAccepted", arg0)
+	m.ctrl.Call(m, "SetLastAccepted", blkID)
 }
 
 // SetLastAccepted indicates an expected call of SetLastAccepted.
-func (mr *MockStateMockRecorder) SetLastAccepted(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) SetLastAccepted(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockState)(nil).SetLastAccepted), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockState)(nil).SetLastAccepted), blkID)
 }
 
 // SetTimestamp mocks base method.
-func (m *MockState) SetTimestamp(arg0 time.Time) {
+func (m *MockState) SetTimestamp(t time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTimestamp", arg0)
+	m.ctrl.Call(m, "SetTimestamp", t)
 }
 
 // SetTimestamp indicates an expected call of SetTimestamp.
-func (mr *MockStateMockRecorder) SetTimestamp(arg0 any) *gomock.Call {
+func (mr *MockStateMockRecorder) SetTimestamp(t any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockState)(nil).SetTimestamp), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockState)(nil).SetTimestamp), t)
 }
 
 // UTXOIDs mocks base method.
-func (m *MockState) UTXOIDs(arg0 []byte, arg1 ids.ID, arg2 int) ([]ids.ID, error) {
+func (m *MockState) UTXOIDs(addr []byte, previous ids.ID, limit int) ([]ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UTXOIDs", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UTXOIDs", addr, previous, limit)
 	ret0, _ := ret[0].([]ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UTXOIDs indicates an expected call of UTXOIDs.
-func (mr *MockStateMockRecorder) UTXOIDs(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockStateMockRecorder) UTXOIDs(addr, previous, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UTXOIDs", reflect.TypeOf((*MockState)(nil).UTXOIDs), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UTXOIDs", reflect.TypeOf((*MockState)(nil).UTXOIDs), addr, previous, limit)
+}
+
+// UTXOs mocks base method.
+func (m *MockState) UTXOs(start ids.ID, limit int) ([]*utxo.UTXO, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UTXOs", start, limit)
+	ret0, _ := ret[0].([]*utxo.UTXO)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UTXOs indicates an expected call of UTXOs.
+func (mr *MockStateMockRecorder) UTXOs(start, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UTXOs", reflect.TypeOf((*MockState)(nil).UTXOs), start, limit)
 }
 
 // MockDiff is a mock of Diff interface.
 type MockDiff struct {
 	ctrl     *gomock.Controller
 	recorder *MockDiffMockRecorder
+	isgomock struct{}
 }
 
 // MockDiffMockRecorder is the mock recorder for MockDiff.
@@ -551,19 +583,19 @@ func (mr *MockDiffMockRecorder) AddBlock(arg0 any) *gomock.Call {
 }
 
 // AddTx mocks base method.
-func (m *MockDiff) AddTx(arg0 *txs.Tx) {
+func (m *MockDiff) AddTx(tx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", arg0)
+	m.ctrl.Call(m, "AddTx", tx)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockDiffMockRecorder) AddTx(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) AddTx(tx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockDiff)(nil).AddTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockDiff)(nil).AddTx), tx)
 }
 
 // AddUTXO mocks base method.
-func (m *MockDiff) AddUTXO(arg0 *lux.UTXO) {
+func (m *MockDiff) AddUTXO(arg0 *utxo.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddUTXO", arg0)
 }
@@ -587,45 +619,45 @@ func (mr *MockDiffMockRecorder) Apply(arg0 any) *gomock.Call {
 }
 
 // DeleteUTXO mocks base method.
-func (m *MockDiff) DeleteUTXO(arg0 ids.ID) {
+func (m *MockDiff) DeleteUTXO(utxoID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteUTXO", arg0)
+	m.ctrl.Call(m, "DeleteUTXO", utxoID)
 }
 
 // DeleteUTXO indicates an expected call of DeleteUTXO.
-func (mr *MockDiffMockRecorder) DeleteUTXO(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) DeleteUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockDiff)(nil).DeleteUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockDiff)(nil).DeleteUTXO), utxoID)
 }
 
 // GetBlock mocks base method.
-func (m *MockDiff) GetBlock(arg0 ids.ID) (block.Block, error) {
+func (m *MockDiff) GetBlock(blkID ids.ID) (block.Block, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlock", arg0)
+	ret := m.ctrl.Call(m, "GetBlock", blkID)
 	ret0, _ := ret[0].(block.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlock indicates an expected call of GetBlock.
-func (mr *MockDiffMockRecorder) GetBlock(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetBlock(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockDiff)(nil).GetBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockDiff)(nil).GetBlock), blkID)
 }
 
 // GetBlockIDAtHeight mocks base method.
-func (m *MockDiff) GetBlockIDAtHeight(arg0 uint64) (ids.ID, error) {
+func (m *MockDiff) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", arg0)
+	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", height)
 	ret0, _ := ret[0].(ids.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBlockIDAtHeight indicates an expected call of GetBlockIDAtHeight.
-func (mr *MockDiffMockRecorder) GetBlockIDAtHeight(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetBlockIDAtHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockDiff)(nil).GetBlockIDAtHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockDiff)(nil).GetBlockIDAtHeight), height)
 }
 
 // GetLastAccepted mocks base method.
@@ -657,55 +689,70 @@ func (mr *MockDiffMockRecorder) GetTimestamp() *gomock.Call {
 }
 
 // GetTx mocks base method.
-func (m *MockDiff) GetTx(arg0 ids.ID) (*txs.Tx, error) {
+func (m *MockDiff) GetTx(txID ids.ID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTx", arg0)
+	ret := m.ctrl.Call(m, "GetTx", txID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTx indicates an expected call of GetTx.
-func (mr *MockDiffMockRecorder) GetTx(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetTx(txID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockDiff)(nil).GetTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockDiff)(nil).GetTx), txID)
 }
 
 // GetUTXO mocks base method.
-func (m *MockDiff) GetUTXO(arg0 ids.ID) (*lux.UTXO, error) {
+func (m *MockDiff) GetUTXO(utxoID ids.ID) (*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUTXO", arg0)
-	ret0, _ := ret[0].(*lux.UTXO)
+	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
+	ret0, _ := ret[0].(*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUTXO indicates an expected call of GetUTXO.
-func (mr *MockDiffMockRecorder) GetUTXO(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) GetUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockDiff)(nil).GetUTXO), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUTXO", reflect.TypeOf((*MockDiff)(nil).GetUTXO), utxoID)
 }
 
 // SetLastAccepted mocks base method.
-func (m *MockDiff) SetLastAccepted(arg0 ids.ID) {
+func (m *MockDiff) SetLastAccepted(blkID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastAccepted", arg0)
+	m.ctrl.Call(m, "SetLastAccepted", blkID)
 }
 
 // SetLastAccepted indicates an expected call of SetLastAccepted.
-func (mr *MockDiffMockRecorder) SetLastAccepted(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) SetLastAccepted(blkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockDiff)(nil).SetLastAccepted), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastAccepted", reflect.TypeOf((*MockDiff)(nil).SetLastAccepted), blkID)
 }
 
 // SetTimestamp mocks base method.
-func (m *MockDiff) SetTimestamp(arg0 time.Time) {
+func (m *MockDiff) SetTimestamp(t time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTimestamp", arg0)
+	m.ctrl.Call(m, "SetTimestamp", t)
 }
 
 // SetTimestamp indicates an expected call of SetTimestamp.
-func (mr *MockDiffMockRecorder) SetTimestamp(arg0 any) *gomock.Call {
+func (mr *MockDiffMockRecorder) SetTimestamp(t any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockDiff)(nil).SetTimestamp), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimestamp", reflect.TypeOf((*MockDiff)(nil).SetTimestamp), t)
+}
+
+// UTXOs mocks base method.
+func (m *MockDiff) UTXOs(start ids.ID, limit int) ([]*utxo.UTXO, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UTXOs", start, limit)
+	ret0, _ := ret[0].([]*utxo.UTXO)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UTXOs indicates an expected call of UTXOs.
+func (mr *MockDiffMockRecorder) UTXOs(start, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UTXOs", reflect.TypeOf((*MockDiff)(nil).UTXOs), start, limit)
 }
