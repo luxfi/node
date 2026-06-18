@@ -1,4 +1,4 @@
-# LLM.md - AI Development Guide
+# AI Development Guide
 
 This file provides guidance for AI assistants working with the Lux node codebase.
 
