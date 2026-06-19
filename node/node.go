@@ -1307,14 +1307,23 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 	}
 
 	// Resolve D-Chain ID for the ManagerConfig even if D is not critical.
+	// The DEXVM factory loads from PluginDir (CGO=0 plugin built by the
+	// Dockerfile Chain VM Plugin Stage), so the ID derived from genesis is
+	// always meaningful regardless of in-process registration. Whether this
+	// node ACTIVATES the D-Chain DEX (tracks/validates it + dials the venue)
+	// is enforced downstream by the chain manager's authorizeChainActivation
+	// from ManagerConfig.DexValidator (wired below). participatesInDEXChain
+	// reads the same flag only to log the operator's intent here.
 	var dChainID ids.ID
-	if true {
-		createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID)
-		if err == nil {
-			dChainID = createDexVMTx.ID()
+	if createDexVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.DexVMID); err == nil {
+		dChainID = createDexVMTx.ID()
+		if n.participatesInDEXChain() {
+			n.Log.Info("DEX validator: D-Chain activation enabled (dex-validator=true)", "chainID", dChainID)
 		} else {
-			n.Log.Info("D-Chain not in genesis, skipping")
+			n.Log.Info("D-Chain in genesis but activation disabled (dex-validator=false) — not tracked even under --track-all-chains", "chainID", dChainID)
 		}
+	} else {
+		n.Log.Info("D-Chain not in genesis, skipping")
 	}
 
 	_, err := metric.MakeAndRegister(
@@ -1343,31 +1352,45 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
-			SybilProtectionEnabled:                  n.Config.SybilProtectionEnabled,
-			StakingTLSSigner:                        n.StakingTLSSigner,
-			StakingTLSCert:                          n.StakingTLSCert,
-			StakingBLSKey:                           n.Config.StakingSigningKey,
-			Log:                                     n.Log,
-			LogFactory:                              n.LogFactory,
-			VMManager:                               n.VMManager,
-			BlockAcceptorGroup:                      n.BlockAcceptorGroup,
-			TxAcceptorGroup:                         n.TxAcceptorGroup,
-			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
-			DB:                                      n.DB,
-			MsgCreator:                              n.msgCreator,
-			Router:                                  n.chainRouter,
-			Net:                                     n.Net,
-			Validators:                              n.vdrs,
-			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
-			NodeID:                                  n.ID,
-			NetworkID:                               n.Config.NetworkID,
-			Server:                                  n.APIServer,
-			AtomicMemory:                            n.sharedMemory,
-			UTXOAssetID:                             utxoAssetID,
-			XChainID:                                xChainID,
-			CChainID:                                cChainID,
-			DChainID:                                dChainID,
-			CriticalChains:                          criticalChains,
+			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
+			StakingTLSSigner:          n.StakingTLSSigner,
+			StakingTLSCert:            n.StakingTLSCert,
+			StakingBLSKey:             n.Config.StakingSigningKey,
+			Log:                       n.Log,
+			LogFactory:                n.LogFactory,
+			VMManager:                 n.VMManager,
+			BlockAcceptorGroup:        n.BlockAcceptorGroup,
+			TxAcceptorGroup:           n.TxAcceptorGroup,
+			VertexAcceptorGroup:       n.VertexAcceptorGroup,
+			DB:                        n.DB,
+			MsgCreator:                n.msgCreator,
+			Router:                    n.chainRouter,
+			Net:                       n.Net,
+			Validators:                n.vdrs,
+			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
+			NodeID:                    n.ID,
+			NetworkID:                 n.Config.NetworkID,
+			Server:                    n.APIServer,
+			AtomicMemory:              n.sharedMemory,
+			UTXOAssetID:               utxoAssetID,
+			XChainID:                  xChainID,
+			CChainID:                  cChainID,
+			DChainID:                  dChainID,
+			CriticalChains:            criticalChains,
+			// ChainAuthorizations is derived from the single OptionalVMs
+			// registry (which VMs need which operator NFT) joined with the
+			// per-network collection assets in Config.NFTAuthorizationAssets and
+			// genesis-resolved chain IDs. Empty until a network configures an
+			// operator collection — so gated optional chains (D/B) behave as
+			// today and ungated ones are untouched — while the gate itself fails
+			// closed for any configured-but-unheld NFT (chains/manager_authz.go).
+			ChainAuthorizations: chainAuthorizationsFor(n.Config.GenesisBytes, n.Config.NFTAuthorizationAssets),
+			// DexValidator is the operator's D-Chain opt-in. It is enforced as a
+			// necessary activation condition by authorizeChainActivation (composed
+			// AND with the NFT gate), so a node WITHOUT dex-validator does not
+			// activate the D-Chain even under --track-all-chains. Read once here
+			// (same value participatesInDEXChain reports for the log line below).
+			DexValidator:                            n.Config.DexValidator,
 			TimeoutManager:                          n.timeoutManager,
 			Health:                                  n.health,
 			ShutdownNodeFunc:                        n.Shutdown,
@@ -1585,8 +1608,22 @@ func (n *Node) initVMs() error {
 	// C-Chain VM (EVM) is loaded as a plugin via ZAP transport when present
 	// in genesis. Plugin binary placed at <plugin-dir>/<EVMID> by init container.
 
-	// Register all VMs (Q, A, B, T, Z, G, D, K, O, R, I chains)
-	if err := n.registerOptionalVMs(); err != nil {
+	// Register the always-activated core VMs in-process (Q, Z). The optional
+	// chain VMs (A/B/D/G/I/K/O/R/T) load from PluginDir via VMRegistry.Reload
+	// below, like the C-Chain EVM — keeping luxd small per the all-plugins
+	// directive.
+	if err := n.registerCoreVMs(); err != nil {
+		return err
+	}
+
+	// Anti-shadow guard: with all in-process registration done (P/X above, Q/Z
+	// in registerCoreVMs), assert that NO optional/plugin VM leaked into the
+	// in-process registry. This runs BEFORE the PluginDir scan below, so a
+	// violation aborts boot before any plugin could be shadowed. Fail-closed:
+	// the node refuses to start rather than silently link a VM that must be a
+	// plugin.
+	if err := n.assertNoOptionalShadows(context.Background()); err != nil {
+		n.Log.Error("VM anti-shadow guard failed", "error", err)
 		return err
 	}
 
