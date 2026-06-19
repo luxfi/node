@@ -18,11 +18,10 @@ import (
 	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/address"
-	"github.com/luxfi/constants"
-	chain "github.com/luxfi/vm/chain"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -35,21 +34,22 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/pcodecs"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/txs/auth"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/txs/auth"
 	"github.com/luxfi/node/vms/xvm/utxo"
-	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 	validators "github.com/luxfi/validators"
 	consensusversion "github.com/luxfi/version"
 	vmcore "github.com/luxfi/vm"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/warp"
 
 	blockbuilder "github.com/luxfi/node/vms/xvm/block/builder"
@@ -791,6 +791,29 @@ func (vm *VM) LoadUser(
 	}
 
 	return utxos, kc, nil
+}
+
+// GetUTXOs returns every UTXO this chain's state holds that is owned by at
+// least one address in [addrs]. This is the in-process (no-HTTP) counterpart
+// to Service.GetUTXOs: the chain manager's NFT-authorization gate calls it to
+// decide whether a validator's staking X-address holds a chain-activation NFT.
+//
+// GetAllUTXOs is a multi-step UTXOIDs-then-GetUTXO walk over vm.state, so it
+// acquires vm.Lock for read to take a consistent snapshot — mirroring
+// Service.GetUTXOs, which locks for its own GetUTXOs walk. The lock is taken
+// HERE (not left to callers) so the snapshot guarantee is part of the method's
+// contract and no caller can violate it; a read lock is sufficient and lets
+// concurrent readers proceed. Safe against deadlock: the sole in-process caller
+// is the chain manager's NFT gate (chains/manager_authz.go), which holds only
+// its own chainsLock when resolving this reader and never vm.Lock.
+// Returns an empty slice (never nil error) when [addrs] is empty.
+func (vm *VM) GetUTXOs(addrs set.Set[ids.ShortID]) ([]*lux.UTXO, error) {
+	if addrs.Len() == 0 {
+		return nil, nil
+	}
+	vm.Lock.RLock()
+	defer vm.Lock.RUnlock()
+	return lux.GetAllUTXOs(vm.state, addrs)
 }
 
 // selectChangeAddr returns the change address to be used for [kc] when [changeAddr] is given
