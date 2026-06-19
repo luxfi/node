@@ -175,6 +175,7 @@ const (
 	PartialSyncPrimaryNetworkKey                       = "partial-sync-primary-network"
 	TrackChainsKey                                     = "track-chains"
 	TrackAllChainsKey                                  = "track-all-chains"
+	DexValidatorKey                                    = "dex-validator"
 	AdminAPIEnabledKey                                 = "api-admin-enabled"
 	InfoAPIEnabledKey                                  = "api-info-enabled"
 	KeystoreAPIEnabledKey                              = "api-keystore-enabled"
