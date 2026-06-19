@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//go:build dchain
-
 // Package dexvm re-exports the canonical DEX VM from
 // github.com/luxfi/chains/dexvm so existing callers that imported
 // github.com/luxfi/node/vms/dexvm pre-extraction keep working
@@ -11,11 +9,10 @@
 // New code should import the canonical path:
 //   "github.com/luxfi/chains/dexvm"
 //
-// This package is a thin alias wrapper kept for backward compatibility. It is
-// gated behind the `dchain` build tag: it imports github.com/luxfi/chains/dexvm
-// (the D-Chain proxy tree), which MUST be absent from the public OSS luxd build
-// (public-build purity). Nothing in-tree imports this alias; it exists only for
-// out-of-tree backward compatibility, and only a venue (dchain) build links it.
+// This package is a thin, unconditional backward-compatibility alias. The
+// underlying chains/dexvm is the pure-Go stateless atomic proxy (zero private
+// deps), so — like every other genesis VM — it is linked into every build with
+// no build tag.
 package dexvm
 
 import (
