@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.25.15
+	github.com/luxfi/consensus v1.25.18
 	github.com/luxfi/crypto v1.19.21
 	github.com/luxfi/database v1.20.3
 	github.com/luxfi/ids v1.2.15
@@ -35,7 +35,7 @@ require (
 	github.com/luxfi/math v1.4.1
 	github.com/luxfi/metric v1.5.8
 	github.com/luxfi/mock v0.1.1
-	github.com/mr-tron/base58 v1.2.0
+	github.com/mr-tron/base58 v1.3.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2 // indirect
@@ -57,7 +57,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.52.0
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
+	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9 // indirect
 	golang.org/x/mod v0.36.0
 	golang.org/x/net v0.55.0
 	golang.org/x/sync v0.20.0
@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.15
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.3.9
+	github.com/luxfi/chains v1.3.10
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.5.8
@@ -128,7 +128,7 @@ require (
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.13.14
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
-	github.com/luxfi/geth v1.16.99
+	github.com/luxfi/geth v1.17.11
 	github.com/luxfi/go-bip39 v1.1.2
 	github.com/luxfi/keys v1.2.0
 	github.com/luxfi/lattice/v7 v7.1.4
@@ -188,17 +188,15 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
-	github.com/luxfi/ai v0.1.0 // indirect
 	github.com/luxfi/corona v0.7.6 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/kms v1.11.4 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/magnetar v1.2.0 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
-	github.com/luxfi/oracle v1.0.0 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
+	github.com/luxfi/precompile v0.5.47 // indirect
 	github.com/luxfi/pulsar v1.1.2 // indirect
-	github.com/luxfi/relay v1.0.0 // indirect
 	github.com/luxfi/staking v1.5.0 // indirect
 	github.com/luxfi/threshold v1.9.7 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
@@ -245,8 +243,8 @@ require (
 	github.com/luxfi/math/big v0.1.0 // indirect
 	github.com/luxfi/sampler v1.1.0 // indirect
 	github.com/luxfi/tls v1.0.3 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.21 // indirect
+	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/montanaflynn/stats v0.9.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
