@@ -1749,6 +1749,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 	nodeConfig.TrackAllChains = v.GetBool(TrackAllChainsKey)
+	nodeConfig.DexValidator = v.GetBool(DexValidatorKey)
 
 	// HTTP APIs
 	nodeConfig.HTTPConfig, err = getHTTPConfig(v)
