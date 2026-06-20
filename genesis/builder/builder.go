@@ -607,6 +607,12 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		{[]byte(config.TChainGenesis), constants.ThresholdVMID, "T-Chain", nil},
 		{[]byte(config.QChainGenesis), constants.QuantumVMID, "Q-Chain", nil},
 		{[]byte(config.ZChainGenesis), constants.ZKVMID, "Z-Chain", nil},
+		// A/G/K carry genesis blobs and are deterministic genesis chains
+		// (per the no-CreateChainTx model). Appended AFTER Z so the existing
+		// X→C→D→B→T→Q→Z blockchain IDs are preserved; A/G/K take fresh tail IDs.
+		{[]byte(config.AChainGenesis), constants.AIVMID, "A-Chain", nil},
+		{[]byte(config.GChainGenesis), constants.GraphVMID, "G-Chain", nil},
+		{[]byte(config.KChainGenesis), constants.KeyVMID, "K-Chain", nil},
 	}
 	chains := []genesis.Chain{}
 	for _, c := range optIn {
@@ -622,8 +628,8 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		})
 	}
 
-	// G/K/A/I chains are loaded as plugins and instantiated via
-	// CreateChainTx post-genesis on their own chains.
+	// I/O/R chains carry no genesis blob; they load as plugins and are
+	// instantiated via CreateChainTx post-genesis on their own chains.
 
 	pChainGenesis, err := genesis.New(
 		utxoAssetID,
