@@ -172,13 +172,20 @@ RUN . ./build_env.sh && \
 # XAssetID → UTXOAssetID (refactor 034ec47). v1.1.6 anticipated the
 # rip in rpc/context.go but still pinned the old runtime, leaving
 # itself internally inconsistent. v1.1.7 pins the post-rip runtime.
-ARG EVM_VERSION=v0.19.3
+ARG EVM_VERSION=v0.19.4
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+# evm v0.19.4 go.mod pins a dead luxfi/upgrade pseudo-version
+# (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
+# the released upgrade v1.0.1 tag (semver-forward, not a downgrade). Then strip
+# first-party go.sum lines so -mod=mod re-records current content hashes for the
+# re-published luxfi modules at their pinned versions (integrity repair, no version drift).
 RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /luxd/build/plugins && \
     git clone --depth 1 --branch ${EVM_VERSION} https://github.com/luxfi/evm.git /tmp/evm && \
     cd /tmp/evm && \
     . /build/build_env.sh && \
+    go mod edit -require=github.com/luxfi/upgrade@v1.0.1 && \
+    find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
     go build -ldflags="-s -w" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
@@ -201,18 +208,20 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   thresholdvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
-ARG CHAINS_REF=main
+ARG CHAINS_REF=v1.3.11
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains
+    git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
+    find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
 
 # Each VM is an independent Go module under /tmp/chains/<vm>/.
 # Build each plugin binary and place it at /luxd/build/plugins/<cb58-vm-id>.
 #
-# NB(2026-05-19): luxfi/chains main has unresolved sibling go.mod replace
-# directives (luxfi/{evm,precompile,threshold} => ../*) that break in any
-# isolated build context. Each chain plugin is therefore built best-effort;
-# production deployments pull plugins from S3 (`pluginSource.bucket`) at
-# runtime per LuxNetwork CR, so an embedded plugin miss is non-fatal.
+# The recursive go.sum strip above lets -mod=mod re-record current content hashes
+# for re-published first-party modules at their pinned versions (integrity repair).
+# At a tagged CHAINS_REF (v1.3.11) the sibling go.mod replace directives that
+# affect `main` are absent, so every VM module builds in isolation. The bridgevm
+# plugin (B-Chain) MUST build — it blank-imports crypto/threshold/bls to register
+# the BLS threshold scheme; a miss reintroduces the v1.30.16 B-Chain init failure.
 RUN --mount=type=cache,target=/root/.cache/go-build \
     . /build/build_env.sh && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
@@ -220,7 +229,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     ( cd /tmp/chains/aivm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
     ( cd /tmp/chains/bridgevm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY ./cmd/plugin ) || echo "WARN: bridgevm plugin build skipped" ; \
+        -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY ./cmd/plugin ) ; \
     ( cd /tmp/chains/dexvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/plugin ) || echo "WARN: dexvm plugin build skipped" ; \
     ( cd /tmp/chains/graphvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
@@ -240,6 +249,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
     ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
+    test -s /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY \
+        || { echo "FATAL: bridgevm (B-Chain) plugin missing — the v1.30.16 regression would recur"; exit 1; } && \
     rm -rf /tmp/chains
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails
@@ -269,8 +280,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Pure Go fallbacks are used when the library is absent.
 RUN ldconfig 2>/dev/null || true
 
-# Maintain compatibility with previous images
-COPY --from=builder /luxd/build /luxd/build
+# Maintain compatibility with previous images.
+# In the builder stage /luxd/build contains ONLY plugins/ (the luxd + lpm binaries
+# live at /build/build and are COPYed separately below). The plugin set (~192MB of
+# 12 VM plugins) is split across several COPY layers so each blob stays well under
+# ~100MB: a single monolithic plugins layer cannot reliably complete its registry
+# blob upload over a contended uplink, whereas sub-100MB layers push reliably (and
+# resume independently by digest).
+# plugin group 1
+COPY --from=builder \
+    /luxd/build/plugins/mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 \
+    /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA \
+    /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY \
+    /luxd/build/plugins/
+# plugin group 2
+COPY --from=builder \
+    /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
+    /luxd/build/plugins/nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt \
+    /luxd/build/plugins/oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM \
+    /luxd/build/plugins/pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M \
+    /luxd/build/plugins/
+# plugin group 3
+COPY --from=builder \
+    /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
+    /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
+    /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
+    /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+    /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
+    /luxd/build/plugins/
 WORKDIR /luxd/build
 
 # Copy the executables into the container
