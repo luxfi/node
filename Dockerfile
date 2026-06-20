@@ -1,6 +1,8 @@
 # The version is supplied as a build argument rather than hard-coded
-# to minimize the cost of version changes.
-ARG GO_VERSION=1.26.1
+# to minimize the cost of version changes. Must be >= the `go` directive
+# in go.mod (1.26.4); the EVM plugin pulls luxfi/upgrade@v1.0.1 which
+# floors the toolchain at 1.26.4.
+ARG GO_VERSION=1.26.4
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer
