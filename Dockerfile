@@ -193,7 +193,26 @@ RUN . ./build_env.sh && \
 # protocolFeeController is the built-in DAO treasury. 0x9010 is REMOVED (not a registered
 # precompile, no dispatch, no forward); 0x9999 is the SOLE canonical DEX precompile. For a
 # fresh net whose genesis ts >= the fork, the marker is present from block 0.
-ARG EVM_VERSION=v1.99.33
+#
+# v1.99.34 (precompile v0.5.54): fixes a consensus-divergence on the relaunch/replay path.
+# The EVM dispatch gate (core.LuxPrecompileOverrider.PrecompileOverride) used to read the
+# process-global params.lastRulesContext (via GetRulesExtra(Rules{})), which is rewritten
+# last-writer-wins by every concurrent Rules() call (eth_call/estimateGas/worker). On a
+# live, RPC-serving post-fork node replaying a PRE-fork RLP block (admin.importChain), a
+# concurrent post-fork eth_call could overwrite the global timestamp between the verify
+# goroutine's NewEVM(pre-fork block) and its tx dispatch — making the pre-fork block see
+# 0x9999 ENABLED and dispatch SettleContract.Run during plain-account execution => state
+# divergence / consensus split. Fix: the dispatch gate now decides from the overrider's OWN
+# per-EVM fields (o.chainConfig + o.timestamp) via the pure params.GetExtrasRules, never the
+# global — so every replay of a block yields the same enabled set on every validator. Also:
+# the registry stateDBBridge.SubBalance fallback now FAILS CLOSED (panic → reverted call)
+# instead of returning a zero "previous balance" without debiting (silent native mint); and
+# the genesis-config builders (SetAllGenesisPrecompiles/AllGenesisPrecompiles) skip AlwaysOn
+# modules so 0x9999 can never get a timestamp-0 genesis config that bypasses the dated fork.
+# The money path (V4 swap ABI, marker install, two-phase atomic settle) is byte-for-byte
+# unchanged: ONLY the dispatch-path timestamp source, the SubBalance fail-mode, the genesis
+# builder guard, and stale 0x9010 comments changed.
+ARG EVM_VERSION=v1.99.34
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
