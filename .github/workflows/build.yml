@@ -27,12 +27,25 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-go-for-project
       # GoReleaser shells out to `go build`, which must fetch private luxfi
-      # modules (container, crypto, proto, ...). setup-go sets GOPRIVATE but only
-      # wires git auth when passed a token; configure it explicitly here, exactly
-      # as ci.yml does, so module fetches don't hit `could not read Username`.
-      - name: Configure Git for private modules
+      # modules across REPOS (container, crypto, database, proto, ...). The
+      # repo-scoped github.token cannot read other private luxfi repos
+      # (`could not read Password ... exit 128`); use the cross-org PAT that
+      # docker.yml already relies on (org GH_TOKEN, else repo UNIVERSE_PAT).
+      - id: pat
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          UNIVERSE_PAT: ${{ secrets.UNIVERSE_PAT }}
         shell: bash
-        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
+        run: |
+          tok="$GH_TOKEN"; src="GH_TOKEN"
+          if [ -z "$tok" ]; then tok="$UNIVERSE_PAT"; src="UNIVERSE_PAT"; fi
+          if [ -z "$tok" ]; then
+            echo "::error::No GH_TOKEN or UNIVERSE_PAT secret set — go build cannot fetch private cross-repo luxfi modules"
+            exit 1
+          fi
+          echo "Using secret: $src (length=${#tok})"
+          echo "::add-mask::$tok"
+          git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"
       - name: Run GoReleaser (release)
         if: startsWith(github.ref, 'refs/tags/')
         uses: goreleaser/goreleaser-action@v7
