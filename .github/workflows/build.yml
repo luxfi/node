@@ -14,7 +14,12 @@ env:
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    # In-cluster ARC pool (lux-build autoscalingrunnerset in lux-k8s, org-scoped to
+    # github.com/luxfi, amd64). GitHub-hosted ubuntu-latest is disabled for this org
+    # (NO GITHUB BUILDERS) — that is why this job red-X'd while docker.yml (lux-build)
+    # published the image. GoReleaser cross-compiles all GOOS/GOARCH from one linux
+    # amd64 host with CGO_ENABLED=0, so a single amd64 runner is sufficient.
+    runs-on: lux-build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
