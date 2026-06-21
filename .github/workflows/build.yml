@@ -26,6 +26,13 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-go-for-project
+      # GoReleaser shells out to `go build`, which must fetch private luxfi
+      # modules (container, crypto, proto, ...). setup-go sets GOPRIVATE but only
+      # wires git auth when passed a token; configure it explicitly here, exactly
+      # as ci.yml does, so module fetches don't hit `could not read Username`.
+      - name: Configure Git for private modules
+        shell: bash
+        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
       - name: Run GoReleaser (release)
         if: startsWith(github.ref, 'refs/tags/')
         uses: goreleaser/goreleaser-action@v7
