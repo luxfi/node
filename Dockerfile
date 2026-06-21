@@ -174,9 +174,13 @@ RUN . ./build_env.sh && \
 # XAssetID → UTXOAssetID (refactor 034ec47). v1.1.6 anticipated the
 # rip in rpc/context.go but still pinned the old runtime, leaving
 # itself internally inconsistent. v1.1.7 pins the post-rip runtime.
-ARG EVM_VERSION=v0.19.4
+# MUST track node's go.mod luxfi/evm (the C-Chain EVM plugin = the native 0x9999
+# receipt/atomic surface). v1.99.31 = the native-atomic seam (precompile v0.5.51,
+# geth v1.17.12 CallIndex). Bump this with every evm release or the bundled
+# C-Chain plugin silently goes stale vs node's deps.
+ARG EVM_VERSION=v1.99.31
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
-# evm v0.19.4 go.mod pins a dead luxfi/upgrade pseudo-version
+# the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
 # the released upgrade v1.0.1 tag (semver-forward, not a downgrade). Then strip
 # first-party go.sum lines so -mod=mod re-records current content hashes for the
@@ -210,7 +214,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   thresholdvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
-ARG CHAINS_REF=v1.3.11
+# MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
+# v1.3.14 = the native-atomic seam (rail-bound D->C atomic, LP committed-liquidity).
+# Bump with every chains release or the bundled VM plugins go stale vs node's deps.
+ARG CHAINS_REF=v1.3.14
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
