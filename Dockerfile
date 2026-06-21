@@ -212,7 +212,7 @@ RUN . ./build_env.sh && \
 # The money path (V4 swap ABI, marker install, two-phase atomic settle) is byte-for-byte
 # unchanged: ONLY the dispatch-path timestamp source, the SubBalance fail-mode, the genesis
 # builder guard, and stale 0x9010 comments changed.
-ARG EVM_VERSION=v1.99.34
+ARG EVM_VERSION=v1.99.35
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
