@@ -179,13 +179,21 @@ RUN . ./build_env.sh && \
 # geth v1.17.12 CallIndex). Bump this with every evm release or the bundled
 # C-Chain plugin silently goes stale vs node's deps.
 #
-# v1.99.32 (precompile v0.5.52): 0x9999 DEX settlement is ALWAYS-ON — active on the
-# C-Chain from genesis with ZERO per-net config (no dexSettleConfig genesis/upgrade
-# entry). Dispatch-only activation (no genesis state write, genesis hash unchanged);
-# the D-Chain (dexvm) peer is resolved at RUNTIME via the consensus-context "D" alias
-# (contract.AtomicState.DChainID()), and the protocolFeeController is the built-in DAO
-# treasury. Booting luxd = 0x9999 live on the C-Chain.
-ARG EVM_VERSION=v1.99.32
+# v1.99.33 (precompile v0.5.53): 0x9999 DEX settlement activates at a SINGLE canonical
+# dated fork — extras.DexSettleActivationTime = 1766704800 (Dec 25 2025 00:00:00 UTC) —
+# with ZERO per-net config (no dexSettleConfig genesis/upgrade entry; one built-in fork,
+# identical on every net). At the fork it BOTH enables dispatch AND installs the standard
+# EXTCODESIZE marker (nonce=1 + code) into 0x9999 going forward, so eth_getCode(0x9999)
+# !=0x and a typed Solidity IPoolManager(0x9999).swap(...) passes the contract-existence
+# guard. The marker is installed FORWARD (never in historical genesis), so pre-Dec-25
+# history (the ~/work/lux/state RLP snapshot, replayed via admin.importChain) stays
+# byte-identical to canonical state — a pre-fork value transfer to 0x9999 hits a PLAIN
+# account, not the precompile. The D-Chain (dexvm) peer is resolved at RUNTIME via the
+# consensus-context "D" alias (contract.AtomicState.DChainID()) and the
+# protocolFeeController is the built-in DAO treasury. 0x9010 is REMOVED (not a registered
+# precompile, no dispatch, no forward); 0x9999 is the SOLE canonical DEX precompile. For a
+# fresh net whose genesis ts >= the fork, the marker is present from block 0.
+ARG EVM_VERSION=v1.99.33
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
