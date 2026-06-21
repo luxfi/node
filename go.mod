@@ -195,7 +195,7 @@ require (
 	github.com/luxfi/magnetar v1.2.0 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.5.51 // indirect
+	github.com/luxfi/precompile v0.5.52 // indirect
 	github.com/luxfi/pulsar v1.1.2 // indirect
 	github.com/luxfi/staking v1.5.0 // indirect
 	github.com/luxfi/threshold v1.9.7 // indirect
