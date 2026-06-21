@@ -178,7 +178,14 @@ RUN . ./build_env.sh && \
 # receipt/atomic surface). v1.99.31 = the native-atomic seam (precompile v0.5.51,
 # geth v1.17.12 CallIndex). Bump this with every evm release or the bundled
 # C-Chain plugin silently goes stale vs node's deps.
-ARG EVM_VERSION=v1.99.31
+#
+# v1.99.32 (precompile v0.5.52): 0x9999 DEX settlement is ALWAYS-ON — active on the
+# C-Chain from genesis with ZERO per-net config (no dexSettleConfig genesis/upgrade
+# entry). Dispatch-only activation (no genesis state write, genesis hash unchanged);
+# the D-Chain (dexvm) peer is resolved at RUNTIME via the consensus-context "D" alias
+# (contract.AtomicState.DChainID()), and the protocolFeeController is the built-in DAO
+# treasury. Booting luxd = 0x9999 live on the C-Chain.
+ARG EVM_VERSION=v1.99.32
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
