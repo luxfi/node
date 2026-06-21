@@ -14,7 +14,10 @@ permissions:
 jobs:
   # Validate semantic version is < v2.0.0
   validate-version:
-    runs-on: ubuntu-latest
+    # lux-build ARC pool (in-cluster, lux-k8s, org-scoped to github.com/luxfi). The org
+    # disables GitHub-hosted runners (NO GITHUB BUILDERS); ubuntu-latest never gets a
+    # runner, which red-X'd this job and cascaded skips to every platform build below.
+    runs-on: lux-build
     outputs:
       version: ${{ steps.extract.outputs.version }}
       is_prerelease: ${{ steps.check.outputs.is_prerelease }}
@@ -94,7 +97,10 @@ jobs:
       - build-linux-binaries
       - build-macos
       - build-windows
-    runs-on: ubuntu-latest
+    # lux-build ARC pool (in-cluster, lux-k8s, org-scoped to github.com/luxfi). This job
+    # only downloads artifacts + cuts the GitHub Release — no compile — but ubuntu-latest
+    # is disabled for the org (NO GITHUB BUILDERS), so it must run on a self-hosted pool.
+    runs-on: lux-build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
