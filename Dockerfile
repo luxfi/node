@@ -97,16 +97,26 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
     echo "export CC=gcc" > ./build_env.sh \
     ; fi
 
-# Fetch pre-built lux-accel (GPU crypto library)
+# Fetch pre-built lux-accel (GPU crypto library). The release assets live in
+# the PRIVATE luxcpp/accel repo (resolves to lux-private/accel) — an
+# unauthenticated GitHub release-download 404s, so the fetch is authenticated
+# with the same `ghtok` BuildKit secret used for private go modules. It is
+# also best-effort (matches the cevm/lpm fetch contract below): the library is
+# ONLY linked at CGO_ENABLED=1, so a CGO_ENABLED=0 build (the canonical CI/devnet
+# build, pure-Go) does not need it and must not fail when it is unreachable.
 ARG ACCEL_VERSION=v0.1.0
-RUN ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+RUN --mount=type=secret,id=ghtok,required=false \
+    ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     if [ "$ARCH" = "amd64" ]; then ACCEL_ARCH="linux-x86_64"; else ACCEL_ARCH="linux-arm64"; fi && \
     mkdir -p /usr/local/include /usr/local/lib && \
-    wget -q "https://github.com/luxcpp/accel/releases/download/${ACCEL_VERSION}/lux-accel-${ACCEL_ARCH}.tar.gz" \
-        -O /tmp/accel.tar.gz && \
-    tar -xzf /tmp/accel.tar.gz -C /usr/local && \
-    rm /tmp/accel.tar.gz && \
-    ldconfig 2>/dev/null || true
+    AUTH=""; [ -s /run/secrets/ghtok ] && AUTH="--header=Authorization: Bearer $(cat /run/secrets/ghtok)"; \
+    ( wget -q ${AUTH:+"$AUTH"} \
+        "https://github.com/luxcpp/accel/releases/download/${ACCEL_VERSION}/lux-accel-${ACCEL_ARCH}.tar.gz" \
+        -O /tmp/accel.tar.gz \
+      && tar -xzf /tmp/accel.tar.gz -C /usr/local \
+      && rm /tmp/accel.tar.gz \
+      && ldconfig 2>/dev/null \
+    ) || echo "WARN: lux-accel ${ACCEL_VERSION} fetch skipped (private/unreachable; GPU accel unused at CGO_ENABLED=0)"
 
 # Fetch pre-built luxcpp/cevm libs (libevm, libevm-gpu, libluxgpu,
 # libcevm_precompiles + go_bridge.h). When CGO_ENABLED=1 these libraries are
@@ -215,7 +225,21 @@ RUN . ./build_env.sh && \
 # The money path (V4 swap ABI, marker install, two-phase atomic settle) is byte-for-byte
 # unchanged: ONLY the dispatch-path timestamp source, the SubBalance fail-mode, the genesis
 # builder guard, and stale 0x9010 comments changed.
-ARG EVM_VERSION=v1.99.35
+#
+# v1.99.37 (precompile v0.5.57): wires the 0x9999 ERC-20 Call surface to the DEX
+# settlement precompile (commit 2cf30e43d) and gates that Call surface to the DEX
+# settlement family 0x9999/0x9996 (commit 9579f2e34). Before this, a CALL into
+# 0x9999's ERC-20 settle path saw a nil PrecompileEnv (GetPrecompileEnv == nil) and
+# could not resolve the token-transfer Call seam — the two-phase atomic settle's
+# ERC-20 leg had no env to execute against. precompile v0.5.57 also adds the
+# CALL-only DELEGATECALL guard (commit feeaab5a0) so the settle surface is reachable
+# only via CALL (not DELEGATECALL, which would run it in the caller's context). Also
+# converges deps to latest patch within v1.x.x (threshold v1.9.9, crypto v1.19.21,
+# database v1.20.3, geth v1.17.12, warp v1.19.5, vm v1.2.5, api v1.0.15 — the
+# UTXOAssetID rename that fixed the LuxAssetID build break) and removes the dead
+# vendored dexConfig upgrade fixtures. The 0x9999 swap ABI + dated-fork activation
+# (DexSettleActivationTime = 1766704800) are unchanged from v1.99.34.
+ARG EVM_VERSION=v1.99.37
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
