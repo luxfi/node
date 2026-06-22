@@ -38,12 +38,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-# Skip checksum verification for luxfi packages (tags may be rewritten)
-ENV GONOSUMCHECK=github.com/luxfi/*
-ENV GONOSUMDB=github.com/luxfi/*
-# Use Go proxy for most deps (gonum.org is flaky via direct), direct only for luxfi
+# Skip checksum verification for luxfi + hanzoai packages: both are cross-org
+# deps not registered in the public sum.golang.org / proxy (reading e.g.
+# hanzoai/vfs@v0.4.1's go.mod via the public sumdb 404s and fails the build).
+ENV GONOSUMCHECK=github.com/luxfi/*,github.com/hanzoai/*
+ENV GONOSUMDB=github.com/luxfi/*,github.com/hanzoai/*
+# Use Go proxy for most deps (gonum.org is flaky via direct), direct only for
+# the cross-org private modules.
 ENV GOPROXY=https://proxy.golang.org,direct
-ENV GONOPROXY=github.com/luxfi/*
+ENV GONOPROXY=github.com/luxfi/*,github.com/hanzoai/*
 ENV GOFLAGS="-mod=mod"
 
 # Copy and download lux dependencies using go mod.
