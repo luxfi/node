@@ -312,9 +312,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # (drops the phantom dchain+cgo gate); v1.5.11 wires CLOB order ingestion over the
 # node HTTP router (VM.CreateHandlers -> /ext/bc/D/dex/<method>, pkg/dchain/ingest.go)
 # so an order POSTed to the node flows submitTx -> mempool -> consensus -> Verify
-# (match) -> Accept. Bump with every dex release that changes the VM, like
-# CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.11
+# (match) -> Accept; v1.5.12 persists the head block so the VM survives a restart
+# once advanced past genesis (GetBlock(lastAccepted) no longer ErrNotFound).
+# Bump with every dex release that changes the VM, like CHAINS_REF for the
+# other 10 VMs.
+ARG DEX_REF=v1.5.12
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
