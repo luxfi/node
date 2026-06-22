@@ -313,10 +313,13 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # node HTTP router (VM.CreateHandlers -> /ext/bc/D/dex/<method>, pkg/dchain/ingest.go)
 # so an order POSTed to the node flows submitTx -> mempool -> consensus -> Verify
 # (match) -> Accept; v1.5.12 persists the head block so the VM survives a restart
-# once advanced past genesis (GetBlock(lastAccepted) no longer ErrNotFound).
-# Bump with every dex release that changes the VM, like CHAINS_REF for the
-# other 10 VMs.
-ARG DEX_REF=v1.5.12
+# once advanced past genesis (GetBlock(lastAccepted) no longer ErrNotFound);
+# v1.5.13 indexes processing blocks so the plugin transport's ID-only Accept
+# (GetBlock(builtID)) resolves the just-built block — without it the engine's
+# self-finalize Accept is a silent no-op and the clob submitTx waiter hangs (no
+# D-Chain blocks). Bump with every dex release that changes the VM, like
+# CHAINS_REF for the other 10 VMs.
+ARG DEX_REF=v1.5.13
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
