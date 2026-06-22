@@ -276,8 +276,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
     ( cd /tmp/chains/bridgevm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY ./cmd/plugin ) ; \
-    ( cd /tmp/chains/dexvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/plugin ) || echo "WARN: dexvm plugin build skipped" ; \
     ( cd /tmp/chains/graphvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt ./cmd/plugin ) || echo "WARN: graphvm plugin build skipped" ; \
     ( cd /tmp/chains/identityvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
@@ -298,6 +296,35 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     test -s /luxd/build/plugins/kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY \
         || { echo "FATAL: bridgevm (B-Chain) plugin missing — the v1.30.16 regression would recur"; exit 1; } && \
     rm -rf /tmp/chains
+
+# ============= Native D-Chain DEX VM Plugin Stage ================
+# The D-Chain (dexvm slot, vmID mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr)
+# is the NATIVE consensus matcher VM: github.com/luxfi/dex/pkg/dchain implements
+# block.ChainVM and runs the lx.OrderBook matcher INSIDE luxd consensus
+# (Block.Verify against a versiondb overlay; Block.Accept commits) — the trade IS
+# the D-Chain state transition, sequenced by luxd's multi-validator engine. This
+# REPLACES the former chains/dexvm proxy (which relayed clob_* over ZAP to a
+# standalone dchain-venue): there is no DexZapEndpoint and no standalone venue in
+# the trading path. cmd/dchain wraps the VM in the SAME rpc.Serve plugin harness
+# luxfi/evm boots through, and is pure-Go (CGO=0) — the optional GPU AMM
+# accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
+# is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
+# (drops the phantom dchain+cgo gate). Bump with every dex release that changes the
+# VM, like CHAINS_REF for the other 10 VMs.
+ARG DEX_REF=v1.5.10
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
+    find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
+    cd /tmp/dex && \
+    . /build/build_env.sh && \
+    GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod \
+    go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/dchain && \
+    chmod +x /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr && \
+    test -s /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
+        || { echo "FATAL: native D-Chain (dexvm) plugin missing — D-Chain cannot start"; exit 1; } && \
+    rm -rf /tmp/dex
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails
 RUN --mount=type=cache,target=/root/.cache/go-build \
