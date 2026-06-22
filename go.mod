@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.4.1
-	github.com/luxfi/metric v1.5.8
+	github.com/luxfi/metric v1.5.9
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.3.0
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -145,8 +145,8 @@ require (
 	github.com/luxfi/utils v1.2.0
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
-	github.com/luxfi/vm v1.2.4
-	github.com/luxfi/warp v1.19.3
+	github.com/luxfi/vm v1.2.5
+	github.com/luxfi/warp v1.19.5
 	github.com/luxfi/zap v0.7.2
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
@@ -214,7 +214,7 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.0.3
-	github.com/luxfi/proto v1.3.4
+	github.com/luxfi/proto v1.3.5
 	github.com/luxfi/upgrade v1.0.1 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
