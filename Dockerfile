@@ -320,9 +320,15 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # D-Chain blocks). v1.5.14 consumes luxfi/database v1.20.4, which fixes prefixdb
 # returning ZERO rows for a nil-start prefix scan over a prefixdb-wrapped chain
 # DB (every plugin VM via vm/rpc) — that stranded the native D-Chain order book
-# (rebuildBookFromDB folded empty -> 0 fills despite committed asks). Bump with
-# every dex release that changes the VM, like CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.14
+# (rebuildBookFromDB folded empty -> 0 fills despite committed asks). v1.5.15 adds
+# the committed-state READ surface (clob_get_trades/orders/markets/book over
+# /ext/bc/D/dex/<method>, pkg/dchain/read.go): read-only JSON of the durable trade
+# log / resting book / markets, served beside the writes with ZERO consensus
+# impact. Needed to VERIFY a fill replicated identically across validators (query
+# every node, diff the trade rows + head root) and to feed markets-display (native
+# fills are trade: rows). Bump with every dex release that changes the VM, like
+# CHAINS_REF for the other 10 VMs.
+ARG DEX_REF=v1.5.15
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
