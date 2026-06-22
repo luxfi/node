@@ -251,7 +251,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
 # v1.3.14 = the native-atomic seam (rail-bound D->C atomic, LP committed-liquidity).
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
-ARG CHAINS_REF=v1.3.14
+ARG CHAINS_REF=v1.3.16
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
