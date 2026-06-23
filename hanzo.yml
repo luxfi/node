@@ -1,0 +1,39 @@
+# Platform-native CI/CD — luxfi/node (the GitHub-Actions escape)
+#
+# Build is owned by platform.hanzo.ai (NOT GitHub Actions). On a tag push,
+# platform reads this file, schedules ONE build job per matrix entry onto the
+# self-hosted arcd long-poll fabric, and an arcd runner on the `lux-build-*`
+# pool builds + pushes the image to GHCR. There is NO GitHub-Actions build hop:
+# the legacy .github/workflows/docker.yml is retired (see RELEASE.md §retire).
+#
+# This ONE Dockerfile build produces BOTH lux release artifacts:
+#   1. the node image  -> ghcr.io/luxfi/node:<tag>   (luxd + all 12 VM plugins
+#      baked at /luxd/build/plugins/)
+#   2. the plugin SET  -> s3://lux-plugins-<env>/<pluginset>/  (published in a
+#      second, decoupled step from the image's baked plugins — see
+#      scripts/publish_plugin_set.sh; consumed by the operator plugin-fetch
+#      init container via the LuxNetwork CR pluginSource).
+#
+# Schema reference: ~/work/hanzo/platform/docs/PLATFORM_CI.md.
+# Release runbook (the ONE canonical way): ./RELEASE.md.
+#
+# Pool resolution: <org>-build-<os>-<arch>. org=luxfi -> brand=lux, so this
+# repo's pools are `lux-build-linux-amd64` and `lux-build-linux-arm64`. These
+# MUST match the live arcd scale-set names exactly.
+#
+# Tagging: a release is a `v*` git-tag push. The webhook decoder maps the tag
+# ref to `branch=<tagname>`, so `tag-pattern: "{{git.branch}}"` yields the
+# image tag `vX.Y.Z` (immutable, semver-only — no :latest, no floating tags).
+build:
+  matrix:
+    - { os: linux, arch: amd64 }
+    - { os: linux, arch: arm64 }
+  dockerfile: ./Dockerfile
+  context: .
+  image: ghcr.io/luxfi/node
+  tag-pattern: "{{git.branch}}"
+  push: true
+  dispatch: native
+# No `deploy:` block. luxd rollout is owned by the lux operator (LuxNetwork CR,
+# ~/work/lux/operator) which the hanzo operator Service-CR rollout does not
+# model. Deploy is a separate, operator-driven step (RELEASE.md §deploy).
