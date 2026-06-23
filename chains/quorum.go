@@ -38,16 +38,38 @@ import (
 	validators "github.com/luxfi/validators"
 )
 
+// isLocalDevNetwork reports whether networkID is an explicitly-local developer
+// network: devnet (3) or localnet (1337). These are EXACT IDs (per luxfi/constants
+// convention), NOT a range — a custom value L1 with a high networkID (e.g. an
+// L1 whose chainID == networkID) is a VALUE network and must NOT match here.
+// Local dev networks are the only IDs that run the minimal-BFT committee
+// (LocalBFTParams, K=4) instead of the large-committee Default (K=20), because a
+// handful of localhost validators cannot reach an α=14-of-K=20 quorum.
+func isLocalDevNetwork(networkID uint32) bool {
+	return networkID == constants.DevnetID || networkID == constants.LocalID
+}
+
 // selectConsensusParams picks the consensus parameters for a chain.
 //
 //   - sybilProtection == false (--dev / single-node): K=1, the sole validator's
 //     accept is the 1-of-1 quorum (no peer signatures).
-//   - sybilProtection == true (multi-node): a BYZANTINE-fault-tolerant param set
-//     selected by network — NEVER LocalParams() (K=3/α=2, f=0, which a single
-//     Byzantine validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→
-//     K=11, every other multi-node net→Default K=20. All satisfy f≥1 and the
-//     2α−K ≥ f+1 overlap bound (ValidateForValueNetwork is also asserted at the
-//     call site as a fail-closed backstop).
+//   - sybilProtection == true, VALUE network: a large BYZANTINE-fault-tolerant
+//     param set — NEVER LocalParams() (K=3/α=2, f=0, which a single Byzantine
+//     validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→K=11, every
+//     other value net→Default K=20.
+//   - sybilProtection == true, LOCAL DEV network (devnet 3 / localnet 1337):
+//     LocalBFTParams() (K=4/α=3, f=1) — the MINIMAL real-BFT committee. Default
+//     K=20 is unsatisfiable on a few localhost validators: α=14 affirmative votes
+//     are unreachable with 3-4 validators, so no block ever finalizes and the
+//     P-Chain freezes at height 0 (no C-Chain is ever created). K=4 makes quorum
+//     reachable (3 of 4) while staying genuinely BFT — it still clears
+//     ValidateForValueNetwork (K≥4, f≥1) and the CRITICAL-2 multi-node-is-BFT
+//     regression, so production safety is untouched. (A local devnet should run
+//     ≥4 validators to realise f=1; with 3 it degrades to near-unanimous f=0,
+//     which is safe though not live under a fault.)
+//
+// All branches satisfy the 2α−K ≥ f+1 overlap bound; the manager call site also
+// asserts ValidateForValueNetwork as a fail-closed backstop (K=4 passes it).
 func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconfig.Parameters {
 	if !sybilProtection {
 		return consensusconfig.SingleValidatorParams()
@@ -58,6 +80,9 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 	case constants.TestnetID:
 		return consensusconfig.TestnetParams()
 	default:
+		if isLocalDevNetwork(networkID) {
+			return consensusconfig.LocalBFTParams()
+		}
 		return consensusconfig.DefaultParams()
 	}
 }

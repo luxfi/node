@@ -60,6 +60,43 @@ func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 	}
 }
 
+// TestSelectConsensusParams_LocalDevIsSatisfiableBFT proves that an explicitly-
+// local dev network (devnet 3 / localnet 1337) selects the MINIMAL real-BFT set
+// (LocalBFTParams: K=4/α=3, f=1) — satisfiable by a handful of localhost
+// validators — and NOT the large Default (K=20/α=14), whose α=14 quorum is
+// unreachable with 3-4 validators (the freeze-at-height-0 bug). It must still be
+// genuinely BFT (f≥1) and pass the value backstop (K=4 ≥ 4), so production
+// safety / CRITICAL-2 is untouched: a custom VALUE L1 (high networkID) still gets
+// the large Default set, never the local one.
+func TestSelectConsensusParams_LocalDevIsSatisfiableBFT(t *testing.T) {
+	for _, networkID := range []uint32{constants.DevnetID, constants.LocalID} {
+		p := selectConsensusParams(true /* sybilProtection */, networkID)
+
+		// Satisfiable on a small committee: α must be small (K=4 → α=3), NOT 14.
+		if p.K != 4 || p.AlphaPreference != 3 {
+			t.Fatalf("local dev net %d: want minimal-BFT K=4/α=3, got K=%d/α=%d (Default K=20 is unsatisfiable on localhost)",
+				networkID, p.K, p.AlphaPreference)
+		}
+		// Still genuinely BFT (f≥1) — does NOT regress CRITICAL-2.
+		if p.ByzantineFaultTolerance() < 1 {
+			t.Fatalf("local dev net %d: K=%d is not BFT (f=%d)", networkID, p.K, p.ByzantineFaultTolerance())
+		}
+		// Must clear the value backstop the manager asserts before engine start.
+		if err := p.ValidateForValueNetwork(networkID); err != nil {
+			t.Fatalf("local dev net %d: minimal-BFT params must pass the value backstop, got %v", networkID, err)
+		}
+	}
+
+	// A custom value L1 with a high networkID is NOT a local dev network: it must
+	// keep the large Default set (the isLocalDevNetwork predicate is EXACT, not a
+	// >=1337 range that would wrongly catch value L1s).
+	const customValueL1 = uint32(909090)
+	if p := selectConsensusParams(true, customValueL1); p.K != consensusconfig.DefaultParams().K {
+		t.Fatalf("custom value L1 %d must get Default K=%d, got K=%d (must NOT match the local-dev path)",
+			customValueL1, consensusconfig.DefaultParams().K, p.K)
+	}
+}
+
 // TestSelectConsensusParams_SingleNodeIsK1 proves --dev / sybil-disabled selects
 // the K=1 single-validator regime (the sole validator's accept is the 1-of-1
 // quorum) — and NOT a multi-node BFT set.
