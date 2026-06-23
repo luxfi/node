@@ -240,7 +240,19 @@ RUN . ./build_env.sh && \
 # UTXOAssetID rename that fixed the LuxAssetID build break) and removes the dead
 # vendored dexConfig upgrade fixtures. The 0x9999 swap ABI + dated-fork activation
 # (DexSettleActivationTime = 1766704800) are unchanged from v1.99.34.
-ARG EVM_VERSION=v1.99.37
+#
+# v1.99.40 (precompile v0.5.59, chains v1.3.19, consensus v1.25.21): the permissionless
+# 0x9999 DEX value path lands end-to-end. precompile v0.5.58/59 = AssetResolver (real
+# on-chain canonical resolution, NO admin allowlist), one synchronous router/book/journal,
+# minOut on every route, no keeper/venue/live-ZAP/second-book; the env→Call ERC-20 vault
+# seam + in-state-vault resolution make a real ERC-20 settle. evm v1.99.39 = the
+# reprocess-bind fix: NewBlockChain binds the chain Runtime (networkID/C-Chain id) BEFORE
+# startup reprocess, so an unclean restart after a 0x9999 swap re-executes the committed
+# swap with the correct identity instead of (0, Empty) — previously that reverted the swap,
+# failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
+# clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
+# stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
+ARG EVM_VERSION=v1.99.40
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
