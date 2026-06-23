@@ -126,7 +126,7 @@ require (
 	github.com/luxfi/constants v1.5.8
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.13.14
+	github.com/luxfi/genesis v1.13.16
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.17.12
 	github.com/luxfi/go-bip39 v1.1.2

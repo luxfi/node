@@ -338,6 +338,8 @@ github.com/luxfi/formatting v1.0.1 h1:ZnE1rAdEUds9yAegdVdGDOBGN6hLMPOv6E03Fp8IEY
 github.com/luxfi/formatting v1.0.1/go.mod h1:mYzNf5DJOiqSSKUPzNj5dKy4tstFbN3pZlkI5716eKc=
 github.com/luxfi/genesis v1.13.14 h1:CauxugSR1NP6Zhng+6BvBvXjTnbMwQrfGILg5a9LbR0=
 github.com/luxfi/genesis v1.13.14/go.mod h1:qUa+AcTWwxv0x+CJochBsRNOMbmEBjw07HJKZLhs5c0=
+github.com/luxfi/genesis v1.13.16 h1:suwWPwUu2nv1fxvx9vwHgcgJCzkCpiVMxBrJIh4S3BQ=
+github.com/luxfi/genesis v1.13.16/go.mod h1:qUa+AcTWwxv0x+CJochBsRNOMbmEBjw07HJKZLhs5c0=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8 h1:9ier0p55ErSpoXHRJpZ04WV5HwwMB1uDrU7PHGBKG2U=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8/go.mod h1:DzU+GYUFv12ja4Vc46bWKNBBmNYbcow3u/DASx4wpfI=
 github.com/luxfi/geth v1.17.12 h1:UP/fhpcfbGPTrkOCwX3d88Oc3jVm5gTOgfjgq+lek6s=
