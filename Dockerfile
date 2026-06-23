@@ -363,9 +363,18 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # log / resting book / markets, served beside the writes with ZERO consensus
 # impact. Needed to VERIFY a fill replicated identically across validators (query
 # every node, diff the trade rows + head root) and to feed markets-display (native
-# fills are trade: rows). Bump with every dex release that changes the VM, like
-# CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.15
+# fills are trade: rows). v1.5.17 makes the ZAP socket the canonical in-luxd CLOB
+# ingestion: VM.Initialize parses init.Config zapIngestAddr and opens an rpc.Listen
+# co-located in the luxd process (pkg/dchain/zapingest.go), so orders flow over the
+# ZAP socket -> mempool -> consensus -> Verify (match) -> Accept without a standalone
+# venue; the HTTP read/write surface (/ext/bc/D/dex/<method>) stays compatible. It
+# also DECOMPLECTS the synthetic-seed/guard footgun (3 layers -> 0): the VM boot-brick
+# assertOrderUserCoverage is removed (settlement identity now holds by construction,
+# not by a boot scan that could refuse to Initialize), and the cmd/clobverify +
+# cmd/fourpath-live synthetic seeders / internal/localguard are deleted (cmd/dexseed
+# is the one canonical REAL-market seeder). Bump with every dex release that changes
+# the VM, like CHAINS_REF for the other 10 VMs.
+ARG DEX_REF=v1.5.17
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
