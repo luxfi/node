@@ -1247,12 +1247,23 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		//   - Single-node (--dev, sybil protection disabled): K=1, self-voting
 		//     (the sole validator's accept is the 1-of-1 quorum).
 		//   - Multi-node (sybil-protected): a BYZANTINE-fault-tolerant param set
-		//     selected by network (Mainnet K=21 / Testnet K=11 / Default K=20).
+		//     selected by network (Mainnet K=21 / Testnet K=11 / Default K=20 /
+		//     local-dev K=numValidators).
 		//
 		// CRITICAL-2: the prior code used LocalParams() (K=3, α=2 → f=0, CFT) for
 		// ALL sybil-protected nets — a SINGLE Byzantine validator forks K=3/α=2.
 		// We now select a real BFT set and FAIL CLOSED if it is not value-safe.
-		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
+		//
+		// LIVENESS: local-dev params are sized to the LIVE primary-network
+		// validator set (the set every native chain — P/C/D — samples from), so the
+		// proposer's self-filtered K-sample still polls the whole set and α has BFT
+		// slack. A hardcoded K=4 on a 5-validator set polled only 3 peers while α=3
+		// demanded all 3 — one lagging validator wedged finality at height 0.
+		numPrimaryValidators := 0
+		if m.Validators != nil {
+			numPrimaryValidators = m.Validators.Count(constants.PrimaryNetworkID)
+		}
+		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID, numPrimaryValidators)
 		if m.SybilProtectionEnabled {
 			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)

@@ -42,11 +42,70 @@ import (
 // network: devnet (3) or localnet (1337). These are EXACT IDs (per luxfi/constants
 // convention), NOT a range — a custom value L1 with a high networkID (e.g. an
 // L1 whose chainID == networkID) is a VALUE network and must NOT match here.
-// Local dev networks are the only IDs that run the minimal-BFT committee
-// (LocalBFTParams, K=4) instead of the large-committee Default (K=20), because a
-// handful of localhost validators cannot reach an α=14-of-K=20 quorum.
+// Local dev networks are the only IDs that run a committee SIZED TO THE LIVE
+// VALIDATOR SET (localBFTParamsForN) instead of the large-committee Default
+// (K=20), because a handful of localhost validators cannot reach an α=14-of-K=20
+// quorum.
 func isLocalDevNetwork(networkID uint32) bool {
 	return networkID == constants.DevnetID || networkID == constants.LocalID
+}
+
+// bftSafeAlpha returns the smallest accept-quorum α that is Byzantine-safe for a
+// committee of K: the integer ceil((K + f + 1) / 2) with f = ⌊(K-1)/3⌋. This is
+// the SAME bound the consensus engine enforces (config.Parameters.Valid asserts
+// 2·α − K ≥ f + 1) and the SAME formula the operator computes (api/v1
+// BFTSafeAlpha) — one definition of "safe quorum", so the node and the operator
+// can never disagree on it. For K=5 → f=1 → α=4; K=4 → f=1 → α=3; K=1 → α=1.
+func bftSafeAlpha(k int) int {
+	if k < 1 {
+		return 1
+	}
+	f := (k - 1) / 3
+	alpha := (k + f + 2) / 2 // == ceil((k + f + 1) / 2)
+	if alpha < 1 {
+		alpha = 1
+	}
+	if alpha > k {
+		alpha = k
+	}
+	return alpha
+}
+
+// localBFTParamsForN returns the minimal Byzantine-fault-tolerant parameter set
+// for a LOCAL DEV network of n validators: K = n (every validator samples every
+// other — the only K that lets the proposer poll the whole set, since the
+// proposer FILTERS ITSELF out of its own K-sample), α = bftSafeAlpha(K).
+//
+// Why K MUST equal n (the liveness fix): the gossiper proposer samples K
+// validators then drops itself from the sample (engine/chain RequestVotes), so a
+// proposer in its own sample queries only K−1 distinct peers. With a fixed K=4
+// on a 5-validator set the proposer queried just 3 peers yet α=3 demanded a
+// UNANIMOUS reply from those 3 — a single lagging validator made the α-quorum
+// unreachable and the first block hung forever (D-Chain + C-Chain frozen at
+// height 0). Setting K = n makes the proposer poll all n−1 peers, so α = ⌈2n/3⌉-ish
+// (4 of 5) has real slack: it tolerates f = ⌊(n-1)/3⌋ non-responsive/Byzantine
+// validators instead of zero. This is what the operator already emits as
+// --consensus-sample-size/--consensus-quorum-size; the node now derives the
+// identical committee from the live set instead of a hardcoded K=4.
+//
+// Clamped to K≥4 so a 2- or 3-validator local net still clears the value-network
+// BFT floor (ValidateForValueNetwork requires K≥4, f≥1); such a tiny set degrades
+// to near-unanimous fault tolerance but remains safe. Keeps the localhost timing
+// (1ms blocks / 5ms rounds) from LocalBFTParams.
+func localBFTParamsForN(n int) consensusconfig.Parameters {
+	k := n
+	if k < 4 {
+		k = 4
+	}
+	p := consensusconfig.LocalBFTParams() // localhost timing + BetaVirtuous/Rogue
+	alpha := bftSafeAlpha(k)
+	p.K = k
+	p.AlphaPreference = alpha
+	p.AlphaConfidence = alpha
+	if p.BetaRogue < k {
+		p.BetaRogue = k // rogue confidence stays above committee size
+	}
+	return p
 }
 
 // selectConsensusParams picks the consensus parameters for a chain.
@@ -58,19 +117,20 @@ func isLocalDevNetwork(networkID uint32) bool {
 //     validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→K=11, every
 //     other value net→Default K=20.
 //   - sybilProtection == true, LOCAL DEV network (devnet 3 / localnet 1337):
-//     LocalBFTParams() (K=4/α=3, f=1) — the MINIMAL real-BFT committee. Default
-//     K=20 is unsatisfiable on a few localhost validators: α=14 affirmative votes
-//     are unreachable with 3-4 validators, so no block ever finalizes and the
-//     P-Chain freezes at height 0 (no C-Chain is ever created). K=4 makes quorum
-//     reachable (3 of 4) while staying genuinely BFT — it still clears
-//     ValidateForValueNetwork (K≥4, f≥1) and the CRITICAL-2 multi-node-is-BFT
-//     regression, so production safety is untouched. (A local devnet should run
-//     ≥4 validators to realise f=1; with 3 it degrades to near-unanimous f=0,
-//     which is safe though not live under a fault.)
+//     a committee SIZED TO THE LIVE VALIDATOR SET — K = numValidators,
+//     α = bftSafeAlpha(K) (localBFTParamsForN). Default K=20 is unsatisfiable on a
+//     few localhost validators (α=14 unreachable → P-Chain frozen at height 0). A
+//     hardcoded K=4 on a 5-validator set was ALSO unsatisfiable in practice: the
+//     proposer self-filters its K-sample so it polled only 3 peers while α=3
+//     required all 3 — one lagging validator wedged finality (this is the bug this
+//     fixes). K = N makes the proposer poll the whole set so α has BFT slack.
 //
-// All branches satisfy the 2α−K ≥ f+1 overlap bound; the manager call site also
-// asserts ValidateForValueNetwork as a fail-closed backstop (K=4 passes it).
-func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconfig.Parameters {
+// numValidators is the live count of the primary-network validator set (the set
+// every native chain — P/C/D — samples from); 0 means "set not yet known", in
+// which case we fall back to the minimal K=4 committee. All branches satisfy the
+// 2α−K ≥ f+1 overlap bound; the manager call site also asserts
+// ValidateForValueNetwork as a fail-closed backstop.
+func selectConsensusParams(sybilProtection bool, networkID uint32, numValidators int) consensusconfig.Parameters {
 	if !sybilProtection {
 		return consensusconfig.SingleValidatorParams()
 	}
@@ -81,7 +141,7 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 		return consensusconfig.TestnetParams()
 	default:
 		if isLocalDevNetwork(networkID) {
-			return consensusconfig.LocalBFTParams()
+			return localBFTParamsForN(numValidators)
 		}
 		return consensusconfig.DefaultParams()
 	}
