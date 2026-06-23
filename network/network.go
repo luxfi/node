@@ -487,11 +487,26 @@ func NewNetwork(
 
 	// Build the per-chain peer.SchemeGate exactly once at network bootstrap.
 	// The gate is the single cross-axis primitive that funnels every
-	// inbound NodeID through the chain's ChainSecurityProfile pin. Chains
-	// that ship no profile (legacy / classical-compat networks) leave the
-	// gate nil — upgrader.connToIDAndCert is nil-safe and refuses nobody.
+	// inbound NodeID through the chain's ChainSecurityProfile pin.
+	//
+	// The gate is built under the SAME predicate that builds the PQ
+	// handshake (profileRequiresPQHandshake), not merely "SecurityProfile
+	// != nil". This is load-bearing: the gate's pinned scheme byte
+	// (SigSchemeMLDSA65) only becomes presentable by a peer once the
+	// application-layer PQ handshake establishes the ML-DSA identity. A
+	// profile that does NOT run the PQ handshake (permissive /
+	// classical-compat) still presents classical secp256k1 cert schemes,
+	// which SchemeGate.Classify refuses unconditionally — its
+	// AcceptsValidatorScheme(_, classicalCompatUnsafe=false) hardcodes the
+	// classical escape hatch off. Building a gate in that state refuses
+	// every peer at the upgrade with no PQ handshake to recover, the exact
+	// "TLS upgrade failed" / 0-peers stall a permissive-pinned classical
+	// network hits. One axis, one predicate: gate + handshake + ML-DSA
+	// identity are built together or not at all. Chains that ship no
+	// profile, or a non-PQ-handshake profile, leave the gate nil —
+	// upgrader.connToIDAndCert is nil-safe and refuses nobody.
 	var schemeGate *peer.SchemeGate
-	if config.SecurityProfile != nil {
+	if profileRequiresPQHandshake(config.SecurityProfile) {
 		schemeGate, err = peer.NewSchemeGate(config.SecurityProfile, 0)
 		if err != nil {
 			return nil, fmt.Errorf("building peer SchemeGate: %w", err)
@@ -506,8 +521,10 @@ func NewNetwork(
 	// config onto every peer goroutine. peer.Start runs the ML-KEM +
 	// ML-DSA handshake the moment TLS upgrade succeeds; bare TLS is
 	// refused. Permissive / classical-compat profiles leave PQHandshake
-	// nil and use the legacy bare-TLS path.
-	if config.SecurityProfile != nil && profileRequiresPQHandshake(config.SecurityProfile) {
+	// nil and use the legacy bare-TLS path. Same predicate as the
+	// SchemeGate build above — profileRequiresPQHandshake is nil-safe, so
+	// the gate and the handshake are guarded by one identical condition.
+	if profileRequiresPQHandshake(config.SecurityProfile) {
 		// The PQ peer handshake MUST sign with the node's PERSISTENT
 		// staking ML-DSA-65 keypair — the one whose public half derives
 		// MyNodeID — so that completing the handshake proves possession of
