@@ -66,7 +66,8 @@ RUN --mount=type=secret,id=ghtok,required=false \
     if [ -s /run/secrets/ghtok ]; then \
         git config --global url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/".insteadOf "https://github.com/"; \
     fi && \
-    go mod download
+    sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' go.sum && \
+    go mod download -x
 
 # Copy the code into the container
 COPY . .
