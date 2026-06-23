@@ -65,25 +65,38 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 // --- BLS vote verifier -------------------------------------------------------
 
 // blsVoteVerifier verifies a validator's BLS signature over the canonical vote
-// message. The validator's BLS public key is looked up in the chain's validator
-// set; an unknown validator, a validator with no BLS key, or a bad signature all
-// yield false (never an error/panic) — a cert with such a voter is simply
-// invalid, the fail-closed contract the engine requires.
+// message. The validator's BLS public key is resolved FROM THE HEIGHT-INDEXED
+// validators.State AT THE BLOCK'S P-CHAIN EPOCH HEIGHT (RESIDUAL-B) — the SAME
+// height-pinned source the set-root and the ⅔-by-stake tally read from
+// (validatorSetAtHeight). It is NOT resolved from the CURRENT validator map.
+//
+// Why the epoch, not the current map: during an async validator-set change a
+// validator can be present in the set@H (it legitimately signed the block being
+// voted on at height H) yet ALREADY GONE from the current map. Resolving its
+// pubkey from the current map drops its valid vote, and if that validator holds
+// >⅓ of the stake-at-H the stable set falls below ⅔ and block H NEVER finalizes
+// (this is not self-healing for that block — the skew is permanent for H). Pinning
+// pubkey resolution to set@H — alongside membership, set-root, and stake — makes
+// the cert internally consistent at exactly one epoch.
+//
+// An unknown validator at the epoch, a validator with no BLS key, or a bad
+// signature all yield false (never an error/panic) — a cert with such a voter is
+// simply invalid, the fail-closed contract the engine requires. A nil state (the
+// no-op on a non-quorum node) yields false for every voter; a K>1 chain is
+// guarded against ever reaching here with a nil/no-op state (manager.go).
 type blsVoteVerifier struct {
-	vdrs      validators.Manager
+	state     validators.State
 	networkID ids.ID
 }
 
-func newBLSVoteVerifier(vdrs validators.Manager, networkID ids.ID) *blsVoteVerifier {
-	return &blsVoteVerifier{vdrs: vdrs, networkID: networkID}
+func newBLSVoteVerifier(state validators.State, networkID ids.ID) *blsVoteVerifier {
+	return &blsVoteVerifier{state: state, networkID: networkID}
 }
 
-// VerifyVote implements consensuschain.VoteVerifier.
-func (v *blsVoteVerifier) VerifyVote(nodeID ids.NodeID, message []byte, sig []byte) bool {
-	if v.vdrs == nil {
-		return false
-	}
-	out, ok := v.vdrs.GetValidator(v.networkID, nodeID)
+// VerifyVote implements consensuschain.VoteVerifier. epochHeight is the block's
+// P-chain height; the voter's pubkey is read from the set IN FORCE AT that height.
+func (v *blsVoteVerifier) VerifyVote(nodeID ids.NodeID, message []byte, sig []byte, epochHeight uint64) bool {
+	out, ok := validatorSetAtHeight(v.state, v.networkID, epochHeight)[nodeID]
 	if !ok || out == nil || len(out.PublicKey) == 0 {
 		return false
 	}

@@ -305,6 +305,19 @@ func getValidatorState(state validators.State) validators.State {
 	return &noopValidatorState{}
 }
 
+// quorumValidatorStateLive reports whether a HEIGHT-INDEXED validator state has
+// actually been published for a K>1 quorum chain. A nil state means the P-Chain
+// never published its validators.State into the manager — getValidatorState would
+// then supply the no-op State, whose GetValidatorSet is empty at every height, so
+// the ⅔-by-stake tally is 0 and VerifyWeighted fails closed FOREVER (a silent
+// permanent finality stall). This predicate is the fail-closed guard (CRITICAL-1
+// (c)): a K>1 chain whose state is not live must REFUSE TO START loudly rather
+// than run with the no-op State. It is a pure function so the guard is unit-
+// testable without building a whole chain (quorum_guard_node_test.go).
+func quorumValidatorStateLive(state validators.State) bool {
+	return state != nil
+}
+
 // createWarpSigner creates a warp.Signer from a bls.Signer
 func createWarpSigner(sk bls.Signer, networkID uint32, chainID ids.ID) warp.Signer {
 	if sk == nil {
@@ -1143,6 +1156,35 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 
+		// CRITICAL-1(a): publish the P-Chain's HEIGHT-INDEXED validators.State so
+		// every K>1 chain built AFTER it (C-Chain, L1s, …) resolves the weighted
+		// validator set / per-voter pubkeys / stake at the block's P-chain epoch
+		// height. The platformvm VM instance IS a validators.State (it embeds the
+		// height-indexed pvalidators.Manager built from its own state DB, with the
+		// real GetValidatorSet(ctx, height, netID)). It only EXISTS after the
+		// P-Chain VM is initialized — which is here — and the P-Chain is created
+		// before any other primary-network chain (single serial chain-creator
+		// goroutine), so this assignment happens-before every later chain reads
+		// m.validatorState in the K>1 wiring block below. Without this the field
+		// stays nil → getValidatorState returns the no-op → empty set at every
+		// height → ⅔-stake tally is 0 → finality stalls forever on every K>1 chain
+		// (the bug the fail-closed guard now also catches). Plain assignment is
+		// race-free: chain creation is serialized (dispatchChainCreator).
+		if chainParams.ID == constants.PlatformChainID {
+			if vdrState, ok := vmImpl.(validators.State); ok {
+				m.validatorState = vdrState
+				m.Log.Info("published P-Chain height-indexed validator state to chain manager (MEDIUM-1/CRITICAL-1)",
+					log.Stringer("chainID", chainParams.ID))
+			} else {
+				// The P-Chain MUST be a validators.State; if it is not, every K>1
+				// chain (including the P-Chain itself) would stall. Fail loud.
+				return nil, fmt.Errorf(
+					"P-Chain VM %T does not implement validators.State — cannot publish the "+
+						"height-indexed validator set; every K>1 quorum chain would stall finality",
+					vmImpl)
+			}
+		}
+
 		// Transition VM to normal operation after initialization
 		// For genesis-based networks with pre-configured validators, this is required
 		// to make the VM APIs available immediately
@@ -1234,27 +1276,68 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Params:     &consensusParams,
 		}
 		if consensusParams.K > 1 {
-			netCfg.VoteVerifier = newBLSVoteVerifier(m.Validators, networkID)
-			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
+			// CRITICAL-1 FAIL-CLOSED GUARD (c): a K>1 quorum chain finalizes ONLY
+			// on a ⅔-by-stake supermajority read from the HEIGHT-INDEXED validator
+			// state. If that state was never published (m.validatorState == nil →
+			// getValidatorState returns the no-op, whose GetValidatorSet is empty at
+			// every height), the stake tally is 0 → VerifyWeighted fails closed →
+			// NO block EVER finalizes. That is a SILENT permanent finality stall.
+			// Refuse to build the chain LOUDLY instead. The P-Chain publishes its
+			// own height-indexed State into m.validatorState the moment it is
+			// created (it is built before any other K>1 chain), so the P-Chain and
+			// every chain after it sees a live state here; only a genuine wiring
+			// regression trips this.
+			if !quorumValidatorStateLive(m.validatorState) {
+				return nil, fmt.Errorf(
+					"refusing to start K>1 quorum chain %s: height-indexed validator state is not wired "+
+						"(getValidatorState would supply the no-op State → zero stake at every height → "+
+						"VerifyWeighted fails closed → finality would stall permanently). The P-Chain must be "+
+						"created first and publish its validators.State; this is a wiring bug, not a runtime condition",
+					chainParams.ID)
+			}
 			// Height-indexed validator state is the SINGLE source of epoch truth for
-			// both the ⅔-by-stake tally and the set-root commitment (MEDIUM-1). It is
-			// read at the cert-position height so every node computes the IDENTICAL
-			// set, weights, and root for a given value-chain height — independent of
-			// async current-map skew during a P-chain / L1-staking change (reading the
-			// CURRENT map made the signer and the assembler disagree on the set-root
-			// and stall finality at every staking change). getValidatorState supplies a
-			// no-op State on non-staking nodes (Empty root / zero stake — the engine's
-			// unbound default).
+			// ALL FOUR epoch-pinned reads (MEDIUM-1 / CRITICAL-1 / RESIDUAL-B):
+			// membership, per-voter PUBKEY (the verifier), the ⅔-by-stake tally, and
+			// the set-root commitment. They are all read at the block's P-CHAIN epoch
+			// height so every node computes the IDENTICAL set/pubkeys/weights/root for
+			// a given block — independent of async current-map skew during a P-chain /
+			// L1-staking change. (Reading the CURRENT map made the signer and the
+			// assembler disagree on the set-root, and dropped the votes of validators
+			// that had left the current map but were members at the epoch — stalling
+			// finality at every staking change.)
 			vdrState := getValidatorState(m.validatorState)
+			// Vote verifier resolves the voter's pubkey from set@epoch (RESIDUAL-B),
+			// the SAME height-pinned source as the stake + set-root — NOT m.Validators
+			// (the current map).
+			netCfg.VoteVerifier = newBLSVoteVerifier(vdrState, networkID)
+			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
 			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
 			// not just the α-of-K count, so a low-stake coalition cannot finalize.
 			netCfg.StakeSource = newValidatorStakeSource(vdrState, networkID)
 			// Epoch binding (MEDIUM-1): pin every vote/cert to the weighted validator
-			// set IN FORCE AT the cert-position height so the ⅔-by-stake predicate is
-			// enforced at that epoch — a cert gathered under one set cannot be
-			// re-verified against another (its signatures were over this height-pinned
-			// root).
+			// set IN FORCE AT the block's P-chain epoch height so the ⅔-by-stake
+			// predicate is enforced at that epoch — a cert gathered under one set
+			// cannot be re-verified against another (its signatures were over this
+			// height-pinned root).
 			netCfg.ValidatorSetRoot = newValidatorSetRootSource(vdrState, networkID)
+			// b2: deliver the REAL P-chain epoch height to the engine. The four reads
+			// above are height-pinned but the engine reads that height off the VM
+			// block (pChainHeightOf) — and a bare plugin block exposes none, so the
+			// engine would resolve the set at P-chain height 0 (the GENESIS set),
+			// freezing the epoch and dropping every post-genesis validator's vote.
+			// Wrap the BlockBuilder so the block the engine builds/parses carries the
+			// proposer's live P-chain height (max(GetCurrentHeight, parentH)), stamped
+			// into the gossiped bytes so every follower adopts the IDENTICAL height —
+			// the set-root/stake/pubkey reads then track the LIVE set at that height.
+			// Installed ONLY here (K>1): a K==1 chain has no cert and no epoch, so the
+			// stamp is inert and the inner VM is used directly.
+			if blockBuilder != nil {
+				blockBuilder = newPChainHeightVM(blockBuilder, vdrState, networkID)
+				netCfg.VM = blockBuilder
+				m.Log.Info("wired P-chain epoch height into consensus block builder (b2)",
+					log.Stringer("chainID", chainParams.ID),
+					log.Stringer("networkID", networkID))
+			}
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
@@ -1334,7 +1417,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Runtime: chainRuntime,
 			VM:      vmTyped,         // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			Handler: newBlockHandler(vmTyped, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
+			// Handler parses inbound blocks through the SAME builder the engine emits
+			// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
+			// on K==1), so the container bytes it parses match the bytes the engine
+			// framed — one codec, no raw-vs-wrapped split.
+			Handler: newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
 		}
 	default:
 		return nil, fmt.Errorf("unsupported VM type: %T", vmImpl)
@@ -2193,7 +2280,15 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // blockHandler implements handler.Handler interface and processes incoming blocks
 // This enables block propagation between validators
 type blockHandler struct {
-	vm         chain.ChainVM
+	// vm is the SAME BlockBuilder the consensus engine builds/parses through — the
+	// P-chain-height-stamping wrapper on K>1 chains (so ParseBlock unwraps the
+	// transport envelope the engine emits and recovers the proposer's epoch
+	// height), the inner VM directly on K==1. The handler only needs the
+	// BlockBuilder subset (GetBlock / ParseBlock / LastAccepted); typing it as the
+	// builder — not chain.ChainVM — keeps the engine and the handler on ONE block
+	// codec, so inbound P2P container bytes are parsed by the same code that framed
+	// them (no raw-vs-wrapped mismatch).
+	vm         consensuschain.BlockBuilder
 	logger     log.Logger
 	engine     *consensuschain.Runtime    // Consensus engine for proper block handling
 	net        network.Network            // Network for sending Qbit responses
@@ -2232,7 +2327,7 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
 	return &blockHandler{
 		vm:               vm,
 		logger:           logger,
