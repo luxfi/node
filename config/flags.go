@@ -309,7 +309,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(HandshakeMLKEMPubKeyPathKey, defaultHandshakeMLKEMPubKeyPath, fmt.Sprintf("Path to the ML-KEM-768 handshake public key (FIPS 203 PEM). Ignored if %s is specified", HandshakeMLKEMPubKeyContentKey))
 	fs.String(HandshakeMLKEMPubKeyContentKey, "", "Base64-encoded ML-KEM-768 handshake public key (FIPS 203 PEM)")
 	fs.String(StakingKMSEndpointKey, "", "KMS endpoint for staking key retrieval (e.g., https://kms.dev.lux.network)")
-	fs.String(StakingKMSSecretPathKey, "", "KMS secret path for staking keys (e.g., /staking/liquid-devnet/node-0)")
+	fs.String(StakingKMSSecretPathKey, "", "KMS secret path for staking keys (e.g., /staking/devnet/node-0)")
 	fs.String(StakingKMSTokenKey, "", "KMS auth token for staking key retrieval")
 	fs.Bool(SybilProtectionEnabledKey, true, "Enables sybil protection. If enabled, Network TLS is required")
 	fs.Uint64(SybilProtectionDisabledWeightKey, 100, "Weight to provide to each peer when sybil protection is disabled")
