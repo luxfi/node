@@ -28,7 +28,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.25.21
 	github.com/luxfi/crypto v1.19.22
-	github.com/luxfi/database v1.20.3
+	github.com/luxfi/database v1.20.4
 	github.com/luxfi/ids v1.2.15
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.3
@@ -102,8 +102,8 @@ require (
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tklauser/go-sysconf v0.3.16 // indirect
-	github.com/tklauser/numcpus v0.11.0 // indirect
+	github.com/tklauser/go-sysconf v0.4.0 // indirect
+	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel/metric v1.44.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.15
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.3.18
+	github.com/luxfi/chains v1.3.19
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.5.8
@@ -147,7 +147,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
 	github.com/luxfi/warp v1.19.5
-	github.com/luxfi/zap v0.7.2
+	github.com/luxfi/zap v0.8.10
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	go.uber.org/zap v1.27.1
@@ -188,6 +188,7 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
+	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.7.9 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/kms v1.11.4 // indirect
@@ -195,7 +196,7 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.5.56 // indirect
+	github.com/luxfi/precompile v0.5.59 // indirect
 	github.com/luxfi/pulsar v1.1.5 // indirect
 	github.com/luxfi/staking v1.5.0 // indirect
 	github.com/luxfi/threshold v1.9.9 // indirect
@@ -209,7 +210,7 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
-	go.mongodb.org/mongo-driver v1.17.4 // indirect
+	go.mongodb.org/mongo-driver v1.17.9 // indirect
 )
 
 require (
