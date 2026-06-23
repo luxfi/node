@@ -217,11 +217,15 @@ type Config struct {
 
 	// SecurityProfile is the chain-wide ChainSecurityProfile this node is
 	// operating under (resolved at boot from the genesis pin in
-	// node.Node.initSecurityProfile). When non-nil, the network upgrader
-	// builds a peer.SchemeGate from it and refuses any inbound or
-	// outbound TLS connection whose wire NodeIDScheme is not admissible
-	// under the profile. nil leaves the cross-axis gate disabled (chains
-	// that ship no profile remain accepted by the upgrader's nil-safe
-	// path).
+	// node.Node.initSecurityProfile). When it mandates the application-layer
+	// PQ handshake (strict-PQ / FIPS — see profileRequiresPQHandshake), the
+	// network builds a peer.SchemeGate from it AND runs the ML-KEM + ML-DSA
+	// handshake; the gate and handshake are gated by one identical
+	// predicate so an ML-DSA identity always exists for the gate to bind.
+	// A nil profile, or a non-PQ-handshake profile (permissive), leaves the
+	// cross-axis gate disabled: peers present classical secp256k1 cert
+	// schemes the gate would refuse unconditionally, so building it there
+	// would refuse every connection with no PQ handshake to recover. Such
+	// chains remain accepted by the upgrader's nil-safe path.
 	SecurityProfile *consensusconfig.ChainSecurityProfile `json:"-"`
 }
