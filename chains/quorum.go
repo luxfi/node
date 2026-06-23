@@ -23,7 +23,11 @@
 package chains
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"errors"
+	"sort"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
@@ -124,9 +128,25 @@ var _ consensuschain.VoteSigner = (*blsVoteSigner)(nil)
 
 // validatorStakeSource supplies validator voting weights so the engine can
 // require a ⅔-by-stake supermajority for finality (HIGH-3). Weights are read
-// from the chain's validator set. (The set here is the current set; for a chain
-// with epoch-versioned stake the height argument selects the epoch — the current
-// node validator manager is single-epoch, so height is advisory.)
+// from the chain's validator set via the node validator Manager.
+//
+// EPOCH MODEL (the MEDIUM fix). The node Manager is SINGLE-EPOCH: it exposes the
+// CURRENT active set, not a height-indexed history (validators.Manager has no
+// GetValidatorSet(height); that lives on validators.State). So this source
+// honestly returns CURRENT-epoch weights, which is exactly right for the LIVE
+// finality path — a cert is verified in the SAME epoch it is created, so
+// "current set" == "the set at the cert's height". The height argument is
+// therefore not used to time-travel weights here.
+//
+// What makes the ⅔-by-stake predicate SOUND ACROSS epochs (so an old cert
+// cannot be re-judged under a different epoch's stake) is NOT this source
+// guessing historical weights — it is the engine binding the active weighted-set
+// commitment into every signed vote (validatorSetRootSource below →
+// VotePosition.ValidatorSetRoot → CanonicalVoteMessage). A cert is
+// cryptographically pinned to the set it was certified under: re-presenting it
+// under a different epoch's set-root fails signature verification. Thus the
+// current-epoch read here is the live-path answer, and cross-epoch laundering is
+// closed at the witness layer, not papered over with an unavailable history.
 type validatorStakeSource struct {
 	vdrs      validators.Manager
 	networkID ids.ID
@@ -136,7 +156,10 @@ func newValidatorStakeSource(vdrs validators.Manager, networkID ids.ID) *validat
 	return &validatorStakeSource{vdrs: vdrs, networkID: networkID}
 }
 
-// Weight implements consensuschain.StakeSource.
+// Weight implements consensuschain.StakeSource. Returns the validator's
+// current-epoch stake (see the epoch-model note on the type); height selects the
+// epoch only on a chain with a height-indexed source, which the single-epoch
+// node Manager is not.
 func (s *validatorStakeSource) Weight(nodeID ids.NodeID, _ uint64) uint64 {
 	if s.vdrs == nil {
 		return 0
@@ -144,7 +167,8 @@ func (s *validatorStakeSource) Weight(nodeID ids.NodeID, _ uint64) uint64 {
 	return s.vdrs.GetLight(s.networkID, nodeID)
 }
 
-// TotalStake implements consensuschain.StakeSource.
+// TotalStake implements consensuschain.StakeSource. Current-epoch total active
+// stake (see the epoch-model note on the type).
 func (s *validatorStakeSource) TotalStake(_ uint64) uint64 {
 	if s.vdrs == nil {
 		return 0
@@ -157,6 +181,70 @@ func (s *validatorStakeSource) TotalStake(_ uint64) uint64 {
 }
 
 var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
+
+// --- validator-set-root source (MEDIUM: epoch binding) -----------------------
+
+// validatorSetRootSource computes the deterministic commitment to the chain's
+// active weighted validator set — the value the engine stamps into every vote's
+// VotePosition.ValidatorSetRoot so a cert is pinned to the exact set it was
+// certified under. It is the node side of the MEDIUM fix: it turns the
+// "⅔-by-stake measured at the cert-position epoch" property into an ENFORCED
+// invariant (a cross-epoch cert fails verification because every signature was
+// over this root).
+//
+// The commitment is a SHA-256 over the set serialized in a canonical order
+// (validators sorted by NodeID, each as nodeID || light || len(pubkey) ||
+// pubkey). Determinism is essential: every honest node computing the root for
+// the same active set MUST agree, or their signatures over the same block would
+// not be mutually verifiable. Sorting by NodeID + length-prefixing the pubkey
+// makes the encoding canonical and unambiguous.
+type validatorSetRootSource struct {
+	vdrs      validators.Manager
+	networkID ids.ID
+}
+
+func newValidatorSetRootSource(vdrs validators.Manager, networkID ids.ID) *validatorSetRootSource {
+	return &validatorSetRootSource{vdrs: vdrs, networkID: networkID}
+}
+
+// ValidatorSetRoot implements consensuschain.ValidatorSetRootSource. Returns the
+// commitment to the CURRENT active weighted set (the single-epoch node Manager
+// has no per-height history; the live finality path commits to the set in force
+// when the vote is cast, which is what pins the cert to its epoch). Returns
+// ids.Empty when the manager is absent or the set is empty (an empty commitment
+// is the explicit "unbound" answer, consistent with the engine default).
+func (s *validatorSetRootSource) ValidatorSetRoot(_ uint64) ids.ID {
+	if s.vdrs == nil {
+		return ids.Empty
+	}
+	set := s.vdrs.GetMap(s.networkID)
+	if len(set) == 0 {
+		return ids.Empty
+	}
+	nodeIDs := make([]ids.NodeID, 0, len(set))
+	for nodeID := range set {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	sort.Slice(nodeIDs, func(i, j int) bool {
+		return bytes.Compare(nodeIDs[i][:], nodeIDs[j][:]) < 0
+	})
+	h := sha256.New()
+	var u64 [8]byte
+	for _, nodeID := range nodeIDs {
+		v := set[nodeID]
+		h.Write(nodeID[:])
+		binary.BigEndian.PutUint64(u64[:], v.Light)
+		h.Write(u64[:])
+		binary.BigEndian.PutUint64(u64[:], uint64(len(v.PublicKey)))
+		h.Write(u64[:])
+		h.Write(v.PublicKey)
+	}
+	var root ids.ID
+	copy(root[:], h.Sum(nil))
+	return root
+}
+
+var _ consensuschain.ValidatorSetRootSource = (*validatorSetRootSource)(nil)
 
 // --- app-gossip envelope for votes/certs -------------------------------------
 
