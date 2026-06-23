@@ -24,6 +24,7 @@ package chains
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -124,58 +125,80 @@ func (s *blsVoteSigner) SignVote(message []byte) ([]byte, error) {
 
 var _ consensuschain.VoteSigner = (*blsVoteSigner)(nil)
 
-// --- stake source (HIGH-3) ---------------------------------------------------
+// --- height-pinned epoch read (MEDIUM-1) -------------------------------------
+
+// validatorSetAtHeight reads the validator set IN FORCE AT a value-chain height
+// from the height-indexed validators.State. This is the SINGLE source of epoch
+// truth shared by the stake source and the set-root source: both membership and
+// weights are read at the SAME height H so a cert's signed set-root and its
+// ⅔-by-stake tally are measured against the identical set.
+//
+// Determinism across nodes is the whole point. validators.State.GetValidatorSet
+// returns the set the network already agreed on at height H (P-chain / L1-staking
+// consensus), so every honest node computes the same set — and therefore the
+// same set-root and the same tally — for a given H, INDEPENDENT of async
+// current-map skew during a validator-set change. (The previous Manager.GetMap()
+// read hashed the CURRENT map, which diverges between the signer and the
+// assembler across that skew window → mismatched canonical messages → dropped
+// votes → finality stall at every staking change. That was MEDIUM-1.)
+//
+// A nil state, a lookup error, or an empty set yields a nil map, which the
+// callers fold into their fail-soft answers (0 weight / Empty root). An error is
+// SYMMETRIC across nodes (a committed height H reads the same on every node, or
+// fails the same way), so the degraded answer is uniform — it never makes one
+// node's view disagree with another's, which is the property that matters here.
+func validatorSetAtHeight(state validators.State, networkID ids.ID, height uint64) map[ids.NodeID]*validators.GetValidatorOutput {
+	if state == nil {
+		return nil
+	}
+	set, err := state.GetValidatorSet(context.Background(), height, networkID)
+	if err != nil || len(set) == 0 {
+		return nil
+	}
+	return set
+}
+
+// --- stake source (HIGH-3, height-pinned by MEDIUM-1) ------------------------
 
 // validatorStakeSource supplies validator voting weights so the engine can
 // require a ⅔-by-stake supermajority for finality (HIGH-3). Weights are read
-// from the chain's validator set via the node validator Manager.
-//
-// EPOCH MODEL (the MEDIUM fix). The node Manager is SINGLE-EPOCH: it exposes the
-// CURRENT active set, not a height-indexed history (validators.Manager has no
-// GetValidatorSet(height); that lives on validators.State). So this source
-// honestly returns CURRENT-epoch weights, which is exactly right for the LIVE
-// finality path — a cert is verified in the SAME epoch it is created, so
-// "current set" == "the set at the cert's height". The height argument is
-// therefore not used to time-travel weights here.
-//
-// What makes the ⅔-by-stake predicate SOUND ACROSS epochs (so an old cert
-// cannot be re-judged under a different epoch's stake) is NOT this source
-// guessing historical weights — it is the engine binding the active weighted-set
-// commitment into every signed vote (validatorSetRootSource below →
-// VotePosition.ValidatorSetRoot → CanonicalVoteMessage). A cert is
-// cryptographically pinned to the set it was certified under: re-presenting it
-// under a different epoch's set-root fails signature verification. Thus the
-// current-epoch read here is the live-path answer, and cross-epoch laundering is
-// closed at the witness layer, not papered over with an unavailable history.
+// from the HEIGHT-INDEXED validators.State at the cert-position height, the same
+// height the set-root commits to (MEDIUM-1). Reading the tally at the same epoch
+// as the signed membership means a validator whose vote is in the cert (its
+// signature verifies against the height-H set-root) also contributes its height-H
+// weight to the tally — eliminating the second skew (a current-map weight read
+// could drop a legitimately-signed quorum when membership changed between sign
+// and tally).
 type validatorStakeSource struct {
-	vdrs      validators.Manager
+	state     validators.State
 	networkID ids.ID
 }
 
-func newValidatorStakeSource(vdrs validators.Manager, networkID ids.ID) *validatorStakeSource {
-	return &validatorStakeSource{vdrs: vdrs, networkID: networkID}
+func newValidatorStakeSource(state validators.State, networkID ids.ID) *validatorStakeSource {
+	return &validatorStakeSource{state: state, networkID: networkID}
 }
 
-// Weight implements consensuschain.StakeSource. Returns the validator's
-// current-epoch stake (see the epoch-model note on the type); height selects the
-// epoch only on a chain with a height-indexed source, which the single-epoch
-// node Manager is not.
-func (s *validatorStakeSource) Weight(nodeID ids.NodeID, _ uint64) uint64 {
-	if s.vdrs == nil {
+// Weight implements consensuschain.StakeSource. Returns the validator's stake in
+// the set IN FORCE AT height — deterministic across nodes for a given height. An
+// unknown validator (or a fail-soft empty read) yields 0, which cannot inflate
+// the numerator.
+func (s *validatorStakeSource) Weight(nodeID ids.NodeID, height uint64) uint64 {
+	out, ok := validatorSetAtHeight(s.state, s.networkID, height)[nodeID]
+	if !ok || out == nil {
 		return 0
 	}
-	return s.vdrs.GetLight(s.networkID, nodeID)
+	return out.Light
 }
 
-// TotalStake implements consensuschain.StakeSource. Current-epoch total active
-// stake (see the epoch-model note on the type).
-func (s *validatorStakeSource) TotalStake(_ uint64) uint64 {
-	if s.vdrs == nil {
-		return 0
-	}
-	total, err := s.vdrs.TotalLight(s.networkID)
-	if err != nil {
-		return 0
+// TotalStake implements consensuschain.StakeSource. Total active stake of the set
+// IN FORCE AT height (the denominator of the ⅔ predicate), measured at the same
+// epoch as Weight and the set-root.
+func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
+	var total uint64
+	for _, out := range validatorSetAtHeight(s.state, s.networkID, height) {
+		if out != nil {
+			total += out.Light
+		}
 	}
 	return total
 }
@@ -184,40 +207,59 @@ var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 
 // --- validator-set-root source (MEDIUM: epoch binding) -----------------------
 
-// validatorSetRootSource computes the deterministic commitment to the chain's
-// active weighted validator set — the value the engine stamps into every vote's
-// VotePosition.ValidatorSetRoot so a cert is pinned to the exact set it was
-// certified under. It is the node side of the MEDIUM fix: it turns the
+// validatorSetRootSource computes the deterministic commitment to the validator
+// set IN FORCE AT a value-chain height — the value the engine stamps into every
+// vote's VotePosition.ValidatorSetRoot so a cert is pinned to the exact set it
+// was certified under. It is the node side of the MEDIUM fix: it turns the
 // "⅔-by-stake measured at the cert-position epoch" property into an ENFORCED
 // invariant (a cross-epoch cert fails verification because every signature was
 // over this root).
 //
+// HEIGHT-PINNED (MEDIUM-1). The root is read from the HEIGHT-INDEXED
+// validators.State at the value-chain block height, NOT from the Manager's
+// CURRENT map. At a given height H, GetValidatorSet returns the set the network
+// already agreed on, so every honest node — signer and assembler alike — computes
+// the IDENTICAL root for H, independent of async current-map skew during a
+// validator-set change. Reading the current map (the prior bug) let the signer
+// and the assembler hold different maps across that skew window → different roots
+// → the canonical signed message differed → signatures failed verification →
+// votes dropped → finality stalled at every staking change.
+//
 // The commitment is a SHA-256 over the set serialized in a canonical order
 // (validators sorted by NodeID, each as nodeID || light || len(pubkey) ||
-// pubkey). Determinism is essential: every honest node computing the root for
-// the same active set MUST agree, or their signatures over the same block would
-// not be mutually verifiable. Sorting by NodeID + length-prefixing the pubkey
-// makes the encoding canonical and unambiguous.
+// pubkey) — see hashValidatorSet. Sorting by NodeID + length-prefixing the
+// pubkey makes the encoding canonical and unambiguous; the byte layout is
+// UNCHANGED from the prior implementation, so the wire format and the engine's
+// epoch-binding contract are preserved (only the SOURCE of the set changed from
+// the current map to the height-indexed set).
 type validatorSetRootSource struct {
-	vdrs      validators.Manager
+	state     validators.State
 	networkID ids.ID
 }
 
-func newValidatorSetRootSource(vdrs validators.Manager, networkID ids.ID) *validatorSetRootSource {
-	return &validatorSetRootSource{vdrs: vdrs, networkID: networkID}
+func newValidatorSetRootSource(state validators.State, networkID ids.ID) *validatorSetRootSource {
+	return &validatorSetRootSource{state: state, networkID: networkID}
 }
 
 // ValidatorSetRoot implements consensuschain.ValidatorSetRootSource. Returns the
-// commitment to the CURRENT active weighted set (the single-epoch node Manager
-// has no per-height history; the live finality path commits to the set in force
-// when the vote is cast, which is what pins the cert to its epoch). Returns
-// ids.Empty when the manager is absent or the set is empty (an empty commitment
-// is the explicit "unbound" answer, consistent with the engine default).
-func (s *validatorSetRootSource) ValidatorSetRoot(_ uint64) ids.ID {
-	if s.vdrs == nil {
-		return ids.Empty
-	}
-	set := s.vdrs.GetMap(s.networkID)
+// commitment to the weighted set IN FORCE AT height (deterministic across nodes).
+// Returns ids.Empty when the state is absent or the set is empty (the explicit
+// "unbound" answer, consistent with the engine default); a height-read error is
+// symmetric across nodes, so the Empty fallback is uniform and never creates a
+// cross-node root disagreement.
+func (s *validatorSetRootSource) ValidatorSetRoot(height uint64) ids.ID {
+	return hashValidatorSet(validatorSetAtHeight(s.state, s.networkID, height))
+}
+
+var _ consensuschain.ValidatorSetRootSource = (*validatorSetRootSource)(nil)
+
+// hashValidatorSet computes the canonical SHA-256 commitment to a weighted
+// validator set: validators sorted by NodeID, each serialized as
+// nodeID || light(8,BE) || len(pubkey)(8,BE) || pubkey. An empty/nil set commits
+// to ids.Empty (the "unbound" answer). This is the SINGLE definition of the
+// set-root encoding (DRY) — both the live source and its tests hash through here,
+// so the wire format cannot drift between them.
+func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID {
 	if len(set) == 0 {
 		return ids.Empty
 	}
@@ -243,8 +285,6 @@ func (s *validatorSetRootSource) ValidatorSetRoot(_ uint64) ids.ID {
 	copy(root[:], h.Sum(nil))
 	return root
 }
-
-var _ consensuschain.ValidatorSetRootSource = (*validatorSetRootSource)(nil)
 
 // --- app-gossip envelope for votes/certs -------------------------------------
 

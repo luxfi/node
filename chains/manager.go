@@ -1236,14 +1236,25 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if consensusParams.K > 1 {
 			netCfg.VoteVerifier = newBLSVoteVerifier(m.Validators, networkID)
 			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
+			// Height-indexed validator state is the SINGLE source of epoch truth for
+			// both the ⅔-by-stake tally and the set-root commitment (MEDIUM-1). It is
+			// read at the cert-position height so every node computes the IDENTICAL
+			// set, weights, and root for a given value-chain height — independent of
+			// async current-map skew during a P-chain / L1-staking change (reading the
+			// CURRENT map made the signer and the assembler disagree on the set-root
+			// and stall finality at every staking change). getValidatorState supplies a
+			// no-op State on non-staking nodes (Empty root / zero stake — the engine's
+			// unbound default).
+			vdrState := getValidatorState(m.validatorState)
 			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
 			// not just the α-of-K count, so a low-stake coalition cannot finalize.
-			netCfg.StakeSource = newValidatorStakeSource(m.Validators, networkID)
-			// Epoch binding (MEDIUM): pin every vote/cert to the active weighted
-			// validator set so the ⅔-by-stake predicate is enforced at the
-			// cert-position epoch — a cert gathered under one set cannot be
-			// re-verified against another (its signatures were over this root).
-			netCfg.ValidatorSetRoot = newValidatorSetRootSource(m.Validators, networkID)
+			netCfg.StakeSource = newValidatorStakeSource(vdrState, networkID)
+			// Epoch binding (MEDIUM-1): pin every vote/cert to the weighted validator
+			// set IN FORCE AT the cert-position height so the ⅔-by-stake predicate is
+			// enforced at that epoch — a cert gathered under one set cannot be
+			// re-verified against another (its signatures were over this height-pinned
+			// root).
+			netCfg.ValidatorSetRoot = newValidatorSetRootSource(vdrState, networkID)
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
