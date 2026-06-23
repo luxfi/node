@@ -1202,34 +1202,45 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		)
 
 		// Choose consensus parameters based on mode:
-		// - Single-node (--dev, sybil protection disabled): K=1, self-voting
-		// - Multi-node (normal): K=3, 2/3 threshold
-		var consensusParams consensusconfig.Parameters
-		if !m.SybilProtectionEnabled {
-			consensusParams = consensusconfig.Parameters{
-				K:                     1,
-				Alpha:                 1.0,
-				AlphaPreference:       1,
-				AlphaConfidence:       1,
-				Beta:                  1,
-				ConcurrentPolls:       1,
-				OptimalProcessing:     1,
-				MaxOutstandingItems:   256,
-				MaxItemProcessingTime: 30 * time.Second,
+		//   - Single-node (--dev, sybil protection disabled): K=1, self-voting
+		//     (the sole validator's accept is the 1-of-1 quorum).
+		//   - Multi-node (sybil-protected): a BYZANTINE-fault-tolerant param set
+		//     selected by network (Mainnet K=21 / Testnet K=11 / Default K=20).
+		//
+		// CRITICAL-2: the prior code used LocalParams() (K=3, α=2 → f=0, CFT) for
+		// ALL sybil-protected nets — a SINGLE Byzantine validator forks K=3/α=2.
+		// We now select a real BFT set and FAIL CLOSED if it is not value-safe.
+		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
+		if m.SybilProtectionEnabled {
+			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
+				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
-		} else {
-			consensusParams = consensusconfig.LocalParams()
 		}
-		consensusEngine := consensuschain.NewRuntime(consensuschain.NetworkConfig{
+
+		// HIGH-4: wire the α-of-K vote/cert topology for multi-validator (K>1)
+		// chains so finality is LIVE (votes broadcast to all, certs gossiped,
+		// followers finalize on the cert). Without a verifier a K>1 engine refuses
+		// to Start; without the gossiper Mode() reports degraded and value-DEX is
+		// refused. For K==1 these stay nil (no quorum, no signatures).
+		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID}
+		netCfg := consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
 			NetworkID:  networkID,
 			NodeID:     m.NodeID,
 			Validators: m.Validators, // CRITICAL: Pass validator sampler for k-peer polling
 			Logger:     m.Log,
-			Gossiper:   &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID},
+			Gossiper:   gossiper,
 			VM:         blockBuilder,
 			Params:     &consensusParams,
-		})
+		}
+		if consensusParams.K > 1 {
+			netCfg.VoteVerifier = newBLSVoteVerifier(m.Validators, networkID)
+			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
+			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
+			// not just the α-of-K count, so a low-stake coalition cannot finalize.
+			netCfg.StakeSource = newValidatorStakeSource(m.Validators, networkID)
+		}
+		consensusEngine := consensuschain.NewRuntime(netCfg)
 
 		// Start the consensus engine
 		engineStartCtx, engineStartCancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -2836,7 +2847,27 @@ func (b *blockHandler) Response(ctx context.Context, nodeID ids.NodeID, requestI
 	return nil
 }
 func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	// Handle Gossip - try to process as block
+	// HIGH-4 receive demux: a quorum envelope (signed vote / finality cert) is
+	// routed to the engine's α-of-K topology; anything else is a plain block
+	// gossip handled by Put (backward-compatible — decode fails soft).
+	//
+	// The quorum path is consulted ONLY when the engine is in quorum-finality
+	// mode (K>1, live topology). A single-validator engine never emits vote/cert
+	// envelopes, so it always treats gossip as a block — this makes a chance
+	// collision of the envelope magic with block bytes impossible to misroute on
+	// the K==1 path.
+	if b.engine != nil && b.engine.Mode() == consensuschain.ModeQuorumFinality {
+		if kind, blockID, payload, err := decodeQuorumGossip(msg); err == nil {
+			switch kind {
+			case quorumKindVote:
+				b.engine.HandleIncomingVote(blockID, payload)
+			case quorumKindCert:
+				b.engine.HandleIncomingCert(payload)
+			}
+			return nil
+		}
+	}
+	// Plain block gossip.
 	return b.Put(ctx, nodeID, 0, msg)
 }
 func (b *blockHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
@@ -3059,6 +3090,47 @@ type networkGossiper struct {
 
 // Compile-time check that networkGossiper implements Gossiper
 var _ consensuschain.Gossiper = (*networkGossiper)(nil)
+
+// Compile-time check that networkGossiper implements QuorumGossiper — the
+// vote/cert distribution topology that makes α-of-K finality LIVE (HIGH-4).
+// Without this the consensus engine runs degraded (Mode() != ModeQuorumFinality)
+// and value-DEX is refused.
+var _ consensuschain.QuorumGossiper = (*networkGossiper)(nil)
+
+// BroadcastVote sends this node's SIGNED accept vote for blockID to ALL
+// validators on the network (not just the proposer). The signed vote rides on
+// app-gossip framed in a quorum envelope (decoded by blockHandler.Gossip into
+// engine.HandleIncomingVote). Broadcasting to ALL — rather than SendVote-to-
+// proposer-only — is the structural fix for the proposer-freeze: any node that
+// collects α distinct signed votes can assemble + gossip the cert, so finality
+// no longer hinges on one node's inbound Chits.
+func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockID ids.ID, voteBytes []byte) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
+	msg, err := g.msgCreator.Gossip(chainID, envelope)
+	if err != nil {
+		return 0
+	}
+	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+}
+
+// GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so
+// followers finalize blockID on a verifiable proof (HandleIncomingCert), not a
+// fast-follow guess. Best effort: the gossiping node's own finality is already
+// established by the verified cert.
+func (g *networkGossiper) GossipCert(chainID ids.ID, networkID ids.ID, blockID ids.ID, certBytes []byte) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+	envelope := encodeQuorumGossip(quorumKindCert, blockID, certBytes)
+	msg, err := g.msgCreator.Gossip(chainID, envelope)
+	if err != nil {
+		return 0
+	}
+	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+}
 
 // GossipPut broadcasts a Put message with block data to validators.
 func (g *networkGossiper) GossipPut(chainID ids.ID, networkID ids.ID, blockData []byte) int {
