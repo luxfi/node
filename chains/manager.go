@@ -1239,6 +1239,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
 			// not just the α-of-K count, so a low-stake coalition cannot finalize.
 			netCfg.StakeSource = newValidatorStakeSource(m.Validators, networkID)
+			// Epoch binding (MEDIUM): pin every vote/cert to the active weighted
+			// validator set so the ⅔-by-stake predicate is enforced at the
+			// cert-position epoch — a cert gathered under one set cannot be
+			// re-verified against another (its signatures were over this root).
+			netCfg.ValidatorSetRoot = newValidatorSetRootSource(m.Validators, networkID)
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
