@@ -374,7 +374,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # cmd/fourpath-live synthetic seeders / internal/localguard are deleted (cmd/dexseed
 # is the one canonical REAL-market seeder). Bump with every dex release that changes
 # the VM, like CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.17
+ARG DEX_REF=v1.5.18
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
