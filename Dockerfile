@@ -152,6 +152,12 @@ RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM, CGO_ENABLED=${CGO_ENABLED}}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
+    # `COPY . .` (above) clobbered the healed go.sum with the repo's copy, whose
+    # first-party hashes go stale whenever a luxfi/hanzoai tag is re-published.
+    # Strip them here so -mod=mod re-records current content hashes from the
+    # authenticated direct fetch (git insteadOf set above) — integrity repair,
+    # no version drift (go.mod pins are untouched). Mirrors the evm-plugin step.
+    sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' go.sum && \
     GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # ============= EVM Plugin Stage ================
