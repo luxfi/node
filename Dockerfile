@@ -271,6 +271,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     cd /tmp/evm && \
     . /build/build_env.sh && \
     go mod edit -require=github.com/luxfi/upgrade@v1.0.1 && \
+    go mod edit -require=github.com/luxfi/chains@v1.3.21 && \
     find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
