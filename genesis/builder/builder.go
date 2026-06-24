@@ -423,15 +423,42 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// initialAmount is the allocation. Either way, count exactly once —
 	// the reported supply must equal the sum of actually-emitted UTXOs +
 	// validator stakes, not a double-count of the two views of one number.
+	//
+	// Accumulate with overflow detection: a stale-magnitude allocation set
+	// (e.g. 9-decimal amounts re-read under the 6-decimal unit) can sum
+	// past uint64 and silently wrap, which would let a wrapped total slip
+	// under a naive cap check. addOverflow makes that a hard build error.
 	initialSupply := uint64(0)
+	addOverflow := func(sum, x uint64) (uint64, bool) {
+		s := sum + x
+		return s, s < sum // wrapped
+	}
 	for _, a := range config.Allocations {
 		if len(a.UnlockSchedule) > 0 {
 			for _, unlock := range a.UnlockSchedule {
-				initialSupply += unlock.Amount
+				var of bool
+				if initialSupply, of = addOverflow(initialSupply, unlock.Amount); of {
+					return nil, ids.Empty, fmt.Errorf("genesis allocation sum overflows uint64 (network %d): allocation magnitudes are out of range for the 6-decimal LUX unit", config.NetworkID)
+				}
 			}
 		} else {
-			initialSupply += a.InitialAmount
+			var of bool
+			if initialSupply, of = addOverflow(initialSupply, a.InitialAmount); of {
+				return nil, ids.Empty, fmt.Errorf("genesis allocation sum overflows uint64 (network %d): allocation magnitudes are out of range for the 6-decimal LUX unit", config.NetworkID)
+			}
 		}
+	}
+
+	// Fail-closed monetary invariant: the genesis allocation total must not
+	// exceed the network's declared supply cap. This is the last line of
+	// defense against a mis-encoded mainnet genesis (the 9-decimal→6-decimal
+	// magnitude bug that put P-supply at 25× the 2T cap). SupplyCap is the
+	// network's own reward-config cap (2T LUX for the Lux primary network);
+	// staking adds validator stake on top, but the genesis allocation sum
+	// alone clearing the cap is the property we refuse to build without.
+	supplyCap := GetStakingConfig(config.NetworkID).RewardConfig.SupplyCap
+	if supplyCap > 0 && initialSupply > supplyCap {
+		return nil, ids.Empty, fmt.Errorf("genesis allocation total %d exceeds supply cap %d for network %d (%.4gx over): refusing to build over-issued monetary genesis", initialSupply, supplyCap, config.NetworkID, float64(initialSupply)/float64(supplyCap))
 	}
 
 	// Build platform allocations
