@@ -272,6 +272,8 @@ func ToConsensusOp(op Op) (byte, bool) {
 		return 9, true // GetContext (wire protocol still uses GetAncestors)
 	case AncestorsOp:
 		return 10, true // Context (wire protocol still uses Ancestors)
+	case GossipOp:
+		return 11, true // Gossip — app-gossip envelope (α-of-K vote/cert), demuxed by handler.Gossip
 	default:
 		return 0, false
 	}

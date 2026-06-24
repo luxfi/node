@@ -3037,6 +3037,16 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 		if len(msg.Message) > 0 {
 			return b.Put(ctx, msg.NodeID, msg.RequestID, msg.Message)
 		}
+	case handler.Gossip:
+		// Gossip is an unsolicited app-gossip payload. For a K>1 quorum chain it
+		// carries the α-of-K vote/cert envelope (BroadcastVote / GossipCert);
+		// b.Gossip demuxes it into engine.HandleIncomingVote / HandleIncomingCert
+		// (and falls through to Put for a plain block gossip). Without this case
+		// inbound votes/certs are dropped at the router and no quorum cert ever
+		// assembles → finality stalls (zero Chits / frozen height).
+		if len(msg.Message) > 0 {
+			return b.Gossip(ctx, msg.NodeID, msg.Message)
+		}
 	case handler.PullQuery:
 		// PullQuery asks for a preference signal on a block identified by ID
 		// Extract the blockID from the message and respond with Qbit
