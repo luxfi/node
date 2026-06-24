@@ -3267,12 +3267,9 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
-		log.Warn("DIAG BroadcastVote: Gossip msg creation failed", "chainID", chainID, "err", err)
 		return 0
 	}
-	n := g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
-	log.Info("DIAG BroadcastVote: sent signed vote", "chainID", chainID, "networkID", g.networkID, "blockID", blockID, "sentTo", n, "envLen", len(envelope))
-	return n
+	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
 }
 
 // GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so

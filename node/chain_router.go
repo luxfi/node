@@ -138,18 +138,12 @@ func (r *chainRouter) HandleInbound(ctx context.Context, msg message.InboundMess
 	// Convert message Op to handler Op
 	consensusOp, ok := message.ToConsensusOp(msg.Op())
 	if !ok {
-		r.log.Info("DIAG router: unhandled message op (DROPPED)",
+		r.log.Debug("unhandled message op",
 			log.Stringer("nodeID", msg.NodeID()),
 			log.Stringer("op", msg.Op()),
-			log.Stringer("chainID", chainID),
 		)
 		return
 	}
-	r.log.Info("DIAG router: inbound consensus msg",
-		log.Stringer("nodeID", msg.NodeID()),
-		log.Stringer("op", msg.Op()),
-		log.Stringer("chainID", chainID),
-	)
 
 	// Extract request ID and container bytes
 	requestID, _ := message.GetRequestID(msg.Message())
