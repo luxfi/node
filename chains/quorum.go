@@ -108,14 +108,90 @@ func localBFTParamsForN(n int) consensusconfig.Parameters {
 	return p
 }
 
+// sizeCommitteeToN takes a network's full large-committee parameter set (its
+// brand TARGET — MainnetParams K=21 / TestnetParams K=11, with that network's
+// timing/Beta) and, when the live validator set n is SMALLER than that target K,
+// shrinks the committee to K = n with α = bftSafeAlpha(n) so a small (e.g.
+// bootstrap) validator set stays finalizable. Once n reaches the target K the
+// full large committee is returned UNCHANGED. The same liveness reasoning as
+// localBFTParamsForN applies: K = n makes the self-filtering proposer poll the
+// whole set, so α = ⌈2n/3⌉-ish carries BFT slack (tolerates f = ⌊(n-1)/3⌋ faults)
+// instead of demanding a near-unanimous reply that one lagging validator wedges.
+//
+// Unlike localBFTParamsForN this PRESERVES the caller's timing/Beta (mainnet/
+// testnet block cadence), it does NOT drop to localhost (1ms) timing. The result
+// always clears the BFT overlap bound (2α−K ≥ f+1, asserted by Parameters.Valid);
+// for n ≥ 4 it is value-safe (f ≥ 1). The manager call site additionally asserts
+// value-safety as a fail-closed backstop before a multi-node chain starts.
+func sizeCommitteeToN(full consensusconfig.Parameters, n int) consensusconfig.Parameters {
+	if n >= full.K {
+		return full // enough validators for the full large committee
+	}
+	k := n
+	if k < 1 {
+		k = 1
+	}
+	alpha := bftSafeAlpha(k)
+	full.K = k
+	full.AlphaPreference = alpha
+	full.AlphaConfidence = alpha
+	if full.BetaRogue < k {
+		full.BetaRogue = k // rogue confidence stays above committee size
+	}
+	return full
+}
+
+// mainnetParamsForN sizes the mainnet committee to the live validator set so a
+// small (e.g. bootstrap) validator set stays finalizable, converging to the full
+// large-committee MainnetParams (K=21, α=15) once the set reaches K. Keeps mainnet
+// timing/Beta. Verified scaling: n=5→K5/α4, n=11→K11/α8, n=20→K20/α14,
+// n≥21→MainnetParams (K21/α15). This is the fix for a wedged 5-validator mainnet:
+// the unconditional K=21/α=15 demanded 15 accepts from a 5-node set — finality
+// was mathematically impossible (α=15 > 5) and the C-Chain froze.
+func mainnetParamsForN(n int) consensusconfig.Parameters {
+	return sizeCommitteeToN(consensusconfig.MainnetParams(), n)
+}
+
+// testnetParamsForN is the testnet analogue: it sizes the testnet committee to the
+// live validator set, converging to the full TestnetParams (K=11, α=8) once the
+// set reaches K, keeping testnet timing/Beta. A few-validator testnet stays
+// finalizable for the same reason (α=8 > a 3-node set is unreachable otherwise).
+func testnetParamsForN(n int) consensusconfig.Parameters {
+	return sizeCommitteeToN(consensusconfig.TestnetParams(), n)
+}
+
+// committeeIsValueSafe reports whether p is a SAFE Byzantine-fault-tolerant value
+// committee — the size-INVARIANT property the engine actually requires: it clears
+// the BFT overlap bound (2α−K ≥ f+1, Parameters.Valid) AND tolerates at least one
+// Byzantine validator (f = ⌊(K-1)/3⌋ ≥ 1, i.e. K ≥ 4). This is the SAME predicate
+// consensusconfig.ValidateForValueNetwork enforces MINUS its brand-target full-set
+// floor (mainnet K≥11 / testnet K≥5). That floor is a TARGET for a healthy full
+// validator set, not a safety invariant; a committee deliberately sized to a
+// smaller live set (mainnetParamsForN/testnetParamsForN) is legitimately
+// sub-target yet still value-safe, so the start-up backstop must assert THIS, not
+// the full-set floor — otherwise a finalizable K=5/α=4 mainnet is wrongly refused
+// (the very freeze this fixes). networkID 0 has no brand floor in
+// ValidateForNetwork, so delegating to it yields exactly Valid()+f≥1 with ONE
+// definition of the bound (DRY — the node never restates the BFT predicate).
+func committeeIsValueSafe(p consensusconfig.Parameters) error {
+	return p.ValidateForValueNetwork(0)
+}
+
 // selectConsensusParams picks the consensus parameters for a chain.
 //
 //   - sybilProtection == false (--dev / single-node): K=1, the sole validator's
 //     accept is the 1-of-1 quorum (no peer signatures).
-//   - sybilProtection == true, VALUE network: a large BYZANTINE-fault-tolerant
-//     param set — NEVER LocalParams() (K=3/α=2, f=0, which a single Byzantine
-//     validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→K=11, every
-//     other value net→Default K=20.
+//   - sybilProtection == true, VALUE network: a BYZANTINE-fault-tolerant param set
+//     SIZED TO THE LIVE VALIDATOR SET — NEVER LocalParams() (K=3/α=2, f=0, which a
+//     single Byzantine validator forks; this was CRITICAL-2). Mainnet converges to
+//     K=21, Testnet to K=11, every other value net to Default K=20, but when the
+//     live set is SMALLER than that target K the committee shrinks to K = N,
+//     α = bftSafeAlpha(N) (mainnetParamsForN / testnetParamsForN). The
+//     unconditional full target was itself a freeze: K=21/α=15 on the live
+//     5-validator mainnet demanded 15 accepts from 5 nodes — α=15 > 5 made finality
+//     mathematically impossible and the C-Chain hung. Sizing to the live set makes
+//     a bootstrap set finalizable and converges to the full large committee as the
+//     set grows.
 //   - sybilProtection == true, LOCAL DEV network (devnet 3 / localnet 1337):
 //     a committee SIZED TO THE LIVE VALIDATOR SET — K = numValidators,
 //     α = bftSafeAlpha(K) (localBFTParamsForN). Default K=20 is unsatisfiable on a
@@ -127,18 +203,19 @@ func localBFTParamsForN(n int) consensusconfig.Parameters {
 //
 // numValidators is the live count of the primary-network validator set (the set
 // every native chain — P/C/D — samples from); 0 means "set not yet known", in
-// which case we fall back to the minimal K=4 committee. All branches satisfy the
-// 2α−K ≥ f+1 overlap bound; the manager call site also asserts
-// ValidateForValueNetwork as a fail-closed backstop.
+// which case we fall back to the minimal K=1 committee (which the multi-node
+// backstop then refuses as non-value-safe — a single-validator set is not a
+// multi-node value chain). All branches satisfy the 2α−K ≥ f+1 overlap bound; the
+// manager call site also asserts committeeIsValueSafe as a fail-closed backstop.
 func selectConsensusParams(sybilProtection bool, networkID uint32, numValidators int) consensusconfig.Parameters {
 	if !sybilProtection {
 		return consensusconfig.SingleValidatorParams()
 	}
 	switch networkID {
 	case constants.MainnetID:
-		return consensusconfig.MainnetParams()
+		return mainnetParamsForN(numValidators)
 	case constants.TestnetID:
-		return consensusconfig.TestnetParams()
+		return testnetParamsForN(numValidators)
 	default:
 		if isLocalDevNetwork(networkID) {
 			return localBFTParamsForN(numValidators)

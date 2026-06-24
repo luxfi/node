@@ -6,19 +6,29 @@
 // chain. The round-1 hole was manager.go selecting LocalParams() (K=3/α=2 → f=0,
 // CFT) for ALL multi-node nets — a single Byzantine validator forks K=3/α=2.
 // These tests pin selectConsensusParams to a BFT-safe set for every multi-node
-// network and prove the value-network backstop (ValidateForValueNetwork) accepts
-// the selected params.
+// network and prove the value-safety backstop (committeeIsValueSafe) accepts the
+// selected params.
 //
-// LIVENESS regression (this revision): local-dev params are sized to the LIVE
+// LIVENESS regression (local dev): local-dev params are sized to the LIVE
 // validator set (K=numValidators, α=bftSafeAlpha(K)). A hardcoded K=4 on a
 // 5-validator set wedged finality at height 0 — the gossiper proposer
 // self-filters its K-sample, so K=4 polled only 3 peers while α=3 demanded all 3,
 // and one lagging validator made the quorum unreachable. K=N polls the whole set
 // so α has BFT slack.
+//
+// LIVENESS regression (MAINNET/TESTNET — this revision): mainnet/testnet params
+// are now ALSO sized to the live validator set (mainnetParamsForN/testnetParamsForN),
+// converging to the full large committee (K=21 / K=11) once the set reaches K. The
+// prior unconditional MainnetParams (K=21/α=15) froze the live 5-validator C-Chain:
+// α=15 > 5 made finality mathematically impossible. The start-up backstop now
+// asserts VALUE-SAFETY (committeeIsValueSafe: K≥4, f≥1, BFT overlap) — the
+// size-invariant property — NOT the brand-target full-set floor (K≥11), so a
+// finalizable K=5/α=4 mainnet is admitted while a forkable K≤3 set is still refused.
 package chains
 
 import (
 	"testing"
+	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/constants"
@@ -30,10 +40,13 @@ const testNumValidators = 5
 
 // TestSelectConsensusParams_MultiNodeIsBFT proves that for EVERY multi-validator
 // (sybilProtection==true) network the node selects a Byzantine-fault-tolerant
-// param set (f≥1, i.e. K≥4) that also clears the value-network validator — and
-// that it is NEVER LocalParams (K=3) or any K<4 set. This is the node half of
-// CRITICAL-2 (the consensus half is config.ValidateForValueNetwork, tested in
-// the consensus module).
+// param set (f≥1, i.e. K≥4) that also clears the start-up value-safety backstop
+// (committeeIsValueSafe) — and that it is NEVER LocalParams (K=3) or any K<4 set.
+// This is the node half of CRITICAL-2 (the consensus half is the BFT overlap
+// bound in config.Valid, tested in the consensus module). At testNumValidators=5
+// the mainnet/testnet committees are sized to K=5/α=4 (f=1) — BFT-safe, even
+// though K=5 is below the brand-target K≥11 floor (which is a target, not a
+// safety invariant; committeeIsValueSafe asserts the invariant).
 func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 	local := consensusconfig.LocalParams()
 
@@ -65,6 +78,13 @@ func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 			// 2·AlphaPreference − K ≥ f+1).
 			if err := p.Valid(); err != nil {
 				t.Fatalf("multi-node net %q selected params fail Valid(): %v (K=%d α=%d)",
+					tc.name, err, p.K, p.AlphaPreference)
+			}
+			// MUST pass the EXACT backstop the manager asserts before engine start
+			// (committeeIsValueSafe: value-safety, K≥4/f≥1/overlap — size-invariant,
+			// no brand-target full-set floor).
+			if err := committeeIsValueSafe(p); err != nil {
+				t.Fatalf("multi-node net %q selected params fail the start-up value-safety backstop: %v (K=%d α=%d)",
 					tc.name, err, p.K, p.AlphaPreference)
 			}
 		})
@@ -174,24 +194,119 @@ func TestSelectConsensusParams_SingleNodeIsK1(t *testing.T) {
 }
 
 // TestSelectConsensusParams_ValueBackstop proves the params selected for a
-// multi-node net pass the STRICTER value-network validator for that net — the
-// fail-closed backstop asserted at the manager call site before starting the
-// engine. (Mainnet enforces K≥11, so MainnetParams K=21 passes; Default K=20
-// passes for an arbitrary value net.)
+// multi-node net pass committeeIsValueSafe — the EXACT fail-closed backstop
+// asserted at the manager call site before starting the engine. This is the
+// value-safety invariant (K≥4, f≥1, BFT overlap), NOT the brand-target full-set
+// floor: a mainnet committee sized to a small live set (here 5) is K=5/α=4, which
+// is value-safe and MUST be admitted — refusing it (the old K≥11-floor behavior)
+// is the exact freeze this revision fixes.
 func TestSelectConsensusParams_ValueBackstop(t *testing.T) {
 	cases := []struct {
 		name      string
 		networkID uint32
 	}{
 		{"mainnet", constants.MainnetID},
+		{"testnet", constants.TestnetID},
 		{"arbitrary-value-net", 909090},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			p := selectConsensusParams(true, tc.networkID, testNumValidators)
-			if err := p.ValidateForValueNetwork(tc.networkID); err != nil {
-				t.Fatalf("selected params for value net %q must pass the value backstop, got %v (K=%d)",
-					tc.name, err, p.K)
+			if err := committeeIsValueSafe(p); err != nil {
+				t.Fatalf("selected params for value net %q must pass the value-safety backstop, got %v (K=%d α=%d)",
+					tc.name, err, p.K, p.AlphaPreference)
+			}
+		})
+	}
+}
+
+// TestMainnetTestnetParamsForN_ScalesToLiveSet pins the EXACT scaling contract for
+// the mainnet/testnet committee sizing: K = min(N, targetK), α = bftSafeAlpha(K),
+// converging to the full brand params (Mainnet K=21/α=15, Testnet K=11/α=8) once
+// N reaches the target. It proves (1) the verified scaling table, (2) MAINNET
+// TIMING is preserved at every size (NOT dropped to localhost 1ms — this is what
+// distinguishes mainnetParamsForN from localBFTParamsForN), (3) every sized
+// committee with N≥4 passes the start-up value-safety backstop, and (4) a set too
+// small to be BFT (N≤3, f=0) is fail-closed REFUSED by that backstop.
+func TestMainnetTestnetParamsForN_ScalesToLiveSet(t *testing.T) {
+	mainnetFull := consensusconfig.MainnetParams()
+	testnetFull := consensusconfig.TestnetParams()
+
+	type want struct {
+		k, alpha int
+	}
+	cases := []struct {
+		name     string
+		paramsFn func(int) consensusconfig.Parameters
+		brandBT  time.Duration // expected BlockTime (brand timing preserved at every size)
+		n        int
+		want     want
+	}{
+		// Mainnet: converges to K=21/α=15, keeping mainnet BlockTime.
+		{"mainnet-n5", mainnetParamsForN, mainnetFull.BlockTime, 5, want{5, 4}},
+		{"mainnet-n11", mainnetParamsForN, mainnetFull.BlockTime, 11, want{11, 8}},
+		{"mainnet-n20", mainnetParamsForN, mainnetFull.BlockTime, 20, want{20, 14}},
+		{"mainnet-n21", mainnetParamsForN, mainnetFull.BlockTime, 21, want{21, 15}},
+		{"mainnet-n25", mainnetParamsForN, mainnetFull.BlockTime, 25, want{21, 15}},
+		// Testnet: converges to K=11/α=8, keeping testnet BlockTime.
+		{"testnet-n5", testnetParamsForN, testnetFull.BlockTime, 5, want{5, 4}},
+		{"testnet-n7", testnetParamsForN, testnetFull.BlockTime, 7, want{7, 5}},
+		{"testnet-n11", testnetParamsForN, testnetFull.BlockTime, 11, want{11, 8}},
+		{"testnet-n15", testnetParamsForN, testnetFull.BlockTime, 15, want{11, 8}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := tc.paramsFn(tc.n)
+			if p.K != tc.want.k || p.AlphaPreference != tc.want.alpha || p.AlphaConfidence != tc.want.alpha {
+				t.Fatalf("%s: want K=%d/α=%d, got K=%d/αPref=%d/αConf=%d",
+					tc.name, tc.want.k, tc.want.alpha, p.K, p.AlphaPreference, p.AlphaConfidence)
+			}
+			// Brand TIMING preserved (NOT localhost 1ms). The sized committee keeps the
+			// full brand params' BlockTime regardless of N.
+			if p.BlockTime != tc.brandBT {
+				t.Fatalf("%s: brand timing not preserved: want BlockTime=%v, got %v", tc.name, tc.brandBT, p.BlockTime)
+			}
+			// N≥4 ⟹ value-safe and admitted by the start-up backstop.
+			if err := committeeIsValueSafe(p); err != nil {
+				t.Fatalf("%s: sized committee (K=%d/α=%d) must pass the value-safety backstop, got %v",
+					tc.name, p.K, p.AlphaPreference, err)
+			}
+		})
+	}
+
+	// Fail-closed: a mainnet/testnet live set too small to be BFT (N≤3 ⟹ f=0) is
+	// REFUSED by the start-up backstop — selectConsensusParams sizes it (K=N) but a
+	// K≤3 committee is forkable (CRITICAL-2) so the manager refuses to start it.
+	for _, n := range []int{1, 2, 3} {
+		for _, id := range []uint32{constants.MainnetID, constants.TestnetID} {
+			p := selectConsensusParams(true, id, n)
+			if err := committeeIsValueSafe(p); err == nil {
+				t.Fatalf("net %d with %d validators: K=%d/α=%d (f=%d) is NOT value-safe but the backstop admitted it",
+					id, n, p.K, p.AlphaPreference, p.ByzantineFaultTolerance())
+			}
+		}
+	}
+}
+
+// TestSelectConsensusParams_FullSetClearsBrandFloor proves that once the live set
+// reaches the brand target, the selected mainnet/testnet committee is the full
+// brand params and therefore ALSO clears the STRICTER brand-target floor
+// (config.ValidateForNetwork: mainnet K≥11, testnet K≥5) — the sizing only ever
+// RELAXES below target for a small set, never weakens a healthy full set.
+func TestSelectConsensusParams_FullSetClearsBrandFloor(t *testing.T) {
+	cases := []struct {
+		name      string
+		networkID uint32
+		n         int
+	}{
+		{"mainnet-full", constants.MainnetID, 30},
+		{"testnet-full", constants.TestnetID, 20},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := selectConsensusParams(true, tc.networkID, tc.n)
+			if err := p.ValidateForNetwork(tc.networkID); err != nil {
+				t.Fatalf("%s: full-set committee must clear the brand-target floor, got %v (K=%d)", tc.name, err, p.K)
 			}
 		})
 	}

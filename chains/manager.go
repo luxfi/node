@@ -1265,7 +1265,18 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID, numPrimaryValidators)
 		if m.SybilProtectionEnabled {
-			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
+			// Assert VALUE-SAFETY (K≥4, f≥1, BFT overlap 2α−K ≥ f+1) — the
+			// size-INVARIANT property a multi-node value chain must always hold —
+			// NOT the brand-target full-set floor (mainnet K≥11 / testnet K≥5).
+			// selectConsensusParams deliberately sizes mainnet/testnet committees DOWN
+			// to a small live validator set (mainnetParamsForN/testnetParamsForN) so a
+			// bootstrap set stays finalizable; such a committee is legitimately
+			// sub-target yet still value-safe. Asserting the full-set floor here would
+			// refuse a finalizable K=5/α=4 mainnet — the exact freeze this guards
+			// against (the unconditional K=21/α=15 froze the live 5-validator C-Chain).
+			// The committee converges to the full large set (K=21/K=11) as the live set
+			// grows, at which point it also clears the brand floor.
+			if err := committeeIsValueSafe(consensusParams); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
