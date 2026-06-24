@@ -32,119 +32,108 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/validators"
 )
 
-// isLocalDevNetwork reports whether networkID is an explicitly-local developer
-// network: devnet (3) or localnet (1337). These are EXACT IDs (per luxfi/constants
-// convention), NOT a range — a custom value L1 with a high networkID (e.g. an
-// L1 whose chainID == networkID) is a VALUE network and must NOT match here.
-// Local dev networks are the only IDs that run a committee SIZED TO THE LIVE
-// VALIDATOR SET (localBFTParamsForN) instead of the large-committee Default
-// (K=20), because a handful of localhost validators cannot reach an α=14-of-K=20
-// quorum.
-func isLocalDevNetwork(networkID uint32) bool {
-	return networkID == constants.DevnetID || networkID == constants.LocalID
+// ConsensusOverride carries an operator's EXPLICIT --consensus-sample-size /
+// --consensus-quorum-size, threaded from node config. A field is honored only
+// when > 0 (the operator actually set the flag); 0 means "use the dynamic
+// live-set value". An explicit value is honored but CLAMPED to the dynamic floor
+// (see applyConsensusOverride) so an operator can RAISE the committee/quorum but
+// never under-set it below the strict-⅔ stake-cert threshold the engine enforces.
+type ConsensusOverride struct {
+	SampleSize int // explicit K (--consensus-sample-size); 0 = unset
+	QuorumSize int // explicit α (--consensus-quorum-size);  0 = unset
 }
 
-// bftSafeAlpha returns the smallest accept-quorum α that is Byzantine-safe for a
-// committee of K: the integer ceil((K + f + 1) / 2) with f = ⌊(K-1)/3⌋. This is
-// the SAME bound the consensus engine enforces (config.Parameters.Valid asserts
-// 2·α − K ≥ f + 1) and the SAME formula the operator computes (api/v1
-// BFTSafeAlpha) — one definition of "safe quorum", so the node and the operator
-// can never disagree on it. For K=5 → f=1 → α=4; K=4 → f=1 → α=3; K=1 → α=1.
-func bftSafeAlpha(k int) int {
-	if k < 1 {
-		return 1
-	}
-	f := (k - 1) / 3
-	alpha := (k + f + 2) / 2 // == ceil((k + f + 1) / 2)
-	if alpha < 1 {
-		alpha = 1
-	}
-	if alpha > k {
-		alpha = k
-	}
-	return alpha
-}
-
-// localBFTParamsForN returns the minimal Byzantine-fault-tolerant parameter set
-// for a LOCAL DEV network of n validators: K = n (every validator samples every
-// other — the only K that lets the proposer poll the whole set, since the
-// proposer FILTERS ITSELF out of its own K-sample), α = bftSafeAlpha(K).
-//
-// Why K MUST equal n (the liveness fix): the gossiper proposer samples K
-// validators then drops itself from the sample (engine/chain RequestVotes), so a
-// proposer in its own sample queries only K−1 distinct peers. With a fixed K=4
-// on a 5-validator set the proposer queried just 3 peers yet α=3 demanded a
-// UNANIMOUS reply from those 3 — a single lagging validator made the α-quorum
-// unreachable and the first block hung forever (D-Chain + C-Chain frozen at
-// height 0). Setting K = n makes the proposer poll all n−1 peers, so α = ⌈2n/3⌉-ish
-// (4 of 5) has real slack: it tolerates f = ⌊(n-1)/3⌋ non-responsive/Byzantine
-// validators instead of zero. This is what the operator already emits as
-// --consensus-sample-size/--consensus-quorum-size; the node now derives the
-// identical committee from the live set instead of a hardcoded K=4.
-//
-// Clamped to K≥4 so a 2- or 3-validator local net still clears the value-network
-// BFT floor (ValidateForValueNetwork requires K≥4, f≥1); such a tiny set degrades
-// to near-unanimous fault tolerance but remains safe. Keeps the localhost timing
-// (1ms blocks / 5ms rounds) from LocalBFTParams.
-func localBFTParamsForN(n int) consensusconfig.Parameters {
-	k := n
-	if k < 4 {
-		k = 4
-	}
-	p := consensusconfig.LocalBFTParams() // localhost timing + BetaVirtuous/Rogue
-	alpha := bftSafeAlpha(k)
-	p.K = k
-	p.AlphaPreference = alpha
-	p.AlphaConfidence = alpha
-	if p.BetaRogue < k {
-		p.BetaRogue = k // rogue confidence stays above committee size
-	}
-	return p
-}
-
-// selectConsensusParams picks the consensus parameters for a chain.
+// selectConsensusParams picks the consensus parameters for a chain — ONE path
+// for every network. The committee is sized to the LIVE validator set
+// (consensusconfig.FeasibleParams): K = numValidators and α = the minimum vote
+// count whose cumulative stake strictly exceeds ⅔ of total stake, DERIVED from
+// the SAME floor the cert verifier enforces (config.TwoThirdsStakeFloor) and
+// clamped up to the BFT overlap floor. Mainnet/testnet/devnet/localnet and every
+// sovereign L1 all flow through this — there is no per-tier K/α schedule.
 //
 //   - sybilProtection == false (--dev / single-node): K=1, the sole validator's
 //     accept is the 1-of-1 quorum (no peer signatures).
-//   - sybilProtection == true, VALUE network: a large BYZANTINE-fault-tolerant
-//     param set — NEVER LocalParams() (K=3/α=2, f=0, which a single Byzantine
-//     validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→K=11, every
-//     other value net→Default K=20.
-//   - sybilProtection == true, LOCAL DEV network (devnet 3 / localnet 1337):
-//     a committee SIZED TO THE LIVE VALIDATOR SET — K = numValidators,
-//     α = bftSafeAlpha(K) (localBFTParamsForN). Default K=20 is unsatisfiable on a
-//     few localhost validators (α=14 unreachable → P-Chain frozen at height 0). A
-//     hardcoded K=4 on a 5-validator set was ALSO unsatisfiable in practice: the
-//     proposer self-filters its K-sample so it polled only 3 peers while α=3
-//     required all 3 — one lagging validator wedged finality (this is the bug this
-//     fixes). K = N makes the proposer poll the whole set so α has BFT slack.
+//   - sybilProtection == true: K = numValidators, α = strict-⅔ stake threshold.
+//     For today's 5-validator nets this is K=5/α=4 on mainnet, testnet AND
+//     devnet — the fastest viable BFT setting (4-of-5 finalizes, one laggard
+//     tolerated, no oversized dead polling). It recomputes automatically when the
+//     validator count changes: a future 21-set yields K=21/α=15 (15, not 14 —
+//     14/21 does not strictly exceed ⅔).
+//
+// Why K MUST equal the live count: the gossiper proposer samples K validators
+// then drops ITSELF from the sample (engine/chain RequestVotes), so a proposer in
+// its own sample polls only K−1 distinct peers. An oversized K (the retired
+// mainnet K=21 on a 5-validator set) demanded α=15 affirmative votes that the ≤4
+// reachable peers could never supply → quorum unreachable → finality frozen. K =
+// live N makes the proposer poll the whole set so α has real Byzantine slack.
 //
 // numValidators is the live count of the primary-network validator set (the set
 // every native chain — P/C/D — samples from); 0 means "set not yet known", in
-// which case we fall back to the minimal K=4 committee. All branches satisfy the
-// 2α−K ≥ f+1 overlap bound; the manager call site also asserts
-// ValidateForValueNetwork as a fail-closed backstop.
-func selectConsensusParams(sybilProtection bool, networkID uint32, numValidators int) consensusconfig.Parameters {
+// which case FeasibleParams falls back to the minimal K=4 committee. The manager
+// call site also asserts ValidateForLiveValueNetwork as a fail-closed backstop.
+func selectConsensusParams(sybilProtection bool, networkID uint32, numValidators int, override ConsensusOverride) consensusconfig.Parameters {
 	if !sybilProtection {
 		return consensusconfig.SingleValidatorParams()
 	}
-	switch networkID {
-	case constants.MainnetID:
-		return consensusconfig.MainnetParams()
-	case constants.TestnetID:
-		return consensusconfig.TestnetParams()
-	default:
-		if isLocalDevNetwork(networkID) {
-			return localBFTParamsForN(numValidators)
+	p := consensusconfig.FeasibleParams(networkID, numValidators)
+	return applyConsensusOverride(p, override, numValidators)
+}
+
+// applyConsensusOverride folds an operator's explicit K/α onto the dynamic
+// params. An override may only RAISE a value, never lower it below the dynamic
+// floor — the floor is the strict-⅔ stake-cert threshold the engine enforces, so
+// honoring a smaller operator value would emit a non-finalizing (or fork-able)
+// quorum. This is the node-side analogue of the operator's own BFTSafeQuorum
+// clamp, made authoritative here: even if the operator emits the BFT-overlap α
+// (14 for a 21-set) the node raises it to the strict-⅔ value (15).
+//
+//   - SampleSize: honored if >0, clamped to ≤ live set (cannot sample validators
+//     that do not exist) and ≥ the dynamic K. Raising K re-derives the α floor.
+//   - QuorumSize: honored if >0, clamped UP to the dynamic α floor for the
+//     effective K and DOWN to ≤K.
+func applyConsensusOverride(p consensusconfig.Parameters, override ConsensusOverride, numValidators int) consensusconfig.Parameters {
+	if override.SampleSize > 0 {
+		k := override.SampleSize
+		if numValidators > 0 && k > numValidators {
+			k = numValidators // never sample more validators than exist
 		}
-		return consensusconfig.DefaultParams()
+		if k > p.K {
+			p.K = k
+			// Re-derive the α floor for the larger committee.
+			floor := consensusconfig.EqualStakeSupermajorityThreshold(p.K)
+			p.AlphaPreference = floor
+			p.AlphaConfidence = floor
+			p.Alpha = float64(floor) / float64(p.K)
+			if p.BetaRogue < p.K {
+				p.BetaRogue = p.K
+			}
+		}
 	}
+	if override.QuorumSize > 0 {
+		alpha := override.QuorumSize
+		floor := consensusconfig.EqualStakeSupermajorityThreshold(p.K)
+		if alpha < floor {
+			alpha = floor // never below the strict-⅔ stake-cert threshold
+		}
+		if alpha > p.K {
+			alpha = p.K
+		}
+		p.AlphaPreference = alpha
+		p.AlphaConfidence = alpha
+		p.Alpha = float64(alpha) / float64(p.K)
+	}
+	if p.Alpha < 0.66 {
+		p.Alpha = 0.66
+	}
+	if p.Alpha > 1.0 {
+		p.Alpha = 1.0
+	}
+	return p
 }
 
 // --- BLS vote verifier -------------------------------------------------------

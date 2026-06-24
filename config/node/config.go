@@ -204,6 +204,15 @@ type Config struct {
 	// handle App messages per chain.
 	ConsensusAppConcurrency int `json:"consensusAppConcurrency"`
 
+	// ConsensusSampleSizeOverride / ConsensusQuorumSizeOverride carry the
+	// operator's EXPLICIT --consensus-sample-size / --consensus-quorum-size, set
+	// only when the flag was actually provided (0 = unset). They are threaded into
+	// chains.ManagerConfig.ConsensusOverride so chain creation honors an explicit
+	// committee/quorum, clamped to the dynamic strict-⅔ floor. When unset the node
+	// sizes K/α purely from the live validator set (the default, dynamic path).
+	ConsensusSampleSizeOverride int `json:"consensusSampleSizeOverride"`
+	ConsensusQuorumSizeOverride int `json:"consensusQuorumSizeOverride"`
+
 	// must initialize successfully or the node shuts down.  Default: ["P","Q"].
 
 	TrackedChains  set.Set[ids.ID] `json:"trackedChains"`

@@ -1352,7 +1352,13 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
-			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
+			SybilProtectionEnabled: n.Config.SybilProtectionEnabled,
+			// Operator's explicit committee/quorum (0 = unset → dynamic live-set
+			// sizing). Honored at chain creation, clamped to the strict-⅔ floor.
+			ConsensusOverride: chains.ConsensusOverride{
+				SampleSize: n.Config.ConsensusSampleSizeOverride,
+				QuorumSize: n.Config.ConsensusQuorumSizeOverride,
+			},
 			StakingTLSSigner:          n.StakingTLSSigner,
 			StakingTLSCert:            n.StakingTLSCert,
 			StakingBLSKey:             n.Config.StakingSigningKey,

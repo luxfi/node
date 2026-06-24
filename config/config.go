@@ -1689,6 +1689,17 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, fmt.Errorf("%s must be > 0", ConsensusAppConcurrencyKey)
 	}
 
+	// Explicit consensus committee/quorum overrides — captured only when the
+	// operator actually set the flag (IsSet), so the default path sizes K/α from
+	// the live validator set. A set value is honored but clamped UP to the
+	// dynamic strict-⅔ floor at chain creation (chains.applyConsensusOverride).
+	if v.IsSet(ConsensusSampleSizeKey) {
+		nodeConfig.ConsensusSampleSizeOverride = v.GetInt(ConsensusSampleSizeKey)
+	}
+	if v.IsSet(ConsensusQuorumSizeKey) {
+		nodeConfig.ConsensusQuorumSizeOverride = v.GetInt(ConsensusQuorumSizeKey)
+	}
+
 	nodeConfig.UseCurrentHeight = v.GetBool(ProposerVMUseCurrentHeightKey)
 
 	// Logging

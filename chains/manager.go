@@ -336,7 +336,12 @@ type ChainConfig struct {
 
 type ManagerConfig struct {
 	SybilProtectionEnabled bool
-	StakingTLSSigner       crypto.Signer
+	// ConsensusOverride carries the operator's EXPLICIT --consensus-sample-size /
+	// --consensus-quorum-size. Zero fields mean "use the dynamic live-set value";
+	// a set field is honored but clamped to the dynamic strict-⅔ floor
+	// (selectConsensusParams / applyConsensusOverride). Sourced from node Config.
+	ConsensusOverride ConsensusOverride
+	StakingTLSSigner  crypto.Signer
 	StakingTLSCert         *staking.Certificate
 	StakingBLSKey          bls.Signer
 	TracingEnabled         bool
@@ -1263,9 +1268,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if m.Validators != nil {
 			numPrimaryValidators = m.Validators.Count(constants.PrimaryNetworkID)
 		}
-		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID, numPrimaryValidators)
+		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID, numPrimaryValidators, m.ConsensusOverride)
 		if m.SybilProtectionEnabled {
-			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
+			// Fail-closed backstop, LIVE-AWARE: the committee must clear the
+			// protocol overlap bound (Valid), tolerate ≥1 Byzantine validator
+			// (f≥1), and sample at least min(tierFloor, liveValidators). With K
+			// sized to the live set this always holds; it rejects only a genuinely
+			// unsafe or under-sized committee.
+			if err := consensusParams.ValidateForLiveValueNetwork(m.NetworkID, numPrimaryValidators); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
