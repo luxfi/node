@@ -1362,10 +1362,24 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
-		// Start the consensus engine
-		engineStartCtx, engineStartCancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer engineStartCancel()
-		if err := consensusEngine.Start(engineStartCtx, true); err != nil {
+		// Start the consensus engine.
+		//
+		// CRITICAL (finality-wedge fix): Start() derives the engine's LIFETIME
+		// context from the ctx passed here and binds ALL of its long-running
+		// background loops to it — the poll loop, the vote handler, the pipeline
+		// loop, and the re-poll (vote re-solicitation) loop (engine/chain Start →
+		// t.ctx, t.cancel = WithCancel(ctx); go {poll,voteHandler,pipeline,rePoll}).
+		// Start() itself only launches those goroutines and returns immediately; it
+		// does NO blocking startup work, so it needs NO timeout. Passing a
+		// 30s-timeout context here (with a deferred cancel) cancelled t.ctx ~30s
+		// after the chain was created — silently killing the vote handler and the
+		// re-poll loop. The proposer then built a block and sent exactly ONE
+		// PushQuery, but nothing ever processed the returning votes or re-solicited
+		// the missing ones → no α-of-K cert ever assembled → finality froze at
+		// genesis (eth_blockNumber pinned at 0x0, zero Chits). The engine has its
+		// own Stop()/t.cancel for shutdown, so a background (lifetime) context is
+		// correct; the loops live until the engine is explicitly stopped.
+		if err := consensusEngine.Start(context.Background(), true); err != nil {
 			m.Log.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
