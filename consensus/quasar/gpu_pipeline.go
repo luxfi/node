@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/luxfi/accel"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/mldsa"
 )
 
 // GPUVerifyPipeline fuses multiple cryptographic verification operations into
@@ -59,11 +61,11 @@ type ZKWork struct {
 	Bases   [][]byte // [M, N, point_size]
 }
 
-// MLDSAWork holds a batch of ML-DSA (Dilithium) signatures to verify.
+// MLDSAWork holds a batch of ML-DSA signatures to verify.
 type MLDSAWork struct {
 	Messages   [][]byte // [N, msg_len]
-	Signatures [][]byte // [N, 3293] Dilithium3
-	PubKeys    [][]byte // [N, 1952] Dilithium3
+	Signatures [][]byte // [N, 3309] FIPS-204 ML-DSA-65 (3293 was the stale round-3 Dilithium3 size)
+	PubKeys    [][]byte // [N, 1952] FIPS-204 ML-DSA-65
 }
 
 // BlockVerifyWork contains all verification batches for a single block.
@@ -376,8 +378,8 @@ func gpuMLDSAVerify(sess *accel.Session, work *MLDSAWork) ([]bool, error) {
 	n := len(work.Messages)
 
 	msgLen := maxByteLen(work.Messages)
-	sigLen := 3293 // Dilithium3 signature
-	pkLen := 1952  // Dilithium3 public key
+	sigLen := 3309 // FIPS-204 ML-DSA-65 signature (3293 was the stale round-3 Dilithium3 size)
+	pkLen := 1952  // FIPS-204 ML-DSA-65 public key (unchanged across the round-3 -> final transition)
 
 	msgFlat := flattenPadded(work.Messages, n, msgLen)
 	sigFlat := flattenPadded(work.Signatures, n, sigLen)
@@ -485,42 +487,75 @@ func (p *GPUVerifyPipeline) verifyCPU(work *BlockVerifyWork) *BlockVerifyResult 
 	return result
 }
 
-// CPU fallback implementations.
-// These verify signatures using pure Go. In a non-CGO build without real
-// crypto libraries for BLS/Dilithium, we validate format and return true
-// for well-formed inputs (actual verification would use luxfi/crypto).
+// CPU fallback implementations — the pure-Go correctness oracle.
+//
+// These perform REAL per-element cryptographic verification using the
+// luxfi/crypto pure-Go primitives (CGO_ENABLED=0-clean). They interpret each
+// element's raw bytes with the SAME layout the GPU kernels use (see
+// gpuBLSVerify / gpuMLDSAVerify), so the CPU and GPU paths are a genuine
+// equivalence pair: a no-GPU node accepts exactly the signatures a GPU node
+// accepts, and never rubber-stamps a forged one.
+//
+// Corona and ZK have no pure-Go verifier in luxfi/crypto, so those paths
+// fail closed (return false) rather than format-check-and-accept. They MUST
+// be wired to a real verifier before block-accept depends on them.
 
 func cpuBLSVerify(work *BLSWork) []bool {
 	valid := make([]bool, len(work.Messages))
 	for i := range work.Messages {
-		// Format check: message present, sig is 96 bytes, pk is 48 bytes
-		valid[i] = len(work.Messages[i]) > 0 &&
-			len(work.Signatures[i]) == 96 &&
-			len(work.PubKeys[i]) == 48
+		// Mirror gpuBLSVerify's layout: pk is a 48-byte compressed G1 point,
+		// sig is a 96-byte compressed G2 point, msg is the raw message.
+		// PublicKeyFromCompressedBytes / SignatureFromBytes enforce the exact
+		// length, on-curve and subgroup membership the blst/CGO path enforces;
+		// any malformed input fails closed (constructor error => false).
+		pk, err := bls.PublicKeyFromCompressedBytes(work.PubKeys[i])
+		if err != nil {
+			continue
+		}
+		sig, err := bls.SignatureFromBytes(work.Signatures[i])
+		if err != nil {
+			continue
+		}
+		valid[i] = bls.Verify(pk, sig, work.Messages[i])
 	}
 	return valid
 }
 
 func cpuCoronaVerify(work *CoronaWork) []bool {
-	valid := make([]bool, len(work.Messages))
-	for i := range work.Messages {
-		valid[i] = len(work.Messages[i]) > 0 &&
-			len(work.Signatures[i]) > 0 &&
-			len(work.PubKeys[i]) > 0
-	}
-	return valid
+	// FAIL CLOSED: luxfi/crypto exposes no pure-Go Corona (lattice threshold)
+	// signature verifier, and the GPU Corona kernel is the known-wrong-prime
+	// BLOCKED kernel. There is no correct way to verify a Corona signature on
+	// the CPU here, so every element is rejected. Never return true for an
+	// unverified signature. Wire a real Corona verifier before block-accept
+	// consumes this result.
+	return make([]bool, len(work.Messages))
 }
 
 func cpuZKVerify(work *ZKWork) bool {
-	return len(work.Scalars) > 0 && len(work.Bases) > 0
+	// FAIL CLOSED: luxfi/crypto exposes no standalone pure-Go ZK proof
+	// verifier (the accel MSM path is a GPU primitive, not a proof check), so
+	// CPU verification cannot establish proof validity. Reject rather than
+	// rubber-stamp. Wire a real ZK verifier before block-accept consumes this.
+	return false
 }
 
 func cpuMLDSAVerify(work *MLDSAWork) []bool {
 	valid := make([]bool, len(work.Messages))
 	for i := range work.Messages {
-		valid[i] = len(work.Messages[i]) > 0 &&
-			len(work.Signatures[i]) == 3293 &&
-			len(work.PubKeys[i]) == 1952
+		// Mirror gpuMLDSAVerify's layout: ML-DSA-65, pk 1952 bytes, msg raw.
+		// PublicKeyFromBytes enforces the exact key length and decodes the
+		// point; VerifySignature uses the FIPS 204 nil-context verify,
+		// matching the kernel's contextless per-tx verification, and accepts
+		// the signature at its true FIPS-204 length (3309 bytes). The GPU
+		// flatten width (gpuMLDSAVerify's sigLen) now agrees at 3309, so the
+		// CPU oracle and GPU path size the signature identically; see
+		// TestMLDSA_WorkStructSizeIsCanonical. Malformed pk fails closed
+		// (constructor error).
+		pub, err := mldsa.PublicKeyFromBytes(work.PubKeys[i], mldsa.MLDSA65)
+		if err != nil {
+			continue
+		}
+		valid[i] = pub.VerifySignature(work.Messages[i], work.Signatures[i])
 	}
 	return valid
 }
