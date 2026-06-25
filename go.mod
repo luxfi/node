@@ -191,7 +191,7 @@ require (
 	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.7.9 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
-	github.com/luxfi/kms v1.11.4 // indirect
+	github.com/luxfi/kms v1.11.7 // indirect
 	github.com/luxfi/lens v0.1.4 // indirect
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
