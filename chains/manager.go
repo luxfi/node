@@ -27,7 +27,6 @@ import (
 	"github.com/luxfi/vm/chains/atomic"
 
 	// "github.com/luxfi/database/zapdb" // Unused
-	dbmanager "github.com/luxfi/database/manager"
 	"github.com/luxfi/runtime"
 
 	// "github.com/luxfi/database/meterdb" // Unused
@@ -46,7 +45,6 @@ import (
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
-	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/vm/chain"
 
 	// "github.com/luxfi/vm/chain/syncer"
@@ -933,10 +931,12 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		// chains as not bootstrapped until sb.Bootstrapped(chainID) is called
 		go m.monitorBootstrap(chain.Engine, sb, chainParams.ID)
 	} else {
-		// DAG chains (X-Chain, Q-Chain) manage their own consensus and don't have
-		// a standard Engine. Mark them as bootstrapped immediately since the DAG
-		// engine was already started in createDAG.
-		m.Log.Info("DAG chain has no standard engine, marking as bootstrapped immediately",
+		// Defensive fallback: a chain that produced no consensus Engine cannot
+		// bootstrap through one, so mark it bootstrapped immediately. Every
+		// primary-network chain (P/C/X/Q/D/Z) now takes the linear cert path,
+		// which always returns a real Engine, so this branch is not reached by
+		// them — it guards only a degenerate Engine-less VM.
+		m.Log.Info("chain has no consensus engine, marking as bootstrapped immediately",
 			log.Stringer("chainID", chainParams.ID))
 		sb.Bootstrapped(chainParams.ID)
 	}
@@ -1060,16 +1060,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	m.Log.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vmImpl)))
 	var createdChain *chainInfo
+	// Every chain (P/C/X/Q/D/Z/…) finalizes through the ONE linear path:
+	// buildChain → consensuschain.NewRuntime, which wires the ⅔-by-stake BFT
+	// certificate (VoteVerifier/VoteSigner/StakeSource/ValidatorSetRoot), the
+	// fail-closed quorum-validator-state guard, and the BFT-floor check. There
+	// is no separate DAG finality path: a VM is routed here iff it satisfies
+	// chain.ChainVM (= block.ChainVM). X-Chain reaches it via its embedded
+	// linear block builder (linearized above); Q-Chain is born linear.
 	switch vmTyped := vmImpl.(type) {
-	// DAG VM support - for X-Chain and Q-Chain
-	case interface{ GetEngine() consensusdag.Engine }:
-		m.Log.Info("detected DAG VM with GetEngine()",
-			log.Stringer("chainID", chainParams.ID),
-		)
-		createdChain, err = m.createDAG(chainRuntime, chainParams, vmTyped, chainFxs)
-		if err != nil {
-			return nil, fmt.Errorf("error creating DAG chain: %w", err)
-		}
 	case chain.ChainVM:
 		beacons := m.Validators
 		if chainParams.ID == constants.PlatformChainID {
@@ -1183,6 +1181,28 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 						"height-indexed validator set; every K>1 quorum chain would stall finality",
 					vmImpl)
 			}
+		}
+
+		// Linearize an AVM-lineage VM (X-Chain) onto its single-parent linear
+		// block model before it serves consensus. Such a VM defers building its
+		// linear block builder / chain manager until Linearize runs; until then
+		// BuildBlock is unwired. Born-linear VMs (P/C/Q/D) expose no Linearize
+		// and are skipped. We pass the SAME toEngine the consensus runtime reads
+		// (via the VM's WaitForEvent) and ids.Empty as the genesis stop vertex,
+		// so the VM builds its genesis block at height 0 with parent ids.Empty.
+		// This is the linear successor to the removed createDAG linearization —
+		// X-Chain now finalizes through the ⅔-stake certificate, not a DAG engine.
+		if linearVM, ok := vmTyped.(interface {
+			Linearize(context.Context, ids.ID, chan<- vm.Message) error
+		}); ok {
+			m.Log.Info("linearizing AVM-lineage VM onto its linear block model",
+				log.Stringer("chainID", chainParams.ID))
+			linearizeCtx, linearizeCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer linearizeCancel()
+			if err := linearVM.Linearize(linearizeCtx, ids.Empty, toEngine); err != nil {
+				return nil, fmt.Errorf("failed to linearize chain %s: %w", chainParams.ID, err)
+			}
+			m.Log.Info("VM linearized successfully", log.Stringer("chainID", chainParams.ID))
 		}
 
 		// Transition VM to normal operation after initialization
@@ -1341,10 +1361,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
-		// Start the consensus engine
-		engineStartCtx, engineStartCancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer engineStartCancel()
-		if err := consensusEngine.Start(engineStartCtx, true); err != nil {
+		// Start the consensus engine with a LIFETIME context (not a timeout):
+		// engine.Start parents all four long-running loops (poll, vote, pipeline,
+		// re-poll) to this ctx, so a WithTimeout here kills them ~30s after the
+		// chain starts and the quorum cert never assembles — the finality wedge
+		// fixed in v1.30.55 (ba3561778e). Do not reintroduce a timeout here.
+		if err := consensusEngine.Start(context.Background(), true); err != nil {
 			m.Log.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
@@ -1438,330 +1460,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 func (m *manager) AddRegistrant(r Registrant) {
 	m.registrants = append(m.registrants, r)
-}
-
-// dagVMAdapter adapts a DAG VM to interfaces.VM for HTTP handler registration
-type dagVMAdapter struct {
-	underlying interface{}
-}
-
-func (v *dagVMAdapter) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	if h, ok := v.underlying.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return h.CreateHandlers(ctx)
-	}
-	return map[string]http.Handler{}, nil
-}
-
-func (v *dagVMAdapter) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	if h, ok := v.underlying.(interface {
-		CreateStaticHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return h.CreateStaticHandlers(ctx)
-	}
-	return map[string]http.Handler{}, nil
-}
-
-func (v *dagVMAdapter) HealthCheck(ctx context.Context) (interface{}, error) {
-	return map[string]interface{}{"healthy": true}, nil
-}
-
-func (v *dagVMAdapter) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
-	return nil, nil
-}
-
-func (v *dagVMAdapter) SetState(ctx context.Context, state vm.State) error {
-	if s, ok := v.underlying.(interface {
-		SetState(context.Context, uint32) error
-	}); ok {
-		return s.SetState(ctx, uint32(state))
-	}
-	return nil
-}
-
-func (v *dagVMAdapter) Shutdown(ctx context.Context) error {
-	if s, ok := v.underlying.(interface {
-		Shutdown(context.Context) error
-	}); ok {
-		return s.Shutdown(ctx)
-	}
-	return nil
-}
-
-func (v *dagVMAdapter) Version(ctx context.Context) (string, error) {
-	return "1.0.0", nil
-}
-
-func (v *dagVMAdapter) Initialize(
-	ctx context.Context,
-	chainRuntime *runtime.Runtime,
-	dbMgr dbmanager.Manager,
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	toEngine chan<- vm.Message,
-	fxs []*vm.Fx,
-	appSender interface{},
-) error {
-	return nil // DAG VMs are pre-initialized
-}
-
-// createDAG creates a DAG chain (X-Chain, Q-Chain) using the VM's DAG engine
-func (m *manager) createDAG(
-	rt *runtime.Runtime,
-	chainParams ChainParameters,
-	vmImpl interface{},
-	fxs []*vm.Fx,
-) (*chainInfo, error) {
-	// Type assert to get GetEngine() method from exchangevm/qvm
-	dagVM, ok := vmImpl.(interface{ GetEngine() consensusdag.Engine })
-	if !ok {
-		return nil, fmt.Errorf("VM does not implement GetEngine() for DAG consensus")
-	}
-
-	m.Log.Info("creating DAG chain",
-		log.Stringer("chainID", chainParams.ID),
-		log.String("vmID", chainParams.VMID.String()),
-	)
-
-	// Register chain aliases early so the VM's address parser can resolve them.
-	// The "X" prefix in addresses like "X-dev1..." must resolve to the actual blockchain ID.
-	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
-		m.Log.Warn("failed to alias chain with itself", log.Err(err))
-	}
-	if strings.EqualFold(chainParams.Name, "X-Chain") {
-		_ = m.Alias(chainParams.ID, "X")
-	} else if strings.EqualFold(chainParams.Name, "Q-Chain") {
-		_ = m.Alias(chainParams.ID, "Q")
-	}
-
-	// Get chain configuration
-	chainConfig, err := m.getChainConfig(chainParams.ID)
-	if err != nil {
-		m.Log.Warn("failed to get chain config, using empty config",
-			log.Stringer("chainID", chainParams.ID),
-			log.Err(err))
-		chainConfig = ChainConfig{}
-	}
-
-	// Inject automining config for dev mode (applies to C-Chain/coreth only)
-	chainConfig.Config = m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
-
-	// Get chain alias for database directory naming
-	chainAlias := chainParams.ID.String()
-	if aliases, _ := m.Aliases(chainParams.ID); len(aliases) > 0 {
-		chainAlias = aliases[0] // Use first alias (e.g., "X", "Q")
-	}
-
-	// Get VM database from chain database manager
-	// In isolated mode, each chain gets its own ZapDB
-	// In legacy mode, uses prefixdb on shared database
-	vmDB, err := m.chainDBManager.GetVMDatabase(chainParams.ID, chainAlias)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get database for chain %s: %w", chainParams.ID, err)
-	}
-
-	// Create a context for VM initialization with timeout
-	initCtx, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancelInit() // Ensure cleanup on function exit
-
-	// Initialize VM if it supports Initialize
-	// Try multiple Initialize signatures since VMs may have different interfaces
-	vmInitialized := false
-
-	// Try QVM Initialize signature (uses consensus/core types)
-	if initVM, ok := vmImpl.(interface {
-		Initialize(
-			ctx context.Context,
-			chainRuntime interface{},
-			db database.Database,
-			genesisBytes []byte,
-			upgradeBytes []byte,
-			configBytes []byte,
-			toEngine chan<- vm.Message,
-			fxs []*vm.Fx,
-			appSender warp.Sender,
-		) error
-	}); ok {
-		toEngine := make(chan vm.Message, 1)
-		err := initVM.Initialize(
-			initCtx,
-			rt,
-			vmDB,
-			chainParams.GenesisData,
-			chainConfig.Upgrade,
-			chainConfig.Config,
-			toEngine,
-			fxs,
-			&noopWarpSender{}, // Simple no-op for non-warp VMs
-		)
-		if err != nil {
-			m.Log.Warn("QVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
-		} else {
-			m.Log.Info("QVM initialized successfully", log.Stringer("chainID", chainParams.ID))
-			vmInitialized = true
-		}
-	}
-
-	// Try ExchangeVM Initialize signature (uses interface{} types for flexibility)
-	if !vmInitialized {
-		if initVM, ok := vmImpl.(interface {
-			Initialize(
-				ctx context.Context,
-				chainRuntime interface{},
-				dbManager interface{},
-				genesisBytes []byte,
-				upgradeBytes []byte,
-				configBytes []byte,
-				toEngine chan<- interface{},
-				fxs []interface{},
-				appSender interface{},
-			) error
-		}); ok {
-			toEngine := make(chan interface{}, 1)
-			// Convert fxs to []interface{}
-			fxsInterface := make([]interface{}, len(fxs))
-			for i, fx := range fxs {
-				fxsInterface[i] = fx
-			}
-			err := initVM.Initialize(
-				initCtx,
-				rt,
-				vmDB,
-				chainParams.GenesisData,
-				chainConfig.Upgrade,
-				chainConfig.Config,
-				toEngine,
-				fxsInterface,
-				&noopWarpSender{}, // Implements p2p.Sender interface
-			)
-			if err != nil {
-				m.Log.Warn("ExchangeVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
-			} else {
-				m.Log.Info("ExchangeVM initialized successfully", log.Stringer("chainID", chainParams.ID))
-				vmInitialized = true
-			}
-		}
-	}
-
-	// Try vmcore.Init struct-based Initialize (used by exchangevm)
-	if !vmInitialized {
-		if initVM, ok := vmImpl.(interface {
-			Initialize(context.Context, vm.Init) error
-		}); ok {
-			toEngine := make(chan vm.Message, 1)
-			// Convert []*vm.Fx to []any for vm.Init.Fx field
-			fxAny := make([]any, len(fxs))
-			for i, fx := range fxs {
-				fxAny[i] = fx
-			}
-			err := initVM.Initialize(initCtx, vm.Init{
-				Runtime:  rt,
-				DB:       vmDB,
-				Genesis:  chainParams.GenesisData,
-				Upgrade:  chainConfig.Upgrade,
-				Config:   chainConfig.Config,
-				ToEngine: toEngine,
-				Fx:       fxAny,
-			})
-			if err != nil {
-				m.Log.Warn("vmcore.Init-style initialization failed",
-					log.Stringer("chainID", chainParams.ID), log.Err(err))
-			} else {
-				m.Log.Info("ExchangeVM initialized via vmcore.Init",
-					log.Stringer("chainID", chainParams.ID))
-				vmInitialized = true
-			}
-		}
-	}
-
-	// Linearize the DAG chain (required for X-Chain).
-	// This transitions the chain from DAG mode to linear block mode.
-	if vmInitialized {
-		if linearVM, ok := vmImpl.(interface {
-			Linearize(context.Context, ids.ID, chan<- vm.Message) error
-		}); ok {
-			toEngine := make(chan vm.Message, 1)
-			if err := linearVM.Linearize(initCtx, ids.Empty, toEngine); err != nil {
-				m.Log.Warn("failed to linearize DAG chain", log.Stringer("chainID", chainParams.ID), log.Err(err))
-			} else {
-				m.Log.Info("DAG chain linearized successfully", log.Stringer("chainID", chainParams.ID))
-			}
-		}
-	}
-
-	// Only transition VM to normal operation if initialization succeeded
-	if vmInitialized {
-		if stateVM, ok := vmImpl.(interface {
-			SetState(context.Context, uint32) error
-		}); ok {
-			if err := stateVM.SetState(initCtx, uint32(vm.Ready)); err != nil {
-				m.Log.Warn("failed to transition VM to normal op", log.Stringer("chainID", chainParams.ID), log.Err(err))
-			}
-		}
-	}
-
-	// Get and start the DAG engine
-	dagEngine := dagVM.GetEngine()
-	if starter, ok := dagEngine.(interface {
-		Start(context.Context, uint32) error
-	}); ok {
-		if err := starter.Start(context.Background(), 0); err != nil {
-			return nil, fmt.Errorf("failed to start DAG engine: %w", err)
-		}
-	}
-
-	m.Log.Info("DAG chain created successfully",
-		log.Stringer("chainID", chainParams.ID),
-		log.String("status", "using native DAG consensus"),
-	)
-
-	// Register HTTP handlers for DAG VMs (exchangevm, qvm, etc.)
-	adapter := &dagVMAdapter{underlying: vmImpl}
-	dagHandlerCtx, dagHandlerCancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer dagHandlerCancel()
-	handlers, err := adapter.CreateHandlers(dagHandlerCtx)
-	if err != nil {
-		m.Log.Warn("failed to create HTTP handlers for DAG chain",
-			log.Stringer("chainID", chainParams.ID),
-			log.Err(err),
-		)
-	} else if len(handlers) > 0 {
-		chainIDStr := chainParams.ID.String()
-		for endpoint, handler := range handlers {
-			m.Server.AddRoute(handler, "bc/"+chainIDStr, endpoint)
-			// Register name alias (e.g., "x-chain")
-			if chainParams.Name != "" {
-				m.Server.AddRoute(handler, "bc/"+strings.ToLower(chainParams.Name), endpoint)
-			}
-			// Register standard single-letter alias
-			for alias, name := range map[string]string{
-				"X": "X-Chain", "Q": "Q-Chain",
-			} {
-				if strings.EqualFold(chainParams.Name, name) {
-					m.Server.AddRoute(handler, "bc/"+alias, endpoint)
-					m.Log.Info("Registered DAG chain HTTP handler",
-						log.String("alias", alias),
-						log.Stringer("chainID", chainParams.ID),
-						log.String("endpoint", endpoint),
-					)
-				}
-			}
-		}
-	}
-
-	dagName := chainParams.Name
-	if dagName == "" {
-		dagName = chainParams.ID.String()
-	}
-	return &chainInfo{
-		Name:    dagName,
-		VMID:    chainParams.VMID,
-		Runtime: rt,
-		VM:      adapter,
-		Handler: &noopHandler{},
-	}, nil
 }
 
 // errBootstrapTimeout is returned when a chain fails to bootstrap within the timeout period
@@ -3083,110 +2781,6 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 	return nil
 }
 func (b *blockHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
-	return nil
-}
-
-// noopHandler implements handler.Handler interface
-type noopHandler struct{}
-
-func (p *noopHandler) Runtime() *runtime.Runtime                     { return nil }
-func (p *noopHandler) Start(ctx context.Context, startReqID uint32)  {}
-func (p *noopHandler) Push(ctx context.Context, msg handler.Message) {}
-func (p *noopHandler) Len() int                                      { return 0 }
-func (p *noopHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
-	return nil
-}
-func (p *noopHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
-	return nil
-}
-func (p *noopHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
-	return nil
-}
-func (p *noopHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
-	return nil
-}
-func (p *noopHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
-	return nil
-}
-func (p *noopHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
-	return nil
-}
-func (p *noopHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	return nil
-}
-func (p *noopHandler) CrossChainRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) CrossChainRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
-	return nil
-}
-func (p *noopHandler) CrossChainResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
-	return nil
-}
-func (p *noopHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	return nil
-}
-func (p *noopHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
-	return nil
-}
-func (p *noopHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
-	return nil
-}
-func (p *noopHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
-	return nil
-}
-func (p *noopHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
-	return nil
-}
-func (p *noopHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
-	return nil
-}
-func (p *noopHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
-	return nil
-}
-func (p *noopHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
-func (p *noopHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
-func (p *noopHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
-func (p *noopHandler) Stop(ctx context.Context)                                  {}
-func (p *noopHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
-	return nil
-}
-func (p *noopHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
-	return nil
-}
-
-// noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
-// Used in single-node mode where cross-chain messaging is not needed
-type noopWarpSender struct{}
-
-// Compile-time check that noopWarpSender implements warp.Sender
-var _ warp.Sender = (*noopWarpSender)(nil)
-
-func (n *noopWarpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
 }
 
