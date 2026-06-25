@@ -1341,10 +1341,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
 
-		// Start the consensus engine
-		engineStartCtx, engineStartCancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer engineStartCancel()
-		if err := consensusEngine.Start(engineStartCtx, true); err != nil {
+		// Start the consensus engine with a LIFETIME context (not a timeout):
+		// engine.Start parents all four long-running loops (poll, vote, pipeline,
+		// re-poll) to this ctx, so a WithTimeout here kills them ~30s after the
+		// chain starts and the quorum cert never assembles — the finality wedge
+		// fixed in v1.30.55 (ba3561778e). Do not reintroduce a timeout here.
+		if err := consensusEngine.Start(context.Background(), true); err != nil {
 			m.Log.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
