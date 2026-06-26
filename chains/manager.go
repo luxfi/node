@@ -2711,7 +2711,49 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	return nil
 }
 
+// GetAcceptedFrontier answers a peer asking "what is your accepted tip?" with our
+// last-accepted block id. This MUST NOT be a no-op: it is how a behind node learns
+// the network tip. A no-op here meant every node received an empty frontier and
+// assumed its own last-accepted WAS the frontier — so a node that fell behind could
+// never discover it was behind (and bootstrap stopped at its own height instead of
+// the network's). Same dead-handler class as the GossipOp/catch-up gaps.
 func (b *blockHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	if b.vm == nil || b.net == nil || b.msgCreator == nil {
+		return nil
+	}
+	acceptedBlkID, err := b.vm.LastAccepted(ctx)
+	if err != nil {
+		return nil
+	}
+	msg, err := b.msgCreator.AcceptedFrontier(b.chainID, requestID, acceptedBlkID)
+	if err != nil {
+		return nil
+	}
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+	b.net.Send(msg, nodeSet, b.networkID, 0)
+	return nil
+}
+
+// AcceptedFrontier handles a peer's reply to GetAcceptedFrontier: the peer's
+// accepted tip. If we do not have that block, we are BEHIND — pull the chain
+// ending at it through the catch-up transport (requestContext → GetAncestors;
+// the missing-parent path walks down the rest of the gap and the blocks arrive
+// via handleContext → Put → engine). This is the proactive half that lets a node
+// which missed the block gossip recover without a restart.
+func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error {
+	if b.vm == nil || containerID == ids.Empty {
+		return nil
+	}
+	if _, err := b.vm.GetBlock(ctx, containerID); err == nil {
+		return nil // we already have the peer's tip — not behind
+	}
+	if b.engine != nil {
+		if _, found := b.engine.GetPendingBlock(containerID); found {
+			return nil // already tracked
+		}
+	}
+	b.requestContext(ctx, nodeID, containerID) // behind → fetch the gap
 	return nil
 }
 func (b *blockHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
