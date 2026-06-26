@@ -12,59 +12,79 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// TestToConsensusOp_GossipIsRouted is the regression guard for the finality
-// wedge: the α-of-K quorum vote/cert transport rides on app-gossip (GossipOp).
-// The chain router (node/chain_router.go) gates EVERY inbound message through
-// ToConsensusOp; an op that does not map is dropped as "unhandled message op"
-// BEFORE it can reach the engine. GossipOp was missing from the table, so every
-// broadcast vote was silently dropped at the router — blocks (PutOp) propagated
-// and verified, but no vote ever reached HandleIncomingVote, the cert never
-// assembled, and the chain wedged at "verified but never accepted".
+// TestToConsensusOp_TableAlignedWithRouter is the systemic guard for the
+// finality-wedge bug CLASS, not just the one Gossip instance. The chain router
+// (node/chain_router.go) forwards an inbound message only if ToConsensusOp maps
+// it, then dispatches on handler.Op(value). The node op table and the consensus
+// router op enum are therefore two halves of ONE routing contract: if they
+// diverge, every message for the divergent op is silently dropped. That is what
+// wedged α-of-K finality — router.Gossip existed but no node op mapped to it, so
+// every broadcast vote vanished before reaching blockHandler.Gossip ->
+// engine.HandleIncomingVote (blocks rode PutOp and verified; votes rode the
+// unmapped GossipOp and disappeared; the cert never reached alpha).
 //
-// This asserts GossipOp maps to the consensus router's Gossip op so votes are
-// delivered to blockHandler.Gossip -> engine.HandleIncomingVote.
-func TestToConsensusOp_GossipIsRouted(t *testing.T) {
-	require := require.New(t)
-
-	got, ok := ToConsensusOp(GossipOp)
-	require.True(ok, "GossipOp MUST map to a consensus router op — votes ride app-gossip; "+
-		"an unmapped GossipOp is dropped by the chain router and finality wedges")
-	require.Equal(byte(router.Gossip), got,
-		"GossipOp must map to router.Gossip so blockHandler routes it to engine.HandleIncomingVote")
-}
-
-// TestToConsensusOp_TableAlignedWithRouter pins the full message-op -> router-op
-// table. Every op the chain router forwards to a consensus handler must map to
-// the SAME byte the consensus side decodes it as (handler.Op == router.Op). A
-// drift here re-breaks routing for that op exactly as the missing GossipOp broke
-// vote delivery.
+// The test proves ToConsensusOp is a BIJECTION onto the router op space
+// [0, router.NumOps), so divergence is un-shippable:
+//   - exhaustive/surjective: every router op has exactly one node-op preimage,
+//     so a router op added without a node mapping (the original bug) -> RED.
+//   - injective/well-typed: no two node ops collide onto one router op and
+//     nothing maps outside the op space -> RED.
+//
+// router.NumOps is the single source of truth for the op count, so a future op
+// added to one table but not the other fails HERE, not at runtime.
 func TestToConsensusOp_TableAlignedWithRouter(t *testing.T) {
 	require := require.New(t)
 
-	cases := []struct {
-		name string
-		in   Op
-		want router.Op
-	}{
-		{"GetAcceptedFrontier", GetAcceptedFrontierOp, router.GetAcceptedFrontier},
-		{"AcceptedFrontier", AcceptedFrontierOp, router.AcceptedFrontier},
-		{"GetAccepted", GetAcceptedOp, router.GetAccepted},
-		{"Accepted", AcceptedOp, router.Accepted},
-		{"Get", GetOp, router.Get},
-		{"Put", PutOp, router.Put},
-		{"PushQuery", PushQueryOp, router.PushQuery},
-		{"PullQuery", PullQueryOp, router.PullQuery},
-		{"Qbit/Vote", QbitOp, router.Vote},
-		{"GetAncestors/GetContext", GetAncestorsOp, router.GetContext},
-		{"Ancestors/Context", AncestorsOp, router.Context},
-		{"Gossip", GossipOp, router.Gossip},
+	// want: the authoritative router-op <-> node-op correspondence.
+	want := map[router.Op]Op{
+		router.GetAcceptedFrontier: GetAcceptedFrontierOp,
+		router.AcceptedFrontier:    AcceptedFrontierOp,
+		router.GetAccepted:         GetAcceptedOp,
+		router.Accepted:            AcceptedOp,
+		router.Get:                 GetOp,
+		router.Put:                 PutOp,
+		router.PushQuery:           PushQueryOp,
+		router.PullQuery:           PullQueryOp,
+		router.Vote:                QbitOp,         // votes ride the Qbit wire op
+		router.GetContext:          GetAncestorsOp, // wire op is still GetAncestors
+		router.Context:             AncestorsOp,    // wire op is still Ancestors
+		router.Gossip:              GossipOp,       // α-of-K vote/cert transport
 	}
 
-	for _, tc := range cases {
-		got, ok := ToConsensusOp(tc.in)
-		require.True(ok, "%s must map to a consensus router op", tc.name)
-		require.Equal(byte(tc.want), got, "%s maps to the wrong router op", tc.name)
+	// EXHAUSTIVE: the table must name every router op exactly once. Pinned to
+	// router.NumOps, so a new router op with no entry here fails immediately.
+	require.Len(want, int(router.NumOps),
+		"node op table names %d ops but the router defines router.NumOps=%d — a "+
+			"router op with no node mapping is dropped by the chain router and "+
+			"finality wedges; add it to want and to ToConsensusOp",
+		len(want), int(router.NumOps))
+
+	// BIJECTION: rebuild the actual inverse mapping by sweeping the whole node op
+	// space (Op is a byte, so [0,256)) and require it to equal want. This one
+	// comparison catches a missing mapping (router op absent from got), a wrong
+	// target (got[r] != want[r]) and a stray mapping into the op space; the dup
+	// guard catches a collision masked by the later write winning the slot.
+	got := make(map[router.Op]Op, int(router.NumOps))
+	for i := 0; i < 256; i++ {
+		nodeOp := Op(i)
+		v, ok := ToConsensusOp(nodeOp)
+		if !ok {
+			continue
+		}
+		require.Less(int(v), int(router.NumOps),
+			"%s maps to router op %d outside [0, NumOps=%d)", nodeOp, v, int(router.NumOps))
+		routerOp := router.Op(v)
+		_, dup := got[routerOp]
+		require.False(dup,
+			"router op %d is mapped from two node ops (%s and %s) — ambiguous routing",
+			v, got[routerOp], nodeOp)
+		got[routerOp] = nodeOp
 	}
+	require.Equal(want, got,
+		"node op table diverged from the router op space: every router op "+
+			"[0, NumOps) must have exactly one node-op preimage and each node op must "+
+			"map to its assigned router op. A divergence here is the finality-wedge "+
+			"bug class — an op routed in one table and dropped in the other.")
 }
 
 // TestInboundGossip_DeliveredNotDropped reproduces the chain router's inbound
