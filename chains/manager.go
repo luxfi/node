@@ -3103,6 +3103,14 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 	case handler.Context:
 		// Context contains prerequisite blocks - process each one via Put
 		return b.handleContext(ctx, msg.NodeID, msg.RequestID, msg.Message)
+	case handler.Gossip:
+		// App-gossip envelope carrying an α-of-K quorum vote or finality cert.
+		// Route to Gossip, which demuxes the quorum envelope into
+		// engine.HandleIncomingVote / HandleIncomingCert (the vote TRANSPORT that
+		// drives finality). Without this case the router delivers the message here
+		// but the switch drops it, so no vote is ever counted and the chain wedges.
+		// Non-quorum gossip falls through inside Gossip to a plain block Put.
+		return b.Gossip(ctx, msg.NodeID, msg.Message)
 	}
 	return nil
 }
