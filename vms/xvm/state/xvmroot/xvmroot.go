@@ -10,7 +10,7 @@
 // keccak256 composition for the final execution_root.
 //
 // The root is a pure function of the canonical leaf FIELD VALUES, not of any
-// in-memory struct. The xvm executor's UTXO/Asset/Tx types are Avalanche-style
+// in-memory struct. The xvm executor's UTXO/Asset/Tx types are UTXO-style
 // (output interfaces, codec-serialized) and deliberately do NOT share the GPU's
 // flat packed layout; the accelerator hashes a state-snapshot layout. So this
 // package consumes that snapshot layout directly — UTXOLeaf, AssetLeaf, TxLeaf

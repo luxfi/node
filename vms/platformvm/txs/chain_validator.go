@@ -10,7 +10,7 @@ import (
 
 // ChainValidator is the legacy per-chain validator descriptor used by
 // AddChainValidatorTx. The Chain field is the network ID this validator
-// registers under (legacy: subnet ID).
+// registers under (pre-LP-018: L1 ID).
 //
 // Deprecated: Use Validator with AddValidatorTx. Under LP-018
 // sovereign-L1, validators validate networks — not chains. Chains live

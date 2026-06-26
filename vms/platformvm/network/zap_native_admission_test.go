@@ -57,7 +57,7 @@ func TestZapNativeAdmissionGate_RejectsCreateSovereignL1Tx(t *testing.T) {
 }
 
 // TestZapNativeAdmissionGate_PassThroughLegacyTypes pins the brief:
-// "Legacy txs.CreateSubnetTx / txs.RegisterL1ValidatorTx (the working
+// "Legacy txs.ConvertNetworkToL1Tx / txs.RegisterL1ValidatorTx (the working
 // ones) still pass through". For txs.BaseTx (working executor) and
 // txs.RegisterL1ValidatorTx + txs.ConvertNetworkToL1Tx (legacy
 // executors at line 639/761), the gate must NOT fire; the inner
