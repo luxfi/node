@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/rs/cors"
+	zaphttp "github.com/zap-proto/http"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
@@ -92,6 +93,15 @@ type server struct {
 
 	// Listener used to serve traffic
 	listener net.Listener
+
+	// handler is the fully-wrapped API handler chain (CORS + host-filter +
+	// /ext/* router). Held here so the optional ZAP-RPC listener serves the
+	// exact same handler as the HTTP listener.
+	handler http.Handler
+
+	// zapSrv is the optional ZAP-RPC listener; nil unless LUX_ZAP_RPC_LISTEN
+	// is set. See zap_listener.go.
+	zapSrv *zaphttp.Server
 }
 
 // New returns an instance of a Server.
@@ -138,10 +148,16 @@ func New(
 		router:          router,
 		srv:             httpServer,
 		listener:        listener,
+		handler:         handler,
 	}, nil
 }
 
 func (s *server) Dispatch() error {
+	// Additively boot the ZAP-RPC listener (opt-in via LUX_ZAP_RPC_LISTEN).
+	// Serves the same handler over github.com/zap-proto/http so the gateway
+	// can reach luxd over the native ZAP mesh. Never fatal — HTTP serves
+	// regardless.
+	s.zapSrv = startZapRPCListener(s.log, s.handler, zapRPCListenAddr())
 	return s.srv.Serve(s.listener)
 }
 
@@ -207,6 +223,10 @@ func (s *server) AddAliasesWithReadLock(endpoint string, aliases ...string) erro
 }
 
 func (s *server) Shutdown() error {
+	if s.zapSrv != nil {
+		_ = s.zapSrv.Close()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	err := s.srv.Shutdown(ctx)
 	cancel()
