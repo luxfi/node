@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	gatomic "sync/atomic"
 	"time"
 
 	"github.com/luxfi/database"
@@ -928,10 +929,14 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		defer startCancel()
 		chain.Engine.Start(startCtx, !m.CriticalChains.Contains(chainParams.ID))
 
-		// Start a goroutine to monitor bootstrap completion and notify the chain
+		// Start a goroutine to monitor bootstrap completion and notify the chain.
 		// This is required because the health check (m.Nets.Bootstrapping()) reports
-		// chains as not bootstrapped until sb.Bootstrapped(chainID) is called
-		go m.monitorBootstrap(chain.Engine, sb, chainParams.ID)
+		// chains as not bootstrapped until sb.Bootstrapped(chainID) is called. Gate on
+		// the HANDLER's real initial-sync completion (BootstrapComplete), not the
+		// engine's "am I started" flag — the latter returned true immediately at the
+		// local last-accepted height, so a behind/empty node was marked bootstrapped
+		// before fetching anything.
+		go m.monitorBootstrap(chain.Engine, chain.Handler, sb, chainParams.ID)
 	} else {
 		// DAG chains (X-Chain, Q-Chain) manage their own consensus and don't have
 		// a standard Engine. Mark them as bootstrapped immediately since the DAG
@@ -1459,7 +1464,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// model as the WaitForEvent bridge above).
 		pollerCtx, pollerCancel := context.WithCancel(context.Background())
 		bh.pollerCancel = pollerCancel
-		go bh.runFrontierPoller(pollerCtx)
+		// Drive INITIAL SYNC first (fetch+execute from the local tip to the network
+		// frontier — the fix for a node that previously declared itself bootstrapped at
+		// its local height and synced nothing), then hand off to the live frontier
+		// poller. bootstrapDone is the REAL ready signal monitorBootstrap gates on. See
+		// bootstrap_sync.go.
+		go bh.runBootstrapThenPoll(pollerCtx)
 		createdChain = &chainInfo{
 			Name:    chainName,
 			VMID:    chainParams.VMID,
@@ -1819,16 +1829,26 @@ var errBootstrapTimeout = errors.New("chain failed to bootstrap within timeout")
 //
 // IMPORTANT: If bootstrap times out, the chain is NOT marked as bootstrapped. This ensures
 // real bootstrap failures are surfaced rather than masked by forcing a "ready" state.
-func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
-	// Check if the engine supports IsBootstrapped
-	type bootstrapChecker interface {
-		IsBootstrapped() bool
-	}
-	checker, ok := engine.(bootstrapChecker)
-	if !ok {
-		// Engine doesn't support IsBootstrapped, immediately mark as bootstrapped
-		// This is safe because if we can't check, we assume the chain is ready
-		m.Log.Info("engine does not support IsBootstrapped, marking chain as bootstrapped",
+func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net, chainID ids.ID) {
+	// The READY signal is the handler's real initial-sync completion: the bootstrap
+	// loop has fetched+executed up to the discovered network frontier. This REPLACES
+	// the old engine.IsBootstrapped() poll, which returned true the instant the engine
+	// started — at whatever LOCAL last-accepted height the node had (genesis for an
+	// empty DB) — so a behind/empty node was declared bootstrapped before syncing a
+	// single block. A handler that does not drive initial sync (no BootstrapComplete)
+	// falls back to the engine's started flag (degenerate / DAG-less paths).
+	type bootstrapCompleter interface{ BootstrapComplete() bool }
+	type bootstrapChecker interface{ IsBootstrapped() bool }
+
+	var ready func() bool
+	if completer, ok := h.(bootstrapCompleter); ok {
+		ready = completer.BootstrapComplete
+	} else if checker, ok := engine.(bootstrapChecker); ok {
+		ready = checker.IsBootstrapped
+	} else {
+		// Cannot check readiness — assume ready (safe: if we cannot tell, do not pin
+		// the chain unbootstrapped forever).
+		m.Log.Info("no bootstrap-completion signal available, marking chain as bootstrapped",
 			log.Stringer("chainID", chainID))
 		sb.Bootstrapped(chainID)
 		return
@@ -1851,7 +1871,7 @@ func (m *manager) monitorBootstrap(engine Engine, sb nets.Net, chainID ids.ID) {
 		select {
 		case <-ticker.C:
 			pollCount++
-			if checker.IsBootstrapped() {
+			if ready() {
 				m.Log.Info("chain finished bootstrapping, notifying chain",
 					log.Stringer("chainID", chainID),
 					log.Int("pollCount", pollCount))
@@ -2353,6 +2373,18 @@ type blockHandler struct {
 	// buffer the event and drain when the block arrives
 	pendingQbits  map[ids.ID][]QbitEvent // Map from blockID to buffered Qbit events
 	pendingQbitMu sync.Mutex             // Protects pendingQbits
+
+	// INITIAL SYNC (bootstrap). The handler is BOTH the fetch transport (BlockSource)
+	// and the execute sink (Chain) the engine/chain/bootstrap loop drives — see
+	// bootstrap_sync.go. While bsActive, inbound frontier/ancestor replies route to the
+	// correlation channels below (so the synchronous loop can await them) instead of
+	// the live cert/vote path; bootstrapDone is the REAL ready signal monitorBootstrap
+	// gates on. bsActive false ⇒ every method behaves exactly as before this change.
+	bootstrapDone gatomic.Bool             // true once initial sync reached the frontier
+	bsActive      gatomic.Bool             // true while the bootstrap loop is driving
+	bsMu          sync.Mutex               // guards bsFrontierCh + bsAncestorCh
+	bsFrontierCh  chan ids.ID              // one-shot frontier reply for the current FrontierTip
+	bsAncestorCh  map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
 }
 
 // QbitEvent is the normalized internal representation of a received Qbit message.
@@ -2385,6 +2417,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *
 		pendingContext:   make(map[ids.ID]contextRequest),
 		maxContextBlocks: 256, // Default max context blocks to request/serve
 		pendingQbits:     make(map[ids.ID][]QbitEvent),
+		bsAncestorCh:     make(map[uint32]chan [][]byte),
 	}
 }
 
@@ -2785,6 +2818,14 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		return nil
 	}
 
+	// INITIAL SYNC: while the bootstrap loop is driving, this Ancestors reply is the
+	// oldest-first batch the loop's Ancestors() requested — hand the raw blocks to that
+	// waiting call (correlated by requestID); the loop decides ordering + re-execution.
+	// See bootstrap_sync.go.
+	if b.deliverBootstrapAncestors(requestID, data) {
+		return nil
+	}
+
 	b.logger.Debug("received context response",
 		log.Stringer("from", nodeID),
 		log.Uint32("requestID", requestID),
@@ -2891,6 +2932,12 @@ func (b *blockHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeI
 // which missed the block gossip recover without a restart.
 func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, containerID ids.ID) error {
 	if b.vm == nil || containerID == ids.Empty {
+		return nil
+	}
+	// INITIAL SYNC: while the bootstrap loop is driving, this reply is the frontier the
+	// loop asked for — hand it to FrontierTip and do NOT auto-fetch (the loop owns the
+	// descent). See bootstrap_sync.go.
+	if b.deliverBootstrapFrontier(containerID) {
 		return nil
 	}
 	if _, err := b.vm.GetBlock(ctx, containerID); err == nil {
