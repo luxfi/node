@@ -35,7 +35,7 @@ var (
 	errAddPrimaryNetworkValidator = errors.New("can't add primary network validator with AddChainValidatorTx")
 )
 
-// AddChainValidatorTx is the legacy per-chain (legacy: per-subnet)
+// AddChainValidatorTx is the legacy per-chain (pre-LP-018: per-L1)
 // validator registration tx.
 //
 // Deprecated: Use AddValidatorTx. Under LP-018 sovereign-L1, validators
