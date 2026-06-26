@@ -9,10 +9,12 @@
 // New code should import the canonical path:
 //   "github.com/luxfi/chains/dexvm"
 //
-// This package is a thin, unconditional backward-compatibility alias. The
-// underlying chains/dexvm is the pure-Go stateless atomic proxy (zero private
-// deps), so — like every other genesis VM — it is linked into every build with
-// no build tag.
+// This package is a thin backward-compatibility alias. The underlying
+// chains/dexvm is the pure-Go stateless atomic proxy (zero private deps).
+// Unlike the always-on genesis VMs, dexvm is registered in OptionalVMs and is
+// NFT-gated (see node/vms.go:118, RequiredNFT "dex-operator"): a node only
+// tracks/validates the D-Chain when the network has configured that operator
+// collection, so it is plugin-loaded on demand, not linked unconditionally.
 package dexvm
 
 import (

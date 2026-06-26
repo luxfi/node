@@ -1185,6 +1185,28 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 		}
 
+		// X-Chain (and any DAG-native VM) must be linearized into linear block mode
+		// BEFORE it goes Ready, so its embedded block builder is wired to the real
+		// toEngine channel the cert runtime reads from. Interface-gated: only VMs that
+		// implement Linearize (X-Chain) take this path; C/D/P/Q are untouched. This is
+		// what lets X-Chain finalize through the same 2/3-stake cert path as every other
+		// chain instead of the (now-removed) undriven DAG engine.
+		if linearVM, ok := vmTyped.(interface {
+			Linearize(context.Context, ids.ID, chan<- vm.Message) error
+		}); ok {
+			m.Log.Info("linearizing DAG-native VM into linear block mode",
+				log.Stringer("chainID", chainParams.ID))
+			linCtx, linCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			if err := linearVM.Linearize(linCtx, ids.Empty, toEngine); err != nil {
+				linCancel()
+				m.Log.Error("failed to linearize VM",
+					log.Stringer("chainID", chainParams.ID),
+					log.Err(err))
+				return nil, fmt.Errorf("failed to linearize VM into linear block mode: %w", err)
+			}
+			linCancel()
+		}
+
 		// Transition VM to normal operation after initialization
 		// For genesis-based networks with pre-configured validators, this is required
 		// to make the VM APIs available immediately

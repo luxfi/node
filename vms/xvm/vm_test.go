@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/vm"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -365,107 +364,6 @@ func TestVMFormat(t *testing.T) {
 	}
 }
 
-func TestTxAcceptAfterParseTx(t *testing.T) {
-	require := require.New(t)
-
-	env := setup(t, &envConfig{
-		fork:          upgrade.Default,
-		notLinearized: true,
-	})
-	defer env.vm.Lock.Unlock()
-
-	var (
-		key = keys[0]
-		kc  = secp256k1fx.NewKeychain(key)
-	)
-
-	firstTx, err := env.txBuilder.BaseTx(
-		[]*lux.TransferableOutput{{
-			Asset: lux.Asset{ID: env.genesisTx.ID()},
-			Out: &secp256k1fx.TransferOutput{
-				Amt: startBalance - env.vm.TxFee,
-				OutputOwners: secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{key.PublicKey().Address()},
-				},
-			},
-		}},
-		nil, // memo
-		kc,
-		key.Address(),
-	)
-	require.NoError(err)
-
-	// Find the output index that holds the requested startBalance-TxFee
-	// amount; firstTx may have a separate change output, and the canonical
-	// output sort (ZAP-native wire envelope bytes per LP-023) determines
-	// which index that lands on.
-	requestedAmt := startBalance - env.vm.TxFee
-	firstBaseTx := firstTx.Unsigned.(*xvmtxs.BaseTx)
-	var requestedIdx uint32
-	found := false
-	for i, out := range firstBaseTx.Outs {
-		o, ok := out.Out.(*secp256k1fx.TransferOutput)
-		if !ok {
-			continue
-		}
-		if o.Amt == requestedAmt {
-			requestedIdx = uint32(i)
-			found = true
-			break
-		}
-	}
-	require.True(found, "firstTx must produce an output with the requested amount")
-
-	// let secondTx spend firstTx outputs
-	secondTx := &xvmtxs.Tx{Unsigned: &xvmtxs.BaseTx{
-		BaseTx: lux.BaseTx{
-			NetworkID:    constants.UnitTestID,
-			BlockchainID: env.vm.XChainID,
-			Ins: []*lux.TransferableInput{{
-				UTXOID: lux.UTXOID{
-					TxID:        firstTx.ID(),
-					OutputIndex: requestedIdx,
-				},
-				Asset: lux.Asset{ID: env.genesisTx.ID()},
-				In: &secp256k1fx.TransferInput{
-					Amt: requestedAmt,
-					Input: secp256k1fx.Input{
-						SigIndices: []uint32{
-							0,
-						},
-					},
-				},
-			}},
-		},
-	}}
-	require.NoError(secondTx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
-
-	parsedFirstTx, err := env.vm.ParseTx(context.Background(), firstTx.Bytes())
-	require.NoError(err)
-
-	require.NoError(parsedFirstTx.Verify(context.Background()))
-	require.NoError(parsedFirstTx.Accept(context.Background()))
-
-	// Update the preferred block (normally done by consensus engine)
-	require.NoError(env.vm.SetPreference(context.Background(), parsedFirstTx.ID()))
-
-	parsedSecondTx, err := env.vm.ParseTx(context.Background(), secondTx.Bytes())
-	require.NoError(err)
-
-	require.NoError(parsedSecondTx.Verify(context.Background()))
-	require.NoError(parsedSecondTx.Accept(context.Background()))
-
-	// Update the preferred block (normally done by consensus engine)
-	require.NoError(env.vm.SetPreference(context.Background(), parsedSecondTx.ID()))
-
-	_, err = env.vm.state.GetTx(firstTx.ID())
-	require.NoError(err)
-
-	_, err = env.vm.state.GetTx(secondTx.ID())
-	require.NoError(err)
-}
-
 // Test issuing an import transaction.
 func TestIssueImportTx(t *testing.T) {
 	require := require.New(t)
@@ -542,70 +440,6 @@ func TestIssueImportTx(t *testing.T) {
 	require.ErrorIs(err, database.ErrNotFound)
 
 	env.vm.Lock.Unlock() // Final unlock (no defer in this test)
-}
-
-// Test force accepting an import transaction.
-func TestForceAcceptImportTx(t *testing.T) {
-	require := require.New(t)
-
-	env := setup(t, &envConfig{
-		fork:          upgrade.Default,
-		notLinearized: true,
-	})
-	defer env.vm.Lock.Unlock()
-
-	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
-	luxID := genesisTx.ID()
-
-	key := keys[0]
-	utxoID := lux.UTXOID{
-		TxID: ids.ID{
-			0x0f, 0x2f, 0x4f, 0x6f, 0x8e, 0xae, 0xce, 0xee,
-			0x0d, 0x2d, 0x4d, 0x6d, 0x8c, 0xac, 0xcc, 0xec,
-			0x0b, 0x2b, 0x4b, 0x6b, 0x8a, 0xaa, 0xca, 0xea,
-			0x09, 0x29, 0x49, 0x69, 0x88, 0xa8, 0xc8, 0xe8,
-		},
-	}
-
-	txAssetID := lux.Asset{ID: luxID}
-	tx := &xvmtxs.Tx{Unsigned: &xvmtxs.ImportTx{
-		BaseTx: xvmtxs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    constants.UnitTestID,
-			BlockchainID: env.vm.XChainID,
-			Outs: []*lux.TransferableOutput{{
-				Asset: txAssetID,
-				Out: &secp256k1fx.TransferOutput{
-					Amt: 10,
-					OutputOwners: secp256k1fx.OutputOwners{
-						Threshold: 1,
-						Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-					},
-				},
-			}},
-		}},
-		SourceChain: constants.PlatformChainID,
-		ImportedIns: []*lux.TransferableInput{{
-			UTXOID: utxoID,
-			Asset:  txAssetID,
-			In: &secp256k1fx.TransferInput{
-				Amt: 1010,
-				Input: secp256k1fx.Input{
-					SigIndices: []uint32{0},
-				},
-			},
-		}},
-	}}
-	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
-
-	parsedTx, err := env.vm.ParseTx(context.Background(), tx.Bytes())
-	require.NoError(err)
-
-	require.NoError(parsedTx.Verify(context.Background()))
-	require.NoError(parsedTx.Accept(context.Background()))
-
-	id := utxoID.InputID()
-	_, err = env.vm.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
-	require.ErrorIs(err, database.ErrNotFound)
 }
 
 func TestImportTxNotState(t *testing.T) {

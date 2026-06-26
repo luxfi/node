@@ -318,7 +318,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	// This ensures PushGossip and PullGossip goroutines are properly terminated
 	t.Cleanup(func() {
 		// Shutdown the VM to cancel onShutdownCtx and stop gossip goroutines
-		_ = vmImpl.Shutdown()
+		_ = vmImpl.Shutdown(context.Background())
 	})
 
 	// Linearize the DAG to initialize the network

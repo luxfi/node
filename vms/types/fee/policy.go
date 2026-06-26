@@ -43,6 +43,13 @@ import (
 // bound when reviewing/upgrading per-VM policies; not enforced inside
 // Validate (a VM is free to charge MORE), but every VM choosing less
 // will be flagged by the migration checklist.
+//
+// Known intentional exception: the X-Chain (xvm) prices transactions through
+// its own UTXO fee subsystem (xvm/config.go TxFee, default 1000 nLUX), NOT the
+// FlatPolicy here, and is deliberately outside this floor — its high-throughput
+// UTXO economics are set independently of the account-model FlatPolicy floor.
+// This is by design, not a migration miss; do not "fix" it by raising xvm
+// TxFee to MinTxFeeFloor.
 const MinTxFeeFloor uint64 = 1_000_000
 
 // Sentinel errors returned by Policy implementations.

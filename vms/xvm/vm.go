@@ -19,8 +19,7 @@ import (
 
 	"github.com/luxfi/address"
 	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/consensus/engine/dag"
-	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
+	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database"
@@ -66,6 +65,17 @@ var (
 	errIncompatibleFx            = errors.New("incompatible feature extension")
 	errUnknownFx                 = errors.New("unknown feature extension")
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
+
+	// Compile-time check that *VM satisfies chain.ChainVM (= block.ChainVM)
+	// AND the consensus engine's BlockBuilder. Together these prove X-Chain
+	// takes the LINEAR ⅔-stake cert path in the chain manager (buildChain →
+	// consensuschain.NewRuntime), not the DAG path. BuildBlock is promoted
+	// from the embedded blockbuilder.Builder (the real linear builder: parent
+	// = preferred, height = parent+1, real timestamp). Do NOT add a
+	// GetEngine() dag.Engine method: that routes the manager's type switch
+	// back to createDAG and bypasses the certificate.
+	_ chain.ChainVM               = (*VM)(nil)
+	_ consensuschain.BlockBuilder = (*VM)(nil)
 )
 
 // BCLookup provides blockchain alias lookup
@@ -115,7 +125,7 @@ type VM struct {
 
 	registerer metrics.Registerer
 
-	connectedPeers map[ids.NodeID]*version.Application
+	connectedPeers map[ids.NodeID]*consensusversion.Application
 
 	parser block.Parser
 
@@ -170,21 +180,14 @@ type VM struct {
 	classicalCompatRegistry auth.ClassicalCompatRegistry
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *consensusversion.Application) error {
 	// If the chain isn't linearized yet, we must track the peers externally
 	// until the network is initialized.
 	if vm.network == nil {
-		vm.connectedPeers[nodeID] = version
+		vm.connectedPeers[nodeID] = nodeVersion
 		return nil
 	}
-	// Convert to consensus version type
-	consensusVer := &consensusversion.Application{
-		Name:  version.Name,
-		Major: version.Major,
-		Minor: version.Minor,
-		Patch: version.Patch,
-	}
-	return vm.network.Connected(ctx, nodeID, consensusVer)
+	return vm.network.Connected(ctx, nodeID, nodeVersion)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
@@ -281,7 +284,7 @@ func (vm *VM) initialize(
 	// Get metrics from a global registry or create new one
 	vm.registerer = metric.NewRegistry()
 
-	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
+	vm.connectedPeers = make(map[ids.NodeID]*consensusversion.Application)
 
 	// Initialize metrics as soon as possible
 	vm.metrics, err = xvmmetrics.New(vm.registerer)
@@ -421,7 +424,7 @@ func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
 	}
 }
 
-func (vm *VM) Shutdown() error {
+func (vm *VM) Shutdown(context.Context) error {
 	if vm.state == nil {
 		return nil
 	}
@@ -618,15 +621,8 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	}
 
 	// Notify the network of our current peers
-	for nodeID, version := range vm.connectedPeers {
-		// Convert to consensus version type
-		consensusVer := &consensusversion.Application{
-			Name:  version.Name,
-			Major: version.Major,
-			Minor: version.Minor,
-			Patch: version.Patch,
-		}
-		if err := vm.network.Connected(ctx, nodeID, consensusVer); err != nil {
+	for nodeID, nodeVersion := range vm.connectedPeers {
+		if err := vm.network.Connected(ctx, nodeID, nodeVersion); err != nil {
 			return err
 		}
 	}
@@ -656,26 +652,6 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 	}
 
 	return nil
-}
-
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (dag.Tx, error) {
-	tx, err := vm.parser.ParseTx(bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Unsigned.Visit(&txexecutor.SyntacticVerifier{
-		Backend: vm.txBackend,
-		Tx:      tx,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Tx{
-		vm: vm,
-		tx: tx,
-	}, nil
 }
 
 /*
@@ -895,19 +871,22 @@ func (vm *VM) onAccept(tx *txs.Tx) {
 	vm.walletService.decided(txID)
 }
 
-// WaitForEvent implements the engine.VM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+// WaitForEvent blocks until the VM has work for the consensus engine (a
+// pending-tx event) or ctx is cancelled. It returns a vmcore.Message
+// (= block.Message) so *VM satisfies the linear chain.ChainVM interface used by
+// the certificate path.
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	if vm.toEngine == nil {
-		// Before linearization, no events to wait for
+		// Before linearization, no events to wait for.
 		<-ctx.Done()
-		return vmcore.PendingTxs, ctx.Err()
+		return vmcore.Message{}, ctx.Err()
 	}
 
 	select {
-	case msgType := <-vm.toEngine:
-		return msgType, nil
+	case msg := <-vm.toEngine:
+		return msg, nil
 	case <-ctx.Done():
-		return vmcore.PendingTxs, ctx.Err()
+		return vmcore.Message{}, ctx.Err()
 	}
 }
 
@@ -915,47 +894,6 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
 	return nil, nil
-}
-
-// BuildVertex builds a new vertex - required for LinearizableVMWithEngine
-func (vm *VM) BuildVertex(ctx context.Context) (dagvertex.Vertex, error) {
-	// XVM doesn't use vertices, it uses blocks
-	return nil, errors.New("XVM does not support vertex building")
-}
-
-// GetVertex gets a vertex by ID - required for LinearizableVMWithEngine
-func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (dagvertex.Vertex, error) {
-	// XVM doesn't use vertices, it uses blocks
-	return nil, errors.New("XVM does not support vertex operations")
-}
-
-// ParseVertex parses vertex bytes - required for LinearizableVMWithEngine
-func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (dagvertex.Vertex, error) {
-	// XVM doesn't use vertices, it uses blocks
-	return nil, errors.New("XVM does not support vertex parsing")
-}
-
-// GetEngine returns the consensus engine - required for LinearizableVMWithEngine
-func (vm *VM) GetEngine() dag.Engine {
-	// XVM doesn't have a separate engine, return a new DAG engine
-	return dag.New()
-}
-
-// SetEngine sets the consensus engine - required for LinearizableVMWithEngine
-func (vm *VM) SetEngine(engine interface{}) {
-	// XVM doesn't use a separate engine
-}
-
-// GetTx returns a transaction by ID - required for LinearizableVMWithEngine
-func (vm *VM) GetTx(ctx context.Context, txID ids.ID) (dag.Transaction, error) {
-	tx, err := vm.state.GetTx(txID)
-	if err != nil {
-		return nil, err
-	}
-	return &Tx{
-		vm: vm,
-		tx: tx,
-	}, nil
 }
 
 // noOpHandler is a simple no-op implementation of warp.Handler
