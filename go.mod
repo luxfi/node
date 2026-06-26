@@ -259,3 +259,8 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+// Local consensus pin for the cert-carry catch-up branch (engine commit 3d11537).
+// Reviewer: swap to a pseudo-version pin (go get github.com/luxfi/consensus@<hash>)
+// once the consensus branch is pushed; do NOT cut a tag.
+replace github.com/luxfi/consensus => ../consensus
