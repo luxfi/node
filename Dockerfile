@@ -149,6 +149,11 @@ ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
 ENV CGO_ENABLED=${CGO_ENABLED}
 RUN . ./build_env.sh && \
+    # `COPY . .` above restored the committed go.sum (stale first-party hashes when
+    # a luxfi/hanzoai module was re-tagged). Re-strip first-party lines so -mod=mod
+    # re-records the CURRENT content hashes already in the module cache (from the
+    # `go mod download` step). Without this, a re-tag => go.sum SECURITY ERROR.
+    sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' go.sum && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM, CGO_ENABLED=${CGO_ENABLED}}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
@@ -291,7 +296,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
 # v1.3.14 = the native-atomic seam (rail-bound D->C atomic, LP committed-liquidity).
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
-ARG CHAINS_REF=v1.3.17
+# v1.3.21 == node go.mod's luxfi/chains pin (the finality-complete go-live); keeps the
+# 10 baked VM plugins (incl. the FATAL-gated bridgevm) in lockstep with the host node.
+ARG CHAINS_REF=v1.3.21
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
