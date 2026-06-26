@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.25.31
+	github.com/luxfi/consensus v1.25.32
 	github.com/luxfi/crypto v1.19.26
 	github.com/luxfi/database v1.20.4
 	github.com/luxfi/ids v1.2.15
@@ -150,6 +150,7 @@ require (
 	github.com/luxfi/zap v0.8.10
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
+	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433
 	go.uber.org/zap v1.27.1
 )
 
@@ -211,7 +212,6 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
-	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
 )
 
@@ -259,8 +259,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-// Local consensus pin for the cert-carry catch-up branch (engine commit 3d11537).
-// Reviewer: swap to a pseudo-version pin (go get github.com/luxfi/consensus@<hash>)
-// once the consensus branch is pushed; do NOT cut a tag.
-replace github.com/luxfi/consensus => ../consensus
