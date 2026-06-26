@@ -8,7 +8,7 @@
 // proxy to luxd over native ZAP instead of HTTP/1.1.
 //
 // Purely ADDITIVE and OPT-IN: the existing HTTP path is untouched. The ZAP
-// listener only boots when LUX_ZAP_RPC_LISTEN is set to a non-empty bind
+// listener only boots when ZAP_RPC_LISTEN is set to a non-empty bind
 // address (e.g. ":9651"); unset/"off" means it never starts, so existing
 // deployments are byte-for-byte unaffected. Boot failures are WARNED, never
 // fatal — the node must keep serving HTTP even if the ZAP listener fails.
@@ -26,7 +26,7 @@ import (
 
 // envZapRPCListen is the env var that sets the ZAP-RPC bind address.
 // Empty / unset / "off" (case-insensitive) keeps the listener disabled.
-const envZapRPCListen = "LUX_ZAP_RPC_LISTEN"
+const envZapRPCListen = "ZAP_RPC_LISTEN"
 
 // zapRPCListenAddr returns the configured bind address, or "" if the ZAP-RPC
 // listener should stay disabled. Disabled is the default — the listener is
