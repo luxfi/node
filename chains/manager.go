@@ -1457,7 +1457,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// it periodically asks peers for their accepted tip and pulls the gap (with
 		// certs) through the catch-up transport. Node-lifetime goroutine (same ctx
 		// model as the WaitForEvent bridge above).
-		go bh.runFrontierPoller(context.Background())
+		pollerCtx, pollerCancel := context.WithCancel(context.Background())
+		bh.pollerCancel = pollerCancel
+		go bh.runFrontierPoller(pollerCtx)
 		createdChain = &chainInfo{
 			Name:    chainName,
 			VMID:    chainParams.VMID,
@@ -2345,6 +2347,7 @@ type blockHandler struct {
 	requestIDCounter uint32                    // Counter for generating unique request IDs
 	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
 	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
+	pollerCancel     context.CancelFunc        // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
 
 	// Qbit event buffering - when we receive a Qbit for a block we don't have yet,
 	// buffer the event and drain when the block arrives
@@ -2526,6 +2529,19 @@ func isMissingContextError(err error) bool {
 		strings.Contains(errStr, "not found") // parent block not in local state
 }
 
+// maxPendingContext hard-bounds the in-flight catch-up request map. A Byzantine
+// peer can stream AcceptedFrontier replies naming distinct random tips, each
+// landing in requestContext; without a bound pendingContext grows without limit
+// and OOMs the node (RED HIGH). pendingContextTTL reaps a request once its
+// deadline has well passed, so a peer that takes the request then withholds
+// Context no longer pins the slot — the block becomes re-requestable from an
+// honest peer (RED MEDIUM re-strand). The GetAncestors deadline below is 10s; a
+// 30s TTL is comfortably past it.
+const (
+	maxPendingContext = 4096
+	pendingContextTTL = 30 * time.Second
+)
+
 // requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
 func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, blockID ids.ID) {
 	if b.net == nil || b.msgCreator == nil {
@@ -2539,6 +2555,28 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		return
 	}
 
+	// BOUND the map (RED HIGH + MEDIUM). Reap requests past their TTL first: a
+	// withheld Context no longer pins the slot, so the block is re-requestable.
+	now := time.Now()
+	for id, req := range b.pendingContext {
+		if now.Sub(req.timestamp) > pendingContextTTL {
+			delete(b.pendingContext, id)
+		}
+	}
+	// Then hard-cap: if still at the bound (a genuine flood inside one TTL window),
+	// evict the oldest so the map can NEVER exceed maxPendingContext.
+	if len(b.pendingContext) >= maxPendingContext {
+		var oldestID ids.ID
+		var oldestT time.Time
+		first := true
+		for id, req := range b.pendingContext {
+			if first || req.timestamp.Before(oldestT) {
+				oldestID, oldestT, first = id, req.timestamp, false
+			}
+		}
+		delete(b.pendingContext, oldestID)
+	}
+
 	// Generate a new request ID
 	b.requestIDCounter++
 	requestID := b.requestIDCounter
@@ -2548,7 +2586,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		nodeID:    nodeID,
 		requestID: requestID,
 		blockID:   blockID,
-		timestamp: time.Now(),
+		timestamp: now,
 	}
 	b.contextRequestMu.Unlock()
 
@@ -3266,7 +3304,11 @@ func (b *blockHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requ
 func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
 func (b *blockHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
 func (b *blockHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
-func (b *blockHandler) Stop(ctx context.Context)                                  {}
+func (b *blockHandler) Stop(ctx context.Context) {
+	if b.pollerCancel != nil {
+		b.pollerCancel()
+	}
+}
 func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
 	// Dispatch based on Op type
 	switch msg.Op {
