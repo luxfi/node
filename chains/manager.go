@@ -1287,6 +1287,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// to Start; without the gossiper Mode() reports degraded and value-DEX is
 		// refused. For K==1 these stay nil (no quorum, no signatures).
 		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID}
+		// catchup is the behind-follower self-heal wire. The engine signals through
+		// it (chain.Catchup) when a gossiped child references a parent we lack; it
+		// routes to the blockHandler's GetAncestors transport. The handler wraps the
+		// engine built just below, so its handler ref is late-bound at chainInfo
+		// construction (a no-op until then — see networkCatchup).
+		catchup := &networkCatchup{}
 		netCfg := consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
 			NetworkID:  networkID,
@@ -1294,6 +1300,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Validators: m.Validators, // CRITICAL: Pass validator sampler for k-peer polling
 			Logger:     m.Log,
 			Gossiper:   gossiper,
+			Catchup:    catchup, // fetch missing ancestors so a behind follower converges
 			VM:         blockBuilder,
 			Params:     &consensusParams,
 		}
@@ -1435,17 +1442,23 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if chainName == "" {
 			chainName = chainRuntime.ChainID.String()
 		}
+		// Handler parses inbound blocks through the SAME builder the engine emits
+		// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
+		// on K==1), so the container bytes it parses match the bytes the engine
+		// framed — one codec, no raw-vs-wrapped split.
+		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID)
+		// Late-bind the handler as the engine's catch-up wire: it owns requestContext
+		// (send GetAncestors) and handleContext -> Put -> engine (deliver the fetched
+		// ancestors), so a follower that falls behind now self-heals instead of
+		// looping on an unfinalizable orphan.
+		catchup.handler = bh
 		createdChain = &chainInfo{
 			Name:    chainName,
 			VMID:    chainParams.VMID,
 			Runtime: chainRuntime,
 			VM:      vmTyped,         // Use the real VM directly
 			Engine:  consensusEngine, // Use real consensus engine directly
-			// Handler parses inbound blocks through the SAME builder the engine emits
-			// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
-			// on K==1), so the container bytes it parses match the bytes the engine
-			// framed — one codec, no raw-vs-wrapped split.
-			Handler: newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID),
+			Handler: bh,
 		}
 	default:
 		return nil, fmt.Errorf("unsupported VM type: %T", vmImpl)
@@ -3225,6 +3238,38 @@ func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig,
 // networkGossiper implements consensuschain.Gossiper for Lux consensus integration.
 // It adapts the node's network layer to the minimal Gossiper interface used by
 // the integrated consensus engine.
+// ancestorRequester is the one capability networkCatchup needs from the inbound
+// handler: ask a peer for the chain of blocks ending at a missing block.
+// *blockHandler provides it via requestContext (GetAncestors out; the Ancestors
+// response flows handleContext -> Put -> engine). Depending on this one-method
+// interface (not the concrete handler) keeps the bridge testable and narrow.
+type ancestorRequester interface {
+	requestContext(ctx context.Context, from ids.NodeID, blockID ids.ID)
+}
+
+// networkCatchup is the node-side wire for the consensus engine's chain.Catchup
+// interface. The engine DECIDES when to catch up — followVerifiedBlock sees a
+// gossiped child whose parent it lacks and calls requestCatchup; networkCatchup
+// ROUTES that to the handler's GetAncestors transport. Splitting "decide" (engine,
+// no network types) from "transport" (handler, no consensus policy) keeps each in
+// its lane. Without this wire a follower that falls behind during consensus loops
+// on an unfinalizable orphan forever — the stranded-follower bug.
+//
+// The handler wraps the engine and is built after it, so `handler` is late-bound
+// once both exist. Until then RequestAncestors is a harmless no-op: no block can
+// be missing before the engine has even started.
+type networkCatchup struct{ handler ancestorRequester }
+
+// RequestAncestors satisfies chain.Catchup. chainID/networkID are already fixed
+// per-handler (one handler per chain), so the wire needs only the missing block
+// and the peer that advertised its child.
+func (c *networkCatchup) RequestAncestors(_ ids.ID, _ ids.ID, missingBlockID ids.ID, from ids.NodeID) error {
+	if c.handler != nil {
+		c.handler.requestContext(context.Background(), from, missingBlockID)
+	}
+	return nil
+}
+
 type networkGossiper struct {
 	net        network.Network
 	msgCreator message.OutboundMsgBuilder
