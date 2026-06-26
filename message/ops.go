@@ -272,6 +272,15 @@ func ToConsensusOp(op Op) (byte, bool) {
 		return 9, true // GetContext (wire protocol still uses GetAncestors)
 	case AncestorsOp:
 		return 10, true // Context (wire protocol still uses Ancestors)
+	case GossipOp:
+		// Gossip (= router.Gossip). The α-of-K quorum vote/cert transport rides on
+		// app-gossip. Without this mapping the chain router drops every inbound vote
+		// as "unhandled message op" before it reaches blockHandler.Gossip ->
+		// engine.HandleIncomingVote, so the finality cert never assembles and the
+		// chain wedges (blocks verify but never accept). Routed to blockHandler's
+		// Gossip method, which demuxes the quorum envelope. MUST match the value the
+		// consensus side decodes it as (TestToConsensusOp_TableAlignedWithRouter).
+		return 11, true // Gossip
 	default:
 		return 0, false
 	}
