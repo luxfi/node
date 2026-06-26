@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/consensus/core/router"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/proto/p2p"
 )
@@ -246,41 +247,40 @@ func Unwrap(m *p2p.Message) (fmt.Stringer, error) {
 	}
 }
 
-// ToConsensusOp maps message.Op to consensus router Op values
-// Returns the consensus Op value and whether the mapping exists
+// ToConsensusOp maps a wire message Op to the consensus router op the chain
+// router (node/chain_router.go) dispatches on, returning false for ops that are
+// not consensus-routed (the router drops those as "unhandled message op"). The
+// returned values ARE the router constants, so they cannot drift in value; the
+// mapping must also stay a bijection onto the router op space [0, router.NumOps)
+// — proven by message/ops_test.go. A missing case silently drops that op: that
+// is the α-of-K finality wedge, where GossipOp had no case and every vote
+// vanished before reaching blockHandler.Gossip -> engine.HandleIncomingVote.
 func ToConsensusOp(op Op) (byte, bool) {
 	switch op {
 	case GetAcceptedFrontierOp:
-		return 0, true // GetAcceptedFrontier
+		return byte(router.GetAcceptedFrontier), true
 	case AcceptedFrontierOp:
-		return 1, true // AcceptedFrontier
+		return byte(router.AcceptedFrontier), true
 	case GetAcceptedOp:
-		return 2, true // GetAccepted
+		return byte(router.GetAccepted), true
 	case AcceptedOp:
-		return 3, true // Accepted
+		return byte(router.Accepted), true
 	case GetOp:
-		return 4, true // Get
+		return byte(router.Get), true
 	case PutOp:
-		return 5, true // Put
+		return byte(router.Put), true
 	case PushQueryOp:
-		return 6, true // PushQuery
+		return byte(router.PushQuery), true
 	case PullQueryOp:
-		return 7, true // PullQuery
+		return byte(router.PullQuery), true
 	case QbitOp:
-		return 8, true // Qbit
+		return byte(router.Vote), true // votes ride the Qbit wire op
 	case GetAncestorsOp:
-		return 9, true // GetContext (wire protocol still uses GetAncestors)
+		return byte(router.GetContext), true // wire op is still GetAncestors
 	case AncestorsOp:
-		return 10, true // Context (wire protocol still uses Ancestors)
+		return byte(router.Context), true // wire op is still Ancestors
 	case GossipOp:
-		// Gossip (= router.Gossip). The α-of-K quorum vote/cert transport rides on
-		// app-gossip. Without this mapping the chain router drops every inbound vote
-		// as "unhandled message op" before it reaches blockHandler.Gossip ->
-		// engine.HandleIncomingVote, so the finality cert never assembles and the
-		// chain wedges (blocks verify but never accept). Routed to blockHandler's
-		// Gossip method, which demuxes the quorum envelope. MUST match the value the
-		// consensus side decodes it as (TestToConsensusOp_TableAlignedWithRouter).
-		return 11, true // Gossip
+		return byte(router.Gossip), true // α-of-K vote/cert transport
 	default:
 		return 0, false
 	}
