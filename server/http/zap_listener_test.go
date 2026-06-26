@@ -15,7 +15,7 @@ import (
 )
 
 // TestZapRPCListenAddr verifies the opt-in env parsing: the listener stays
-// disabled unless LUX_ZAP_RPC_LISTEN is set to a real bind address.
+// disabled unless ZAP_RPC_LISTEN is set to a real bind address.
 func TestZapRPCListenAddr(t *testing.T) {
 	cases := []struct {
 		set  bool
