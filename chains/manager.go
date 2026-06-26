@@ -1452,6 +1452,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// ancestors), so a follower that falls behind now self-heals instead of
 		// looping on an unfinalizable orphan.
 		catchup.handler = bh
+		// Start the proactive frontier poller: a node that received NO gossip (the
+		// stranded-validator case) has no other trigger to discover it is behind, so
+		// it periodically asks peers for their accepted tip and pulls the gap (with
+		// certs) through the catch-up transport. Node-lifetime goroutine (same ctx
+		// model as the WaitForEvent bridge above).
+		go bh.runFrontierPoller(context.Background())
 		createdChain = &chainInfo{
 			Name:    chainName,
 			VMID:    chainParams.VMID,
@@ -2580,9 +2586,74 @@ func (b *blockHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uin
 	return nil
 }
 
+// catchupEntryMagic tags a CERT-CARRYING catch-up container so a requester can
+// tell it apart from a legacy raw-block container. "LCU2" = Lux Catch-Up wire v2.
+// A real block's bytes never start with this: an EVM/RLP block opens with an RLP
+// list header (0xf8/0xf9/0xfa) and a P/X-chain block with a codec version (0x0000),
+// neither of which is 0x4C ('L'). So the discriminator is unambiguous AND a
+// cross-version exchange fails CLEANLY: a legacy decoder reads these 4 magic bytes
+// as a uint32 length (0x4C435532 ≈ 1.28 GB) which exceeds the buffer, so it rejects
+// the frame (0 blocks processed) — no panic, no misparse, no bad accept.
+var catchupEntryMagic = [4]byte{'L', 'C', 'U', '2'}
+
+// encodeCatchupEntry frames ONE catch-up container pairing a block with its
+// finality cert:
+//
+//	magic:4 | blockLen:4 | block | certLen:4 | cert            (all big-endian)
+//
+// certLen == 0 means "no finality cert available for this block" — e.g. a still
+// pending (unfinalized) block served on the live missing-parent path; the requester
+// then votes on it (the legacy path) instead of cert-accepting. The Ancestors
+// flattener wraps this whole entry again as one [entryLen:4][entry] container, so
+// the existing outer framing is reused unchanged.
+func encodeCatchupEntry(blockBytes, certBytes []byte) []byte {
+	out := make([]byte, 0, 4+4+len(blockBytes)+4+len(certBytes))
+	out = append(out, catchupEntryMagic[:]...)
+	var u32 [4]byte
+	binary.BigEndian.PutUint32(u32[:], uint32(len(blockBytes)))
+	out = append(out, u32[:]...)
+	out = append(out, blockBytes...)
+	binary.BigEndian.PutUint32(u32[:], uint32(len(certBytes)))
+	out = append(out, u32[:]...)
+	out = append(out, certBytes...)
+	return out
+}
+
+// decodeCatchupEntry is the inverse of encodeCatchupEntry. ok is false (NOT an
+// error) when entry is not a v2 cert-carrying frame — no magic, or a structurally
+// invalid one (lengths that do not consume the entry EXACTLY). The caller then
+// treats entry as a legacy raw block. Strict: any overflow or trailing bytes ⇒ not
+// a v2 entry (fail to the legacy interpretation, never a partial parse).
+func decodeCatchupEntry(entry []byte) (blockBytes, certBytes []byte, ok bool) {
+	if len(entry) < 4+4 || [4]byte{entry[0], entry[1], entry[2], entry[3]} != catchupEntryMagic {
+		return nil, nil, false
+	}
+	rest := entry[4:]
+	blockLen := binary.BigEndian.Uint32(rest[:4])
+	rest = rest[4:]
+	if uint64(blockLen) > uint64(len(rest)) {
+		return nil, nil, false
+	}
+	blockBytes = rest[:blockLen]
+	rest = rest[blockLen:]
+	if len(rest) < 4 {
+		return nil, nil, false
+	}
+	certLen := binary.BigEndian.Uint32(rest[:4])
+	rest = rest[4:]
+	if uint64(certLen) != uint64(len(rest)) { // must consume the entry EXACTLY
+		return nil, nil, false
+	}
+	return blockBytes, rest, true
+}
+
 // GetContext responds to a request for verification context (parent chain blocks)
 // starting from containerID. We respond with up to maxAncestors blocks in
-// chronological order (oldest first) so the requester can attach the missing context.
+// chronological order (oldest first) so the requester can attach the missing
+// context. Each block is paired with its finality cert (encodeCatchupEntry) when we
+// have one (CertForBlock) so a BEHIND requester can finalize the gap via the cert
+// path; a still-pending block is served with an empty cert (the requester votes on
+// it, the legacy live missing-parent behaviour).
 func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	if b.vm == nil || b.net == nil || b.msgCreator == nil {
 		return nil
@@ -2618,9 +2689,16 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 			}
 		}
 
-		// Add block bytes to the response (prepend to get oldest first)
-		blockBytes := blk.Bytes()
-		containers = append([][]byte{blockBytes}, containers...)
+		// Pair the block with its finality cert (empty if we have none — a still
+		// pending block, or one whose cert aged out of the served window). The
+		// requester cert-accepts when a cert is present and votes otherwise. Prepend
+		// to keep oldest-first.
+		var certBytes []byte
+		if b.engine != nil {
+			certBytes, _ = b.engine.CertForBlock(blk.ID())
+		}
+		entry := encodeCatchupEntry(blk.Bytes(), certBytes)
+		containers = append([][]byte{entry}, containers...)
 
 		// Get parent ID for next iteration
 		parentID := blk.Parent()
@@ -2674,26 +2752,58 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		log.Uint32("requestID", requestID),
 		log.Int("dataLen", len(data)))
 
-	// The data encodes multiple blocks as:
-	// [len][block][len][block]... where len is a 4-byte big-endian length.
+	// The outer framing (added by the Ancestors flattener) is
+	// [entryLen:4][entry][entryLen:4][entry]..., oldest-first. Each entry is either a
+	// v2 cert-carrying frame (magic|blockLen|block|certLen|cert) or a legacy raw
+	// block. We decode the outer length, then dispatch the entry:
+	//   - cert present → AcceptCatchupBlock: parse → Verify → finalize via the SAME
+	//     verified-cert predicate as live finality (the network already decided this
+	//     height; we cannot re-vote it). A bad cert is REJECTED here, never finalized.
+	//   - no cert / legacy block → Put: the voting path (a fresh near-tip block on the
+	//     live missing-parent path, where the network is still voting).
+	// Entries are applied in order; a rejected entry (out-of-order, already-have, or
+	// bad cert) is skipped and the loop CONTINUES — the next entry may be the right
+	// contiguous one, and a behind node re-polls the frontier on its next tick.
 	processed := 0
 	remaining := data
 
 	for len(remaining) >= 4 {
-		blockLen := int(binary.BigEndian.Uint32(remaining[:4]))
+		entryLen := int(binary.BigEndian.Uint32(remaining[:4]))
 		remaining = remaining[4:]
-		if blockLen <= 0 || blockLen > len(remaining) {
-			b.logger.Debug("invalid context block length",
+		if entryLen <= 0 || entryLen > len(remaining) {
+			b.logger.Debug("invalid context entry length",
 				log.Stringer("from", nodeID),
 				log.Int("processed", processed),
-				log.Int("blockLen", blockLen),
+				log.Int("entryLen", entryLen),
 				log.Int("remaining", len(remaining)))
 			break
 		}
 
-		blockBytes := remaining[:blockLen]
-		remaining = remaining[blockLen:]
+		entry := remaining[:entryLen]
+		remaining = remaining[entryLen:]
 
+		// One decode decides the route. A v2 frame yields (block, cert); a legacy raw
+		// container yields !isV2, and the whole entry IS the block.
+		blockBytes, certBytes, isV2 := decodeCatchupEntry(entry)
+
+		if isV2 && len(certBytes) > 0 {
+			// CERT path: finalize the gap block on its verified cert (no re-vote).
+			if err := b.engine.AcceptCatchupBlock(ctx, blockBytes, certBytes); err != nil {
+				b.logger.Debug("catch-up cert-accept rejected (skipping entry)",
+					log.Stringer("from", nodeID),
+					log.Int("processed", processed),
+					log.Err(err))
+				continue // not finalized; the cert-gate held — try the next entry
+			}
+			processed++
+			continue
+		}
+
+		// VOTE path: a v2 entry with an empty cert (still-pending block on the live
+		// missing-parent path) carries just the block; a legacy entry IS the block.
+		if !isV2 {
+			blockBytes = entry
+		}
 		if err := b.Put(ctx, nodeID, requestID, blockBytes); err != nil {
 			b.logger.Debug("failed to process context block",
 				log.Stringer("from", nodeID),
@@ -2704,7 +2814,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		processed++
 	}
 
-	b.logger.Info("processed context blocks",
+	b.logger.Info("processed context entries",
 		log.Stringer("from", nodeID),
 		log.Int("processed", processed))
 
@@ -2756,6 +2866,81 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 	b.requestContext(ctx, nodeID, containerID) // behind → fetch the gap
 	return nil
 }
+
+// frontierPollInterval is the heartbeat at which a node proactively asks a small
+// sample of peers "what is your accepted tip?" so it discovers it has fallen behind
+// the finalized frontier WITHOUT a restart (the producers do not re-gossip old
+// blocks to a behind node, so nothing else tells it). It is a SLOW heartbeat, not a
+// hot loop: a reply naming a tip we lack drives AcceptedFrontier → requestContext,
+// which is itself throttled downstream (pendingContext per-block dedup + the
+// engine's claimCatchupLocked cooldown), so discovery cannot become a fetch storm.
+const frontierPollInterval = 15 * time.Second
+
+// frontierPollSample is how many peers each tick is asked. A SMALL sample (not a
+// broadcast) keeps the heartbeat cheap; because PeerInfo's order varies per call,
+// successive ticks reach different peers, so a behind node that drew a peer which
+// cannot serve certs (un-upgraded, or aged-out window) reaches a serving peer on a
+// later tick — no single-peer dependency and no hot retry (GAP-4 backoff).
+const frontierPollSample = 4
+
+// runFrontierPoller is the proactive half of frontier-sync: it periodically sends
+// GetAcceptedFrontier to a few peers tracking this chain. Started once when the
+// chain handler is created; exits when ctx is done (node shutdown).
+func (b *blockHandler) runFrontierPoller(ctx context.Context) {
+	if b.net == nil || b.msgCreator == nil || b.engine == nil {
+		return
+	}
+	ticker := time.NewTicker(frontierPollInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			b.pollFrontierOnce(ctx)
+		}
+	}
+}
+
+// pollFrontierOnce asks up to frontierPollSample connected peers (that track this
+// chain) for their accepted tip. The reply lands in AcceptedFrontier, which fetches
+// the gap if we are behind. Safe no-op when there are no peers (e.g. a single-node
+// dev chain): nothing is sent, nothing is fetched.
+func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
+	peers := b.net.PeerInfo(nil)
+	if len(peers) == 0 {
+		return
+	}
+	sample := set.NewSet[ids.NodeID](frontierPollSample)
+	for _, p := range peers {
+		if p.TrackedChains.Contains(b.chainID) {
+			sample.Add(p.ID)
+			if sample.Len() >= frontierPollSample {
+				break
+			}
+		}
+	}
+	if sample.Len() == 0 {
+		return
+	}
+
+	b.contextRequestMu.Lock()
+	b.requestIDCounter++
+	requestID := b.requestIDCounter
+	b.contextRequestMu.Unlock()
+
+	msg, err := b.msgCreator.GetAcceptedFrontier(b.chainID, requestID, 10*time.Second)
+	if err != nil {
+		b.logger.Debug("frontier poll: failed to build GetAcceptedFrontier", log.Err(err))
+		return
+	}
+	sentTo := b.net.Send(msg, sample, b.networkID, 0)
+	b.logger.Debug("frontier poll sent",
+		log.Stringer("chainID", b.chainID),
+		log.Int("asked", sample.Len()),
+		log.Int("sentTo", sentTo.Len()))
+}
+
 func (b *blockHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
 	return nil
 }
@@ -3147,6 +3332,23 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			b.logger.Warn("message too short for preferredID",
 				log.Stringer("from", msg.NodeID),
 				log.Int("msgLen", len(msg.Message)))
+		}
+	case handler.GetAcceptedFrontier:
+		// A peer asks "what is your accepted tip?" — answer with our last-accepted
+		// block id (the frontier responder). This is the SERVE half of frontier-sync:
+		// it is how a behind node learns the network tip. Without this case the op
+		// reaches HandleInbound and falls through (dropped), so a node that fell
+		// behind could never discover it (the GAP-1 dead-handler, same class as the
+		// GossipOp/catch-up gaps).
+		return b.GetAcceptedFrontier(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second))
+	case handler.AcceptedFrontier:
+		// A peer's reply naming ITS accepted tip (a 32-byte container id). If we lack
+		// that block we are BEHIND → pull the gap through the catch-up transport. This
+		// is the LEARN half of frontier-sync; parse the id like the Context case.
+		if len(msg.Message) >= 32 {
+			var containerID ids.ID
+			copy(containerID[:], msg.Message[:32])
+			return b.AcceptedFrontier(ctx, msg.NodeID, msg.RequestID, containerID)
 		}
 	case handler.GetContext:
 		// GetContext requests verification context (parent chain) for a block
