@@ -99,7 +99,7 @@ type server struct {
 	// exact same handler as the HTTP listener.
 	handler http.Handler
 
-	// zapSrv is the optional ZAP-RPC listener; nil unless LUX_ZAP_RPC_LISTEN
+	// zapSrv is the optional ZAP-RPC listener; nil unless ZAP_RPC_LISTEN
 	// is set. See zap_listener.go.
 	zapSrv *zaphttp.Server
 }
@@ -153,7 +153,7 @@ func New(
 }
 
 func (s *server) Dispatch() error {
-	// Additively boot the ZAP-RPC listener (opt-in via LUX_ZAP_RPC_LISTEN).
+	// Additively boot the ZAP-RPC listener (opt-in via ZAP_RPC_LISTEN).
 	// Serves the same handler over github.com/zap-proto/http so the gateway
 	// can reach luxd over the native ZAP mesh. Never fatal — HTTP serves
 	// regardless.
