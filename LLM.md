@@ -576,7 +576,7 @@ For importing pre-merge blocks, Shanghai must be active based on `ShanghaiTime`,
 ### 8. `vms/components/lux` vs `luxfi/utxo` (parallel UTXO types)
 The `github.com/luxfi/node/vms/components/lux` package contains a parallel
 `lux.UTXO`/`lux.TransferableInput` type tree alongside `github.com/luxfi/utxo`.
-External consumers (e.g. `~/work/liquidity/network-bootstrap/fund.go`) need
+External consumers (e.g. a white-label tenant's network-bootstrap tooling) need
 to import the `vms/components/lux` variant to interop with PlatformVM/AVM
 tx builders — `luxfi/utxo` types alone are not accepted by the X→P export
 path. This is a known anomaly pending #58 follow-up consolidation; do NOT
