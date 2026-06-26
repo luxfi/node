@@ -270,6 +270,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     cd /tmp/evm && \
     . /build/build_env.sh && \
     go mod edit -require=github.com/luxfi/upgrade@v1.0.1 && \
+    # evm v1.99.40 pins luxfi/chains v1.3.19, whose dexvm/registry was an incomplete
+    # refactor (forbidden.go deleted -> AssertNoForbiddenAssetRefs/looksLikeASCIITickerID/
+    # toHex/fromHex undefined => won't compile). Force v1.3.21 (forbidden.go restored),
+    # matching node's go.mod and the chain-VM plugin stage (CHAINS_REF) below.
+    go mod edit -require=github.com/luxfi/chains@v1.3.21 && \
     find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
