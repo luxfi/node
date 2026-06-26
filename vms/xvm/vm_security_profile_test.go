@@ -90,7 +90,7 @@ func TestXVMInitialize_WiresSecurityProfileIntoMempool(t *testing.T) {
 			Sender:   &noOpSender{},
 		},
 	))
-	t.Cleanup(func() { _ = vmImpl.Shutdown() })
+	t.Cleanup(func() { _ = vmImpl.Shutdown(context.Background()) })
 
 	// Linearize so the mempool builder is constructed and SetAuthPolicy
 	// has fired with the strict-PQ profile.
