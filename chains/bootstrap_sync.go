@@ -20,6 +20,7 @@ import (
 
 	cblock "github.com/luxfi/consensus/engine/chain/block"
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -35,49 +36,116 @@ var (
 )
 
 const (
-	// bootstrapFrontierTimeout bounds how long FrontierTip waits for a peer to name its
-	// accepted tip before giving up this round (the driver re-samples).
-	bootstrapFrontierTimeout = 6 * time.Second
+	// bootstrapFrontierWindow bounds how long FrontierTip collects weighted beacon
+	// replies before tallying the ⅔-by-stake quorum. A beacon answering later just
+	// misses this round (the driver re-samples) — it is not abandoned.
+	bootstrapFrontierWindow = 3 * time.Second
 	// bootstrapAncestorsTimeout bounds how long Ancestors waits for a peer to serve a
 	// batch (longer than the 10s GetAncestors deadline so a slow-but-honest peer is not
 	// abandoned prematurely).
 	bootstrapAncestorsTimeout = 12 * time.Second
+	// bootstrapAncestorSample is how many beacons one Ancestors round asks. The sample
+	// ROTATES (bsRotor) so no single beacon monopolizes the descent or can repeatedly
+	// stall it (M1). Content addressing in the loop makes the fetched ancestry safe
+	// regardless of WHICH beacon serves it.
+	bootstrapAncestorSample = 4
+	// bootstrapMinAgreeingBeacons floors the DISTINCT beacons that must name the same
+	// tip, so a single (even >⅔-stake) validator cannot alone determine the frontier.
+	// Capped at the beacon-set size for tiny networks.
+	bootstrapMinAgreeingBeacons = 2
 )
 
-// samplePeerTrackingChain returns a small sample of connected peers that track this
-// chain. ok=false when none exist (a single-node / dev chain, or a momentarily
-// peerless start) — the caller then treats the node as already at the frontier
-// (nothing to sync to).
-func (b *blockHandler) samplePeerTrackingChain() (set.Set[ids.NodeID], bool) {
-	if b.net == nil {
+// beaconWeights returns the beacon set's nodeID→stake map and total stake under this
+// chain's validation network, or ok=false when no beacon set is configured (single-node
+// / --skip-bootstrap). This is the TRUST ANCHOR for initial sync: only a node in this
+// set, weighted by its stake, can contribute to naming the frontier — the C1
+// forged-chain gate. An arbitrary connected peer is not in this map and is ignored.
+func (b *blockHandler) beaconWeights() (weights map[ids.NodeID]uint64, total uint64, ok bool) {
+	if b.beacons == nil {
+		return nil, 0, false
+	}
+	vmap := b.beacons.GetMap(b.networkID)
+	if len(vmap) == 0 {
+		return nil, 0, false
+	}
+	weights = make(map[ids.NodeID]uint64, len(vmap))
+	for id, v := range vmap {
+		w := v.Weight
+		if w == 0 {
+			w = v.Light // Weight is an alias for Light
+		}
+		weights[id] = w
+		total += w
+	}
+	if total == 0 {
+		return nil, 0, false
+	}
+	return weights, total, true
+}
+
+// connectedBeaconsTrackingChain intersects the beacon set with the peers actually
+// CONNECTED and tracking this chain. Only these beacons' frontier replies count toward
+// the quorum, but the FULL beacon stake (total) stays the quorum DENOMINATOR — so a node
+// must hear a ⅔-stake supermajority. An eclipse that reaches < ⅔ of beacon stake fails
+// CLOSED (it cannot name a frontier) instead of syncing an attacker's chain.
+func (b *blockHandler) connectedBeaconsTrackingChain() (connected []ids.NodeID, weights map[ids.NodeID]uint64, total uint64, ok bool) {
+	weights, total, ok = b.beaconWeights()
+	if !ok || b.net == nil {
+		return nil, nil, 0, false
+	}
+	beaconIDs := make([]ids.NodeID, 0, len(weights))
+	for id := range weights {
+		beaconIDs = append(beaconIDs, id)
+	}
+	for _, p := range b.net.PeerInfo(beaconIDs) {
+		if _, isBeacon := weights[p.ID]; isBeacon && p.TrackedChains.Contains(b.chainID) {
+			connected = append(connected, p.ID)
+		}
+	}
+	if len(connected) == 0 {
+		return nil, weights, total, false
+	}
+	return connected, weights, total, true
+}
+
+// sampleAncestorBeacons returns a small ROTATED sample of connected beacons to fetch
+// ancestry from (M1 — bsRotor advances each call so the sample walks the beacon set and
+// no single beacon monopolizes the descent). Safety is independent of WHICH beacon
+// serves: the loop's content-addressed descent rejects any block off the agreed
+// frontier's parent chain, so a withholding/forging beacon costs only a re-sample.
+func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
+	connected, _, _, ok := b.connectedBeaconsTrackingChain()
+	if !ok {
 		return nil, false
 	}
-	peers := b.net.PeerInfo(nil)
-	sample := set.NewSet[ids.NodeID](frontierPollSample)
-	for _, p := range peers {
-		if p.TrackedChains.Contains(b.chainID) {
-			sample.Add(p.ID)
-			if sample.Len() >= frontierPollSample {
-				break
-			}
-		}
+	start := int(b.bsRotor.Add(1)-1) % len(connected)
+	sample := set.NewSet[ids.NodeID](bootstrapAncestorSample)
+	for i := 0; i < len(connected) && sample.Len() < bootstrapAncestorSample; i++ {
+		sample.Add(connected[(start+i)%len(connected)])
 	}
 	return sample, sample.Len() > 0
 }
 
-// FrontierTip implements chainbootstrap.BlockSource: ask a sample of peers for their
-// accepted tip and return the first reply (the network frontier). ok=false when no
-// peer is reachable — the loop treats that as "nothing to sync to" and finishes.
+// FrontierTip implements chainbootstrap.BlockSource. It names the network frontier ONLY
+// when a ⅔-BY-STAKE SUPERMAJORITY of the configured beacons agree on the SAME accepted
+// tip — the C1 forged-chain gate. It queries every connected beacon, tallies their
+// replies weighted by stake, and returns a tip only once its agreeing stake clears the
+// shared live floor (config.TwoThirdsStakeFloor over the FULL beacon stake) with at
+// least the minimum distinct beacons. ok=false (fail-closed) when no such quorum forms —
+// a non-beacon peer, a single peer, or any sub-⅔-stake set can NEVER name the frontier,
+// so a forged chain cannot be the thing an empty/behind node syncs to.
 func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, bool) {
 	if b.net == nil || b.msgCreator == nil {
 		return ids.Empty, false
 	}
-	sample, ok := b.samplePeerTrackingChain()
+	connected, weights, total, ok := b.connectedBeaconsTrackingChain()
 	if !ok {
+		// No reachable beacon quorum — fail closed (re-sampled by the loop). Once ⅔ of
+		// beacon stake is reachable and agrees, the quorum forms.
 		return ids.Empty, false
 	}
 
-	ch := make(chan ids.ID, frontierPollSample)
+	ch := make(chan bsFrontierReply, len(connected))
 	b.bsMu.Lock()
 	b.bsFrontierCh = ch
 	b.bsMu.Unlock()
@@ -96,26 +164,66 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, bool) {
 	if err != nil {
 		return ids.Empty, false
 	}
+	sample := set.NewSet[ids.NodeID](len(connected))
+	sample.Add(connected...)
 	b.net.Send(msg, sample, b.networkID, 0)
 
-	select {
-	case tip := <-ch:
-		return tip, tip != ids.Empty
-	case <-time.After(bootstrapFrontierTimeout):
-		return ids.Empty, false
-	case <-ctx.Done():
-		return ids.Empty, false
+	// Tally weighted replies until a tip clears the ⅔-by-stake floor with ≥ the minimum
+	// distinct beacons, or the window closes. ONE reply per beacon counts.
+	required := bootstrapMinAgreeingBeacons
+	if n := len(weights); n < required {
+		required = n
+	}
+	floor := consensusconfig.TwoThirdsStakeFloor(total)
+	agree := make(map[ids.ID]uint64)
+	voters := make(map[ids.ID]map[ids.NodeID]struct{})
+	seen := make(map[ids.NodeID]struct{})
+	deadline := time.After(bootstrapFrontierWindow)
+	for {
+		select {
+		case rep := <-ch:
+			w, isBeacon := weights[rep.nodeID]
+			if !isBeacon || rep.tip == ids.Empty {
+				continue // only a beacon's non-empty reply counts
+			}
+			if _, dup := seen[rep.nodeID]; dup {
+				continue // one vote per beacon
+			}
+			seen[rep.nodeID] = struct{}{}
+			agree[rep.tip] += w
+			if voters[rep.tip] == nil {
+				voters[rep.tip] = make(map[ids.NodeID]struct{})
+			}
+			voters[rep.tip][rep.nodeID] = struct{}{}
+			if agree[rep.tip] > floor && len(voters[rep.tip]) >= required {
+				return rep.tip, true // ⅔-by-stake supermajority of beacons named this tip
+			}
+		case <-deadline:
+			// Window closed: return the best tip that cleared the floor, else no quorum.
+			var best ids.ID
+			var bestW uint64
+			for tip, w := range agree {
+				if w > floor && len(voters[tip]) >= required && w > bestW {
+					best, bestW = tip, w
+				}
+			}
+			return best, bestW > 0
+		case <-ctx.Done():
+			return ids.Empty, false
+		}
 	}
 }
 
 // Ancestors implements chainbootstrap.BlockSource: fetch up to maxBlocks blocks ending
-// at blockID, OLDEST-FIRST, from a peer (wire: GetAncestors -> Ancestors). An empty
-// result (no error) means the sampled peer did not serve — the loop re-samples.
+// at blockID, OLDEST-FIRST, from a ROTATED sample of beacons (wire: GetAncestors ->
+// Ancestors). An empty result (no error) means the sampled beacon did not serve — the
+// loop re-samples. The fetched ancestry is made safe by the loop's content-addressed
+// descent (off-path blocks ignored), not by trusting the serving peer.
 func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks int) ([][]byte, error) {
 	if b.net == nil || b.msgCreator == nil {
 		return nil, nil
 	}
-	sample, ok := b.samplePeerTrackingChain()
+	sample, ok := b.sampleAncestorBeacons()
 	if !ok {
 		return nil, nil
 	}
@@ -197,11 +305,31 @@ func (b *blockHandler) AcceptBootstrapBlock(ctx context.Context, raw []byte) err
 // synced).
 func (b *blockHandler) BootstrapComplete() bool { return b.bootstrapDone.Load() }
 
-// deliverBootstrapFrontier routes a frontier reply to the waiting FrontierTip when the
-// bootstrap loop is driving. Returns true iff consumed (the caller must then NOT run
-// the live auto-fetch). Non-blocking: an extra reply (several peers under one
-// requestID) is dropped.
-func (b *blockHandler) deliverBootstrapFrontier(containerID ids.ID) bool {
+// BootstrapHeight reports the node's current locally-accepted height — the PROGRESS
+// signal monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall
+// timer) from a genuine no-progress stall (fail). Best-effort: 0 if unknown.
+func (b *blockHandler) BootstrapHeight() uint64 {
+	if b.vm == nil {
+		return 0
+	}
+	id, err := b.vm.LastAccepted(context.Background())
+	if err != nil || id == ids.Empty {
+		return 0
+	}
+	blk, err := b.vm.GetBlock(context.Background(), id)
+	if err != nil {
+		return 0
+	}
+	return blk.Height()
+}
+
+// deliverBootstrapFrontier routes a frontier reply (TAGGED with the responding beacon)
+// to the waiting FrontierTip when the bootstrap loop is driving. Returns true iff
+// consumed (the caller must then NOT run the live auto-fetch). The nodeID is what lets
+// FrontierTip weight the reply by the responder's stake — the heart of the α-quorum.
+// Non-blocking: if the buffered channel is momentarily full the reply is dropped (the
+// window/loop re-samples).
+func (b *blockHandler) deliverBootstrapFrontier(nodeID ids.NodeID, containerID ids.ID) bool {
 	if !b.bsActive.Load() {
 		return false
 	}
@@ -210,7 +338,7 @@ func (b *blockHandler) deliverBootstrapFrontier(containerID ids.ID) bool {
 	b.bsMu.Unlock()
 	if ch != nil {
 		select {
-		case ch <- containerID:
+		case ch <- bsFrontierReply{nodeID: nodeID, tip: containerID}:
 		default:
 		}
 	}
@@ -260,6 +388,11 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 		Source: b,
 		Chain:  b,
 		Log:    b.logger,
+		// Optional operator-pinned weak-subjectivity anchor: the α-agreed frontier must
+		// descend from this id at this height (defense-in-depth for empty-genesis). Zero
+		// ⇒ disabled (the beacon + ⅔-stake quorum is the primary anchor).
+		WeakSubjectivityID:     b.wsCheckpointID,
+		WeakSubjectivityHeight: b.wsCheckpointHeight,
 	})
 	err := bs.Run(ctx)
 	b.bsActive.Store(false)

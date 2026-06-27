@@ -1087,12 +1087,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			beacons = &emptyValidatorManager{}
 			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
-		// Note: For linear chains, the consensus engine uses networkGossiper
-		// which samples validators from m.Net (network's validator manager).
-		// The validator manager (n.vdrs) is populated by PlatformVM during
-		// its initialization via state.initValidatorSets(). Beacons are not
-		// directly used here but are available for future beacon-based bootstrap.
-		_ = beacons
+		// The beacon set is the ANCHOR for INITIAL SYNC (bootstrap): the blockHandler
+		// names the network frontier ONLY from a ⅔-by-stake quorum of these beacons —
+		// an arbitrary connected peer can no longer name a forged frontier (the C1
+		// forged-chain gate). The validator manager (n.vdrs) is populated by PlatformVM
+		// during its initialization via state.initValidatorSets(); for native chains the
+		// beacon set IS that primary-network validator set (looked up under networkID =
+		// PrimaryNetworkID below). Empty under --skip-bootstrap (single-node), in which
+		// case the frontier quorum is inert and the node treats itself as already synced.
 
 		// Create simple linear chain with basic consensus engine
 		m.Log.Info("creating linear chain", log.Stringer("chainID", chainRuntime.ChainID))
@@ -1451,7 +1453,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
-		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID)
+		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons)
 		// Late-bind the handler as the engine's catch-up wire: it owns requestContext
 		// (send GetAncestors) and handleContext -> Put -> engine (deliver the fetched
 		// ancestors), so a follower that falls behind now self-heals instead of
@@ -1854,69 +1856,118 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		return
 	}
 
-	// Poll the engine until it reports bootstrapped
-	// Use a short initial delay to let the engine start up, then poll regularly
-	ticker := time.NewTicker(100 * time.Millisecond)
+	// PROGRESS signal (H2). The hard 5-minute timer that was set ONCE and never reset
+	// killed a healthy-but-slow initial sync (a deep gap legitimately takes longer than
+	// 5 minutes). Instead we watch the locally-accepted height: as long as it keeps
+	// ADVANCING, the sync is making progress and the stall clock is reset. Only a
+	// genuine NO-PROGRESS stall — no height gain for the whole window — is a real failure.
+	type bootstrapHeighter interface{ BootstrapHeight() uint64 }
+	var heightOf func() uint64
+	if hp, ok := h.(bootstrapHeighter); ok {
+		heightOf = hp.BootstrapHeight
+	}
+
+	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
+	// loop is unit-testable), then handle the manager-side outcome.
+	const bootstrapStallTimeout = 5 * time.Minute
+	outcome, stalledAtHeight := watchBootstrapProgress(ready, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
+	switch outcome {
+	case bootstrapReady:
+		m.Log.Info("chain finished bootstrapping, notifying chain",
+			log.Stringer("chainID", chainID))
+		sb.Bootstrapped(chainID)
+		return
+	case bootstrapShutdown:
+		// Manager is shutting down.
+		return
+	case bootstrapStalled:
+		// NO-PROGRESS stall — a real bootstrap failure. DO NOT mark as bootstrapped
+		// (masking real failures causes unpredictable behavior).
+		m.Log.Error("chain bootstrap stalled - chain NOT marked as bootstrapped",
+			log.Stringer("chainID", chainID),
+			log.Uint64("stalledAtHeight", stalledAtHeight),
+			log.String("lastState", "no height progress for the stall window"),
+			log.Err(errBootstrapTimeout))
+
+		// Stop the engine with the bootstrap timeout error so the chain is marked failed.
+		if err := engine.StopWithError(context.Background(), errBootstrapTimeout); err != nil {
+			m.Log.Error("failed to stop engine after bootstrap stall",
+				log.Stringer("chainID", chainID),
+				log.Err(err))
+		}
+
+		// Register a health check that reports the bootstrap failure.
+		chainAlias := m.PrimaryAliasOrDefault(chainID)
+		healthErr := m.Health.RegisterHealthCheck(
+			chainAlias+"-bootstrap",
+			health.CheckerFunc(func(context.Context) (interface{}, error) {
+				return map[string]interface{}{
+					"chainID":         chainID.String(),
+					"error":           "bootstrap stalled (no progress)",
+					"stalledAtHeight": stalledAtHeight,
+				}, errBootstrapTimeout
+			}),
+			health.ApplicationTag,
+		)
+		if healthErr != nil {
+			m.Log.Error("failed to register bootstrap stall health check",
+				log.Stringer("chainID", chainID),
+				log.Err(healthErr))
+		}
+		return
+	}
+}
+
+// bootstrapOutcome is the result of the progress-based bootstrap watchdog.
+type bootstrapOutcome int
+
+const (
+	bootstrapReady    bootstrapOutcome = iota // ready() reported initial sync complete
+	bootstrapStalled                          // no height progress for the stall window
+	bootstrapShutdown                         // shutdown was signaled
+)
+
+// watchBootstrapProgress is the PROGRESS-BASED bootstrap watchdog (H2), decomplected from
+// the manager-side success/failure handling so it can be unit-tested. It polls ready()
+// every tick and returns:
+//   - bootstrapReady the instant ready() is true;
+//   - bootstrapStalled when heightOf() has NOT advanced for stallTimeout — so a
+//     slow-but-ADVANCING sync (each tick the height climbs) resets the clock and is NEVER
+//     timed out, while a genuine no-progress stall fails after the window;
+//   - bootstrapShutdown when shutdown fires.
+//
+// It also returns the last observed height (the stall diagnostic). heightOf may be nil
+// (then the window is a fixed wall-clock budget from the start — the legacy behavior).
+func watchBootstrapProgress(
+	ready func() bool,
+	heightOf func() uint64,
+	tick, stallTimeout time.Duration,
+	shutdown <-chan struct{},
+) (bootstrapOutcome, uint64) {
+	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 
-	// Set a reasonable timeout (5 minutes for local networks)
-	// After timeout, we do NOT mark as bootstrapped - this is a real failure
-	timeout := time.NewTimer(5 * time.Minute)
-	defer timeout.Stop()
-
-	// Track polling count for diagnostics
-	pollCount := 0
+	var lastHeight uint64
+	var heightKnown bool
+	lastProgress := time.Now()
 
 	for {
 		select {
 		case <-ticker.C:
-			pollCount++
 			if ready() {
-				m.Log.Info("chain finished bootstrapping, notifying chain",
-					log.Stringer("chainID", chainID),
-					log.Int("pollCount", pollCount))
-				sb.Bootstrapped(chainID)
-				return
+				return bootstrapReady, lastHeight
 			}
-		case <-timeout.C:
-			// Timeout reached - this is a real bootstrap failure
-			// DO NOT mark as bootstrapped - this masks real failures and causes unpredictable behavior
-			m.Log.Error("chain bootstrap timeout - chain NOT marked as bootstrapped",
-				log.Stringer("chainID", chainID),
-				log.Int("pollCount", pollCount),
-				log.String("lastState", "still bootstrapping after 5 minutes"),
-				log.Err(errBootstrapTimeout))
-
-			// Stop the engine with the bootstrap timeout error
-			// This ensures the chain is properly marked as failed
-			if err := engine.StopWithError(context.Background(), errBootstrapTimeout); err != nil {
-				m.Log.Error("failed to stop engine after bootstrap timeout",
-					log.Stringer("chainID", chainID),
-					log.Err(err))
+			if heightOf != nil {
+				if cur := heightOf(); !heightKnown || cur > lastHeight {
+					lastHeight, heightKnown = cur, true
+					lastProgress = time.Now()
+				}
 			}
-
-			// Register a health check that reports the bootstrap failure
-			chainAlias := m.PrimaryAliasOrDefault(chainID)
-			healthErr := m.Health.RegisterHealthCheck(
-				chainAlias+"-bootstrap",
-				health.CheckerFunc(func(context.Context) (interface{}, error) {
-					return map[string]interface{}{
-						"chainID":   chainID.String(),
-						"error":     "bootstrap timeout",
-						"pollCount": pollCount,
-					}, errBootstrapTimeout
-				}),
-				health.ApplicationTag,
-			)
-			if healthErr != nil {
-				m.Log.Error("failed to register bootstrap timeout health check",
-					log.Stringer("chainID", chainID),
-					log.Err(healthErr))
+			if time.Since(lastProgress) >= stallTimeout {
+				return bootstrapStalled, lastHeight
 			}
-			return
-		case <-m.chainCreatorShutdownCh:
-			// Manager is shutting down
-			return
+		case <-shutdown:
+			return bootstrapShutdown, lastHeight
 		}
 	}
 }
@@ -2383,8 +2434,30 @@ type blockHandler struct {
 	bootstrapDone gatomic.Bool             // true once initial sync reached the frontier
 	bsActive      gatomic.Bool             // true while the bootstrap loop is driving
 	bsMu          sync.Mutex               // guards bsFrontierCh + bsAncestorCh
-	bsFrontierCh  chan ids.ID              // one-shot frontier reply for the current FrontierTip
+	bsFrontierCh  chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
 	bsAncestorCh  map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
+	bsRotor       gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+
+	// beacons is the BEACON / staked-validator set the accepted-frontier quorum is
+	// anchored to (m.Validators for native chains, CustomBeacons for the P-chain). The
+	// C1 forged-chain gate: ONLY a node in this set, weighted by stake, can contribute to
+	// naming the frontier an empty/behind node syncs to — an arbitrary connected peer
+	// cannot. nil ⇒ no beacon quorum (single-node / skip-bootstrap), bootstrap is inert.
+	beacons validators.Manager
+
+	// wsCheckpointID + wsCheckpointHeight are an OPTIONAL operator-supplied weak-
+	// subjectivity anchor (a recent finalized block id at height) the α-agreed frontier
+	// must descend from — defense-in-depth for an empty-genesis node. Zero ⇒ disabled.
+	wsCheckpointID     ids.ID
+	wsCheckpointHeight uint64
+}
+
+// bsFrontierReply is one beacon's accepted-frontier answer, tagged with the responder so
+// FrontierTip can weight it by that beacon's stake. The C1 fix turns the frontier from
+// "first peer to answer" into "the tip a ⅔-by-stake supermajority of beacons name."
+type bsFrontierReply struct {
+	nodeID ids.NodeID
+	tip    ids.ID
 }
 
 // QbitEvent is the normalized internal representation of a received Qbit message.
@@ -2405,7 +2478,7 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager) *blockHandler {
 	return &blockHandler{
 		vm:               vm,
 		logger:           logger,
@@ -2414,6 +2487,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *
 		msgCreator:       msgCreator,
 		chainID:          chainID,
 		networkID:        networkID,
+		beacons:          beacons,
 		pendingContext:   make(map[ids.ID]contextRequest),
 		maxContextBlocks: 256, // Default max context blocks to request/serve
 		pendingQbits:     make(map[ids.ID][]QbitEvent),
@@ -2934,10 +3008,11 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 	if b.vm == nil || containerID == ids.Empty {
 		return nil
 	}
-	// INITIAL SYNC: while the bootstrap loop is driving, this reply is the frontier the
-	// loop asked for — hand it to FrontierTip and do NOT auto-fetch (the loop owns the
+	// INITIAL SYNC: while the bootstrap loop is driving, this reply is a frontier vote the
+	// loop asked for — hand it to FrontierTip TAGGED with the sender (so it can be weighted
+	// by the beacon's stake in the ⅔ quorum) and do NOT auto-fetch (the loop owns the
 	// descent). See bootstrap_sync.go.
-	if b.deliverBootstrapFrontier(containerID) {
+	if b.deliverBootstrapFrontier(nodeID, containerID) {
 		return nil
 	}
 	if _, err := b.vm.GetBlock(ctx, containerID); err == nil {
