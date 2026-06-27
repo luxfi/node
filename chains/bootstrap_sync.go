@@ -233,9 +233,28 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// safe). Never false-complete at the stale height; never trust the captured few.
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	default:
-		// ErrNoBootstrapQuorum: enough beacons responded but no ⅔-of-responders agreement on a
-		// common committed block this round — a transient bleeding-edge split (the loop's bounded
-		// F2 retry converges it) or a genuine partition (fails safe at the bound). NOT caught up.
+		// ErrNoBootstrapQuorum: enough beacons responded (the FLOOR is met) but no ⅔-of-responders
+		// agreement named a common committed block this round. Before failing safe, check whether we
+		// are CAUGHT UP. A TIP-HOLDER on a mixed-height co-restart sees the responders SPLIT below ⅔
+		// (the tip-holders are only half), so NOTHING is named, yet it is plainly not behind — and
+		// the ancestor-tolerant tally cannot name the ⅔-backed COMMON ancestor either, because that
+		// ancestor is BELOW the node's own last-accepted (MinFrontierHeight filters it). Without this
+		// the tip-holder fails safe DOWN at its own tip — the opposite of the stale-go-live bug.
+		//
+		// policy.CaughtUp is true ONLY when the floor is met AND no responder reports an accepted tip
+		// above our height AND we hold every reported tip (its full safety argument lives on the
+		// method). When it holds, the network frontier IS our own accepted tip: return it NAMED so
+		// the loop's existing Has()-shortcut (bootstrapper "named a tip we already hold → synced")
+		// concludes caught-up and we go Ready at our OWN height — never below it, never at a stale
+		// height. A genuinely stale node has an honest responder ahead (or lacks its tip) → CaughtUp
+		// is false → it keeps syncing; an eclipse hiding the ahead-nodes drops below the floor →
+		// CaughtUp is false → it fails safe. Distinct from the transient finality-skew retry the loop
+		// runs on a bare FrontierNoQuorum ("connected but momentarily split" — keep polling): this is
+		// "split AND I am at the top of every responder" — provably DONE, not waiting.
+		if lastID, lastH, lerr := b.LastAccepted(ctx); lerr == nil && lastID != ids.Empty &&
+			policy.CaughtUp(replies, lastH, b.heldHeight) {
+			return lastID, chainbootstrap.FrontierNamed
+		}
 		return ids.Empty, chainbootstrap.FrontierNoQuorum
 	}
 }
@@ -455,6 +474,23 @@ func (b *blockHandler) Has(ctx context.Context, id ids.ID) bool {
 	return err == nil
 }
 
+// heldHeight is the height ORACLE the BootstrapPolicy.CaughtUp determination injects: it returns a
+// block's canonical height from the LOCAL store, ok=false when the node does NOT hold it. CaughtUp
+// uses it to (c) require the node to HOLD every reported tip and (b) read those held tips' heights
+// to confirm none is above the node's accepted height. It NEVER fetches over the network — a tip
+// the node lacks simply makes the node not-caught-up (it syncs), the safe direction. It is Has()
+// plus the height the determination needs, in one local lookup.
+func (b *blockHandler) heldHeight(id ids.ID) (uint64, bool) {
+	if id == ids.Empty || b.vm == nil {
+		return 0, false
+	}
+	blk, err := b.vm.GetBlock(context.Background(), id)
+	if err != nil {
+		return 0, false
+	}
+	return blk.Height(), true
+}
+
 // AcceptBootstrapBlock implements chainbootstrap.Chain: re-execute + finalize a fetched
 // block on frontier-trust via the engine's bootstrap accept authority.
 func (b *blockHandler) AcceptBootstrapBlock(ctx context.Context, raw []byte) error {
@@ -488,6 +524,16 @@ func (b *blockHandler) BootstrapFailure() error {
 	}
 	return nil
 }
+
+// BootstrapConnecting reports whether initial sync is in its bounded connectivity-RETRY wait — a
+// transient beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path). The node
+// is correctly failing safe DOWN (VM in Bootstrapping, serving nothing as head) and waiting for the
+// quorum to return; the network cannot make progress without it. monitorBootstrap's no-progress
+// watchdog polls this so it does NOT force-STOP a node that is deliberately waiting — which, given
+// the K8s probes only poll the always-green /ext/health/liveness, would be a permanent brick. It is
+// the discriminator between "stuck on a served gap" (a real stall → stop) and "waiting for the
+// quorum" (self-heal → keep waiting). Distinct from BootstrapFailed (a terminal/structural fail).
+func (b *blockHandler) BootstrapConnecting() bool { return b.bootstrapConnecting.Load() }
 
 // BootstrapHeight reports the node's current locally-accepted height — the PROGRESS
 // signal monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall
@@ -577,15 +623,25 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 // frontier. Gating the normal-op transition on reaching the frontier makes "VM live at a
 // stale height" structurally impossible: the VM is in Bootstrapping until it has converged.
 //
-// FAIL-SAFE (eclipse / isolated node). bs.Run is internally BOUNDED: it WAITS for beacon
-// connectivity (re-sampling the beacon set every RetryInterval up to ConnectDeadline) — the
-// bounded retry that self-heals the instant the beacons return — then returns rather than
-// hanging. If the deadline elapses with no ⅔-by-stake beacon quorum reachable (genuine
-// eclipse / partition / deep gap), runInitialSync returns false WITHOUT going Ready: the VM
-// stays in Bootstrapping (it serves nothing as head), and bootstrapFailed records the reason
-// so monitorBootstrap stops the chain and surfaces it. The orchestrator restarts the node,
-// which re-syncs and converges (nothing pins it live at the stale height anymore). The node
-// NEVER false-completes at its local stale height.
+// GO-LIVE includes the CAUGHT-UP path. A tip-holding producer on a mixed-height co-restart names
+// no frontier (the responders split below ⅔) yet is at the top of every responder — FrontierTip
+// returns its OWN held tip NAMED (BootstrapPolicy.CaughtUp), the loop's Has()-shortcut concludes
+// caught-up, and bs.Run returns nil → it goes Ready at its own tip. Without that path the producer
+// would fail safe DOWN at its own tip (the regression this round fixes), the opposite of the
+// stale-go-live bug.
+//
+// FAIL-SAFE + SELF-HEAL (eclipse / isolation / majority outage). Each bs.Run attempt is internally
+// BOUNDED: it WAITS for beacon connectivity (re-sampling every RetryInterval up to ConnectDeadline)
+// then returns rather than hanging. A TRANSIENT connectivity fail-safe (ErrBeaconsUnreachable /
+// ErrNoBeaconQuorum — the quorum was not reachable this attempt) is RE-ATTEMPTED (bootstrapMaxAttempts
+// ≤ 0 ⇒ until the quorum returns or shutdown), with bootstrapConnecting set so monitorBootstrap's
+// no-progress watchdog treats it as a deliberate WAIT, not a stall: the node stays in Bootstrapping
+// (serving nothing as head, NEVER live at the stale height) and CONVERGES the instant the quorum
+// returns — the in-process self-heal the K8s probes do NOT provide (they poll the always-green
+// /ext/health/liveness, so a fail-safe-DOWN node is never restarted). A STRUCTURAL failure (deep gap
+// → state-sync) or an exhausted attempt bound returns false WITHOUT going Ready, bootstrapFailed
+// recording the reason so monitorBootstrap surfaces it. The node NEVER false-completes at its stale
+// height, and a transient outage NEVER becomes a permanent brick.
 func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	if b.engine == nil || b.net == nil || b.msgCreator == nil {
 		// Degenerate handler (no transport/engine to drive sync): nothing to converge to.
@@ -594,7 +650,7 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 		if b.engine != nil {
 			b.engine.FinishBootstrap()
 		}
-		if err := b.transitionVMReady(); err != nil {
+		if err := b.transitionVMReady(ctx); err != nil {
 			b.logger.Error("degenerate chain: VM SetState(Ready) failed — NOT marking bootstrapped",
 				log.Stringer("chainID", b.chainID), log.Err(err))
 			b.bootstrapFailed.Store(&bsFailure{err: err})
@@ -604,13 +660,12 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 		return true
 	}
 
-	b.bsActive.Store(true)
 	bs := chainbootstrap.New(chainbootstrap.Config{
 		Source: b,
 		Chain:  b,
 		Log:    b.logger,
 		// Bounded beacon-connect WAIT + re-sample pause (zero ⇒ library defaults 3m / 1s).
-		// ConnectDeadline is the bounded retry: bs.Run re-samples the beacon set every
+		// ConnectDeadline is the IN-ATTEMPT retry: bs.Run re-samples the beacon set every
 		// RetryInterval up to this deadline, converging the instant the beacons return.
 		ConnectDeadline: b.bootstrapConnectDeadline,
 		RetryInterval:   b.bootstrapRetryInterval,
@@ -620,55 +675,117 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 		WeakSubjectivityID:     b.wsCheckpointID,
 		WeakSubjectivityHeight: b.wsCheckpointHeight,
 	})
-	err := bs.Run(ctx)
-	b.bsActive.Store(false)
 
-	if err != nil {
+	// OUTER SELF-HEAL RETRY. A bs.Run attempt that fails because the beacon quorum was UNREACHABLE
+	// (eclipse / partition / a majority co-restart still in flight) is RE-ATTEMPTED — the node stays
+	// in Bootstrapping (engine alive, VM serving nothing as head, never live at the stale height)
+	// and CONVERGES the instant the quorum returns. This is the recovery the K8s probes do NOT
+	// provide (they all poll the always-green /ext/health/liveness, so a fail-safe-DOWN node is
+	// never restarted). bootstrapMaxAttempts ≤ 0 ⇒ retry until the quorum returns or shutdown; a
+	// test pins it to 1 to assert the single-attempt terminal fail-safe. A STRUCTURAL failure (deep
+	// gap → state-sync) is NOT retried — a retry cannot fix it; it is surfaced for the operator.
+	var lastErr error
+	for attempt := 1; ; attempt++ {
+		b.bsActive.Store(true)
+		err := bs.Run(ctx)
+		b.bsActive.Store(false)
+
+		if err == nil {
+			// Reached the frontier (or no beacon set / already at / above the tip — caught up): go
+			// live. CLOSE the no-cert bootstrap-accept gate FIRST — FinishBootstrap ends
+			// InBootstrapPhase, so AcceptBootstrapBlock can no longer finalize a block without an
+			// α-of-K cert — THEN transition the VM to normal operation. Ordering them this way
+			// (matching the degenerate path above) leaves NO window where the live VM is
+			// building/serving while the cert-less accept path is still open. FinishBootstrap is
+			// idempotent and void; if the VM transition then fails we fail safe (record the reason,
+			// return false). A VM that REFUSES normal-op is a real failure: do NOT mark ready.
+			b.bootstrapConnecting.Store(false)
+			b.engine.FinishBootstrap()
+			if verr := b.transitionVMReady(ctx); verr != nil {
+				b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped",
+					log.Stringer("chainID", b.chainID), log.Err(verr))
+				b.bootstrapFailed.Store(&bsFailure{err: verr})
+				return false
+			}
+			b.bootstrapDone.Store(true)
+			b.logger.Info("chain initial sync complete — VM live (normal operation) at the network frontier",
+				log.Stringer("chainID", b.chainID))
+			return true
+		}
+
 		if ctx.Err() != nil {
+			b.bootstrapConnecting.Store(false)
 			return false // shutdown — not a bootstrap failure
 		}
-		// Initial sync did not reach the frontier within the bounded deadline (eclipse /
-		// partition / deep gap). DO NOT transition to normal operation — leaving the VM in
-		// Bootstrapping is the fail-safe: it does not serve / build at the stale local height
-		// (that was the freeze defect). Record the reason so monitorBootstrap stops the chain
-		// PROMPTLY (F5) and surfaces it; the orchestrator restarts and the node re-syncs. bs.Run
-		// already retried beacon connectivity for its full ConnectDeadline, so this is the
-		// bounded fail-safe, not a hang.
-		b.logger.Warn("chain initial sync did not reach the frontier — VM stays bootstrapping (NOT serving normal-op), failing safe",
-			log.Stringer("chainID", b.chainID),
-			log.Err(err))
-		b.bootstrapFailed.Store(&bsFailure{err: err})
-		return false
+		lastErr = err
+
+		// Decide whether to RE-ATTEMPT. A transient connectivity fail-safe self-heals when the
+		// quorum returns (retry); a structural failure or an exhausted attempt bound does not (break
+		// → surface). While we wait between attempts, mark bootstrapConnecting so the monitor's
+		// no-progress watchdog treats this as a deliberate quorum WAIT, not a stall — a node failing
+		// safe DOWN and waiting must not be force-stopped (that is the brick this avoids).
+		boundReached := b.bootstrapMaxAttempts > 0 && attempt >= b.bootstrapMaxAttempts
+		if boundReached || !isRetryableBootstrapFailure(err) {
+			break
+		}
+		b.bootstrapConnecting.Store(true)
+		if perr := b.pauseBootstrapRetry(ctx); perr != nil {
+			b.bootstrapConnecting.Store(false)
+			return false // shutdown during the inter-attempt backoff
+		}
 	}
 
-	// Reached the frontier (or no beacon set / already at the tip): transition the VM to
-	// normal operation, THEN end the engine's bootstrap phase and mark ready — so the two
-	// go-live transitions happen TOGETHER at the named frontier, never at a stale height. A VM
-	// that REFUSES normal-op is a real failure: do NOT mark ready (fail safe).
-	if err := b.transitionVMReady(); err != nil {
-		b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped",
-			log.Stringer("chainID", b.chainID), log.Err(err))
-		b.bootstrapFailed.Store(&bsFailure{err: err})
-		return false
+	// Exhausted the attempt bound, or a structural failure (deep gap / disjoint peer). DO NOT
+	// transition to normal operation — leaving the VM in Bootstrapping is the fail-safe: it does not
+	// serve / build at the stale local height (that was the freeze defect). Record the reason so
+	// monitorBootstrap surfaces it (F5).
+	b.bootstrapConnecting.Store(false)
+	b.logger.Warn("chain initial sync did not reach the frontier — VM stays bootstrapping (NOT serving normal-op), failing safe",
+		log.Stringer("chainID", b.chainID),
+		log.Err(lastErr))
+	b.bootstrapFailed.Store(&bsFailure{err: lastErr})
+	return false
+}
+
+// isRetryableBootstrapFailure reports whether a bs.Run fail-safe is a TRANSIENT connectivity
+// failure — the beacon quorum was not reachable this attempt — which RECOVERS when the quorum
+// returns, so re-attempting bootstrap (the node staying in Bootstrapping meanwhile) self-heals it.
+// A STRUCTURAL failure (ErrGapTooLarge needs state-sync; ErrCannotConnect / ErrStalled is a serving
+// peer naming a disjoint chain or withholding ancestry) is NOT retried here — a retry cannot fix it;
+// it is surfaced (bootstrapFailed → monitorBootstrap) for operator action.
+func isRetryableBootstrapFailure(err error) bool {
+	return errors.Is(err, chainbootstrap.ErrBeaconsUnreachable) ||
+		errors.Is(err, chainbootstrap.ErrNoBeaconQuorum)
+}
+
+// pauseBootstrapRetry backs off one RetryInterval between bootstrap re-attempts (never a hot loop),
+// or returns ctx.Err() on shutdown. Mirrors the bootstrapper's own pause so the OUTER self-heal
+// retry has the same bounded, shutdown-terminable backoff as the inner connect wait.
+func (b *blockHandler) pauseBootstrapRetry(ctx context.Context) error {
+	d := b.bootstrapRetryInterval
+	if d <= 0 {
+		d = time.Second
 	}
-	b.engine.FinishBootstrap()
-	b.bootstrapDone.Store(true)
-	b.logger.Info("chain initial sync complete — VM live (normal operation) at the network frontier",
-		log.Stringer("chainID", b.chainID))
-	return true
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(d):
+		return nil
+	}
 }
 
 // transitionVMReady moves the VM to NORMAL OPERATION (vm.Ready) through the gated callback
 // buildChain wired from the VM's SetState. It is the SINGLE place the VM goes live, called
 // by runInitialSync ONLY after initial sync has reached the named frontier. No-op when no
-// SetState VM is wired (degenerate / test handlers — nothing to transition). Bounded by a
-// 30s timeout (decoupled from the sync ctx) so a wedged VM transition cannot hang the
-// goroutine, matching the original buildChain transition budget.
-func (b *blockHandler) transitionVMReady() error {
+// SetState VM is wired (degenerate / test handlers — nothing to transition). Bounded by a 30s
+// timeout DERIVED FROM the sync/shutdown ctx (not context.Background): a wedged VM transition
+// cannot hang the goroutine past 30s, AND a shutdown that cancels ctx cancels the transition
+// immediately instead of blocking the chain teardown for up to 30s.
+func (b *blockHandler) transitionVMReady(ctx context.Context) error {
 	if b.vmReady == nil {
 		return nil
 	}
-	sctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	sctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	return b.vmReady(sctx)
 }

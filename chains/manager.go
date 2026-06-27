@@ -1784,7 +1784,19 @@ func (m *manager) createDAG(
 		}
 	}
 
-	// Only transition VM to normal operation if initialization succeeded
+	// Transition the DAG VM to normal operation if initialization succeeded.
+	//
+	// DELIBERATE SCOPE (RED MEDIUM): this go-live is UNCONDITIONAL — unlike the LINEAR-chain path
+	// (buildChain → runInitialSync), it does NOT gate on a node-layer initial sync reaching the
+	// network frontier. The gated lifecycle is implemented only for native LINEAR chains
+	// (C/D/B/T/Z), which use consensuschain.Runtime + the blockHandler bootstrap wiring
+	// (bootstrap_sync.go). DAG chains (X/Q) run a different engine (consensusdag) with no such
+	// node-layer fetch+execute loop, so the stale-go-live gate cannot simply be reused here; adding
+	// it requires building the DAG equivalent of the linear bootstrap loop. That is tracked as a
+	// SEPARATE task — RECOMMENDED to stay separate, NOT folded into this canary hotfix, because the
+	// production native chains that froze are all linear (mainnet runs P + linear C/D/B/T/Z; X/Q
+	// carry no at-risk producer state on the canary). This call is UNCHANGED by this fix — the DAG
+	// path neither regresses nor improves here; it retains its prior behavior pending that task.
 	if vmInitialized {
 		if stateVM, ok := vmImpl.(interface {
 			SetState(context.Context, uint32) error
@@ -1918,10 +1930,24 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		failure = f.BootstrapFailure
 	}
 
+	// CONNECTING predicate (RED MEDIUM #2 self-heal). A handler that is in its bounded
+	// connectivity-RETRY wait (a transient quorum-unreachable fail-safe it is re-attempting) reports
+	// this true. The no-progress watchdog treats it as a deliberate quorum WAIT, not a stall: it must
+	// NOT force-STOP a node that is correctly failing safe DOWN and waiting for its quorum to return
+	// (the network cannot progress without the quorum, and the K8s probes — all polling the
+	// always-green /ext/health/liveness — would never restart it, so a stop here is a permanent
+	// brick). The node stays in Bootstrapping (serving nothing as head) and converges when the quorum
+	// returns. nil for degenerate handlers (legacy behavior).
+	type bootstrapConnector interface{ BootstrapConnecting() bool }
+	var connecting func() bool
+	if c, ok := h.(bootstrapConnector); ok {
+		connecting = c.BootstrapConnecting
+	}
+
 	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
 	// loop is unit-testable), then handle the manager-side outcome.
 	const bootstrapStallTimeout = 5 * time.Minute
-	outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
+	outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, connecting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
 	switch outcome {
 	case bootstrapReady:
 		m.Log.Info("chain finished bootstrapping, notifying chain",
@@ -2016,12 +2042,20 @@ const (
 // (then the window is a fixed wall-clock budget from the start — the legacy behavior).
 //
 // failed (F5) is the PROMPT fail-safe predicate: when the sync loop RETURNS a fail-safe error
-// (eclipse / partition / deep gap) the driver flips it, and the watchdog returns bootstrapFailed
-// the next tick — instead of waiting out stallTimeout for a chain that has already stopped
-// trying. nil disables it (degenerate handlers with no fail-safe signal — legacy behavior).
+// (deep gap / disjoint peer / exhausted attempt bound) the driver flips it, and the watchdog returns
+// bootstrapFailed the next tick — instead of waiting out stallTimeout for a chain that has already
+// stopped trying. nil disables it (degenerate handlers with no fail-safe signal — legacy behavior).
+//
+// connecting (RED MEDIUM #2 self-heal) is the deliberate-WAIT predicate: when the driver is in its
+// bounded connectivity-RETRY (a transient quorum-unreachable fail-safe it is re-attempting), the
+// no-progress window is NOT a stall — the node is correctly failing safe DOWN and waiting for its
+// quorum to return, so the clock is reset rather than force-STOPPING it (which the K8s probes would
+// never undo → a permanent brick). A genuine stall (NOT connecting, no height progress) still fails.
+// nil disables it (legacy behavior).
 func watchBootstrapProgress(
 	ready func() bool,
 	failed func() bool,
+	connecting func() bool,
 	heightOf func() uint64,
 	tick, stallTimeout time.Duration,
 	shutdown <-chan struct{},
@@ -2051,6 +2085,13 @@ func watchBootstrapProgress(
 				}
 			}
 			if time.Since(lastProgress) >= stallTimeout {
+				// A node in its connectivity-RETRY wait is NOT stalled — it is deliberately failing
+				// safe DOWN and waiting for its quorum to return (self-heal). Reset the clock and keep
+				// waiting; never force-stop it (the K8s probes would never restart it → brick).
+				if connecting != nil && connecting() {
+					lastProgress = time.Now()
+					continue
+				}
 				return bootstrapStalled, lastHeight
 			}
 		case <-shutdown:
@@ -2525,11 +2566,18 @@ type blockHandler struct {
 	// Run returning and the 5-min no-progress watchdog (where the chain was neither syncing nor
 	// stopped). bootstrapDone XOR bootstrapFailed XOR still-syncing.
 	bootstrapFailed gatomic.Pointer[bsFailure]
-	bsActive        gatomic.Bool             // true while the bootstrap loop is driving
-	bsMu            sync.Mutex               // guards bsFrontierCh + bsAncestorCh
-	bsFrontierCh    chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
-	bsAncestorCh    map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
-	bsRotor         gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+	// bootstrapConnecting is true while runInitialSync is in its bounded connectivity-RETRY wait —
+	// a transient beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path). It
+	// tells monitorBootstrap's no-progress watchdog this is a deliberate WAIT for the quorum to
+	// return (the network cannot make progress without it), NOT a stall — so the watchdog does not
+	// force-STOP a node that is correctly failing safe and waiting, which (given the K8s probes only
+	// poll the always-green /ext/health/liveness) would otherwise be a permanent brick.
+	bootstrapConnecting gatomic.Bool
+	bsActive            gatomic.Bool             // true while the bootstrap loop is driving
+	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh
+	bsFrontierCh        chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
+	bsAncestorCh        map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
+	bsRotor             gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
 
 	// vmReady transitions the VM to NORMAL OPERATION (vm.Ready → the EVM's
 	// onNormalOperationsStarted: block building, mempool gossip, validator dispatch).
@@ -2585,12 +2633,24 @@ type blockHandler struct {
 	bootstrapCheckpoint   *Checkpoint
 
 	// bootstrapConnectDeadline / bootstrapRetryInterval tune the initial-sync loop
-	// (chainbootstrap.Config): how long runInitialSync WAITS for beacon connectivity before
-	// failing safe (ConnectDeadline — the bounded retry that self-heals when beacons return),
-	// and the re-sample pause between rounds (RetryInterval). Zero ⇒ library defaults (3m / 1s).
-	// Operator-overridable; the bootstrap tests set them small to bound the fail-safe path.
+	// (chainbootstrap.Config): how long ONE bs.Run attempt WAITS for beacon connectivity before
+	// failing safe (ConnectDeadline — the in-attempt retry that self-heals when beacons return),
+	// and the re-sample pause between rounds (RetryInterval, also the inter-attempt backoff). Zero ⇒
+	// library defaults (3m / 1s). Operator-overridable; the bootstrap tests set them small to bound
+	// the fail-safe path.
 	bootstrapConnectDeadline time.Duration
 	bootstrapRetryInterval   time.Duration
+	// bootstrapMaxAttempts bounds how many times runInitialSync RE-ATTEMPTS bootstrap after a
+	// TRANSIENT connectivity fail-safe (the beacon quorum unreachable — eclipse / partition /
+	// majority co-restart still in flight). Each attempt is itself bounded (ConnectDeadline) with a
+	// backoff between, so this is the OUTER self-heal: the node stays in Bootstrapping (failing safe
+	// DOWN — never live at a stale height) and CONVERGES the instant the quorum returns. ≤0 ⇒
+	// UNLIMITED (retry until the quorum returns or shutdown) — the production default, because a
+	// node without a quorum must keep trying to rejoin and the K8s liveness probe does NOT restart
+	// it (all luxd probes poll the always-green /ext/health/liveness). A STRUCTURAL failure (deep
+	// gap → state-sync) is never retried regardless. Tests pin it to 1 to assert the single-attempt
+	// terminal fail-safe in isolation.
+	bootstrapMaxAttempts int
 }
 
 // bsFrontierReply is one beacon's accepted-frontier answer, tagged with the responder so
