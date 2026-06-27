@@ -221,7 +221,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	// judges the TRUE full validator set. Deadlock-free: the P-chain converges independently from its
 	// own configured CustomBeacons; a native chain only waits the bounded extra moment for it.
 	if b.expectsStakedBeacons && b.primaryNetworkReady != nil && !b.primaryNetworkReady() {
-		b.logger.Info("bootstrap frontier: staked validator set not yet fully loaded (P-chain still syncing) — waiting, NOT concluding caught-up",
+		b.logger.Debug("bootstrap frontier: staked validator set not yet fully loaded (P-chain still syncing) — waiting, NOT concluding caught-up",
 			log.Stringer("chainID", b.chainID),
 			log.Int("partialBeaconCount", len(weights)))
 		return ids.Empty, chainbootstrap.FrontierConnecting
@@ -262,7 +262,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// honest named tip either (we do NOT require holding every reported tip to accept the named
 		// one; that stricter rule belongs to the dual CaughtUp path below, which decides the
 		// no-quorum/own-height case).
-		b.logger.Info("bootstrap frontier: NAMED",
+		b.logger.Debug("bootstrap frontier: NAMED",
 			log.Stringer("chainID", b.chainID),
 			log.Stringer("tip", frontier.ID),
 			log.Uint64("namedHeight", frontier.Height),
@@ -276,7 +276,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// Fewer than MinResponses configured beacons have RESPONDED — not a partition-capture-safe
 		// quorum yet. More may connect: WAIT (bounded by the loop's ConnectDeadline, then fail
 		// safe). Never false-complete at the stale height; never trust the captured few.
-		b.logger.Info("bootstrap frontier: CONNECTING (below the MinResponses floor)",
+		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
 			log.Stringer("chainID", b.chainID),
 			log.Int("beaconSetSize", len(weights)),
 			log.Int("connected", len(connected)),
@@ -307,13 +307,13 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// runs on a bare FrontierNoQuorum ("connected but momentarily split" — keep polling): this is
 		// "split AND I am at the top of every responder" — provably DONE, not waiting.
 		if haveLast && policy.CaughtUp(replies, lastH, b.acceptedHeight) {
-			b.logger.Info("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
+			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
 				log.Stringer("chainID", b.chainID),
 				log.Stringer("tip", lastID),
 				log.Uint64("height", lastH))
 			return lastID, chainbootstrap.FrontierNamed
 		}
-		b.logger.Info("bootstrap frontier: NO QUORUM (responders split, not caught up) — retry/fail safe",
+		b.logger.Debug("bootstrap frontier: NO QUORUM (responders split, not caught up) — retry/fail safe",
 			log.Stringer("chainID", b.chainID),
 			log.Uint64("lastAccepted", lastH),
 			log.Int("replies", len(replies)))
@@ -335,7 +335,7 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 	}
 	for _, r := range replies {
 		h, accepted := b.acceptedHeight(r.Tip)
-		b.logger.Info("bootstrap frontier reply",
+		b.logger.Debug("bootstrap frontier reply",
 			log.Stringer("chainID", b.chainID),
 			log.Stringer("from", r.NodeID),
 			log.Stringer("reportedTip", r.Tip),
@@ -346,7 +346,7 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 			log.Bool("accepted", accepted),
 			log.Uint64("resolvedHeight", h))
 	}
-	b.logger.Info("bootstrap frontier inputs",
+	b.logger.Debug("bootstrap frontier inputs",
 		log.Stringer("chainID", b.chainID),
 		log.Int("beaconSetSize", len(weights)),
 		log.Uint64("beaconSetTotalStake", total),
