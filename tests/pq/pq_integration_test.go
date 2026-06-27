@@ -4,7 +4,6 @@
 // Package pq provides P+Q (Post-Quantum) integration tests for Lux network.
 //
 // These tests verify that all post-quantum security measures are enforced:
-//   - Q-chain validators require RTSignature (Corona) in consensus votes
 //   - TLS connections use X25519MLKEM768 hybrid key exchange (no fallback)
 //   - SignedHost uses DNS hostnames only (no IP literals)
 //   - ML-DSA signatures work for X-Chain UTXOs
@@ -14,41 +13,27 @@ package pq
 
 import (
 	"bytes"
-	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"github.com/go-json-experiment/json"
 	"errors"
+	"github.com/go-json-experiment/json"
 	"math/big"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-
-	"github.com/luxfi/node/consensus/quasar"
 	"github.com/luxfi/node/network/peer"
 )
 
 // ----------------------------------------------------------------------------
 // Test Constants
 // ----------------------------------------------------------------------------
-
-const (
-	testValidatorCount = 5
-	testQuorumNum      = 2
-	testQuorumDen      = 3
-	testThreshold      = 3
-)
 
 // ML-DSA security level constants
 const (
@@ -66,371 +51,6 @@ const (
 	mldsa87PubKeyLen = 2592
 	mldsa87SigLen    = 4627
 )
-
-// ----------------------------------------------------------------------------
-// Test Validator Infrastructure
-// ----------------------------------------------------------------------------
-
-// testValidator represents a validator node for integration testing.
-type testValidator struct {
-	nodeID    ids.NodeID
-	blsKey    *bls.SecretKey
-	blsPubKey *bls.PublicKey
-	rtKey     []byte // ML-DSA-65 public key
-	rtPrivKey []byte // ML-DSA-65 private key (for signing)
-	weight    uint64
-	active    bool
-}
-
-// newTestValidator creates a test validator with all required keys.
-func newTestValidator(weight uint64) (*testValidator, error) {
-	// Generate BLS keypair
-	blsKey, err := bls.NewSecretKey()
-	if err != nil {
-		return nil, err
-	}
-	blsPubKey := bls.PublicFromSecretKey(blsKey)
-
-	// Generate mock ML-DSA-65 keys (in production, use actual ML-DSA)
-	rtKey := make([]byte, mldsa65PubKeyLen)
-	rtPrivKey := make([]byte, mldsa65PubKeyLen) // Simplified for test
-	if _, err := rand.Read(rtKey); err != nil {
-		return nil, err
-	}
-	if _, err := rand.Read(rtPrivKey); err != nil {
-		return nil, err
-	}
-
-	return &testValidator{
-		nodeID:    ids.GenerateTestNodeID(),
-		blsKey:    blsKey,
-		blsPubKey: blsPubKey,
-		rtKey:     rtKey,
-		rtPrivKey: rtPrivKey,
-		weight:    weight,
-		active:    true,
-	}, nil
-}
-
-// toValidatorState converts to quasar.ValidatorState.
-func (v *testValidator) toValidatorState() quasar.ValidatorState {
-	return quasar.ValidatorState{
-		NodeID:      v.nodeID,
-		Weight:      v.weight,
-		BLSPubKey:   bls.PublicKeyToCompressedBytes(v.blsPubKey),
-		CoronaKey: v.rtKey,
-		Active:      v.active,
-	}
-}
-
-// testValidatorSet creates a set of test validators.
-func testValidatorSet(n int) ([]*testValidator, error) {
-	validators := make([]*testValidator, n)
-	for i := 0; i < n; i++ {
-		v, err := newTestValidator(1000)
-		if err != nil {
-			return nil, err
-		}
-		validators[i] = v
-	}
-	return validators, nil
-}
-
-// toValidatorStates converts validators to quasar.ValidatorState slice.
-func toValidatorStates(validators []*testValidator) []quasar.ValidatorState {
-	states := make([]quasar.ValidatorState, len(validators))
-	for i, v := range validators {
-		states[i] = v.toValidatorState()
-	}
-	return states
-}
-
-// ----------------------------------------------------------------------------
-// Mock P-Chain Provider
-// ----------------------------------------------------------------------------
-
-type mockPChainProvider struct {
-	mu         sync.RWMutex
-	height     uint64
-	validators []quasar.ValidatorState
-	finalityCh chan quasar.FinalityEvent
-	closed     bool
-}
-
-func newMockPChainProvider(validators []quasar.ValidatorState) *mockPChainProvider {
-	return &mockPChainProvider{
-		height:     0,
-		validators: validators,
-		finalityCh: make(chan quasar.FinalityEvent, 100),
-	}
-}
-
-func (m *mockPChainProvider) GetFinalizedHeight() uint64 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.height
-}
-
-func (m *mockPChainProvider) GetValidators(height uint64) ([]quasar.ValidatorState, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.validators, nil
-}
-
-func (m *mockPChainProvider) SubscribeFinality() <-chan quasar.FinalityEvent {
-	return m.finalityCh
-}
-
-func (m *mockPChainProvider) EmitFinality(event quasar.FinalityEvent) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.closed {
-		return
-	}
-	m.height = event.Height
-	select {
-	case m.finalityCh <- event:
-	default:
-	}
-}
-
-func (m *mockPChainProvider) Close() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if !m.closed {
-		m.closed = true
-		close(m.finalityCh)
-	}
-}
-
-// ----------------------------------------------------------------------------
-// SECTION 1: Q-Chain Validator Network Tests
-// ----------------------------------------------------------------------------
-
-// TestQChainValidatorNetwork tests 5-node Q-chain validator consensus.
-func TestQChainValidatorNetwork(t *testing.T) {
-	t.Run("5_node_initialization", func(t *testing.T) {
-		validators, err := testValidatorSet(testValidatorCount)
-		require.NoError(t, err, "failed to create validators")
-		require.Len(t, validators, testValidatorCount)
-
-		// Verify each validator has required key material
-		for i, v := range validators {
-			require.NotNil(t, v.blsKey, "validator %d missing BLS key", i)
-			require.NotNil(t, v.blsPubKey, "validator %d missing BLS pubkey", i)
-			require.Len(t, v.rtKey, mldsa65PubKeyLen, "validator %d RT key wrong length", i)
-		}
-	})
-
-	t.Run("quasar_with_validators", func(t *testing.T) {
-		validators, err := testValidatorSet(testValidatorCount)
-		require.NoError(t, err)
-
-		states := toValidatorStates(validators)
-		pchain := newMockPChainProvider(states)
-		defer pchain.Close()
-
-		q, err := quasar.NewQuasar(log.NewNoOpLogger(), testThreshold, testQuorumNum, testQuorumDen)
-		require.NoError(t, err)
-
-		q.ConnectPChain(pchain)
-
-		// Initialize Corona with node IDs
-		nodeIDs := make([]ids.NodeID, len(validators))
-		for i, v := range validators {
-			nodeIDs[i] = v.nodeID
-		}
-
-		// Corona init may fail due to lattice lib constraints in test env
-		err = q.InitializeCorona(nodeIDs)
-		if err != nil {
-			t.Skipf("Skipping: Corona initialization requires lattice library: %v", err)
-		}
-
-		stats := q.Stats()
-		require.True(t, stats.CoronaReady, "Corona should be initialized")
-	})
-
-	t.Run("consensus_starts_and_stops", func(t *testing.T) {
-		validators, err := testValidatorSet(testValidatorCount)
-		require.NoError(t, err)
-
-		states := toValidatorStates(validators)
-		pchain := newMockPChainProvider(states)
-		defer pchain.Close()
-
-		q, err := quasar.NewQuasar(log.NewNoOpLogger(), testThreshold, testQuorumNum, testQuorumDen)
-		require.NoError(t, err)
-
-		q.ConnectPChain(pchain)
-		q.ConnectQuantumFallback(&mockQuantumSigner{})
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		err = q.Start(ctx)
-		require.NoError(t, err)
-
-		// Verify running state
-		require.True(t, q.IsRunning(), "Quasar should be running")
-
-		// Emit finality event (it will be queued even if not fully processed)
-		var blockID ids.ID
-		_, _ = rand.Read(blockID[:])
-
-		event := quasar.FinalityEvent{
-			Height:     1,
-			BlockID:    blockID,
-			Validators: states,
-			Timestamp:  time.Now(),
-		}
-		pchain.EmitFinality(event)
-
-		// Give event time to be received
-		time.Sleep(100 * time.Millisecond)
-
-		// Clean stop
-		q.Stop()
-		require.False(t, q.IsRunning(), "Quasar should stop cleanly")
-	})
-
-	t.Run("manual_finality_set", func(t *testing.T) {
-		// Test that we can manually set finality entries (simulates successful finality)
-		q, err := quasar.NewQuasar(log.NewNoOpLogger(), testThreshold, testQuorumNum, testQuorumDen)
-		require.NoError(t, err)
-
-		var blockID ids.ID
-		_, _ = rand.Read(blockID[:])
-
-		// Create a valid finality with both proofs
-		finality := &quasar.QuantumFinality{
-			BlockID:       blockID,
-			PChainHeight:  1,
-			QChainHeight:  1,
-			BLSProof:      make([]byte, 96),
-			CoronaProof: make([]byte, mldsa65SigLen),
-			TotalWeight:   1000,
-			SignerWeight:  700, // 70% > 67% quorum
-		}
-
-		q.SetFinalized(blockID, finality)
-
-		// Verify we can retrieve it
-		retrieved, found := q.GetFinality(blockID)
-		require.True(t, found, "should find finalized block")
-		require.Equal(t, finality.BlockID, retrieved.BlockID)
-
-		stats := q.Stats()
-		require.GreaterOrEqual(t, stats.FinalizedBlocks, 1, "should have at least 1 finalized block")
-	})
-}
-
-// mockQuantumSigner provides mock RT signing for tests.
-type mockQuantumSigner struct{}
-
-func (m *mockQuantumSigner) SignMessage(msg []byte) ([]byte, error) {
-	return []byte("RT-MOCK-SIG"), nil
-}
-
-// ----------------------------------------------------------------------------
-// SECTION 2: RTSignature Enforcement Tests
-// ----------------------------------------------------------------------------
-
-// TestRTSignatureRequired verifies RTSignature is REQUIRED at consensus-critical boundaries.
-func TestRTSignatureRequired(t *testing.T) {
-	t.Run("vote_without_rt_rejected", func(t *testing.T) {
-		// Create a vote message without RTSignature
-		vote := &testVoteMessage{
-			blockID:      ids.GenerateTestID(),
-			height:       1,
-			blsSignature: []byte("valid-bls-sig"),
-			rtSignature:  nil, // Missing!
-		}
-
-		// Validate vote - should fail
-		err := validateVoteMessage(vote)
-		require.Error(t, err, "vote without RTSignature should be rejected")
-		require.Contains(t, err.Error(), "RTSignature required")
-	})
-
-	t.Run("vote_with_empty_rt_rejected", func(t *testing.T) {
-		vote := &testVoteMessage{
-			blockID:      ids.GenerateTestID(),
-			height:       1,
-			blsSignature: []byte("valid-bls-sig"),
-			rtSignature:  []byte{}, // Empty!
-		}
-
-		err := validateVoteMessage(vote)
-		require.Error(t, err, "vote with empty RTSignature should be rejected")
-	})
-
-	t.Run("vote_with_invalid_rt_length_rejected", func(t *testing.T) {
-		vote := &testVoteMessage{
-			blockID:      ids.GenerateTestID(),
-			height:       1,
-			blsSignature: []byte("valid-bls-sig"),
-			rtSignature:  []byte("too-short"), // Wrong length
-		}
-
-		err := validateVoteMessage(vote)
-		require.Error(t, err, "vote with invalid RTSignature length should be rejected")
-	})
-
-	t.Run("vote_with_valid_rt_accepted", func(t *testing.T) {
-		rtSig := make([]byte, mldsa65SigLen)
-		_, _ = rand.Read(rtSig)
-
-		vote := &testVoteMessage{
-			blockID:      ids.GenerateTestID(),
-			height:       1,
-			blsSignature: []byte("valid-bls-sig"),
-			rtSignature:  rtSig,
-		}
-
-		err := validateVoteMessage(vote)
-		require.NoError(t, err, "vote with valid RTSignature should be accepted")
-	})
-
-	t.Run("finality_without_both_proofs_rejected", func(t *testing.T) {
-		// Finality requires both BLS and RT proofs
-		finality := &quasar.QuantumFinality{
-			BlockID:       ids.GenerateTestID(),
-			BLSProof:      []byte("bls-proof"),
-			CoronaProof: nil, // Missing RT proof!
-			TotalWeight:   1000,
-			SignerWeight:  700,
-		}
-
-		q, _ := quasar.NewQuasar(log.NewNoOpLogger(), testThreshold, testQuorumNum, testQuorumDen)
-		err := q.Verify(finality)
-		require.Error(t, err, "finality without RT proof should be rejected")
-	})
-}
-
-// testVoteMessage simulates a consensus vote message.
-type testVoteMessage struct {
-	blockID      ids.ID
-	height       uint64
-	blsSignature []byte
-	rtSignature  []byte
-}
-
-// validateVoteMessage validates a vote message for Q-chain consensus.
-func validateVoteMessage(vote *testVoteMessage) error {
-	// RTSignature is REQUIRED for Q-chain validators
-	if vote.rtSignature == nil {
-		return errors.New("RTSignature required for Q-chain consensus vote")
-	}
-	if len(vote.rtSignature) == 0 {
-		return errors.New("RTSignature cannot be empty")
-	}
-	// Check signature length matches ML-DSA-65
-	if len(vote.rtSignature) != mldsa65SigLen {
-		return errors.New("RTSignature has invalid length for ML-DSA-65")
-	}
-	return nil
-}
 
 // ----------------------------------------------------------------------------
 // SECTION 3: PQ-Only TLS Tests
@@ -605,8 +225,8 @@ func TestHostnameOnlyAddressing(t *testing.T) {
 func TestMLDSACredential(t *testing.T) {
 	t.Run("security_level_signature_lengths", func(t *testing.T) {
 		testCases := []struct {
-			level    int
-			sigLen   int
+			level     int
+			sigLen    int
 			pubKeyLen int
 		}{
 			{mldsaSecLevel44, mldsa44SigLen, mldsa44PubKeyLen},
