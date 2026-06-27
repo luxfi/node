@@ -648,7 +648,7 @@ func TestWatchBootstrapProgress_SlowButAdvancingNotKilled(t *testing.T) {
 	var calls int
 	heightOf := func() uint64 { calls++; return uint64(calls) } // advances every poll
 	ready := func() bool { return calls >= 120 }                 // done only after 120 polls (≫ the 60ms window)
-	outcome, _ := watchBootstrapProgress(ready, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, _ := watchBootstrapProgress(ready, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapReady, outcome, "a slow-but-ADVANCING sync must complete, not be timed out")
 }
 
@@ -658,7 +658,7 @@ func TestWatchBootstrapProgress_GenuineStallFails(t *testing.T) {
 	heightOf := func() uint64 { return 5 } // pinned — no progress
 	ready := func() bool { return false }
 	start := time.Now()
-	outcome, last := watchBootstrapProgress(ready, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, last := watchBootstrapProgress(ready, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapStalled, outcome, "a no-progress sync must stall out")
 	require.Equal(t, uint64(5), last, "the stall diagnostic must report the height it stalled at")
 	require.GreaterOrEqual(t, time.Since(start), 60*time.Millisecond, "must wait the full stall window before failing")
@@ -670,8 +670,52 @@ func TestWatchBootstrapProgress_Shutdown(t *testing.T) {
 	shutdown := make(chan struct{})
 	go func() { time.Sleep(20 * time.Millisecond); close(shutdown) }()
 	outcome, _ := watchBootstrapProgress(
-		func() bool { return false }, func() uint64 { return 0 },
+		func() bool { return false }, nil, func() uint64 { return 0 },
 		time.Millisecond, time.Hour, shutdown,
 	)
 	require.Equal(t, bootstrapShutdown, outcome)
+}
+
+// TestWatchBootstrapProgress_FailSafeSurfacesPromptly is the F5 proof: when the sync loop
+// RETURNS a fail-safe error, the failed() predicate flips and the watchdog returns
+// bootstrapFailed on the NEXT tick — NOT after the (here, 1-hour) no-progress window. This is
+// what removes the dead zone where the chain was neither syncing nor stopped: monitorBootstrap
+// gets the signal to stop the chain the instant Run returns.
+func TestWatchBootstrapProgress_FailSafeSurfacesPromptly(t *testing.T) {
+	failed := func() bool { return true } // the loop has already returned a fail-safe error
+	start := time.Now()
+	outcome, _ := watchBootstrapProgress(
+		func() bool { return false }, // not ready
+		failed,
+		func() uint64 { return 7 }, // height pinned — would otherwise wait the full stall window
+		time.Millisecond, time.Hour, nil,
+	)
+	require.Equal(t, bootstrapFailed, outcome, "a fail-safe RETURN must surface as bootstrapFailed, not stall")
+	require.Less(t, time.Since(start), 500*time.Millisecond, "must surface PROMPTLY, not after the no-progress watchdog")
+}
+
+// TestWatchBootstrapProgress_ReadyBeatsFailed: if the sync completed in the SAME tick the
+// predicates are evaluated, ready wins (success is never masked by a stale failure flag).
+func TestWatchBootstrapProgress_ReadyBeatsFailed(t *testing.T) {
+	outcome, _ := watchBootstrapProgress(
+		func() bool { return true }, // ready
+		func() bool { return true }, // and failed — ready must take precedence
+		func() uint64 { return 0 },
+		time.Millisecond, time.Hour, nil,
+	)
+	require.Equal(t, bootstrapReady, outcome, "ready must take precedence over a failed flag")
+}
+
+// TestBootstrapFailure_AccessorSurfacesReason proves the F5 plumbing the driver↔monitor share:
+// runBootstrapThenPoll stores the fail-safe reason, and the BootstrapFailed/BootstrapFailure
+// accessors (which monitorBootstrap polls) surface it race-free. Before a failure both report
+// "no failure"; after, they report the exact error (so the health check carries the real cause).
+func TestBootstrapFailure_AccessorSurfacesReason(t *testing.T) {
+	bh := &blockHandler{}
+	require.False(t, bh.BootstrapFailed(), "a fresh handler has not failed")
+	require.NoError(t, bh.BootstrapFailure(), "no reason before a failure")
+
+	bh.bootstrapFailed.Store(&bsFailure{err: chainbootstrap.ErrNoBeaconQuorum})
+	require.True(t, bh.BootstrapFailed(), "after a fail-safe return BootstrapFailed must be true")
+	require.ErrorIs(t, bh.BootstrapFailure(), chainbootstrap.ErrNoBeaconQuorum, "the precise fail-safe reason must surface for the health check")
 }
