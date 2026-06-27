@@ -1225,22 +1225,31 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			linCancel()
 		}
 
-		// Transition VM to normal operation after initialization
-		// For genesis-based networks with pre-configured validators, this is required
-		// to make the VM APIs available immediately
+		// Place the VM in BOOTSTRAPPING state (NOT normal operation) after init. The
+		// node-layer initial sync (runBootstrapThenPoll → runInitialSync) drives it to the
+		// network frontier; ONLY when that completes does the VM transition to Ready (see
+		// blockHandler.vmReady, wired below). Going straight to Ready here was the
+		// restart-freeze defect: SetState(Ready) fires the EVM's onNormalOperationsStarted
+		// (block building, mempool gossip, validator dispatch) at the LOCAL last-accepted
+		// height — so a restarted STALE validator served / built at its stale height while
+		// the real sync ran detached and non-gating. Bootstrapping fires onBootstrapStarted
+		// (snapshots only, no building) — the correct state while the node fetch+executes the
+		// gap. The two "go live" transitions (VM serves + engine cert-gates) now happen
+		// TOGETHER at the named frontier, never at a stale height.
 		if stateVM, ok := vmTyped.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			m.Log.Info("transitioning VM to normal operation",
+			m.Log.Info("transitioning VM to bootstrapping (initial sync gates normal operation)",
 				log.Stringer("chainID", chainParams.ID))
 			stateCtx, stateCancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer stateCancel()
-			if err := stateVM.SetState(stateCtx, uint32(vm.Ready)); err != nil {
-				m.Log.Error("failed to transition VM to normal operation",
+			if err := stateVM.SetState(stateCtx, uint32(vm.Bootstrapping)); err != nil {
+				stateCancel()
+				m.Log.Error("failed to transition VM to bootstrapping",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
-				return nil, fmt.Errorf("failed to transition VM to normal operation: %w", err)
+				return nil, fmt.Errorf("failed to transition VM to bootstrapping: %w", err)
 			}
+			stateCancel()
 		}
 
 		// Create integrated consensus engine - the ONE right way to set up chain consensus
@@ -1465,6 +1474,22 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
 		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, expectsStakedBeacons)
+		// Wire the gated normal-operation transition. The bootstrap driver calls this ONCE
+		// initial sync has reached the named frontier (runInitialSync) — never before, so the
+		// VM cannot serve / build at a stale height. nil when the VM exposes no SetState
+		// (degenerate / non-EVM paths): runInitialSync then just marks ready (nothing to
+		// transition). The closure captures vmTyped (the real VM, which owns SetState), not the
+		// block-builder wrapper the handler holds as b.vm.
+		if stateVM, ok := vmTyped.(interface {
+			SetState(context.Context, uint32) error
+		}); ok {
+			chainID := chainParams.ID
+			bh.vmReady = func(ctx context.Context) error {
+				m.Log.Info("initial sync reached the frontier — transitioning VM to normal operation",
+					log.Stringer("chainID", chainID))
+				return stateVM.SetState(ctx, uint32(vm.Ready))
+			}
+		}
 		// Late-bind the handler as the engine's catch-up wire: it owns requestContext
 		// (send GetAncestors) and handleContext -> Put -> engine (deliver the fetched
 		// ancestors), so a follower that falls behind now self-heals instead of
@@ -2506,6 +2531,16 @@ type blockHandler struct {
 	bsAncestorCh    map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
 	bsRotor         gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
 
+	// vmReady transitions the VM to NORMAL OPERATION (vm.Ready → the EVM's
+	// onNormalOperationsStarted: block building, mempool gossip, validator dispatch).
+	// runInitialSync calls it EXACTLY ONCE, and ONLY after initial sync has fetch+executed
+	// up to the named network frontier — never at the local (possibly stale) height. That
+	// ordering is the whole fix: a restarted stale validator stays in Bootstrapping (serving
+	// nothing as head) until it has converged, so it can never go live at a stale height.
+	// nil for handlers over a VM with no SetState (degenerate / test) → runInitialSync just
+	// marks ready. Set in buildChain right after construction.
+	vmReady func(context.Context) error
+
 	// beacons is the BEACON / staked-validator set the accepted-frontier quorum is
 	// anchored to (m.Validators for native chains, CustomBeacons for the P-chain). The
 	// C1 forged-chain gate: ONLY a node in this set, weighted by stake, can contribute to
@@ -2548,6 +2583,14 @@ type blockHandler struct {
 	bootstrapMinResponses int
 	bootstrapAgreement    Ratio
 	bootstrapCheckpoint   *Checkpoint
+
+	// bootstrapConnectDeadline / bootstrapRetryInterval tune the initial-sync loop
+	// (chainbootstrap.Config): how long runInitialSync WAITS for beacon connectivity before
+	// failing safe (ConnectDeadline — the bounded retry that self-heals when beacons return),
+	// and the re-sample pause between rounds (RetryInterval). Zero ⇒ library defaults (3m / 1s).
+	// Operator-overridable; the bootstrap tests set them small to bound the fail-safe path.
+	bootstrapConnectDeadline time.Duration
+	bootstrapRetryInterval   time.Duration
 }
 
 // bsFrontierReply is one beacon's accepted-frontier answer, tagged with the responder so

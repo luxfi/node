@@ -1025,3 +1025,180 @@ func TestBootstrapFailure_AccessorSurfacesReason(t *testing.T) {
 	require.True(t, bh.BootstrapFailed(), "after a fail-safe return BootstrapFailed must be true")
 	require.ErrorIs(t, bh.BootstrapFailure(), chainbootstrap.ErrNoBeaconQuorum, "the precise fail-safe reason must surface for the health check")
 }
+
+// ----- VM normal-operation GATING (the restart-freeze fix) -------------------
+//
+// These prove the ORDERING fix in runInitialSync: the VM transitions to NORMAL OPERATION
+// (vm.Ready → the EVM's onNormalOperationsStarted: block building / mempool / validator
+// dispatch) ONLY AFTER initial sync has fetch+executed up to the network frontier — never at
+// the LOCAL (possibly stale) height. Before the fix buildChain put the VM into normal
+// operation UNCONDITIONALLY right after Initialize, so a restarted STALE validator served /
+// built at its stale height and never converged (the luxd-2 mainnet freeze: stuck at 1082780
+// while producers finalized 1082796). vmHeightAtReady records the height the VM was at the
+// instant it was told to go live; the gate makes that the frontier, not the stale tip.
+
+// recordVMReady wires bh.vmReady to capture (a) how many times the VM was transitioned to
+// normal operation and (b) the VM's accepted height at the FIRST such transition — the two
+// facts the gating invariant turns on.
+func recordVMReady(bh *blockHandler, vm *bsTestVM) (calls *int, heightAtReady *uint64) {
+	calls = new(int)
+	heightAtReady = new(uint64)
+	bh.vmReady = func(context.Context) error {
+		if *calls == 0 {
+			*heightAtReady = vm.all[vm.lastAcc].height
+		}
+		*calls++
+		return nil
+	}
+	return calls, heightAtReady
+}
+
+// TestRED_StaleValidatorGoesReadyOnlyAfterReachingFrontier reproduces the EXACT production
+// scenario: a node with stale local state (height N) restarts against a live network whose
+// finalized frontier is N+k, validator set loaded. It MUST fetch+execute to N+k BEFORE the VM
+// is transitioned to normal operation — never go live at the stale N.
+//
+// FAILS before the fix (the VM was transitioned to normal operation at N, in buildChain,
+// before this sync ran) and PASSES after (the transition is gated on reaching N+k).
+func TestRED_StaleValidatorGoesReadyOnlyAfterReachingFrontier(t *testing.T) {
+	const N, K = 30, 16 // stale at 30; live frontier at 46 — the luxd-2 16-block gap shape
+	chain, byID := buildBSChain(N+K, -1)
+	vm := newBSVMAt(chain, N) // node ALREADY at height N (restarted spare), gap N+1..N+K ahead
+
+	// 5-validator equal-stake beacon set (the mainnet shape), all connected and serving — the
+	// "validator set IS loaded, 9 peers incl. producers" live condition.
+	bIDs := make([]ids.NodeID, 5)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 2 * time.Second
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: bIDs, byID: byID, tip: chain[N+K], serveAncestors: true}
+	bh.msgCreator = bsMsgBuilder{}
+
+	calls, heightAtReady := recordVMReady(bh, vm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	live := bh.runInitialSync(ctx)
+
+	require.True(t, live, "node must reach the frontier and go live")
+	require.True(t, bh.bootstrapDone.Load(), "chain must be marked bootstrapped after reaching the frontier")
+	require.False(t, bh.BootstrapFailed(), "a converged sync must not record a fail-safe reason")
+
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N+K].id, last, "VM must fetch+execute up to the network frontier (height %d)", N+K)
+
+	require.Equal(t, 1, *calls, "VM must be transitioned to normal operation exactly once")
+	require.Equal(t, uint64(N+K), *heightAtReady,
+		"THE FIX: VM must go to normal operation ONLY at the frontier (height %d), never at the stale local height %d", N+K, N)
+}
+
+// TestNodeBootstrap_FreshGenesisNoBeaconsReadyImmediately is the NO-REGRESSION guard for a
+// fresh network / single node: NO beacon set (FrontierNoBeacons) means there is nothing ahead
+// to sync to, so the VM must go to normal operation PROMPTLY at genesis. The gate must not pin
+// a legitimate fresh-genesis / dev node unbootstrapped.
+func TestNodeBootstrap_FreshGenesisNoBeaconsReadyImmediately(t *testing.T) {
+	chain, byID := buildBSChain(0, -1) // genesis only
+	vm := newBSVM(chain)
+	bh, chainID, _ := newBSHandlerAndEngine(t, vm, 0) // 0 beacons, expectsStakedBeacons=false
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 2 * time.Second
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: nil, byID: byID, tip: chain[0]}
+	bh.msgCreator = bsMsgBuilder{}
+
+	calls, heightAtReady := recordVMReady(bh, vm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	start := time.Now()
+	live := bh.runInitialSync(ctx)
+
+	require.True(t, live, "a no-beacon (fresh genesis / single node) chain must go live")
+	require.True(t, bh.bootstrapDone.Load(), "fresh-genesis chain must be marked bootstrapped")
+	require.Less(t, time.Since(start), 2*time.Second, "no-beacon fast path must not wait out the connect deadline")
+	require.Equal(t, 1, *calls, "VM must be transitioned to normal operation once")
+	require.Equal(t, uint64(0), *heightAtReady, "fresh-genesis node goes live at genesis (height 0)")
+}
+
+// TestRED_EclipsedValidatorNeverGoesReadyAtStaleHeight is the FAIL-SAFE proof: a stale node
+// whose beacons are UNREACHABLE (eclipse / isolation) must NOT go to normal operation at its
+// stale height (that was the freeze defect). Within the bounded connect deadline it fails safe
+// — VM stays in Bootstrapping (vmReady never called), bootstrapFailed records the reason — and
+// it does NOT hang (the deadline bounds it). monitorBootstrap then stops the chain; the
+// orchestrator restarts and the node re-syncs.
+func TestRED_EclipsedValidatorNeverGoesReadyAtStaleHeight(t *testing.T) {
+	const N, K = 30, 16
+	chain, byID := buildBSChain(N+K, -1)
+	vm := newBSVMAt(chain, N)
+
+	bIDs := make([]ids.NodeID, 5)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 300 * time.Millisecond // bounded fail-safe window for the test
+	// connected: nil — the beacon set is configured (weights known) but NONE are reachable.
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: nil, byID: byID, tip: chain[N+K], serveAncestors: true}
+	bh.msgCreator = bsMsgBuilder{}
+
+	calls, _ := recordVMReady(bh, vm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	start := time.Now()
+	live := bh.runInitialSync(ctx)
+	elapsed := time.Since(start)
+
+	require.False(t, live, "an eclipsed node must NOT go live")
+	require.Equal(t, 0, *calls, "THE FIX: VM must NEVER be transitioned to normal operation at the stale height when beacons are unreachable")
+	require.False(t, bh.bootstrapDone.Load(), "an eclipsed node must not be marked bootstrapped")
+	require.True(t, bh.BootstrapFailed(), "the fail-safe reason must be recorded for monitorBootstrap")
+	require.ErrorIs(t, bh.BootstrapFailure(), chainbootstrap.ErrBeaconsUnreachable, "eclipse must surface as ErrBeaconsUnreachable")
+
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "the VM must stay at its stale height (it served nothing, never advanced)")
+	require.Less(t, elapsed, 3*time.Second, "fail-safe must be BOUNDED — no unbounded hang")
+}
+
+// TestNodeBootstrap_ProducerAtTipReadyFast is the PRODUCER hard-constraint guard: a producer
+// at (or at most one block from) the frontier restarts. It must re-bootstrap QUICKLY and go
+// live — not hang waiting to sync blocks it already has. Here the node is at N and the beacon
+// quorum names N (it already holds the tip): the loop is caught-up on the first round and the
+// VM goes live at N promptly.
+func TestNodeBootstrap_ProducerAtTipReadyFast(t *testing.T) {
+	const N = 40
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, N) // already at the tip
+
+	bIDs := make([]ids.NodeID, 5)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 2 * time.Second
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: bIDs, byID: byID, tip: chain[N], serveAncestors: true}
+	bh.msgCreator = bsMsgBuilder{}
+
+	calls, heightAtReady := recordVMReady(bh, vm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	start := time.Now()
+	live := bh.runInitialSync(ctx)
+
+	require.True(t, live, "a producer at the tip must go live")
+	require.Less(t, time.Since(start), 2*time.Second, "an at-the-tip restart must be FAST — not hang")
+	require.Equal(t, 1, *calls, "VM transitioned to normal operation once")
+	require.Equal(t, uint64(N), *heightAtReady, "producer goes live at the frontier (== its tip, height %d)", N)
+	require.True(t, bh.bootstrapDone.Load(), "producer chain marked bootstrapped")
+}
