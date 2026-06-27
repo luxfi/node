@@ -46,7 +46,7 @@ func countContaining(deps []string, needle string) int {
 //
 // The four core VMs are deliberately NOT asserted here: P(platformvm) and
 // X(xvm) are foundational primary-network VMs, and Q(quantumvm)/Z(zkvm) stay
-// in-process for now (Q backs Quasar hybrid finality + is critical by default).
+// in-process for now (Q is the post-quantum chain and is critical by default).
 // Turning Q/Z into plugins is a separate design-first phase.
 func TestOptionalVMsNotLinkedInProcess(t *testing.T) {
 	optionalVMs := []string{
