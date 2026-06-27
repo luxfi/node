@@ -84,10 +84,22 @@ func (b *blockHandler) beaconWeights() (weights map[ids.NodeID]uint64, total uin
 }
 
 // connectedBeacons returns the beacons from `weights` currently CONNECTED and tracking
-// this chain. The frontier quorum is tallied over these, but the FULL beacon stake (the
-// `total` from beaconWeights) stays the quorum DENOMINATOR — so a node must hear a ⅔-stake
-// supermajority. An eclipse that reaches < ⅔ of beacon stake cannot name a frontier.
-// Returns nil when none are connected (or there is no transport).
+// this chain's validation NETWORK. The frontier quorum is tallied over these, but the FULL
+// beacon stake (the `total` from beaconWeights) stays the quorum DENOMINATOR — so a node
+// must hear a ⅔-stake supermajority. An eclipse that reaches < ⅔ of beacon stake cannot
+// name a frontier. Returns nil when none are connected (or there is no transport).
+//
+// The tracking filter matches against b.networkID (the NET the beacon set is anchored to —
+// constants.PrimaryNetworkID for native chains, the L1 net ID for sovereign chains), NOT
+// b.chainID. This is the mainnet-canary fix: a peer advertises the NETS it tracks in its
+// handshake (network/peer/peer.go adds constants.PrimaryNetworkID plus every tracked L1 net
+// ID to peer.Info.TrackedChains) — it NEVER advertises an individual native chain ID like
+// the C-Chain's. Filtering on b.chainID therefore matched ZERO real peers, so connectedStake
+// stayed 0, FrontierTip reported FrontierConnecting forever, and a healthy stale node failed
+// safe at the connect deadline instead of converging. Matching on b.networkID counts exactly
+// the beacons participating in this chain's validation network. C1 is untouched: a peer is
+// still admitted ONLY if it is in `weights` (the staked validator set) — a non-staked peer
+// that tracks the network is still ignored.
 func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.NodeID {
 	if b.net == nil || len(weights) == 0 {
 		return nil
@@ -98,7 +110,7 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 	}
 	var connected []ids.NodeID
 	for _, p := range b.net.PeerInfo(beaconIDs) {
-		if _, isBeacon := weights[p.ID]; isBeacon && p.TrackedChains.Contains(b.chainID) {
+		if _, isBeacon := weights[p.ID]; isBeacon && p.TrackedChains.Contains(b.networkID) {
 			connected = append(connected, p.ID)
 		}
 	}
@@ -148,7 +160,19 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.FrontierStatus) {
 	weights, total, haveBeacons := b.beaconWeights()
 	if !haveBeacons {
-		// No beacon set configured (single-node / dev / --skip-bootstrap). Nothing to sync to.
+		if b.expectsStakedBeacons {
+			// This chain syncs against the STAKED primary-network validator set, which the
+			// already-bootstrapped P-chain populates — an empty set here means it is not yet
+			// loaded (sequencing) or misconfigured, NOT a single-node network. WAIT (bounded by
+			// the loop's ConnectDeadline → fail safe). Critically we do NOT conclude caught-up
+			// at the local stale height, and we do NOT fall back to unweighted / endpoint trust:
+			// a connected peer can name the frontier ONLY through the ⅔-by-stake quorum below,
+			// which is empty here. The sequencing case resolves (initValidatorSets populates the
+			// set) and the node converges; a genuine empty/misconfigured set fails safe.
+			return ids.Empty, chainbootstrap.FrontierConnecting
+		}
+		// No beacon set expected (single-node / dev / --skip-bootstrap / P-chain endpoint-only
+		// bootstrappers). Nothing to sync to.
 		return ids.Empty, chainbootstrap.FrontierNoBeacons
 	}
 	if b.net == nil || b.msgCreator == nil {
