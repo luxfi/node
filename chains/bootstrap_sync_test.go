@@ -168,6 +168,7 @@ type bsBeaconNet struct {
 	byID           map[ids.ID]*bsTestBlock // honest chain by id (for ancestry serving)
 	tip            *bsTestBlock            // the honest tip the beacons report
 	serveAncestors bool                    // beacons serve ancestry (false models name-only beacons)
+	ancestorsEmpty bool                    // beacons REPLY to GetAncestors but serve an EMPTY batch (cross-version / withholding)
 
 	// tipFor optionally overrides the tip a specific beacon reports (models DISAGREEMENT —
 	// beacons connected but split across tips, so no ⅔ quorum forms → FrontierNoQuorum).
@@ -288,6 +289,11 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 	case "ancestors":
 		if n.serveAncestors {
 			n.bh.deliverBootstrapAncestors(m.requestID, n.frame(m.blockID))
+		} else if n.ancestorsEmpty {
+			// The peer REPLIES but serves NOTHING — the cross-version / withholding case the canary
+			// risked. The descent gets an empty batch and must fail safe (ErrStalled), never silently
+			// conclude caught-up at the stale height.
+			n.bh.deliverBootstrapAncestors(m.requestID, nil)
 		}
 	}
 	return nil
@@ -1508,4 +1514,182 @@ func TestWatchBootstrapProgress_ConnectingNotStalled(t *testing.T) {
 	)
 	require.Equal(t, bootstrapShutdown, outcome,
 		"a CONNECTING node must NEVER be stalled out (it is waiting for its quorum) — only shutdown ends it")
+}
+
+// ============================================================================
+// PRODUCTION-MODELING REPRO (mainnet luxd-2 freeze, v1.30.84 → fix/bootstrap-vm-ready-ordering)
+//
+// The v1.30.84 fix passed 50 unit tests + a BFT proof but FAILED the real mainnet canary: a
+// STALE spare (luxd-2) at C-Chain accepted height N went Ready at N instead of fetching the 16
+// blocks to the producers' frontier Top. The mocks injected the FULL, STABLE validator set from
+// t=0, masking the real trigger: a native chain's bootstrap goroutine starts right after its
+// VM.Initialize — BEFORE the P-chain has finished replaying its blocks — so the staked beacon set
+// (m.Validators) is a PARTIAL set at boot. The MinResponseWeight stake-majority floor (total/2+1)
+// is fail-secure ONLY when `total` is the TRUE full-set stake; under a partial denominator a
+// degenerate at-or-below responder subset (the genuinely-ahead producers not yet loaded) clears
+// the floor and the frontier decision concludes "caught up" at the stale local height.
+//
+// These tests model the REAL conditions (not the ideal full set): not-held producer tips, an
+// empty ancestry fetch, a peer-connect delay, and — the headline — a PARTIAL staked set at boot.
+// ============================================================================
+
+// TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale is THE production reproduction. It models
+// the staked validator set being PARTIAL while the P-chain is still syncing (the producers not yet
+// loaded), and proves:
+//   - WITHOUT the P-ready gate (the f882142c81 behavior): the partial at-or-below responder subset
+//     clears the floor and FrontierTip NAMES the node's OWN stale tip → go-live-at-stale (the freeze).
+//   - WITH the gate: a native chain WAITS (FrontierConnecting) for the staked set to load, never
+//     concluding caught-up on a non-representative partial set.
+//   - Once the P-chain finishes (full set, producers now loaded at Top), the node names Top and
+//     converges — never stopping at its stale N.
+func TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale(t *testing.T) {
+	const M = 40   // our STALE local height (luxd-2's 1082780, scaled)
+	const Top = 56 // producers' real accepted frontier (gap 16 — the canary's 16 blocks)
+	chain, byID := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M) // behind by 16
+
+	// The PARTIAL staked set visible while the P-chain is still replaying: only the two stale spares
+	// (at M) are loaded; the three genuinely-ahead producers (at Top) are NOT in the set yet. Both
+	// spares report the node's OWN tip chain[M] (they are at M too) — a stake-MAJORITY of the PARTIAL
+	// set, so the floor is met and the exact-fast-path would name chain[M], concluding caught-up STALE.
+	spareA, spareB := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{spareA: 100, spareB: 100})
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{spareA, spareB},
+		byID: byID, tip: chain[M], serveAncestors: true, // both partial-set beacons report our OWN tip
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// (1) NO GATE == f882142c81: the partial set false-names the stale own tip — the production freeze.
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status,
+		"REPRO: without the P-ready gate a PARTIAL staked set false-names the stale own tip (go-live-at-stale)")
+	require.Equal(t, chain[M].id, tip, "REPRO: the named 'frontier' is the node's OWN stale tip — the luxd-2 freeze")
+
+	// (2) WITH THE GATE: staked set not yet fully loaded (P-chain still syncing) → WAIT, never caught-up.
+	var pReady atomic.Bool // false until the P-chain finishes its own initial sync
+	bh.primaryNetworkReady = pReady.Load
+	bh.bsActive.Store(true)
+	tip, status = bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierConnecting, status,
+		"FIX: a behind node must WAIT for the FULL staked set, not conclude caught-up on a partial one")
+	require.Equal(t, ids.Empty, tip)
+
+	// (3) P-chain finished → the FULL set is now visible (the three ahead producers loaded, only THEY
+	// connected). They report Top (NOT held by the node at M). The node must NAME Top and sync to it,
+	// never stop at its stale M.
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	full := validators.NewManager()
+	for id, w := range map[ids.NodeID]uint64{spareA: 100, spareB: 100, p1: 100, p2: 100, p3: 100} {
+		require.NoError(t, full.AddStaker(bh.networkID, id, nil, ids.GenerateTestID(), w))
+	}
+	bh.beacons = full
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3}, // the ⅔-stake producers, at Top
+		byID: byID, tip: chain[Top], serveAncestors: true,
+	}
+	pReady.Store(true)
+	require.NoError(t, runBS(t, bh), "with the full staked set the behind node must converge to the producers' frontier")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[Top].id, last,
+		"behind node must sync to the producers' real frontier Top=%d, NEVER stop at its stale M=%d", Top, M)
+}
+
+// TestNodeBootstrap_BehindNodeNotHeldTips_SyncsToFrontier (variant A). A behind node at M, the FULL
+// staked set loaded (P-ready), the ⅔-stake producers reporting Top which the node does NOT hold,
+// ancestry served. CaughtUp's held-check fails (the producer tip is not held), so the node names
+// the real higher frontier and fetch+executes to it — Ready at Top, never at its stale M.
+func TestNodeBootstrap_BehindNodeNotHeldTips_SyncsToFrontier(t *testing.T) {
+	const M = 40
+	const Top = 56 // gap 16, all NOT held by the node at M
+	chain, byID := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100})
+	var pReady atomic.Bool
+	pReady.Store(true) // P-chain synced: full staked set
+	bh.primaryNetworkReady = pReady.Load
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[Top], serveAncestors: true,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	require.False(t, bh.Has(ctx, chain[Top].id), "precondition: the producers' tip Top is NOT held by the behind node")
+	require.NoError(t, runBS(t, bh), "behind node must descend the not-held frontier and converge")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[Top].id, last, "behind node must reach Top=%d, never stop at stale M=%d", Top, M)
+	require.True(t, bh.Has(ctx, chain[Top].id), "node must hold the producer tip after sync")
+}
+
+// TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping (variant B). A behind node names the
+// real higher frontier Top (the producers report it), but the ancestry fetch returns EMPTY (the
+// cross-version / unreachable case the canary risked). The node MUST stay un-synced (fail safe),
+// NEVER concluding caught-up at its stale M: bs.Run returns a real error and the local height is
+// unchanged — runInitialSync would leave the VM in Bootstrapping, not Ready.
+func TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping(t *testing.T) {
+	const M = 40
+	const Top = 56
+	chain, byID := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100})
+	var pReady atomic.Bool
+	pReady.Store(true)
+	bh.primaryNetworkReady = pReady.Load
+	// ancestorsEmpty — the producers REPLY to GetAncestors but serve an EMPTY batch (the
+	// cross-version / withholding case). The frontier is named (producers report Top) but the gap
+	// can never be fetched, so the descent must fail safe (ErrStalled), never conclude caught-up.
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[Top], serveAncestors: false, ancestorsEmpty: true,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	err := runBS(t, bh)
+	require.Error(t, err, "an empty ancestry fetch must FAIL SAFE (real error), never a nil 'caught up'")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[M].id, last,
+		"behind node must NOT advance and must NOT go Ready when the gap cannot be fetched — stays at M=%d (Bootstrapping)", M)
+	require.False(t, bh.Has(ctx, chain[Top].id), "node must NOT hold the unfetched frontier")
+}
+
+// TestRED_BehindNode_PeerConnectDelay_NeverFalseCompletesAtStale (variant C). A behind node boots
+// with the staked set loaded (P-ready) but its producer beacons still handshaking: the first polls
+// see ZERO connected beacons. The node must WAIT (never conclude caught-up at its stale M while it
+// cannot even ask the network), then converge to Top once the producers connect.
+func TestRED_BehindNode_PeerConnectDelay_NeverFalseCompletesAtStale(t *testing.T) {
+	const M = 40
+	const Top = 56
+	chain, byID := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100})
+	var pReady atomic.Bool
+	pReady.Store(true)
+	bh.primaryNetworkReady = pReady.Load
+	net := &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[Top], serveAncestors: true,
+		connectAfterCalls: 4, // beacons finish handshaking only after the 4th PeerInfo poll
+	}
+	bh.net = net
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	require.NoError(t, runBS(t, bh), "behind node must converge once the producer beacons connect")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[Top].id, last,
+		"behind node must converge to Top=%d after the connect delay, NEVER false-complete at stale M=%d", Top, M)
+	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls,
+		"the loop must have WAITED through the connecting passes before naming the frontier")
 }

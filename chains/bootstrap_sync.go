@@ -208,6 +208,25 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
 
+	// THE CANARY ROOT-CAUSE GATE. A native chain's beacon set is the STAKED primary-network
+	// validator set the P-chain populates as it replays its blocks (genesis stakers + every later
+	// AddValidatorTx). This bootstrap goroutine starts right after the chain's VM.Initialize — NOT
+	// after the P-chain has finished syncing — so without this gate FrontierTip can run while that
+	// set is PARTIAL. A partial set is a NON-REPRESENTATIVE stake denominator: the MinResponseWeight
+	// stake-majority floor (total/2+1) is fail-secure only when `total` is the TRUE full-set stake,
+	// and under a partial denominator a degenerate set of at-or-below responders (the genuinely-ahead
+	// producers not yet loaded / not yet connected) clears the floor and the decision below
+	// false-completes the node at its stale local height — the mainnet luxd-2 freeze. WAIT (→ the
+	// loop's ConnectDeadline → fail safe) until the staked set is fully loaded, so every branch below
+	// judges the TRUE full validator set. Deadlock-free: the P-chain converges independently from its
+	// own configured CustomBeacons; a native chain only waits the bounded extra moment for it.
+	if b.expectsStakedBeacons && b.primaryNetworkReady != nil && !b.primaryNetworkReady() {
+		b.logger.Debug("bootstrap frontier: staked validator set not yet fully loaded (P-chain still syncing) — waiting, NOT concluding caught-up",
+			log.Stringer("chainID", b.chainID),
+			log.Int("partialBeaconCount", len(weights)))
+		return ids.Empty, chainbootstrap.FrontierConnecting
+	}
+
 	// THE MASS-RECOVERY FIX. The acceptance decision is the BootstrapPolicy (a SEPARATE object
 	// with a SEPARATE threat model — bootstrap_trust.go), NOT the ⅔-of-CURRENT-total-stake
 	// consensus floor. The prior code required a ⅔-by-stake quorum of the WHOLE validator set to
@@ -221,16 +240,44 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	policy := b.bootstrapPolicy(weights)
 	replies := b.collectFrontierReplies(ctx, connected, weights)
 
+	// INSTRUMENTATION (canary ground truth). Per attempt, record the FULL beacon-set size + total
+	// stake (the floor DENOMINATOR — a partial value here is the smoking gun), the connected count,
+	// and every reply's tip + LOCALLY-resolved height + held-or-not. Debug level so production is
+	// silent; set the chain's log level to Debug on the canary to capture the real decision data.
+	b.logFrontierInputs(weights, connected, replies)
+
+	lastID, lastH, lastErr := b.LastAccepted(ctx)
+	haveLast := lastErr == nil && lastID != ids.Empty
+
 	frontier, err := policy.AcceptsFrontier(ctx, replies)
 	switch {
 	case err == nil:
 		// A configured-beacon quorum named a safe sync anchor (NOT a finality cert — the loop
 		// re-executes the descent and re-enters consensus, where ConsensusQuorum alone governs).
+		// With the P-ready gate above, this judgement is over the TRUE FULL staked set, so a tip the
+		// quorum actively names is a real frontier (when it equals our own held tip, a ⅔-of-responders
+		// supermajority is AT our height, so we ARE at the network frontier — the loop's Has()-shortcut
+		// then correctly concludes caught-up). A Byzantine minority reporting an unheld forged sibling
+		// cannot reach the ⅔ agreement, so it is never named (C1) and — crucially — never BLOCKS the
+		// honest named tip either (we do NOT require holding every reported tip to accept the named
+		// one; that stricter rule belongs to the dual CaughtUp path below, which decides the
+		// no-quorum/own-height case).
+		b.logger.Debug("bootstrap frontier: NAMED",
+			log.Stringer("chainID", b.chainID),
+			log.Stringer("tip", frontier.ID),
+			log.Uint64("namedHeight", frontier.Height),
+			log.Int("responders", frontier.Responders),
+			log.Bool("held", b.Has(ctx, frontier.ID)))
 		return frontier.ID, chainbootstrap.FrontierNamed
 	case errors.Is(err, ErrInsufficientBootstrapResponses):
 		// Fewer than MinResponses configured beacons have RESPONDED — not a partition-capture-safe
 		// quorum yet. More may connect: WAIT (bounded by the loop's ConnectDeadline, then fail
 		// safe). Never false-complete at the stale height; never trust the captured few.
+		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
+			log.Stringer("chainID", b.chainID),
+			log.Int("beaconSetSize", len(weights)),
+			log.Int("connected", len(connected)),
+			log.Int("replies", len(replies)))
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	default:
 		// ErrNoBootstrapQuorum: enough beacons responded (the FLOOR is met) but no ⅔-of-responders
@@ -256,12 +303,49 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// CaughtUp is false → it fails safe. Distinct from the transient finality-skew retry the loop
 		// runs on a bare FrontierNoQuorum ("connected but momentarily split" — keep polling): this is
 		// "split AND I am at the top of every responder" — provably DONE, not waiting.
-		if lastID, lastH, lerr := b.LastAccepted(ctx); lerr == nil && lastID != ids.Empty &&
-			policy.CaughtUp(replies, lastH, b.heldHeight) {
+		if haveLast && policy.CaughtUp(replies, lastH, b.heldHeight) {
+			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
+				log.Stringer("chainID", b.chainID),
+				log.Stringer("tip", lastID),
+				log.Uint64("height", lastH))
 			return lastID, chainbootstrap.FrontierNamed
 		}
+		b.logger.Debug("bootstrap frontier: NO QUORUM (responders split, not caught up) — retry/fail safe",
+			log.Stringer("chainID", b.chainID),
+			log.Uint64("lastAccepted", lastH),
+			log.Int("replies", len(replies)))
 		return ids.Empty, chainbootstrap.FrontierNoQuorum
 	}
+}
+
+// logFrontierInputs records, at Debug level, the raw inputs to one FrontierTip decision — the
+// canary ground-truth instrumentation. The FULL beacon-set size + total stake is the floor's
+// DENOMINATOR: if it is a PARTIAL value (the staked set still loading), the stake-majority floor
+// is non-representative and a degenerate at-or-below responder subset can false-complete the node
+// — so logging the denominator alongside every reply's tip + locally-resolved height + held-or-not
+// is exactly what distinguishes "caught up" from "tricked by a partial set". Silent in production
+// (Debug); enable Debug on the chain to capture it on the canary.
+func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connected []ids.NodeID, replies []BeaconReply) {
+	var total uint64
+	for _, w := range weights {
+		total += w
+	}
+	for _, r := range replies {
+		h, held := b.heldHeight(r.Tip)
+		b.logger.Debug("bootstrap frontier reply",
+			log.Stringer("chainID", b.chainID),
+			log.Stringer("from", r.NodeID),
+			log.Stringer("reportedTip", r.Tip),
+			log.Uint64("beaconWeight", r.Weight),
+			log.Bool("held", held),
+			log.Uint64("resolvedHeight", h))
+	}
+	b.logger.Debug("bootstrap frontier inputs",
+		log.Stringer("chainID", b.chainID),
+		log.Int("beaconSetSize", len(weights)),
+		log.Uint64("beaconSetTotalStake", total),
+		log.Int("connectedBeacons", len(connected)),
+		log.Int("replies", len(replies)))
 }
 
 // bootstrapPolicy builds the BootstrapTrust DECISION object for this round from the configured
