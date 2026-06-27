@@ -349,6 +349,27 @@ func (b *blockHandler) AcceptBootstrapBlock(ctx context.Context, raw []byte) err
 // synced).
 func (b *blockHandler) BootstrapComplete() bool { return b.bootstrapDone.Load() }
 
+// bsFailure records the fail-safe reason initial sync returned (ErrBeaconsUnreachable /
+// ErrNoBeaconQuorum / ErrGapTooLarge / ...). Stored behind an atomic pointer so the
+// monitorBootstrap goroutine reads it race-free — the precise diagnostic for the health check.
+type bsFailure struct{ err error }
+
+// BootstrapFailed reports whether initial sync ended in a fail-SAFE error (eclipse / partition
+// / deep gap) rather than reaching the frontier (F5). monitorBootstrap polls this so a fail-safe
+// return STOPS the chain promptly — it does not sit in the dead window between Run returning and
+// the 5-min no-progress watchdog. Distinct from BootstrapComplete: a chain is ready XOR failed
+// XOR still-syncing.
+func (b *blockHandler) BootstrapFailed() bool { return b.bootstrapFailed.Load() != nil }
+
+// BootstrapFailure returns the fail-safe reason once BootstrapFailed (else nil) — the precise
+// cause (eclipsed/partitioned/too-far-behind) the operator's health check surfaces.
+func (b *blockHandler) BootstrapFailure() error {
+	if f := b.bootstrapFailed.Load(); f != nil {
+		return f.err
+	}
+	return nil
+}
+
 // BootstrapHeight reports the node's current locally-accepted height — the PROGRESS
 // signal monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall
 // timer) from a genuine no-progress stall (fail). Best-effort: 0 if unknown.
@@ -445,12 +466,15 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 		if ctx.Err() != nil {
 			return // shutdown — not a bootstrap failure
 		}
-		// Initial sync did not complete (stalled / gap-too-large). Do NOT mark the chain
-		// ready — monitorBootstrap times out and surfaces the failure. The operator
-		// state-syncs (deep gap) or fixes peering, then restarts.
+		// Initial sync did not complete (eclipse / partition / gap-too-large). Do NOT mark the
+		// chain ready. Record the fail-safe reason so monitorBootstrap surfaces it PROMPTLY (F5)
+		// — stopping the chain the moment Run returns instead of leaving it in the dead window
+		// until the 5-min no-progress watchdog. The operator state-syncs (deep gap) or fixes
+		// peering, then restarts.
 		b.logger.Warn("chain initial sync did not complete — chain NOT marked bootstrapped",
 			log.Stringer("chainID", b.chainID),
 			log.Err(err))
+		b.bootstrapFailed.Store(&bsFailure{err: err})
 		return
 	}
 
