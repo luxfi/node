@@ -478,6 +478,18 @@ type manager struct {
 	// Value: The chain
 	chains map[ids.ID]*chainInfo
 
+	// pChainBootstrapped flips true the instant monitorBootstrap declares the P-CHAIN's initial
+	// sync COMPLETE (its handler's BootstrapComplete fired — the P-chain fetch+executed to the
+	// network frontier, so it has replayed every staker tx and m.Validators now holds the TRUE
+	// FULL primary-network set). A native non-platform chain reads it (blockHandler.primaryNetworkReady)
+	// to gate its OWN bootstrap frontier-trust: until it is true the staked beacon set is a PARTIAL
+	// (mid-replay) set, a non-representative stake denominator that would let a degenerate at-or-below
+	// responder subset false-complete the node at its stale height (the mainnet luxd-2 canary). It is
+	// the authoritative "primary-network validator set is fully loaded" signal — distinct from
+	// manager.IsBootstrapped, which returns true the instant the P-chain merely EXISTS in m.chains
+	// (right after createChain launched its bootstrap goroutine — far too early).
+	pChainBootstrapped gatomic.Bool
+
 	// chain++ related interface to allow validators retrieval
 	validatorState validators.State
 
@@ -1474,6 +1486,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
 		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, expectsStakedBeacons)
+		// Gate this native chain's bootstrap frontier-TRUST on the P-chain having finished its
+		// initial sync, so the staked beacon set (and thus the stake-majority floor denominator)
+		// is the TRUE full validator set, not a partial mid-replay set. Wired ONLY for native
+		// non-platform chains (expectsStakedBeacons) — the P-chain has no such dependency (it
+		// anchors to its own configured CustomBeacons) and must not gate on itself. The signal is
+		// m.pChainBootstrapped, published by monitorBootstrap when the P-chain completes initial sync.
+		if expectsStakedBeacons {
+			bh.primaryNetworkReady = m.pChainBootstrapped.Load
+		}
 		// Wire the gated normal-operation transition. The bootstrap driver calls this ONCE
 		// initial sync has reached the named frontier (runInitialSync) — never before, so the
 		// VM cannot serve / build at a stale height. nil when the VM exposes no SetState
@@ -1952,6 +1973,13 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	case bootstrapReady:
 		m.Log.Info("chain finished bootstrapping, notifying chain",
 			log.Stringer("chainID", chainID))
+		// The P-chain completing initial sync means the staked primary-network validator set is
+		// now FULLY loaded (every staker tx replayed). Publish that so native non-platform chains
+		// can safely begin trusting their beacon set (blockHandler.primaryNetworkReady → the canary
+		// partial-set gate). Set BEFORE sb.Bootstrapped so the signal is never lagging the readiness.
+		if chainID == constants.PlatformChainID {
+			m.pChainBootstrapped.Store(true)
+		}
 		sb.Bootstrapped(chainID)
 		return
 	case bootstrapShutdown:
@@ -2606,6 +2634,24 @@ type blockHandler struct {
 	// legitimately empty under endpoint-only --bootstrap-nodes) and for single-node mode,
 	// where an empty beacon set legitimately means "nothing to sync to".
 	expectsStakedBeacons bool
+
+	// primaryNetworkReady reports whether the STAKED primary-network validator set this native
+	// chain anchors its beacon quorum to is FULLY LOADED — i.e. the P-chain has finished its own
+	// initial sync (replaying genesis stakers + every AddValidatorTx). nil ⇒ no gate (the P-chain
+	// itself, single-node / skip-bootstrap, and unit tests that wire a static beacon set).
+	//
+	// THE CANARY ROOT-CAUSE GATE. A native non-platform chain's runBootstrapThenPoll starts right
+	// after the chain's VM.Initialize (dispatchChainCreator), NOT after the P-chain has finished
+	// BOOTSTRAPPING — so FrontierTip can run while m.Validators.GetMap(PrimaryNetworkID) is still a
+	// PARTIAL set. The MinResponseWeight stake-majority floor (total/2+1) is fail-secure ONLY when
+	// `total` is the TRUE full-set stake; under a partial denominator a degenerate at-or-below
+	// responder subset (the genuinely-ahead producers not yet loaded / not yet connected) clears the
+	// floor and the frontier decision false-completes the node at its stale local height — the
+	// mainnet luxd-2 freeze. Gating frontier-trust on a fully-loaded set makes the floor's
+	// denominator the true full validator set, so the existing fail-secure logic holds. Deadlock-free:
+	// the P-chain bootstraps INDEPENDENTLY from its own configured (full-from-config) CustomBeacons,
+	// so a native chain only waits a bounded extra moment for the P-chain to converge.
+	primaryNetworkReady func() bool
 
 	// wsCheckpointID + wsCheckpointHeight are an OPTIONAL operator-supplied weak-
 	// subjectivity anchor (a recent finalized block id at height) the α-agreed frontier
@@ -3273,9 +3319,20 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 	if len(peers) == 0 {
 		return
 	}
+	// Filter on the NETWORK id, not the chain id. A peer advertises in its handshake the NETS it
+	// tracks (network/peer/peer.go: constants.PrimaryNetworkID plus every tracked L1 net id) — it
+	// NEVER advertises an individual native chain id like the C-Chain's. Filtering on b.chainID
+	// therefore matched ZERO real peers, so the sample was always empty, no GetAcceptedFrontier was
+	// ever sent, and a behind-but-Ready validator NEVER discovered it was behind (it sat frozen at a
+	// stale height with no self-heal — the second half of the luxd-2 freeze). This is the IDENTICAL
+	// fix already applied to connectedBeacons (bootstrap_sync.go); the NormalOp poller had the same
+	// latent chainID/networkID confusion. Matching on b.networkID reaches exactly the peers
+	// participating in this chain's validation network. Catch-up safety is unchanged: the reply
+	// drives requestContext, which pulls the gap WITH CERTS (cert-verified accept), so asking any
+	// network peer is sound.
 	sample := set.NewSet[ids.NodeID](frontierPollSample)
 	for _, p := range peers {
-		if p.TrackedChains.Contains(b.chainID) {
+		if p.TrackedChains.Contains(b.networkID) {
 			sample.Add(p.ID)
 			if sample.Len() >= frontierPollSample {
 				break
