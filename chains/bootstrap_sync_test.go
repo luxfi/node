@@ -555,30 +555,37 @@ func TestNodeBootstrap_StaleNodeWaitsForBeaconConnect(t *testing.T) {
 	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls, "the loop must have WAITED through the connecting passes before naming the frontier")
 }
 
-// TestNodeBootstrap_BeaconsSplitNoQuorum: the beacons ARE connected (enough stake to ASK)
-// but DISAGREE — split across two tips so neither clears the ⅔ floor. FrontierTip reports
-// FrontierNoQuorum (a genuine eclipse/partition signal), NOT a named/caught-up tip — the
-// loop then fails safe (proven instantly at the consensus layer by
-// TestLoop_BeaconsConnectedNoQuorum_FailsSafe).
+// TestNodeBootstrap_BeaconsSplitNoQuorum: the beacons ARE connected (enough stake to ASK) but
+// are split 3/3 across two INCOMPATIBLE chains (separate geneses — a genuine partition, no
+// shared ancestor), so neither half holds ⅔ and there is NO ⅔-backed COMMON committed block.
+// FrontierTip reports FrontierNoQuorum and the loop fails safe (proven instantly at the
+// consensus layer by TestLoop_BeaconsConnectedNoQuorum_FailsSafe).
+//
+// This is the genuine-partition guard for the ancestor-tolerant tally: ancestor tolerance names
+// the highest block a ⅔-by-stake supermajority SHARES, so it must NOT manufacture a quorum here.
+// The beacons serve their ancestry (serveAncestors), so the tally actually fetches and walks
+// both halves — and STILL finds no block with ⅔ behind it, because the two halves share no
+// ancestor. A ±1-block bleeding-edge split (one shared chain) converges; a real fork does not.
 func TestNodeBootstrap_BeaconsSplitNoQuorum(t *testing.T) {
 	const N = 30
 	chain, byID := buildBSChain(N, -1)
-	other, _ := buildBSChain(N, -1) // the dissenting half names this chain's tip
+	other, _ := buildBSChain(N, -1) // a DISJOINT chain (fresh genesis) — no common ancestor
 	vm := newBSVMAt(chain, 10)
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 6)
 
-	// 6 connected (600 > 400 floor → enough to ASK), split 3/3 so neither tip clears 400.
+	// 6 connected (600 > 400 floor → enough to ASK), split 3/3 so neither chain holds ⅔ and the
+	// two halves share no ancestor: no ⅔-backed common block exists.
 	tipFor := map[ids.NodeID]ids.ID{}
 	for _, id := range beacons[3:] {
 		tipFor[id] = other[N].id
 	}
-	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], tipFor: tipFor}
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], tipFor: tipFor, serveAncestors: true}
 	bh.msgCreator = bsMsgBuilder{}
 
 	bh.bsActive.Store(true)
 	tip, status := bh.FrontierTip(context.Background())
 	bh.bsActive.Store(false)
-	require.Equal(t, chainbootstrap.FrontierNoQuorum, status, "split beacons (no ⅔ agreement) → FrontierNoQuorum, never caught-up")
+	require.Equal(t, chainbootstrap.FrontierNoQuorum, status, "disjoint split (no ⅔-backed common ancestor) → FrontierNoQuorum, never caught-up")
 	require.Equal(t, ids.Empty, tip)
 }
 
@@ -707,6 +714,145 @@ func TestRED_EmptyStakedSetFailsSafe(t *testing.T) {
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[5].id, last, "node must stay at its stale height — no endpoint-named frontier adopted")
 	require.False(t, bh.Has(ctx, chain[N].id), "no frontier tip may be adopted from a non-staked endpoint")
+}
+
+// TestRED_TipSplitConvergesToCommonHeight is THE MAINNET CANARY (luxd-2 on v1.30.78) the
+// ancestor-tolerant frontier quorum fixes. The 3 producers hold > ⅔ stake but are SPLIT at the
+// bleeding edge: 2 have accepted block N, the third's UN-FINALIZED pending block is N+1 (one
+// block ahead, on the SAME chain). The chain is idle, so the split is STABLE and never resolves.
+//
+// THE BUG: the EXACT-tip tally required ⅔-by-stake to report the IDENTICAL id. N drew only the 2
+// producers (200 of 300; the floor is `> 200`, so 200 does NOT clear it) and N+1 drew only the
+// lone producer (100) — neither cleared ⅔, so FrontierTip returned NoQuorum FOREVER and the
+// healthy stale node failed safe at its stale height instead of converging.
+//
+// THE FIX: a beacon reporting N+1 also has N in its accepted chain, so N draws ALL THREE
+// producers (300 > 200) and is NAMED; N+1 draws only the lone producer and is NOT. The node
+// converges to N (the ⅔-agreed committed height); live consensus catch-up handles N+1. If this
+// regressed to the exact-tip tally, FrontierTip would return NoQuorum here and the test fails.
+func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
+	const N = 40          // the ⅔-agreed COMMON committed height (all 3 producers have it accepted)
+	const pending = N + 1 // the lone producer's UN-FINALIZED pending block (1 ahead, same chain)
+	const M = 23          // our STALE local height (gap-17 — the canary's gap, within the window)
+	chain, byID := buildBSChain(pending, -1)
+	vm := newBSVMAt(chain, M)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100} // total 300, ⅔ floor = 200 (need > 200)
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+
+	// p1, p2 report the common tip N; p3 (luxd-3) reports its pending N+1. All on ONE chain, so
+	// N+1 vouches for N. Exact tally: N=200 (not > 200), N+1=100 — NoQuorum. Ancestor-tolerant: N=300.
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[N], serveAncestors: true,
+		tipFor: map[ids.NodeID]ids.ID{p3: chain[pending].id},
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// Sanity: 2-of-3 producers (200) is exactly the floor, NOT above it — the exact-tip tally
+	// genuinely cannot name N. The fix must come from ancestor tolerance, not a looser floor.
+	require.Equal(t, uint64(200), consensusconfig.TwoThirdsStakeFloor(300))
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status,
+		"CANARY: a ±1-block tip split must name the ⅔-COMMON height, not return NoQuorum")
+	require.Equal(t, chain[N].id, tip, "must name N (the height all 3 producers share), NOT the minority N+1")
+	require.NotEqual(t, chain[pending].id, tip, "the lone producer's pending N+1 must NOT be named")
+
+	// The full loop converges to N — NOT fail-safe, NOT to the minority N+1.
+	require.NoError(t, runBS(t, bh), "tip-split stale node must converge to the ⅔-common height")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last,
+		"CANARY SUCCESS: converge to the ⅔-common height N=%d (NOT stuck at M=%d, NOT the minority N+1)", N, M)
+	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the ⅔-common tip N after sync")
+	require.False(t, bh.Has(ctx, chain[pending].id), "node must NOT hold the minority pending N+1 — that is live consensus' job")
+}
+
+// TestRED_ForgedHighTipFromMinorityNotNamed is the C1 proof for the ancestor-tolerant path: a
+// Byzantine BEACON (in the staked set, but < ⅓ stake) reports a FORGED block built directly on
+// the real ⅔-backed block N — a forged sibling of the honest pending N+1. Ancestor tolerance
+// must NOT name the forged block (it holds only the Byzantine minority's stake); it must name
+// the real ⅔-common N, and the node must never sync or hold the forged block.
+//
+// This is the adversarial heart of C1 under the new agreement relation: even a forged block that
+// descends from a genuinely ⅔-backed block only RATIFIES that real ancestor (which the honest ⅔
+// already back) — it can never name ITSELF, because naming requires > ⅔ of the TOTAL staked
+// weight behind the block, and the forger holds < ⅓. Only the agreement relation changed
+// (exact-tip → in-accepted-chain); the ⅔-by-stake-of-the-real-set requirement did not.
+func TestRED_ForgedHighTipFromMinorityNotNamed(t *testing.T) {
+	const N = 40
+	const pending = N + 1
+	const M = 23
+	chain, byID := buildBSChain(pending, -1)
+	vm := newBSVMAt(chain, M)
+
+	// A forged block at height N+1 whose parent is the REAL N (a forged sibling of the honest
+	// pending N+1). The node can PARSE it (any structurally-valid block parses) but has NOT
+	// accepted it — model that by adding it to the VM's parse maps but not to `accepted`.
+	forged := &bsTestBlock{
+		id: ids.GenerateTestID(), parent: chain[N].id, height: pending,
+		bytes: []byte("forged-sibling@" + strconv.Itoa(pending) + ":" + ids.GenerateTestID().String()),
+		valid: true,
+	}
+	byID[forged.id] = forged
+	vm.all[forged.id] = forged
+	vm.byBytes[string(forged.bytes)] = forged
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	byz := ids.GenerateTestNodeID()
+	// 4 beacons @100 → total 400, ⅔ floor = 266. Honest p1,p2 at N (200), p3 at the real N+1
+	// (100), Byzantine byz at the FORGED sibling (100). No tip clears 266 exactly → ancestor path.
+	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100, byz: 100}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3, byz},
+		byID: byID, tip: chain[N], serveAncestors: true,
+		tipFor: map[ids.NodeID]ids.ID{p3: chain[pending].id, byz: forged.id},
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status, "the honest ⅔-common N must still be named")
+	require.Equal(t, chain[N].id, tip, "C1: the named frontier is the real ⅔-common N")
+	require.NotEqual(t, forged.id, tip, "C1: the Byzantine-minority FORGED block must NEVER be named")
+	require.NotEqual(t, chain[pending].id, tip, "the honest minority pending N+1 is not named either")
+
+	require.NoError(t, runBS(t, bh), "node converges to the real ⅔-common height")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "C1: node syncs to the real N")
+	require.False(t, bh.Has(ctx, forged.id), "C1: the forged block must NOT be finalized")
+	require.False(t, bh.Has(ctx, chain[pending].id), "the honest pending N+1 is left to live consensus")
+}
+
+// TestNodeBootstrap_ExactQuorumUsesFastPath is the no-regression proof: when a ⅔-by-stake
+// supermajority DOES report the IDENTICAL tip, FrontierTip names it via the EXACT fast path —
+// with NO ancestry fetch. The beacons do NOT serve ancestry (serveAncestors=false); the tip is
+// still named, which is only possible if the exact fast path returned before any fetch (a
+// fetch would have found nothing and yielded NoQuorum). It also returns promptly.
+func TestNodeBootstrap_ExactQuorumUsesFastPath(t *testing.T) {
+	const N = 30
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, 10)
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 4) // 4 @100 = 400, floor 266; all agree → exact
+
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], serveAncestors: false}
+	bh.msgCreator = bsMsgBuilder{}
+
+	bh.bsActive.Store(true)
+	start := time.Now()
+	tip, status := bh.FrontierTip(context.Background())
+	elapsed := time.Since(start)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status, "unanimous ⅔ must name the exact tip with no fetch")
+	require.Equal(t, chain[N].id, tip)
+	require.Less(t, elapsed, bootstrapNamingTimeout, "the exact fast path must not enter the ancestry-fetch resolution")
 }
 
 // TestNodeBootstrap_InvalidBlockHaltsTransport: beacons serve a corrupt block at height
