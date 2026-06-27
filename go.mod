@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.15
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.3.21
+	github.com/luxfi/chains v1.3.22
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.5.8
@@ -147,7 +147,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
 	github.com/luxfi/warp v1.19.5
-	github.com/luxfi/zap v0.8.10
+	github.com/luxfi/zap v0.8.11
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433
@@ -200,7 +200,7 @@ require (
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/precompile v0.5.59 // indirect
 	github.com/luxfi/pulsar v1.1.5 // indirect
-	github.com/luxfi/staking v1.5.0 // indirect
+	github.com/luxfi/staking v1.5.1 // indirect
 	github.com/luxfi/threshold v1.9.9 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
 	github.com/luxfi/zapcodec v1.0.1 // indirect
