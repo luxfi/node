@@ -534,3 +534,56 @@ func TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, real.ID, f.ID, "only configured beacons name the frontier; the 50-peer forged swarm is ignored")
 }
+
+// TestBootstrapPolicy_WiresStakeMajorityFloor is the regression guard the re-red flagged (LOW):
+// the production constructor bootstrapPolicy() MUST emit MinResponseWeight = ⌈total/2⌉. The H/D2
+// tests construct policies directly, so a mutation that stops the constructor from setting the
+// floor would not be caught — this asserts the WIRING on the real production path. Mutation-proof:
+// neuter `if total > 0` in bootstrapPolicy() and this test fails (MinResponseWeight==0).
+func TestBootstrapPolicy_WiresStakeMajorityFloor(t *testing.T) {
+	refs, _ := refChain(5)
+	vm := newBSVMAt(refs5BSBlocks(refs), 0)
+	bh, _ := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{}) // handler shell; we call bootstrapPolicy directly
+
+	// SKEWED set: total = 22, ⌈total/2⌉ = 12.
+	b := nodeIDs(6)
+	weights := map[ids.NodeID]uint64{b[0]: 3, b[1]: 3, b[2]: 13, b[3]: 1, b[4]: 1, b[5]: 1}
+	var total uint64
+	for _, w := range weights {
+		total += w
+	}
+
+	pol := bh.bootstrapPolicy(weights)
+	require.Equal(t, StakeWeight(total/2+1), pol.MinResponseWeight,
+		"REGRESSION: bootstrapPolicy() must wire MinResponseWeight = ⌈total/2⌉ (skewed-weight floor)")
+	require.Equal(t, len(weights)/2+1, pol.MinResponses,
+		"bootstrapPolicy() must wire the count-majority floor too")
+	require.NotNil(t, pol.Source, "the policy must carry an AncestrySource")
+
+	// EQUAL-weight: 5 × 0.5e18 — the floor must not re-deadlock 3-of-5 (= 0.6 ≥ 0.5).
+	eq := equalBeacons(nodeIDs(5), 500_000_000_000_000_000)
+	var eqTotal uint64
+	for _, w := range eq {
+		eqTotal += uint64(w)
+	}
+	eqPol := bh.bootstrapPolicy(eq)
+	require.Equal(t, StakeWeight(eqTotal/2+1), eqPol.MinResponseWeight)
+	require.Less(t, eqPol.MinResponseWeight, StakeWeight(3*500_000_000_000_000_000),
+		"3-of-5 equal stake (0.6·total) must clear the ½ floor — no re-deadlock")
+
+	// DEGENERATE: empty weights → floor disabled (0), no panic.
+	require.Equal(t, StakeWeight(0), bh.bootstrapPolicy(map[ids.NodeID]uint64{}).MinResponseWeight,
+		"empty weights → MinResponseWeight disabled (pre-P-chain / single-node fallback)")
+}
+
+// refs5BSBlocks adapts a BlockRef chain to the []*bsTestBlock the bsTestVM needs (genesis only
+// accepted), so newBSHandlerWeighted has a VM. The handler is used only to call bootstrapPolicy().
+func refs5BSBlocks(refs []BlockRef) []*bsTestBlock {
+	out := make([]*bsTestBlock, len(refs))
+	var parent ids.ID
+	for i, r := range refs {
+		out[i] = &bsTestBlock{id: r.ID, parent: parent, height: r.Height, bytes: []byte(r.ID.String()), valid: true}
+		parent = r.ID
+	}
+	return out
+}
