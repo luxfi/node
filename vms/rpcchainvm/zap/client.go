@@ -39,7 +39,14 @@ type Client struct {
 	conn   *zapwire.Conn
 	logger log.Logger
 
-	// Cached state from Initialize
+	// lastAcceptedID caches the plugin's last-accepted block id. SEEDED at Initialize and
+	// REFRESHED on every successful block Accept (setLastAccepted) so LastAccepted() honors the
+	// block.ChainVM contract — return the ACTUAL last-accepted, not a frozen Initialize snapshot.
+	// Before this refresh the cache froze for the process life: a fire-and-forget Accept advanced
+	// the plugin (coreth on-disk) but never the cache, so GetAcceptedFrontier served a stale tip and
+	// any consumer reading VM.LastAccepted was misled. Guarded by lastAcceptedMu because Accept (the
+	// consensus accept goroutine) and LastAccepted (the network/bootstrap goroutines) race.
+	lastAcceptedMu sync.RWMutex
 	lastAcceptedID ids.ID
 
 	// dbServer is the ZAP-native rpcdb server spawned in Initialize that
@@ -135,17 +142,27 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return fmt.Errorf("zap decode initialize response: %w", err)
 	}
 
-	c.lastAcceptedID, err = ids.ToID(resp.LastAcceptedID)
+	seedID, err := ids.ToID(resp.LastAcceptedID)
 	if err != nil {
 		return err
 	}
+	c.setLastAccepted(seedID)
 
 	c.logger.Info("VM initialized via ZAP",
 		"height", resp.Height,
-		"lastAcceptedID", c.lastAcceptedID,
+		"lastAcceptedID", seedID,
 	)
 
 	return nil
+}
+
+// setLastAccepted refreshes the cached last-accepted id under the write lock. Called at
+// Initialize (seed) and on every successful zapBlock.Accept so the cache tracks the plugin's
+// real accepted tip instead of freezing at the boot snapshot.
+func (c *Client) setLastAccepted(id ids.ID) {
+	c.lastAcceptedMu.Lock()
+	c.lastAcceptedID = id
+	c.lastAcceptedMu.Unlock()
 }
 
 // Shutdown implements chain.ChainVM
@@ -376,8 +393,11 @@ func (c *Client) SetPreference(ctx context.Context, blkID ids.ID) error {
 	return err
 }
 
-// LastAccepted implements chain.ChainVM
+// LastAccepted implements chain.ChainVM. Returns the cache refreshed on every Accept (NOT a
+// frozen Initialize snapshot) under the read lock.
 func (c *Client) LastAccepted(ctx context.Context) (ids.ID, error) {
+	c.lastAcceptedMu.RLock()
+	defer c.lastAcceptedMu.RUnlock()
 	return c.lastAcceptedID, nil
 }
 
@@ -643,8 +663,13 @@ func (b *zapBlock) Accept(ctx context.Context) error {
 	defer zapwire.PutBuffer(buf)
 	req.Encode(buf)
 
-	_, _, err := b.client.conn.Call(ctx, zapwire.MsgBlockAccept, buf.Bytes())
-	return err
+	if _, _, err := b.client.conn.Call(ctx, zapwire.MsgBlockAccept, buf.Bytes()); err != nil {
+		return err
+	}
+	// Refresh the cache so LastAccepted() reflects this accept instead of freezing at the
+	// Initialize snapshot. Only on SUCCESS — a failed accept did not advance the plugin.
+	b.client.setLastAccepted(b.id)
+	return nil
 }
 
 func (b *zapBlock) Reject(ctx context.Context) error {

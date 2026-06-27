@@ -373,15 +373,18 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 //     last-ACCEPTED block, so an un-finalized N+1 a producer is merely processing is never reported
 //     — the ±1 pending-tip skew cannot fake "ahead", and a producer one ACCEPTED block ahead
 //     correctly defeats caught-up so the node syncs that block.)
-//   - (c) the node HOLDS every reported tip — heightOf returns ok ONLY for a block the node has, so
-//     a tip the node lacks (someone genuinely ahead, or a same-height sibling/fork it never
-//     finalized) makes the conclusion fail. The node declares caught-up only to blocks it holds.
+//   - (c) the node has ACCEPTED every reported tip — heightOf returns ok ONLY for a block on the
+//     node's FINALIZED chain, so a tip the node lacks OR merely holds-in-store-but-has-not-accepted
+//     (someone genuinely ahead, a gossiped-ahead block, or a same-height sibling/fork it never
+//     finalized) makes the conclusion fail. The node declares caught-up only to blocks it ACCEPTED.
 //
-// heightOf resolves a tip's height from blocks the NODE HOLDS (ok=false when not held), injected so
-// the trust DECISION stays free of any VM/block dependency — the same separation as AncestrySource.
-// It is NEVER a network fetch: a tip the node lacks simply makes it not-caught-up (the safe
-// direction — it syncs). Because (c) requires the node to hold every reported tip, the heights (b)
-// compares are all read locally and are the blocks' canonical (content-addressed) heights.
+// heightOf resolves a tip's height from the node's ACCEPTED chain (ok=false when the tip is not
+// accepted — including a block merely PRESENT in the store but unaccepted, the luxd-2 freeze case),
+// injected so the trust DECISION stays free of any VM/block dependency — the same separation as
+// AncestrySource. It is NEVER a network fetch: an unaccepted/absent tip simply makes the node
+// not-caught-up (the safe direction — it syncs). Because (c) requires the node to have ACCEPTED
+// every reported tip, the heights (b) compares are the blocks' canonical (content-addressed)
+// heights read from the finalized chain — store presence can never fake "caught up".
 func (p *BootstrapPolicy) CaughtUp(replies []BeaconReply, lastAccepted uint64, heightOf func(ids.ID) (uint64, bool)) bool {
 	responders, responderWeight, stakeOnTip, _ := p.tallyResponders(replies)
 	if !p.floorMet(responders, responderWeight) {
