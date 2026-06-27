@@ -1841,6 +1841,13 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	// falls back to the engine's started flag (degenerate / DAG-less paths).
 	type bootstrapCompleter interface{ BootstrapComplete() bool }
 	type bootstrapChecker interface{ IsBootstrapped() bool }
+	// bootstrapFailer surfaces a fail-SAFE RETURN from the sync loop (F5). A handler that drives
+	// initial sync implements it; the watchdog then stops the chain the moment Run returns
+	// (eclipse / partition / deep gap) instead of waiting out the 5-min no-progress window.
+	type bootstrapFailer interface {
+		BootstrapFailed() bool
+		BootstrapFailure() error
+	}
 
 	var ready func() bool
 	if completer, ok := h.(bootstrapCompleter); ok {
@@ -1867,10 +1874,18 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		heightOf = hp.BootstrapHeight
 	}
 
+	// F5 fail-safe RETURN predicate + reason getter (nil for degenerate handlers).
+	var failed func() bool
+	var failure func() error
+	if f, ok := h.(bootstrapFailer); ok {
+		failed = f.BootstrapFailed
+		failure = f.BootstrapFailure
+	}
+
 	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
 	// loop is unit-testable), then handle the manager-side outcome.
 	const bootstrapStallTimeout = 5 * time.Minute
-	outcome, stalledAtHeight := watchBootstrapProgress(ready, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
+	outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
 	switch outcome {
 	case bootstrapReady:
 		m.Log.Info("chain finished bootstrapping, notifying chain",
@@ -1883,38 +1898,62 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	case bootstrapStalled:
 		// NO-PROGRESS stall — a real bootstrap failure. DO NOT mark as bootstrapped
 		// (masking real failures causes unpredictable behavior).
-		m.Log.Error("chain bootstrap stalled - chain NOT marked as bootstrapped",
-			log.Stringer("chainID", chainID),
-			log.Uint64("stalledAtHeight", stalledAtHeight),
-			log.String("lastState", "no height progress for the stall window"),
-			log.Err(errBootstrapTimeout))
-
-		// Stop the engine with the bootstrap timeout error so the chain is marked failed.
-		if err := engine.StopWithError(context.Background(), errBootstrapTimeout); err != nil {
-			m.Log.Error("failed to stop engine after bootstrap stall",
-				log.Stringer("chainID", chainID),
-				log.Err(err))
-		}
-
-		// Register a health check that reports the bootstrap failure.
-		chainAlias := m.PrimaryAliasOrDefault(chainID)
-		healthErr := m.Health.RegisterHealthCheck(
-			chainAlias+"-bootstrap",
-			health.CheckerFunc(func(context.Context) (interface{}, error) {
-				return map[string]interface{}{
-					"chainID":         chainID.String(),
-					"error":           "bootstrap stalled (no progress)",
-					"stalledAtHeight": stalledAtHeight,
-				}, errBootstrapTimeout
-			}),
-			health.ApplicationTag,
-		)
-		if healthErr != nil {
-			m.Log.Error("failed to register bootstrap stall health check",
-				log.Stringer("chainID", chainID),
-				log.Err(healthErr))
-		}
+		m.failBootstrapChain(engine, chainID, errBootstrapTimeout, stalledAtHeight, "bootstrap stalled (no progress)")
 		return
+	case bootstrapFailed:
+		// F5: the sync loop RETURNED a fail-safe error (eclipse / partition / deep gap). Surface
+		// it PROMPTLY with the real reason — not after the 5-min no-progress watchdog. Same
+		// manager-side handling as a stall (stop engine + failing health check), but the instant
+		// Run returns and with the precise diagnostic so the operator knows to fix peering or
+		// state-sync rather than wait.
+		reason := errBootstrapTimeout
+		if failure != nil {
+			if e := failure(); e != nil {
+				reason = e
+			}
+		}
+		m.failBootstrapChain(engine, chainID, reason, stalledAtHeight, "bootstrap failed safe (eclipsed/partitioned/too-far-behind)")
+		return
+	}
+}
+
+// failBootstrapChain stops a chain whose initial sync did NOT reach the frontier — either a
+// no-progress STALL (bootstrapStalled) or an explicit fail-SAFE return from the sync loop
+// (bootstrapFailed, F5). It stops the engine with `reason` and registers a failing health check
+// carrying it, so the operator sees the precise cause (no-progress vs eclipse/partition/deep-gap)
+// and the chain is marked failed rather than silently half-started. Shared by both failure
+// outcomes so the stop+health logic lives in exactly one place.
+func (m *manager) failBootstrapChain(engine Engine, chainID ids.ID, reason error, atHeight uint64, summary string) {
+	m.Log.Error("chain bootstrap did not complete - chain NOT marked as bootstrapped",
+		log.Stringer("chainID", chainID),
+		log.Uint64("height", atHeight),
+		log.String("reason", summary),
+		log.Err(reason))
+
+	// Stop the engine with the real reason so the chain is marked failed.
+	if err := engine.StopWithError(context.Background(), reason); err != nil {
+		m.Log.Error("failed to stop engine after bootstrap failure",
+			log.Stringer("chainID", chainID),
+			log.Err(err))
+	}
+
+	// Register a health check that reports the bootstrap failure (carrying the real reason).
+	chainAlias := m.PrimaryAliasOrDefault(chainID)
+	healthErr := m.Health.RegisterHealthCheck(
+		chainAlias+"-bootstrap",
+		health.CheckerFunc(func(context.Context) (interface{}, error) {
+			return map[string]interface{}{
+				"chainID": chainID.String(),
+				"error":   summary,
+				"height":  atHeight,
+			}, reason
+		}),
+		health.ApplicationTag,
+	)
+	if healthErr != nil {
+		m.Log.Error("failed to register bootstrap failure health check",
+			log.Stringer("chainID", chainID),
+			log.Err(healthErr))
 	}
 }
 
@@ -1925,6 +1964,7 @@ const (
 	bootstrapReady    bootstrapOutcome = iota // ready() reported initial sync complete
 	bootstrapStalled                          // no height progress for the stall window
 	bootstrapShutdown                         // shutdown was signaled
+	bootstrapFailed                           // the sync loop RETURNED a fail-safe error — surface PROMPTLY (F5), not via the no-progress watchdog
 )
 
 // watchBootstrapProgress is the PROGRESS-BASED bootstrap watchdog (H2), decomplected from
@@ -1938,8 +1978,14 @@ const (
 //
 // It also returns the last observed height (the stall diagnostic). heightOf may be nil
 // (then the window is a fixed wall-clock budget from the start — the legacy behavior).
+//
+// failed (F5) is the PROMPT fail-safe predicate: when the sync loop RETURNS a fail-safe error
+// (eclipse / partition / deep gap) the driver flips it, and the watchdog returns bootstrapFailed
+// the next tick — instead of waiting out stallTimeout for a chain that has already stopped
+// trying. nil disables it (degenerate handlers with no fail-safe signal — legacy behavior).
 func watchBootstrapProgress(
 	ready func() bool,
+	failed func() bool,
 	heightOf func() uint64,
 	tick, stallTimeout time.Duration,
 	shutdown <-chan struct{},
@@ -1956,6 +2002,11 @@ func watchBootstrapProgress(
 		case <-ticker.C:
 			if ready() {
 				return bootstrapReady, lastHeight
+			}
+			// F5: a fail-safe RETURN from the sync loop is surfaced immediately — no point
+			// waiting out the no-progress window for a chain that has already given up.
+			if failed != nil && failed() {
+				return bootstrapFailed, lastHeight
 			}
 			if heightOf != nil {
 				if cur := heightOf(); !heightKnown || cur > lastHeight {
@@ -2432,7 +2483,13 @@ type blockHandler struct {
 	// the live cert/vote path; bootstrapDone is the REAL ready signal monitorBootstrap
 	// gates on. bsActive false ⇒ every method behaves exactly as before this change.
 	bootstrapDone gatomic.Bool             // true once initial sync reached the frontier
-	bsActive      gatomic.Bool             // true while the bootstrap loop is driving
+	// bootstrapFailed is non-nil once initial sync RETURNED A FAIL-SAFE error (eclipse /
+	// partition / deep gap) instead of reaching the frontier (F5). monitorBootstrap polls it so
+	// the chain is stopped PROMPTLY with the real reason — not left in the dead window between
+	// Run returning and the 5-min no-progress watchdog (where the chain was neither syncing nor
+	// stopped). bootstrapDone XOR bootstrapFailed XOR still-syncing.
+	bootstrapFailed gatomic.Pointer[bsFailure]
+	bsActive        gatomic.Bool             // true while the bootstrap loop is driving
 	bsMu          sync.Mutex               // guards bsFrontierCh + bsAncestorCh
 	bsFrontierCh  chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
 	bsAncestorCh  map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
