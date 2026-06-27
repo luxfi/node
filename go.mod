@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
-	github.com/luxfi/warp v1.22.0
+	github.com/luxfi/warp v1.23.0
 	github.com/luxfi/zap v0.8.11
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
@@ -199,7 +199,7 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.12.0 // indirect
+	github.com/luxfi/precompile v0.13.0 // indirect
 	github.com/luxfi/pulsar v1.1.5 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
 	github.com/luxfi/threshold v1.9.9 // indirect
