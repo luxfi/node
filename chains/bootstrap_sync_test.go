@@ -189,9 +189,17 @@ type bsBeaconNet struct {
 // unfiltered (nil) query — i.e. it is never in the beacon-restricted frontier sample.
 // When connectAfterCalls > 0 the beacons are withheld for the first that many calls,
 // modeling a beacon set that has not finished its handshake at boot.
+//
+// TrackedChains models REALITY (network/peer/peer.go): a peer advertises the NETS it tracks
+// — always constants.PrimaryNetworkID plus any tracked L1 net IDs — NEVER an individual
+// native chain ID. So beacons report the handler's networkID (the NET the beacon set is
+// anchored to), the value connectedBeacons now filters on. The pre-fix code filtered on the
+// chain ID, which no real peer advertises; the old mock reported set.Of(n.chainID), masking
+// that bug. Reporting set.Of(networkID) is what makes the canary-convergence tests meaningful.
 func (n *bsBeaconNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
 	n.peerInfoCalls++
 	beaconsUp := n.connectAfterCalls == 0 || n.peerInfoCalls > n.connectAfterCalls
+	trackedNet := n.bh.networkID // the NET real peers advertise (incl. PrimaryNetworkID)
 	want := map[ids.NodeID]bool{}
 	for _, id := range nodeIDs {
 		want[id] = true
@@ -200,12 +208,12 @@ func (n *bsBeaconNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
 	if beaconsUp {
 		for _, b := range n.connected {
 			if len(nodeIDs) == 0 || want[b] {
-				out = append(out, peer.Info{ID: b, TrackedChains: set.Of(n.chainID)})
+				out = append(out, peer.Info{ID: b, TrackedChains: set.Of(trackedNet)})
 			}
 		}
 	}
 	if n.malicious != ids.EmptyNodeID && (len(nodeIDs) == 0 || want[n.malicious]) {
-		out = append(out, peer.Info{ID: n.malicious, TrackedChains: set.Of(n.chainID)})
+		out = append(out, peer.Info{ID: n.malicious, TrackedChains: set.Of(trackedNet)})
 	}
 	return out
 }
@@ -301,11 +309,10 @@ func newBeaconManager(networkID ids.ID, beaconIDs []ids.NodeID, weight uint64) v
 	return mgr
 }
 
-// newBSHandlerAndEngine wires a blockHandler over a fresh engine (K=1, no verifier) and
-// the mock VM, seeded at genesis — the node-side of an EMPTY node — with `numBeacons`
-// equal-weight beacons registered under networkID. Returns the handler, the chainID, and
-// the beacon node IDs.
-func newBSHandlerAndEngine(t *testing.T, vm *bsTestVM, numBeacons int) (*blockHandler, ids.ID, []ids.NodeID) {
+// newBSEngine builds a fresh K=1 (no-verifier) consensus engine over the mock VM, seeded at
+// the VM's genesis (height 0) via SyncStateFromVM — the shared core of the bootstrap test
+// handlers. Returns the engine plus fresh chain + network IDs.
+func newBSEngine(t *testing.T, vm *bsTestVM) (*consensuschain.Runtime, ids.ID, ids.ID) {
 	t.Helper()
 	chainID := ids.GenerateTestID()
 	networkID := ids.GenerateTestID()
@@ -317,11 +324,18 @@ func newBSHandlerAndEngine(t *testing.T, vm *bsTestVM, numBeacons int) (*blockHa
 		Params:    &consensusconfig.Parameters{K: 1, AlphaPreference: 1, AlphaConfidence: 1, Beta: 1},
 		VM:        vm,
 	})
-	// Seed consensus at the VM's genesis (height 0), as buildChain does via
-	// SyncStateFromVM — this establishes the finalized tip the first gap block extends.
 	if _, _, err := consensuschain.SyncStateFromVM(context.Background(), vm, eng.Transitive); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
+	return eng, chainID, networkID
+}
+
+// newBSHandlerAndEngine wires a blockHandler over a fresh engine and the mock VM, seeded at
+// genesis — the node-side of an EMPTY node — with `numBeacons` equal-weight beacons registered
+// under networkID. Returns the handler, the chainID, and the beacon node IDs.
+func newBSHandlerAndEngine(t *testing.T, vm *bsTestVM, numBeacons int) (*blockHandler, ids.ID, []ids.NodeID) {
+	t.Helper()
+	eng, chainID, networkID := newBSEngine(t, vm)
 	beaconIDs := make([]ids.NodeID, numBeacons)
 	for i := range beaconIDs {
 		beaconIDs[i] = ids.GenerateTestNodeID()
@@ -337,6 +351,31 @@ func newBSHandlerAndEngine(t *testing.T, vm *bsTestVM, numBeacons int) (*blockHa
 		bsAncestorCh:   make(map[uint32]chan [][]byte),
 	}
 	return bh, chainID, beaconIDs
+}
+
+// newBSHandlerWeighted wires a blockHandler (as newBSHandlerAndEngine) but with a caller-
+// supplied STAKE-WEIGHTED beacon set, modeling a real primary-network validator set where
+// producers hold the majority of stake. expectsStakedBeacons is true (these are native-chain
+// staked beacons). Returns the handler and its chainID.
+func newBSHandlerWeighted(t *testing.T, vm *bsTestVM, weights map[ids.NodeID]uint64) (*blockHandler, ids.ID) {
+	t.Helper()
+	eng, chainID, networkID := newBSEngine(t, vm)
+	mgr := validators.NewManager()
+	for id, w := range weights {
+		require.NoError(t, mgr.AddStaker(networkID, id, nil, ids.GenerateTestID(), w))
+	}
+	bh := &blockHandler{
+		logger:               log.NewNoOpLogger(),
+		engine:               eng,
+		vm:                   vm,
+		chainID:              chainID,
+		networkID:            networkID,
+		beacons:              mgr,
+		expectsStakedBeacons: true,
+		pendingContext:       make(map[ids.ID]contextRequest),
+		bsAncestorCh:         make(map[uint32]chan [][]byte),
+	}
+	return bh, chainID
 }
 
 func runBS(t *testing.T, bh *blockHandler) error {
@@ -557,6 +596,117 @@ func TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons(t *testing.T) {
 	tip, status := bh.FrontierTip(context.Background())
 	require.Equal(t, chainbootstrap.FrontierNoBeacons, status, "no beacon set → single-node/dev → NoBeacons (the loop completes, no hang)")
 	require.Equal(t, ids.Empty, tip)
+}
+
+// TestRED_PeersTrackNetNotChain_StaleNodeConverges is THE MAINNET-CANARY (luxd-2) intended
+// SUCCESS and the regression guard for the beacon-connectivity bug.
+//
+// THE BUG (canary): the beacon set IS the stake-weighted primary-network validator set, but
+// connectedBeacons filtered connected peers by p.TrackedChains.Contains(chainID). Real peers
+// advertise the NETS they track (always constants.PrimaryNetworkID + tracked L1 net IDs),
+// NEVER an individual native chain ID — so the filter matched ZERO peers, connectedStake
+// stayed 0, FrontierTip reported FrontierConnecting forever, and the healthy stale node failed
+// safe at the connect deadline despite the ⅔-stake producers being connected and right there.
+//
+// THE FIX: filter on the NET (b.networkID). Here 3 producers hold > ⅔ of stake and — like
+// every real peer — advertise the NET (the handler's networkID), not the chain ID. The stale
+// node counts their stake, names the frontier, and converges. C1 is preserved: a peer is
+// still counted only if it is in the staked set (weights), and the ⅔-by-stake threshold and
+// content-addressed descent are unchanged.
+func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
+	const N = 40 // producer (beacon-named) frontier height
+	const M = 23 // our stale local height (gap-17, within the window) — the canary's gap
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	o1, o2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	// Producers 100 each (300), two lighter validators 25 each (50): total 350, ⅔ floor = 233.
+	// The 3 producers (300) clear it; any 2 of them (200) do not — the quorum genuinely needs
+	// the producers' ⅔-stake supermajority, exactly the mainnet shape.
+	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100, o1: 25, o2: 25}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+
+	// Only the 3 producers are connected (the 2 lighter validators are offline). They track the
+	// NET (the handler's networkID), not the chain — modeling real peer.Info.TrackedChains.
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[N], serveAncestors: true,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// Pin the fix at the unit level: the producers ARE recognized as connected beacons because
+	// they track the NET. Pre-fix (filtering on chainID) this returned EMPTY → connectedStake 0.
+	w, _, ok := bh.beaconWeights()
+	require.True(t, ok, "staked beacon set must be present")
+	require.ElementsMatch(t, []ids.NodeID{p1, p2, p3}, bh.connectedBeacons(w),
+		"producers tracking the NET must be recognized as connected beacons (the canary fix)")
+
+	// FrontierTip names the frontier from the connected ⅔-stake producers.
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status,
+		"3 producers holding > ⅔ stake, connected + tracking the NET, MUST name the frontier")
+	require.Equal(t, chain[N].id, tip)
+
+	// And the full loop converges to N (NOT false-complete at the stale M).
+	require.NoError(t, runBS(t, bh), "stake-weighted stale node must converge")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last,
+		"CANARY SUCCESS: stale node converges to the producer frontier N=%d, not stuck at M=%d", N, M)
+	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the producer tip after sync")
+}
+
+// TestRED_EmptyStakedSetFailsSafe covers EDGE (4): a native chain whose STAKED validator set
+// is empty/unqueryable (not yet loaded by the P-chain, or misconfigured) must WAIT then FAIL
+// SAFE — it must NOT conclude caught-up at its stale height, and must NOT fall back to trusting
+// a connected non-staked endpoint peer (which would reopen C1). The expectsStakedBeacons flag
+// is the discriminator: with it set, an empty set ⇒ FrontierConnecting (wait → fail safe);
+// the SAME empty set WITHOUT the flag (single-node / P-chain endpoint-only) ⇒ FrontierNoBeacons
+// (complete) — see TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons.
+func TestRED_EmptyStakedSetFailsSafe(t *testing.T) {
+	const N = 20
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, 5) // stale at height 5
+
+	// EMPTY staked set + expectsStakedBeacons (native non-platform chain on a real network).
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{})
+	require.True(t, bh.expectsStakedBeacons)
+
+	// A connected NON-beacon endpoint peer that names + serves a tip (forged, in general). It is
+	// NOT in the staked set, so it must NEVER be trusted to name the frontier.
+	endpoint := ids.GenerateTestNodeID()
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: nil, byID: byID, tip: chain[N],
+		serveAncestors: true, malicious: endpoint, forgedTip: chain[N].id,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierConnecting, status,
+		"empty staked set (beacons expected) → Connecting (wait→fail safe), NOT NoBeacons (false-complete) or Named (endpoint trust)")
+	require.Equal(t, ids.Empty, tip)
+
+	// Discriminator check: the SAME empty set on a node that does NOT expect staked beacons
+	// (single-node / P-chain endpoint-only) reports NoBeacons (legitimately "nothing to sync to").
+	bh.expectsStakedBeacons = false
+	_, status = bh.FrontierTip(ctx)
+	require.Equal(t, chainbootstrap.FrontierNoBeacons, status,
+		"empty set WITHOUT a staked-beacon expectation → NoBeacons (single-node), proving the flag is the discriminator")
+	bh.expectsStakedBeacons = true
+
+	// The full loop fails safe — no endpoint trust, nothing finalized past the stale height.
+	err := runBS(t, bh)
+	require.ErrorIs(t, err, chainbootstrap.ErrBeaconsUnreachable,
+		"empty staked set must fail safe at the connect deadline, never trust endpoints")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[5].id, last, "node must stay at its stale height — no endpoint-named frontier adopted")
+	require.False(t, bh.Has(ctx, chain[N].id), "no frontier tip may be adopted from a non-staked endpoint")
 }
 
 // TestNodeBootstrap_InvalidBlockHaltsTransport: beacons serve a corrupt block at height
