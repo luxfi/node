@@ -365,6 +365,12 @@ func (vm *pChainHeightVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.inner.LastAccepted(ctx)
 }
 
+// NOTE: this wrapper deliberately does NOT forward GetBlockIDAtHeight. The bootstrap acceptance
+// oracle's fork-sibling check reads the IN-PROCESS consensus finalized ledger
+// (blockHandler.finalizedBlockAtHeight → engine.FinalizedBlockAtHeight), NOT a VM height index —
+// because the VM index is dead over ZAP (the zap server has no MsgGetBlockIDAtHeight handler, so
+// the real C-Chain returns nothing). A forwarder here would only re-expose that dead path.
+
 // SetPreference delegates to the inner VM.
 func (vm *pChainHeightVM) SetPreference(ctx context.Context, id ids.ID) error {
 	return vm.inner.SetPreference(ctx, id)

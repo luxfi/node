@@ -256,7 +256,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// re-executes the descent and re-enters consensus, where ConsensusQuorum alone governs).
 		// With the P-ready gate above, this judgement is over the TRUE FULL staked set, so a tip the
 		// quorum actively names is a real frontier (when it equals our own held tip, a ⅔-of-responders
-		// supermajority is AT our height, so we ARE at the network frontier — the loop's Has()-shortcut
+		// supermajority is AT our height, so we ARE at the network frontier — the loop's Accepted()-shortcut
 		// then correctly concludes caught-up). A Byzantine minority reporting an unheld forged sibling
 		// cannot reach the ⅔ agreement, so it is never named (C1) and — crucially — never BLOCKS the
 		// honest named tip either (we do NOT require holding every reported tip to accept the named
@@ -267,7 +267,10 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			log.Stringer("tip", frontier.ID),
 			log.Uint64("namedHeight", frontier.Height),
 			log.Int("responders", frontier.Responders),
-			log.Bool("held", b.Has(ctx, frontier.ID)))
+			// ACCEPTED, not merely held: a gossiped-but-unaccepted frontier (the freeze) logs
+			// accepted=false here, so the loop's Accepted()-shortcut DESCENDS instead of completing
+			// at the stale tip. The diagnostic now distinguishes "in the store" from "finalized".
+			log.Bool("accepted", b.Accepted(ctx, frontier.ID)))
 		return frontier.ID, chainbootstrap.FrontierNamed
 	case errors.Is(err, ErrInsufficientBootstrapResponses):
 		// Fewer than MinResponses configured beacons have RESPONDED — not a partition-capture-safe
@@ -296,14 +299,14 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// policy.CaughtUp is true ONLY when the floor is met AND no responder reports an accepted tip
 		// above our height AND we hold every reported tip (its full safety argument lives on the
 		// method). When it holds, the network frontier IS our own accepted tip: return it NAMED so
-		// the loop's existing Has()-shortcut (bootstrapper "named a tip we already hold → synced")
+		// the loop's existing Accepted()-shortcut (bootstrapper "named a tip we have ACCEPTED → synced")
 		// concludes caught-up and we go Ready at our OWN height — never below it, never at a stale
 		// height. A genuinely stale node has an honest responder ahead (or lacks its tip) → CaughtUp
 		// is false → it keeps syncing; an eclipse hiding the ahead-nodes drops below the floor →
 		// CaughtUp is false → it fails safe. Distinct from the transient finality-skew retry the loop
 		// runs on a bare FrontierNoQuorum ("connected but momentarily split" — keep polling): this is
 		// "split AND I am at the top of every responder" — provably DONE, not waiting.
-		if haveLast && policy.CaughtUp(replies, lastH, b.heldHeight) {
+		if haveLast && policy.CaughtUp(replies, lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
 				log.Stringer("chainID", b.chainID),
 				log.Stringer("tip", lastID),
@@ -331,13 +334,16 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 		total += w
 	}
 	for _, r := range replies {
-		h, held := b.heldHeight(r.Tip)
+		h, accepted := b.acceptedHeight(r.Tip)
 		b.logger.Debug("bootstrap frontier reply",
 			log.Stringer("chainID", b.chainID),
 			log.Stringer("from", r.NodeID),
 			log.Stringer("reportedTip", r.Tip),
 			log.Uint64("beaconWeight", r.Weight),
-			log.Bool("held", held),
+			// ACCEPTED (on our finalized chain), not merely present in the store: a beacon tip we
+			// hold-but-have-not-accepted logs accepted=false with resolvedHeight 0 — the smoking gun
+			// that distinguishes a genuine catch-up from the stored-but-unaccepted freeze.
+			log.Bool("accepted", accepted),
 			log.Uint64("resolvedHeight", h))
 	}
 	b.logger.Debug("bootstrap frontier inputs",
@@ -539,8 +545,47 @@ func (b *blockHandler) ParseBlock(ctx context.Context, raw []byte) (cblock.Block
 	return b.vm.ParseBlock(ctx, raw)
 }
 
-// LastAccepted implements chainbootstrap.Chain: the local last-accepted id + height.
+// LastAccepted implements chainbootstrap.Chain: the node's ACCEPTED tip id + height, read
+// from the IN-PROCESS consensus finalized ledger — the SINGLE advancing source of truth the
+// loop drives convergence off (THE one-source decomplect). It is NOT read from the VM cache.
+//
+// THE FREEZE-STALL (red HIGH-1): the descent DOES accept the run-up (the consensus finalized
+// ledger AND the coreth on-disk store both advance), but the ZAP VM client caches its
+// LastAccepted at Initialize and a fire-and-forget Accept never refreshes it (client.go) —
+// so VM.LastAccepted is FROZEN for the process life. Reading lastH off that frozen cache made
+// every pass after the first re-descend from the stale height while AcceptBootstrapBlock
+// no-oped each block (height ≤ the ADVANCED finalizedHeight) → advanced=false → ErrStalled:
+// "unfreezes but stalls". AcceptBootstrapBlock's own contiguity guard already trusts the
+// in-process ledger (consensus.GetFinalizedHeight); driving lastH/the caught-up oracle off the
+// SAME ledger is the decomplect — the loop trusts the ledger it is building, not a VM cache.
 func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error) {
+	return b.finalizedTip(ctx)
+}
+
+// finalizedTip returns the in-process consensus finalized ledger position (the ADVANCING
+// source), falling back to the VM's last-accepted ONLY when the ledger is unset — the
+// empty-genesis boot window before the first finalize (consensus SyncState seeds the ledger
+// from a NON-empty last-accepted; an empty node leaves it unset until block 1 finalizes), or a
+// degenerate/test handler with no engine. The VM fallback is correct there: at genesis the VM
+// last-accepted IS the anchor and has not yet had a chance to go stale (it only diverges from
+// the ledger once blocks finalize, at which point the ledger takes over). This mirrors the
+// engine's own M2 first-block anchor (bootstrap_accept.go localLastAccepted), keeping ONE rule.
+func (b *blockHandler) finalizedTip(ctx context.Context) (ids.ID, uint64, error) {
+	if b.engine != nil {
+		if tip, h, set := b.engine.FinalizedLedger(); set {
+			return tip, h, nil
+		}
+	}
+	return b.vmLastAccepted(ctx)
+}
+
+// vmLastAccepted reads the VM's last-accepted id + height. It is the genesis-anchor fallback
+// for finalizedTip (used only before the consensus ledger is seeded), NOT a convergence
+// signal — a converging node's height MUST come from the finalized ledger, never this cache.
+func (b *blockHandler) vmLastAccepted(ctx context.Context) (ids.ID, uint64, error) {
+	if b.vm == nil {
+		return ids.Empty, 0, nil
+	}
 	id, err := b.vm.LastAccepted(ctx)
 	if err != nil {
 		return ids.Empty, 0, err
@@ -555,31 +600,89 @@ func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error)
 	return id, blk.Height(), nil
 }
 
-// Has implements chainbootstrap.Chain: whether the node already holds block id (so the
-// loop can detect it has reached the frontier).
-func (b *blockHandler) Has(ctx context.Context, id ids.ID) bool {
-	if id == ids.Empty || b.vm == nil {
-		return false
-	}
-	_, err := b.vm.GetBlock(ctx, id)
-	return err == nil
+// Accepted implements chainbootstrap.Chain: reports whether id is on the node's ACCEPTED chain
+// (finalized) — NOT merely PRESENT in the block store. This is the loop's caught-up predicate.
+// THE FREEZE was a store-vs-acceptance conflation: the prior Has() returned true for a frontier
+// GOSSIPED into the store but UNACCEPTED (height ABOVE last-accepted), short-circuiting the loop
+// to caught-up at the stale last-accepted and never descending to accept it. A stored-but-
+// unaccepted block returns false here, so the loop descends and DRIVES its acceptance.
+func (b *blockHandler) Accepted(ctx context.Context, id ids.ID) bool {
+	_, ok := b.acceptedHeightCtx(ctx, id)
+	return ok
 }
 
-// heldHeight is the height ORACLE the BootstrapPolicy.CaughtUp determination injects: it returns a
-// block's canonical height from the LOCAL store, ok=false when the node does NOT hold it. CaughtUp
-// uses it to (c) require the node to HOLD every reported tip and (b) read those held tips' heights
-// to confirm none is above the node's accepted height. It NEVER fetches over the network — a tip
-// the node lacks simply makes the node not-caught-up (it syncs), the safe direction. It is Has()
-// plus the height the determination needs, in one local lookup.
-func (b *blockHandler) heldHeight(id ids.ID) (uint64, bool) {
+// acceptedHeight is the ACCEPTANCE oracle injected into BootstrapPolicy.CaughtUp (as heightOf):
+// it returns id's height and TRUE iff the node has ACCEPTED id (id is on the node's finalized
+// chain), and (0,false) when id is merely PRESENT IN THE STORE but NOT accepted — the store-vs-
+// acceptance distinction the luxd-2 freeze hinged on. CaughtUp uses it to (c) require the node to
+// have ACCEPTED every reported tip and (b) read those tips' heights to confirm none is above the
+// node's accepted height; a stored-but-unaccepted tip now makes CaughtUp FALSE (the node is behind
+// in ACCEPTANCE → it syncs). It NEVER fetches over the network — an unaccepted/unheld tip simply
+// makes the node not-caught-up, the safe direction.
+func (b *blockHandler) acceptedHeight(id ids.ID) (uint64, bool) {
+	return b.acceptedHeightCtx(context.Background(), id)
+}
+
+// acceptedHeightCtx is the ctx-honoring core of the acceptance oracle (shared by Accepted and
+// acceptedHeight). Authoritative and VM-internals-light: the accepted head id+height come from
+// the IN-PROCESS consensus finalized ledger (LastAccepted → finalizedTip — the ADVANCING source,
+// never the frozen VM cache), the height-bound (id ABOVE finalizedHeight ⇒ not yet accepted —
+// the gossiped-ahead freeze case, regardless of store presence) is the primary anchor, and the
+// in-process per-height ledger is the fork-sibling oracle for a block at/below the finalized head.
+func (b *blockHandler) acceptedHeightCtx(ctx context.Context, id ids.ID) (uint64, bool) {
 	if id == ids.Empty || b.vm == nil {
 		return 0, false
 	}
-	blk, err := b.vm.GetBlock(context.Background(), id)
+	lastID, lastH, err := b.LastAccepted(ctx)
 	if err != nil {
 		return 0, false
 	}
-	return blk.Height(), true
+	if id == lastID {
+		return lastH, true // the finalized head itself — the authoritative anchor
+	}
+	blk, err := b.vm.GetBlock(ctx, id)
+	if err != nil {
+		return 0, false // not even in the store → certainly not accepted
+	}
+	h := blk.Height()
+	if h > lastH {
+		// ABOVE our finalized head: a block GOSSIPED into the store ahead of acceptance. THE FREEZE
+		// — present, but NOT accepted. NOT caught up; the node must descend and accept it.
+		return 0, false
+	}
+	// h <= lastH and id != lastID: id is at a height we have finalized PAST. It is accepted IFF it
+	// is the block our per-height ledger finalized at h. Ask the IN-PROCESS finalized ledger (the
+	// same source LastAccepted reads), which replaces the dead coreth height index — block.ChainVM.
+	// GetBlockIDAtHeight is unhandled over ZAP, so the old VM-index call returned nothing on the real
+	// C-Chain and this whole branch was dead there. The in-process ledger answers authoritatively for
+	// every height finalized THIS session.
+	if canonical, ok := b.finalizedBlockAtHeight(h); ok {
+		if canonical != id {
+			return 0, false // a stored sibling/fork at a finalized height — NOT on the accepted chain
+		}
+		return h, true
+	}
+	// The per-height ledger does not know h: it is a height BELOW the boot seed (consensus SyncState
+	// seeds only the boot height + advances upward; older heights are never re-seeded). We have
+	// finalized PAST h and we hold id, so on a BFT-final chain (one finalized block per height) id is
+	// on our accepted chain. A node CAN gossip-hold a non-finalized sibling at such a height with NO
+	// safety break (it received a losing fork via gossip) — but that costs nothing HERE: this oracle
+	// only feeds the caught-up decision, which acts on the ⅔-NAMED frontier, and C1 (⅔-by-stake
+	// frontier naming) guarantees a forged/losing sibling is NEVER the named frontier; the descent's
+	// content-addressing + the per-height accept guard reject any off-chain block during execution.
+	// So treating a held sub-boot-seed block as accepted is the safe over-approximation.
+	return h, true
+}
+
+// finalizedBlockAtHeight returns the block the IN-PROCESS consensus ledger finalized at height h
+// (ok=false when the node has not finalized h this session — a height below the boot seed — or has
+// no engine). It is the authoritative fork-sibling oracle that replaces the dead coreth height
+// index; degrading to ok=false simply routes acceptedHeightCtx to its height-bound anchor.
+func (b *blockHandler) finalizedBlockAtHeight(h uint64) (ids.ID, bool) {
+	if b.engine == nil {
+		return ids.Empty, false
+	}
+	return b.engine.FinalizedBlockAtHeight(h)
 }
 
 // AcceptBootstrapBlock implements chainbootstrap.Chain: re-execute + finalize a fetched
@@ -626,22 +729,19 @@ func (b *blockHandler) BootstrapFailure() error {
 // quorum" (self-heal → keep waiting). Distinct from BootstrapFailed (a terminal/structural fail).
 func (b *blockHandler) BootstrapConnecting() bool { return b.bootstrapConnecting.Load() }
 
-// BootstrapHeight reports the node's current locally-accepted height — the PROGRESS
-// signal monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall
-// timer) from a genuine no-progress stall (fail). Best-effort: 0 if unknown.
+// BootstrapHeight reports the node's current ACCEPTED height — the PROGRESS signal
+// monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall timer) from a
+// genuine no-progress stall (fail). It reads the IN-PROCESS finalized ledger (finalizedTip), the
+// SAME advancing source as the convergence oracle — NOT the VM cache, which a fire-and-forget ZAP
+// Accept leaves FROZEN: reading the frozen cache here made monitorBootstrap's progress probe see
+// zero advance even while the descent finalized block after block, so a deep but healthy sync
+// looked like a stall. Best-effort: 0 if unknown.
 func (b *blockHandler) BootstrapHeight() uint64 {
-	if b.vm == nil {
-		return 0
-	}
-	id, err := b.vm.LastAccepted(context.Background())
-	if err != nil || id == ids.Empty {
-		return 0
-	}
-	blk, err := b.vm.GetBlock(context.Background(), id)
+	_, h, err := b.finalizedTip(context.Background())
 	if err != nil {
 		return 0
 	}
-	return blk.Height()
+	return h
 }
 
 // deliverBootstrapFrontier routes a frontier reply (TAGGED with the responding beacon)
@@ -716,7 +816,7 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 //
 // GO-LIVE includes the CAUGHT-UP path. A tip-holding producer on a mixed-height co-restart names
 // no frontier (the responders split below ⅔) yet is at the top of every responder — FrontierTip
-// returns its OWN held tip NAMED (BootstrapPolicy.CaughtUp), the loop's Has()-shortcut concludes
+// returns its OWN held tip NAMED (BootstrapPolicy.CaughtUp), the loop's Accepted()-shortcut concludes
 // caught-up, and bs.Run returns nil → it goes Ready at its own tip. Without that path the producer
 // would fail safe DOWN at its own tip (the regression this round fixes), the opposite of the
 // stale-go-live bug.
