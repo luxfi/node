@@ -303,7 +303,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
 # v1.3.21 == node go.mod's luxfi/chains pin (the finality-complete go-live); keeps the
 # 10 baked VM plugins (incl. the FATAL-gated bridgevm) in lockstep with the host node.
-ARG CHAINS_REF=v1.3.21
+ARG CHAINS_REF=v1.3.22
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
