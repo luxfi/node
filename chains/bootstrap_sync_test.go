@@ -20,10 +20,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	cblock "github.com/luxfi/consensus/engine/chain/block"
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
-	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -161,12 +161,12 @@ func (bsMsgBuilder) GetAncestors(_ ids.ID, requestID uint32, _ time.Duration, bl
 // test can model "beacons offline, only the attacker is up").
 type bsBeaconNet struct {
 	network.Network
-	bh        *blockHandler
-	chainID   ids.ID
-	connected []ids.NodeID            // beacons that are connected + tracking the chain
-	byID      map[ids.ID]*bsTestBlock // honest chain by id (for ancestry serving)
-	tip       *bsTestBlock            // the honest tip the beacons report
-	serveAncestors bool               // beacons serve ancestry (false models name-only beacons)
+	bh             *blockHandler
+	chainID        ids.ID
+	connected      []ids.NodeID            // beacons that are connected + tracking the chain
+	byID           map[ids.ID]*bsTestBlock // honest chain by id (for ancestry serving)
+	tip            *bsTestBlock            // the honest tip the beacons report
+	serveAncestors bool                    // beacons serve ancestry (false models name-only beacons)
 
 	// tipFor optionally overrides the tip a specific beacon reports (models DISAGREEMENT —
 	// beacons connected but split across tips, so no ⅔ quorum forms → FrontierNoQuorum).
@@ -179,8 +179,8 @@ type bsBeaconNet struct {
 	peerInfoCalls     int
 
 	// Optional malicious NON-beacon peer: connected and tracking, reports a forged tip.
-	malicious   ids.NodeID
-	forgedTip   ids.ID
+	malicious ids.NodeID
+	forgedTip ids.ID
 }
 
 // PeerInfo returns the connected beacons (and the malicious peer, when present) that
@@ -495,32 +495,42 @@ func TestRED_HonestBeaconQuorumIgnoresMaliciousFrontier(t *testing.T) {
 	require.False(t, bh.Has(ctx, forged[N].id), "node must ignore the malicious forged frontier")
 }
 
-// TestRED_SubAlphaStakeCannotNameFrontier: a minority of beacons (below the ⅔ stake floor)
-// reporting a tip cannot name the frontier. Only once a ⅔-by-stake supermajority agrees
-// does FrontierTip return the tip.
-func TestRED_SubAlphaStakeCannotNameFrontier(t *testing.T) {
+// TestRED_SubQuorumCannotNameFrontier: a minority of configured beacons cannot name the
+// frontier — the partition-capture floor (INVARIANT 2). This REPLACES the prior
+// SubAlphaStakeCannotNameFrontier, which asserted the ⅔-of-CURRENT-TOTAL-STAKE connect gate that
+// was THE MASS-RECOVERY BUG: it required ⅔ of the WHOLE validator set to be connected, which is
+// unsatisfiable when the down validators ARE the recovery targets. Under the BootstrapTrust
+// policy the floor is MinResponses (a count of authenticated CONFIGURED beacons that must
+// respond), defaulting to a MAJORITY of the set — so an attacker who partitions the node down to
+// a minority of beacons still cannot capture the frontier, while a recovering node only needs a
+// majority (not ⅔ of total stake) of beacons reachable. The C1 "minority cannot name" property is
+// preserved; only the floor changed from ⅔-of-total-stake to a response COUNT over RESPONDERS.
+func TestRED_SubQuorumCannotNameFrontier(t *testing.T) {
 	const N = 30
 	chain, byID := buildBSChain(N, -1)
 	vm := newBSVM(chain)
-	// 6 beacons, equal weight → ⅔ floor = floor(2*600/3) = 400, need > 400 ⇒ ≥ 5 beacons.
+	// 6 beacons, equal weight. Default MinResponses = majority(6) = 4. Below 4 responders → no
+	// trusted quorum (capture-prevented); at/above 4 with ⅔-of-responders agreement → named.
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 6)
 	bh.msgCreator = bsMsgBuilder{}
-	bh.bsActive.Store(true) // so frontier replies route to the quorum tally
+	bh.bsActive.Store(true) // so frontier replies route to the policy decision
 	defer bh.bsActive.Store(false)
 	ctx := context.Background()
 
-	// Only 4 of 6 beacons connected (4*100 = 400, NOT > 400 floor) → cannot even FORM a
-	// quorum → still CONNECTING (the loop waits for the rest; it never names a frontier
-	// here, and it certainly never concludes caught-up at the stale height).
-	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:4], byID: byID, tip: chain[N]}
+	// Only 3 of 6 connected (3 < the majority floor of 4) → fewer than MinResponses configured
+	// beacons responded → CONNECTING (wait for more; never name from the captured minority, never
+	// conclude caught-up at the stale height).
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:3], byID: byID, tip: chain[N]}
 	tip, status := bh.FrontierTip(ctx)
-	require.Equal(t, chainbootstrap.FrontierConnecting, status, "4/6 beacons (≤ ⅔ stake) cannot name the frontier — still connecting")
+	require.Equal(t, chainbootstrap.FrontierConnecting, status, "3/6 beacons (below the majority response floor) cannot name the frontier — still connecting")
 	require.Equal(t, ids.Empty, tip)
 
-	// 5 of 6 connected (5*100 = 500 > 400) → quorum → the tip is named.
-	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:5], byID: byID, tip: chain[N]}
+	// 4 of 6 connected (= the majority floor) and all agreeing → the policy names the tip. Note
+	// the OLD ⅔-of-total gate would have REJECTED this (4*100 = 400 is NOT > the 400 floor) — that
+	// rejection was the deadlock; the response-floor model correctly accepts it.
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:4], byID: byID, tip: chain[N]}
 	tip, status = bh.FrontierTip(ctx)
-	require.Equal(t, chainbootstrap.FrontierNamed, status, "5/6 beacons (> ⅔ stake) must name the frontier")
+	require.Equal(t, chainbootstrap.FrontierNamed, status, "4/6 beacons (≥ the majority floor) all agreeing must name the frontier")
 	require.Equal(t, chain[N].id, tip)
 }
 
@@ -943,7 +953,7 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 func TestWatchBootstrapProgress_SlowButAdvancingNotKilled(t *testing.T) {
 	var calls int
 	heightOf := func() uint64 { calls++; return uint64(calls) } // advances every poll
-	ready := func() bool { return calls >= 120 }                 // done only after 120 polls (≫ the 60ms window)
+	ready := func() bool { return calls >= 120 }                // done only after 120 polls (≫ the 60ms window)
 	outcome, _ := watchBootstrapProgress(ready, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapReady, outcome, "a slow-but-ADVANCING sync must complete, not be timed out")
 }

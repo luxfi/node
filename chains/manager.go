@@ -2493,7 +2493,7 @@ type blockHandler struct {
 	// correlation channels below (so the synchronous loop can await them) instead of
 	// the live cert/vote path; bootstrapDone is the REAL ready signal monitorBootstrap
 	// gates on. bsActive false ⇒ every method behaves exactly as before this change.
-	bootstrapDone gatomic.Bool             // true once initial sync reached the frontier
+	bootstrapDone gatomic.Bool // true once initial sync reached the frontier
 	// bootstrapFailed is non-nil once initial sync RETURNED A FAIL-SAFE error (eclipse /
 	// partition / deep gap) instead of reaching the frontier (F5). monitorBootstrap polls it so
 	// the chain is stopped PROMPTLY with the real reason — not left in the dead window between
@@ -2501,10 +2501,10 @@ type blockHandler struct {
 	// stopped). bootstrapDone XOR bootstrapFailed XOR still-syncing.
 	bootstrapFailed gatomic.Pointer[bsFailure]
 	bsActive        gatomic.Bool             // true while the bootstrap loop is driving
-	bsMu          sync.Mutex               // guards bsFrontierCh + bsAncestorCh
-	bsFrontierCh  chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
-	bsAncestorCh  map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
-	bsRotor       gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+	bsMu            sync.Mutex               // guards bsFrontierCh + bsAncestorCh
+	bsFrontierCh    chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
+	bsAncestorCh    map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
+	bsRotor         gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
 
 	// beacons is the BEACON / staked-validator set the accepted-frontier quorum is
 	// anchored to (m.Validators for native chains, CustomBeacons for the P-chain). The
@@ -2529,6 +2529,25 @@ type blockHandler struct {
 	// must descend from — defense-in-depth for an empty-genesis node. Zero ⇒ disabled.
 	wsCheckpointID     ids.ID
 	wsCheckpointHeight uint64
+
+	// bootstrapMinResponses / bootstrapAgreement / bootstrapCheckpoint configure the
+	// BootstrapTrust policy (bootstrap_trust.go) — the SEPARATE object that decides whether a
+	// fetched frontier is safe to BEGIN SYNC FROM, distinct from consensus finality. They are the
+	// fix for the mass-recovery deadlock: the acceptance gate is a response FLOOR + a
+	// ⅔-of-RESPONDERS agreement, NOT a ⅔-of-CURRENT-total-stake quorum (unsatisfiable when the
+	// recovery targets are themselves down validators). All default when zero (bootstrapPolicy):
+	//   - bootstrapMinResponses: minimum distinct authenticated configured beacons that must
+	//     respond before any frontier is named (INVARIANT 2's partition-capture floor). Zero ⇒ a
+	//     MAJORITY of the configured beacon set. For the 5-validator mainnet this is 3, so the 3
+	//     reachable producers recover the network while a 2-beacon partition is rejected.
+	//   - bootstrapAgreement: the fraction of the RESPONDER weight a named frontier must exceed.
+	//     Zero ⇒ ⅔. An operator may tighten to ¾ (Ratio{3,4}).
+	//   - bootstrapCheckpoint: an OPTIONAL operator-pinned (id,height) to anchor from when fewer
+	//     than the floor respond (the explicit override for the "1 of N reachable" case). nil ⇒
+	//     reject below the floor rather than trust a captured minority.
+	bootstrapMinResponses int
+	bootstrapAgreement    Ratio
+	bootstrapCheckpoint   *Checkpoint
 }
 
 // bsFrontierReply is one beacon's accepted-frontier answer, tagged with the responder so

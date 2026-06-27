@@ -14,15 +14,13 @@
 package chains
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
-	"sort"
+	"errors"
 	"time"
 
 	cblock "github.com/luxfi/consensus/engine/chain/block"
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
-	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -31,10 +29,14 @@ import (
 
 // The blockHandler IS the bootstrap loop's fetch transport AND execute sink. If it
 // ever stops satisfying either, the chain cannot initial-sync — catch it at compile
-// time, not in production (the same discipline as the ancestorRequester assertion).
+// time, not in production (the same discipline as the ancestorRequester assertion). It is
+// also the BootstrapPolicy's AncestrySource (the content-addressed ancestry the responder-
+// agreement tally walks), keeping the trust DECISION (bootstrap_trust.go) separate from the
+// transport that feeds it.
 var (
 	_ chainbootstrap.BlockSource = (*blockHandler)(nil)
 	_ chainbootstrap.Chain       = (*blockHandler)(nil)
+	_ AncestrySource             = (*blockHandler)(nil)
 )
 
 const (
@@ -182,7 +184,7 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 // A non-beacon peer, a single peer, or any sub-⅔-stake set can NEVER reach FrontierNamed,
 // so a forged chain can never be the thing an empty/behind node syncs to.
 func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.FrontierStatus) {
-	weights, total, haveBeacons := b.beaconWeights()
+	weights, _, haveBeacons := b.beaconWeights()
 	if !haveBeacons {
 		if b.expectsStakedBeacons {
 			// This chain syncs against the STAKED primary-network validator set, which the
@@ -206,61 +208,84 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
 
-	required := bootstrapMinAgreeingBeacons
-	if n := len(weights); n < required {
-		required = n
-	}
-	floor := consensusconfig.TwoThirdsStakeFloor(total)
-
-	// DECOMPLECT the canary boot race from a real eclipse: is enough beacon stake CONNECTED
-	// that a ⅔-by-stake quorum is even POSSIBLE right now? The most stake any single tip
-	// could gather is the connected stake; if that cannot clear the floor (or too few
-	// distinct beacons are up), connectivity is still coming up — report Connecting so the
-	// loop WAITS rather than false-completing at the local stale height. This is consistent
-	// with the named-quorum check below (agree > floor): if even unanimous connected beacons
-	// could not clear it, we have not yet connected enough to ask.
+	// THE MASS-RECOVERY FIX. The acceptance decision is the BootstrapPolicy (a SEPARATE object
+	// with a SEPARATE threat model — bootstrap_trust.go), NOT the ⅔-of-CURRENT-total-stake
+	// consensus floor. The prior code required a ⅔-by-stake quorum of the WHOLE validator set to
+	// be CONNECTED before naming a frontier; when the recovery targets are themselves validators
+	// (a crashed node IS one of the 5), that floor is mathematically unsatisfiable during a mass
+	// outage — the deadlock. The policy instead requires MinResponses authenticated CONFIGURED
+	// beacons to respond and a ⅔-of-RESPONDERS agreement, so 3 of 5 reachable beacons all agreeing
+	// recover the network even though 3 of 5 STAKE is not a finalizing supermajority. Finality is
+	// untouched (it lives in consensus and still needs > ⅔ of current stake).
 	connected := b.connectedBeacons(weights)
-	var connectedStake uint64
-	for _, id := range connected {
-		connectedStake += weights[id]
-	}
-	if connectedStake <= floor || len(connected) < required {
-		return ids.Empty, chainbootstrap.FrontierConnecting
-	}
+	policy := b.bootstrapPolicy(weights)
+	replies := b.collectFrontierReplies(ctx, connected, weights)
 
-	// Enough beacon stake is connected to ASK — query + tally the ⅔-by-stake quorum.
-	if tip, ok := b.queryFrontierQuorum(ctx, connected, weights, floor, required); ok {
-		return tip, chainbootstrap.FrontierNamed
+	frontier, err := policy.AcceptsFrontier(ctx, replies)
+	switch {
+	case err == nil:
+		// A configured-beacon quorum named a safe sync anchor (NOT a finality cert — the loop
+		// re-executes the descent and re-enters consensus, where ConsensusQuorum alone governs).
+		return frontier.ID, chainbootstrap.FrontierNamed
+	case errors.Is(err, ErrInsufficientBootstrapResponses):
+		// Fewer than MinResponses configured beacons have RESPONDED — not a partition-capture-safe
+		// quorum yet. More may connect: WAIT (bounded by the loop's ConnectDeadline, then fail
+		// safe). Never false-complete at the stale height; never trust the captured few.
+		return ids.Empty, chainbootstrap.FrontierConnecting
+	default:
+		// ErrNoBootstrapQuorum: enough beacons responded but no ⅔-of-responders agreement on a
+		// common committed block this round — a transient bleeding-edge split (the loop's bounded
+		// F2 retry converges it) or a genuine partition (fails safe at the bound). NOT caught up.
+		return ids.Empty, chainbootstrap.FrontierNoQuorum
 	}
-	// Connected enough to ask, but no ⅔-by-stake agreement on a single tip: a genuine
-	// eclipse / partition. Fail safe — the loop must NOT conclude caught-up at the stale tip.
-	return ids.Empty, chainbootstrap.FrontierNoQuorum
 }
 
-// queryFrontierQuorum sends GetAcceptedFrontier to the connected beacons and tallies their
-// replies WEIGHTED by stake, naming the highest block a ⅔-by-stake supermajority of the
-// beacons agree on — where AGREEMENT is "this block is in my accepted chain" (the block is the
-// beacon's tip OR an ancestor of it), NOT "this block is my exact tip".
+// bootstrapPolicy builds the BootstrapTrust DECISION object for this round from the configured
+// beacon set (the trust anchor — INVARIANT 1: configured/checkpoint/genesis, never peer
+// self-report). MinResponses defaults to a MAJORITY of the configured beacons (the largest floor
+// that still lets the node recover when a minority of validators is down); the agreement is ⅔ of
+// the RESPONDERS; MinFrontierHeight is the node's last-accepted height (the ancestor-tolerant path
+// never names a block beneath where the node already is — fail safe, not false-complete). All are
+// operator-overridable via the blockHandler fields; zero ⇒ the documented default.
+func (b *blockHandler) bootstrapPolicy(weights map[ids.NodeID]uint64) *BootstrapPolicy {
+	minResp := b.bootstrapMinResponses
+	if minResp <= 0 {
+		minResp = len(weights)/2 + 1 // MAJORITY of the configured beacon set
+	}
+	if minResp > len(weights) {
+		minResp = len(weights)
+	}
+	var lastH uint64
+	if _, h, err := b.LastAccepted(context.Background()); err == nil {
+		lastH = h
+	}
+	return &BootstrapPolicy{
+		TrustedBeacons:     weights,
+		AgreementThreshold: b.bootstrapAgreement, // zero ⇒ policy default ⅔
+		MinResponses:       minResp,
+		MinResponders:      bootstrapMinAgreeingBeacons,
+		MinFrontierHeight:  lastH,
+		Checkpoint:         b.bootstrapCheckpoint,
+		NamingWindow:       bootstrapNamingWindow,
+		MaxAnchors:         maxNamingAnchors,
+		NamingTimeout:      bootstrapNamingTimeout,
+		Source:             b,
+	}
+}
+
+// collectFrontierReplies sends GetAcceptedFrontier to the connected beacons and gathers ONE
+// reply per beacon within the window, returning them as []BeaconReply for the BootstrapPolicy to
+// JUDGE. This is pure TRANSPORT — it does not decide. The DECISION (which beacons count, the
+// MinResponses floor, the ⅔-of-responders agreement, the ancestor-tolerant tally) is the
+// policy's (bootstrap_trust.go), keeping the trust object separate from the wire.
 //
-// THE EXACT-TIP TALLY (the pre-fix behavior) required ⅔-by-stake to report the IDENTICAL tip
-// id. On a LIVE chain that can never be guaranteed: validators are legitimately ±1 block apart
-// at the bleeding edge, so the freshest tip splits and no single id draws ⅔. The mainnet canary
-// (luxd-2) hit exactly this — 2 producers had accepted block N, the third's un-finalized
-// pending block was N+1, neither tip alone cleared ⅔ — and a healthy stale node failed safe
-// instead of converging. The chain was idle, so the split was STABLE and never resolved.
-//
-// ANCESTOR TOLERANCE fixes it without weakening C1: a beacon reporting tip N+1 also vouches for
-// N (its ancestor), so N draws ALL THREE producers' stake → clears ⅔ → is named; N+1 draws only
-// the lone producer → is NOT named. The node syncs to N (the ⅔-agreed committed height) and
-// live consensus catch-up handles N+1. ONLY the agreement RELATION changed; the named frontier
-// is still backed by > ⅔ of the TOTAL real staked-beacon weight with ≥ required distinct voters,
-// and the synced chain still descends to it via the consensus content-addressed descent. A
-// forged or sub-⅔ tip still names nothing (see nameAncestorTolerant for the C1 argument).
-//
-// The EXACT-⅔ fast path is preserved: when one tip does draw the supermajority outright (the
-// whole network already agrees) it is named immediately with NO ancestry fetch. ok=false when
-// not even the ancestor-tolerant ⅔ quorum forms within the window. ONE reply per beacon counts.
-func (b *blockHandler) queryFrontierQuorum(ctx context.Context, connected []ids.NodeID, weights map[ids.NodeID]uint64, floor uint64, required int) (ids.ID, bool) {
+// It early-returns the instant every connected beacon has answered (no need to wait out the
+// window on the common fully-connected path), bounding a slow/silent minority by the window.
+// Non-beacon and empty replies are dropped here too (the policy re-filters — defense in depth).
+func (b *blockHandler) collectFrontierReplies(ctx context.Context, connected []ids.NodeID, weights map[ids.NodeID]uint64) []BeaconReply {
+	if len(connected) == 0 || b.net == nil || b.msgCreator == nil {
+		return nil
+	}
 	ch := make(chan bsFrontierReply, len(connected))
 	b.bsMu.Lock()
 	b.bsFrontierCh = ch
@@ -278,183 +303,36 @@ func (b *blockHandler) queryFrontierQuorum(ctx context.Context, connected []ids.
 
 	msg, err := b.msgCreator.GetAcceptedFrontier(b.chainID, requestID, 10*time.Second)
 	if err != nil {
-		return ids.Empty, false
+		return nil
 	}
 	sample := set.NewSet[ids.NodeID](len(connected))
 	sample.Add(connected...)
 	b.net.Send(msg, sample, b.networkID, 0)
 
-	agree := make(map[ids.ID]uint64)
-	voters := make(map[ids.ID]map[ids.NodeID]struct{})
-	seen := make(map[ids.NodeID]struct{})
+	replies := make([]BeaconReply, 0, len(connected))
+	seen := make(map[ids.NodeID]struct{}, len(connected))
 	deadline := time.After(bootstrapFrontierWindow)
 	for {
 		select {
 		case rep := <-ch:
 			w, isBeacon := weights[rep.nodeID]
 			if !isBeacon || rep.tip == ids.Empty {
-				continue // only a beacon's non-empty reply counts
+				continue // only a configured beacon's non-empty reply counts
 			}
 			if _, dup := seen[rep.nodeID]; dup {
-				continue // one vote per beacon
+				continue // one reply per beacon
 			}
 			seen[rep.nodeID] = struct{}{}
-			agree[rep.tip] += w
-			if voters[rep.tip] == nil {
-				voters[rep.tip] = make(map[ids.NodeID]struct{})
-			}
-			voters[rep.tip][rep.nodeID] = struct{}{}
-			if agree[rep.tip] > floor && len(voters[rep.tip]) >= required {
-				// EXACT-⅔ fast path: one tip drew the supermajority outright (the whole network
-				// agrees on the same tip). Name it with NO ancestry fetch — the common case.
-				return rep.tip, true
-			}
+			replies = append(replies, BeaconReply{NodeID: rep.nodeID, Tip: rep.tip, Weight: w})
 			if len(seen) >= len(connected) {
-				// Heard from EVERY connected beacon and no single tip drew an exact ⅔. There is no
-				// reason to wait out the rest of the window — resolve the ancestor-tolerant ⅔ now.
-				// (The window remains the bound for when some beacons are slow/silent.) This keeps a
-				// live-frontier split converging in one round instead of stalling a full window.
-				return b.nameAncestorTolerant(ctx, agree, voters, floor, required)
+				return replies // every connected beacon answered — resolve now, do not wait the window
 			}
 		case <-deadline:
-			// No single tip drew an EXACT ⅔ supermajority within the window. On a live chain this
-			// is the normal bleeding-edge case — honest beacons legitimately ±1 block apart (the
-			// canary: 2 producers at N, 1 at N+1). A beacon reporting tip T also has every ANCESTOR
-			// of T in its accepted chain, so resolve the highest COMMON committed block the ⅔-stake
-			// supermajority shares. A genuine eclipse/partition (no ⅔-backed common ancestor) still
-			// returns ok=false here → FrontierNoQuorum → the loop fails safe.
-			return b.nameAncestorTolerant(ctx, agree, voters, floor, required)
+			return replies
 		case <-ctx.Done():
-			return ids.Empty, false
+			return replies
 		}
 	}
-}
-
-// nameAncestorTolerant resolves the COMMON COMMITTED FRONTIER when no single tip drew an EXACT
-// ⅔-by-stake supermajority — the live-chain bleeding-edge case the mainnet canary hit (luxd-2:
-// 2 producers had accepted block N, the third producer's un-finalized pending block was N+1, so
-// neither tip alone cleared ⅔ and the exact-match tally returned NoQuorum forever, even though
-// all three producers AGREE on N as the canonical committed height).
-//
-// A beacon reporting tip T vouches not only for T but for every ANCESTOR of T (its accepted
-// chain contains them). So the named frontier is the HIGHEST block B such that beacons holding
-// > floor (⅔ of the TOTAL beacon stake) have B in their accepted chain — B == their tip OR B is
-// an ancestor of their tip — with ≥ required distinct voters. The node then syncs to B and live
-// consensus catch-up handles anything above it.
-//
-// Ancestry is learned by CONTENT, reusing the same parent-link descent the sync loop trusts:
-// for each candidate tip (most stake first, so the honest, well-supported tips are covered),
-// fetch its ancestry, parse it into a parent-linked chain, and cumulatively tally — walking the
-// chain from the tip DOWNWARD, summing the stake of beacons whose own tip sits at or above the
-// current block ON THIS chain. The FIRST (highest) block clearing the floor is that anchor's
-// candidate; the highest across all anchors is the named frontier.
-//
-// C1 (a forged chain finalizes ZERO) is preserved EXACTLY. A credit is only ever made along a
-// real parent-linked chain: a block's parent id is fixed by its content, so a peer cannot fake
-// the linkage BELOW an honestly-reported tip — crediting block B with a beacon's stake is
-// truthful precisely because that beacon's tip lies on B's real descendant chain. A block is
-// named only with > ⅔ of the total staked-beacon weight behind it. A forged or minority tip on
-// a side-fork shares only the honest prefix, so it can never raise the named block above the
-// genuine ⅔-common height; a sub-⅔ set still names nothing. Under ⅔-honest finality two
-// honestly-reported tips are always on one chain (honest validators never finalize conflicting
-// blocks), so the only ids drawing honest credit are real canonical blocks. The agreement
-// RELATION moved from "exact tip" to "in the accepted chain"; the ⅔-by-stake-of-the-real-set
-// requirement did not.
-func (b *blockHandler) nameAncestorTolerant(ctx context.Context, stakeOnTip map[ids.ID]uint64, votersOf map[ids.ID]map[ids.NodeID]struct{}, floor uint64, required int) (ids.ID, bool) {
-	// TOTAL-bound all the anchor ancestry fetches so a partition that answers the frontier but
-	// withholds ancestry cannot hang FrontierTip — the loop's bounded retry handles it instead.
-	ctx, cancel := context.WithTimeout(ctx, bootstrapNamingTimeout)
-	defer cancel()
-
-	// Candidate anchors = the distinct reported tips, MOST STAKE FIRST. Honest beacons hold ⅔ of
-	// the stake, so even when split their tips sort ahead of any low-stake forged outliers (which
-	// the anchor cap then excludes). Stake order only minimizes fetches — safety comes from the
-	// per-anchor content verification and the ⅔ re-tally, not from which anchor is tried first.
-	anchors := make([]ids.ID, 0, len(stakeOnTip))
-	for tip := range stakeOnTip {
-		anchors = append(anchors, tip)
-	}
-	sort.Slice(anchors, func(i, j int) bool {
-		if stakeOnTip[anchors[i]] != stakeOnTip[anchors[j]] {
-			return stakeOnTip[anchors[i]] > stakeOnTip[anchors[j]]
-		}
-		return bytes.Compare(anchors[i][:], anchors[j][:]) < 0 // stable tiebreak
-	})
-
-	covered := make(map[ids.ID]struct{}) // ids already walked on a fetched chain — skip re-anchoring
-	var bestID ids.ID
-	var bestHeight, bestStake uint64
-	found := false
-	for i, anchor := range anchors {
-		if i >= maxNamingAnchors {
-			break // bound the fetches — honest tips cluster; a forged swarm cannot exhaust this
-		}
-		if _, done := covered[anchor]; done {
-			continue // this tip already lies on a previously-fetched (higher) chain
-		}
-		id, h, st, ok := b.tallyAnchorChain(ctx, anchor, stakeOnTip, votersOf, floor, required, covered)
-		if !ok {
-			continue
-		}
-		if !found || h > bestHeight || (h == bestHeight && st > bestStake) {
-			bestID, bestHeight, bestStake, found = id, h, st, true
-		}
-	}
-	return bestID, found
-}
-
-// tallyAnchorChain fetches `anchor`'s ancestry (ONE bounded window — the bleeding-edge skew
-// between honest beacons is small), rebuilds the parent-linked chain by CONTENT, and walks it
-// from the anchor DOWNWARD accumulating beacon stake + distinct voters. It returns the HIGHEST
-// block whose cumulative stake exceeds `floor` with ≥ `required` distinct voters (the highest
-// ⅔-common block ON THIS chain), and records every block id it walks into `covered` so the
-// caller can skip re-anchoring a tip already on this chain. ok=false if the anchor's ancestry
-// cannot be fetched/parsed, or no block on it clears the floor within the window.
-//
-// The cumulative is exact: walking from the anchor down, at each block we add the stake of
-// beacons whose TIP is that block; a beacon higher on the chain was already counted when the
-// walk passed its tip. So the running total at block B equals the stake of every beacon whose
-// tip lies on this chain at height ≥ B — i.e. the stake that has B in its accepted chain.
-func (b *blockHandler) tallyAnchorChain(ctx context.Context, anchor ids.ID, stakeOnTip map[ids.ID]uint64, votersOf map[ids.ID]map[ids.NodeID]struct{}, floor uint64, required int, covered map[ids.ID]struct{}) (ids.ID, uint64, uint64, bool) {
-	batch, err := b.Ancestors(ctx, anchor, bootstrapNamingWindow)
-	if err != nil || len(batch) == 0 {
-		return ids.Empty, 0, 0, false // peer did not serve this anchor's ancestry — skip it
-	}
-	type linked struct {
-		height uint64
-		parent ids.ID
-	}
-	index := make(map[ids.ID]linked, len(batch))
-	for _, raw := range batch {
-		blk, perr := b.vm.ParseBlock(ctx, raw)
-		if perr != nil {
-			return ids.Empty, 0, 0, false // a malformed served block — do not trust this anchor's chain
-		}
-		index[blk.ID()] = linked{height: blk.Height(), parent: blk.ParentID()}
-	}
-
-	var cumStake uint64
-	cumVoters := make(map[ids.NodeID]struct{})
-	cur := anchor
-	for {
-		n, ok := index[cur]
-		if !ok {
-			break // the served batch does not extend the content-addressed chain further down
-		}
-		covered[cur] = struct{}{}
-		cumStake += stakeOnTip[cur]
-		for v := range votersOf[cur] {
-			cumVoters[v] = struct{}{}
-		}
-		if cumStake > floor && len(cumVoters) >= required {
-			return cur, n.height, cumStake, true // highest crossing (we walk top-down)
-		}
-		if n.parent == ids.Empty {
-			break
-		}
-		cur = n.parent
-	}
-	return ids.Empty, 0, 0, false
 }
 
 // Ancestors implements chainbootstrap.BlockSource: fetch up to maxBlocks blocks ending
@@ -500,6 +378,29 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
+}
+
+// Ancestry implements the BootstrapPolicy's AncestrySource: fetch a tip's ancestry over the wire
+// and parse each block to its CONTENT-ADDRESSED (id, height, parent). It reuses the SAME Ancestors
+// transport + ParseBlock the sync loop trusts, so a forging peer cannot fake the parent linkage
+// the responder-agreement tally walks — and the trust DECISION (bootstrap_trust.go) stays free of
+// any VM/block dependency, taking only []BlockRef. An empty fetch (peer did not serve) yields nil
+// so that anchor simply contributes nothing; a malformed served block fails the whole anchor (it
+// is not safe to trust a chain we cannot parse).
+func (b *blockHandler) Ancestry(ctx context.Context, tip ids.ID, max int) ([]BlockRef, error) {
+	raw, err := b.Ancestors(ctx, tip, max)
+	if err != nil || len(raw) == 0 {
+		return nil, err
+	}
+	refs := make([]BlockRef, 0, len(raw))
+	for _, bz := range raw {
+		blk, perr := b.vm.ParseBlock(ctx, bz)
+		if perr != nil {
+			return nil, perr
+		}
+		refs = append(refs, BlockRef{ID: blk.ID(), Height: blk.Height(), Parent: blk.ParentID()})
+	}
+	return refs, nil
 }
 
 // ParseBlock implements chainbootstrap.Chain: decode block bytes through the SAME

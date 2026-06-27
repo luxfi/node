@@ -1,0 +1,423 @@
+// Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+// bootstrap_trust_test.go — the A–G proof matrix for the BootstrapTrust policy: the SEPARATE
+// trust object (distinct from consensus finality) that lets a node recover when validators are
+// down (mass recovery) while refusing partition-capture and never weakening finality.
+//
+// Most cases test the POLICY decision (AcceptsFrontier) directly — deterministic, no network
+// timing — since that IS the acceptance gate the owner specified. The mass-recovery success (A)
+// and the global-tally height-floor guard also run the FULL fetch+execute loop over the real
+// transport to prove the node converges (or fails safe) end to end. Each is load-bearing: revert
+// the response-floor policy to the prior ⅔-of-current-total-stake gate and A deadlocks; drop the
+// configured-beacon filter and D/E capture; drop the MinFrontierHeight floor and the shared-
+// genesis fork false-completes.
+package chains
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	consensusconfig "github.com/luxfi/consensus/config"
+	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	"github.com/luxfi/ids"
+)
+
+// ----- policy test helpers --------------------------------------------------
+
+// stubAncestry is an in-memory AncestrySource: it walks a parent-linked BlockRef map down from a
+// tip, exactly as the real wire transport would serve content-addressed ancestry. Modeling the
+// transport this way keeps the policy unit tests deterministic while exercising the real ancestor-
+// tolerant tally. `withhold` models a beacon that names a tip but does NOT serve its ancestry.
+type stubAncestry struct {
+	byID     map[ids.ID]BlockRef
+	withhold map[ids.ID]bool
+}
+
+func (s *stubAncestry) Ancestry(_ context.Context, tip ids.ID, max int) ([]BlockRef, error) {
+	if s.withhold[tip] {
+		return nil, nil
+	}
+	var out []BlockRef
+	cur := tip
+	for i := 0; i < max; i++ {
+		ref, ok := s.byID[cur]
+		if !ok {
+			break
+		}
+		out = append(out, ref)
+		if ref.Parent == ids.Empty {
+			break
+		}
+		cur = ref.Parent
+	}
+	return out, nil
+}
+
+// refChain builds genesis..n as content-addressed BlockRefs (parent-linked), returning the slice
+// and an id→ref index for the stub AncestrySource.
+func refChain(n int) ([]BlockRef, map[ids.ID]BlockRef) {
+	refs := make([]BlockRef, 0, n+1)
+	byID := map[ids.ID]BlockRef{}
+	var parent ids.ID
+	for h := 0; h <= n; h++ {
+		r := BlockRef{ID: ids.GenerateTestID(), Height: uint64(h), Parent: parent}
+		refs = append(refs, r)
+		byID[r.ID] = r
+		parent = r.ID
+	}
+	return refs, byID
+}
+
+// childRef makes a block extending `parent` at height parentHeight+1 — used to forge a "higher"
+// sibling tip built on a real block.
+func childRef(parent BlockRef) BlockRef {
+	return BlockRef{ID: ids.GenerateTestID(), Height: parent.Height + 1, Parent: parent.ID}
+}
+
+func nodeIDs(n int) []ids.NodeID {
+	out := make([]ids.NodeID, n)
+	for i := range out {
+		out[i] = ids.GenerateTestNodeID()
+	}
+	return out
+}
+
+// equalBeacons builds a TrustedBeacons map of equal-weight validators.
+func equalBeacons(beacons []ids.NodeID, w uint64) map[ids.NodeID]StakeWeight {
+	m := make(map[ids.NodeID]StakeWeight, len(beacons))
+	for _, id := range beacons {
+		m[id] = w
+	}
+	return m
+}
+
+func reply(id ids.NodeID, tip ids.ID, w uint64) BeaconReply {
+	return BeaconReply{NodeID: id, Tip: tip, Weight: w}
+}
+
+// equalStake is the owner's mainnet shape: 5 validators each 0.5e18, total 2.5e18.
+const equalStake uint64 = 500_000_000_000_000_000
+
+// ----- A: MASS RECOVERY SUCCESS ---------------------------------------------
+
+// TestBootstrapTrust_A_MassRecoverySucceeds is THE deadlock fix. 5 EQUAL-weight validators; the 2
+// stranded recovery targets are down, so only 3 are reachable; the 3 reachable agree on the
+// frontier. With MinResponses=3 the policy ACCEPTS — even though 3 of 5 stake (1.5e18) is BELOW
+// the ⅔-of-current-total floor (1.667e18) that the prior code required to be CONNECTED. That old
+// floor was mathematically unsatisfiable here (the down nodes ARE validators), which is exactly
+// why no node could recover. This test pins both: the policy accepts, AND the old gate would have
+// rejected (the deadlock), AND the full loop converges over the real transport.
+func TestBootstrapTrust_A_MassRecoverySucceeds(t *testing.T) {
+	// The deadlock the fix escapes: 3-of-5 connected stake does NOT clear ⅔ of the total set.
+	require.LessOrEqual(t, 3*equalStake, consensusconfig.TwoThirdsStakeFloor(5*equalStake),
+		"precondition: 3 of 5 equal validators is BELOW ⅔ of total — the prior connect gate's deadlock")
+
+	// Policy decision: 5 configured, 3 reachable agree on the frontier (mainnet analog 1082796).
+	beacons := nodeIDs(5)
+	frontier := ids.GenerateTestID()
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, equalStake),
+		MinResponses:   3,
+	}
+	replies := []BeaconReply{
+		reply(beacons[0], frontier, equalStake),
+		reply(beacons[1], frontier, equalStake),
+		reply(beacons[2], frontier, equalStake),
+		// beacons[3], beacons[4] are down/stranded — no reply.
+	}
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err, "3 of 5 reachable beacons agreeing MUST be accepted — the mass-recovery case")
+	require.Equal(t, frontier, f.ID)
+	require.Equal(t, 3, f.Responders)
+	require.False(t, f.FromCheckpoint)
+
+	// End to end over the real GetAcceptedFrontier/GetAncestors transport: a STALE node with only
+	// 3 of its 5 equal-weight validators reachable converges to the frontier N (not stuck at M).
+	const N = 40
+	const M = 23
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M)
+	v := nodeIDs(5)
+	weights := equalBeacons(v, equalStake)
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapMinResponses = 3 // the owner's MinBootstrapResponses=3
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{v[0], v[1], v[2]}, // 2 stranded down
+		byID: byID, tip: chain[N], serveAncestors: true,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status,
+		"MASS RECOVERY: 3 of 5 equal validators reachable + agreeing must NAME the frontier (no deadlock)")
+	require.Equal(t, chain[N].id, tip)
+
+	require.NoError(t, runBS(t, bh), "mass-recovery node must converge")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "RECOVERED: converged to the frontier N=%d despite 2 of 5 validators down", N)
+	require.True(t, bh.Has(ctx, chain[N].id))
+}
+
+// ----- B: ONE-BEACON CAPTURE REJECTED ---------------------------------------
+
+// TestBootstrapTrust_B_OneBeaconCaptureRejected: 5 configured, only 1 reachable. A single beacon —
+// even an authentic configured one — cannot name the frontier (it could be the attacker's lone
+// peer in an eclipse). The response FLOOR rejects it.
+func TestBootstrapTrust_B_OneBeaconCaptureRejected(t *testing.T) {
+	beacons := nodeIDs(5)
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, equalStake), MinResponses: 3}
+	replies := []BeaconReply{reply(beacons[0], ids.GenerateTestID(), equalStake)}
+
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.Nil(t, f)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses,
+		"1 of 5 reachable must be REJECTED (capture) — below the MinResponses floor")
+}
+
+// ----- C: TWO-BEACON PARTITION REJECTED -------------------------------------
+
+// TestBootstrapTrust_C_TwoBeaconPartitionRejected: 5 configured, 2 reachable AGREEING. Two beacons
+// is still below MinResponses=3, so the policy rejects by default — an attacker who partitions the
+// node down to 2 beacons cannot capture the frontier even if both agree.
+func TestBootstrapTrust_C_TwoBeaconPartitionRejected(t *testing.T) {
+	beacons := nodeIDs(5)
+	frontier := ids.GenerateTestID()
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, equalStake), MinResponses: 3}
+	replies := []BeaconReply{
+		reply(beacons[0], frontier, equalStake),
+		reply(beacons[1], frontier, equalStake),
+	}
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.Nil(t, f)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses,
+		"2 of 5 reachable + agreeing must be REJECTED by default — the partition-capture floor is MinResponses=3")
+}
+
+// ----- D: NON-CONFIGURED PEER IGNORED ---------------------------------------
+
+// TestBootstrapTrust_D_NonConfiguredPeerIgnored: an attacker peer that is NOT in the configured
+// beacon set reports a higher forged tip. INVARIANT 1 (non-circular eligibility): peers never
+// define who is a beacon, so the forged reply is dropped entirely and the configured beacons name
+// the real frontier.
+func TestBootstrapTrust_D_NonConfiguredPeerIgnored(t *testing.T) {
+	beacons := nodeIDs(5)
+	real := ids.GenerateTestID()
+	forgedHigher := ids.GenerateTestID()
+	attacker := ids.GenerateTestNodeID() // NOT in TrustedBeacons
+
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, equalStake), MinResponses: 3}
+	replies := []BeaconReply{
+		reply(beacons[0], real, equalStake),
+		reply(beacons[1], real, equalStake),
+		reply(beacons[2], real, equalStake),
+		reply(attacker, forgedHigher, 9_000_000_000_000_000_000), // huge self-reported weight, ignored
+	}
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err)
+	require.Equal(t, real, f.ID, "the non-configured attacker's forged tip must be IGNORED")
+	require.NotEqual(t, forgedHigher, f.ID)
+	require.Equal(t, 3, f.Responders, "only the 3 configured beacons count toward the quorum")
+}
+
+// ----- E: MINORITY CONFIGURED FORGERY REJECTED ------------------------------
+
+// TestBootstrapTrust_E_MinorityConfiguredForgeryRejected: 3 honest configured beacons report
+// frontier A; 2 configured beacons report a FORGED tip B built directly on A (a forged higher
+// sibling). C1: the forgers can only RATIFY A (the real block they built on); B itself holds only
+// the Byzantine minority's stake and is NEVER named. The policy selects A.
+func TestBootstrapTrust_E_MinorityConfiguredForgeryRejected(t *testing.T) {
+	const w uint64 = 100
+	refs, byID := refChain(30) // genesis..30; A := refs[30]
+	A := refs[30]
+	forgedB := childRef(A) // forged sibling at height 31, parent = real A
+	byID[forgedB.ID] = forgedB
+
+	beacons := nodeIDs(5)
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, w),
+		MinResponses:   3,
+		Source:         &stubAncestry{byID: byID},
+	}
+	replies := []BeaconReply{
+		reply(beacons[0], A.ID, w),
+		reply(beacons[1], A.ID, w),
+		reply(beacons[2], A.ID, w),       // 3 honest on A (300)
+		reply(beacons[3], forgedB.ID, w), // 2 Byzantine on the forged child (200)
+		reply(beacons[4], forgedB.ID, w),
+	}
+	// floor = ⅔ of 500 = 333. Neither A (300) nor forgedB (200) clears it directly, so the
+	// ancestor-tolerant tally runs: the forgers' stake flows DOWN through A (its real parent),
+	// crediting A with 500 while forgedB keeps only 200 → A named, forgedB never.
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err)
+	require.Equal(t, A.ID, f.ID, "C1: the forged child only RATIFIES A — A is named")
+	require.NotEqual(t, forgedB.ID, f.ID, "C1: the Byzantine-minority forged tip is NEVER named")
+	require.Equal(t, A.Height, f.Height)
+}
+
+// ----- F: SPLIT REACHABLE ANCESTRY ------------------------------------------
+
+// TestBootstrapTrust_F_SplitReachableAncestrySelectsCommonAncestor: 3 reachable configured beacons
+// each report a DIFFERENT sibling tip (three pending blocks built on the same committed block H —
+// the healthy bleeding edge). No single tip holds a supermajority, but H is in all three accepted
+// chains, so the policy names H (the highest ⅔-of-responders common committed block), NOT any
+// isolated tip.
+func TestBootstrapTrust_F_SplitReachableAncestrySelectsCommonAncestor(t *testing.T) {
+	const w uint64 = 100
+	refs, byID := refChain(39) // genesis..39; H := refs[39] (the common committed block)
+	H := refs[39]
+	a1, a2, a3 := childRef(H), childRef(H), childRef(H) // three sibling pending blocks at height 40
+	for _, c := range []BlockRef{a1, a2, a3} {
+		byID[c.ID] = c
+	}
+
+	beacons := nodeIDs(3)
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, w),
+		MinResponses:   3,
+		Source:         &stubAncestry{byID: byID},
+	}
+	replies := []BeaconReply{
+		reply(beacons[0], a1.ID, w),
+		reply(beacons[1], a2.ID, w),
+		reply(beacons[2], a3.ID, w),
+	}
+	// floor = ⅔ of 300 = 200. Each sibling holds only 100, but H is shared by all three → 300 > 200.
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err)
+	require.Equal(t, H.ID, f.ID, "must select the common committed ancestor H")
+	require.Equal(t, H.Height, f.Height)
+	require.NotEqual(t, a1.ID, f.ID)
+	require.NotEqual(t, a2.ID, f.ID)
+	require.NotEqual(t, a3.ID, f.ID)
+}
+
+// ----- G: FINALITY UNCHANGED ------------------------------------------------
+
+// TestBootstrapTrust_G_FinalityUnchanged proves INVARIANT 3: a bootstrap-accepted frontier is NOT
+// finality. The SAME 3-of-5 support that AcceptsFrontier admits as a sync anchor does NOT satisfy
+// ConsensusQuorum.HasFinality — live block acceptance still requires > ⅔ of CURRENT validator
+// stake (4 of 5 here). The bootstrap quorum cannot finalize a block.
+func TestBootstrapTrust_G_FinalityUnchanged(t *testing.T) {
+	const w uint64 = 100
+	const total = 5 * w
+	beacons := nodeIDs(5)
+	frontier := ids.GenerateTestID()
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, w), MinResponses: 3}
+
+	// BootstrapTrust ACCEPTS 3 of 5 (a sync anchor).
+	f, err := policy.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], frontier, w),
+		reply(beacons[1], frontier, w),
+		reply(beacons[2], frontier, w),
+	})
+	require.NoError(t, err)
+	require.Equal(t, frontier, f.ID)
+	require.Equal(t, StakeWeight(3*w), f.Weight, "the frontier is backed by exactly the 3 responders")
+
+	// ConsensusQuorum says that SAME 3-of-5 weight is NOT finality — the decisions are different
+	// objects with different thresholds. Finality is unchanged: it still needs > ⅔ (4 of 5).
+	cq := DefaultConsensusQuorum()
+	require.False(t, cq.HasFinality(3*w, total),
+		"INVARIANT 3: a bootstrap-accepted frontier (3 of 5) is NOT a finalizing supermajority")
+	require.True(t, cq.HasFinality(4*w, total),
+		"finality UNCHANGED: > ⅔ of current stake (4 of 5) still finalizes")
+	require.False(t, cq.HasFinality(f.Weight, total),
+		"the bootstrap quorum's own backing weight cannot finalize a block")
+}
+
+// ----- checkpoint override (complements B) ----------------------------------
+
+// TestBootstrapTrust_CheckpointOverride: below the response floor (1 of 5), the DEFAULT is reject
+// (test B), but an operator who pins a checkpoint gets the explicit override — the node anchors to
+// the pinned (id,height) instead of trusting the lone beacon. This is the sanctioned escape hatch
+// for a deeply-partitioned node, NEVER an open-ended ≥1-beacon acceptance.
+func TestBootstrapTrust_CheckpointOverride(t *testing.T) {
+	beacons := nodeIDs(5)
+	ckptID := ids.GenerateTestID()
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, equalStake),
+		MinResponses:   3,
+		Checkpoint:     &Checkpoint{ID: ckptID, Height: 1_082_796},
+	}
+	// 1 reachable beacon — below the floor — but a checkpoint is pinned.
+	f, err := policy.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], ids.GenerateTestID(), equalStake),
+	})
+	require.NoError(t, err)
+	require.True(t, f.FromCheckpoint, "below the floor with a pinned checkpoint → anchor to the checkpoint")
+	require.Equal(t, ckptID, f.ID)
+	require.Equal(t, uint64(1_082_796), f.Height)
+
+	// Without the checkpoint the same 1-of-5 is rejected (the default — never trust the lone beacon).
+	policy.Checkpoint = nil
+	_, err = policy.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], ids.GenerateTestID(), equalStake),
+	})
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses)
+}
+
+// ----- safety guard for the global ancestor-tolerant tally ------------------
+
+// TestBootstrapTrust_ForkAtSharedGenesisFailsSafe is the load-bearing guard for the
+// MinFrontierHeight floor — the safety property the global cross-anchor tally (which makes case F
+// work) would otherwise break. Two branches fork at a DEEP shared ancestor H (height 5), and the
+// node is stale ABOVE the fork (height 23). The tally credits H with the union of BOTH halves'
+// stake (all responders share H), so without the floor it would name H — and since the node
+// already HOLDS H, the loop would FALSE-COMPLETE at the stale height instead of recognizing it has
+// no ⅔-agreed frontier ahead. The MinFrontierHeight floor refuses to name any block beneath the
+// node's last-accepted height, turning the partition into a safe ErrNoBootstrapQuorum.
+//
+// Asserted deterministically at the POLICY level (a stub AncestrySource serves BOTH branches'
+// shared ancestry — the real wire transport's rotated sampling may only serve one, masking the
+// vulnerability, so the integration path is NOT a faithful test of this guard). Revert the floor
+// (set MinFrontierHeight: 0) and this names H instead of failing safe.
+func TestBootstrapTrust_ForkAtSharedGenesisFailsSafe(t *testing.T) {
+	const w uint64 = 100
+	const nodeHeight = 23
+
+	// Shared prefix genesis..H (H at height 5), then two divergent branches to height 40.
+	shared, byID := refChain(5)
+	H := shared[5]
+	branchA := []BlockRef{H}
+	branchB := []BlockRef{H}
+	for h := 6; h <= 40; h++ {
+		a := childRef(branchA[len(branchA)-1])
+		b := childRef(branchB[len(branchB)-1])
+		byID[a.ID], byID[b.ID] = a, b
+		branchA = append(branchA, a)
+		branchB = append(branchB, b)
+	}
+	tipA, tipB := branchA[len(branchA)-1], branchB[len(branchB)-1]
+
+	beacons := nodeIDs(6)
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(beacons, w),
+		MinResponses:      4,
+		MinFrontierHeight: nodeHeight, // the node is stale at height 23, ABOVE the fork at 5
+		Source:            &stubAncestry{byID: byID},
+	}
+	replies := []BeaconReply{
+		reply(beacons[0], tipA.ID, w), reply(beacons[1], tipA.ID, w), reply(beacons[2], tipA.ID, w),
+		reply(beacons[3], tipB.ID, w), reply(beacons[4], tipB.ID, w), reply(beacons[5], tipB.ID, w),
+	}
+	// H (height 5) is shared by all 6 → 600 > floor(400). But it is BELOW the node's height, so the
+	// floor refuses it; no block at/above height 23 has ⅔ → fail safe.
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.Nil(t, f, "must not name the deep shared ancestor — that would false-complete at the stale height")
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"a fork sharing only blocks BELOW the node's height must fail safe, never name the deep common ancestor")
+
+	// The same split with the node BELOW the fork (a fresh node) legitimately names H — the floor
+	// only blocks naming history the node already has, never a real frontier ahead.
+	policy.MinFrontierHeight = 0
+	f, err = policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err)
+	require.Equal(t, H.ID, f.ID, "with the node below the fork, H IS the ⅔-common frontier to sync to")
+}
