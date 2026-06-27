@@ -1077,9 +1077,20 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 	case chain.ChainVM:
 		beacons := m.Validators
-		if chainParams.ID == constants.PlatformChainID {
+		isPlatformChain := chainParams.ID == constants.PlatformChainID
+		if isPlatformChain {
 			beacons = chainParams.CustomBeacons
 		}
+
+		// expectsStakedBeacons gates the EMPTY-beacon-set behavior of the bootstrap frontier
+		// quorum (see blockHandler.expectsStakedBeacons). True ONLY for a native NON-platform
+		// chain (C/X/Q/...) on a sybil-protected network — those sync against the STAKED
+		// primary-network validator set (m.Validators, populated by the already-bootstrapped
+		// P-chain), so an empty set means "not yet loaded / misconfig → wait then fail safe",
+		// NOT "single-node → done". The P-chain (CustomBeacons may be empty under endpoint-only
+		// --bootstrap-nodes) and skip-bootstrap keep the "empty ⇒ nothing to sync to" behavior.
+		// Computed BEFORE the skip-bootstrap override so it is false in single-node mode.
+		expectsStakedBeacons := !m.SkipBootstrap && ids.IsNativeChain(chainParams.ID) && !isPlatformChain
 
 		// In skip-bootstrap mode, use empty beacons for all chains
 		// This enables single-node development mode
@@ -1453,7 +1464,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
-		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons)
+		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, expectsStakedBeacons)
 		// Late-bind the handler as the engine's catch-up wire: it owns requestContext
 		// (send GetAncestors) and handleContext -> Put -> engine (deliver the fetched
 		// ancestors), so a follower that falls behind now self-heals instead of
@@ -2502,6 +2513,17 @@ type blockHandler struct {
 	// cannot. nil ⇒ no beacon quorum (single-node / skip-bootstrap), bootstrap is inert.
 	beacons validators.Manager
 
+	// expectsStakedBeacons is true when this chain syncs against the STAKED primary-network
+	// validator set (m.Validators) — i.e. a native non-platform chain (C/X/Q/...) on a
+	// sybil-protected network. That set is populated by the already-bootstrapped P-chain, so
+	// an EMPTY beacon set here means the staked set is not yet loaded or is misconfigured,
+	// NOT a single-node network. In that case FrontierTip must WAIT (→ ConnectDeadline → fail
+	// safe), never false-complete at the stale height and never fall back to unweighted /
+	// endpoint trust (which would reopen C1). False for the P-chain (its CustomBeacons may be
+	// legitimately empty under endpoint-only --bootstrap-nodes) and for single-node mode,
+	// where an empty beacon set legitimately means "nothing to sync to".
+	expectsStakedBeacons bool
+
 	// wsCheckpointID + wsCheckpointHeight are an OPTIONAL operator-supplied weak-
 	// subjectivity anchor (a recent finalized block id at height) the α-agreed frontier
 	// must descend from — defense-in-depth for an empty-genesis node. Zero ⇒ disabled.
@@ -2535,20 +2557,21 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, expectsStakedBeacons bool) *blockHandler {
 	return &blockHandler{
-		vm:               vm,
-		logger:           logger,
-		engine:           engine,
-		net:              net,
-		msgCreator:       msgCreator,
-		chainID:          chainID,
-		networkID:        networkID,
-		beacons:          beacons,
-		pendingContext:   make(map[ids.ID]contextRequest),
-		maxContextBlocks: 256, // Default max context blocks to request/serve
-		pendingQbits:     make(map[ids.ID][]QbitEvent),
-		bsAncestorCh:     make(map[uint32]chan [][]byte),
+		vm:                   vm,
+		logger:               logger,
+		engine:               engine,
+		net:                  net,
+		msgCreator:           msgCreator,
+		chainID:              chainID,
+		networkID:            networkID,
+		beacons:              beacons,
+		expectsStakedBeacons: expectsStakedBeacons,
+		pendingContext:       make(map[ids.ID]contextRequest),
+		maxContextBlocks:     256, // Default max context blocks to request/serve
+		pendingQbits:         make(map[ids.ID][]QbitEvent),
+		bsAncestorCh:         make(map[uint32]chan [][]byte),
 	}
 }
 
