@@ -238,8 +238,13 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// are CAUGHT UP. A TIP-HOLDER on a mixed-height co-restart sees the responders SPLIT below ⅔
 		// (the tip-holders are only half), so NOTHING is named, yet it is plainly not behind — and
 		// the ancestor-tolerant tally cannot name the ⅔-backed COMMON ancestor either, because that
-		// ancestor is BELOW the node's own last-accepted (MinFrontierHeight filters it). Without this
-		// the tip-holder fails safe DOWN at its own tip — the opposite of the stale-go-live bug.
+		// ancestor is AT OR BELOW the node's own last-accepted (MinFrontierHeight names only STRICTLY
+		// ABOVE it). That own-height exclusion is also the M1 eclipse-stale fix: a block at the node's
+		// height that accrues ⅔ purely as the shared ANCESTOR of ahead-tips an eclipse throttled below
+		// the naming threshold is NOT named — so this same CaughtUp gate, not nameFrontier, decides the
+		// at-own-height case, and it REFUSES when any responder is genuinely ahead (the node lacks that
+		// tip). Without this the tip-holder fails safe DOWN at its own tip — the opposite of the
+		// stale-go-live bug.
 		//
 		// policy.CaughtUp is true ONLY when the floor is met AND no responder reports an accepted tip
 		// above our height AND we hold every reported tip (its full safety argument lives on the
@@ -264,8 +269,10 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 // self-report). MinResponses defaults to a MAJORITY of the configured beacons (the largest floor
 // that still lets the node recover when a minority of validators is down); the agreement is ⅔ of
 // the RESPONDERS; MinFrontierHeight is the node's last-accepted height (the ancestor-tolerant path
-// never names a block beneath where the node already is — fail safe, not false-complete). All are
-// operator-overridable via the blockHandler fields; zero ⇒ the documented default.
+// names only a block STRICTLY ABOVE it — never at or beneath where the node already is, so an
+// eclipse cannot make the node's own height a false frontier; that case routes to CaughtUp — fail
+// safe, not false-complete). All are operator-overridable via the blockHandler fields; zero ⇒ the
+// documented default.
 func (b *blockHandler) bootstrapPolicy(weights map[ids.NodeID]uint64) *BootstrapPolicy {
 	minResp := b.bootstrapMinResponses
 	if minResp <= 0 {

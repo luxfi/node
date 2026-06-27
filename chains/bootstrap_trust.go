@@ -184,12 +184,17 @@ type BootstrapPolicy struct {
 	// MinResponders is the minimum DISTINCT beacons that must back a NAMED block (default 2), so a
 	// single beacon cannot alone name the frontier. Capped at the responder count.
 	MinResponders int
-	// MinFrontierHeight floors the height the ANCESTOR-TOLERANT path may name (the node's current
-	// last-accepted height). A common ancestor BELOW where the node already is means the beacons
-	// agree only on history the node has — a partition above, not a frontier ahead — so it is NOT
-	// named (→ ErrNoBootstrapQuorum, fail safe), never a false-complete at the stale height. The
-	// exact fast path is exempt: a tip a responder supermajority actively reports is a real
-	// frontier even when low (a genuinely fresh network).
+	// MinFrontierHeight is the node's current last-accepted height. The ANCESTOR-TOLERANT path
+	// names only a block STRICTLY ABOVE it — a frontier genuinely AHEAD. A common ancestor BELOW it
+	// is history the node has (a partition above, not a frontier ahead). A block AT exactly this
+	// height is ALSO not named here (the M1 eclipse-stale fix): an eclipse can throttle the honest
+	// ahead-tips below the ⅔ naming threshold while the node's OWN height accrues ⅔ as their shared
+	// ANCESTOR — naming it would go Ready stale. Excluding own height routes that case to CaughtUp,
+	// which distinguishes a legit all-at-N fleet from an eclipse with ahead-tips the node lacks. So
+	// nothing at or below own height is named (→ ErrNoBootstrapQuorum, fail safe), never a
+	// false-complete at the stale height. The exact fast path is exempt: a tip a responder
+	// supermajority ACTIVELY reports is a real frontier even at own height (a genuinely fresh
+	// network, or a fleet unanimously AT the tip).
 	MinFrontierHeight uint64
 	// Checkpoint is the OPTIONAL operator override for the below-floor case (INVARIANT 2). nil ⇒
 	// reject below the floor.
@@ -404,9 +409,10 @@ func (p *BootstrapPolicy) CaughtUp(replies []BeaconReply, lastAccepted uint64, h
 //     MinFrontierHeight: an actively-reported tip is a real frontier even when low.
 //   - ANCESTOR-TOLERANT PATH: otherwise, fetch the distinct tips' ancestries into ONE union index
 //     and globally credit each tip's stake to every block on its content-addressed chain. The
-//     highest block clearing the floor (and at height ≥ MinFrontierHeight) is named. A sibling
-//     split converges to the common committed ancestor; a partition that shares nothing ⅔-backed
-//     names nothing (→ fail safe).
+//     highest block clearing the floor AND at a height STRICTLY ABOVE MinFrontierHeight (a frontier
+//     genuinely ahead — never the node's own height, which an eclipse could over-credit as a shared
+//     ancestor; that routes to CaughtUp) is named. A sibling split converges to the common committed
+//     ancestor; a partition that shares nothing ⅔-backed names nothing (→ fail safe).
 //
 // C1 (a forged chain finalizes ZERO) is preserved: a block is credited a beacon's stake only when
 // that beacon's tip lies on the block's CONTENT-ADDRESSED descendant chain (parent ids are bound
@@ -482,14 +488,19 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 		}
 	}
 
-	// Name the HIGHEST block clearing the floor with ≥ required distinct voters, at height ≥
-	// MinFrontierHeight (never a block at or below where a partition diverged beneath the node).
+	// Name the HIGHEST block clearing the floor with ≥ required distinct voters, at a height
+	// STRICTLY ABOVE MinFrontierHeight — a genuine frontier AHEAD. A block AT the node's own
+	// last-accepted height is NOT named here (it is history the node already holds, reachable as a
+	// ⅔-backed ANCESTOR of higher tips an eclipse can suppress below the naming threshold — the M1
+	// stale-go-live path): that case routes to CaughtUp, which alone can distinguish a legit
+	// all-at-N fleet (→ Ready at N) from an eclipse with ahead-tips the node lacks (→ sync). A block
+	// BELOW own height is a partition diverged beneath the node. Both fail safe, never false-complete.
 	var bestID ids.ID
 	var bestHeight, bestStake uint64
 	found := false
 	for id, st := range backing {
 		ref := index[id]
-		if st <= floor || len(voters[id]) < required || ref.Height < p.MinFrontierHeight {
+		if st <= floor || len(voters[id]) < required || ref.Height <= p.MinFrontierHeight {
 			continue
 		}
 		if !found || ref.Height > bestHeight || (ref.Height == bestHeight && st > bestStake) {

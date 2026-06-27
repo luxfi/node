@@ -188,6 +188,37 @@ type bsBeaconNet struct {
 	// Optional malicious NON-beacon peer: connected and tracking, reports a forged tip.
 	malicious ids.NodeID
 	forgedTip ids.ID
+
+	// tipFor2 + propagateAtHeight model finalization PROPAGATION across the fleet, the faithful
+	// analog of the connectivity evolution above. A beacon reports tipFor[id] UNTIL the syncing
+	// node has accepted through propagateAtHeight, then reports tipFor2[id]. This is what
+	// GetAcceptedFrontier returns in production (chains/manager.go: vm.LastAccepted — the
+	// last-ACCEPTED block, NEVER an un-finalized preferred tip): on a live chain the laggards'
+	// last-accepted frontier RATCHETS UP as finalization completes, so by the time a behind node
+	// has synced to the ⅔-common height the bleeding-edge block is finalized fleet-wide. Modeling
+	// it this way lets a full-loop test exercise the ancestor-tolerant ⅔-common naming for a BEHIND
+	// node AND still reach caught-up at the TRUE finalized tip — instead of a STATIC minority-above
+	// that (post the M1 own-height-exclusion fix) correctly refuses to go-live stale. Zero value
+	// (nil / 0) disables it, so existing tests are unaffected.
+	tipFor2           map[ids.NodeID]ids.ID
+	propagateAtHeight uint64
+}
+
+// nodeAcceptedHeight reports the syncing node's current last-ACCEPTED height (0 if unknown) — the
+// signal the propagation model keys on, exactly the value chains/manager.go answers GetAcceptedFrontier with.
+func (n *bsBeaconNet) nodeAcceptedHeight() uint64 {
+	if n.bh == nil || n.bh.vm == nil {
+		return 0
+	}
+	id, err := n.bh.vm.LastAccepted(context.Background())
+	if err != nil || id == ids.Empty {
+		return 0
+	}
+	blk, err := n.bh.vm.GetBlock(context.Background(), id)
+	if err != nil {
+		return 0
+	}
+	return blk.Height()
 }
 
 // PeerInfo returns the connected beacons (and the malicious peer, when present) that
@@ -234,11 +265,16 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 	switch m.op {
 	case "frontier":
 		// Each queried beacon answers with the honest tip (or its tipFor override, modeling
-		// disagreement).
+		// disagreement) — and, once the node has accepted through propagateAtHeight, its tipFor2
+		// (modeling finalization propagating across the fleet so the bleeding edge resolves).
+		propagated := n.tipFor2 != nil && n.nodeAcceptedHeight() >= n.propagateAtHeight
 		for id := range nodeIDs {
 			tip := n.tip.id
-			if n.tipFor != nil {
-				if t, ok := n.tipFor[id]; ok {
+			if t, ok := n.tipFor[id]; ok {
+				tip = t
+			}
+			if propagated {
+				if t, ok := n.tipFor2[id]; ok {
 					tip = t
 				}
 			}
@@ -735,36 +771,48 @@ func TestRED_EmptyStakedSetFailsSafe(t *testing.T) {
 }
 
 // TestRED_TipSplitConvergesToCommonHeight is THE MAINNET CANARY (luxd-2 on v1.30.78) the
-// ancestor-tolerant frontier quorum fixes. The 3 producers hold > ⅔ stake but are SPLIT at the
-// bleeding edge: 2 have accepted block N, the third's UN-FINALIZED pending block is N+1 (one
-// block ahead, on the SAME chain). The chain is idle, so the split is STABLE and never resolves.
+// ancestor-tolerant frontier quorum fixes — restated FAITHFULLY to the responder semantics
+// (chains/manager.go answers GetAcceptedFrontier with vm.LastAccepted — the last-ACCEPTED block,
+// NEVER an un-finalized preferred tip). The 3 producers hold > ⅔ stake but are SPLIT at the
+// bleeding edge of ACTIVE finalization: producer luxd-3 finalized block TOP first, while luxd-1/2
+// are momentarily one ACCEPTED block behind at N (TOP's parent). A behind node at M must (1) name
+// the ⅔-COMMON committed height N via ancestor tolerance even though no single tip holds ⅔, and
+// (2) RATCHET on to the true finalized tip TOP as finalization propagates across the fleet —
+// ending caught-up at TOP, never stuck at M, never falsely caught-up below the network frontier.
 //
-// THE BUG: the EXACT-tip tally required ⅔-by-stake to report the IDENTICAL id. N drew only the 2
-// producers (200 of 300; the floor is `> 200`, so 200 does NOT clear it) and N+1 drew only the
-// lone producer (100) — neither cleared ⅔, so FrontierTip returned NoQuorum FOREVER and the
-// healthy stale node failed safe at its stale height instead of converging.
+// THE NAMING BUG this guards: the EXACT-tip tally required ⅔-by-stake to report the IDENTICAL id.
+// N drew only luxd-1/2 (200 of 300; the floor is `> 200`, so 200 does NOT clear it) and TOP drew
+// only luxd-3 (100) — neither cleared ⅔, so FrontierTip returned NoQuorum and the healthy stale
+// node failed safe at its stale height. Ancestor tolerance fixes it: a beacon reporting TOP also
+// has N in its accepted chain, so N draws ALL THREE producers (300 > 200) and is NAMED.
 //
-// THE FIX: a beacon reporting N+1 also has N in its accepted chain, so N draws ALL THREE
-// producers (300 > 200) and is NAMED; N+1 draws only the lone producer and is NOT. The node
-// converges to N (the ⅔-agreed committed height); live consensus catch-up handles N+1. If this
-// regressed to the exact-tip tally, FrontierTip would return NoQuorum here and the test fails.
+// WHY PROPAGATION, not a STATIC minority-above: a beacon never reports an UN-finalized tip
+// (manager.go: vm.LastAccepted), so a PERMANENT "2 at N, 1 at N+1" split on an idle chain cannot
+// occur — luxd-3 reporting TOP means TOP is FINALIZED for it, and on a live chain luxd-1/2's
+// last-accepted ratchets to TOP too. Modeling it static would assert a node going Ready while a
+// genuinely-finalized higher tip is reported — a gap-1 instance of the M1 stale-go-live the
+// own-height-exclusion fix closes. The faithful model converges to the TRUE frontier TOP.
 func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
-	const N = 40          // the ⅔-agreed COMMON committed height (all 3 producers have it accepted)
-	const pending = N + 1 // the lone producer's UN-FINALIZED pending block (1 ahead, same chain)
-	const M = 23          // our STALE local height (gap-17 — the canary's gap, within the window)
-	chain, byID := buildBSChain(pending, -1)
+	const M = 23   // our STALE local height (gap-17 — the canary's gap, within the window)
+	const N = 40   // the ⅔-agreed COMMON committed height (all 3 producers have it accepted)
+	const top = 41 // luxd-3 finalized this first; luxd-1/2 ratchet to it as finalization propagates
+	chain, byID := buildBSChain(top, -1)
 	vm := newBSVMAt(chain, M)
 
 	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100} // total 300, ⅔ floor = 200 (need > 200)
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 
-	// p1, p2 report the common tip N; p3 (luxd-3) reports its pending N+1. All on ONE chain, so
-	// N+1 vouches for N. Exact tally: N=200 (not > 200), N+1=100 — NoQuorum. Ancestor-tolerant: N=300.
+	// luxd-3 reports the true finalized tip TOP throughout; luxd-1/2 report their last-accepted N
+	// UNTIL the node has accepted through N, then ratchet to TOP (finalization propagated). So while
+	// the node is BEHIND it sees {N, N, TOP} (ancestor tolerance names the ⅔-common N), and once it
+	// reaches N it sees {TOP, TOP, TOP} (names TOP, the true frontier).
 	bh.net = &bsBeaconNet{
 		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
-		byID: byID, tip: chain[N], serveAncestors: true,
-		tipFor: map[ids.NodeID]ids.ID{p3: chain[pending].id},
+		byID: byID, tip: chain[top], serveAncestors: true,
+		tipFor:            map[ids.NodeID]ids.ID{p1: chain[N].id, p2: chain[N].id},
+		tipFor2:           map[ids.NodeID]ids.ID{p1: chain[top].id, p2: chain[top].id},
+		propagateAtHeight: N,
 	}
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
@@ -773,47 +821,53 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	// genuinely cannot name N. The fix must come from ancestor tolerance, not a looser floor.
 	require.Equal(t, uint64(200), consensusconfig.TwoThirdsStakeFloor(300))
 
+	// BEHIND-NODE NAMING (node at M, pre-propagation sees {N, N, TOP}): ancestor tolerance names the
+	// ⅔-COMMON N — NOT NoQuorum, NOT the lone-producer TOP (only 100, sub-⅔). This is the canary fix.
 	bh.bsActive.Store(true)
 	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
 	require.Equal(t, chainbootstrap.FrontierNamed, status,
 		"CANARY: a ±1-block tip split must name the ⅔-COMMON height, not return NoQuorum")
-	require.Equal(t, chain[N].id, tip, "must name N (the height all 3 producers share), NOT the minority N+1")
-	require.NotEqual(t, chain[pending].id, tip, "the lone producer's pending N+1 must NOT be named")
+	require.Equal(t, chain[N].id, tip, "must name N (the height all 3 producers share), NOT the minority TOP")
+	require.NotEqual(t, chain[top].id, tip, "the lone producer's bleeding-edge TOP must NOT be named while sub-⅔")
 
-	// The full loop converges to N — NOT fail-safe, NOT to the minority N+1.
-	require.NoError(t, runBS(t, bh), "tip-split stale node must converge to the ⅔-common height")
+	// FULL LOOP: the node ratchets M → N (ancestor-tolerant ⅔-common) → TOP (the true finalized tip,
+	// once finalization propagated to the fleet). It converges to TOP — never stuck at M, never
+	// falsely caught-up at the intermediate N while a genuinely-finalized TOP is the frontier.
+	require.NoError(t, runBS(t, bh), "tip-split stale node must converge to the true finalized frontier")
 	last, _ := vm.LastAccepted(ctx)
-	require.Equal(t, chain[N].id, last,
-		"CANARY SUCCESS: converge to the ⅔-common height N=%d (NOT stuck at M=%d, NOT the minority N+1)", N, M)
-	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the ⅔-common tip N after sync")
-	require.False(t, bh.Has(ctx, chain[pending].id), "node must NOT hold the minority pending N+1 — that is live consensus' job")
+	require.Equal(t, chain[top].id, last,
+		"CANARY SUCCESS: ratchet through the ⅔-common N to the true finalized tip TOP=%d (NOT stuck at M=%d)", top, M)
+	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the ⅔-common N it passed through")
+	require.True(t, bh.Has(ctx, chain[top].id), "node must hold the true finalized tip TOP after ratcheting to it")
 }
 
 // TestRED_ForgedHighTipFromMinorityNotNamed is the C1 proof for the ancestor-tolerant path: a
 // Byzantine BEACON (in the staked set, but < ⅓ stake) reports a FORGED block built directly on
-// the real ⅔-backed block N — a forged sibling of the honest pending N+1. Ancestor tolerance
-// must NOT name the forged block (it holds only the Byzantine minority's stake); it must name
-// the real ⅔-common N, and the node must never sync or hold the forged block.
+// the real ⅔-backed block N — a forged sibling of the real bleeding-edge TOP. Ancestor tolerance
+// must NOT name the forged block (it holds only the Byzantine minority's stake) through the ENTIRE
+// ratchet: it names the real ⅔-common N while the node is behind, then the true finalized TOP as
+// finalization propagates, and the node must never sync or hold the forged block at any point.
 //
-// This is the adversarial heart of C1 under the new agreement relation: even a forged block that
+// This is the adversarial heart of C1 under the agreement relation: even a forged block that
 // descends from a genuinely ⅔-backed block only RATIFIES that real ancestor (which the honest ⅔
 // already back) — it can never name ITSELF, because naming requires > ⅔ of the TOTAL staked
-// weight behind the block, and the forger holds < ⅓. Only the agreement relation changed
-// (exact-tip → in-accepted-chain); the ⅔-by-stake-of-the-real-set requirement did not.
+// weight behind the block, and the forger holds < ⅓. (Faithful responder model — manager.go:
+// vm.LastAccepted: the honest laggards' last-accepted ratchets to the real TOP as finalization
+// propagates, while the Byzantine beacon keeps lying with its forged sibling throughout.)
 func TestRED_ForgedHighTipFromMinorityNotNamed(t *testing.T) {
-	const N = 40
-	const pending = N + 1
-	const M = 23
-	chain, byID := buildBSChain(pending, -1)
+	const M = 23   // stale local height
+	const N = 40   // the ⅔-common committed height the honest laggards share
+	const top = 41 // the real bleeding-edge tip luxd-3 finalized first; the laggards ratchet to it
+	chain, byID := buildBSChain(top, -1)
 	vm := newBSVMAt(chain, M)
 
-	// A forged block at height N+1 whose parent is the REAL N (a forged sibling of the honest
-	// pending N+1). The node can PARSE it (any structurally-valid block parses) but has NOT
-	// accepted it — model that by adding it to the VM's parse maps but not to `accepted`.
+	// A forged block at height TOP whose parent is the REAL N (a forged sibling of the real TOP).
+	// The node can PARSE it (any structurally-valid block parses) but has NOT accepted it — model
+	// that by adding it to the VM's parse maps but not to `accepted`.
 	forged := &bsTestBlock{
-		id: ids.GenerateTestID(), parent: chain[N].id, height: pending,
-		bytes: []byte("forged-sibling@" + strconv.Itoa(pending) + ":" + ids.GenerateTestID().String()),
+		id: ids.GenerateTestID(), parent: chain[N].id, height: top,
+		bytes: []byte("forged-sibling@" + strconv.Itoa(top) + ":" + ids.GenerateTestID().String()),
 		valid: true,
 	}
 	byID[forged.id] = forged
@@ -822,31 +876,39 @@ func TestRED_ForgedHighTipFromMinorityNotNamed(t *testing.T) {
 
 	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	byz := ids.GenerateTestNodeID()
-	// 4 beacons @100 → total 400, ⅔ floor = 266. Honest p1,p2 at N (200), p3 at the real N+1
-	// (100), Byzantine byz at the FORGED sibling (100). No tip clears 266 exactly → ancestor path.
+	// 4 beacons @100 → total 400, ⅔ floor = 266. Honest laggards p1,p2 at N (200) ratcheting to
+	// TOP; honest p3 at the real TOP (100); Byzantine byz at the FORGED sibling (100), forever.
+	// While behind: no tip clears 266 → ancestor path names the ⅔-common N (forged only ratifies it).
 	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100, byz: 100}
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 	bh.net = &bsBeaconNet{
 		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3, byz},
-		byID: byID, tip: chain[N], serveAncestors: true,
-		tipFor: map[ids.NodeID]ids.ID{p3: chain[pending].id, byz: forged.id},
+		byID: byID, tip: chain[top], serveAncestors: true,
+		// p3 reports the real TOP (default tip); p1,p2 report N then ratchet to TOP; byz lies (forged) throughout.
+		tipFor:            map[ids.NodeID]ids.ID{p1: chain[N].id, p2: chain[N].id, byz: forged.id},
+		tipFor2:           map[ids.NodeID]ids.ID{p1: chain[top].id, p2: chain[top].id},
+		propagateAtHeight: N,
 	}
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
 
+	// BEHIND-NODE NAMING (node at M, pre-propagation sees {N, N, realTOP, forgedTOP}): ancestor
+	// tolerance names the ⅔-common N — the forged sibling (100) and the real TOP (100) are both
+	// sub-⅔ and NEITHER is named. C1 in the ancestor-tolerant tally.
 	bh.bsActive.Store(true)
 	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
 	require.Equal(t, chainbootstrap.FrontierNamed, status, "the honest ⅔-common N must still be named")
 	require.Equal(t, chain[N].id, tip, "C1: the named frontier is the real ⅔-common N")
 	require.NotEqual(t, forged.id, tip, "C1: the Byzantine-minority FORGED block must NEVER be named")
-	require.NotEqual(t, chain[pending].id, tip, "the honest minority pending N+1 is not named either")
+	require.NotEqual(t, chain[top].id, tip, "the real bleeding-edge TOP is not named either while sub-⅔")
 
-	require.NoError(t, runBS(t, bh), "node converges to the real ⅔-common height")
+	// FULL LOOP: the node ratchets M → N → real TOP; the forged sibling is NEVER named or held at any step.
+	require.NoError(t, runBS(t, bh), "node converges to the real finalized frontier, never the forged tip")
 	last, _ := vm.LastAccepted(ctx)
-	require.Equal(t, chain[N].id, last, "C1: node syncs to the real N")
-	require.False(t, bh.Has(ctx, forged.id), "C1: the forged block must NOT be finalized")
-	require.False(t, bh.Has(ctx, chain[pending].id), "the honest pending N+1 is left to live consensus")
+	require.Equal(t, chain[top].id, last, "C1: node syncs to the real TOP (the true finalized frontier)")
+	require.False(t, bh.Has(ctx, forged.id), "C1: the forged block must NOT be finalized — at any point in the ratchet")
+	require.True(t, bh.Has(ctx, chain[N].id), "node holds the real ⅔-common N it passed through")
 }
 
 // TestNodeBootstrap_ExactQuorumUsesFastPath is the no-regression proof: when a ⅔-by-stake
@@ -1337,6 +1399,96 @@ func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	require.Equal(t, uint64(N+K), *heightAtReady, "self-healed node converges to the frontier N+K=%d, never the stale N=%d", N+K, N)
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N+K].id, last, "self-healed node holds the frontier tip after recovery")
+}
+
+// TestRED_EclipseOwnHeightNotNamedRoutesToSync is the M1 fast-follow at the INTEGRATION level (the
+// real FrontierTip routing + full-loop go-live decision). A node at accepted height N restarts while
+// block N+5 is GENUINELY FINALIZED ahead, but a sustained eclipse THROTTLES the ahead responders below
+// the ⅔ naming threshold (R_a=300 of a responder weight 500; ⅔ floor 333) while letting the at-height
+// responders (R_b=200 at N) through. Block N then accrues R_a+R_b=500 > ⅔ purely as the shared
+// ANCESTOR of the ahead N+5 tips.
+//
+//   - BEFORE the own-height filter fix (`ref.Height < MinFrontierHeight`): nameFrontier NAMES N (own
+//     height) → FrontierNamed at chain[N] → the node goes Ready STALE, 5 blocks behind finality. M1.
+//   - AFTER (`ref.Height <= MinFrontierHeight`): own height is excluded → AcceptsFrontier names nothing
+//     → routes to CaughtUp → CaughtUp sees the un-held, above N+5 tips → REFUSES → FrontierNoQuorum.
+//     The full loop fails safe: the VM is NEVER transitioned to normal operation at the stale height,
+//     and the node stays at N (serving nothing) rather than going live 5 blocks behind finality.
+//
+// Then the ECLIPSE LIFTS (the ahead set returns to ≥⅔): N+5 becomes nameable and the node SYNCS UP to
+// it — proving the refusal was a safe HOLD, not a permanent stall, and the node converges to the true
+// finalized frontier, never having served the stale N.
+func TestRED_EclipseOwnHeightNotNamedRoutesToSync(t *testing.T) {
+	const N, ahead = 40, 45 // node at N; block N+5 genuinely finalized ahead
+	chain, byID := buildBSChain(ahead, -1)
+
+	// 6 equal-weight beacons (total 600 → bootstrapPolicy wires MinResponseWeight ⌈600/2⌉=301,
+	// MinResponses majority=4, MinFrontierHeight=lastAccepted=N).
+	bIDs := make([]ids.NodeID, 6)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+
+	// ---- PART A: the eclipse — ahead set throttled below ⅔ → must NOT go Ready at stale N ----
+	vmA := newBSVMAt(chain, N) // node already accepted 0..N, NOT N+1..N+5
+	bhA, chainIDA := newBSHandlerWeighted(t, vmA, weights)
+	bhA.bootstrapRetryInterval = 2 * time.Millisecond
+	bhA.bootstrapConnectDeadline = 300 * time.Millisecond
+	bhA.bootstrapMaxAttempts = 1 // assert the terminal fail-safe in isolation
+	// Connected responders: b0,b1 at N (R_b=200), b2,b3,b4 at N+5 (R_a=300, < ⅔·500=333); b5 eclipsed.
+	bhA.net = &bsBeaconNet{
+		bh: bhA, chainID: chainIDA, connected: bIDs[:5], byID: byID, tip: chain[N], serveAncestors: true,
+		tipFor: map[ids.NodeID]ids.ID{
+			bIDs[2]: chain[ahead].id, bIDs[3]: chain[ahead].id, bIDs[4]: chain[ahead].id,
+		},
+	}
+	bhA.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// UNIT: FrontierTip must NOT name the stale own height N. Own height is excluded from nameFrontier,
+	// the ahead N+5 is sub-⅔, and CaughtUp refuses (N+5 un-held, above) → FrontierNoQuorum.
+	bhA.bsActive.Store(true)
+	tip, status := bhA.FrontierTip(ctx)
+	bhA.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNoQuorum, status,
+		"M1: an eclipse crediting the node's OWN height as a ⅔-ancestor of throttled ahead tips must NOT name it")
+	require.NotEqual(t, chain[N].id, tip, "M1: the stale own height N must NOT be named")
+	require.Equal(t, ids.Empty, tip)
+
+	// FULL LOOP: the node fails safe DOWN — VM never goes to normal operation at the stale height.
+	callsA, _ := recordVMReady(bhA, vmA)
+	rctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	live := bhA.runInitialSync(rctx)
+	require.False(t, live, "M1: an eclipse-stale node must NOT go live at its own height")
+	require.Equal(t, 0, *callsA, "M1: VM must NEVER be transitioned to normal operation at the stale height")
+	require.False(t, vmA.accepted[chain[ahead].id], "node did not (and could not) sync the throttled N+5 under eclipse")
+	lastA, _ := vmA.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, lastA, "node stays at its stale height N (served nothing) — never live, never advanced")
+
+	// ---- PART B: the eclipse lifts — ahead set returns to ≥⅔ → node SYNCS UP to the true frontier ----
+	vmB := newBSVMAt(chain, N)
+	bhB, chainIDB := newBSHandlerWeighted(t, vmB, weights)
+	bhB.bootstrapRetryInterval = 2 * time.Millisecond
+	bhB.bootstrapConnectDeadline = 2 * time.Second
+	// Now 4 of 5 responders report N+5 (400 > ⅔·500=333 → nameable); one lags at N. The ahead set is
+	// no longer throttled, so N+5 is named and the node descends+executes N+1..N+5.
+	bhB.net = &bsBeaconNet{
+		bh: bhB, chainID: chainIDB, connected: bIDs[:5], byID: byID, tip: chain[ahead], serveAncestors: true,
+		tipFor: map[ids.NodeID]ids.ID{bIDs[0]: chain[N].id}, // one laggard at N; b1..b4 report N+5 (default tip)
+	}
+	bhB.msgCreator = bsMsgBuilder{}
+
+	callsB, heightAtReadyB := recordVMReady(bhB, vmB)
+	bctx, bcancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer bcancel()
+	require.True(t, bhB.runInitialSync(bctx), "eclipse lifted: the node must converge to the true finalized frontier")
+	require.Equal(t, 1, *callsB, "VM goes live exactly once — at the recovered frontier, never the stale N")
+	require.Equal(t, uint64(ahead), *heightAtReadyB, "went live at the true finalized frontier N+5=%d, never the stale N=%d", ahead, N)
+	lastB, _ := vmB.LastAccepted(ctx)
+	require.Equal(t, chain[ahead].id, lastB, "node synced UP to N+5 once the eclipse lifted (a safe HOLD, not a permanent stall)")
 }
 
 // TestWatchBootstrapProgress_ConnectingNotStalled is the RED MEDIUM #2 watchdog guard: a node in its
