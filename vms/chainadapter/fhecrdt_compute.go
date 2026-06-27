@@ -4,6 +4,7 @@
 package chainadapter
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 )
 
@@ -250,17 +252,93 @@ type Endorsement struct {
 	TEEAttestation *TEEAttestation `json:"teeAttestation,omitempty"`
 }
 
-// Verify verifies the committee certificate
-func (c *CommitteeCert) Verify() error {
+// signingDigest is the canonical, domain-separated message that every
+// committee member signs when endorsing this certificate. It binds the
+// committee, the request, the certified output commitment and the
+// timestamp so that an endorsement for one (request, output) pair can
+// never be replayed for another.
+func (c *CommitteeCert) signingDigest() [32]byte {
+	h := sha256.New()
+	h.Write([]byte("lux/chainadapter/committee-cert/v1"))
+	h.Write(c.CommitteeID[:])
+	h.Write(c.RequestID[:])
+	h.Write(c.OutputCommitment[:])
+	var ts [8]byte
+	binary.BigEndian.PutUint64(ts[:], uint64(c.Timestamp.UTC().UnixNano()))
+	h.Write(ts[:])
+	var out [32]byte
+	copy(out[:], h.Sum(nil))
+	return out
+}
+
+// Verify checks that the certificate carries at least Threshold valid,
+// distinct endorsement signatures from members of the supplied committee.
+//
+// Each endorsement must:
+//   - reference a member that exists in the committee roster (known signer);
+//   - carry a MemberID matching the roster entry at that index;
+//   - be a BLS signature over the certificate's canonical signing digest
+//     that verifies under that member's registered public key;
+//   - be distinct — no member may endorse twice.
+//
+// The certificate is rejected (fail-closed) on any nil/malformed, unknown,
+// duplicate, or cryptographically invalid endorsement, on a committee/cert
+// parameter mismatch, or when fewer than Threshold distinct valid
+// endorsements are present. There is no count-only path: every accepted
+// endorsement has had its signature verified against a registered key.
+func (c *CommitteeCert) Verify(committee *ComputeCommittee) error {
+	if committee == nil {
+		return ErrCommitteeCertInvalid
+	}
+	// Threshold and committee identity must agree, and the roster must be
+	// internally consistent (one public key per member).
+	if c.Threshold <= 0 || c.Threshold != committee.Threshold {
+		return ErrCommitteeCertInvalid
+	}
+	if c.CommitteeID != committee.ID {
+		return ErrCommitteeCertInvalid
+	}
+	if len(committee.PublicKeys) != len(committee.Members) || len(committee.PublicKeys) == 0 {
+		return ErrCommitteeCertInvalid
+	}
 	if len(c.Endorsements) < c.Threshold {
 		return ErrCommitteeCertInvalid
 	}
 
-	// In production, verify:
-	// 1. Each endorsement signature
-	// 2. Endorsers are valid committee members
-	// 3. Optional: aggregate signature
+	msg := c.signingDigest()
+	seen := make(map[int]struct{}, len(c.Endorsements))
 
+	for _, e := range c.Endorsements {
+		if e == nil {
+			return ErrCommitteeCertInvalid
+		}
+		idx := e.MemberIndex
+		if idx < 0 || idx >= len(committee.PublicKeys) {
+			return ErrCommitteeCertInvalid // unknown signer
+		}
+		if _, dup := seen[idx]; dup {
+			return ErrCommitteeCertInvalid // duplicate signer
+		}
+		if !bytes.Equal(e.MemberID, committee.Members[idx]) {
+			return ErrCommitteeCertInvalid // identity does not match roster index
+		}
+		pk, err := bls.PublicKeyFromCompressedBytes(committee.PublicKeys[idx])
+		if err != nil {
+			return ErrCommitteeCertInvalid
+		}
+		sig, err := bls.SignatureFromBytes(e.Signature)
+		if err != nil {
+			return ErrCommitteeCertInvalid
+		}
+		if !bls.Verify(pk, sig, msg[:]) {
+			return ErrCommitteeCertInvalid // forged or invalid signature
+		}
+		seen[idx] = struct{}{}
+	}
+
+	if len(seen) < c.Threshold {
+		return ErrCommitteeCertInvalid
+	}
 	return nil
 }
 
@@ -277,6 +355,11 @@ type ConfidentialComputeEngine struct {
 
 	// Result cache
 	results       map[ids.ID]*ComputeResult
+
+	// Registered committee rosters, keyed by committee ID. A committee
+	// certificate can only be verified against a roster registered here;
+	// an unknown committee fails closed.
+	committees map[ids.ID]*ComputeCommittee
 }
 
 // ComputeSession tracks an active computation
@@ -302,7 +385,22 @@ func NewConfidentialComputeEngine(teeType TEEType) *ConfidentialComputeEngine {
 		teeAvailable: true, // Check actual TEE availability
 		sessions:     make(map[ids.ID]*ComputeSession),
 		results:      make(map[ids.ID]*ComputeResult),
+		committees:   make(map[ids.ID]*ComputeCommittee),
 	}
+}
+
+// RegisterCommittee registers a committee roster so that certificates the
+// committee produces can be verified against its members' public keys.
+// PublicKeys and Members must be parallel arrays (one compressed BLS public
+// key per member).
+func (e *ConfidentialComputeEngine) RegisterCommittee(committee *ComputeCommittee) error {
+	if committee == nil || len(committee.PublicKeys) != len(committee.Members) || len(committee.PublicKeys) == 0 {
+		return ErrCommitteeCertInvalid
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.committees[committee.ID] = committee
+	return nil
 }
 
 // SubmitRequest submits a compute request
@@ -491,9 +589,16 @@ func (e *ConfidentialComputeEngine) VerifyResult(result *ComputeResult) error {
 		}
 	}
 
-	// Verify committee cert if present
+	// Verify committee cert if present. The roster must have been
+	// registered; an unknown committee fails closed.
 	if result.CommitteeCert != nil {
-		if err := result.CommitteeCert.Verify(); err != nil {
+		e.mu.RLock()
+		committee := e.committees[result.CommitteeCert.CommitteeID]
+		e.mu.RUnlock()
+		if committee == nil {
+			return ErrCommitteeCertInvalid
+		}
+		if err := result.CommitteeCert.Verify(committee); err != nil {
 			return err
 		}
 	}
