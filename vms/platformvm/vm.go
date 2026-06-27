@@ -67,12 +67,12 @@ type warpSignerAdapter struct {
 }
 
 func (a *warpSignerAdapter) Sign(msg *warp.UnsignedMessage) ([]byte, error) {
-	// Convert internal message to external message format
-	extMsg, err := extwarp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
+	// Convert the internal message to the external ZAP core
+	extCore, err := extwarp.NewCore(msg.NetworkID, msg.SourceChainID, msg.Payload)
 	if err != nil {
 		return nil, err
 	}
-	return a.extSigner.Sign(extMsg)
+	return a.extSigner.Sign(extCore)
 }
 
 type VM struct {

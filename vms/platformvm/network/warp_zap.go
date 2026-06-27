@@ -24,7 +24,7 @@ type signatureRequestVerifier struct {
 
 func (s signatureRequestVerifier) Verify(
 	_ context.Context,
-	_ *warp.UnsignedMessage,
+	_ *warp.Core,
 	_ []byte,
 ) error {
 	return nil
