@@ -14,7 +14,7 @@ var _ luxWarp.Verifier = (*xsvmVerifier)(nil)
 // xsvmVerifier allows signing all warp messages
 type xsvmVerifier struct{}
 
-func (xsvmVerifier) Verify(context.Context, *luxWarp.Core, []byte) error {
+func (xsvmVerifier) Verify(context.Context, *luxWarp.Message, []byte) error {
 	return nil
 }
 
