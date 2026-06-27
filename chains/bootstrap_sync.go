@@ -548,23 +548,60 @@ func (b *blockHandler) deliverBootstrapAncestors(requestID uint32, data []byte) 
 	return true
 }
 
-// runBootstrapThenPoll is the chain's startup sync driver. It (1) runs the
-// fetch+execute bootstrap loop to converge to the network frontier, (2) on success
-// ENDS the engine's bootstrap phase (FinishBootstrap — only the α-of-K cert-gate
-// finalizes thereafter) and flips bootstrapDone (so monitorBootstrap marks the chain
-// ready), then (3) hands off to the live frontier poller (runtime catch-up via the
-// cert path). On bootstrap failure it leaves bootstrapDone false so monitorBootstrap
-// surfaces a real failure (timeout) rather than masking it. Node-lifetime goroutine
-// (started in buildChain); exits when ctx is done (shutdown).
+// runBootstrapThenPoll is the chain's startup sync driver (the goroutine buildChain
+// launches). It runs INITIAL SYNC to the network frontier with the VM's normal-operation
+// transition GATED on that completion (runInitialSync), then — ONLY if the chain actually
+// went live — hands off to the live frontier poller (runtime cert-carry catch-up). On
+// fail-safe runInitialSync returns false and the poller is NOT started: the chain stays
+// not-ready for monitorBootstrap to surface, and the VM stays in Bootstrapping (it never
+// serves a stale height). Exits when ctx is done (shutdown). The gating logic lives in
+// runInitialSync so it is unit-testable without the blocking poller hand-off.
 func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
+	if b.runInitialSync(ctx) {
+		b.runFrontierPoller(ctx)
+	}
+}
+
+// runInitialSync drives the fetch+execute bootstrap loop to the network frontier and, ON
+// SUCCESS, transitions the VM to normal operation (transitionVMReady → vm.Ready), ENDS the
+// engine's bootstrap phase (FinishBootstrap — only the α-of-K cert-gate finalizes
+// thereafter), and flips bootstrapDone — IN THAT ORDER, so "VM serves / builds" and "engine
+// cert-gates finality" go live TOGETHER at the named frontier. Returns true iff the chain
+// went live.
+//
+// THE ORDERING IS THE FIX. Previously buildChain put the VM into normal operation
+// UNCONDITIONALLY right after Initialize — at the LOCAL last-accepted height — and ran this
+// sync afterward as a detached, non-gating goroutine. A restarted STALE validator therefore
+// went live (block building, mempool, validator dispatch via the EVM's
+// onNormalOperationsStarted) at its stale height and never converged to the finalized
+// frontier. Gating the normal-op transition on reaching the frontier makes "VM live at a
+// stale height" structurally impossible: the VM is in Bootstrapping until it has converged.
+//
+// FAIL-SAFE (eclipse / isolated node). bs.Run is internally BOUNDED: it WAITS for beacon
+// connectivity (re-sampling the beacon set every RetryInterval up to ConnectDeadline) — the
+// bounded retry that self-heals the instant the beacons return — then returns rather than
+// hanging. If the deadline elapses with no ⅔-by-stake beacon quorum reachable (genuine
+// eclipse / partition / deep gap), runInitialSync returns false WITHOUT going Ready: the VM
+// stays in Bootstrapping (it serves nothing as head), and bootstrapFailed records the reason
+// so monitorBootstrap stops the chain and surfaces it. The orchestrator restarts the node,
+// which re-syncs and converges (nothing pins it live at the stale height anymore). The node
+// NEVER false-completes at its local stale height.
+func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	if b.engine == nil || b.net == nil || b.msgCreator == nil {
-		// No transport/engine to drive sync — nothing to bootstrap; treat as ready so a
-		// degenerate handler does not pin the chain unbootstrapped.
+		// Degenerate handler (no transport/engine to drive sync): nothing to converge to.
+		// Go live immediately so a single-node / transport-less chain is not pinned
+		// unbootstrapped — the same fast-path the no-beacon-set case takes.
 		if b.engine != nil {
 			b.engine.FinishBootstrap()
 		}
+		if err := b.transitionVMReady(); err != nil {
+			b.logger.Error("degenerate chain: VM SetState(Ready) failed — NOT marking bootstrapped",
+				log.Stringer("chainID", b.chainID), log.Err(err))
+			b.bootstrapFailed.Store(&bsFailure{err: err})
+			return false
+		}
 		b.bootstrapDone.Store(true)
-		return
+		return true
 	}
 
 	b.bsActive.Store(true)
@@ -572,6 +609,11 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 		Source: b,
 		Chain:  b,
 		Log:    b.logger,
+		// Bounded beacon-connect WAIT + re-sample pause (zero ⇒ library defaults 3m / 1s).
+		// ConnectDeadline is the bounded retry: bs.Run re-samples the beacon set every
+		// RetryInterval up to this deadline, converging the instant the beacons return.
+		ConnectDeadline: b.bootstrapConnectDeadline,
+		RetryInterval:   b.bootstrapRetryInterval,
 		// Optional operator-pinned weak-subjectivity anchor: the α-agreed frontier must
 		// descend from this id at this height (defense-in-depth for empty-genesis). Zero
 		// ⇒ disabled (the beacon + ⅔-stake quorum is the primary anchor).
@@ -583,27 +625,52 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 
 	if err != nil {
 		if ctx.Err() != nil {
-			return // shutdown — not a bootstrap failure
+			return false // shutdown — not a bootstrap failure
 		}
-		// Initial sync did not complete (eclipse / partition / gap-too-large). Do NOT mark the
-		// chain ready. Record the fail-safe reason so monitorBootstrap surfaces it PROMPTLY (F5)
-		// — stopping the chain the moment Run returns instead of leaving it in the dead window
-		// until the 5-min no-progress watchdog. The operator state-syncs (deep gap) or fixes
-		// peering, then restarts.
-		b.logger.Warn("chain initial sync did not complete — chain NOT marked bootstrapped",
+		// Initial sync did not reach the frontier within the bounded deadline (eclipse /
+		// partition / deep gap). DO NOT transition to normal operation — leaving the VM in
+		// Bootstrapping is the fail-safe: it does not serve / build at the stale local height
+		// (that was the freeze defect). Record the reason so monitorBootstrap stops the chain
+		// PROMPTLY (F5) and surfaces it; the orchestrator restarts and the node re-syncs. bs.Run
+		// already retried beacon connectivity for its full ConnectDeadline, so this is the
+		// bounded fail-safe, not a hang.
+		b.logger.Warn("chain initial sync did not reach the frontier — VM stays bootstrapping (NOT serving normal-op), failing safe",
 			log.Stringer("chainID", b.chainID),
 			log.Err(err))
 		b.bootstrapFailed.Store(&bsFailure{err: err})
-		return
+		return false
 	}
 
-	// Reached the frontier: end the bootstrap phase (fail-close the bootstrap accept
-	// authority) and mark the chain ready, THEN run the live frontier poller.
+	// Reached the frontier (or no beacon set / already at the tip): transition the VM to
+	// normal operation, THEN end the engine's bootstrap phase and mark ready — so the two
+	// go-live transitions happen TOGETHER at the named frontier, never at a stale height. A VM
+	// that REFUSES normal-op is a real failure: do NOT mark ready (fail safe).
+	if err := b.transitionVMReady(); err != nil {
+		b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped",
+			log.Stringer("chainID", b.chainID), log.Err(err))
+		b.bootstrapFailed.Store(&bsFailure{err: err})
+		return false
+	}
 	b.engine.FinishBootstrap()
 	b.bootstrapDone.Store(true)
-	b.logger.Info("chain initial sync complete — entering live consensus",
+	b.logger.Info("chain initial sync complete — VM live (normal operation) at the network frontier",
 		log.Stringer("chainID", b.chainID))
-	b.runFrontierPoller(ctx)
+	return true
+}
+
+// transitionVMReady moves the VM to NORMAL OPERATION (vm.Ready) through the gated callback
+// buildChain wired from the VM's SetState. It is the SINGLE place the VM goes live, called
+// by runInitialSync ONLY after initial sync has reached the named frontier. No-op when no
+// SetState VM is wired (degenerate / test handlers — nothing to transition). Bounded by a
+// 30s timeout (decoupled from the sync ctx) so a wedged VM transition cannot hang the
+// goroutine, matching the original buildChain transition budget.
+func (b *blockHandler) transitionVMReady() error {
+	if b.vmReady == nil {
+		return nil
+	}
+	sctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	return b.vmReady(sctx)
 }
 
 // decodeContextBlocks extracts the raw block bytes (oldest-first) from a framed
