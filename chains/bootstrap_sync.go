@@ -83,29 +83,26 @@ func (b *blockHandler) beaconWeights() (weights map[ids.NodeID]uint64, total uin
 	return weights, total, true
 }
 
-// connectedBeaconsTrackingChain intersects the beacon set with the peers actually
-// CONNECTED and tracking this chain. Only these beacons' frontier replies count toward
-// the quorum, but the FULL beacon stake (total) stays the quorum DENOMINATOR — so a node
-// must hear a ⅔-stake supermajority. An eclipse that reaches < ⅔ of beacon stake fails
-// CLOSED (it cannot name a frontier) instead of syncing an attacker's chain.
-func (b *blockHandler) connectedBeaconsTrackingChain() (connected []ids.NodeID, weights map[ids.NodeID]uint64, total uint64, ok bool) {
-	weights, total, ok = b.beaconWeights()
-	if !ok || b.net == nil {
-		return nil, nil, 0, false
+// connectedBeacons returns the beacons from `weights` currently CONNECTED and tracking
+// this chain. The frontier quorum is tallied over these, but the FULL beacon stake (the
+// `total` from beaconWeights) stays the quorum DENOMINATOR — so a node must hear a ⅔-stake
+// supermajority. An eclipse that reaches < ⅔ of beacon stake cannot name a frontier.
+// Returns nil when none are connected (or there is no transport).
+func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.NodeID {
+	if b.net == nil || len(weights) == 0 {
+		return nil
 	}
 	beaconIDs := make([]ids.NodeID, 0, len(weights))
 	for id := range weights {
 		beaconIDs = append(beaconIDs, id)
 	}
+	var connected []ids.NodeID
 	for _, p := range b.net.PeerInfo(beaconIDs) {
 		if _, isBeacon := weights[p.ID]; isBeacon && p.TrackedChains.Contains(b.chainID) {
 			connected = append(connected, p.ID)
 		}
 	}
-	if len(connected) == 0 {
-		return nil, weights, total, false
-	}
-	return connected, weights, total, true
+	return connected
 }
 
 // sampleAncestorBeacons returns a small ROTATED sample of connected beacons to fetch
@@ -114,8 +111,12 @@ func (b *blockHandler) connectedBeaconsTrackingChain() (connected []ids.NodeID, 
 // serves: the loop's content-addressed descent rejects any block off the agreed
 // frontier's parent chain, so a withholding/forging beacon costs only a re-sample.
 func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
-	connected, _, _, ok := b.connectedBeaconsTrackingChain()
+	weights, _, ok := b.beaconWeights()
 	if !ok {
+		return nil, false
+	}
+	connected := b.connectedBeacons(weights)
+	if len(connected) == 0 {
 		return nil, false
 	}
 	start := int(b.bsRotor.Add(1)-1) % len(connected)
@@ -126,25 +127,75 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 	return sample, sample.Len() > 0
 }
 
-// FrontierTip implements chainbootstrap.BlockSource. It names the network frontier ONLY
-// when a ⅔-BY-STAKE SUPERMAJORITY of the configured beacons agree on the SAME accepted
-// tip — the C1 forged-chain gate. It queries every connected beacon, tallies their
-// replies weighted by stake, and returns a tip only once its agreeing stake clears the
-// shared live floor (config.TwoThirdsStakeFloor over the FULL beacon stake) with at
-// least the minimum distinct beacons. ok=false (fail-closed) when no such quorum forms —
-// a non-beacon peer, a single peer, or any sub-⅔-stake set can NEVER name the frontier,
-// so a forged chain cannot be the thing an empty/behind node syncs to.
-func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, bool) {
-	if b.net == nil || b.msgCreator == nil {
-		return ids.Empty, false
+// FrontierTip implements chainbootstrap.BlockSource. It returns a FrontierStatus that
+// decomplects the THREE reasons a tip may not be named — the fix for the mainnet canary
+// where a freshly-booted STALE node, asking the frontier BEFORE any beacon had connected,
+// concluded "caught up" at its local stale height (a single ok=false meant both "no beacon
+// quorum reachable yet" and "nothing ahead — done"):
+//
+//   - FrontierNoBeacons   — no beacon set configured (single-node / dev). Nothing to sync to.
+//   - FrontierConnecting  — beacons configured but not enough stake CONNECTED yet to even
+//     FORM a ⅔ quorum (the boot race). The node cannot ASK — the loop must WAIT, never
+//     conclude caught-up here.
+//   - FrontierNoQuorum    — enough beacon stake IS connected to ask, but no ⅔-by-stake
+//     agreement is reachable (genuine eclipse / partition). The loop fails SAFE.
+//   - FrontierNamed       — a ⅔-by-stake SUPERMAJORITY of the configured beacons agreed on
+//     the SAME accepted tip (the C1 forged-chain gate, unchanged). The tip is meaningful
+//     ONLY in this case.
+//
+// A non-beacon peer, a single peer, or any sub-⅔-stake set can NEVER reach FrontierNamed,
+// so a forged chain can never be the thing an empty/behind node syncs to.
+func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.FrontierStatus) {
+	weights, total, haveBeacons := b.beaconWeights()
+	if !haveBeacons {
+		// No beacon set configured (single-node / dev / --skip-bootstrap). Nothing to sync to.
+		return ids.Empty, chainbootstrap.FrontierNoBeacons
 	}
-	connected, weights, total, ok := b.connectedBeaconsTrackingChain()
-	if !ok {
-		// No reachable beacon quorum — fail closed (re-sampled by the loop). Once ⅔ of
-		// beacon stake is reachable and agrees, the quorum forms.
-		return ids.Empty, false
+	if b.net == nil || b.msgCreator == nil {
+		// Beacons configured but no transport to ask them — treat as still connecting
+		// (bounded by the loop's connect deadline). In practice runBootstrapThenPoll
+		// short-circuits a transport-less handler before Run is ever called.
+		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
 
+	required := bootstrapMinAgreeingBeacons
+	if n := len(weights); n < required {
+		required = n
+	}
+	floor := consensusconfig.TwoThirdsStakeFloor(total)
+
+	// DECOMPLECT the canary boot race from a real eclipse: is enough beacon stake CONNECTED
+	// that a ⅔-by-stake quorum is even POSSIBLE right now? The most stake any single tip
+	// could gather is the connected stake; if that cannot clear the floor (or too few
+	// distinct beacons are up), connectivity is still coming up — report Connecting so the
+	// loop WAITS rather than false-completing at the local stale height. This is consistent
+	// with the named-quorum check below (agree > floor): if even unanimous connected beacons
+	// could not clear it, we have not yet connected enough to ask.
+	connected := b.connectedBeacons(weights)
+	var connectedStake uint64
+	for _, id := range connected {
+		connectedStake += weights[id]
+	}
+	if connectedStake <= floor || len(connected) < required {
+		return ids.Empty, chainbootstrap.FrontierConnecting
+	}
+
+	// Enough beacon stake is connected to ASK — query + tally the ⅔-by-stake quorum.
+	if tip, ok := b.queryFrontierQuorum(ctx, connected, weights, floor, required); ok {
+		return tip, chainbootstrap.FrontierNamed
+	}
+	// Connected enough to ask, but no ⅔-by-stake agreement on a single tip: a genuine
+	// eclipse / partition. Fail safe — the loop must NOT conclude caught-up at the stale tip.
+	return ids.Empty, chainbootstrap.FrontierNoQuorum
+}
+
+// queryFrontierQuorum sends GetAcceptedFrontier to the connected beacons and tallies their
+// replies WEIGHTED by stake, returning a tip only once some tip's agreeing stake clears
+// `floor` (⅔ of the FULL beacon stake) with ≥ `required` distinct beacons — the C1
+// forged-chain gate (UNCHANGED from the original FrontierTip body; only the
+// connecting/no-quorum discrimination above is new). ok=false when no such quorum forms
+// within the collection window. ONE reply per beacon counts.
+func (b *blockHandler) queryFrontierQuorum(ctx context.Context, connected []ids.NodeID, weights map[ids.NodeID]uint64, floor uint64, required int) (ids.ID, bool) {
 	ch := make(chan bsFrontierReply, len(connected))
 	b.bsMu.Lock()
 	b.bsFrontierCh = ch
@@ -168,13 +219,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, bool) {
 	sample.Add(connected...)
 	b.net.Send(msg, sample, b.networkID, 0)
 
-	// Tally weighted replies until a tip clears the ⅔-by-stake floor with ≥ the minimum
-	// distinct beacons, or the window closes. ONE reply per beacon counts.
-	required := bootstrapMinAgreeingBeacons
-	if n := len(weights); n < required {
-		required = n
-	}
-	floor := consensusconfig.TwoThirdsStakeFloor(total)
 	agree := make(map[ids.ID]uint64)
 	voters := make(map[ids.ID]map[ids.NodeID]struct{})
 	seen := make(map[ids.NodeID]struct{})

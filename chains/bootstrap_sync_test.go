@@ -98,6 +98,18 @@ func newBSVM(chain []*bsTestBlock) *bsTestVM {
 	return vm
 }
 
+// newBSVMAt seeds the VM with blocks 0..m ACCEPTED (a node already at height m) so a test
+// can model a STALE node rather than an empty one. SyncStateFromVM then seeds consensus at
+// height m, and the first fetched gap block extends chain[m].
+func newBSVMAt(chain []*bsTestBlock, m int) *bsTestVM {
+	vm := newBSVM(chain)
+	for i := 1; i <= m; i++ {
+		vm.accepted[chain[i].id] = true
+	}
+	vm.lastAcc = chain[m].id
+	return vm
+}
+
 func (m *bsTestVM) BuildBlock(context.Context) (cblock.Block, error) { return nil, errBSNoBuild }
 func (m *bsTestVM) GetBlock(_ context.Context, id ids.ID) (cblock.Block, error) {
 	if m.accepted[id] {
@@ -156,6 +168,16 @@ type bsBeaconNet struct {
 	tip       *bsTestBlock            // the honest tip the beacons report
 	serveAncestors bool               // beacons serve ancestry (false models name-only beacons)
 
+	// tipFor optionally overrides the tip a specific beacon reports (models DISAGREEMENT —
+	// beacons connected but split across tips, so no ⅔ quorum forms → FrontierNoQuorum).
+	tipFor map[ids.NodeID]ids.ID
+
+	// connectAfterCalls models the CANARY boot race over the REAL transport: while
+	// peerInfoCalls ≤ connectAfterCalls the beacons are reported as NOT yet connected (so
+	// FrontierTip must return FrontierConnecting and the loop WAITS); afterward they connect.
+	connectAfterCalls int
+	peerInfoCalls     int
+
 	// Optional malicious NON-beacon peer: connected and tracking, reports a forged tip.
 	malicious   ids.NodeID
 	forgedTip   ids.ID
@@ -165,15 +187,21 @@ type bsBeaconNet struct {
 // match the requested filter. The bootstrap path queries PeerInfo(beaconIDs), so only
 // beacons in `connected` are returned for it; the malicious peer surfaces only on an
 // unfiltered (nil) query — i.e. it is never in the beacon-restricted frontier sample.
+// When connectAfterCalls > 0 the beacons are withheld for the first that many calls,
+// modeling a beacon set that has not finished its handshake at boot.
 func (n *bsBeaconNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
+	n.peerInfoCalls++
+	beaconsUp := n.connectAfterCalls == 0 || n.peerInfoCalls > n.connectAfterCalls
 	want := map[ids.NodeID]bool{}
 	for _, id := range nodeIDs {
 		want[id] = true
 	}
 	var out []peer.Info
-	for _, b := range n.connected {
-		if len(nodeIDs) == 0 || want[b] {
-			out = append(out, peer.Info{ID: b, TrackedChains: set.Of(n.chainID)})
+	if beaconsUp {
+		for _, b := range n.connected {
+			if len(nodeIDs) == 0 || want[b] {
+				out = append(out, peer.Info{ID: b, TrackedChains: set.Of(n.chainID)})
+			}
 		}
 	}
 	if n.malicious != ids.EmptyNodeID && (len(nodeIDs) == 0 || want[n.malicious]) {
@@ -189,9 +217,16 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 	}
 	switch m.op {
 	case "frontier":
-		// Each queried beacon answers with the honest tip.
+		// Each queried beacon answers with the honest tip (or its tipFor override, modeling
+		// disagreement).
 		for id := range nodeIDs {
-			n.bh.deliverBootstrapFrontier(id, n.tip.id)
+			tip := n.tip.id
+			if n.tipFor != nil {
+				if t, ok := n.tipFor[id]; ok {
+					tip = t
+				}
+			}
+			n.bh.deliverBootstrapFrontier(id, tip)
 		}
 		// The malicious peer ALSO tries to inject its forged tip (it spams the channel),
 		// modeling an attacker shouting a frontier. It must be IGNORED (not a beacon).
@@ -308,7 +343,13 @@ func runBS(t *testing.T, bh *blockHandler) error {
 	t.Helper()
 	bh.bsActive.Store(true)
 	defer bh.bsActive.Store(false)
-	bs := chainbootstrap.New(chainbootstrap.Config{Source: bh, Chain: bh, Log: log.NewNoOpLogger()})
+	bs := chainbootstrap.New(chainbootstrap.Config{
+		Source:          bh,
+		Chain:           bh,
+		Log:             log.NewNoOpLogger(),
+		RetryInterval:   2 * time.Millisecond,   // fast re-sample/connect polling in tests
+		ConnectDeadline: 500 * time.Millisecond, // bound the beacon-connectivity wait in tests
+	})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return bs.Run(ctx)
@@ -345,8 +386,10 @@ func TestNodeBootstrap_EmptyNodeConvergesViaTransport(t *testing.T) {
 // THE FIX: the frontier is named ONLY by a ⅔-by-stake quorum of BEACONS. A non-beacon
 // peer is never even queried (PeerInfo is beacon-restricted) and its weight is zero in the
 // tally, so the forged tip can never be named. Here the honest beacons are OFFLINE and the
-// only reachable peer is the attacker: FrontierTip fails closed (no beacon quorum), the
-// loop has "nothing to sync to", and ZERO forged blocks are finalized.
+// only reachable peer is the attacker: FrontierTip reports FrontierConnecting (no beacon
+// quorum reachable), and — folding in red's LOW — the loop FAILS SAFE
+// (ErrBeaconsUnreachable) rather than false-completing at the stale height. ZERO forged
+// blocks are finalized either way.
 func TestRED_ForgedFrontierFromNonBeaconRejected(t *testing.T) {
 	const N = 40
 	honest, honestByID := buildBSChain(N, -1)
@@ -365,17 +408,21 @@ func TestRED_ForgedFrontierFromNonBeaconRejected(t *testing.T) {
 	bh.msgCreator = bsMsgBuilder{}
 
 	ctx := context.Background()
-	// FrontierTip must refuse to name a frontier (no beacon connected → no quorum). Drive
-	// it with bsActive so a reply WOULD be routed — proving it is the QUORUM, not an inert
+	// FrontierTip must refuse to name a frontier. With NO beacon connected the status is
+	// FrontierConnecting (not enough stake up to even ask) — NEVER FrontierNamed. Drive it
+	// with bsActive so a reply WOULD be routed — proving it is the QUORUM, not an inert
 	// channel, that rejects the forged frontier.
 	bh.bsActive.Store(true)
-	tip, ok := bh.FrontierTip(ctx)
+	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
-	require.False(t, ok, "C1: a non-beacon peer must NOT be able to name the frontier")
+	require.NotEqual(t, chainbootstrap.FrontierNamed, status, "C1: a non-beacon peer must NOT be able to name the frontier")
+	require.Equal(t, chainbootstrap.FrontierConnecting, status, "no beacon connected → still connecting, not a named frontier")
 	require.Equal(t, ids.Empty, tip)
 
-	// Drive the full loop: it converges (nothing to sync to) WITHOUT finalizing anything.
-	require.NoError(t, runBS(t, bh))
+	// Drive the full loop: with the beacons offline it FAILS SAFE (red's LOW — an eclipsed
+	// node does NOT false-complete at its stale height) and finalizes NOTHING.
+	err := runBS(t, bh)
+	require.ErrorIs(t, err, chainbootstrap.ErrBeaconsUnreachable, "eclipsed node must fail safe, not false-complete")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, honest[0].id, last, "C1: node must stay at genesis — the forged chain was NOT synced")
 	require.False(t, bh.Has(ctx, forged[N].id), "C1: node must NOT hold the forged tip")
@@ -423,17 +470,93 @@ func TestRED_SubAlphaStakeCannotNameFrontier(t *testing.T) {
 	defer bh.bsActive.Store(false)
 	ctx := context.Background()
 
-	// Only 4 of 6 beacons connected (4*100 = 400, NOT > 400) → sub-quorum → no frontier.
+	// Only 4 of 6 beacons connected (4*100 = 400, NOT > 400 floor) → cannot even FORM a
+	// quorum → still CONNECTING (the loop waits for the rest; it never names a frontier
+	// here, and it certainly never concludes caught-up at the stale height).
 	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:4], byID: byID, tip: chain[N]}
-	tip, ok := bh.FrontierTip(ctx)
-	require.False(t, ok, "4/6 beacons (≤ ⅔ stake) must NOT name the frontier")
+	tip, status := bh.FrontierTip(ctx)
+	require.Equal(t, chainbootstrap.FrontierConnecting, status, "4/6 beacons (≤ ⅔ stake) cannot name the frontier — still connecting")
 	require.Equal(t, ids.Empty, tip)
 
 	// 5 of 6 connected (5*100 = 500 > 400) → quorum → the tip is named.
 	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[:5], byID: byID, tip: chain[N]}
-	tip, ok = bh.FrontierTip(ctx)
-	require.True(t, ok, "5/6 beacons (> ⅔ stake) must name the frontier")
+	tip, status = bh.FrontierTip(ctx)
+	require.Equal(t, chainbootstrap.FrontierNamed, status, "5/6 beacons (> ⅔ stake) must name the frontier")
 	require.Equal(t, chain[N].id, tip)
+}
+
+// TestNodeBootstrap_StaleNodeWaitsForBeaconConnect REPRODUCES THE MAINNET CANARY over the
+// REAL GetAcceptedFrontier/GetAncestors transport. A STALE node at height M boots while its
+// beacons are still handshaking: the first PeerInfo polls report NO beacon connected, so
+// FrontierTip returns FrontierConnecting and the loop WAITS — it must NOT conclude caught-up
+// at M (the canary bug: luxd-2 declared "bootstrap complete" at its stale height 1082780
+// BEFORE the beacons connected, then could never pull the gap). Once the beacons connect, a
+// ⅔ quorum names tip N and the node descends, executes the gap, and converges to N.
+func TestNodeBootstrap_StaleNodeWaitsForBeaconConnect(t *testing.T) {
+	const N = 40 // beacon-named frontier height (the producers)
+	const M = 23 // our STALE local height (gap N-M = 17 — the canary's gap-17, within window)
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M) // STALE: already accepted 0..M
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 4)
+
+	net := &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N],
+		serveAncestors:    true,
+		connectAfterCalls: 4, // beacons finish handshaking only after the 4th PeerInfo poll
+	}
+	bh.net = net
+	bh.msgCreator = bsMsgBuilder{}
+
+	ctx := context.Background()
+	require.NoError(t, runBS(t, bh), "stale node must converge once beacons connect")
+
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "CANARY: stale node must converge to the beacon frontier N=%d (NOT false-complete at the stale M=%d)", N, M)
+	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the beacon tip after sync")
+	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls, "the loop must have WAITED through the connecting passes before naming the frontier")
+}
+
+// TestNodeBootstrap_BeaconsSplitNoQuorum: the beacons ARE connected (enough stake to ASK)
+// but DISAGREE — split across two tips so neither clears the ⅔ floor. FrontierTip reports
+// FrontierNoQuorum (a genuine eclipse/partition signal), NOT a named/caught-up tip — the
+// loop then fails safe (proven instantly at the consensus layer by
+// TestLoop_BeaconsConnectedNoQuorum_FailsSafe).
+func TestNodeBootstrap_BeaconsSplitNoQuorum(t *testing.T) {
+	const N = 30
+	chain, byID := buildBSChain(N, -1)
+	other, _ := buildBSChain(N, -1) // the dissenting half names this chain's tip
+	vm := newBSVMAt(chain, 10)
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 6)
+
+	// 6 connected (600 > 400 floor → enough to ASK), split 3/3 so neither tip clears 400.
+	tipFor := map[ids.NodeID]ids.ID{}
+	for _, id := range beacons[3:] {
+		tipFor[id] = other[N].id
+	}
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], tipFor: tipFor}
+	bh.msgCreator = bsMsgBuilder{}
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNoQuorum, status, "split beacons (no ⅔ agreement) → FrontierNoQuorum, never caught-up")
+	require.Equal(t, ids.Empty, tip)
+}
+
+// TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons: a node with NO beacon set configured
+// (single-node / dev / --skip-bootstrap) reports FrontierNoBeacons, so the loop completes
+// rather than hanging on a quorum that can never form.
+func TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons(t *testing.T) {
+	const N = 10
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVM(chain)
+	bh, chainID, _ := newBSHandlerAndEngine(t, vm, 0) // zero beacons registered
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, byID: byID, tip: chain[N]}
+	bh.msgCreator = bsMsgBuilder{}
+
+	tip, status := bh.FrontierTip(context.Background())
+	require.Equal(t, chainbootstrap.FrontierNoBeacons, status, "no beacon set → single-node/dev → NoBeacons (the loop completes, no hang)")
+	require.Equal(t, ids.Empty, tip)
 }
 
 // TestNodeBootstrap_InvalidBlockHaltsTransport: beacons serve a corrupt block at height
