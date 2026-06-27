@@ -587,3 +587,170 @@ func refs5BSBlocks(refs []BlockRef) []*bsTestBlock {
 	}
 	return out
 }
+
+// ----- CaughtUp: the tip-holder go-live determination (RED CRITICAL fix) ----
+//
+// CaughtUp is the DUAL of AcceptsFrontier — "nobody is ahead" vs "here is the block ahead to sync
+// to". It is the go-live path for a TIP-HOLDER on a mixed-height co-restart, where the responders
+// SPLIT below the ⅔ naming threshold so AcceptsFrontier names NOTHING yet the node is plainly not
+// behind. Getting its SAFETY exactly right is the hinge between "fixes the freeze" and "reopens the
+// stale-go-live bug": these pin all three conditions (floor met, none-ahead, holds-every-tip) and
+// prove the two adversarial fake-caught-up attempts FAIL.
+
+// heldOracle builds the height ORACLE CaughtUp injects: a block's height, ok=false when not held.
+func heldOracle(held map[ids.ID]uint64) func(ids.ID) (uint64, bool) {
+	return func(id ids.ID) (uint64, bool) { h, ok := held[id]; return h, ok }
+}
+
+// TestBootstrapTrust_CaughtUp_TipHolderSplitGoesReady is the CRITICAL regression at the policy layer:
+// the EXACT mainnet co-restart shape. A producer at N sees 4 responders split {N, N, N-16, genesis};
+// the tip-holders are only ½ (< ⅔), so AcceptsFrontier names NOTHING (ErrNoBootstrapQuorum) — yet the
+// node holds every reported tip and none is above N, so CaughtUp is TRUE. It pins BOTH halves: the
+// SAME replies yield no NAMED frontier (the case the tip-holder fails safe DOWN without this fix) but
+// ARE caught-up.
+func TestBootstrapTrust_CaughtUp_TipHolderSplitGoesReady(t *testing.T) {
+	const N = 40
+	refs, byID := refChain(N) // genesis..N
+	b := nodeIDs(5)           // 5 equal-weight beacons (the node is the 5th, not a responder)
+	const w = uint64(100)     // total 500 → MinResponseWeight ⌈500/2⌉=251, MinResponses majority=3
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(b, w),
+		MinResponses:      3,
+		MinResponseWeight: 251,
+		MinFrontierHeight: N,
+		Source:            &stubAncestry{byID: byID},
+	}
+
+	// 4 connected responders: 2 at the tip N, one stale at N-16, one at genesis — the production shape.
+	replies := []BeaconReply{
+		reply(b[0], refs[N].ID, w),
+		reply(b[1], refs[N].ID, w),
+		reply(b[2], refs[N-16].ID, w),
+		reply(b[3], refs[0].ID, w),
+	}
+
+	// HALF 1: AcceptsFrontier names NOTHING — the tip-holders (200) do not clear ⅔ (266), and the
+	// ⅔-backed common ancestor N-16 is below MinFrontierHeight=N (history the node already has).
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"the mixed-height split names no frontier — exactly the case the tip-holder froze on without CaughtUp")
+
+	// HALF 2: the node HOLDS its accepted chain 0..N, so it holds every reported tip and none is above
+	// N → CaughtUp is TRUE. This is the go-live path the regression was missing.
+	held := map[ids.ID]uint64{refs[N].ID: N, refs[N-16].ID: N - 16, refs[0].ID: 0}
+	require.True(t, policy.CaughtUp(replies, N, heldOracle(held)),
+		"a tip-holder that holds every reported tip and is at the top of all of them IS caught up")
+}
+
+// TestBootstrapTrust_CaughtUp_StaleNodeNotCaughtUp is the FORWARD safety guard (the stale-go-live bug
+// staying FIXED): a STALE node at N-16 with honest producers at N PRESENT must NOT be caught-up — an
+// honest responder is ahead, so it still SYNCS. CaughtUp must not fire merely because SOME responders
+// are at/below the node.
+func TestBootstrapTrust_CaughtUp_StaleNodeNotCaughtUp(t *testing.T) {
+	const N = 40
+	refs, _ := refChain(N)
+	b := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, MinResponseWeight: 251, MinFrontierHeight: N - 16}
+
+	replies := []BeaconReply{
+		reply(b[0], refs[N].ID, w),    // honest, AHEAD
+		reply(b[1], refs[N].ID, w),    // honest, AHEAD
+		reply(b[2], refs[N-16].ID, w), // at the node's height
+		reply(b[3], refs[N-20].ID, w), // below
+	}
+	// The node holds only 0..N-16 — it does NOT hold the producers' tip N.
+	held := map[ids.ID]uint64{refs[N-16].ID: N - 16, refs[N-20].ID: N - 20}
+	require.False(t, policy.CaughtUp(replies, N-16, heldOracle(held)),
+		"a stale node with an honest responder ahead must NOT be caught up — it syncs (stale-go-live stays fixed)")
+}
+
+// TestBootstrapTrust_CaughtUp_StaleNodeMinorityFakeRejected is adversarial fake-caught-up #1 (honest
+// present): a node at N-16 where a <⅓-stake set of beacons reports ≤ N-16 to fake caught-up WHILE the
+// honest producers at N are also present. The honest max is ahead (and the node lacks tip N) → NOT
+// caught up. The minority cannot fake it past the honest responders.
+func TestBootstrapTrust_CaughtUp_StaleNodeMinorityFakeRejected(t *testing.T) {
+	const N = 40
+	refs, _ := refChain(N)
+	b := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, MinResponseWeight: 251, MinFrontierHeight: N - 16}
+
+	// 3 honest producers at N (ahead) + 1 Byzantine at N-16 trying to fake "everyone is at my height".
+	replies := []BeaconReply{
+		reply(b[0], refs[N].ID, w),
+		reply(b[1], refs[N].ID, w),
+		reply(b[2], refs[N].ID, w),
+		reply(b[3], refs[N-16].ID, w), // the < ⅓ liar
+	}
+	held := map[ids.ID]uint64{refs[N-16].ID: N - 16} // node holds only up to N-16
+	require.False(t, policy.CaughtUp(replies, N-16, heldOracle(held)),
+		"a <⅓ minority reporting ≤N-16 cannot fake caught-up while honest producers at N are present")
+}
+
+// TestBootstrapTrust_CaughtUp_EclipsedMinorityFailsSafe is adversarial fake-caught-up #2 (honest
+// eclipsed): the honest producers (at N) are SUPPRESSED and only a <½-stake set of beacons reports
+// ≤ N-16. The response FLOOR (the SAME one AcceptsFrontier uses) is not met → CaughtUp is FALSE →
+// fail safe. Faking caught-up costs the same stake-majority of honest beacons that faking a NAMED
+// frontier does — no partition-capture.
+func TestBootstrapTrust_CaughtUp_EclipsedMinorityFailsSafe(t *testing.T) {
+	const N = 40
+	refs, _ := refChain(N)
+	b := nodeIDs(5)
+	const w = uint64(100) // total 500 → MinResponseWeight 251
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, MinResponseWeight: 251, MinFrontierHeight: N - 16}
+
+	// Only 2 of 5 beacons answer (the honest producers at N are eclipsed). Their weight 200 < 251.
+	replies := []BeaconReply{
+		reply(b[2], refs[N-16].ID, w),
+		reply(b[3], refs[N-20].ID, w),
+	}
+	held := map[ids.ID]uint64{refs[N-16].ID: N - 16, refs[N-20].ID: N - 20}
+	require.False(t, policy.CaughtUp(replies, N-16, heldOracle(held)),
+		"an eclipsed <½-stake responder set cannot fake caught-up — the floor is not met (fail safe)")
+
+	// Sanity: AcceptsFrontier ALSO rejects this set below the floor (the SAME floor gates both paths).
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses, "the same floor gates naming and caught-up")
+}
+
+// TestBootstrapTrust_CaughtUp_OneAcceptedBlockBehindSyncs proves condition (b) uses the ACCEPTED
+// height: a node at accepted N that has merely PROCESSED N+1 (holds it) is NOT caught up when a
+// producer has ACCEPTED N+1 — it must sync that block. heightOf reads the block's canonical height,
+// so a held-but-above-lastAccepted tip correctly defeats caught-up (the ±1 pending skew cannot fake it).
+func TestBootstrapTrust_CaughtUp_OneAcceptedBlockBehindSyncs(t *testing.T) {
+	const N = 40
+	refs, _ := refChain(N + 1) // includes N+1
+	b := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, MinResponseWeight: 251, MinFrontierHeight: N}
+	replies := []BeaconReply{
+		reply(b[0], refs[N+1].ID, w), // a producer ACCEPTED N+1
+		reply(b[1], refs[N].ID, w),
+		reply(b[2], refs[N].ID, w),
+	}
+	// The node holds 0..N AND has processed N+1 (held), but its ACCEPTED height is N.
+	held := map[ids.ID]uint64{refs[N+1].ID: N + 1, refs[N].ID: N}
+	require.False(t, policy.CaughtUp(replies, N, heldOracle(held)),
+		"a node one ACCEPTED block behind (even if it processed N+1) must NOT be caught up — it syncs")
+}
+
+// TestBootstrapTrust_CaughtUp_SameHeightForkNotHeld proves condition (c): a responder reporting a
+// DIFFERENT block at the node's height (a fork the node never finalized) defeats caught-up — the node
+// must HOLD every reported tip, not merely match heights numerically.
+func TestBootstrapTrust_CaughtUp_SameHeightForkNotHeld(t *testing.T) {
+	const N = 40
+	refs, _ := refChain(N)
+	fork := BlockRef{ID: ids.GenerateTestID(), Height: N} // a sibling at height N the node does NOT hold
+	b := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, MinResponseWeight: 251, MinFrontierHeight: N}
+	replies := []BeaconReply{
+		reply(b[0], refs[N].ID, w),
+		reply(b[1], refs[N].ID, w),
+		reply(b[2], fork.ID, w), // a fork at the same height N
+	}
+	held := map[ids.ID]uint64{refs[N].ID: N} // the node holds its tip N but NOT the fork
+	require.False(t, policy.CaughtUp(replies, N, heldOracle(held)),
+		"a same-height fork the node does not hold defeats caught-up (condition c: holds every reported tip)")
+}

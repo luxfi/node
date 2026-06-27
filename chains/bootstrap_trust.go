@@ -264,20 +264,17 @@ func (p *BootstrapPolicy) namingTimeout() time.Duration {
 	return bootstrapNamingTimeout
 }
 
-// AcceptsFrontier implements BootstrapTrust. It (1) keeps ONLY configured-beacon replies
-// (INVARIANT 1), (2) enforces the MinResponses / MinResponseWeight floor or falls back to the
-// operator checkpoint (INVARIANT 2), then (3) names the highest block a responder supermajority
-// shares via the ancestor-tolerant tally. It never consults the ⅔-of-current-stake finality rule
-// (INVARIANT 3): the decision is the response floor + responder agreement, a separate threat model.
-func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconReply) (*Frontier, error) {
-	// INVARIANT 1: only CONFIGURED beacons count, deduplicated by NodeID. A reply from a peer not
-	// in TrustedBeacons is ignored — peers never define who is a beacon (non-circular). The
-	// authenticated NodeID (transport handshake) is what makes "configured" unforgeable.
+// tallyResponders applies INVARIANT 1 (only CONFIGURED beacons count, deduplicated by NodeID — a
+// reply from a peer not in TrustedBeacons, a repeat, or an empty tip is dropped) and returns the
+// distinct responder count + total responder stake plus the per-tip stake / voter maps the naming
+// tally walks. The authenticated NodeID (transport handshake) is what makes "configured"
+// unforgeable. Shared by AcceptsFrontier (which names a frontier AHEAD) and CaughtUp (which
+// concludes NONE is ahead) so both judge the IDENTICAL responder set under the SAME eligibility
+// rule — the eligibility decision lives in exactly one place.
+func (p *BootstrapPolicy) tallyResponders(replies []BeaconReply) (responders int, responderWeight StakeWeight, stakeOnTip map[ids.ID]StakeWeight, votersOf map[ids.ID]map[ids.NodeID]struct{}) {
 	seen := make(map[ids.NodeID]struct{}, len(replies))
-	stakeOnTip := make(map[ids.ID]StakeWeight)
-	votersOf := make(map[ids.ID]map[ids.NodeID]struct{})
-	var responders int
-	var responderWeight StakeWeight
+	stakeOnTip = make(map[ids.ID]StakeWeight)
+	votersOf = make(map[ids.ID]map[ids.NodeID]struct{})
 	for _, r := range replies {
 		w, ok := p.TrustedBeacons[r.NodeID]
 		if !ok || r.Tip == ids.Empty {
@@ -295,13 +292,38 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 		}
 		votersOf[r.Tip][r.NodeID] = struct{}{}
 	}
+	return responders, responderWeight, stakeOnTip, votersOf
+}
+
+// floorMet reports whether the responder set clears INVARIANT 2's partition-capture FLOOR: at
+// least MinResponses distinct configured beacons AND (when MinResponseWeight is configured) at
+// least that much total responder stake. AcceptsFrontier gates NAMING a frontier on it and
+// CaughtUp gates concluding NONE-AHEAD on the SAME floor — so an eclipse that suppresses the
+// honest ahead-nodes to fake EITHER outcome must drop the responder set below it and fail safe.
+func (p *BootstrapPolicy) floorMet(responders int, responderWeight StakeWeight) bool {
+	if responders < p.effectiveMinResponses() {
+		return false
+	}
+	if p.MinResponseWeight > 0 && responderWeight < p.MinResponseWeight {
+		return false
+	}
+	return true
+}
+
+// AcceptsFrontier implements BootstrapTrust. It (1) keeps ONLY configured-beacon replies
+// (INVARIANT 1, tallyResponders), (2) enforces the MinResponses / MinResponseWeight floor or falls
+// back to the operator checkpoint (INVARIANT 2, floorMet), then (3) names the highest block a
+// responder supermajority shares via the ancestor-tolerant tally. It never consults the
+// ⅔-of-current-stake finality rule (INVARIANT 3): the decision is the response floor + responder
+// agreement, a separate threat model.
+func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconReply) (*Frontier, error) {
+	responders, responderWeight, stakeOnTip, votersOf := p.tallyResponders(replies)
 
 	// INVARIANT 2: the response FLOOR prevents partition-capture. Below MinResponses (or below
 	// MinResponseWeight) the node has not heard from enough authenticated beacons to trust ANY
 	// frontier — an attacker may have partitioned it down to a captured few. REJECT, unless the
 	// operator explicitly pinned a checkpoint to anchor from.
-	minResp := p.effectiveMinResponses()
-	if responders < minResp || (p.MinResponseWeight > 0 && responderWeight < p.MinResponseWeight) {
+	if !p.floorMet(responders, responderWeight) {
 		if p.Checkpoint != nil {
 			return &Frontier{
 				ID:             p.Checkpoint.ID,
@@ -311,7 +333,7 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 			}, nil
 		}
 		return nil, fmt.Errorf("%w: %d configured beacons responded (weight %d), need %d",
-			ErrInsufficientBootstrapResponses, responders, responderWeight, minResp)
+			ErrInsufficientBootstrapResponses, responders, responderWeight, p.effectiveMinResponses())
 	}
 
 	// The agreement threshold is over the RESPONDERS, not the whole configured set — this is what
@@ -325,6 +347,50 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 		return nil, ErrNoBootstrapQuorum
 	}
 	return &Frontier{ID: id, Height: height, Weight: weight, Responders: responders}, nil
+}
+
+// CaughtUp reports whether the responder set PROVES the node is already AT OR ABOVE the network
+// frontier — the dual of AcceptsFrontier ("nobody is ahead" vs "here is the block ahead to sync
+// to"). It is the go-live path for a TIP-HOLDER on a mixed-height co-restart: when producers
+// restart together the responder set SPLITS (the tip-holders are exactly half — below the ⅔
+// naming threshold), so AcceptsFrontier names NOTHING (ErrNoBootstrapQuorum), yet the node is
+// plainly not behind. Without this determination such a producer fails safe DOWN at its own tip —
+// the exact OPPOSITE of the stale-go-live bug, and just as wrong. THREE conditions, ALL required:
+//
+//   - (a) the SAME response FLOOR AcceptsFrontier uses is met (floorMet: MinResponses distinct
+//     beacons AND MinResponseWeight stake-majority). An eclipse that hides the higher (real) tips
+//     to fake caught-up must SUPPRESS the ahead-nodes' replies, dropping the responder set below
+//     the floor → NOT caught up, fail safe. No partition-capture: faking caught-up costs the same
+//     stake-majority of honest beacons that faking a NAMED frontier does.
+//   - (b) every responder's reported ACCEPTED tip is at height ≤ lastAccepted. A genuinely STALE
+//     node has at least one honest responder AHEAD (height > lastAccepted) → NOT caught up: it
+//     still syncs, so the stale-go-live bug stays fixed. (GetAcceptedFrontier reports a beacon's
+//     last-ACCEPTED block, so an un-finalized N+1 a producer is merely processing is never reported
+//     — the ±1 pending-tip skew cannot fake "ahead", and a producer one ACCEPTED block ahead
+//     correctly defeats caught-up so the node syncs that block.)
+//   - (c) the node HOLDS every reported tip — heightOf returns ok ONLY for a block the node has, so
+//     a tip the node lacks (someone genuinely ahead, or a same-height sibling/fork it never
+//     finalized) makes the conclusion fail. The node declares caught-up only to blocks it holds.
+//
+// heightOf resolves a tip's height from blocks the NODE HOLDS (ok=false when not held), injected so
+// the trust DECISION stays free of any VM/block dependency — the same separation as AncestrySource.
+// It is NEVER a network fetch: a tip the node lacks simply makes it not-caught-up (the safe
+// direction — it syncs). Because (c) requires the node to hold every reported tip, the heights (b)
+// compares are all read locally and are the blocks' canonical (content-addressed) heights.
+func (p *BootstrapPolicy) CaughtUp(replies []BeaconReply, lastAccepted uint64, heightOf func(ids.ID) (uint64, bool)) bool {
+	responders, responderWeight, stakeOnTip, _ := p.tallyResponders(replies)
+	if !p.floorMet(responders, responderWeight) {
+		return false // (a) below the floor — an eclipse/partition can never fake caught-up
+	}
+	sawTip := false
+	for tip := range stakeOnTip {
+		sawTip = true
+		h, held := heightOf(tip)
+		if !held || h > lastAccepted {
+			return false // (c) a tip we do not hold, or (b) a responder ahead → NOT caught up
+		}
+	}
+	return sawTip // ≥1 responder tip evaluated (floor already implies this; guards an empty set)
 }
 
 // nameFrontier finds the block a responder supermajority shares — by CONTENT, reusing the

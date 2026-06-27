@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/binary"
 	"strconv"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -178,6 +179,12 @@ type bsBeaconNet struct {
 	connectAfterCalls int
 	peerInfoCalls     int
 
+	// gate models a DYNAMIC eclipse a concurrent test goroutine flips (atomic: PeerInfo runs on the
+	// bootstrap goroutine). gate==true ⇒ NO beacon is reported connected (the quorum is unreachable),
+	// the self-heal driver re-attempts; gate==false ⇒ beacons connect and the node converges. Zero
+	// value (false) is the default (connected), so existing tests are unaffected.
+	gate atomic.Bool
+
 	// Optional malicious NON-beacon peer: connected and tracking, reports a forged tip.
 	malicious ids.NodeID
 	forgedTip ids.ID
@@ -198,7 +205,8 @@ type bsBeaconNet struct {
 // that bug. Reporting set.Of(networkID) is what makes the canary-convergence tests meaningful.
 func (n *bsBeaconNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
 	n.peerInfoCalls++
-	beaconsUp := n.connectAfterCalls == 0 || n.peerInfoCalls > n.connectAfterCalls
+	// gate (atomic) is the dynamic eclipse: when set, NO beacon is reported connected this round.
+	beaconsUp := (n.connectAfterCalls == 0 || n.peerInfoCalls > n.connectAfterCalls) && !n.gate.Load()
 	trackedNet := n.bh.networkID // the NET real peers advertise (incl. PrimaryNetworkID)
 	want := map[ids.NodeID]bool{}
 	for _, id := range nodeIDs {
@@ -954,7 +962,7 @@ func TestWatchBootstrapProgress_SlowButAdvancingNotKilled(t *testing.T) {
 	var calls int
 	heightOf := func() uint64 { calls++; return uint64(calls) } // advances every poll
 	ready := func() bool { return calls >= 120 }                // done only after 120 polls (≫ the 60ms window)
-	outcome, _ := watchBootstrapProgress(ready, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, _ := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapReady, outcome, "a slow-but-ADVANCING sync must complete, not be timed out")
 }
 
@@ -964,7 +972,7 @@ func TestWatchBootstrapProgress_GenuineStallFails(t *testing.T) {
 	heightOf := func() uint64 { return 5 } // pinned — no progress
 	ready := func() bool { return false }
 	start := time.Now()
-	outcome, last := watchBootstrapProgress(ready, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, last := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapStalled, outcome, "a no-progress sync must stall out")
 	require.Equal(t, uint64(5), last, "the stall diagnostic must report the height it stalled at")
 	require.GreaterOrEqual(t, time.Since(start), 60*time.Millisecond, "must wait the full stall window before failing")
@@ -976,7 +984,7 @@ func TestWatchBootstrapProgress_Shutdown(t *testing.T) {
 	shutdown := make(chan struct{})
 	go func() { time.Sleep(20 * time.Millisecond); close(shutdown) }()
 	outcome, _ := watchBootstrapProgress(
-		func() bool { return false }, nil, func() uint64 { return 0 },
+		func() bool { return false }, nil, nil, func() uint64 { return 0 },
 		time.Millisecond, time.Hour, shutdown,
 	)
 	require.Equal(t, bootstrapShutdown, outcome)
@@ -993,6 +1001,7 @@ func TestWatchBootstrapProgress_FailSafeSurfacesPromptly(t *testing.T) {
 	outcome, _ := watchBootstrapProgress(
 		func() bool { return false }, // not ready
 		failed,
+		nil,                        // not connecting
 		func() uint64 { return 7 }, // height pinned — would otherwise wait the full stall window
 		time.Millisecond, time.Hour, nil,
 	)
@@ -1006,6 +1015,7 @@ func TestWatchBootstrapProgress_ReadyBeatsFailed(t *testing.T) {
 	outcome, _ := watchBootstrapProgress(
 		func() bool { return true }, // ready
 		func() bool { return true }, // and failed — ready must take precedence
+		nil,                         // connecting (irrelevant — ready wins)
 		func() uint64 { return 0 },
 		time.Millisecond, time.Hour, nil,
 	)
@@ -1144,6 +1154,11 @@ func TestRED_EclipsedValidatorNeverGoesReadyAtStaleHeight(t *testing.T) {
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 	bh.bootstrapRetryInterval = 2 * time.Millisecond
 	bh.bootstrapConnectDeadline = 300 * time.Millisecond // bounded fail-safe window for the test
+	// Pin a SINGLE attempt so this asserts the TERMINAL fail-safe in isolation (the connectivity
+	// self-heal RETRY — bootstrapMaxAttempts ≤ 0 ⇒ retry until the quorum returns — is proven
+	// separately in TestRED_MajorityOutageSelfHealsWhenQuorumReturns). The SAFETY property here (an
+	// eclipsed node NEVER goes live at its stale height) holds identically under one attempt or many.
+	bh.bootstrapMaxAttempts = 1
 	// connected: nil — the beacon set is configured (weights known) but NONE are reachable.
 	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: nil, byID: byID, tip: chain[N+K], serveAncestors: true}
 	bh.msgCreator = bsMsgBuilder{}
@@ -1201,4 +1216,144 @@ func TestNodeBootstrap_ProducerAtTipReadyFast(t *testing.T) {
 	require.Equal(t, 1, *calls, "VM transitioned to normal operation once")
 	require.Equal(t, uint64(N), *heightAtReady, "producer goes live at the frontier (== its tip, height %d)", N)
 	require.True(t, bh.bootstrapDone.Load(), "producer chain marked bootstrapped")
+}
+
+// TestRED_TipHolderCoRestartGoesReadyAtOwnTip is THE CRITICAL regression RED found and the hinge of
+// this round. A PRODUCER at the tip N, on a simultaneous co-restart, sees the production fleet SPLIT
+// across heights: 2 other producers at N, one node at N-16, one at genesis. The tip-holders are only
+// ½ of the 4 responders (< ⅔), so NO frontier is NAMED, and the ⅔-backed common ancestor N-16 is
+// below the node's own last-accepted (MinFrontierHeight filters it). WITHOUT the caught-up
+// determination this producer has no go-live path and fails safe DOWN at its own tip — the OPPOSITE
+// of the stale-go-live bug, and just as wrong.
+//
+// FAILS on 5d3aaeb5a0 (FrontierTip → FrontierNoQuorum → ErrNoBeaconQuorum → live==false); PASSES
+// after: CaughtUp proves the node is at the top of every responder and holds every reported tip, so
+// the network frontier IS the node's own accepted tip → the loop's Has()-shortcut → Ready at N, once.
+func TestRED_TipHolderCoRestartGoesReadyAtOwnTip(t *testing.T) {
+	const N = 80   // the producer's tip (models the mainnet 1082796 — the RELATIVE shape is the point)
+	const gap = 16 // luxd-2's lag (the canary's 16-block gap → N-16)
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, N) // the PRODUCER holds its full accepted chain 0..N (a co-restart spare)
+
+	// 5 equal-weight beacons (the mainnet shape). The node is the 5th; its 4 PEERS report the SPLIT:
+	// two producers at the tip N, luxd-2 at N-16, luxd-0 at genesis.
+	bIDs := make([]ids.NodeID, 5)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 2 * time.Second
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: bIDs[:4], byID: byID, tip: chain[N], serveAncestors: true,
+		tipFor: map[ids.NodeID]ids.ID{
+			bIDs[2]: chain[N-gap].id, // luxd-2 at N-16
+			bIDs[3]: chain[0].id,     // luxd-0 at genesis
+		},
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// UNIT: the tip-holders (b0,b1 = 200) do NOT clear ⅔ (266 of 400) and the ⅔-common N-16 is below
+	// MinFrontierHeight=N → no frontier is NAMED; the caught-up path names the node's OWN held tip.
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(ctx)
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNamed, status,
+		"CAUGHT-UP: a tip-holder that holds every reported tip and is at the top of all of them must go Ready, not NoQuorum")
+	require.Equal(t, chain[N].id, tip, "the caught-up frontier is the node's OWN accepted tip N")
+
+	// FULL LOOP: the producer goes live at its OWN tip N — exactly once, never below it, never hung.
+	calls, heightAtReady := recordVMReady(bh, vm)
+	rctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	start := time.Now()
+	live := bh.runInitialSync(rctx)
+
+	require.True(t, live, "THE FIX: a tip-holding producer on a mixed-height co-restart must go Ready at its own tip")
+	require.Less(t, time.Since(start), 2*time.Second, "a caught-up producer must go live PROMPTLY, not hang on the no-quorum retry")
+	require.Equal(t, 1, *calls, "VM transitioned to normal operation exactly once")
+	require.Equal(t, uint64(N), *heightAtReady, "went live at its OWN tip N=%d, never below it", N)
+	require.True(t, bh.bootstrapDone.Load(), "tip-holder chain marked bootstrapped")
+	require.False(t, bh.BootstrapFailed(), "a caught-up producer must NOT record a fail-safe reason")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "the producer stays at its tip N — it does NOT sync backward to the ⅔-common N-16")
+}
+
+// TestRED_MajorityOutageSelfHealsWhenQuorumReturns is the RED MEDIUM #2 self-heal proof. A node boots
+// into a MAJORITY OUTAGE (its beacon quorum unreachable — a co-restart where < MinResponses are up).
+// It must NOT go live at its stale height (safety) and must NOT permanently give up (liveness): it
+// stays in Bootstrapping, RE-ATTEMPTS (bootstrapMaxAttempts ≤ 0 ⇒ until the quorum returns), and
+// CONVERGES the instant the quorum comes back — all IN-PROCESS, with no pod restart (the K8s probes
+// poll the always-green /ext/health/liveness and would never restart it). This is the bounded
+// re-bootstrap retry that closes the "permanent brick" RED flagged.
+func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
+	const N, K = 30, 16 // stale at N; the live frontier (once the quorum returns) is N+K
+	chain, byID := buildBSChain(N+K, -1)
+	vm := newBSVMAt(chain, N)
+
+	bIDs := make([]ids.NodeID, 5)
+	weights := map[ids.NodeID]uint64{}
+	for i := range bIDs {
+		bIDs[i] = ids.GenerateTestNodeID()
+		weights[bIDs[i]] = 100
+	}
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.bootstrapRetryInterval = 2 * time.Millisecond
+	bh.bootstrapConnectDeadline = 80 * time.Millisecond // short per-attempt connect wait (test bound)
+	// bootstrapMaxAttempts left 0 ⇒ UNLIMITED retry — the production self-heal.
+
+	net := &bsBeaconNet{bh: bh, chainID: chainID, connected: bIDs, byID: byID, tip: chain[N+K], serveAncestors: true}
+	net.gate.Store(true) // start in the OUTAGE: the quorum is unreachable (a majority co-restart)
+	bh.net = net
+	bh.msgCreator = bsMsgBuilder{}
+
+	calls, heightAtReady := recordVMReady(bh, vm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	done := make(chan bool, 1)
+	go func() { done <- bh.runInitialSync(ctx) }()
+
+	// While the quorum is down the node must fail safe DOWN and ENTER its connectivity-retry wait —
+	// NOT go live at the stale height, NOT give up. (Asserted via the ATOMIC status — no non-atomic
+	// read of the bootstrap goroutine's state while it runs.)
+	require.Eventually(t, bh.BootstrapConnecting, 3*time.Second, 2*time.Millisecond,
+		"an outage must put the node into the connectivity-retry wait (failing safe DOWN), not live or given-up")
+	require.False(t, bh.bootstrapDone.Load(), "must NOT be bootstrapped while the quorum is unreachable")
+	require.False(t, bh.BootstrapFailed(), "a retryable connectivity outage is NOT a terminal fail-safe — it keeps trying")
+
+	// The quorum RETURNS. The node must SELF-HEAL in-process: converge to the frontier and go live.
+	net.gate.Store(false)
+
+	require.True(t, <-done, "node must self-heal and go live once the quorum returns") // happens-before for the reads below
+	require.True(t, bh.bootstrapDone.Load(), "chain marked bootstrapped after self-heal")
+	// calls==1 (exactly one go-live, TOTAL) proves the VM never went live during the outage — had it,
+	// the recovery go-live would make this 2. heightAtReady==N+K proves that single go-live was at the
+	// recovered frontier, never the stale N.
+	require.Equal(t, 1, *calls, "VM transitioned to normal operation exactly once — at the frontier, after recovery")
+	require.Equal(t, uint64(N+K), *heightAtReady, "self-healed node converges to the frontier N+K=%d, never the stale N=%d", N+K, N)
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N+K].id, last, "self-healed node holds the frontier tip after recovery")
+}
+
+// TestWatchBootstrapProgress_ConnectingNotStalled is the RED MEDIUM #2 watchdog guard: a node in its
+// connectivity-RETRY wait reports connecting()==true, so the no-progress watchdog must NOT declare it
+// stalled — force-STOPPING a node that is correctly waiting for its quorum would be a permanent brick
+// (the K8s probes never restart it). The clock is reset while connecting; only a NON-connecting
+// no-progress node stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
+func TestWatchBootstrapProgress_ConnectingNotStalled(t *testing.T) {
+	shutdown := make(chan struct{})
+	go func() { time.Sleep(120 * time.Millisecond); close(shutdown) }() // ~6 stall windows later
+	outcome, _ := watchBootstrapProgress(
+		func() bool { return false }, // never ready
+		func() bool { return false }, // never a terminal fail
+		func() bool { return true },  // ALWAYS connecting (deliberate quorum wait)
+		func() uint64 { return 5 },   // height pinned — no progress
+		time.Millisecond, 20*time.Millisecond, shutdown,
+	)
+	require.Equal(t, bootstrapShutdown, outcome,
+		"a CONNECTING node must NEVER be stalled out (it is waiting for its quorum) — only shutdown ends it")
 }
