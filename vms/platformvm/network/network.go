@@ -43,10 +43,10 @@ type warpSignerAdapter struct {
 }
 
 // Sign implements extwarp.Signer interface
-func (a *warpSignerAdapter) Sign(msg *extwarp.UnsignedMessage) ([]byte, error) {
-	// Convert external warp message to internal warp message
-	// msg.SourceChainID is already ids.ID type
-	internalMsg, err := warp.NewUnsignedMessage(msg.NetworkID, msg.SourceChainID, msg.Payload)
+func (a *warpSignerAdapter) Sign(core *extwarp.Core) ([]byte, error) {
+	// Convert the external ZAP core to an internal warp message
+	// core.SourceChainID is already ids.ID type
+	internalMsg, err := warp.NewUnsignedMessage(core.NetworkID, core.SourceChainID, core.Payload)
 	if err != nil {
 		return nil, err
 	}
