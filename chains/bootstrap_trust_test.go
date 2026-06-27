@@ -421,3 +421,116 @@ func TestBootstrapTrust_ForkAtSharedGenesisFailsSafe(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, H.ID, f.ID, "with the node below the fork, H IS the ⅔-common frontier to sync to")
 }
+
+// ----- H: SKEWED-WEIGHT PARTITION-CAPTURE (the re-red HIGH; MinResponseWeight floor) ---------
+
+// weightedBeacons builds a TrustedBeacons map from an explicit per-node weight list — for
+// modeling a SKEWED (non-uniform) validator stake distribution.
+func weightedBeacons(beacons []ids.NodeID, w []uint64) map[ids.NodeID]StakeWeight {
+	m := make(map[ids.NodeID]StakeWeight, len(beacons))
+	for i, id := range beacons {
+		m[id] = StakeWeight(w[i])
+	}
+	return m
+}
+
+// TestBootstrapTrust_H_SkewedWeightPartitionRejected is the load-bearing regression for the re-red
+// HIGH finding. Under SKEWED validator weights the MinResponses COUNT floor and the ⅔-of-responders
+// WEIGHT agreement diverge: an attacker who eclipses the HEAVY honest beacon but lets enough LIGHT
+// honest beacons through to satisfy the count can shrink the responder-WEIGHT denominator until his
+// < ⅓-of-total Byzantine stake clears ⅔-of-responders and NAMES A FORGED FRONTIER. The MinResponseWeight
+// stake-majority floor (> ½ of TOTAL configured beacon stake) closes this — a < ⅓-stake adversary can
+// never make the responders carry a ⅔ weight majority once they must also carry > ½ of the total.
+//
+// Red's PoC: 6 beacons w={3,3,13,1,1,1}, total 22, Byzantine {B0,B1}=6 (27% < ⅓). The attacker
+// partitions to {B0,B1 on forgedF} + {H2,H3 on realR} = 4 responders (= the majority count floor),
+// responderWeight=8, ⅔-floor=5, backing[forgedF]=6 > 5 → forgedF would be named. The heavy honest H1
+// (weight 13, on the real tip) is eclipsed. With MinResponseWeight=⌈22/2⌉=12, responderWeight=8 < 12
+// → the partition is rejected (the node waits for / re-samples a stake-majority of beacons).
+func TestBootstrapTrust_H_SkewedWeightPartitionRejected(t *testing.T) {
+	refs, byID := refChain(30)
+	realR := refs[30]
+	forgedF := childRef(realR) // forged sibling at height 31 (its only honest ancestor is realR)
+	byID[forgedF.ID] = forgedF
+
+	b := nodeIDs(6)
+	weights := []uint64{3, 3, 13, 1, 1, 1} // total 22; Byzantine b[0],b[1]=6 (<⅓)
+	var total uint64
+	for _, w := range weights {
+		total += w
+	}
+	tb := weightedBeacons(b, weights)
+
+	// The eclipse: only the 2 Byzantine + 2 LIGHT honest answer; the HEAVY honest b[2] (the real
+	// tip's weight-13 voter) and b[5] are partitioned away.
+	replies := []BeaconReply{
+		reply(b[0], forgedF.ID, weights[0]), // Byzantine, light
+		reply(b[1], forgedF.ID, weights[1]), // Byzantine, light
+		reply(b[3], realR.ID, weights[3]),   // honest, light
+		reply(b[4], realR.ID, weights[4]),   // honest, light
+	}
+
+	// WITHOUT the stake-majority floor (the bug): the forged tip is named.
+	vuln := &BootstrapPolicy{TrustedBeacons: tb, MinResponses: 4, Source: &stubAncestry{byID: byID}}
+	if f, err := vuln.AcceptsFrontier(context.Background(), replies); err == nil && f != nil {
+		require.Equal(t, forgedF.ID, f.ID,
+			"VULN PRECONDITION: without MinResponseWeight the eclipsed skewed partition names the forged tip (proves the floor is load-bearing)")
+	}
+
+	// WITH the stake-majority floor (the fix, exactly as bootstrapPolicy() now wires it): rejected.
+	fixed := &BootstrapPolicy{
+		TrustedBeacons:    tb,
+		MinResponses:      4,
+		MinResponseWeight: StakeWeight(total/2 + 1), // ⌈total/2⌉ = 12
+		Source:            &stubAncestry{byID: byID},
+	}
+	_, err := fixed.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses,
+		"FIX: responderWeight 8 < ½-stake floor 12 → the skewed partition cannot name a frontier (forged or otherwise)")
+
+	// And the fix still admits an HONEST stake-majority: add the heavy honest H1 (weight 13) on realR.
+	full := append(replies, reply(b[2], realR.ID, weights[2])) // responderWeight 8+13 = 21 ≥ 12
+	f, err := fixed.AcceptsFrontier(context.Background(), full)
+	require.NoError(t, err, "an honest stake-majority of responders still names the real frontier")
+	require.Equal(t, realR.ID, f.ID, "the real tip is named once a stake-majority is reachable; forged never")
+}
+
+// TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing is the cleaner load-bearing isolation of the
+// configured-beacon filter (INVARIANT 1) that the re-red asked for: a SWARM of non-configured peers
+// (enough to clear any count floor on their own) all shouting a forged frontier names NOTHING,
+// because none is in TrustedBeacons. This proves the filter, not merely the MinResponders floor.
+func TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing(t *testing.T) {
+	const w uint64 = 100
+	refs, byID := refChain(30)
+	real := refs[30]
+	forged, fbyID := refChain(40) // a wholly forged chain from a fresh genesis
+	for id, r := range fbyID {
+		byID[id] = r
+	}
+
+	configured := nodeIDs(3) // the real beacon set
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(configured, w),
+		MinResponses:      2,
+		MinResponseWeight: StakeWeight(w*3/2 + 1),
+		Source:            &stubAncestry{byID: byID},
+	}
+
+	// 50 non-configured peers, each heavy, all on the forged tip — NOT in TrustedBeacons.
+	swarm := nodeIDs(50)
+	var replies []BeaconReply
+	for _, p := range swarm {
+		replies = append(replies, reply(p, forged[40].ID, 9_000_000))
+	}
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses,
+		"INVARIANT 1: non-configured peers carry ZERO weight — a forged swarm names nothing")
+
+	// Add the 3 real configured beacons on the real tip → the real tip is named, swarm invisible.
+	for _, c := range configured {
+		replies = append(replies, reply(c, real.ID, w))
+	}
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err)
+	require.Equal(t, real.ID, f.ID, "only configured beacons name the frontier; the 50-peer forged swarm is ignored")
+}

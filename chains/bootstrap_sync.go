@@ -259,10 +259,29 @@ func (b *blockHandler) bootstrapPolicy(weights map[ids.NodeID]uint64) *Bootstrap
 	if _, h, err := b.LastAccepted(context.Background()); err == nil {
 		lastH = h
 	}
+	// STAKE-MAJORITY FLOOR (closes the skewed-weight partition-capture forgery). MinResponses is a
+	// COUNT of beacons; AgreementThreshold is over responder WEIGHT. Under SKEWED validator stake
+	// these diverge: an attacker who eclipses the HEAVY honest beacons but lets enough LIGHT honest
+	// beacons through to satisfy the count floor can shrink the responder-weight denominator until
+	// his < ⅓-of-total Byzantine stake clears the ⅔-OF-RESPONDERS agreement and names a forged
+	// frontier. Requiring the responders to also carry > ½ of TOTAL configured beacon stake bounds
+	// that denominator from below, so a < ⅓-stake adversary can never reach a responder-weight ⅔
+	// majority. Proven safe AND deadlock-free: equal-weight recovery needs only > ½ (e.g. 3/5 =
+	// 0.6·total ≥ 0.5), NOT the > ⅔ that caused the original mass-recovery deadlock. Disabled only
+	// when no weights are known (degenerate single-node / pre-P-chain).
+	var minRespWeight uint64
+	var total uint64
+	for _, w := range weights {
+		total += w
+	}
+	if total > 0 {
+		minRespWeight = total/2 + 1 // ⌈total/2⌉ stake-majority floor
+	}
 	return &BootstrapPolicy{
 		TrustedBeacons:     weights,
 		AgreementThreshold: b.bootstrapAgreement, // zero ⇒ policy default ⅔
 		MinResponses:       minResp,
+		MinResponseWeight:  minRespWeight, // stake-majority floor (anti skewed-weight partition-capture)
 		MinResponders:      bootstrapMinAgreeingBeacons,
 		MinFrontierHeight:  lastH,
 		Checkpoint:         b.bootstrapCheckpoint,
