@@ -161,7 +161,7 @@ func TestBootstrapTrust_A_MassRecoverySucceeds(t *testing.T) {
 	require.NoError(t, runBS(t, bh), "mass-recovery node must converge")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N].id, last, "RECOVERED: converged to the frontier N=%d despite 2 of 5 validators down", N)
-	require.True(t, bh.Has(ctx, chain[N].id))
+	require.True(t, bh.Accepted(ctx, chain[N].id))
 }
 
 // ----- B: ONE-BEACON CAPTURE REJECTED ---------------------------------------

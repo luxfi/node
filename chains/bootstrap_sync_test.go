@@ -72,29 +72,48 @@ const (
 	errBSUnknown   = bsErr("unknown bytes")
 )
 
-// bsTestVM models a node VM: it can PARSE any block on the chain (the wire codec is
-// deterministic), but only GETS blocks it has ACCEPTED (stored). SetPreference marks a
-// block stored — the engine calls it right after Accept, so Has/LastAccepted advance
-// exactly as the node syncs.
+// bsTestVM models a node VM with the REAL store-vs-acceptance distinction (the prior mock
+// conflated them — GetBlock returned only accepted blocks). It can PARSE any block on the chain
+// (the wire codec is deterministic). It GETS a block that is either ACCEPTED or merely STORED (a
+// block GOSSIPED into the store ahead of acceptance — the luxd-2 freeze precondition). `accepted`
+// is the FINALIZED chain; `acceptedByHeight` is the canonical height→id index the real coreth VM
+// maintains (GetBlockIDAtHeight); `stored` holds present-but-unaccepted blocks. SetPreference
+// marks a block accepted — the engine calls it right after Accept, so LastAccepted/the index
+// advance exactly as the node syncs.
 type bsTestVM struct {
-	all      map[ids.ID]*bsTestBlock
-	byBytes  map[string]*bsTestBlock
-	accepted map[ids.ID]bool
-	lastAcc  ids.ID
+	all              map[ids.ID]*bsTestBlock
+	byBytes          map[string]*bsTestBlock
+	accepted         map[ids.ID]bool   // FINALIZED chain
+	acceptedByHeight map[uint64]ids.ID // canonical height→id index (coreth GetBlockIDAtHeight)
+	stored           map[ids.ID]bool   // present in the store but NOT (yet) accepted (gossiped-ahead)
+	lastAcc          ids.ID
+
+	// frozenLastAccepted models the REAL ZAP VM client (vms/rpcchainvm/zap/client.go before the
+	// option-b refresh): a fire-and-forget Accept advances the plugin's on-disk store (so GetBlock /
+	// the accepted map still advance) but NEVER the cached LastAccepted id, which stays frozen at the
+	// boot snapshot for the process life. When true, SetPreference advances the store but does NOT
+	// move lastAcc — the exact freeze red HIGH-1 traced. A node whose bootstrap height/caught-up
+	// signals read this frozen cache "unfreezes but stalls"; reading the consensus finalized ledger
+	// instead converges. The mock bsTestVM otherwise advanced lastAcc on SetPreference, which HID the
+	// bug (units passed while the real client did not advance).
+	frozenLastAccepted bool
 }
 
 func newBSVM(chain []*bsTestBlock) *bsTestVM {
 	vm := &bsTestVM{
-		all:      map[ids.ID]*bsTestBlock{},
-		byBytes:  map[string]*bsTestBlock{},
-		accepted: map[ids.ID]bool{},
+		all:              map[ids.ID]*bsTestBlock{},
+		byBytes:          map[string]*bsTestBlock{},
+		accepted:         map[ids.ID]bool{},
+		acceptedByHeight: map[uint64]ids.ID{},
+		stored:           map[ids.ID]bool{},
 	}
 	for _, b := range chain {
 		vm.all[b.id] = b
 		vm.byBytes[string(b.bytes)] = b
 	}
-	// Empty node: only genesis is accepted/stored.
+	// Empty node: only genesis is accepted.
 	vm.accepted[chain[0].id] = true
+	vm.acceptedByHeight[chain[0].height] = chain[0].id
 	vm.lastAcc = chain[0].id
 	return vm
 }
@@ -106,17 +125,37 @@ func newBSVMAt(chain []*bsTestBlock, m int) *bsTestVM {
 	vm := newBSVM(chain)
 	for i := 1; i <= m; i++ {
 		vm.accepted[chain[i].id] = true
+		vm.acceptedByHeight[chain[i].height] = chain[i].id
 	}
 	vm.lastAcc = chain[m].id
 	return vm
 }
 
+// store marks blocks PRESENT in the block store WITHOUT accepting them — models blocks GOSSIPED
+// into the store ahead of acceptance (the luxd-2 freeze precondition: GetBlock returns them, but
+// they are not on the accepted chain and not in the canonical height index).
+func (m *bsTestVM) store(blocks ...*bsTestBlock) {
+	for _, b := range blocks {
+		m.stored[b.id] = true
+	}
+}
+
 func (m *bsTestVM) BuildBlock(context.Context) (cblock.Block, error) { return nil, errBSNoBuild }
 func (m *bsTestVM) GetBlock(_ context.Context, id ids.ID) (cblock.Block, error) {
-	if m.accepted[id] {
+	if m.accepted[id] || m.stored[id] {
 		return m.all[id], nil
 	}
 	return nil, errBSNotStored
+}
+
+// GetBlockIDAtHeight is the canonical ACCEPTED height→id index (coreth's authoritative oracle): it
+// returns the FINALIZED block at a height, never a stored-but-unaccepted one. ids.Empty when no
+// block is accepted at h — exactly how the real VM reports "nothing finalized there".
+func (m *bsTestVM) GetBlockIDAtHeight(_ context.Context, h uint64) (ids.ID, error) {
+	if id, ok := m.acceptedByHeight[h]; ok {
+		return id, nil
+	}
+	return ids.Empty, nil
 }
 func (m *bsTestVM) ParseBlock(_ context.Context, b []byte) (cblock.Block, error) {
 	if blk, ok := m.byBytes[string(b)]; ok {
@@ -127,7 +166,15 @@ func (m *bsTestVM) ParseBlock(_ context.Context, b []byte) (cblock.Block, error)
 func (m *bsTestVM) LastAccepted(context.Context) (ids.ID, error) { return m.lastAcc, nil }
 func (m *bsTestVM) SetPreference(_ context.Context, id ids.ID) error {
 	m.accepted[id] = true
-	m.lastAcc = id
+	if blk, ok := m.all[id]; ok {
+		m.acceptedByHeight[blk.height] = id
+	}
+	delete(m.stored, id) // accepting a stored-ahead block promotes it onto the finalized chain
+	if !m.frozenLastAccepted {
+		m.lastAcc = id
+	}
+	// else: model the ZAP client — the plugin (store/accepted above) advances, but the cached
+	// LastAccepted id stays FROZEN at the boot snapshot for the process life.
 	return nil
 }
 
@@ -462,7 +509,60 @@ func TestNodeBootstrap_EmptyNodeConvergesViaTransport(t *testing.T) {
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N].id, last, "empty node must sync to the beacon-agreed tip (height %d)", N)
 	require.Equal(t, 1, chain[N].accepts, "tip block must be VM-accepted exactly once")
-	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the tip after sync")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the tip after sync")
+}
+
+// TestRED_FrozenVMLastAccepted_ConvergesOffFinalizedLedger is the regression guard for red
+// HIGH-1: the convergence-recognition must ride the IN-PROCESS consensus finalized ledger, NOT
+// the VM's LastAccepted cache — which the real ZAP client FREEZES at the boot snapshot for the
+// process life (a fire-and-forget Accept advances the plugin but never the cache).
+//
+// THE GAP THE PRIOR MOCK COULD NOT EXPRESS. bsTestVM.SetPreference advanced lastAcc, so every
+// unit "passed" while the real client did NOT advance it. Here frozenLastAccepted models the real
+// client faithfully: a STALE node boots at M, the descent finalizes M+1..N (the consensus
+// finalized ledger AND the store both advance), but VM.LastAccepted stays pinned at M. With the
+// pre-fix wiring (lastH / Accepted / BootstrapHeight read the frozen cache) the loop re-descends
+// every pass while AcceptBootstrapBlock no-ops each already-finalized block (advanced=false) →
+// ErrStalled: "unfreezes but stalls". The fix drives those signals off the finalized ledger (the
+// same source AcceptBootstrapBlock's contiguity guard trusts), so the node converges in ONE Run.
+//
+// RED-before / GREEN-after: with LastAccepted/Accepted/BootstrapHeight reading the frozen cache
+// this require.NoError FAILS (runBS returns ErrStalled); reading the finalized ledger it PASSES.
+func TestRED_FrozenVMLastAccepted_ConvergesOffFinalizedLedger(t *testing.T) {
+	const N = 40
+	const M = 24 // a STALE node booted at height M; the descent must finalize M+1..N
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M)
+	vm.frozenLastAccepted = true // the ZAP freeze: VM.LastAccepted stays pinned at M for the run
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 4)
+
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], serveAncestors: true}
+	bh.msgCreator = bsMsgBuilder{}
+
+	ctx := context.Background()
+	require.NoError(t, runBS(t, bh),
+		"must converge off the advancing finalized ledger even though VM.LastAccepted is frozen")
+
+	// Test premise still holds: the VM cache NEVER moved (faithful to the real ZAP client).
+	frozen, err := vm.LastAccepted(ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain[M].id, frozen,
+		"premise: VM.LastAccepted must stay frozen at the boot height M — the bug only matters because it does")
+
+	// Yet every bootstrap signal advanced to the true frontier N off the consensus finalized ledger.
+	tip, h, set := bh.engine.FinalizedLedger()
+	require.True(t, set)
+	require.Equal(t, chain[N].id, tip, "consensus finalized ledger must have advanced to the frontier")
+	require.Equal(t, uint64(N), h)
+
+	lastID, lastH, err := bh.LastAccepted(ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain[N].id, lastID, "Chain.LastAccepted must read the advancing finalized tip, not the frozen cache")
+	require.Equal(t, uint64(N), lastH)
+	require.Equal(t, uint64(N), bh.BootstrapHeight(), "BootstrapHeight (monitorBootstrap progress) must advance off the ledger")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "caught-up oracle must recognize the finalized frontier")
+	// And a block ABOVE the finalized head is still correctly NOT accepted (the freeze direction).
+	require.False(t, bh.Accepted(ctx, ids.GenerateTestID()), "an unknown/ahead id must never read as accepted")
 }
 
 // TestRED_ForgedFrontierFromNonBeaconRejected is the HEADLINE C1 proof at the node layer.
@@ -514,9 +614,9 @@ func TestRED_ForgedFrontierFromNonBeaconRejected(t *testing.T) {
 	require.ErrorIs(t, err, chainbootstrap.ErrBeaconsUnreachable, "eclipsed node must fail safe, not false-complete")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, honest[0].id, last, "C1: node must stay at genesis — the forged chain was NOT synced")
-	require.False(t, bh.Has(ctx, forged[N].id), "C1: node must NOT hold the forged tip")
+	require.False(t, bh.Accepted(ctx, forged[N].id), "C1: node must NOT hold the forged tip")
 	for _, f := range forged[1:] {
-		require.False(t, bh.Has(ctx, f.id), "C1: no forged block may be finalized")
+		require.False(t, bh.Accepted(ctx, f.id), "C1: no forged block may be finalized")
 	}
 }
 
@@ -542,7 +642,7 @@ func TestRED_HonestBeaconQuorumIgnoresMaliciousFrontier(t *testing.T) {
 	require.NoError(t, runBS(t, bh))
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, honest[N].id, last, "node must sync the beacon-agreed canonical tip")
-	require.False(t, bh.Has(ctx, forged[N].id), "node must ignore the malicious forged frontier")
+	require.False(t, bh.Accepted(ctx, forged[N].id), "node must ignore the malicious forged frontier")
 }
 
 // TestRED_SubQuorumCannotNameFrontier: a minority of configured beacons cannot name the
@@ -611,7 +711,7 @@ func TestNodeBootstrap_StaleNodeWaitsForBeaconConnect(t *testing.T) {
 
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N].id, last, "CANARY: stale node must converge to the beacon frontier N=%d (NOT false-complete at the stale M=%d)", N, M)
-	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the beacon tip after sync")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the beacon tip after sync")
 	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls, "the loop must have WAITED through the connecting passes before naming the frontier")
 }
 
@@ -723,7 +823,7 @@ func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N].id, last,
 		"CANARY SUCCESS: stale node converges to the producer frontier N=%d, not stuck at M=%d", N, M)
-	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the producer tip after sync")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the producer tip after sync")
 }
 
 // TestRED_EmptyStakedSetFailsSafe covers EDGE (4): a native chain whose STAKED validator set
@@ -773,7 +873,7 @@ func TestRED_EmptyStakedSetFailsSafe(t *testing.T) {
 		"empty staked set must fail safe at the connect deadline, never trust endpoints")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[5].id, last, "node must stay at its stale height — no endpoint-named frontier adopted")
-	require.False(t, bh.Has(ctx, chain[N].id), "no frontier tip may be adopted from a non-staked endpoint")
+	require.False(t, bh.Accepted(ctx, chain[N].id), "no frontier tip may be adopted from a non-staked endpoint")
 }
 
 // TestRED_TipSplitConvergesToCommonHeight is THE MAINNET CANARY (luxd-2 on v1.30.78) the
@@ -844,8 +944,8 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[top].id, last,
 		"CANARY SUCCESS: ratchet through the ⅔-common N to the true finalized tip TOP=%d (NOT stuck at M=%d)", top, M)
-	require.True(t, bh.Has(ctx, chain[N].id), "node must hold the ⅔-common N it passed through")
-	require.True(t, bh.Has(ctx, chain[top].id), "node must hold the true finalized tip TOP after ratcheting to it")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the ⅔-common N it passed through")
+	require.True(t, bh.Accepted(ctx, chain[top].id), "node must hold the true finalized tip TOP after ratcheting to it")
 }
 
 // TestRED_ForgedHighTipFromMinorityNotNamed is the C1 proof for the ancestor-tolerant path: a
@@ -913,8 +1013,8 @@ func TestRED_ForgedHighTipFromMinorityNotNamed(t *testing.T) {
 	require.NoError(t, runBS(t, bh), "node converges to the real finalized frontier, never the forged tip")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[top].id, last, "C1: node syncs to the real TOP (the true finalized frontier)")
-	require.False(t, bh.Has(ctx, forged.id), "C1: the forged block must NOT be finalized — at any point in the ratchet")
-	require.True(t, bh.Has(ctx, chain[N].id), "node holds the real ⅔-common N it passed through")
+	require.False(t, bh.Accepted(ctx, forged.id), "C1: the forged block must NOT be finalized — at any point in the ratchet")
+	require.True(t, bh.Accepted(ctx, chain[N].id), "node holds the real ⅔-common N it passed through")
 }
 
 // TestNodeBootstrap_ExactQuorumUsesFastPath is the no-regression proof: when a ⅔-by-stake
@@ -1621,11 +1721,93 @@ func TestNodeBootstrap_BehindNodeNotHeldTips_SyncsToFrontier(t *testing.T) {
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
 
-	require.False(t, bh.Has(ctx, chain[Top].id), "precondition: the producers' tip Top is NOT held by the behind node")
+	require.False(t, bh.Accepted(ctx, chain[Top].id), "precondition: the producers' tip Top is NOT held by the behind node")
 	require.NoError(t, runBS(t, bh), "behind node must descend the not-held frontier and converge")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[Top].id, last, "behind node must reach Top=%d, never stop at stale M=%d", Top, M)
-	require.True(t, bh.Has(ctx, chain[Top].id), "node must hold the producer tip after sync")
+	require.True(t, bh.Accepted(ctx, chain[Top].id), "node must hold the producer tip after sync")
+}
+
+// TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance is the NODE-LAYER reproduction of
+// THE mainnet luxd-2 freeze with production ground truth — the case the prior mocks could not even
+// express (their VM conflated store and acceptance). A behind node at M holds blocks M+1..Top
+// ALREADY IN ITS STORE (gossiped / a prior incomplete sync) but UNACCEPTED, and the ⅔-stake
+// producers name the frontier at Top — a tip the node HOLDS but has NOT accepted. THE BUG: the
+// node-side Has()/heldHeight reported "present" for those stored-but-unaccepted blocks, the loop's
+// Has()-shortcut concluded caught-up at the stale M, and the node went Ready at M forever (self-
+// reinforcing across restarts — every reboot re-concluded caught-up). THE FIX: Accepted(Top) is
+// false (present ≠ accepted), so the node descends and ACCEPTS M+1..Top — through the per-height-
+// guarded cert/Verify path, accepting the blocks already in the store — reaching Top, never Ready
+// at the stale M.
+func TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance(t *testing.T) {
+	const M = 40
+	const Top = 56 // gap 16, the exact ground-truth skew (1082780 → 1082796)
+	chain, byID := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M)
+	// GROUND TRUTH: M+1..Top are PRESENT IN THE STORE (gossiped ahead) but UNACCEPTED.
+	vm.store(chain[M+1 : Top+1]...)
+
+	p1, p2, p3 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100})
+	var pReady atomic.Bool
+	pReady.Store(true) // P-chain synced: full staked set
+	bh.primaryNetworkReady = pReady.Load
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: []ids.NodeID{p1, p2, p3},
+		byID: byID, tip: chain[Top], serveAncestors: true,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+	ctx := context.Background()
+
+	// Precondition — the EXACT freeze state: the node HOLDS the named frontier in its store yet has
+	// NOT accepted it (last-accepted is M). The store-vs-acceptance distinction the conflation missed.
+	require.True(t, vm.stored[chain[Top].id], "precondition: the frontier must be present in the store (gossiped ahead)")
+	require.False(t, bh.Accepted(ctx, chain[Top].id), "precondition: the held-in-store frontier must NOT be accepted (last-accepted is M)")
+
+	require.NoError(t, runBS(t, bh), "node must descend+accept the stored-but-unaccepted frontier, not freeze at M")
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[Top].id, last,
+		"FREEZE: node must reach Top=%d, never go Ready at the stale M=%d while holding M+1..Top unaccepted", Top, M)
+	require.True(t, bh.Accepted(ctx, chain[Top].id), "the named frontier must be ACCEPTED after sync")
+}
+
+// TestBootstrap_AcceptedHeight_StoreVsAcceptance pins the ACCEPTANCE oracle the whole fix turns on:
+// acceptedHeight / Accepted report a block ACCEPTED only when it is on the FINALIZED chain — never
+// merely because it is PRESENT in the store. This is the store-vs-acceptance distinction the luxd-2
+// freeze conflated, isolated from the network so the predicate itself is the unit under test.
+func TestBootstrap_AcceptedHeight_StoreVsAcceptance(t *testing.T) {
+	const M = 30
+	const Top = 40
+	chain, _ := buildBSChain(Top, -1)
+	vm := newBSVMAt(chain, M)          // accepted 0..M
+	vm.store(chain[M+1 : Top+1]...)    // M+1..Top GOSSIPED into the store but UNACCEPTED
+	bh := &blockHandler{logger: log.NewNoOpLogger(), vm: vm}
+	ctx := context.Background()
+
+	// (a) the accepted head and a finalized ancestor resolve as ACCEPTED at their canonical heights.
+	if h, ok := bh.acceptedHeight(chain[M].id); !ok || h != uint64(M) {
+		t.Fatalf("accepted head must resolve accepted at height %d, got (%d,%v)", M, h, ok)
+	}
+	if h, ok := bh.acceptedHeight(chain[M-5].id); !ok || h != uint64(M-5) {
+		t.Fatalf("a finalized ancestor must resolve accepted at height %d, got (%d,%v)", M-5, h, ok)
+	}
+	// (b) stored-but-unaccepted blocks (ABOVE the accepted head) are present in the store yet NOT
+	// accepted — the freeze conflation. acceptedHeight AND Accepted must both report not-accepted.
+	for _, h := range []int{M + 1, Top} {
+		if _, err := vm.GetBlock(ctx, chain[h].id); err != nil {
+			t.Fatalf("precondition: chain[%d] must be present in the store", h)
+		}
+		if _, ok := bh.acceptedHeight(chain[h].id); ok {
+			t.Fatalf("FREEZE: stored-but-unaccepted chain[%d] must NOT resolve as accepted", h)
+		}
+		if bh.Accepted(ctx, chain[h].id) {
+			t.Fatalf("FREEZE: Accepted(stored-but-unaccepted chain[%d]) must be false", h)
+		}
+	}
+	// (c) an absent block is not accepted.
+	if bh.Accepted(ctx, ids.GenerateTestID()) {
+		t.Fatal("an absent block must not be accepted")
+	}
 }
 
 // TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping (variant B). A behind node names the
@@ -1659,7 +1841,7 @@ func TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping(t *testing.T)
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[M].id, last,
 		"behind node must NOT advance and must NOT go Ready when the gap cannot be fetched — stays at M=%d (Bootstrapping)", M)
-	require.False(t, bh.Has(ctx, chain[Top].id), "node must NOT hold the unfetched frontier")
+	require.False(t, bh.Accepted(ctx, chain[Top].id), "node must NOT hold the unfetched frontier")
 }
 
 // TestRED_BehindNode_PeerConnectDelay_NeverFalseCompletesAtStale (variant C). A behind node boots
