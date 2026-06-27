@@ -754,3 +754,77 @@ func TestBootstrapTrust_CaughtUp_SameHeightForkNotHeld(t *testing.T) {
 	require.False(t, policy.CaughtUp(replies, N, heldOracle(held)),
 		"a same-height fork the node does not hold defeats caught-up (condition c: holds every reported tip)")
 }
+
+// ----- M1: the pre-existing eclipse-stale own-height path (red fast-follow) ------------------
+//
+// M1 is the pre-existing path the own-height filter tightening closes. BEFORE: nameFrontier filtered
+// the ancestor-tolerant tally with `ref.Height < MinFrontierHeight` (== the node's own last-accepted),
+// so a block AT the node's own height PASSED the filter and could be NAMED. An eclipse that throttles
+// the genuinely-ahead responders below the ⅔ naming threshold — while letting the at-height responders
+// through — makes the node's OWN height accrue ⅔ purely as the shared ANCESTOR of those ahead tips, so
+// nameFrontier names it → FrontierNamed at own height → the node goes Ready STALE (here, 5 blocks
+// behind a finalized N+5). AFTER: the filter is `ref.Height <= MinFrontierHeight`, so own height is
+// EXCLUDED from naming; the at-own-height decision routes to CaughtUp, which SEES the N+5 ahead tips
+// (un-held, above) and REFUSES → the node syncs/fails safe instead of going Ready stale.
+//
+// Deterministic, no network timing. Revert the filter to `<` and the first assertion (own height
+// NOT named → ErrNoBootstrapQuorum) FAILS — that revert IS the M1 bug, so this is the RED-before /
+// GREEN-after pin. The boundary sub-assertion (one notch lower DOES name N) proves it is precisely
+// the OWN-HEIGHT exclusion doing the work, not some unrelated filter.
+func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
+	const N = 40       // the node's own last-accepted height
+	const ahead = N + 5 // a GENUINELY FINALIZED block 5 ahead — the eclipse throttles its visibility
+	refs, byID := refChain(ahead) // genesis..N+5, parent-linked; the ahead set's tip descends through N
+	const w = uint64(100)
+
+	b := nodeIDs(6) // 6 configured beacons @100 → total 600; MinResponseWeight ⌈600/2⌉=301, MinResponses majority=4
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(b, w),
+		MinResponses:      4,
+		MinResponseWeight: 301,
+		MinFrontierHeight: N, // the node's own last-accepted height — exactly the M1 boundary
+		Source:            &stubAncestry{byID: byID},
+	}
+
+	// THE ECLIPSE CONSTRUCTION (red's, verbatim numbers): the ahead responders are throttled to
+	// R_a = 300 (3 beacons at N+5, BELOW the ⅔-of-responders naming threshold), the behind/at-height
+	// responders R_b = 200 (2 beacons at N) all get through; the 6th beacon is eclipsed (no reply).
+	// R = R_a + R_b = 500 > ½·600 (floor met). R_a = 300 < ⅔R = 333 (so N+5 is NOT named). YET block N
+	// accrues R_a + R_b = 500 > ⅔R because the ahead nodes credit N as an ANCESTOR of N+5.
+	replies := []BeaconReply{
+		reply(b[0], refs[N].ID, w),     // at the node's own height N
+		reply(b[1], refs[N].ID, w),     // at the node's own height N  (R_b = 200)
+		reply(b[2], refs[ahead].ID, w), // genuinely ahead at N+5
+		reply(b[3], refs[ahead].ID, w), // genuinely ahead at N+5
+		reply(b[4], refs[ahead].ID, w), // genuinely ahead at N+5      (R_a = 300, < ⅔·500 = 333)
+		// b[5] eclipsed — no reply.
+	}
+
+	// Sanity pins on the construction (so a future edit that breaks the eclipse shape is caught).
+	require.Equal(t, uint64(333), Ratio{2, 3}.floorOf(500), "⅔-of-responders floor over R=500 is 333")
+	require.Less(t, uint64(300), uint64(333), "R_a=300 is BELOW the ⅔ naming threshold — N+5 is not nameable")
+
+	// AFTER (the fix): own height N is EXCLUDED from naming → no ⅔-backed block ABOVE N exists
+	// (N+5 is sub-⅔) → ErrNoBootstrapQuorum. (Revert `<=`→`<` and this names refs[N] — the M1 bug.)
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"M1 FIX: the node's OWN height must NOT be named even when ahead tips credit it as a ⅔-backed ancestor")
+
+	// …and the decision routes to CaughtUp, which SEES the genuinely-ahead N+5 tips (un-held, above
+	// the node's height) and REFUSES — so the node syncs toward N+5, never goes Ready at stale N.
+	held := map[ids.ID]uint64{} // the node holds 0..N, NOT N+1..N+5
+	for h := 0; h <= N; h++ {
+		held[refs[h].ID] = uint64(h)
+	}
+	require.False(t, policy.CaughtUp(replies, N, heldOracle(held)),
+		"M1 FIX: routed to CaughtUp, the eclipse's ahead tips (un-held, above N) correctly defeat caught-up → sync")
+
+	// BOUNDARY: the SAME replies with MinFrontierHeight one notch lower (N-1) DO name N (height N is
+	// now STRICTLY ABOVE the floor). This proves the refusal above is precisely the OWN-HEIGHT
+	// exclusion — not the ⅔ tally, the responder floor, or the voter count — doing the work.
+	policy.MinFrontierHeight = N - 1
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err, "one notch below own height, N is strictly above the floor and IS the ⅔-common frontier")
+	require.Equal(t, refs[N].ID, f.ID, "boundary: N is named iff its height is STRICTLY ABOVE MinFrontierHeight")
+	require.Equal(t, uint64(N), f.Height)
+}
