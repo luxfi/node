@@ -87,6 +87,32 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 	}
 }
 
+// shouldWrapInProposerVM decides whether a linear chain.ChainVM is wrapped in
+// proposervm to enforce single-proposer-per-height block production (the
+// Snowman++ window). It is the SINGLE policy gate (the manager calls it once);
+// keeping it a pure function makes the policy unit-testable without standing up
+// a whole chain. All three conditions must hold:
+//
+//   - k > 1: a multi-validator quorum. K==1 (single-node --dev) has exactly one
+//     proposer already, so there is no equivocation to prevent and no schedule
+//     to compute (proposervm would only add a wrapper with no safety value).
+//   - chainID is NOT the P-Chain: the P-Chain publishes its OWN height-indexed
+//     validators.State DURING its createChain, AFTER the chainRuntime snapshot
+//     proposervm's windower reads — so its windower would see an empty set and
+//     fall back to anyone-can-propose with a P-chain-height-0 stamp. The P-Chain
+//     keeps the existing newPChainHeightVM path (which DOES get the live state).
+//   - inner is NOT DAG-native (no Linearize): a linearized DAG VM (X-Chain) is
+//     driven by a push-notification bridge that does not compose with
+//     proposervm's pull/window model without avalanchego's initializeOnLinearizeVM
+//     machinery. It keeps the existing path.
+//
+// The C-Chain and sovereign-L1 EVM chains satisfy all three (multi-validator,
+// not the P-Chain, not DAG) — they are exactly the chains that exhibited the
+// equivocation crash, and exactly the chains avalanchego wraps in proposervm.
+func shouldWrapInProposerVM(k int, chainID ids.ID, innerIsDAGNative bool) bool {
+	return k > 1 && chainID != constants.PlatformChainID && !innerIsDAGNative
+}
+
 // --- BLS vote verifier -------------------------------------------------------
 
 // blsVoteVerifier verifies a validator's BLS signature over the canonical vote
