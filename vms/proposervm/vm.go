@@ -511,6 +511,16 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get inner last accepted: %w", err)
 	}
+	// A fresh inner chain that has accepted no block reports the empty ID (some
+	// Lux VMs return ids.Empty before their first acceptance / before genesis is
+	// committed at the moment proposervm initializes). GetBlock(ids.Empty) would
+	// fail, and there is no accepted chain to roll the proposervm index back
+	// against — there is nothing to repair. Mirror the other "nothing to repair"
+	// early returns below. Without this guard, wrapping a fresh chain in
+	// proposervm fails VM initialization and crashes the whole node.
+	if innerLastAcceptedID == ids.Empty {
+		return nil
+	}
 	innerLastAccepted, err := vm.ChainVM.GetBlock(ctx, innerLastAcceptedID)
 	if err != nil {
 		return fmt.Errorf("failed to get inner last accepted block: %w", err)
