@@ -31,4 +31,8 @@ var (
 	// ErrPolicyMismatch — the cert's PolicyID is not the configured policy. A
 	// cert cannot select its own (weaker) posture.
 	ErrPolicyMismatch = errors.New("quasar: cert policy id does not match configured policy")
+
+	// ErrGateMisconfigured — the gate is activated at a checkpoint but has no
+	// cert store or validator provider. Fail closed rather than panic.
+	ErrGateMisconfigured = errors.New("quasar: gate activated but missing store or validator provider")
 )

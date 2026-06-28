@@ -137,6 +137,11 @@ func (vm *VM) SetQuasarGate(g *pqfinality.Gate) { vm.quasarGate = g }
 // StateRoot is left zero here (committed transitively through the block id), so
 // the cert's StateRoot binding is not cross-checked at this layer.
 func (vm *VM) verifyQuasarFinality(b *postForkBlock) error {
+	// Fast path: no gate (the default) => zero cost, no block-accessor calls, no
+	// checkpoint build. The classical accept path is untouched.
+	if vm.quasarGate == nil {
+		return nil
+	}
 	return vm.quasarGate.VerifyAccepted(pqfinality.Checkpoint{
 		Epoch:   b.PChainEpoch().Number,
 		Height:  b.Height(),
