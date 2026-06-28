@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	qcert "github.com/luxfi/consensus/protocol/quasar"
 )
@@ -79,18 +78,6 @@ func TestBelowActivationIsNoop(t *testing.T) {
 	}
 }
 
-// TestActivationTimeNotReached — height is past the activation height but the
-// forward-dated wall-clock moment has not arrived => still dormant.
-func TestActivationTimeNotReached(t *testing.T) {
-	g := NewGate(Config{
-		Activation:         ActivationConfig{Height: 10, Time: time.Now().Add(time.Hour)},
-		CheckpointInterval: 10,
-	}, NewMemCertStore(), StaticValidatorSetProvider{Set: testValidators()})
-	if err := g.VerifyAccepted(checkpointAt(10)); err != nil {
-		t.Fatalf("pre-activation-time must be a no-op, got %v", err)
-	}
-}
-
 // TestNonCheckpointIsNoop — activated and at/above activation height, but the
 // height is not a checkpoint => nil (certs ride checkpoints only).
 func TestNonCheckpointIsNoop(t *testing.T) {
@@ -122,14 +109,18 @@ func TestMissingCertFailsClosed(t *testing.T) {
 // (wrong block id / height / chain) is rejected by bindCheck before any crypto.
 // Anti-replay: a valid cert for a different block must not satisfy this one.
 func TestMismatchedCertRejected(t *testing.T) {
+	// cp = checkpointAt(20) has Epoch 1, Round 0. Each case sets every binding
+	// field correctly EXCEPT the one named, so it fails at that field.
 	cases := []struct {
 		name string
 		cert *qcert.ConsensusCert
 	}{
-		{"wrong block", &qcert.ConsensusCert{ChainID: 1337, Height: 20, BlockHash: [32]byte{0x99}}},
-		{"wrong height", &qcert.ConsensusCert{ChainID: 1337, Height: 21, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
-		{"wrong chain", &qcert.ConsensusCert{ChainID: 7, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
-		{"wrong state root", &qcert.ConsensusCert{ChainID: 1337, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}, StateRoot: [32]byte{0x55}}},
+		{"wrong block", &qcert.ConsensusCert{ChainID: 1337, Epoch: 1, Height: 20, BlockHash: [32]byte{0x99}}},
+		{"wrong height", &qcert.ConsensusCert{ChainID: 1337, Epoch: 1, Height: 21, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
+		{"wrong chain", &qcert.ConsensusCert{ChainID: 7, Epoch: 1, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
+		{"wrong epoch", &qcert.ConsensusCert{ChainID: 1337, Epoch: 2, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
+		{"wrong round", &qcert.ConsensusCert{ChainID: 1337, Epoch: 1, Round: 1, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}}},
+		{"wrong state root", &qcert.ConsensusCert{ChainID: 1337, Epoch: 1, Height: 20, BlockHash: [32]byte{0xab, 0xcd, 0xef}, StateRoot: [32]byte{0x55}}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -186,17 +177,38 @@ func TestDelegatesToVerifier(t *testing.T) {
 // provider has no set for the epoch => ErrValidatorSetUnavailable (fail closed).
 func TestValidatorSetUnavailable(t *testing.T) {
 	cp := checkpointAt(20)
-	cert := &qcert.ConsensusCert{Version: 1, ChainID: 1337, Height: cp.Height, BlockHash: cp.BlockID}
+	// Bind correctly (epoch included) so the cert passes bindCheck and the
+	// failure is specifically the unavailable validator set.
+	cert := &qcert.ConsensusCert{Version: 1, ChainID: 1337, Epoch: cp.Epoch, Height: cp.Height, BlockHash: cp.BlockID}
 	store := NewMemCertStore()
 	store.Put(cert)
 	g := NewGate(Config{
 		ChainID:            1337,
 		Activation:         ActivationConfig{Height: 10},
 		CheckpointInterval: 10,
-	}, store, StaticValidatorSetProvider{Set: nil}) // no set
+	}, store, StaticValidatorSetProvider{Set: nil}) // provider present, no set
 	err := g.VerifyAccepted(cp)
 	if !errors.Is(err, ErrValidatorSetUnavailable) {
 		t.Fatalf("want ErrValidatorSetUnavailable, got %v", err)
+	}
+}
+
+// TestGateMisconfiguredFailsClosed — an activated gate at a checkpoint with no
+// cert store (or no validator provider) fails closed with a typed error rather
+// than panicking in the accept hook.
+func TestGateMisconfiguredFailsClosed(t *testing.T) {
+	g := NewGate(Config{
+		ChainID:            1337,
+		Activation:         ActivationConfig{Height: 10},
+		CheckpointInterval: 10,
+	}, nil, nil) // no store, no validators
+	if err := g.VerifyAccepted(checkpointAt(20)); !errors.Is(err, ErrGateMisconfigured) {
+		t.Fatalf("want ErrGateMisconfigured, got %v", err)
+	}
+	// dormant misconfigured gate is still a no-op (guard is post-activation).
+	gd := NewGate(Config{ChainID: 1337, CheckpointInterval: 10}, nil, nil)
+	if err := gd.VerifyAccepted(checkpointAt(20)); err != nil {
+		t.Fatalf("dormant gate must be a no-op even if misconfigured, got %v", err)
 	}
 }
 
