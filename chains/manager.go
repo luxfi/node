@@ -1204,6 +1204,32 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		})
 		wrapInProposerVM := shouldWrapInProposerVM(consensusParams.K, chainParams.ID, innerIsDAGNative)
 
+		// Resolve the validator-set ID for this chain ONCE, here — BEFORE the
+		// proposervm wrap and the consensus-engine wiring both consume it. This is
+		// the SINGLE source of truth (DRY) so the proposervm windower and the cert
+		// side cannot disagree (CRITICAL-3: a divergent windower/cert set breaks
+		// determinism on non-native chains, and a hardcoded primary set on a
+		// sovereign L1 silently defeats single-proposer):
+		//   - native/primary chains (P/C/X/Q/A/B/T/Z/G/I/K) register validators under
+		//     constants.PrimaryNetworkID (ids.Empty), NOT their individual chain ID.
+		//   - a sovereign L1 uses its OWN validator-set ID (chainParams.ChainID ==
+		//     its EVM chainID), falling back to primary ONLY if that set is empty.
+		networkID := chainParams.ChainID
+		isNative := ids.IsNativeChain(chainParams.ID)
+		if isNative {
+			networkID = constants.PrimaryNetworkID
+		}
+		if m.Validators != nil && networkID != constants.PrimaryNetworkID {
+			if m.Validators.Count(networkID) == 0 {
+				m.Log.Warn("no validators found for network ID; falling back to primary network validators",
+					log.Stringer("chainID", chainParams.ID),
+					log.Stringer("networkID", networkID),
+					log.Stringer("fallbackNetworkID", constants.PrimaryNetworkID),
+				)
+				networkID = constants.PrimaryNetworkID
+			}
+		}
+
 		// engineVM is the VM the consensus engine, the WaitForEvent bridge, the
 		// block handler, and HTTP registration all use. For a wrapped chain it is
 		// the proposervm; build / parse / verify / accept and the proposer-window
@@ -1219,6 +1245,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 			engineVM = proposervm.New(vmTyped, proposervm.Config{
 				Upgrades:            m.Upgrades,
+				NetworkID:           networkID, // CRITICAL-3: windower uses the SAME set ID as the cert side
 				MinBlkDelay:         proposervm.DefaultMinBlockDelay,
 				NumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 				StakingLeafSigner:   m.StakingTLSSigner,
@@ -1228,6 +1255,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			m.Log.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
 				log.Stringer("chainID", chainParams.ID),
 				log.Int("K", consensusParams.K),
+				log.Stringer("windowerNetworkID", networkID),
 				log.Duration("minBlockDelay", proposervm.DefaultMinBlockDelay))
 		}
 
@@ -1363,26 +1391,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				log.Stringer("chainID", chainParams.ID))
 		}
 
-		// For native/primary network chains (P/C/X/Q/A/B/T/Z etc.), use PrimaryNetworkID for validator lookups.
-		// Native chains all have IDs with first 31 bytes zero, last byte is the chain letter (e.g., 'P', 'C').
-		// Validators are registered under constants.PrimaryNetworkID (ids.Empty), not individual chain IDs.
-		// For L1/net chains, use the net's validator set ID (chainParams.ChainID).
-		networkID := chainParams.ChainID
-		isNative := ids.IsNativeChain(chainParams.ID)
-		if isNative {
-			// Native chains (P, C, X, Q, A, B, T, Z, G, I, K) use PrimaryNetworkID for validator lookups
-			networkID = constants.PrimaryNetworkID
-		}
-		if m.Validators != nil && networkID != constants.PrimaryNetworkID {
-			if m.Validators.Count(networkID) == 0 {
-				m.Log.Warn("no validators found for network ID; falling back to primary network validators",
-					log.Stringer("chainID", chainParams.ID),
-					log.Stringer("networkID", networkID),
-					log.Stringer("fallbackNetworkID", constants.PrimaryNetworkID),
-				)
-				networkID = constants.PrimaryNetworkID
-			}
-		}
+		// networkID + isNative were resolved ONCE above (before the proposervm wrap)
+		// so the windower and the cert side share the IDENTICAL validator-set ID
+		// (CRITICAL-3). Do not re-resolve here.
 		m.Log.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("chainParams.ChainID", chainParams.ChainID),

@@ -154,7 +154,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(vm.validatorState, constants.PrimaryNetworkID, vm.rt.ChainID)
+	vm.Windower = vm.newWindower()
 	vm.Tree = tree.New()
 	registry, ok := vm.Config.Registerer.(metric.Registry)
 	if !ok {
@@ -233,6 +233,23 @@ func (vm *VM) Initialize(
 
 	// Metrics are automatically registered by the metrics instance
 	return nil
+}
+
+// newWindower builds the proposer-schedule windower bound to the validator-set
+// ID the consensus cert side resolves under: vm.Config.NetworkID, set once by
+// chains/manager.go (constants.PrimaryNetworkID for native chains, else the
+// L1's own chainID). CRITICAL-3: hardcoding PrimaryNetworkID here made a
+// sovereign L1's windower call GetValidatorSet under the wrong ID, get an empty
+// set, degrade to ErrAnyoneCanPropose, and equivocate exactly like the unfixed
+// C-Chain — while diverging from the cert's set. The zero value (ids.Empty) IS
+// constants.PrimaryNetworkID, so a native chain matches the original
+// proposer.New(..., PrimaryNetworkID, ...) byte-for-byte.
+func (vm *VM) newWindower() proposer.Windower {
+	netID := vm.Config.NetworkID
+	if netID == ids.Empty {
+		netID = constants.PrimaryNetworkID
+	}
+	return proposer.New(vm.validatorState, netID, vm.rt.ChainID)
 }
 
 // Shutdown ops then propagate shutdown to innerVM
@@ -402,10 +419,15 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	// Because the VM is marked as being in the Ready state, we know
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
-	// If the preferred block is pre-fork, we should wait for events on the
-	// innerVM.
+	// If the preferred block is pre-fork, the next block is the pre-fork →
+	// post-fork TRANSITION. CRITICAL-1: window WHEN this node builds it (mirroring
+	// the post-fork path) so non-leaders WAIT their slot and adopt the elected
+	// leader's gossiped transition block instead of every validator forwarding to
+	// the inner VM and building its own (the old behavior, which forked the chain
+	// at its start). On no-schedule / unresolvable, this falls back to the legacy
+	// immediate forward.
 	if err != nil {
-		return time.Time{}, false, nil
+		return vm.timeToBuildPreForkTransitionLocked(ctx)
 	}
 
 	pChainHeight, err := blk.pChainHeight(ctx)
@@ -441,6 +463,52 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	}
 
 	return nextStartTime, true, nil
+}
+
+// timeToBuildPreForkTransitionLocked computes the build window for the pre-fork →
+// post-fork TRANSITION block (the first post-fork block) when the preferred block
+// is still pre-fork. It is the timing half of CRITICAL-1 and mirrors
+// getPostDurangoSlotTime: when this node has a real proposer slot in the schedule
+// it returns that slot's start time (shouldWait=true), so a non-leader waits its
+// slot and adopts the elected leader's gossiped transition block — and a down
+// leader does not stall the chain because the eligible set widens as wall-clock
+// (and therefore the slot) advances. When there is NO schedule
+// (proposer.ErrAnyoneCanPropose — empty/degenerate validator set) or the window
+// cannot be resolved, it preserves the legacy behavior (shouldWait=false → forward
+// to the inner VM and build an unsigned block immediately). Caller holds vm.lock;
+// this only reads (validatorState / windower) and never re-acquires vm.lock.
+func (vm *VM) timeToBuildPreForkTransitionLocked(ctx context.Context) (time.Time, bool, error) {
+	pre, err := vm.getPreForkBlock(ctx, vm.preferred)
+	if err != nil {
+		// Preferred is neither a post-fork nor a resolvable pre-fork block — keep
+		// the legacy immediate-forward behavior.
+		return time.Time{}, false, nil
+	}
+	pChainHeight, err := vm.selectChildPChainHeight(ctx, 0)
+	if err != nil {
+		return time.Time{}, false, nil
+	}
+	var (
+		parentTimestamp = pre.Timestamp()
+		childHeight     = pre.Height() + 1
+		currentTime     = vm.Clock.Time().Truncate(time.Second)
+		slot            = proposer.TimeToSlot(parentTimestamp, currentTime)
+	)
+	// MinDelayForProposer returns the delay until THIS node's earliest slot in the
+	// schedule for (childHeight, pChainHeight). The elected leader's delay is ~0;
+	// a non-leader's delay is its slot offset, so it waits then builds only if the
+	// leader has not already produced the transition block by then.
+	delay, err := vm.Windower.MinDelayForProposer(ctx, childHeight, pChainHeight, vm.rt.NodeID, slot)
+	switch {
+	case err == nil:
+		delay = max(delay, vm.MinBlkDelay)
+		return parentTimestamp.Add(delay), true, nil
+	case errors.Is(err, proposer.ErrAnyoneCanPropose):
+		// No schedule — preserve the legacy immediate forward (unsigned build).
+		return time.Time{}, false, nil
+	default:
+		return time.Time{}, false, nil
+	}
 }
 
 func (vm *VM) getPostDurangoSlotTime(

@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/lp181"
+	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/runtime"
 	chain "github.com/luxfi/vm/chain"
 )
@@ -219,6 +220,60 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		)
 		return nil, err
 	}
+
+	// CRITICAL-1: single-proposer transition. The pre-fork → post-fork transition
+	// block (the first post-fork block, child of the last pre-fork block) MUST stay
+	// UNSIGNED — verifyPostForkChild rejects a signed transition
+	// (errChildOfPreForkBlockHasProposer), and an unsigned block carries no
+	// verifiable proposer binding, so the wire format cannot be made single-proposer
+	// by signing it. But WHO builds it can and MUST be gated. Without this gate every
+	// validator builds its OWN unsigned transition block stamped with its LOCAL
+	// wall-clock second (newTimestamp); a fleet that crosses into Ready at different
+	// instants then emits DIFFERENT height-(N+1) blocks → two valid blocks at one
+	// height → a FORK at chain start, which every fresh net (devnet/Zoo/Hanzo) and
+	// every existing-chain upgrade traverses. Gate the builder with the SAME windower
+	// the post-fork path uses (shouldBuildSignedBlockPostDurango): only the elected
+	// proposer for the CURRENT slot builds; as wall-clock advances the eligible set
+	// widens (slot progression), so a down leader does not stall the transition —
+	// liveness is provided by vm.timeToBuild windowing the wait. Non-leaders return
+	// WITHOUT building and adopt the leader's gossiped transition block through the
+	// α-of-K cert path. This makes the HONEST fleet emit exactly ONE transition block.
+	// The residual case — a Byzantine node publishing a competing UNSIGNED transition
+	// block (which verifyPostForkChild still admits, since an unsigned block cannot be
+	// bound to a proposer) — is rendered SAFE by the per-height finality guard (only
+	// one block finalizes at a height) and no longer crashes the fleet (consensus
+	// CRITICAL-2). Correct resolution of ExpectedProposer on a sovereign L1 depends on
+	// CRITICAL-3 (the windower reading the L1's own validator set, not an empty
+	// primary set).
+	childHeight := b.Height() + 1
+	slot := proposer.TimeToSlot(parentTimestamp, newTimestamp)
+	expectedProposerID, err := b.vm.Windower.ExpectedProposer(ctx, childHeight, pChainHeight, slot)
+	switch {
+	case errors.Is(err, proposer.ErrAnyoneCanPropose):
+		// No proposer schedule (empty/degenerate validator set — e.g. K==1, or a
+		// chain whose windower set is not yet populated). Fall through to the legacy
+		// unsigned build: single-proposer cannot hold without a schedule, and
+		// CRITICAL-2 makes the residual equivocation survivable.
+	case err != nil:
+		b.vm.logger.Error("unexpected build block failure",
+			log.String("reason", "failed to calculate expected transition proposer"),
+			log.Stringer("parentID", parentID),
+			log.Err(err),
+		)
+		return nil, err
+	case expectedProposerID != b.vm.rt.NodeID:
+		// Not our turn at this slot — DO NOT build. vm.timeToBuild windows the wait
+		// so we adopt the elected leader's gossiped transition block; a later slot
+		// elects us iff the leader is down.
+		b.vm.logger.Debug("transition build dropped: not our slot",
+			log.Stringer("parentID", parentID),
+			log.Uint64("childHeight", childHeight),
+			log.Uint64("slot", slot),
+			log.Stringer("expectedProposer", expectedProposerID),
+		)
+		return nil, fmt.Errorf("%w: slot %d expects %s", errUnexpectedProposer, slot, expectedProposerID)
+	}
+	// else: we ARE the elected proposer for this slot — build the unsigned block.
 
 	var innerBlock chain.Block
 	if b.vm.blockBuilderVM != nil {
