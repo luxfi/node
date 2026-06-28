@@ -41,7 +41,6 @@ package quasar
 
 import (
 	"fmt"
-	"time"
 
 	qcert "github.com/luxfi/consensus/protocol/quasar"
 )
@@ -49,35 +48,28 @@ import (
 // ActivationConfig is the forward-dated activation switch.
 //
 // The zero value is DORMANT: Height == 0 means "never activate" and the gate is
-// a no-op for every block. This mirrors the genesis upgrade-timestamp discipline
-// (a far-future / unset activation point cannot affect live finality).
+// a no-op for every block. This mirrors the genesis upgrade discipline (a
+// far-future / unset activation point cannot affect live finality).
+//
+// Activation is by HEIGHT ONLY, deliberately. A block height is agreed by
+// consensus, so every honest validator enforces PQ finality at exactly the SAME
+// checkpoints — there is no node-local decision. (A wall-clock gate would split
+// finalization across validators with skewed clocks: some halting on a missing
+// cert while others finalize without one. Timestamp-based forward-dating is
+// expressed by choosing the activation HEIGHT at the target time.)
 type ActivationConfig struct {
 	// Height is the block height at and above which PQ-finality verification is
 	// enforced at checkpoints. 0 == dormant (never).
 	Height uint64
-
-	// Time, when non-zero, ADDITIONALLY requires the wall-clock activation
-	// moment to have passed before enforcement begins (defence in depth on the
-	// forward-dating). Zero == height-only gating.
-	Time time.Time
 }
 
 // dormant reports whether the activation is unset (the default — never enforce).
 func (a ActivationConfig) dormant() bool { return a.Height == 0 }
 
-// active reports whether enforcement is live for a block at the given height and
-// the given wall-clock now. Dormant activation is never active.
-func (a ActivationConfig) active(height uint64, now time.Time) bool {
-	if a.Height == 0 {
-		return false
-	}
-	if height < a.Height {
-		return false
-	}
-	if !a.Time.IsZero() && now.Before(a.Time) {
-		return false
-	}
-	return true
+// active reports whether enforcement is live for a block at the given height.
+// Deterministic: height-only, no wall clock. Dormant activation is never active.
+func (a ActivationConfig) active(height uint64) bool {
+	return a.Height != 0 && height >= a.Height
 }
 
 // DefaultCheckpointInterval is the default checkpoint cadence in blocks. PQ
@@ -177,11 +169,17 @@ func (g *Gate) VerifyAccepted(cp Checkpoint) error {
 	if g == nil || g.cfg.Activation.dormant() {
 		return nil
 	}
-	if !g.cfg.Activation.active(cp.Height, time.Now()) {
+	if !g.cfg.Activation.active(cp.Height) {
 		return nil
 	}
 	if !g.isCheckpoint(cp.Height) {
 		return nil
+	}
+	// Activated checkpoint: the gate MUST have its cert store + validator
+	// provider, or it cannot verify. Fail closed with a typed error rather than
+	// panic in the accept hook (a panic would halt the chain uncontrollably).
+	if g.store == nil || g.validators == nil {
+		return fmt.Errorf("%w: chain=%d height=%d", ErrGateMisconfigured, g.cfg.ChainID, cp.Height)
 	}
 
 	cert, ok := g.store.Lookup(g.cfg.ChainID, cp.Height, cp.BlockID)
@@ -209,7 +207,7 @@ func (g *Gate) Activated(height uint64) bool {
 	if g == nil {
 		return false
 	}
-	return g.cfg.Activation.active(height, time.Now())
+	return g.cfg.Activation.active(height)
 }
 
 // IsCheckpoint reports whether the given height is a checkpoint under the gate's
@@ -239,15 +237,29 @@ func bindCheck(cert *qcert.ConsensusCert, chainID uint32, cp Checkpoint) error {
 	if cert.ChainID != chainID {
 		return fmt.Errorf("%w: cert chain %d != finalized chain %d", ErrFinalityCertMismatch, cert.ChainID, chainID)
 	}
+	// Bind the epoch. The gate resolves the verification keys from the cert's
+	// epoch, so an UNBOUND epoch would let a cert signed under a DIFFERENT
+	// validator-set era (e.g. a compromised RETIRED committee's group key) certify
+	// the current block — nullifying KeyEra rotation as a blast-radius bound. The
+	// honest producer signs over Subject.Epoch == cp.Epoch, so honest certs match.
+	if cert.Epoch != cp.Epoch {
+		return fmt.Errorf("%w: cert epoch %d != finalized epoch %d", ErrFinalityCertMismatch, cert.Epoch, cp.Epoch)
+	}
+	if cert.Round != cp.Round {
+		return fmt.Errorf("%w: cert round %d != finalized round %d", ErrFinalityCertMismatch, cert.Round, cp.Round)
+	}
 	if cert.Height != cp.Height {
 		return fmt.Errorf("%w: cert height %d != finalized height %d", ErrFinalityCertMismatch, cert.Height, cp.Height)
 	}
 	if cert.BlockHash != cp.BlockID {
 		return fmt.Errorf("%w: cert block hash != finalized block id", ErrFinalityCertMismatch)
 	}
-	// StateRoot binds only when the cert commits it. A zero cert StateRoot means
-	// "committed transitively through BlockHash" (the envelope spec), so it is
-	// not cross-checked.
+	// StateRoot contract: at the proposervm layer the post-state root is
+	// committed TRANSITIVELY through BlockHash, so cp.StateRoot is zero and the
+	// cert MUST carry a zero StateRoot too. A non-zero cert StateRoot is rejected
+	// (no state to cross-check here) — the producer follow-on MUST emit
+	// StateRoot==0 at this layer; a chain that wants an explicit state binding
+	// plumbs cp.StateRoot AND signs it, and this check then enforces equality.
 	var zero [32]byte
 	if cert.StateRoot != zero && cert.StateRoot != cp.StateRoot {
 		return fmt.Errorf("%w: cert state root != finalized state root", ErrFinalityCertMismatch)
