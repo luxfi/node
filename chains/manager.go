@@ -76,8 +76,8 @@ import (
 	"github.com/luxfi/utxo/mldsafx"
 	"github.com/luxfi/utxo/nftfx"
 
-	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/utxo/secp256r1fx"
