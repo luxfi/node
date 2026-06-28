@@ -578,6 +578,14 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	if !ok {
 		return errInvalidTLSKey
 	}
+	// Publish the staking TLS private key as the node's block signer. The chain
+	// manager passes this to proposervm as StakingLeafSigner so the elected
+	// proposer can SIGN post-fork blocks (block.Build → key.Sign). It was
+	// declared but never assigned, so proposervm received a nil signer and
+	// panicked (nil pointer in key.Sign) the moment it built the first signed
+	// post-fork block — mirrors avalanchego setting StakingTLSSigner from the
+	// cert's private key.
+	n.StakingTLSSigner = tlsKey
 
 	if n.Config.NetworkConfig.TLSKeyLogFile != "" {
 		n.tlsKeyLogWriterCloser, err = perms.Create(n.Config.NetworkConfig.TLSKeyLogFile, perms.ReadWrite)
