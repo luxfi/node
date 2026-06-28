@@ -257,7 +257,7 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.99.40
+ARG EVM_VERSION=v1.99.47
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -270,11 +270,12 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     cd /tmp/evm && \
     . /build/build_env.sh && \
     go mod edit -require=github.com/luxfi/upgrade@v1.0.1 && \
-    # evm v1.99.40 pins luxfi/chains v1.3.19, whose dexvm/registry was an incomplete
-    # refactor (forbidden.go deleted -> AssertNoForbiddenAssetRefs/looksLikeASCIITickerID/
-    # toHex/fromHex undefined => won't compile). Force v1.3.21 (forbidden.go restored),
-    # matching node's go.mod and the chain-VM plugin stage (CHAINS_REF) below.
-    go mod edit -require=github.com/luxfi/chains@v1.3.21 && \
+    # evm v1.99.47 pins luxfi/chains v1.3.22 (forbidden.go restored, dexvm/registry
+    # complete) and luxfi/precompile v0.15.0 — the active-only 0x9999 DEX money path
+    # (native-ZAP + non-empty-vault marker; dormant conduit + dead bespoke DEX-BLS +
+    # AI-slop pqcrypto bundle retired). Pin chains v1.3.22 to match evm + the chain-VM
+    # plugin stage (CHAINS_REF) below; no precompile force (evm's go.mod v0.15.0 wins).
+    go mod edit -require=github.com/luxfi/chains@v1.3.22 && \
     find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
