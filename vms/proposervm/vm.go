@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
+	pqfinality "github.com/luxfi/node/consensus/quasar"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
@@ -111,6 +112,36 @@ type VM struct {
 	// lastAcceptedTimestampGaugeVec reports timestamps for the last-accepted
 	// [postForkBlock] and its inner block.
 	lastAcceptedTimestampGaugeVec metric.GaugeVec
+
+	// quasarGate is the OPTIONAL post-quantum finality-cert gate. nil (the
+	// default) means PQ-finality verification is OFF — the accept path is
+	// unchanged classical Snow. When set AND forward-dated activation is reached,
+	// it requires a valid QuasarCert at every checkpoint and fails closed. See
+	// consensus/quasar.
+	quasarGate *pqfinality.Gate
+}
+
+// SetQuasarGate installs the post-quantum finality gate. Called once at chain
+// wiring time when PQ-finality config is present; left unset (nil) otherwise so
+// the accept path stays classical. Idempotent, set before consensus starts.
+func (vm *VM) SetQuasarGate(g *pqfinality.Gate) { vm.quasarGate = g }
+
+// verifyQuasarFinality is the accept-path hook for one finalized post-fork
+// block. It is nil-safe and dormant-by-default: with no gate, or pre-activation,
+// or off a checkpoint height, it returns nil and the block finalizes on the
+// classical path unchanged. Post-activation at a checkpoint it requires a valid
+// QuasarCert bound to this block and returns the verification error otherwise
+// (fail closed — the caller surfaces it from Accept).
+//
+// BlockID binds the proposervm block id (the accepted block at this layer);
+// StateRoot is left zero here (committed transitively through the block id), so
+// the cert's StateRoot binding is not cross-checked at this layer.
+func (vm *VM) verifyQuasarFinality(b *postForkBlock) error {
+	return vm.quasarGate.VerifyAccepted(pqfinality.Checkpoint{
+		Epoch:   b.PChainEpoch().Number,
+		Height:  b.Height(),
+		BlockID: [32]byte(b.ID()),
+	})
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block

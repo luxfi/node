@@ -35,10 +35,17 @@ func (b *postForkBlock) Height() uint64 {
 }
 
 // Accept:
+// 0) OPTIONAL post-quantum finality gate (dormant by default; see
+//    consensus/quasar). Runs BEFORE the accept commits so a checkpoint that
+//    cannot be PQ-certified post-activation halts WITHOUT persisting — fail
+//    closed. A nil/dormant gate, or a non-checkpoint height, is a no-op.
 // 1) Sets this blocks status to Accepted.
 // 2) Persists this block in storage
 // 3) Calls Reject() on siblings of this block and their descendants.
 func (b *postForkBlock) Accept(ctx context.Context) error {
+	if err := b.vm.verifyQuasarFinality(b); err != nil {
+		return err
+	}
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
