@@ -190,7 +190,6 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.7.9 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/kms v1.11.7 // indirect
@@ -199,7 +198,7 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.13.0 // indirect
+	github.com/luxfi/precompile v0.15.0 // indirect
 	github.com/luxfi/pulsar v1.1.5 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
 	github.com/luxfi/threshold v1.9.9 // indirect
