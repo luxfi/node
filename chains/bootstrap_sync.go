@@ -202,6 +202,34 @@ func (b *blockHandler) withSelfVote(replies []BeaconReply, weights map[ids.NodeI
 	return out
 }
 
+// repliedCovers reports whether EVERY connected beacon answered THIS frontier
+// round — set containment {reply.NodeID} ⊇ connected, NOT a count (frontier
+// replies are not yet round/connected-filtered, so a stale/non-connected reply
+// could pad a length check). The self-vote caught-up shortcut requires this:
+// without it the gate keys on CONNECTIVITY (fullyConnectedBeacons) while CaughtUp
+// tallies REPLIES, and the two diverge for a beacon that is CONNECTED but SILENT
+// — TCP up, its frontier reply delayed or withheld. That is a capability strictly
+// WEAKER than a full eclipse (no TCP drop needed) and it occurs NATURALLY when an
+// ahead beacon replays state on a mass co-restart. Such a beacon counts as "fully
+// connected" yet is absent from the tally, so self's (heavy) weight backfills the
+// floor and the node goes live at a forged STALE height — the precise failure the
+// frontier-quorum gate exists to prevent (RED CRITICAL). Requiring every connected
+// beacon to have replied means a silent ahead-beacon blocks caught-up → the node
+// waits / fails safe, while a genuine fresh net (every connected beacon answers
+// genesis) still completes.
+func repliedCovers(replies []BeaconReply, connected []ids.NodeID) bool {
+	replied := make(map[ids.NodeID]struct{}, len(replies))
+	for _, r := range replies {
+		replied[r.NodeID] = struct{}{}
+	}
+	for _, id := range connected {
+		if _, ok := replied[id]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // FrontierTip implements chainbootstrap.BlockSource. It returns a FrontierStatus that
 // decomplects the THREE reasons a tip may not be named — the fix for the mainnet canary
 // where a freshly-booted STALE node, asking the frontier BEFORE any beacon had connected,
@@ -327,6 +355,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// naming) is untouched, and a genuinely behind node has an ahead peer in the full set → CaughtUp
 		// is false → it keeps waiting/syncing.
 		if haveLast && b.fullyConnectedBeacons(weights, connected) &&
+			repliedCovers(replies, connected) &&
 			policy.CaughtUp(b.withSelfVote(replies, weights, lastID), lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (full beacon set + self all at/below it, peer-only weight below the naming floor)",
 				log.Stringer("chainID", b.chainID),
