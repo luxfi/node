@@ -170,3 +170,96 @@ func TestRED_PROBE_EqualStakeNeedsNoSelfVote(t *testing.T) {
 		"equal-stake peers clear the stake-majority floor unaided — no self-vote needed")
 	require.Equal(t, chain[0].id, tip, "caught up at genesis")
 }
+
+// TestRED_PROBE_SilentAheadBeacon_ExactlyFrontierConnecting pins the POSITIVE post-fix outcome of
+// the silent-beacon break: it is not merely "not CaughtUp" — it must be EXACTLY FrontierConnecting,
+// the fail-safe WAIT. A heavy self (60 of 100) crashed STALE at M while a connected-but-silent
+// beacon B (33) retained finalized K at N; the peer-only responder weight (A's 7) is far below the
+// stake-majority naming floor (51), so the decision rides the self-vote branch — which repliedCovers
+// now blocks because B did not answer. The node WAITS (the loop re-samples / fails safe at the
+// connect deadline), never going live at the stale height.
+func TestRED_PROBE_SilentAheadBeacon_ExactlyFrontierConnecting(t *testing.T) {
+	const N = 10 // B's retained finalized height
+	const M = 5  // self's stale height after the persistence-lag crash
+	chain, _ := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M)
+
+	self := ids.GenerateTestNodeID()
+	a := ids.GenerateTestNodeID() // co-stale light beacon, vocal at M
+	b := ids.GenerateTestNodeID() // AHEAD beacon, CONNECTED but SILENT this round
+	weights := map[ids.NodeID]uint64{self: 60, a: 7, b: 33}
+
+	bh, _ := newBSHandlerWeighted(t, vm, weights)
+	bh.selfNodeID = self
+	bh.msgCreator = bsMsgBuilder{}
+
+	silent := set.NewSet[ids.NodeID](1)
+	silent.Add(b)
+	bh.net = &redSilentNet{
+		bh: bh, connected: []ids.NodeID{a, b}, silent: silent,
+		tipFor: map[ids.NodeID]ids.ID{a: chain[M].id},
+	}
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+
+	require.Equal(t, chainbootstrap.FrontierConnecting, status,
+		"a CONNECTED but silent ahead-beacon must leave the node WAITING (FrontierConnecting), never caught-up at the stale height")
+	require.Equal(t, ids.Empty, tip, "no tip is named while connecting")
+}
+
+// TestRED_PROBE_SilentCoStaleBeacon_BlocksCaughtUp is the eclipse/partition INVERSION that proves
+// the guard keys on REPLY-COVERAGE, not on whether the silent peer is ahead. A two-sided contrast
+// on a genuine FRESH net (every node at genesis): the ONLY variable is whether the connected
+// co-stale beacon B answers.
+//
+//   - B vocal at genesis → full set + self all hold genesis, nobody ahead → FrontierCaughtUp (the
+//     legitimate fresh-net completion).
+//   - B connected but SILENT → even though B is NOT ahead (it is at genesis like everyone), the node
+//     cannot KNOW that without hearing from it, so repliedCovers blocks the self-vote and the node
+//     fails safe to FrontierConnecting.
+//
+// This is the precise eclipse defense: an adversary need not hide an ahead-beacon's TCP — merely
+// suppressing its application-level frontier reply must NOT let a heavy node self-complete.
+func TestRED_PROBE_SilentCoStaleBeacon_BlocksCaughtUp(t *testing.T) {
+	const N = 5
+	chain, _ := buildBSChain(N, -1)
+
+	self := ids.GenerateTestNodeID()
+	a := ids.GenerateTestNodeID() // vocal co-stale beacon (genesis)
+	b := ids.GenerateTestNodeID() // co-stale beacon (genesis), connected — silence is the variable
+	// HEAVY self (60 of 100): peers alone (40) < the 51 stake-majority floor → the self-vote branch,
+	// so the outcome is decided entirely by repliedCovers over the connected set {a, b}.
+	weights := map[ids.NodeID]uint64{self: 60, a: 30, b: 10}
+
+	run := func(t *testing.T, bSilent bool) chainbootstrap.FrontierStatus {
+		vm := newBSVM(chain) // node at genesis
+		bh, _ := newBSHandlerWeighted(t, vm, weights)
+		bh.selfNodeID = self
+		bh.msgCreator = bsMsgBuilder{}
+
+		silent := set.NewSet[ids.NodeID](1)
+		tipFor := map[ids.NodeID]ids.ID{a: chain[0].id} // A always reports genesis
+		if bSilent {
+			silent.Add(b)
+		} else {
+			tipFor[b] = chain[0].id // B also reports genesis (co-stale, NOT ahead)
+		}
+		bh.net = &redSilentNet{bh: bh, connected: []ids.NodeID{a, b}, silent: silent, tipFor: tipFor}
+
+		bh.bsActive.Store(true)
+		_, status := bh.FrontierTip(context.Background())
+		bh.bsActive.Store(false)
+		return status
+	}
+
+	bVocal := run(t, false)
+	bSilent := run(t, true)
+	t.Logf("B vocal co-stale → %v ; B silent co-stale → %v", bVocal, bSilent)
+
+	require.Equal(t, chainbootstrap.FrontierCaughtUp, bVocal,
+		"sanity: when every connected co-stale beacon REPLIES genesis, the fresh net completes (CaughtUp)")
+	require.Equal(t, chainbootstrap.FrontierConnecting, bSilent,
+		"a SILENT connected beacon — even one that is NOT ahead — blocks caught-up: the guard requires REPLY coverage, not ahead-ness")
+}
