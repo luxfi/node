@@ -77,7 +77,7 @@ import (
 	"github.com/luxfi/utxo/nftfx"
 
 	"github.com/luxfi/utxo/propertyfx"
-	// "github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/utxo/secp256r1fx"
@@ -1161,10 +1161,84 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// profile on its side of the boundary.
 		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 		vmConfigBytes = m.injectSecurityProfileConfig(chainParams.VMID, vmConfigBytes)
+		// CONSENSUS-SAFETY (single-proposer-per-height): re-wrap multi-validator
+		// linear chains in proposervm so block production follows the Snowman++
+		// proposer schedule — exactly ONE validator builds height H, the rest wait
+		// and vote. Without it every validator's engine calls BuildBlock
+		// UNCONDITIONALLY at every height off a slightly-different mempool, so two
+		// nodes can each gather an α-of-K cert for DIFFERENT blocks at the same
+		// height → reportCertEquivocation → Logger.Crit → crash (also the DEX-tx
+		// non-determinism wedge). proposervm's WaitForEvent only returns PendingTxs
+		// inside THIS node's proposer window, collapsing the race at its source.
+		// This restores the wrapper avalanchego (chains/manager.go) uses; Lux had
+		// commented it out and hand-rolled a bridge that dropped the invariant.
+		//
+		// Gate (all three required):
+		//   - K>1            : single-proposer only matters for a multi-validator
+		//                      quorum; K==1 (single-node --dev) is trivially one
+		//                      proposer and needs no schedule.
+		//   - not the P-Chain: the P-Chain publishes its OWN height-indexed
+		//                      validators.State DURING its createChain — AFTER the
+		//                      chainRuntime.ValidatorState snapshot used here was
+		//                      taken — so proposervm's windower would see an empty
+		//                      set and degrade to anyone-can-propose with a
+		//                      P-chain-height-0 stamp. The P-Chain keeps the existing
+		//                      path (its newPChainHeightVM gets the live state, which
+		//                      IS published by the K>1 block below). P-Chain blocks
+		//                      are rare (staking events) and ⅔-by-stake finality
+		//                      makes an equivocation crash require Byzantine
+		//                      double-voting, so the residual exposure is low.
+		//   - not DAG-native : a VM that implements Linearize (X-Chain) drives the
+		//                      engine through a push-notification linearize bridge
+		//                      that does not compose with proposervm's pull/window
+		//                      model without avalanchego's initializeOnLinearizeVM
+		//                      machinery (out of scope). It keeps the existing path.
+		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
+		if m.SybilProtectionEnabled {
+			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
+				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
+			}
+		}
+		_, innerIsDAGNative := vmTyped.(interface {
+			Linearize(context.Context, ids.ID, chan<- vm.Message) error
+		})
+		wrapInProposerVM := shouldWrapInProposerVM(consensusParams.K, chainParams.ID, innerIsDAGNative)
+
+		// engineVM is the VM the consensus engine, the WaitForEvent bridge, the
+		// block handler, and HTTP registration all use. For a wrapped chain it is
+		// the proposervm; build / parse / verify / accept and the proposer-window
+		// WaitForEvent all flow THROUGH it (proposervm forwards to the inner VM and
+		// carries the proposer signature + P-chain epoch height in the block bytes).
+		// For an unwrapped chain it IS the inner VM, so every call below is the
+		// original behavior unchanged.
+		var engineVM chain.ChainVM = vmTyped
+		if wrapInProposerVM {
+			proposervmReg, regErr := metrics.MakeAndRegister(m.proposervmGatherer, linearChainAlias)
+			if regErr != nil {
+				return nil, fmt.Errorf("failed to register proposervm metrics for chain %s: %w", chainParams.ID, regErr)
+			}
+			engineVM = proposervm.New(vmTyped, proposervm.Config{
+				Upgrades:            m.Upgrades,
+				MinBlkDelay:         proposervm.DefaultMinBlockDelay,
+				NumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
+				StakingLeafSigner:   m.StakingTLSSigner,
+				StakingCertLeaf:     m.StakingTLSCert,
+				Registerer:          proposervmReg,
+			})
+			m.Log.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
+				log.Stringer("chainID", chainParams.ID),
+				log.Int("K", consensusParams.K),
+				log.Duration("minBlockDelay", proposervm.DefaultMinBlockDelay))
+		}
+
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		initCtx, initCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer initCancel()
-		err = vmTyped.Initialize(
+		// Initialize THROUGH engineVM. proposervm.Initialize builds its windower
+		// from chainRuntime.ValidatorState, then initializes the inner VM with the
+		// SAME vm.Init (the inner gets the real DB / genesis / ToEngine). For an
+		// unwrapped chain engineVM IS the inner VM, so this is the original call.
+		err = engineVM.Initialize(
 			initCtx,
 			vm.Init{
 				Runtime:  chainRuntime,
@@ -1248,7 +1322,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// (snapshots only, no building) — the correct state while the node fetch+executes the
 		// gap. The two "go live" transitions (VM serves + engine cert-gates) now happen
 		// TOGETHER at the named frontier, never at a stale height.
-		if stateVM, ok := vmTyped.(interface {
+		// Route SetState through engineVM. For a wrapped chain this is the
+		// proposervm, which forwards the state to the inner VM AND records its own
+		// consensusState — the gate proposervm.WaitForEvent reads to decide whether
+		// to enforce the proposer window. If we set state on the inner VM directly,
+		// proposervm.consensusState would stay Unknown and the window would never
+		// engage (no single-proposer). For an unwrapped chain engineVM is the inner.
+		if stateVM, ok := engineVM.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
 			m.Log.Info("transitioning VM to bootstrapping (initial sync gates normal operation)",
@@ -1266,8 +1346,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 		// Create integrated consensus engine - the ONE right way to set up chain consensus
 		// This consolidates: engine creation, emitter wiring, VM registration
+		// blockBuilder is what the engine builds/parses through. For a wrapped chain
+		// it is the proposervm (BuildBlock signs + stamps the P-chain height, the
+		// block bytes the Quasar cert covers; ParseBlock verifies the proposer sig
+		// of a gossiped block), so build and parse route through the SAME wrapper
+		// and certs are over consistent bytes. proposervm.VM structurally satisfies
+		// consensuschain.BlockBuilder because vm/chain.Block is a type alias for the
+		// engine's block.Block.
 		var blockBuilder consensuschain.BlockBuilder
-		if bb, ok := vmTyped.(consensuschain.BlockBuilder); ok {
+		if bb, ok := engineVM.(consensuschain.BlockBuilder); ok {
 			blockBuilder = bb
 			m.Log.Info("registered VM with consensus engine for block building",
 				log.Stringer("chainID", chainParams.ID))
@@ -1304,21 +1391,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			log.Stringer("PrimaryNetworkID", constants.PrimaryNetworkID),
 		)
 
-		// Choose consensus parameters based on mode:
-		//   - Single-node (--dev, sybil protection disabled): K=1, self-voting
-		//     (the sole validator's accept is the 1-of-1 quorum).
-		//   - Multi-node (sybil-protected): a BYZANTINE-fault-tolerant param set
-		//     selected by network (Mainnet K=21 / Testnet K=11 / Default K=20).
-		//
-		// CRITICAL-2: the prior code used LocalParams() (K=3, α=2 → f=0, CFT) for
-		// ALL sybil-protected nets — a SINGLE Byzantine validator forks K=3/α=2.
-		// We now select a real BFT set and FAIL CLOSED if it is not value-safe.
-		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
-		if m.SybilProtectionEnabled {
-			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
-				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
-			}
-		}
+		// consensusParams was selected and value-validated above (before VM
+		// Initialize) so the proposervm-wrap decision could read K. It chooses:
+		//   - Single-node (--dev, sybil protection disabled): K=1, self-voting.
+		//   - Multi-node (sybil-protected): a BYZANTINE-fault-tolerant set selected
+		//     by network (Mainnet K=21 / Testnet K=11 / Default K=20 / local-BFT K=4).
+		// CRITICAL-2: never LocalParams() (K=3/α=2, f=0, which a single Byzantine
+		// validator forks); the value-net validation fails closed otherwise.
 
 		// HIGH-4: wire the α-of-K vote/cert topology for multi-validator (K>1)
 		// chains so finality is LIVE (votes broadcast to all, certs gossiped,
@@ -1397,9 +1476,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// proposer's live P-chain height (max(GetCurrentHeight, parentH)), stamped
 			// into the gossiped bytes so every follower adopts the IDENTICAL height —
 			// the set-root/stake/pubkey reads then track the LIVE set at that height.
-			// Installed ONLY here (K>1): a K==1 chain has no cert and no epoch, so the
-			// stamp is inert and the inner VM is used directly.
-			if blockBuilder != nil {
+			// Installed ONLY here (K>1) AND ONLY when this chain is NOT wrapped in
+			// proposervm: when wrapInProposerVM is true the blockBuilder already IS
+			// the proposervm, whose SignedBlock carries the real P-chain height
+			// (selectChildPChainHeight = max(GetCurrentHeight, parentH)) and exposes
+			// PChainHeight() — the SAME value the engine's pChainHeightOf reads. That
+			// is precisely the Snowman++ mechanism newPChainHeightVM was a stand-in
+			// for, so stacking both would double-stamp the height. We keep
+			// newPChainHeightVM only for the unwrapped K>1 chains (P-Chain, X-Chain).
+			if blockBuilder != nil && !wrapInProposerVM {
 				blockBuilder = newPChainHeightVM(blockBuilder, vdrState, networkID)
 				netCfg.VM = blockBuilder
 				m.Log.Info("wired P-chain epoch height into consensus block builder (b2)",
@@ -1440,17 +1525,23 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 		}
 
-		// Bridge VM's WaitForEvent to toEngine channel.
-		// This is the critical missing piece: ForwardVMNotifications reads from toEngine,
-		// but nothing was writing to it! This goroutine calls WaitForEvent on the VM
-		// and writes the result to toEngine, which ForwardVMNotifications then reads
-		// and forwards to the consensus engine via Notify().
+		// Bridge engineVM's WaitForEvent to the toEngine channel.
+		// ForwardVMNotifications reads from toEngine; this goroutine is the sole
+		// writer. For a WRAPPED chain engineVM is the proposervm, whose WaitForEvent
+		// is the single-proposer gate: when the chain is Ready it returns PendingTxs
+		// ONLY inside THIS node's proposer window (timeToBuild → Windower.
+		// MinDelayForProposer → one scheduled leader per (height, slot)); every other
+		// validator BLOCKS until its later slot, by which time the leader has built,
+		// gossiped, and finalized that height, so they advance and never build it.
+		// That is the invariant the bare-inner WaitForEvent dropped (everyone built
+		// every height → conflicting certs → equivocation crash). For an unwrapped
+		// chain engineVM is the inner VM — original behavior.
 		go func() {
 			ctx := context.Background()
 			for {
 				// Call WaitForEvent on the VM - this blocks until there are pending txs
 				// or staker changes that should trigger block building
-				msg, err := vmTyped.WaitForEvent(ctx)
+				msg, err := engineVM.WaitForEvent(ctx)
 				if err != nil {
 					if ctx.Err() != nil {
 						// Context cancelled, exit gracefully
@@ -1499,9 +1590,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// initial sync has reached the named frontier (runInitialSync) — never before, so the
 		// VM cannot serve / build at a stale height. nil when the VM exposes no SetState
 		// (degenerate / non-EVM paths): runInitialSync then just marks ready (nothing to
-		// transition). The closure captures vmTyped (the real VM, which owns SetState), not the
-		// block-builder wrapper the handler holds as b.vm.
-		if stateVM, ok := vmTyped.(interface {
+		// transition). The closure captures engineVM: for a wrapped chain SetState(Ready)
+		// both (a) flips proposervm.consensusState to Ready — the gate proposervm.
+		// WaitForEvent reads to ENGAGE the proposer window (single-proposer turns on
+		// exactly at go-live, not at a stale height) — and (b) forwards Ready to the
+		// inner VM so the EVM starts building/gossiping. Routing this to the inner VM
+		// instead would start the EVM but leave the window disengaged.
+		if stateVM, ok := engineVM.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
 			chainID := chainParams.ID
@@ -1533,7 +1628,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			Name:    chainName,
 			VMID:    chainParams.VMID,
 			Runtime: chainRuntime,
-			VM:      vmTyped,         // Use the real VM directly
+			// engineVM = the proposervm for a wrapped chain (else the inner VM).
+			// HTTP registration calls engineVM.CreateHandlers, and proposervm.
+			// CreateHandlers forwards the inner VM's handlers (the C-Chain /rpc) and
+			// adds /proposervm — so endpoints are preserved. Shutdown/health route
+			// through proposervm to the inner.
+			VM:      engineVM,
 			Engine:  consensusEngine, // Use real consensus engine directly
 			Handler: bh,
 		}
