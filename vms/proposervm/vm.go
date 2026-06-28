@@ -591,7 +591,19 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	}
 	innerLastAccepted, err := vm.ChainVM.GetBlock(ctx, innerLastAcceptedID)
 	if err != nil {
-		return fmt.Errorf("failed to get inner last accepted block: %w", err)
+		// A fresh / not-yet-committed inner chain can report a last-accepted ID
+		// whose block is not retrievable — e.g. the brand/feature VMs (Q/A/G/K...)
+		// whose genesis references an empty parent, so GetBlock returns
+		// "block 111...LpoYY: not found" even though innerLastAcceptedID is not
+		// itself ids.Empty (so the guard above does not catch it). There is no
+		// accepted chain to roll the proposervm height index back against, so
+		// there is nothing to repair. Without this, wrapping such a chain crashes
+		// the WHOLE node at init ("error creating required chain" → exit 1).
+		vm.logger.Warn("proposervm: inner last-accepted block not retrievable at init; nothing to repair",
+			log.Stringer("innerLastAcceptedID", innerLastAcceptedID),
+			log.Err(err),
+		)
+		return nil
 	}
 	proLastAcceptedID, err := vm.State.GetLastAccepted()
 	if err == database.ErrNotFound {
