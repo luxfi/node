@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/hero.svg" alt="node" width="880"></p>
+
 <div align="center">
   <img src="resources/LuxLogoRed.png?raw=true">
 </div>
