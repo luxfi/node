@@ -1587,7 +1587,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
-		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, expectsStakedBeacons)
+		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons)
 		// Gate this native chain's bootstrap frontier-TRUST on the P-chain having finished its
 		// initial sync, so the staked beacon set (and thus the stake-majority floor denominator)
 		// is the TRUE full validator set, not a partial mid-replay set. Wired ONLY for native
@@ -2735,6 +2735,15 @@ type blockHandler struct {
 	// cannot. nil ⇒ no beacon quorum (single-node / skip-bootstrap), bootstrap is inert.
 	beacons validators.Manager
 
+	// selfNodeID is THIS node's own NodeID (m.NodeID). The node is itself a beacon (a
+	// validator in `beacons`), and it KNOWS its own accepted frontier with certainty — it
+	// cannot, and need not, ask itself over the network. FrontierTip counts this SELF-VOTE in
+	// the caught-up determination ONLY under FULL beacon connectivity (the fresh-net fix), so a
+	// node whose own stake makes the PEER-ONLY responder weight fall below the stake-majority
+	// floor still concludes caught-up at genesis instead of hanging in FrontierConnecting. Empty
+	// for degenerate / single-node handlers (no self in the beacon set ⇒ the self-vote is inert).
+	selfNodeID ids.NodeID
+
 	// expectsStakedBeacons is true when this chain syncs against the STAKED primary-network
 	// validator set (m.Validators) — i.e. a native non-platform chain (C/X/Q/...) on a
 	// sybil-protected network. That set is populated by the already-bootstrapped P-chain, so
@@ -2836,7 +2845,7 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, expectsStakedBeacons bool) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool) *blockHandler {
 	return &blockHandler{
 		vm:                   vm,
 		logger:               logger,
@@ -2846,6 +2855,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *
 		chainID:              chainID,
 		networkID:            networkID,
 		beacons:              beacons,
+		selfNodeID:           selfNodeID,
 		expectsStakedBeacons: expectsStakedBeacons,
 		pendingContext:       make(map[ids.ID]contextRequest),
 		maxContextBlocks:     256, // Default max context blocks to request/serve
