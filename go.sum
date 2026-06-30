@@ -322,6 +322,8 @@ github.com/luxfi/container v0.0.4 h1:BXhF82WyfqVP5mjlNcr7tP0Fcnvl0Ap1rkiu+rq5XuM
 github.com/luxfi/container v0.0.4/go.mod h1:Z3SpmMF5d4t77MM0nHYXURpn+EMVaeu1fhbd/3BGaek=
 github.com/luxfi/corona v0.10.2 h1:pIS5uJq2lHnk6NFjoaBN8CvjPp9wwFHek91rV0u3jHk=
 github.com/luxfi/corona v0.10.2/go.mod h1:gx0nrRq4TB/scQm1kNU10lyRDQhKLMAYK1fIrfCrZ9s=
+github.com/luxfi/corona v0.10.3 h1:Yi1oAkW0HEsf5fvst/tUN0AjRVg6DoNHB/IC0qrFWZE=
+github.com/luxfi/corona v0.10.3/go.mod h1:xe5qRir0p+FA6eETpyGDv4LjYySg1zVB13kmHpy9x94=
 github.com/luxfi/crypto v1.19.26 h1:+aHn/L479ak2ih7s/DkBZojjuhcyHBLqu3nYT81vcrU=
 github.com/luxfi/crypto v1.19.26/go.mod h1:0DCU62kX8+zhYU2qeM07A4pifJyPkPujnUOfgc8TOFQ=
 github.com/luxfi/crypto/ipa v1.2.4 h1:6xfwhI9/HrcDkF3Ti5/NxsNQIWbwYDJmRSNIHRQ/xfU=
@@ -386,6 +388,8 @@ github.com/luxfi/proto v1.3.5 h1:AW11rnu5xyvB7beyowoiY9uIffLOF3+eMR/a3EkK2c8=
 github.com/luxfi/proto v1.3.5/go.mod h1:ixTofGpdW1rTYr+wgTuBhAsgBv8GnWYHMLWbPNEdm7M=
 github.com/luxfi/pulsar v1.7.1 h1:q/TVn0TWeMImm67EJZ3CMmBAGQCW+bhIX7YQGL3aYK0=
 github.com/luxfi/pulsar v1.7.1/go.mod h1:wW+V2mUVOqppN68+n5u9Qtlfcscd0vOz4acvubcSOKI=
+github.com/luxfi/pulsar v1.8.0 h1:ZWOwVQ8HcEJzWljj2blkNIRKwktngPJc05knkZtRjVM=
+github.com/luxfi/pulsar v1.8.0/go.mod h1:wW+V2mUVOqppN68+n5u9Qtlfcscd0vOz4acvubcSOKI=
 github.com/luxfi/resource v0.0.1 h1:mTh+ICWSy548GTUSSyx7V/X5dV18oEwxZeQEYGJQhD4=
 github.com/luxfi/resource v0.0.1/go.mod h1:wWpZktciYwIi6RNqA+fHwzmPrUJa7PRX7urfwT+spRE=
 github.com/luxfi/rpc v1.1.0 h1:B/PJbK399th1mHRDSufhCpVbAciZqId3LsaWhIGNWH4=
