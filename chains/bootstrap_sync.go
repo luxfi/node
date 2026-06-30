@@ -165,6 +165,71 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 	return sample, sample.Len() > 0
 }
 
+// fullyConnectedBeacons reports whether the node has reached its ENTIRE EXTERNAL beacon set — every
+// beacon OTHER than itself is connected and tracking this chain's network. This is the eclipse-free
+// condition that makes the FrontierTip SELF-VOTE safe: when the full set is reached no beacon can be
+// suppressed, so a unanimous "nobody ahead" from the full set PLUS the node itself is a TRUE caught-up
+// — an eclipse hiding any ahead-producer would drop that beacon from `connected` and break full-set,
+// falling back to the partition-capture floor (fail safe). `connected` is connectedBeacons(weights);
+// the external-set size is the beacon set minus the node itself (a node cannot, and need not, connect
+// to itself). Returns false for an empty external set (a degenerate single-beacon / self-only set, so
+// the self-vote is never the SOLE basis for caught-up).
+func (b *blockHandler) fullyConnectedBeacons(weights map[ids.NodeID]uint64, connected []ids.NodeID) bool {
+	external := len(weights)
+	if _, selfIsBeacon := weights[b.selfNodeID]; selfIsBeacon {
+		external-- // the node is in its own beacon set but is never one of its own peers
+	}
+	return external > 0 && len(connected) >= external
+}
+
+// withSelfVote returns `replies` plus the node's OWN accepted frontier as a beacon reply — the
+// SELF-VOTE. The node is itself a beacon (selfNodeID in `weights`, the trust anchor) and knows its
+// own accepted tip (lastID) with certainty, so it vouches for it exactly as a connected peer's reply
+// would (deduped by NodeID in the policy's tally; collectFrontierReplies samples only PEERS, never
+// self, so there is no double-count). Returned UNCHANGED when the node is not in the beacon set
+// (degenerate / single-node / a P-chain whose CustomBeacons omit self) or has no accepted tip — the
+// self-vote is then inert. self only ever vouches for the block IT HAS ACCEPTED, so it can never name
+// a forged tip (C1 untouched); the SOLE caller gates its use on FULL connectivity, so it can never
+// tip a partial (eclipsed) view into caught-up.
+func (b *blockHandler) withSelfVote(replies []BeaconReply, weights map[ids.NodeID]uint64, lastID ids.ID) []BeaconReply {
+	w, selfIsBeacon := weights[b.selfNodeID]
+	if !selfIsBeacon || lastID == ids.Empty {
+		return replies
+	}
+	out := make([]BeaconReply, 0, len(replies)+1)
+	out = append(out, replies...)
+	out = append(out, BeaconReply{NodeID: b.selfNodeID, Tip: lastID, Weight: w})
+	return out
+}
+
+// repliedCovers reports whether EVERY connected beacon answered THIS frontier
+// round — set containment {reply.NodeID} ⊇ connected, NOT a count (frontier
+// replies are not yet round/connected-filtered, so a stale/non-connected reply
+// could pad a length check). The self-vote caught-up shortcut requires this:
+// without it the gate keys on CONNECTIVITY (fullyConnectedBeacons) while CaughtUp
+// tallies REPLIES, and the two diverge for a beacon that is CONNECTED but SILENT
+// — TCP up, its frontier reply delayed or withheld. That is a capability strictly
+// WEAKER than a full eclipse (no TCP drop needed) and it occurs NATURALLY when an
+// ahead beacon replays state on a mass co-restart. Such a beacon counts as "fully
+// connected" yet is absent from the tally, so self's (heavy) weight backfills the
+// floor and the node goes live at a forged STALE height — the precise failure the
+// frontier-quorum gate exists to prevent (RED CRITICAL). Requiring every connected
+// beacon to have replied means a silent ahead-beacon blocks caught-up → the node
+// waits / fails safe, while a genuine fresh net (every connected beacon answers
+// genesis) still completes.
+func repliedCovers(replies []BeaconReply, connected []ids.NodeID) bool {
+	replied := make(map[ids.NodeID]struct{}, len(replies))
+	for _, r := range replies {
+		replied[r.NodeID] = struct{}{}
+	}
+	for _, id := range connected {
+		if _, ok := replied[id]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // FrontierTip implements chainbootstrap.BlockSource. It returns a FrontierStatus that
 // decomplects the THREE reasons a tip may not be named — the fix for the mainnet canary
 // where a freshly-booted STALE node, asking the frontier BEFORE any beacon had connected,
@@ -273,9 +338,36 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			log.Bool("accepted", b.Accepted(ctx, frontier.ID)))
 		return frontier.ID, chainbootstrap.FrontierNamed
 	case errors.Is(err, ErrInsufficientBootstrapResponses):
-		// Fewer than MinResponses configured beacons have RESPONDED — not a partition-capture-safe
-		// quorum yet. More may connect: WAIT (bounded by the loop's ConnectDeadline, then fail
-		// safe). Never false-complete at the stale height; never trust the captured few.
+		// Below the PEER-ONLY response floor. Before WAITING, apply the SELF-VOTE under FULL
+		// connectivity — THE FRESH-NET FIX. The node is itself a beacon and knows its OWN accepted
+		// tip with certainty. When it has reached its ENTIRE beacon set (fullyConnectedBeacons — so no
+		// eclipse can be hiding an ahead-tip) and that full set PLUS itself unanimously hold a tip the
+		// node has ALREADY ACCEPTED, the node IS at the network frontier — even though the peer-only
+		// responder weight could not reach the stake-majority NAMING floor. That floor is unsatisfiable
+		// by PEERS ALONE precisely when the node's own stake is large relative to the rest (a heavy
+		// validator, a small beacon set like the P-chain's CustomBeacons, or skewed stake): peers =
+		// total − self, so peers < total/2+1 ⟺ self > total/2−1. On a fresh net every validator holds
+		// only genesis, so such a node would otherwise hang in FrontierConnecting forever with the
+		// WHOLE set connected. SAFE: self is counted ONLY under full connectivity, so an eclipse that
+		// suppresses ANY beacon breaks full-set and we fall through to the partition-capture floor
+		// (FrontierConnecting → fail safe) — self can never tip a PARTIAL (eclipsed) view into a false
+		// caught-up. self also only ever vouches for its OWN accepted tip, so C1 (forged-frontier
+		// naming) is untouched, and a genuinely behind node has an ahead peer in the full set → CaughtUp
+		// is false → it keeps waiting/syncing.
+		if haveLast && b.fullyConnectedBeacons(weights, connected) &&
+			repliedCovers(replies, connected) &&
+			policy.CaughtUp(b.withSelfVote(replies, weights, lastID), lastH, b.acceptedHeight) {
+			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (full beacon set + self all at/below it, peer-only weight below the naming floor)",
+				log.Stringer("chainID", b.chainID),
+				log.Stringer("tip", lastID),
+				log.Uint64("height", lastH),
+				log.Int("beaconSetSize", len(weights)),
+				log.Int("connected", len(connected)))
+			return lastID, chainbootstrap.FrontierCaughtUp
+		}
+		// Fewer than MinResponses configured beacons have RESPONDED (and not provably caught-up under
+		// full connectivity) — not a partition-capture-safe quorum yet. More may connect: WAIT (bounded
+		// by the loop's ConnectDeadline, then fail safe). Never false-complete; never trust the few.
 		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
 			log.Stringer("chainID", b.chainID),
 			log.Int("beaconSetSize", len(weights)),
