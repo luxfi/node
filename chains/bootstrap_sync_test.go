@@ -765,6 +765,79 @@ func TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons(t *testing.T) {
 	require.Equal(t, ids.Empty, tip)
 }
 
+// TestNodeBootstrap_FreshNet_SelfVoteUnderFullConnectivity_CaughtUp is THE FRESH-NET FIX. The node
+// is itself a beacon (selfNodeID) on a 2-validator set; on a fresh net both hold only genesis. The
+// PEER-ONLY responder weight (100) is BELOW the stake-majority naming floor (200/2+1 = 101), so the
+// node could NEVER name a frontier and hung in FrontierConnecting forever — "bootstrap waiting for
+// beacon connectivity" — DESPITE the whole set being connected. With the self-vote, under FULL
+// connectivity (the one other beacon reached) the full set PLUS the node itself unanimously hold
+// genesis with nobody ahead → FrontierCaughtUp, and the loop completes at the node's own genesis tip.
+func TestNodeBootstrap_FreshNet_SelfVoteUnderFullConnectivity_CaughtUp(t *testing.T) {
+	const N = 5
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVM(chain)                                  // the node is at genesis (lastAccepted = genesis)
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 2) // 2 equal-weight (100) beacons
+	bh.selfNodeID = beacons[0]                            // THIS node is beacon 0 — it is itself a validator
+	bh.msgCreator = bsMsgBuilder{}
+
+	// FULL connectivity: the ONE other beacon is connected and reports GENESIS (a fresh net — every
+	// validator holds only genesis). connected EXCLUDES self (a node is never one of its own peers).
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[1:], byID: byID, tip: chain[0]}
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierCaughtUp, status,
+		"fresh net, FULL set + self all at genesis, peer-only weight below the naming floor → CAUGHT UP (the fix), never a FrontierConnecting hang")
+	require.Equal(t, chain[0].id, tip, "caught up at the node's OWN genesis tip")
+}
+
+// TestNodeBootstrap_SelfVote_PeerAheadDefeatsCaughtUp proves the self-vote NEVER false-completes a
+// genuinely BEHIND node. Same 2-beacon set with the node a beacon and FULL connectivity, but the
+// peer is AHEAD at N (an EXISTING net the empty node must SYNC to). A responder is above the node's
+// height, so CaughtUp(self+peers) is false → NOT FrontierCaughtUp: the node keeps waiting/syncing,
+// never goes live at its stale genesis. (The luxfi/consensus loop then descends once a frontier is
+// named, or fails safe.)
+func TestNodeBootstrap_SelfVote_PeerAheadDefeatsCaughtUp(t *testing.T) {
+	const N = 20
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVM(chain) // node at genesis
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 2)
+	bh.selfNodeID = beacons[0]
+	bh.msgCreator = bsMsgBuilder{}
+	// FULL connectivity, but the peer reports the AHEAD tip N — the node is genuinely behind.
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[1:], byID: byID, tip: chain[N], serveAncestors: true}
+
+	bh.bsActive.Store(true)
+	_, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+	require.NotEqual(t, chainbootstrap.FrontierCaughtUp, status,
+		"a peer AHEAD must defeat the self-vote — the node is behind and must sync, never false-complete caught-up at genesis")
+}
+
+// TestNodeBootstrap_SelfVote_PartialConnectivityFailsSafe proves the self-vote is SAFE against an
+// eclipse. The node is a beacon on a 3-validator set, but only ONE of the two OTHER beacons is
+// connected (NOT full connectivity). Even though that one + self report genesis, a SUPPRESSED beacon
+// could be hiding an ahead-tip — so the self-vote must NOT apply. fullyConnectedBeacons is false →
+// the node falls back to the partition-capture floor and reports FrontierConnecting (fail safe),
+// exactly as before the fix. self can never tip a PARTIAL view into a false caught-up.
+func TestNodeBootstrap_SelfVote_PartialConnectivityFailsSafe(t *testing.T) {
+	const N = 5
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVM(chain) // node at genesis
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 3) // self + 2 others
+	bh.selfNodeID = beacons[0]
+	bh.msgCreator = bsMsgBuilder{}
+	// ECLIPSE: only ONE of the two OTHER beacons is connected (beacons[1]); beacons[2] is suppressed.
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons[1:2], byID: byID, tip: chain[0]}
+
+	bh.bsActive.Store(true)
+	_, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierConnecting, status,
+		"partial connectivity (an eclipse could hide an ahead-tip) → the self-vote must NOT apply → fail safe, NOT caught up")
+}
+
 // TestRED_PeersTrackNetNotChain_StaleNodeConverges is THE MAINNET-CANARY (luxd-2) intended
 // SUCCESS and the regression guard for the beacon-connectivity bug.
 //
