@@ -143,7 +143,7 @@ func TestRevokeToken(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword).(*auth)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
@@ -157,7 +157,7 @@ func TestWrapHandlerHappyPath(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
@@ -178,7 +178,7 @@ func TestWrapHandlerRevokedToken(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
@@ -205,7 +205,7 @@ func TestWrapHandlerExpiredToken(t *testing.T) {
 	auth.clock.Set(time.Now().Add(-2 * defaultTokenLifespan))
 
 	// Make a token that expired well in the past
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
@@ -227,7 +227,7 @@ func TestWrapHandlerNoAuthToken(t *testing.T) {
 
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	wrappedHandler := auth.WrapHandler(dummyHandler)
 	for _, endpoint := range endpoints {
 		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:9630%s", endpoint), strings.NewReader(""))
@@ -245,11 +245,11 @@ func TestWrapHandlerUnauthorizedEndpoint(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token
-	endpoints := []string{"/ext/info"}
+	endpoints := []string{"/v1/info"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
-	unauthorizedEndpoints := []string{"/ext/bc/X", "/ext/metrics", "", "/foo", "/ext/info/foo"}
+	unauthorizedEndpoints := []string{"/v1/bc/X", "/v1/metrics", "", "/foo", "/v1/info/foo"}
 
 	wrappedHandler := auth.WrapHandler(dummyHandler)
 	for _, endpoint := range unauthorizedEndpoints {
@@ -269,12 +269,12 @@ func TestWrapHandlerAuthEndpoint(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics", "", "/foo", "/ext/info/foo"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics", "", "/foo", "/v1/info/foo"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
 	wrappedHandler := auth.WrapHandler(dummyHandler)
-	req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:9630/ext/auth", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:9630/v1/auth", strings.NewReader(""))
 	req.Header.Add("Authorization", headerValStart+tokenStr)
 	rr := httptest.NewRecorder()
 	wrappedHandler.ServeHTTP(rr, req)
@@ -287,7 +287,7 @@ func TestWrapHandlerAccessAll(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token that allows access to all endpoints
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics", "", "/foo", "/ext/foo/info"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics", "", "/foo", "/v1/foo/info"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, []string{"*"})
 	require.NoError(err)
 
@@ -316,7 +316,7 @@ func TestWrapHandlerMutatedRevokedToken(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	tokenStr, err := auth.NewToken(testPassword, defaultTokenLifespan, endpoints)
 	require.NoError(err)
 
@@ -339,7 +339,7 @@ func TestWrapHandlerInvalidSigningMethod(t *testing.T) {
 	auth := NewFromHash(log.NewNoOpLogger(), "auth", hashedPassword).(*auth)
 
 	// Make a token
-	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
+	endpoints := []string{"/v1/info", "/v1/bc/X", "/v1/metrics"}
 	idBytes := [tokenIDByteLen]byte{}
 	_, err := rand.Read(idBytes[:])
 	require.NoError(err)

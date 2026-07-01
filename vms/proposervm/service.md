@@ -5,7 +5,7 @@ The ProposerVM API allows clients to fetch information about a chain's Consensus
 ## Endpoint
 
 ```text
-/ext/bc/{blockchainID}/proposervm
+/v1/bc/{blockchainID}/proposervm
 ```
 
 ## Format
@@ -35,7 +35,7 @@ curl -X POST --data '{
     "method": "proposervm.getProposedHeight",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P/proposervm
+}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/bc/P/proposervm
 ```
 
 **Example Response:**
@@ -73,7 +73,7 @@ curl -X POST --data '{
     "method": "proposervm.getCurrentEpoch",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P/proposervm
+}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/bc/P/proposervm
 ```
 
 **Example Response:**

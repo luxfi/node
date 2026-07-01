@@ -210,14 +210,14 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "health.health"
-}' -H 'content-type:application/json;' http://localhost:9630/ext/health
+}' -H 'content-type:application/json;' http://localhost:9630/v1/health
 
 # Get node info
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "info.getNodeVersion"
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 
 # Check bootstrap status
 curl -X POST --data '{
@@ -227,7 +227,7 @@ curl -X POST --data '{
     "params": {
         "chain": "P"
     }
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 ## Troubleshooting

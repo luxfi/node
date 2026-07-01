@@ -31,7 +31,7 @@ Or in configuration:
 ## Endpoint
 
 ```
-http://localhost:9630/ext/admin
+http://localhost:9630/v1/admin
 ```
 
 ## Methods
@@ -54,7 +54,7 @@ curl -X POST --data '{
         "chain":"2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX"
     },
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -85,7 +85,7 @@ curl -X POST --data '{
         "chain":"2S53R2ub94CV5vmSRAjqPYmRxvuiFunCb1gN2CAw3DQBfPWghX"
     },
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 **Response:**
@@ -114,7 +114,7 @@ curl -X POST --data '{
     "method":"admin.getLogLevel",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 **Response:**
@@ -146,7 +146,7 @@ curl -X POST --data '{
         "logLevel":"debug"
     },
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -181,7 +181,7 @@ curl -X POST --data '{
     "method":"admin.loadVMs",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 **Response:**
@@ -214,7 +214,7 @@ curl -X POST --data '{
     "method":"admin.startCPUProfiler",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -232,7 +232,7 @@ curl -X POST --data '{
     "method":"admin.stopCPUProfiler",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -250,7 +250,7 @@ curl -X POST --data '{
     "method":"admin.memoryProfile",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -276,7 +276,7 @@ curl -X POST --data '{
     "method":"admin.getConfig",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 **Response:**
@@ -311,7 +311,7 @@ curl -X POST --data '{
     "method":"admin.shutdown",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ---
@@ -330,7 +330,7 @@ curl -X POST --data '{
     "method":"admin.db.commit",
     "params":{},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/admin
+}' -H 'content-type:application/json;' http://localhost:9630/v1/admin
 ```
 
 ## Profiling and Debugging
@@ -344,7 +344,7 @@ curl -X POST --data '{
     "method":"admin.startCPUProfiler",
     "params":{},
     "id":1
-}' http://localhost:9630/ext/admin
+}' http://localhost:9630/v1/admin
 
 # Let it run for 30 seconds
 sleep 30
@@ -355,7 +355,7 @@ curl -X POST --data '{
     "method":"admin.stopCPUProfiler",
     "params":{},
     "id":2
-}' http://localhost:9630/ext/admin
+}' http://localhost:9630/v1/admin
 
 # Analyze profile
 go tool pprof cpu.prof
@@ -370,7 +370,7 @@ curl -X POST --data '{
     "method":"admin.memoryProfile",
     "params":{},
     "id":1
-}' http://localhost:9630/ext/admin
+}' http://localhost:9630/v1/admin
 
 # Analyze
 go tool pprof mem.prof
@@ -401,7 +401,7 @@ set_log_level() {
         \"method\":\"admin.setLogLevel\",
         \"params\":{\"logLevel\":\"$LEVEL\"},
         \"id\":1
-    }" http://localhost:9630/ext/admin
+    }" http://localhost:9630/v1/admin
 }
 
 # Increase verbosity for debugging
@@ -476,7 +476,7 @@ Enable audit logging for admin operations:
 # auto_restart.sh
 
 check_health() {
-    curl -s http://localhost:9630/ext/health | jq -r '.healthy'
+    curl -s http://localhost:9630/v1/health | jq -r '.healthy'
 }
 
 restart_node() {
@@ -488,7 +488,7 @@ restart_node() {
         "method":"admin.shutdown",
         "params":{},
         "id":1
-    }' http://localhost:9630/ext/admin
+    }' http://localhost:9630/v1/admin
 
     sleep 10
 
@@ -514,7 +514,7 @@ CURRENT=$(curl -s -X POST --data '{
     "method":"admin.getConfig",
     "params":{},
     "id":1
-}' http://localhost:9630/ext/admin)
+}' http://localhost:9630/v1/admin)
 
 echo "Current configuration:"
 echo $CURRENT | jq .
@@ -525,7 +525,7 @@ curl -X POST --data '{
     "method":"admin.setLogLevel",
     "params":{"logLevel":"debug"},
     "id":2
-}' http://localhost:9630/ext/admin
+}' http://localhost:9630/v1/admin
 ```
 
 ## Troubleshooting

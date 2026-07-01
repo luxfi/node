@@ -104,14 +104,14 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "info.getNetworkInfo"
-}' -H 'content-type:application/json;' http://localhost:9650/ext/info
+}' -H 'content-type:application/json;' http://localhost:9650/v1/info
 
 # Get node ID
 curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "info.getNodeID"
-}' -H 'content-type:application/json;' http://localhost:9650/ext/info
+}' -H 'content-type:application/json;' http://localhost:9650/v1/info
 ```
 
 ## Chain Management
@@ -130,7 +130,7 @@ curl -X POST --data '{
         "genesisData": "...",
         "netID": "network-id"
     }
-}' -H 'content-type:application/json;' http://localhost:9650/ext/P
+}' -H 'content-type:application/json;' http://localhost:9650/v1/P
 ```
 
 ### Validator Management
@@ -147,7 +147,7 @@ curl -X POST --data '{
         "endTime": ...,
         "stakeAmount": ...
     }
-}' -H 'content-type:application/json;' http://localhost:9650/ext/P
+}' -H 'content-type:application/json;' http://localhost:9650/v1/P
 ```
 
 ## Configuration Reference
@@ -175,10 +175,10 @@ curl -X POST --data '{
 
 ```bash
 # Prometheus metrics endpoint
-curl http://localhost:9650/ext/metrics
+curl http://localhost:9650/v1/metrics
 
 # Health check
-curl http://localhost:9650/ext/health
+curl http://localhost:9650/v1/health
 ```
 
 ### Logs
@@ -193,7 +193,7 @@ curl -X POST --data '{
     "id": 1,
     "method": "admin.setLogLevel",
     "params": {"logLevel": "debug"}
-}' http://localhost:9650/ext/admin
+}' http://localhost:9650/v1/admin
 ```
 
 ## Testing

@@ -147,9 +147,9 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				P string `json:"p"`
 				X string `json:"x"`
 			}{
-				C: "/ext/bc/C/rpc",
-				P: "/ext/bc/P",
-				X: "/ext/bc/X",
+				C: baseURL + "/bc/C/rpc",
+				P: baseURL + "/bc/P",
+				X: baseURL + "/bc/X",
 			},
 			Endpoints: struct {
 				RPC       string `json:"rpc"`
@@ -157,10 +157,10 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				Info      string `json:"info"`
 				Health    string `json:"health"`
 			}{
-				RPC:       "/ext/bc/C/rpc",
-				Websocket: "/ext/bc/C/ws",
-				Info:      "/ext/info",
-				Health:    "/ext/health",
+				RPC:       baseURL + "/bc/C/rpc",
+				Websocket: baseURL + "/bc/C/ws",
+				Info:      baseURL + "/info",
+				Health:    baseURL + "/health",
 			},
 		}
 	}
@@ -173,10 +173,10 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 // handleRootPOST proxies JSON-RPC requests to the C-chain
 func (r *router) handleRootPOST(w http.ResponseWriter, req *http.Request) {
 	// Look up the C-chain RPC handler
-	handler, err := r.GetHandler("/ext/bc/C", "/rpc")
+	handler, err := r.GetHandler(baseURL+"/bc/C", "/rpc")
 	if err != nil {
 		// Try alternate path formats
-		handler, err = r.GetHandler("/ext/bc/C/rpc", "")
+		handler, err = r.GetHandler(baseURL+"/bc/C/rpc", "")
 		if err != nil {
 			// Return proper JSON-RPC error
 			w.Header().Set("Content-Type", "application/json")
@@ -198,10 +198,10 @@ func (r *router) SetRootInfoProvider(provider RootInfoProvider) {
 }
 
 // handleHealthz returns a minimal health response for K8s probes.
-// This delegates to the full /ext/health handler when available,
+// This delegates to the full /v1/health handler when available,
 // falling back to a static 200 response during early startup.
 func (r *router) handleHealthz(w http.ResponseWriter, req *http.Request) {
-	if handler, err := r.GetHandler("/ext/health", "/health"); err == nil {
+	if handler, err := r.GetHandler(baseURL+"/health", "/health"); err == nil {
 		handler.ServeHTTP(w, req)
 		return
 	}

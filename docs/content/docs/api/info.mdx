@@ -10,7 +10,7 @@ The Info API provides general information about the node and network status. Thi
 ## Endpoint
 
 ```
-http://localhost:9630/ext/info
+http://localhost:9630/v1/info
 ```
 
 ## Format
@@ -23,7 +23,7 @@ curl -X POST --data '{
     "method": "info.<method>",
     "params": {...},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 ## Methods
@@ -41,7 +41,7 @@ curl -X POST --data '{
     "method": "info.getNodeVersion",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -78,7 +78,7 @@ curl -X POST --data '{
     "method": "info.getNodeID",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -111,7 +111,7 @@ curl -X POST --data '{
     "method": "info.getNodeIP",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -140,7 +140,7 @@ curl -X POST --data '{
     "method": "info.getNetworkID",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -175,7 +175,7 @@ curl -X POST --data '{
     "method": "info.getNetworkName",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -207,7 +207,7 @@ curl -X POST --data '{
         "alias": "P"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -239,7 +239,7 @@ curl -X POST --data '{
         "chain": "P"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -269,7 +269,7 @@ curl -X POST --data '{
     "method": "info.peers",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -313,7 +313,7 @@ curl -X POST --data '{
     "method": "info.getTxFee",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -348,7 +348,7 @@ curl -X POST --data '{
     "method": "info.uptime",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response (Validator):**
@@ -390,7 +390,7 @@ curl -X POST --data '{
     "method": "info.getVMs",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -424,7 +424,7 @@ curl -X POST --data '{
     "method": "info.getUpgrades",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 **Example Response:**
@@ -468,7 +468,7 @@ VERSION=$(curl -s -X POST --data '{
     "method": "info.getNodeVersion",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.version')
+}' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.version')
 
 echo "Version: $VERSION"
 
@@ -478,7 +478,7 @@ NODE_ID=$(curl -s -X POST --data '{
     "method": "info.getNodeID",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.nodeID')
+}' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.nodeID')
 
 echo "Node ID: $NODE_ID"
 
@@ -488,7 +488,7 @@ PEERS=$(curl -s -X POST --data '{
     "method": "info.peers",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+}' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.numPeers')
 
 echo "Connected Peers: $PEERS"
 
@@ -499,7 +499,7 @@ for CHAIN in P X C Q; do
         \"method\": \"info.isBootstrapped\",
         \"params\": {\"chain\": \"$CHAIN\"},
         \"id\": 1
-    }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+    }" -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.isBootstrapped')
 
     echo "$CHAIN-Chain Bootstrapped: $STATUS"
 done
@@ -510,7 +510,7 @@ UPTIME=$(curl -s -X POST --data '{
     "method": "info.uptime",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info 2>/dev/null | jq -r '.result.rewardingStakePercentage' 2>/dev/null)
+}' -H 'content-type:application/json;' $NODE_URL/v1/info 2>/dev/null | jq -r '.result.rewardingStakePercentage' 2>/dev/null)
 
 if [ "$UPTIME" != "null" ] && [ -n "$UPTIME" ]; then
     echo "Validator Uptime: $UPTIME%"
@@ -531,7 +531,7 @@ PEERS=$(curl -s -X POST --data '{
     "method": "info.peers",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.peers[]')
+}' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.peers[]')
 
 echo "=== Peer Connection Quality ==="
 echo "Node ID | Latency (ms) | Uptime % | Version"
@@ -560,7 +560,7 @@ while true; do
             \"method\": \"info.isBootstrapped\",
             \"params\": {\"chain\": \"$CHAIN\"},
             \"id\": 1
-        }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+        }" -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.isBootstrapped')
 
         if [ "$STATUS" == "true" ]; then
             echo "✅ $CHAIN-Chain: Bootstrapped"
@@ -575,7 +575,7 @@ while true; do
         "method": "info.peers",
         "params": {},
         "id": 1
-    }' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+    }' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.numPeers')
 
     echo ""
     echo "Connected Peers: $PEERS"
@@ -588,7 +588,7 @@ while true; do
             \"method\": \"info.isBootstrapped\",
             \"params\": {\"chain\": \"$CHAIN\"},
             \"id\": 1
-        }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+        }" -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.isBootstrapped')
 
         if [ "$STATUS" != "true" ]; then
             ALL_BOOTSTRAPPED=false

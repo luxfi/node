@@ -203,7 +203,7 @@ func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 }
 
 // TestREST_securityProfile_GET proves the /profile sidecar (full path
-// /ext/security/profile when mounted on APIServer) returns the same
+// /v1/security/profile when mounted on APIServer) returns the same
 // JSON shape as the JSON-RPC handler. One shape, two transports — no
 // per-transport drift.
 func TestREST_securityProfile_GET(t *testing.T) {
@@ -262,7 +262,7 @@ func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
 }
 
 // TestREST_blockSecurity_GET proves the /block/{n} sidecar (full path
-// /ext/security/block/{n} when mounted on APIServer) returns the same
+// /v1/security/block/{n} when mounted on APIServer) returns the same
 // JSON shape as the JSON-RPC handler. One shape, two transports — no
 // per-transport drift.
 func TestREST_blockSecurity_GET(t *testing.T) {

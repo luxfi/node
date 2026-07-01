@@ -60,7 +60,7 @@ func TestStartZapRPCListener_RoundTrip(t *testing.T) {
 	const body = `{"jsonrpc":"2.0","result":"0x2a","id":1}`
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ext/bc/C/rpc", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/bc/C/rpc", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, body)
 	})
@@ -75,7 +75,7 @@ func TestStartZapRPCListener_RoundTrip(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	client := &http.Client{Transport: zaphttp.NewTransport(addr)}
-	resp, err := client.Post("http://"+addr+"/ext/bc/C/rpc", "application/json", nil)
+	resp, err := client.Post("http://"+addr+"/v1/bc/C/rpc", "application/json", nil)
 	if err != nil {
 		t.Fatalf("ZAP round-trip POST failed: %v", err)
 	}

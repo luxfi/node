@@ -27,7 +27,7 @@ var ErrNoProfile = errors.New(
 		"(genesis carries no SecurityProfile{} block); RPC unavailable")
 
 // Service is the JSON-RPC handler set registered under the security
-// namespace at /ext/security. Methods are read-only; the underlying
+// namespace at /v1/security. Methods are read-only; the underlying
 // profile pointer is set once at construction and never mutated.
 //
 // Exposed methods:
@@ -37,7 +37,7 @@ var ErrNoProfile = errors.New(
 //
 // On the wire, gorilla/rpc dispatches these as security_securityProfile
 // and security_blockSecurity (namespace_method). Callers using the REST
-// sidecars hit /ext/security/profile and /ext/security/block/{n}
+// sidecars hit /v1/security/profile and /v1/security/block/{n}
 // directly. One namespace, two transports, one shape.
 //
 // The "block" method returns the chain-wide envelope; per-block
@@ -53,13 +53,13 @@ type Service struct {
 // namespace. Profile may be nil — see ErrNoProfile.
 //
 // The returned handler is suitable for APIServer.AddRoute(handler,
-// "security", "") so it lands at /ext/security on the node's HTTP
+// "security", "") so it lands at /v1/security on the node's HTTP
 // listener. REST sidecars are mounted at /profile and /block/{n} on
 // the same handler so the full external surface is:
 //
-//	POST /ext/security                  (JSON-RPC, methods above)
-//	GET  /ext/security/profile          (REST sidecar)
-//	GET  /ext/security/block/{n}        (REST sidecar)
+//	POST /v1/security                  (JSON-RPC, methods above)
+//	GET  /v1/security/profile          (REST sidecar)
+//	GET  /v1/security/block/{n}        (REST sidecar)
 func NewHandler(logger log.Logger, profile *consensusconfig.ChainSecurityProfile) (http.Handler, error) {
 	server := rpc.NewServer()
 	codec := avajson.NewCodec()
@@ -71,7 +71,7 @@ func NewHandler(logger log.Logger, profile *consensusconfig.ChainSecurityProfile
 	}
 	// REST sidecars share the Service receiver so the two transports
 	// stay byte-identical in semantics (one and only one way to
-	// compute the shape). Paths relative to /ext/security:
+	// compute the shape). Paths relative to /v1/security:
 	//   /profile        → restProfile
 	//   /block/{n}      → restBlockSecurity
 	mux := http.NewServeMux()
@@ -133,7 +133,7 @@ func (s *Service) BlockSecurity(_ *http.Request, _ *BlockSecurityArgs, reply *Bl
 	return nil
 }
 
-// restProfile is the GET /profile sidecar (full path /ext/security/profile).
+// restProfile is the GET /profile sidecar (full path /v1/security/profile).
 // Same body as the securityProfile JSON-RPC method; useful for
 // explorers that don't speak JSON-RPC. Refuses every non-GET method so
 // callers can't smuggle state through the read-only endpoint.
@@ -151,7 +151,7 @@ func (s *Service) restProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // restBlockSecurity is the GET /block/{n} sidecar (full path
-// /ext/security/block/{n}). The path suffix is taken as the block
+// /v1/security/block/{n}). The path suffix is taken as the block
 // number; chain alias defaults to the platform chain (callers can
 // re-route per-chain at the chain-manager layer if needed).
 func (s *Service) restBlockSecurity(w http.ResponseWriter, r *http.Request) {

@@ -70,7 +70,7 @@ type XClient struct {
 func NewXClient(uri, chainAlias string) *XClient {
 	return &XClient{
 		requester: rpc.NewEndpointRequester(
-			fmt.Sprintf("%s/ext/bc/%s", uri, chainAlias),
+			fmt.Sprintf("%s/v1/bc/%s", uri, chainAlias),
 		),
 	}
 }
