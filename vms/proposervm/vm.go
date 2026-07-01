@@ -81,6 +81,14 @@ type VM struct {
 	validatorState validators.State
 	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetworkID lookups
 
+	// verifiedBlocksLock guards [verifiedBlocks]. The consensus engine drives
+	// the proposervm from multiple goroutines concurrently (e.g. a
+	// PullQuery/Put handler verifying a block — which writes the map — while a
+	// Qbit handler reads the same map via GetBlock), so every access to the map
+	// below must hold this lock. It is a leaf lock: it is never held across a
+	// callout, so it can never participate in a deadlock with [lock], the
+	// [Tree], or the inner VM.
+	verifiedBlocksLock sync.RWMutex
 	// Block ID --> Block
 	// Each element is a block that passed verification but
 	// hasn't yet been accepted/rejected
@@ -610,6 +618,46 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	return handlers, nil
 }
 
+// repairAction is the reconciliation the proposervm applies at init when its
+// finality index and the inner VM's accepted tip disagree in height.
+type repairAction int
+
+const (
+	// repairNone: the proposervm and inner heights match; nothing to do.
+	repairNone repairAction = iota
+	// repairRollBackToInner: the proposervm is AHEAD of the inner (and the
+	// rollback target is at/above the fork); roll the proposervm index back to
+	// the inner's height.
+	repairRollBackToInner
+	// repairForgetPastFork: the proposervm is ahead but the rollback target is
+	// BELOW the fork; drop all proposervm indices (pre-fork territory).
+	repairForgetPastFork
+	// repairResetBehindIndex: the proposervm index is BEHIND the inner tip — a
+	// truncated/inconsistent on-disk state (e.g. a partially-restored snapshot).
+	// The proposervm cannot fabricate the missing wrapper blocks, so drop the
+	// stale finality pointer and re-bootstrap rather than fatally bricking init.
+	repairResetBehindIndex
+)
+
+// planHeightRepair is the PURE reconciliation decision for
+// repairAcceptedChainByHeight: given the proposervm's last-accepted height, the
+// inner VM's last-accepted height, and the proposervm fork height, it returns
+// the action to apply. Separating this decision from the DB effects keeps it
+// deterministically testable and makes the behind-index policy (which replaced a
+// node-bricking fatal) explicit and regression-locked.
+func planHeightRepair(proHeight, innerHeight, forkHeight uint64) repairAction {
+	switch {
+	case proHeight == innerHeight:
+		return repairNone
+	case proHeight < innerHeight:
+		return repairResetBehindIndex
+	case forkHeight > innerHeight:
+		return repairForgetPastFork
+	default: // proHeight > innerHeight and forkHeight <= innerHeight
+		return repairRollBackToInner
+	}
+}
+
 func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	innerLastAcceptedID, err := vm.ChainVM.LastAccepted(ctx)
 	if err != nil {
@@ -657,34 +705,71 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 
 	proLastAcceptedHeight := proLastAccepted.Height()
 	innerLastAcceptedHeight := innerLastAccepted.Height()
-	if proLastAcceptedHeight < innerLastAcceptedHeight {
-		return fmt.Errorf("proposervm height index (%d) should never be lower than the inner height index (%d)", proLastAcceptedHeight, innerLastAcceptedHeight)
-	}
-	if proLastAcceptedHeight == innerLastAcceptedHeight {
-		// There is nothing to repair - as the heights match
-		return nil
-	}
 
-	vm.logger.Info("repairing accepted chain by height",
-		log.Uint64("outerHeight", proLastAcceptedHeight),
-		log.Uint64("innerHeight", innerLastAcceptedHeight),
-	)
-
-	// The inner vm must be behind the proposer vm, so we must roll the
-	// proposervm back.
+	// The fork height only matters when the proposervm is AHEAD (rolling back),
+	// but the state is already initialized here (we read a last-accepted above),
+	// so reading it up front is safe and keeps the reconciliation decision pure.
 	forkHeight, err := vm.State.GetForkHeight()
 	if err != nil {
 		return fmt.Errorf("failed to get fork height: %w", err)
 	}
 
-	if forkHeight > innerLastAcceptedHeight {
+	switch planHeightRepair(proLastAcceptedHeight, innerLastAcceptedHeight, forkHeight) {
+	case repairNone:
+		// Heights match — nothing to repair.
+		return nil
+
+	case repairResetBehindIndex:
+		// INVARIANT VIOLATION, but a RECOVERABLE one: the proposervm's finality
+		// index sits BELOW the inner VM's accepted tip. In a correct system this
+		// never happens (the proposervm's last-accepted and height index commit in
+		// the SAME versiondb batch as every inner accept, so they cannot lag), so
+		// reaching here means the on-disk proposervm state was truncated relative
+		// to the inner — e.g. a crash-inconsistent or partially-restored snapshot
+		// (the devnet-C "index 7 < inner 8" brick). The proposervm cannot fabricate
+		// the missing outer wrapper blocks for heights (pro, inner], so it CANNOT
+		// heal forward locally.
+		//
+		// Previously this was a FATAL init error that bricked the WHOLE chain
+		// ("error creating required chain" -> exit 1), turning a recoverable
+		// index/snapshot inconsistency on ONE node into a hard outage that needed
+		// manual surgery. Instead, drop the stale proposervm finality pointer and
+		// let the node re-bootstrap: consensus re-fetches the canonical blocks (with
+		// their finality certs) from healthy peers through the catch-up transport
+		// and re-accepts them, rebuilding the proposervm index consistently on top
+		// of the inner tip. This is the SAME recovery repairForgetPastFork performs;
+		// here we reach it because the index is behind, not ahead. Loud + actionable
+		// so operators see exactly what healed and why.
+		vm.logger.Warn("proposervm finality index is behind the inner VM tip; resetting the proposervm index to re-bootstrap from peers (recoverable snapshot/index inconsistency, NOT a crash)",
+			log.Uint64("proposervmHeight", proLastAcceptedHeight),
+			log.Uint64("innerHeight", innerLastAcceptedHeight),
+			log.Stringer("innerLastAcceptedID", innerLastAcceptedID),
+		)
+		if err := vm.State.DeleteLastAccepted(); err != nil {
+			return fmt.Errorf("failed to reset proposervm last accepted while healing behind-index: %w", err)
+		}
+		return vm.db.Commit()
+
+	case repairForgetPastFork:
 		// We are rolling back past the fork, so we should just forget about all
 		// of our proposervm indices.
+		vm.logger.Info("repairing accepted chain by height: rolling back past the proposervm fork",
+			log.Uint64("outerHeight", proLastAcceptedHeight),
+			log.Uint64("innerHeight", innerLastAcceptedHeight),
+			log.Uint64("forkHeight", forkHeight),
+		)
 		if err := vm.State.DeleteLastAccepted(); err != nil {
 			return fmt.Errorf("failed to delete last accepted: %w", err)
 		}
 		return vm.db.Commit()
 	}
+
+	// repairRollBackToInner: the inner vm is behind the proposer vm, so roll the
+	// proposervm back to the inner's height.
+	vm.logger.Info("repairing accepted chain by height",
+		log.Uint64("outerHeight", proLastAcceptedHeight),
+		log.Uint64("innerHeight", innerLastAcceptedHeight),
+	)
 
 	newProLastAcceptedID, err := vm.State.GetBlockIDAtHeight(innerLastAcceptedHeight)
 	if err != nil {
@@ -807,9 +892,33 @@ func (vm *VM) getBlock(ctx context.Context, id ids.ID) (Block, error) {
 	return vm.getPreForkBlock(ctx, id)
 }
 
+// cachedVerifiedBlock returns the verified-but-not-yet-decided block for
+// [blkID] if it is currently held in the verified set. Concurrency-safe.
+func (vm *VM) cachedVerifiedBlock(blkID ids.ID) (PostForkBlock, bool) {
+	vm.verifiedBlocksLock.RLock()
+	defer vm.verifiedBlocksLock.RUnlock()
+	blk, exists := vm.verifiedBlocks[blkID]
+	return blk, exists
+}
+
+// recordVerifiedBlock adds [blk] to the verified set after it passes
+// verification. Concurrency-safe.
+func (vm *VM) recordVerifiedBlock(blk PostForkBlock) {
+	vm.verifiedBlocksLock.Lock()
+	defer vm.verifiedBlocksLock.Unlock()
+	vm.verifiedBlocks[blk.ID()] = blk
+}
+
+// forgetVerifiedBlock drops [blkID] from the verified set once it has been
+// accepted or rejected. Concurrency-safe and idempotent.
+func (vm *VM) forgetVerifiedBlock(blkID ids.ID) {
+	vm.verifiedBlocksLock.Lock()
+	defer vm.verifiedBlocksLock.Unlock()
+	delete(vm.verifiedBlocks, blkID)
+}
+
 func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock, error) {
-	block, exists := vm.verifiedBlocks[blkID]
-	if exists {
+	if block, exists := vm.cachedVerifiedBlock(blkID); exists {
 		return block, nil
 	}
 
@@ -858,7 +967,7 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	blkID := blk.ID()
 
 	vm.lastAcceptedHeight = height
-	delete(vm.verifiedBlocks, blkID)
+	vm.forgetVerifiedBlock(blkID)
 
 	// Persist this block, its height index, and its status
 	if err := vm.State.SetLastAccepted(blkID); err != nil {
@@ -922,7 +1031,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockRuntime *runtime
 	if !previouslyVerified {
 		vm.Tree.Add(innerBlk)
 	}
-	vm.verifiedBlocks[postForkID] = postFork
+	vm.recordVerifiedBlock(postFork)
 	return nil
 }
 

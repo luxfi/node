@@ -7,6 +7,7 @@ import (
 	"context"
 	"maps"
 	"slices"
+	"sync"
 
 	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
@@ -43,6 +44,12 @@ type Tree interface {
 }
 
 type tree struct {
+	// lock guards [nodes]. The proposervm calls Add/Get (during Verify) and
+	// Accept concurrently from the consensus engine's handler goroutines, so
+	// every access to [nodes] must hold this lock. Accept makes block callouts
+	// (Accept/Reject on the inner VM) only AFTER releasing the lock, so this
+	// lock is a leaf lock and cannot deadlock against the inner VM.
+	lock sync.RWMutex
 	// parentID -> childID -> childBlock
 	nodes map[ids.ID]map[ids.ID]chain.Block
 }
@@ -54,6 +61,9 @@ func New() Tree {
 }
 
 func (t *tree) Add(blk chain.Block) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
@@ -64,6 +74,9 @@ func (t *tree) Add(blk chain.Block) {
 }
 
 func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	originalBlk, exists := children[blk.ID()]
@@ -71,36 +84,45 @@ func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 }
 
 func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
-	// accept the provided block
+	// accept the provided block. This callout is made before any map mutation,
+	// preserving the original semantics: if Accept fails the tree is unchanged.
 	if err := blk.Accept(ctx); err != nil {
 		return err
 	}
 
-	// get the siblings of the block
+	// Phase 1 (locked, no callouts): detach the accepted block's subtree from
+	// the node map and collect every conflicting block that must be rejected.
+	// Collecting the full reject set under the lock — rather than interleaving
+	// map reads with Reject callouts — is what keeps this lock a leaf lock.
+	t.lock.Lock()
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	delete(children, blk.ID())
 	delete(t.nodes, parentID)
 
-	// mark the siblings of the accepted block as rejectable
-	childrenToReject := slices.Collect(maps.Values(children))
+	// frontier holds blocks still to be expanded; rejected accumulates the full
+	// set of blocks to reject (each exactly once).
+	frontier := slices.Collect(maps.Values(children))
+	rejected := make([]chain.Block, 0, len(frontier))
+	for len(frontier) > 0 {
+		i := len(frontier) - 1
+		child := frontier[i]
+		frontier = frontier[:i]
 
-	// reject all the rejectable blocks
-	for len(childrenToReject) > 0 {
-		i := len(childrenToReject) - 1
-		child := childrenToReject[i]
-		childrenToReject = childrenToReject[:i]
-
-		// reject the block
-		if err := child.Reject(ctx); err != nil {
-			return err
-		}
+		rejected = append(rejected, child)
 
 		// mark the progeny of this block as being rejectable
 		childID := child.ID()
-		children := t.nodes[childID]
-		childrenToReject = append(childrenToReject, slices.Collect(maps.Values(children))...)
+		frontier = append(frontier, slices.Collect(maps.Values(t.nodes[childID]))...)
 		delete(t.nodes, childID)
+	}
+	t.lock.Unlock()
+
+	// Phase 2 (unlocked): reject all conflicting blocks via inner-VM callouts.
+	for _, child := range rejected {
+		if err := child.Reject(ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }

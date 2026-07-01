@@ -85,7 +85,7 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 
 func (b *postForkBlock) Reject(ctx context.Context) error {
 	// We do not reject the inner block here because it may be accepted later
-	delete(b.vm.verifiedBlocks, b.ID())
+	b.vm.forgetVerifiedBlock(b.ID())
 	return nil
 }
 
