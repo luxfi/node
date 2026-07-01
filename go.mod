@@ -26,10 +26,10 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.32.1
+	github.com/luxfi/consensus v1.33.1
 	github.com/luxfi/crypto v1.19.26
 	github.com/luxfi/database v1.20.4
-	github.com/luxfi/ids v1.2.15
+	github.com/luxfi/ids v1.3.0
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.4.1
@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
-	github.com/luxfi/warp v1.23.0
+	github.com/luxfi/warp v1.24.0
 	github.com/luxfi/zap v0.8.11
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
@@ -202,9 +202,9 @@ require (
 	github.com/luxfi/mlwe v0.2.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/precompile v0.16.0 // indirect
-	github.com/luxfi/pulsar v1.8.0 // indirect
+	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
-	github.com/luxfi/threshold v1.10.2 // indirect
+	github.com/luxfi/threshold v1.12.0 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
 	github.com/luxfi/zapcodec v1.0.1 // indirect
 	github.com/luxfi/zapdb v1.10.1 // indirect
