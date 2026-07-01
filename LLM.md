@@ -65,10 +65,10 @@ selection, and EVM contract auth.
 ### Where to look for X
 - Profile resolve at boot: `node/node.go:initSecurityProfile`
 - Profile RPC + REST + metrics: `service/security/`
-  - JSON-RPC namespace: `security` at `POST /ext/security`
+  - JSON-RPC namespace: `security` at `POST /v1/security`
     (methods `securityProfile`, `blockSecurity`)
-  - REST sidecars: `GET /ext/security/profile`, `GET /ext/security/block/{n}`
-  - Prometheus gauges: `/ext/metrics` under the `security_*` family
+  - REST sidecars: `GET /v1/security/profile`, `GET /v1/security/block/{n}`
+  - Prometheus gauges: `/v1/metrics` under the `security_*` family
 - Peer scheme gate: `network/peer/scheme_gate.go`
 - Classical-compat registry: `vms/txs/auth/policy.go`
 - Mempool gate (P-Chain): `vms/platformvm/mempool/*.go`
@@ -659,7 +659,7 @@ When CGO disabled, these use CPU fallbacks:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
-  http://localhost:9640/ext/bc/C/rpc
+  http://localhost:9640/v1/bc/C/rpc
 # Returns: {"jsonrpc":"2.0","id":1,"result":"0x17870"}
 ```
 
@@ -668,7 +668,7 @@ curl -s -X POST -H "Content-Type: application/json" \
 
 **Behavior**:
 - **GET /**: Returns JSON node information (nodeId, networkId, version, chains, endpoints)
-- **POST /**: Proxies JSON-RPC requests directly to C-chain `/ext/bc/C/rpc`
+- **POST /**: Proxies JSON-RPC requests directly to C-chain `/v1/bc/C/rpc`
 - **OPTIONS /**: Returns CORS preflight headers
 
 **Files Modified**: `server/http/router.go`, `server/http/server.go`
@@ -735,7 +735,7 @@ if s.validators.NumNets() != 0 {
 
 **Verification**:
 ```bash
-curl -s http://localhost:9650/ext/health | jq '.checks.bls'
+curl -s http://localhost:9650/v1/health | jq '.checks.bls'
 # Should show: "message": "node has the correct BLS key"
 ```
 
@@ -769,7 +769,7 @@ Testing conducted on a single Lux validator node (testnet mode, macOS):
 **Benchmark Command:**
 ```bash
 cd ~/work/lux/benchmarks
-NODE_ENDPOINT="http://localhost:9640/ext/bc/C/rpc" \
+NODE_ENDPOINT="http://localhost:9640/v1/bc/C/rpc" \
 PRIVATE_KEY="<funded_key>" \
 ./bin/bench tps --chains=lux --duration=60s --concurrency=5
 ```

@@ -1825,18 +1825,18 @@ func (n *Node) initInfoAPI() error {
 // initSecurityAPI exposes the chain-wide ChainSecurityProfile as a
 // read-only API surface. Three endpoints share one handler:
 //
-//   - JSON-RPC: POST /ext/security with methods securityProfile and
+//   - JSON-RPC: POST /v1/security with methods securityProfile and
 //     blockSecurity (dispatched on the wire as security_securityProfile
 //     / security_blockSecurity per gorilla/rpc namespace convention)
-//   - REST:     GET  /ext/security/profile
-//   - REST:     GET  /ext/security/block/{n}
+//   - REST:     GET  /v1/security/profile
+//   - REST:     GET  /v1/security/block/{n}
 //
 // All three share the same Service receiver; the shape returned is
 // the SCREAMING_SNAKE canonical profile JSON consumed by audit tooling,
 // wallet posture banners, and block explorers.
 //
 // Prometheus gauges for the active profile are stamped onto the
-// node-wide metrics gatherer here so /ext/metrics carries the profile
+// node-wide metrics gatherer here so /v1/metrics carries the profile
 // posture immediately after boot.
 //
 // Closes F102 follow-ups (securityProfile RPC + profile metrics).
@@ -1844,7 +1844,7 @@ func (n *Node) initSecurityAPI() error {
 	n.Log.Info("initializing security API")
 
 	// Register profile metrics under the "security" namespace on the
-	// node-wide gatherer so /ext/metrics carries them alongside the
+	// node-wide gatherer so /v1/metrics carries them alongside the
 	// existing process / api / chain metric families.
 	securityMetricsReg, err := metric.MakeAndRegister(
 		n.MetricsGatherer,

@@ -25,7 +25,12 @@ import (
 )
 
 const (
-	baseURL              = "/ext"
+	// baseURL is the canonical — and only — prefix for every luxd HTTP route
+	// (/v1/bc/C/rpc, /v1/info, /v1/health, ...). Single source of truth:
+	// AddRoute/AddAliases and the root/health helpers in router.go all derive
+	// their paths from it. The legacy Avalanche-heritage /ext prefix is gone;
+	// one way, no backward compatibility (activation Dec 25 2025).
+	baseURL              = "/v1"
 	maxConcurrentStreams = 64
 )
 
@@ -95,7 +100,7 @@ type server struct {
 	listener net.Listener
 
 	// handler is the fully-wrapped API handler chain (CORS + host-filter +
-	// /ext/* router). Held here so the optional ZAP-RPC listener serves the
+	// /v1/* router). Held here so the optional ZAP-RPC listener serves the
 	// exact same handler as the HTTP listener.
 	handler http.Handler
 

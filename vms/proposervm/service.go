@@ -36,7 +36,7 @@ type GetProposedHeightReply struct {
 //	    "id"     :1,
 //	    "method" :"proposervm.getProposedHeight",
 //	    "params" :{}
-//	}' -H 'content-type:application/json;' http://127.0.0.1:9650/ext/bc/C/rpc
+//	}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/bc/C/rpc
 func (s *Service) GetProposedHeight(r *http.Request, _ *GetProposedHeightArgs, reply *GetProposedHeightReply) error {
 	ctx := r.Context()
 

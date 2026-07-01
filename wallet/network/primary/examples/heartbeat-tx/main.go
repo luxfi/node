@@ -126,7 +126,7 @@ func sendSignedTx(ctx context.Context, client *ethclient.Client, chainID *big.In
 // it first sends `seedAmount` from seedKey to the heartbeat key and waits
 // for that to confirm before issuing the heartbeat tx.
 func heartbeatChain(ctx context.Context, chain, rpcBase string, key, seedKey *ecdsa.PrivateKey, seedAmount, seedFloor *big.Int, waitFor time.Duration) (prev, next uint64, txHash common.Hash, gasUsed uint64, err error) {
-	url := fmt.Sprintf("%s/ext/bc/%s/rpc", strings.TrimRight(rpcBase, "/"), chain)
+	url := fmt.Sprintf("%s/v1/bc/%s/rpc", strings.TrimRight(rpcBase, "/"), chain)
 	client, err := ethclient.DialContext(ctx, url)
 	if err != nil {
 		return 0, 0, common.Hash{}, 0, fmt.Errorf("dial %s: %w", url, err)
@@ -190,7 +190,7 @@ func main() {
 		seedAmountWei  string
 		seedFloorWei   string
 	)
-	flag.StringVar(&chains, "chains", "C,hanzo,zoo,pars,spc", "comma-separated chain aliases under /ext/bc/<chain>/rpc")
+	flag.StringVar(&chains, "chains", "C,hanzo,zoo,pars,spc", "comma-separated chain aliases under /v1/bc/<chain>/rpc")
 	flag.StringVar(&rpcBase, "rpc-base", "", "RPC base URL, e.g. https://api.lux-test.network")
 	flag.StringVar(&mnemonicEnv, "mnemonic-env", "LUX_MNEMONIC", "env var holding the BIP39 mnemonic")
 	flag.UintVar(&bipIdx, "bip44-idx", 10, "BIP44 child index at m/44'/60'/0'/0/<idx>")

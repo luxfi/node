@@ -26,7 +26,7 @@ else
 fi
 
 # Check API responsiveness
-if curl -s http://localhost:9630/ext/health > /dev/null 2>&1; then
+if curl -s http://localhost:9630/v1/health > /dev/null 2>&1; then
     echo "✅ API is responsive"
 else
     echo "❌ API is NOT responsive"
@@ -53,7 +53,7 @@ PEERS=$(curl -s -X POST --data '{
     "jsonrpc":"2.0",
     "method":"info.peers",
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info 2>/dev/null | jq -r '.result.numPeers')
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info 2>/dev/null | jq -r '.result.numPeers')
 
 if [ -n "$PEERS" ] && [ "$PEERS" -gt 0 ]; then
     echo "✅ Connected peers: $PEERS"
@@ -225,7 +225,7 @@ curl -X POST --data '{
     "method":"platform.getCurrentValidators",
     "params":{"nodeIDs":["<your-node-id>"]},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 
 # Verify staking transaction
 curl -X POST --data '{
@@ -233,7 +233,7 @@ curl -X POST --data '{
     "method":"platform.getTx",
     "params":{"txID":"<staking-tx-id>"},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 #### Issue: Low uptime percentage
@@ -275,7 +275,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "method":"platform.getHeight",
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 
 # Reduce consensus participation
 ./build/node --consensus-gossip-concurrent=2
@@ -334,7 +334,7 @@ grep "api" ~/.luxd/configs/node-config.json
 ./build/node --http-host=0.0.0.0
 
 # Check for rate limiting
-curl -I http://localhost:9630/ext/info
+curl -I http://localhost:9630/v1/info
 ```
 
 ### Staking Issues
@@ -369,7 +369,7 @@ curl -X POST --data '{
     "method":"platform.getBalance",
     "params":{"addresses":["P-lux1..."]},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 
 # Import funds from X-Chain
 curl -X POST --data '{
@@ -381,7 +381,7 @@ curl -X POST --data '{
         "sourceChain":"X"
     },
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ## Log Analysis
@@ -518,7 +518,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "method":"info.getNodeID",
     "id":1
-}' http://localhost:9630/ext/info
+}' http://localhost:9630/v1/info
 ```
 
 ### Support Channels

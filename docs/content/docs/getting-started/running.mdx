@@ -308,7 +308,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "health.health"
-}' -H 'content-type:application/json;' http://localhost:9630/ext/health
+}' -H 'content-type:application/json;' http://localhost:9630/v1/health
 ```
 
 ### Bootstrap Status
@@ -320,7 +320,7 @@ curl -X POST --data '{
     "id": 1,
     "method": "info.isBootstrapped",
     "params": {"chain": "P"}
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 ### Metrics
@@ -328,7 +328,7 @@ curl -X POST --data '{
 Access Prometheus metrics:
 
 ```bash
-curl http://localhost:9630/ext/metrics
+curl http://localhost:9630/v1/metrics
 ```
 
 Key metrics to monitor:

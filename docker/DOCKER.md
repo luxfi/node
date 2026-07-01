@@ -133,12 +133,12 @@ deploy:
 
 ### Prometheus Metrics
 
-The node exposes metrics at `http://localhost:9630/ext/metrics`
+The node exposes metrics at `http://localhost:9630/v1/metrics`
 
 ### Health Checks
 
-- Liveness: `http://localhost:9630/ext/health`
-- Readiness: `http://localhost:9630/ext/info`
+- Liveness: `http://localhost:9630/v1/health`
+- Readiness: `http://localhost:9630/v1/info`
 
 ### Grafana Dashboard
 
@@ -178,12 +178,12 @@ docker exec -it luxd /bin/bash
 # Check if bootstrapped
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"info.isBootstrapped","params":{"chain":"C"}}' \
-  http://localhost:9630/ext/info
+  http://localhost:9630/v1/info
 
 # Get block number
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
-  http://localhost:9630/ext/bc/C/rpc
+  http://localhost:9630/v1/bc/C/rpc
 ```
 
 ## CI/CD

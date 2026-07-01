@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // ZAP-RPC listener — serves the EXACT same fully-wrapped API handler chain
-// (CORS + host-filter + /ext/* router) as the HTTP listener, but over the
+// (CORS + host-filter + /v1/* router) as the HTTP listener, but over the
 // github.com/zap-proto/http binary protocol. This is what makes luxd a
 // first-class citizen of the ZAP service mesh: the api.<brand> gateway can
 // proxy to luxd over native ZAP instead of HTTP/1.1.

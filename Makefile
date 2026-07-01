@@ -212,7 +212,7 @@ run-testnet: build-fips init-chains
 node-status:
 	@echo "$(GREEN)Checking node status...$(NC)"
 	@curl -s -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.isBootstrapped","params":{}}' \
-		-H 'content-type:application/json;' http://localhost:9630/ext/info | jq
+		-H 'content-type:application/json;' http://localhost:9630/v1/info | jq
 
 stop-node:
 	@echo "$(YELLOW)Stopping Lux node...$(NC)"

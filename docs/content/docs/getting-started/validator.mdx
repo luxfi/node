@@ -58,7 +58,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "platform.getHeight"
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 
 # Check bootstrap status for all chains
 curl -X POST --data '{
@@ -66,7 +66,7 @@ curl -X POST --data '{
     "id": 1,
     "method": "info.isBootstrapped",
     "params": {"chain": "P"}
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 ### Configure Public IP
@@ -90,7 +90,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "info.getNodeID"
-}' -H 'content-type:application/json;' http://localhost:9630/ext/info
+}' -H 'content-type:application/json;' http://localhost:9630/v1/info
 ```
 
 Response:
@@ -155,7 +155,7 @@ curl -X POST --data '{
         "password": "mypassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/keystore
+}' -H 'content-type:application/json;' http://localhost:9630/v1/keystore
 
 # Create P-Chain address
 curl -X POST --data '{
@@ -166,7 +166,7 @@ curl -X POST --data '{
         "password": "mypassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ### Transfer LUX to P-Chain
@@ -185,7 +185,7 @@ curl -X POST --data '{
         "amount": 2000000000000
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/X
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/X
 
 # Import to P-Chain
 curl -X POST --data '{
@@ -197,7 +197,7 @@ curl -X POST --data '{
         "sourceChain": "X"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ## Step 4: Add as Validator
@@ -221,7 +221,7 @@ curl -X POST --data '{
         "delegationFeeRate": 10
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 Parameters:
@@ -243,7 +243,7 @@ curl -X POST --data '{
     "method": "platform.getPendingValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 
 # Get current validators
 curl -X POST --data '{
@@ -251,7 +251,7 @@ curl -X POST --data '{
     "method": "platform.getCurrentValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ## Step 5: Monitor Your Validator
@@ -268,7 +268,7 @@ curl -X POST --data '{
         "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ### Monitor Performance Metrics
@@ -277,10 +277,10 @@ Key metrics to track:
 
 ```bash
 # Node health
-curl http://localhost:9630/ext/health
+curl http://localhost:9630/v1/health
 
 # Prometheus metrics
-curl http://localhost:9630/ext/metrics | grep -E "uptime|stake|validator"
+curl http://localhost:9630/v1/metrics | grep -E "uptime|stake|validator"
 ```
 
 Important metrics:
@@ -308,7 +308,7 @@ NODE_URL="http://localhost:9630"
 WEBHOOK_URL="your-webhook-url"
 
 # Check if node is responsive
-if ! curl -s "$NODE_URL/ext/health" > /dev/null; then
+if ! curl -s "$NODE_URL/v1/health" > /dev/null; then
   curl -X POST "$WEBHOOK_URL" -d '{"text":"ALERT: Node is not responding!"}'
 fi
 
@@ -318,7 +318,7 @@ UPTIME=$(curl -s -X POST --data '{
     "method":"platform.getValidator",
     "params":{"nodeID":"NodeID-xxx"},
     "id":1
-}' "$NODE_URL/ext/bc/P" | jq -r '.result.uptime')
+}' "$NODE_URL/v1/bc/P" | jq -r '.result.uptime')
 
 if [ "$UPTIME" -lt "80" ]; then
   curl -X POST "$WEBHOOK_URL" -d "{\"text\":\"WARNING: Uptime is $UPTIME%\"}"
@@ -349,7 +349,7 @@ curl -X POST --data '{
         "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ## Chain Validation
@@ -373,7 +373,7 @@ curl -X POST --data '{
         "weight": 1000
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/ext/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
 ```
 
 ### Chain Requirements

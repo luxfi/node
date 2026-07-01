@@ -367,7 +367,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
 # is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
 # (drops the phantom dchain+cgo gate); v1.5.11 wires CLOB order ingestion over the
-# node HTTP router (VM.CreateHandlers -> /ext/bc/D/dex/<method>, pkg/dchain/ingest.go)
+# node HTTP router (VM.CreateHandlers -> /v1/bc/D/dex/<method>, pkg/dchain/ingest.go)
 # so an order POSTed to the node flows submitTx -> mempool -> consensus -> Verify
 # (match) -> Accept; v1.5.12 persists the head block so the VM survives a restart
 # once advanced past genesis (GetBlock(lastAccepted) no longer ErrNotFound);
@@ -379,7 +379,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # DB (every plugin VM via vm/rpc) — that stranded the native D-Chain order book
 # (rebuildBookFromDB folded empty -> 0 fills despite committed asks). v1.5.15 adds
 # the committed-state READ surface (clob_get_trades/orders/markets/book over
-# /ext/bc/D/dex/<method>, pkg/dchain/read.go): read-only JSON of the durable trade
+# /v1/bc/D/dex/<method>, pkg/dchain/read.go): read-only JSON of the durable trade
 # log / resting book / markets, served beside the writes with ZERO consensus
 # impact. Needed to VERIFY a fill replicated identically across validators (query
 # every node, diff the trade rows + head root) and to feed markets-display (native

@@ -3066,7 +3066,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed `x/merkledb.ChangeProof#getLargestKey` to correctly handle no changes
 - Added test for `xvm/txs/executor.SemanticVerifier#verifyFxUsage` with multiple valid fxs
 - Fixed CPU + bandwidth performance regression during vertex processing
-- Added example usage of the `/ext/index/X/block` API
+- Added example usage of the `/v1/index/X/block` API
 - Reduced the default value of `--consensus-optimal-processing` from `50` to `10`
 - Updated the year in the license header
 

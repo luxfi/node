@@ -20,7 +20,7 @@ import (
 // and prints the ID of the block and its transactions.
 func main() {
 	var (
-		uri       = primary.LocalAPIURI + "/ext/index/P/block"
+		uri       = primary.LocalAPIURI + "/v1/index/P/block"
 		client    = indexer.NewClient(uri)
 		ctx       = context.Background()
 		nextIndex uint64

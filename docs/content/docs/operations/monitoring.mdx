@@ -39,7 +39,7 @@ scrape_configs:
   - job_name: 'lux-node'
     static_configs:
       - targets: ['localhost:9630']
-    metrics_path: '/ext/metrics'
+    metrics_path: '/v1/metrics'
 
   - job_name: 'node-exporter'
     static_configs:
@@ -56,7 +56,7 @@ alerting:
 
 ### Available Metrics
 
-The Lux node exposes 400+ Prometheus metrics at `http://localhost:9630/ext/metrics`.
+The Lux node exposes 400+ Prometheus metrics at `http://localhost:9630/v1/metrics`.
 
 #### Key Metric Categories
 
@@ -419,11 +419,11 @@ groups:
 
 ```bash
 # Basic health check
-curl http://localhost:9630/ext/health
+curl http://localhost:9630/v1/health
 
 # Detailed health with readiness/liveness
-curl http://localhost:9630/ext/health/readiness
-curl http://localhost:9630/ext/health/liveness
+curl http://localhost:9630/v1/health/readiness
+curl http://localhost:9630/v1/health/liveness
 ```
 
 ### Custom Health Script
@@ -443,7 +443,7 @@ send_alert() {
 }
 
 # Check if node is responsive
-if ! curl -s "$NODE_URL/ext/health" > /dev/null; then
+if ! curl -s "$NODE_URL/v1/health" > /dev/null; then
     send_alert "Node is not responding!"
     exit 1
 fi
@@ -455,7 +455,7 @@ for CHAIN in P X C Q; do
         \"method\": \"info.isBootstrapped\",
         \"params\": {\"chain\": \"$CHAIN\"},
         \"id\": 1
-    }" -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.isBootstrapped')
+    }" -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.isBootstrapped')
 
     if [ "$STATUS" != "true" ]; then
         send_alert "$CHAIN-Chain is not bootstrapped!"
@@ -468,7 +468,7 @@ PEERS=$(curl -s -X POST --data '{
     "method": "info.peers",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' $NODE_URL/ext/info | jq -r '.result.numPeers')
+}' -H 'content-type:application/json;' $NODE_URL/v1/info | jq -r '.result.numPeers')
 
 if [ "$PEERS" -lt 4 ]; then
     send_alert "Low peer count: $PEERS"
@@ -619,7 +619,7 @@ Create runbooks for common issues:
 
 ```bash
 # Real-time metrics
-watch -n 1 'curl -s http://localhost:9630/ext/metrics | grep -E "chain_height|network_peers"'
+watch -n 1 'curl -s http://localhost:9630/v1/metrics | grep -E "chain_height|network_peers"'
 
 # Log streaming
 tail -f ~/.luxd/logs/*.log | grep --line-buffered ERROR

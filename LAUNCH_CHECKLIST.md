@@ -52,7 +52,7 @@ Target: validate all consensus, EVM, and staking behavior with K=11 validators.
 - [ ] Verify all precompile activation timestamps are after 2025-12-25
 - [ ] Deploy via PaaS (platform.hanzo.ai), not manual kubectl
 - [ ] Verify all 11 pods reach Running state
-- [ ] Verify all 11 nodes report healthy via `/ext/health/liveness`
+- [ ] Verify all 11 nodes report healthy via `/v1/health/liveness`
 
 ### 1.2 Bootstrap and Connectivity
 

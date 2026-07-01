@@ -70,4 +70,4 @@ esac
 
 echo ""
 echo "Import complete! Verify with:"
-echo "  curl -s -X POST --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' -H 'content-type:application/json' \$RPC_URL/ext/bc/<blockchain-id>/rpc"
+echo "  curl -s -X POST --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' -H 'content-type:application/json' \$RPC_URL/v1/bc/<blockchain-id>/rpc"

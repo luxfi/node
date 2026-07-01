@@ -7,7 +7,7 @@ The `GetProposedHeight` API endpoint returns the P-Chain height that would be pr
 ## Endpoint
 
 ```
-/ext/bc/<CHAIN_ID>/proposervm
+/v1/bc/<CHAIN_ID>/proposervm
 ```
 
 ## Method
@@ -45,7 +45,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"proposervm.getProposedHeight",
     "params" :{}
-}' -H 'content-type:application/json;' http://127.0.0.1:9650/ext/bc/C/proposervm
+}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/bc/C/proposervm
 ```
 
 ### Response

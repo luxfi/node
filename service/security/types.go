@@ -3,8 +3,8 @@
 
 // Package security exposes the chain-wide ChainSecurityProfile to operators,
 // dApps, and auditors through the security JSON-RPC namespace at
-// /ext/security and two REST sidecars at /ext/security/profile and
-// /ext/security/block/{n}.
+// /v1/security and two REST sidecars at /v1/security/profile and
+// /v1/security/block/{n}.
 //
 // The handlers in this package are read-only: every shape is derived from
 // the immutable *consensusconfig.ChainSecurityProfile resolved at node
@@ -22,7 +22,7 @@ import (
 )
 
 // ProfileReply is the JSON body returned by the securityProfile RPC
-// (POST /ext/security) and the REST sidecar (GET /ext/security/profile).
+// (POST /v1/security) and the REST sidecar (GET /v1/security/profile).
 //
 // Stable shape: every field has a fixed JSON tag, no embedded structs.
 // Adding a new field requires bumping the major version of the security
@@ -99,8 +99,8 @@ type ProfileReply struct {
 }
 
 // BlockSecurityReply is the JSON body returned by the blockSecurity
-// RPC (POST /ext/security) and the REST endpoint
-// /ext/security/block/{n}. It enriches a block lookup with the
+// RPC (POST /v1/security) and the REST endpoint
+// /v1/security/block/{n}. It enriches a block lookup with the
 // chain-wide security envelope so explorers can show "this block was
 // finalised under profile X with backend Y" without reimplementing
 // profile lookup.

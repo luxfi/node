@@ -5,7 +5,7 @@ The `GetAllValidatorsAt` endpoint returns the validator sets of all networks (in
 
 ## Endpoint
 ```
-POST /ext/bc/P
+POST /v1/bc/P
 ```
 
 ## Request Format
@@ -71,7 +71,7 @@ curl -X POST --data '{
   "params": {
     "height": 1000
   }
-}' -H 'content-type:application/json;' http://127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/bc/P
 ```
 
 ### Get validators at proposed height
@@ -83,7 +83,7 @@ curl -X POST --data '{
   "params": {
     "height": "proposed"
   }
-}' -H 'content-type:application/json;' http://127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/bc/P
 ```
 
 ## Use Cases

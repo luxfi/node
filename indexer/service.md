@@ -25,29 +25,29 @@ Each chain has one or more index. To see if a C-Chain block is accepted, for exa
 ### C-Chain Blocks
 
 ```
-/ext/index/C/block
+/v1/index/C/block
 ```
 
 ### P-Chain Blocks
 
 ```
-/ext/index/P/block
+/v1/index/P/block
 ```
 
 ### X-Chain Transactions
 
 ```
-/ext/index/X/tx
+/v1/index/X/tx
 ```
 
 ### X-Chain Blocks
 
 ```
-/ext/index/X/block
+/v1/index/X/block
 ```
 
 <Callout type="warn">
-To ensure historical data can be accessed, the `/ext/index/X/vtx` is still accessible, even though it is no longer populated with chain data since the X-Chain block linearization landed. If you are using `V1.10.0` or higher, you need to migrate to using the `/ext/index/X/block` endpoint.
+To ensure historical data can be accessed, the `/v1/index/X/vtx` is still accessible, even though it is no longer populated with chain data since the X-Chain block linearization landed. If you are using `V1.10.0` or higher, you need to migrate to using the `/v1/index/X/block` endpoint.
 </Callout>
 
 ## Methods
@@ -87,7 +87,7 @@ index.getContainerByID({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -151,7 +151,7 @@ index.getContainerByIndex({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -223,7 +223,7 @@ index.getContainerRange({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -282,7 +282,7 @@ index.getIndex({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -339,7 +339,7 @@ index.getLastAccepted({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -394,7 +394,7 @@ index.isAccepted({
 **Example Call**:
 
 ```sh
-curl --location --request POST 'localhost:9630/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -430,7 +430,7 @@ To get an X-Chain transaction by its index (the order it was accepted in), use I
 For example, to get the second transaction (note that `"index":1`) accepted on the X-Chain, do:
 
 ```sh
-curl --location --request POST 'https://indexer-demo.lux.network/ext/index/X/tx' \
+curl --location --request POST 'https://indexer-demo.lux.network/v1/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
    "jsonrpc": "2.0",
@@ -474,7 +474,7 @@ curl -X POST --data '{
         "txID":"ZGYTSU8w3zUP6VFseGC798vA2Vnxnfj6fz1QPfA9N93bhjJvo",
         "encoding": "json"
     }
-}' -H 'content-type:application/json;' https://api.lux.network/ext/bc/X
+}' -H 'content-type:application/json;' https://api.lux.network/v1/bc/X
 ```
 
 **Response**:

@@ -149,7 +149,7 @@ type Client interface {
 For example:
 
 ```bash
-curl --location --request POST 'http://34.235.54.228:9630/ext/bc/28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT' \
+curl --location --request POST 'http://34.235.54.228:9630/v1/bc/28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",

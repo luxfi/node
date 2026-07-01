@@ -10,7 +10,7 @@ The Health API provides endpoints to monitor the health and readiness of your Lu
 ## Endpoint
 
 ```
-http://localhost:9630/ext/health
+http://localhost:9630/v1/health
 ```
 
 ## Health Check Types
@@ -20,7 +20,7 @@ http://localhost:9630/ext/health
 Get the overall health status of the node:
 
 ```bash
-curl http://localhost:9630/ext/health
+curl http://localhost:9630/v1/health
 ```
 
 **Response:**
@@ -61,7 +61,7 @@ curl http://localhost:9630/ext/health
 Check if the node is ready to serve requests:
 
 ```bash
-curl http://localhost:9630/ext/health/readiness
+curl http://localhost:9630/v1/health/readiness
 ```
 
 Returns:
@@ -73,7 +73,7 @@ Returns:
 Check if the node is alive and running:
 
 ```bash
-curl http://localhost:9630/ext/health/liveness
+curl http://localhost:9630/v1/health/liveness
 ```
 
 Returns:
@@ -92,7 +92,7 @@ curl -X POST --data '{
     "id": 1,
     "method": "health.health",
     "params": {}
-}' -H 'content-type:application/json;' http://localhost:9630/ext/health
+}' -H 'content-type:application/json;' http://localhost:9630/v1/health
 ```
 
 **Response:**
@@ -175,7 +175,7 @@ Configure per-chain health parameters:
 Export health metrics in Prometheus format:
 
 ```bash
-curl http://localhost:9630/ext/metrics | grep health
+curl http://localhost:9630/v1/metrics | grep health
 ```
 
 Metrics:
@@ -208,13 +208,13 @@ spec:
         image: luxfi/node:latest
         livenessProbe:
           httpGet:
-            path: /ext/health/liveness
+            path: /v1/health/liveness
             port: 9630
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /ext/health/readiness
+            path: /v1/health/readiness
             port: 9630
           initialDelaySeconds: 60
           periodSeconds: 5
@@ -229,7 +229,7 @@ spec:
 # health_monitor.sh
 
 while true; do
-    HEALTH=$(curl -s http://localhost:9630/ext/health | jq -r '.healthy')
+    HEALTH=$(curl -s http://localhost:9630/v1/health | jq -r '.healthy')
 
     if [ "$HEALTH" != "true" ]; then
         echo "ALERT: Node unhealthy at $(date)"
@@ -248,7 +248,7 @@ done
 # health_analysis.sh
 
 # Get detailed health
-RESPONSE=$(curl -s http://localhost:9630/ext/health)
+RESPONSE=$(curl -s http://localhost:9630/v1/health)
 
 # Parse each chain
 for CHAIN in P X C Q; do
@@ -271,7 +271,7 @@ done
 
 ```
 backend lux_nodes
-    option httpchk GET /ext/health
+    option httpchk GET /v1/health
     http-check expect status 200
 
     server node1 192.168.1.10:9630 check
@@ -289,7 +289,7 @@ upstream lux_nodes {
 }
 
 location /health_check {
-    proxy_pass http://lux_nodes/ext/health;
+    proxy_pass http://lux_nodes/v1/health;
     proxy_connect_timeout 1s;
     proxy_read_timeout 1s;
 }

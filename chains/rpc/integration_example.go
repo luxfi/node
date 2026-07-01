@@ -80,9 +80,9 @@ func IntegrationExample(
 			fmt.Printf("\n✅ Chain %s RPC endpoints ready:\n", chainID)
 			for _, endpoint := range info.Endpoints {
 				if info.ChainAlias != "" {
-					fmt.Printf("   %s/ext/bc/%s%s\n", baseURL, info.ChainAlias, endpoint)
+					fmt.Printf("   %s/v1/bc/%s%s\n", baseURL, info.ChainAlias, endpoint)
 				}
-				fmt.Printf("   %s/ext/bc/%s%s\n", baseURL, chainID, endpoint)
+				fmt.Printf("   %s/v1/bc/%s%s\n", baseURL, chainID, endpoint)
 			}
 			fmt.Println()
 		}
