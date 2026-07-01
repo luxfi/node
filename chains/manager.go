@@ -219,7 +219,7 @@ type ChainParameters struct {
 	FxIDs []ids.ID
 	// Invariant: Only used when [ID] is the P-chain ID.
 	CustomBeacons validators.Manager
-	// Name of the chain (used for HTTP routing alias, e.g., /ext/bc/zoo/rpc)
+	// Name of the chain (used for HTTP routing alias, e.g., /v1/bc/zoo/rpc)
 	Name string
 }
 
@@ -743,7 +743,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		// plugin shows up later (e.g. via lpm install).
 		//
 		// The old behavior (always register a failing health check) made
-		// /ext/health return 503 for any opted-out chain, which made
+		// /v1/health return 503 for any opted-out chain, which made
 		// kubelet liveness probes kill the validator pod. That made
 		// chain participation effectively all-or-nothing per validator.
 		// Now: validators participate per-plugin, opt-in.
@@ -855,7 +855,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 					m.Server.AddRoute(handler, chainIDBase, endpoint)
 				}
 
-				// Also register with chain name alias for user-friendly routing (e.g., /ext/bc/zoo/rpc)
+				// Also register with chain name alias for user-friendly routing (e.g., /v1/bc/zoo/rpc)
 				if chainParams.Name != "" {
 					nameLower := strings.ToLower(chainParams.Name)
 					nameBase := fmt.Sprintf("bc/%s", nameLower)
@@ -928,9 +928,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
 	m.Log.Info("║ Network ID:", log.Stringer("chainID", chainParams.ChainID))
 	m.Log.Info("║ Endpoints available at:")
-	m.Log.Info("║   → /ext/bc/" + chainParams.ID.String())
+	m.Log.Info("║   → /v1/bc/" + chainParams.ID.String())
 	if chainAlias != chainParams.ID.String() {
-		m.Log.Info("║   → /ext/bc/" + chainAlias)
+		m.Log.Info("║   → /v1/bc/" + chainAlias)
 	}
 	m.Log.Info("╚══════════════════════════════════════════════════════════════════╝")
 
@@ -2080,7 +2080,7 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	// this true. The no-progress watchdog treats it as a deliberate quorum WAIT, not a stall: it must
 	// NOT force-STOP a node that is correctly failing safe DOWN and waiting for its quorum to return
 	// (the network cannot progress without the quorum, and the K8s probes — all polling the
-	// always-green /ext/health/liveness — would never restart it, so a stop here is a permanent
+	// always-green /v1/health/liveness — would never restart it, so a stop here is a permanent
 	// brick). The node stays in Bootstrapping (serving nothing as head) and converges when the quorum
 	// returns. nil for degenerate handlers (legacy behavior).
 	type bootstrapConnector interface{ BootstrapConnecting() bool }
@@ -2723,7 +2723,7 @@ type blockHandler struct {
 	// tells monitorBootstrap's no-progress watchdog this is a deliberate WAIT for the quorum to
 	// return (the network cannot make progress without it), NOT a stall — so the watchdog does not
 	// force-STOP a node that is correctly failing safe and waiting, which (given the K8s probes only
-	// poll the always-green /ext/health/liveness) would otherwise be a permanent brick.
+	// poll the always-green /v1/health/liveness) would otherwise be a permanent brick.
 	bootstrapConnecting gatomic.Bool
 	bsActive            gatomic.Bool             // true while the bootstrap loop is driving
 	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh
@@ -2826,7 +2826,7 @@ type blockHandler struct {
 	// DOWN — never live at a stale height) and CONVERGES the instant the quorum returns. ≤0 ⇒
 	// UNLIMITED (retry until the quorum returns or shutdown) — the production default, because a
 	// node without a quorum must keep trying to rejoin and the K8s liveness probe does NOT restart
-	// it (all luxd probes poll the always-green /ext/health/liveness). A STRUCTURAL failure (deep
+	// it (all luxd probes poll the always-green /v1/health/liveness). A STRUCTURAL failure (deep
 	// gap → state-sync) is never retried regardless. Tests pin it to 1 to assert the single-attempt
 	// terminal fail-safe in isolation.
 	bootstrapMaxAttempts int

@@ -72,7 +72,7 @@ echo ""
 # Wait for RPC to be ready
 echo -n "Waiting for RPC..."
 for _ in {1..30}; do
-    if curl -s "http://127.0.0.1:$HTTP_PORT/ext/info" >/dev/null 2>&1; then
+    if curl -s "http://127.0.0.1:$HTTP_PORT/v1/info" >/dev/null 2>&1; then
         echo " ready!"
         break
     fi
@@ -83,10 +83,10 @@ done
 # Show status
 echo ""
 echo "=== Instance Ready ==="
-echo "  C-Chain RPC:  http://127.0.0.1:$HTTP_PORT/ext/bc/C/rpc"
-echo "  X-Chain RPC:  http://127.0.0.1:$HTTP_PORT/ext/bc/X"
-echo "  P-Chain RPC:  http://127.0.0.1:$HTTP_PORT/ext/bc/P"
-echo "  Info API:     http://127.0.0.1:$HTTP_PORT/ext/info"
+echo "  C-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/C/rpc"
+echo "  X-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/X"
+echo "  P-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/P"
+echo "  Info API:     http://127.0.0.1:$HTTP_PORT/v1/info"
 echo ""
 echo "  Logs:         tail -f $LOG_FILE"
 echo "  Stop:         kill $(cat "$PID_FILE")"

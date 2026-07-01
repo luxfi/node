@@ -595,10 +595,10 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "method":"info.peers",
     "id":1
-}' http://localhost:9630/ext/info
+}' http://localhost:9630/v1/info
 
 # Check network metrics
-curl http://localhost:9630/ext/metrics | grep network
+curl http://localhost:9630/v1/metrics | grep network
 
 # Monitor connections
 netstat -an | grep 9631

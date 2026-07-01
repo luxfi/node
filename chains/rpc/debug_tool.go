@@ -68,20 +68,20 @@ func (d *DebugTool) DiagnoseEndpoint(chainID ids.ID, alias string) *DiagnosticRe
 // getURLPatterns returns all possible URL patterns to test.
 func (d *DebugTool) getURLPatterns(chainID ids.ID, alias string) []string {
 	patterns := []string{
-		fmt.Sprintf("%s/ext/bc/%s/rpc", d.baseURL, chainID.String()),
-		fmt.Sprintf("%s/ext/bc/%s/ws", d.baseURL, chainID.String()),
-		fmt.Sprintf("%s/ext/bc/%s", d.baseURL, chainID.String()),
+		fmt.Sprintf("%s/v1/bc/%s/rpc", d.baseURL, chainID.String()),
+		fmt.Sprintf("%s/v1/bc/%s/ws", d.baseURL, chainID.String()),
+		fmt.Sprintf("%s/v1/bc/%s", d.baseURL, chainID.String()),
 	}
 
 	if alias != "" && alias != chainID.String() {
 		patterns = append(patterns,
-			fmt.Sprintf("%s/ext/bc/%s/rpc", d.baseURL, alias),
-			fmt.Sprintf("%s/ext/bc/%s/ws", d.baseURL, alias),
-			fmt.Sprintf("%s/ext/bc/%s", d.baseURL, alias),
+			fmt.Sprintf("%s/v1/bc/%s/rpc", d.baseURL, alias),
+			fmt.Sprintf("%s/v1/bc/%s/ws", d.baseURL, alias),
+			fmt.Sprintf("%s/v1/bc/%s", d.baseURL, alias),
 		)
 	}
 
-	// Also test without /ext prefix (some setups might differ)
+	// Also test without /v1 prefix (some setups might differ)
 	patterns = append(patterns,
 		fmt.Sprintf("%s/bc/%s/rpc", d.baseURL, chainID.String()),
 	)

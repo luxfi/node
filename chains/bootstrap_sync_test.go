@@ -1528,7 +1528,7 @@ func TestRED_TipHolderCoRestartGoesReadyAtOwnTip(t *testing.T) {
 // It must NOT go live at its stale height (safety) and must NOT permanently give up (liveness): it
 // stays in Bootstrapping, RE-ATTEMPTS (bootstrapMaxAttempts ≤ 0 ⇒ until the quorum returns), and
 // CONVERGES the instant the quorum comes back — all IN-PROCESS, with no pod restart (the K8s probes
-// poll the always-green /ext/health/liveness and would never restart it). This is the bounded
+// poll the always-green /v1/health/liveness and would never restart it). This is the bounded
 // re-bootstrap retry that closes the "permanent brick" RED flagged.
 func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	const N, K = 30, 16 // stale at N; the live frontier (once the quorum returns) is N+K

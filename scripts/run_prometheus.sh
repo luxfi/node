@@ -101,7 +101,7 @@ global:
 
 scrape_configs:
   - job_name: "node"
-    metrics_path: "/ext/metrics"
+    metrics_path: "/v1/metrics"
     file_sd_configs:
       - files:
           - '${FILE_SD_PATH}/*.json'

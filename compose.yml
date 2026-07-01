@@ -19,7 +19,7 @@ services:
       LUXD_CONSENSUS_QUORUM_SIZE: "1"
       LUXD_LOG_LEVEL: "info"
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:9630/ext/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:9630/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 5

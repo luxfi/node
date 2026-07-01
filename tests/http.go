@@ -31,7 +31,7 @@ type SimpleNodesMetrics map[string]SimpleNodeMetrics
 
 // GetSimpleNodeMetrics retrieves the specified metrics the provided node URI.
 func GetSimpleNodeMetrics(nodeURI string, metricNames ...string) (SimpleNodeMetrics, error) {
-	uri := nodeURI + "/ext/metrics"
+	uri := nodeURI + "/v1/metrics"
 	return GetMetricsValue(uri, metricNames...)
 }
 

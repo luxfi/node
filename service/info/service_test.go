@@ -64,7 +64,7 @@ func TestGetNodeVersionConsensusRoundtrip(t *testing.T) {
 		log: log.NewNoOpLogger(),
 	}
 
-	req := httptest.NewRequest("POST", "/ext/info", nil)
+	req := httptest.NewRequest("POST", "/v1/info", nil)
 	reply := apiinfo.GetNodeVersionReply{}
 	require.NoError(info.GetNodeVersion(req, nil, &reply))
 	require.NotNil(reply.Consensus)
@@ -114,7 +114,7 @@ func TestGetVMsSuccess(t *testing.T) {
 		id2: []string{alias2},
 	}
 
-	req := httptest.NewRequest("POST", "/ext/info", nil)
+	req := httptest.NewRequest("POST", "/v1/info", nil)
 	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(vmIDs, nil)
 	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id1).Times(1).Return(alias1, nil)
 	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id2).Times(1).Return(alias2, nil)
@@ -128,7 +128,7 @@ func TestGetVMsSuccess(t *testing.T) {
 func TestGetVMsVMsListFactoriesFails(t *testing.T) {
 	resources := initGetVMsTest(t)
 
-	req := httptest.NewRequest("POST", "/ext/info", nil)
+	req := httptest.NewRequest("POST", "/v1/info", nil)
 	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(nil, errTest)
 
 	reply := apiinfo.GetVMsReply{}
@@ -146,7 +146,7 @@ func TestGetVMsGetAliasesFails(t *testing.T) {
 	vmIDs := []ids.ID{id1, id2}
 	alias1 := "vm1-alias-1"
 
-	req := httptest.NewRequest("POST", "/ext/info", nil)
+	req := httptest.NewRequest("POST", "/v1/info", nil)
 	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(vmIDs, nil)
 	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id1).Times(1).Return(alias1, nil)
 	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id2).Times(1).Return("", errTest)

@@ -346,7 +346,7 @@ export default function HomePage() {
               </p>
               <pre className="mt-4 overflow-x-auto rounded-lg bg-black/50 p-4">
                 <code className="text-sm text-green-400">
-                  curl -X POST --data &#39;&#123;&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;:&quot;health.health&quot;,&quot;id&quot;:1&#125;&#39; \{"\n"}  -H &#39;content-type:application/json&#39; \{"\n"}  127.0.0.1:9650/ext/health
+                  curl -X POST --data &#39;&#123;&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;:&quot;health.health&quot;,&quot;id&quot;:1&#125;&#39; \{"\n"}  -H &#39;content-type:application/json&#39; \{"\n"}  127.0.0.1:9650/v1/health
                 </code>
               </pre>
             </div>

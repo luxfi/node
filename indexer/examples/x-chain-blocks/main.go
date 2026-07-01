@@ -19,7 +19,7 @@ import (
 // and prints the ID of the block and its transactions.
 func main() {
 	var (
-		uri       = primary.LocalAPIURI + "/ext/index/X/block"
+		uri       = primary.LocalAPIURI + "/v1/index/X/block"
 		xChainID  = ids.FromStringOrPanic("2eNy1mUFdmaxXNj1eQHUe7Np4gju9sJsEtWQ4MX3ToiNKuADed")
 		client    = indexer.NewClient(uri)
 		ctx       = context.Background()
