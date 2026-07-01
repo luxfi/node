@@ -618,43 +618,47 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	return handlers, nil
 }
 
-// repairAction is the reconciliation the proposervm applies at init when its
-// finality index and the inner VM's accepted tip disagree in height.
-type repairAction int
+// heightRelation classifies how the proposervm finality index relates to the
+// inner VM's accepted tip at init. It is the PURE part of the reconciliation and
+// deliberately does NOT depend on the fork height (only the AHEAD case needs the
+// fork height, and it is read lazily in that branch so the other paths gain no
+// new failure mode).
+type heightRelation int
 
 const (
-	// repairNone: the proposervm and inner heights match; nothing to do.
-	repairNone repairAction = iota
-	// repairRollBackToInner: the proposervm is AHEAD of the inner (and the
-	// rollback target is at/above the fork); roll the proposervm index back to
-	// the inner's height.
-	repairRollBackToInner
-	// repairForgetPastFork: the proposervm is ahead but the rollback target is
-	// BELOW the fork; drop all proposervm indices (pre-fork territory).
-	repairForgetPastFork
-	// repairResetBehindIndex: the proposervm index is BEHIND the inner tip — a
-	// truncated/inconsistent on-disk state (e.g. a partially-restored snapshot).
-	// The proposervm cannot fabricate the missing wrapper blocks, so drop the
-	// stale finality pointer and re-bootstrap rather than fatally bricking init.
-	repairResetBehindIndex
+	// heightMatch: proposervm and inner heights are equal; nothing to repair.
+	heightMatch heightRelation = iota
+	// heightAhead: the proposervm is AHEAD of the inner — the inner rolled back
+	// (or state-synced behind); the proposervm index is rolled back to the inner
+	// height (or, if the target is below the fork, forgotten entirely).
+	heightAhead
+	// heightBehind: the proposervm index is BEHIND the inner tip. This is an
+	// on-disk inconsistency (e.g. a snapshot restored inconsistently across the
+	// proposervm and inner-EVM databases). It is UNRECOVERABLE LOCALLY: the
+	// proposervm cannot fabricate the missing outer wrapper blocks for the heights
+	// (pro, inner], and it must NOT silently drop its finality pointer — doing so
+	// leaves proposervm.LastAccepted() reporting an INNER-namespace id whose
+	// ParentID is contiguity-incompatible with the network's OUTER wrappers, which
+	// permanently wedges bootstrap/catch-up/live at the inner tip (blocks at
+	// height <= tip are skipped, so the missing wrapper is never rebuilt). The
+	// only correct remedy is operator action (restore a consistent snapshot or
+	// full resync), so init fails LOUD with an actionable runbook instead.
+	heightBehind
 )
 
-// planHeightRepair is the PURE reconciliation decision for
-// repairAcceptedChainByHeight: given the proposervm's last-accepted height, the
-// inner VM's last-accepted height, and the proposervm fork height, it returns
-// the action to apply. Separating this decision from the DB effects keeps it
-// deterministically testable and makes the behind-index policy (which replaced a
-// node-bricking fatal) explicit and regression-locked.
-func planHeightRepair(proHeight, innerHeight, forkHeight uint64) repairAction {
+// classifyHeightRepair is the PURE, deterministically-testable reconciliation
+// decision. Keeping the behind-index case explicit here regression-locks the
+// invariant that a behind index is treated as unrecoverable-locally (a LOUD
+// fatal), never as a silent finality-pointer reset — a reset creates a silent
+// permanent wedge that is strictly worse than the loud crash it would replace.
+func classifyHeightRepair(proHeight, innerHeight uint64) heightRelation {
 	switch {
 	case proHeight == innerHeight:
-		return repairNone
+		return heightMatch
 	case proHeight < innerHeight:
-		return repairResetBehindIndex
-	case forkHeight > innerHeight:
-		return repairForgetPastFork
-	default: // proHeight > innerHeight and forkHeight <= innerHeight
-		return repairRollBackToInner
+		return heightBehind
+	default: // proHeight > innerHeight
+		return heightAhead
 	}
 }
 
@@ -706,53 +710,56 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	proLastAcceptedHeight := proLastAccepted.Height()
 	innerLastAcceptedHeight := innerLastAccepted.Height()
 
-	// The fork height only matters when the proposervm is AHEAD (rolling back),
-	// but the state is already initialized here (we read a last-accepted above),
-	// so reading it up front is safe and keeps the reconciliation decision pure.
+	switch classifyHeightRepair(proLastAcceptedHeight, innerLastAcceptedHeight) {
+	case heightMatch:
+		// Heights match — nothing to repair.
+		return nil
+
+	case heightBehind:
+		// INVARIANT VIOLATION and UNRECOVERABLE LOCALLY: the proposervm's finality
+		// index sits BELOW the inner VM's accepted tip. In a correct system this
+		// never happens — the proposervm last-accepted pointer and height index
+		// commit in the SAME versiondb batch as every inner accept, so they cannot
+		// lag. Reaching here means the on-disk proposervm state was truncated
+		// relative to the inner EVM — e.g. a snapshot restored inconsistently across
+		// the two databases (the devnet-C "index 7 < inner 8").
+		//
+		// We FAIL LOUD rather than "self-heal", because there is no correct local
+		// heal: the proposervm cannot fabricate the missing outer wrapper blocks for
+		// heights (pro, inner]. In particular, dropping the finality pointer
+		// (DeleteLastAccepted) is NOT a heal — proposervm.LastAccepted() would then
+		// fall back to the inner-namespace id (see LastAccepted), whose ParentID is
+		// contiguity-incompatible with the network's OUTER wrappers, permanently
+		// wedging bootstrap (the first-block anchor), catch-up (the parent==tip
+		// guard) and live Verify (the parent lookup) at the inner tip — and since
+		// every path skips blocks at height <= the tip, the missing wrapper is never
+		// rebuilt. That silent wedge is strictly worse than this loud, actionable
+		// stop. The correct remedy is operator action; surface it explicitly.
+		return fmt.Errorf(
+			"proposervm finality index (height %d, id %s) is BEHIND the inner VM tip (height %d, id %s): "+
+				"the on-disk proposervm state is truncated/inconsistent relative to the inner EVM "+
+				"(e.g. a snapshot restored inconsistently across the proposervm and EVM databases). "+
+				"This cannot be repaired locally — the proposervm cannot rebuild the missing outer wrapper "+
+				"blocks. RECOVERY: restore a snapshot that is consistent across BOTH databases, or fully "+
+				"resync this node from peers (wipe this chain's db and re-bootstrap). Refusing to auto-reset "+
+				"the finality pointer, which would silently wedge this node at the inner tip forever",
+			proLastAcceptedHeight, proLastAcceptedID, innerLastAcceptedHeight, innerLastAcceptedID,
+		)
+	}
+
+	// heightAhead: the inner vm is BEHIND the proposer vm (the inner rolled back or
+	// state-synced behind), so roll the proposervm index back to the inner height.
+	// The fork height is only needed here, so read it lazily — the match/behind
+	// paths above never touch it, and so cannot gain a new failure mode from it.
 	forkHeight, err := vm.State.GetForkHeight()
 	if err != nil {
 		return fmt.Errorf("failed to get fork height: %w", err)
 	}
 
-	switch planHeightRepair(proLastAcceptedHeight, innerLastAcceptedHeight, forkHeight) {
-	case repairNone:
-		// Heights match — nothing to repair.
-		return nil
-
-	case repairResetBehindIndex:
-		// INVARIANT VIOLATION, but a RECOVERABLE one: the proposervm's finality
-		// index sits BELOW the inner VM's accepted tip. In a correct system this
-		// never happens (the proposervm's last-accepted and height index commit in
-		// the SAME versiondb batch as every inner accept, so they cannot lag), so
-		// reaching here means the on-disk proposervm state was truncated relative
-		// to the inner — e.g. a crash-inconsistent or partially-restored snapshot
-		// (the devnet-C "index 7 < inner 8" brick). The proposervm cannot fabricate
-		// the missing outer wrapper blocks for heights (pro, inner], so it CANNOT
-		// heal forward locally.
-		//
-		// Previously this was a FATAL init error that bricked the WHOLE chain
-		// ("error creating required chain" -> exit 1), turning a recoverable
-		// index/snapshot inconsistency on ONE node into a hard outage that needed
-		// manual surgery. Instead, drop the stale proposervm finality pointer and
-		// let the node re-bootstrap: consensus re-fetches the canonical blocks (with
-		// their finality certs) from healthy peers through the catch-up transport
-		// and re-accepts them, rebuilding the proposervm index consistently on top
-		// of the inner tip. This is the SAME recovery repairForgetPastFork performs;
-		// here we reach it because the index is behind, not ahead. Loud + actionable
-		// so operators see exactly what healed and why.
-		vm.logger.Warn("proposervm finality index is behind the inner VM tip; resetting the proposervm index to re-bootstrap from peers (recoverable snapshot/index inconsistency, NOT a crash)",
-			log.Uint64("proposervmHeight", proLastAcceptedHeight),
-			log.Uint64("innerHeight", innerLastAcceptedHeight),
-			log.Stringer("innerLastAcceptedID", innerLastAcceptedID),
-		)
-		if err := vm.State.DeleteLastAccepted(); err != nil {
-			return fmt.Errorf("failed to reset proposervm last accepted while healing behind-index: %w", err)
-		}
-		return vm.db.Commit()
-
-	case repairForgetPastFork:
-		// We are rolling back past the fork, so we should just forget about all
-		// of our proposervm indices.
+	if forkHeight > innerLastAcceptedHeight {
+		// We are rolling back past the fork, so we should just forget about all of
+		// our proposervm indices. The inner tip is BELOW the fork, so it is a
+		// pre-fork block and proposervm.LastAccepted() correctly falls back to it.
 		vm.logger.Info("repairing accepted chain by height: rolling back past the proposervm fork",
 			log.Uint64("outerHeight", proLastAcceptedHeight),
 			log.Uint64("innerHeight", innerLastAcceptedHeight),
@@ -764,8 +771,6 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return vm.db.Commit()
 	}
 
-	// repairRollBackToInner: the inner vm is behind the proposer vm, so roll the
-	// proposervm back to the inner's height.
 	vm.logger.Info("repairing accepted chain by height",
 		log.Uint64("outerHeight", proLastAcceptedHeight),
 		log.Uint64("innerHeight", innerLastAcceptedHeight),

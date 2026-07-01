@@ -29,6 +29,15 @@ import (
 var (
 	ErrNotConnected    = errors.New("zap: not connected")
 	ErrInvalidResponse = errors.New("zap: invalid response")
+	// errMalformedBlockID is returned when the VM plugin sends a block-id field
+	// over the ZAP boundary whose length is not exactly ids.IDLen (32 bytes).
+	// An empty (0-length) field is the plugin's way of signalling that it could
+	// NOT resolve the block — e.g. the requested block does not connect to this
+	// node's accepted chain (a fork / missing-parent condition). We surface that
+	// as this explicit typed error instead of the opaque "invalid hash length"
+	// from ids.ToID, and we NEVER coerce it to ids.Empty (a 32-byte zero id is a
+	// legitimate value; a 0-length field is not).
+	errMalformedBlockID = errors.New("zap: plugin returned malformed block id (does not connect to accepted chain)")
 )
 
 // Compile-time check that Client implements chain.ChainVM
@@ -142,7 +151,7 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return fmt.Errorf("zap decode initialize response: %w", err)
 	}
 
-	seedID, err := ids.ToID(resp.LastAcceptedID)
+	seedID, err := blockIDFromZAP("lastAcceptedID", resp.LastAcceptedID)
 	if err != nil {
 		return err
 	}
@@ -262,6 +271,18 @@ func (c *Client) Version(ctx context.Context) (string, error) {
 	return resp.Version, nil
 }
 
+// blockIDFromZAP converts a block-id field returned by the VM plugin over the
+// ZAP boundary into an ids.ID, guarding the malformed/empty case. A well-formed
+// plugin always returns exactly ids.IDLen bytes; any other length (notably the
+// 0-length "could not resolve" signal) yields errMalformedBlockID rather than
+// the opaque ids.ToID "invalid hash length" error, and never a coerced zero id.
+func blockIDFromZAP(field string, b []byte) (ids.ID, error) {
+	if len(b) != ids.IDLen {
+		return ids.Empty, fmt.Errorf("%w: %s was %d bytes, want %d", errMalformedBlockID, field, len(b), ids.IDLen)
+	}
+	return ids.ToID(b)
+}
+
 // BuildBlock implements chain.ChainVM
 func (c *Client) BuildBlock(ctx context.Context) (block.Block, error) {
 	_, respData, err := c.conn.Call(ctx, zapwire.MsgBuildBlock, nil)
@@ -278,11 +299,11 @@ func (c *Client) BuildBlock(ctx context.Context) (block.Block, error) {
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	id, err := ids.ToID(resp.ID)
+	id, err := blockIDFromZAP("id", resp.ID)
 	if err != nil {
 		return nil, err
 	}
-	parentID, err := ids.ToID(resp.ParentID)
+	parentID, err := blockIDFromZAP("parentID", resp.ParentID)
 	if err != nil {
 		return nil, err
 	}
@@ -321,11 +342,11 @@ func (c *Client) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	id, err := ids.ToID(resp.ID)
+	id, err := blockIDFromZAP("id", resp.ID)
 	if err != nil {
 		return nil, err
 	}
-	parentID, err := ids.ToID(resp.ParentID)
+	parentID, err := blockIDFromZAP("parentID", resp.ParentID)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +385,7 @@ func (c *Client) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error
 		return nil, errorFromZAP(resp.Err)
 	}
 
-	parentID, err := ids.ToID(resp.ParentID)
+	parentID, err := blockIDFromZAP("parentID", resp.ParentID)
 	if err != nil {
 		return nil, err
 	}
@@ -592,7 +613,7 @@ func (c *Client) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID,
 		return ids.Empty, errorFromZAP(resp.Err)
 	}
 
-	blkID, err := ids.ToID(resp.BlkID)
+	blkID, err := blockIDFromZAP("blkID", resp.BlkID)
 	if err != nil {
 		return ids.Empty, err
 	}
