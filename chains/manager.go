@@ -1478,6 +1478,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// cannot be re-verified against another (its signatures were over this
 			// height-pinned root).
 			netCfg.ValidatorSetRoot = newValidatorSetRootSource(vdrState, networkID)
+			// HIGH-1 durable non-equivocation guard: open the per-chain vote-once store so
+			// this signing validator's (height,epoch)→canonical bindings survive a
+			// crash/restart. Without it, a crash between casting a vote and finalizing the
+			// height would forget the binding and let the restarted node sign a conflicting
+			// sibling at that height — a cross-node fork with ZERO Byzantine intent under a
+			// rolling upgrade / eviction / OOM. Fail CLOSED on a corrupt store: a signer
+			// must not start with equivocation memory it cannot trust.
+			voteGuard, guardErr := consensuschain.OpenVoteGuard(filepath.Join(chainDataDir, "vote-guard"))
+			if guardErr != nil {
+				return nil, fmt.Errorf("refusing to start signing chain %s: durable vote-once guard: %w",
+					chainParams.ID, guardErr)
+			}
+			netCfg.VoteGuard = voteGuard
 			// b2: deliver the REAL P-chain epoch height to the engine. The four reads
 			// above are height-pinned but the engine reads that height off the VM
 			// block (pChainHeightOf) — and a bare plugin block exposes none, so the
