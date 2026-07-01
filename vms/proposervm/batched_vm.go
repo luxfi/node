@@ -111,8 +111,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Blo
 		}
 
 		blkID := statelessBlock.ID()
-		block, exists := vm.verifiedBlocks[blkID]
-		if exists {
+		if block, exists := vm.cachedVerifiedBlock(blkID); exists {
 			blocks[blocksIndex] = block
 			continue
 		}
@@ -162,7 +161,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Blo
 }
 
 func (vm *VM) getStatelessBlk(blkID ids.ID) (statelessblock.Block, error) {
-	if currentBlk, exists := vm.verifiedBlocks[blkID]; exists {
+	if currentBlk, exists := vm.cachedVerifiedBlock(blkID); exists {
 		return currentBlk.getStatelessBlk(), nil
 	}
 	return vm.State.GetBlock(blkID)
