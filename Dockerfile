@@ -257,7 +257,7 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.99.51
+ARG EVM_VERSION=v1.99.52
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -270,9 +270,13 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     cd /tmp/evm && \
     . /build/build_env.sh && \
     go mod edit -require=github.com/luxfi/upgrade@v1.0.1 && \
-    # evm v1.99.51 = the block-production stall fix (WaitForEvent builder-ready
-    # race + target-rate build pacing — un-freezes the C-Chain that stalled at
-    # the imported frontier) on top of precompile v0.16.0 enable-everything
+    # evm v1.99.52 = v1.99.51 + the idle-builder bounded-wake backstop
+    # (startPendingTxPoll: a 500ms mempool re-poll so a tx after idle wakes the
+    # builder within a bounded window — closes the lost-wakeup/subscribe-gap;
+    # deterministic, wake-timing only). v1.99.51 = the block-production stall fix
+    # (WaitForEvent builder-ready race + target-rate build pacing — un-freezes the
+    # C-Chain that stalled at the imported frontier) on top of precompile v0.16.0
+    # enable-everything
     # (wallet curves + standard precompiles enabled; fflonk fail-closed; accel
     # byte-identity; DEX big.Rat + determinism). Pin chains v1.4.8 (warp
     # consolidated to one luxfi/warp helper; graphvm genesis-last-accepted fix)
