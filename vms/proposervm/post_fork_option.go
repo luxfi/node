@@ -62,7 +62,7 @@ func (b *postForkOption) Reject(ctx context.Context) error {
 	// we do not reject the inner block here because that block may be contained
 	// in the proposer block that causing this block to be rejected.
 
-	delete(b.vm.verifiedBlocks, b.ID())
+	b.vm.forgetVerifiedBlock(b.ID())
 	return nil
 }
 
