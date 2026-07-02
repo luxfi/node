@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	gatomic "sync/atomic"
@@ -1194,6 +1195,18 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		//                      model without avalanchego's initializeOnLinearizeVM
 		//                      machinery (out of scope). It keeps the existing path.
 		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
+		// DIAG-1082814 (devnet artifact): allow overriding the convergence settle
+		// window via env so config A (unset ⇒ 0 ⇒ 150ms auto-floor, reproduces the
+		// original) and config B (e.g. LUX_CONVERGENCE_SETTLE_MS=1500, a proper WAN
+		// window) run from the SAME image. Devnet-only diagnostic knob.
+		if ms := os.Getenv("LUX_CONVERGENCE_SETTLE_MS"); ms != "" {
+			if v, perr := strconv.Atoi(ms); perr == nil && v >= 0 {
+				consensusParams.ConvergenceSettleWindow = time.Duration(v) * time.Millisecond
+				m.Log.Info("DIAG: ConvergenceSettleWindow overridden by env",
+					log.Stringer("chain", chainParams.ID),
+					log.Int("settleMs", v))
+			}
+		}
 		if m.SybilProtectionEnabled {
 			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
