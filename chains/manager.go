@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	gatomic "sync/atomic"
@@ -1530,6 +1531,46 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
+
+		// BOUNDED PHANTOM-FLOOR RECONCILE (recovery). When a chain's durable decided-floor ran
+		// AHEAD of its EVM's applied head (the pre-fix swallowed-VM.Accept bug left finalizedThrough
+		// past every VM's last-accepted — the phantom-floor freeze), the sign gate treats those
+		// never-applied heights as decided and the view-change can NEVER re-finalize them: the chain
+		// is permanently wedged even after the consensus liveness fix. Recovery: the operator supplies
+		// the fleet-max VM-applied height — VERIFIED out of band by a read-only probe of EVERY
+		// validator's accepted head — as LUX_CONSENSUS_RECONCILE_FLOOR, and the engine lowers the
+		// durable floor DOWN to max(target, THIS node's own applied head), abandoning ONLY the
+		// internal-only finalizations above the fleet-max (no VM applied them, no observer ever saw
+		// them → provably non-double-certing; committed heights at/below the floor are recovered by
+		// cert-carrying catch-up, never re-finalized — see engine/chain/reconcile.go). It runs AFTER
+		// WithVoteGuard seeded the floor (NewRuntime) and BEFORE Start launches signing; it is a
+		// one-shot no-op on a healthy chain (decidedFloor == VM ⇒ nothing above the intrinsic guard),
+		// idempotent (safe to leave set — it only acts while a phantom gap exists), and scoped to the
+		// C-Chain so a stray target can never touch P/X.
+		if consensusParams.K > 1 && chainParams.VMID == constants.EVMID {
+			if raw := strings.TrimSpace(os.Getenv("LUX_CONSENSUS_RECONCILE_FLOOR")); raw != "" {
+				target, perr := strconv.ParseUint(raw, 10, 64)
+				if perr != nil || target == 0 {
+					m.Log.Warn("LUX_CONSENSUS_RECONCILE_FLOOR set but not a positive integer — ignoring",
+						log.Stringer("chainID", chainParams.ID), log.String("value", raw))
+				} else {
+					reconciledTo, rerr := consensusEngine.ReconcilePhantomFloor(context.Background(), target)
+					if rerr != nil {
+						// Fail-closed: nothing changed in memory or on disk; the chain stays safely at
+						// the (un-recovered) phantom floor. Refuse to start so the operator sees it and
+						// retries rather than silently proceeding with a half-applied recovery.
+						m.Log.Error("PHANTOM-RECONCILE failed (fail-closed; chain unchanged)",
+							log.Stringer("chainID", chainParams.ID), log.Uint64("target", target), log.Err(rerr))
+						return nil, fmt.Errorf("phantom-reconcile of chain %s to floor %d failed: %w",
+							chainParams.ID, target, rerr)
+					}
+					m.Log.Warn("PHANTOM-RECONCILE applied at boot (durable decided-floor lowered to the fleet-max)",
+						log.Stringer("chainID", chainParams.ID),
+						log.Uint64("target", target),
+						log.Uint64("reconciledFloor", reconciledTo))
+				}
+			}
+		}
 
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,
