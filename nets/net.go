@@ -34,6 +34,15 @@ type Net interface {
 	// IsBootstrapped returns true if the chains in this chain are done bootstrapping
 	IsBootstrapped() bool
 
+	// IsChainBootstrapped reports whether a SPECIFIC chain in this net has finished
+	// initial sync — i.e. Bootstrapped(chainID) was called for it (the chain reached
+	// the network frontier and its VM went to normal operation). This is the per-chain
+	// truth that info.isBootstrapped keys on, distinct from IsBootstrapped() which is
+	// the net-wide "no chain still bootstrapping" aggregate. A chain that is merely
+	// tracked (added, sync goroutine launched) but has NOT converged is still in the
+	// bootstrapping set and reads false here — closing the premature-true masking bug.
+	IsChainBootstrapped(chainID ids.ID) bool
+
 	// Bootstrapped marks the chain as done bootstrapping
 	Bootstrapped(chainID ids.ID)
 
@@ -64,6 +73,13 @@ func (s *chain) IsBootstrapped() bool {
 	defer s.lock.RUnlock()
 
 	return s.bootstrapping.Len() == 0
+}
+
+func (s *chain) IsChainBootstrapped(chainID ids.ID) bool {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.bootstrapped.Contains(chainID)
 }
 
 func (s *chain) Bootstrapped(chainID ids.ID) {

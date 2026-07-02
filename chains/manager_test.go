@@ -177,6 +177,69 @@ func TestIsBootstrapped(t *testing.T) {
 	require.False(m.IsBootstrapped(chainID))
 }
 
+// TestIsBootstrappedTracksRealConvergence is the regression guard for the
+// premature-true masking bug: manager.IsBootstrapped must report true ONLY once the
+// chain has ACTUALLY finished initial sync (its net marked it Bootstrapped), NOT the
+// instant it is merely tracked (added to m.chains with its sync goroutine launched).
+// Before the fix, a C-Chain stalled at genesis (head 0x0) reported
+// info.isBootstrapped(C)=true, masking the stall from any readiness gate.
+func TestIsBootstrappedTracksRealConvergence(t *testing.T) {
+	require := require.New(t)
+
+	chainConfigs := map[ids.ID]nets.Config{
+		constants.PrimaryNetworkID: {},
+	}
+	netsTracker, err := NewNets(ids.GenerateTestNodeID(), chainConfigs)
+	require.NoError(err)
+
+	config := &ManagerConfig{
+		Log:          log.NewNoOpLogger(),
+		Metrics:      metric.NewMultiGatherer(),
+		VMManager:    vms.NewManager(),
+		ChainDataDir: t.TempDir(),
+		Nets:         netsTracker,
+	}
+	m, err := New(config)
+	require.NoError(err)
+	mImpl := m.(*manager)
+
+	// A native chain validated by the primary network — the C-Chain shape.
+	chainID := ids.GenerateTestID()
+
+	// Simulate createChain's tracking: the chain EXISTS in m.chains and is registered
+	// as bootstrapping in its validation net — but has NOT converged (initial sync is
+	// still driving, e.g. stalled at genesis fetching ancestry).
+	mImpl.chainsLock.Lock()
+	mImpl.chains[chainID] = &chainInfo{Name: "C-Chain"}
+	mImpl.chainsLock.Unlock()
+	sb, _ := netsTracker.GetOrCreate(constants.PrimaryNetworkID)
+	require.True(sb.AddChain(chainID))
+
+	// THE FIX: exists-but-not-converged must be FALSE (was true — the masking bug).
+	require.False(m.IsBootstrapped(chainID),
+		"a tracked-but-still-syncing chain must not report bootstrapped")
+	for _, ci := range m.(*manager).GetChains() {
+		if ci.ID == chainID {
+			require.False(ci.Bootstrapped, "GetChains must not report a syncing chain bootstrapped")
+		}
+	}
+
+	// Initial sync reaches the frontier → monitorBootstrap calls sb.Bootstrapped.
+	sb.Bootstrapped(chainID)
+
+	// Now — and only now — it reports bootstrapped (head advanced to frontier, VM live).
+	require.True(m.IsBootstrapped(chainID),
+		"a converged chain must report bootstrapped")
+	found := false
+	for _, ci := range m.(*manager).GetChains() {
+		if ci.ID == chainID {
+			found = true
+			require.True(ci.Bootstrapped, "GetChains must report a converged chain bootstrapped")
+		}
+	}
+	require.True(found)
+}
+
 // TestToEngineChannelFlow verifies the toEngine channel notification flow
 // This tests the goroutine that reads from toEngine and triggers block building
 func TestToEngineChannelFlow(t *testing.T) {
