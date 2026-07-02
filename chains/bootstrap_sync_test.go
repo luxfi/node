@@ -217,6 +217,13 @@ type bsBeaconNet struct {
 	serveAncestors bool                    // beacons serve ancestry (false models name-only beacons)
 	ancestorsEmpty bool                    // beacons REPLY to GetAncestors but serve an EMPTY batch (cross-version / withholding)
 
+	// emptyResponders models a MIXED fleet on a WIPE-path recovery: the named beacons REPLY to
+	// GetAncestors with an EMPTY batch (they lack the block — e.g. still at genesis after a
+	// simultaneous wipe), while the rest serve the real ancestry. When set, the mock delivers the
+	// empties FIRST, proving the fetcher (blockHandler.Ancestors) skips them and still returns the
+	// non-empty batch — never starved by a peer that can't serve. Requires serveAncestors=true.
+	emptyResponders set.Set[ids.NodeID]
+
 	// tipFor optionally overrides the tip a specific beacon reports (models DISAGREEMENT —
 	// beacons connected but split across tips, so no ⅔ quorum forms → FrontierNoQuorum).
 	tipFor map[ids.NodeID]ids.ID
@@ -334,6 +341,23 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 			n.bh.deliverBootstrapFrontier(n.malicious, n.forgedTip)
 		}
 	case "ancestors":
+		if n.emptyResponders != nil {
+			// Mixed fleet: emptyResponders reply EMPTY (they lack the block), the rest serve.
+			// Deliver the empties FIRST so the test proves Ancestors skips them and returns the
+			// slower non-empty batch (the WIPE-path ≥2-at-genesis case).
+			var servers []ids.NodeID
+			for id := range nodeIDs {
+				if n.emptyResponders.Contains(id) {
+					n.bh.deliverBootstrapAncestors(m.requestID, nil)
+				} else {
+					servers = append(servers, id)
+				}
+			}
+			for range servers {
+				n.bh.deliverBootstrapAncestors(m.requestID, n.frame(m.blockID))
+			}
+			return nil
+		}
 		if n.serveAncestors {
 			n.bh.deliverBootstrapAncestors(m.requestID, n.frame(m.blockID))
 		} else if n.ancestorsEmpty {
@@ -510,6 +534,66 @@ func TestNodeBootstrap_EmptyNodeConvergesViaTransport(t *testing.T) {
 	require.Equal(t, chain[N].id, last, "empty node must sync to the beacon-agreed tip (height %d)", N)
 	require.Equal(t, 1, chain[N].accepts, "tip block must be VM-accepted exactly once")
 	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the tip after sync")
+}
+
+// TestNodeBootstrap_WipePath_MixedGenesisPeers_ObtainsAncestry is the regression guard for the
+// WIPE-path ≥2-at-genesis stall (deliverable 3). A re-bootstrapping node samples a fleet where
+// SOME beacons reply to GetAncestors with an EMPTY batch (they lack the block — still at genesis
+// after a simultaneous wipe) while the rest serve the real ancestry, and the empties arrive FIRST.
+// With the pre-fix size-1 reply channel + first-reply-wins, the empty reply won the race and the
+// good peer's non-empty batch was dropped, so the descent got nothing every round and stalled. The
+// fix buffers the whole sample and SKIPS empty batches, returning the first non-empty one — so the
+// node obtains ancestry from the peers that CAN serve, even when ≥2 peers are at genesis.
+func TestNodeBootstrap_WipePath_MixedGenesisPeers_ObtainsAncestry(t *testing.T) {
+	const N = 30
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVM(chain)
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 5)
+
+	// 2 of 5 beacons are "still at genesis" — they reply EMPTY to GetAncestors. The mock
+	// delivers those empties FIRST so a first-reply-wins fetcher would be starved.
+	empties := set.NewSet[ids.NodeID](2)
+	empties.Add(beacons[0], beacons[1])
+	bh.net = &bsBeaconNet{
+		bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N],
+		serveAncestors: true, emptyResponders: empties,
+	}
+	bh.msgCreator = bsMsgBuilder{}
+
+	ctx := context.Background()
+	require.NoError(t, runBS(t, bh), "node must converge despite ≥2 peers serving empty ancestry")
+
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last, "node must sync to the tip via the peers that CAN serve")
+	require.True(t, bh.Accepted(ctx, chain[N].id))
+}
+
+// TestSampleAncestorBeacons_PrefersAheadBeacons proves change 2: the ancestry sample PREFERS
+// beacons the frontier round found genuinely AHEAD (they hold the ancestry), so a re-bootstrapping
+// node asks peers that can serve rather than wasting the bounded sample on genesis peers. With more
+// connected beacons than the sample size, blind rotation would periodically EXCLUDE any given
+// beacon; the preference guarantees the recorded ahead-beacon is ALWAYS sampled.
+func TestSampleAncestorBeacons_PrefersAheadBeacons(t *testing.T) {
+	const numBeacons = 8 // > bootstrapAncestorSample (4), so rotation alone would sometimes miss one
+	chain, byID := buildBSChain(1, -1)
+	vm := newBSVM(chain)
+	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, numBeacons)
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[1]}
+	bh.msgCreator = bsMsgBuilder{}
+
+	// Record ONE beacon as ahead (the frontier round's output). It must appear in EVERY sample.
+	ahead := beacons[numBeacons-1]
+	bh.bsMu.Lock()
+	bh.bsAheadBeacons = set.Of(ahead)
+	bh.bsMu.Unlock()
+
+	for i := 0; i < 2*numBeacons; i++ {
+		sample, ok := bh.sampleAncestorBeacons()
+		require.True(t, ok)
+		require.LessOrEqual(t, sample.Len(), bootstrapAncestorSample)
+		require.True(t, sample.Contains(ahead),
+			"the recorded ahead-beacon must be preferred into every ancestry sample (call %d)", i)
+	}
 }
 
 // TestRED_FrozenVMLastAccepted_ConvergesOffFinalizedLedger is the regression guard for red
@@ -775,9 +859,9 @@ func TestNodeBootstrap_NoBeaconSet_ReportsNoBeacons(t *testing.T) {
 func TestNodeBootstrap_FreshNet_SelfVoteUnderFullConnectivity_CaughtUp(t *testing.T) {
 	const N = 5
 	chain, byID := buildBSChain(N, -1)
-	vm := newBSVM(chain)                                  // the node is at genesis (lastAccepted = genesis)
+	vm := newBSVM(chain)                                    // the node is at genesis (lastAccepted = genesis)
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 2) // 2 equal-weight (100) beacons
-	bh.selfNodeID = beacons[0]                            // THIS node is beacon 0 — it is itself a validator
+	bh.selfNodeID = beacons[0]                              // THIS node is beacon 0 — it is itself a validator
 	bh.msgCreator = bsMsgBuilder{}
 
 	// FULL connectivity: the ONE other beacon is connected and reports GENESIS (a fresh net — every
@@ -824,7 +908,7 @@ func TestNodeBootstrap_SelfVote_PeerAheadDefeatsCaughtUp(t *testing.T) {
 func TestNodeBootstrap_SelfVote_PartialConnectivityFailsSafe(t *testing.T) {
 	const N = 5
 	chain, byID := buildBSChain(N, -1)
-	vm := newBSVM(chain) // node at genesis
+	vm := newBSVM(chain)                                    // node at genesis
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 3) // self + 2 others
 	bh.selfNodeID = beacons[0]
 	bh.msgCreator = bsMsgBuilder{}
@@ -1852,8 +1936,8 @@ func TestBootstrap_AcceptedHeight_StoreVsAcceptance(t *testing.T) {
 	const M = 30
 	const Top = 40
 	chain, _ := buildBSChain(Top, -1)
-	vm := newBSVMAt(chain, M)          // accepted 0..M
-	vm.store(chain[M+1 : Top+1]...)    // M+1..Top GOSSIPED into the store but UNACCEPTED
+	vm := newBSVMAt(chain, M)       // accepted 0..M
+	vm.store(chain[M+1 : Top+1]...) // M+1..Top GOSSIPED into the store but UNACCEPTED
 	bh := &blockHandler{logger: log.NewNoOpLogger(), vm: vm}
 	ctx := context.Background()
 

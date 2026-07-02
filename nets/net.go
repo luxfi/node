@@ -34,6 +34,15 @@ type Net interface {
 	// IsBootstrapped returns true if the chains in this chain are done bootstrapping
 	IsBootstrapped() bool
 
+	// IsChainBootstrapped reports whether a SPECIFIC chain in this net has finished
+	// initial sync — i.e. Bootstrapped(chainID) was called for it (the chain reached
+	// the network frontier and its VM went to normal operation). This is the per-chain
+	// truth that info.isBootstrapped keys on, distinct from IsBootstrapped() which is
+	// the net-wide "no chain still bootstrapping" aggregate. A chain that is merely
+	// tracked (added, sync goroutine launched) but has NOT converged is still in the
+	// bootstrapping set and reads false here — closing the premature-true masking bug.
+	IsChainBootstrapped(chainID ids.ID) bool
+
 	// Bootstrapped marks the chain as done bootstrapping
 	Bootstrapped(chainID ids.ID)
 
@@ -64,6 +73,21 @@ func (s *chain) IsBootstrapped() bool {
 	defer s.lock.RUnlock()
 
 	return s.bootstrapping.Len() == 0
+}
+
+// IsChainBootstrapped assumes MONOTONIC per-process bootstrapped state: a chain
+// only ever moves bootstrapping→bootstrapped (Bootstrapped is forward-only and
+// AddChain refuses to re-add a chain already in either set), so this signal — and
+// the Bootstrapping() health check that shares the set — never report stale-true.
+// INVARIANT: if a future path ever moves a live chain BACK to bootstrapping (e.g.
+// SetState(Bootstrapping) on a running chain) it MUST remove the chainID from
+// bootstrapped, or both this signal and the readiness health check will report a
+// re-syncing chain as still bootstrapped.
+func (s *chain) IsChainBootstrapped(chainID ids.ID) bool {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.bootstrapped.Contains(chainID)
 }
 
 func (s *chain) Bootstrapped(chainID ids.ID) {

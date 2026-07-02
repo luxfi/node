@@ -157,8 +157,27 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 	if len(connected) == 0 {
 		return nil, false
 	}
-	start := int(b.bsRotor.Add(1)-1) % len(connected)
+	// Prefer beacons that reported an ahead tip in the last frontier round — they HOLD the
+	// ancestry the descent needs, so asking them (rather than a rotated peer that may be at
+	// genesis) is what lets a re-bootstrapping node obtain ancestry even when ≥2 peers are still
+	// at genesis. This is ava's PeerTracker "ask a prover" bias sourced from the frontier replies
+	// we already have (no separate tracker). Fill any remaining slots from the rotated full set so
+	// the sample never shrinks below what blind rotation would pick (defense against a stale/empty
+	// ahead-set). Empty ahead-set ⇒ pure rotation, identical to prior behavior.
+	b.bsMu.Lock()
+	ahead := b.bsAheadBeacons
+	b.bsMu.Unlock()
+
 	sample := set.NewSet[ids.NodeID](bootstrapAncestorSample)
+	for _, id := range connected {
+		if sample.Len() >= bootstrapAncestorSample {
+			break
+		}
+		if ahead != nil && ahead.Contains(id) {
+			sample.Add(id)
+		}
+	}
+	start := int(b.bsRotor.Add(1)-1) % len(connected)
 	for i := 0; i < len(connected) && sample.Len() < bootstrapAncestorSample; i++ {
 		sample.Add(connected[(start+i)%len(connected)])
 	}
@@ -538,6 +557,17 @@ func (b *blockHandler) collectFrontierReplies(ctx context.Context, connected []i
 
 	replies := make([]BeaconReply, 0, len(connected))
 	seen := make(map[ids.NodeID]struct{}, len(connected))
+	// ahead = beacons reporting a tip this node has NOT accepted (they hold blocks we lack, so
+	// they can SERVE the ancestry the descent needs). sampleAncestorBeacons prefers them so the
+	// GetAncestors sample targets peers that can serve — never a peer still at genesis (our own
+	// tip). Recorded per round; publishes into b.bsAheadBeacons before returning.
+	ahead := set.NewSet[ids.NodeID](len(connected))
+	record := func() []BeaconReply {
+		b.bsMu.Lock()
+		b.bsAheadBeacons = ahead
+		b.bsMu.Unlock()
+		return replies
+	}
 	deadline := time.After(bootstrapFrontierWindow)
 	for {
 		select {
@@ -551,13 +581,16 @@ func (b *blockHandler) collectFrontierReplies(ctx context.Context, connected []i
 			}
 			seen[rep.nodeID] = struct{}{}
 			replies = append(replies, BeaconReply{NodeID: rep.nodeID, Tip: rep.tip, Weight: w})
+			if _, accepted := b.acceptedHeight(rep.tip); !accepted {
+				ahead.Add(rep.nodeID) // reported a tip we have not accepted → genuinely ahead
+			}
 			if len(seen) >= len(connected) {
-				return replies // every connected beacon answered — resolve now, do not wait the window
+				return record() // every connected beacon answered — resolve now, do not wait the window
 			}
 		case <-deadline:
-			return replies
+			return record()
 		case <-ctx.Done():
-			return replies
+			return record()
 		}
 	}
 }
@@ -581,7 +614,15 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	requestID := b.requestIDCounter
 	b.contextRequestMu.Unlock()
 
-	ch := make(chan [][]byte, 1)
+	// Buffer the whole sample so EVERY sampled beacon's reply can queue — the loop
+	// then skips the EMPTY ones (a beacon that lacks the requested block, e.g. a peer
+	// still at genesis) and returns the first NON-EMPTY batch. With a size-1 channel a
+	// fast empty reply won the race and starved a slower peer that actually held the
+	// ancestry, so a re-bootstrapping node with ≥2 peers at genesis could keep drawing
+	// empties and stall. This mirrors the proven avalanchego contract: an empty Ancestors
+	// reply means "this peer can't serve — take another's," never "done" (getter serves an
+	// EXPLICIT empty batch when it lacks the block; see GetContext).
+	ch := make(chan [][]byte, bootstrapAncestorSample)
 	b.bsMu.Lock()
 	b.bsAncestorCh[requestID] = ch
 	b.bsMu.Unlock()
@@ -597,13 +638,19 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	}
 	b.net.Send(msg, sample, b.networkID, 0)
 
-	select {
-	case blocks := <-ch:
-		return blocks, nil
-	case <-time.After(bootstrapAncestorsTimeout):
-		return nil, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
+	deadline := time.After(bootstrapAncestorsTimeout)
+	for {
+		select {
+		case blocks := <-ch:
+			if len(blocks) == 0 {
+				continue // this beacon can't serve the block — wait for a peer that can
+			}
+			return blocks, nil
+		case <-deadline:
+			return nil, nil // no beacon in the sample served — the loop re-samples (rotated)
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	}
 }
 

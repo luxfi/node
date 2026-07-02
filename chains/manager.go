@@ -1199,6 +1199,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
+		// Round-scoped view-change (restores liveness under competing siblings + a zero-margin
+		// quorum — the 415→416 freeze). OPT-IN per deployment via LUX_CONSENSUS_VIEW_CHANGE=true
+		// so devnet/testnet can enable it without a mainnet default (mainnet is owner-gated). Only
+		// meaningful on a multi-validator (K>1) chain; K==1 has no competing proposers. The engine
+		// itself fail-secure HALTS the view-change if the committee fails the 2α−n>f bound, so
+		// enabling it can never weaken safety — at worst it halts (never forks).
+		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
+			consensusParams.ViewChange = true
+			m.Log.Info("round-scoped view-change ENABLED for chain",
+				log.Stringer("chainID", chainParams.ID),
+				log.Int("K", consensusParams.K),
+				log.Int("alpha", consensusParams.AlphaConfidence))
+		}
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		})
@@ -2252,6 +2265,17 @@ func watchBootstrapProgress(
 	}
 }
 
+// IsBootstrapped reports whether [id] has ACTUALLY finished initial sync on this
+// node: the chain exists AND its validation net has marked it bootstrapped —
+// monitorBootstrap called sb.Bootstrapped(id) only after runInitialSync reached the
+// named network frontier and transitioned the VM to normal operation (head advanced
+// to the frontier, eth-RPC serving live). The old body returned true the instant the
+// chain merely EXISTED in m.chains — set right after createChain launched the (async,
+// possibly-stalling) bootstrap goroutine — so a C-Chain stalled at genesis (head 0x0,
+// never converged) still reported info.isBootstrapped(C)=true, masking the stall from
+// any readiness gate keyed on it. Keying on the SAME sb.Bootstrapped signal the health
+// check (m.Nets.Bootstrapping) already uses makes info.isBootstrapped track real state,
+// so a hands-off rolling upgrade's wait-for-healthy gate can trust it.
 func (m *manager) IsBootstrapped(id ids.ID) bool {
 	m.chainsLock.Lock()
 	_, exists := m.chains[id]
@@ -2259,9 +2283,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 	if !exists {
 		return false
 	}
-
-	// Bootstrapped chains start in NormalOp
-	return true
+	return m.Nets.IsChainBootstrapped(id)
 }
 
 func (m *manager) GetChains() []ChainInfo {
@@ -2271,10 +2293,12 @@ func (m *manager) GetChains() []ChainInfo {
 	result := make([]ChainInfo, 0, len(m.chains))
 	for id, info := range m.chains {
 		result = append(result, ChainInfo{
-			ID:           id,
-			Name:         info.Name,
-			VMID:         info.VMID,
-			Bootstrapped: true,
+			ID:   id,
+			Name: info.Name,
+			VMID: info.VMID,
+			// Real per-chain convergence, not mere existence (same fix as IsBootstrapped):
+			// a tracked-but-still-syncing chain reports Bootstrapped=false.
+			Bootstrapped: m.Nets.IsChainBootstrapped(id),
 		})
 	}
 	return result
@@ -2726,10 +2750,18 @@ type blockHandler struct {
 	// poll the always-green /v1/health/liveness) would otherwise be a permanent brick.
 	bootstrapConnecting gatomic.Bool
 	bsActive            gatomic.Bool             // true while the bootstrap loop is driving
-	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh
+	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh + bsAheadBeacons
 	bsFrontierCh        chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
 	bsAncestorCh        map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
 	bsRotor             gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
+	// FrontierTip round, is a block this node does NOT hold — i.e. beacons genuinely AHEAD that
+	// therefore HAVE the ancestry the descent needs. sampleAncestorBeacons prefers them so a
+	// re-bootstrapping node asks GetAncestors of peers that can serve, never wasting the sample on
+	// peers still at genesis (the ava PeerTracker "ask a prover" bias, without a full tracker).
+	// Recorded in collectFrontierReplies; empty ⇒ sampleAncestorBeacons falls back to the full
+	// rotated set (identical to prior behavior). Guarded by bsMu.
+	bsAheadBeacons set.Set[ids.NodeID]
 
 	// vmReady transitions the VM to NORMAL OPERATION (vm.Ready → the EVM's
 	// onNormalOperationsStarted: block building, mempool gossip, validator dispatch).
@@ -3791,6 +3823,10 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
 				b.engine.HandleIncomingCert(payload)
+			case quorumKindPrevote:
+				// Round-scoped view-change prevote: the engine decodes+verifies
+				// (height,round,canonical,sig) from the payload and tallies it toward a POL.
+				b.engine.HandleIncomingPrevote(payload)
 			}
 			return nil
 		}
@@ -4098,6 +4134,24 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 		return 0
 	}
 	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
+	msg, err := g.msgCreator.Gossip(chainID, envelope)
+	if err != nil {
+		return 0
+	}
+	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+}
+
+// BroadcastPrevote sends this node's signed ROUND-SCOPED view-change prevote (the
+// non-binding preference signal) for `canonical` at (height, round) to ALL validators,
+// framed in a quorum envelope (kind 3) and decoded by blockHandler.Gossip into
+// engine.HandleIncomingPrevote. Prevotes never finalize anything — they drive the POL +
+// the lock/unlock rule that lets a competing-sibling split RE-CONVERGE (liveness under a
+// down proposer + zero-margin quorum). Only emitted when the chain runs params.ViewChange.
+func (g *networkGossiper) BroadcastPrevote(chainID ids.ID, networkID ids.ID, height uint64, round uint32, canonical ids.ID, voteBytes []byte) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+	envelope := encodeQuorumGossip(quorumKindPrevote, canonical, voteBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
 		return 0
