@@ -364,11 +364,17 @@ func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID 
 //
 // kind 1 = signed vote (payload = engine encodeSignedVote: nodeID+sig)
 // kind 2 = finality cert (payload = engine cert MarshalBinary)
+// kind 3 = round-scoped view-change PREVOTE (payload = engine encodeSignedPrevote:
+//          nodeID+height+round+canonical+sig, domain "LUX/chain/prevote/v1"). The
+//          envelope blockID field carries the canonical for routing but is advisory —
+//          HandleIncomingPrevote decodes the authoritative (height,round,canonical) from
+//          the payload and verifies the signature over the reconstructed message.
 var quorumGossipMagic = [4]byte{'L', 'X', 'Q', 0x01}
 
 const (
-	quorumKindVote byte = 1
-	quorumKindCert byte = 2
+	quorumKindVote    byte = 1
+	quorumKindCert    byte = 2
+	quorumKindPrevote byte = 3
 )
 
 // ErrNotQuorumGossip signals a payload is not a quorum envelope (so the caller
@@ -394,7 +400,7 @@ func decodeQuorumGossip(data []byte) (kind byte, blockID ids.ID, payload []byte,
 	kind = data[4]
 	copy(blockID[:], data[5:5+32])
 	payload = data[5+32:]
-	if kind != quorumKindVote && kind != quorumKindCert {
+	if kind != quorumKindVote && kind != quorumKindCert && kind != quorumKindPrevote {
 		return 0, ids.Empty, nil, ErrNotQuorumGossip
 	}
 	return kind, blockID, payload, nil
