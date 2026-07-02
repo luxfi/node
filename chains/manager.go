@@ -3256,14 +3256,6 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		}
 		entry := encodeCatchupEntry(blk.Bytes(), certBytes)
 		containers = append([][]byte{entry}, containers...)
-		// BSDIAG: record the served block's id+height so we can compare to the requester's
-		// parsed ids (does the served tip's id survive Bytes()->ParseBlock round-trip?).
-		if i < 3 || blk.ID() == containerID {
-			b.logger.Info("BSDIAG GetContext walk-block",
-				log.Stringer("chainID", b.chainID), log.Int("i", i),
-				log.Stringer("servedID", blk.ID()), log.Uint64("height", blk.Height()),
-				log.Bool("isRequestedTip", blk.ID() == containerID))
-		}
 
 		// Get parent ID for next iteration
 		parentID := blk.Parent()

@@ -17,8 +17,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
-	"strings"
 	"time"
 
 	cblock "github.com/luxfi/consensus/engine/chain/block"
@@ -669,30 +667,9 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 				emptySkips++
 				continue // this beacon can't serve the block — wait for a peer that can
 			}
-			// BSDIAG: parse the served batch and check whether `want` (blockID) is among the
-			// parsed IDs — the descent abandons the pass (want unchanged → stall) when it is NOT.
-			wantInBatch := false
-			var parsedIDs []string
-			var heights []string
-			if b.vm != nil {
-				for _, bz := range blocks {
-					if pb, perr := b.vm.ParseBlock(ctx, bz); perr == nil {
-						parsedIDs = append(parsedIDs, pb.ID().String())
-						heights = append(heights, fmt.Sprintf("%d", pb.Height()))
-						if pb.ID() == blockID {
-							wantInBatch = true
-						}
-					} else {
-						parsedIDs = append(parsedIDs, "PARSE_ERR:"+perr.Error())
-					}
-				}
-			}
 			b.logger.Info("BSDIAG Ancestors GOT batch",
 				log.Stringer("chainID", b.chainID), log.Uint32("requestID", requestID),
-				log.Int("blocks", len(blocks)), log.Int("emptySkips", emptySkips),
-				log.Stringer("want", blockID), log.Bool("wantInBatch", wantInBatch),
-				log.String("parsedIDs", strings.Join(parsedIDs, ",")),
-				log.String("heights", strings.Join(heights, ",")))
+				log.Int("blocks", len(blocks)), log.Int("emptySkips", emptySkips))
 			return blocks, nil
 		case <-deadline:
 			// BSDIAG: no NON-empty reply within the timeout — the descent counts this as a stall round.
