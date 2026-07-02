@@ -9,10 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/nets"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -163,8 +165,10 @@ func TestHoldsAuthorizationNFT(t *testing.T) {
 
 // newGateManager builds the minimal manager needed to exercise the gate:
 // only the fields authorizeChainActivation reads. xChainVM, when non-nil, is
-// installed as the X-Chain's tracked VM so IsBootstrapped(XChainID) is true and
-// xChainUTXOReader() resolves to it.
+// installed as the X-Chain's tracked VM AND marked bootstrapped in its net so
+// IsBootstrapped(XChainID) is true (the gate consults the X-Chain UTXO set, which
+// is only valid once the X-Chain has finished initial sync — mere presence in
+// m.chains is no longer sufficient) and xChainUTXOReader() resolves to it.
 func newGateManager(
 	xChainID ids.ID,
 	stakingAddr ids.ShortID,
@@ -172,17 +176,29 @@ func newGateManager(
 	critical set.Set[ids.ID],
 	xChainVM xChainUTXOReader,
 ) *manager {
+	netsTracker, err := NewNets(ids.GenerateTestNodeID(), map[ids.ID]nets.Config{
+		constants.PrimaryNetworkID: {},
+	})
+	if err != nil {
+		panic(err)
+	}
 	m := &manager{
 		chains:        make(map[ids.ID]*chainInfo),
 		gatedAttempts: make(map[ids.ID]int),
 	}
 	m.Log = log.NewNoOpLogger()
+	m.Nets = netsTracker
 	m.XChainID = xChainID
 	m.StakingXAddress = stakingAddr
 	m.ChainAuthorizations = authz
 	m.CriticalChains = critical
 	if xChainVM != nil {
 		m.chains[xChainID] = &chainInfo{Name: "X-Chain", VM: xChainVM}
+		// The X-Chain has finished initial sync (its UTXO set is valid) — the real
+		// precondition the gate depends on, now reflected in the net tracking.
+		sb, _ := netsTracker.GetOrCreate(constants.PrimaryNetworkID)
+		sb.AddChain(xChainID)
+		sb.Bootstrapped(xChainID)
 	}
 	return m
 }
@@ -278,11 +294,14 @@ func TestAuthorizeChainActivation(t *testing.T) {
 	})
 
 	t.Run("gated chain, X-Chain tracked but VM lacks reader, opts out", func(t *testing.T) {
-		// X-Chain is in m.chains (IsBootstrapped true) but its VM does not
-		// satisfy xChainUTXOReader. The gate must fail closed (ready, !authz),
-		// not panic.
+		// X-Chain is bootstrapped (in m.chains AND marked bootstrapped in its net, so
+		// IsBootstrapped true) but its VM does not satisfy xChainUTXOReader. The gate must
+		// fail closed (ready, !authz), not panic.
 		m := newGateManager(xChainID, addr, collection, nil, nil)
 		m.chains[xChainID] = &chainInfo{Name: "X-Chain", VM: struct{}{}}
+		sb, _ := m.Nets.GetOrCreate(constants.PrimaryNetworkID)
+		sb.AddChain(xChainID)
+		sb.Bootstrapped(xChainID)
 		authorized, ready := m.authorizeChainActivation(gatedChain)
 		require.True(t, ready)
 		require.False(t, authorized)
