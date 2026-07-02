@@ -302,7 +302,7 @@ func TestBootstrapTrust_F_SplitReachableAncestrySelectsCommonAncestor(t *testing
 
 // TestBootstrapTrust_G_FinalityUnchanged proves INVARIANT 3: a bootstrap-accepted frontier is NOT
 // finality. The SAME 3-of-5 support that AcceptsFrontier admits as a sync anchor does NOT satisfy
-// ConsensusQuorum.HasFinality — live block acceptance still requires > ⅔ of CURRENT validator
+// FinalityQuorum.HasFinality — live block acceptance still requires > ⅔ of CURRENT validator
 // stake (4 of 5 here). The bootstrap quorum cannot finalize a block.
 func TestBootstrapTrust_G_FinalityUnchanged(t *testing.T) {
 	const w uint64 = 100
@@ -321,15 +321,24 @@ func TestBootstrapTrust_G_FinalityUnchanged(t *testing.T) {
 	require.Equal(t, frontier, f.ID)
 	require.Equal(t, StakeWeight(3*w), f.Weight, "the frontier is backed by exactly the 3 responders")
 
-	// ConsensusQuorum says that SAME 3-of-5 weight is NOT finality — the decisions are different
+	// FinalityQuorum says that SAME 3-of-5 weight is NOT finality — the decisions are different
 	// objects with different thresholds. Finality is unchanged: it still needs > ⅔ (4 of 5).
-	cq := DefaultConsensusQuorum()
+	cq := DefaultFinalityQuorum()
 	require.False(t, cq.HasFinality(3*w, total),
 		"INVARIANT 3: a bootstrap-accepted frontier (3 of 5) is NOT a finalizing supermajority")
 	require.True(t, cq.HasFinality(4*w, total),
 		"finality UNCHANGED: > ⅔ of current stake (4 of 5) still finalizes")
 	require.False(t, cq.HasFinality(f.Weight, total),
 		"the bootstrap quorum's own backing weight cannot finalize a block")
+
+	// AFTER-SYNC (the owner's "bootstrap is not a finality bypass"): the node has now SYNCED to the
+	// frontier via BootstrapTrust and re-entered live consensus. A NEW block that collects the SAME
+	// 3-of-5 stake STILL does not finalize — bootstrap admitted a sync ANCHOR, it did not lower the
+	// finality bar. Live acceptance returns to strict > ⅔ of CURRENT stake, exactly as before any
+	// bootstrap. HasFinality is stateless in the bootstrap outcome, which is the whole point: there
+	// is no code path by which "we bootstrapped from 3/5" leaks into the finality decision.
+	require.False(t, cq.HasFinality(3*w, total),
+		"AFTER syncing from a 3-of-5 bootstrap frontier, live finality STILL needs > ⅔ (4 of 5) — no bypass")
 }
 
 // ----- checkpoint override (complements B) ----------------------------------

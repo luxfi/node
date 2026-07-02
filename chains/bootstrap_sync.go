@@ -337,7 +337,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	switch {
 	case err == nil:
 		// A configured-beacon quorum named a safe sync anchor (NOT a finality cert — the loop
-		// re-executes the descent and re-enters consensus, where ConsensusQuorum alone governs).
+		// re-executes the descent and re-enters consensus, where FinalityQuorum alone governs).
 		// With the P-ready gate above, this judgement is over the TRUE FULL staked set, so a tip the
 		// quorum actively names is a real frontier (when it equals our own held tip, a ⅔-of-responders
 		// supermajority is AT our height, so we ARE at the network frontier — the loop's Accepted()-shortcut
