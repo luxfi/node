@@ -181,6 +181,19 @@ func (b *blockHandler) sampleAncestorBeacons() (set.Set[ids.NodeID], bool) {
 	for i := 0; i < len(connected) && sample.Len() < bootstrapAncestorSample; i++ {
 		sample.Add(connected[(start+i)%len(connected)])
 	}
+	// BSDIAG (temporary instrumentation — remove after root-cause): the descent's fast-nil
+	// path is empty-sample; log the inputs so we can see whether connectedBeacons is empty at
+	// descent time even though the frontier round named a tip.
+	aheadLen := -1
+	if ahead != nil {
+		aheadLen = ahead.Len()
+	}
+	b.logger.Info("BSDIAG sampleAncestorBeacons",
+		log.Stringer("chainID", b.chainID),
+		log.Int("weights", len(weights)),
+		log.Int("connected", len(connected)),
+		log.Int("ahead", aheadLen),
+		log.Int("sample", sample.Len()))
 	return sample, sample.Len() > 0
 }
 
@@ -634,19 +647,34 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 
 	msg, err := b.msgCreator.GetAncestors(b.chainID, requestID, 10*time.Second, blockID, p2p.EngineType_ENGINE_TYPE_CHAIN)
 	if err != nil {
+		// BSDIAG: msg-build failure would be a fast-nil stall round.
+		b.logger.Info("BSDIAG Ancestors msgBuild FAILED",
+			log.Stringer("chainID", b.chainID), log.Stringer("blockID", blockID), log.Err(err))
 		return nil, err
 	}
-	b.net.Send(msg, sample, b.networkID, 0)
+	sentTo := b.net.Send(msg, sample, b.networkID, 0)
+	// BSDIAG: did the request go out, and to how many? sentTo=0 ⇒ send-side failure.
+	b.logger.Info("BSDIAG Ancestors SENT",
+		log.Stringer("chainID", b.chainID), log.Stringer("blockID", blockID),
+		log.Uint32("requestID", requestID), log.Int("sampleSize", sample.Len()), log.Int("sentTo", sentTo.Len()))
 
 	deadline := time.After(bootstrapAncestorsTimeout)
+	emptySkips := 0
 	for {
 		select {
 		case blocks := <-ch:
 			if len(blocks) == 0 {
+				emptySkips++
 				continue // this beacon can't serve the block — wait for a peer that can
 			}
+			b.logger.Info("BSDIAG Ancestors GOT batch",
+				log.Stringer("chainID", b.chainID), log.Uint32("requestID", requestID),
+				log.Int("blocks", len(blocks)), log.Int("emptySkips", emptySkips))
 			return blocks, nil
 		case <-deadline:
+			// BSDIAG: no NON-empty reply within the timeout — the descent counts this as a stall round.
+			b.logger.Info("BSDIAG Ancestors TIMEOUT (no serve)",
+				log.Stringer("chainID", b.chainID), log.Uint32("requestID", requestID), log.Int("emptySkips", emptySkips))
 			return nil, nil // no beacon in the sample served — the loop re-samples (rotated)
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -915,12 +943,20 @@ func (b *blockHandler) deliverBootstrapAncestors(requestID uint32, data []byte) 
 	b.bsMu.Lock()
 	ch := b.bsAncestorCh[requestID]
 	b.bsMu.Unlock()
+	delivered := false
 	if ch != nil {
 		select {
 		case ch <- raw:
+			delivered = true
 		default:
 		}
 	}
+	// BSDIAG: an Ancestors reply arrived during bootstrap — did it match a pending request
+	// and carry blocks? chFound=false ⇒ requestID mismatch (reply for a stale/other request).
+	b.logger.Info("BSDIAG deliverBootstrapAncestors",
+		log.Stringer("chainID", b.chainID), log.Uint32("requestID", requestID),
+		log.Int("dataLen", len(data)), log.Int("decodedBlocks", len(raw)),
+		log.Bool("chFound", ch != nil), log.Bool("delivered", delivered))
 	return true
 }
 

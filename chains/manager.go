@@ -3205,7 +3205,10 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		return nil
 	}
 
-	b.logger.Debug("received context request",
+	// BSDIAG (temporary): does the peer RECEIVE the descent's GetAncestors, and can it
+	// resolve the requested tip? Logged at INFO so it surfaces in pod logs.
+	b.logger.Info("BSDIAG GetContext RECV",
+		log.Stringer("chainID", b.chainID),
 		log.Stringer("from", nodeID),
 		log.Stringer("containerID", containerID),
 		log.Uint32("requestID", requestID))
@@ -3213,6 +3216,7 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	// Collect context blocks (walk parent chain)
 	var containers [][]byte
 	currentID := containerID
+	firstFound := false
 
 	for i := 0; i < b.maxContextBlocks; i++ {
 		// First check pending blocks (for recently proposed but not yet accepted blocks)
@@ -3230,9 +3234,16 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 			var err error
 			blk, err = b.vm.GetBlock(ctx, currentID)
 			if err != nil {
-				// Block not found in either location, stop walking
+				// BSDIAG: which block did the walk fail on? If i==0 the peer lacks the
+				// requested tip itself (serve-side "0 responses" root cause).
+				b.logger.Info("BSDIAG GetContext walk-miss",
+					log.Stringer("chainID", b.chainID), log.Int("i", i),
+					log.Stringer("missingID", currentID), log.Err(err))
 				break
 			}
+		}
+		if i == 0 {
+			firstFound = true
 		}
 
 		// Pair the block with its finality cert (empty if we have none — a still
@@ -3256,11 +3267,17 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	}
 
 	if len(containers) == 0 {
-		b.logger.Debug("no context found for request",
+		// BSDIAG: peer served NOTHING (INFO). firstFound=false ⇒ peer lacks the requested tip.
+		b.logger.Info("BSDIAG GetContext SERVED 0",
+			log.Stringer("chainID", b.chainID),
 			log.Stringer("from", nodeID),
-			log.Stringer("containerID", containerID))
+			log.Stringer("containerID", containerID),
+			log.Bool("firstFound", firstFound))
 		return nil
 	}
+	b.logger.Info("BSDIAG GetContext SERVING",
+		log.Stringer("chainID", b.chainID), log.Stringer("to", nodeID),
+		log.Uint32("requestID", requestID), log.Int("containers", len(containers)))
 
 	// Create and send Context response (wire protocol uses Ancestors message type)
 	msg, err := b.msgCreator.Ancestors(b.chainID, requestID, containers)
