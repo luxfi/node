@@ -12,7 +12,7 @@
 // to recover from. Bootstrap trust was braided into consensus finality, and finality's ⅔ rule
 // is mathematically unsatisfiable during a mass outage.
 //
-// The fix is a type split, NOT a renamed threshold. ConsensusQuorum decides FINALITY
+// The fix is a type split, NOT a renamed threshold. FinalityQuorum decides FINALITY
 // (> ⅔ of CURRENT stake — UNCHANGED). BootstrapTrust decides whether a fetched frontier is
 // SAFE TO BEGIN SYNC FROM: a quorum of AUTHENTICATED CONFIGURED beacons that RESPOND, gated by
 // a response FLOOR (MinResponses) and an agreement threshold over the RESPONDERS (not over the
@@ -37,30 +37,30 @@ import (
 
 // BootstrapTrust is not a consensus-finality oracle.
 // It selects a weak-subjective sync frontier from authenticated configured beacons.
-// Live block acceptance remains governed exclusively by ConsensusQuorum.
+// Live block acceptance remains governed exclusively by FinalityQuorum.
 type BootstrapTrust interface {
 	// AcceptsFrontier returns the block an empty/behind node may BEGIN SYNCING FROM, selected
 	// from the authenticated configured beacons' frontier replies — or an error
 	// (ErrInsufficientBootstrapResponses / ErrNoBootstrapQuorum) when no trusted frontier can be
 	// named this round. The returned Frontier is a sync ANCHOR, never a consensus certificate
 	// (see the type comment): the node must still re-execute every block it descends to before
-	// re-entering live consensus, where ConsensusQuorum alone governs acceptance.
+	// re-entering live consensus, where FinalityQuorum alone governs acceptance.
 	AcceptsFrontier(ctx context.Context, replies []BeaconReply) (*Frontier, error)
 }
 
-// ConsensusQuorum decides FINALITY: whether a weight is a finalizing supermajority (> ⅔) of the
+// FinalityQuorum decides FINALITY: whether a weight is a finalizing supermajority (> ⅔) of the
 // CURRENT validator set. This is the live-consensus rule; bootstrap does NOT change it. It is a
 // SEPARATE named type from BootstrapTrust precisely so the distinction is explicit and testable:
 // a frontier that AcceptsFrontier admits is "safe to sync from", and in general it does NOT
 // satisfy HasFinality (3 of 5 responders is a valid sync anchor; 3 of 5 stake is not finality).
-type ConsensusQuorum interface {
+type FinalityQuorum interface {
 	HasFinality(weight, total StakeWeight) bool
 }
 
 // StakeWeight is validator stake in the units the validator manager reports (Weight/Light).
 type StakeWeight = uint64
 
-// twoThirdsFinality is the production ConsensusQuorum: > ⅔ of the CURRENT total stake, exactly
+// twoThirdsFinality is the production FinalityQuorum: > ⅔ of the CURRENT total stake, exactly
 // the rule the live cert-gate uses (consensusconfig.TwoThirdsStakeFloor). Defined here only to
 // give the live rule a name to CONTRAST bootstrap trust against — it is not wired into the live
 // path (that already enforces ⅔ inside consensus), and bootstrap never calls it to ACCEPT.
@@ -70,10 +70,10 @@ func (twoThirdsFinality) HasFinality(weight, total StakeWeight) bool {
 	return weight > consensusconfig.TwoThirdsStakeFloor(total)
 }
 
-// DefaultConsensusQuorum returns the live ⅔-of-current-stake finality rule — the thing bootstrap
+// DefaultFinalityQuorum returns the live ⅔-of-current-stake finality rule — the thing bootstrap
 // trust is explicitly NOT. Used by the test suite to prove a bootstrap-accepted frontier does
 // not constitute finality.
-func DefaultConsensusQuorum() ConsensusQuorum { return twoThirdsFinality{} }
+func DefaultFinalityQuorum() FinalityQuorum { return twoThirdsFinality{} }
 
 var (
 	// ErrInsufficientBootstrapResponses: fewer than MinResponses configured beacons answered.
@@ -152,7 +152,7 @@ func (r Ratio) floorOf(whole uint64) uint64 {
 }
 
 // BootstrapPolicy is the default BootstrapTrust: a CONFIGURED-BEACON quorum with a response
-// FLOOR and an agreement threshold over the RESPONDERS — a SEPARATE object from ConsensusQuorum
+// FLOOR and an agreement threshold over the RESPONDERS — a SEPARATE object from FinalityQuorum
 // with a SEPARATE threat model. It does NOT pass "reachable stake" into the ⅔-of-current-stake
 // finality rule (that conflation IS the mass-recovery deadlock). It reuses the ancestor-tolerant
 // common-ancestor tally only for HOW to find the agreed frontier; the ACCEPTANCE gate is the
