@@ -1,0 +1,127 @@
+name: Docker (GPU variant)
+
+# Per-arch NATIVE build of the GPU-accelerated node image (DEXVM_GPU=1).
+#
+# The standard image (docker.yml) is pure-Go (CGO_ENABLED=0) and cross-compiles
+# arm64 on an amd64 runner — correct, because nothing native is linked. The GPU
+# variant is different: its D-Chain dexvm plugin links the per-arch native
+# liblux_gpu (lux_gpu_dex_match_order), and a native GPU lib CANNOT be
+# cross-linked. So each arch is built on the arcd pool that owns the matching
+# silicon and the matching liblux_gpu artifact from lux-private/gpu-kernels:
+#
+#   arm64 → spark (GB10, CUDA)  → lux-gpu-linux-arm64.tar.gz
+#   amd64 → evo   (ROCm, native-linux personality) → lux-gpu-linux-amd64.tar.gz
+#
+# Each job emits ghcr.io/luxfi/node:<tag>-gpu-<arch>; the manifest job fuses
+# them into ghcr.io/luxfi/node:<tag>-gpu. The plain (CPU) manifest is untouched.
+#
+# This is opt-in and separate from docker.yml on purpose: an operator that wants
+# GPU matching pulls :<tag>-gpu; everyone else pulls the portable CPU image.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'version tag to build as the GPU variant, e.g. v1.33.1'
+        required: true
+      lux_gpu_version:
+        description: 'lux-private/gpu-kernels release providing the per-arch liblux_gpu'
+        required: false
+        default: 'v0.1.0'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: spark-lux-linux     # GB10 — CUDA host, native arm64
+            platform: linux/arm64
+          - arch: amd64
+            runner: evo-lux-linux        # Strix Halo — ROCm host, native amd64
+            platform: linux/amd64
+    name: node:gpu-${{ matrix.arch }} (native)
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      # NATIVE only — no QEMU, no cross. The GPU lib is per-arch; assert the
+      # runner arch matches the target before building.
+      - name: Assert native arch
+        run: |
+          set -euo pipefail
+          host="$(uname -m)"
+          case "${{ matrix.arch }}" in
+            arm64) [ "$host" = "aarch64" ] || [ "$host" = "arm64" ] || { echo "::error::arm64 target on $host"; exit 1; } ;;
+            amd64) [ "$host" = "x86_64"  ] || { echo "::error::amd64 target on $host"; exit 1; } ;;
+          esac
+          echo "OK native ${{ matrix.arch }} on $host"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          driver-opts: network=host
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve cross-repo PAT for private luxfi/* deps
+        id: pat
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          UNIVERSE_PAT: ${{ secrets.UNIVERSE_PAT }}
+        run: |
+          tok="$GH_TOKEN"; [ -z "$tok" ] && tok="$UNIVERSE_PAT"
+          [ -n "$tok" ] || { echo "::error::no GH_TOKEN/UNIVERSE_PAT for private luxfi deps"; exit 1; }
+          echo "::add-mask::$tok"
+          { echo "token<<EOF"; echo "$tok"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+
+      # Single-arch, native build. DEXVM_GPU=1 + CGO_ENABLED=1 make the dexvm
+      # plugin link the per-arch liblux_gpu fetched inside the Dockerfile from
+      # the lux-gpu release. BUILDPLATFORM == TARGETPLATFORM (native) so the
+      # Dockerfile's cross-compile branch is never taken.
+      - name: Build & push GPU variant (native ${{ matrix.arch }})
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          build-args: |
+            CGO_ENABLED=1
+            DEXVM_GPU=1
+            LUX_GPU_VERSION=${{ github.event.inputs.lux_gpu_version }}
+          secrets: |
+            ghtok=${{ steps.pat.outputs.token }}
+          tags: ghcr.io/luxfi/node:${{ github.event.inputs.tag }}-gpu-${{ matrix.arch }}
+
+  manifest:
+    needs: build
+    runs-on: [self-hosted, linux, amd64]
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fuse per-arch GPU images into one manifest
+        run: |
+          set -euo pipefail
+          T="ghcr.io/luxfi/node:${{ github.event.inputs.tag }}-gpu"
+          docker manifest create "$T" "$T-amd64" "$T-arm64"
+          docker manifest push "$T"
+          echo "published $T (amd64 + arm64)"

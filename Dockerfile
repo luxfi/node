@@ -363,9 +363,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # REPLACES the former chains/dexvm proxy (which relayed clob_* over ZAP to a
 # standalone dchain-venue): there is no DexZapEndpoint and no standalone venue in
 # the trading path. cmd/dchain wraps the VM in the SAME rpc.Serve plugin harness
-# luxfi/evm boots through, and is pure-Go (CGO=0) — the optional GPU AMM
-# accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
-# is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
+# luxfi/evm boots through. The STANDARD node builds this plugin pure-Go (CGO=0),
+# so its matcher is lx.MatchOrderCPU — the pure-Go oracle that works on every
+# arch with no native deps. GPU acceleration is OPT-IN via DEXVM_GPU=1 (below):
+# pkg/lx's single orderbook_gpu.go links the unified lux-gpu (liblux_gpu) and
+# runtime-selects CUDA/HIP/Metal, falling back to MatchOrderCPU when no device is
+# present — so the two paths are byte-equal by contract (orderbook_gpu_test.go).
+# Because lux-gpu is a per-arch native lib, the DEXVM_GPU variant CANNOT be
+# cross-compiled: it must be built on the matching arcd GPU pool (see the
+# per-arch GPU-variant build in .github/workflows/docker-gpu.yml). v1.5.10 is
+# the first tag whose cmd/dchain builds CGO=0
 # (drops the phantom dchain+cgo gate); v1.5.11 wires CLOB order ingestion over the
 # node HTTP router (VM.CreateHandlers -> /ext/bc/D/dex/<method>, pkg/dchain/ingest.go)
 # so an order POSTed to the node flows submitTx -> mempool -> consensus -> Verify
@@ -386,13 +393,47 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # fills are trade: rows). Bump with every dex release that changes the VM, like
 # CHAINS_REF for the other 10 VMs.
 ARG DEX_REF=v1.5.15
+
+# GPU-accelerated D-Chain matcher (opt-in). DEXVM_GPU=1 fetches the per-arch
+# unified lux-gpu (built natively on the arcd GPU pools by
+# lux-private/gpu-kernels' liblux-gpu.yml — CUDA/arm64 on spark, HIP/amd64 on
+# evo, Metal on the mac) and builds the dexvm plugin with CGO_ENABLED=1 so
+# pkg/lx/orderbook_gpu.go links liblux_gpu (lux_gpu_dex_match_order +
+# lux_gpu_backend_name). Default 0 = the portable pure-Go CPU matcher, unchanged.
+# The fetch is per-arch and best-effort in the same spirit as lux-accel above,
+# but for DEXVM_GPU=1 a MISSING lib is FATAL: an operator asking for the GPU
+# variant must get a GPU-linked plugin, not a silent CPU one. Do NOT set
+# DEXVM_GPU=1 in a cross-arch (BUILDPLATFORM != TARGETPLATFORM) build — a native
+# GPU lib cannot be cross-linked; build the GPU variant on the matching pool.
+ARG DEXVM_GPU=0
+ARG LUX_GPU_VERSION=v0.1.0
+RUN --mount=type=secret,id=ghtok,required=false \
+    if [ "${DEXVM_GPU}" = "1" ]; then \
+        ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+        AUTH=""; [ -s /run/secrets/ghtok ] && AUTH="--header=Authorization: Bearer $(cat /run/secrets/ghtok)"; \
+        wget -q ${AUTH:+"$AUTH"} \
+            "https://github.com/lux-private/gpu-kernels/releases/download/${LUX_GPU_VERSION}/lux-gpu-linux-${ARCH}.tar.gz" \
+            -O /tmp/lux-gpu.tar.gz \
+          && tar -xzf /tmp/lux-gpu.tar.gz -C /usr/local \
+          && rm /tmp/lux-gpu.tar.gz \
+          && ldconfig 2>/dev/null || true; \
+        test -f /usr/local/lib/pkgconfig/lux-gpu.pc \
+            || { echo "FATAL: DEXVM_GPU=1 but lux-gpu ${LUX_GPU_VERSION} (${ARCH}) unavailable — cannot build the GPU dexvm variant"; exit 1; }; \
+    else \
+        echo "DEXVM_GPU=0: dexvm builds pure-Go CPU matcher (no lux-gpu link)"; \
+    fi
+
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     cd /tmp/dex && \
     . /build/build_env.sh && \
+    # DEXVM_GPU=1 → CGO on, orderbook_gpu.go links lux-gpu (pkg-config finds the
+    # per-arch lib fetched above). Default → CGO off, portable pure-Go matcher.
+    if [ "${DEXVM_GPU}" = "1" ]; then DEX_CGO=1; else DEX_CGO=0; fi && \
+    export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}" && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod \
+    CGO_ENABLED=${DEX_CGO} GOFLAGS=-mod=mod \
     go build -ldflags="-s -w" \
         -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/dchain && \
     chmod +x /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr && \
@@ -423,8 +464,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-# GPU crypto library (optional -- only present when built with CGO_ENABLED=1 + luxcpp).
-# Pure Go fallbacks are used when the library is absent.
+# Native GPU libraries (optional). /usr/local/lib exists (empty) on the builder
+# for the standard CGO_ENABLED=0 / DEXVM_GPU=0 image, so this COPY is a no-op
+# there. For the DEXVM_GPU=1 variant it carries the per-arch liblux_gpu.so that
+# the D-Chain dexvm plugin dynamically links; ldconfig then makes it resolvable.
+# Pure-Go fallbacks are used whenever the library is absent.
+COPY --from=builder /usr/local/lib/ /usr/local/lib/
 RUN ldconfig 2>/dev/null || true
 
 # Maintain compatibility with previous images.
