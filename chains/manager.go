@@ -1199,6 +1199,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
+		// Round-scoped view-change (restores liveness under competing siblings + a zero-margin
+		// quorum — the 415→416 freeze). OPT-IN per deployment via LUX_CONSENSUS_VIEW_CHANGE=true
+		// so devnet/testnet can enable it without a mainnet default (mainnet is owner-gated). Only
+		// meaningful on a multi-validator (K>1) chain; K==1 has no competing proposers. The engine
+		// itself fail-secure HALTS the view-change if the committee fails the 2α−n>f bound, so
+		// enabling it can never weaken safety — at worst it halts (never forks).
+		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
+			consensusParams.ViewChange = true
+			m.Log.Info("round-scoped view-change ENABLED for chain",
+				log.Stringer("chainID", chainParams.ID),
+				log.Int("K", consensusParams.K),
+				log.Int("alpha", consensusParams.AlphaConfidence))
+		}
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		})
