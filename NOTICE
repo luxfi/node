@@ -1,0 +1,38 @@
+Lux Node
+Copyright (c) 2019-2025 Lux Industries Inc.
+
+This product includes software from avalanchego by Ava Labs, Inc.
+(https://github.com/ava-labs/avalanchego), licensed under the BSD 3-Clause
+License:
+
+    Copyright (C) 2019, Ava Labs, Inc.
+
+Lux Node is derived from avalanchego. The Lux additions and modifications in
+this repository are licensed under the BSD 3-Clause License (see the LICENSE
+file). The BSD 3-Clause terms of the upstream avalanchego code are retained;
+this NOTICE preserves the required Ava Labs copyright attribution at the
+repository level.
+
+--------------------------------------------------------------------------
+
+Ethereum Virtual Machine support is derived from go-ethereum by The
+go-ethereum Authors (https://github.com/ethereum/go-ethereum). In this
+repository that code is NOT vendored in-tree; it is consumed as an external
+Go module through the Lux fork github.com/luxfi/geth, which retains
+go-ethereum's original licenses:
+
+  * The go-ethereum library packages are licensed under the GNU Lesser
+    General Public License, version 3 (LGPL-3.0-or-later).
+  * The go-ethereum command-line tools are licensed under the GNU General
+    Public License, version 3 (GPL-3.0).
+
+    Copyright (C) The go-ethereum Authors
+
+COPYLEFT NOTICE: The LGPL-3.0/GPL-3.0 terms continue to apply to the
+go-ethereum-derived portions provided via github.com/luxfi/geth, and are NOT
+superseded by the BSD 3-Clause license of this repository. Distribution of
+compiled Lux Node binaries must honor LGPL-3.0 for the linked go-ethereum
+library code (source availability for that code and its modifications, and
+the ability for users to relink against a modified library). The luxfi/geth
+source, including Lux modifications, is published at
+https://github.com/luxfi/geth.
