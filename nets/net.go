@@ -75,6 +75,14 @@ func (s *chain) IsBootstrapped() bool {
 	return s.bootstrapping.Len() == 0
 }
 
+// IsChainBootstrapped assumes MONOTONIC per-process bootstrapped state: a chain
+// only ever moves bootstrapping→bootstrapped (Bootstrapped is forward-only and
+// AddChain refuses to re-add a chain already in either set), so this signal — and
+// the Bootstrapping() health check that shares the set — never report stale-true.
+// INVARIANT: if a future path ever moves a live chain BACK to bootstrapping (e.g.
+// SetState(Bootstrapping) on a running chain) it MUST remove the chainID from
+// bootstrapped, or both this signal and the readiness health check will report a
+// re-syncing chain as still bootstrapped.
 func (s *chain) IsChainBootstrapped(chainID ids.ID) bool {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
