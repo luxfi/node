@@ -2252,6 +2252,17 @@ func watchBootstrapProgress(
 	}
 }
 
+// IsBootstrapped reports whether [id] has ACTUALLY finished initial sync on this
+// node: the chain exists AND its validation net has marked it bootstrapped —
+// monitorBootstrap called sb.Bootstrapped(id) only after runInitialSync reached the
+// named network frontier and transitioned the VM to normal operation (head advanced
+// to the frontier, eth-RPC serving live). The old body returned true the instant the
+// chain merely EXISTED in m.chains — set right after createChain launched the (async,
+// possibly-stalling) bootstrap goroutine — so a C-Chain stalled at genesis (head 0x0,
+// never converged) still reported info.isBootstrapped(C)=true, masking the stall from
+// any readiness gate keyed on it. Keying on the SAME sb.Bootstrapped signal the health
+// check (m.Nets.Bootstrapping) already uses makes info.isBootstrapped track real state,
+// so a hands-off rolling upgrade's wait-for-healthy gate can trust it.
 func (m *manager) IsBootstrapped(id ids.ID) bool {
 	m.chainsLock.Lock()
 	_, exists := m.chains[id]
@@ -2259,9 +2270,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 	if !exists {
 		return false
 	}
-
-	// Bootstrapped chains start in NormalOp
-	return true
+	return m.Nets.IsChainBootstrapped(id)
 }
 
 func (m *manager) GetChains() []ChainInfo {
@@ -2271,10 +2280,12 @@ func (m *manager) GetChains() []ChainInfo {
 	result := make([]ChainInfo, 0, len(m.chains))
 	for id, info := range m.chains {
 		result = append(result, ChainInfo{
-			ID:           id,
-			Name:         info.Name,
-			VMID:         info.VMID,
-			Bootstrapped: true,
+			ID:   id,
+			Name: info.Name,
+			VMID: info.VMID,
+			// Real per-chain convergence, not mere existence (same fix as IsBootstrapped):
+			// a tracked-but-still-syncing chain reports Bootstrapped=false.
+			Bootstrapped: m.Nets.IsChainBootstrapped(id),
 		})
 	}
 	return result
@@ -2726,10 +2737,18 @@ type blockHandler struct {
 	// poll the always-green /ext/health/liveness) would otherwise be a permanent brick.
 	bootstrapConnecting gatomic.Bool
 	bsActive            gatomic.Bool             // true while the bootstrap loop is driving
-	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh
+	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh + bsAheadBeacons
 	bsFrontierCh        chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
 	bsAncestorCh        map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
 	bsRotor             gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
+	// FrontierTip round, is a block this node does NOT hold — i.e. beacons genuinely AHEAD that
+	// therefore HAVE the ancestry the descent needs. sampleAncestorBeacons prefers them so a
+	// re-bootstrapping node asks GetAncestors of peers that can serve, never wasting the sample on
+	// peers still at genesis (the ava PeerTracker "ask a prover" bias, without a full tracker).
+	// Recorded in collectFrontierReplies; empty ⇒ sampleAncestorBeacons falls back to the full
+	// rotated set (identical to prior behavior). Guarded by bsMu.
+	bsAheadBeacons set.Set[ids.NodeID]
 
 	// vmReady transitions the VM to NORMAL OPERATION (vm.Ready → the EVM's
 	// onNormalOperationsStarted: block building, mempool gossip, validator dispatch).

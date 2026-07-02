@@ -46,6 +46,30 @@ func (s *Nets) GetOrCreate(chainID ids.ID) (nets.Net, bool) {
 	return chain, true
 }
 
+// IsChainBootstrapped reports whether the given chain has finished initial sync
+// (reached the network frontier and transitioned its VM to normal operation) on
+// this node — Bootstrapped(chainID) was called for it in its validation net. A
+// chain that is merely tracked (its sync goroutine launched) but has NOT converged
+// reads false. This is the per-chain truth manager.IsBootstrapped / info.isBootstrapped
+// key on, replacing the mere-existence test that returned true the instant a chain
+// was added to the manager (the premature-true masking bug: a C-Chain stalled at
+// genesis reported bootstrapped=true). A chainID is added to exactly one net's
+// tracking, so the first net that reports it bootstrapped is authoritative.
+func (s *Nets) IsChainBootstrapped(chainID ids.ID) bool {
+	if s == nil {
+		return false // no net tracking wired ⇒ nothing has been marked bootstrapped
+	}
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	for _, chain := range s.chains {
+		if chain.IsChainBootstrapped(chainID) {
+			return true
+		}
+	}
+	return false
+}
+
 // Bootstrapping returns the chainIDs of any chains that are still
 // bootstrapping.
 func (s *Nets) Bootstrapping() []ids.ID {
