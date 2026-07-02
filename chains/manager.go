@@ -3810,6 +3810,10 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
 				b.engine.HandleIncomingCert(payload)
+			case quorumKindPrevote:
+				// Round-scoped view-change prevote: the engine decodes+verifies
+				// (height,round,canonical,sig) from the payload and tallies it toward a POL.
+				b.engine.HandleIncomingPrevote(payload)
 			}
 			return nil
 		}
@@ -4117,6 +4121,24 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 		return 0
 	}
 	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
+	msg, err := g.msgCreator.Gossip(chainID, envelope)
+	if err != nil {
+		return 0
+	}
+	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+}
+
+// BroadcastPrevote sends this node's signed ROUND-SCOPED view-change prevote (the
+// non-binding preference signal) for `canonical` at (height, round) to ALL validators,
+// framed in a quorum envelope (kind 3) and decoded by blockHandler.Gossip into
+// engine.HandleIncomingPrevote. Prevotes never finalize anything — they drive the POL +
+// the lock/unlock rule that lets a competing-sibling split RE-CONVERGE (liveness under a
+// down proposer + zero-margin quorum). Only emitted when the chain runs params.ViewChange.
+func (g *networkGossiper) BroadcastPrevote(chainID ids.ID, networkID ids.ID, height uint64, round uint32, canonical ids.ID, voteBytes []byte) int {
+	if g.net == nil || g.msgCreator == nil {
+		return 0
+	}
+	envelope := encodeQuorumGossip(quorumKindPrevote, canonical, voteBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
 		return 0
