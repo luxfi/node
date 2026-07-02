@@ -123,8 +123,14 @@ func (m *manager) authorizeChainActivation(chainID ids.ID) (authorized bool, rea
 	// authorization from an NFT held at an address it does not control.
 
 	// The gate consults the X-Chain UTXO set, so the X-Chain must already be
-	// bootstrapped (created and tracked) on this node. If not, we cannot decide
-	// yet — signal the caller to defer.
+	// bootstrapped on this node. IsBootstrapped now keys on REAL convergence
+	// (sb.Bootstrapped), not mere presence — safe here because X-Chain is a DAG
+	// chain marked bootstrapped SYNCHRONOUSLY inside createChain (Engine == nil
+	// path) before the sequential chain-creator dequeues any re-pushed gated chain,
+	// so IsBootstrapped(X) is already true when a gated chain re-runs. INVARIANT: if
+	// X-Chain is ever linearized into an engine chain (async Bootstrapped via
+	// monitorBootstrap), retryPendingGatedChains must be made to re-drain after X
+	// converges, else gated chains park forever. If not bootstrapped yet, defer.
 	if !m.IsBootstrapped(m.XChainID) {
 		return false, false
 	}

@@ -257,7 +257,7 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.101.2
+ARG EVM_VERSION=v1.103.0
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -281,7 +281,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     # byte-identity; DEX big.Rat + determinism). Pin chains v1.4.8 (warp
     # consolidated to one luxfi/warp helper; graphvm genesis-last-accepted fix)
     # to match the chain-VM plugin stage (CHAINS_REF) below.
-    go mod edit -require=github.com/luxfi/chains@v1.4.8 && \
+    go mod edit -require=github.com/luxfi/chains@v1.7.0 && \
     find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
@@ -311,7 +311,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # helper (bridgevm/zkvm/thresholdvm), graphvm genesis-last-accepted fix, built on
 # evm v1.99.48 + precompile v0.16.0 (enable-everything builder surface). Keeps the
 # baked VM plugins in lockstep with the host node.
-ARG CHAINS_REF=v1.4.8
+ARG CHAINS_REF=v1.7.0
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
