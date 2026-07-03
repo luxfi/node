@@ -85,6 +85,29 @@ selection, and EVM contract auth.
 
 ## FeePolicy — canonical user-tx fee gate
 
+> **Topology + UTXO ownership + cross-chain fee model** are normatively
+> specified by [**LP-0130** (Chain Topology, UTXO Ownership, and Fee
+> Model)](https://github.com/luxfi/lps/blob/main/LPs/lp-0130-chain-topology-utxo-ownership-and-fee-model.md).
+> Read that LP before touching any VM's fee/settlement path or any
+> cross-chain import/export flow. In particular:
+>
+> - Only **P** and **X** are canonical UTXO state machines (LP-0130 §2).
+> - **X** is the money rail; **P** is the staking/reward rail; **LUX**
+>   is the fee currency everywhere (LP-0130 §3, §5).
+> - **Q-Chain has no user-payable blockspace** — finality is a
+>   validator obligation paid via P (LP-0130 §6). `quantumvm` MUST
+>   use `NoUserTxPolicy{}` — enforced in chains/quantumvm/feegate.go as of 2026-07-03.
+> - **M-Chain fees are service fees** deducted from the originating
+>   chain's fee pool, not a user M-balance (LP-0130 §7). `mpcvm`
+>   already runs `NoUserTxPolicy{}` — correct.
+> - **B-Chain fees** are deducted from the bridged amount (LP-0130 §8).
+> - Every non-P/X chain settles worker rewards to X (asset payouts) or
+>   P (staker rewards) via epoch fee roots reconciled at Q finality
+>   (LP-0130 §4, §11).
+> - **Σ-escrow invariant** (LP-0130 I-8): `Σ non-P/X fee balances ==
+>   Σ X-side fee escrow` at every Q checkpoint. Drift is a
+>   finality-blocking fault.
+
 Every Lux VM that accepts user-submitted txs declares a `fee.Policy`
 (package `vms/types/fee`). There is one interface and one validator —
 no per-VM bespoke fee structs.
@@ -97,14 +120,14 @@ no per-VM bespoke fee structs.
 | zkvm | Z-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
 | aivm | A-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
 | keyvm | K-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
-| bridgevm | B-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
-| quantumvm | Q-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
+| bridgevm | B-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` (deducted from bridged amount, LP-0130 §8) |
+| quantumvm | Q-Chain | **service-only** (LP-0130 §6) | `NoUserTxPolicy{}` — validator obligation, no user-payable blockspace |
 | identityvm | I-Chain | user-tx | `FlatPolicy{Fee: MinTxFeeFloor, ...}` |
-| thresholdvm | M-Chain | service-only | `NoUserTxPolicy{}` |
+| mpcvm | M-Chain | service-only (LP-0130 §7) | `NoUserTxPolicy{}` — fees pulled from originating chain's fee pool |
 | oraclevm | O-Chain | service-only | `NoUserTxPolicy{}` |
 | relayvm | R-Chain | service-only | `NoUserTxPolicy{}` |
 | graphvm | G-Chain | read-only | `NoUserTxPolicy{}` (GraphQL refuses `mutation`) |
-| evm | C-Chain | user-tx | native EVM gas (gas * gasPrice >= 0 enforced upstream) |
+| evm | C-Chain | user-tx | native EVM gas (gas * gasPrice >= 0 enforced upstream); balance is X-imported LUX (LP-0130 §10) |
 | platformvm | P-Chain | user-tx | native `TxFee` field on Config |
 | avm | X-Chain | user-tx | native `TxFee` field on Config |
 
@@ -230,7 +253,7 @@ Located in `/vms/`:
 - **platformvm**: Staking, validation, network management
 - **xvm**: Asset transfers, UTXO model
 - **dexvm**: DEX with order book, perpetuals, AMM
-- **thresholdvm**: Threshold MPC and FHE for confidential computing
+- **mpcvm**: Threshold MPC and FHE for confidential computing
 - **quantumvm**: PQ consensus coordination (ML-DSA, Corona)
 - **identityvm**: Decentralized identity (DID, verifiable credentials)
 - **keyvm**: Post-quantum key management (ML-KEM, ML-DSA)
@@ -320,11 +343,11 @@ github.com/luxfi/genesis (JSON config)  →  github.com/luxfi/node/genesis/build
 ### CGO Dependencies
 These require CGO for full functionality (graceful fallback when disabled):
 - `consensus/quasar` - GPU NTT acceleration
-- `vms/thresholdvm/fhe` - GPU FHE operations
+- `vms/mpcvm/fhe` - GPU FHE operations
 - `x/blockdb` - zstd compression
 
 ### FHE (Fully Homomorphic Encryption)
-Located in `vms/thresholdvm/fhe/`:
+Located in `vms/mpcvm/fhe/`:
 - Uses `github.com/luxfi/lattice/multiparty` for DKG
 - Lattice-based cryptography only (no fallbacks)
 - Threshold decryption via Warp messaging
@@ -639,7 +662,7 @@ strings.Contains(errStr, "not found") // parent block not in local state
 ### Known CGO Stubs
 When CGO disabled, these use CPU fallbacks:
 - `consensus/quasar/gpu_ntt_nocgo.go`
-- `vms/thresholdvm/fhe/gpu_fhe_nocgo.go`
+- `vms/mpcvm/fhe/gpu_fhe_nocgo.go`
 - `vms/zkvm/accel/accel_mlx.go`
 
 ### 8. ZAP CreateHandlers for VM HTTP Endpoints

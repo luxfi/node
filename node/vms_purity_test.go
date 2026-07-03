@@ -58,7 +58,7 @@ func TestOptionalVMsNotLinkedInProcess(t *testing.T) {
 		"github.com/luxfi/chains/keyvm",
 		"github.com/luxfi/chains/oraclevm",
 		"github.com/luxfi/chains/relayvm",
-		"github.com/luxfi/chains/thresholdvm",
+		"github.com/luxfi/chains/mpcvm",
 	}
 	for _, pkg := range []string{"./node/", "./main"} {
 		deps := goListDeps(t, pkg)
