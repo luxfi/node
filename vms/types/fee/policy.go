@@ -9,7 +9,7 @@
 // charging 1,000x too little (quantumvm). The root cause was that fee
 // policy lived as ad-hoc fields on each VM's Config — there was no shared
 // surface to enforce a non-zero floor, and no sentinel for chains that
-// legitimately accept no user txs (thresholdvm, oraclevm, relayvm —
+// legitimately accept no user txs (mpcvm, oraclevm, relayvm —
 // committee-driven, no user mempool).
 //
 // This package provides exactly one way to declare a fee policy:
@@ -122,7 +122,7 @@ func (p FlatPolicy) ValidateFee(paid uint64, asset ids.ID) error {
 }
 
 // NoUserTxPolicy is the sentinel policy for chains that accept no
-// user-submitted txs — committee-driven only (thresholdvm, oraclevm,
+// user-submitted txs — committee-driven only (mpcvm, oraclevm,
 // relayvm). Distinguishing this from "policy not set" is what makes
 // Manager's boot-time Validate able to refuse zero-fee user-facing
 // chains without false-positive-ing the committee chains.

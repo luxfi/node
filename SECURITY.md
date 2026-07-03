@@ -145,7 +145,7 @@ Production implementations live in `lux/crypto/` and `lux/lattice/`. Formal veri
 | `audits/2025-12-30-other-vms-audit.md` | Secondary VMs |
 | `audits/2025-12-30-platformvm-audit.md` | PlatformVM (P-Chain) |
 | `audits/2025-12-30-proposervm-evm-audit.md` | ProposerVM and EVM integration |
-| `audits/2025-12-30-thresholdvm-audit.md` | ThresholdVM (T-Chain) |
+| `audits/2025-12-30-mpcvm-audit.md` | ThresholdVM (T-Chain) |
 | `audits/2025-12-30-warp-audit.md` | Warp cross-chain messaging |
 | `audits/2025-12-30-zkvm-audit.md` | ZKVM (Z-Chain) |
 
