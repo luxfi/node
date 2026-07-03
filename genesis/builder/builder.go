@@ -54,7 +54,8 @@ var (
 	QChainAliases = AliasesFor("Q")
 	AChainAliases = AliasesFor("A")
 	BChainAliases = AliasesFor("B")
-	TChainAliases = AliasesFor("T")
+	MChainAliases = AliasesFor("M")
+	FChainAliases = AliasesFor("F")
 	ZChainAliases = AliasesFor("Z")
 	GChainAliases = AliasesFor("G")
 	KChainAliases = AliasesFor("K")
@@ -604,7 +605,8 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 		{[]byte(config.CChainGenesis), constants.EVMID, "C-Chain", nil},
 		{[]byte(config.DChainGenesis), constants.DexVMID, "D-Chain", nil},
 		{[]byte(config.BChainGenesis), constants.BridgeVMID, "B-Chain", nil},
-		{[]byte(config.TChainGenesis), constants.ThresholdVMID, "T-Chain", nil},
+		{[]byte(config.MChainGenesis), constants.MPCVMID, "M-Chain", nil},
+		{[]byte(config.FChainGenesis), constants.FHEVMID, "F-Chain", nil},
 		{[]byte(config.QChainGenesis), constants.QuantumVMID, "Q-Chain", nil},
 		{[]byte(config.ZChainGenesis), constants.ZKVMID, "Z-Chain", nil},
 		// A/G/K carry genesis blobs and are deterministic genesis chains
@@ -832,16 +834,24 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 				path.Join(constants.ChainAliasPrefix, "bridge"),
 			}
 			chainAliases[chainID] = BChainAliases
-		case constants.ThresholdVMID:
+		case constants.MPCVMID:
 			apiAliases[endpoint] = []string{
-				"T",
-				"threshold",
-				"thresholdvm",
+				"M",
 				"mpc",
-				path.Join(constants.ChainAliasPrefix, "T"),
-				path.Join(constants.ChainAliasPrefix, "threshold"),
+				"mpcvm",
+				path.Join(constants.ChainAliasPrefix, "M"),
+				path.Join(constants.ChainAliasPrefix, "mpc"),
 			}
-			chainAliases[chainID] = TChainAliases
+			chainAliases[chainID] = MChainAliases
+		case constants.FHEVMID:
+			apiAliases[endpoint] = []string{
+				"F",
+				"fhe",
+				"fhevm",
+				path.Join(constants.ChainAliasPrefix, "F"),
+				path.Join(constants.ChainAliasPrefix, "fhe"),
+			}
+			chainAliases[chainID] = FChainAliases
 		case constants.ZKVMID:
 			apiAliases[endpoint] = []string{
 				"Z",

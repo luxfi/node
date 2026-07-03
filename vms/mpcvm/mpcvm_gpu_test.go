@@ -1,7 +1,7 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package thresholdvm
+package mpcvm
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ import (
 // device-side __align__(16) values declared in
 // the GPU plugin install tree ops/mpcvm/cuda/mpcvm_kernels_common.cuh.
 //
-// Even though the structs are type aliases to chains/thresholdvm, this
+// Even though the structs are type aliases to chains/mpcvm, this
 // test sits at the node import boundary — if upstream sizes drift the
 // node-side surface MUST also fail loud rather than miscompile.
 func TestNodeGPULayoutSizes(t *testing.T) {

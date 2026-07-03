@@ -124,7 +124,8 @@ var OptionalVMs = map[ids.ID]PluginSpec{
 	constants.KeyVMID:       {Name: "keyvm"},
 	constants.OracleVMID:    {Name: "oraclevm"},
 	constants.RelayVMID:     {Name: "relayvm"},
-	constants.ThresholdVMID: {Name: "thresholdvm"},
+	constants.MPCVMID:       {Name: "mpcvm"},
+	constants.FHEVMID:       {Name: "fhevm"},
 }
 
 func init() {
