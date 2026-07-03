@@ -8,12 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sync"
 	"time"
 
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -113,7 +115,12 @@ func NewManager(
 		state:   state,
 		metrics: metrics,
 		clk:     clk,
-		caches:  make(map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput]),
+		// Snapshot the tracked-chain set. cfg.TrackedChains aliases the network's
+		// runtime-mutable set, and the P-chain VM (this constructor) is initialized
+		// synchronously before the API server serves setTrackedChains, so this
+		// one-time copy happens-before any concurrent TrackChain writer.
+		trackedChains: set.Of(cfg.TrackedChains.List()...),
+		caches:        make(map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput]),
 		recentlyAccepted: window.New[ids.ID](
 			window.Config{
 				Clock:   clk,
@@ -131,6 +138,19 @@ type manager struct {
 	state   State
 	metrics metrics.Metrics
 	clk     *mockable.Clock
+
+	// trackedChains is an immutable snapshot of cfg.TrackedChains taken at
+	// construction. getValidatorSetCache reads it lock-free from the consensus
+	// hot path; cfg.TrackedChains itself aliases the network's runtime-mutable
+	// set (mutated by network.TrackChain under peersLock via the admin
+	// setTrackedChains RPC), so the hot path must not read that live map.
+	trackedChains set.Set[ids.ID]
+
+	// cachesLock guards concurrent access to caches. getValidatorSetCache runs a
+	// check-then-insert that is reached concurrently from every chain's
+	// proposervm (windower.ExpectedProposer -> GetValidatorSet), so the map
+	// read, existence check, and insert must be atomic.
+	cachesLock sync.Mutex
 
 	// Maps caches for each net that is currently tracked.
 	// Key: Net ID
@@ -253,10 +273,21 @@ func (m *manager) GetValidatorSetWithContext(
 }
 
 func (m *manager) getValidatorSetCache(chainID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
-	// Only cache tracked chains
-	if chainID != constants.PrimaryNetworkID && !m.cfg.TrackedChains.Contains(chainID) {
+	// Only cache the primary network and chains tracked at startup. trackedChains
+	// is an immutable snapshot (see NewManager), so this read is lock-free and
+	// cannot race the network's runtime setTrackedChains writer. A chain tracked
+	// at runtime via the (default-disabled) admin API is not reflected here: it
+	// reads as untracked and its validator set is recomputed per call rather than
+	// cached — correct, just uncached.
+	if chainID != constants.PrimaryNetworkID && !m.trackedChains.Contains(chainID) {
 		return &cache.Empty[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{}
 	}
+
+	// The check-then-insert on caches must be atomic: this method is reached
+	// concurrently across chains, so an unguarded map write here crashes the
+	// node with "concurrent map writes".
+	m.cachesLock.Lock()
+	defer m.cachesLock.Unlock()
 
 	validatorSetsCache, exists := m.caches[chainID]
 	if exists {
