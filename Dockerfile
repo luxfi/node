@@ -302,13 +302,13 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   oraclevm     -> r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS
 #   quantumvm    -> ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug
 #   relayvm      -> sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz
-#   thresholdvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
+#   mpcvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
 # MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
 # v1.4.7 == node go.mod's luxfi/chains pin: warp consolidated to ONE luxfi/warp
-# helper (bridgevm/zkvm/thresholdvm), graphvm genesis-last-accepted fix, built on
+# helper (bridgevm/zkvm/mpcvm), graphvm genesis-last-accepted fix, built on
 # evm v1.99.48 + precompile v0.16.0 (enable-everything builder surface). Keeps the
 # baked VM plugins in lockstep with the host node.
 ARG CHAINS_REF=v1.7.0
@@ -345,8 +345,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         -o /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug ./cmd/plugin ) || echo "WARN: quantumvm plugin build skipped" ; \
     ( cd /tmp/chains/relayvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz ./cmd/plugin ) || echo "WARN: relayvm plugin build skipped" ; \
-    ( cd /tmp/chains/thresholdvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t ./cmd/plugin ) || echo "WARN: thresholdvm plugin build skipped" ; \
+    ( cd /tmp/chains/mpcvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
+        -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t ./cmd/plugin ) || echo "WARN: mpcvm plugin build skipped" ; \
     ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
     ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
