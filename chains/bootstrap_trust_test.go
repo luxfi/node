@@ -16,6 +16,7 @@ package chains
 
 import (
 	"context"
+	"crypto/ed25519"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -343,26 +344,54 @@ func TestBootstrapTrust_G_FinalityUnchanged(t *testing.T) {
 
 // ----- checkpoint override (complements B) ----------------------------------
 
+// edCheckpointAuthority is a test checkpoint authority backed by Ed25519 — a PROVEN primitive, no
+// custom crypto. It signs a checkpoint's canonical (id,height) message and verifies against its own
+// public key, rejecting an empty signature and any key that is not the configured authority.
+type edCheckpointAuthority struct {
+	priv ed25519.PrivateKey
+	pub  ed25519.PublicKey
+}
+
+func newEdCheckpointAuthority(t *testing.T) *edCheckpointAuthority {
+	t.Helper()
+	pub, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	return &edCheckpointAuthority{priv: priv, pub: pub}
+}
+
+func (a *edCheckpointAuthority) sign(id ids.ID, height uint64) []byte {
+	return ed25519.Sign(a.priv, CanonicalCheckpointMessage(id, height))
+}
+
+// VerifyCheckpoint implements CheckpointVerifier: authenticate against the authority's public key.
+func (a *edCheckpointAuthority) VerifyCheckpoint(id ids.ID, height uint64, sig []byte) bool {
+	return len(sig) != 0 && ed25519.Verify(a.pub, CanonicalCheckpointMessage(id, height), sig)
+}
+
 // TestBootstrapTrust_CheckpointOverride: below the response floor (1 of 5), the DEFAULT is reject
-// (test B), but an operator who pins a checkpoint gets the explicit override — the node anchors to
-// the pinned (id,height) instead of trusting the lone beacon. This is the sanctioned escape hatch
-// for a deeply-partitioned node, NEVER an open-ended ≥1-beacon acceptance.
+// (test B), but an operator who pins a SIGNED checkpoint gets the explicit override — the node
+// anchors to the authenticated (id,height) instead of trusting the lone beacon. This is the
+// sanctioned escape hatch for a deeply-partitioned node, NEVER an open-ended ≥1-beacon acceptance,
+// and (INVARIANT 4) NEVER a bare unsigned config value.
 func TestBootstrapTrust_CheckpointOverride(t *testing.T) {
 	beacons := nodeIDs(5)
+	authority := newEdCheckpointAuthority(t)
 	ckptID := ids.GenerateTestID()
+	const ckptHeight = uint64(1_082_796)
 	policy := &BootstrapPolicy{
-		TrustedBeacons: equalBeacons(beacons, equalStake),
-		MinResponses:   3,
-		Checkpoint:     &Checkpoint{ID: ckptID, Height: 1_082_796},
+		TrustedBeacons:     equalBeacons(beacons, equalStake),
+		MinResponses:       3,
+		Checkpoint:         &Checkpoint{ID: ckptID, Height: ckptHeight, Signature: authority.sign(ckptID, ckptHeight)},
+		CheckpointVerifier: authority,
 	}
-	// 1 reachable beacon — below the floor — but a checkpoint is pinned.
+	// 1 reachable beacon — below the floor — but a SIGNED checkpoint is pinned.
 	f, err := policy.AcceptsFrontier(context.Background(), []BeaconReply{
 		reply(beacons[0], ids.GenerateTestID(), equalStake),
 	})
 	require.NoError(t, err)
-	require.True(t, f.FromCheckpoint, "below the floor with a pinned checkpoint → anchor to the checkpoint")
+	require.True(t, f.FromCheckpoint, "below the floor with a SIGNED checkpoint → anchor to the checkpoint")
 	require.Equal(t, ckptID, f.ID)
-	require.Equal(t, uint64(1_082_796), f.Height)
+	require.Equal(t, ckptHeight, f.Height)
 
 	// Without the checkpoint the same 1-of-5 is rejected (the default — never trust the lone beacon).
 	policy.Checkpoint = nil
@@ -370,6 +399,56 @@ func TestBootstrapTrust_CheckpointOverride(t *testing.T) {
 		reply(beacons[0], ids.GenerateTestID(), equalStake),
 	})
 	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses)
+}
+
+// TestBootstrapTrust_CheckpointMustBeSigned is INVARIANT 4: a checkpoint that is present but not
+// AUTHENTICATED is REJECTED (fail closed). A compromised flag/config that pins a false (id,height)
+// cannot inject a sync anchor without the authority's signature. Four rejection modes, one accept.
+func TestBootstrapTrust_CheckpointMustBeSigned(t *testing.T) {
+	beacons := nodeIDs(5)
+	authority := newEdCheckpointAuthority(t)
+	attacker := newEdCheckpointAuthority(t) // a DIFFERENT key — not the configured authority
+	ckptID := ids.GenerateTestID()
+	const h = uint64(500_000)
+	lone := []BeaconReply{reply(beacons[0], ids.GenerateTestID(), equalStake)} // 1-of-5, below floor
+
+	base := func() *BootstrapPolicy {
+		return &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, equalStake), MinResponses: 3, CheckpointVerifier: authority}
+	}
+
+	// (1) UNSIGNED checkpoint (empty signature) → rejected even with a verifier wired.
+	p := base()
+	p.Checkpoint = &Checkpoint{ID: ckptID, Height: h}
+	_, err := p.AcceptsFrontier(context.Background(), lone)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses, "an UNSIGNED checkpoint must be rejected")
+
+	// (2) signed by a NON-AUTHORITY (attacker) key → rejected.
+	p = base()
+	p.Checkpoint = &Checkpoint{ID: ckptID, Height: h, Signature: attacker.sign(ckptID, h)}
+	_, err = p.AcceptsFrontier(context.Background(), lone)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses, "a checkpoint signed by a non-authority key must be rejected")
+
+	// (3) authority signature over a DIFFERENT (id,height) — replay onto a forged anchor → rejected.
+	p = base()
+	forgedID := ids.GenerateTestID()
+	p.Checkpoint = &Checkpoint{ID: forgedID, Height: h, Signature: authority.sign(ckptID, h)} // sig binds ckptID, not forgedID
+	_, err = p.AcceptsFrontier(context.Background(), lone)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses, "a signature transplanted to a different (id,height) must be rejected")
+
+	// (4) NO verifier configured → any checkpoint is untrusted (fail closed).
+	p = base()
+	p.CheckpointVerifier = nil
+	p.Checkpoint = &Checkpoint{ID: ckptID, Height: h, Signature: authority.sign(ckptID, h)}
+	_, err = p.AcceptsFrontier(context.Background(), lone)
+	require.ErrorIs(t, err, ErrInsufficientBootstrapResponses, "no verifier ⇒ even a validly-signed checkpoint is untrusted")
+
+	// (accept) authority signs the exact pinned (id,height) → trusted.
+	p = base()
+	p.Checkpoint = &Checkpoint{ID: ckptID, Height: h, Signature: authority.sign(ckptID, h)}
+	f, err := p.AcceptsFrontier(context.Background(), lone)
+	require.NoError(t, err)
+	require.True(t, f.FromCheckpoint)
+	require.Equal(t, ckptID, f.ID)
 }
 
 // ----- safety guard for the global ancestor-tolerant tally ------------------

@@ -24,6 +24,7 @@ package chains
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -127,9 +128,48 @@ type AncestrySource interface {
 // Checkpoint is an operator-pinned (id, height) the recovering node may anchor to when too few
 // beacons respond to form a quorum — the EXPLICIT override for INVARIANT 2's "1 of N reachable"
 // case. Absent (nil) ⇒ the default policy REJECTS rather than trusting a captured minority.
+//
+// INVARIANT 4 (a checkpoint is a SIGNED weak-subjectivity anchor, not a bare config value): the
+// checkpoint carries a cryptographic Signature by the configured checkpoint AUTHORITY over its
+// (id, height), and AcceptsFrontier trusts it ONLY when CheckpointVerifier authenticates that
+// signature. A (id,height) present in a flag/config but UNSIGNED — or signed by a non-authority key
+// — is REJECTED (fail closed). This is the crucial hardening: the checkpoint is the one path that
+// bypasses the beacon quorum, so a compromised flag must NOT be able to inject a false sync anchor
+// without ALSO forging the authority's signature. It is a cryptographic vouch, NEVER a ⅔-live-stake
+// tally (that conflation is the very deadlock BootstrapTrust exists to avoid).
 type Checkpoint struct {
 	ID     ids.ID
 	Height uint64
+	// Signature is the checkpoint authority's signature over this checkpoint's canonical (id,height)
+	// bytes. Verified by CheckpointVerifier before the anchor is trusted; an empty signature is
+	// never accepted.
+	Signature []byte
+}
+
+// CheckpointVerifier authenticates a Checkpoint's Signature against the configured checkpoint
+// AUTHORITY key(s). The node injects a real implementation backed by a PROVEN primitive (Ed25519 /
+// BLS — never custom crypto); the policy stays free of any crypto dependency, exactly like
+// AncestrySource and heightOf. A nil verifier means no signed anchor is configured, so any
+// Checkpoint is untrusted and the below-floor case fails closed.
+type CheckpointVerifier interface {
+	// VerifyCheckpoint reports whether sig is a valid signature over (id, height) by the configured
+	// checkpoint authority. It MUST reject an empty signature and be signature-safe (constant-time
+	// compare on the primitive). It is the sole authority on whether a pinned anchor may be trusted.
+	VerifyCheckpoint(id ids.ID, height uint64, sig []byte) bool
+}
+
+// CanonicalCheckpointMessage is the exact byte string a checkpoint authority signs and
+// CheckpointVerifier authenticates: a domain-separated, fixed-layout encoding of (id, height) so a
+// signature can never be transplanted from another context. 8-byte big-endian height after the
+// 32-byte id, under a distinct domain tag.
+func CanonicalCheckpointMessage(id ids.ID, height uint64) []byte {
+	const domain = "lux-bootstrap-checkpoint-v1\x00"
+	msg := make([]byte, 0, len(domain)+len(id)+8)
+	msg = append(msg, domain...)
+	msg = append(msg, id[:]...)
+	var h [8]byte
+	binary.BigEndian.PutUint64(h[:], height)
+	return append(msg, h[:]...)
 }
 
 // Ratio is an exact rational threshold (e.g. 2/3, 3/4). A value clears it iff
@@ -197,8 +237,12 @@ type BootstrapPolicy struct {
 	// network, or a fleet unanimously AT the tip).
 	MinFrontierHeight uint64
 	// Checkpoint is the OPTIONAL operator override for the below-floor case (INVARIANT 2). nil ⇒
-	// reject below the floor.
+	// reject below the floor. When set, it is trusted ONLY if CheckpointVerifier authenticates its
+	// signature (INVARIANT 4).
 	Checkpoint *Checkpoint
+	// CheckpointVerifier authenticates the Checkpoint's authority signature (INVARIANT 4). nil ⇒ a
+	// configured Checkpoint is NOT trusted (fail closed) — a bare (id,height) is never enough.
+	CheckpointVerifier CheckpointVerifier
 	// NamingWindow bounds the ancestry fetched per anchor; MaxAnchors bounds how many distinct
 	// reported tips are resolved. Both default to the package constants when zero.
 	NamingWindow int
@@ -330,6 +374,15 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 	// operator explicitly pinned a checkpoint to anchor from.
 	if !p.floorMet(responders, responderWeight) {
 		if p.Checkpoint != nil {
+			// INVARIANT 4: the checkpoint bypasses the beacon quorum, so trust it ONLY when the
+			// configured authority SIGNED this exact (id,height). A checkpoint present in config but
+			// unsigned, or signed by a non-authority key, is REJECTED (fail closed) — a compromised
+			// flag cannot inject a false sync anchor without also forging the authority's signature.
+			if p.CheckpointVerifier == nil || len(p.Checkpoint.Signature) == 0 ||
+				!p.CheckpointVerifier.VerifyCheckpoint(p.Checkpoint.ID, p.Checkpoint.Height, p.Checkpoint.Signature) {
+				return nil, fmt.Errorf("%w: a checkpoint is pinned but its authority signature did not verify",
+					ErrInsufficientBootstrapResponses)
+			}
 			return &Frontier{
 				ID:             p.Checkpoint.ID,
 				Height:         p.Checkpoint.Height,
