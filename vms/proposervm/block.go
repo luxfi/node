@@ -210,6 +210,42 @@ func (p *postForkCommonComponents) Verify(
 	)
 }
 
+// slotSnappedChildTimestamp returns the timestamp a child built at wall-clock `now` off a
+// parent at `parentTimestamp` should carry. It is the parent-anchored proposer-window grid:
+// parentTimestamp + slot*WindowDuration, where slot = TimeToSlot(parentTimestamp, now).
+//
+// WHY (round-scoped view-change liveness): off a STALE parent — idle past the proposer
+// window, so "anyone can propose" — buildChild is called repeatedly, and a raw wall-clock
+// timestamp (now.Truncate(1s)) makes EVERY rebuild a DISTINCT envelope over the same inner
+// block. That is an unbounded, ever-growing set of siblings at one height; the round-scoped
+// view-change can never gather α aligned prevotes on any single candidate (no proof-of-lock
+// forms) → finality stalls fleet-wide (the distributed liveness stall a goroutine dump of the
+// hung fleet showed: all nodes quiescent, waiting for votes no one will send). Snapping to the
+// window grid makes all rebuilds WITHIN one slot byte-IDENTICAL — one stable candidate per
+// slot for the view-change to converge on.
+//
+// WHY IT IS SAFE: TimeToSlot(parent, snapped) == slot == TimeToSlot(parent, now), so the
+// block's SLOT is unchanged; ExpectedProposer (verifyPostDurangoBlockDelay /
+// shouldBuildSignedBlockPostDurango) returns the IDENTICAL verdict, so the proposer-window and
+// signed/unsigned checks are byte-for-byte unaffected, and the derived epoch is stabilised
+// across the slot instead of churned. Only slot>0 is snapped, so:
+//   - normal in-window production (slot 0, child < WindowDuration after parent) keeps its exact
+//     sub-window timestamp — zero behaviour change on a live chain;
+//   - a snapped time is strictly > parent (monotonic, no errTimeNotMonotonic) and ≤ now (never
+//     errTimeTooAdvanced).
+// It is a pure function of (parentTimestamp, now) so it is idempotent for any two calls in the
+// same slot — the property the liveness fix relies on.
+func slotSnappedChildTimestamp(parentTimestamp, now time.Time) time.Time {
+	ts := now.Truncate(time.Second)
+	if ts.Before(parentTimestamp) {
+		return parentTimestamp
+	}
+	if slot := proposer.TimeToSlot(parentTimestamp, ts); slot > 0 {
+		return parentTimestamp.Add(time.Duration(slot) * proposer.WindowDuration)
+	}
+	return ts
+}
+
 // Return the child (a *postForkBlock) of this block
 func (p *postForkCommonComponents) buildChild(
 	ctx context.Context,
@@ -218,11 +254,10 @@ func (p *postForkCommonComponents) buildChild(
 	parentPChainHeight uint64,
 	parentEpoch chain.Epoch,
 ) (Block, error) {
-	// Child's timestamp is the later of now and this block's timestamp
-	newTimestamp := p.vm.Time().Truncate(time.Second)
-	if newTimestamp.Before(parentTimestamp) {
-		newTimestamp = parentTimestamp
-	}
+	// Child's timestamp is the later of now and this block's timestamp, SLOT-SNAPPED to the
+	// parent-anchored proposer-window grid (see slotSnappedChildTimestamp) so repeated rebuilds
+	// off a stale parent are byte-identical — the round-scoped view-change liveness fix.
+	newTimestamp := slotSnappedChildTimestamp(parentTimestamp, p.vm.Time())
 
 	// The child's P-Chain height is proposed as the optimal P-Chain height that
 	// is at least the parent's P-Chain height
