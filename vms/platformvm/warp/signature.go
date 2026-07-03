@@ -14,7 +14,7 @@ import (
 	"github.com/cloudflare/circl/kem/mlkem/mlkem768"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/threshold"
-	_ "github.com/luxfi/crypto/threshold/bls" // Register BLS threshold scheme
+	_ "github.com/luxfi/threshold/scheme/bls" // Register BLS threshold scheme
 	"github.com/luxfi/math/set"
 )
 
