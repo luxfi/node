@@ -94,7 +94,7 @@ type Policy interface {
 
 // FlatPolicy charges a fixed fee per user tx. The canonical
 // implementation for VMs without dynamic gas pricing — dexvm, bridgevm,
-// keyvm, zkvm, aivm, quantumvm all use this.
+// keyvm, zkvm, aivm use this (quantumvm is NoUserTxPolicy per LP-0130 §6).
 type FlatPolicy struct {
 	// Fee is the per-tx burn amount, in nLUX. MUST be > 0.
 	Fee uint64

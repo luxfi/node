@@ -96,7 +96,7 @@ selection, and EVM contract auth.
 >   is the fee currency everywhere (LP-0130 §3, §5).
 > - **Q-Chain has no user-payable blockspace** — finality is a
 >   validator obligation paid via P (LP-0130 §6). `quantumvm` MUST
->   use `NoUserTxPolicy{}`; the row below is being corrected.
+>   use `NoUserTxPolicy{}` — enforced in chains/quantumvm/feegate.go as of 2026-07-03.
 > - **M-Chain fees are service fees** deducted from the originating
 >   chain's fee pool, not a user M-balance (LP-0130 §7). `mpcvm`
 >   already runs `NoUserTxPolicy{}` — correct.
