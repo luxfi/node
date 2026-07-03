@@ -1,14 +1,14 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package thresholdvm
+package mpcvm
 
 // TestGPUBridgeCgoNocgoParity is the node-side mirror of the parity
-// test in chains/thresholdvm — proves that the re-exported GPUBackend
+// test in chains/mpcvm — proves that the re-exported GPUBackend
 // method set produces byte-identical MPC ceremony state transitions
 // regardless of build flavor (cgo / nocgo) and plugin presence.
 //
-// The node package is a thin alias layer over chains/thresholdvm —
+// The node package is a thin alias layer over chains/mpcvm —
 // type aliases on the wire structs and a re-exported GPUBackendInstance
 // accessor — so the parity properties of the canonical bridge transfer
 // directly. We re-run the four-op pipeline through the node-side
@@ -19,13 +19,13 @@ import (
 	"strings"
 	"testing"
 
-	chainsthreshold "github.com/luxfi/chains/thresholdvm"
+	chainsthreshold "github.com/luxfi/chains/mpcvm"
 )
 
 // TestGPUBridgeCgoNocgoParity runs a 3-of-5 FROST keygen ceremony
 // through GPUBackendInstance() (the node-side accessor) and compares
 // the resulting arena byte-for-byte to a fresh run via the canonical
-// bridge in chains/thresholdvm. Under cgo, the comparison is the
+// bridge in chains/mpcvm. Under cgo, the comparison is the
 // upstream cgo bridge vs itself (both runs hit the same dispatcher).
 // Under !cgo, the comparison is the upstream nocgo bridge vs itself.
 // Either path proves the alias layer is transparent and the substrate
