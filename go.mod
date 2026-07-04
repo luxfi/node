@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.15
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.2
+	github.com/luxfi/chains v1.7.3
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.6.1
@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utils v1.2.0
 	github.com/luxfi/utxo v0.3.7
 	github.com/luxfi/validators v1.2.0
-	github.com/luxfi/vm v1.2.5
+	github.com/luxfi/vm v1.2.6
 	github.com/luxfi/warp v1.24.0
 	github.com/luxfi/zap v0.8.11
 	github.com/luxfi/zwing v0.5.2
@@ -178,7 +178,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
@@ -192,7 +191,6 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.10.3 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
@@ -203,7 +201,7 @@ require (
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.2.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
-	github.com/luxfi/precompile v0.19.0 // indirect
+	github.com/luxfi/precompile v0.19.1 // indirect
 	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
