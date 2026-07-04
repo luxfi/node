@@ -26,10 +26,10 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.35.17
+	github.com/luxfi/consensus v1.35.20
 	github.com/luxfi/crypto v1.19.26
 	github.com/luxfi/database v1.20.4
-	github.com/luxfi/ids v1.3.0
+	github.com/luxfi/ids v1.3.1
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.4.1
@@ -120,13 +120,13 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.15
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.0
+	github.com/luxfi/chains v1.7.1
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
-	github.com/luxfi/constants v1.5.8
+	github.com/luxfi/constants v1.6.1
 	github.com/luxfi/container v0.0.4
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.13.16
+	github.com/luxfi/genesis v1.16.1
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.17.12
 	github.com/luxfi/go-bip39 v1.1.2
@@ -205,7 +205,7 @@ require (
 	github.com/luxfi/precompile v0.19.0 // indirect
 	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
-	github.com/luxfi/threshold v1.12.0 // indirect
+	github.com/luxfi/threshold v1.12.1 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
 	github.com/luxfi/zapcodec v1.0.1 // indirect
 	github.com/luxfi/zapdb v1.10.1 // indirect
