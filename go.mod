@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.35.22
+	github.com/luxfi/consensus v1.35.24
 	github.com/luxfi/crypto v1.19.26
 	github.com/luxfi/database v1.20.4
 	github.com/luxfi/ids v1.3.1
@@ -139,6 +139,7 @@ require (
 	github.com/luxfi/runtime v1.1.3
 	github.com/luxfi/sdk v1.17.9
 	github.com/luxfi/sys v0.1.0
+	github.com/luxfi/threshold v1.12.1
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.2.0
@@ -205,7 +206,6 @@ require (
 	github.com/luxfi/precompile v0.19.0 // indirect
 	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
-	github.com/luxfi/threshold v1.12.1 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
 	github.com/luxfi/zapcodec v1.0.1 // indirect
 	github.com/luxfi/zapdb v1.10.1 // indirect
