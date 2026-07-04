@@ -1529,7 +1529,50 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					log.Stringer("networkID", networkID))
 			}
 		}
+		// DEFENSIVE (view-change hygiene): a view-change chain that cannot BROADCAST its
+		// prevotes/precommits (its gossiper is not a QuorumGossiper) or cannot SIGN them (no
+		// VoteSigner) would emit votes into the void — every node tallies only its OWN vote, no
+		// peer ever receives one, α is never reached, and finality silently stalls. Refuse to
+		// start such a chain LOUDLY rather than freeze in production.
+		if consensusParams.ViewChange {
+			if _, ok := netCfg.Gossiper.(consensuschain.QuorumGossiper); !ok {
+				return nil, fmt.Errorf("refusing to start view-change chain %s: gossiper %T does not implement "+
+					"QuorumGossiper — prevotes/precommits could not be broadcast and finality would silently stall",
+					chainParams.ID, netCfg.Gossiper)
+			}
+			if netCfg.VoteSigner == nil {
+				return nil, fmt.Errorf("refusing to start view-change chain %s: no VoteSigner wired — this node "+
+					"could not sign its prevotes/precommits and finality would silently stall", chainParams.ID)
+			}
+		}
 		consensusEngine := consensuschain.NewRuntime(netCfg)
+
+		// STALE-LOCK MIGRATION (one-shot, operator-gated). AFTER NewRuntime seeds the durable
+		// view-change locks and BEFORE Start drives any view, optionally CANONICALIZE (or prune)
+		// pre-fix OUTER-wrapper view-change lock metadata ABOVE the decided floor — the block-1082880
+		// durable split-lock: locks stored by the proposervm outer id that the canonical=inner roll
+		// never re-canonicalized, so honest nodes stay locked on stale aliases, split below α, and
+		// never form a POL. All finalized + vote-guard state AT OR BELOW the floor is preserved
+		// verbatim and the floor is never lowered — a narrow metadata migration, not a state reset.
+		// LUX_CONSENSUS_MIGRATE_STALE_LOCKS: "inspect" prints the plan and mutates NOTHING (the
+		// per-pod audit gate); "apply" performs the idempotent, safety-gated repair. Only for a K>1
+		// view-change chain (the only chains that carry these locks).
+		if consensusParams.K > 1 && consensusParams.ViewChange {
+			switch strings.ToLower(os.Getenv("LUX_CONSENSUS_MIGRATE_STALE_LOCKS")) {
+			case "inspect":
+				logStaleLockReport(m.Log, chainParams.ID, "inspect (no write)", consensusEngine.InspectLocks(context.Background()))
+			case "apply":
+				rep, mErr := consensusEngine.MigrateStaleLocks(context.Background())
+				logStaleLockReport(m.Log, chainParams.ID, "apply", rep)
+				if mErr != nil {
+					return nil, fmt.Errorf("stale-lock migration for chain %s failed (fail-closed, nothing changed): %w", chainParams.ID, mErr)
+				}
+				if rep.Stop {
+					m.Log.Error("stale-lock migration STOPPED — manual recovery required (no write performed)",
+						log.Stringer("chainID", chainParams.ID), log.String("reason", rep.StopReason))
+				}
+			}
+		}
 
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,
@@ -4070,6 +4113,30 @@ func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, reque
 
 func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
 	return nil
+}
+
+// logStaleLockReport renders a stale-lock migration plan as an auditable per-height trace table in
+// the node log (one line per lock above the decided floor: the persisted outer id, the inner
+// canonical it resolves to, the lock round, whether a cert binds the height, and the planned
+// disposition in the Reason). Used by both the read-only inspect mode and the apply mode so the
+// operator sees the identical plan before and after a write.
+func logStaleLockReport(logger log.Logger, chainID ids.ID, mode string, rep consensuschain.LockMigrationReport) {
+	logger.Warn("stale-lock migration report",
+		log.Stringer("chainID", chainID), log.String("mode", mode),
+		log.Uint64("decidedFloor", rep.DecidedFloor), log.Uint64("finalizedThrough", rep.FinalizedThrough),
+		log.Int("locksAboveFloor", len(rep.Entries)), log.Bool("changed", rep.Changed),
+		log.Bool("stop", rep.Stop), log.String("stopReason", rep.StopReason))
+	for _, e := range rep.Entries {
+		logger.Warn("stale-lock entry",
+			log.Stringer("chainID", chainID),
+			log.Uint64("height", e.Height),
+			log.Stringer("lockOuter", e.LockOuter),
+			log.Stringer("lockInner", e.LockCanon),
+			log.Uint32("lockRound", e.LockRound),
+			log.Bool("hasRound", e.HasRound),
+			log.Bool("certAt", e.CertAt),
+			log.String("plan", e.Reason))
+	}
 }
 
 // networkGossiper implements consensuschain.Gossiper for Lux consensus integration.
