@@ -364,6 +364,34 @@ func (p *postForkCommonComponents) setInnerBlk(innerBlk chain.Block) {
 	p.innerBlk = innerBlk
 }
 
+// canonicalCommitter (proposervm side) — expose the INNER execution block's
+// identity to the consensus engine so it collapses duplicate outer wrappers of ONE
+// inner block to ONE consensus object.
+//
+// WHY THIS EXISTS. Post-Durango, when the chain is stuck the designated proposer
+// re-wraps the SAME inner block with a fresh proposer signature / block-timestamp
+// each slot — many DISTINCT outer envelope ids over ONE inner block. The consensus
+// engine's finality object is the CanonicalID (VotePosition.CanonicalID; the signed
+// vote binds it and EXCLUDES the outer id). Until this method existed, no block
+// exposed a CanonicalID, so the engine's canonicalIDOf fell back to the OUTER id and
+// treated every re-wrap as a distinct fork — votes scattered across the wrappers,
+// no α-of-K cert ever formed, and the chain froze (the mainnet 1082879 storm). By
+// returning the inner block's id here, every outer wrapper of one inner block yields
+// the SAME CanonicalID → they collapse to ONE, votes aggregate, one cert forms.
+//
+// SAFETY. CanonicalID is derived from the ACTUAL verified inner block (innerBlk is
+// execution-verified before the wrapper is tracked), so two wrappers collapse iff
+// they genuinely carry the same inner block; two wrappers over DIFFERENT inner
+// blocks (a real execution fork) return DIFFERENT CanonicalIDs and are NOT collapsed.
+// ParentCanonicalID is the inner PARENT id, so a forked parent (two wrappers of one
+// inner parent) also collapses for its children. The execution/payload roots are left
+// Empty (the engine treats Empty as "not exposed"); the inner-id collapse is what the
+// finality path needs, and Empty roots keep the signed message byte-compatible.
+func (p *postForkCommonComponents) CanonicalID() ids.ID        { return p.innerBlk.ID() }
+func (p *postForkCommonComponents) ParentCanonicalID() ids.ID  { return p.innerBlk.Parent() }
+func (p *postForkCommonComponents) ExecutionStateRoot() ids.ID { return ids.Empty }
+func (p *postForkCommonComponents) PayloadRoot() ids.ID        { return ids.Empty }
+
 func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
 	oracle, ok := b.(OracleBlock)
 	if !ok {
