@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	gatomic "sync/atomic"
@@ -1555,14 +1556,26 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// never form a POL. All finalized + vote-guard state AT OR BELOW the floor is preserved
 		// verbatim and the floor is never lowered — a narrow metadata migration, not a state reset.
 		// LUX_CONSENSUS_MIGRATE_STALE_LOCKS: "inspect" prints the plan and mutates NOTHING (the
-		// per-pod audit gate); "apply" performs the idempotent, safety-gated repair. Only for a K>1
-		// view-change chain (the only chains that carry these locks).
+		// per-pod audit gate); "apply:<floor>" performs the idempotent, safety-gated repair, where
+		// <floor> is the decided floor the operator OBSERVED via inspect (1082879 for the mainnet
+		// one-shot). The explicit target makes the apply SELF-DISARMING: once the chain recovers
+		// and the floor advances past the target, a lingering env no-ops instead of degrading into
+		// an every-boot prune of genuine crash locks (the HIGH-1 regression). A bare "apply" is
+		// REFUSED. Only for a K>1 view-change chain (the only chains that carry these locks).
 		if consensusParams.K > 1 && consensusParams.ViewChange {
-			switch strings.ToLower(os.Getenv("LUX_CONSENSUS_MIGRATE_STALE_LOCKS")) {
-			case "inspect":
+			env := strings.ToLower(os.Getenv("LUX_CONSENSUS_MIGRATE_STALE_LOCKS"))
+			switch {
+			case env == "inspect":
 				logStaleLockReport(m.Log, chainParams.ID, "inspect (no write)", consensusEngine.InspectLocks(context.Background()))
-			case "apply":
-				rep, mErr := consensusEngine.MigrateStaleLocks(context.Background())
+			case env == "apply" || strings.HasPrefix(env, "apply:"):
+				target, tErr := strconv.ParseUint(strings.TrimPrefix(env, "apply:"), 10, 64)
+				if env == "apply" || tErr != nil {
+					m.Log.Error("stale-lock migration REFUSED: apply requires an explicit floor target — "+
+						"run inspect, read decidedFloor, then set LUX_CONSENSUS_MIGRATE_STALE_LOCKS=apply:<decidedFloor>",
+						log.Stringer("chainID", chainParams.ID), log.String("env", env))
+					break
+				}
+				rep, mErr := consensusEngine.MigrateStaleLocks(context.Background(), target)
 				logStaleLockReport(m.Log, chainParams.ID, "apply", rep)
 				if mErr != nil {
 					return nil, fmt.Errorf("stale-lock migration for chain %s failed (fail-closed, nothing changed): %w", chainParams.ID, mErr)
@@ -1570,6 +1583,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				if rep.Stop {
 					m.Log.Error("stale-lock migration STOPPED — manual recovery required (no write performed)",
 						log.Stringer("chainID", chainParams.ID), log.String("reason", rep.StopReason))
+				}
+				if rep.Skipped {
+					m.Log.Warn("stale-lock migration self-disarmed (no write) — unset LUX_CONSENSUS_MIGRATE_STALE_LOCKS",
+						log.Stringer("chainID", chainParams.ID), log.String("reason", rep.SkipReason))
 				}
 			}
 		}
