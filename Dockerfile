@@ -257,7 +257,13 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.104.3
+# EVM_VERSION MUST track node's go.mod luxfi/evm — the C-Chain 0x9999 DEX precompile
+# executes in THIS plugin (built by `git clone --branch ${EVM_VERSION}`), NOT the luxd
+# node binary. v1.104.4 pins precompile v0.19.1 = the settle-only decomplect (embedded
+# matcher removed, 0x9012 value ops → PRECOMPILE_MOVED). A stale pin here silently ships
+# the OLD matcher-bearing plugin even when the node binary is current (devnet canary caught
+# exactly this: node v0.19.1 but plugin v1.104.3/precompile v0.19.0).
+ARG EVM_VERSION=v1.104.4
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
