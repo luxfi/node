@@ -3126,14 +3126,45 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		return
 	}
 
-	nodeSet := set.NewSet[ids.NodeID](1)
-	nodeSet.Add(nodeID)
+	// PEER SELECTION (defect #3). The consensus layer signals "I hold a VERIFIED cert
+	// for a block I don't track — fetch it" by passing ids.EmptyNodeID (topology.go:
+	// requestCatchup(cert.Position.BlockID, ids.EmptyNodeID)); picking a real peer is
+	// the node layer's job. The prior code blindly Add(EmptyNodeID) + Send, so
+	// GetAncestors went to ZERO peers (the "sentTo=0" spam on the frozen fleet) and the
+	// certified-but-untracked block was NEVER fetched — the node saw the cert, could not
+	// finalize, and never recovered. When nodeID is Empty, sample real connected peers
+	// that track this chain's network (the SAME selection pollFrontierOnce uses); a valid
+	// cert already gated this request, so asking any network peer is sound (the served
+	// gap is cert-verified on accept).
+	nodeSet := set.NewSet[ids.NodeID](frontierPollSample)
+	if nodeID == ids.EmptyNodeID {
+		for _, p := range b.net.PeerInfo(nil) {
+			if p.TrackedChains.Contains(b.networkID) {
+				nodeSet.Add(p.ID)
+				if nodeSet.Len() >= frontierPollSample {
+					break
+				}
+			}
+		}
+	} else {
+		nodeSet.Add(nodeID)
+	}
+	if nodeSet.Len() == 0 {
+		// No reachable peer to serve the block. Release the pending slot so a later tick
+		// (frontier poll → AcceptedFrontier, or a re-gossiped cert) can retry — otherwise
+		// the block stays pinned unrequestable until the TTL reap.
+		b.contextRequestMu.Lock()
+		delete(b.pendingContext, blockID)
+		b.contextRequestMu.Unlock()
+		return
+	}
 
 	sentTo := b.net.Send(msg, nodeSet, b.networkID, 0)
 	b.logger.Info("requested context for missing prerequisites",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", blockID),
 		log.Uint32("requestID", requestID),
+		log.Int("asked", nodeSet.Len()),
 		log.Int("sentTo", sentTo.Len()))
 }
 
@@ -3429,15 +3460,28 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 	if b.deliverBootstrapFrontier(nodeID, containerID) {
 		return nil
 	}
-	if _, err := b.vm.GetBlock(ctx, containerID); err == nil {
-		return nil // we already have the peer's tip — not behind
-	}
-	if b.engine != nil {
+	if blk, err := b.vm.GetBlock(ctx, containerID); err == nil {
+		// HAVE-BLOCK, LACK-FINALIZATION (defect #5). Holding the peer's tip block does NOT
+		// mean we are caught up. A verified-but-unfinalized block (we voted for it, but the
+		// α-of-K cert never reached us) leaves us behind on the CERT, not the block bytes.
+		// The prior check returned "not behind" on GetBlock success, so such a node NEVER
+		// fetched the missing cert and sat stuck at its unfinalized height forever (the exact
+		// "verified 288 but no cert" condition). Only "have the block AND it is finalized
+		// here" is truly not-behind; otherwise fall through to fetch the cert-carrying gap so
+		// AcceptCatchupBlock can finalize it on its verified cert (no re-vote).
+		if b.engine == nil {
+			return nil
+		}
+		if fin, ok := b.engine.FinalizedBlockAtHeight(blk.Height()); ok && fin == containerID {
+			return nil // have the block AND finalized it — truly not behind
+		}
+		// have the block but not finalized here → behind on the cert → fetch below
+	} else if b.engine != nil {
 		if _, found := b.engine.GetPendingBlock(containerID); found {
-			return nil // already tracked
+			return nil // already tracked (pending) — the live path is handling it
 		}
 	}
-	b.requestContext(ctx, nodeID, containerID) // behind → fetch the gap
+	b.requestContext(ctx, nodeID, containerID) // behind (missing block OR its cert) → fetch the gap
 	return nil
 }
 
