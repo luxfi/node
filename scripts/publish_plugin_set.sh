@@ -47,8 +47,11 @@ if [[ -z "${IMAGE_REF}" || -z "${S3_DEST}" ]]; then
   exit 2
 fi
 
-# Canonical plugin set: the 12 VM-ID filenames the Dockerfile writes to
+# Canonical plugin set: the 13 VM-ID filenames the Dockerfile writes to
 # /luxd/build/plugins/. Kept in lockstep with the Dockerfile plugin stages.
+# mpcvm (M-Chain) and fhevm (F-Chain) are the SAME byte-identical ThresholdVM
+# binary installed under two chain VM IDs (mode split by genesis); they share a
+# sha256 in the manifest but ship as two objects.
 PLUGINS=(
   mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6   # evm    (C-Chain EVM, 0x9999)
   mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr   # dexvm  (native D-Chain DEX)
@@ -60,7 +63,8 @@ PLUGINS=(
   r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS   # oraclevm
   ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug   # quantumvm
   sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz   # relayvm
-  tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t   # mpcvm
+  qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS   # mpcvm  (M-Chain, ThresholdVM mode=mpc)
+  n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv   # fhevm  (F-Chain, ThresholdVM mode=fhe; byte-identical binary)
   vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9   # zkvm
 )
 

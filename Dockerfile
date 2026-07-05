@@ -308,8 +308,20 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   oraclevm     -> r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS
 #   quantumvm    -> ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug
 #   relayvm      -> sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz
-#   mpcvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
+#   mpcvm (M-Chain) -> qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS
+#   fhevm (F-Chain) -> n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
+#
+# M-Chain (MPCVMID) and F-Chain (FHEVMID) are the SAME shared ThresholdVM
+# substrate (github.com/luxfi/chains/mpcvm; factory.go documents it as "the
+# shared library substrate that M-Chain (MPC) and F-Chain (FHE) run; it is not
+# itself a chain"). One byte-identical binary is installed under BOTH chain VM
+# IDs; the mpc-vs-fhe split is driven by each chain's genesis ("mode":"mpc" in
+# mchain.json vs "mode":"fhe" in fchain.json). The plugin's filename must equal
+# the chain's VMID (vms/registry parses ids.FromString(file.Name())), so the old
+# thresholdvm-ID name (tGVBwRxpmD2...) matched NEITHER chain and left both
+# unloadable — GetFactory(MPCVMID/FHEVMID) missed. Baking at the two chain IDs
+# is what makes M-Chain and F-Chain registrable.
 
 # MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
@@ -352,7 +364,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     ( cd /tmp/chains/relayvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz ./cmd/plugin ) || echo "WARN: relayvm plugin build skipped" ; \
     ( cd /tmp/chains/mpcvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t ./cmd/plugin ) || echo "WARN: mpcvm plugin build skipped" ; \
+        -o /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS ./cmd/plugin && \
+      cp /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
+         /luxd/build/plugins/n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv ) \
+      || echo "WARN: mpcvm(M-Chain)/fhevm(F-Chain) plugin build skipped" ; \
     ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
     ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
@@ -365,7 +380,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
         ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
         sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
-        tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+        qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
+        n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv \
         vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ; do \
         test -s /luxd/build/plugins/$p \
             || { echo "FATAL: required chain-VM plugin $p missing/empty — its build failed above (see the matching WARN line); the runtime-stage hard COPY would otherwise fail cryptically. Surface & fix the real Go build error, or remove the plugin from BOTH the build list and the runtime COPY."; exit 1; } ; \
@@ -470,7 +486,8 @@ COPY --from=builder \
     /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
     /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
     /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
-    /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+    /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
+    /luxd/build/plugins/n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv \
     /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
     /luxd/build/plugins/
 WORKDIR /luxd/build
