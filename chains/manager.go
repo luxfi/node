@@ -1162,7 +1162,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 		vmConfigBytes = m.injectSecurityProfileConfig(chainParams.VMID, vmConfigBytes)
 		// CONSENSUS-SAFETY (single-proposer-per-height): re-wrap multi-validator
-		// linear chains in proposervm so block production follows the Snowman++
+		// linear chains in proposervm so block production follows the proposervm's
 		// proposer schedule — exactly ONE validator builds height H, the rest wait
 		// and vote. Without it every validator's engine calls BuildBlock
 		// UNCONDITIONALLY at every height off a slightly-different mempool, so two
@@ -1207,7 +1207,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// enabling it can never weaken safety — at worst it halts (never forks).
 		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
 			consensusParams.ViewChange = true
-			// NOTE: presetK/presetAlpha are the Snowman SAMPLE preset (MainnetParams K=21/α=15),
+			// NOTE: presetK/presetAlpha are the sample preset (MainnetParams K=21/α=15),
 			// NOT the finality committee. The α-of-K cert and the view-change POL/precommit are
 			// sized to the LIVE validator set at runtime via effectiveCommittee/bftCommittee
 			// (e.g. 5 validators → K=5/α=4); the engine logs the effective (K,α) whenever it
@@ -1524,7 +1524,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// the proposervm, whose SignedBlock carries the real P-chain height
 			// (selectChildPChainHeight = max(GetCurrentHeight, parentH)) and exposes
 			// PChainHeight() — the SAME value the engine's pChainHeightOf reads. That
-			// is precisely the Snowman++ mechanism newPChainHeightVM was a stand-in
+			// is precisely the proposervm mechanism newPChainHeightVM was a stand-in
 			// for, so stacking both would double-stamp the height. We keep
 			// newPChainHeightVM only for the unwrapped K>1 chains (P-Chain, X-Chain).
 			if blockBuilder != nil && !wrapInProposerVM {

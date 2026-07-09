@@ -89,7 +89,7 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 
 // shouldWrapInProposerVM decides whether a linear chain.ChainVM is wrapped in
 // proposervm to enforce single-proposer-per-height block production (the
-// Snowman++ window). It is the SINGLE policy gate (the manager calls it once);
+// proposer window). It is the SINGLE policy gate (the manager calls it once);
 // keeping it a pure function makes the policy unit-testable without standing up
 // a whole chain. All three conditions must hold:
 //
@@ -270,7 +270,7 @@ func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
 // ValidatorCount implements consensuschain.StakeSource. The number of DISTINCT
 // validators in the set IN FORCE AT height — the round-scoped view-change's BFT
 // committee size (it sizes its POL/precommit quorum to bftAlpha over this count,
-// NOT the oversized Snowman sample K). Read from the SAME height-indexed set as
+// NOT the oversized sample K). Read from the SAME height-indexed set as
 // Weight/TotalStake so every node computes the identical committee and the
 // count-quorum matches the ⅔-by-stake set exactly.
 func (s *validatorStakeSource) ValidatorCount(height uint64) int {
