@@ -267,6 +267,16 @@ func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
 	return total
 }
 
+// ValidatorCount implements consensuschain.StakeSource. The number of DISTINCT
+// validators in the set IN FORCE AT height — the round-scoped view-change's BFT
+// committee size (it sizes its POL/precommit quorum to bftAlpha over this count,
+// NOT the oversized Snowman sample K). Read from the SAME height-indexed set as
+// Weight/TotalStake so every node computes the identical committee and the
+// count-quorum matches the ⅔-by-stake set exactly.
+func (s *validatorStakeSource) ValidatorCount(height uint64) int {
+	return len(validatorSetAtHeight(s.state, s.networkID, height))
+}
+
 var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 
 // --- validator-set-root source (MEDIUM: epoch binding) -----------------------
