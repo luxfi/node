@@ -141,6 +141,13 @@ No archive-mode workaround and no state-sync hack. Disk growth is unchanged
    `BuildBlock` then fails `not found` in a tight loop and the node's voter
    goes mute (observed ~170 err/s). Restart clears it. Fix: fall back to
    last-accepted when the preferred parent is not fetchable.
+   **FIXED (commit `8001bc5179`, branch `ship/node-v1.34.24`, ships in
+   v1.34.26):** `vms/proposervm/vm.go` `BuildBlock` now builds the child on
+   last-accepted (always held — committed state) when `vm.preferred` is
+   unfetchable, instead of hard-erroring; it surfaces the original error only
+   when last-accepted is itself the unfetchable id. Build-side companion to the
+   already-shipped defect #1 `SetPreference` validate-before-assign hardening.
+   Tests: `vms/proposervm/vm_buildblock_fallback_test.go`.
 2. **Ancestor-fetch liveness:** the finality guard refuses certs with
    "ancestor … is not tracked (behind; fetch and retry)" but the fetch never
    fires, so the node loops instead of catching up. Restart clears it. Fix:
