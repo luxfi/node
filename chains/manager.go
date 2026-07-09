@@ -1207,10 +1207,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// enabling it can never weaken safety — at worst it halts (never forks).
 		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
 			consensusParams.ViewChange = true
+			// NOTE: presetK/presetAlpha are the Snowman SAMPLE preset (MainnetParams K=21/α=15),
+			// NOT the finality committee. The α-of-K cert and the view-change POL/precommit are
+			// sized to the LIVE validator set at runtime via effectiveCommittee/bftCommittee
+			// (e.g. 5 validators → K=5/α=4); the engine logs the effective (K,α) whenever it
+			// re-clamps ("committee re-clamped … newK/newAlpha"). Do not read presetK as the quorum.
 			m.Log.Info("round-scoped view-change ENABLED for chain",
 				log.Stringer("chainID", chainParams.ID),
-				log.Int("K", consensusParams.K),
-				log.Int("alpha", consensusParams.AlphaConfidence))
+				log.Int("presetK", consensusParams.K),
+				log.Int("presetAlpha", consensusParams.AlphaConfidence),
+				log.String("note", "finality committee sized to the live validator set at runtime (see engine committee-clamp log for effective K/alpha)"))
 		}
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
