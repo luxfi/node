@@ -18,7 +18,7 @@
 //   - ROTATION (liveness): consecutive slots designate (in general) DIFFERENT
 //     proposers, so a down/wedged/forked designated proposer for slot S is routed
 //     around: at slot S+1 (5s later) a different validator is designated and builds
-//     a signed block the rest accept. This is avalanchego's Snowman++ mechanism,
+//     a signed block the rest accept. This is the upstream proposer-window mechanism,
 //     byte-for-byte (windower.go is identical to ava's), and the reason a faulty
 //     leader cannot halt the chain.
 //
