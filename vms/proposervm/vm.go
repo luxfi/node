@@ -329,16 +329,53 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 
 func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
-	if err != nil {
+	if err == nil {
+		return preferredBlock.buildChild(ctx)
+	}
+
+	// FAIL-SECURE FALLBACK — the build-side companion to the defect #1
+	// SetPreference hardening (validate-before-assign, see SetPreference above).
+	//
+	// SetPreference only adopts vm.preferred after a successful getBlock, but a block
+	// that was fetchable at preference time can later become unfetchable: an unaccepted
+	// sibling that consensus dropped, or a never-persisted outer block referenced after
+	// heavy sibling churn. On affected versions BuildBlock then failed `not found` in a
+	// tight loop and the node's voter went mute (~170 err/s). Quasar cert-finality has no
+	// polling re-converge path, so the node never recovered on its own — a fleet-wide
+	// liveness wedge under churn (mainnet 1082879→1085755 window; postmortem residual #1).
+	//
+	// last-accepted is ALWAYS held — it is committed state. Build the child on it: the node
+	// keeps producing on a valid tip while the catch-up path pulls the gap, and a later
+	// SetPreference(held tip) re-advances the preference. Fail secure: never wedge the
+	// builder on an unheld preference. Only surface the original error when last-accepted
+	// is itself the unfetchable id (nothing better to build on).
+	lastAcceptedID, laErr := vm.LastAccepted(ctx)
+	if laErr != nil || lastAcceptedID == vm.preferred {
 		vm.logger.Error("unexpected build block failure",
-			log.String("reason", "failed to fetch preferred block"),
+			log.String("reason", "failed to fetch preferred block; no distinct last-accepted fallback"),
 			log.Stringer("parentID", vm.preferred),
 			log.Err(err),
 		)
 		return nil, err
 	}
 
-	return preferredBlock.buildChild(ctx)
+	fallbackBlock, faErr := vm.getBlock(ctx, lastAcceptedID)
+	if faErr != nil {
+		vm.logger.Error("unexpected build block failure",
+			log.String("reason", "failed to fetch preferred block AND last-accepted fallback"),
+			log.Stringer("preferred", vm.preferred),
+			log.Stringer("lastAccepted", lastAcceptedID),
+			log.Err(err),
+		)
+		return nil, err
+	}
+
+	vm.logger.Warn("BuildBlock: preferred block not fetchable; building on last-accepted (no mute-voter wedge)",
+		log.Stringer("preferred", vm.preferred),
+		log.Stringer("lastAccepted", lastAcceptedID),
+		log.Err(err),
+	)
+	return fallbackBlock.buildChild(ctx)
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (vmchain.Block, error) {
