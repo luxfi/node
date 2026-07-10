@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	gatomic "sync/atomic"
@@ -1163,7 +1162,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		vmConfigBytes := m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 		vmConfigBytes = m.injectSecurityProfileConfig(chainParams.VMID, vmConfigBytes)
 		// CONSENSUS-SAFETY (single-proposer-per-height): re-wrap multi-validator
-		// linear chains in proposervm so block production follows the Snowman++
+		// linear chains in proposervm so block production follows the proposervm's
 		// proposer schedule — exactly ONE validator builds height H, the rest wait
 		// and vote. Without it every validator's engine calls BuildBlock
 		// UNCONDITIONALLY at every height off a slightly-different mempool, so two
@@ -1200,19 +1199,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
-		// Round-scoped view-change (restores liveness under competing siblings + a zero-margin
-		// quorum — the 415→416 freeze). OPT-IN per deployment via LUX_CONSENSUS_VIEW_CHANGE=true
-		// so devnet/testnet can enable it without a mainnet default (mainnet is owner-gated). Only
-		// meaningful on a multi-validator (K>1) chain; K==1 has no competing proposers. The engine
-		// itself fail-secure HALTS the view-change if the committee fails the 2α−n>f bound, so
-		// enabling it can never weaken safety — at worst it halts (never forks).
-		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
-			consensusParams.ViewChange = true
-			m.Log.Info("round-scoped view-change ENABLED for chain",
-				log.Stringer("chainID", chainParams.ID),
-				log.Int("K", consensusParams.K),
-				log.Int("alpha", consensusParams.AlphaConfidence))
-		}
+		// v1.36 "Nova": the round-scoped VIEW-CHANGE (prevote/POL/lock) was DELETED from the
+		// consensus engine (174af3c31). Nova metastable sampling is the sole decider and the ⅔
+		// Quasar attestation trails it — there is no view-change to opt into, so the former
+		// LUX_CONSENSUS_VIEW_CHANGE env gate is gone. Keep the braid dead.
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		})
@@ -1519,7 +1509,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// the proposervm, whose SignedBlock carries the real P-chain height
 			// (selectChildPChainHeight = max(GetCurrentHeight, parentH)) and exposes
 			// PChainHeight() — the SAME value the engine's pChainHeightOf reads. That
-			// is precisely the Snowman++ mechanism newPChainHeightVM was a stand-in
+			// is precisely the proposervm mechanism newPChainHeightVM was a stand-in
 			// for, so stacking both would double-stamp the height. We keep
 			// newPChainHeightVM only for the unwrapped K>1 chains (P-Chain, X-Chain).
 			if blockBuilder != nil && !wrapInProposerVM {
@@ -1530,66 +1520,34 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					log.Stringer("networkID", networkID))
 			}
 		}
-		// DEFENSIVE (view-change hygiene): a view-change chain that cannot BROADCAST its
-		// prevotes/precommits (its gossiper is not a QuorumGossiper) or cannot SIGN them (no
-		// VoteSigner) would emit votes into the void — every node tallies only its OWN vote, no
-		// peer ever receives one, α is never reached, and finality silently stalls. Refuse to
-		// start such a chain LOUDLY rather than freeze in production.
-		if consensusParams.ViewChange {
-			if _, ok := netCfg.Gossiper.(consensuschain.QuorumGossiper); !ok {
-				return nil, fmt.Errorf("refusing to start view-change chain %s: gossiper %T does not implement "+
-					"QuorumGossiper — prevotes/precommits could not be broadcast and finality would silently stall",
-					chainParams.ID, netCfg.Gossiper)
+			// EXPORT-FRONTIER BRIDGE (two-tier consensus, v1.36). VM.Accept now advances the
+			// local NOVA (bare-majority) accept tip, which is reorgable and MUST NOT be exported.
+			// Push each EXPORT (Quasar, ⅔-by-stake) frontier advance into the VM so the EVM
+			// `finalized`/`safe` block tags and the warp cross-chain export gate resolve to the
+			// Quasar tip, NEVER the Nova tip (the "semantic collapse" the split exists to prevent).
+			// Interface-gated: only a VM that exposes the export sink participates (the C-Chain
+			// EVM); other VMs are Nova-only with no export surface. Push into the RAW inner VM
+			// (vmTyped) — the eth backend / warp backend live there, not on the proposervm wrapper.
+			if qvm, ok := vmTyped.(interface{ SetLastQuasarFinalized(uint64) }); ok {
+				netCfg.QuasarObserver = func(_ ids.ID, height uint64) {
+					qvm.SetLastQuasarFinalized(height)
+				}
+				m.Log.Info("wired EXPORT-frontier (quasar) bridge into the VM (finalized/safe + warp gate track ⅔-stake finality)",
+					log.Stringer("chainID", chainParams.ID))
 			}
-			if netCfg.VoteSigner == nil {
-				return nil, fmt.Errorf("refusing to start view-change chain %s: no VoteSigner wired — this node "+
-					"could not sign its prevotes/precommits and finality would silently stall", chainParams.ID)
-			}
-		}
-		consensusEngine := consensuschain.NewRuntime(netCfg)
+			consensusEngine := consensuschain.NewRuntime(netCfg)
 
-		// STALE-LOCK MIGRATION (one-shot, operator-gated). AFTER NewRuntime seeds the durable
-		// view-change locks and BEFORE Start drives any view, optionally CANONICALIZE (or prune)
-		// pre-fix OUTER-wrapper view-change lock metadata ABOVE the decided floor — the block-1082880
-		// durable split-lock: locks stored by the proposervm outer id that the canonical=inner roll
-		// never re-canonicalized, so honest nodes stay locked on stale aliases, split below α, and
-		// never form a POL. All finalized + vote-guard state AT OR BELOW the floor is preserved
-		// verbatim and the floor is never lowered — a narrow metadata migration, not a state reset.
-		// LUX_CONSENSUS_MIGRATE_STALE_LOCKS: "inspect" prints the plan and mutates NOTHING (the
-		// per-pod audit gate); "apply:<floor>" performs the idempotent, safety-gated repair, where
-		// <floor> is the decided floor the operator OBSERVED via inspect (1082879 for the mainnet
-		// one-shot). The explicit target makes the apply SELF-DISARMING: once the chain recovers
-		// and the floor advances past the target, a lingering env no-ops instead of degrading into
-		// an every-boot prune of genuine crash locks (the HIGH-1 regression). A bare "apply" is
-		// REFUSED. Only for a K>1 view-change chain (the only chains that carry these locks).
-		if consensusParams.K > 1 && consensusParams.ViewChange {
-			env := strings.ToLower(os.Getenv("LUX_CONSENSUS_MIGRATE_STALE_LOCKS"))
-			switch {
-			case env == "inspect":
-				logStaleLockReport(m.Log, chainParams.ID, "inspect (no write)", consensusEngine.InspectLocks(context.Background()))
-			case env == "apply" || strings.HasPrefix(env, "apply:"):
-				target, tErr := strconv.ParseUint(strings.TrimPrefix(env, "apply:"), 10, 64)
-				if env == "apply" || tErr != nil {
-					m.Log.Error("stale-lock migration REFUSED: apply requires an explicit floor target — "+
-						"run inspect, read decidedFloor, then set LUX_CONSENSUS_MIGRATE_STALE_LOCKS=apply:<decidedFloor>",
-						log.Stringer("chainID", chainParams.ID), log.String("env", env))
-					break
-				}
-				rep, mErr := consensusEngine.MigrateStaleLocks(context.Background(), target)
-				logStaleLockReport(m.Log, chainParams.ID, "apply", rep)
-				if mErr != nil {
-					return nil, fmt.Errorf("stale-lock migration for chain %s failed (fail-closed, nothing changed): %w", chainParams.ID, mErr)
-				}
-				if rep.Stop {
-					m.Log.Error("stale-lock migration STOPPED — manual recovery required (no write performed)",
-						log.Stringer("chainID", chainParams.ID), log.String("reason", rep.StopReason))
-				}
-				if rep.Skipped {
-					m.Log.Warn("stale-lock migration self-disarmed (no write) — unset LUX_CONSENSUS_MIGRATE_STALE_LOCKS",
-						log.Stringer("chainID", chainParams.ID), log.String("reason", rep.SkipReason))
+			// Re-seed the consensus EXPORT frontier from the VM's DURABLE Quasar height so
+			// GetQuasarTip / QuasarHeight do not regress on restart (the in-memory frontier resets
+			// to (Empty,0) until a fresh ⅔-stake cert re-forms; the VM persisted the export height).
+			// Advance-only; the observer above refines it as new certs land this session.
+			if qvm, ok := vmTyped.(interface{ LastQuasarHeight() uint64 }); ok {
+				if h := qvm.LastQuasarHeight(); h > 0 {
+					consensusEngine.SyncQuasarFrontier(ids.Empty, h)
+					m.Log.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
+						log.Stringer("chainID", chainParams.ID), log.Uint64("quasarHeight", h))
 				}
 			}
-		}
 
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,
@@ -3186,14 +3144,45 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		return
 	}
 
-	nodeSet := set.NewSet[ids.NodeID](1)
-	nodeSet.Add(nodeID)
+	// PEER SELECTION (defect #3). The consensus layer signals "I hold a VERIFIED cert
+	// for a block I don't track — fetch it" by passing ids.EmptyNodeID (topology.go:
+	// requestCatchup(cert.Position.BlockID, ids.EmptyNodeID)); picking a real peer is
+	// the node layer's job. The prior code blindly Add(EmptyNodeID) + Send, so
+	// GetAncestors went to ZERO peers (the "sentTo=0" spam on the frozen fleet) and the
+	// certified-but-untracked block was NEVER fetched — the node saw the cert, could not
+	// finalize, and never recovered. When nodeID is Empty, sample real connected peers
+	// that track this chain's network (the SAME selection pollFrontierOnce uses); a valid
+	// cert already gated this request, so asking any network peer is sound (the served
+	// gap is cert-verified on accept).
+	nodeSet := set.NewSet[ids.NodeID](frontierPollSample)
+	if nodeID == ids.EmptyNodeID {
+		for _, p := range b.net.PeerInfo(nil) {
+			if p.TrackedChains.Contains(b.networkID) {
+				nodeSet.Add(p.ID)
+				if nodeSet.Len() >= frontierPollSample {
+					break
+				}
+			}
+		}
+	} else {
+		nodeSet.Add(nodeID)
+	}
+	if nodeSet.Len() == 0 {
+		// No reachable peer to serve the block. Release the pending slot so a later tick
+		// (frontier poll → AcceptedFrontier, or a re-gossiped cert) can retry — otherwise
+		// the block stays pinned unrequestable until the TTL reap.
+		b.contextRequestMu.Lock()
+		delete(b.pendingContext, blockID)
+		b.contextRequestMu.Unlock()
+		return
+	}
 
 	sentTo := b.net.Send(msg, nodeSet, b.networkID, 0)
 	b.logger.Info("requested context for missing prerequisites",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", blockID),
 		log.Uint32("requestID", requestID),
+		log.Int("asked", nodeSet.Len()),
 		log.Int("sentTo", sentTo.Len()))
 }
 
@@ -3283,9 +3272,30 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		log.Stringer("containerID", containerID),
 		log.Uint32("requestID", requestID))
 
-	// Collect context blocks (walk parent chain)
+	// Collect context blocks (walk parent chain).
+	//
+	// SIZE-CHUNKING (the heavy-DEX-block self-heal fix). The response is the Ancestors
+	// wire message, whose UNCOMPRESSED size the peer compressor refuses above the message
+	// cap (constants.DefaultMaxMessageSize; the zstd compressor bounds its input to prevent a
+	// decompression bomb). The old loop bounded ONLY by COUNT (maxContextBlocks=256), so under
+	// heavy DEX load 256 blocks summed to 3.4-5.7 MB > the 2 MB cap, msgCreator.Ancestors FAILED
+	// to build, and the behind validator got NOTHING — it could never resync and fell
+	// permanently behind (the benchmark-proven stall). We now ALSO bound by serialized size:
+	// stop before the accumulated payload would exceed the budget, but ALWAYS include at least
+	// one block so a behind node makes progress every round; the requester re-requests for the
+	// remaining gap (GetAncestors/context is already a multi-round, oldest-first fill). A single
+	// block that alone exceeds the budget is still served (best-effort) so the walk never
+	// deadlocks — the trust-tiered validator cap (peer layer) gives such a block the headroom to
+	// actually send; for a stranger it will be refused by the tight cap, which is correct.
 	var containers [][]byte
 	currentID := containerID
+
+	// Leave margin under the cap for the p2p envelope (chainID, requestID, per-container length
+	// prefixes, compression framing) so the assembled message stays comfortably below the limit.
+	const contextResponseMargin = 128 * 1024 // 128 KiB
+	byteBudget := constants.DefaultMaxMessageSize - contextResponseMargin
+	accumulated := 0
+	truncatedForSize := false
 
 	for i := 0; i < b.maxContextBlocks; i++ {
 		// First check pending blocks (for recently proposed but not yet accepted blocks)
@@ -3317,6 +3327,14 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 			certBytes, _ = b.engine.CertForBlock(blk.ID())
 		}
 		entry := encodeCatchupEntry(blk.Bytes(), certBytes)
+
+		// SIZE GATE: stop before exceeding the budget — but never drop the FIRST block, so a
+		// behind node always receives at least one block per request and cannot deadlock.
+		if len(containers) > 0 && accumulated+len(entry) > byteBudget {
+			truncatedForSize = true
+			break
+		}
+		accumulated += len(entry)
 		containers = append([][]byte{entry}, containers...)
 
 		// Get parent ID for next iteration
@@ -3352,6 +3370,8 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		log.Stringer("to", nodeID),
 		log.Stringer("containerID", containerID),
 		log.Int("numBlocks", len(containers)),
+		log.Int("payloadBytes", accumulated),
+		log.Bool("truncatedForSize", truncatedForSize),
 		log.Int("sentTo", sentTo.Len()))
 
 	return nil
@@ -3489,15 +3509,28 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 	if b.deliverBootstrapFrontier(nodeID, containerID) {
 		return nil
 	}
-	if _, err := b.vm.GetBlock(ctx, containerID); err == nil {
-		return nil // we already have the peer's tip — not behind
-	}
-	if b.engine != nil {
+	if blk, err := b.vm.GetBlock(ctx, containerID); err == nil {
+		// HAVE-BLOCK, LACK-FINALIZATION (defect #5). Holding the peer's tip block does NOT
+		// mean we are caught up. A verified-but-unfinalized block (we voted for it, but the
+		// α-of-K cert never reached us) leaves us behind on the CERT, not the block bytes.
+		// The prior check returned "not behind" on GetBlock success, so such a node NEVER
+		// fetched the missing cert and sat stuck at its unfinalized height forever (the exact
+		// "verified 288 but no cert" condition). Only "have the block AND it is finalized
+		// here" is truly not-behind; otherwise fall through to fetch the cert-carrying gap so
+		// AcceptCatchupBlock can finalize it on its verified cert (no re-vote).
+		if b.engine == nil {
+			return nil
+		}
+		if fin, ok := b.engine.FinalizedBlockAtHeight(blk.Height()); ok && fin == containerID {
+			return nil // have the block AND finalized it — truly not behind
+		}
+		// have the block but not finalized here → behind on the cert → fetch below
+	} else if b.engine != nil {
 		if _, found := b.engine.GetPendingBlock(containerID); found {
-			return nil // already tracked
+			return nil // already tracked (pending) — the live path is handling it
 		}
 	}
-	b.requestContext(ctx, nodeID, containerID) // behind → fetch the gap
+	b.requestContext(ctx, nodeID, containerID) // behind (missing block OR its cert) → fetch the gap
 	return nil
 }
 
@@ -3883,10 +3916,6 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
 				b.engine.HandleIncomingCert(payload)
-			case quorumKindPrevote:
-				// Round-scoped view-change prevote: the engine decodes+verifies
-				// (height,round,canonical,sig) from the payload and tallies it toward a POL.
-				b.engine.HandleIncomingPrevote(payload)
 			}
 			return nil
 		}
@@ -4132,30 +4161,6 @@ func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig,
 	return nil
 }
 
-// logStaleLockReport renders a stale-lock migration plan as an auditable per-height trace table in
-// the node log (one line per lock above the decided floor: the persisted outer id, the inner
-// canonical it resolves to, the lock round, whether a cert binds the height, and the planned
-// disposition in the Reason). Used by both the read-only inspect mode and the apply mode so the
-// operator sees the identical plan before and after a write.
-func logStaleLockReport(logger log.Logger, chainID ids.ID, mode string, rep consensuschain.LockMigrationReport) {
-	logger.Warn("stale-lock migration report",
-		log.Stringer("chainID", chainID), log.String("mode", mode),
-		log.Uint64("decidedFloor", rep.DecidedFloor), log.Uint64("finalizedThrough", rep.FinalizedThrough),
-		log.Int("locksAboveFloor", len(rep.Entries)), log.Bool("changed", rep.Changed),
-		log.Bool("stop", rep.Stop), log.String("stopReason", rep.StopReason))
-	for _, e := range rep.Entries {
-		logger.Warn("stale-lock entry",
-			log.Stringer("chainID", chainID),
-			log.Uint64("height", e.Height),
-			log.Stringer("lockOuter", e.LockOuter),
-			log.Stringer("lockInner", e.LockCanon),
-			log.Uint32("lockRound", e.LockRound),
-			log.Bool("hasRound", e.HasRound),
-			log.Bool("certAt", e.CertAt),
-			log.String("plan", e.Reason))
-	}
-}
-
 // networkGossiper implements consensuschain.Gossiper for Lux consensus integration.
 // It adapts the node's network layer to the minimal Gossiper interface used by
 // the integrated consensus engine.
@@ -4225,23 +4230,9 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
 }
 
-// BroadcastPrevote sends this node's signed ROUND-SCOPED view-change prevote (the
-// non-binding preference signal) for `canonical` at (height, round) to ALL validators,
-// framed in a quorum envelope (kind 3) and decoded by blockHandler.Gossip into
-// engine.HandleIncomingPrevote. Prevotes never finalize anything — they drive the POL +
-// the lock/unlock rule that lets a competing-sibling split RE-CONVERGE (liveness under a
-// down proposer + zero-margin quorum). Only emitted when the chain runs params.ViewChange.
-func (g *networkGossiper) BroadcastPrevote(chainID ids.ID, networkID ids.ID, height uint64, round uint32, canonical ids.ID, voteBytes []byte) int {
-	if g.net == nil || g.msgCreator == nil {
-		return 0
-	}
-	envelope := encodeQuorumGossip(quorumKindPrevote, canonical, voteBytes)
-	msg, err := g.msgCreator.Gossip(chainID, envelope)
-	if err != nil {
-		return 0
-	}
-	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
-}
+// v1.36 "Nova": BroadcastPrevote was DELETED — the round-scoped view-change (prevote/POL/lock)
+// it fed no longer exists in the consensus engine (174af3c31). Nova sampling decides; the ⅔
+// Quasar attestation (a plain accept-vote, gossiped via BroadcastVote) trails it. Keep the braid dead.
 
 // GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so
 // followers finalize blockID on a verifiable proof (HandleIncomingCert), not a
