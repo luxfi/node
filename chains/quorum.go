@@ -382,9 +382,10 @@ func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID 
 var quorumGossipMagic = [4]byte{'L', 'X', 'Q', 0x01}
 
 const (
-	quorumKindVote    byte = 1
-	quorumKindCert    byte = 2
-	quorumKindPrevote byte = 3
+	quorumKindVote byte = 1
+	quorumKindCert byte = 2
+	// kind 3 (prevote) was DELETED with the v1.36 view-change rip-out (174af3c31); Nova sampling
+	// decides and the ⅔ Quasar attestation rides quorumKindVote. Do not reuse 3 — keep the braid dead.
 )
 
 // ErrNotQuorumGossip signals a payload is not a quorum envelope (so the caller
@@ -410,7 +411,7 @@ func decodeQuorumGossip(data []byte) (kind byte, blockID ids.ID, payload []byte,
 	kind = data[4]
 	copy(blockID[:], data[5:5+32])
 	payload = data[5+32:]
-	if kind != quorumKindVote && kind != quorumKindCert && kind != quorumKindPrevote {
+	if kind != quorumKindVote && kind != quorumKindCert {
 		return 0, ids.Empty, nil, ErrNotQuorumGossip
 	}
 	return kind, blockID, payload, nil
