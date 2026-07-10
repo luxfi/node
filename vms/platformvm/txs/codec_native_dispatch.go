@@ -41,6 +41,16 @@ func marshalUnsignedNative(u UnsignedTx) ([]byte, error) {
 		return marshalRemoveChainValidatorTx(t)
 	case *CreateNetworkTx:
 		return marshalCreateNetworkTx(t)
+	case *TransferChainOwnershipTx:
+		return marshalTransferChainOwnershipTx(t)
+	case *RegisterL1ValidatorTx:
+		return marshalRegisterL1ValidatorTx(t)
+	case *ImportTx:
+		return marshalImportTx(t)
+	case *ExportTx:
+		return marshalExportTx(t)
+	case *CreateChainTx:
+		return marshalCreateChainTx(t)
 	default:
 		return nil, fmt.Errorf("zap_native: unsigned tx type %T not yet bridged", u)
 	}
@@ -127,6 +137,21 @@ func unmarshalUnsignedNative(b []byte) (UnsignedTx, int, error) {
 		return tx, n, err
 	case zn.TxKindCreateNetwork:
 		tx, err := unmarshalCreateNetworkTx(buf)
+		return tx, n, err
+	case zn.TxKindTransferChainOwnership:
+		tx, err := unmarshalTransferChainOwnershipTx(buf)
+		return tx, n, err
+	case zn.TxKindRegisterL1Validator:
+		tx, err := unmarshalRegisterL1ValidatorTx(buf)
+		return tx, n, err
+	case zn.TxKindImport:
+		tx, err := unmarshalImportTx(buf)
+		return tx, n, err
+	case zn.TxKindExport:
+		tx, err := unmarshalExportTx(buf)
+		return tx, n, err
+	case zn.TxKindCreateChain:
+		tx, err := unmarshalCreateChainTx(buf)
 		return tx, n, err
 
 	default:
