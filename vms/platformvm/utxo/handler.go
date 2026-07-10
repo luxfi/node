@@ -565,7 +565,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
+		ownerBytes, err := txs.MarshalOwner(owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}
@@ -614,7 +614,7 @@ func (h *handler) VerifySpendUTXOs(
 			return fmt.Errorf("expected fx.Owned but got %T", out)
 		}
 		owner := owned.Owners()
-		ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, owner)
+		ownerBytes, err := txs.MarshalOwner(owner)
 		if err != nil {
 			return fmt.Errorf("couldn't marshal owner: %w", err)
 		}

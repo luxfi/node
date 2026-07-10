@@ -95,6 +95,35 @@ func readOwner(obj zap.Object, thresholdOff, locktimeOff, addrPtrOff int) fx.Own
 	}
 }
 
+// standalone owner object: threshold u32 @0, locktime u64 @4, addr ptr 8B @12.
+const (
+	ownerObjThreshold = 0
+	ownerObjLocktime  = 4
+	ownerObjAddrPtr   = 12
+	ownerObjSize      = 20
+)
+
+// MarshalOwner is the ONE canonical byte encoding of an owner — same layout as
+// the owner embedded in every tx, lifted to a standalone buffer. Used wherever
+// a stable owner identity is needed off the tx wire (e.g. lock-owner hash keys
+// in utxo verification). Takes `any` to match the fx.Owned.Owners() surface it
+// serves. One encoding everywhere; no codec.
+func MarshalOwner(o any) ([]byte, error) {
+	oo, ok := o.(*secp256k1fx.OutputOwners)
+	if !ok {
+		return nil, fmt.Errorf("unsupported owner %T (want *secp256k1fx.OutputOwners)", o)
+	}
+	b := zap.NewBuilder(zap.HeaderSize + 128)
+	threshold, locktime, addrOff, addrCount, err := writeOwner(b, oo)
+	if err != nil {
+		return nil, err
+	}
+	ob := b.StartObject(ownerObjSize)
+	setOwner(ob, ownerObjThreshold, ownerObjLocktime, ownerObjAddrPtr, threshold, locktime, addrOff, addrCount)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
+}
+
 // ---- inline Validator (44B: NodeID20 + Start8 + End8 + Wght8) ----
 
 const validatorSize = 44
