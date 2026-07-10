@@ -329,16 +329,53 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 
 func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
-	if err != nil {
+	if err == nil {
+		return preferredBlock.buildChild(ctx)
+	}
+
+	// FAIL-SECURE FALLBACK — the build-side companion to the defect #1
+	// SetPreference hardening (validate-before-assign, see SetPreference above).
+	//
+	// SetPreference only adopts vm.preferred after a successful getBlock, but a block
+	// that was fetchable at preference time can later become unfetchable: an unaccepted
+	// sibling that consensus dropped, or a never-persisted outer block referenced after
+	// heavy sibling churn. On affected versions BuildBlock then failed `not found` in a
+	// tight loop and the node's voter went mute (~170 err/s). Quasar cert-finality has no
+	// polling re-converge path, so the node never recovered on its own — a fleet-wide
+	// liveness wedge under churn (mainnet 1082879→1085755 window; postmortem residual #1).
+	//
+	// last-accepted is ALWAYS held — it is committed state. Build the child on it: the node
+	// keeps producing on a valid tip while the catch-up path pulls the gap, and a later
+	// SetPreference(held tip) re-advances the preference. Fail secure: never wedge the
+	// builder on an unheld preference. Only surface the original error when last-accepted
+	// is itself the unfetchable id (nothing better to build on).
+	lastAcceptedID, laErr := vm.LastAccepted(ctx)
+	if laErr != nil || lastAcceptedID == vm.preferred {
 		vm.logger.Error("unexpected build block failure",
-			log.String("reason", "failed to fetch preferred block"),
+			log.String("reason", "failed to fetch preferred block; no distinct last-accepted fallback"),
 			log.Stringer("parentID", vm.preferred),
 			log.Err(err),
 		)
 		return nil, err
 	}
 
-	return preferredBlock.buildChild(ctx)
+	fallbackBlock, faErr := vm.getBlock(ctx, lastAcceptedID)
+	if faErr != nil {
+		vm.logger.Error("unexpected build block failure",
+			log.String("reason", "failed to fetch preferred block AND last-accepted fallback"),
+			log.Stringer("preferred", vm.preferred),
+			log.Stringer("lastAccepted", lastAcceptedID),
+			log.Err(err),
+		)
+		return nil, err
+	}
+
+	vm.logger.Warn("BuildBlock: preferred block not fetchable; building on last-accepted (no mute-voter wedge)",
+		log.Stringer("preferred", vm.preferred),
+		log.Stringer("lastAccepted", lastAcceptedID),
+		log.Err(err),
+	)
+	return fallbackBlock.buildChild(ctx)
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (vmchain.Block, error) {
@@ -370,20 +407,41 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
-	vm.preferred = preferred
-
-	// Check for context cancellation before expensive operations
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
+	// VALIDATE BEFORE ASSIGN (defect #1 — the luxd-1 rejoin wedge).
+	//
+	// The prior code assigned vm.preferred = preferred BEFORE fetching the block. A
+	// preference for a block this proposervm does not hold therefore POISONED
+	// vm.preferred permanently: BuildBlock reads vm.preferred (getBlock) and, on the
+	// poisoned id, logs "failed to fetch preferred block" and errors on EVERY build
+	// attempt forever. Quasar's cert-finality has no polling re-converge path, so the
+	// node never recovers — it just spams the failure.
+	//
+	// A validator that fell behind is steered by the consensus engine
+	// (consensus/engine/chain/integration.go — defect #2) to a DAG build-tip ABOVE its
+	// own frontier, which is exactly such an unheld id. Ava never hits this because it
+	// upholds the single-store invariant (it only ever calls SetPreference with a block
+	// Consensus already Verified-into-VM); Lux's build-tip steering does not, so the
+	// proposervm must be hardened to never adopt an id it cannot serve builds on.
+	//
+	// getBlock resolves BOTH the post-fork store and the inner (pre-fork) VM, so a miss
+	// here means the id is held in NEITHER namespace. Fetch first; only adopt the
+	// preference once the fetch + inner delegation both succeed.
 	blk, err := vm.getBlock(ctx, preferred)
 	if err != nil {
-		vm.logger.Error("preferred block not found",
-			log.Stringer("blkID", preferred),
+		// KEEP the prior-good preference (guaranteed held: this function only assigns
+		// vm.preferred after a successful fetch). BuildBlock stays live on the last held
+		// tip — producing on lastAccepted while the catch-up path pulls the gap — and a
+		// later SetPreference(held tip) advances us once the gap is closed.
+		//
+		// NOT fatal: an unheld build hint must never wedge or crash the VM. Returning an
+		// error here is what the old code did AND it left vm.preferred poisoned, which is
+		// strictly worse than a no-op. Fail secure: keep building.
+		vm.logger.Warn("SetPreference: preferred block not held by this node; keeping prior preference (no wedge)",
+			log.Stringer("requested", preferred),
+			log.Stringer("keptPreferred", vm.preferred),
 			log.Err(err),
 		)
-		return fmt.Errorf("preferred block %s not found: %w", preferred, err)
+		return nil
 	}
 
 	// Check for context cancellation before delegating to inner VM
@@ -399,6 +457,11 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	if err := vm.ChainVM.SetPreference(ctx, innerBlkID); err != nil {
 		return err
 	}
+
+	// Adopt the preference ONLY after we confirmed we hold the block AND the inner VM
+	// accepted it — an atomic all-or-nothing update, so a partial failure never leaves
+	// vm.preferred pointing at a block BuildBlock cannot fetch.
+	vm.preferred = preferred
 
 	vm.logger.Debug("set preference",
 		log.Stringer("blkID", preferred),

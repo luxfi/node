@@ -257,7 +257,7 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.104.3
+ARG EVM_VERSION=v1.104.7
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
