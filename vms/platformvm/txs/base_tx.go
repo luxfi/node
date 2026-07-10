@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,11 +9,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/utxo/secp256k1fx"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
@@ -25,86 +23,71 @@ var (
 	errInputsNotSortedUnique = errors.New("inputs not sorted and unique")
 )
 
-// BaseTx contains fields common to many transaction types. It should be
-// embedded in transaction implementations.
+// BaseTx is the bare spending envelope: kind + NetworkID/BlockchainID/Outs/
+// Ins/Memo, no delta fields. The struct IS the wire — it embeds spendingTx,
+// which holds the zap buffer and serves the whole envelope surface (Bytes/
+// NetworkID/Outputs/InputIDs/Memo/...). Delta-carrying tx types embed
+// spendingTx the same way and add their own field accessors.
+//
+// Wire: zap header + object{ envelope@0..76 } (kind=kindBase).
 type BaseTx struct {
-	lux.BaseTx `serialize:"true"`
-
-	// true iff this transaction has already passed syntactic verification
-	SyntacticallyVerified bool `json:"-"`
-
-	unsignedBytes []byte // Unsigned byte representation of this data
+	spendingTx
 }
 
-func (tx *BaseTx) SetBytes(unsignedBytes []byte) {
-	tx.unsignedBytes = unsignedBytes
-}
-
-func (tx *BaseTx) Bytes() []byte {
-	return tx.unsignedBytes
-}
-
-func (tx *BaseTx) InputIDs() set.Set[ids.ID] {
-	inputIDs := set.NewSet[ids.ID](len(tx.Ins))
-	for _, in := range tx.Ins {
-		inputIDs.Add(in.InputID())
+// NewBaseTx builds a bare spending tx into a fresh zap buffer — the one place
+// the envelope fields become bytes (construction, not serialization).
+func NewBaseTx(base *lux.BaseTx) (*BaseTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 256 + spendSize)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
-	return inputIDs
-}
-
-func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
-	return tx.Outs
-}
-
-// InitRuntime sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
-// sets the [rt] to the given [vm.rt] so that the addresses can be json
-// marshalled into human readable format
-func (tx *BaseTx) InitRuntime(rt *runtime.Runtime) {
-	for _, in := range tx.BaseTx.Ins {
-		in.FxID = secp256k1fx.ID
+	ob := b.StartObject(spendSize)
+	setEnvelope(ob, kindBase, base, p)
+	ob.FinishAsRoot()
+	msg, err := zap.Parse(b.Finish())
+	if err != nil {
+		return nil, err
 	}
-	for _, out := range tx.BaseTx.Outs {
-		out.FxID = secp256k1fx.ID
-		out.InitRuntime(rt)
-	}
+	return &BaseTx{spendingTx{msg}}, nil
 }
 
-// InitializeRuntime is a no-op. Runtime is passed explicitly.
-func (tx *BaseTx) Initialize(ctx context.Context) error {
-	return nil
-}
-
-// SyntacticVerify returns nil iff this tx is well formed
+// SyntacticVerify returns nil iff this tx is well formed.
 func (tx *BaseTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
 	}
-	if err := tx.BaseTx.Verify(rt); err != nil {
+	return verifyBaseTx(tx.baseTx(), rt)
+}
+
+func (tx *BaseTx) Visit(visitor Visitor) error { return visitor.BaseTx(tx) }
+
+func (tx *BaseTx) Initialize(context.Context) error { return nil }
+
+// verifyBaseTx runs the shared spending-envelope checks (metadata, per-output
+// and per-input verification, canonical ordering). Every spending tx type
+// composes this over its own delta-field checks — one envelope validator,
+// reused.
+func verifyBaseTx(base lux.BaseTx, rt *runtime.Runtime) error {
+	if err := base.Verify(rt); err != nil {
 		return fmt.Errorf("metadata failed verification: %w", err)
 	}
-	for _, out := range tx.Outs {
+	for _, out := range base.Outs {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("output failed verification: %w", err)
 		}
 	}
-	for _, in := range tx.Ins {
+	for _, in := range base.Ins {
 		if err := in.Verify(); err != nil {
 			return fmt.Errorf("input failed verification: %w", err)
 		}
 	}
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.Outs):
+	case !lux.IsSortedTransferableOutputs(base.Outs):
 		return errOutputsNotSorted
-	case !utils.IsSortedAndUnique(tx.Ins):
+	case !utils.IsSortedAndUnique(base.Ins):
 		return errInputsNotSortedUnique
 	default:
 		return nil
 	}
-}
-
-func (tx *BaseTx) Visit(visitor Visitor) error {
-	return visitor.BaseTx(tx)
 }

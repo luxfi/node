@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,109 +7,106 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
-	_ ValidatorTx     = (*AddValidatorTx)(nil)
-	_ ScheduledStaker = (*AddValidatorTx)(nil)
+	_ UnsignedTx = (*AddValidatorTx)(nil)
 
 	errTooManyShares = fmt.Errorf("a staker can only require at most %d shares from delegators", reward.PercentDenominator)
 )
 
-// AddValidatorTx is an unsigned addValidatorTx
+// AddValidatorTx is an unsigned addValidatorTx. The struct IS the wire: it
+// holds the zap buffer and reads its fields by offset. No codec, no marshal.
+//
+// Wire: zap header + object{ envelope@0..76, Validator@77, StakeOuts@121,
+// RewardsOwner@137, DelegationShares@157 }.
 type AddValidatorTx struct {
-	// Metadata, inputs and outputs
-	BaseTx `serialize:"true"`
-	// Describes the delegatee
-	Validator `serialize:"true" json:"validator"`
-	// Where to send staked tokens when done validating
-	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
-	// Where to send staking rewards when done validating
-	RewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
-	// Fee this validator charges delegators as a percentage, times 10,000
-	// For example, if this validator has DelegationShares=300,000 then they
-	// take 30% of rewards from delegators
-	DelegationShares uint32 `serialize:"true" json:"shares"`
+	spendingTx
 }
 
-// InitRuntime sets the FxID fields in the inputs and outputs of this
-// [AddValidatorTx]. Also sets the [rt] to the given [vm.rt] so that
-// the addresses can be json marshalled into human readable format
-func (tx *AddValidatorTx) InitRuntime(rt *runtime.Runtime) {
-	tx.BaseTx.InitRuntime(rt)
-	for _, out := range tx.StakeOuts {
-		out.FxID = secp256k1fx.ID
-		out.InitRuntime(rt)
+const (
+	offAVValidator        = spendSize                      // 77: inline Validator (44B)
+	offAVStakeOuts        = offAVValidator + validatorSize // 121: stake-outs list ptr (8B)
+	offAVStakeAddrs       = offAVStakeOuts + 8             // 129: stake-outs owner-addr array ptr (8B)
+	offAVRewardsThreshold = offAVStakeAddrs + 8            // 137: rewards owner threshold (u32)
+	offAVRewardsLocktime  = offAVRewardsThreshold + 4      // 141: rewards owner locktime (u64)
+	offAVRewardsAddrs     = offAVRewardsLocktime + 8       // 149: rewards owner addr array ptr (8B)
+	offAVDelegationShares = offAVRewardsAddrs + 8          // 157: delegation shares (u32)
+	addValidatorSize      = offAVDelegationShares + 4      // 161
+)
+
+// NewAddValidatorTx builds the tx into a fresh zap buffer.
+func NewAddValidatorTx(base *lux.BaseTx, validator Validator, stakeOuts []*lux.TransferableOutput, rewardsOwner fx.Owner, delegationShares uint32) (*AddValidatorTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 1024 + addValidatorSize)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
-	// Owner doesn't have InitRuntime method
+	stakeListOff, stakeListCount, stakeAddrOff, stakeAddrCount, err := writeExtraOuts(b, stakeOuts)
+	if err != nil {
+		return nil, err
+	}
+	ownerThreshold, ownerLocktime, ownerAddrOff, ownerAddrCount, err := writeOwner(b, rewardsOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	ob := b.StartObject(addValidatorSize)
+	setEnvelope(ob, kindAddValidator, base, p)
+	setValidator(ob, offAVValidator, validator)
+	ob.SetList(offAVStakeOuts, stakeListOff, stakeListCount)
+	ob.SetList(offAVStakeAddrs, stakeAddrOff, stakeAddrCount)
+	setOwner(ob, offAVRewardsThreshold, offAVRewardsLocktime, offAVRewardsAddrs, ownerThreshold, ownerLocktime, ownerAddrOff, ownerAddrCount)
+	ob.SetUint32(offAVDelegationShares, delegationShares)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &AddValidatorTx{spendingTx{msg}}, nil
 }
 
-func (*AddValidatorTx) ChainID() ids.ID {
-	return constants.PrimaryNetworkID
+// Validator describes the delegatee (offset read).
+func (tx *AddValidatorTx) Validator() Validator { return readValidator(tx.root(), offAVValidator) }
+
+// StakeOuts is where staked tokens go when done validating (offset read).
+func (tx *AddValidatorTx) StakeOuts() []*lux.TransferableOutput {
+	return readExtraOuts(tx.root(), offAVStakeOuts, offAVStakeAddrs)
 }
 
-func (tx *AddValidatorTx) NodeID() ids.NodeID {
-	return tx.Validator.NodeID
+// RewardsOwner is where staking rewards go when done validating.
+func (tx *AddValidatorTx) RewardsOwner() fx.Owner {
+	return readOwner(tx.root(), offAVRewardsThreshold, offAVRewardsLocktime, offAVRewardsAddrs)
 }
 
-func (*AddValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
-	return nil, false, nil
-}
+// DelegationShares is the fee (times 10,000) charged to delegators.
+func (tx *AddValidatorTx) DelegationShares() uint32 { return tx.root().Uint32(offAVDelegationShares) }
 
-func (*AddValidatorTx) PendingPriority() Priority {
-	return PrimaryNetworkValidatorPendingPriority
-}
-
-func (*AddValidatorTx) CurrentPriority() Priority {
-	return PrimaryNetworkValidatorCurrentPriority
-}
-
-func (tx *AddValidatorTx) Stake() []*lux.TransferableOutput {
-	return tx.StakeOuts
-}
-
-func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner {
-	return tx.RewardsOwner
-}
-
-func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner {
-	return tx.RewardsOwner
-}
-
-func (tx *AddValidatorTx) Shares() uint32 {
-	return tx.DelegationShares
-}
-
-// SyntacticVerify returns nil iff [tx] is valid
+// SyntacticVerify returns nil iff [tx] is valid.
 func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
-	case tx.DelegationShares > reward.PercentDenominator: // Ensure delegators shares are in the allowed amount
+	}
+	if tx.DelegationShares() > reward.PercentDenominator { // shares in the allowed amount
 		return errTooManyShares
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return fmt.Errorf("failed to verify BaseTx: %w", err)
 	}
-	if err := verify.All(&tx.Validator, tx.RewardsOwner); err != nil {
+	v := tx.Validator()
+	if err := verify.All(&v, tx.RewardsOwner()); err != nil {
 		return fmt.Errorf("failed to verify validator or rewards owner: %w", err)
 	}
 
+	stakeOuts := tx.StakeOuts()
 	totalStakeWeight := uint64(0)
-	for _, out := range tx.StakeOuts {
+	for _, out := range stakeOuts {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("failed to verify output: %w", err)
 		}
@@ -127,14 +124,11 @@ func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts):
+	case !lux.IsSortedTransferableOutputs(stakeOuts):
 		return errOutputsNotSorted
-	case totalStakeWeight != tx.Wght:
-		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Wght, totalStakeWeight)
+	case totalStakeWeight != v.Wght:
+		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, v.Wght, totalStakeWeight)
 	}
-
-	// cache that this is valid
-	tx.SyntacticallyVerified = true
 	return nil
 }
 
@@ -142,8 +136,7 @@ func (tx *AddValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddValidatorTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
+// Initialize is a no-op; Runtime is passed explicitly to InitRuntime.
 func (tx *AddValidatorTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
 	return nil
 }
