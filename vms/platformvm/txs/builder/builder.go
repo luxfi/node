@@ -460,10 +460,9 @@ func (b *builder) NewCreateNetworkTx(
 			Addrs:     ownerAddrs,
 		},
 		security.Mode{RestakeParent: true, Admission: security.NoOwnSet, Manager: security.PChain},
-		nil, // validators (none: no own set)
-		nil, // chains (none at genesis)
-		0,   // managerChainIdx (unused without a contract-governed own set)
-		nil, // managerAddress
+		nil,       // validators (none: no own set)
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
 	)
 	if err != nil {
 		return nil, err

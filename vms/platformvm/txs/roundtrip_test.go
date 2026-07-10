@@ -90,19 +90,17 @@ func sampleNetworkValidator() *NetworkValidator {
 	return v
 }
 
-// TestRoundTrip_CreateNetwork_SovereignL1 exercises the folded one-tx L1 birth:
-// parent=Primary, own validator set, genesis chains, manager — all round-trip.
+// TestRoundTrip_CreateNetwork_SovereignL1 exercises the one-tx L1 birth:
+// parent=Primary, own validator set, contract manager ref — all round-trip.
 func TestRoundTrip_CreateNetwork_SovereignL1(t *testing.T) {
 	require := require.New(t)
 	base := spendBase()
 	vdr := sampleNetworkValidator()
 	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
-	chains := []*NetworkChain{
-		{BlockchainName: "evm chain", VMID: ids.GenerateTestID(), FxIDs: []ids.ID{ids.GenerateTestID()}, GenesisData: []byte(`{"g":1}`)},
-	}
-	sec := security.Mode{Admission: security.Open, Threshold: 2_000, Manager: security.PChain}
+	sec := security.Mode{Admission: security.Open, Threshold: 2_000, Manager: security.Contract}
+	mgrChain := ids.GenerateTestID()
 	in, err := NewCreateNetworkTx(base, ids.Empty /*Primary parent*/, owner, sec,
-		[]*NetworkValidator{vdr}, chains, 0, []byte("mgr"))
+		[]*NetworkValidator{vdr}, mgrChain, []byte("mgr"))
 	require.NoError(err)
 	got := roundTrip(t, in).(*CreateNetworkTx)
 	require.Equal(ids.Empty, got.Parent())
@@ -110,29 +108,26 @@ func TestRoundTrip_CreateNetwork_SovereignL1(t *testing.T) {
 	require.True(got.Sovereign())
 	require.Equal(sec, got.Security(), "security.Mode round-trips")
 	require.Equal([]*NetworkValidator{vdr}, got.Validators(), "genesis validator set round-trips")
-	require.Equal(chains, got.Chains(), "genesis chain manifest round-trips")
-	require.EqualValues(0, got.ManagerChainIdx())
+	require.Equal(mgrChain, got.ManagerChainID(), "manager chain ref round-trips")
 	require.Equal([]byte("mgr"), got.ManagerAddress())
 }
 
 // TestRoundTrip_CreateNetwork_InheritedL2 exercises an L2 restaking its parent
-// L1's security: parent=some L1, Inherited (no own validators), still holds a
-// local manager and genesis chains.
+// L1's security: parent=some L1, no own validators (pure restake). Chains are
+// added separately via CreateChainTx.
 func TestRoundTrip_CreateNetwork_InheritedL2(t *testing.T) {
 	require := require.New(t)
 	base := spendBase()
 	parentL1 := ids.GenerateTestID()
 	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
-	chains := []*NetworkChain{{BlockchainName: "l2 evm", VMID: ids.GenerateTestID()}}
 	sec := security.Mode{RestakeParent: true, Admission: security.NoOwnSet, Manager: security.PChain}
-	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, nil, chains, 0, nil)
+	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, nil, ids.Empty, nil)
 	require.NoError(err)
 	got := roundTrip(t, in).(*CreateNetworkTx)
 	require.Equal(parentL1, got.Parent(), "L2 records its parent L1 (level = depth)")
 	require.False(got.Sovereign())
 	require.Equal(sec, got.Security(), "restaked-L2 mode round-trips")
 	require.Empty(got.Validators(), "restaked security carries no own validators")
-	require.Equal(chains, got.Chains())
 }
 
 // TestRoundTrip_CreateNetwork_HybridL2 exercises the mode the old flat
@@ -146,7 +141,7 @@ func TestRoundTrip_CreateNetwork_HybridL2(t *testing.T) {
 	vdr := sampleNetworkValidator()
 	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
 	sec := security.Mode{RestakeParent: true, Admission: security.Open, Threshold: 500, Manager: security.PChain}
-	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, []*NetworkValidator{vdr}, nil, 0, nil)
+	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, []*NetworkValidator{vdr}, ids.Empty, nil)
 	require.NoError(err)
 	got := roundTrip(t, in).(*CreateNetworkTx)
 	require.True(got.Security().RestakeParent, "restakes parent")

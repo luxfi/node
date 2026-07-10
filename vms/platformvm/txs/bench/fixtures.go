@@ -374,10 +374,9 @@ func NewCreateNetworkTxFixture() *txs.CreateNetworkTx {
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
 		security.Mode{RestakeParent: true}, // restaked L2, no own set
-		nil,                                // validators
-		nil,                                // chains
-		0,                                  // managerChainIdx
-		nil,                                // managerAddress
+		nil,       // validators
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
 	)
 	if err != nil {
 		panic(err)
