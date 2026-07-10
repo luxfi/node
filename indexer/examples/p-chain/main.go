@@ -39,7 +39,7 @@ func main() {
 			platformvmBlockBytes = proposerVMBlock.Block()
 		}
 
-		platformvmBlock, err := platformvmblock.Parse(platformvmblock.Codec, platformvmBlockBytes)
+		platformvmBlock, err := platformvmblock.Parse(platformvmBlockBytes)
 		if err != nil {
 			log.Fatalf("failed to parse platformvm block: %s\n", err)
 		}
