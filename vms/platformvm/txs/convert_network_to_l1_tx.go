@@ -119,7 +119,8 @@ func writeConvertValidators(b *zap.Builder, vdrs []*ConvertNetworkToL1Validator)
 
 		lb.AddBytes(e[:])
 	}
-	listOff, listCount = lb.Finish()
+	listOff, _ = lb.Finish()
+	listCount = len(vdrs) // AddBytes counts bytes, not elements
 	return listOff, listCount, nodeIDs, addrs
 }
 
@@ -203,7 +204,8 @@ func NewConvertNetworkToL1Tx(
 		for _, a := range addrPool {
 			alb.AddBytes(a[:])
 		}
-		addrOff, addrCount = alb.Finish()
+		addrOff, _ = alb.Finish()
+		addrCount = len(addrPool)
 	}
 
 	ob := b.StartObject(sizeConvTx)
