@@ -27,8 +27,6 @@ const (
 	kindAddDelegator
 	kindAddPermissionlessValidator
 	kindAddPermissionlessDelegator
-	kindConvertNetworkToL1
-	kindCreateSovereignL1
 	kindRegisterL1Validator
 	kindSetL1ValidatorWeight
 	kindIncreaseL1ValidatorBalance

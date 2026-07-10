@@ -23,15 +23,6 @@ type Visitor interface {
 	TransferChainOwnershipTx(*TransferChainOwnershipTx) error
 	BaseTx(*BaseTx) error
 
-	ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error
-	// CreateSovereignL1Tx atomically registers a new sovereign L1
-	// (network + genesis validators + chain manifest + manager-contract
-	// handoff) in one tx. The single-step alternative to the legacy
-	// CreateNetworkTx + AddChainValidatorTx ×N + CreateChainTx ×K +
-	// ConvertNetworkToL1Tx flow. After commit, the primary network
-	// neither track-chains nor validates the L1's blocks — the L1's
-	// own validators run their own consensus from genesis.
-	CreateSovereignL1Tx(*CreateSovereignL1Tx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error

@@ -71,12 +71,12 @@ func TestRoundTrip_BaseTx_MultisigStakeable(t *testing.T) {
 	require.Equal([]byte(base.Memo), got.Memo())
 }
 
-func sampleConvertValidator() *ConvertNetworkToL1Validator {
+func sampleNetworkValidator() *NetworkValidator {
 	nodeID := ids.GenerateTestNodeID()
-	v := &ConvertNetworkToL1Validator{
-		NodeID:  nodeID[:],
-		Weight:  1000,
-		Balance: 500,
+	v := &NetworkValidator{
+		NodeID:                nodeID[:],
+		Weight:                1000,
+		Balance:               500,
 		RemainingBalanceOwner: message.PChainOwner{Threshold: 1, Addresses: []ids.ShortID{ids.GenerateTestShortID()}},
 		DeactivationOwner:     message.PChainOwner{Threshold: 2, Addresses: []ids.ShortID{ids.GenerateTestShortID(), ids.GenerateTestShortID()}},
 	}
@@ -89,37 +89,46 @@ func sampleConvertValidator() *ConvertNetworkToL1Validator {
 	return v
 }
 
-func TestRoundTrip_ConvertNetworkToL1(t *testing.T) {
+// TestRoundTrip_CreateNetwork_SovereignL1 exercises the folded one-tx L1 birth:
+// parent=Primary, own validator set, genesis chains, manager — all round-trip.
+func TestRoundTrip_CreateNetwork_SovereignL1(t *testing.T) {
 	require := require.New(t)
 	base := spendBase()
-	vdr := sampleConvertValidator()
-	in, err := NewConvertNetworkToL1Tx(base, ids.GenerateTestID(), ids.GenerateTestID(), []byte("0xmanager"),
-		[]*ConvertNetworkToL1Validator{vdr}, &secp256k1fx.Input{SigIndices: []uint32{0}})
-	require.NoError(err)
-	got := roundTrip(t, in).(*ConvertNetworkToL1Tx)
-	require.Equal(in.Chain(), got.Chain())
-	require.Equal(in.ManagerChainID(), got.ManagerChainID())
-	require.Equal([]byte("0xmanager"), got.Address())
-	require.Equal([]*ConvertNetworkToL1Validator{vdr}, got.Validators(), "nested validator (NodeID+BLS PoP+2 owners) round-trips")
-	require.Equal(in.ChainAuth(), got.ChainAuth())
-}
-
-func TestRoundTrip_CreateSovereignL1(t *testing.T) {
-	require := require.New(t)
-	base := spendBase()
-	vdr := sampleConvertValidator()
+	vdr := sampleNetworkValidator()
 	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
-	chains := []*SovereignL1Chain{
+	chains := []*NetworkChain{
 		{BlockchainName: "evm chain", VMID: ids.GenerateTestID(), FxIDs: []ids.ID{ids.GenerateTestID()}, GenesisData: []byte(`{"g":1}`)},
 	}
-	in, err := NewCreateSovereignL1Tx(base, owner, []*ConvertNetworkToL1Validator{vdr}, chains, 0, []byte("mgr"))
+	in, err := NewCreateNetworkTx(base, ids.Empty /*Primary parent*/, owner, SecuritySovereign,
+		[]*NetworkValidator{vdr}, chains, 0, []byte("mgr"))
 	require.NoError(err)
-	got := roundTrip(t, in).(*CreateSovereignL1Tx)
+	got := roundTrip(t, in).(*CreateNetworkTx)
+	require.Equal(ids.Empty, got.Parent())
 	require.Equal(owner, got.Owner())
-	require.Equal([]*ConvertNetworkToL1Validator{vdr}, got.Validators())
-	require.Equal(chains, got.Chains(), "sovereign L1 chain manifest round-trips")
+	require.True(got.Sovereign())
+	require.Equal([]*NetworkValidator{vdr}, got.Validators(), "genesis validator set round-trips")
+	require.Equal(chains, got.Chains(), "genesis chain manifest round-trips")
 	require.EqualValues(0, got.ManagerChainIdx())
 	require.Equal([]byte("mgr"), got.ManagerAddress())
+}
+
+// TestRoundTrip_CreateNetwork_InheritedL2 exercises an L2 restaking its parent
+// L1's security: parent=some L1, Inherited (no own validators), still holds a
+// local manager and genesis chains.
+func TestRoundTrip_CreateNetwork_InheritedL2(t *testing.T) {
+	require := require.New(t)
+	base := spendBase()
+	parentL1 := ids.GenerateTestID()
+	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
+	chains := []*NetworkChain{{BlockchainName: "l2 evm", VMID: ids.GenerateTestID()}}
+	in, err := NewCreateNetworkTx(base, parentL1, owner, SecurityInherited, nil, chains, 0, []byte("l2mgr"))
+	require.NoError(err)
+	got := roundTrip(t, in).(*CreateNetworkTx)
+	require.Equal(parentL1, got.Parent(), "L2 records its parent L1 (level = depth)")
+	require.False(got.Sovereign())
+	require.Empty(got.Validators(), "inherited security carries no own validators")
+	require.Equal(chains, got.Chains())
+	require.Equal([]byte("l2mgr"), got.ManagerAddress(), "inherited L2 still holds a local manager")
 }
 
 func TestRoundTrip_SignedWithCreds(t *testing.T) {
