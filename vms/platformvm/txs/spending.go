@@ -26,11 +26,57 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
+
+// spendingTx is the embedded base for every non-proposal tx. It holds the zap
+// buffer and serves the whole envelope surface (Bytes/NetworkID/Outputs/
+// InputIDs/Memo), so each type file only adds its delta accessors + Visit +
+// SyntacticVerify.
+type spendingTx struct {
+	msg *zap.Message
+}
+
+func (t spendingTx) Bytes() []byte      { return t.msg.Bytes() }
+func (t *spendingTx) SetBytes(b []byte) { t.msg, _ = zap.Parse(b) }
+func (t spendingTx) root() zap.Object   { return t.msg.Root() }
+
+func (t spendingTx) NetworkID() uint32          { return t.msg.Root().Uint32(offNetworkID) }
+func (t spendingTx) BlockchainID() ids.ID       { return readID(t.msg.Root(), offBlockchainID) }
+func (spendingTx) InitRuntime(*runtime.Runtime) {}
+
+func (t spendingTx) Outputs() []*lux.TransferableOutput {
+	return readOutputs(t.msg.Root(), offOuts, offOwnerAddrs)
+}
+
+func (t spendingTx) Inputs() []*lux.TransferableInput {
+	return readInputs(t.msg.Root(), offIns, offSigIndices)
+}
+
+func (t spendingTx) Memo() []byte {
+	if m := t.msg.Root().Bytes(offMemo); len(m) > 0 {
+		return append([]byte(nil), m...)
+	}
+	return nil
+}
+
+func (t spendingTx) InputIDs() set.Set[ids.ID] {
+	ins := t.Inputs()
+	inputIDs := set.NewSet[ids.ID](len(ins))
+	for _, in := range ins {
+		inputIDs.Add(in.InputID())
+	}
+	return inputIDs
+}
+
+// baseTx reconstructs the embedded lux.BaseTx (used by SyntacticVerify paths
+// that validate the spending envelope as a whole).
+func (t spendingTx) baseTx() lux.BaseTx { return readEnvelope(t.msg.Root()) }
 
 const (
 	offNetworkID    = 1
