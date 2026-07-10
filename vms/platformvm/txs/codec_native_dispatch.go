@@ -31,6 +31,16 @@ func marshalUnsignedNative(u UnsignedTx) ([]byte, error) {
 		return zn.NewRewardValidatorTx(t.TxID).Bytes(), nil
 	case *BaseTx:
 		return marshalBaseTx(t)
+	case *IncreaseL1ValidatorBalanceTx:
+		return marshalIncreaseL1ValidatorBalanceTx(t)
+	case *SetL1ValidatorWeightTx:
+		return marshalSetL1ValidatorWeightTx(t)
+	case *DisableL1ValidatorTx:
+		return marshalDisableL1ValidatorTx(t)
+	case *RemoveChainValidatorTx:
+		return marshalRemoveChainValidatorTx(t)
+	case *CreateNetworkTx:
+		return marshalCreateNetworkTx(t)
 	default:
 		return nil, fmt.Errorf("zap_native: unsigned tx type %T not yet bridged", u)
 	}
@@ -102,6 +112,22 @@ func unmarshalUnsignedNative(b []byte) (UnsignedTx, int, error) {
 		tx := &BaseTx{BaseTx: readSpending(msg.Root())}
 		tx.SetBytes(buf)
 		return tx, n, nil
+
+	case zn.TxKindIncreaseL1ValidatorBalance:
+		tx, err := unmarshalIncreaseL1ValidatorBalanceTx(buf)
+		return tx, n, err
+	case zn.TxKindSetL1ValidatorWeight:
+		tx, err := unmarshalSetL1ValidatorWeightTx(buf)
+		return tx, n, err
+	case zn.TxKindDisableL1Validator:
+		tx, err := unmarshalDisableL1ValidatorTx(buf)
+		return tx, n, err
+	case zn.TxKindRemoveChainValidator:
+		tx, err := unmarshalRemoveChainValidatorTx(buf)
+		return tx, n, err
+	case zn.TxKindCreateNetwork:
+		tx, err := unmarshalCreateNetworkTx(buf)
+		return tx, n, err
 
 	default:
 		return nil, 0, fmt.Errorf("zap_native: tx kind %d not yet bridged", kind)
