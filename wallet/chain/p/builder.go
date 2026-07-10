@@ -12,15 +12,16 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/platformvm/security"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/math"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -318,13 +319,13 @@ func (b *txBuilder) NewBaseTx(
 	outputs = append(outputs, changeOutputs...)
 	lux.SortTransferableOutputs(outputs) // sort the outputs
 
-	return &txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewBaseTx(&lux.BaseTx{
 		NetworkID:    b.context.NetworkID,
 		BlockchainID: constants.PlatformChainID,
 		Ins:          inputs,
 		Outs:         outputs,
 		Memo:         ops.Memo(),
-	}}, nil
+	})
 }
 
 func (b *txBuilder) NewAddValidatorTx(
@@ -347,19 +348,19 @@ func (b *txBuilder) NewAddValidatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
-	return &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:        *vdr,
-		StakeOuts:        stakeOutputs,
-		RewardsOwner:     rewardsOwner,
-		DelegationShares: shares,
-	}, nil
+		},
+		*vdr,
+		stakeOutputs,
+		rewardsOwner,
+		shares,
+	)
 }
 
 func (b *txBuilder) NewAddChainValidatorTx(
@@ -381,17 +382,18 @@ func (b *txBuilder) NewAddChainValidatorTx(
 		return nil, err
 	}
 
-	return &txs.AddChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		ChainValidator: *vdr,
-		ChainAuth:      chainAuth,
-	}, nil
+		},
+		vdr.Validator,
+		vdr.Chain,
+		chainAuth,
+	)
 }
 
 func (b *txBuilder) NewRemoveChainValidatorTx(
@@ -414,18 +416,18 @@ func (b *txBuilder) NewRemoveChainValidatorTx(
 		return nil, err
 	}
 
-	return &txs.RemoveChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewRemoveChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		Chain:     netID,
-		NodeID:    nodeID,
-		ChainAuth: chainAuth,
-	}, nil
+		},
+		nodeID,
+		netID,
+		chainAuth,
+	)
 }
 
 func (b *txBuilder) NewAddDelegatorTx(
@@ -447,18 +449,18 @@ func (b *txBuilder) NewAddDelegatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
-	return &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddDelegatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:              *vdr,
-		StakeOuts:              stakeOutputs,
-		DelegationRewardsOwner: rewardsOwner,
-	}, nil
+		},
+		*vdr,
+		stakeOutputs,
+		rewardsOwner,
+	)
 }
 
 func (b *txBuilder) NewCreateChainTx(
@@ -485,21 +487,21 @@ func (b *txBuilder) NewCreateChainTx(
 	}
 
 	utils.Sort(fxIDs)
-	return &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewCreateChainTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		ChainID:        netID,
-		BlockchainName: chainName,
-		VMID:           vmID,
-		FxIDs:          fxIDs,
-		GenesisData:    genesis,
-		ChainAuth:      chainAuth,
-	}, nil
+		},
+		netID,
+		chainName,
+		vmID,
+		fxIDs,
+		genesis,
+		chainAuth,
+	)
 }
 
 func (b *txBuilder) NewCreateNetworkTx(
@@ -517,16 +519,25 @@ func (b *txBuilder) NewCreateNetworkTx(
 	}
 
 	utils.Sort(owner.Addrs)
-	return &txs.CreateNetworkTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	// Plain "create an empty network under the primary network": no own
+	// validators or chains, no manager. Parent = primary network;
+	// security inherited (restaked from parent).
+	return txs.NewCreateNetworkTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		Owner: owner,
-	}, nil
+		},
+		constants.PrimaryNetworkID, // parent
+		owner,
+		security.Mode{RestakeParent: true, Manager: security.PChain}, // restaked L2 under primary
+		nil, // validators
+		nil, // chains
+		0,   // managerChainIdx
+		nil, // managerAddress
+	)
 }
 
 func (b *txBuilder) NewImportTx(
@@ -543,7 +554,7 @@ func (b *txBuilder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		utxoAssetID      = b.context.UTXOAssetID
+		utxoAssetID     = b.context.UTXOAssetID
 		txFee           = b.context.StaticFeeConfig.TxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -622,17 +633,17 @@ func (b *txBuilder) NewImportTx(
 	}
 
 	lux.SortTransferableOutputs(outputs) // sort imported outputs
-	return &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewImportTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		SourceChain:    sourceChainID,
-		ImportedInputs: importedInputs,
-	}, nil
+		},
+		sourceChainID,
+		importedInputs,
+	)
 }
 
 func (b *txBuilder) NewExportTx(
@@ -660,17 +671,17 @@ func (b *txBuilder) NewExportTx(
 	}
 
 	lux.SortTransferableOutputs(outputs) // sort exported outputs
-	return &txs.ExportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewExportTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         changeOutputs,
 			Memo:         ops.Memo(),
-		}},
-		DestinationChain: chainID,
-		ExportedOutputs:  outputs,
-	}, nil
+		},
+		chainID,
+		outputs,
+	)
 }
 
 func (b *txBuilder) NewTransformChainTx(
@@ -692,7 +703,7 @@ func (b *txBuilder) NewTransformChainTx(
 ) (*txs.TransformChainTx, error) {
 	toBurn := map[ids.ID]uint64{
 		b.context.UTXOAssetID: b.context.StaticFeeConfig.TransformChainTxFee,
-		assetID:            maxSupply - initialSupply,
+		assetID:               maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -706,30 +717,30 @@ func (b *txBuilder) NewTransformChainTx(
 		return nil, err
 	}
 
-	return &txs.TransformChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewTransformChainTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		Chain:                    netID,
-		AssetID:                  assetID,
-		InitialSupply:            initialSupply,
-		MaximumSupply:            maxSupply,
-		MinConsumptionRate:       minConsumptionRate,
-		MaxConsumptionRate:       maxConsumptionRate,
-		MinValidatorStake:        minValidatorStake,
-		MaxValidatorStake:        maxValidatorStake,
-		MinStakeDuration:         uint32(minStakeDuration / time.Second),
-		MaxStakeDuration:         uint32(maxStakeDuration / time.Second),
-		MinDelegationFee:         minDelegationFee,
-		MinDelegatorStake:        minDelegatorStake,
-		MaxValidatorWeightFactor: maxValidatorWeightFactor,
-		UptimeRequirement:        uptimeRequirement,
-		ChainAuth:                chainAuth,
-	}, nil
+		},
+		netID,
+		assetID,
+		initialSupply,
+		maxSupply,
+		minConsumptionRate,
+		maxConsumptionRate,
+		minValidatorStake,
+		maxValidatorStake,
+		uint32(minStakeDuration/time.Second),
+		uint32(maxStakeDuration/time.Second),
+		minDelegationFee,
+		minDelegatorStake,
+		maxValidatorWeightFactor,
+		uptimeRequirement,
+		chainAuth,
+	)
 }
 
 func (b *txBuilder) NewAddPermissionlessValidatorTx(
@@ -759,22 +770,22 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 
 	utils.Sort(validationRewardsOwner.Addrs)
 	utils.Sort(delegationRewardsOwner.Addrs)
-	return &txs.AddPermissionlessValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddPermissionlessValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:             vdr.Validator,
-		Chain:                 vdr.Chain,
-		Signer:                signer,
-		StakeOuts:             stakeOutputs,
-		ValidatorRewardsOwner: validationRewardsOwner,
-		DelegatorRewardsOwner: delegationRewardsOwner,
-		DelegationShares:      shares,
-	}, nil
+		},
+		vdr.Validator,
+		vdr.Chain,
+		signer,
+		stakeOutputs,
+		validationRewardsOwner,
+		delegationRewardsOwner,
+		shares,
+	)
 }
 
 func (b *txBuilder) NewAddPermissionlessDelegatorTx(
@@ -800,19 +811,19 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
-	return &txs.AddPermissionlessDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddPermissionlessDelegatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:              vdr.Validator,
-		Chain:                  vdr.Chain,
-		StakeOuts:              stakeOutputs,
-		DelegationRewardsOwner: rewardsOwner,
-	}, nil
+		},
+		vdr.Validator,
+		vdr.Chain,
+		stakeOutputs,
+		rewardsOwner,
+	)
 }
 
 func (b *txBuilder) getBalance(
@@ -1085,7 +1096,7 @@ func (b *txBuilder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                    // sort inputs
+	utils.Sort(inputs)                         // sort inputs
 	lux.SortTransferableOutputs(changeOutputs) // sort the change outputs
 	lux.SortTransferableOutputs(stakeOutputs)  // sort stake outputs
 	return inputs, changeOutputs, stakeOutputs, nil

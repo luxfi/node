@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -99,13 +100,15 @@ func TestRoundTrip_CreateNetwork_SovereignL1(t *testing.T) {
 	chains := []*NetworkChain{
 		{BlockchainName: "evm chain", VMID: ids.GenerateTestID(), FxIDs: []ids.ID{ids.GenerateTestID()}, GenesisData: []byte(`{"g":1}`)},
 	}
-	in, err := NewCreateNetworkTx(base, ids.Empty /*Primary parent*/, owner, SecuritySovereign,
+	sec := security.Mode{Admission: security.Open, Threshold: 2_000, Manager: security.PChain}
+	in, err := NewCreateNetworkTx(base, ids.Empty /*Primary parent*/, owner, sec,
 		[]*NetworkValidator{vdr}, chains, 0, []byte("mgr"))
 	require.NoError(err)
 	got := roundTrip(t, in).(*CreateNetworkTx)
 	require.Equal(ids.Empty, got.Parent())
 	require.Equal(owner, got.Owner())
 	require.True(got.Sovereign())
+	require.Equal(sec, got.Security(), "security.Mode round-trips")
 	require.Equal([]*NetworkValidator{vdr}, got.Validators(), "genesis validator set round-trips")
 	require.Equal(chains, got.Chains(), "genesis chain manifest round-trips")
 	require.EqualValues(0, got.ManagerChainIdx())
@@ -121,14 +124,35 @@ func TestRoundTrip_CreateNetwork_InheritedL2(t *testing.T) {
 	parentL1 := ids.GenerateTestID()
 	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
 	chains := []*NetworkChain{{BlockchainName: "l2 evm", VMID: ids.GenerateTestID()}}
-	in, err := NewCreateNetworkTx(base, parentL1, owner, SecurityInherited, nil, chains, 0, []byte("l2mgr"))
+	sec := security.Mode{RestakeParent: true, Admission: security.NoOwnSet, Manager: security.PChain}
+	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, nil, chains, 0, nil)
 	require.NoError(err)
 	got := roundTrip(t, in).(*CreateNetworkTx)
 	require.Equal(parentL1, got.Parent(), "L2 records its parent L1 (level = depth)")
 	require.False(got.Sovereign())
-	require.Empty(got.Validators(), "inherited security carries no own validators")
+	require.Equal(sec, got.Security(), "restaked-L2 mode round-trips")
+	require.Empty(got.Validators(), "restaked security carries no own validators")
 	require.Equal(chains, got.Chains())
-	require.Equal([]byte("l2mgr"), got.ManagerAddress(), "inherited L2 still holds a local manager")
+}
+
+// TestRoundTrip_CreateNetwork_HybridL2 exercises the mode the old flat
+// Inherited/Sovereign byte could NOT express: an L2 that BOTH restakes its
+// parent AND runs an additive own validator set (RestakeParent ∧ Open). The
+// two security.Mode axes round-trip independently.
+func TestRoundTrip_CreateNetwork_HybridL2(t *testing.T) {
+	require := require.New(t)
+	base := spendBase()
+	parentL1 := ids.GenerateTestID()
+	vdr := sampleNetworkValidator()
+	var owner fx.Owner = &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{ids.GenerateTestShortID()}}
+	sec := security.Mode{RestakeParent: true, Admission: security.Open, Threshold: 500, Manager: security.PChain}
+	in, err := NewCreateNetworkTx(base, parentL1, owner, sec, []*NetworkValidator{vdr}, nil, 0, nil)
+	require.NoError(err)
+	got := roundTrip(t, in).(*CreateNetworkTx)
+	require.True(got.Security().RestakeParent, "restakes parent")
+	require.True(got.Sovereign(), "AND runs its own set")
+	require.Equal(sec, got.Security())
+	require.Equal([]*NetworkValidator{vdr}, got.Validators())
 }
 
 // TestRoundTrip_ConvertNetwork exercises the promote endomorphism: an existing
@@ -138,10 +162,12 @@ func TestRoundTrip_ConvertNetwork(t *testing.T) {
 	require := require.New(t)
 	base := spendBase()
 	vdr := sampleNetworkValidator()
+	sec := security.Mode{Admission: security.Open, Threshold: 1_000, Manager: security.Contract}
 	in, err := NewConvertNetworkTx(base,
 		ids.GenerateTestID(),         // the L2/L3 network being promoted
 		ids.Empty,                    // new parent = Primary ⇒ becomes an L1
 		ids.GenerateTestID(),         // manager chain
+		sec,                          // target security.Mode (sovereign, contract-governed)
 		[]byte("0xmgr"),              // manager address
 		[]*NetworkValidator{vdr},     // sovereign validator set
 		&secp256k1fx.Input{SigIndices: []uint32{0}}, // owner auth
@@ -152,6 +178,7 @@ func TestRoundTrip_ConvertNetwork(t *testing.T) {
 	require.Equal(ids.Empty, got.Parent(), "re-anchored to Primary ⇒ L1")
 	require.Equal(in.ManagerChainID(), got.ManagerChainID())
 	require.Equal([]byte("0xmgr"), got.ManagerAddress())
+	require.Equal(sec, got.Security(), "target security.Mode round-trips on promote")
 	require.Equal([]*NetworkValidator{vdr}, got.Validators(), "sovereign set established on promote")
 	require.Equal(in.Auth(), got.Auth())
 }

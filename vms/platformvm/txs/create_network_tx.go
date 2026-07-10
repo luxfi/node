@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/runtime"
@@ -30,19 +31,15 @@ import (
 //     for L3/L4. The tx is byte-identical at every level — only Parent differs.
 //     level = depth in the parent tree; it is derivable, never stored.
 //   - Owner authorises future admin against the network record.
-//   - Security is a coproduct: Sovereign (own Validators + Manager) or
-//     Inherited (restaked from Parent). SecurityMode selects it.
+//   - Security (security.Mode) is the two-axis model: RestakeParent and/or an
+//     own validator set (Admission + Manager). One definition, shared with the
+//     executor and state.
 //   - Chains are created at genesis (may be empty; more via CreateChainTx).
-//   - Manager (chain index + address) is the on-chain validator-manager; it
-//     lives on the Network, so even an Inherited L2 can hold local admin.
+//   - Manager (chain index + address) is the on-chain validator-manager for a
+//     Contract-governed own set.
 //
 // The new network's ID is derived from this tx's hash. The primary network
 // records the network but does not track or validate its blocks.
-
-const (
-	SecurityInherited uint8 = 0 // restaked from Parent's validator set
-	SecuritySovereign uint8 = 1 // own validator set + Manager
-)
 
 const (
 	MaxChainAddressLength = 4096
@@ -53,19 +50,19 @@ var (
 	_ UnsignedTx                        = (*CreateNetworkTx)(nil)
 	_ utils.Sortable[*NetworkValidator] = (*NetworkValidator)(nil)
 
-	ErrZeroWeight                    = errors.New("validator weight must be non-zero")
-	ErrAddressTooLong                = errors.New("address is too long")
-	ErrValidatorsNotSortedAndUnique  = errors.New("validators must be sorted and unique")
-	ErrSovereignMustIncludeValidator = errors.New("sovereign network must include at least one validator")
-	ErrInheritedMustNotHaveValidator = errors.New("inherited network must not carry its own validators")
-	ErrNetworkTooManyChains          = errors.New("network exceeds MaxNetworkChains")
-	ErrNetworkManagerIdxOutOfRange   = errors.New("managerChainIdx out of range for chains[]")
-	ErrChainNameTooLong              = errors.New("chain name exceeds MaxNameLen")
-	ErrChainNameIllegal              = errors.New("chain name contains illegal characters")
-	ErrChainVMIDEmpty                = errors.New("chain VMID must not be empty")
-	ErrChainFxIDsNotSorted           = errors.New("chain FxIDs must be sorted and unique")
-	ErrChainGenesisTooLong           = errors.New("chain genesis exceeds MaxGenesisLen")
-	ErrUnknownSecurityMode           = errors.New("unknown security mode")
+	ErrZeroWeight                   = errors.New("validator weight must be non-zero")
+	ErrAddressTooLong               = errors.New("address is too long")
+	ErrValidatorsNotSortedAndUnique = errors.New("validators must be sorted and unique")
+	ErrOwnSetMustIncludeValidator   = errors.New("sovereign (non-restaking) network must include at least one genesis validator")
+	ErrNoOwnSetButHasValidators     = errors.New("network with no own set must not carry validators")
+	ErrContractManagerNeedsAddress  = errors.New("contract-governed own set requires a manager address")
+	ErrNetworkTooManyChains         = errors.New("network exceeds MaxNetworkChains")
+	ErrNetworkManagerIdxOutOfRange  = errors.New("managerChainIdx out of range for chains[]")
+	ErrChainNameTooLong             = errors.New("chain name exceeds MaxNameLen")
+	ErrChainNameIllegal             = errors.New("chain name contains illegal characters")
+	ErrChainVMIDEmpty               = errors.New("chain VMID must not be empty")
+	ErrChainFxIDsNotSorted          = errors.New("chain FxIDs must be sorted and unique")
+	ErrChainGenesisTooLong          = errors.New("chain genesis exceeds MaxGenesisLen")
 )
 
 // NetworkValidator is a genesis validator value (shared component; encoded
@@ -278,18 +275,43 @@ const (
 	offCN_OwnerThreshold  = spendSize + 32  // u32
 	offCN_OwnerLocktime   = spendSize + 36  // u64
 	offCN_OwnerAddrPtr    = spendSize + 44  // 8B
-	offCN_SecurityMode    = spendSize + 52  // u8
-	offCN_Validators      = spendSize + 53  // 8B list
-	offCN_ValNodeIDPool   = spendSize + 61  // 8B bytes
-	offCN_ValAddrPool     = spendSize + 69  // 8B list
-	offCN_Chains          = spendSize + 77  // 8B list
-	offCN_ChNamePool      = spendSize + 85  // 8B bytes
-	offCN_ChFxPool        = spendSize + 93  // 8B list
-	offCN_ChGenPool       = spendSize + 101 // 8B bytes
-	offCN_ManagerChainIdx = spendSize + 109 // u32
-	offCN_ManagerAddress  = spendSize + 113 // 8B bytes
-	sizeCNTx              = spendSize + 121
+	offCN_RestakeParent   = spendSize + 52  // u8 (security.Mode axis 1)
+	offCN_Admission       = spendSize + 53  // u8 (security.Admission)
+	offCN_Manager         = spendSize + 54  // u8 (security.Manager)
+	offCN_Threshold       = spendSize + 55  // u64 (Open-admission min stake)
+	offCN_Validators      = spendSize + 63  // 8B list
+	offCN_ValNodeIDPool   = spendSize + 71  // 8B bytes
+	offCN_ValAddrPool     = spendSize + 79  // 8B list
+	offCN_Chains          = spendSize + 87  // 8B list
+	offCN_ChNamePool      = spendSize + 95  // 8B bytes
+	offCN_ChFxPool        = spendSize + 103 // 8B list
+	offCN_ChGenPool       = spendSize + 111 // 8B bytes
+	offCN_ManagerChainIdx = spendSize + 119 // u32
+	offCN_ManagerAddress  = spendSize + 123 // 8B bytes
+	sizeCNTx              = spendSize + 131
 )
+
+// setSecurity / readSecurity encode a security.Mode across four fixed object
+// fields. Shared by CreateNetworkTx and ConvertNetworkTx — one wire encoding.
+func setSecurity(ob *zap.ObjectBuilder, offRestake, offAdmission, offManager, offThreshold int, m security.Mode) {
+	var restake uint8
+	if m.RestakeParent {
+		restake = 1
+	}
+	ob.SetUint8(offRestake, restake)
+	ob.SetUint8(offAdmission, uint8(m.Admission))
+	ob.SetUint8(offManager, uint8(m.Manager))
+	ob.SetUint64(offThreshold, m.Threshold)
+}
+
+func readSecurity(o zap.Object, offRestake, offAdmission, offManager, offThreshold int) security.Mode {
+	return security.Mode{
+		RestakeParent: o.Uint8(offRestake) != 0,
+		Admission:     security.Admission(o.Uint8(offAdmission)),
+		Manager:       security.Manager(o.Uint8(offManager)),
+		Threshold:     o.Uint64(offThreshold),
+	}
+}
 
 type CreateNetworkTx struct {
 	spendingTx
@@ -299,7 +321,7 @@ func NewCreateNetworkTx(
 	base *lux.BaseTx,
 	parent ids.ID,
 	owner fx.Owner,
-	securityMode uint8,
+	sec security.Mode,
 	validators []*NetworkValidator,
 	chains []*NetworkChain,
 	managerChainIdx uint32,
@@ -339,7 +361,7 @@ func NewCreateNetworkTx(
 	setEnvelope(ob, kindCreateNetwork, base, p)
 	setID(ob, offCN_Parent, parent)
 	setOwner(ob, offCN_OwnerThreshold, offCN_OwnerLocktime, offCN_OwnerAddrPtr, oThreshold, oLocktime, oAddrOff, oAddrCount)
-	ob.SetUint8(offCN_SecurityMode, securityMode)
+	setSecurity(ob, offCN_RestakeParent, offCN_Admission, offCN_Manager, offCN_Threshold, sec)
 	ob.SetList(offCN_Validators, vdrOff, vdrCount)
 	ob.SetBytes(offCN_ValNodeIDPool, nodeIDPool)
 	ob.SetList(offCN_ValAddrPool, valAddrOff, valAddrCount)
@@ -358,8 +380,10 @@ func (tx *CreateNetworkTx) Parent() ids.ID { return readID(tx.root(), offCN_Pare
 func (tx *CreateNetworkTx) Owner() fx.Owner {
 	return readOwner(tx.root(), offCN_OwnerThreshold, offCN_OwnerLocktime, offCN_OwnerAddrPtr)
 }
-func (tx *CreateNetworkTx) SecurityMode() uint8 { return tx.root().Uint8(offCN_SecurityMode) }
-func (tx *CreateNetworkTx) Sovereign() bool     { return tx.SecurityMode() == SecuritySovereign }
+func (tx *CreateNetworkTx) Security() security.Mode {
+	return readSecurity(tx.root(), offCN_RestakeParent, offCN_Admission, offCN_Manager, offCN_Threshold)
+}
+func (tx *CreateNetworkTx) Sovereign() bool { return tx.Security().Sovereign() }
 func (tx *CreateNetworkTx) Validators() []*NetworkValidator {
 	return readNetworkValidators(tx.root(), offCN_Validators, offCN_ValNodeIDPool, offCN_ValAddrPool)
 }
@@ -380,17 +404,22 @@ func (tx *CreateNetworkTx) SyntacticVerify(rt *runtime.Runtime) error {
 	}
 	vdrs := tx.Validators()
 	chains := tx.Chains()
-	switch tx.SecurityMode() {
-	case SecuritySovereign:
-		if len(vdrs) == 0 {
-			return ErrSovereignMustIncludeValidator
-		}
-	case SecurityInherited:
-		if len(vdrs) != 0 {
-			return ErrInheritedMustNotHaveValidator
-		}
-	default:
-		return ErrUnknownSecurityMode
+	sec := tx.Security()
+	// enum ranges + cross-axis invariant (RestakeParent || own set) live on Mode.
+	if err := sec.Valid(); err != nil {
+		return err
+	}
+	// tx-level consistency between the Mode and the genesis validators it carries:
+	switch {
+	case !sec.Sovereign() && len(vdrs) != 0:
+		// no own set ⇒ the tx must not carry validators.
+		return ErrNoOwnSetButHasValidators
+	case !sec.RestakeParent && len(vdrs) == 0:
+		// a network that does not restake its parent must ship a bootstrap
+		// validator to produce its first block.
+		return ErrOwnSetMustIncludeValidator
+	case sec.Sovereign() && sec.Manager == security.Contract && len(tx.ManagerAddress()) == 0:
+		return ErrContractManagerNeedsAddress
 	}
 	switch {
 	case !utils.IsSortedAndUnique(vdrs):
