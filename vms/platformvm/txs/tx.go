@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/p2p/gossip"
 	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
@@ -27,176 +26,130 @@ var (
 	errSignedTxNotInitialized = errors.New("signed tx was never initialized and is not valid")
 )
 
-// Tx is a signed transaction
+// Tx is a signed transaction: an unsigned tx (itself a zap buffer) plus its
+// credentials. The signed bytes are unsigned ‖ creds; there is no codec.
 type Tx struct {
-	// The body of this transaction
-	Unsigned UnsignedTx `serialize:"true" json:"unsignedTx"`
+	// Unsigned is the tx body (a zap-backed UnsignedTx).
+	Unsigned UnsignedTx `json:"unsignedTx"`
 
-	// The credentials of this transaction
-	Creds []verify.Verifiable `serialize:"true" json:"credentials"`
+	// Creds are the credentials authorizing the tx.
+	Creds []verify.Verifiable `json:"credentials"`
 
 	TxID  ids.ID `json:"id"`
 	bytes []byte
 }
 
-func NewSigned(
-	unsigned UnsignedTx,
-	c pcodecs.Manager,
-	signers [][]*secp256k1.PrivateKey,
-) (*Tx, error) {
-	res := &Tx{Unsigned: unsigned}
-	return res, res.Sign(c, signers)
+// NewSigned builds a signed tx from an unsigned tx (already a zap buffer) and
+// signs it.
+func NewSigned(unsigned UnsignedTx, signers [][]*secp256k1.PrivateKey) (*Tx, error) {
+	tx := &Tx{Unsigned: unsigned}
+	return tx, tx.Sign(signers)
 }
 
-// Initialize marshals tx with the canonical write codec (v1) and
-// derives TxID = hash(signedBytes). This is appropriate ONLY for txs
-// built fresh in this process (e.g. by the wallet or by the block
-// builder). For txs loaded from disk or received from the wire, use
-// InitializeFromBytes — Initialize would re-encode at v1, changing the
-// TxID of any tx that was originally serialized at v0.
-func (tx *Tx) Initialize(c pcodecs.Manager) error {
-	signedBytes, err := c.Marshal(CodecVersion, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal ProposalTx: %w", err)
-	}
-
-	unsignedBytesLen, err := c.Size(CodecVersion, &tx.Unsigned)
-	if err != nil {
-		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
-	}
-
-	unsignedBytes := signedBytes[:unsignedBytesLen]
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
-}
-
-// InitializeFromBytes binds the tx to the EXACT signedBytes it was
-// decoded from, deriving TxID = hash(signedBytes) under the codec
-// version the bytes were originally written at. It never re-marshals,
-// so a tx whose bytes were written at v0 keeps its v0-derived TxID
-// forever — the chain commitment is therefore stable across the v0->v1
-// codec migration.
-//
-// version is the codec version the bytes were decoded under (returned
-// by codec.Manager.Unmarshal). It selects the c.Size(...) call used to
-// split signedBytes into unsignedBytes (the prefix the signature
-// covers) and the credentials suffix.
-func (tx *Tx) InitializeFromBytes(c pcodecs.Manager, version uint16, signedBytes []byte) error {
-	unsignedBytesLen, err := c.Size(version, &tx.Unsigned)
-	if err != nil {
-		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
-	}
-	if unsignedBytesLen > len(signedBytes) {
-		return fmt.Errorf("unsigned length %d exceeds signed length %d", unsignedBytesLen, len(signedBytes))
-	}
-	unsignedBytes := signedBytes[:unsignedBytesLen]
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
-}
-
-// InitializeFromBytesAtVersion is the byte-preserving init used after
-// a struct-level Unmarshal where the outer container (a genesis blob,
-// a stored block) decoded the tx field directly — in that case we
-// only have the struct value and the codec version it was decoded
-// under, not the raw signed bytes (which were never sliced out of the
-// outer stream by the codec).
-//
-// We re-derive signedBytes by Marshal'ing the just-decoded tx at the
-// SAME version, then bind via SetBytes. The wire format is
-// deterministic and the codec is closed at v0, so the re-marshal
-// produces the exact bytes the original v0 producer emitted; therefore
-// TxID = hash(re-marshaled v0 bytes) = TxID the chain committed.
-//
-// This single bounded re-marshal is the ONLY place we allow
-// c.Marshal(v0, ...) inside the read path. It is justified because:
-//   1. Linearcodec marshal is a pure function of the struct fields
-//      under a fixed slot map, so the output is byte-equal to the
-//      original v0 producer's output.
-//   2. The struct fields were just populated by c.Unmarshal at the
-//      same version, so no information has been lost or rotated.
-//   3. The c.Size(v0, ...) inverse used by InitializeFromBytes is the
-//      same path, just in the opposite direction — the size of an
-//      Unsigned in v0 layout is a fixed function of its fields.
-//
-// Once every genesis blob and every stored block on disk has been
-// re-encoded at v1 (a future migration), this method becomes dead
-// code and the v0 codec entry can be removed.
-func (tx *Tx) InitializeFromBytesAtVersion(c pcodecs.Manager, version uint16) error {
-	signedBytes, err := c.Marshal(version, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't re-marshal tx at v%d: %w", version, err)
-	}
-	return tx.InitializeFromBytes(c, version, signedBytes)
-}
-
-func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
-	tx.Unsigned.SetBytes(unsignedBytes)
-	tx.bytes = signedBytes
-	tx.TxID = hash.ComputeHash256Array(signedBytes)
-}
-
-// Parse signed tx starting from its byte representation. The wire
-// version is taken from the 2-byte prefix that c.Unmarshal reads;
-// c.Size(...) is then called under THAT version so the split point
-// between unsignedBytes and the credentials suffix is correct for
-// either v0 or v1 layouts.
-//
-// Parse never re-marshals: TxID = hash(signedBytes) verbatim. This is
-// the byte-preserving path that all from-disk and from-wire reads must
-// go through to keep TxIDs stable across the v0→v1 migration.
-//
-// We explicitly pass the codec in Parse since some call sites (genesis,
-// state fallback) must use GenesisCodec to admit txs larger than the
-// max length of Codec.
-func Parse(c pcodecs.Manager, signedBytes []byte) (*Tx, error) {
-	tx := &Tx{}
-	version, err := c.Unmarshal(signedBytes, tx)
+// Parse wraps signed bytes zero-copy: the leading self-delimiting zap buffer
+// is the unsigned body; any remainder is the credential buffer. TxID =
+// hash(signedBytes), no re-encoding.
+func Parse(signedBytes []byte) (*Tx, error) {
+	n, err := zapLen(signedBytes)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't parse tx: %w", err)
 	}
-	if err := tx.InitializeFromBytes(c, version, signedBytes); err != nil {
-		return nil, fmt.Errorf("couldn't initialize tx from bytes: %w", err)
+	unsigned, err := parseUnsigned(signedBytes[:n])
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse unsigned tx: %w", err)
+	}
+	tx := &Tx{
+		Unsigned: unsigned,
+		bytes:    signedBytes,
+		TxID:     hash.ComputeHash256Array(signedBytes),
+	}
+	if len(signedBytes) > n {
+		creds, err := parseCredsBuf(signedBytes[n:])
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse credentials: %w", err)
+		}
+		tx.Creds = creds
 	}
 	return tx, nil
 }
 
-func (tx *Tx) Bytes() []byte {
-	return tx.bytes
+// Initialize binds the tx's cached bytes and TxID from its Unsigned buffer and
+// Creds. Used for txs built fresh in-process (wallet, block builder) whose
+// Unsigned buffer is already set. For txs from disk/wire use Parse.
+func (tx *Tx) Initialize() error {
+	unsignedBytes := tx.Unsigned.Bytes()
+	signedBytes := unsignedBytes
+	if len(tx.Creds) > 0 {
+		credsBuf, err := writeCredsBuf(tx.Creds)
+		if err != nil {
+			return fmt.Errorf("couldn't encode credentials: %w", err)
+		}
+		signedBytes = concat(unsignedBytes, credsBuf)
+	}
+	tx.SetBytes(signedBytes)
+	return nil
 }
 
-func (tx *Tx) Size() int {
-	return len(tx.bytes)
+// SetBytes binds the exact signed bytes and derives TxID = hash(signedBytes).
+func (tx *Tx) SetBytes(signedBytes []byte) {
+	tx.bytes = signedBytes
+	tx.TxID = hash.ComputeHash256Array(signedBytes)
 }
 
-func (tx *Tx) ID() ids.ID {
-	return tx.TxID
+// Sign attaches credentials for the provided signer sets over the unsigned
+// bytes, then binds signed bytes = unsigned ‖ creds.
+func (tx *Tx) Sign(signers [][]*secp256k1.PrivateKey) error {
+	unsignedBytes := tx.Unsigned.Bytes()
+	h := hash.ComputeHash256(unsignedBytes)
+
+	tx.Creds = nil
+	for _, keys := range signers {
+		cred := &secp256k1fx.Credential{
+			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
+		}
+		for i, key := range keys {
+			sig, err := key.SignHash(h)
+			if err != nil {
+				return fmt.Errorf("problem generating credential: %w", err)
+			}
+			copy(cred.Sigs[i][:], sig)
+		}
+		tx.Creds = append(tx.Creds, cred)
+	}
+
+	signedBytes := unsignedBytes
+	if len(tx.Creds) > 0 {
+		credsBuf, err := writeCredsBuf(tx.Creds)
+		if err != nil {
+			return fmt.Errorf("couldn't encode credentials: %w", err)
+		}
+		signedBytes = concat(unsignedBytes, credsBuf)
+	}
+	tx.SetBytes(signedBytes)
+	return nil
 }
 
-func (tx *Tx) GossipID() ids.ID {
-	return tx.TxID
-}
+func (tx *Tx) Bytes() []byte    { return tx.bytes }
+func (tx *Tx) Size() int        { return len(tx.bytes) }
+func (tx *Tx) ID() ids.ID       { return tx.TxID }
+func (tx *Tx) GossipID() ids.ID { return tx.TxID }
 
-// UTXOs returns the UTXOs transaction is producing.
+// UTXOs returns the UTXOs this transaction produces.
 func (tx *Tx) UTXOs() []*lux.UTXO {
 	outs := tx.Unsigned.Outputs()
 	utxos := make([]*lux.UTXO, len(outs))
 	for i, out := range outs {
 		utxos[i] = &lux.UTXO{
-			UTXOID: lux.UTXOID{
-				TxID:        tx.TxID,
-				OutputIndex: uint32(i),
-			},
-			Asset: lux.Asset{ID: out.AssetID()},
-			Out:   out.Out,
+			UTXOID: lux.UTXOID{TxID: tx.TxID, OutputIndex: uint32(i)},
+			Asset:  lux.Asset{ID: out.AssetID()},
+			Out:    out.Out,
 		}
 	}
 	return utxos
 }
 
-// InputIDs returns the set of inputs this transaction consumes
-func (tx *Tx) InputIDs() set.Set[ids.ID] {
-	return tx.Unsigned.InputIDs()
-}
+// InputIDs returns the set of inputs this transaction consumes.
+func (tx *Tx) InputIDs() set.Set[ids.ID] { return tx.Unsigned.InputIDs() }
 
 func (tx *Tx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
@@ -209,35 +162,10 @@ func (tx *Tx) SyntacticVerify(rt *runtime.Runtime) error {
 	}
 }
 
-// Sign this transaction with the provided signers
-// Note: We explicitly pass the codec in Sign since we may need to sign P-Chain
-// genesis txs whose length exceed the max length of txs.Codec.
-func (tx *Tx) Sign(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
-	unsignedBytes, err := c.Marshal(CodecVersion, &tx.Unsigned)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal UnsignedTx: %w", err)
-	}
-
-	// Attach credentials
-	hash := hash.ComputeHash256(unsignedBytes)
-	for _, keys := range signers {
-		cred := &secp256k1fx.Credential{
-			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
-		}
-		for i, key := range keys {
-			sig, err := key.SignHash(hash) // Sign hash
-			if err != nil {
-				return fmt.Errorf("problem generating credential: %w", err)
-			}
-			copy(cred.Sigs[i][:], sig)
-		}
-		tx.Creds = append(tx.Creds, cred) // Attach credential
-	}
-
-	signedBytes, err := c.Marshal(CodecVersion, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal ProposalTx: %w", err)
-	}
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
+// concat returns a ‖ b as a fresh slice.
+func concat(a, b []byte) []byte {
+	out := make([]byte, 0, len(a)+len(b))
+	out = append(out, a...)
+	out = append(out, b...)
+	return out
 }
