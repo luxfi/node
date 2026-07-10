@@ -31,6 +31,7 @@ const (
 	kindSetL1ValidatorWeight
 	kindIncreaseL1ValidatorBalance
 	kindDisableL1Validator
+	kindConvertNetwork // promote an existing network: inherited → sovereign, re-anchor parent (L2→L1, L3→L1)
 )
 
 // offKind is the fixed wire position of the discriminator (object offset 0).

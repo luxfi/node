@@ -131,6 +131,31 @@ func TestRoundTrip_CreateNetwork_InheritedL2(t *testing.T) {
 	require.Equal([]byte("l2mgr"), got.ManagerAddress(), "inherited L2 still holds a local manager")
 }
 
+// TestRoundTrip_ConvertNetwork exercises the promote endomorphism: an existing
+// network re-anchors to Primary (→L1) and establishes its own validator set +
+// manager, authorized by its owner.
+func TestRoundTrip_ConvertNetwork(t *testing.T) {
+	require := require.New(t)
+	base := spendBase()
+	vdr := sampleNetworkValidator()
+	in, err := NewConvertNetworkTx(base,
+		ids.GenerateTestID(),         // the L2/L3 network being promoted
+		ids.Empty,                    // new parent = Primary ⇒ becomes an L1
+		ids.GenerateTestID(),         // manager chain
+		[]byte("0xmgr"),              // manager address
+		[]*NetworkValidator{vdr},     // sovereign validator set
+		&secp256k1fx.Input{SigIndices: []uint32{0}}, // owner auth
+	)
+	require.NoError(err)
+	got := roundTrip(t, in).(*ConvertNetworkTx)
+	require.Equal(in.Network(), got.Network())
+	require.Equal(ids.Empty, got.Parent(), "re-anchored to Primary ⇒ L1")
+	require.Equal(in.ManagerChainID(), got.ManagerChainID())
+	require.Equal([]byte("0xmgr"), got.ManagerAddress())
+	require.Equal([]*NetworkValidator{vdr}, got.Validators(), "sovereign set established on promote")
+	require.Equal(in.Auth(), got.Auth())
+}
+
 func TestRoundTrip_SignedWithCreds(t *testing.T) {
 	require := require.New(t)
 	in, err := NewBaseTx(spendBase())

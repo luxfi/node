@@ -368,51 +368,6 @@ func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 	return complexity, err
 }
 
-// ConvertNetworkToL1ValidatorComplexity returns the complexity the validators
-// add to a transaction.
-func ConvertNetworkToL1ValidatorComplexity(l1Validators ...*txs.ConvertNetworkToL1Validator) (gas.Dimensions, error) {
-	var complexity gas.Dimensions
-	for _, l1Validator := range l1Validators {
-		l1ValidatorComplexity, err := convertNetToL1ValidatorComplexity(l1Validator)
-		if err != nil {
-			return gas.Dimensions{}, err
-		}
-
-		complexity, err = complexity.Add(&l1ValidatorComplexity)
-		if err != nil {
-			return gas.Dimensions{}, err
-		}
-	}
-	return complexity, nil
-}
-
-func convertNetToL1ValidatorComplexity(l1Validator *txs.ConvertNetworkToL1Validator) (gas.Dimensions, error) {
-	complexity := gas.Dimensions{
-		gas.Bandwidth: intrinsicConvertNetworkToL1ValidatorBandwidth,
-		gas.DBWrite:   intrinsicConvertNetworkToL1ValidatorDBWrite,
-	}
-
-	signerComplexity, err := SignerComplexity(&l1Validator.Signer)
-	if err != nil {
-		return gas.Dimensions{}, err
-	}
-
-	numAddresses := uint64(len(l1Validator.RemainingBalanceOwner.Addresses) + len(l1Validator.DeactivationOwner.Addresses))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
-	if err != nil {
-		return gas.Dimensions{}, err
-	}
-	return complexity.Add(
-		&gas.Dimensions{
-			gas.Bandwidth: uint64(len(l1Validator.NodeID)),
-		},
-		&signerComplexity,
-		&gas.Dimensions{
-			gas.Bandwidth: addressBandwidth,
-		},
-	)
-}
-
 // OwnerComplexity returns the complexity an owner adds to a transaction.
 // It does not include the typeID of the owner.
 func OwnerComplexity(ownerIntf fx.Owner) (gas.Dimensions, error) {
@@ -735,59 +690,6 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 	}
 	c.output, err = IntrinsicBaseTxComplexities.Add(&baseTxComplexity)
 	return err
-}
-
-func (c *complexityVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	baseTxComplexity, err := baseTxComplexity(tx)
-	if err != nil {
-		return err
-	}
-	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators()...)
-	if err != nil {
-		return err
-	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth())
-	if err != nil {
-		return err
-	}
-	c.output, err = IntrinsicConvertNetworkToL1TxComplexities.Add(
-		&baseTxComplexity,
-		&validatorComplexity,
-		&authComplexity,
-		&gas.Dimensions{
-			gas.Bandwidth: uint64(len(tx.Address())),
-		},
-	)
-	return err
-}
-
-func (c *complexityVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
-	// Sovereign L1 = network + N validators + K chains. Fee complexity
-	// is approximately the sum: baseTx + ConvertNetworkToL1 (validators)
-	// + sum(CreateChain) (chains). Charge as composite.
-	baseTxComplexity, err := baseTxComplexity(tx)
-	if err != nil {
-		return err
-	}
-	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators()...)
-	if err != nil {
-		return err
-	}
-	c.output, err = baseTxComplexity.Add(&validatorComplexity)
-	if err != nil {
-		return err
-	}
-	// Per-chain genesis adds to the bandwidth dimension.
-	for _, ch := range tx.Chains() {
-		chainBytes := gas.Dimensions{
-			gas.Bandwidth: uint64(len(ch.GenesisData)) + uint64(len(ch.BlockchainName)),
-		}
-		c.output, err = c.output.Add(&chainBytes)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (c *complexityVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
