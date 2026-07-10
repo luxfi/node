@@ -106,7 +106,7 @@ func katMixedSigners() []SignerLeaf {
 		s.Occupied = 1
 		s.SignerID = uint64(i + 1)
 		for k := 0; k < 20; k++ {
-			s.LuxAddress[k] = byte(i + k)
+			s.UTXOAddr[k] = byte(i + k)
 		}
 		for k := 0; k < 48; k++ {
 			s.BLSPubkey[k] = byte(0x10 + k)
@@ -281,7 +281,7 @@ func katDenseSigners(n uint32) []SignerLeaf {
 		s.Occupied = 1
 		s.SignerID = uint64(i + 1)
 		for k := 0; k < 20; k++ {
-			s.LuxAddress[k] = byte(0x40 + int(i) + k)
+			s.UTXOAddr[k] = byte(0x40 + int(i) + k)
 		}
 		for k := 0; k < 48; k++ {
 			s.BLSPubkey[k] = byte(0x11 + int(i) + k)
