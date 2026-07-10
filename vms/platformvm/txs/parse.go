@@ -81,12 +81,6 @@ func parseUnsigned(buf []byte) (UnsignedTx, error) {
 		return &IncreaseL1ValidatorBalanceTx{spendingTx{msg: msg}}, nil
 	case kindDisableL1Validator:
 		return &DisableL1ValidatorTx{spendingTx{msg: msg}}, nil
-	case kindSlashValidator:
-		return &SlashValidatorTx{spendingTx{msg: msg}}, nil
-	case kindCreateAsset:
-		return &CreateAssetTx{spendingTx{msg: msg}}, nil
-	case kindOperation:
-		return &OperationTx{spendingTx{msg: msg}}, nil
 	default:
 		return nil, fmt.Errorf("zap: unknown tx kind %d", k)
 	}

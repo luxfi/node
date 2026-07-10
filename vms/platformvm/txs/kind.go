@@ -33,9 +33,6 @@ const (
 	kindSetL1ValidatorWeight
 	kindIncreaseL1ValidatorBalance
 	kindDisableL1Validator
-	kindSlashValidator
-	kindCreateAsset
-	kindOperation
 )
 
 // offKind is the fixed wire position of the discriminator (object offset 0).

@@ -36,11 +36,4 @@ type Visitor interface {
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error
 	DisableL1ValidatorTx(*DisableL1ValidatorTx) error
-
-	SlashValidatorTx(*SlashValidatorTx) error
-
-	// P-only primary network — historically X-Chain
-	// (kept on PlatformVM, opt-in for X-Chain when present):
-	CreateAssetTx(*CreateAssetTx) error
-	OperationTx(*OperationTx) error
 }

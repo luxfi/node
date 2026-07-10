@@ -16,8 +16,10 @@ package txs
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/luxfi/constants"
+	bls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/runtime"
@@ -26,7 +28,9 @@ import (
 )
 
 var (
-	_ UnsignedTx = (*AddChainValidatorTx)(nil)
+	_ UnsignedTx      = (*AddChainValidatorTx)(nil)
+	_ StakerTx        = (*AddChainValidatorTx)(nil)
+	_ ScheduledStaker = (*AddChainValidatorTx)(nil)
 
 	errAddPrimaryNetworkValidator = errors.New("can't add primary network validator with AddChainValidatorTx")
 )
@@ -86,6 +90,42 @@ func (tx *AddChainValidatorTx) Chain() ids.ID { return readID(tx.root(), offACVC
 // ChainAuth proves the issuer may add this validator to the network.
 func (tx *AddChainValidatorTx) ChainAuth() verify.Verifiable {
 	return readAuth(tx.root(), offACVChainAuth)
+}
+
+// ---- Staker / ScheduledStaker interface ----
+
+// ChainID is the network id this validator registers under (legacy
+// ChainValidator.ChainID, sourced from the pure Chain() accessor).
+func (tx *AddChainValidatorTx) ChainID() ids.ID {
+	return tx.Chain()
+}
+
+func (tx *AddChainValidatorTx) NodeID() ids.NodeID {
+	return tx.Validator().NodeID
+}
+
+func (*AddChainValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	return nil, false, nil
+}
+
+func (tx *AddChainValidatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddChainValidatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddChainValidatorTx) Weight() uint64 {
+	return tx.Validator().Wght
+}
+
+func (*AddChainValidatorTx) PendingPriority() Priority {
+	return ChainPermissionedValidatorPendingPriority
+}
+
+func (*AddChainValidatorTx) CurrentPriority() Priority {
+	return ChainPermissionedValidatorCurrentPriority
 }
 
 // SyntacticVerify returns nil iff [tx] is valid.

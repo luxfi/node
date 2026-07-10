@@ -151,18 +151,6 @@ func (*proposalTxExecutor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	return ErrWrongTxType
-}
-
-func (*proposalTxExecutor) CreateAssetTx(*txs.CreateAssetTx) error {
-	return ErrWrongTxType
-}
-
-func (*proposalTxExecutor) OperationTx(*txs.OperationTx) error {
-	return ErrWrongTxType
-}
-
 func (*proposalTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
 	// Proposal-style AddValidatorTx is permanently rejected; only standard
 	// blocks may carry staker txs.

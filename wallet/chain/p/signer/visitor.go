@@ -31,8 +31,6 @@ var (
 	ErrUnknownAuthType       = errors.New("unknown auth type")
 	ErrUnknownOwnerType      = errors.New("unknown owner type")
 	ErrUnknownCredentialType = errors.New("unknown credential type")
-	ErrUnknownOpType         = errors.New("unknown op type")
-	ErrInvalidNumUTXOsInOp   = errors.New("invalid number of UTXOs in operation")
 
 	emptySig [secp256k1.SignatureLen]byte
 )
@@ -244,93 +242,6 @@ func (s *visitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
 	}
 	txSigners = append(txSigners, disableAuthSigners)
 	return sign(s.tx, true, txSigners)
-}
-
-func (s *visitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, true, txSigners)
-}
-
-// CreateAssetTx signs the BaseTx fee inputs that pay for asset creation.
-// No additional auth required beyond the input credentials.
-func (s *visitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, false, txSigners)
-}
-
-// OperationTx signs BaseTx fee inputs plus, for each operation, the
-// signature indices required by the consumed UTXO outputs. Mirrors
-// `wallet/chain/x/signer/visitor.go::getOpsSigners` so the P-only
-// secp256k1fx path produces credentials the semantic verifier will accept.
-func (s *visitor) OperationTx(tx *txs.OperationTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	opsSigners, err := s.getOpsSigners(constants.PlatformChainID, tx.Ops)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, opsSigners...)
-	return sign(s.tx, false, txSigners)
-}
-
-// getOpsSigners resolves the per-op credential signers from the consumed
-// UTXOs. PlatformVM ships only secp256k1fx so the operation must carry a
-// *secp256k1fx.MintOperation; the consumed UTXO output must be a
-// *secp256k1fx.MintOutput (the asset's mint authority). Any other shape is
-// rejected — the same gate the syntactic verifier and codec both apply.
-func (s *visitor) getOpsSigners(
-	sourceChainID ids.ID,
-	ops []*txs.Operation,
-) ([][]keychain.Signer, error) {
-	txSigners := make([][]keychain.Signer, len(ops))
-	for credIndex, op := range ops {
-		mintOp, ok := op.Op.(*secp256k1fx.MintOperation)
-		if !ok {
-			return nil, ErrUnknownOpType
-		}
-		input := &mintOp.MintInput
-		inputSigners := make([]keychain.Signer, len(input.SigIndices))
-		txSigners[credIndex] = inputSigners
-
-		if len(op.UTXOIDs) != 1 {
-			return nil, ErrInvalidNumUTXOsInOp
-		}
-		utxoID := op.UTXOIDs[0].InputID()
-		utxo, err := s.backend.GetUTXO(s.ctx, sourceChainID, utxoID)
-		if err == database.ErrNotFound {
-			// No access to the UTXO — partial sign and let the caller
-			// merge a populated credential later.
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		mintOut, ok := utxo.Out.(*secp256k1fx.MintOutput)
-		if !ok {
-			return nil, ErrUnknownOutputType
-		}
-		for sigIndex, addrIndex := range input.SigIndices {
-			if addrIndex >= uint32(len(mintOut.Addrs)) {
-				return nil, ErrInvalidUTXOSigIndex
-			}
-			addr := mintOut.Addrs[addrIndex]
-			key, ok := s.kc.Get(addr)
-			if !ok {
-				continue
-			}
-			inputSigners[sigIndex] = key
-		}
-	}
-	return txSigners, nil
 }
 
 func (s *visitor) getSigners(sourceChainID ids.ID, ins []*lux.TransferableInput) ([][]keychain.Signer, error) {

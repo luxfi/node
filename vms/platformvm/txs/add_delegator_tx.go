@@ -7,17 +7,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/luxfi/constants"
+	bls "github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
 
 var (
-	_ UnsignedTx = (*AddDelegatorTx)(nil)
+	_ UnsignedTx      = (*AddDelegatorTx)(nil)
+	_ DelegatorTx     = (*AddDelegatorTx)(nil)
+	_ ScheduledStaker = (*AddDelegatorTx)(nil)
 
 	errDelegatorWeightMismatch = errors.New("delegator weight is not equal to total stake weight")
 	errStakeMustBeLUX          = errors.New("stake must be LUX")
@@ -81,6 +88,54 @@ func (tx *AddDelegatorTx) StakeOuts() []*lux.TransferableOutput {
 // DelegationRewardsOwner is where staking rewards go when done validating.
 func (tx *AddDelegatorTx) DelegationRewardsOwner() fx.Owner {
 	return readOwner(tx.root(), offADRewardsThreshold, offADRewardsLocktime, offADRewardsAddrs)
+}
+
+// ---- Staker / DelegatorTx / ScheduledStaker interface ----
+
+func (*AddDelegatorTx) ChainID() ids.ID {
+	return constants.PrimaryNetworkID
+}
+
+func (tx *AddDelegatorTx) NodeID() ids.NodeID {
+	return tx.Validator().NodeID
+}
+
+func (*AddDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	return nil, false, nil
+}
+
+func (tx *AddDelegatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddDelegatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddDelegatorTx) Weight() uint64 {
+	return tx.Validator().Wght
+}
+
+func (*AddDelegatorTx) PendingPriority() Priority {
+	return PrimaryNetworkDelegatorLegacyPendingPriority
+}
+
+func (*AddDelegatorTx) CurrentPriority() Priority {
+	return PrimaryNetworkDelegatorCurrentPriority
+}
+
+// Stake is where staked tokens go when done validating, with FxID set on
+// each output (secp256k1fx) as the legacy InitRuntime did.
+func (tx *AddDelegatorTx) Stake() []*lux.TransferableOutput {
+	outs := tx.StakeOuts()
+	for _, out := range outs {
+		out.FxID = secp256k1fx.ID
+	}
+	return outs
+}
+
+func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
+	return tx.DelegationRewardsOwner()
 }
 
 // SyntacticVerify returns nil iff [tx] is valid.

@@ -118,18 +118,6 @@ func (*warpVerifier) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	return nil
-}
-
-func (*warpVerifier) CreateAssetTx(*txs.CreateAssetTx) error {
-	return nil
-}
-
-func (*warpVerifier) OperationTx(*txs.OperationTx) error {
-	return nil
-}
-
 func (w *warpVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	return w.verify(tx.Message)
 }

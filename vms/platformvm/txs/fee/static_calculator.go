@@ -149,10 +149,6 @@ func (*staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error 
 	return ErrUnsupportedTx
 }
 
-func (*staticVisitor) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	return ErrUnsupportedTx
-}
-
 func (v *staticVisitor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	v.fee = v.config.AddChainValidatorFee
 	return nil
@@ -174,16 +170,6 @@ func (v *staticVisitor) TransformChainTx(*txs.TransformChainTx) error {
 }
 
 func (v *staticVisitor) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
-	v.fee = v.config.TxFee
-	return nil
-}
-
-func (v *staticVisitor) CreateAssetTx(*txs.CreateAssetTx) error {
-	v.fee = v.config.CreateAssetTxFee
-	return nil
-}
-
-func (v *staticVisitor) OperationTx(*txs.OperationTx) error {
 	v.fee = v.config.TxFee
 	return nil
 }
