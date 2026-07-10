@@ -35,12 +35,12 @@ func (s *state) GetTx(txID ids.ID) (*txs.Tx, status.Status, error) {
 		return nil, status.Unknown, err
 	}
 
-	stx := txBytesAndStatus{}
-	if _, err := txs.GenesisCodec.Unmarshal(txBytes, &stx); err != nil {
+	stx, err := parseTxStatus(txBytes)
+	if err != nil {
 		return nil, status.Unknown, err
 	}
 
-	tx, err := txs.Parse(txs.GenesisCodec, stx.Tx)
+	tx, err := txs.Parse(stx.Tx)
 	if err != nil {
 		return nil, status.Unknown, err
 	}
@@ -101,9 +101,10 @@ func (s *state) writeTXs() error {
 			Status: txStatus.status,
 		}
 
-		// Note that we're serializing a [txBytesAndStatus] here, not a
-		// *txs.Tx, so we don't use [txs.Codec].
-		txBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, &stx)
+		// We serialize the [txBytesAndStatus] envelope natively (see
+		// statewire.go). The embedded tx keeps its own self-delimiting
+		// signed bytes so its TxID is preserved on re-parse.
+		txBytes, err := marshalTxStatus(stx)
 		if err != nil {
 			return fmt.Errorf("failed to serialize tx: %w", err)
 		}

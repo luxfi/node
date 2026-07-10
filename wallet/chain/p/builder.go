@@ -1116,7 +1116,7 @@ func (b *txBuilder) authorizeNet(netID ids.ID, options *common.Options) (*secp25
 		return nil, errWrongTxType
 	}
 
-	owner, ok := network.Owner.(*secp256k1fx.OutputOwners)
+	owner, ok := network.Owner().(*secp256k1fx.OutputOwners)
 	if !ok {
 		return nil, errUnknownOwnerType
 	}

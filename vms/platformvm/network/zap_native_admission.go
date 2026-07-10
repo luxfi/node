@@ -78,18 +78,11 @@ var ErrZapNativeNotYetExecutable = errors.New(
 //
 // DO NOT add map lookups here in the hot path — IssueTxFromRPC is on
 // the critical path of every incoming RPC tx. Use a type switch.
-func isLegacyTxKindNotYetExecutable(tx *txs.Tx) bool {
-	if tx == nil || tx.Unsigned == nil {
-		return false
-	}
-	switch tx.Unsigned.(type) {
-	case *txs.CreateSovereignL1Tx:
-		// standard_tx_executor.go:635 — body returns
-		// "CreateSovereignL1Tx executor: not yet implemented (follow-up PR)".
-		// Gating at admission means the not-yet-implemented error never
-		// even fires; the tx is refused before the executor sees it.
-		return true
-	}
+func isLegacyTxKindNotYetExecutable(_ *txs.Tx) bool {
+	// The former CreateSovereignL1Tx / ConvertNetworkToL1Tx legacy struct
+	// kinds were folded into CreateNetworkTx, whose executor is
+	// implemented. No legacy struct kind is not-yet-executable today; the
+	// zap_native wire gate below still covers future stub kinds.
 	return false
 }
 

@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 func (s *state) GetTimestamp() time.Time {
@@ -173,8 +172,7 @@ func (s *state) loadMetadata() error {
 	}
 
 	indexedHeights := &heightRange{}
-	_, err = multiVersionUnmarshal(block.GenesisCodec, indexedHeightsBytes, indexedHeights)
-	if err != nil {
+	if err := parseHeightRange(indexedHeightsBytes, indexedHeights); err != nil {
 		return err
 	}
 
@@ -233,7 +231,7 @@ func (s *state) writeMetadata() error {
 		s.persistedLastAccepted = currentLastAccepted
 	}
 	if s.indexedHeights != nil {
-		indexedHeightsBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, s.indexedHeights)
+		indexedHeightsBytes, err := marshalHeightRange(s.indexedHeights)
 		if err != nil {
 			return err
 		}
@@ -253,7 +251,7 @@ func isInitialized(db database.KeyValueReader) (bool, error) {
 }
 
 func putFeeState(db database.KeyValueWriter, feeState gas.State) error {
-	feeStateBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, feeState)
+	feeStateBytes, err := marshalFeeState(feeState)
 	if err != nil {
 		return err
 	}
@@ -269,8 +267,8 @@ func getFeeState(db database.KeyValueReader) (gas.State, error) {
 		return gas.State{}, err
 	}
 
-	var feeState gas.State
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, feeStateBytes, &feeState); err != nil {
+	feeState, err := parseFeeState(feeStateBytes)
+	if err != nil {
 		return gas.State{}, err
 	}
 	return feeState, nil

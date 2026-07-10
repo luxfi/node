@@ -109,6 +109,21 @@ func (s *signerVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
+// ConvertNetworkTx promotes an existing network; like CreateChainTx it requires
+// the existing network owner's authorization (tx.Auth() against tx.Network()).
+func (s *signerVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
+	if err != nil {
+		return err
+	}
+	chainAuthSigners, err := s.getChainSigners(tx.Network(), tx.Auth())
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, chainAuthSigners)
+	return sign(s.tx, false, txSigners)
+}
+
 func (s *signerVisitor) ImportTx(tx *txs.ImportTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
@@ -377,28 +392,6 @@ func (s *signerVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) err
 
 // SetL1ValidatorWeightTx signs a SetL1ValidatorWeightTx
 func (s *signerVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Inputs())
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, false, txSigners)
-}
-
-// ConvertNetworkToL1Tx signs a ConvertNetworkToL1Tx
-func (s *signerVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Inputs())
-	if err != nil {
-		return err
-	}
-	chainAuthSigners, err := s.getChainSigners(tx.Chain(), tx.ChainAuth())
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, chainAuthSigners)
-	return sign(s.tx, false, txSigners)
-}
-
-func (s *signerVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
 	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Inputs())
 	if err != nil {
 		return err

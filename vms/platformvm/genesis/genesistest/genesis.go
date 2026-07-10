@@ -125,18 +125,19 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 				key.Address(),
 			},
 		}
-		validator := &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-				NetworkID:    c.NetworkID,
-				BlockchainID: constants.PlatformChainID,
-			}},
-			Validator: txs.Validator{
+		validatorBase := &lux.BaseTx{
+			NetworkID:    c.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+		}
+		validator, err := txs.NewAddValidatorTx(
+			validatorBase,
+			txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(c.ValidatorStartTime.Unix()),
 				End:    uint64(c.ValidatorEndTime.Unix()),
 				Wght:   c.ValidatorWeight,
 			},
-			StakeOuts: []*lux.TransferableOutput{
+			[]*lux.TransferableOutput{
 				{
 					Asset: XAsset,
 					Out: &secp256k1fx.TransferOutput{
@@ -145,27 +146,32 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 					},
 				},
 			},
-			RewardsOwner:     &owner,
-			DelegationShares: ValidatorDelegationShares,
-		}
+			&owner,
+			ValidatorDelegationShares,
+		)
+		require.NoError(err)
 		validatorTx := &txs.Tx{Unsigned: validator}
-		require.NoError(validatorTx.Initialize(txs.GenesisCodec))
+		require.NoError(validatorTx.Initialize())
 
 		genesis.Validators[i] = validatorTx
 	}
 
-	chain := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    c.NetworkID,
-			BlockchainID: constants.PlatformChainID,
-		}},
-		ChainID:        constants.PrimaryNetworkID, // Changed from ChainID to ChainID in regenesis
-		BlockchainName: XChainName,
-		VMID:           constants.XVMID, // Changed from AVMID to XVMID in Lux
-		ChainAuth:      &secp256k1fx.Input{},
+	chainBase := &lux.BaseTx{
+		NetworkID:    c.NetworkID,
+		BlockchainID: constants.PlatformChainID,
 	}
+	chain, err := txs.NewCreateChainTx(
+		chainBase,
+		constants.PrimaryNetworkID,
+		XChainName,
+		constants.XVMID,
+		nil,
+		nil,
+		&secp256k1fx.Input{},
+	)
+	require.NoError(err)
 	chainTx := &txs.Tx{Unsigned: chain}
-	require.NoError(chainTx.Initialize(txs.GenesisCodec))
+	require.NoError(chainTx.Initialize())
 
 	genesis.Chains = []*txs.Tx{chainTx}
 	return genesis
@@ -173,7 +179,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 
 func NewBytes(t testing.TB, c Config) []byte {
 	g := New(t, c)
-	genesisBytes, err := platformvmgenesis.Codec.Marshal(platformvmgenesis.CodecVersion, g)
+	genesisBytes, err := g.Bytes()
 	require.NoError(t, err)
 	return genesisBytes
 }

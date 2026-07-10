@@ -101,6 +101,21 @@ func (s *visitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
+// ConvertNetworkTx promotes an existing network; like CreateChainTx it requires
+// the existing network owner's authorization (tx.Auth() against tx.Network()).
+func (s *visitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
+	if err != nil {
+		return err
+	}
+	netAuthSigners, err := s.getAuthSigners(tx.Network(), tx.Auth())
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, netAuthSigners)
+	return sign(s.tx, false, txSigners)
+}
+
 func (s *visitor) ImportTx(tx *txs.ImportTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
@@ -184,27 +199,6 @@ func (s *visitor) BaseTx(tx *txs.BaseTx) error {
 		return err
 	}
 	return sign(s.tx, false, txSigners)
-}
-
-func (s *visitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
-	if err != nil {
-		return err
-	}
-	chainAuthSigners, err := s.getAuthSigners(tx.Chain(), tx.ChainAuth())
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, chainAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
-
-func (s *visitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, true, txSigners)
 }
 
 func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {

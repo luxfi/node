@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -15,6 +14,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/validators/uptime"
 )
 
 var (
@@ -71,7 +71,7 @@ func (o *options) ProposalBlock(b *block.ProposalBlock) error {
 		)
 	}
 
-	prefersCommit, err := o.prefersCommit(b.Tx)
+	prefersCommit, err := o.prefersCommit(b.Tx())
 	if err != nil {
 		o.log.Debug("falling back to prefer commit",
 			"error", err,
@@ -105,7 +105,7 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 		return false, fmt.Errorf("%w: %T", errUnexpectedProposalTxType, tx.Unsigned)
 	}
 
-	stakerTx, _, err := o.state.GetTx(unsignedTx.TxID)
+	stakerTx, _, err := o.state.GetTx(unsignedTx.TxID())
 	if err != nil {
 		return false, fmt.Errorf("%w: %w", errFailedFetchingStakerTx, err)
 	}
@@ -132,7 +132,7 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 			return false, fmt.Errorf("%w: %w", errFailedFetchingNetTransformation, err)
 		}
 
-		expectedUptimePercentage = float64(transformNet.UptimeRequirement) / reward.PercentDenominator
+		expectedUptimePercentage = float64(transformNet.UptimeRequirement()) / reward.PercentDenominator
 	}
 
 	uptime, err := o.uptimes.CalculateUptimePercentFrom(

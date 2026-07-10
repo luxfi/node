@@ -151,6 +151,12 @@ func (v *staticVisitor) CreateNetworkTx(*txs.CreateNetworkTx) error {
 	return nil
 }
 
+func (v *staticVisitor) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
+	// Convert is a network-lifecycle operation of the same class as create.
+	v.fee = v.config.CreateNetworkTxFee
+	return nil
+}
+
 func (v *staticVisitor) RemoveChainValidatorTx(*txs.RemoveChainValidatorTx) error {
 	v.fee = v.config.TxFee
 	return nil

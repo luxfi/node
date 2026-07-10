@@ -813,6 +813,50 @@ func (c *complexityVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	return err
 }
 
+// ConvertNetworkTx promotes an existing network to a sovereign L1: it carries
+// the manager address plus the initial validator set. Complexity is the base
+// spend + auth, plus the raw wire bandwidth of the manager address and of each
+// validator record, and one staker DBWrite per validator. No invented
+// intrinsic dimension table — bandwidth is the byte count of the variable
+// payload, its definitional lower bound.
+func (c *complexityVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	baseTxComplexity, err := baseTxComplexity(tx)
+	if err != nil {
+		return err
+	}
+	authComplexity, err := AuthComplexity(tx.Auth())
+	if err != nil {
+		return err
+	}
+	c.output, err = baseTxComplexity.Add(&authComplexity)
+	if err != nil {
+		return err
+	}
+
+	// Manager address bandwidth.
+	c.output[gas.Bandwidth], err = math.Add(c.output[gas.Bandwidth], uint64(len(tx.ManagerAddress())))
+	if err != nil {
+		return err
+	}
+
+	// Per-validator: NodeID + weight(8) + balance(8) + PoP signer(pub+sig) +
+	// both owners' addresses, plus one staker write each.
+	for _, vdr := range tx.Validators() {
+		vdrBandwidth := uint64(len(vdr.NodeID)) + 2*8 + // weight(8) + balance(8)
+			uint64(len(vdr.Signer.PublicKey)) + uint64(len(vdr.Signer.ProofOfPossession)) +
+			uint64(len(vdr.RemainingBalanceOwner.Addresses)+len(vdr.DeactivationOwner.Addresses))*ids.ShortIDLen
+		c.output[gas.Bandwidth], err = math.Add(c.output[gas.Bandwidth], vdrBandwidth)
+		if err != nil {
+			return err
+		}
+		c.output[gas.DBWrite], err = math.Add(c.output[gas.DBWrite], 1)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {

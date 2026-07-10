@@ -728,10 +728,10 @@ func UTXOAssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, bool, error) {
 		if !ok {
 			continue
 		}
-		if uChain.VMID != constants.XVMID {
+		if uChain.VMID() != constants.XVMID {
 			continue
 		}
-		id, err := xvmgenesis.AssetIDFromBytes(uChain.GenesisData)
+		id, err := xvmgenesis.AssetIDFromBytes(uChain.GenesisData())
 		if err != nil {
 			return ids.Empty, false, fmt.Errorf("derive X-Chain asset ID from genesis data: %w", err)
 		}
@@ -749,7 +749,7 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 	}
 	for _, chain := range gen.Chains {
 		uChain := chain.Unsigned.(*pchaintxs.CreateChainTx)
-		if uChain.VMID == vmID {
+		if uChain.VMID() == vmID {
 			return chain, nil
 		}
 	}
@@ -778,7 +778,7 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 		uChain := chain.Unsigned.(*pchaintxs.CreateChainTx)
 		chainID := chain.ID()
 		endpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
-		switch uChain.VMID {
+		switch uChain.VMID() {
 		case constants.XVMID:
 			apiAliases[endpoint] = []string{
 				"X",
