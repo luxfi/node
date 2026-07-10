@@ -10,13 +10,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/math"
+	lux "github.com/luxfi/utxo"
 )
 
 const (
@@ -32,14 +32,14 @@ const (
 var (
 	_ txs.Visitor = (*proposalTxExecutor)(nil)
 
-	ErrRemoveStakerTooEarly          = errors.New("attempting to remove staker before their end time")
-	ErrRemoveWrongStaker             = errors.New("attempting to remove wrong staker")
-	ErrInvalidState                  = errors.New("generated output isn't valid state")
-	ErrShouldBePermissionlessStaker  = errors.New("expected permissionless staker")
-	ErrWrongTxType                   = errors.New("wrong transaction type")
-	ErrInvalidID                     = errors.New("invalid ID")
+	ErrRemoveStakerTooEarly            = errors.New("attempting to remove staker before their end time")
+	ErrRemoveWrongStaker               = errors.New("attempting to remove wrong staker")
+	ErrInvalidState                    = errors.New("generated output isn't valid state")
+	ErrShouldBePermissionlessStaker    = errors.New("expected permissionless staker")
+	ErrWrongTxType                     = errors.New("wrong transaction type")
+	ErrInvalidID                       = errors.New("invalid ID")
 	ErrProposedAddStakerTxNotPermitted = errors.New("staker transaction not permitted")
-	ErrAdvanceTimeTxNotPermitted = errors.New("AdvanceTimeTx not permitted")
+	ErrAdvanceTimeTxNotPermitted       = errors.New("AdvanceTimeTx not permitted")
 )
 
 // ProposalTx executes the proposal transaction [tx].
@@ -127,11 +127,7 @@ func (*proposalTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return ErrWrongTxType
-}
-
-func (*proposalTxExecutor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+func (*proposalTxExecutor) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
 	return ErrWrongTxType
 }
 
@@ -177,7 +173,7 @@ func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 	switch {
 	case tx == nil:
 		return txs.ErrNilTx
-	case tx.TxID == ids.Empty:
+	case tx.TxID() == ids.Empty:
 		return ErrInvalidID
 	case len(e.tx.Creds) != 0:
 		return errWrongNumberOfCredentials
@@ -193,12 +189,12 @@ func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 	stakerToReward := currentStakerIterator.Value()
 	currentStakerIterator.Release()
 
-	if stakerToReward.TxID != tx.TxID {
+	if stakerToReward.TxID != tx.TxID() {
 		return fmt.Errorf(
 			"%w: %s != %s",
 			ErrRemoveWrongStaker,
 			stakerToReward.TxID,
-			tx.TxID,
+			tx.TxID(),
 		)
 	}
 
@@ -208,7 +204,7 @@ func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error 
 		return fmt.Errorf(
 			"%w: TxID = %s with %s < %s",
 			ErrRemoveStakerTooEarly,
-			tx.TxID,
+			tx.TxID(),
 			currentChainTime,
 			stakerToReward.EndTime,
 		)

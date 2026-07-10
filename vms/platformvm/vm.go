@@ -617,9 +617,9 @@ func (vm *VM) Shutdown(context.Context) error {
 }
 
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
-	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
-	// rather than blocks.GenesisCodec
-	statelessBlk, err := block.Parse(block.Codec, b)
+	// Blocks are native struct-is-wire (zap): Parse re-wraps the self-delimiting
+	// buffer zero-copy — no codec, no version prefix.
+	statelessBlk, err := block.Parse(b)
 	if err != nil {
 		return nil, err
 	}

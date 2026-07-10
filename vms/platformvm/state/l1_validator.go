@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/utils"
 	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/math"
@@ -219,7 +218,7 @@ func getL1Validator(
 	l1Validator := L1Validator{
 		ValidationID: validationID,
 	}
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, bytes, &l1Validator); err != nil {
+	if err := parseL1Validator(bytes, &l1Validator); err != nil {
 		return L1Validator{}, fmt.Errorf("failed to unmarshal L1 validator: %w", err)
 	}
 
@@ -232,7 +231,7 @@ func putL1Validator(
 	cache cache.Cacher[ids.ID, maybe.Maybe[L1Validator]],
 	l1Validator L1Validator,
 ) error {
-	bytes, err := block.GenesisCodec.Marshal(block.CodecVersion, l1Validator)
+	bytes, err := marshalL1Validator(l1Validator)
 	if err != nil {
 		return fmt.Errorf("failed to marshal L1 validator: %w", err)
 	}

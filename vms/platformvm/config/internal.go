@@ -117,18 +117,18 @@ type Internal struct {
 func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled &&
 		!c.TrackAllChains && // Not tracking all chains automatically
-		!c.TrackedChains.Contains(tx.ChainID) && // Check if chain ID is tracked
+		!c.TrackedChains.Contains(tx.ChainID()) && // Check if chain ID is tracked
 		!c.TrackedChains.Contains(blockchainID) { // Check if blockchain ID is tracked
 		return
 	}
 
 	chainParams := chains.ChainParameters{
 		ID:          blockchainID,
-		ChainID:       tx.ChainID,
-		GenesisData: tx.GenesisData,
-		VMID:        tx.VMID,
-		FxIDs:       tx.FxIDs,
-		Name:        tx.BlockchainName,
+		ChainID:     tx.ChainID(),
+		GenesisData: tx.GenesisData(),
+		VMID:        tx.VMID(),
+		FxIDs:       tx.FxIDs(),
+		Name:        tx.BlockchainName(),
 	}
 
 	c.Chains.QueueChainCreation(chainParams)

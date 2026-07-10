@@ -106,8 +106,9 @@ const (
 // MarshalOwner is the ONE canonical byte encoding of an owner — same layout as
 // the owner embedded in every tx, lifted to a standalone buffer. Used wherever
 // a stable owner identity is needed off the tx wire (e.g. lock-owner hash keys
-// in utxo verification). Takes `any` to match the fx.Owned.Owners() surface it
-// serves. One encoding everywhere; no codec.
+// in utxo verification, the L1-validator balance/deactivation owner blobs
+// stored in P-Chain state). Takes `any` to match the fx.Owned.Owners() surface
+// it serves. One encoding everywhere; no codec.
 func MarshalOwner(o any) ([]byte, error) {
 	oo, ok := o.(*secp256k1fx.OutputOwners)
 	if !ok {
@@ -122,6 +123,22 @@ func MarshalOwner(o any) ([]byte, error) {
 	setOwner(ob, ownerObjThreshold, ownerObjLocktime, ownerObjAddrPtr, threshold, locktime, addrOff, addrCount)
 	ob.FinishAsRoot()
 	return b.Finish(), nil
+}
+
+// UnmarshalOwner is the exact inverse of MarshalOwner — it parses the canonical
+// standalone owner buffer back into *secp256k1fx.OutputOwners. Same layout, no
+// codec; the marshal/unmarshal pair is the one owner byte codec every consumer
+// (executor, service, state-owner blobs) shares.
+func UnmarshalOwner(b []byte) (*secp256k1fx.OutputOwners, error) {
+	msg, err := zap.Parse(b)
+	if err != nil {
+		return nil, err
+	}
+	oo, ok := readOwner(msg.Root(), ownerObjThreshold, ownerObjLocktime, ownerObjAddrPtr).(*secp256k1fx.OutputOwners)
+	if !ok {
+		return nil, fmt.Errorf("unexpected owner encoding")
+	}
+	return oo, nil
 }
 
 // ---- inline Validator (44B: NodeID20 + Start8 + End8 + Wght8) ----

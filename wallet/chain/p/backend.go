@@ -113,6 +113,12 @@ func (v *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	return v.baseTx(tx)
 }
 
+// ConvertNetworkTx promotes an existing network — its owner is already tracked
+// from the original CreateNetworkTx, so only the base UTXO scan is needed.
+func (v *backendVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	return v.baseTx(tx)
+}
+
 func (v *backendVisitor) ImportTx(tx *txs.ImportTx) error {
 	err := v.b.removeUTXOs(v.ctx, tx.SourceChain(), tx.InputUTXOs())
 	if err != nil {
@@ -165,14 +171,6 @@ func (v *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnership
 
 func (v *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return v.baseTx(tx)
-}
-
-func (v *backendVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return nil
-}
-
-func (v *backendVisitor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
-	return nil
 }
 
 func (v *backendVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {

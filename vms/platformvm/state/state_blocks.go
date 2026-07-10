@@ -100,27 +100,16 @@ func (s *state) writeBlocks() error {
 	return nil
 }
 
-// parseStoredBlock returns the block and whether it is a legacy [stateBlk].
-// Invariant: blkBytes is safe to parse with blocks.GenesisCodec.
-// Retained for backward compatibility with pre-v1.14.x databases.
+// parseStoredBlock returns the block stored under a blockDB value. Blocks are
+// stored as their native-ZAP wire bytes (struct-is-wire); block.Parse wraps
+// them zero-copy. The second return (legacy-format flag) is always false —
+// re-genesis leaves no pre-native block rows on disk.
 func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
-	// Attempt to parse as blocks.Block
-	blk, err := block.Parse(block.GenesisCodec, blkBytes)
-	if err == nil {
-		return blk, false, nil
-	}
-
-	// Fallback to [stateBlk] using our legacy codec
-	blkState := stateBlk{}
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, blkBytes, &blkState); err != nil {
-		// If we can't unmarshal as stateBlk, this might not be a block at all
-		// (could be an index entry or other data in the blockDB)
-		// Return the original parse error
+	blk, err := block.Parse(blkBytes)
+	if err != nil {
 		return nil, false, err
 	}
-
-	blk, err = block.Parse(block.GenesisCodec, blkState.Bytes)
-	return blk, true, err
+	return blk, false, nil
 }
 
 func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {

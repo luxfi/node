@@ -246,33 +246,9 @@ type State interface {
 	Close() error
 }
 
-// Prior to https://github.com/luxfi/node/pull/1719, blocks were
-// stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
-// still have blocks partially stored using this legacy format.
-//
-// stateBlk is the legacy block storage format from before PR #1719.
-// Retained for backward compatibility with pre-v1.14.x databases.
-type stateBlk struct {
-	Bytes  []byte `serialize:"true"`
-	Status uint32 `serialize:"true"`
-}
-
-// RegisterStateBlockType registers the stateBlk type with the given codec.
-// This is needed for backward compatibility with old block storage format.
-func RegisterStateBlockType(targetCodec pcodecs.Registry) error {
-	return targetCodec.RegisterType(&stateBlk{})
-}
-
-// Initialize the stateBlk type registration with the block codecs.
-// This must be called before using parseStoredBlock for backward compatibility.
-func init() {
-	// We need to register stateBlk with block.GenesisCodec so that
-	// parseStoredBlock can deserialize legacy block storage format.
-	// Since state imports block (no import cycle), we can register directly.
-	if err := block.RegisterGenesisType(&stateBlk{}); err != nil {
-		panic(err)
-	}
-}
+// Blocks are stored as their native-ZAP wire bytes (struct-is-wire) keyed by
+// blockID; parseStoredBlock wraps them via block.Parse. There is no legacy
+// stateBlk envelope and no codec registry under native ZAP.
 
 /*
  * VMDB

@@ -62,6 +62,12 @@ func (b *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	return b.baseTx(tx)
 }
 
+// ConvertNetworkTx promotes an existing network — its owner is already tracked
+// from the original CreateNetworkTx, so only the base UTXO scan is needed.
+func (b *backendVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	return b.baseTx(tx)
+}
+
 func (b *backendVisitor) ImportTx(tx *txs.ImportTx) error {
 	err := b.b.removeUTXOs(
 		b.ctx,
@@ -120,26 +126,6 @@ func (b *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnership
 }
 
 func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
-	return b.baseTx(tx)
-}
-
-func (b *backendVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	for i, vdr := range tx.Validators() {
-		b.b.setOwner(
-			tx.Chain().Append(uint32(i)),
-			&secp256k1fx.OutputOwners{
-				Threshold: vdr.DeactivationOwner.Threshold,
-				Addrs:     vdr.DeactivationOwner.Addresses,
-			},
-		)
-	}
-	return b.baseTx(tx)
-}
-
-func (b *backendVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
-	// Sovereign L1 launch: the new network ID is derived from the tx
-	// hash at commit time. The wallet backend does not need to
-	// preregister owners — that happens P-chain-side during execution.
 	return b.baseTx(tx)
 }
 

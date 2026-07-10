@@ -6,9 +6,9 @@ package executor
 import (
 	"context"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	validators "github.com/luxfi/validators"
 )
 
 const (
@@ -102,11 +102,7 @@ func (*warpVerifier) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (*warpVerifier) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return nil
-}
-
-func (*warpVerifier) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+func (*warpVerifier) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
 	return nil
 }
 
@@ -119,11 +115,11 @@ func (*warpVerifier) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 }
 
 func (w *warpVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	return w.verify(tx.Message)
+	return w.verify(tx.Message())
 }
 
 func (w *warpVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return w.verify(tx.Message)
+	return w.verify(tx.Message())
 }
 
 func (w *warpVerifier) verify(message []byte) error {

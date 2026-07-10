@@ -340,15 +340,16 @@ func NewNetwork(
 				// AddPermissionlessValidatorTx (modern). Handle both.
 				switch tx := validatorTx.Unsigned.(type) {
 				case *txs.AddPermissionlessValidatorTx:
-					nodeID := tx.Validator.NodeID
-					weight := tx.Validator.Wght
+					validator := tx.Validator()
+					nodeID := validator.NodeID
+					weight := validator.Wght
 					if weight == 0 {
 						weight = 1
 					}
 
 					var blsKey []byte
-					if tx.Signer != nil {
-						if pubKey := tx.Signer.Key(); pubKey != nil {
+					if s := tx.Signer(); s != nil {
+						if pubKey := s.Key(); pubKey != nil {
 							blsKey = bls.PublicKeyToCompressedBytes(pubKey)
 						}
 					}
@@ -368,8 +369,9 @@ func NewNetwork(
 						zap.Int("blsKeyLen", len(blsKey)),
 					)
 				case *txs.AddValidatorTx:
-					nodeID := tx.Validator.NodeID
-					weight := tx.Validator.Wght
+					validator := tx.Validator()
+					nodeID := validator.NodeID
+					weight := validator.Wght
 					if weight == 0 {
 						weight = 1
 					}

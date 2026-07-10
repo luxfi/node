@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/address"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -51,43 +52,12 @@ type Genesis struct {
 	Message       string    `serialize:"true"`
 }
 
-// Parse deserializes a P-Chain genesis blob produced by either the
-// v0 (v1.23.x) or v1 (current) codec. Wire version is taken from the
-// 2-byte codec prefix; the matching codec.Manager entry is used to
-// unmarshal the outer Genesis struct, and embedded validator + chain
-// txs are bound to their original signedBytes via InitializeFromBytes
-// (NOT Initialize, which would re-marshal and rotate the TxID).
-//
-// TxID stability across the v0->v1 migration is preserved because:
-//   - v0 genesis blobs decode via the v0 slot map and embedded txs are
-//     re-bound at version 0; their hash(signedBytes) is identical to
-//     what the v1.23.x producer committed.
-//   - v1 genesis blobs decode via the v1 slot map; embedded txs are
-//     re-bound at version 1; bytes are deterministic so the result is
-//     byte-equal to what a v1 producer emits.
-//
-// Genesis blobs are typically produced fresh from the JSON config at
-// each bootstrap (see New + Bytes), so the path that matters for
-// mainnet/testnet is the v0 fallback: the originally-committed genesis
-// hash is what subsequent block headers chain back to, and that hash
-// is hash(v0 genesis bytes).
+// Parse deserializes a P-Chain genesis blob from its native-ZAP wire form
+// (see genesiswire.go). Embedded validator + chain txs are re-parsed via
+// txs.Parse from their own self-delimiting signed bytes, so each TxID
+// (= hash(signedBytes)) is preserved byte-for-byte with no re-encoding.
 func Parse(genesisBytes []byte) (*Genesis, error) {
-	gen := &Genesis{}
-	version, err := Codec.Unmarshal(genesisBytes, gen)
-	if err != nil {
-		return nil, err
-	}
-	for _, tx := range gen.Validators {
-		if err := tx.InitializeFromBytesAtVersion(txs.GenesisCodec, version); err != nil {
-			return nil, err
-		}
-	}
-	for _, tx := range gen.Chains {
-		if err := tx.InitializeFromBytesAtVersion(txs.GenesisCodec, version); err != nil {
-			return nil, err
-		}
-	}
-	return gen, nil
+	return parseGenesis(genesisBytes)
 }
 
 // Allocation is a UTXO on the Platform Chain that exists at the chain's genesis
@@ -315,40 +285,41 @@ func New(
 
 		delegationFee := vdr.ExactDelegationFee
 
-		var (
-			baseTx = txs.BaseTx{BaseTx: lux.BaseTx{
-				NetworkID:    networkID,
-				BlockchainID: ids.Empty,
-			}}
-			validator = txs.Validator{
-				NodeID: vdr.NodeID,
-				Start:  time,
-				End:    vdr.EndTime,
-				Wght:   weight,
-			}
-			tx *txs.Tx
-		)
-		if vdr.Signer == nil {
-			tx = &txs.Tx{Unsigned: &txs.AddValidatorTx{
-				BaseTx:           baseTx,
-				Validator:        validator,
-				StakeOuts:        stake,
-				RewardsOwner:     owner,
-				DelegationShares: delegationFee,
-			}}
-		} else {
-			tx = &txs.Tx{Unsigned: &txs.AddPermissionlessValidatorTx{
-				BaseTx:                baseTx,
-				Validator:             validator,
-				Signer:                vdr.Signer,
-				StakeOuts:             stake,
-				ValidatorRewardsOwner: owner,
-				DelegatorRewardsOwner: owner,
-				DelegationShares:      delegationFee,
-			}}
+		base := &lux.BaseTx{
+			NetworkID:    networkID,
+			BlockchainID: ids.Empty,
+		}
+		validator := txs.Validator{
+			NodeID: vdr.NodeID,
+			Start:  time,
+			End:    vdr.EndTime,
+			Wght:   weight,
 		}
 
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+		var (
+			unsigned txs.UnsignedTx
+			err      error
+		)
+		if vdr.Signer == nil {
+			unsigned, err = txs.NewAddValidatorTx(base, validator, stake, owner, delegationFee)
+		} else {
+			unsigned, err = txs.NewAddPermissionlessValidatorTx(
+				base,
+				validator,
+				constants.PrimaryNetworkID,
+				vdr.Signer,
+				stake,
+				owner, // validator rewards owner
+				owner, // delegator rewards owner
+				delegationFee,
+			)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tx := &txs.Tx{Unsigned: unsigned}
+		if err := tx.Initialize(); err != nil {
 			return nil, err
 		}
 
@@ -358,19 +329,25 @@ func New(
 	// Specify the chains that exist at genesis
 	chainsTxs := []*txs.Tx{}
 	for _, chain := range chains {
-		tx := &txs.Tx{Unsigned: &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-				NetworkID:    networkID,
-				BlockchainID: ids.Empty,
-			}},
-			ChainID:        chain.ChainID,
-			BlockchainName: chain.Name,
-			VMID:           chain.VMID,
-			FxIDs:          chain.FxIDs,
-			GenesisData:    chain.GenesisData,
-			ChainAuth:      &secp256k1fx.Input{},
-		}}
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+		base := &lux.BaseTx{
+			NetworkID:    networkID,
+			BlockchainID: ids.Empty,
+		}
+		unsigned, err := txs.NewCreateChainTx(
+			base,
+			chain.ChainID,
+			chain.Name,
+			chain.VMID,
+			chain.FxIDs,
+			chain.GenesisData,
+			&secp256k1fx.Input{},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := &txs.Tx{Unsigned: unsigned}
+		if err := tx.Initialize(); err != nil {
 			return nil, err
 		}
 
@@ -391,7 +368,7 @@ func New(
 	return g, nil
 }
 
-// Bytes serializes the Genesis to bytes using the PlatformVM genesis codec
+// Bytes serializes the Genesis to its native-ZAP wire form (see genesiswire.go).
 func (g *Genesis) Bytes() ([]byte, error) {
-	return Codec.Marshal(CodecVersion, g)
+	return marshalGenesis(g)
 }

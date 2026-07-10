@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var _ Builder = (*builderWithOptions)(nil)
@@ -249,22 +249,6 @@ func (b *builderWithOptions) NewAddPermissionlessDelegatorTx(
 		vdr,
 		assetID,
 		rewardsOwner,
-		common.UnionOptions(b.options, options)...,
-	)
-}
-
-func (b *builderWithOptions) NewConvertNetworkToL1Tx(
-	netID ids.ID,
-	managerChainID ids.ID,
-	address []byte,
-	validators []*txs.ConvertNetworkToL1Validator,
-	options ...common.Option,
-) (*txs.ConvertNetworkToL1Tx, error) {
-	return b.builder.NewConvertNetworkToL1Tx(
-		netID,
-		managerChainID,
-		address,
-		validators,
 		common.UnionOptions(b.options, options)...,
 	)
 }

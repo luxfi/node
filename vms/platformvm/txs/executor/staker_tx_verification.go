@@ -12,10 +12,10 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	lux "github.com/luxfi/utxo"
 
 	safemath "github.com/luxfi/math"
 )
@@ -38,9 +38,9 @@ var (
 	ErrDuplicateValidator              = errors.New("duplicate validator")
 	ErrDelegateToPermissionedValidator = errors.New("delegation to permissioned validator")
 	ErrWrongStakedAssetID              = errors.New("incorrect staked assetID")
-	ErrLegacyUpgradeNotActive         = errors.New("legacy upgrade feature not active")
-	ErrAddValidatorTxNotPermitted       = errors.New("AddValidatorTx is not permitted")
-	ErrAddDelegatorTxNotPermitted       = errors.New("AddDelegatorTx is not permitted")
+	ErrLegacyUpgradeNotActive          = errors.New("legacy upgrade feature not active")
+	ErrAddValidatorTxNotPermitted      = errors.New("AddValidatorTx is not permitted")
+	ErrAddDelegatorTxNotPermitted      = errors.New("AddDelegatorTx is not permitted")
 )
 
 // verifyChainValidatorPrimaryNetworkRequirements verifies the primary
@@ -109,7 +109,7 @@ func verifyAddChainValidatorTx(
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo(), true); err != nil {
 		return err
 	}
 
@@ -135,28 +135,28 @@ func verifyAddChainValidatorTx(
 		return err
 	}
 
-	_, err := GetValidator(chainState, tx.ChainValidator.Chain, tx.Validator.NodeID)
+	_, err := GetValidator(chainState, tx.Chain(), tx.Validator().NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"attempted to issue %w for %s on net %s",
 			ErrDuplicateValidator,
-			tx.Validator.NodeID,
-			tx.ChainValidator.Chain,
+			tx.Validator().NodeID,
+			tx.Chain(),
 		)
 	}
 	if err != database.ErrNotFound {
 		return fmt.Errorf(
 			"failed to find whether %s is a net validator: %w",
-			tx.Validator.NodeID,
+			tx.Validator().NodeID,
 			err,
 		)
 	}
 
-	if err := verifyChainValidatorPrimaryNetworkRequirements(chainState, tx.Validator); err != nil {
+	if err := verifyChainValidatorPrimaryNetworkRequirements(chainState, tx.Validator()); err != nil {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoAChainAuthorization(backend.Fx, chainState, sTx, tx.ChainValidator.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyPoAChainAuthorization(backend.Fx, chainState, sTx, tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -169,8 +169,8 @@ func verifyAddChainValidatorTx(
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
-		tx.Ins,
-		tx.Outs,
+		tx.Inputs(),
+		tx.Outputs(),
 		baseTxCreds,
 		map[ids.ID]uint64{
 			backend.Runtime.UTXOAssetID: fee,
@@ -202,23 +202,23 @@ func verifyRemoveChainValidatorTx(
 		return nil, false, err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo(), true); err != nil {
 		return nil, false, err
 	}
 
 	isCurrentValidator := true
-	vdr, err := chainState.GetCurrentValidator(tx.Chain, tx.NodeID)
+	vdr, err := chainState.GetCurrentValidator(tx.Chain(), tx.NodeID())
 	if err == database.ErrNotFound {
-		vdr, err = chainState.GetPendingValidator(tx.Chain, tx.NodeID)
+		vdr, err = chainState.GetPendingValidator(tx.Chain(), tx.NodeID())
 		isCurrentValidator = false
 	}
 	if err != nil {
 		// It isn't a current or pending validator.
 		return nil, false, fmt.Errorf(
 			"%s %w of %s: %w",
-			tx.NodeID,
+			tx.NodeID(),
 			ErrNotValidator,
-			tx.Chain,
+			tx.Chain(),
 			err,
 		)
 	}
@@ -232,7 +232,7 @@ func verifyRemoveChainValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifyChainAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyChainAuthorization(backend.Fx, chainState, sTx, tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return nil, false, err
 	}
@@ -245,8 +245,8 @@ func verifyRemoveChainValidatorTx(
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
-		tx.Ins,
-		tx.Outs,
+		tx.Inputs(),
+		tx.Outputs(),
 		baseTxCreds,
 		map[ids.ID]uint64{
 			backend.Runtime.UTXOAssetID: fee,
@@ -287,7 +287,7 @@ func verifyAddPermissionlessValidatorTx(
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo(), true); err != nil {
 		return err
 	}
 
@@ -303,22 +303,22 @@ func verifyAddPermissionlessValidatorTx(
 		return err
 	}
 
-	validatorRules, err := getValidatorRules(backend, chainState, tx.Chain)
+	validatorRules, err := getValidatorRules(backend, chainState, tx.Chain())
 	if err != nil {
 		return err
 	}
 
-	stakedAssetID := tx.StakeOuts[0].AssetID()
+	stakedAssetID := tx.StakeOuts()[0].AssetID()
 	switch {
-	case tx.Validator.Wght < validatorRules.minValidatorStake:
+	case tx.Validator().Wght < validatorRules.minValidatorStake:
 		// Ensure validator is staking at least the minimum amount
 		return ErrWeightTooSmall
 
-	case tx.Validator.Wght > validatorRules.maxValidatorStake:
+	case tx.Validator().Wght > validatorRules.maxValidatorStake:
 		// Ensure validator isn't staking too much
 		return ErrWeightTooLarge
 
-	case tx.DelegationShares < validatorRules.minDelegationFee:
+	case tx.DelegationShares() < validatorRules.minDelegationFee:
 		// Ensure the validator fee is at least the minimum amount
 		return ErrInsufficientDelegationFee
 
@@ -340,33 +340,33 @@ func verifyAddPermissionlessValidatorTx(
 		)
 	}
 
-	_, err = GetValidator(chainState, tx.Chain, tx.Validator.NodeID)
+	_, err = GetValidator(chainState, tx.Chain(), tx.Validator().NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"%w: %s on %s",
 			ErrDuplicateValidator,
-			tx.Validator.NodeID,
-			tx.Chain,
+			tx.Validator().NodeID,
+			tx.Chain(),
 		)
 	}
 	if err != database.ErrNotFound {
 		return fmt.Errorf(
 			"failed to find whether %s is a validator on %s: %w",
-			tx.Validator.NodeID,
-			tx.Chain,
+			tx.Validator().NodeID,
+			tx.Chain(),
 			err,
 		)
 	}
 
-	if tx.Chain != constants.PrimaryNetworkID {
-		if err := verifyChainValidatorPrimaryNetworkRequirements(chainState, tx.Validator); err != nil {
+	if tx.Chain() != constants.PrimaryNetworkID {
+		if err := verifyChainValidatorPrimaryNetworkRequirements(chainState, tx.Validator()); err != nil {
 			return err
 		}
 	}
 
-	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
-	copy(outs, tx.Outs)
-	copy(outs[len(tx.Outs):], tx.StakeOuts)
+	outs := make([]*lux.TransferableOutput, len(tx.Outputs())+len(tx.StakeOuts()))
+	copy(outs, tx.Outputs())
+	copy(outs[len(tx.Outputs()):], tx.StakeOuts())
 
 	// Verify the flowcheck
 	fee, err := feeCalculator.CalculateFee(tx)
@@ -376,7 +376,7 @@ func verifyAddPermissionlessValidatorTx(
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
-		tx.Ins,
+		tx.Inputs(),
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
@@ -403,7 +403,7 @@ func verifyAddPermissionlessDelegatorTx(
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo(), true); err != nil {
 		return err
 	}
 
@@ -422,14 +422,14 @@ func verifyAddPermissionlessDelegatorTx(
 		return err
 	}
 
-	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Chain)
+	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Chain())
 	if err != nil {
 		return err
 	}
 
-	stakedAssetID := tx.StakeOuts[0].AssetID()
+	stakedAssetID := tx.StakeOuts()[0].AssetID()
 	switch {
-	case tx.Validator.Wght < delegatorRules.minDelegatorStake:
+	case tx.Validator().Wght < delegatorRules.minDelegatorStake:
 		// Ensure delegator is staking at least the minimum amount
 		return ErrWeightTooSmall
 
@@ -451,12 +451,12 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	validator, err := GetValidator(chainState, tx.Chain, tx.Validator.NodeID)
+	validator, err := GetValidator(chainState, tx.Chain(), tx.Validator().NodeID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to fetch the validator for %s on %s: %w",
-			tx.Validator.NodeID,
-			tx.Chain,
+			tx.Validator().NodeID,
+			tx.Chain(),
 			err,
 		)
 	}
@@ -482,7 +482,7 @@ func verifyAddPermissionlessDelegatorTx(
 		chainState,
 		validator,
 		maximumWeight,
-		tx.Validator.Wght,
+		tx.Validator().Wght,
 		startTime,
 		endTime,
 	)
@@ -493,11 +493,11 @@ func verifyAddPermissionlessDelegatorTx(
 		return ErrOverDelegated
 	}
 
-	outs := make([]*lux.TransferableOutput, len(tx.Outs)+len(tx.StakeOuts))
-	copy(outs, tx.Outs)
-	copy(outs[len(tx.Outs):], tx.StakeOuts)
+	outs := make([]*lux.TransferableOutput, len(tx.Outputs())+len(tx.StakeOuts()))
+	copy(outs, tx.Outputs())
+	copy(outs[len(tx.Outputs()):], tx.StakeOuts())
 
-	if tx.Chain != constants.PrimaryNetworkID {
+	if tx.Chain() != constants.PrimaryNetworkID {
 		// Invariant: Delegators must only be able to reference validator
 		//            transactions that implement [txs.ValidatorTx]. All
 		//            validator transactions implement this interface except the
@@ -517,7 +517,7 @@ func verifyAddPermissionlessDelegatorTx(
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
-		tx.Ins,
+		tx.Inputs(),
 		outs,
 		sTx.Creds,
 		map[ids.ID]uint64{
@@ -547,7 +547,7 @@ func verifyTransferChainOwnershipTx(
 		return err
 	}
 
-	if err := lux.VerifyMemoFieldLength(tx.Memo, true); err != nil {
+	if err := lux.VerifyMemoFieldLength(tx.Memo(), true); err != nil {
 		return err
 	}
 
@@ -556,7 +556,7 @@ func verifyTransferChainOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifyChainAuthorization(backend.Fx, chainState, sTx, tx.Chain, tx.ChainAuth)
+	baseTxCreds, err := verifyChainAuthorization(backend.Fx, chainState, sTx, tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -569,8 +569,8 @@ func verifyTransferChainOwnershipTx(
 	if err := backend.FlowChecker.VerifySpend(
 		tx,
 		chainState,
-		tx.Ins,
-		tx.Outs,
+		tx.Inputs(),
+		tx.Outputs(),
 		baseTxCreds,
 		map[ids.ID]uint64{
 			backend.Runtime.UTXOAssetID: fee,

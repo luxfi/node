@@ -17,32 +17,32 @@ import (
 	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/luxfi/log"
 
-	validators "github.com/luxfi/validators"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
+	safemath "github.com/luxfi/math"
 	"github.com/luxfi/math/set"
-	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
-	safemath "github.com/luxfi/math"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/vm/types"
 
-	platformapitypes "github.com/luxfi/node/vms/platformvm/api"
 	avajson "github.com/luxfi/node/utils/json"
+	platformapitypes "github.com/luxfi/node/vms/platformvm/api"
 )
 
 const (
@@ -700,7 +700,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 		)
 	}
 
-	response.AssetID = transformNet.AssetID
+	response.AssetID = transformNet.AssetID()
 	return nil
 }
 
@@ -739,7 +739,7 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 	case txs.ValidatorTx:
 		var pop *signer.ProofOfPossession
 		if staker, ok := stakerTx.(*txs.AddPermissionlessValidatorTx); ok {
-			if s, ok := staker.Signer.(*signer.ProofOfPossession); ok {
+			if s, ok := staker.Signer().(*signer.ProofOfPossession); ok {
 				pop = s
 			}
 		}
@@ -1073,10 +1073,11 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 }
 
 func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapitypes.APIL1Validator, error) {
-	var remainingBalanceOwner message.PChainOwner
-	if _, err := txs.Codec.Unmarshal(vdr.RemainingBalanceOwner, &remainingBalanceOwner); err != nil {
+	remBalOwner, err := txs.UnmarshalOwner(vdr.RemainingBalanceOwner)
+	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling remaining balance owner: %w", err)
 	}
+	remainingBalanceOwner := message.PChainOwner{Threshold: remBalOwner.Threshold, Addresses: remBalOwner.Addrs}
 	remainingBalanceAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
 		Threshold: remainingBalanceOwner.Threshold,
 		Addrs:     remainingBalanceOwner.Addresses,
@@ -1085,10 +1086,11 @@ func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapityp
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed formatting remaining balance owner: %w", err)
 	}
 
-	var deactivationOwner message.PChainOwner
-	if _, err := txs.Codec.Unmarshal(vdr.DeactivationOwner, &deactivationOwner); err != nil {
+	deacOwner, err := txs.UnmarshalOwner(vdr.DeactivationOwner)
+	if err != nil {
 		return platformapitypes.APIL1Validator{}, fmt.Errorf("failed unmarshalling deactivation owner: %w", err)
 	}
+	deactivationOwner := message.PChainOwner{Threshold: deacOwner.Threshold, Addresses: deacOwner.Addrs}
 	deactivationAPIOwner, err := s.getAPIOwner(&secp256k1fx.OutputOwners{
 		Threshold: deactivationOwner.Threshold,
 		Addrs:     deactivationOwner.Addresses,
@@ -1269,7 +1271,7 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-	_, isValidator := s.vm.Validators.GetValidator(chain.ChainID, s.vm.nodeID)
+	_, isValidator := s.vm.Validators.GetValidator(chain.ChainID(), s.vm.nodeID)
 	return isValidator
 }
 
@@ -1427,10 +1429,10 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 				return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 			}
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
-				ID:    chainID,
-				Name:  chain.BlockchainName,
+				ID:      chainID,
+				Name:    chain.BlockchainName(),
 				ChainID: netID,
-				VMID:  chain.VMID,
+				VMID:    chain.VMID(),
 			})
 		}
 	}
@@ -1446,10 +1448,10 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 		}
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
-			ID:    chainID,
-			Name:  chain.BlockchainName,
+			ID:      chainID,
+			Name:    chain.BlockchainName(),
 			ChainID: constants.PrimaryNetworkID,
-			VMID:  chain.VMID,
+			VMID:    chain.VMID(),
 		})
 	}
 
@@ -1466,7 +1468,7 @@ func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, response 
 	if err != nil {
 		return fmt.Errorf("problem decoding transaction: %w", err)
 	}
-	tx, err := txs.Parse(txs.Codec, txBytes)
+	tx, err := txs.Parse(txBytes)
 	if err != nil {
 		return fmt.Errorf("couldn't parse tx: %w", err)
 	}
@@ -1676,7 +1678,15 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	response.Staked = response.Stakeds[s.vm.utxoAssetID]
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
-		bytes, err := txs.Codec.Marshal(txs.CodecVersion, output)
+		// Surface each staked output as native UTXO wire bytes — the one
+		// canonical standalone-output encoding (no codec). The deprecated
+		// GetStake client treats each entry as an opaque byte string.
+		utxo := &lux.UTXO{
+			UTXOID: lux.UTXOID{TxID: ids.Empty, OutputIndex: uint32(i)},
+			Asset:  output.Asset,
+			Out:    output.Out,
+		}
+		bytes, err := utxo.WireBytes()
 		if err != nil {
 			return fmt.Errorf("couldn't serialize output %s: %w", output.ID, err)
 		}
@@ -1735,8 +1745,8 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 		)
 	}
 
-	reply.MinValidatorStake = avajson.Uint64(transformNet.MinValidatorStake)
-	reply.MinDelegatorStake = avajson.Uint64(transformNet.MinDelegatorStake)
+	reply.MinValidatorStake = avajson.Uint64(transformNet.MinValidatorStake())
+	reply.MinDelegatorStake = avajson.Uint64(transformNet.MinDelegatorStake())
 
 	return nil
 }
@@ -1839,8 +1849,8 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
-	Height platformapitypes.Height `json:"height"`
-	ChainID  ids.ID             `json:"netID"`
+	Height  platformapitypes.Height `json:"height"`
+	ChainID ids.ID                  `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {

@@ -1,223 +1,84 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/constants"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
+// preFundedKeys is the shared set of test signing keys used across the txs
+// package tests (owner addresses, credentials).
 var preFundedKeys = secp256k1.TestKeys()
 
 func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	utxoAssetID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-		NodeID:   nodeID,
-	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-
-	var (
-		stx            *Tx
-		addDelegatorTx *AddDelegatorTx
-		err            error
-	)
-
-	// Case : signed tx is nil
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilSignedTx)
-
-	// Case : unsigned tx is nil
-	err = addDelegatorTx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilTx)
-
-	validatorWeight := uint64(2022)
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: utxoAssetID},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
+	owner := &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{preFundedKeys[0].Address()}}
+	weight := uint64(2022)
+	validator := Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: weight}
+	stakeOuts := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: rt.UTXOAssetID},
+		Out:   &secp256k1fx.TransferOutput{Amt: weight, OutputOwners: *owner},
 	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: utxoAssetID},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: utxoAssetID},
-		Out: &stakeable.LockOut{
-			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
-			TransferableOut: &secp256k1fx.TransferOutput{
-				Amt: validatorWeight,
-				OutputOwners: secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-				},
-			},
-		},
-	}}
-	addDelegatorTx = &AddDelegatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Outs:         outputs,
-			Ins:          inputs,
-			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-		}},
-		Validator: Validator{
-			NodeID: rt.NodeID,
-			Start:  uint64(clk.Time().Unix()),
-			End:    uint64(clk.Time().Add(time.Hour).Unix()),
-			Wght:   validatorWeight,
-		},
-		StakeOuts: stakes,
-		DelegationRewardsOwner: &secp256k1fx.OutputOwners{
-			Locktime:  0,
-			Threshold: 1,
-			Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-		},
+	base := func(networkID uint32) *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: networkID, BlockchainID: rt.ChainID}
 	}
 
-	// Case: signed tx not initialized
-	stx = &Tx{Unsigned: addDelegatorTx}
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errSignedTxNotInitialized)
+	// Case: signed tx is nil
+	var stx *Tx
+	require.ErrorIs(stx.SyntacticVerify(rt), ErrNilSignedTx)
+
+	// Case: unsigned tx is nil
+	var nilTx *AddDelegatorTx
+	require.ErrorIs(nilTx.SyntacticVerify(rt), ErrNilTx)
+
+	// Case: signed tx not initialized (Tx wrapper without Initialize/Sign)
+	u, err := NewAddDelegatorTx(base(rt.NetworkID), validator, stakeOuts, owner)
+	require.NoError(err)
+	require.ErrorIs((&Tx{Unsigned: u}).SyntacticVerify(rt), errSignedTxNotInitialized)
 
 	// Case: valid tx
-	stx, err = NewSigned(addDelegatorTx, Codec, signers)
-	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(rt))
+	require.NoError(u.SyntacticVerify(rt))
 
-	// Case: Wrong network ID
-	addDelegatorTx.SyntacticallyVerified = false
-	addDelegatorTx.NetworkID++
-	stx, err = NewSigned(addDelegatorTx, Codec, signers)
+	// Case: wrong network ID
+	uWrong, err := NewAddDelegatorTx(base(rt.NetworkID+1), validator, stakeOuts, owner)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, lux.ErrWrongNetworkID)
-	addDelegatorTx.NetworkID--
+	require.ErrorIs(uWrong.SyntacticVerify(rt), lux.ErrWrongNetworkID)
 
 	// Case: delegator weight is not equal to total stake weight
-	addDelegatorTx.SyntacticallyVerified = false
-	addDelegatorTx.Wght = 2 * validatorWeight
-	stx, err = NewSigned(addDelegatorTx, Codec, signers)
+	heavyValidator := validator
+	heavyValidator.Wght = 2 * weight
+	uMismatch, err := NewAddDelegatorTx(base(rt.NetworkID), heavyValidator, stakeOuts, owner)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errDelegatorWeightMismatch)
-	addDelegatorTx.Wght = validatorWeight
+	require.ErrorIs(uMismatch.SyntacticVerify(rt), errDelegatorWeightMismatch)
 }
 
 func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 
-		ChainID: testChainID,
-		NodeID:  nodeID,
-	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-
-	var (
-		stx            *Tx
-		addDelegatorTx *AddDelegatorTx
-		err            error
-	)
-
-	assetID := ids.GenerateTestID()
-	validatorWeight := uint64(2022)
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: assetID},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
+	owner := &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{preFundedKeys[0].Address()}}
+	weight := uint64(2022)
+	validator := Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: weight}
+	// Stake asset is not the primary-network UTXO asset.
+	stakeOuts := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.GenerateTestID()},
+		Out:   &secp256k1fx.TransferOutput{Amt: weight, OutputOwners: *owner},
 	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: assetID},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: assetID},
-		Out: &stakeable.LockOut{
-			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
-			TransferableOut: &secp256k1fx.TransferOutput{
-				Amt: validatorWeight,
-				OutputOwners: secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-				},
-			},
-		},
-	}}
-	addDelegatorTx = &AddDelegatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Outs:         outputs,
-			Ins:          inputs,
-			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-		}},
-		Validator: Validator{
-			NodeID: rt.NodeID,
-			Start:  uint64(clk.Time().Unix()),
-			End:    uint64(clk.Time().Add(time.Hour).Unix()),
-			Wght:   validatorWeight,
-		},
-		StakeOuts: stakes,
-		DelegationRewardsOwner: &secp256k1fx.OutputOwners{
-			Locktime:  0,
-			Threshold: 1,
-			Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-		},
-	}
 
-	stx, err = NewSigned(addDelegatorTx, Codec, signers)
+	u, err := NewAddDelegatorTx(&lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}, validator, stakeOuts, owner)
 	require.NoError(err)
-
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errStakeMustBeLUX)
+	require.ErrorIs(u.SyntacticVerify(rt), errStakeMustBeLUX)
 }
 
 func TestAddDelegatorTxNotValidatorTx(t *testing.T) {

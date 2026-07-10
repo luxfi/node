@@ -682,8 +682,8 @@ func getNextStakerToReward(
 }
 
 func NewRewardValidatorTx(ctx context.Context, txID ids.ID) (*txs.Tx, error) {
-	utx := &txs.RewardValidatorTx{TxID: txID}
-	tx, err := txs.NewSigned(utx, txs.Codec, nil)
+	utx := txs.NewRewardValidatorTx(txID)
+	tx, err := txs.NewSigned(utx, nil)
 	if err != nil {
 		return nil, err
 	}
