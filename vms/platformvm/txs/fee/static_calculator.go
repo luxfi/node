@@ -93,7 +93,7 @@ func (c *staticVisitor) CreateChainTx(*txs.CreateChainTx) error {
 // }
 
 func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	if tx.Chain != constants.PrimaryNetworkID {
+	if tx.Chain() != constants.PrimaryNetworkID {
 		c.fee = c.config.TxFee // Use TxFee since AddChainValidatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddNetworkValidatorFee
@@ -102,7 +102,7 @@ func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessVa
 }
 
 func (c *staticVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	if tx.Chain != constants.PrimaryNetworkID {
+	if tx.Chain() != constants.PrimaryNetworkID {
 		c.fee = c.config.TxFee // Use TxFee since AddChainDelegatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddNetworkDelegatorFee

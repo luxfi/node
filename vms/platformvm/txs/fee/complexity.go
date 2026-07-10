@@ -540,11 +540,11 @@ func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 
 // Removed in regenesis
 // func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+// 	baseTxComplexity, err := baseTxComplexity(tx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
 // 	if err != nil {
 // 		return err
 // 	}
@@ -556,15 +556,15 @@ func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 // }
 
 func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	bandwidth, err := math.Mul(uint64(len(tx.FxIDs)), ids.IDLen)
+	bandwidth, err := math.Mul(uint64(len(tx.FxIDs())), ids.IDLen)
 	if err != nil {
 		return err
 	}
-	bandwidth, err = math.Add(bandwidth, uint64(len(tx.BlockchainName)))
+	bandwidth, err = math.Add(bandwidth, uint64(len(tx.BlockchainName())))
 	if err != nil {
 		return err
 	}
-	bandwidth, err = math.Add(bandwidth, uint64(len(tx.GenesisData)))
+	bandwidth, err = math.Add(bandwidth, uint64(len(tx.GenesisData())))
 	if err != nil {
 		return err
 	}
@@ -572,11 +572,11 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 		gas.Bandwidth: bandwidth,
 	}
 
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -590,11 +590,11 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 
 // Removed in regenesis
 // func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+// 	baseTxComplexity, err := baseTxComplexity(tx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	ownerComplexity, err := OwnerComplexity(tx.Owner)
+// 	ownerComplexity, err := OwnerComplexity(tx.Owner())
 // 	if err != nil {
 // 		return err
 // 	}
@@ -606,11 +606,11 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 // }
 
 func (c *complexityVisitor) ImportTx(tx *txs.ImportTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	inputsComplexity, err := InputComplexity(tx.ImportedInputs...)
+	inputsComplexity, err := InputComplexity(tx.ImportedInputs()...)
 	if err != nil {
 		return err
 	}
@@ -622,11 +622,11 @@ func (c *complexityVisitor) ImportTx(tx *txs.ImportTx) error {
 }
 
 func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	outputsComplexity, err := OutputComplexity(tx.ExportedOutputs...)
+	outputsComplexity, err := OutputComplexity(tx.ExportedOutputs()...)
 	if err != nil {
 		return err
 	}
@@ -639,11 +639,11 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 
 // Removed in regenesis
 // func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+// 	baseTxComplexity, err := baseTxComplexity(tx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
 // 	if err != nil {
 // 		return err
 // 	}
@@ -655,23 +655,23 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 // }
 
 func (c *complexityVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	signerComplexity, err := SignerComplexity(tx.Signer)
+	signerComplexity, err := SignerComplexity(tx.Signer())
 	if err != nil {
 		return err
 	}
-	outputsComplexity, err := OutputComplexity(tx.StakeOuts...)
+	outputsComplexity, err := OutputComplexity(tx.StakeOuts()...)
 	if err != nil {
 		return err
 	}
-	validatorOwnerComplexity, err := OwnerComplexity(tx.ValidatorRewardsOwner)
+	validatorOwnerComplexity, err := OwnerComplexity(tx.ValidatorRewardsOwner())
 	if err != nil {
 		return err
 	}
-	delegatorOwnerComplexity, err := OwnerComplexity(tx.DelegatorRewardsOwner)
+	delegatorOwnerComplexity, err := OwnerComplexity(tx.DelegatorRewardsOwner())
 	if err != nil {
 		return err
 	}
@@ -686,15 +686,15 @@ func (c *complexityVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionle
 }
 
 func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	ownerComplexity, err := OwnerComplexity(tx.DelegationRewardsOwner)
+	ownerComplexity, err := OwnerComplexity(tx.DelegationRewardsOwner())
 	if err != nil {
 		return err
 	}
-	outputsComplexity, err := OutputComplexity(tx.StakeOuts...)
+	outputsComplexity, err := OutputComplexity(tx.StakeOuts()...)
 	if err != nil {
 		return err
 	}
@@ -708,15 +708,15 @@ func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 
 // Removed in regenesis
 // func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+// 	baseTxComplexity, err := baseTxComplexity(tx)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth)
+// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
 // 	if err != nil {
 // 		return err
 // 	}
-// 	ownerComplexity, err := OwnerComplexity(tx.Owner)
+// 	ownerComplexity, err := OwnerComplexity(tx.Owner())
 // 	if err != nil {
 // 		return err
 // 	}
@@ -738,15 +738,15 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 }
 
 func (c *complexityVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators...)
+	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators()...)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -755,7 +755,7 @@ func (c *complexityVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) e
 		&validatorComplexity,
 		&authComplexity,
 		&gas.Dimensions{
-			gas.Bandwidth: uint64(len(tx.Address)),
+			gas.Bandwidth: uint64(len(tx.Address())),
 		},
 	)
 	return err
@@ -765,11 +765,11 @@ func (c *complexityVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) err
 	// Sovereign L1 = network + N validators + K chains. Fee complexity
 	// is approximately the sum: baseTx + ConvertNetworkToL1 (validators)
 	// + sum(CreateChain) (chains). Charge as composite.
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators...)
+	validatorComplexity, err := ConvertNetworkToL1ValidatorComplexity(tx.Validators()...)
 	if err != nil {
 		return err
 	}
@@ -778,7 +778,7 @@ func (c *complexityVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) err
 		return err
 	}
 	// Per-chain genesis adds to the bandwidth dimension.
-	for _, ch := range tx.Chains {
+	for _, ch := range tx.Chains() {
 		chainBytes := gas.Dimensions{
 			gas.Bandwidth: uint64(len(ch.GenesisData)) + uint64(len(ch.BlockchainName)),
 		}
@@ -791,11 +791,11 @@ func (c *complexityVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) err
 }
 
 func (c *complexityVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	warpComplexity, err := WarpComplexity(tx.Message)
+	warpComplexity, err := WarpComplexity(tx.Message())
 	if err != nil {
 		return err
 	}
@@ -807,11 +807,11 @@ func (c *complexityVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx)
 }
 
 func (c *complexityVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	warpComplexity, err := WarpComplexity(tx.Message)
+	warpComplexity, err := WarpComplexity(tx.Message())
 	if err != nil {
 		return err
 	}
@@ -823,7 +823,7 @@ func (c *complexityVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightT
 }
 
 func (c *complexityVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
@@ -834,11 +834,11 @@ func (c *complexityVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1Valid
 }
 
 func (c *complexityVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.DisableAuth)
+	authComplexity, err := AuthComplexity(tx.DisableAuth())
 	if err != nil {
 		return err
 	}
@@ -849,12 +849,22 @@ func (c *complexityVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) e
 	return err
 }
 
-func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
-	outputsComplexity, err := OutputComplexity(tx.Outs...)
+// baseTxEnvelope is the spending-envelope accessor surface shared by every
+// spending tx type (BaseTx and all delta-carrying txs embed spendingTx, which
+// serves Outputs/Inputs/Memo). baseTxComplexity reads it directly rather than
+// reaching for a struct field that no longer exists.
+type baseTxEnvelope interface {
+	Outputs() []*lux.TransferableOutput
+	Inputs() []*lux.TransferableInput
+	Memo() []byte
+}
+
+func baseTxComplexity(tx baseTxEnvelope) (gas.Dimensions, error) {
+	outputsComplexity, err := OutputComplexity(tx.Outputs()...)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
-	inputsComplexity, err := InputComplexity(tx.Ins...)
+	inputsComplexity, err := InputComplexity(tx.Inputs()...)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -864,17 +874,17 @@ func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 	}
 	complexity[gas.Bandwidth], err = math.Add(
 		complexity[gas.Bandwidth],
-		uint64(len(tx.Memo)),
+		uint64(len(tx.Memo())),
 	)
 	return complexity, err
 }
 
 func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -886,11 +896,11 @@ func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) err
 }
 
 func (c *complexityVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	ownerComplexity, err := OwnerComplexity(tx.Owner)
+	ownerComplexity, err := OwnerComplexity(tx.Owner())
 	if err != nil {
 		return err
 	}
@@ -902,11 +912,11 @@ func (c *complexityVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 }
 
 func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -922,15 +932,15 @@ func (*complexityVisitor) TransformChainTx(*txs.TransformChainTx) error {
 }
 
 func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.ChainAuth)
+	authComplexity, err := AuthComplexity(tx.ChainAuth())
 	if err != nil {
 		return err
 	}
-	ownerComplexity, err := OwnerComplexity(tx.Owner)
+	ownerComplexity, err := OwnerComplexity(tx.Owner())
 	if err != nil {
 		return err
 	}
