@@ -89,7 +89,7 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 
 // shouldWrapInProposerVM decides whether a linear chain.ChainVM is wrapped in
 // proposervm to enforce single-proposer-per-height block production (the
-// Snowman++ window). It is the SINGLE policy gate (the manager calls it once);
+// proposer window). It is the SINGLE policy gate (the manager calls it once);
 // keeping it a pure function makes the policy unit-testable without standing up
 // a whole chain. All three conditions must hold:
 //
@@ -267,6 +267,16 @@ func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
 	return total
 }
 
+// ValidatorCount implements consensuschain.StakeSource. The number of DISTINCT
+// validators in the set IN FORCE AT height — the round-scoped view-change's BFT
+// committee size (it sizes its POL/precommit quorum to bftAlpha over this count,
+// NOT the oversized sample K). Read from the SAME height-indexed set as
+// Weight/TotalStake so every node computes the identical committee and the
+// count-quorum matches the ⅔-by-stake set exactly.
+func (s *validatorStakeSource) ValidatorCount(height uint64) int {
+	return len(validatorSetAtHeight(s.state, s.networkID, height))
+}
+
 var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 
 // --- validator-set-root source (MEDIUM: epoch binding) -----------------------
@@ -372,9 +382,10 @@ func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID 
 var quorumGossipMagic = [4]byte{'L', 'X', 'Q', 0x01}
 
 const (
-	quorumKindVote    byte = 1
-	quorumKindCert    byte = 2
-	quorumKindPrevote byte = 3
+	quorumKindVote byte = 1
+	quorumKindCert byte = 2
+	// kind 3 (prevote) was DELETED with the v1.36 view-change rip-out (174af3c31); Nova sampling
+	// decides and the ⅔ Quasar attestation rides quorumKindVote. Do not reuse 3 — keep the braid dead.
 )
 
 // ErrNotQuorumGossip signals a payload is not a quorum envelope (so the caller
@@ -400,7 +411,7 @@ func decodeQuorumGossip(data []byte) (kind byte, blockID ids.ID, payload []byte,
 	kind = data[4]
 	copy(blockID[:], data[5:5+32])
 	payload = data[5+32:]
-	if kind != quorumKindVote && kind != quorumKindCert && kind != quorumKindPrevote {
+	if kind != quorumKindVote && kind != quorumKindCert {
 		return 0, ids.Empty, nil, ErrNotQuorumGossip
 	}
 	return kind, blockID, payload, nil

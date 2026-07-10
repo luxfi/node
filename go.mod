@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.35.27
+	github.com/luxfi/consensus v1.36.0
 	github.com/luxfi/crypto v1.19.26
 	github.com/luxfi/database v1.20.4
 	github.com/luxfi/ids v1.3.1
@@ -178,7 +178,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
@@ -192,7 +191,6 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.5.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.10.3 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
@@ -263,10 +261,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-// TEMPORARY — local-dev build aid for the bootstrap frozen-cache convergence fix.
-// FINAL CASCADE (publish step, NOT done here): tag consensus v1.25.36 (the uncommitted
-// engine/chain/integration.go FinalizedLedger + FinalizedBlockAtHeight accessors and the
-// engine/chain/bootstrap Has→Accepted change), bump the require above v1.25.35 → v1.25.36,
-// then DELETE this replace. The zap client (option b) is node-only and does NOT widen the
-// consensus bump.
