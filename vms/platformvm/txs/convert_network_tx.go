@@ -9,6 +9,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 	lux "github.com/luxfi/utxo"
@@ -32,8 +33,9 @@ type ConvertNetworkTx struct {
 var (
 	_ UnsignedTx = (*ConvertNetworkTx)(nil)
 
-	ErrConvertPrimaryNetwork     = errors.New("cannot convert the primary network")
-	ErrConvertMustHaveValidators = errors.New("conversion must establish at least one validator")
+	ErrConvertPrimaryNetwork      = errors.New("cannot convert the primary network")
+	ErrConvertMustHaveValidators  = errors.New("conversion must establish at least one validator")
+	ErrConvertMustEstablishOwnSet = errors.New("conversion must establish an own validator set (sovereign mode)")
 )
 
 const (
@@ -45,12 +47,17 @@ const (
 	offCV_ValNodeIDPool  = spendSize + 112 // bytes ptr (8B)
 	offCV_ValAddrPool    = spendSize + 120 // list ptr (8B)
 	offCV_AuthPtr        = spendSize + 128 // sig-idx list ptr (8B)
-	sizeCVTx             = spendSize + 136
+	offCV_RestakeParent  = spendSize + 136 // u8 (security.Mode axis 1)
+	offCV_Admission      = spendSize + 137 // u8 (security.Admission)
+	offCV_Manager        = spendSize + 138 // u8 (security.Manager)
+	offCV_Threshold      = spendSize + 139 // u64 (Open-admission min stake)
+	sizeCVTx             = spendSize + 147
 )
 
 func NewConvertNetworkTx(
 	base *lux.BaseTx,
 	network, parent, managerChainID ids.ID,
+	sec security.Mode,
 	managerAddress []byte,
 	validators []*NetworkValidator,
 	auth verify.Verifiable,
@@ -85,6 +92,7 @@ func NewConvertNetworkTx(
 	ob.SetBytes(offCV_ValNodeIDPool, nodeIDPool)
 	ob.SetList(offCV_ValAddrPool, valAddrOff, valAddrCount)
 	ob.SetList(offCV_AuthPtr, authOff, authCount)
+	setSecurity(ob, offCV_RestakeParent, offCV_Admission, offCV_Manager, offCV_Threshold, sec)
 	ob.FinishAsRoot()
 	msg, _ := zap.Parse(b.Finish())
 	return &ConvertNetworkTx{spendingTx{msg: msg}}, nil
@@ -103,12 +111,17 @@ func (tx *ConvertNetworkTx) Validators() []*NetworkValidator {
 	return readNetworkValidators(tx.root(), offCV_Validators, offCV_ValNodeIDPool, offCV_ValAddrPool)
 }
 func (tx *ConvertNetworkTx) Auth() verify.Verifiable { return readAuth(tx.root(), offCV_AuthPtr) }
+func (tx *ConvertNetworkTx) Security() security.Mode {
+	return readSecurity(tx.root(), offCV_RestakeParent, offCV_Admission, offCV_Manager, offCV_Threshold)
+}
+func (tx *ConvertNetworkTx) Sovereign() bool { return tx.Security().Sovereign() }
 
 func (tx *ConvertNetworkTx) SyntacticVerify(rt *runtime.Runtime) error {
 	if tx == nil {
 		return ErrNilTx
 	}
 	vdrs := tx.Validators()
+	sec := tx.Security()
 	switch {
 	case tx.Network() == constants.PrimaryNetworkID:
 		return ErrConvertPrimaryNetwork
@@ -118,6 +131,16 @@ func (tx *ConvertNetworkTx) SyntacticVerify(rt *runtime.Runtime) error {
 		return ErrValidatorsNotSortedAndUnique
 	case len(tx.ManagerAddress()) > MaxChainAddressLength:
 		return ErrAddressTooLong
+	}
+	// promotion establishes an own set; the target Mode must be valid + sovereign.
+	if err := sec.Valid(); err != nil {
+		return err
+	}
+	if !sec.Sovereign() {
+		return ErrConvertMustEstablishOwnSet
+	}
+	if sec.Manager == security.Contract && len(tx.ManagerAddress()) == 0 {
+		return ErrContractManagerNeedsAddress
 	}
 	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return err
