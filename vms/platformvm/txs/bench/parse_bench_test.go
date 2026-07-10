@@ -12,7 +12,7 @@ import (
 )
 
 // BenchmarkParseLegacy walks the fixture map and benchmarks Parse for
-// each type via the legacy linearcodec path (txs.Parse). The output
+// each type via the legacy reflection codec path (txs.Parse). The output
 // names the tx type so the per-type table can be assembled from the
 // raw `go test -bench` output.
 func BenchmarkParseLegacy(b *testing.B) {

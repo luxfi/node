@@ -285,7 +285,7 @@ func (s *signerVisitor) getChainSigners(netID ids.ID, chainAuth verify.Verifiabl
 }
 
 func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
-	unsignedBytes, err := txs.Codec.Marshal(txs.Version, &tx.Unsigned)
+	unsignedBytes, err := txs.Codec.Marshal(txs.CodecVersion, &tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal unsigned tx: %w", err)
 	}
@@ -346,7 +346,7 @@ func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 		}
 	}
 
-	signedBytes, err := txs.Codec.Marshal(txs.Version, tx)
+	signedBytes, err := txs.Codec.Marshal(txs.CodecVersion, tx)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal tx: %w", err)
 	}

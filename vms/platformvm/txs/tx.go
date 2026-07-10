@@ -48,12 +48,12 @@ func NewSigned(
 	return res, res.Sign(c, signers)
 }
 
-// Initialize marshals tx with the canonical write codec (v1) and
-// derives TxID = hash(signedBytes). This is appropriate ONLY for txs
-// built fresh in this process (e.g. by the wallet or by the block
-// builder). For txs loaded from disk or received from the wire, use
-// InitializeFromBytes — Initialize would re-encode at v1, changing the
-// TxID of any tx that was originally serialized at v0.
+// Initialize marshals tx with the canonical ZAP codec and derives
+// TxID = hash(signedBytes). This is appropriate ONLY for txs built
+// fresh in this process (e.g. by the wallet or the block builder). For
+// txs loaded from disk or received from the wire, use
+// InitializeFromBytes, which binds the exact received bytes rather than
+// re-encoding.
 func (tx *Tx) Initialize(c pcodecs.Manager) error {
 	signedBytes, err := c.Marshal(CodecVersion, tx)
 	if err != nil {
@@ -71,16 +71,13 @@ func (tx *Tx) Initialize(c pcodecs.Manager) error {
 }
 
 // InitializeFromBytes binds the tx to the EXACT signedBytes it was
-// decoded from, deriving TxID = hash(signedBytes) under the codec
-// version the bytes were originally written at. It never re-marshals,
-// so a tx whose bytes were written at v0 keeps its v0-derived TxID
-// forever — the chain commitment is therefore stable across the v0->v1
-// codec migration.
+// decoded from, deriving TxID = hash(signedBytes). It never re-marshals,
+// so the TxID is exactly the hash of the bytes the chain committed.
 //
 // version is the codec version the bytes were decoded under (returned
-// by codec.Manager.Unmarshal). It selects the c.Size(...) call used to
-// split signedBytes into unsignedBytes (the prefix the signature
-// covers) and the credentials suffix.
+// by codec.Manager.Unmarshal — always CodecVersion). It selects the
+// c.Size(...) call used to split signedBytes into unsignedBytes (the
+// prefix the signature covers) and the credentials suffix.
 func (tx *Tx) InitializeFromBytes(c pcodecs.Manager, version uint16, signedBytes []byte) error {
 	unsignedBytesLen, err := c.Size(version, &tx.Unsigned)
 	if err != nil {
@@ -94,33 +91,23 @@ func (tx *Tx) InitializeFromBytes(c pcodecs.Manager, version uint16, signedBytes
 	return nil
 }
 
-// InitializeFromBytesAtVersion is the byte-preserving init used after
-// a struct-level Unmarshal where the outer container (a genesis blob,
-// a stored block) decoded the tx field directly — in that case we
-// only have the struct value and the codec version it was decoded
-// under, not the raw signed bytes (which were never sliced out of the
-// outer stream by the codec).
+// InitializeFromBytesAtVersion is the byte-preserving init used after a
+// struct-level Unmarshal where the outer container (a genesis blob, a
+// stored block) decoded the tx field directly — in that case we only
+// have the struct value and the codec version it was decoded under, not
+// the raw signed bytes (which were never sliced out of the outer stream
+// by the codec).
 //
 // We re-derive signedBytes by Marshal'ing the just-decoded tx at the
-// SAME version, then bind via SetBytes. The wire format is
-// deterministic and the codec is closed at v0, so the re-marshal
-// produces the exact bytes the original v0 producer emitted; therefore
-// TxID = hash(re-marshaled v0 bytes) = TxID the chain committed.
+// same version, then bind via SetBytes. This is byte-exact because:
+//   1. ZAP marshal is a pure function of the struct fields under a fixed
+//      slot map, so the output is byte-equal to the producer's output.
+//   2. The struct fields were just populated by c.Unmarshal at the same
+//      version, so no information has been lost or rotated.
+//   3. The c.Size(...) inverse used by InitializeFromBytes walks the
+//      same layout in the opposite direction.
 //
-// This single bounded re-marshal is the ONLY place we allow
-// c.Marshal(v0, ...) inside the read path. It is justified because:
-//   1. Linearcodec marshal is a pure function of the struct fields
-//      under a fixed slot map, so the output is byte-equal to the
-//      original v0 producer's output.
-//   2. The struct fields were just populated by c.Unmarshal at the
-//      same version, so no information has been lost or rotated.
-//   3. The c.Size(v0, ...) inverse used by InitializeFromBytes is the
-//      same path, just in the opposite direction — the size of an
-//      Unsigned in v0 layout is a fixed function of its fields.
-//
-// Once every genesis blob and every stored block on disk has been
-// re-encoded at v1 (a future migration), this method becomes dead
-// code and the v0 codec entry can be removed.
+// Therefore TxID = hash(re-marshaled bytes) = TxID the chain committed.
 func (tx *Tx) InitializeFromBytesAtVersion(c pcodecs.Manager, version uint16) error {
 	signedBytes, err := c.Marshal(version, tx)
 	if err != nil {
@@ -136,14 +123,14 @@ func (tx *Tx) SetBytes(unsignedBytes, signedBytes []byte) {
 }
 
 // Parse signed tx starting from its byte representation. The wire
-// version is taken from the 2-byte prefix that c.Unmarshal reads;
-// c.Size(...) is then called under THAT version so the split point
-// between unsignedBytes and the credentials suffix is correct for
-// either v0 or v1 layouts.
+// version is taken from the 2-byte prefix that c.Unmarshal reads (it
+// must equal CodecVersion, else Unmarshal rejects it); c.Size(...) is
+// then called under that version so the split point between
+// unsignedBytes and the credentials suffix is correct.
 //
 // Parse never re-marshals: TxID = hash(signedBytes) verbatim. This is
-// the byte-preserving path that all from-disk and from-wire reads must
-// go through to keep TxIDs stable across the v0→v1 migration.
+// the byte-preserving path that all from-disk and from-wire reads go
+// through to keep TxIDs equal to the committed bytes' hash.
 //
 // We explicitly pass the codec in Parse since some call sites (genesis,
 // state fallback) must use GenesisCodec to admit txs larger than the

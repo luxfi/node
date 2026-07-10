@@ -8,31 +8,15 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-// CodecVersion is the canonical write version for new P-Chain genesis
-// blobs. It is shared with the block codec (and txs codec) so a single
-// constant bumps the whole stack.
+// CodecVersion is the sole write version for P-Chain genesis blobs. It
+// is shared with the block codec (and tx codec) so a single constant
+// pins the whole stack.
 const CodecVersion = block.CodecVersion
 
-// Codec is the multi-version codec.Manager used to (un)marshal P-Chain
-// genesis blobs. It is intentionally an alias for txs.GenesisCodec
-// rather than block.GenesisCodec because:
-//
-//   - txs.GenesisCodec registers BOTH the v0 (v1.23.x Apricot/Banff)
-//     and v1 (current) tx slot maps, so it can decode v0-prefixed
-//     cached-genesis blobs that pre-date the codec bump. block.Genesis
-//     Codec carries only the v1 slot map and errors on prefix=0 with
-//     codec.ErrUnknownVersion — exactly the failure mode that broke
-//     v1.28.0 testnet canary at first-byte parse of
-//     <data>/genesis.bytes.
-//   - The outer Genesis struct itself has no slot ID; all version-
-//     sensitive data lives in the embedded []*txs.Tx (validators,
-//     chains). Decoding via txs.GenesisCodec is therefore exactly the
-//     dispatch we need — version is taken from the 2-byte wire prefix
-//     and routed to the v0 or v1 tx slot map.
-//   - Marshal at CodecVersion (== v1) is unchanged: the v1 slot map in
-//     txs.GenesisCodec is byte-for-byte identical to the v1 slot map in
-//     block.GenesisCodec (both come from registerV1TxTypes).
-//
-// All write paths (Genesis.Bytes, New, static_service) MUST continue to
-// use CodecVersion. v0 is a READ-ONLY decoder.
+// Codec is the codec.Manager used to (un)marshal P-Chain genesis blobs.
+// It aliases txs.GenesisCodec (unbounded size budget) because the outer
+// Genesis struct has no slot ID — every version-sensitive value lives in
+// the embedded []*txs.Tx (validators, chains), so decoding via the tx
+// genesis codec is exactly the dispatch we need. One ZAP-native version,
+// one write path, one read path.
 var Codec = txs.GenesisCodec

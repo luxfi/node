@@ -236,7 +236,7 @@ func (s *state) loadActiveL1Validators() error {
 				ValidationID: validationID,
 			}
 		)
-		if _, err := multiVersionUnmarshal(block.GenesisCodec, value, &l1Validator); err != nil {
+		if _, err := block.GenesisCodec.Unmarshal(value, &l1Validator); err != nil {
 			return fmt.Errorf("failed to unmarshal L1 validator: %w", err)
 		}
 
@@ -532,7 +532,7 @@ func (s *state) initValidatorSets() error {
 		}
 
 		var l1Validator L1Validator
-		if _, err := multiVersionUnmarshal(block.GenesisCodec, inactiveIt.Value(), &l1Validator); err != nil {
+		if _, err := block.GenesisCodec.Unmarshal(inactiveIt.Value(), &l1Validator); err != nil {
 			return fmt.Errorf("failed to unmarshal inactive L1 validator: %w", err)
 		}
 		l1Validator.ValidationID = validationID

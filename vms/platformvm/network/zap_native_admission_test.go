@@ -187,7 +187,7 @@ func TestZapNativeAdmissionGate_RejectsZapWireConvertNetworkToL1(t *testing.T) {
 
 // TestZapNativeAdmissionGate_PassThroughNonZapBytes pins the gate's
 // non-interference contract: a tx whose Bytes() are NOT ZAP-magic
-// (e.g. legacy linearcodec-encoded) and whose Unsigned is a working
+// (e.g. legacy reflection codec-encoded) and whose Unsigned is a working
 // executor type MUST be delegated to the inner verifier unmodified.
 func TestZapNativeAdmissionGate_PassThroughNonZapBytes(t *testing.T) {
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{}}

@@ -29,11 +29,12 @@ func (b *StandardBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 
 func (b *StandardBlock) initialize(bytes []byte) error {
 	b.CommonBlock.initialize(bytes)
 	for _, tx := range b.Transactions {
-		// Byte-preserving: re-derive signedBytes by re-marshalling at
-		// the canonical write version (v1). This is the v1 read path
-		// — v0 reads go through block.parseV0 + liftedV0Block, which
-		// rebinds via InitializeFromBytesAtVersion(v0).
-		if err := tx.InitializeFromBytesAtVersion(txs.Codec, txs.CodecVersionV1); err != nil {
+		// Byte-preserving: re-derive signedBytes by re-marshalling at the
+		// sole canonical codec version. ZAP marshal is a pure function of
+		// the struct fields under a fixed slot map, so the re-marshal is
+		// byte-identical to the producer's bytes and TxID = hash(bytes)
+		// is stable.
+		if err := tx.InitializeFromBytesAtVersion(txs.Codec, txs.CodecVersion); err != nil {
 			return fmt.Errorf("failed to initialize tx: %w", err)
 		}
 	}

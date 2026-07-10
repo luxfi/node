@@ -3,7 +3,7 @@
 
 // Wire-format regression test. Pins on-chain encoding for every type the
 // warp codec is willing to marshal, both as a concrete struct and through
-// the Signature interface (which prepends the linearcodec typeID).
+// the Signature interface (which prepends the codec typeID).
 //
 // The hex strings encoded in `want` are the on-chain bytes. They MUST
 // NOT change without a hard fork — any failure here means a code change
@@ -17,8 +17,8 @@
 // HybridBLSCoronaSignature; the hex baseline below was captured from the
 // pre-rename build and re-verified post-rename. Type and field name
 // changes are wire-safe — type IDs and field encodings come from
-// registration order and declaration order respectively (see
-// reflectcodec/struct_fielder.go and linearcodec/codec.go).
+// registration order and declaration order respectively (the ZAP
+// reflection codec: sequential type-id assignment, struct-tag field walk).
 
 package warp
 

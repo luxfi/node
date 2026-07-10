@@ -17,9 +17,10 @@ func init() {
 	Codec = pcodecs.NewMaxIntManager()
 	lc := pcodecs.NewLinearCodec()
 
-	// CRITICAL: RegisterType order is the on-chain wire format. linearcodec
-	// assigns a monotonically increasing typeID per call. Reordering ANY of
-	// these lines is a hard fork. New types must be appended ONLY.
+	// CRITICAL: RegisterType order is the on-chain wire format. The codec
+	// assigns a monotonically increasing typeID per call (sequential
+	// type-id assignment). Reordering ANY of these lines is a hard fork.
+	// New types must be appended ONLY.
 	//
 	//   typeID 0x00 → BitSetSignature
 	//   typeID 0x01 → CoronaSignature
