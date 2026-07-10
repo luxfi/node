@@ -1199,25 +1199,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
-		// Round-scoped view-change (restores liveness under competing siblings + a zero-margin
-		// quorum — the 415→416 freeze). OPT-IN per deployment via LUX_CONSENSUS_VIEW_CHANGE=true
-		// so devnet/testnet can enable it without a mainnet default (mainnet is owner-gated). Only
-		// meaningful on a multi-validator (K>1) chain; K==1 has no competing proposers. The engine
-		// itself fail-secure HALTS the view-change if the committee fails the 2α−n>f bound, so
-		// enabling it can never weaken safety — at worst it halts (never forks).
-		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
-			consensusParams.ViewChange = true
-			// NOTE: presetK/presetAlpha are the sample preset (MainnetParams K=21/α=15),
-			// NOT the finality committee. The α-of-K cert and the view-change POL/precommit are
-			// sized to the LIVE validator set at runtime via effectiveCommittee/bftCommittee
-			// (e.g. 5 validators → K=5/α=4); the engine logs the effective (K,α) whenever it
-			// re-clamps ("committee re-clamped … newK/newAlpha"). Do not read presetK as the quorum.
-			m.Log.Info("round-scoped view-change ENABLED for chain",
-				log.Stringer("chainID", chainParams.ID),
-				log.Int("presetK", consensusParams.K),
-				log.Int("presetAlpha", consensusParams.AlphaConfidence),
-				log.String("note", "finality committee sized to the live validator set at runtime (see engine committee-clamp log for effective K/alpha)"))
-		}
+		// v1.36 "Nova": the round-scoped VIEW-CHANGE (prevote/POL/lock) was DELETED from the
+		// consensus engine (174af3c31). Nova metastable sampling is the sole decider and the ⅔
+		// Quasar attestation trails it — there is no view-change to opt into, so the former
+		// LUX_CONSENSUS_VIEW_CHANGE env gate is gone. Keep the braid dead.
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		})
@@ -1535,7 +1520,34 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					log.Stringer("networkID", networkID))
 			}
 		}
-		consensusEngine := consensuschain.NewRuntime(netCfg)
+			// EXPORT-FRONTIER BRIDGE (two-tier consensus, v1.36). VM.Accept now advances the
+			// local NOVA (bare-majority) accept tip, which is reorgable and MUST NOT be exported.
+			// Push each EXPORT (Quasar, ⅔-by-stake) frontier advance into the VM so the EVM
+			// `finalized`/`safe` block tags and the warp cross-chain export gate resolve to the
+			// Quasar tip, NEVER the Nova tip (the "semantic collapse" the split exists to prevent).
+			// Interface-gated: only a VM that exposes the export sink participates (the C-Chain
+			// EVM); other VMs are Nova-only with no export surface. Push into the RAW inner VM
+			// (vmTyped) — the eth backend / warp backend live there, not on the proposervm wrapper.
+			if qvm, ok := vmTyped.(interface{ SetLastQuasarFinalized(uint64) }); ok {
+				netCfg.QuasarObserver = func(_ ids.ID, height uint64) {
+					qvm.SetLastQuasarFinalized(height)
+				}
+				m.Log.Info("wired EXPORT-frontier (quasar) bridge into the VM (finalized/safe + warp gate track ⅔-stake finality)",
+					log.Stringer("chainID", chainParams.ID))
+			}
+			consensusEngine := consensuschain.NewRuntime(netCfg)
+
+			// Re-seed the consensus EXPORT frontier from the VM's DURABLE Quasar height so
+			// GetQuasarTip / QuasarHeight do not regress on restart (the in-memory frontier resets
+			// to (Empty,0) until a fresh ⅔-stake cert re-forms; the VM persisted the export height).
+			// Advance-only; the observer above refines it as new certs land this session.
+			if qvm, ok := vmTyped.(interface{ LastQuasarHeight() uint64 }); ok {
+				if h := qvm.LastQuasarHeight(); h > 0 {
+					consensusEngine.SyncQuasarFrontier(ids.Empty, h)
+					m.Log.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
+						log.Stringer("chainID", chainParams.ID), log.Uint64("quasarHeight", h))
+				}
+			}
 
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,
@@ -3904,10 +3916,6 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
 				b.engine.HandleIncomingCert(payload)
-			case quorumKindPrevote:
-				// Round-scoped view-change prevote: the engine decodes+verifies
-				// (height,round,canonical,sig) from the payload and tallies it toward a POL.
-				b.engine.HandleIncomingPrevote(payload)
 			}
 			return nil
 		}
@@ -4222,23 +4230,9 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
 }
 
-// BroadcastPrevote sends this node's signed ROUND-SCOPED view-change prevote (the
-// non-binding preference signal) for `canonical` at (height, round) to ALL validators,
-// framed in a quorum envelope (kind 3) and decoded by blockHandler.Gossip into
-// engine.HandleIncomingPrevote. Prevotes never finalize anything — they drive the POL +
-// the lock/unlock rule that lets a competing-sibling split RE-CONVERGE (liveness under a
-// down proposer + zero-margin quorum). Only emitted when the chain runs params.ViewChange.
-func (g *networkGossiper) BroadcastPrevote(chainID ids.ID, networkID ids.ID, height uint64, round uint32, canonical ids.ID, voteBytes []byte) int {
-	if g.net == nil || g.msgCreator == nil {
-		return 0
-	}
-	envelope := encodeQuorumGossip(quorumKindPrevote, canonical, voteBytes)
-	msg, err := g.msgCreator.Gossip(chainID, envelope)
-	if err != nil {
-		return 0
-	}
-	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
-}
+// v1.36 "Nova": BroadcastPrevote was DELETED — the round-scoped view-change (prevote/POL/lock)
+// it fed no longer exists in the consensus engine (174af3c31). Nova sampling decides; the ⅔
+// Quasar attestation (a plain accept-vote, gossiped via BroadcastVote) trails it. Keep the braid dead.
 
 // GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so
 // followers finalize blockID on a verifiable proof (HandleIncomingCert), not a
