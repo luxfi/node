@@ -3260,9 +3260,30 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		log.Stringer("containerID", containerID),
 		log.Uint32("requestID", requestID))
 
-	// Collect context blocks (walk parent chain)
+	// Collect context blocks (walk parent chain).
+	//
+	// SIZE-CHUNKING (the heavy-DEX-block self-heal fix). The response is the Ancestors
+	// wire message, whose UNCOMPRESSED size the peer compressor refuses above the message
+	// cap (constants.DefaultMaxMessageSize; the zstd compressor bounds its input to prevent a
+	// decompression bomb). The old loop bounded ONLY by COUNT (maxContextBlocks=256), so under
+	// heavy DEX load 256 blocks summed to 3.4-5.7 MB > the 2 MB cap, msgCreator.Ancestors FAILED
+	// to build, and the behind validator got NOTHING — it could never resync and fell
+	// permanently behind (the benchmark-proven stall). We now ALSO bound by serialized size:
+	// stop before the accumulated payload would exceed the budget, but ALWAYS include at least
+	// one block so a behind node makes progress every round; the requester re-requests for the
+	// remaining gap (GetAncestors/context is already a multi-round, oldest-first fill). A single
+	// block that alone exceeds the budget is still served (best-effort) so the walk never
+	// deadlocks — the trust-tiered validator cap (peer layer) gives such a block the headroom to
+	// actually send; for a stranger it will be refused by the tight cap, which is correct.
 	var containers [][]byte
 	currentID := containerID
+
+	// Leave margin under the cap for the p2p envelope (chainID, requestID, per-container length
+	// prefixes, compression framing) so the assembled message stays comfortably below the limit.
+	const contextResponseMargin = 128 * 1024 // 128 KiB
+	byteBudget := constants.DefaultMaxMessageSize - contextResponseMargin
+	accumulated := 0
+	truncatedForSize := false
 
 	for i := 0; i < b.maxContextBlocks; i++ {
 		// First check pending blocks (for recently proposed but not yet accepted blocks)
@@ -3294,6 +3315,14 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 			certBytes, _ = b.engine.CertForBlock(blk.ID())
 		}
 		entry := encodeCatchupEntry(blk.Bytes(), certBytes)
+
+		// SIZE GATE: stop before exceeding the budget — but never drop the FIRST block, so a
+		// behind node always receives at least one block per request and cannot deadlock.
+		if len(containers) > 0 && accumulated+len(entry) > byteBudget {
+			truncatedForSize = true
+			break
+		}
+		accumulated += len(entry)
 		containers = append([][]byte{entry}, containers...)
 
 		// Get parent ID for next iteration
@@ -3329,6 +3358,8 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		log.Stringer("to", nodeID),
 		log.Stringer("containerID", containerID),
 		log.Int("numBlocks", len(containers)),
+		log.Int("payloadBytes", accumulated),
+		log.Bool("truncatedForSize", truncatedForSize),
 		log.Int("sentTo", sentTo.Len()))
 
 	return nil
