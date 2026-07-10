@@ -753,10 +753,9 @@ func (b *builder) NewCreateNetworkTx(
 		constants.PrimaryNetworkID, // parent
 		owner,
 		security.Mode{RestakeParent: true, Manager: security.PChain}, // restaked L2 under primary
-		nil, // validators
-		nil, // chains
-		0,   // managerChainIdx
-		nil, // managerAddress
+		nil,       // validators
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
 	)
 }
 

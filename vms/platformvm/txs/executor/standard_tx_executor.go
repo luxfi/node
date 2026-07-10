@@ -283,16 +283,11 @@ func (e *standardTxExecutor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 
 	// A sovereign network runs its OWN validator set: seed that set and record
 	// its manager authority now. The new network's id IS this tx's id, so the
-	// L1 validators are keyed under txID. When the network ships genesis chains,
-	// the manager lives on the chain at ManagerChainIdx (its id derived
-	// deterministically from txID+index); otherwise the set is P-Chain-governed
-	// with no external manager anchor.
+	// L1 validators are keyed under txID. ManagerChainID names the chain hosting
+	// a Contract-governed staking contract (ids.Empty ⇒ P-Chain-governed, owner
+	// is the authority). Chains themselves are added by CreateChainTx.
 	if tx.Security().Sovereign() {
-		managerChainID := ids.Empty
-		if chains := tx.Chains(); len(chains) > 0 && int(tx.ManagerChainIdx()) < len(chains) {
-			managerChainID = txID.Append(tx.ManagerChainIdx())
-		}
-		if err := registerOwnSet(e, txID, tx.Validators(), tx.Security(), managerChainID, tx.ManagerAddress()); err != nil {
+		if err := registerOwnSet(e, txID, tx.Validators(), tx.Security(), tx.ManagerChainID(), tx.ManagerAddress()); err != nil {
 			return err
 		}
 	}
