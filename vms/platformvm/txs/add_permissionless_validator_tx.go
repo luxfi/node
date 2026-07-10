@@ -7,8 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/luxfi/constants"
+	bls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/verify"
@@ -17,11 +19,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
 
 var (
-	_ UnsignedTx = (*AddPermissionlessValidatorTx)(nil)
+	_ UnsignedTx      = (*AddPermissionlessValidatorTx)(nil)
+	_ ValidatorTx     = (*AddPermissionlessValidatorTx)(nil)
+	_ ScheduledStaker = (*AddPermissionlessValidatorTx)(nil)
 
 	errEmptyNodeID             = errors.New("validator nodeID cannot be empty")
 	errNoStake                 = errors.New("no stake")
@@ -127,6 +132,73 @@ func (tx *AddPermissionlessValidatorTx) DelegatorRewardsOwner() fx.Owner {
 // DelegationShares is the fee (times 10,000) charged to delegators.
 func (tx *AddPermissionlessValidatorTx) DelegationShares() uint32 {
 	return tx.root().Uint32(offAPVDelegationShares)
+}
+
+// ---- Staker / ValidatorTx / ScheduledStaker interface ----
+
+func (tx *AddPermissionlessValidatorTx) ChainID() ids.ID {
+	return tx.Chain()
+}
+
+func (tx *AddPermissionlessValidatorTx) NodeID() ids.NodeID {
+	return tx.Validator().NodeID
+}
+
+func (tx *AddPermissionlessValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	sig := tx.Signer()
+	if err := sig.Verify(); err != nil {
+		return nil, false, err
+	}
+	key := sig.Key()
+	return key, key != nil, nil
+}
+
+func (tx *AddPermissionlessValidatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddPermissionlessValidatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddPermissionlessValidatorTx) Weight() uint64 {
+	return tx.Validator().Wght
+}
+
+func (tx *AddPermissionlessValidatorTx) PendingPriority() Priority {
+	if tx.Chain() == constants.PrimaryNetworkID {
+		return PrimaryNetworkValidatorPendingPriority
+	}
+	return ChainPermissionlessValidatorPendingPriority
+}
+
+func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
+	if tx.Chain() == constants.PrimaryNetworkID {
+		return PrimaryNetworkValidatorCurrentPriority
+	}
+	return ChainPermissionlessValidatorCurrentPriority
+}
+
+// Stake is where staked tokens go when done validating, with FxID set on
+// each output (secp256k1fx) as the legacy InitRuntime did.
+func (tx *AddPermissionlessValidatorTx) Stake() []*lux.TransferableOutput {
+	outs := tx.StakeOuts()
+	for _, out := range outs {
+		out.FxID = secp256k1fx.ID
+	}
+	return outs
+}
+
+func (tx *AddPermissionlessValidatorTx) ValidationRewardsOwner() fx.Owner {
+	return tx.ValidatorRewardsOwner()
+}
+
+func (tx *AddPermissionlessValidatorTx) DelegationRewardsOwner() fx.Owner {
+	return tx.DelegatorRewardsOwner()
+}
+
+func (tx *AddPermissionlessValidatorTx) Shares() uint32 {
+	return tx.DelegationShares()
 }
 
 // SyntacticVerify returns nil iff [tx] is valid.

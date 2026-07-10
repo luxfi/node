@@ -6,18 +6,25 @@ package txs
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/luxfi/constants"
+	bls "github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
 
 var (
-	_ UnsignedTx = (*AddValidatorTx)(nil)
+	_ UnsignedTx      = (*AddValidatorTx)(nil)
+	_ ValidatorTx     = (*AddValidatorTx)(nil)
+	_ ScheduledStaker = (*AddValidatorTx)(nil)
 
 	errTooManyShares = fmt.Errorf("a staker can only require at most %d shares from delegators", reward.PercentDenominator)
 )
@@ -86,6 +93,62 @@ func (tx *AddValidatorTx) RewardsOwner() fx.Owner {
 
 // DelegationShares is the fee (times 10,000) charged to delegators.
 func (tx *AddValidatorTx) DelegationShares() uint32 { return tx.root().Uint32(offAVDelegationShares) }
+
+// ---- Staker / ValidatorTx / ScheduledStaker interface ----
+
+func (*AddValidatorTx) ChainID() ids.ID {
+	return constants.PrimaryNetworkID
+}
+
+func (tx *AddValidatorTx) NodeID() ids.NodeID {
+	return tx.Validator().NodeID
+}
+
+func (*AddValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	return nil, false, nil
+}
+
+func (tx *AddValidatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddValidatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddValidatorTx) Weight() uint64 {
+	return tx.Validator().Wght
+}
+
+func (*AddValidatorTx) PendingPriority() Priority {
+	return PrimaryNetworkValidatorPendingPriority
+}
+
+func (*AddValidatorTx) CurrentPriority() Priority {
+	return PrimaryNetworkValidatorCurrentPriority
+}
+
+// Stake is where staked tokens go when done validating, with FxID set on
+// each output (secp256k1fx) as the legacy InitRuntime did.
+func (tx *AddValidatorTx) Stake() []*lux.TransferableOutput {
+	outs := tx.StakeOuts()
+	for _, out := range outs {
+		out.FxID = secp256k1fx.ID
+	}
+	return outs
+}
+
+func (tx *AddValidatorTx) ValidationRewardsOwner() fx.Owner {
+	return tx.RewardsOwner()
+}
+
+func (tx *AddValidatorTx) DelegationRewardsOwner() fx.Owner {
+	return tx.RewardsOwner()
+}
+
+func (tx *AddValidatorTx) Shares() uint32 {
+	return tx.DelegationShares()
+}
 
 // SyntacticVerify returns nil iff [tx] is valid.
 func (tx *AddValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {

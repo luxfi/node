@@ -6,17 +6,25 @@ package txs
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/luxfi/constants"
+	bls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
 
-var _ UnsignedTx = (*AddPermissionlessDelegatorTx)(nil)
+var (
+	_ UnsignedTx      = (*AddPermissionlessDelegatorTx)(nil)
+	_ DelegatorTx     = (*AddPermissionlessDelegatorTx)(nil)
+	_ ScheduledStaker = (*AddPermissionlessDelegatorTx)(nil)
+)
 
 // AddPermissionlessDelegatorTx is an unsigned addPermissionlessDelegatorTx.
 // The struct IS the wire: it holds the zap buffer and reads its fields by
@@ -84,6 +92,60 @@ func (tx *AddPermissionlessDelegatorTx) StakeOuts() []*lux.TransferableOutput {
 // DelegationRewardsOwner is where staking rewards go when done validating.
 func (tx *AddPermissionlessDelegatorTx) DelegationRewardsOwner() fx.Owner {
 	return readOwner(tx.root(), offAPDRewardsThreshold, offAPDRewardsLocktime, offAPDRewardsAddrs)
+}
+
+// ---- Staker / DelegatorTx / ScheduledStaker interface ----
+
+func (tx *AddPermissionlessDelegatorTx) ChainID() ids.ID {
+	return tx.Chain()
+}
+
+func (tx *AddPermissionlessDelegatorTx) NodeID() ids.NodeID {
+	return tx.Validator().NodeID
+}
+
+func (*AddPermissionlessDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+	return nil, false, nil
+}
+
+func (tx *AddPermissionlessDelegatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddPermissionlessDelegatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddPermissionlessDelegatorTx) Weight() uint64 {
+	return tx.Validator().Wght
+}
+
+func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
+	if tx.Chain() == constants.PrimaryNetworkID {
+		return PrimaryNetworkDelegatorPermissionlessPendingPriority
+	}
+	return ChainPermissionlessDelegatorPendingPriority
+}
+
+func (tx *AddPermissionlessDelegatorTx) CurrentPriority() Priority {
+	if tx.Chain() == constants.PrimaryNetworkID {
+		return PrimaryNetworkDelegatorCurrentPriority
+	}
+	return ChainPermissionlessDelegatorCurrentPriority
+}
+
+// Stake is where staked tokens go when done validating, with FxID set on
+// each output (secp256k1fx) as the legacy InitRuntime did.
+func (tx *AddPermissionlessDelegatorTx) Stake() []*lux.TransferableOutput {
+	outs := tx.StakeOuts()
+	for _, out := range outs {
+		out.FxID = secp256k1fx.ID
+	}
+	return outs
+}
+
+func (tx *AddPermissionlessDelegatorTx) RewardsOwner() fx.Owner {
+	return tx.DelegationRewardsOwner()
 }
 
 // SyntacticVerify returns nil iff [tx] is valid.

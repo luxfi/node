@@ -242,18 +242,6 @@ var (
 		gas.DBRead:  1, // read staker
 		gas.DBWrite: 6, // write remaining balance utxo + weight diff + deactivated weight diff + public key diff + delete staker + write staker
 	}
-	IntrinsicSlashValidatorTxComplexities = gas.Dimensions{
-		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-			ids.NodeIDLen + // nodeID
-			pcodecs.LongLen + // evidence height
-			pcodecs.ByteLen + // evidence type
-			pcodecs.IntLen + // messageA length prefix
-			pcodecs.IntLen + // messageB length prefix
-			2*bls.SignatureLen + // two BLS signatures
-			pcodecs.IntLen, // slashPercentage
-		gas.DBRead:  1, // read validator
-		gas.DBWrite: 2, // delete + re-insert validator (or just delete if below minimum)
-	}
 
 	errUnsupportedOutput = errors.New("unsupported output type")
 	errUnsupportedInput  = errors.New("unsupported input type")
@@ -861,23 +849,6 @@ func (c *complexityVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) e
 	return err
 }
 
-func (c *complexityVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
-	if err != nil {
-		return err
-	}
-	// Add bandwidth for the variable-length evidence messages
-	evidenceBandwidth := uint64(len(tx.Evidence.MessageA) + len(tx.Evidence.MessageB))
-	c.output, err = IntrinsicSlashValidatorTxComplexities.Add(
-		&baseTxComplexity,
-	)
-	if err != nil {
-		return err
-	}
-	c.output[gas.Bandwidth], err = math.Add(c.output[gas.Bandwidth], evidenceBandwidth)
-	return err
-}
-
 func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 	outputsComplexity, err := OutputComplexity(tx.Outs...)
 	if err != nil {
@@ -968,29 +939,5 @@ func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwners
 		&authComplexity,
 		&ownerComplexity,
 	)
-	return err
-}
-
-// CreateAssetTx complexity is base + the initial-state output complexity
-// (each InitialState carries TransferableOut-shaped outs that mint asset
-// UTXOs). The fee charged is CreateAssetTxFee, applied by the fee calc.
-func (c *complexityVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
-	if err != nil {
-		return err
-	}
-	c.output, err = IntrinsicBaseTxComplexities.Add(&baseTxComplexity)
-	return err
-}
-
-// OperationTx complexity is base + per-operation overhead. We bound the
-// per-op cost via the BaseTx complexity envelope on P-Chain (no Fx-specific
-// op state cost path).
-func (c *complexityVisitor) OperationTx(tx *txs.OperationTx) error {
-	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
-	if err != nil {
-		return err
-	}
-	c.output, err = IntrinsicBaseTxComplexities.Add(&baseTxComplexity)
 	return err
 }

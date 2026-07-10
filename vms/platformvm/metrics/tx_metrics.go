@@ -186,13 +186,6 @@ func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "slash_validator",
-	}).Inc()
-	return nil
-}
-
 func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "add_net_validator",
@@ -224,20 +217,6 @@ func (m *txMetrics) TransformChainTx(*txs.TransformChainTx) error {
 func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "transfer_net_ownership",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) CreateAssetTx(*txs.CreateAssetTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "create_asset",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) OperationTx(*txs.OperationTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "operation",
 	}).Inc()
 	return nil
 }
