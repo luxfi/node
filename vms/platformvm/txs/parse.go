@@ -69,10 +69,6 @@ func parseUnsigned(buf []byte) (UnsignedTx, error) {
 		return &AddPermissionlessValidatorTx{spendingTx{msg: msg}}, nil
 	case kindAddPermissionlessDelegator:
 		return &AddPermissionlessDelegatorTx{spendingTx{msg: msg}}, nil
-	case kindConvertNetworkToL1:
-		return &ConvertNetworkToL1Tx{spendingTx{msg: msg}}, nil
-	case kindCreateSovereignL1:
-		return &CreateSovereignL1Tx{spendingTx{msg: msg}}, nil
 	case kindRegisterL1Validator:
 		return &RegisterL1ValidatorTx{spendingTx{msg: msg}}, nil
 	case kindSetL1ValidatorWeight:
