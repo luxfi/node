@@ -77,6 +77,8 @@ func parseUnsigned(buf []byte) (UnsignedTx, error) {
 		return &IncreaseL1ValidatorBalanceTx{spendingTx{msg: msg}}, nil
 	case kindDisableL1Validator:
 		return &DisableL1ValidatorTx{spendingTx{msg: msg}}, nil
+	case kindConvertNetwork:
+		return &ConvertNetworkTx{spendingTx{msg: msg}}, nil
 	default:
 		return nil, fmt.Errorf("zap: unknown tx kind %d", k)
 	}
