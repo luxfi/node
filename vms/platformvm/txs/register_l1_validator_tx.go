@@ -73,8 +73,7 @@ func (tx *RegisterL1ValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 		return ErrNilTx
 	}
 
-	base := BaseTx{BaseTx: tx.baseTx()}
-	return base.SyntacticVerify(rt)
+	return verifyBaseTx(tx.baseTx(), rt)
 }
 
 func (tx *RegisterL1ValidatorTx) Visit(visitor Visitor) error {
