@@ -29,9 +29,34 @@ func marshalUnsignedNative(u UnsignedTx) ([]byte, error) {
 		return zn.NewAdvanceTimeTx(t.Time).Bytes(), nil
 	case *RewardValidatorTx:
 		return zn.NewRewardValidatorTx(t.TxID).Bytes(), nil
+	case *BaseTx:
+		return marshalBaseTx(t)
 	default:
 		return nil, fmt.Errorf("zap_native: unsigned tx type %T not yet bridged", u)
 	}
+}
+
+// marshalBaseTx encodes a standalone txs.BaseTx (a full spending tx) as a
+// native-ZAP TxKindBaseFull object: the shared spending envelope with no
+// delta fields.
+func marshalBaseTx(tx *BaseTx) ([]byte, error) {
+	outs, err := toOutputEntries(tx.Outs)
+	if err != nil {
+		return nil, err
+	}
+	ins, err := toInputEntries(tx.Ins)
+	if err != nil {
+		return nil, err
+	}
+	capHint := zap.HeaderSize + 32 + SpendEnvelopeSize +
+		len(outs)*zn.SizeTransferableOutputFull +
+		len(ins)*zn.SizeTransferableInputFull + len(tx.Memo)
+	b := zap.NewBuilder(capHint)
+	so := writeSpendingLists(b, outs, ins)
+	ob := b.StartObject(SpendEnvelopeSize)
+	setSpendingEnvelope(ob, zn.TxKindBaseFull, tx.NetworkID, tx.BlockchainID, so, tx.Memo)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
 }
 
 // unmarshalUnsignedNative decodes the leading self-delimiting ZAP message in
@@ -69,6 +94,15 @@ func unmarshalUnsignedNative(b []byte) (UnsignedTx, int, error) {
 		tx.SetBytes(buf)
 		return tx, n, nil
 
+	case zn.TxKindBaseFull:
+		msg, err := zap.Parse(buf)
+		if err != nil {
+			return nil, 0, err
+		}
+		tx := &BaseTx{BaseTx: readSpending(msg.Root())}
+		tx.SetBytes(buf)
+		return tx, n, nil
+
 	default:
 		return nil, 0, fmt.Errorf("zap_native: tx kind %d not yet bridged", kind)
 	}
@@ -86,20 +120,43 @@ func txKindOf(buf []byte) (zn.TxKind, error) {
 	return zn.TxKind(msg.Root().Uint8(zn.OffsetTxKind)), nil
 }
 
+// credsBuffer object layout: CredsList @ 0, SigArray @ 8 (each an 8-byte list
+// pointer). The signatures live in the shared SignatureArray that the
+// CredentialList entries slice into.
+const (
+	offsetCredsBuf_CredsList = 0
+	offsetCredsBuf_SigArray  = 8
+	sizeCredsBuf             = 16
+)
+
 // marshalCredsNative encodes a signed tx's credential list as a standalone
-// native-ZAP buffer appended after the unsigned prefix. Only reached for
-// txs that actually carry credentials; proposal txs (empty Creds) never hit
-// this path.
+// native-ZAP buffer appended after the unsigned prefix (unsigned ‖ creds).
+// Only reached when Creds is non-empty; proposal txs never hit this path.
 func marshalCredsNative(creds []verify.Verifiable) ([]byte, error) {
-	if len(creds) == 0 {
-		return nil, nil
+	credEntries, err := toCredEntries(creds)
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("zap_native: credential encoding not yet bridged (%d creds)", len(creds))
+	capHint := zap.HeaderSize + 32 + sizeCredsBuf + len(creds)*zn.SizeCredential
+	b := zap.NewBuilder(capHint)
+	credsOff, credsCount, sigBlobs := zn.WriteCredentialList(b, credEntries)
+	sigArrOff, sigArrCount := zn.WriteSignatureArray(b, sigBlobs)
+	ob := b.StartObject(sizeCredsBuf)
+	ob.SetList(offsetCredsBuf_CredsList, credsOff, credsCount)
+	ob.SetList(offsetCredsBuf_SigArray, sigArrOff, sigArrCount)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
 }
 
-// unmarshalCredsNative decodes a credential-list buffer produced by
-// marshalCredsNative. Symmetric with the marshal side; not yet reached for
-// proposal txs.
+// unmarshalCredsNative decodes a credential buffer produced by
+// marshalCredsNative back into the []verify.Verifiable credential slice.
 func unmarshalCredsNative(b []byte) ([]verify.Verifiable, error) {
-	return nil, fmt.Errorf("zap_native: credential decoding not yet bridged (%d bytes)", len(b))
+	msg, err := zap.Parse(b)
+	if err != nil {
+		return nil, err
+	}
+	obj := msg.Root()
+	credsList := zn.CredentialListView(obj, offsetCredsBuf_CredsList)
+	sigArr := zn.SignatureArrayView(obj, offsetCredsBuf_SigArray)
+	return fromCredEntries(credsList, sigArr), nil
 }
